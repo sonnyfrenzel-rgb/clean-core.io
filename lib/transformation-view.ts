@@ -338,15 +338,31 @@ export interface NotGeneratedItem {
 }
 
 /** What a generation cannot carry over from this source, and why — each from the engine. */
+/** SAP GUI list and file output: ALV, the classic list, front-end file transfer. */
+const UI_OUTPUT = /^(REUSE_ALV_|REUSE_LIST|CL_SALV_|CL_GUI_|GUI_(DOWNLOAD|UPLOAD)$|WS_(DOWNLOAD|UPLOAD)$)/i;
+
 export function notGeneratedReasons(findings: readonly EvidenceFinding[], coverage: CoverageReport | null): NotGeneratedItem[] {
   const out: NotGeneratedItem[] = [];
   const none = findings.filter((f) => f.objectName && !f.sapReplacement?.objectName && !isCustomObject(f.objectName));
-  if (none.length > 0) {
-    const names = Array.from(new Set(none.map((f) => f.objectName!)));
+  // Classic list and file output has no function-module successor, but it has
+  // a target all the same — a Fiori app — and Design says so. Said apart, so the
+  // two tools do not read as a contradiction (dev acceptance 14.10.2026).
+  const ui = none.filter((f) => UI_OUTPUT.test(f.objectName!));
+  const rest = none.filter((f) => !UI_OUTPUT.test(f.objectName!));
+  if (ui.length > 0) {
+    const names = Array.from(new Set(ui.map((f) => f.objectName!)));
+    out.push({
+      key: 'ui-output',
+      text: `List and file output (${joinShort(names, 4)}) has no function module to call instead — in the target it becomes a Fiori app with its list and export, which is not part of the generated package.`,
+      lines: Array.from(new Set(ui.map((f) => f.lineStart))).slice(0, 4),
+    });
+  }
+  if (rest.length > 0) {
+    const names = Array.from(new Set(rest.map((f) => f.objectName!)));
     out.push({
       key: 'no-successor',
       text: `No released successor for ${joinShort(names, 4)} — the catalog names none, so there is nothing released to call.`,
-      lines: Array.from(new Set(none.map((f) => f.lineStart))).slice(0, 4),
+      lines: Array.from(new Set(rest.map((f) => f.lineStart))).slice(0, 4),
     });
   }
   const custom = Array.from(new Set(findings.filter((f) => isCustomObject(f.objectName)).map((f) => f.objectName!)));
@@ -389,7 +405,15 @@ const ROLES: Array<[RegExp, FileType, string]> = [
   [/(^|\/)Dockerfile$/i, 'container', 'Container build'],
   [/\.cds$/i, 'model', 'Data model (CDS)'],
   [/\.clas\.abap$/i, 'code', 'ABAP class'],
+  [/\.clas\.locals_(imp|def)\.abap$/i, 'code', 'Local classes of the class'],
+  [/\.clas\.testclasses\.abap$/i, 'test', 'ABAP Unit test classes'],
   [/\.clas\.xml$/i, 'config', 'Class metadata for abapGit'],
+  [/\.intf\.abap$/i, 'code', 'ABAP interface'],
+  [/\.tabl\.xml$/i, 'model', 'Database table'],
+  [/\.dcls\.asdcls$/i, 'model', 'Access control (DCL)'],
+  [/\.(intf|ddls|bdef|dcls|srvd|srvb|tabl|devc)\.xml$/i, 'config', 'Object metadata for abapGit'],
+  [/(^|\/)\.abapgit\.xml$/i, 'config', 'abapGit repository settings'],
+  [/\.md$/i, 'other', 'Document'],
   [/\.ddls\.asddls$/i, 'model', 'CDS data definition'],
   [/\.bdef\.asbdef$/i, 'model', 'Behavior definition'],
   [/\.srvd\.assrvd$/i, 'model', 'Service definition'],
@@ -415,6 +439,69 @@ export function fileCard(file: GeneratedFile): FileCard {
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
+}
+
+/** One object of the package and its files: a class with its local classes and metadata, a CDS view, a table. */
+export interface PackageGroup {
+  key: string;
+  /** The object's name as the system knows it, or "Package documents" for the files at the root. */
+  name: string;
+  /** What the object is — the role of its main file. */
+  kind: string;
+  type: FileType;
+  files: FileCard[];
+  lines: number;
+  bytes: number;
+  /**
+   * Who wrote it. `model`: the model wrote function bodies into it (it holds
+   * fill markers); `engine`: built by the engine alone; `whole-model`: the
+   * package came from one model call, every file is the model's.
+   */
+  author: 'model' | 'engine' | 'whole-model';
+}
+
+const MAIN_TYPE: FileType[] = ['code', 'model', 'test', 'container', 'config', 'other'];
+const FILL_MARK = /@cc-fill BEGIN /;
+const ABAP_FILE = /\.(abap|xml|asddls|asbdef|asdcls|assrvd|assrvb)$/i;
+
+/**
+ * The package by object instead of file by file (dev acceptance 14.10.2026:
+ * 36 tiles told a reader nothing). Files under a folder group by the name
+ * before their first dot (`zcl_x.clas.abap`, `zcl_x.clas.locals_imp.abap` and
+ * `zcl_x.clas.xml` are one class); files at the root are the package's own
+ * documents. Order: code, then data model, then tests, then the rest.
+ */
+export function packageGroups(files: readonly GeneratedFile[]): PackageGroup[] {
+  const engineLed = files.some((f) => FILL_MARK.test(f.content ?? ''));
+  const byKey = new Map<string, { files: GeneratedFile[] }>();
+  for (const f of files) {
+    const slash = f.path.lastIndexOf('/');
+    const base = f.path.slice(slash + 1);
+    // ABAP files are one object under several names (`.clas.abap`, `.clas.xml`);
+    // a Node package's files are modules, and their folder is the unit.
+    const key = slash < 0 ? '(root)' : ABAP_FILE.test(base) ? `${f.path.slice(0, slash + 1)}${base.split('.')[0]}` : f.path.slice(0, slash + 1);
+    const g = byKey.get(key) ?? { files: [] };
+    g.files.push(f);
+    byKey.set(key, g);
+  }
+  const out: PackageGroup[] = [];
+  for (const [key, g] of byKey) {
+    const cards = g.files.map(fileCard);
+    const main = [...cards].sort((a, b) => MAIN_TYPE.indexOf(a.type) - MAIN_TYPE.indexOf(b.type))[0];
+    const root = key === '(root)';
+    out.push({
+      key,
+      name: root ? 'Package documents' : key.endsWith('/') ? key : key.slice(key.lastIndexOf('/') + 1).toUpperCase(),
+      kind: root ? 'README, status and trace' : key.endsWith('/') ? 'Folder' : main.role,
+      type: root ? 'other' : main.type,
+      files: cards,
+      lines: cards.reduce((n, c) => n + c.lines, 0),
+      bytes: cards.reduce((n, c) => n + c.bytes, 0),
+      author: !engineLed ? 'whole-model' : g.files.some((f) => FILL_MARK.test(f.content ?? '')) ? 'model' : 'engine',
+    });
+  }
+  const rank = (g: PackageGroup) => (g.key === '(root)' ? 99 : MAIN_TYPE.indexOf(g.type));
+  return out.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 }
 
 /** Folders and root files, "srv/ 1 · root 2". */

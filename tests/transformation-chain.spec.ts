@@ -333,6 +333,16 @@ test.describe('the stages', () => {
     expect(board).toMatchObject({ written: 1, notWritten: 1 });
   });
 
+  test('a repair in progress says its round of two, and a reason gets its own line under the title (dev acceptance 14.10.2026)', () => {
+    const board = unitBoard(
+      [{ unitId: 'U01', title: 'Validate references', lines: 'L580-646', rules: [] }],
+      [{ t: 'fill', unitId: 'U01', state: 'written' }, { t: 'repair', round: 1, unitIds: ['U01'], state: 'start' }],
+    );
+    expect(board.rows[0].word).toBe('repairing — round 1 of 2');
+    const chain = fs.readFileSync(path.join(process.cwd(), 'components/transformation/GenerationChain.tsx'), 'utf8');
+    expect(chain).toContain("r.state === 'not-written' ? 'sm:col-span-2' : 'sm:col-start-auto sm:text-right'");
+  });
+
   test('the single call advances in order: entering one ends the one before; a failure stops the running one', () => {
     let log = enterStage({}, 'facts', 1000);
     log = withFacts(log, 'facts', originalFactsLines({ guards: [1, 2, 3], decimals: [1], inputs: [1, 2] }));
@@ -450,7 +460,9 @@ test.describe('the page', () => {
     expect(code).toMatch(/const warning = decisionWarning\(chainInputs\);/);
     expect(code).toMatch(/const nothingOpen = settled && tips\.length === 0 && warning === null;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?warning=\{warning\}/);
-    expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canGenerate \|\| files\.length > 0/);
+    // 13.10.2026: and only once the plan is read and the pre-flight check allows it.
+    expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canStart \|\| !planSettled \|\| files\.length > 0/);
+    expect(code).toMatch(/const canStart = canGenerate && planBlocked === null;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?onGenerate=\{startGeneration\}/);
   });
 

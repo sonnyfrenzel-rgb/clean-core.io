@@ -41,7 +41,7 @@ export default function BuiltOnCard({
       </div>
     );
   }
-  const meta = tfBuiltOnMeta(formatTextDate(generatedAt), record.elapsedMs !== null ? formatElapsed(record.elapsedMs) : null);
+  const meta = tfBuiltOnMeta(formatTextDate(generatedAt), record.elapsedMs !== null ? `took ${formatElapsed(record.elapsedMs)} min` : null);
   const engine = record.engine;
   return (
     <section aria-labelledby="built-on-title" data-built-on={record.path} className="mb-6 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">

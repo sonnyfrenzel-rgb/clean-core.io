@@ -76,6 +76,32 @@ export function fillRulesText(track: 'node' | 'rap' = 'node'): string {
   return (track === 'rap' ? FILL_RULE_NUMBERS_RAP : FILL_RULE_NUMBERS).map((n) => byNumber.get(n)).filter((l): l is string => !!l).join('\n');
 }
 
+/**
+ * How a body calls the unit's guards and how a predicate reads its inputs.
+ * The request lists each guard by name, placement and the keys of its
+ * `values`, but not the signatures the scaffold writes for them
+ * (`scaffold-node.ts` `guardsFile`, `scaffold-rap.ts`): without these lines
+ * the model guessed argument lists (`when_G0877(parent, lvQty)`) and predicate
+ * parameters (`lvCode`, `pCase`) that do not exist, and the body guards
+ * refused the answer (A/B 13.10.2026, units U16 and U01).
+ */
+export function fillGuardLines(track: 'node' | 'rap'): string[] {
+  if (track === 'node') {
+    return [
+      '- Guards: helper and predicate take (sel, st, record, values) — record: the row the condition reads, or null; values: { the keys under "values" }, left out when none.',
+      '- placement "entry"/"selection": the stub calls it already; never again.',
+      '- placement "body": call the helper where the original checks ("line"), never its condition: guard_… returns Refusal | null (`const r = guard_G0345(sel, st, null, { lvCode }); if (r) return r;`); stop_…/skip_… return true where the original ends the step/skips the record.',
+      '- A guard with a "regionId": write its predicate when_<id without "-">(sel, st, record, values): boolean, true exactly when "condition" holds, reading only sel, st, record, values.<key>, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+    ];
+  }
+  return [
+    '- Guards: predicate methods when_<id lower case, without "-">( is_sel = … is_rec = … iv_… = … ) RETURNING rv_holds — is_rec: the row the condition reads (optional); one iv_ per key under "values" in snake case (lvQty: iv_lv_qty).',
+    '- placement "entry"/"selection": the engine calls it already; never again.',
+    '- placement "body": call it where the original checks ("line"), never its condition: IF when_g0345( is_sel = is_sel iv_lv_code = lv_code ) = abap_true. … ENDIF.',
+    '- A guard with a "regionId": write its predicate body, rv_holds = abap_true exactly when "condition" holds, reading only is_sel, is_rec and its iv_ parameters, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+  ];
+}
+
 /** The fixed instruction header (§8.2). */
 export function fillInstructionHeader(track: 'node' | 'rap'): string {
   const lang = track === 'node' ? 'TypeScript' : 'ABAP Cloud';
@@ -89,12 +115,18 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     'Rules for every body:',
     `- Do not write ${forbidden}, and never the text "@cc-fill".`,
     '- Call only names listed under "available" for that unit (helpers and callees). If you need another allowlisted helper, name it under "needs".',
-    '- Keep every guard call the stub already makes; never re-implement a guard condition inline.',
-    '- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.',
+    ...(track === 'node' ? ['- "types" of a unit declares every type its signature and callees name: read and write only those fields.'] : []),
+    ...fillGuardLines(track),
+    ...(track === 'node'
+      ? [
+          // Defect F (A/B 13.10.2026): "on a decimal value" read as permission for Number() on a TYPE i field.
+          '- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
+          '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
+        ]
+      : ['- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.']),
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',
     '- If you cannot write a body faithfully from the ABAP shown, answer "refused": { "reason": "…" } for that unit instead of guessing.',
-    `- A guard listed with a "regionId" under a unit is a check of the original whose condition you write as well: its predicate body — statements that return ${track === 'node' ? 'true' : "abap_true"} exactly when the original's "condition" holds, reading only the parameters of its signature. Answer it under "guards": [ { "id": "G-0506", "body": "…" } ] of that unit; the engine calls it where the original checks.`,
-    '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [], "refused": null } ] } — one entry per unit asked for.',
+    '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [] } ] } — one entry per unit asked for; "refused" only on a unit you refuse.',
     'CODE-DRAFT RULES (by number, unchanged):',
     fillRulesText(track),
   ].join('\n');
@@ -122,7 +154,10 @@ export interface BundleOptions {
   /** Repair rounds: the failure and previous body per unit id. */
   repair?: ReadonlyMap<string, FillRepair> | null;
   unitsPerCall?: number;
+  /** The most characters of a call of several units (default `FILL_PROMPT_MAX_CHARS`). */
   maxChars?: number;
+  /** The most characters of a call of one unit before its context or ABAP is cut (default `LEASED_PROMPT_MAX_CHARS`). */
+  maxAloneChars?: number;
 }
 
 function cutRepair(r: FillRepair): FillRepair {
@@ -186,12 +221,17 @@ function requestOf(opts: BundleOptions, context: string, units: FillRequestUnit[
 
 /**
  * The fill calls for these units, in their order: ≤ 4 units and ≤ 14,000
- * characters per prompt. Never drops a unit; a unit too large alone is cut
- * (context first, then its ABAP slice from the end) and the cut is reported.
+ * characters per prompt of several units. A unit that does not fit 14,000
+ * goes alone, and alone it may use up to `LEASED_PROMPT_MAX_CHARS` (28,000)
+ * uncut (13.10.2026: cutting a unit to 14,000 dropped 108 of its ABAP lines,
+ * and the model then — rightly — declined it every time). Never drops a unit;
+ * a unit too large even for that is cut (context first, then its ABAP slice
+ * from the end) and the cut is reported.
  */
 export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptions): FillBundle[] {
   const perCall = Math.max(1, Math.min(opts.unitsPerCall ?? FILL_UNITS_PER_CALL, 6));
   const maxChars = opts.maxChars ?? FILL_PROMPT_MAX_CHARS;
+  const maxAlone = Math.max(maxChars, opts.maxAloneChars ?? LEASED_PROMPT_MAX_CHARS);
   const context = cutContext(opts.context, FILL_CONTEXT_MAX_CHARS).text;
 
   const bundles: FillBundle[] = [];
@@ -211,20 +251,27 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       continue;
     }
     close();
-    if (fillPrompt(requestOf(opts, context, [unit])).length <= maxChars) {
+    const aloneRequest = requestOf(opts, context, [unit]);
+    const alonePrompt = fillPrompt(aloneRequest);
+    if (alonePrompt.length <= maxChars) {
       current = [unit];
+      continue;
+    }
+    if (alonePrompt.length <= maxAlone) {
+      // Too large to share a call, small enough to go alone uncut.
+      bundles.push({ unitIds: [unit.unitId], request: aloneRequest, prompt: alonePrompt, trimmed: [] });
       continue;
     }
     // Alone and still too large: give up context, then the end of the slice.
     const trimmed: FillBundle['trimmed'] = [];
     let ctx = context;
     let u = unit;
-    let over = fillPrompt(requestOf(opts, ctx, [u])).length - maxChars;
+    let over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
     if (over > 0 && ctx.length > 0) {
       const cut = cutContext(ctx, Math.max(0, ctx.length - over - 80));
       trimmed.push({ unitId: unit.unitId, what: 'context', chars: ctx.length - cut.text.length });
       ctx = cut.text;
-      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxChars;
+      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
     }
     // JSON escaping makes a character of the slice cost more than one in the
     // prompt, so the cut is measured again until it fits.
@@ -233,7 +280,7 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       const cut = cutAbap(unit, over + abapCut);
       abapCut = cut.cut;
       u = cut.unit;
-      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxChars;
+      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
       if (cut.unit.abap.text.split('\n').length <= 2) break;
     }
     if (abapCut > 0) trimmed.push({ unitId: unit.unitId, what: 'abap', chars: abapCut });
@@ -284,6 +331,12 @@ export const predicateRegionOf = (unitId: string, guardId: string): string => `$
  * with a string body (may be empty only when refused), `needs` as strings and
  * `refused` null or `{ reason }`. Units asked for and not answered come back
  * as `missing`; entries for units not asked for are dropped.
+ *
+ * `refused`: the schema types it as an object, so a model cannot answer null;
+ * absent, or without a non-blank reason, it reads as not refused. A reason the
+ * model writes is taken at its word — `{ "reason": "none" }` included — and the
+ * body is not used: splicing on a guess about what the model meant is worse
+ * than one more repair round (A/B 13.10.2026; the header asks to leave it out).
  */
 export function parseFillAnswer(text: string | null | undefined, askedFor: readonly string[]): FillAnswerCheck {
   const parsed = parseModelJsonObject(text);

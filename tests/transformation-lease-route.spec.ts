@@ -156,12 +156,14 @@ test('another account\'s lease, a lease spent on another stage, a malformed leas
 
 test('the 5th call in flight, the call past the budget and a call after expiry are refused', async ({ request }) => {
   const call = () => gemini(request, { prompt: FILL_PROMPT, stage: 'transformation', lease: { projectId: P1, leaseId } });
-  await adminMergeDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId, { inFlight: 4 });
+  // Four live slots (13.10.2026: a lease counts its in-flight calls by their slot times).
+  const now = Date.now();
+  await adminMergeDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId, { inFlight: 4, slots: [now, now, now, now] });
   const busy = await call();
   expect(busy.status()).toBe(429);
   expect((await busy.json()).code).toBe('lease-busy');
 
-  await adminMergeDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId, { inFlight: 0, used: 26 });
+  await adminMergeDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId, { inFlight: 0, slots: [], used: 26 });
   const spent = await call();
   expect(spent.status()).toBe(429);
   expect((await spent.json()).code).toBe('lease-exhausted');

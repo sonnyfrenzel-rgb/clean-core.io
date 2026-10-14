@@ -6,6 +6,7 @@ import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import ChainList from '@/components/transformation/ChainList';
 import ConceptSuccessors from '@/components/ConceptSuccessors';
+import GenerationPlan, { type PlanView } from '@/components/transformation/GenerationPlan';
 import { tfCostLine, tfTipsMeta, wt } from '@/lib/workspace-messages';
 import { GENERATION_MAX_MODEL_CALLS, QUALITY_ANCHOR, type ChainSlot, type DecisionWarning, type QualityTip } from '@/lib/transformation-chain';
 
@@ -33,6 +34,7 @@ export default function QualityTips({
   keySource,
   onGenerate,
   conceptSource = '',
+  plan = null,
 }: {
   tips: QualityTip[];
   /**
@@ -57,6 +59,8 @@ export default function QualityTips({
    * no count, no link, nothing to decide — so it stands as its own card.
    */
   conceptSource?: string;
+  /** The plan and its limits before the click (owner, 13.10.2026); null where no engine-led plan applies. */
+  plan?: PlanView | null;
 }) {
   return (
     <div data-quality-tips={settled ? String(tips.length) : 'reading'} className="mb-6 flex flex-col gap-4">
@@ -133,6 +137,7 @@ export default function QualityTips({
             {wt('transformation.tipsDone')}
           </p>
         ) : null}
+        {plan ? <GenerationPlan plan={plan} /> : null}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <CcButton
             variant="primary"

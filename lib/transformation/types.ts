@@ -30,12 +30,16 @@ export const PLAN_VERSION = 2;
  * 3 (3.0.12, abapGit package): the RAP scaffold writes abapGit's metadata file for every object
  * (`abapgit-files.ts`), the table as abapGit XML instead of `.tabl.astabl`, the root package's
  * `package.devc.xml`, and a transparent table name within 16 characters. The Node scaffold's text is unchanged.
- * 4 (3.0.13, probes that reach the written functions): the Node scaffold's `test/acceptance-shims.ts` gains
+ * 4 (3.0.12, defect E of the fill A/B 13.10.2026): a work area that LOOP, READ TABLE or SELECT fills from an
+ * internal table the program builds itself is a computed value, not an input record — a check on it is called
+ * in the body with the value in `values` (`guard-basis.ts`). Both scaffolds' guard text changes where a check
+ * reads such a work area (its values, its doc line); nothing signed changes (§12.3).
+ * 5 (3.0.13, probes that reach the written functions): the Node scaffold's `test/acceptance-shims.ts` gains
  * entry points that run the whole process (`listOf`, `exportOf`, `recalcOf`, `writeOf`), and
  * `acceptance-adapter.json` maps the display-filter, recalculation and negative-write probes onto them where
  * the original shows the pattern, naming the unit each one reaches (`fill-probes.ts`). The RAP text is unchanged.
  */
-export const SCAFFOLD_VERSION = 4;
+export const SCAFFOLD_VERSION = 5;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -358,6 +362,18 @@ export interface BodyGuardContext {
   guardCalls?: readonly string[];
   /** Guards the body must call (placement `body`); a body that skips one, or writes its condition inline, is refused. */
   required?: readonly RequiredGuard[];
+  /**
+   * Parameters of the region's own signature beyond the step parameters every body has (`sel`, `st`, `record`, …):
+   * `values` for the predicate of a derived check (`when_G0345(sel, st, record, values)`). A member call on one
+   * (`values.lvCode.trim()`) reads the region's input and is no foreign call.
+   */
+  params?: readonly string[];
+  /**
+   * The fields of the region's parameters typed by a closed interface of the scaffold (`type-shapes.ts`):
+   * `{ sel: […], st: […], args: […] }`. A body reading `st.gt_effects` when RunState has no such field is refused,
+   * as `tsc` would refuse it — the name was invented (A/B 13.10.2026, defect D).
+   */
+  shapes?: Readonly<Record<string, readonly string[]>>;
 }
 
 /** A guard a fill body must call at the original's position. */
@@ -381,7 +397,8 @@ export type BodyRefusalCode =
   | 'too-long'
   | 'binary-number'
   | 'guard-missing'
-  | 'guard-inlined';
+  | 'guard-inlined'
+  | 'unknown-field';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;
@@ -529,6 +546,11 @@ export interface FillRequestUnit {
   }>;
   facts: { decimals: Array<{ name: string; digits: number; decimals: number; type: string }> };
   available: { helpers: string[]; callees: string[] };
+  /**
+   * The declarations of the types the signature and the callees' signatures name, with the types they name one
+   * level down — as the scaffold writes them (`type-shapes.ts`), so a body reads fields that exist (Node only).
+   */
+  types?: string;
 }
 
 /** A repair round's addition to a unit (§13.2 step 3). */
@@ -573,7 +595,20 @@ export type ContextSlotKey = string;
 export type GenerationEvent =
   | { t: 'slot'; slot: ContextSlotKey; state: 'loading' | 'loaded' | 'missing' | 'stale'; at: number }
   | { t: 'scaffold'; units: number; guards: number; decimals: number; inputs: number; cases: number; ms: number }
-  | { t: 'fill'; unitId: string; state: 'writing' | 'written' | 'refused' | 'unusable'; at: number }
+  | {
+      t: 'fill';
+      unitId: string;
+      /** `waiting-slot`: the server said `lease-busy` and the call waits for a free slot (13.10.2026). */
+      state: 'writing' | 'waiting-slot' | 'written' | 'refused' | 'unusable';
+      at: number;
+      /** Why, in words, on `refused` / `unusable` — the reason the unit carries. */
+      reason?: string;
+      /** The code of the failure (`lib/transformation/error-codes.ts`) and the HTTP status, when there was one. */
+      code?: string;
+      status?: number;
+    }
+  /** One model call begins or ends — what the remaining-time estimate is read from. `admitted`: the server counted it. */
+  | { t: 'call'; callId: number; state: 'start' | 'end'; at: number; admitted?: boolean }
   | {
       t: 'check';
       kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats';

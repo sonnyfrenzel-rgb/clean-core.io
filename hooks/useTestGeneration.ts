@@ -15,6 +15,7 @@ import { numberedSource, originPromptSection, withOriginCheck, type OriginEngine
 import { ORIGIN_FAILED, originEngineFor, signedForOrigin } from './useScenarioOrigins';
 import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, type MaterialRule, type MaterialTable } from '@/lib/testing-rule-trace';
 import { withInvariants } from '@/lib/testing-invariants';
+import { TESTING_PROMPT_LIMIT, TESTING_PROMPT_MARGIN, codeForTestingPrompt, testingCodeNote } from '@/lib/testing-prompt-code';
 import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
 
 /** What the testing stage asks the model for, in the retry and failure sentences. */
@@ -129,12 +130,13 @@ export const useTestGeneration = (
       const ruleAsk = ruleTracePromptSection(rulesForTrace, tablesForTrace);
       const engineAsk = engineCasePromptSection(engineCases, isAbapCloud ? 'abap-unit' : 'node');
 
-      const prompt = isAbapCloud
+      const buildPrompt = (generatedText: string): string => (isAbapCloud
         ? `Given the following context:
         Legacy Code (numbered lines):
 ${legacyForPrompt}
         Design: ${project?.solutionDesign}
-        Generated ABAP Cloud RAP Code: ${project?.generatedCode}
+        Generated ABAP Cloud RAP Code:
+${generatedText}
         ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
         
         Generate:
@@ -162,7 +164,8 @@ ${legacyForPrompt}
         Legacy Code (numbered lines):
 ${legacyForPrompt}
         Design: ${project?.solutionDesign}
-        Generated Node.js Code: ${project?.generatedCode}
+        Generated Node.js Code:
+${generatedText}
         ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
         
         Generate:
@@ -203,7 +206,11 @@ ${legacyForPrompt}
         ${ruleAsk}
         ${engineAsk}
         ${originAsk}
-        `;
+        `);
+      // Only the code under test, within what is left of the prompt limit
+      // (dev acceptance 14.10.2026: the SD package went past it).
+      const codeView = codeForTestingPrompt(project?.generatedCode, Math.max(0, TESTING_PROMPT_LIMIT - TESTING_PROMPT_MARGIN - buildPrompt('').length));
+      const prompt = buildPrompt(`${codeView.text}${testingCodeNote(codeView)}`);
       
       // The same standard as the Transformation stage (owner report
       // 03.10.2026, `lib/model-json.ts`): the request carries the stage's

@@ -36,7 +36,7 @@ const verdicts = (run: ChecksRun) => Object.fromEntries(run.probes.filter((p) =>
 test.describe('reading the patterns from the original', () => {
   test('a component recalculated from its own value is input (plan 2): it comes with the record and starts at zero', () => {
     expect(PLAN_VERSION).toBe(2);
-    expect(SCAFFOLD_VERSION).toBe(4);
+    expect(SCAFFOLD_VERSION).toBe(5);
     for (const [text, want] of [
       ['<ls_item>-menge = <ls_item>-menge + p_add.', { component: 'menge', sign: '+', operand: 'p_add' }],
       ['ls-menge = p_add + ls-menge', { component: 'menge', sign: '+', operand: 'p_add' }],

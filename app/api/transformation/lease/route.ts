@@ -17,15 +17,23 @@ import { generationDirection } from '@/lib/generation-direction';
 import { generationRevision, generationStateOf } from '@/lib/generation-revision';
 import { platformContextOf } from '@/lib/transformation-context-build';
 import type { InputManifest } from '@/lib/input-manifest';
-import { LEASE_MAX_PLANNED_CALLS, leaseView } from '@/lib/transformation/lease';
-import { issueLease, voidLease } from '@/lib/transformation/lease-store';
+import { LEASE_MAX_PLANNED_CALLS, isRunId, leaseView } from '@/lib/transformation/lease';
+import { closeLease, issueLease, readLeaseWindow, voidLease } from '@/lib/transformation/lease-store';
 
 /**
  * POST /api/transformation/lease — one generation's model budget
  * (`docs/design/engine-led-transformation.md` §11; owner decision 12.10.2026).
  *
- *   IN : { projectId, generationToken, plannedCalls }
+ *   IN : { projectId, generationToken, plannedCalls, runId? }
  *   OUT: { lease: { projectId, leaseId, budget, used, expiresAt, maxInFlight }, reused }
+ *
+ * `runId` names one click of *Generate* (13.10.2026): the open lease is
+ * returned only to the same run (a retry of this request); a new run gets a
+ * new lease and the old one is superseded, so a restart never inherits the
+ * in-flight slots of a cancelled run.
+ *
+ * DELETE { projectId, leaseId } — *Cancel*: the owner closes the run's lease.
+ * GET — the account's generations this hour: { used, limit, nextFreeInSeconds }.
  *
  * An engine-led generation makes up to 48 small model calls. Each of them
  * passing the per-account limit of `/api/gemini` (20 an hour) would make one
@@ -95,13 +103,16 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ error: 'Invalid request body.', code: 'bad-request' }, { status: 400 });
     }
-    const { projectId, generationToken, plannedCalls } = body;
+    const { projectId, generationToken, plannedCalls, runId } = body;
     // Checked before the id forms any document path (SEC-2026-514).
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.', code: 'bad-request' }, { status: 400 });
     }
     if (typeof generationToken !== 'string' || generationToken.length === 0 || generationToken.length > 256) {
       return NextResponse.json({ error: 'Name the generation this lease is for: generationToken.', code: 'no-generation-token' }, { status: 400 });
+    }
+    if (runId !== undefined && !(isRunId(runId) && isFirestoreId(runId))) {
+      return NextResponse.json({ error: 'runId must be 8 to 64 letters, digits, - or _.', code: 'bad-request' }, { status: 400 });
     }
     if (typeof plannedCalls !== 'number' || !Number.isInteger(plannedCalls) || plannedCalls < 1 || plannedCalls > LEASE_MAX_PLANNED_CALLS) {
       return NextResponse.json(
@@ -162,7 +173,7 @@ export async function POST(req: NextRequest) {
     }
 
     const now = Date.now();
-    const outcome = await issueLease(db, { projectId, uid: decodedToken.uid, generationToken, plannedCalls, now });
+    const outcome = await issueLease(db, { projectId, uid: decodedToken.uid, generationToken, runId: isRunId(runId) ? runId : null, plannedCalls, now });
     if (outcome.kind === 'refused') {
       return NextResponse.json(
         { error: outcome.error, code: outcome.code, ...(outcome.retryAfterSeconds ? { retryAfterSeconds: outcome.retryAfterSeconds } : {}) },
@@ -189,5 +200,60 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     logger.error('transformation lease failed', { route: 'api/transformation/lease', error: errMessage(err) });
     return NextResponse.json({ error: 'The generation could not be prepared. Please try again.' }, { status: 500 });
+  }
+}
+
+/** Auth and the second factor — the gates GET and DELETE share with POST. */
+async function signedInOwner(req: NextRequest): Promise<{ uid: string } | NextResponse> {
+  const decodedToken = await verifyRequestAuth(req);
+  if (!decodedToken) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  try {
+    await assertMfaSatisfied(req, decodedToken);
+  } catch (mfaErr: unknown) {
+    const q = mfaErr as { message?: string; status?: number };
+    return NextResponse.json({ error: q?.message || 'MFA verification required.' }, { status: q?.status || 403 });
+  }
+  return { uid: decodedToken.uid };
+}
+
+/**
+ * *Cancel* (13.10.2026): the run's lease is closed, so its late calls are
+ * refused and the next run starts on a lease of its own. Only the owner's own
+ * open lease is closed; anything else is answered the same, with nothing done.
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const who = await signedInOwner(req);
+    if (who instanceof NextResponse) return who;
+    let body: Record<string, unknown> = {};
+    try {
+      const parsed = await readBoundedJson(new Response(req.body, { headers: req.headers }), LEASE_BODY_LIMITS);
+      body = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body.', code: 'bad-request' }, { status: 400 });
+    }
+    const { projectId, leaseId } = body;
+    if (!isFirestoreId(projectId) || !isFirestoreId(leaseId)) {
+      return NextResponse.json({ error: 'Name the lease as { projectId, leaseId }.', code: 'bad-request' }, { status: 400 });
+    }
+    const { db } = await getAdminDb();
+    const closed = await closeLease(db, { projectId, leaseId }, { uid: who.uid });
+    return NextResponse.json({ closed });
+  } catch (err: unknown) {
+    logger.error('transformation lease close failed', { route: 'api/transformation/lease', error: errMessage(err) });
+    return NextResponse.json({ error: 'The generation lease could not be closed.' }, { status: 500 });
+  }
+}
+
+/** The account's generations this hour — read only, for the start screen's limits (owner, 13.10.2026). */
+export async function GET(req: NextRequest) {
+  try {
+    const who = await signedInOwner(req);
+    if (who instanceof NextResponse) return who;
+    const { db } = await getAdminDb();
+    return NextResponse.json({ window: await readLeaseWindow(db, who.uid, Date.now()) });
+  } catch (err: unknown) {
+    logger.error('transformation lease window read failed', { route: 'api/transformation/lease', error: errMessage(err) });
+    return NextResponse.json({ error: 'The generations of this hour could not be read.' }, { status: 500 });
   }
 }

@@ -64,6 +64,9 @@ export interface GenerationRecord {
 }
 
 const str = (v: unknown, max: number): string => (typeof v === 'string' ? (v.length > max ? `${v.slice(0, max - 1)}…` : v) : '');
+
+/** A slot's fact as the record stores it — compare today's facts through this, or a long fact is always "changed". */
+export const storedFact = (text: string): string => str(text, 300);
 const int = (v: unknown, max = 1_000_000): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0);
 const list = <T>(v: unknown, max: number, map: (x: Record<string, unknown>) => T | null): T[] =>
   Array.isArray(v) ? v.slice(0, max).map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? map(x as Record<string, unknown>) : null)).filter((x): x is T => x !== null) : [];
@@ -205,6 +208,9 @@ export function basisSlotChanged(b: BasisSlot, now: readonly CurrentSlot[]): boo
   const current = now.find((s) => s.key === b.key);
   if (!current || current.state === 'loading' || current.state === 'unread') return false;
   if (str(current.when ?? '', 120) !== b.when) return true;
-  const facts = current.facts.slice(0, 4).map((f) => str(f.text, 300));
+  // Every stored fact, each as the record stores it: the record keeps a fact cut at 300 characters, and
+  // comparing the first fact uncut marked a long design reason stale right after the generation (dev
+  // acceptance 14.10.2026, hotfix 2).
+  const facts = current.facts.slice(0, 4).map((f) => storedFact(f.text));
   return facts.length !== b.facts.length || facts.some((f, i) => f !== b.facts[i]);
 }

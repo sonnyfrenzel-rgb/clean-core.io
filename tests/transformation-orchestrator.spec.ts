@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
+  BUSY_MAX_WAIT_MS,
+  BUSY_WAIT_MS,
   RETRY_WAIT_MS,
   fillOrder,
   modelErrorKind,
@@ -241,7 +243,8 @@ test.describe('retries and partial results', () => {
   test('error kinds: lease codes stop, 429 and transient errors retry, an abort is an abort', () => {
     expect(modelErrorKind(new ModelError('x', 403, 'lease-expired'))).toBe('lease');
     expect(modelErrorKind(new ModelError('x', 429, 'lease-exhausted'))).toBe('lease');
-    expect(modelErrorKind(new ModelError('x', 429, 'lease-busy'))).toBe('retry-rate');
+    // 13.10.2026: busy is its own kind — it waits for a slot, it is not a failed attempt.
+    expect(modelErrorKind(new ModelError('x', 429, 'lease-busy'))).toBe('busy');
     expect(modelErrorKind(new ModelError('Rate limit exceeded', 429))).toBe('retry-rate');
     expect(modelErrorKind(new ModelError('x', 503))).toBe('retry-transient');
     expect(modelErrorKind(new ModelError('switched off', 403, 'stage-disabled'))).toBe('fatal');
@@ -412,13 +415,18 @@ test.describe('events', () => {
       };
     };
     await runGeneration(base({ units: units(1), verify, onEvent: (e) => events.push(e) }));
-    expect(events.map((e) => (e.t === 'fill' ? `fill:${e.state}` : e.t === 'check' ? `check:${e.kind}` : e.t === 'repair' ? `repair:${e.state}` : e.t))).toEqual([
+    // Every model call is bracketed by its start and end (13.10.2026: the remaining-time estimate reads them).
+    expect(events.map((e) => (e.t === 'fill' ? `fill:${e.state}` : e.t === 'check' ? `check:${e.kind}` : e.t === 'repair' ? `repair:${e.state}` : e.t === 'call' ? `call:${e.state}` : e.t))).toEqual([
       'fill:writing',
+      'call:start',
+      'call:end',
       'fill:written',
       'check:guards',
       'check:lint',
       'repair:start',
       'fill:writing',
+      'call:start',
+      'call:end',
       'fill:written',
       'repair:done',
       'check:lint',
@@ -465,5 +473,107 @@ test.describe('a prompt the route would refuse is never sent (QA finding 804d092
     expect(calls).toBe(0);
     expect(result.callsUsed).toBe(0);
     expect(result.units.every((u) => u.state === 'not-written' && /more than the 100 a fill call may carry/.test(u.reason ?? ''))).toBe(true);
+  });
+});
+
+test.describe('lease-busy is waited out, and only calls the server counted count (13.10.2026)', () => {
+  // Production, 13.10.2026: 29 of 30 functions not written — every lease-busy
+  // refusal used the unit's one retry and was counted against the budget, so
+  // "the generation's 40 model calls are used up" came within seconds.
+  test('busy N times, then answered: every unit is written, no retry is used, and callsUsed counts admitted calls only', async () => {
+    const waits: number[] = [];
+    const events: GenerationEvent[] = [];
+    let attempts = 0;
+    let busy = 0;
+    const result = await runGeneration(
+      base({
+        units: units(8), // two bundles
+        budget: 2, // exactly the two admitted calls: a counted refusal would run out
+        model: async (prompt) => {
+          attempts++;
+          if (busy < 6) {
+            busy++;
+            throw new ModelError('At most 4 model calls of one generation run at once.', 429, 'lease-busy');
+          }
+          return answer(prompt);
+        },
+        sleep: async (ms) => {
+          waits.push(ms);
+        },
+        maxInFlight: 1,
+        onEvent: (e) => events.push(e),
+      }),
+    );
+    expect(result.status).toBe('complete');
+    expect(result.units.every((u) => u.state === 'written')).toBe(true);
+    expect(attempts).toBe(8);
+    expect(result.callsUsed).toBe(2);
+    expect(waits).toEqual(Array(6).fill(BUSY_WAIT_MS));
+    // The waiting is said, with its code, and no unit was asked again.
+    expect(events.some((e) => e.t === 'fill' && e.state === 'waiting-slot' && e.code === 'lease-busy' && e.status === 429)).toBe(true);
+    expect(events.filter((e) => e.t === 'fill' && e.state === 'unusable')).toHaveLength(0);
+    const ends = events.filter((e): e is Extract<GenerationEvent, { t: 'call' }> => e.t === 'call' && e.state === 'end');
+    expect(ends.filter((e) => e.admitted === false)).toHaveLength(6);
+    expect(ends.filter((e) => e.admitted === true)).toHaveLength(2);
+  });
+
+  test('the wait is bounded: past BUSY_MAX_WAIT_MS busy is a failed attempt like any other', async () => {
+    const waits: number[] = [];
+    const result = await runGeneration(
+      base({
+        units: units(1),
+        model: async () => {
+          throw new ModelError('busy', 429, 'lease-busy');
+        },
+        sleep: async (ms) => {
+          waits.push(ms);
+        },
+        maxInFlight: 1,
+      }),
+    );
+    expect(result.units[0].state).toBe('not-written');
+    expect(result.units[0].code).toBe('lease-busy');
+    expect(result.units[0].status).toBe(429);
+    expect(result.callsUsed).toBe(0);
+    expect(waits.filter((w) => w === BUSY_WAIT_MS).length).toBeGreaterThanOrEqual(BUSY_MAX_WAIT_MS / BUSY_WAIT_MS);
+  });
+
+  test('a refusal the route makes before the lease counts (prompt too large) costs no call; a model timeout does', async () => {
+    let n = 0;
+    const result = await runGeneration(
+      base({
+        units: units(2),
+        bundleOptions: { track: 'node', program: 'ZTEST', context: '', unitsPerCall: 1 } as OrchestratorInput['bundleOptions'],
+        model: async (prompt) => {
+          n++;
+          if (requestOf(prompt).units[0].unitId === 'U01') throw new ModelError('too large', 413, 'lease-prompt-too-large');
+          throw new ModelError('The model did not answer in time.', 504, 'model-timeout');
+        },
+        maxInFlight: 1,
+      }),
+    );
+    // U01: refused twice before the lease, never counted. U02: two timeouts, then twice more alone — all counted.
+    const u01 = result.units.find((u) => u.unitId === 'U01')!;
+    const u02 = result.units.find((u) => u.unitId === 'U02')!;
+    expect(u01).toMatchObject({ state: 'not-written', code: 'lease-prompt-too-large', status: 413 });
+    expect(u02).toMatchObject({ state: 'not-written', code: 'model-timeout', status: 504 });
+    expect(n).toBe(4);
+    expect(result.callsUsed).toBe(2);
+  });
+
+  test('every unit that is not written carries the code of why', async () => {
+    const result = await runGeneration(
+      base({
+        units: units(2),
+        model: async (prompt) =>
+          JSON.stringify({
+            units: requestOf(prompt).units.map((u) => (u.unitId === 'U01' ? { unitId: 'U01', body: null, needs: [], refused: { reason: 'no slice' } } : { unitId: u.unitId, body: 'return 1;', needs: [], refused: null })),
+          }),
+        guardBody: (id) => (id === 'U02' ? 'touches engine code' : null),
+        maxInFlight: 1,
+      }),
+    );
+    expect(result.units.find((u) => u.unitId === 'U01')).toMatchObject({ state: 'not-written', code: 'model-declined' });
+    expect(result.units.find((u) => u.unitId === 'U02')).toMatchObject({ state: 'not-written', code: 'body-refused' });
   });
 });
