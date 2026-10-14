@@ -454,22 +454,22 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now, charged: true, charged: true });
+    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now, charged: true });
     expect(a.kind).toBe('issued');
     if (a.kind !== 'issued') return;
     expect(a.lease).toMatchObject({ budget: 26, used: 0, inFlight: 0, status: 'open' });
 
-    const again = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now: now + 1, charged: true, charged: true });
+    const again = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now: now + 1, charged: true });
     expect(again).toMatchObject({ kind: 'reused', lease: { leaseId: a.lease.leaseId } });
 
-    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok-b', plannedCalls: 9, now: now + 2, charged: true, charged: true });
+    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok-b', plannedCalls: 9, now: now + 2, charged: true });
     expect(b).toMatchObject({ kind: 'issued', superseded: [a.lease.leaseId] });
     expect((await readLease(db(), { projectId, leaseId: a.lease.leaseId }))?.status).toBe('superseded');
     expect(await peekLease(db(), { projectId, leaseId: a.lease.leaseId }, { uid, now: now + 3 })).toMatchObject({ ok: false, code: 'lease-closed' });
 
-    const c = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-c', plannedCalls: 9, now: now + 3, charged: true, charged: true });
+    const c = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-c', plannedCalls: 9, now: now + 3, charged: true });
     expect(c.kind).toBe('issued');
-    const d = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-d', plannedCalls: 9, now: now + 4, charged: true, charged: true });
+    const d = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-d', plannedCalls: 9, now: now + 4, charged: true });
     expect(d).toMatchObject({ kind: 'refused', status: 429, code: 'lease-hourly-limit' });
   });
 
@@ -477,7 +477,7 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 40, now, charged: true, charged: true });
+    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 40, now, charged: true });
     if (issued.kind !== 'issued') throw new Error('not issued');
     const ref = { projectId, leaseId: issued.lease.leaseId };
     expect(issued.lease.budget).toBe(LEASE_MAX_CALLS);
@@ -499,7 +499,7 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 9, now, charged: true, charged: true });
+    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 9, now, charged: true });
     if (issued.kind !== 'issued') throw new Error('not issued');
     const ref = { projectId, leaseId: issued.lease.leaseId };
     const raced = await Promise.all(Array.from({ length: 6 }, () => acquireLeaseCall(db(), ref, { uid, now: now + 1 })));
@@ -516,15 +516,15 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now, charged: true, charged: true });
+    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now, charged: true });
     if (a.kind !== 'issued') throw new Error('not issued');
     const refA = { projectId, leaseId: a.lease.leaseId };
     for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) expect((await acquireLeaseCall(db(), refA, { uid, now: now + 1 })).ok).toBe(true);
     expect(await acquireLeaseCall(db(), refA, { uid, now: now + 2 })).toMatchObject({ ok: false, code: 'lease-busy' });
 
     // The same run asking again gets its lease back; a new run gets its own, with nothing in flight.
-    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now: now + 3, charged: true, charged: true })).toMatchObject({ kind: 'reused' });
-    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-bbbbbbbb', plannedCalls: 9, now: now + 4, charged: true, charged: true });
+    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now: now + 3, charged: true })).toMatchObject({ kind: 'reused' });
+    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-bbbbbbbb', plannedCalls: 9, now: now + 4, charged: true });
     expect(b).toMatchObject({ kind: 'issued', superseded: [a.lease.leaseId], lease: { inFlight: 0, used: 0, runId: 'run-bbbbbbbb' } });
     if (b.kind !== 'issued') return;
     const refB = { projectId, leaseId: b.lease.leaseId };
@@ -543,7 +543,7 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(await closeLease(db(), refB, { uid })).toBe(false);
 
     // A slot held by a call that never released is free after the deadline + 30 s.
-    const c = await issueLease(db(), { projectId: id('lease-project'), uid: id('lease-owner'), generationToken: 'tok', runId: 'run-cccccccc', plannedCalls: 9, now, charged: true, charged: true });
+    const c = await issueLease(db(), { projectId: id('lease-project'), uid: id('lease-owner'), generationToken: 'tok', runId: 'run-cccccccc', plannedCalls: 9, now, charged: true });
     if (c.kind !== 'issued') throw new Error('not issued');
     const refC = { projectId: c.lease.projectId, leaseId: c.lease.leaseId };
     for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) expect((await acquireLeaseCall(db(), refC, { uid: c.lease.uid, now })).ok).toBe(true);
@@ -579,7 +579,7 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const now = Date.now();
     expect(await readLeaseWindow(db(), uid, now)).toEqual({ used: 0, limit: LEASES_PER_WINDOW, nextFreeInSeconds: null });
-    await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok', runId: 'run-dddddddd', plannedCalls: 9, now, charged: true, charged: true });
+    await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok', runId: 'run-dddddddd', plannedCalls: 9, now, charged: true });
     expect(await readLeaseWindow(db(), uid, now + 1)).toMatchObject({ used: 1, nextFreeInSeconds: null });
   });
 });

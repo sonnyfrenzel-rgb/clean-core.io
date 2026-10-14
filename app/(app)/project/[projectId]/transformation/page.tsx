@@ -1219,7 +1219,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       // the recommendation unless a deviation was declared — and a deviation
       // reaches it only with a reason (`lib/architecture-contract.ts` throws
       // without one). A blocked contract generates nothing and says why.
-      const { contract, decision, generation } = await fetchGenerationDecision(projectId as string);
+      // Under the generation's signal: *Cancel* while the contract is read ends
+      // the read (QA leftovers of hotfix 2). The lease request below stays
+      // un-aborted on purpose — see the note there.
+      const { contract, decision, generation } = await fetchGenerationDecision(projectId as string, controller.signal);
       if (!decision.ok) {
         setContractRefusal(decision);
         failed = true;
@@ -1545,6 +1548,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       if (failed) closeLeaseRef.current?.();
       closeLeaseRef.current = null;
       setCancelling(false);
+      // The plan is read again (this hour's generations changed), and until it
+      // is, the one on screen is not the plan a click would start: pending.
+      setPlanView(undefined);
       setPlanNonce((n) => n + 1);
       setStageLog((log) => finishStages(log, Date.now(), failed ? 'failed' : 'done'));
       setLoading(false);
@@ -1636,9 +1642,18 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    */
   const prerequisites = generationPrerequisites(project, 'transformation');
   const canGenerate = project !== null && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  /** The plan before the click is read whenever a generation could start and none runs (see the effect that reads it below). */
+  const planWanted = canGenerate && !loading;
   /** The pre-flight check (owner, 13.10.2026): a plan that cannot succeed does not start. */
   const planBlocked: Preflight['blocked'] = planView && planView.state === 'ready' ? planView.preflight.blocked : null;
-  const canStart = canGenerate && planBlocked === null;
+  /**
+   * The plan is still being read: *Generate* waits for it, or a click before
+   * it lands would start a plan the check has not seen (QA leftovers of
+   * hotfix 2). A plan that cannot be read (`unavailable`) or does not apply
+   * (`null`) blocks nothing.
+   */
+  const planPending = planWanted && (planView === undefined || planView?.state === 'reading');
+  const canStart = canGenerate && planBlocked === null && !planPending;
   /** Once a package exists the button replaces it, and says so. */
   const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
   /** The first reason the code cannot be generated now, for the empty package card. */
@@ -1738,14 +1753,13 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * no lease, no model call. A program the engine cannot plan has no plan to
    * show (the single call), and a read that fails says so and blocks nothing.
    */
-  const planWanted = showTips && canGenerate && !loading;
   useEffect(() => {
     if (!planWanted) return;
     let live = true;
     const controller = new AbortController();
     void (async () => {
       try {
-        const { decision, generation } = await fetchGenerationDecision(projectId as string);
+        const { decision, generation } = await fetchGenerationDecision(projectId as string, controller.signal);
         if (!decision.ok || !generation) {
           if (live) setPlanView(null);
           return;

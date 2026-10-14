@@ -462,7 +462,7 @@ test.describe('the page', () => {
     expect(code).toMatch(/<QualityTips[\s\S]*?warning=\{warning\}/);
     // 13.10.2026: and only once the plan is read and the pre-flight check allows it.
     expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canStart \|\| !planSettled \|\| files\.length > 0/);
-    expect(code).toMatch(/const canStart = canGenerate && planBlocked === null;/);
+    expect(code).toMatch(/const canStart = canGenerate && planBlocked === null && !planPending;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?onGenerate=\{startGeneration\}/);
   });
 
