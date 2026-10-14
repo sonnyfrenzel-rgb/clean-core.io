@@ -12,6 +12,7 @@ import { isSideBySideRoute } from '../sap-naming';
 import { successorInContext } from './sap-api-catalog';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
+import { precisionFixesApply } from './precision-fixes-gate';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -502,6 +503,11 @@ function calledFunctionModules(code: string): string[] {
  * claim about those programs, decided in a regex. It belongs on the roadmap with
  * an argument, not here.
  */
+/** A function module in a customer or partner namespace: `Z…`, `Y…` or a `/namespace/` one — not SAP's IDoc framework. */
+function isCustomerNamespace(name: string): boolean {
+  return /^(?:[ZY]|\/)/i.test(name);
+}
+
 function isRfcOrIdocModule(name: string): boolean {
   return /^RFC_/.test(name) || /(?:^|_)IDOC(?:_|$)/.test(name);
 }
@@ -598,10 +604,26 @@ export function recommendArchitecture(
     // supports: the classification file lists the IDoc framework modules
     // (MASTER_IDOC_DISTRIBUTE, IDOC_INBOUND_SINGLE, …) as classicAPI, i.e.
     // level B for classic ABAP, and ABAP Cloud does not offer them.
+    //
+    // From 3.0.13 (`PRECISION_FIXES_FROM`) SAP's classification is said only of
+    // SAP's modules: a module in a customer or partner namespace (`Z…`, `Y…`, `/…/`) is
+    // not in SAP's file, and its level is that of what it calls (QA leftovers
+    // of hotfix 2, roadmap 3.0.13).
+    const fixes = precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion);
+    const ownModules = fixes ? idocModules.filter(isCustomerNamespace) : [];
+    const sapModules = idocModules.filter((name) => !ownModules.includes(name));
+    const own = ownModules.length === 0
+      ? ''
+      : sapModules.length === 0
+        ? `IDoc function modules in a customer or partner namespace are called (${ownModules.join(', ')}). SAP's classification file covers SAP's IDoc framework modules, not these: their level is the level of what they call. `
+        : `${ownModules.join(', ')} ${ownModules.length > 1 ? 'are' : 'is'} in a customer or partner namespace, which SAP's classification file does not cover: ${ownModules.length > 1 ? 'their' : 'its'} level is the level of what ${ownModules.length > 1 ? 'they call' : 'it calls'}. `;
+    const sap = sapModules.length === 0
+      ? ''
+      : `IDoc function modules are called (${sapModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in SAP Cloud ERP Private. `;
     return {
       architecture: 'integration',
       confidence: 80,
-      justification: `IDoc function modules are called (${idocModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in SAP Cloud ERP Private. `
+      justification: sap + own
         + 'It has to be replaced where the target is ABAP Cloud or SAP S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
         + 'For EDI and other high-volume asynchronous document exchange an IDoc interface can remain the better fit than one API call per document; decide that with the owners of the integration.',
     };

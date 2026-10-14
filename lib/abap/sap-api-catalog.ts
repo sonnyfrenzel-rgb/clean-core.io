@@ -170,6 +170,11 @@ export interface ContextualSuccessor {
   when?: readonly string[];
   /** The rule applies only when the program reads none of these. */
   unless?: readonly string[];
+  /**
+   * `unless` as runs of engine 3.0.12 signed it, where it differs. Read only
+   * when the caller says the corrections of `PRECISION_FIXES_FROM` do not apply.
+   */
+  unlessBefore3013?: readonly string[];
   entry: SapApiEntry;
   /** Said with the successor: what the context is and why. */
   context: string;
@@ -189,7 +194,11 @@ export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze(
   },
   {
     table: 'RESB',
-    unless: ['AFKO', 'AFPO', 'AFVC', 'AUFK'],
+    // The same tables that make AUFK a production order (QA leftovers of
+    // hotfix 2, roadmap 3.0.13): AUFK beside RESB alone is no production order,
+    // so RESB there is a reservation; AFRU (confirmations) is one.
+    unless: PRODUCTION_ORDER_TABLES,
+    unlessBefore3013: ['AFKO', 'AFPO', 'AFVC', 'AUFK'],
     entry: { view: 'I_ReservationDocumentItem', type: 'CDS View' },
     context: 'reservation context: the program reads no production order table',
   },
@@ -202,6 +211,8 @@ export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze(
 export function successorInContext(
   table: string,
   tablesInProgram: Iterable<string>,
+  /** `precisionFixes: false` reads the rules as engine 3.0.12 signed them (`PRECISION_FIXES_FROM`). */
+  options: { precisionFixes?: boolean } = {},
 ): { entry: SapApiEntry; context: string; readHere: string[] } | null {
   const key = (table || '').trim().toUpperCase();
   const read = new Set([...tablesInProgram].map((t) => String(t).toUpperCase()));
@@ -209,7 +220,8 @@ export function successorInContext(
     if (rule.table !== key) continue;
     const hits = (rule.when ?? []).filter((t) => read.has(t));
     if (rule.when && hits.length === 0) continue;
-    if (rule.unless && rule.unless.some((t) => read.has(t))) continue;
+    const unless = options.precisionFixes === false && rule.unlessBefore3013 ? rule.unlessBefore3013 : rule.unless;
+    if (unless && unless.some((t) => read.has(t))) continue;
     return { entry: rule.entry, context: rule.context, readHere: hits };
   }
   return null;

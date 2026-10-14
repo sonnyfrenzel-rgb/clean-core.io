@@ -396,7 +396,8 @@ export function buildAbapEvidence(
     if (!base) return undefined;
     // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): a run of an earlier engine keeps
     // the plain catalog successor it signed (QA review of 03501b79fb3d).
-    const inContext = guideline ? successorInContext(table, tablesHere) : null;
+    // From 3.0.13 (`PRECISION_FIXES_FROM`) RESB beside AUFK alone is a reservation.
+    const inContext = guideline ? successorInContext(table, tablesHere, { precisionFixes: fixes }) : null;
     return inContext ? { view: inContext.entry.view, type: inContext.entry.type, confidence: 'curated' } : base;
   };
 

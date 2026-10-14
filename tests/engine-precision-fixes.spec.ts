@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence, rfcDestinationOf } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { extractCodeInventory, extractDataCoupling, recommendArchitecture } from '../lib/abap/code-assessment';
 import { PRECISION_FIXES_FROM, precisionFixesApply } from '../lib/abap/precision-fixes-gate';
 import { readSecurityReviewTasks } from '../lib/abap/security-review';
 
@@ -290,5 +291,27 @@ test.describe('the flow from input is followed however long the chain and in wha
       .filter((f) => f.kind === 'security-review').length;
     expect(tasks(NEW)).toBe(1);
     expect(tasks(OLD)).toBe(0);
+  });
+});
+
+test.describe("the IDoc sentence attributes SAP's classification only to SAP's modules (QA leftovers of hotfix 2)", () => {
+  const program = (...modules: string[]) => ['REPORT zidoc.', ...modules.map((m) => `CALL FUNCTION '${m}' EXPORTING x = 1.`), ''].join('\n');
+  const why = (code: string, engine: string) =>
+    recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code), undefined, engine).justification;
+
+  test('a module in a customer or partner namespace is not said to be in SAP\'s classification file', () => {
+    const own = why(program('Z_SEND_IDOC'), NEW);
+    expect(own).toContain('IDoc function modules in a customer or partner namespace are called (Z_SEND_IDOC)');
+    expect(own).not.toMatch(/IDoc function modules are called/);
+    expect(why(program('/ACME/SEND_IDOC'), NEW)).toContain('customer or partner namespace are called (/ACME/SEND_IDOC)');
+    // What v3.0.12 signed.
+    expect(why(program('Z_SEND_IDOC'), OLD)).toMatch(/^IDoc function modules are called \(Z_SEND_IDOC\)\. SAP's classification file lists/);
+  });
+
+  test('SAP\'s module keeps the classification; a customer module beside it is named apart', () => {
+    expect(why(program('MASTER_IDOC_DISTRIBUTE'), NEW)).toMatch(/^IDoc function modules are called \(MASTER_IDOC_DISTRIBUTE\)\. SAP's classification file lists/);
+    const mixed = why(program('MASTER_IDOC_DISTRIBUTE', 'Y_IDOC_POST'), NEW);
+    expect(mixed).toMatch(/^IDoc function modules are called \(MASTER_IDOC_DISTRIBUTE\)\./);
+    expect(mixed).toContain('Y_IDOC_POST is in a customer or partner namespace, which SAP\'s classification file does not cover: its level is the level of what it calls.');
   });
 });
