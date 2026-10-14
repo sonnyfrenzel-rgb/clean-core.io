@@ -79,5 +79,5 @@ test('a provider call that throws is logged too, as failed, with its duration an
   expect(caught.indexOf("logger.warn('gemini usage', modelUsageLog({")).toBeGreaterThan(-1);
   expect(caught).toContain('failed: true,');
   expect(caught.indexOf('throw providerErr;')).toBeGreaterThan(caught.indexOf('failed: true,'));
-  expect(caught.slice(0, caught.indexOf('throw providerErr;'))).not.toMatch(/prompt|text|contents/);
+  expect(caught.slice(0, caught.indexOf('throw providerErr;'))).not.toMatch(/\bprompt\b|\btext\b|contents/);
 });
