@@ -67,6 +67,7 @@
 
 import { deriveEngineCases, type EngineCaseDerivation } from '../testing-engine-cases';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
+import { goldenMasterForScaffold } from './golden-master';
 import { rangeWords, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
 import { accessPointsOf, type AccessPoint } from './access-layer';
@@ -1571,6 +1572,14 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       ...testImpls,
       'ENDCLASS.',
       '',
+      // 3.0.13 (6): the original's own demo cases as test data, one method per case calling the run entry (golden-master.ts).
+      ...(goldenMasterForScaffold(facts.source, {
+        logicClass: logic,
+        accessDouble: hasAccess ? 'ltd_access' : null,
+        selection: selection.map((f) => ({ original: f.original, component: abapField(f), range: f.kind === 'range' })),
+        stateComponents: ['records', 'not_filled'],
+        program: plan.program,
+      })?.testClass.lines ?? []),
     ].join('\n'),
   });
 
