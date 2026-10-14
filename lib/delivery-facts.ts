@@ -13,7 +13,7 @@
  * and hands it in; this module only reads.
  */
 
-import { storedGenerationRecord } from './transformation/generation-record';
+import { storedCdsCompile, storedGenerationRecord } from './transformation/generation-record';
 import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
 import { abapTestEvidenceOfProject, abapTestEvidenceSentences } from './testing-abap-unit';
 import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
@@ -555,6 +555,8 @@ export function deliveryFactsOf(
     referenceSection: opts.referenceSection,
     // Roadmap 3.0.12, step E: how the stored package was made (engine-led or one call).
     generation: storedGenerationRecord(project.generationBinding),
+    // Roadmap 3.0.13 (CAP shell): the server's cds compile of the stored package, or null when none is on record.
+    cdsCompile: storedCdsCompile(project.generationBinding),
   };
 }
 

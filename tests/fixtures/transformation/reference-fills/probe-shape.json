@@ -7,20 +7,20 @@
       "    x.option === 'EQ' ? v === x.low : x.option === 'NE' ? v !== x.low : x.option === 'BT' ? v >= x.low && v <= (x.high ?? x.low) : false;",
       "  const inc = sel.matnr.filter((x) => x.sign === 'I');",
       "  const exc = sel.matnr.filter((x) => x.sign === 'E');",
-      "  st.records = st.records.filter((r) => {",
+      "  st.local.gtItem = st.local.gtItem.filter((r) => {",
       "    const v = String(r.matnr ?? '');",
       "    return (inc.length === 0 || inc.some((x) => hit(x, v))) && !exc.some((x) => hit(x, v));",
       "  });",
       "}",
-      "for (const r of st.records) r.menge = dec.add(r.menge, sel.add ?? '0', 2) as typeof r.menge;",
+      "for (const r of st.local.gtItem) r.menge = dec.add(r.menge, sel.add ?? '0', 2) as typeof r.menge;",
       "const c = checkAmounts(sel, st);",
       "if (c) return c;",
       "const s = saveItems(sel, st);",
       "if (s) return s;",
-      "for (const r of st.records) st.rows.push({ vbeln: r.vbeln, matnr: r.matnr, menge: r.menge, netwr: r.netwr });"
+      "for (const r of st.local.gtItem) st.rows.push({ vbeln: r.vbeln, matnr: r.matnr, menge: r.menge, netwr: r.netwr });"
     ],
     "U01": "return;",
-    "U01.G0049": "return st.records.some((r) => dec.compare(r.netwr, '0') < 0);",
-    "U02": "st.result.updates = st.records.map((r) => ({ vbeln: r.vbeln, menge: r.menge, netwr: r.netwr }));"
+    "U01.G0049": "return st.local.gtItem.some((r) => dec.compare(r.netwr, '0') < 0);",
+    "U02": "st.result.updates = st.local.gtItem.map((r) => ({ vbeln: r.vbeln, menge: r.menge, netwr: r.netwr }));"
   }
 }

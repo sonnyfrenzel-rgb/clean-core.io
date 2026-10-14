@@ -4,6 +4,7 @@ import os from 'os';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { buildNodeScaffold, planUnits, readEngineFacts, withTrace, type PlanInput, type ScaffoldFile, type UnitPlan } from '../../lib/transformation';
+import { CAP_TYPES_STANDIN } from '../../lib/transformation/cap-api-declaration';
 
 /**
  * Shared by the tests/transformation-*.spec.ts specs: the hand-written fixtures
@@ -59,8 +60,18 @@ export function nodePackage(source: string, input: PlanInput = {}): { dir: strin
   return { dir: writePackage(files), plan, files };
 }
 
-/** tsc on the emitted package with its own tsconfig; the repository's @types/node stands in for an install. */
+/**
+ * tsc on the emitted package with its own tsconfig; the repository's @types/node stands in for an install, and
+ * Clean-Core.io's declaration of the @sap/cds API the CAP shell uses stands in for @cap-js/cds-types — exactly as
+ * in the server's type check (`lib/transformation/cap-api-declaration.ts`, scaffold version 7).
+ */
 export function typecheck(dir: string): { ok: boolean; output: string } {
+  for (const f of CAP_TYPES_STANDIN) {
+    const target = path.join(dir, f.path);
+    if (fs.existsSync(target)) continue;
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, f.content);
+  }
   try {
     const output = execFileSync(
       process.execPath,

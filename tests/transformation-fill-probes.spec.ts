@@ -36,7 +36,7 @@ const verdicts = (run: ChecksRun) => Object.fromEntries(run.probes.filter((p) =>
 test.describe('reading the patterns from the original', () => {
   test('a component recalculated from its own value is input (plan 2): it comes with the record and starts at zero', () => {
     expect(PLAN_VERSION).toBe(2);
-    expect(SCAFFOLD_VERSION).toBe(6);
+    expect(SCAFFOLD_VERSION).toBe(7); // 7: one input list per source structure (tests/transformation-cap-shell.spec.ts)
     for (const [text, want] of [
       ['<ls_item>-menge = <ls_item>-menge + p_add.', { component: 'menge', sign: '+', operand: 'p_add' }],
       ['ls-menge = p_add + ls-menge', { component: 'menge', sign: '+', operand: 'p_add' }],
@@ -149,7 +149,7 @@ test.describe('the probes in the confined probe pass', () => {
         probe: 'display-filter',
         unit: 'U00',
         // The range read, then not applied: the list shows every record.
-        change: (b) => b.set('U00', b.get('U00')!.replace('st.records = st.records.filter((r) => {', 'void st.records.filter((r) => {')),
+        change: (b) => b.set('U00', b.get('U00')!.replace('st.local.gtItem = st.local.gtItem.filter((r) => {', 'void st.local.gtItem.filter((r) => {')),
         evidence: /the filtered list still shows 1 non-matching of 2 items/,
       },
       {

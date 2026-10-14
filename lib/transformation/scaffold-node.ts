@@ -35,6 +35,8 @@ import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { originalDemoCases, type OriginalDemoCases } from './golden-master';
 import { nodeDemoFiles } from './node-demo';
 import { acceptanceAdapter, contractModel } from './call-contract';
+import { capShellFiles } from './cap-shell';
+import { inputListsOf, listOfPath, withListPaths, workAreasOf, type InputList } from './input-lists';
 import { fillProbeConfigs } from './fill-probes';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
@@ -101,10 +103,13 @@ function typesReserved(plan: UnitPlan): Set<string> {
   ]);
 }
 
-function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes): string {
+/** A record field still carried in the one record list (`records[].x`): its structure has no input list of its own. */
+const inRecords = (f: ContractField) => f.where === 'record' && (listOfPath(f.path) ?? 'records') === 'records';
+
+function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes, lists: readonly InputList[]): string {
   const packed = plan.fields.filter((f) => f.kind === 'packed');
   const selection = plan.fields.filter((f) => f.where === 'selection');
-  const record = plan.fields.filter((f) => f.where === 'record');
+  const record = plan.fields.filter(inRecords);
   const lines: string[] = [];
   lines.push('/**');
   lines.push(` * Types of ${plan.program ?? 'the program'} — written by Clean-Core.io (engine) from the original's declarations.`);
@@ -146,18 +151,19 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   if (plan.fields.length === 0) lines.push('  run?: boolean;');
   lines.push('}');
   lines.push('');
-  // The structure each record field comes from (A3, 3.0.13): the request carries one record list in this
-  // version, so a record holds the input fields of every input structure together — each field says whose it is.
+  // The structure each record field comes from (A3, 3.0.13). Since scaffold version 7 a structure with an input
+  // table of its own is a list of its own (`Inputs` below); only fields of a structure without one stay here.
   const ownerOf = (line: number) => shapes.structures.find((s) => line > s.line && line < s.lineEnd);
   const owners = [...new Set(record.map((f) => ownerOf(f.line)).filter((s): s is NonNullable<typeof s> => !!s))];
   lines.push('/**');
-  lines.push(' * One input record, validated.');
+  lines.push(' * One input record of the record list (`records`), validated.');
   if (owners.length > 1) {
-    lines.push(` * The request carries one record list: a record holds the input fields of ${owners.map((s) => `${s.name.toUpperCase()} (${s.tsName}, L${s.line}–${s.lineEnd})`).join(', ')}`);
-    lines.push(' * together — each field names the structure it comes from. Rows of each structure, typed: the interfaces below.');
+    lines.push(` * A record holds the input fields of ${owners.map((s) => `${s.name.toUpperCase()} (${s.tsName}, L${s.line}–${s.lineEnd})`).join(', ')}`);
+    lines.push(' * together — the original has no input table of these structures; each field names the structure it comes from.');
   } else if (owners.length === 1) {
     lines.push(` * Its fields are the input components of ${owners[0].name.toUpperCase()} (${owners[0].tsName}, L${owners[0].line}–${owners[0].lineEnd}).`);
   }
+  if (lists.length > 0) lines.push(` * The input structures with a table of their own are lists of their own (Inputs): ${lists.map((l) => `${l.key} (${l.structure.name.toUpperCase()})`).join(', ')}.`);
   lines.push(' */');
   lines.push('export interface Rec {');
   for (const f of record) {
@@ -166,8 +172,16 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   }
   lines.push('}');
   lines.push('');
-  lines.push('/** A validated request: the selection and the records. */');
-  lines.push('export type Request = Selection & { records: Rec[] };');
+  lines.push('/**');
+  lines.push(" * The input lists, one per input table of the original, each typed by its own structure (scaffold version 7).");
+  lines.push(" * A run starts with these rows in the original's global table (srv/lib/input-contract.ts seedOf).");
+  lines.push(' */');
+  lines.push('export interface Inputs {');
+  for (const l of lists) lines.push(`  /** ${l.global.name.toUpperCase()} (L${l.global.line}) — rows of ${l.structure.name.toUpperCase()}; ${l.filledBy.map((b) => (b === 'demo' ? "the original's demo data fills it" : b === 'read' ? 'a SELECT fills it' : 'its input fields')).join(', ')}. */\n  ${l.key}: ${l.structure.tsName}[];`);
+  lines.push('}');
+  lines.push('');
+  lines.push('/** A validated request: the selection, the record list and the input lists. */');
+  lines.push('export type Request = Selection & { records: Rec[] } & Inputs;');
   lines.push('');
   // Every structure the original declares, typed by its components (scalars as text: numbers are computed through dec.*).
   for (const s of shapes.structures) {
@@ -177,7 +191,11 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
     lines.push('}');
     lines.push('');
   }
-  lines.push("/** The original's global data, typed by its declarations: what the steps share in one run (st.local). */");
+  lines.push(
+    lists.length > 0
+      ? `/** The original's global data, typed by its declarations: what the steps share in one run (st.local). The request's input lists start the run in their tables: ${lists.map((l) => `${l.key} → ${l.global.key}`).join(', ')}. */`
+      : "/** The original's global data, typed by its declarations: what the steps share in one run (st.local). */",
+  );
   lines.push('export interface Locals {');
   for (const g of shapes.globals) lines.push(`  /** ${shapeComment(g)} */\n  ${g.key}: ${g.ts};`);
   lines.push('}');
@@ -276,6 +294,7 @@ function normalise(spec: FieldSpec, raw: unknown, path: string, errors: InputErr
   }
   const text = scalarText(raw);
   if (text === undefined) return fail('not a finite value');
+  if (spec.length !== null && spec.kind === 'text' && text.length > spec.length) return fail('longer than ' + spec.declaration + ' (' + spec.length + ' characters)');
   switch (spec.kind) {
     case 'packed': {
       if (!dec.parse(text)) return fail('not a decimal number');
@@ -316,9 +335,12 @@ export function validateRequest(raw: unknown): Validation {
   const recordSpecs = FIELDS.filter((f) => f.where === 'record');
   const known = new Set(selectionSpecs.map((f) => f.key));
   if (recordSpecs.length > 0) known.add('records');
-  if (FIELDS.length === 0) known.add('run');
+  for (const l of LISTS) known.add(l.key);
+  if (FIELDS.length === 0 && LISTS.length === 0) known.add('run');
   for (const key of Object.keys(raw)) {
-    if (!known.has(key)) errors.push({ field: key, rule: 'INPUT', message: key + ': the original offers no such option' });
+    if (known.has(key)) continue;
+    const listed = key === 'records' && LISTS.length > 0;
+    errors.push({ field: key, rule: 'INPUT', message: listed ? 'records: this package takes one list per input structure (' + LISTS.map((l) => l.key).join(', ') + '), not one record list' : key + ': the original offers no such option' });
   }
   const out: Record<string, unknown> = {};
   for (const spec of selectionSpecs) {
@@ -349,8 +371,54 @@ export function validateRequest(raw: unknown): Validation {
       });
     }
   }
+  // One list per input structure (scaffold version 7): each row validated by its own structure's components.
+  const inputs: Record<string, unknown> = {};
+  for (const l of LISTS) {
+    const list = raw[l.key];
+    const rows: Array<Record<string, unknown>> = [];
+    if (list !== undefined && list !== null && !Array.isArray(list)) {
+      errors.push({ field: l.key, rule: 'INPUT', message: l.key + ': a list of ' + l.original + ' rows' });
+    } else if (Array.isArray(list)) {
+      const columns = new Set(l.columns.map((c) => c.key));
+      list.forEach((item, i) => {
+        const at = l.key + '[' + i + ']';
+        if (!isObj(item)) {
+          errors.push({ field: at, rule: 'INPUT', message: 'a row of ' + l.original + ' is an object' });
+          return;
+        }
+        for (const key of Object.keys(item)) {
+          if (!columns.has(key)) errors.push({ field: at + '.' + key, rule: 'INPUT', message: key + ': not a component of ' + l.original });
+        }
+        const row = l.initial();
+        for (const c of l.columns) {
+          const v = normalise(c, item[c.key], at + '.' + c.key, errors);
+          if (v !== undefined && v !== null) row[c.key] = v;
+        }
+        rows.push(row);
+      });
+    }
+    inputs[l.key] = rows;
+  }
+  // Rule 17: the lists that carry the original's input records cannot all be empty — no rows, nothing selected.
+  const required = LISTS.filter((l) => l.required);
+  if (required.length > 0 && required.every((l) => (inputs[l.key] as unknown[]).length === 0)) {
+    errors.push({ field: required.length === 1 ? required[0].key : null, rule: 'INPUT', message: 'empty selection: no rows in ' + required.map((l) => l.key).join(', ') });
+  }
   if (errors.length > 0) return { ok: false, errors, normalized: null };
-  return { ok: true, errors: [], normalized: { ...(out as unknown as Selection), records: records as unknown as Rec[] } };
+  return { ok: true, errors: [], normalized: { ...(out as unknown as Selection), records: records as unknown as Rec[], ...(inputs as unknown as Inputs) } };
+}
+
+/** A validated request in its parts: the selection, the record list, the input lists. */
+export function splitRequest(r: Request): { selection: Selection; records: Rec[]; inputs: Inputs } {
+  const rest: Record<string, unknown> = { ...(r as unknown as Record<string, unknown>) };
+  const records = (Array.isArray(rest.records) ? rest.records : []) as Rec[];
+  delete rest.records;
+  const inputs: Record<string, unknown> = {};
+  for (const l of LISTS) {
+    inputs[l.key] = Array.isArray(rest[l.key]) ? rest[l.key] : [];
+    delete rest[l.key];
+  }
+  return { selection: rest as unknown as Selection, records, inputs: inputs as unknown as Inputs };
 }
 
 /**
@@ -374,13 +442,31 @@ export function validateSelection(raw: unknown): { ok: boolean; errors: InputErr
   return { ok: true, errors: [], selection: out as unknown as Selection };
 }
 
-/** A CSV upload of records plus the selection in the query, as the raw request validateRequest reads. */
+/**
+ * A CSV upload of rows plus the selection in the query, as the raw request validateRequest reads. The rows are
+ * the input list the query names (list=claims), else the record list, else the first input list.
+ */
 export function requestFromCsv(text: string, query: Record<string, string | undefined>): Record<string, unknown> {
   const raw: Record<string, unknown> = {};
   for (const spec of FIELDS.filter((f) => f.where === 'selection')) {
     const v = query[spec.key] ?? query[spec.original] ?? query[spec.original.toLowerCase()];
     if (v === undefined) continue;
     raw[spec.key] = spec.kind === 'range' ? v.split(',').filter((x) => x !== '') : v;
+  }
+  const named = LISTS.find((l) => l.key === query.list);
+  const target = named ?? (FIELDS.some((f) => f.where === 'record') ? undefined : LISTS[0]);
+  if (target) {
+    const byName = new Map<string, string>();
+    for (const c of target.columns) {
+      byName.set(c.key.toLowerCase(), c.key);
+      byName.set(c.original.toLowerCase(), c.key);
+    }
+    raw[target.key] = csv.objects(text, CSV_DELIMITER).map((row) => {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(row)) out[byName.get(k.toLowerCase()) ?? k] = v;
+      return out;
+    });
+    return raw;
   }
   if (FIELDS.some((f) => f.where === 'record')) {
     const byName = new Map<string, string>();
@@ -398,15 +484,16 @@ export function requestFromCsv(text: string, query: Record<string, string | unde
 }
 `;
 
-function inputContractFile(plan: UnitPlan): string {
+function inputContractFile(plan: UnitPlan, lists: readonly InputList[]): string {
   const lines: string[] = [];
   lines.push('/**');
   lines.push(' * The input contract — one validator for JSON, query and CSV (rules 15–17, 19).');
   lines.push(" * Written by Clean-Core.io (engine) from the original's selection screen and declarations.");
+  lines.push(' * Since scaffold version 7 each input table of the original is a list of its own (LISTS), typed by its structure.');
   lines.push(' */');
   lines.push("import * as csv from './csv.ts';");
   lines.push("import * as dec from './decimal.ts';");
-  lines.push("import type { Range, Rec, Request, Selection } from './types.ts';");
+  lines.push("import type { Inputs, Locals, Range, Rec, Request, Selection } from './types.ts';");
   lines.push('');
   lines.push("export type FieldKind = 'packed' | 'integer' | 'digits' | 'date' | 'flag' | 'range' | 'text';");
   lines.push('export interface FieldSpec {');
@@ -420,6 +507,22 @@ function inputContractFile(plan: UnitPlan): string {
   lines.push('  readonly obligatory: boolean;');
   lines.push('  readonly line: number;');
   lines.push('  readonly declaration: string;');
+  lines.push('  /** The length of a text field, where the original declares it; a longer value is refused. */');
+  lines.push('  readonly length: number | null;');
+  lines.push('}');
+  lines.push('/** One input list: the request key, the original\'s table it fills, its structure\'s components. */');
+  lines.push('export interface ListSpec {');
+  lines.push('  readonly key: string;');
+  lines.push('  /** The original\'s structure, upper case. */');
+  lines.push('  readonly original: string;');
+  lines.push('  /** The original\'s global table, upper case, and its key in Locals. */');
+  lines.push('  readonly table: string;');
+  lines.push('  readonly global: string;');
+  lines.push('  readonly columns: readonly FieldSpec[];');
+  lines.push("  /** It carries the original's input records: a request needs rows in at least one such list. */");
+  lines.push('  readonly required: boolean;');
+  lines.push('  /** A row with every component at its initial value. */');
+  lines.push('  readonly initial: () => Record<string, unknown>;');
   lines.push('}');
   lines.push('export interface InputError {\n  field: string | null;\n  rule: string;\n  message: string;\n}');
   lines.push('export interface Validation {\n  ok: boolean;\n  errors: InputError[];\n  normalized: Request | null;\n}');
@@ -427,14 +530,45 @@ function inputContractFile(plan: UnitPlan): string {
   lines.push(`/** The delimiter of CSV files: the original's (${q(plan.csvDelimiter)}). */`);
   lines.push(`export const CSV_DELIMITER = ${q(plan.csvDelimiter)};`);
   lines.push('');
-  lines.push("/** Every field of the request, from the original's declarations. */");
+  lines.push("/** Every field of the selection and of the record list, from the original's declarations. */");
   lines.push('export const FIELDS: readonly FieldSpec[] = [');
-  for (const f of plan.fields.filter((x) => x.where !== 'internal')) {
+  for (const f of plan.fields.filter((x) => x.where === 'selection' || inRecords(x))) {
     lines.push(
-      `  { original: ${q(f.original)}, key: ${q(f.key)}, where: ${q(f.where)}, kind: ${q(f.kind)}, digits: ${f.digits ?? 'null'}, places: ${f.places}, max: ${f.max ? q(f.max) : 'null'}, obligatory: ${f.obligatory}, line: ${f.line}, declaration: ${q(f.declaration)} },`,
+      `  { original: ${q(f.original)}, key: ${q(f.key)}, where: ${q(f.where)}, kind: ${q(f.kind)}, digits: ${f.digits ?? 'null'}, places: ${f.places}, max: ${f.max ? q(f.max) : 'null'}, obligatory: ${f.obligatory}, line: ${f.line}, declaration: ${q(f.declaration)}, length: null },`,
     );
   }
   lines.push('];');
+  lines.push('');
+  lines.push("/** The input lists: one per input table of the original, each row checked against its structure's components. */");
+  lines.push('export const LISTS: readonly ListSpec[] = [');
+  for (const l of lists) {
+    lines.push(`  {`);
+    const required = plan.fields.some((f) => f.where === 'record' && listOfPath(f.path) === l.key);
+    lines.push(`    key: ${q(l.key)}, original: ${q(l.structure.name.toUpperCase())}, table: ${q(l.global.name.toUpperCase())}, global: ${q(l.global.key)}, required: ${required},`);
+    lines.push('    columns: [');
+    for (const c of l.columns) {
+      lines.push(
+        `      { original: ${q(c.name.toUpperCase())}, key: ${q(c.key)}, where: "record", kind: ${q(c.kind)}, digits: ${c.digits ?? 'null'}, places: ${c.places}, max: ${c.max ? q(c.max) : 'null'}, obligatory: ${c.obligatory}, line: ${c.line}, declaration: ${q(c.declaration)}, length: ${c.length ?? 'null'} },`,
+      );
+    }
+    lines.push('    ],');
+    lines.push(`    initial: () => ({ ${l.columns.map((c) => `${c.key}: ${c.init}`).join(', ')} }),`);
+    lines.push('  },');
+  }
+  lines.push('];');
+  lines.push('');
+  lines.push("/** The original's table each list fills, by the table's name (GT_CLAIMS → gtClaims). */");
+  lines.push(`export const LIST_GLOBALS: Readonly<Record<string, string>> = ${JSON.stringify(Object.fromEntries(lists.map((l) => [l.global.name.toUpperCase(), l.global.key])))};`);
+  lines.push('');
+  lines.push("/** The input lists as the run's start values of the original's global tables. */");
+  lines.push('export function seedOf(inputs: Inputs): Partial<Locals> {');
+  lines.push(lists.length ? `  return { ${lists.map((l) => `${l.global.key}: inputs.${l.key}`).join(', ')} };` : '  void inputs;\n  return {};');
+  lines.push('}');
+  lines.push('');
+  lines.push("/** The rows still in the original's input tables after a run (a skipping check removes one). */");
+  lines.push('export function inputRowsOf(local: Locals): number {');
+  lines.push(lists.length ? `  return ${lists.map((l) => `local.${l.global.key}.length`).join(' + ')};` : '  void local;\n  return 0;');
+  lines.push('}');
   return lines.join('\n') + '\n' + INPUT_CORE;
 }
 
@@ -507,7 +641,13 @@ interface Built {
   regions: Array<{ regionId: string; available: string[] }>;
 }
 
-function guardsFile(plan: UnitPlan): Built {
+function guardsFile(plan: UnitPlan, lists: readonly InputList[] = []): Built {
+  // The row a check reads (scaffold version 7): a row of the input list its subject belongs to, else a record.
+  const rowTypeOf = (g: PlanGuard): string => {
+    const list = listOfPath(subjectPath(plan, g.subject));
+    return lists.find((l) => l.key === list)?.structure.tsName ?? 'Rec';
+  };
+  const rowTypes = [...new Set(plan.guards.filter((g) => g.carried).map(rowTypeOf).filter((t) => t !== 'Rec'))].sort();
   const carried = plan.guards.filter((g) => g.carried);
   const regions: Built['regions'] = [];
   const out: string[] = [];
@@ -518,7 +658,7 @@ function guardsFile(plan: UnitPlan): Built {
   out.push(' */');
   out.push("import * as dec from './decimal.ts';");
   out.push("import { NotImplementedFill, Refusal } from './errors.ts';");
-  out.push("import type { Rec, RunState, Selection } from './types.ts';");
+  out.push(`import type { ${['Rec', 'RunState', 'Selection', ...rowTypes].join(', ')} } from './types.ts';`);
   out.push('');
   out.push('/** Run a check or a step; a stub (not written by the generation) is recorded on the run and skipped. */');
   out.push('export function checked<T>(st: RunState, fn: () => T): T | null {');
@@ -545,8 +685,9 @@ function guardsFile(plan: UnitPlan): Built {
     }
     const valuesParam = valuesType ? `, values: ${valuesType}` : '';
     const valuesArg = valuesType ? ', values' : '';
-    const recordParam = valuesType ? 'record: Rec | null' : 'record: Rec | null = null';
-    const sig = `export function ${pred}(sel: Selection, st: RunState, record: Rec | null${valuesParam}): boolean`;
+    const rowType = rowTypeOf(g);
+    const recordParam = valuesType ? `record: ${rowType} | null` : `record: ${rowType} | null = null`;
+    const sig = `export function ${pred}(sel: Selection, st: RunState, record: ${rowType} | null${valuesParam}): boolean`;
     const doc = guardDoc(g, plan);
     out.push('');
     out.push(doc);
@@ -787,7 +928,7 @@ const SIMULATE_TS = String.raw`/**
  * One simulation: validate, run the process, store the run under a fresh id.
  * Shared by the HTTP app and the call contract. Written by Clean-Core.io (engine).
  */
-import { validateRequest, type InputError } from './lib/input-contract.ts';
+import { inputRowsOf, seedOf, splitRequest, validateRequest, type InputError } from './lib/input-contract.ts';
 import type { RunRecord, RunStore } from './lib/run-store.ts';
 import { CONTEXT_DIGEST, RULE_REVISION, SOURCE_REVISION, type Selection } from './lib/types.ts';
 import { runProcess } from './process.ts';
@@ -801,7 +942,7 @@ export interface RunResult {
 export interface SimulateAnswer {
   ok: boolean;
   runId: string | null;
-  /** Input records in the result (a skipping check removes one). */
+  /** Input records and input-list rows in the result (a skipping check removes one). */
   records: number;
   errors: InputError[];
   /** False while a function the run reached is still a stub. */
@@ -813,8 +954,8 @@ export interface SimulateAnswer {
 export function simulateRequest(raw: unknown, store: RunStore<Selection, RunResult>): SimulateAnswer {
   const v = validateRequest(raw);
   if (!v.ok || !v.normalized) return { ok: false, runId: null, records: 0, errors: v.errors, complete: false, notFilled: [], run: null };
-  const { records, ...selection } = v.normalized;
-  const outcome = runProcess(selection, records);
+  const { selection, records, inputs } = splitRequest(v.normalized);
+  const outcome = runProcess(selection, records, seedOf(inputs));
   if (outcome.refusal) {
     return { ok: false, runId: null, records: 0, errors: outcome.refusal.errors, complete: outcome.complete, notFilled: outcome.notFilled, run: null };
   }
@@ -826,7 +967,7 @@ export function simulateRequest(raw: unknown, store: RunStore<Selection, RunResu
     contextDigest: CONTEXT_DIGEST,
     complete: outcome.complete,
     notFilled: outcome.notFilled,
-    records: st.records.length,
+    records: st.records.length + inputRowsOf(st.local),
     result: { rows: st.rows, result: st.result, issues: st.issues },
   });
   return { ok: true, runId: run.runId, records: run.records, errors: [], complete: run.complete, notFilled: [...run.notFilled], run };
@@ -936,6 +1077,8 @@ export function createApp(deps: AppDeps = {}): http.Server {
 `;
 
 const SERVER_TS = String.raw`// The only file that listens (rule 22), and only when started directly. Written by Clean-Core.io (engine).
+// The core's own HTTP app (npm run core). cds watch under tsx reads this file as a custom server.ts: it exports
+// nothing, so CAP starts its own server and serves srv/service.cds.
 import { pathToFileURL } from 'node:url';
 import { createApp } from './app.ts';
 
@@ -948,8 +1091,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 `;
 
-function engineContractFile(plan: UnitPlan): string {
+function engineContractFile(plan: UnitPlan, lists: readonly InputList[], statements: readonly AbapStatement[]): string {
   const model = contractModel(plan);
+  // A work area the original reads an input table's rows into (LOOP AT gt_raw INTO ls_raw) names that list's
+  // columns: LS_RAW-KNOWN_AT is raw[].knownAt, not the first structure's KNOWN_AT (scaffold version 7).
+  for (const [area, list] of workAreasOf(statements, lists)) {
+    for (const c of list.columns) {
+      const name = `${area}-${c.name.toUpperCase()}`;
+      if (!(name in model.fields)) model.fields[name] = `${list.key}[].${c.key}`;
+    }
+  }
   return [
     '/**',
     ' * The call contract (code-draft rule 24): the engine cases run against these exports without a',
@@ -959,9 +1110,9 @@ function engineContractFile(plan: UnitPlan): string {
     "import * as dec from './lib/decimal.ts';",
     "import { NotImplementedFill } from './lib/errors.ts';",
     "import * as guards from './lib/guards.ts';",
-    "import { validateRequest, type InputError } from './lib/input-contract.ts';",
+    "import { LIST_GLOBALS, seedOf, splitRequest, validateRequest, type InputError } from './lib/input-contract.ts';",
     "import { createRunStore } from './lib/run-store.ts';",
-    "import { DECIMALS, initialLocals, type Request, type Selection } from './lib/types.ts';",
+    "import { DECIMALS, initialLocals, type Locals, type Request, type Selection } from './lib/types.ts';",
     "import { simulateRequest, type RunResult } from './simulate.ts';",
     '',
     `export const CONTRACT = ${JSON.stringify(model, null, 2)};`,
@@ -974,10 +1125,11 @@ function engineContractFile(plan: UnitPlan): string {
     'function requireBaseValues(request: unknown): void {',
     '  const r = (request ?? {}) as Record<string, unknown>;',
     '  if (Object.keys(r).length === 0) return;',
-    '  const first = Array.isArray(r.records) ? (r.records[0] as Record<string, unknown> | undefined) : undefined;',
     '  const absent = MISSING_BASE.filter((m) => {',
     "    const key = m.path.slice(m.path.lastIndexOf('.') + 1);",
-    '    const holder = m.path.startsWith("records[].") ? first : r;',
+    "    const at = m.path.indexOf('[]');",
+    '    const list = at > 0 ? r[m.path.slice(0, at)] : undefined;',
+    '    const holder = at > 0 ? (Array.isArray(list) ? (list[0] as Record<string, unknown> | undefined) : undefined) : r;',
     '    return !holder || holder[key] === undefined || holder[key] === null;',
     '  });',
     "  if (absent.length > 0) throw new Error('Not run — no valid base value known for ' + absent.map((m) => m.original).join(', '));",
@@ -1015,7 +1167,7 @@ function engineContractFile(plan: UnitPlan): string {
     '  return out;',
     '}',
     '',
-    ...checkExport(plan),
+    ...checkExport(plan, lists),
   ].join('\n');
 }
 
@@ -1026,20 +1178,22 @@ function engineContractFile(plan: UnitPlan): string {
  * (`SY-SUBRC`) as a number, a declared decimal as a decimal string at its places; any other computed value
  * is `unsupported` and the case is not run. A predicate still a stub answers `notFilled`.
  */
-function checkExport(plan: UnitPlan): string[] {
+function checkExport(plan: UnitPlan, lists: readonly InputList[]): string[] {
+  const listTables = new Set(lists.map((l) => l.global.name.toUpperCase()));
   const decimals = new Set(plan.decimals.map((d) => d.name.toUpperCase()));
   const recordTable = plan.fields.some((f) => f.where === 'record');
   const fieldNames = new Set(plan.fields.map((f) => f.original));
-  type CheckSpec = { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> };
+  type CheckSpec = { predicate: string; record: boolean; list: string | null; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> };
   const table: Record<string, CheckSpec> = {};
   for (const g of plan.guards) {
     if (!g.carried || !g.regionId) continue;
     const subject = g.subject ? g.subject.toUpperCase() : null;
     // `gt_rcv IS INITIAL` on the table the records stand for: the check is asked with no records.
-    const isTable = Boolean(recordTable && subject && !subject.includes('-') && !fieldNames.has(subject) && /\bIS\s+(?:NOT\s+)?INITIAL\s*$/i.test(g.condition));
+    const isTable = Boolean(subject && /\bIS\s+(?:NOT\s+)?INITIAL\s*$/i.test(g.condition) && (listTables.has(subject) || (recordTable && !subject.includes('-') && !fieldNames.has(subject))));
     table[g.id] = {
       predicate: predicateName(g),
       record: g.outcome === 'skips',
+      list: lists.find((l) => l.key === listOfPath(subjectPath(plan, g.subject)))?.global.key ?? null,
       table: isTable ? subject : null,
       operands: (g.basis === 'derived' ? g.operands : []).map((o) => {
         const name = o.name.toUpperCase();
@@ -1050,7 +1204,7 @@ function checkExport(plan: UnitPlan): string[] {
   }
   return [
     '/** The carried checks: the predicate, whether it reads a record, the record table it tests, the values it reads. */',
-    `const CHECKS: Record<string, { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> }> = ${JSON.stringify(table, null, 2)};`,
+    `const CHECKS: Record<string, { predicate: string; record: boolean; list: string | null; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> }> = ${JSON.stringify(table, null, 2)};`,
     '',
     "/** Does the predicate of the original's check `guard` (`G-0061`) hold on this request? `values`: the computed values it reads, by original name. */",
     'export function check(guard: string, request: unknown, values: Record<string, unknown> = {}) {',
@@ -1059,11 +1213,14 @@ function checkExport(plan: UnitPlan): string[] {
     '  requireBaseValues(request);',
     '  const v = validateRequest(request);',
     '  if (!v.ok || !v.normalized) return { ok: false, errors: v.errors };',
-    '  const { records, ...selection } = v.normalized;',
+    '  const { selection, records, inputs } = splitRequest(v.normalized);',
     '  const given = (values ?? {}) as Record<string, unknown>;',
     '  const asked = spec.table !== null ? given[spec.table] : undefined;',
     "  const empty = typeof asked === 'object' && asked !== null && (asked as { special?: unknown }).special === 'empty';",
-    '  const st = { selection, records: empty ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local: initialLocals() };',
+    '  // The table the check tests, asked empty: an input list empties its own table, otherwise the record list.',
+    '  const emptyList = empty && spec.table !== null ? LIST_GLOBALS[spec.table] : undefined;',
+    '  const local = { ...initialLocals(), ...seedOf(inputs), ...(emptyList ? { [emptyList]: [] } : {}) } as Locals;',
+    '  const st = { selection, records: empty && !emptyList ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local };',
     '  const missingValues = spec.operands.filter((o) => !(o.name in given)).map((o) => o.name);',
     '  if (missingValues.length > 0) return { ok: false, missingValues, errors: [] as InputError[] };',
     '  const unsupported = spec.operands.filter((o) => o.form === null).map((o) => o.name);',
@@ -1074,7 +1231,9 @@ function checkExport(plan: UnitPlan): string[] {
     "    const decimal = DECIMALS[o.name] ?? DECIMALS[o.name.slice(o.name.lastIndexOf('-') + 1)];",
     "    handed[o.key] = o.form === 'number' ? Number(raw) : decimal && dec.parse(raw) ? dec.round(raw, decimal.places) : raw;",
     '  }',
-    '  const record = spec.record ? (st.records[0] ?? null) : null;',
+    '  // The row a skipping check reads: the first of its input list (scaffold version 7), else the first record.',
+    '  const rows = spec.list !== null ? (local as unknown as Record<string, unknown[]>)[spec.list] : st.records;',
+    '  const record = spec.record ? (rows[0] ?? null) : null;',
     '  const predicate = (guards as unknown as Record<string, (...args: unknown[]) => unknown>)[spec.predicate];',
     '  try {',
     '    return { ok: true, holds: predicate(selection, st, record, handed) === true };',
@@ -1099,7 +1258,7 @@ const SHIMS_TS = String.raw`/**
 import { exportCsv } from '../srv/app.ts';
 import * as csv from '../srv/lib/csv.ts';
 import * as dec from '../srv/lib/decimal.ts';
-import { CSV_DELIMITER, validateRequest } from '../srv/lib/input-contract.ts';
+import { CSV_DELIMITER, LIST_GLOBALS, seedOf, splitRequest, validateRequest } from '../srv/lib/input-contract.ts';
 import { createRunStore } from '../srv/lib/run-store.ts';
 import type { RunState, Selection } from '../srv/lib/types.ts';
 import { runProcess } from '../srv/process.ts';
@@ -1130,8 +1289,8 @@ type ProcessRun = { state: 'refused' } | { state: 'incomplete'; notFilled: strin
 function processRun(request: unknown): ProcessRun {
   const v = validateRequest(request);
   if (!v.ok || !v.normalized) return { state: 'refused' };
-  const { records, ...selection } = v.normalized;
-  const outcome = runProcess(selection, records);
+  const { selection, records, inputs } = splitRequest(v.normalized);
+  const outcome = runProcess(selection, records, seedOf(inputs));
   if (outcome.refusal) return { state: 'refused' };
   if (!outcome.complete) return { state: 'incomplete', notFilled: outcome.notFilled };
   return { state: 'complete', st: outcome.state };
@@ -1159,7 +1318,9 @@ export function recalcOf(request: unknown, key: string): { value: number | null;
   const r = processRun(request);
   if (r.state !== 'complete') return { value: null, notFilled: notFilledOf(r) };
   const row = r.st.rows[0];
-  const record = r.st.records[0] as unknown as Record<string, unknown> | undefined;
+  const local = r.st.local as unknown as Record<string, unknown>;
+  const firstRows = Object.values(LIST_GLOBALS).map((g) => (Array.isArray(local[g]) ? (local[g] as Array<Record<string, unknown>>)[0] : undefined));
+  const record = [r.st.records[0] as unknown as Record<string, unknown> | undefined, ...firstRows].find((x) => x !== undefined && key in x);
   const raw = row && key in row ? row[key] : record ? record[key] : undefined;
   return { value: numberOf(raw), notFilled: [] };
 }
@@ -1199,50 +1360,9 @@ for (const c of cases) {
 }
 `;
 
-/* ------------------------------------------------------------- db, misc */
+/* ----------------------------------------------------------------- misc */
 
-function schemaCds(plan: UnitPlan, facts: EngineFacts): string {
-  const name = (plan.program ?? 'program').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-  const tables = new Set<string>();
-  for (const st of facts.statements) {
-    const m = /\bFROM\s+([a-z][\w/]*)/i.exec(st.keyword === 'SELECT' ? st.text : '');
-    if (m && !/^@/.test(m[1])) tables.add(m[1].toUpperCase());
-  }
-  for (const w of facts.graph.databaseWrites) tables.add(w.table);
-  const record = plan.fields.filter((f) => f.where === 'record');
-  const out: string[] = [];
-  out.push(`// Entities for ${plan.program ?? 'the program'} — written by Clean-Core.io (engine).`);
-  out.push(`// Tables the original reads or writes: ${[...tables].sort().join(', ') || 'none found'}. Their fields are not in the source and are not invented here.`);
-  out.push(`namespace cc.${name};`);
-  out.push('');
-  out.push('entity InputRecords {');
-  out.push('  key ID : UUID;');
-  for (const f of record) {
-    const type = f.kind === 'packed' ? `Decimal(${f.digits}, ${f.places})` : 'String';
-    out.push(`  ${f.key} : ${type}; // ${f.original}, ${f.declaration}, L${f.line}`);
-  }
-  out.push('}');
-  out.push('');
-  return out.join('\n');
-}
-
-function packageJson(name: string): string {
-  return `${JSON.stringify(
-    {
-      name,
-      version: '0.1.0',
-      private: true,
-      type: 'module',
-      description: 'Generated by Clean-Core.io: engine-written scaffold, model-written function bodies (see TRACE.md).',
-      engines: { node: '>=22.18' },
-      scripts: { start: 'node srv/server.ts', test: 'node --test test/', typecheck: 'tsc -p .' },
-      dependencies: {},
-      devDependencies: { typescript: '^5.9.3', '@types/node': '^22.0.0' },
-    },
-    null,
-    2,
-  )}\n`;
-}
+// db/schema.cds, srv/service.cds and package.json: the CAP shell (cap-shell.ts, scaffold version 7).
 
 const TSCONFIG = `${JSON.stringify(
   {
@@ -1266,7 +1386,8 @@ const TSCONFIG = `${JSON.stringify(
 
 const DOCKERFILE = `# Container for review and local trials — a fixed template of Clean-Core.io.
 # It has not been built, scanned or deployed by Clean-Core.io.
-# The package has no runtime dependency and runs its TypeScript on Node's type stripping.
+# It runs the core's HTTP app (srv/server.ts), which imports nothing beyond Node, on Node's type stripping;
+# the CAP service (npm start: cds-serve, or mta.yaml on SAP BTP) needs the dependencies in package.json.
 FROM node:${SCAFFOLD_NODE_MAJOR}-alpine
 WORKDIR /app
 ENV NODE_ENV=production
@@ -1297,16 +1418,23 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     for (const r of b.regions) available[r.regionId] = r.available;
   };
 
-  files.push({ path: 'package.json', content: packageJson(name), owner: 'engine' });
+  const shapes = readAbapShapes(facts.statements, facts.blocks, typesReserved(plan));
+  // One list per input structure (scaffold version 7): the plan as this package sees it moves each record field
+  // whose structure has an input table into that table's list. The planner's own plan is unchanged.
+  const originalDemo = options.originalDemo === undefined ? originalDemoCases(facts.source) : options.originalDemo;
+  const lists = inputListsOf(plan, facts, shapes, new Set([...plan.fields.filter((f) => f.where === 'selection').map((f) => f.key), 'records', 'run']), originalDemo ? [originalDemo.switch.routine, originalDemo.baseline.routine] : []);
+  plan = withListPaths(plan, lists);
+  // The CAP shell around the core (scaffold version 7, `cap-shell.ts`): package.json, the data model, the service.
+  const cap = capShellFiles({ plan, facts, lists, packageName: name });
+  files.push({ path: 'package.json', content: cap.packageJson, owner: 'engine' });
   files.push({ path: 'tsconfig.json', content: TSCONFIG, owner: 'engine' });
   files.push({ path: 'srv/lib/errors.ts', content: ERRORS_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/decimal.ts', content: DECIMAL_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/csv.ts', content: CSV_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/run-store.ts', content: RUN_STORE_TS, owner: 'engine' });
-  const shapes = readAbapShapes(facts.statements, facts.blocks, typesReserved(plan));
-  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes), owner: 'engine' });
-  files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan), owner: 'engine' });
-  add(guardsFile(plan));
+  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, lists), owner: 'engine' });
+  files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, lists), owner: 'engine' });
+  add(guardsFile(plan, lists));
   for (const u of plan.units) {
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
@@ -1317,11 +1445,11 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/simulate.ts', content: SIMULATE_TS, owner: 'engine' });
   files.push({ path: 'srv/app.ts', content: APP_TS, owner: 'engine' });
   files.push({ path: 'srv/server.ts', content: SERVER_TS, owner: 'engine' });
-  files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan), owner: 'engine' });
+  files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan, lists, facts.statements), owner: 'engine' });
   // The original's demo cases (3.0.13, A4): the golden master as data, a loader that runs one case through the
   // process with the case's tables as the run's globals, and a test that runs them all (`node-demo.ts`).
-  files.push(...nodeDemoFiles(plan, shapes, options.originalDemo === undefined ? originalDemoCases(facts.source) : options.originalDemo));
-  files.push({ path: 'db/schema.cds', content: schemaCds(plan, facts), owner: 'engine' });
+  files.push(...nodeDemoFiles(plan, shapes, originalDemo));
+  files.push(...cap.files);
   files.push({
     path: ENGINE_CASES_FILE,
     content: engineCasesFile(engineCaseProvenance(cases.cases as unknown as Array<Record<string, unknown>>, cases).verified) ?? `${JSON.stringify({ format: 'clean-core.engine-cases/1', cases: [] }, null, 2)}\n`,

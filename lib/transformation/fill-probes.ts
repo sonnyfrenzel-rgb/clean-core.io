@@ -39,6 +39,7 @@
 
 import type { AbapStatement } from '../abap/statement-reader';
 import { contractModel, hasRecords } from './call-contract';
+import { listOfPath } from './input-lists';
 import { selfUpdateOf } from './unit-plan';
 import type { ContractField, Unit, UnitPlan } from './types';
 
@@ -106,10 +107,10 @@ function fieldNamed(plan: Pick<UnitPlan, 'fields'>, name: string): ContractField
 const numericKind = (f: ContractField) => f.kind === 'packed' || f.kind === 'integer';
 const holds = (f: ContractField, value: number) => f.max === null || Number(f.max) >= Math.abs(value);
 
-/** The base request, and its first record, for building probe requests. */
-function baseOf(plan: UnitPlan): { request: Record<string, unknown>; record: Record<string, unknown> } {
+/** The base request, and the first row of a list (the record list unless named), for building probe requests. */
+function baseOf(plan: UnitPlan, list = 'records'): { request: Record<string, unknown>; record: Record<string, unknown> } {
   const request = structuredClone(contractModel(plan).baseRequest);
-  const records = Array.isArray(request.records) ? (request.records as Array<Record<string, unknown>>) : [];
+  const records = Array.isArray(request[list]) ? (request[list] as Array<Record<string, unknown>>) : [];
   return { request, record: { ...(records[0] ?? {}) } };
 }
 
@@ -133,9 +134,10 @@ function displayFilter(plan: UnitPlan, statements: readonly AbapStatement[]): Co
     const lines = statements.filter((st) => applies.test(st.text) && unitAtLine(plan, st.lineStart)).map((st) => st.lineStart);
     if (lines.length === 0) continue;
     const units = [...new Set(lines.flatMap((l) => unitsReaching(plan, statements, l)))];
-    const { request, record } = baseOf(plan);
+    const list = listOfPath(field.path) ?? 'records';
+    const { request, record } = baseOf(plan, list);
     for (const f of plan.fields) if (f.where === 'selection' && f.kind === 'range') request[f.key] = [];
-    request.records = FILTER_VALUES.map((v) => ({ ...record, [field.key]: v }));
+    request[list] = FILTER_VALUES.map((v) => ({ ...record, [field.key]: v }));
     const filtered = { ...structuredClone(request), [range.key]: [{ sign: 'I', option: 'EQ', low: FILTER_VALUES[0], high: null }] };
     return {
       call: { module: 'shims', export: 'listOf' },
@@ -165,7 +167,8 @@ function recalcAdditive(plan: UnitPlan, statements: readonly AbapStatement[]): C
       reasons.push(`${field.original} cannot hold ${RECALC_EXISTING + RECALC_INCREMENT}`);
       continue;
     }
-    const { request, record } = baseOf(plan);
+    const list = listOfPath(field.path) ?? 'records';
+    const { request, record } = baseOf(plan, list);
     const row: Record<string, unknown> = { ...record, [field.key]: '$existing' };
     let increment: number;
     const literal = /^'?(-?\d+(?:\.\d+)?)'?$/.exec(update.operand);
@@ -184,7 +187,7 @@ function recalcAdditive(plan: UnitPlan, statements: readonly AbapStatement[]): C
     }
     return {
       call: { module: 'shims', export: 'recalcOf' },
-      args: [{ ...request, records: '$rows' }, field.key],
+      args: [{ ...request, [list]: '$rows' }, field.key],
       rowTemplate: row,
       value: 'value',
       existing: RECALC_EXISTING,
@@ -236,7 +239,7 @@ function negativeWrite(plan: UnitPlan, statements: readonly AbapStatement[]): Co
     const carries = writes.filter((w) => new RegExp(`\\b${escape(comp)}\\b`, 'i').test(w.text) || (holder ? new RegExp(`(?:^|[^\\w<])${escape(holder)}\\b`, 'i').test(w.text) : false));
     if (carries.length === 0) continue;
     const { request } = baseOf(plan);
-    if (field.where === 'record') (request.records as Array<Record<string, unknown>>)[0][field.key] = '$value';
+    if (field.where === 'record') (request[listOfPath(field.path) ?? 'records'] as Array<Record<string, unknown>>)[0][field.key] = '$value';
     else request[field.key] = '$value';
     return {
       call: { module: 'shims', export: 'writeOf' },

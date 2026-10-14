@@ -387,6 +387,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const typed = nodeEngine ? (await import('@/lib/test-sandbox/type-check')).typeCheckCandidate(JSON.parse(code) as Array<{ path: string; content: string }>) : null;
     const words = nodeEngine ? await import('@/lib/transformation/check-words') : null;
     const typeCheck = typed && words ? words.typeCheckRecordOf(typed) : null;
+    // Roadmap 3.0.13 (CAP shell): `cds compile` of the package's model and service, where SAP's compiler is installed —
+    // not on the production server (SAP Developer License, `lib/transformation/cds-compile.ts`): there the record says
+    // it did not run, and the CAP capabilities stay "proposed".
+    const cdsCompile =
+      nodeEngine && words ? words.cdsCompileRecordOf((await import('@/lib/transformation/cds-compile')).cdsCompileCandidate(JSON.parse(code) as Array<{ path: string; content: string }>)) : null;
 
     // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
     // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
@@ -413,6 +418,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
         : {}),
       ...(abaplint ? { abaplint } : {}),
       ...(typeCheck ? { typeCheck } : {}),
+      ...(cdsCompile ? { cdsCompile } : {}),
     };
     const fields = {
       generatedCode: code,

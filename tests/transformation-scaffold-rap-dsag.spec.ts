@@ -339,6 +339,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 4: a check on a work area filled from an internal table is called in the body (tests/transformation-fill-guards.spec.ts, E).
   // 5: the Node scaffold's probe entry points (tests/transformation-fill-probes.spec.ts); one number for both tracks.
   // 6: the typed RAP contract, guards in the logic path, a custom entity for a read-only program (tests/transformation-rap-contract.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(6);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(6);
+  // 7: the CAP shell and one input list per source structure on the Node track (tests/transformation-cap-shell.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(7);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(7);
 });

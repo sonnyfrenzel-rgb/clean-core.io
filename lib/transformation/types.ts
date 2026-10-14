@@ -48,8 +48,20 @@ export const PLAN_VERSION = 2;
  * query provider instead of a managed business object; one that writes keeps the business object, run by an
  * action with the selection as its parameter. The access interface types each call from its call sites. The
  * Node scaffold's text is unchanged; nothing signed changes (§12.3).
+ * 7 (3.0.13, the side-by-side route becomes real CAP, step 2 — a CAP shell around the Node core): the input is one
+ * named list per input table of the original, each typed by its own structure (`input-lists.ts`), instead of one
+ * record list folding every structure into `Rec`; a run starts with those rows in the original's own global tables
+ * (`seedOf`), a skipping check's `record` is a row of its list, and only fields of a structure without an input
+ * table stay in `records`. Around the unchanged core the engine writes the CAP shell (`cap-shell.ts`): package.json
+ * with `@sap/cds` and `cds-serve`/`cds watch`, `db/schema.cds` with one type and entity per input structure (types
+ * as declared), `srv/service.cds` with the action the architecture asks for (`simulate` for a read-only program,
+ * `run` and the written customer tables for a writing one — the RAP route's decision, `architecture.ts`),
+ * `srv/service.ts` handlers that only delegate to the core, `srv/access.ts` with remote services on released OData
+ * APIs (placeholder definitions, mock data) or refusals with their reason, `mta.yaml` and `xs-security.json`.
+ * Checked by `cds compile` where the compiler is installed (`cds-compile.ts`) and by the type check. The RAP text
+ * is unchanged; stored packages keep their version and their request shape; nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 6;
+export const SCAFFOLD_VERSION = 7;
 
 /* -------------------------------------------------------------- budgets */
 

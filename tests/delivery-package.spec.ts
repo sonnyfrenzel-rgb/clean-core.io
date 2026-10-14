@@ -327,6 +327,9 @@ app.listen(4004);
 export default app;
 `;
 
+  // Roadmap 3.0.13: "implemented" only when the shell compiles — the server's cds compile on record, 0 errors.
+  const COMPILED = { v: 1, ran: true, compiler: '7.1.2', files: 2, errors: 0, warnings: 0, services: ['WorklistService'], findings: [] };
+
   test('a CAP runtime with a service model is implemented, and then nothing says "proposed"', () => {
     const pkg = JSON.parse(PACKAGE) as Array<{ path: string; content: string }>;
     const json = JSON.parse(MODEL_PACKAGE_JSON);
@@ -335,13 +338,38 @@ export default app;
       f.path === 'package.json' ? { ...f, content: JSON.stringify(json) } : f.path === 'srv/service.ts' ? { ...f, content: CAP_ENTRY } : f,
     );
     cap.push({ path: 'srv/service.cds', content: 'using fi from \'../db/schema\';\nservice WorklistService { entity Items as projection on fi.Items; }\n' });
-    const out = finished(withFailure(fiProject({ generatedCode: JSON.stringify(cap) })));
+    const out = finished(withFailure(fiProject({ generatedCode: JSON.stringify(cap), generationBinding: { cdsCompile: COMPILED } })));
     const manifest = JSON.parse(out.file('manifest.json')!);
     const capability = (k: string) => manifest.capabilities.find((c: { key: string }) => c.key === k);
     expect(capability('cap-runtime').status).toBe('implemented');
+    expect(capability('cap-runtime').evidence).toContain('cds compile: 0 errors in 2 CDS files (@sap/cds-compiler 7.1.2)');
     expect(capability('service-model').status).toBe('implemented');
     expect(manifest.files.find((f: { path: string }) => f.path === 'db/schema.cds').status).toBe('implemented');
     expect(manifest.implementation).not.toContain('proposed');
+  });
+
+  test('a CAP shell without a cds compile on record, or with errors, or where the compiler did not run, is proposed and says why (3.0.13)', () => {
+    const pkg = JSON.parse(PACKAGE) as Array<{ path: string; content: string }>;
+    const json = JSON.parse(MODEL_PACKAGE_JSON);
+    json.dependencies['@sap/cds'] = '^8.0.0';
+    const cap = pkg.map((f) =>
+      f.path === 'package.json' ? { ...f, content: JSON.stringify(json) } : f.path === 'srv/service.ts' ? { ...f, content: CAP_ENTRY } : f,
+    );
+    cap.push({ path: 'srv/service.cds', content: 'using fi from \'../db/schema\';\nservice WorklistService { entity Items as projection on fi.Items; }\n' });
+    const cases: Array<[Record<string, unknown> | undefined, RegExp]> = [
+      [undefined, /no cds compile of this package is on record — not verified/],
+      [{ ...COMPILED, errors: 3, findings: [{ path: 'srv/service.cds', line: 2, severity: 'Error', id: 'ref-undefined-def', message: 'x' }] }, /cds compile: 3 errors in 2 CDS files .* — not verified/],
+      [{ v: 1, ran: false, reason: 'cds compile not run: the compiler is not installed on this server.' }, /cds compile not run: the compiler is not installed on this server — not verified/],
+    ];
+    for (const [record, words] of cases) {
+      const out = finished(withFailure(fiProject({ generatedCode: JSON.stringify(cap), ...(record ? { generationBinding: { cdsCompile: record } } : {}) })));
+      const manifest = JSON.parse(out.file('manifest.json')!);
+      const capability = (k: string) => manifest.capabilities.find((c: { key: string }) => c.key === k);
+      expect(capability('cap-runtime').status).toBe('proposed');
+      expect(capability('cap-runtime').evidence).toMatch(words);
+      expect(capability('service-model').status).toBe('proposed');
+      expect(manifest.implementation).toContain('CAP service not verified by cds compile');
+    }
   });
 
   test('@sap/cds and a service model with an entry that starts plain Express is not a CAP runtime (QA 186e14f906b2)', () => {
