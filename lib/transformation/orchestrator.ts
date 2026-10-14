@@ -47,20 +47,31 @@
  *     is a scaffold finding, never sent to the model. A failing body is kept
  *     (a reviewable draft) unless the body guards refused it (then the stub
  *     stays).
+ *   - **Gate repairs** (owner decision 14.10.2026, quality over cost — a call
+ *     costs ≈ $0.005): a unit that fails the gate (the activation check's
+ *     parser/syntax errors on RAP, the type check on Node; `GATE_CHECKS`) goes
+ *     back in calls marked `gateRepair`. Those may go on past the budget on the
+ *     lease's gate-repair calls (`gateRepairBudget`, at most 16 — the server
+ *     counts them apart and honours the mark only on such a repair), and after
+ *     round 2 the units failing the gate alone get a third round with the
+ *     gate's mapped reasons. Every other call ends at the budget, as before.
  *
  * Pure: no network, no Firestore, no React. Every effect is injected, so the
  * specs drive it with a fake model and a fake clock.
  */
 
 import { decideGenerationRepair, GENERATION_REPAIR_MAX_ROUNDS } from '../repair-draft';
-import { LEASED_PROMPT_MAX_CHARS, bundleFills, parseFillAnswer, type BundleOptions, type FillBundle } from './fill-prompt';
+import { LEASED_PROMPT_MAX_CHARS, bundleFills, isGateFailureLine, parseFillAnswer, type BundleOptions, type FillBundle } from './fill-prompt';
 import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
 import { serverCountedCall } from './error-codes';
 
 import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types';
 
-/** One model call: the prompt in, the answer text out; must honour the signal. */
-export type FillModel = (prompt: string, signal: AbortSignal) => Promise<string>;
+/**
+ * One model call: the prompt in, the answer text out; must honour the signal. `meta.gateRepair`: the call repairs
+ * gate errors only, and the lease may count it against its gate-repair calls (owner decision 14.10.2026).
+ */
+export type FillModel = (prompt: string, signal: AbortSignal, meta?: { gateRepair?: boolean }) => Promise<string>;
 
 /** `abap` (3.0.13): abaplint's parser and syntax check of an ABAP candidate with the shipped configuration (`abap-check.ts`). */
 export type CheckKind = 'lint' | 'cases' | 'probes' | 'formats' | 'abap' | 'types';
@@ -135,6 +146,11 @@ export interface OrchestratorInput {
   mustRun?: readonly CheckKind[];
   /** Model calls this generation may make (the lease's budget). */
   budget: number;
+  /**
+   * Calls beyond `budget` that only repairs of gate errors may make (the lease's `gateRepairBudget` less what is
+   * used; owner decision 14.10.2026). 0 or absent: none, and no third round.
+   */
+  gateRepairBudget?: number;
   maxInFlight?: number;
   /** The largest prompt a call may carry; the route refuses a leased one above it (default `LEASED_PROMPT_MAX_CHARS`). */
   maxPromptChars?: number;
@@ -145,7 +161,7 @@ export interface OrchestratorInput {
   now?: () => number;
 }
 
-export type FilledBy = 'model' | 'model-repair-1' | 'model-repair-2' | 'not-filled';
+export type FilledBy = 'model' | 'model-repair-1' | 'model-repair-2' | 'model-repair-3' | 'not-filled';
 
 export interface UnitOutcome {
   unitId: string;
@@ -169,7 +185,10 @@ export interface GenerationRunResult {
   /** complete: every unit written and every check that ran passed; partial: anything less; cancelled: stopped by the caller. */
   status: 'complete' | 'partial' | 'cancelled';
   units: UnitOutcome[];
+  /** Every model call this generation made: of the budget and of the gate-repair calls together. */
   callsUsed: number;
+  /** Of `callsUsed`, the calls spent beyond the budget on gate repairs (owner decision 14.10.2026). */
+  gateRepairCallsUsed?: number;
   rounds: number;
   stop: StopReason;
   /** Failures in engine-written code: our bug, never sent to the model (§13.2 step 2). */
@@ -314,14 +333,20 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, code: null, status: null, final: false, failures: [], predicates: new Map(), predicateGaps: [] } as UnitState]),
   );
 
+  // The budget's calls and, apart, the gate-repair calls beyond it (owner decision 14.10.2026): a call marked
+  // gate repair spends the budget while any is left, then the gate-repair calls — as the server counts them.
   let callsUsed = 0;
+  let gateCallsUsed = 0;
+  const gateBudget = Math.max(0, Math.floor(input.gateRepairBudget ?? 0));
+  const gateCallsLeft = () => gateBudget - gateCallsUsed;
   let inFlight = 0;
   let maxInFlightSeen = 0;
   let stoppedBy: 'lease' | 'budget' | null = null;
   /** The code that ended the lease, when a lease refusal stopped the generation. */
   let leaseStop: { code: string | null; status: number | null } | null = null;
   let callSeq = 0;
-  const halted = () => calls.signal.aborted || stoppedBy !== null;
+  /** No new call starts: cancelled, the lease ended, or the budget is used — for a gate repair, the gate-repair calls too. */
+  const halted = (gate = false) => calls.signal.aborted || stoppedBy === 'lease' || (stoppedBy === 'budget' && !(gate && gateCallsLeft() > 0));
 
   type CallOutcome = { text: string } | { error: string; code?: string | null; status?: number | null; final?: boolean };
   const maxPromptChars = input.maxPromptChars ?? LEASED_PROMPT_MAX_CHARS;
@@ -332,22 +357,27 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
    * `lease-busy` refusal waits for a free slot and asks again without using
    * that retry; a refusal the server did not count gives its call back.
    */
-  async function call(prompt: string, unitIds: readonly string[]): Promise<CallOutcome> {
+  async function call(prompt: string, unitIds: readonly string[], gate = false): Promise<CallOutcome> {
     let busyWaited = 0;
     for (let attempt = 0; attempt < 2; ) {
       if (calls.signal.aborted) return ended();
-      if (callsUsed >= input.budget) {
+      const pool: 'budget' | 'gate' | null = callsUsed < input.budget ? 'budget' : gate && gateCallsLeft() > 0 ? 'gate' : null;
+      if (pool === null) {
         stoppedBy = stoppedBy ?? 'budget';
-        return { error: `the generation's ${input.budget} model calls are used up`, code: 'call-budget-used' };
+        return {
+          error: gate && gateBudget > 0 ? `the generation's ${input.budget} model calls and its ${gateBudget} calls for gate repairs are used up` : `the generation's ${input.budget} model calls are used up`,
+          code: 'call-budget-used',
+        };
       }
-      callsUsed++;
+      if (pool === 'budget') callsUsed++;
+      else gateCallsUsed++;
       inFlight++;
       maxInFlightSeen = Math.max(maxInFlightSeen, inFlight);
       const callId = ++callSeq;
       emit({ t: 'call', callId, state: 'start', at: now() });
       let failure: unknown;
       try {
-        const text = await input.model(prompt, calls.signal);
+        const text = gate ? await input.model(prompt, calls.signal, { gateRepair: true }) : await input.model(prompt, calls.signal);
         emit({ t: 'call', callId, state: 'end', at: now(), admitted: true });
         return { text };
       } catch (err) {
@@ -359,7 +389,10 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       const facts = modelErrorFacts(failure);
       // Refused before the lease counted it: the call is given back.
       const admitted = kind === 'aborted' || serverCountedCall(facts.code, facts.status);
-      if (!admitted) callsUsed--;
+      if (!admitted) {
+        if (pool === 'budget') callsUsed--;
+        else gateCallsUsed--;
+      }
       emit({ t: 'call', callId, state: 'end', at: now(), admitted });
       const message = failure instanceof Error ? failure.message : String(failure);
       if (kind === 'aborted') return ended();
@@ -386,11 +419,14 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     return { error: 'the model call failed' };
   }
 
-  /** The bundles, at most `maxInFlight` at a time; nothing new starts once the generation is halted. */
-  async function runBundles(bundles: FillBundle[], onAnswer: (bundle: FillBundle, outcome: CallOutcome) => void) {
+  /**
+   * The bundles, at most `maxInFlight` at a time; nothing new starts once the generation is halted. `gate`: the
+   * bundles that repair gate errors only (marked so on their call).
+   */
+  async function runBundles(bundles: FillBundle[], onAnswer: (bundle: FillBundle, outcome: CallOutcome) => void, gate: ReadonlySet<FillBundle> = new Set()) {
     let next = 0;
     const worker = async () => {
-      while (next < bundles.length && !halted()) {
+      while (next < bundles.length && !halted(gate.has(bundles[next]))) {
         const b = bundles[next++];
         // A prompt the route would refuse is never sent: no call is spent on it,
         // and asking again would build the same prompt (QA finding 804d0920fff4).
@@ -404,20 +440,20 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
           continue;
         }
         for (const id of b.unitIds) emit({ t: 'fill', unitId: id, state: 'writing', at: now() });
-        onAnswer(b, await call(b.prompt, b.unitIds));
+        onAnswer(b, await call(b.prompt, b.unitIds, gate.has(b)));
       }
     };
     await Promise.all(Array.from({ length: Math.min(maxInFlight, bundles.length) }, worker));
   }
 
-  const filledByRound = (round: 0 | 1 | 2): FilledBy => (round === 0 ? 'model' : round === 1 ? 'model-repair-1' : 'model-repair-2');
+  const filledByRound = (round: 0 | 1 | 2 | 3): FilledBy => (round === 0 ? 'model' : round === 1 ? 'model-repair-1' : round === 2 ? 'model-repair-2' : 'model-repair-3');
 
   /**
    * Read one answer into the unit states. Returns the units whose answer was
    * unusable. In a repair round an unusable or declined answer leaves the
    * unit as it was.
    */
-  function take(b: FillBundle, outcome: CallOutcome, round: 0 | 1 | 2): string[] {
+  function take(b: FillBundle, outcome: CallOutcome, round: 0 | 1 | 2 | 3): string[] {
     const unusable = (ids: readonly string[], reason: string, code: string | null, status: number | null = null) => {
       for (const id of ids) {
         if (round === 0) {
@@ -591,6 +627,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         previousSignature,
         callsLeft: stoppedBy === 'budget' ? 0 : input.budget - callsUsed,
         leaseEnded: stoppedBy === 'lease',
+        // Gate repairs (owner decision 14.10.2026): only with calls held for them on the lease.
+        ...(gateBudget > 0 ? { gate: { isGate: isGateFailureLine, callsLeft: gateCallsLeft() } } : {}),
       });
       if (decision.kind === 'stop') {
         stop = decision.reason;
@@ -607,10 +645,11 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
           return [u.unitId, { unitId: u.unitId, round, failure: u.failure, previousBody: s.body ?? s.refusedBody }];
         }),
       );
-      await runBundles(
-        bundle(ordered.filter((u) => repair.has(u.unitId)), repair),
-        (b, o) => void take(b, o, round),
-      );
+      // Units failing the gate travel in calls of their own, marked as gate repairs; the others as before.
+      const gateIds = new Set(decision.units.filter((u) => u.gate && gateBudget > 0).map((u) => u.unitId));
+      const gateBundles = bundle(ordered.filter((u) => gateIds.has(u.unitId)), repair);
+      const otherBundles = bundle(ordered.filter((u) => repair.has(u.unitId) && !gateIds.has(u.unitId)), repair);
+      await runBundles([...otherBundles, ...gateBundles], (b, o) => void take(b, o, round), new Set(gateBundles));
       const rewritten = ids.filter((id) => states.get(id)!.filledBy === filledByRound(round)).length;
       emit({ t: 'repair', round, unitIds: ids, state: 'done', fixed: rewritten });
     }
@@ -657,7 +696,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
   return {
     status: stop === 'cancelled' ? 'cancelled' : complete ? 'complete' : 'partial',
     units,
-    callsUsed,
+    callsUsed: callsUsed + gateCallsUsed,
+    ...(gateBudget > 0 ? { gateRepairCallsUsed: gateCallsUsed } : {}),
     rounds,
     stop,
     scaffoldFindings: [...scaffoldFindings],

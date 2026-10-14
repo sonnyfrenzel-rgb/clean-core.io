@@ -10,6 +10,7 @@ import {
   leaseWindowStatus,
   liveSlots,
   newLeaseRecord,
+  type LeasePool,
   type LeaseRecord,
   type LeaseReference,
   type LeaseRefusal,
@@ -132,10 +133,14 @@ export async function confirmLeaseCharge(db: Firestore, ref: LeaseReference): Pr
   });
 }
 
-/** Read and judge a lease without counting — the route's early check. */
-export async function peekLease(db: Firestore, ref: LeaseReference, ctx: { uid: string; now: number }): Promise<{ ok: true; lease: LeaseRecord } | LeaseRefusal> {
+/** Read and judge a lease without counting — the route's early check. `gateRepair`: the call is a checked repair of gate errors. */
+export async function peekLease(
+  db: Firestore,
+  ref: LeaseReference,
+  ctx: { uid: string; now: number; gateRepair?: boolean },
+): Promise<{ ok: true; lease: LeaseRecord } | LeaseRefusal> {
   const snap = await leasesOf(db, ref.projectId).doc(ref.leaseId).get();
-  return decideLeaseCall(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId, now: ctx.now });
+  return decideLeaseCall(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId, now: ctx.now, gateRepair: ctx.gateRepair === true });
 }
 
 /** A lease reference with the time of the slot one call holds (`acquireLeaseCall`), so its release frees exactly that slot. */
@@ -146,28 +151,34 @@ export type HeldLeaseSlot = LeaseReference & { slotAt?: number };
  * a slot (its time joins `slots`; stale slots leave), in the transaction that
  * checks the budget and the in-flight cap — so two calls racing for the 48th
  * call or the 5th slot cannot both get it.
+ *
+ * A call marked `gateRepair` (the route has checked its prompt, `isGateRepairPrompt`) that finds the budget used
+ * counts against the lease's gate-repair calls instead (`gateRepairUsed`, owner decision 14.10.2026) — in the
+ * same transaction, so the 16 cannot be overrun either.
  */
 export async function acquireLeaseCall(
   db: Firestore,
   ref: LeaseReference,
-  ctx: { uid: string; now: number },
-): Promise<{ ok: true; lease: LeaseRecord; slotAt: number } | LeaseRefusal> {
+  ctx: { uid: string; now: number; gateRepair?: boolean },
+): Promise<{ ok: true; lease: LeaseRecord; slotAt: number; pool: LeasePool } | LeaseRefusal> {
   const docRef = leasesOf(db, ref.projectId).doc(ref.leaseId);
   return db.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(docRef);
-    const decision = decideLeaseCall(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId, now: ctx.now });
+    const decision = decideLeaseCall(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId, now: ctx.now, gateRepair: ctx.gateRepair === true });
     if (!decision.ok) return decision;
     const was = decision.lease;
+    const pool = decision.pool;
+    const counted = pool === 'budget' ? { used: was.used + 1 } : { gateRepairUsed: (was.gateRepairUsed ?? 0) + 1 };
     if (Array.isArray(was.slots)) {
       const slots = [...liveSlots(was.slots, ctx.now), ctx.now];
-      const lease = { ...was, used: was.used + 1, inFlight: slots.length, slots };
-      tx.update(docRef, { used: lease.used, inFlight: lease.inFlight, slots });
-      return { ok: true as const, lease, slotAt: ctx.now };
+      const lease = { ...was, ...counted, inFlight: slots.length, slots };
+      tx.update(docRef, { ...counted, inFlight: lease.inFlight, slots });
+      return { ok: true as const, lease, slotAt: ctx.now, pool };
     }
     // A lease from before the slot times: counted as it always was.
-    const lease = { ...was, used: was.used + 1, inFlight: was.inFlight + 1 };
-    tx.update(docRef, { used: lease.used, inFlight: lease.inFlight });
-    return { ok: true as const, lease, slotAt: ctx.now };
+    const lease = { ...was, ...counted, inFlight: was.inFlight + 1 };
+    tx.update(docRef, { ...counted, inFlight: lease.inFlight });
+    return { ok: true as const, lease, slotAt: ctx.now, pool };
   });
 }
 

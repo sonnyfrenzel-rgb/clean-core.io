@@ -8,7 +8,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc, adminGetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
-import { LEASE_COLLECTION, LEASE_WINDOW_COLLECTION } from '../lib/transformation/lease';
+import { LEASE_COLLECTION, LEASE_GATE_REPAIR_CALLS, LEASE_WINDOW_COLLECTION } from '../lib/transformation/lease';
 import { bundleFills, parseFillAnswer } from '../lib/transformation/fill-prompt';
 import type { FillRequestUnit } from '../lib/transformation/types';
 
@@ -112,7 +112,8 @@ test('a lease for the owner\'s current generation; asked again, the same lease f
   expect(res.status(), await res.text()).toBe(200);
   const body = await res.json();
   expect(body).toMatchObject({ reused: false, lease: { projectId: P1, budget: 26, used: 0, maxInFlight: 4 } });
-  expect(Object.keys(body.lease).sort()).toEqual(['budget', 'expiresAt', 'leaseId', 'maxInFlight', 'projectId', 'used']);
+  expect(Object.keys(body.lease).sort()).toEqual(['budget', 'expiresAt', 'gateRepairBudget', 'gateRepairUsed', 'leaseId', 'maxInFlight', 'projectId', 'used']);
+  expect(body.lease).toMatchObject({ gateRepairBudget: LEASE_GATE_REPAIR_CALLS, gateRepairUsed: 0 });
   leaseId = body.lease.leaseId;
   const again = await (await lease(request, P1, token)).json();
   expect(again).toMatchObject({ reused: true, lease: { leaseId } });

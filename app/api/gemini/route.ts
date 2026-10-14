@@ -39,7 +39,7 @@ import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { LEASE_CODES, leaseReferenceOf } from '@/lib/transformation/lease';
 import { acquireLeaseCall, peekLease, releaseLeaseCall, type HeldLeaseSlot } from '@/lib/transformation/lease-store';
 import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@/lib/attempt-limit';
-import { LEASED_PROMPT_MAX_CHARS } from '@/lib/transformation/fill-prompt';
+import { LEASED_PROMPT_MAX_CHARS, isGateRepairPrompt } from '@/lib/transformation/fill-prompt';
 import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
@@ -82,6 +82,12 @@ import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeout
  * or used-up lease is refused with a code before the provider is asked. Every
  * other gate below applies to a leased call unchanged, and a call without a
  * lease behaves exactly as before.
+ *
+ * 3.0.13 (owner decision 14.10.2026, quality over cost) — a lease also holds 16
+ * calls for repairs of gate errors (activation / type check), spent only by a
+ * call marked `gateRepair` whose prompt is such a repair (`isGateRepairPrompt`)
+ * and only once the 48 are used: at most 64 calls per generation, the hourly
+ * limits unchanged.
  */
 
 // Cache the default instance so we don't create a new one per request.
@@ -249,6 +255,8 @@ export async function POST(request: NextRequest) {
     if (lease && 'ok' in lease) {
       return NextResponse.json({ error: lease.error, code: lease.code }, { status: lease.status });
     }
+    // Only meaningful under a lease: the call repairs gate errors (checked against its prompt below).
+    const gateRepair = lease !== null && (body as { gateRepair?: unknown } | null)?.gateRepair === true;
 
     try {
       if (lease) {
@@ -289,8 +297,18 @@ export async function POST(request: NextRequest) {
             { status: 413 },
           );
         }
+        // A call marked as a repair of gate errors may spend the lease's gate-repair calls once its budget is
+        // used (owner decision 14.10.2026, `LEASE_GATE_REPAIR_CALLS`). The mark is honoured only on a prompt that
+        // is such a repair (`isGateRepairPrompt`): a fill or any other call marked so is refused here, before the
+        // lease is read, and could never reach those calls.
+        if (gateRepair && !isGateRepairPrompt(leased.prompt)) {
+          return NextResponse.json(
+            { error: 'Only a repair of activation or type-check errors may use the calls a generation holds for them.', code: LEASE_CODES.gateRepair },
+            { status: 400 },
+          );
+        }
         const { db } = await getAdminDb();
-        const peek = await peekLease(db, lease, { uid: decodedToken.uid, now: Date.now() });
+        const peek = await peekLease(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
         if (!peek.ok) {
           return NextResponse.json({ error: peek.error, code: peek.code }, { status: peek.status });
         }
@@ -502,13 +520,13 @@ export async function POST(request: NextRequest) {
     //
     // A leased call is counted now, after every gate and right before the
     // provider is asked: `used` and `inFlight` go up in one transaction that
-    // re-checks the budget (48) and the in-flight cap (4). The slot is given
+    // re-checks the budget (48; a checked gate repair beyond it: its 16) and the in-flight cap (4). The slot is given
     // back in `finally` below, whatever the call does; the call itself stays
     // counted. A leased call also ends with its request: when the browser
     // cancels the generation, the provider call is aborted and not retried.
     if (lease) {
       const { db } = await getAdminDb();
-      const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now() });
+      const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
       if (!counted.ok) {
         return NextResponse.json({ error: counted.error, code: counted.code }, { status: counted.status });
       }

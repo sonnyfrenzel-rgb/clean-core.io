@@ -59,6 +59,9 @@ export interface EngineLedRecord {
   scaffoldFindings: string[];
   callsUsed: number;
   budget: number;
+  /** Calls held for gate repairs beyond `budget`, and how many were spent (owner decision 14.10.2026). */
+  gateRepairBudget?: number;
+  gateRepairCallsUsed?: number;
   rounds: number;
   stop: string;
   scaffoldVersion: number;
@@ -137,6 +140,9 @@ function engineOf(raw: unknown): EngineLedRecord | null {
     scaffoldFindings: Array.isArray(e.scaffoldFindings) ? e.scaffoldFindings.slice(0, 50).filter((s): s is string => typeof s === 'string').map((s) => str(s, 500)) : [],
     callsUsed: int(e.callsUsed, 1_000),
     budget: int(e.budget, 1_000),
+    ...(typeof e.gateRepairBudget === 'number' && e.gateRepairBudget > 0
+      ? { gateRepairBudget: int(e.gateRepairBudget, 1_000), gateRepairCallsUsed: int(e.gateRepairCallsUsed, 1_000) }
+      : {}),
     rounds: int(e.rounds, 10),
     stop: str(e.stop, 20),
     scaffoldVersion: int(e.scaffoldVersion, 10_000),

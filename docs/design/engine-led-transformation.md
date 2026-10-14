@@ -396,7 +396,11 @@ a reason rather than guessing. The 3.0.12 code-draft rules are included by numbe
 - **Order**: leaves first (callees before callers), orchestrator last, so a caller's prompt can carry
   the callees' final signatures (signatures are engine-written anyway; order only matters for repair).
 - **Budget per generation**: 48 model calls (fills + retries + repairs). Measured need: 3–9 fill calls
-  (§10), so the budget leaves room for two repair rounds even on CO.
+  (§10), so the budget leaves room for two repair rounds even on CO. Since 14.10.2026 (owner decision,
+  quality over cost, ≈ $0.005 a call) a lease also holds 16 calls that only repairs of gate errors
+  (activation parser/syntax on RAP, type errors on Node) may spend once the 48 are used — the server
+  counts them apart and honours a call's `gateRepair` mark only on such a repair — and units failing
+  the gate get a third repair round: at most 64 calls per generation; the hourly limits are unchanged.
 
 ## 9. Merging the model's body into the stub — markers and splice
 

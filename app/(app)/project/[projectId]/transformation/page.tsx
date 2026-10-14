@@ -1485,6 +1485,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           // The lease's own budget, as the server answered it (a fresh lease per
           // run, so `used` is 0 unless this very run asked for it twice).
           budget: Math.max(0, leaseNow.budget - leaseNow.used),
+          // The lease's calls for repairs of gate errors only (owner decision 14.10.2026): the server counts them
+          // apart and honours them only on a marked repair of activation or type-check errors.
+          gateRepairBudget: Math.max(0, (leaseNow.gateRepairBudget ?? 0) - (leaseNow.gateRepairUsed ?? 0)),
           maxInFlight: leaseNow.maxInFlight,
           signal: controller.signal,
           onEvent,
@@ -1495,7 +1498,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         setStageLog((log) =>
           withFacts(log, 'fills', [
             `${writtenCount} of ${result.units.length} functions written${writtenCount < result.units.length ? `; ${result.units.length - writtenCount} left as stubs` : ''}`,
-            `${result.callsUsed} of ${leaseNow.budget} model calls used`,
+            `${result.callsUsed - (result.gateRepairCallsUsed ?? 0)} of ${leaseNow.budget} model calls used${result.gateRepairCallsUsed ? `, and ${result.gateRepairCallsUsed} of ${leaseNow.gateRepairBudget ?? 0} held for repairs of activation or type-check errors` : ''}`,
           ]),
         );
         for (const n of result.checksNotRun) {
@@ -1510,6 +1513,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           runId: projectRef.current?.activeRunId ?? null,
           checks: [...checkSummaries.values()],
           budget: leaseNow.budget,
+          gateRepairBudget: leaseNow.gateRepairBudget ?? 0,
           activation: lastActivation,
           typeCheck: typeCheckRecordOf(lastTypeCheck),
         });
@@ -1938,7 +1942,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               {u.filledBy === 'not-filled' ? (
                 <CcProvenanceChip value="not-determined" note={u.note ? `not written — ${u.note}` : 'not written'} />
               ) : u.filledBy === 'engine' ? null : (
-                <CcProvenanceChip value="proposed" note={u.filledBy === 'model' ? 'body' : `body, ${u.filledBy === 'model-repair-1' ? 'repair round 1' : 'repair round 2'}`} />
+                <CcProvenanceChip value="proposed" note={u.filledBy === 'model' ? 'body' : `body, ${u.filledBy === 'model-repair-1' ? 'repair round 1' : u.filledBy === 'model-repair-3' ? 'repair round 3' : 'repair round 2'}`} />
               )}
             </div>
           ))}

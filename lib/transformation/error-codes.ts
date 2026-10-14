@@ -93,6 +93,13 @@ export const TRANSFORMATION_CODES = {
     kind: 'change',
     counted: false,
   },
+  'lease-gate-repair-invalid': {
+    title: 'not a gate repair',
+    explain: 'A call asked for the calls a generation holds for repairs of activation or type-check errors, but it was not such a repair, so it was not sent.',
+    action: 'Nothing to do — the function keeps its last body; report it if it recurs.',
+    kind: 'nothing',
+    counted: false,
+  },
   'too-large': {
     title: 'request too large',
     explain: 'The request was larger than the server accepts, so it was not processed.',

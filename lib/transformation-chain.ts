@@ -858,7 +858,7 @@ export interface UnitBoard {
 /** The generation events the panel reads (`GenerationEvent`, design §15.5) — only the ones it needs. */
 export type BoardEvent =
   | { t: 'fill'; unitId: string; state: 'writing' | 'waiting-slot' | 'written' | 'refused' | 'unusable'; reason?: string; code?: string; status?: number }
-  | { t: 'repair'; round: 1 | 2; unitIds: string[]; state: 'start' | 'done' };
+  | { t: 'repair'; round: 1 | 2 | 3; unitIds: string[]; state: 'start' | 'done' };
 
 /** "lease-busy · 429" and its two sentences — from the one table (`lib/transformation/error-codes.ts`). */
 function codeOf(code: string | undefined | null, status?: number | null): { code: string | null; hint: string | null } {
@@ -891,7 +891,7 @@ export function unitBoard(
         for (const id of e.unitIds) {
           if (!state.has(id)) continue;
           state.set(id, 'repair');
-          word.set(id, `repairing — round ${e.round} of 2`);
+          word.set(id, e.round === 3 ? 'repairing — round 3, activation or type errors only' : `repairing — round ${e.round} of 2`);
           code.set(id, clear);
         }
       } else {

@@ -14,6 +14,9 @@ import type { FillModel } from './orchestrator';
 export interface GenerationLease extends LeaseReference {
   budget: number;
   used: number;
+  /** Calls held for repairs of gate errors (owner decision 14.10.2026); absent from a server before: none. */
+  gateRepairBudget?: number;
+  gateRepairUsed?: number;
   expiresAt: number;
   maxInFlight: number;
 }
@@ -106,9 +109,12 @@ export async function readGenerationWindow(): Promise<GenerationWindow | null> {
 export function leasedFillModel(lease: LeaseReference, modelName: string = PRODUCT_GEMINI_MODEL): FillModel {
   // A refusal comes back as `GeminiCallError` with `status` and `code`, which
   // the orchestrator reads (`modelErrorKind`) to retry, stop or give up a unit.
-  return (prompt, signal) =>
+  // A repair of gate errors is marked (`meta.gateRepair`), so the server may count it against the lease's
+  // gate-repair calls once the budget is used — never any other call (owner decision 14.10.2026).
+  return (prompt, signal, meta) =>
     callGemini(prompt, modelName, true, 'transformation', signal, {
       lease: { projectId: lease.projectId, leaseId: lease.leaseId },
       responseShape: 'transformation-fill',
+      ...(meta?.gateRepair ? { gateRepair: true } : {}),
     });
 }

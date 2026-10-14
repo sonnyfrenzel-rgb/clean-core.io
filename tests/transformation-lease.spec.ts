@@ -11,7 +11,9 @@ import {
   LEASE_CHARGE_PENDING_MS,
   LEASE_CODES,
   LEASE_COLLECTION,
+  LEASE_GATE_REPAIR_CALLS,
   LEASE_MAX_CALLS,
+  LEASE_MAX_CALLS_PER_GENERATION,
   LEASE_MAX_IN_FLIGHT,
   LEASE_MAX_TTL_MS,
   LEASE_TTL_MS,
@@ -36,6 +38,7 @@ import {
 import { acquireLeaseCall, closeLease, confirmLeaseCharge, issueLease, peekLease, readLease, readLeaseWindow, releaseLeaseCall } from '../lib/transformation/lease-store';
 import { MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 import { FILL_PROMPT_MAX_CHARS, LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
+import { serverCountedCall } from '../lib/transformation/error-codes';
 
 /**
  * The generation lease (design §11; owner decision 12.10.2026: one generation
@@ -230,7 +233,7 @@ test.describe('the decisions', () => {
       expect(leaseReferenceOf(bad, isFirestoreId)).toMatchObject({ ok: false, status: 400, code: 'lease-invalid' });
     }
     const view = leaseView(lease());
-    expect(Object.keys(view).sort()).toEqual(['budget', 'expiresAt', 'leaseId', 'maxInFlight', 'projectId', 'used']);
+    expect(Object.keys(view).sort()).toEqual(['budget', 'expiresAt', 'gateRepairBudget', 'gateRepairUsed', 'leaseId', 'maxInFlight', 'projectId', 'used']);
   });
 });
 
@@ -325,6 +328,75 @@ test.describe('the lease branch of /api/gemini', () => {
   test('a refusal carries the lease\'s code and status', () => {
     expect(src).toMatch(/if \(!peek\.ok\) \{\s*return NextResponse\.json\(\{ error: peek\.error, code: peek\.code \}, \{ status: peek\.status \}\);/);
     expect(src).toMatch(/if \(!counted\.ok\) \{\s*return NextResponse\.json\(\{ error: counted\.error, code: counted\.code \}, \{ status: counted\.status \}\);/);
+  });
+
+  test('a call marked gate repair is honoured only under a lease and only on a repair of gate errors, checked before the lease is read (14.10.2026)', () => {
+    // Read from the body only together with a lease: without one the mark means nothing.
+    expect(src).toContain('const gateRepair = lease !== null && (body as { gateRepair?: unknown } | null)?.gateRepair === true;');
+    const before = src.slice(at('if (lease) {'), at('peekLease('));
+    expect(before).toMatch(/if \(gateRepair && !isGateRepairPrompt\(leased\.prompt\)\) \{\s*return NextResponse\.json\(\s*\{[\s\S]*?code: LEASE_CODES\.gateRepair \},\s*\{ status: 400 \},\s*\);/);
+    // The same mark reaches the early check and the transaction that counts the call — nothing else decides the pool.
+    expect(src).toContain('peekLease(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair })');
+    expect(src).toContain('acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair })');
+    // The client marks only what the orchestrator marks.
+    const client = code('lib/transformation/lease-client.ts');
+    expect(client).toContain('...(meta?.gateRepair ? { gateRepair: true } : {}),');
+    expect(code('lib/gemini.ts')).toContain('...(options?.lease && options.gateRepair ? { gateRepair: true } : {}),');
+  });
+});
+
+test.describe('the gate-repair calls (owner decision 14.10.2026)', () => {
+  test('a lease holds 16 of them: at most 64 calls per generation', () => {
+    expect(LEASE_GATE_REPAIR_CALLS).toBe(16);
+    expect(LEASE_MAX_CALLS_PER_GENERATION).toBe(64);
+    expect(lease()).toMatchObject({ gateRepairBudget: LEASE_GATE_REPAIR_CALLS, gateRepairUsed: 0 });
+    expect(leaseView(lease())).toMatchObject({ gateRepairBudget: 16, gateRepairUsed: 0 });
+  });
+
+  test('only a call marked gate repair spends them, and only once the budget is used', () => {
+    let l = lease({ budget: LEASE_MAX_CALLS });
+    // While the budget lasts, a gate repair spends the budget like any call.
+    expect(decideLeaseCall(l, { ...ctx(), gateRepair: true })).toMatchObject({ ok: true, pool: 'budget' });
+    l = { ...l, used: LEASE_MAX_CALLS };
+    // The budget used: an unmarked call is refused although gate-repair calls are left.
+    expect(decideLeaseCall(l, ctx())).toMatchObject({ ok: false, status: 429, code: 'lease-exhausted' });
+    expect(decideLeaseCall(l, { ...ctx(), gateRepair: false })).toMatchObject({ ok: false, code: 'lease-exhausted' });
+    let spent = 0;
+    for (;;) {
+      const d = decideLeaseCall(l, { ...ctx(), gateRepair: true });
+      if (!d.ok) {
+        expect(d).toMatchObject({ status: 429, code: 'lease-exhausted' });
+        expect(d.error).toContain(`its ${LEASE_GATE_REPAIR_CALLS} calls for gate repairs`);
+        break;
+      }
+      expect(d.pool).toBe('gate-repair');
+      l = { ...l, gateRepairUsed: (l.gateRepairUsed ?? 0) + 1 };
+      spent++;
+      expect(spent).toBeLessThanOrEqual(LEASE_GATE_REPAIR_CALLS);
+    }
+    expect(spent).toBe(LEASE_GATE_REPAIR_CALLS);
+    expect(l.used + (l.gateRepairUsed ?? 0)).toBe(LEASE_MAX_CALLS_PER_GENERATION);
+    // The in-flight cap holds for them too.
+    const busy = { ...lease({ budget: 10, used: 10 }), slots: Array.from({ length: LEASE_MAX_IN_FLIGHT }, () => T0 + 500), inFlight: LEASE_MAX_IN_FLIGHT };
+    expect(decideLeaseCall(busy, { ...ctx(), gateRepair: true })).toMatchObject({ ok: false, code: 'lease-busy' });
+  });
+
+  test('a lease from before has none; a stored record cannot raise them', () => {
+    const before = { ...lease({ used: 26 }) } as LeaseRecord;
+    delete before.gateRepairBudget;
+    delete before.gateRepairUsed;
+    expect(isLeaseRecord(before)).toBe(true);
+    expect(decideLeaseCall(before, { ...ctx(), gateRepair: true })).toMatchObject({ ok: false, code: 'lease-exhausted' });
+    // More than 16, or more used than held: not a lease at all.
+    expect(isLeaseRecord({ ...lease(), gateRepairBudget: LEASE_GATE_REPAIR_CALLS + 1 })).toBe(false);
+    expect(isLeaseRecord({ ...lease(), gateRepairUsed: LEASE_GATE_REPAIR_CALLS + 1 })).toBe(false);
+    expect(isLeaseRecord({ ...lease(), gateRepairBudget: 2, gateRepairUsed: 3 })).toBe(false);
+    expect(isLeaseRecord({ ...lease(), gateRepairBudget: -1 })).toBe(false);
+  });
+
+  test('a refused mark is not counted and does not stop the generation', () => {
+    expect(LEASE_CODES.gateRepair).toBe('lease-gate-repair-invalid');
+    expect(serverCountedCall(LEASE_CODES.gateRepair, 400)).toBe(false);
   });
 });
 
@@ -493,6 +565,36 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(await acquireLeaseCall(db(), ref, { uid, now: now + 20 })).toMatchObject({ ok: false, status: 429, code: 'lease-exhausted' });
     const stored = await readLease(db(), ref);
     expect(stored).toMatchObject({ used: LEASE_MAX_CALLS, inFlight: 0 });
+  });
+
+  test('past the 48, 16 gate repairs and not one more — counted apart, in the same transaction (14.10.2026)', async () => {
+    const uid = id('lease-owner');
+    const projectId = id('lease-project');
+    const now = Date.now();
+    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 40, now, charged: true });
+    if (issued.kind !== 'issued') throw new Error('not issued');
+    const ref = { projectId, leaseId: issued.lease.leaseId };
+    expect(issued.lease).toMatchObject({ budget: LEASE_MAX_CALLS, gateRepairBudget: LEASE_GATE_REPAIR_CALLS, gateRepairUsed: 0 });
+    for (let i = 0; i < LEASE_MAX_CALLS; i++) {
+      const got = await acquireLeaseCall(db(), ref, { uid, now: now + 10, gateRepair: i % 2 === 0 });
+      expect(got, `call ${i + 1}`).toMatchObject({ ok: true, pool: 'budget' });
+      await releaseLeaseCall(db(), ref);
+    }
+    // An unmarked call finds the lease used up; a marked one goes on.
+    expect(await acquireLeaseCall(db(), ref, { uid, now: now + 20 })).toMatchObject({ ok: false, status: 429, code: 'lease-exhausted' });
+    expect(await peekLease(db(), ref, { uid, now: now + 20 })).toMatchObject({ ok: false, code: 'lease-exhausted' });
+    expect((await peekLease(db(), ref, { uid, now: now + 20, gateRepair: true })).ok).toBe(true);
+    // Racing for them: never more than 16, whatever the order.
+    const raced: Array<Awaited<ReturnType<typeof acquireLeaseCall>>> = [];
+    for (let wave = 0; wave < 6; wave++) {
+      const got = await Promise.all(Array.from({ length: LEASE_MAX_IN_FLIGHT }, () => acquireLeaseCall(db(), ref, { uid, now: now + 30, gateRepair: true })));
+      raced.push(...got);
+      for (const g of got) if (g.ok) await releaseLeaseCall(db(), { ...ref, slotAt: g.slotAt });
+    }
+    expect(raced.filter((r) => r.ok)).toHaveLength(LEASE_GATE_REPAIR_CALLS);
+    for (const r of raced.filter((x) => x.ok)) expect(r).toMatchObject({ pool: 'gate-repair' });
+    expect(await acquireLeaseCall(db(), ref, { uid, now: now + 40, gateRepair: true })).toMatchObject({ ok: false, status: 429, code: 'lease-exhausted' });
+    expect(await readLease(db(), ref)).toMatchObject({ used: LEASE_MAX_CALLS, gateRepairUsed: LEASE_GATE_REPAIR_CALLS, inFlight: 0 });
   });
 
   test('of six calls racing for a slot, four get one; a released slot is free again', async () => {
