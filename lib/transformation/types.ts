@@ -92,7 +92,8 @@ export const PLAN_VERSION = 2;
  * Node — a whole number of the original (`i`, `int1`, `int2`, `int4`, `b`, `s`, `TYPE sy-tabix`) is a `number` in
  * `srv/lib/types.ts`, the guards' `values` and the steps' arguments, starts at `0`, and the input contract holds it as
  * one (`int8` stays exact text); the check export hands such a value in as a number; the original's demo cases put a
- * whole number into a number. Nothing signed changes (§12.3).
+ * whole number into a number; `srv/fixtures.ts` reads no file (its test reads the cases' JSON), so the acceptance
+ * suite runs a case by its number in the confined executor. Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 12;
 

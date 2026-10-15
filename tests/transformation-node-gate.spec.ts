@@ -423,7 +423,8 @@ test('A4: the original’s demo cases are the package’s fixture, and each runs
     const runs = runInPackage<Array<{ n: number; state: string; complete?: boolean; notFilled?: string[]; claims?: number }>>(
       dir,
       `const f = await import(${JSON.stringify(fileUrl(dir, 'srv/fixtures.ts'))});
-       const demo = f.loadOriginalDemo();
+       // srv/fixtures.ts reads no file since 3.0.14 (item 3): the case data is the JSON beside the test.
+       const demo = JSON.parse((await import('node:fs')).readFileSync(new URL(${JSON.stringify(fileUrl(dir, 'test/fixtures/original-demo.json'))}), 'utf8'));
        console.log(JSON.stringify(demo.cases.map((c) => { const r = f.runDemoCase(demo, c); return { n: c.number, state: r.state, ...(r.state === 'ran' ? { complete: r.outcome.complete, notFilled: r.outcome.notFilled, claims: r.outcome.state.local.gtClaims.length } : {}) }; })));`,
     );
     expect(runs.map((r) => r.state)).toEqual(['ran', 'ran', 'ran']);

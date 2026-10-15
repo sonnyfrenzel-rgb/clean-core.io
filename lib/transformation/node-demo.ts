@@ -78,10 +78,6 @@ export interface OriginalDemo {
   cases: OriginalDemoCase[];
 }
 
-export function loadOriginalDemo(file: URL = new URL('../test/fixtures/original-demo.json', import.meta.url)): OriginalDemo {
-  return JSON.parse(fs.readFileSync(file, 'utf8')) as OriginalDemo;
-}
-
 /** One case run: ran (with the process outcome), threw (the code under test threw), or not run, with the reason. */
 export type DemoRun =
   | { state: 'ran'; outcome: ProcessOutcome }
@@ -207,9 +203,12 @@ const DEMO_TEST_MJS = String.raw`// The original's own demo cases, run through t
 // the case shows. A case that cannot be carried into the package is not run and is not a test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadOriginalDemo, runDemoCase } from '../srv/fixtures.ts';
+import fs from 'node:fs';
+import { runDemoCase } from '../srv/fixtures.ts';
 
-const demo = loadOriginalDemo();
+// Read here, not in srv/fixtures.ts: the module that runs a case touches no file (3.0.14 item 3 — the acceptance
+// suite runs a case by its number in the confined executor, which provides no file system).
+const demo = JSON.parse(fs.readFileSync(new URL('./fixtures/original-demo.json', import.meta.url), 'utf8'));
 for (const c of demo.cases) {
   test('ORIGINAL_DEMO_' + c.number + ' ' + c.title + ' (from the original, confirm once)', (t) => {
     const r = runDemoCase(demo, c);
@@ -244,7 +243,6 @@ export function nodeDemoFiles(plan: UnitPlan, shapes: AbapShapes, demo: Original
     ...(fixtures.length ? [` * The original's fixture routines (${fixtures.map((f) => `${f.routine} L${f.lineStart}–L${f.lineEnd}`).join(', ').replace(/\*\//g, '* /')}) are not code of this package: their data is.`] : []),
     ' * Written by Clean-Core.io (engine).',
     ' */',
-    "import fs from 'node:fs';",
     "import { FIELDS, validateSelection } from './lib/input-contract.ts';",
     "import { initialLocals, type Locals } from './lib/types.ts';",
     "import { runProcess, type ProcessOutcome } from './process.ts';",

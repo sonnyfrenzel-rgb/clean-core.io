@@ -11,7 +11,12 @@ import { FILL_REPAIR_PREVIOUS_MAX_CHARS, FILL_REQUEST_MARK, GATE_REPAIR_ABAP_NOT
 import { runGeneration, type FillModel, type Verify } from '../lib/transformation/orchestrator';
 import { LEASE_GATE_REPAIR_CALLS, LEASE_MAX_CALLS } from '../lib/transformation/lease';
 import type { FillRequest, FillRequestUnit } from '../lib/transformation/types';
-import { loadPrograms, loadSource } from '../scripts/acceptance/suite';
+import { judgeScenarios, loadPrograms, loadSource, packageDemoOf } from '../scripts/acceptance/suite';
+import { compareScenario, demoCaseVerdicts, scenarioCases, type CaseScenario, type DemoCaseRuns, type DemoCaseSummary, type PackageDemo } from '../scripts/acceptance/scenario-cases';
+import { pathToFileURL } from 'node:url';
+import { writePackage } from './helpers/transformation-scaffold';
+
+const NO_PROBES = { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: null, byPattern: {} };
 import { poDemo } from './helpers/transformation-scaffold';
 
 /**
@@ -231,6 +236,106 @@ test.describe('2 — a gate repair of the largest units fits the leased call: th
     // As a fill carries a repair, SD (RAP and Node), CO and PP RAP units went past the cap — the repair was not sent.
     expect(before.length).toBeGreaterThan(0);
     expect(over).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ 3 */
+
+test.describe("3 — a Node scenario is judged by the package's own case of its ID", () => {
+  const demo: PackageDemo = { switch: { parameter: 'P_CASE' }, cases: [{ number: 0 }, { number: 1 }, { number: 7 }] };
+  const scen = (id: string, over: Partial<CaseScenario> = {}): CaseScenario => ({ id, group: 'reference', expectedForm: 'machine', ...over });
+
+  test('a scenario names its case by the case switch in its input, or by its ID; a case the package lacks is not matched', () => {
+    const m = scenarioCases(
+      [
+        scen('CASE-07', { input: { p_demo: 'X', p_case: 7 } }),
+        scen('case_01'),
+        scen('0', { expectedForm: 'prose' }),
+        scen('E01', { group: 'probe', input: { amount: '1' } }),
+        scen('CASE-09', { input: { p_case: 9 } }),
+        scen('7', { group: 'probe' }),
+      ],
+      demo,
+    );
+    expect([...m.entries()]).toEqual([
+      ['CASE-07', 7],
+      ['case_01', 1],
+      ['0', 0],
+    ]);
+    expect(scenarioCases([scen('CASE-07', { input: { p_case: 7 } })], null).size).toBe(0);
+  });
+
+  const ran = (over: Partial<Extract<DemoCaseSummary, { state: 'ran' }>> = {}): Extract<DemoCaseSummary, { state: 'ran' }> => ({
+    state: 'ran',
+    complete: true,
+    notFilled: [],
+    refused: false,
+    rows: [],
+    result: {},
+    issues: [],
+    local: {},
+    ...over,
+  });
+
+  test('pass only when every expected value is found and equal — rows by the global table of their shape, scalars by name', () => {
+    const expected = { status: 'OK', retries: 1, rows: [{ cid: 'C1', balance: 10.5 }, { cid: 'C2', balance: 0 }], issues: ['Claim C2 deferred'] };
+    const out = ran({
+      issues: ['Claim C2 deferred'],
+      local: { gvStatus: 'OK', gvRetries: 1, gtDisplay: [{ cid: 'C1', balance: '10.50', other: 'x' }, { cid: 'C2', balance: '0.00' }], gtRaw: [{ id: 'r' }] },
+    });
+    // status, retries; the number of rows and four cells; the number of issues and the one message.
+    expect(compareScenario(expected, out)).toEqual({ verdict: 'pass', located: 9, total: 9, differ: 0 });
+    // One value off: a fail, counted, never shown.
+    const off = ran({ ...out, local: { ...out.local, gtDisplay: [{ cid: 'C1', balance: '10.49' }, { cid: 'C2', balance: '0.00' }] } });
+    expect(compareScenario(expected, off)).toMatchObject({ verdict: 'fail', differ: 1 });
+    // Another number of rows: a fail.
+    expect(compareScenario({ rows: [{ cid: 'C1' }] }, ran({ rows: [{ cid: 'C1' }, { cid: 'C2' }] })).verdict).toBe('fail');
+    // A value the output does not hold: not judged — never a pass.
+    expect(compareScenario({ status: 'OK', hidden_known: 3 }, ran({ local: { gvStatus: 'OK' } }))).toEqual({ verdict: 'not-judged', located: 1, total: 2, differ: 0 });
+    expect(compareScenario({}, ran()).verdict).toBe('not-judged');
+  });
+
+  test('the verdicts: a case that threw fails, a stub is not run, prose ran for a reviewer, no harness run says why', () => {
+    const scenarios = [scen('CASE-00', { expected: { status: 'OK' } }), scen('CASE-01', { expected: { status: 'OK' } }), scen('CASE-07', { expectedForm: 'prose' })];
+    const cases = new Map([['CASE-00', 0], ['CASE-01', 1], ['CASE-07', 7]]);
+    const runs: DemoCaseRuns = {
+      executed: true,
+      reason: null,
+      byNumber: { '0': ran({ local: { gvStatus: 'OK' } }), '1': { state: 'threw', message: 'x is undefined' }, '7': ran() },
+    };
+    expect(demoCaseVerdicts(scenarios, cases, runs)).toEqual({
+      'CASE-00': { ran: true, verdict: 'pass' },
+      'CASE-01': { ran: true, verdict: 'fail' },
+      'CASE-07': { ran: true, verdict: 'ran: demo case 7 — a prose expectation, judged by a reviewer' },
+    });
+    const stub = demoCaseVerdicts(scenarios.slice(0, 1), cases, { ...runs, byNumber: { '0': ran({ complete: false, notFilled: ['U03'] }) } });
+    expect(stub['CASE-00']).toEqual({ ran: true, verdict: 'not-run: demo case 0 reached 1 function(s) still left as stubs' });
+    const none = demoCaseVerdicts(scenarios.slice(0, 1), cases, { executed: false, reason: 'not executed: no Node >= 25', byNumber: {} });
+    expect(none['CASE-00']).toEqual({ ran: false, verdict: 'not-run: demo case 0 — not executed: no Node >= 25' });
+
+    // The suite counts them: ran, matched, failed — and a RAP track never runs them here.
+    const file = { program: 'x', scenarios: scenarios.map((s) => ({ ...s, title: 't' })) };
+    const tally = judgeScenarios(file, null, 'node', NO_PROBES, {}, demoCaseVerdicts(scenarios, cases, runs));
+    expect([tally.ran, tally.matched, tally.failed, tally.notJudged, tally.total]).toEqual([3, 1, 1, 1, 3]);
+    expect(judgeScenarios(file, null, 'rap', NO_PROBES, {}).ran).toBe(0);
+  });
+
+  test("the package's case module reads no file, so the confined executor can load it; the case data is the JSON beside the test", async () => {
+    const p = prep(fs.readFileSync(path.join(__dirname, 'fixtures', 'golden-master', 'three-cases.abap'), 'utf8'), 'node');
+    const fixtures = p.scaffold.files.find((f) => f.path === 'srv/fixtures.ts')!.content;
+    expect(fixtures).not.toMatch(/from 'node:fs'|from 'fs'/);
+    expect(p.scaffold.files.find((f) => f.path === 'test/original-demo.test.mjs')!.content).toContain("readFileSync(new URL('./fixtures/original-demo.json', import.meta.url)");
+    const demoOf = packageDemoOf(p.scaffold.files);
+    expect(demoOf?.cases.map((c) => c.number)).toEqual([0, 1, 2]);
+    // Bundled as the harness step bundles it: no module the confined executor refuses.
+    const dir = writePackage(candidateFiles(p, new Map()), 'cc-3014-demo-');
+    try {
+      const { bundleModules } = (await import(pathToFileURL(path.join(__dirname, '..', 'scripts', 'acceptance', 'lib', 'sandbox.mjs')).href)) as { bundleModules: (root: string, modules: Record<string, string>, o?: { reserved?: string[] }) => Promise<{ failure?: string }> };
+      const bundled = await bundleModules(dir, { fixtures: 'srv/fixtures.ts' }, { reserved: ['test'] });
+      expect(bundled.failure).toBeUndefined();
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
