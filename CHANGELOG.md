@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.14] — unreleased
 
+- Transformation, side by side: Sync Scroll follows the package's trace instead of the scroll percentage — a line of the original brings its function to the top of the open file, a function brings its ABAP lines, and a newly chosen file opens at the function of the original's current line; a file with no traced function (TRACE.md, metadata, configuration) or a package without traceability says that sync does not apply, and on a phone the stacked panes say they scroll on their own (roadmap 3.0.14, item 6).
 
 ## [v3.0.13] — 2026-10-15
 

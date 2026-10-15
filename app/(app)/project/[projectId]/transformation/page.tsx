@@ -55,6 +55,8 @@ import type { TypeCheckAnswer } from '@/lib/transformation/verify';
 import type { GenerationEvent } from '@/lib/transformation/types';
 import { storedGenerationRecord } from '@/lib/transformation/generation-record';
 import { abapLines, fileGroups, traceOfFiles, unitsOfFile } from '@/lib/transformation/trace-view';
+import { abapLineForTargetLine, syncNote, syncScopeOf, targetLineForAbapLine } from '@/lib/transformation/scroll-sync';
+import { scrollLineToTop, topVisibleLine } from '@/lib/transformation/code-pane';
 import BuiltOnCard from '@/components/transformation/BuiltOnCard';
 import { duplicatePaths } from './duplicate-paths';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
@@ -212,6 +214,13 @@ async function ruleRegisterOf(outcome: StatesReadOutcome, source: string): Promi
 const noSubscription = () => () => {};
 const readSearch = () => window.location.search;
 const serverSearch = () => '';
+/** Tailwind's `xl`: from here the two code panes stand side by side (roadmap 3.0.14, item 6). */
+const SIDE_BY_SIDE_QUERY = '(min-width: 1280px)';
+const subscribeSideBySide = (onChange: () => void) => {
+  const query = window.matchMedia(SIDE_BY_SIDE_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+};
 
 export default function TransformationPage() {
   const { projectId } = useParams();
@@ -580,8 +589,27 @@ export default function TransformationPage() {
 
   const legacyScrollRef = useRef<HTMLDivElement>(null);
   const modernScrollRef = useRef<HTMLDivElement>(null);
-  const isScrollingLegacy = useRef(false);
-  const isScrollingModern = useRef(false);
+  /**
+   * Roadmap 3.0.14 (6): the panes follow each other by the trace, not by percent
+   * (`lib/transformation/scroll-sync.ts`). `lastSyncedUnit` is the unit both panes
+   * stand at — a pane is moved only when the other reaches a different unit, so a
+   * reader scrolling inside one function is never pulled back. `drivenPane` is the
+   * pane this page is scrolling right now; its own scroll events are not a reader's.
+   */
+  const lastSyncedUnit = useRef<string | null>(null);
+  const drivenPane = useRef<{ pane: 'legacy' | 'modern'; until: number } | null>(null);
+  const selectedFileContent = files.find((f) => f.path === selectedFilePath)?.content ?? '';
+  const scrollScope = useMemo(
+    () => syncScopeOf(packageTrace, selectedFilePath, selectedFileContent),
+    [packageTrace, selectedFilePath, selectedFileContent],
+  );
+  /** The panes stand side by side from the `xl` breakpoint; below it they stack and do not sync. */
+  const panesSideBySide = useSyncExternalStore(
+    subscribeSideBySide,
+    () => window.matchMedia(SIDE_BY_SIDE_QUERY).matches,
+    () => true,
+  );
+  const syncActive = syncScroll && panesSideBySide && scrollScope.applies;
 
   const parseGeneratedCode = (codeStr: string): ProjectFile[] => {
     if (!codeStr) return [];
@@ -637,53 +665,72 @@ export default function TransformationPage() {
     }
   }, [selectedFilePath, files]);
 
-  const handleLegacyScroll = () => {
-    if (!syncScroll) return;
-    if (isScrollingModern.current) {
-      isScrollingModern.current = false;
-      return;
+  /** True while this pane is being scrolled by the page; each of its scroll events extends the window a little. */
+  const isDriven = (pane: 'legacy' | 'modern') => {
+    const d = drivenPane.current;
+    if (!d || d.pane !== pane) return false;
+    const now = Date.now();
+    if (now > d.until) {
+      drivenPane.current = null;
+      return false;
     }
-    
+    d.until = Math.max(d.until, now + 150);
+    return true;
+  };
+
+  const drive = (pane: 'legacy' | 'modern', el: HTMLElement, line: number, behavior: ScrollBehavior) => {
+    drivenPane.current = { pane, until: Date.now() + 400 };
+    scrollLineToTop(el, line, behavior);
+  };
+
+  const handleLegacyScroll = () => {
+    if (!syncActive || !packageTrace || !scrollScope.applies || isDriven('legacy')) return;
     const legacyEl = legacyScrollRef.current;
     const modernEl = modernScrollRef.current;
     if (!legacyEl || !modernEl) return;
-    
-    isScrollingLegacy.current = true;
-    
-    const legacyScrollableHeight = legacyEl.scrollHeight - legacyEl.clientHeight;
-    const modernScrollableHeight = modernEl.scrollHeight - modernEl.clientHeight;
-    
-    if (legacyScrollableHeight > 0 && modernScrollableHeight > 0) {
-      const scrollPercentage = legacyEl.scrollTop / legacyScrollableHeight;
-      // Writing `scrollTop` on a DOM node held in a ref, from a scroll handler.
-      // The compiler rule cannot tell a DOM element apart from a value it is
-      // meant to keep immutable, and there is no other way to sync two panes.
-      // eslint-disable-next-line react-hooks/immutability
-      modernEl.scrollTop = scrollPercentage * modernScrollableHeight;
+    const target = targetLineForAbapLine(packageTrace, scrollScope.file, topVisibleLine(legacyEl));
+    if (!target) {
+      lastSyncedUnit.current = null;
+      return;
     }
+    if (target.unitId === lastSyncedUnit.current) return;
+    lastSyncedUnit.current = target.unitId;
+    drive('modern', modernEl, target.line, 'smooth');
   };
 
   const handleModernScroll = () => {
-    if (!syncScroll) return;
-    if (isScrollingLegacy.current) {
-      isScrollingLegacy.current = false;
-      return;
-    }
-    
+    if (!syncActive || !packageTrace || !scrollScope.applies || isDriven('modern')) return;
     const legacyEl = legacyScrollRef.current;
     const modernEl = modernScrollRef.current;
     if (!legacyEl || !modernEl) return;
-    
-    isScrollingModern.current = true;
-    
-    const legacyScrollableHeight = legacyEl.scrollHeight - legacyEl.clientHeight;
-    const modernScrollableHeight = modernEl.scrollHeight - modernEl.clientHeight;
-    
-    if (legacyScrollableHeight > 0 && modernScrollableHeight > 0) {
-      const scrollPercentage = modernEl.scrollTop / modernScrollableHeight;
-      legacyEl.scrollTop = scrollPercentage * legacyScrollableHeight;
+    const target = abapLineForTargetLine(packageTrace, scrollScope.file, topVisibleLine(modernEl));
+    if (!target) {
+      lastSyncedUnit.current = null;
+      return;
     }
+    if (target.unitId === lastSyncedUnit.current) return;
+    lastSyncedUnit.current = target.unitId;
+    drive('legacy', legacyEl, target.line, 'smooth');
   };
+
+  // A newly chosen file opens at the function of the original's current line when it has one,
+  // otherwise at its top. Runs once the new file's lines are on screen.
+  const openedPath = useRef<string | null>(null);
+  useEffect(() => {
+    if (transformedCode !== selectedFileContent || openedPath.current === selectedFilePath) return;
+    openedPath.current = selectedFilePath;
+    lastSyncedUnit.current = null;
+    const legacyEl = legacyScrollRef.current;
+    const modernEl = modernScrollRef.current;
+    if (!legacyEl || !modernEl) return;
+    const target = syncActive && packageTrace && scrollScope.applies
+      ? targetLineForAbapLine(packageTrace, scrollScope.file, topVisibleLine(legacyEl))
+      : null;
+    if (target) lastSyncedUnit.current = target.unitId;
+    drive('modern', modernEl, target?.line ?? 1, 'auto');
+    // `drive` and the refs are stable in effect; the file and its content decide.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilePath, selectedFileContent, transformedCode]);
 
   const renderFileButton = (file: ProjectFile, name: string) => {
     const isSelected = selectedFilePath === file.path;
@@ -1882,13 +1929,25 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 id="tf-side-title" className="m-0 cc-text-h2 text-cc-ink">Side by side with ABAP</h2>
-              <CcButton
-                aria-pressed={syncScroll}
-                icon={syncScroll ? <Lock size={16} aria-hidden="true" /> : <Unlock size={16} aria-hidden="true" />}
-                onClick={() => setSyncScroll(!syncScroll)}
-              >
-                Sync Scroll: {syncScroll ? 'ON' : 'OFF'}
-              </CcButton>
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                {/* Roadmap 3.0.14 (6): the toggle says when sync does not apply, rather than
+                    lining up unrelated lines by percent. */}
+                <p
+                  id="tf-sync-note"
+                  data-sync-scope={!panesSideBySide ? 'stacked' : scrollScope.applies ? 'trace' : scrollScope.reason}
+                  className="m-0 min-w-0 cc-text-cell text-cc-ink-muted"
+                >
+                  {syncNote(scrollScope, { on: syncScroll, stacked: !panesSideBySide, fileName: selectedFilePath.split('/').pop() ?? '' })}
+                </p>
+                <CcButton
+                  aria-pressed={syncScroll}
+                  aria-describedby="tf-sync-note"
+                  icon={syncScroll ? <Lock size={16} aria-hidden="true" /> : <Unlock size={16} aria-hidden="true" />}
+                  onClick={() => setSyncScroll(!syncScroll)}
+                >
+                  Sync Scroll: {syncScroll ? 'ON' : 'OFF'}
+                </CcButton>
+              </div>
             </div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* Legacy Code Panel */}
