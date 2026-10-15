@@ -348,7 +348,8 @@ test.describe('repair rounds and their stop rules (§13.2)', () => {
     const result = await runGeneration(base({ verify, model: async (p) => (calls++, answer(p)) }));
     expect(calls).toBe(1);
     expect(result.scaffoldFindings).toEqual(['probes: probe csv-escaping failed']);
-    expect(result.stop).toBe('passed');
+    // Not "passed" (acceptance run 4, 14.10.2026): the written functions pass, engine code does not.
+    expect(result.stop).toBe('engine-code');
     expect(result.status).toBe('partial');
   });
 

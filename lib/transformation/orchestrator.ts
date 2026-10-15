@@ -179,7 +179,11 @@ export interface UnitOutcome {
   status?: number | null;
 }
 
-export type StopReason = 'passed' | 'round-limit' | 'budget' | 'no-progress' | 'lease' | 'cancelled';
+/**
+ * Why the repair loop ended. `engine-code` (acceptance run 4, 14.10.2026): every written function passes, but a
+ * check still fails in engine-written code — no repair round can reach it, so the loop does not call it passed.
+ */
+export type StopReason = 'passed' | 'engine-code' | 'round-limit' | 'budget' | 'no-progress' | 'lease' | 'cancelled';
 
 export interface GenerationRunResult {
   /** complete: every unit written and every check that ran passed; partial: anything less; cancelled: stopped by the caller. */
@@ -631,7 +635,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         ...(gateBudget > 0 ? { gate: { isGate: isGateFailureLine, callsLeft: gateCallsLeft() } } : {}),
       });
       if (decision.kind === 'stop') {
-        stop = decision.reason;
+        stop = decision.reason === 'passed' && scaffoldFindings.length > 0 ? 'engine-code' : decision.reason;
         break;
       }
       previousSignature = decision.signature;

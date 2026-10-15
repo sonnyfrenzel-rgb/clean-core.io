@@ -227,3 +227,26 @@ export function normalizeClassificationFile(
     entries,
   };
 }
+
+/* ---------- released class names for the body guard of the transformation (acceptance run 4) ---------- */
+
+/**
+ * The released-class list the transformation's body guard reads (`lib/transformation/markers.ts`): the names of
+ * the classes SAP marks `released` in the `latest` (ABAP Cloud) list, lower-case and sorted — ~1,400 names, 9 kB
+ * gzip, so the engine chunk can carry it where the 3 MB catalog never travels (tests/client-catalog-boundary.spec.ts).
+ * Written beside the catalog by `scripts/sync-cloudification-repo.ts` whenever `latest` is synced.
+ */
+export interface ReleasedClassList {
+  meta: { source: string; release: string; sourceSha256: string; count: number };
+  classes: string[];
+}
+
+export const RELEASED_CLASSES_FILE = 'released-classes.latest.json';
+
+export function deriveReleasedClasses(artifact: Pick<CloudificationArtifact, 'meta' | 'entries'>): ReleasedClassList {
+  const classes = Object.entries(artifact.entries)
+    .filter(([, e]) => e.tadir === 'CLAS' && e.state === 'released')
+    .map(([name]) => name.toLowerCase())
+    .sort();
+  return { meta: { source: artifact.meta.source, release: artifact.meta.release, sourceSha256: artifact.meta.sourceSha256, count: classes.length }, classes };
+}

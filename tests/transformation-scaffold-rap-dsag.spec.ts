@@ -349,6 +349,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 6: the typed RAP contract, guards in the logic path, a custom entity for a read-only program (tests/transformation-rap-contract.spec.ts).
   // 7: the CAP shell and one input list per source structure on the Node track (tests/transformation-cap-shell.spec.ts).
   // 8: the contract gaps of the second real acceptance run (tests/transformation-contract-gaps.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(8);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(8);
+  // 9: customer tables written or typed by, released SAP classes (tests/transformation-run4-defects.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(9);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(9);
 });

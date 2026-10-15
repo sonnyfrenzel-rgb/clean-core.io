@@ -1328,7 +1328,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { prepareScaffold },
         { requestGenerationLease, leasedFillModel, newGenerationRunId, closeGenerationLease },
         { runGeneration },
-        { createRunnerVerifier, runnerOverHttp, packageFormatsHook, abapScaffoldCheck },
+        { createRunnerVerifier, runnerOverHttp, packageFormatsHook, abapScaffoldCheck, nodeScaffoldCheck },
         { guardBodyOf, normalizeBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
         { sha256Hex },
         { affSchemaSource },
@@ -1480,8 +1480,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           verify,
           // Complete only when these ran in full (3.0.13, A2/A5): a skipped or not-run case is never evidence.
           ...(prep.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),
-          // The scaffold as the engine wrote it, before any fill: reported, never blocking (3.0.13).
-          ...(prep.scaffold.track === 'rap' ? { scaffoldCheck: abapScaffoldCheck(prep.scaffold.files, runOnRunner) } : {}),
+          // The scaffold as the engine wrote it, before any fill: reported, never blocking (3.0.13; Node since acceptance run 4).
+          scaffoldCheck: (prep.scaffold.track === 'rap' ? abapScaffoldCheck : nodeScaffoldCheck)(prep.scaffold.files, runOnRunner),
           // The lease's own budget, as the server answered it (a fresh lease per
           // run, so `used` is 0 unless this very run asked for it twice).
           budget: Math.max(0, leaseNow.budget - leaseNow.used),

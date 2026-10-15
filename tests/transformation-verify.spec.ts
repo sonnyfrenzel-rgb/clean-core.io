@@ -80,7 +80,8 @@ const FILES = [
 test.describe('failures find their function', () => {
   test('a line between a unit\'s markers is that unit\'s; the stub\'s guard lines and the engine files are not', () => {
     const spans = markerSpans(FILES);
-    expect(spans).toEqual([{ unitId: 'U02', path: 'srv/steps/02-validate-policy.ts', beginLine: 6, endLine: 9 }]);
+    // openLine/fn: the function the body fills, whose signature carries a missing return (acceptance run 4).
+    expect(spans).toEqual([{ unitId: 'U02', path: 'srv/steps/02-validate-policy.ts', beginLine: 6, endLine: 9, openLine: 3, fn: 'validatePolicy' }]);
     expect(unitAt(spans, 'srv/steps/02-validate-policy.ts', 7)).toBe('U02');
     expect(unitAt(spans, './srv/steps/02-validate-policy.ts', 8)).toBe('U02');
     expect(unitAt(spans, 'srv/steps/02-validate-policy.ts', 4)).toBeNull();

@@ -69,7 +69,7 @@ import JSZip from 'jszip';
 
 import { prepareEngineLed, preflightFactsOf, guardBodyOf, normalizeBodyOf, candidateFiles, assembleEngineLed, type CheckSummary, type EngineLedPrepared } from '../../lib/transformation/engine-led';
 import { runGeneration, type CheckKind, type FillModel, type GenerationRunResult, type Verify } from '../../lib/transformation/orchestrator';
-import { createRunnerVerifier, abapScaffoldCheck, markerSpans, unitAt, type TypeCheckAnswer, type VerifyRunAnswer } from '../../lib/transformation/verify';
+import { createRunnerVerifier, abapScaffoldCheck, nodeScaffoldCheck, markerSpans, unitAt, type TypeCheckAnswer, type VerifyRunAnswer } from '../../lib/transformation/verify';
 import { packageFormatsHook } from '../../lib/transformation/abapgit-check';
 import { affSchemaSource } from '../../lib/transformation/aff-schemas';
 import { preflight } from '../../lib/transformation/preflight';
@@ -872,9 +872,9 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
       guardBody: guardBodyOf(prepared),
       normalizeBody: normalizeBodyOf(prepared),
       verify,
-      // As on the page: on Node complete only when these ran in full; on RAP the scaffold's own activation check first.
+      // As on the page: on Node complete only when these ran in full; the scaffold's own gate first (RAP activation, Node type check).
       ...(prepared.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),
-      ...(prepared.scaffold.track === 'rap' ? { scaffoldCheck: abapScaffoldCheck(prepared.scaffold.files, runOnRunner) } : {}),
+      scaffoldCheck: (prepared.scaffold.track === 'rap' ? abapScaffoldCheck : nodeScaffoldCheck)(prepared.scaffold.files, runOnRunner),
       budget: LEASE_MAX_CALLS,
       // As a lease grants them (owner decision 14.10.2026): calls only repairs of gate errors may spend.
       gateRepairBudget: LEASE_GATE_REPAIR_CALLS,

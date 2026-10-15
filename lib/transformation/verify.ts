@@ -48,6 +48,14 @@ export interface MarkerSpan {
   /** 1-based lines of the BEGIN and END markers. */
   beginLine: number;
   endLine: number;
+  /**
+   * The line that opens the function the fill region is the body of (its last signature line, `): T {`), when the
+   * region is a TypeScript function body. The compiler reports a body that does not return on every path on the
+   * return type — this line, outside the markers (acceptance run 4, 14.10.2026: TS2355 in srv/lib/guards.ts).
+   */
+  openLine?: number;
+  /** The name of that function, when the engine declared it with `function <name>(`. */
+  fn?: string;
 }
 
 const BEGIN = /@cc-fill BEGIN (U[0-9A-Za-z_-]+)\b/;
@@ -69,13 +77,48 @@ export function markerSpans(files: readonly FileLike[]): MarkerSpan[] {
       }
       const e = line.match(END);
       if (e && open.has(e[1])) {
-        spans.push({ unitId: e[1], path: normPath(file.path), beginLine: open.get(e[1])!, endLine: i + 1 });
+        const beginLine = open.get(e[1])!;
+        const openLine = functionOpenLine(lines, beginLine);
+        const fn = openLine ? functionNameAbove(lines, openLine) : null;
+        spans.push({ unitId: e[1], path: normPath(file.path), beginLine, endLine: i + 1, ...(openLine ? { openLine } : {}), ...(fn ? { fn } : {}) });
         open.delete(e[1]);
       }
     });
   }
   return spans;
 }
+
+/**
+ * The 1-based line that opens the TypeScript function whose body starts at the BEGIN marker on `beginLine`: the
+ * nearest line above it ending in `{`, past the entry checks the engine writes between signature and marker
+ * (statements ending in `;`). Null for anything else (ABAP, a marker not inside a function).
+ */
+function functionOpenLine(lines: readonly string[], beginLine: number): number | null {
+  for (let i = beginLine - 2, seen = 0; i >= 0 && seen < 16; i--, seen++) {
+    const l = lines[i].trim();
+    if (l === '' || l.startsWith('//')) continue;
+    if (/\)\s*(?::\s*[^{};]+)?\{$/.test(l)) return i + 1;
+    if (!l.endsWith(';')) return null;
+  }
+  return null;
+}
+
+/** The name in the `function <name>(` that starts at or above the open line (a signature may span lines). */
+function functionNameAbove(lines: readonly string[], openLine: number): string | null {
+  for (let i = openLine - 1, seen = 0; i >= 0 && seen < 8; i--, seen++) {
+    const m = lines[i].match(/\bfunction\s+([A-Za-z_$][\w$]*)\s*[(<]/);
+    if (m) return m[1];
+    if (i < openLine - 1 && /[;}]\s*$/.test(lines[i].trim())) return null;
+  }
+  return null;
+}
+
+/**
+ * The compiler's errors that a body causes but reports on its function's return type (the open line): no return
+ * on every path (TS2355, TS2366), a reachable end in a function returning never (TS2534). They belong to the
+ * function whose body it is — the model can repair them; the engine's signature is not wrong.
+ */
+const BODY_ERRORS_ON_SIGNATURE = new Set(['TS2355', 'TS2366', 'TS2534']);
 
 /** The unit whose fill markers enclose this line, or null. */
 export function unitAt(spans: readonly MarkerSpan[], path: string, line: number | null | undefined): string | null {
@@ -328,14 +371,17 @@ export const TYPE_FINDINGS_PER_UNIT = 8;
  * model.
  */
 export function mapTypeFindings(findings: readonly TypeFindingWords[], spans: readonly MarkerSpan[]): CheckFailure[] {
-  const byUnit = new Map<string, Array<{ f: TypeFindingWords; bodyLine: number }>>();
+  const byUnit = new Map<string, Array<{ f: TypeFindingWords; bodyLine: number; fn?: string }>>();
   const byFile = new Map<string, TypeFindingWords[]>();
   for (const f of findings) {
     const p = normPath(f.path);
-    const span = spans.find((s) => s.path === p && f.line > s.beginLine && f.line < s.endLine);
+    const span =
+      spans.find((s) => s.path === p && f.line > s.beginLine && f.line < s.endLine) ??
+      (BODY_ERRORS_ON_SIGNATURE.has(f.code) ? spans.find((s) => s.path === p && s.openLine === f.line) : undefined);
     if (span) {
       const list = byUnit.get(span.unitId) ?? [];
-      list.push({ f, bodyLine: f.line - span.beginLine });
+      // On the signature: said as the function's, not by a body line.
+      list.push({ f, bodyLine: Math.max(0, f.line - span.beginLine), ...(span.fn ? { fn: span.fn } : {}) });
       byUnit.set(span.unitId, list);
     } else {
       const list = byFile.get(p) ?? [];
@@ -345,7 +391,9 @@ export function mapTypeFindings(findings: readonly TypeFindingWords[], spans: re
   }
   const out: CheckFailure[] = [];
   for (const [unitId, list] of byUnit) {
-    const shown = list.slice(0, TYPE_FINDINGS_PER_UNIT).map((x) => `body line ${x.bodyLine} — ${x.f.code} ${x.f.message}`);
+    const shown = list
+      .slice(0, TYPE_FINDINGS_PER_UNIT)
+      .map((x) => (x.bodyLine === 0 ? `the function${x.fn ? ` ${x.fn}` : ''} — ${x.f.code} ${x.f.message} (the body must return a value on every path)` : `body line ${x.bodyLine} — ${x.f.code} ${x.f.message}`));
     const more = list.length > shown.length ? `; and ${list.length - shown.length} more` : '';
     out.push({
       unitId,
@@ -575,6 +623,26 @@ export function abapScaffoldCheck(
     if (a.activatable) return { failures: [] };
     const failures = mapAbapFindings(a.findings, []);
     return { failures: [{ unitId: null, check: 'abap', failure: `${a.parserErrors} parser and ${a.syntaxErrors} syntax errors in the scaffold (abaplint ${a.abaplint}, shipped config)` }, ...failures] };
+  };
+}
+
+/**
+ * The Node equivalent (acceptance run 4, 14.10.2026): the route's type check on the scaffold as the engine wrote
+ * it, its stubs in place. A stub compiles, so every error is in engine-written code — reported before any fill,
+ * named on the generation, never a repair reason. Null when the route did not run the type check.
+ */
+export function nodeScaffoldCheck(
+  files: readonly FileLike[],
+  runOnRunner: (files: readonly FileLike[], signal: AbortSignal) => Promise<VerifyRunAnswer>,
+): (signal: AbortSignal) => Promise<Pick<VerifyOutcome, 'failures'> | null> {
+  return async (signal) => {
+    const answer = await runOnRunner(files, signal);
+    if (!answer.types?.ran) return null;
+    const t = answer.types;
+    if (t.errors === 0) return { failures: [] };
+    // No spans: on the scaffold nothing is a body's.
+    const failures = mapTypeFindings(t.findings, []);
+    return { failures: [{ unitId: null, check: 'types', failure: `${t.errors} type error${t.errors === 1 ? '' : 's'} in the scaffold (TypeScript ${t.typescript}, the package's own tsconfig.json)` }, ...failures] };
   };
 }
 

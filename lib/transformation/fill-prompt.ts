@@ -139,7 +139,8 @@ export function fillRapLines(): string[] {
     '- WRITE x TO y becomes y = |{ x }|, its options inside the braces: |{ x DECIMALS = 2 }|, |{ x CURRENCY = lv_waers }|, |{ x DATE = USER }| — never an addition after an assignment.',
     '- SAP is reached only through mo_access-><method>( … ) with the parameters "types" lists; never call SAP directly and never an access method that is not listed.',
     '- A method call is one statement: parameter groups in the order EXPORTING, IMPORTING, CHANGING, RECEIVING, no commas, and nothing after its ")" but "." — mo_access->read_x( EXPORTING iv_key = lv_key IMPORTING es_row = ls_row ). (no INTO, WHERE or TO behind it).',
-    '- A customer table (Z…, Y…) the original reads is not in this package: read it through its access method (SELECT … FROM zmm_x becomes mo_access->read_zmm_x( CHANGING ct_rows = lt_rows ) and a READ TABLE or LOOP on lt_rows), never by SELECT.',
+    // Acceptance run 4 (14.10.2026): written ones too, through write_<table>; data typed by one keeps its type.
+    '- A customer table (Z…, Y…) the original reads is not in this package: read it through its access method (SELECT … FROM zmm_x becomes mo_access->read_zmm_x( CHANGING ct_rows = lt_rows )), write it through mo_access->write_zmm_x( is_row = ls_x ) or ( it_rows = lt_x ); never SQL on it.',
     '- Numbers keep the types the class declares (packed with its DECIMALS, i, n, d): compute and compare them as the original does, never through text and never TYPE f.',
   ];
 }

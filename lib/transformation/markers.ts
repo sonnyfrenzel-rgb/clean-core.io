@@ -30,6 +30,8 @@ import { sha256Hex } from '../artefact-digest';
 import { readBlocks } from '../abap/block-structure';
 import { readStatements } from '../abap/statement-reader';
 import { codeMask } from '../ts-source-scan';
+// The class names SAP releases for ABAP Cloud (~1,400, 9 kB gzip; written by the catalog sync) — never the catalog itself.
+import releasedClassList from '../abap/generated/released-classes.latest.json';
 import {
   BODY_MAX_CHARS,
   BODY_SLICE_FACTOR,
@@ -337,6 +339,16 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
 const ABAP_FRAME = /^(METHOD|ENDMETHOD|CLASS|ENDCLASS|INTERFACE|ENDINTERFACE|FORM|ENDFORM|REPORT|PROGRAM|FUNCTION|ENDFUNCTION|MODULE|ENDMODULE)$/;
 const ABAP_FOREIGN = /^(?:CALL\s+FUNCTION|CALL\s+TRANSACTION|PERFORM|SUBMIT|EXEC\s+SQL|CALL\s+METHOD\s+\(|CALL\s+'|GENERATE|INSERT\s+REPORT|EDITOR-CALL)\b/i;
 const ABAP_ALLOWED_CLASS = /^(?:cl_abap_|cx_|xco_cp|me$|lcl_|lhc_|lsc_)/i;
+/**
+ * The classes SAP's `latest` list marks released (acceptance run 4, 14.10.2026: `cl_system_uuid=>` refused as a
+ * call outside the logic class in 2 of 3 runs). A body may call them; a name neither declared by the package nor
+ * released — an invented or an internal class — is still refused.
+ */
+const RELEASED_CLASSES: ReadonlySet<string> = new Set((releasedClassList as { classes: string[] }).classes);
+/** Whether SAP releases this class for ABAP Cloud (lower-case or not). */
+export function isReleasedSapClass(name: string): boolean {
+  return RELEASED_CLASSES.has(name.toLowerCase());
+}
 const OPENERS: Record<string, string> = { IF: 'ENDIF', CASE: 'ENDCASE', LOOP: 'ENDLOOP', DO: 'ENDDO', WHILE: 'ENDWHILE', TRY: 'ENDTRY' };
 
 function abapLiteralsClosed(body: string): boolean {
@@ -382,10 +394,10 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     if (ABAP_FOREIGN.test(s.text)) foreign.push(s.text.slice(0, 40));
     for (const m of s.text.matchAll(/([\w/]+)=>/g)) {
       const cls = m[1].toLowerCase();
-      if (!available.has(cls) && !ABAP_ALLOWED_CLASS.test(cls)) foreign.push(`${cls}=>`);
+      if (!available.has(cls) && !ABAP_ALLOWED_CLASS.test(cls) && !RELEASED_CLASSES.has(cls)) foreign.push(`${cls}=>`);
     }
   }
-  if (foreign.length > 0) out.push(refusal('foreign-call', `calls outside the logic class: ${[...new Set(foreign)].slice(0, 6).join(', ')}`));
+  if (foreign.length > 0) out.push(refusal('foreign-call', `calls outside the logic class: ${[...new Set(foreign)].slice(0, 6).join(', ')} — neither declared by this package nor released by SAP for ABAP Cloud`));
   if (statements.some((s) => /\bTYPE\s+f\b/i.test(s.text))) out.push(refusal('binary-number', 'TYPE f is binary floating point — amounts and quantities are packed'));
   // Scaffold version 6 (3.0.13): what ABAP Cloud does not have, a SELECT on SAP's tables, names the class does not declare.
   const cloud = statements.filter((s) => ABAP_NOT_CLOUD.test(s.text) || ABAP_NOT_CLOUD_DECL.test(s.text)).map((s) => s.text.split(/\s+/).slice(0, 2).join(' '));
@@ -420,6 +432,29 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     if (undeclared.size > 0) {
       const words = [...undeclared].slice(0, 6).map(([t, method]) => (method ? `${t.toUpperCase()} (read it with mo_access->${method}( ))` : `${t.toUpperCase()} (not in this package and not in the access layer)`));
       out.push(refusal('customer-select', `a SELECT on customer tables this package does not ship: ${words.join(', ')}`));
+    }
+    // A write to one (acceptance run 4, 14.10.2026, PO: `INSERT zmm_po_appr FROM ls_appr`): through its write method.
+    // A data object the body declares under the same name is an internal table, not the database table.
+    const writes = ctx.abap.customerWrites ?? {};
+    const local = new Set<string>();
+    for (const s of statements) {
+      const d = /^(?:DATA|STATICS|FIELD-SYMBOLS)\s*:?\s*(<?[\w/]+>?)/i.exec(s.text);
+      if (d) local.add(d[1].toLowerCase());
+      for (const m of s.text.matchAll(/\b(?:DATA|FINAL)\(\s*([\w/]+)\s*\)/gi)) local.add(m[1].toLowerCase());
+    }
+    const written = new Map<string, string | null>();
+    for (const s of statements) {
+      const w = /^(?:INSERT|MODIFY|UPDATE|DELETE)\s+(?:FROM\s+)?(\/?[A-Za-z][\w/]*)(?![\w/-])([\s\S]*)$/i.exec(s.text);
+      if (!w) continue;
+      const t = w[1].toLowerCase();
+      if (!/^\/?[zy]/.test(t) || own.has(t) || local.has(t)) continue;
+      // `INSERT ls INTO TABLE lt`, `INSERT … INTO lt INDEX n`: an internal table.
+      if (/^\s+INTO\b/i.test(w[2]) || /\bINTO\s+TABLE\b/i.test(w[2])) continue;
+      written.set(t, writes[t] ?? null);
+    }
+    if (written.size > 0) {
+      const words = [...written].slice(0, 6).map(([t, method]) => (method ? `${t.toUpperCase()} (write it with mo_access->${method}( is_row = … ) or ( it_rows = … ))` : `${t.toUpperCase()} (not in this package and not in the access layer)`));
+      out.push(refusal('customer-write', `a database write to customer tables this package does not ship: ${words.join(', ')}`));
     }
   }
   if (ctx.abap) out.push(...unknownAbapNames(body, statements, ctx.abap));

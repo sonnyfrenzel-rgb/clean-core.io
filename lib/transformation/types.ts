@@ -69,8 +69,16 @@ export const PLAN_VERSION = 2;
  * from its FORM; steps, process and guards import every type of `srv/lib/types.ts`, and `tsconfig.json` has no
  * DOM library. Merged on top of 7: both hold — named input lists and typed values/four-parameter checks.
  * Nothing signed changes (§12.3).
+ * 9 (3.0.13, engine defects of the fourth real acceptance run, 14.10.2026): RAP — a customer table the original
+ * writes or types data by, whose definition the package does not ship, is a structure type of the logic class under
+ * the table's own name, built from the fields the original uses (`DATA ls_appr TYPE zmm_po_appr` activates); a
+ * customer table it writes gets `write_<table>( is_row | it_rows )` in the access layer, and a body's INSERT, MODIFY,
+ * UPDATE or DELETE on it is refused naming that method; a call to a class SAP releases for ABAP Cloud
+ * (`cl_system_uuid=>…`, the synced `released-classes.latest.json`) is no longer "a call outside the logic class".
+ * Node — the scaffold text is unchanged (the type check maps a body's missing return, reported on the signature, to
+ * that body; the scaffold's own type check runs before the fills). Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 8;
+export const SCAFFOLD_VERSION = 9;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -430,6 +438,8 @@ export interface AbapRegionNames {
   tables?: string[];
   /** Customer tables the original reads → the access method that reads them (`zmm_vend_block` → `read_zmm_vend_block`). */
   customerReads?: Record<string, string>;
+  /** Customer tables the original writes → the access method that writes them (`zmm_po_appr` → `write_zmm_po_appr`; acceptance run 4). */
+  customerWrites?: Record<string, string>;
 }
 
 /**
@@ -477,7 +487,8 @@ export type BodyRefusalCode =
   | 'cloud-statement'
   | 'unknown-name'
   | 'sap-select'
-  | 'customer-select';
+  | 'customer-select'
+  | 'customer-write';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;

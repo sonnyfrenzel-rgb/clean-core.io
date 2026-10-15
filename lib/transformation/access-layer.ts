@@ -9,13 +9,15 @@
  * exceptions. The scaffold writes one interface method per SAP object the
  * original touches, named after what it does there (`read_ekko`,
  * `call_bapi_po_create1`), never after an API the package does not call
- * (rule 23). Customer objects (`Z*`, `Y*`) the original writes or calls get no
+ * (rule 23). Customer function modules (`Z*`, `Y*`) the original calls get no
  * method; neither do the job, popup and ALV modules (the delivery choice reads
  * those) nor the commit modules (the RAP framework owns the LUW). A customer
  * table the original reads does (3.0.13, acceptance run 14.10.2026): the
  * package does not ship its definition, so a body's `SELECT` on it could not
  * compile — it is read through `read_<table>` like an SAP table, and a body that
- * selects from it is refused with that method's name (`markers.ts`).
+ * selects from it is refused with that method's name (`markers.ts`). One the
+ * original writes gets `write_<table>` (acceptance run 4, 14.10.2026), and a
+ * body's INSERT, MODIFY, UPDATE or DELETE on it is refused the same way.
  *
  * Pure, no network, no model.
  */
@@ -31,13 +33,13 @@ export interface AccessPoint {
   object: string;
   /** Lines of the original where it happens, ascending. */
   lines: number[];
-  /** A customer table (`Z*`, `Y*`) of the original's system: not in the package, read through the layer all the same. */
+  /** A customer table (`Z*`, `Y*`) of the original's system: not in the package, read or written through the layer all the same. */
   customer?: boolean;
 }
 
 /** At most this many methods: an original touching more is listed in the interface's ABAP Doc. */
 export const MAX_ACCESS_POINTS = 20;
-/** Customer tables read, listed besides the SAP objects (3.0.13). */
+/** Customer tables read or written, listed besides the SAP objects (3.0.13). */
 export const MAX_CUSTOMER_READS = 10;
 
 const CUSTOMER = /^(?:[ZY]|\/[ZY])/;
@@ -54,14 +56,23 @@ function tablesRead(text: string): string[] {
   return out;
 }
 
-export function accessPointsOf(facts: { statements: readonly AbapStatement[]; graph: CallGraphReport }): { points: AccessPoint[]; more: string[] } {
+/**
+ * `customerWrites`: whether a customer table the original writes gets a write method (the RAP route, acceptance
+ * run 4). The CAP shell leaves it out: it writes those tables as entities of its own service (`cap-shell.ts`).
+ */
+export function accessPointsOf(
+  facts: { statements: readonly AbapStatement[]; graph: CallGraphReport },
+  options: { customerWrites?: boolean } = {},
+): { points: AccessPoint[]; more: string[] } {
   const byKey = new Map<string, AccessPoint>();
   const add = (kind: AccessPoint['kind'], object: string, line: number) => {
     // A customer table the original reads is not part of the package either (acceptance run 14.10.2026, PO:
     // the body wrote `SELECT … FROM zmm_vend_block` and the class did not compile): it is read through the layer.
-    // Customer writes and function modules stay the package's own business, as before.
+    // One it writes too (acceptance run 4, 14.10.2026, PO: `INSERT zmm_po_appr FROM ls_appr`): written through
+    // `write_<table>`, its rows typed by the structure the contract declares under the table's name. Customer
+    // function modules stay the package's own business, as before.
     const customer = CUSTOMER.test(object);
-    if (customer && kind !== 'read') return;
+    if (customer && (kind === 'call' || (kind === 'write' && !options.customerWrites))) return;
     const verb = kind === 'read' ? 'read' : kind === 'write' ? 'write' : 'call';
     const key = `${verb}:${object}`;
     const hit = byKey.get(key);

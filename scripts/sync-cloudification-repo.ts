@@ -22,6 +22,8 @@ import {
   CLASSIFICATION_RELEASES,
   normalizeCrFile,
   normalizeClassificationFile,
+  deriveReleasedClasses,
+  RELEASED_CLASSES_FILE,
   type CrFile,
   type CrClassificationFile,
 } from '../lib/abap/cloudification-repo';
@@ -85,13 +87,26 @@ async function syncOne(release: string): Promise<boolean> {
   }
   const outFile = path.join(OUT_DIR, `cloudification-repo.${release}.json`);
 
+  // The released class names the transformation's body guard reads (acceptance run 4, 14.10.2026): derived from
+  // `latest` on every sync of it, written only when the names change.
+  let classesChanged = false;
+  if (release === 'latest' && !isClassification) {
+    const classesFile = path.join(OUT_DIR, RELEASED_CLASSES_FILE);
+    const classesOut = JSON.stringify(deriveReleasedClasses({ meta: artifact.meta, entries: sortedEntries }), null, 0) + '\n';
+    if (!existsSync(classesFile) || readFileSync(classesFile, 'utf8') !== classesOut) {
+      writeFileSync(classesFile, classesOut);
+      classesChanged = true;
+      console.log(`[sync] ${release}: wrote the released class names → ${classesFile}`);
+    }
+  }
+
   // Only rewrite when content (minus fetchedAt) actually changed → stable diffs.
   if (existsSync(outFile)) {
     const prev = readFileSync(outFile, 'utf8');
     const strip = (s: string) => s.replace(/"fetchedAt":\s*"[^"]+"/, '"fetchedAt":"-"');
     if (strip(prev) === strip(out)) {
       console.log(`[sync] ${release}: no changes (${artifact.meta.entryCount} entries) — skipping write`);
-      return false;
+      return classesChanged;
     }
   }
 

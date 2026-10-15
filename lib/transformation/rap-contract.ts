@@ -86,12 +86,26 @@ export interface RapContract {
   namedTypes: string[];
   /** Lower-case name of a global or selection input → its phrase. */
   globalScope: Map<string, string>;
+  /**
+   * The customer tables (`Z*`, `Y*`) the original writes or types data by, whose dictionary definition the package
+   * does not ship (acceptance run 4, 14.10.2026, PO: `DATA ls_appr TYPE zmm_po_appr` did not activate). Each is a
+   * structure type of the class under the table's own name, built from the fields the original uses; the access
+   * layer's write method takes a row of it. Empty when there is none.
+   */
+  customerTables: CustomerTable[];
   /** The scope of a routine (upper-case FORM or METHOD name). */
   scopeOf(routine: string): RoutineScope;
   /** A phrase a METHODS parameter can carry for this declaration phrase, naming a type when it must (hint: the parameter). */
   paramPhrase(phrase: string | null, hint: string, generic?: 'table' | 'any'): string;
   /** A declaration phrase with LIKE resolved in this scope, or null when it cannot be. */
   resolve(phrase: string, scope?: ReadonlyMap<string, string>): string | null;
+}
+
+export interface CustomerTable {
+  /** The table's name, lower case — also the name of the structure type the class declares. */
+  name: string;
+  /** The fields the original uses, typed by what it assigns them or is assigned from (`TYPE string` when unknown). */
+  components: Array<{ name: string; phrase: string }>;
 }
 
 const PROCEDURE = new Set<Container['kind']>(['form', 'method', 'module', 'function']);
@@ -546,6 +560,19 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
     return scope;
   };
 
+  // ---- customer tables the package does not ship (acceptance run 4): a structure of the class under their name
+  const customerTables = customerTablesOf(facts, typeNames, globalScope, scopeOf, (phrase, scope) => resolveIn(phrase, scope)).filter(
+    // A class's types and attributes share one namespace: a table named like a global of the original stays out.
+    (t) => !usedNames.has(t.name),
+  );
+  for (const t of customerTables) {
+    if (t.components.length > 0) types.push(`TYPES BEGIN OF ${t.name}`, ...t.components.map((c) => `TYPES ${c.name} ${c.phrase}`), `TYPES END OF ${t.name}`);
+    else types.push(`TYPES ${t.name} TYPE string`);
+    typeNames.add(t.name);
+    usedNames.add(t.name);
+    typeDefs.set(t.name, t.components.length > 0 ? 'STRUCTURE' : 'TYPE string');
+  }
+
   return {
     types,
     constants,
@@ -556,10 +583,124 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
     typeNames,
     namedTypes,
     globalScope,
+    customerTables,
     scopeOf,
     paramPhrase,
     resolve: (phrase, scope) => resolveIn(phrase, scope ?? null),
   };
+}
+
+const CUSTOMER_TABLE = /^\/?[zy][\w/]*$/i;
+/** System fields a customer table's field is commonly filled from, with their dictionary types. */
+const SY_TYPES: Record<string, string> = {
+  'sy-datum': 'TYPE d',
+  'sy-uzeit': 'TYPE t',
+  'sy-mandt': 'TYPE c LENGTH 3',
+  'sy-uname': 'TYPE c LENGTH 12',
+  'sy-langu': 'TYPE c LENGTH 1',
+  'sy-tabix': 'TYPE i',
+  'sy-index': 'TYPE i',
+};
+
+/**
+ * The customer tables an original writes, or declares data by, that the package does not ship — each with the
+ * fields the original uses (`ls_appr-banfn = p_banfn`, `VALUE #( objkey = lv_objkey … )`, `UPDATE z SET f = …`),
+ * typed by what it assigns them or is assigned from (`TYPE string` when that is not known). Nothing beyond the
+ * fields the original names is invented.
+ */
+function customerTablesOf(
+  facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>,
+  declaredTypes: ReadonlySet<string>,
+  globalScope: ReadonlyMap<string, string>,
+  scopeOf: (routine: string) => RoutineScope,
+  resolve: (phrase: string, scope: ReadonlyMap<string, string> | null) => string | null,
+): CustomerTable[] {
+  const { statements, blocks } = facts;
+  const isCustomer = (n: string) => CUSTOMER_TABLE.test(n) && !declaredTypes.has(n.toLowerCase());
+  const tables = new Set<string>();
+  for (const w of facts.graph.databaseWrites) if (isCustomer(w.table)) tables.add(w.table.toLowerCase());
+  // A declaration typed by a customer table: `TYPE z`, `LIKE z`, `TYPE [STANDARD] TABLE OF z`, `TYPE z-field`.
+  const DECL = /^(?:DATA|STATICS|CLASS-DATA|TYPES|CONSTANTS|PARAMETERS|FIELD-SYMBOLS)\b/i;
+  const typedBy = /\b(?:TYPE|LIKE)\s+(?:(?:STANDARD\s+|SORTED\s+|HASHED\s+)?TABLE\s+OF\s+|LINE\s+OF\s+|RANGE\s+OF\s+)?(\/?[zy][\w/]*)(-[\w/]+)?(?![\w/-])/gi;
+  for (const st of statements) {
+    if (st.nativeSql || !DECL.test(st.text)) continue;
+    for (const m of st.text.matchAll(typedBy)) if (isCustomer(m[1])) tables.add(m[1].toLowerCase());
+  }
+  if (tables.size === 0) return [];
+
+  const routineOf = (line: number) => {
+    const c = containerAt(blocks.containers as Container[], line);
+    return c && (c.kind === 'form' || c.kind === 'method') && c.name ? c.name : null;
+  };
+  // Data objects typed by each table: work areas (a row) and internal tables (a row through a loop or a read).
+  const rowOf = new Map<string, string>();
+  const tabOf = new Map<string, string>();
+  const declRe = /^(?:DATA|STATICS|CLASS-DATA)\s*:?\s*([\w/]+)\s+(?:TYPE|LIKE)\s+(?:(?:STANDARD\s+|SORTED\s+|HASHED\s+)?(TABLE\s+OF\s+))?(\/?[zy][\w/]*)(?![\w/-])/i;
+  for (const st of statements) {
+    const m = declRe.exec(st.text);
+    if (!m || !tables.has(m[3].toLowerCase())) continue;
+    (m[2] ? tabOf : rowOf).set(m[1].toLowerCase(), m[3].toLowerCase());
+  }
+  for (const st of statements) {
+    const m = /^(?:LOOP\s+AT|READ\s+TABLE)\s+([\w/]+)\b[\s\S]*?\b(?:INTO\s+(?:DATA\(\s*)?|ASSIGNING\s+(?:FIELD-SYMBOL\(\s*)?)(<?[\w/]+>?)/i.exec(st.text);
+    const t = m ? tabOf.get(m[1].toLowerCase()) : undefined;
+    if (m && t && !rowOf.has(m[2].toLowerCase())) rowOf.set(m[2].toLowerCase(), t);
+  }
+  // TABLES z, `TYPE z-field`: the table's own name stands for its row.
+  for (const t of tables) rowOf.set(t, t);
+
+  const fields = new Map<string, Map<string, string | null>>();
+  for (const t of tables) fields.set(t, new Map());
+  const mentions = (phrase: string, name: string) => new RegExp(`(?:^|[^\\w/])${escapeRe(name)}(?![\\w/])`, 'i').test(phrase);
+  const typeOf = (expr: string, line: number): string | null => {
+    const e = expr.trim().replace(/^@/, '').toLowerCase();
+    if (SY_TYPES[e]) return SY_TYPES[e];
+    if (/^-?\d+$/.test(e)) return 'TYPE i';
+    if (!/^<?[a-z_][\w/]*>?$/.test(e)) return null;
+    const routine = routineOf(line);
+    const scope = routine ? scopeOf(routine) : null;
+    const declared = scope?.locals.get(e) || globalScope.get(e) || null;
+    if (!declared) return null;
+    const r = resolve(declared, scope?.locals ?? null);
+    if (!r || /^TYPE\s+(?:any|data|c|n|x|p|csequence|simple|clike|numeric)$/i.test(r) || /\bTABLE\b|\bREF\s+TO\b/i.test(r)) return null;
+    // A type the routine declares itself, or a customer table, is no type the class can name.
+    if (scope && [...scope.localTypes].some((lt) => mentions(r, lt))) return null;
+    if ([...tables].some((t) => mentions(r, t))) return null;
+    return r;
+  };
+  const note = (table: string, field: string, phrase: string | null) => {
+    const f = field.toLowerCase();
+    const m = fields.get(table)!;
+    if (!m.has(f) || (m.get(f) === null && phrase)) m.set(f, phrase);
+  };
+  const strip = (t: string) => t.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''");
+  for (const st of statements) {
+    if (st.nativeSql) continue;
+    const text = strip(st.text);
+    // `ls-f = rhs` and `lhs = ls-f`.
+    const assign = /^([\w/<>]+)-([\w/]+)\s*=\s*(.+)$/i.exec(text);
+    if (assign && rowOf.has(assign[1].toLowerCase())) note(rowOf.get(assign[1].toLowerCase())!, assign[2], typeOf(assign[3], st.lineStart));
+    const back = /^([\w/<>]+)\s*=\s*([\w/<>]+)-([\w/]+)$/i.exec(text);
+    if (back && rowOf.has(back[2].toLowerCase())) note(rowOf.get(back[2].toLowerCase())!, back[3], typeOf(back[1], st.lineStart));
+    // Any other use of a component, in a declaration (`TYPE z-f`) or a statement.
+    for (const m of text.matchAll(/(?:^|[^\w/>-])(<?[\w/]+>?)-([a-z_][\w/]*)/gi)) {
+      const t = rowOf.get(m[1].toLowerCase());
+      if (t) note(t, m[2], null);
+    }
+    // A write with its row spelled out: `INSERT z FROM @( VALUE #( f = x … ) )`, `UPDATE z SET f = x, …`.
+    const write = /^(?:INSERT|MODIFY|UPDATE)\s+(\/?[zy][\w/]*)(?![\w/])([\s\S]*)$/i.exec(text);
+    if (write && tables.has(write[1].toLowerCase())) {
+      const t = write[1].toLowerCase();
+      const value = /\bVALUE\s+#\(([\s\S]*)\)/i.exec(write[2]);
+      if (value) for (const m of value[1].matchAll(/\b([a-z_]\w*)\s*=\s*(@?[\w/<>-]+)/gi)) note(t, m[1], typeOf(m[2], st.lineStart));
+      const set = /^\s*SET\s+([\s\S]*?)(?:\bWHERE\b|$)/i.exec(write[2]);
+      if (set) for (const m of set[1].matchAll(/\b([a-z_]\w*)\s*=\s*(@?[\w/<>-]+)/gi)) note(t, m[1], typeOf(m[2], st.lineStart));
+    }
+  }
+  return [...tables].sort().map((name) => ({
+    name,
+    components: [...fields.get(name)!].map(([f, phrase]) => ({ name: f, phrase: phrase ?? 'TYPE string' })),
+  }));
 }
 
 /** The components of a structure type the class declares (`TYPES BEGIN OF x … END OF x`), name → phrase; null when it is not one. */

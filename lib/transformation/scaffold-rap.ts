@@ -385,7 +385,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const accessCx = `zcx_${s}_access`;
   const job = `zcl_${s}_job`;
   const jobSetup = `zcl_${s}_job_setup`;
-  const access = accessPointsOf(facts);
+  const access = accessPointsOf(facts, { customerWrites: true });
   const hasAccess = access.points.length > 0;
   const delivery = plan.abapDelivery;
   const withJob = delivery.kind !== 'ui-service';
@@ -636,7 +636,21 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         ],
       };
     }
-    if (point.kind === 'write') return { point, params: [{ name: 'it_rows', direction: 'importing', phrase: 'TYPE STANDARD TABLE', original: 'the rows written', optional: false }] };
+    if (point.kind === 'write') {
+      // A customer table (acceptance run 4): one row typed by the structure the contract declares under the table's
+      // name (`INSERT z FROM ls` → is_row = ls), or a table of rows (`INSERT z FROM TABLE lt` → it_rows = lt).
+      const own = point.customer ? contract.customerTables.find((t) => t.name === point.object.toLowerCase()) : undefined;
+      if (own) {
+        return {
+          point,
+          params: [
+            { name: 'is_row', direction: 'importing', phrase: `TYPE ${logic}=>${own.name}`, original: 'the row written', optional: true },
+            { name: 'it_rows', direction: 'importing', phrase: 'TYPE STANDARD TABLE', original: 'the rows written', optional: true },
+          ],
+        };
+      }
+      return { point, params: [{ name: 'it_rows', direction: 'importing', phrase: 'TYPE STANDARD TABLE', original: 'the rows written', optional: false }] };
+    }
     const sites = point.lines.map((line) => facts.statements.find((st) => st.lineStart === line && /^CALL\s+FUNCTION\b/i.test(st.text))).filter((x): x is AbapStatement => !!x);
     const byFormal = new Map<string, AccessParam & { count: number }>();
     for (const st of sites) {
@@ -792,7 +806,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const attributesList = [...attributeNames, ...(hasAccess ? ['mo_access'] : []), ...(inputs.length ? ['ms_input'] : []), 'mt_messages'];
   // The tables this package ships, and the customer tables the original reads with the method that reads them:
   // a body's SELECT on any other customer table is refused, naming that method (acceptance run 14.10.2026, PO).
-  const tableNames = { tables: [table], customerReads: Object.fromEntries(accessMethods.filter((m) => m.point.customer).map((m) => [m.point.object.toLowerCase(), m.point.method])) };
+  const customerMethods = (kind: AccessPoint['kind']) =>
+    Object.fromEntries(accessMethods.filter((m) => m.point.customer && m.point.kind === kind).map((m) => [m.point.object.toLowerCase(), m.point.method]));
+  // …and the ones it writes, with their write methods (acceptance run 4): a body's INSERT, MODIFY, UPDATE or DELETE on one is refused.
+  const tableNames = { tables: [table], customerReads: customerMethods('read'), customerWrites: customerMethods('write') };
 
   for (const u of [...unitsWithBody, ...parentsOfParts]) {
     const name = methodOf.get(u.id)!;
@@ -1050,7 +1067,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       owner: 'engine',
       content: [
         head,
-        `"! Every SAP object ${docText(program)} reads, writes or calls${access.points.some((p) => p.customer) ? ', and every customer table it reads,' : ''} behind one interface: the logic never calls SAP itself,`,
+        `"! Every SAP object ${docText(program)} reads, writes or calls${access.points.some((p) => p.customer) ? `, and every customer table it ${access.points.some((p) => p.customer && p.kind === 'write') ? 'reads or writes' : 'reads'},` : ''} behind one interface: the logic never calls SAP itself,`,
         '"! so ABAP Unit can replace this layer with a test double, and a released API can replace the original object in one place.',
         ...(access.more.length > 0 ? [`"! Not listed (more than ${access.points.length}): ${access.more.slice(0, 20).join(', ')}.`] : []),
         `INTERFACE ${accessIf} PUBLIC.`,
@@ -1079,8 +1096,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
           `  METHOD ${accessIf}~${m.point.method}.`,
           ...(m.point.customer
             ? [
-                `    " ${OPEN_MARKER} ACCESS: the original reads ${m.point.object}, a customer table this package does not ship, at ${anchor(m.point)}.`,
-                '    " Read it here (or through a CDS view over it) once it exists in the target system; until then this raises.',
+                `    " ${OPEN_MARKER} ACCESS: the original ${verb(m.point).toLowerCase()} ${m.point.object}, a customer table this package does not ship, at ${anchor(m.point)}.`,
+                m.point.kind === 'write'
+                  ? '    " Write it here once it exists in the target system (in RAP, from the save sequence); until then this raises.'
+                  : '    " Read it here (or through a CDS view over it) once it exists in the target system; until then this raises.',
               ]
             : [
                 `    " ${OPEN_MARKER} ACCESS: the original ${verb(m.point).toLowerCase()} ${m.point.object} at ${anchor(m.point)}. Connect a released API here (Analyze names`,
