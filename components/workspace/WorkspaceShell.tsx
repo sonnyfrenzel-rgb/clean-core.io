@@ -941,9 +941,11 @@ export default function WorkspaceShell({
     ),
     // Business only: the business rules, once, in their own card under the map
     // (owner, 03.10.2026). The rule actions of the page — "Your next step" and
-    // the first look outside Business — lead here by this block's id.
+    // the first look outside Business — lead here by this block's id. Not while
+    // the start run is still being signed: forty rules to decide on under a
+    // map that is still loading confuse the reader (owner, 15.10.2026).
     rules:
-      view === 'business' && reading !== null && reading.ruleSet.rules.length > 0 ? (
+      view === 'business' && reading !== null && reading.ruleSet.rules.length > 0 && startRun?.phase !== 'running' ? (
         <div id={BUSINESS_RULES_ID} data-workspace-rules-block="" className="mt-5 scroll-mt-20">
           <BusinessRulesEditor project={project} projectId={projectId} reading={reading} />
         </div>
