@@ -114,7 +114,7 @@ test('the logic class: one method per unit with its FORM signature, bodies betwe
   const modelPredicates = Object.values(scaffold.rap!.guards).filter((g) => g.written === 'model').length;
   expect(scaffold.regions).toHaveLength(plan.units.length + modelPredicates);
   for (const r of scaffold.regions) expect(r.file).toBe('src/zcl_mm_po_approv_logic.clas.abap');
-  expect(logic).toMatch(/"! @cc-fill BEGIN U01 [0-9a-f]{8}\n\s+RAISE EXCEPTION NEW zcx_mm_po_approv_nofill\( unit = 'U01' \)\.\n\s+"! @cc-fill END U01/);
+  expect(logic).toMatch(/" @cc-fill BEGIN U01 [0-9a-f]{8}\n\s+RAISE EXCEPTION NEW zcx_mm_po_approv_nofill\( unit = 'U01' \)\.\n\s+" @cc-fill END U01/);
 });
 
 test('ABAP Unit: one test method per engine case; exact arithmetic written by the engine', () => {

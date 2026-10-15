@@ -195,7 +195,9 @@ test('RAP regions use ABAP comment markers and splice the same way', () => {
   const region = s.regions.find((r) => r.regionId === 'U02')!;
   expect(region.stub).toMatch(/^RAISE EXCEPTION NEW zcx_fx_co_alloc_nofill\( unit = 'U02' \)\.$/);
   const file = s.files.find((f) => f.path === region.file)!;
-  expect(file.content).toContain(`"! @cc-fill BEGIN U02 ${region.hash}`);
+  // Scaffold version 11: a plain comment, not ABAP Doc (which SAP's activation warns about inside a method).
+  expect(file.content).toContain(`\n    " @cc-fill BEGIN U02 ${region.hash}\n`);
+  expect(file.content).not.toContain('"! @cc-fill');
   // Scaffold version 6: the body calls the unit's guards with the original's own operands (G-0054 runs at the entry already).
   const body = [
     'DATA lv_sum TYPE ty_sum.',

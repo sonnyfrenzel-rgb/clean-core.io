@@ -151,7 +151,9 @@ test.describe('B4 — the access layer', () => {
     expect(logic).toContain('mo_access = COND #( WHEN io_access IS BOUND THEN io_access ELSE NEW zcl_mm_po_approv_access( ) ).');
     // Fills may call the layer; ABAP Unit gets a double.
     for (const u of plan.units) expect(scaffold.available[u.id]).toContain('mo_access');
-    expect(file(scaffold, '.testclasses.abap')).toContain('INTERFACES zif_mm_po_approv_access PARTIALLY IMPLEMENTED.');
+    // Scaffold version 11: every method implemented, empty — PARTIALLY IMPLEMENTED crashed every case at the first access call.
+    expect(file(scaffold, '.testclasses.abap')).toContain('    INTERFACES zif_mm_po_approv_access.\n');
+    expect(file(scaffold, '.testclasses.abap')).toContain('  METHOD zif_mm_po_approv_access~read_eban.\n');
     // A program that touches no SAP object and reads no customer table gets no layer.
     const plain = rap(fs.readFileSync(path.join(FIXTURES, 'conservation-shape.abap'), 'utf8')).scaffold;
     expect(plain.files.some((f) => f.path.includes('_access'))).toBe(false);
@@ -351,6 +353,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 8: the contract gaps of the second real acceptance run (tests/transformation-contract-gaps.spec.ts).
   // 9: customer tables written or typed by, released SAP classes (tests/transformation-run4-defects.spec.ts).
   // 10: no field or element named with a word the Dictionary refuses (tests/transformation-scaffold-rap.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(10);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(10);
+  // 11: the first SAP activation — built-in types for unreleased ones, SAP row types, a complete test double, plain-comment markers (tests/transformation-first-activation.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(11);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(11);
 });

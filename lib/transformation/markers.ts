@@ -8,9 +8,9 @@
  *     throw new NotImplementedFill('U02', 'validatePolicy');
  *     // @cc-fill END U02
  *
- *     "! @cc-fill BEGIN U02 9f2c41d0           (ABAP)
+ *     " @cc-fill BEGIN U02 9f2c41d0            (ABAP; `"!` before scaffold version 11)
  *     RAISE EXCEPTION NEW zcx_…_not_filled( unit = 'U02' ).
- *     "! @cc-fill END U02
+ *     " @cc-fill END U02
  *
  * A region id is a unit (`U02`, the function body) or a unit and a guard
  * (`U02.G0506`, the guard's predicate). The 8 hex characters are the first 8
@@ -47,8 +47,13 @@ import {
 
 export const MARKER_TAG = '@cc-fill';
 
-const BEGIN = /^([ \t]*)(\/\/|"!)[ \t]*@cc-fill BEGIN ([A-Za-z0-9.]+) ([0-9a-f]{8})[ \t]*$/;
-const END = /^([ \t]*)(\/\/|"!)[ \t]*@cc-fill END ([A-Za-z0-9.]+)[ \t]*$/;
+/**
+ * An ABAP marker is a plain comment (`" @cc-fill …`) since scaffold version 11: as ABAP Doc (`"! @cc-fill …`, versions
+ * 1–10) inside a method it drew 71 activation warnings in the first SAP activation (15.10.2026, "ABAP Doc comment is in
+ * the wrong position"). Both forms are read, so a package stored before keeps its regions and its digest.
+ */
+const BEGIN = /^([ \t]*)(\/\/|"!?)[ \t]*@cc-fill BEGIN ([A-Za-z0-9.]+) ([0-9a-f]{8})[ \t]*$/;
+const END = /^([ \t]*)(\/\/|"!?)[ \t]*@cc-fill END ([A-Za-z0-9.]+)[ \t]*$/;
 
 /** First 8 hex characters of sha256 over a region's engine-owned anchor text. */
 export function regionHash(anchor: string): string {
@@ -57,7 +62,7 @@ export function regionHash(anchor: string): string {
 
 /** The two marker lines of a region, for a file of `track`. */
 export function markerLines(track: 'node' | 'rap', regionId: string, hash: string, indent: string): { begin: string; end: string } {
-  const c = track === 'node' ? '//' : '"!';
+  const c = track === 'node' ? '//' : '"';
   return { begin: `${indent}${c} ${MARKER_TAG} BEGIN ${regionId} ${hash}`, end: `${indent}${c} ${MARKER_TAG} END ${regionId}` };
 }
 
@@ -516,8 +521,36 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
       out.push(refusal('customer-write', `a database write to customer tables this package does not ship: ${words.join(', ')}`));
     }
   }
+  if (ctx.abap?.sapTypes) out.push(...sapTypeRefusals(statements, ctx.abap));
   if (ctx.abap) out.push(...unknownAbapNames(body, statements, ctx.abap));
   return out;
+}
+
+/**
+ * Data typed by an SAP table the access layer reads or writes (scaffold version 11, the first SAP activation,
+ * 15.10.2026: `DATA lt_vbak TYPE STANDARD TABLE OF vbak` — "Type VBAK is unknown"; abaplint cannot see SAP's types and
+ * let it through). ABAP Cloud has no type of an SAP table nor of its fields; the class declares a row type for each.
+ */
+function sapTypeRefusals(statements: ReturnType<typeof readStatements>, names: AbapRegionNames): BodyRefusal[] {
+  const sap = names.sapTypes ?? {};
+  const typed = new Map<string, string | null>();
+  const re = /\bTYPE\s+(?:(?:STANDARD\s+|SORTED\s+|HASHED\s+|ANY\s+|INDEX\s+)?TABLE\s+OF\s+|LINE\s+OF\s+|REF\s+TO\s+|RANGE\s+OF\s+)?(\/?[A-Za-z][\w/]*)(?:-[\w/]+)*(?![\w/-])/gi;
+  for (const s of statements) {
+    const text = s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''");
+    for (const m of text.matchAll(re)) {
+      const t = m[1].toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(sap, t)) typed.set(t, sap[t]);
+    }
+  }
+  if (typed.size === 0) return [];
+  const words = [...typed].slice(0, 6).map(([t, row]) => {
+    const read = names.sapReads?.[t];
+    const how = read ? `, read with mo_access->${read}( CHANGING ct_rows = lt_rows )` : '';
+    return row
+      ? `${t.toUpperCase()} (use ${row}, the row type of the logic class: DATA lt_rows TYPE STANDARD TABLE OF ${row} WITH EMPTY KEY${how}; a field by its component, ${row}-<field>)`
+      : `${t.toUpperCase()} (the class has no row type for it: declare a structure of your own with the fields you need, typed with built-in types${how})`;
+  });
+  return [refusal('sap-type', `types data by SAP tables ABAP Cloud does not release: ${words.join('; ')}`)];
 }
 
 /** Statements ABAP Cloud does not have (the SD review: 81 WRITE, 19 MESSAGE, 4 ULINE, 2 DESCRIBE in one class). */

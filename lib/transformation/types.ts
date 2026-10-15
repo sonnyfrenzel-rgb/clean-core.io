@@ -80,8 +80,16 @@ export const PLAN_VERSION = 2;
  * 10 (3.0.13, the first real activation, BTP ABAP trial, 15.10.2026): RAP — no generated table field or CDS element
  * carries a name the Dictionary refuses; the SQL reserved words SAP keeps in TRESE (`ddic-reserved.ts`) get `_value`
  * (the SD custom entity was refused for DEFERRED). Node — unchanged. Nothing signed changes (§12.3).
+ * 11 (3.0.13, the first SAP activation and ABAP Unit run, BTP ABAP trial, 15.10.2026): RAP — a type the original
+ * names as a component of a table or structure ABAP Cloud does not release (`TYPE rlgrap-filename`) is a built-in
+ * type with a comment naming the original's (`cloudPhrase`); each SAP table the access layer reads or writes has a row
+ * type of the logic class from the fields the original uses (`ty_vbak_row`), and a body typing data by the table is
+ * refused naming it (`sap-type`); the ABAP Unit double of the access layer implements every method, empty (no
+ * PARTIALLY IMPLEMENTED: every golden-master case died with CX_SY_DYN_CALL_ILLEGAL_METHOD); the fill markers are
+ * plain comments (`" @cc-fill`), not ABAP Doc, which drew 71 activation warnings — the reader takes both forms. Node —
+ * unchanged. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 10;
+export const SCAFFOLD_VERSION = 11;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -443,6 +451,14 @@ export interface AbapRegionNames {
   customerReads?: Record<string, string>;
   /** Customer tables the original writes → the access method that writes them (`zmm_po_appr` → `write_zmm_po_appr`; acceptance run 4). */
   customerWrites?: Record<string, string>;
+  /**
+   * SAP tables the access layer reads or writes → the row type the logic class declares for each (`vbak` →
+   * `ty_vbak_row`), null where it declares none. ABAP Cloud has no type of an SAP table: a body that types data by one
+   * is refused, naming the row type (scaffold version 11, the first SAP activation, 15.10.2026).
+   */
+  sapTypes?: Record<string, string | null>;
+  /** SAP tables the access layer reads → the access method that reads them (`vbak` → `read_vbak`). */
+  sapReads?: Record<string, string>;
 }
 
 /**
@@ -491,7 +507,8 @@ export type BodyRefusalCode =
   | 'unknown-name'
   | 'sap-select'
   | 'customer-select'
-  | 'customer-write';
+  | 'customer-write'
+  | 'sap-type';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;

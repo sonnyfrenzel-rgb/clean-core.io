@@ -42,6 +42,11 @@ export interface AbapDecl {
   /** `TYPE ty_i`, `TYPE STANDARD TABLE OF ty_policy WITH DEFAULT KEY`, `TYPE c LENGTH 10`. */
   phrase: string;
   line: number;
+  /**
+   * The type the original names, where ABAP Cloud does not permit it and the phrase is a built-in type instead
+   * (`rlgrap-filename`, scaffold version 11) — for a comment beside the declaration. Absent otherwise.
+   */
+  was?: string;
 }
 
 export interface SelectionField extends AbapDecl {
@@ -93,6 +98,18 @@ export interface RapContract {
    * layer's write method takes a row of it. Empty when there is none.
    */
   customerTables: CustomerTable[];
+  /**
+   * The SAP tables the access layer reads or writes, each with a row type of the class (`vbak` → `ty_vbak_row`) built
+   * from the fields the original uses — ABAP Cloud has no type VBAK (scaffold version 11, the first SAP activation,
+   * 15.10.2026: a body's `TYPE STANDARD TABLE OF vbak` did not activate). `rowType` is null where the original names
+   * no field of the table: then there is no row type to offer.
+   */
+  sapRows: SapRow[];
+  /**
+   * TYPES statements of `types` (as stored, without the period) whose type the original names in a way ABAP Cloud
+   * does not permit, with what it named (`TYPES p_file TYPE c LENGTH 128` → `rlgrap-filename`).
+   */
+  typeNotes: Map<string, string>;
   /** The scope of a routine (upper-case FORM or METHOD name). */
   scopeOf(routine: string): RoutineScope;
   /** A phrase a METHODS parameter can carry for this declaration phrase, naming a type when it must (hint: the parameter). */
@@ -106,6 +123,83 @@ export interface CustomerTable {
   name: string;
   /** The fields the original uses, typed by what it assigns them or is assigned from (`TYPE string` when unknown). */
   components: Array<{ name: string; phrase: string }>;
+}
+
+export interface SapRow {
+  /** The SAP table, lower case (`vbak`). */
+  table: string;
+  /** The row type the class declares for it (`ty_vbak_row`), or null when the original names none of its fields. */
+  rowType: string | null;
+  components: Array<{ name: string; phrase: string }>;
+}
+
+/**
+ * Fields of SAP tables and structures whose dictionary type is certain (S/4HANA; MATNR is CHAR 40 there): a
+ * declaration `TYPE <table>-<field>` ABAP Cloud refuses becomes this built-in type. Any other is `TYPE string`.
+ * Only what is sure is listed — a wrong length would truncate silently.
+ */
+export const NOT_RELEASED_FIELD_TYPES: Readonly<Record<string, string>> = {
+  'rlgrap-filename': 'c LENGTH 128',
+  'vbak-vbeln': 'c LENGTH 10',
+  'vbap-vbeln': 'c LENGTH 10',
+  'vbap-posnr': 'n LENGTH 6',
+  'vbak-kunnr': 'c LENGTH 10',
+  'kna1-kunnr': 'c LENGTH 10',
+  'vbak-vkorg': 'c LENGTH 4',
+  'vbak-vtweg': 'c LENGTH 2',
+  'vbak-spart': 'c LENGTH 2',
+  'vbak-auart': 'c LENGTH 4',
+  'vbak-erdat': 'd',
+  'vbak-ernam': 'c LENGTH 12',
+  'vbak-waerk': 'c LENGTH 5',
+  'vbak-netwr': 'p LENGTH 8 DECIMALS 2',
+  'vbap-netwr': 'p LENGTH 8 DECIMALS 2',
+  'vbap-kwmeng': 'p LENGTH 8 DECIMALS 3',
+  'vbap-matnr': 'c LENGTH 40',
+  'mara-matnr': 'c LENGTH 40',
+  'vbap-werks': 'c LENGTH 4',
+  'vbak-lifsk': 'c LENGTH 2',
+  'vbak-faksk': 'c LENGTH 2',
+  'eban-banfn': 'c LENGTH 10',
+  'eban-bnfpo': 'n LENGTH 5',
+  'eban-ekgrp': 'c LENGTH 3',
+  'mara-mtart': 'c LENGTH 4',
+  'mara-matkl': 'c LENGTH 9',
+  'kna1-land1': 'c LENGTH 3',
+  'kna1-name1': 'c LENGTH 35',
+  't001-bukrs': 'c LENGTH 4',
+  'knb1-bukrs': 'c LENGTH 4',
+};
+
+/** The names a type phrase may keep as `<holder>-<field>`: the system fields (released), and customer names. */
+const KEPT_HOLDER = /^(?:sy|syst|\/?[zy][\w/]*)$/i;
+
+/**
+ * A type phrase ABAP Cloud permits (scaffold version 11, the first SAP activation, 15.10.2026: `TYPE rlgrap-filename`
+ * — "The use of Table RLGRAP is not permitted"). A component of a table or structure the program does not declare,
+ * not a system field and not a customer name, becomes a built-in type (`NOT_RELEASED_FIELD_TYPES`, else `string`; a
+ * range or table of one `string`, which `RANGE OF` takes and `c LENGTH n` it does not); an SAP table the access layer
+ * reads, as a whole, becomes its row type (`sapRows`). `was` names what the original wrote, null when nothing changed.
+ */
+export function cloudPhrase(phrase: string, declared: (name: string) => boolean, sapRows: ReadonlyMap<string, string> = new Map()): { phrase: string; was: string | null } {
+  const p = phrase.trim();
+  const field = /^TYPE\s+(RANGE\s+OF\s+|(?:STANDARD\s+|SORTED\s+|HASHED\s+)?TABLE\s+OF\s+|LINE\s+OF\s+)?(\/?[\w/]+)-([\w/]+(?:-[\w/]+)*)(\s+WITH\s+[\s\S]*)?$/i.exec(p);
+  if (field) {
+    const holder = field[2].toLowerCase();
+    if (KEPT_HOLDER.test(holder) || declared(holder)) return { phrase: p, was: null };
+    const was = `${holder}-${field[3].toLowerCase()}`;
+    const prefix = (field[1] ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+    if (!prefix || prefix === 'LINE OF') return { phrase: `TYPE ${NOT_RELEASED_FIELD_TYPES[was] ?? 'string'}`, was };
+    if (prefix === 'RANGE OF') return { phrase: 'TYPE RANGE OF string', was };
+    // A sorted or hashed key names components a string line does not have: a standard table with the default key.
+    return { phrase: 'TYPE STANDARD TABLE OF string WITH DEFAULT KEY', was };
+  }
+  const whole = /^TYPE\s+((?:STANDARD\s+|SORTED\s+|HASHED\s+)?TABLE\s+OF\s+|LINE\s+OF\s+)?(\/?[\w/]+)(\s+WITH\s+[\s\S]*)?$/i.exec(p);
+  const row = whole ? sapRows.get(whole[2].toLowerCase()) : undefined;
+  if (!whole || !row) return { phrase: p, was: null };
+  const was = whole[2].toLowerCase();
+  if (!whole[1] || /^LINE/i.test(whole[1])) return { phrase: `TYPE ${row}`, was };
+  return { phrase: `TYPE ${whole[1].replace(/\s+/g, ' ')}${row}${whole[3] ?? ' WITH DEFAULT KEY'}`, was };
 }
 
 const PROCEDURE = new Set<Container['kind']>(['form', 'method', 'module', 'function']);
@@ -269,7 +363,14 @@ function writesTo(statements: readonly AbapStatement[], name: string): boolean {
 }
 
 /** The contract of a program — see the file comment. */
-export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>, reserved: ReadonlySet<string> = new Set()): RapContract {
+export function readRapContract(
+  facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>,
+  reserved: ReadonlySet<string> = new Set(),
+  options: {
+    /** The SAP tables the access layer reads or writes (scaffold version 11): each gets a row type of the class. */
+    sapTables?: readonly string[];
+  } = {},
+): RapContract {
   const { statements, blocks } = facts;
   const containers = blocks.containers;
   const types: string[] = [];
@@ -284,6 +385,36 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
   const namedTypes: string[] = [];
   const namedByPhrase = new Map<string, string>();
   const usedNames = new Set<string>([...reserved].map((r) => r.toLowerCase()));
+  const typeNotes = new Map<string, string>();
+
+  // ---- ABAP Cloud has no type of an SAP table, nor a component of one (scaffold version 11, the first SAP activation)
+  const rowTypeOf = new Map<string, string>();
+  for (const t of new Set((options.sapTables ?? []).map((x) => x.toLowerCase()))) {
+    if (CUSTOMER_TABLE.test(t)) continue;
+    let name = `ty_${t.replace(/^\/([^/]+)\//, '$1_').replace(/[^a-z0-9_]/g, '_').slice(0, 23)}_row`;
+    for (let i = 2; usedNames.has(name); i++) name = `${name.slice(0, 27)}_${i}`;
+    usedNames.add(name);
+    rowTypeOf.set(t, name);
+  }
+  /** Index in `types` of the first statement that names a row type: the row types are declared before it. */
+  let firstRowUse: number | null = null;
+  /** The SAP tables a declaration of the original is typed by as a whole: their row type must exist. */
+  const rowUsed = new Set<string>();
+  const cloud = (phrase: string, local?: ReadonlyMap<string, string>, localTypes?: ReadonlySet<string>) => {
+    const c = cloudPhrase(phrase, (h) => typeNames.has(h) || globalScope.has(h) || !!local?.has(h) || !!localTypes?.has(h), rowTypeOf);
+    if (c.was && rowTypeOf.has(c.was)) rowUsed.add(c.was);
+    return c;
+  };
+  /** A TYPES statement for `types`, with a note where the original's type is not permitted. */
+  const typesStatement = (name: string, phrase: string): string => {
+    const c = cloud(phrase);
+    const statement = `TYPES ${name} ${c.phrase}`;
+    if (c.was) {
+      typeNotes.set(statement, c.was);
+      if (rowTypeOf.has(c.was) && firstRowUse === null) firstRowUse = types.length;
+    }
+    return statement;
+  };
 
   const isGlobal = (line: number) => {
     const c = containerAt(containers as Container[], line);
@@ -355,6 +486,7 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
       const name = m[1].toLowerCase();
       let tail = m[3];
       let phrase: string;
+      let was: string | null = null;
       if (/\bAS\s+CHECKBOX\b|\bRADIOBUTTON\s+GROUP\b/i.test(tail)) phrase = 'TYPE c LENGTH 1';
       else {
         const t = /\b(TYPE|LIKE)\s+([\w/]+(?:-[\w/]+)*)/i.exec(tail);
@@ -362,9 +494,9 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
         const decimals = /\bDECIMALS\s+(\d+)/i.exec(tail);
         const typed = t ? `${t[1].toUpperCase()} ${t[2]}${decimals ? ` DECIMALS ${decimals[1]}` : ''}` : '';
         phrase = normalisePhrase(typed, lengthClause?.[1] ?? m[2] ?? (typed ? null : '8'));
-        phrase = resolveIn(phrase, null) ?? 'TYPE string';
+        ({ phrase, was } = cloud(resolveIn(phrase, null) ?? 'TYPE string'));
       }
-      selection.push({ name, phrase, line: st.lineStart, kind: 'parameter', rangeOf: null });
+      selection.push({ name, phrase, line: st.lineStart, kind: 'parameter', rangeOf: null, ...(was ? { was } : {}) });
       globalScope.set(name, phrase);
       continue;
     }
@@ -385,10 +517,12 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
           : m[2].includes('-') || !globalScope.has(m[2].toLowerCase())
             ? m[2].toLowerCase()
             : null;
-      const rangeOf = named ?? 'string';
-      const phrase = `TYPE RANGE OF ${rangeOf}`;
-      if (kw === 'SELECT-OPTIONS') selection.push({ name, phrase, line: st.lineStart, kind: 'range', rangeOf });
-      else globals.push({ name, phrase, line: st.lineStart });
+      const c = cloud(`TYPE RANGE OF ${named ?? 'string'}`);
+      const rangeOf = c.was ? 'string' : named ?? 'string';
+      const phrase = c.phrase;
+      const was = c.was ? { was: c.was } : {};
+      if (kw === 'SELECT-OPTIONS') selection.push({ name, phrase, line: st.lineStart, kind: 'range', rangeOf, ...was });
+      else globals.push({ name, phrase, line: st.lineStart, ...was });
       globalScope.set(name, phrase);
       continue;
     }
@@ -455,19 +589,20 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
       const n = simpleTypeName(phrase);
       if (n) phrase = `TYPE STANDARD TABLE OF ${n} WITH DEFAULT KEY`;
     }
-    const resolved = resolveIn(phrase, null);
-    if (!resolved) {
+    const original = resolveIn(phrase, null);
+    if (!original) {
       skipped.push({ line: st.lineStart, text: st.text.slice(0, 80) });
       continue;
     }
     if (structStack.length > 0) {
       const s = structStack[structStack.length - 1];
-      if (s.kind === 'CONSTANTS') constants.push(`CONSTANTS ${name} ${resolved}${d.value ? ` VALUE ${d.value}` : ''}`);
-      else types.push(`TYPES ${name} ${resolved}`);
+      if (s.kind === 'CONSTANTS') constants.push(`CONSTANTS ${name} ${cloud(original).phrase}${d.value ? ` VALUE ${d.value}` : ''}`);
+      else types.push(typesStatement(name, original));
       continue;
     }
+    const { phrase: resolved, was } = cloud(original);
     if (kw === 'TYPES') {
-      types.push(`TYPES ${name} ${resolved}`);
+      types.push(typesStatement(name, original));
       typeNames.add(name);
       typeDefs.set(name, resolved);
     } else if (kw === 'CONSTANTS') {
@@ -475,7 +610,7 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
       constantNames.add(name);
       globalScope.set(name, resolved);
     } else {
-      globals.push({ name, phrase: resolved, line: st.lineStart });
+      globals.push({ name, phrase: resolved, line: st.lineStart, ...(was ? { was } : {}) });
       globalScope.set(name, resolved);
     }
   }
@@ -518,7 +653,8 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
       const body = own.filter((s) => s !== head);
       for (const p of formParameters(head.text)) {
         const declared = p.phrase ? normalisePhrase(p.phrase, null) : null;
-        const resolved = declared ? resolveIn(declared, null) : null;
+        const raw = declared ? resolveIn(declared, null) : null;
+        const resolved = raw ? cloud(raw).phrase : null;
         locals.set(p.name, resolved ?? (p.section === 'tables' ? 'TYPE STANDARD TABLE' : 'TYPE any'));
         let typed: string;
         if (p.section === 'tables') {
@@ -550,7 +686,8 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
       const d = splitDecl(rest);
       if (!d) continue;
       const phrase = normalisePhrase(d.phrase, d.length);
-      const r = resolveIn(phrase, locals);
+      const raw = resolveIn(phrase, locals);
+      const r = raw ? cloud(raw, locals, localTypes).phrase : null;
       const usesLocalType = [...localTypes].some((t) => new RegExp(`\\b${escapeRe(t)}\\b`, 'i').test(phrase));
       if (r && !usesLocalType) locals.set(d.name.toLowerCase(), r);
       else locals.set(d.name.toLowerCase(), '');
@@ -566,11 +703,58 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
     (t) => !usedNames.has(t.name),
   );
   for (const t of customerTables) {
+    for (const c of t.components) c.phrase = cloud(c.phrase).phrase;
     if (t.components.length > 0) types.push(`TYPES BEGIN OF ${t.name}`, ...t.components.map((c) => `TYPES ${c.name} ${c.phrase}`), `TYPES END OF ${t.name}`);
     else types.push(`TYPES ${t.name} TYPE string`);
     typeNames.add(t.name);
     usedNames.add(t.name);
     typeDefs.set(t.name, t.components.length > 0 ? 'STRUCTURE' : 'TYPE string');
+  }
+
+  // ---- the SAP tables the access layer reads or writes: a row type each, from the fields the original uses
+  const sapRows: SapRow[] = [];
+  if (rowTypeOf.size > 0) {
+    // Every routine's declarations are read now, so a local typed by an SAP table marks its row type as needed.
+    for (const c of containers) if ((c.kind === 'form' || c.kind === 'method') && c.name) scopeOf(c.name);
+    /** The same-named component of the structure a SELECT reads into, where the program declares that structure. */
+    const selectInto = (target: string, field: string, scope: ReadonlyMap<string, string> | null): string | null => {
+      const declared = scope?.get(target.toLowerCase()) || globalScope.get(target.toLowerCase());
+      if (!declared) return null;
+      const line = tableLineOf(declared) ?? simpleTypeName(declared);
+      const own = line ? tableLineOf(typeDefs.get(line.toLowerCase()) ?? '') ?? line : null;
+      const comp = own ? structureComponents({ types }, own)?.find((x) => x.name === field) : undefined;
+      return comp && !/\bTABLE\b|\bREF\s+TO\b/i.test(comp.phrase) ? comp.phrase : null;
+    };
+    const fields = tableFieldsOf(facts, new Set(rowTypeOf.keys()), globalScope, scopeOf, (phrase, scope) => resolveIn(phrase, scope), selectInto);
+    const blocks: string[] = [];
+    for (const [table, name] of rowTypeOf) {
+      const known = [...(fields.get(table) ?? new Map<string, string | null>())].filter(([f]) => /^[a-z_]\w*$/i.test(f));
+      const components = known.map(([f, phrase]) => {
+        const builtin = NOT_RELEASED_FIELD_TYPES[`${table}-${f}`];
+        return { name: f, phrase: cloud(phrase ?? (builtin ? `TYPE ${builtin}` : 'TYPE string')).phrase };
+      });
+      if (components.length === 0 && !rowUsed.has(table)) {
+        sapRows.push({ table, rowType: null, components });
+        continue;
+      }
+      if (components.length > 0) blocks.push(`TYPES BEGIN OF ${name}`, ...components.map((c) => `TYPES ${c.name} ${c.phrase}`), `TYPES END OF ${name}`);
+      else blocks.push(`TYPES ${name} TYPE string`);
+      typeNames.add(name);
+      typeDefs.set(name, components.length > 0 ? 'STRUCTURE' : 'TYPE string');
+      sapRows.push({ table, rowType: name, components });
+    }
+    // Before the first statement that names one, at the top level (never inside a structure).
+    let at = firstRowUse ?? types.length;
+    let depth = 0;
+    let open = 0;
+    for (let i = 0; i < at; i++) {
+      if (/^TYPES BEGIN OF /i.test(types[i])) {
+        if (depth === 0) open = i;
+        depth++;
+      } else if (/^TYPES END OF /i.test(types[i])) depth = Math.max(0, depth - 1);
+    }
+    if (depth > 0) at = open;
+    types.splice(at, 0, ...blocks);
   }
 
   return {
@@ -584,6 +768,8 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
     namedTypes,
     globalScope,
     customerTables,
+    sapRows,
+    typeNotes,
     scopeOf,
     paramPhrase,
     resolve: (phrase, scope) => resolveIn(phrase, scope ?? null),
@@ -615,7 +801,7 @@ function customerTablesOf(
   scopeOf: (routine: string) => RoutineScope,
   resolve: (phrase: string, scope: ReadonlyMap<string, string> | null) => string | null,
 ): CustomerTable[] {
-  const { statements, blocks } = facts;
+  const { statements } = facts;
   const isCustomer = (n: string) => CUSTOMER_TABLE.test(n) && !declaredTypes.has(n.toLowerCase());
   const tables = new Set<string>();
   for (const w of facts.graph.databaseWrites) if (isCustomer(w.table)) tables.add(w.table.toLowerCase());
@@ -627,6 +813,29 @@ function customerTablesOf(
     for (const m of st.text.matchAll(typedBy)) if (isCustomer(m[1])) tables.add(m[1].toLowerCase());
   }
   if (tables.size === 0) return [];
+  const fields = tableFieldsOf(facts, tables, globalScope, scopeOf, resolve, null);
+  return [...tables].sort().map((name) => ({
+    name,
+    components: [...fields.get(name)!].map(([f, phrase]) => ({ name: f, phrase: phrase ?? 'TYPE string' })),
+  }));
+}
+
+/**
+ * The fields an original uses of each of `tables` — of a data object typed by the table (`ls-f = x`, `x = ls-f`, a
+ * loop or read into a row), of a write with its row spelled out — with the type of what it assigns them or is
+ * assigned from (null when that is not known). `selectInto`, for SAP tables (scaffold version 11): also the fields a
+ * SELECT on the table names, typed by the same-named component of the structure it reads into where the program
+ * declares one (`SELECT vbeln FROM vbak INTO TABLE gt_orders` with `gt_orders` of `ty_order`, `vbeln TYPE vbeln_va`).
+ */
+function tableFieldsOf(
+  facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>,
+  tables: ReadonlySet<string>,
+  globalScope: ReadonlyMap<string, string>,
+  scopeOf: (routine: string) => RoutineScope,
+  resolve: (phrase: string, scope: ReadonlyMap<string, string> | null) => string | null,
+  selectInto: ((target: string, field: string, scope: ReadonlyMap<string, string> | null) => string | null) | null,
+): Map<string, Map<string, string | null>> {
+  const { statements, blocks } = facts;
 
   const routineOf = (line: number) => {
     const c = containerAt(blocks.containers as Container[], line);
@@ -635,7 +844,7 @@ function customerTablesOf(
   // Data objects typed by each table: work areas (a row) and internal tables (a row through a loop or a read).
   const rowOf = new Map<string, string>();
   const tabOf = new Map<string, string>();
-  const declRe = /^(?:DATA|STATICS|CLASS-DATA)\s*:?\s*([\w/]+)\s+(?:TYPE|LIKE)\s+(?:(?:STANDARD\s+|SORTED\s+|HASHED\s+)?(TABLE\s+OF\s+))?(\/?[zy][\w/]*)(?![\w/-])/i;
+  const declRe = /^(?:DATA|STATICS|CLASS-DATA)\s*:?\s*([\w/]+)\s+(?:TYPE|LIKE)\s+(?:(?:STANDARD\s+|SORTED\s+|HASHED\s+)?(TABLE\s+OF\s+))?(\/?[a-z][\w/]*)(?![\w/-])/i;
   for (const st of statements) {
     const m = declRe.exec(st.text);
     if (!m || !tables.has(m[3].toLowerCase())) continue;
@@ -684,11 +893,12 @@ function customerTablesOf(
     if (back && rowOf.has(back[2].toLowerCase())) note(rowOf.get(back[2].toLowerCase())!, back[3], typeOf(back[1], st.lineStart));
     // Any other use of a component, in a declaration (`TYPE z-f`) or a statement.
     for (const m of text.matchAll(/(?:^|[^\w/>-])(<?[\w/]+>?)-([a-z_][\w/]*)/gi)) {
-      const t = rowOf.get(m[1].toLowerCase());
+      // A table's column too, for an SAP table (`FOR ALL ENTRIES IN lt_vbrp WHERE vbeln = lt_vbrp-vbeln`).
+      const t = rowOf.get(m[1].toLowerCase()) ?? (selectInto ? tabOf.get(m[1].toLowerCase()) : undefined);
       if (t) note(t, m[2], null);
     }
     // A write with its row spelled out: `INSERT z FROM @( VALUE #( f = x … ) )`, `UPDATE z SET f = x, …`.
-    const write = /^(?:INSERT|MODIFY|UPDATE)\s+(\/?[zy][\w/]*)(?![\w/])([\s\S]*)$/i.exec(text);
+    const write = /^(?:INSERT|MODIFY|UPDATE)\s+(\/?[a-z][\w/]*)(?![\w/])([\s\S]*)$/i.exec(text);
     if (write && tables.has(write[1].toLowerCase())) {
       const t = write[1].toLowerCase();
       const value = /\bVALUE\s+#\(([\s\S]*)\)/i.exec(write[2]);
@@ -696,11 +906,41 @@ function customerTablesOf(
       const set = /^\s*SET\s+([\s\S]*?)(?:\bWHERE\b|$)/i.exec(write[2]);
       if (set) for (const m of set[1].matchAll(/\b([a-z_]\w*)\s*=\s*(@?[\w/<>-]+)/gi)) note(t, m[1], typeOf(m[2], st.lineStart));
     }
+    if (selectInto && /^SELECT\b/i.test(text)) {
+      const flat = text.replace(/\s+/g, ' ');
+      const from = [...flat.matchAll(/\b(?:FROM|JOIN) (\/?[a-z][\w/]*)(?: AS ([\w]+))?/gi)];
+      const alias = new Map<string, string>();
+      for (const m of from) {
+        alias.set(m[1].toLowerCase(), m[1].toLowerCase());
+        if (m[2]) alias.set(m[2].toLowerCase(), m[1].toLowerCase());
+      }
+      const read = [...new Set(from.map((m) => m[1].toLowerCase()))];
+      if (!read.some((t) => tables.has(t))) continue;
+      const list =
+        /\bFIELDS ([\s\S]*?)(?= (?:WHERE|INTO|APPENDING|GROUP|ORDER|HAVING|UP|FOR)\b|$)/i.exec(flat)?.[1] ??
+        /^SELECT (?:SINGLE )?(?:FOR UPDATE )?(?:DISTINCT )?([\s\S]*?) FROM\b/i.exec(flat)?.[1] ??
+        '';
+      const into = /\b(?:INTO|APPENDING) (?:CORRESPONDING FIELDS OF )?(?:TABLE )?@?([\w/]+)/i.exec(flat)?.[1] ?? null;
+      const routine = routineOf(st.lineStart);
+      const scope = routine ? scopeOf(routine).locals : null;
+      for (const token of list.replace(/\bAS \w+/gi, ' ').split(/[\s,()]+/)) {
+        const m = /^(?:([\w/]+)~)?([a-z_]\w*)$/i.exec(token);
+        if (!m || /^(?:SINGLE|DISTINCT|FOR|UPDATE|COUNT|SUM|MIN|MAX|AVG|CAST|AS|DATA)$/i.test(m[2])) continue;
+        const table = m[1] ? alias.get(m[1].toLowerCase()) : read.length === 1 ? read[0] : undefined;
+        if (!table || !tables.has(table)) continue;
+        note(table, m[2], into ? selectInto(into, m[2].toLowerCase(), scope) : null);
+      }
+      // The fields its WHERE compares (`WHERE vbeln = …`, `a~vkorg IN s_vkorg`): fields of the table, too.
+      const where = /\bWHERE ([\s\S]*?)(?= (?:INTO|APPENDING|GROUP|ORDER|HAVING|UP)\b|$)/i.exec(flat)?.[1] ?? '';
+      for (const m of where.matchAll(/(?:^|[\s(])(?:([\w/]+)~)?([a-z_]\w*)\s*(?:=|<>|<=|>=|<|>|\b(?:EQ|NE|LT|LE|GT|GE|IN|BETWEEN|LIKE|IS)\b)/gi)) {
+        if (/^(?:AND|OR|NOT)$/i.test(m[2])) continue;
+        const table = m[1] ? alias.get(m[1].toLowerCase()) : read.length === 1 ? read[0] : undefined;
+        if (!table || !tables.has(table)) continue;
+        note(table, m[2], into ? selectInto(into, m[2].toLowerCase(), scope) : null);
+      }
+    }
   }
-  return [...tables].sort().map((name) => ({
-    name,
-    components: [...fields.get(name)!].map(([f, phrase]) => ({ name: f, phrase: phrase ?? 'TYPE string' })),
-  }));
+  return fields;
 }
 
 /** The components of a structure type the class declares (`TYPES BEGIN OF x … END OF x`), name → phrase; null when it is not one. */

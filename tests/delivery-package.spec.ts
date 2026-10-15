@@ -266,6 +266,22 @@ test.describe('README.md is written from the files in the archive', () => {
     expect(readme).toContain('ZCL_DEMO_RAP_TEST');
     expect(out.files.map((f) => f.path)).not.toContain('package.json');
   });
+
+  test('a package with a service binding says that abapGit reports its service group on pull, and that this is expected', () => {
+    // The first SAP activation (BTP ABAP trial, 15.10.2026): "Object type G4BA not supported, …_SRVB ignored", "Pulled with errors".
+    const p = fiProject({ extensibilityRoute: 'In-App (ABAP Cloud)', generatedCode: 'CLASS zcl_x DEFINITION. ENDCLASS.', testSuite: { code: 'CLASS ltc DEFINITION FOR TESTING. ENDCLASS.' } });
+    const readmeOf = (withBinding: boolean) => {
+      const bundle = createDeliveryBundle();
+      bundle.file('.abapgit.xml', '<asx:abap/>');
+      bundle.file('src/zcl_demo_rap_logic.clas.abap', 'CLASS zcl_x DEFINITION. ENDCLASS.', 'generated');
+      if (withBinding) bundle.file('src/zdemo_rap_srvb.srvb.xml', '<abapGit/>', 'generated');
+      return finishDeliveryPackage({ entries: bundle.entries, facts: factsOf(p), layout: 'flat' }).files.find((f) => f.path === 'README.md')!.content;
+    };
+    const readme = readmeOf(true);
+    expect(readme).toContain('"Object type G4BA not supported, ZDEMO_RAP_SRVB ignored"');
+    expect(readme).toContain('That is expected — publish the service binding `ZDEMO_RAP_SRVB` once in ADT.');
+    expect(readmeOf(false)).not.toContain('G4BA');
+  });
 });
 
 /* ===================================================== STATUS.md and manifest */

@@ -401,7 +401,13 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const unitsWithBody = plan.units.filter((u) => !plan.units.some((p) => p.part?.parent === u.id));
   const parentsOfParts = plan.units.filter((u) => plan.units.some((p) => p.part?.parent === u.id));
   const reservedNames = new Set(['run', 'run_with_state', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
-  const contract = readRapContract(facts, reservedNames);
+  // The SAP tables the access layer reads or writes: ABAP Cloud has no type of them, the class declares a row type each.
+  const sapTables = access.points.filter((p) => !p.customer && p.kind !== 'call').map((p) => p.object.toLowerCase());
+  const contract = readRapContract(facts, reservedNames, { sapTables });
+  const sapRowOf = new Map(contract.sapRows.map((r) => [r.table, r]));
+  /** A comment line before a declaration whose type the original names in a way ABAP Cloud does not permit. */
+  const notReleased = (name: string, was: string | undefined, indent = '    '): string[] =>
+    was ? [`${indent}" ${name}: the original types it by ${was}, which ABAP Cloud does not release - ${sapRowOf.get(was)?.rowType ?? 'a built-in type'} instead.`] : [];
   const attributeNames = new Set([...contract.globals.map((g) => g.name), ...contract.selection.map((f) => f.name), ...contract.constantNames]);
   const takenMethod = new Set<string>([...attributeNames, 'run', 'run_with_state', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages']);
   const methodOf = new Map<string, string>();
@@ -804,7 +810,11 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const customerMethods = (kind: AccessPoint['kind']) =>
     Object.fromEntries(accessMethods.filter((m) => m.point.customer && m.point.kind === kind).map((m) => [m.point.object.toLowerCase(), m.point.method]));
   // …and the ones it writes, with their write methods (acceptance run 4): a body's INSERT, MODIFY, UPDATE or DELETE on one is refused.
-  const tableNames = { tables: [table], customerReads: customerMethods('read'), customerWrites: customerMethods('write') };
+  // …and the SAP tables it reads or writes, with the row type the class declares for each (scaffold version 11): a body
+  // typing data by one (`TYPE STANDARD TABLE OF vbak`) is refused, naming that row type.
+  const sapTypes = Object.fromEntries(contract.sapRows.map((r) => [r.table, r.rowType]));
+  const readerOf = Object.fromEntries(accessMethods.filter((m) => !m.point.customer && m.point.kind === 'read').map((m) => [m.point.object.toLowerCase(), m.point.method]));
+  const tableNames = { tables: [table], customerReads: customerMethods('read'), customerWrites: customerMethods('write'), sapTypes, sapReads: readerOf };
 
   for (const u of [...unitsWithBody, ...parentsOfParts]) {
     const name = methodOf.get(u.id)!;
@@ -857,14 +867,18 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       impls.push(`    " Not written by the engine: ${docText(p.why ?? 'the condition reads names the class does not declare')}.`);
       impls.push(regionText('rap', g.regionId!, `${p.name}|${g.line}|${g.condition}`, '    ', `RAISE EXCEPTION NEW ${cx}( unit = '${g.regionId}' ).`));
       available[g.regionId!] = [logic, 'me'];
-      regionNames[g.regionId!] = { attributes: attributesList, params: p.params.map((x) => x.name), methods: allMethods, access: [], tables: [table] };
+      regionNames[g.regionId!] = { attributes: attributesList, params: p.params.map((x) => x.name), methods: allMethods, access: [], tables: [table], sapTypes };
     }
     impls.push('  ENDMETHOD.', '');
   }
 
   const typesBlock = [
     ...(contract.types.length > 0 ? [`    " The original's types, as it declares them.`] : []),
-    ...contract.types.map((t) => `    ${t}.`),
+    ...contract.types.flatMap((t) => {
+      const row = contract.sapRows.find((r) => r.rowType && new RegExp(`^TYPES (?:BEGIN OF )?${r.rowType}(?: |$)`, 'i').test(t));
+      const rowNote = row ? [`    " ${row.rowType}: a row of ${row.table.toUpperCase()} with the fields the original uses - ABAP Cloud has no type ${row.table.toUpperCase()}.`] : [];
+      return [...rowNote, ...notReleased(/^TYPES ([\w/]+)/i.exec(t)?.[1] ?? '', contract.typeNotes.get(t)), `    ${t}.`];
+    }),
     ...(contract.constants.length > 0 ? ["    \" The original's constants."] : []),
     ...contract.constants.map((c) => `    ${c}.`),
     ...(contract.namedTypes.length + localTypes.length > 0 ? ['    " Types the method parameters need, named by the engine.'] : []),
@@ -872,7 +886,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     ...localTypes.map((t) => `    ${t}.`),
     "    \" The run's selection: the original's PARAMETERS and SELECT-OPTIONS under their names.",
     '    TYPES BEGIN OF ty_run_selection.',
-    ...(contract.selection.length > 0 ? contract.selection.map((f) => `    TYPES ${f.name} ${f.phrase}.`) : ['    TYPES no_selection TYPE c LENGTH 1.']),
+    ...(contract.selection.length > 0 ? contract.selection.flatMap((f) => [...notReleased(f.name, f.was), `    TYPES ${f.name} ${f.phrase}.`]) : ['    TYPES no_selection TYPE c LENGTH 1.']),
     '    TYPES END OF ty_run_selection.',
     ...(inputs.length > 0
       ? [
@@ -891,9 +905,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const privateData = [
     ...(hasAccess ? ['    "! The access layer: every SAP read, write and call of the original goes through it (rule 25).', `    DATA mo_access TYPE REF TO ${accessIf}.`] : []),
     ...(contract.selection.length > 0 ? ["    \" The original's selection inputs, under their names."] : []),
-    ...contract.selection.map((f) => `    DATA ${f.name} ${f.phrase}.`),
+    ...contract.selection.flatMap((f) => [...notReleased(f.name, f.was), `    DATA ${f.name} ${f.phrase}.`]),
     ...(contract.globals.length > 0 ? ["    \" The original's globals, under their names."] : []),
-    ...contract.globals.map((g) => `    DATA ${g.name} ${g.phrase}.`),
+    ...contract.globals.flatMap((g) => [...notReleased(g.name, g.was), `    DATA ${g.name} ${g.phrase}.`]),
     ...(inputs.length > 0 ? ['    DATA ms_input TYPE ty_run_input.'] : []),
     "    \" What the original showed as a message (TYPE 'I', 'S', 'W'): one line each, in order.",
     '    DATA mt_messages TYPE string_table.',
@@ -975,6 +989,11 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       const m = /^CONSTANTS (?:BEGIN OF )?([\w/]+)/i.exec(c);
       return !!m && contract.constantNames.has(m[1].toLowerCase()) && mentions(text, m[1]);
     });
+    // The row types of the SAP tables this unit's ABAP reads (scaffold version 11): ABAP Cloud has no type VBAK.
+    const rows = contract.sapRows.filter((r) => r.rowType && !wantTypes.has(r.rowType) && mentions(text, r.table));
+    const rowLines = rows.flatMap((r) =>
+      r.components.length > 0 ? [`TYPES BEGIN OF ${r.rowType}.`, ...r.components.map((c) => `TYPES ${c.name} ${c.phrase}.`), `TYPES END OF ${r.rowType}.`] : [`TYPES ${r.rowType} TYPE string.`],
+    );
     const callees = u.callees.map((id) => signatures[id]).filter(Boolean);
     const preds = u.guards
       .filter((id) => predicates.has(id))
@@ -986,6 +1005,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     unitTypes[u.id] = [
       `CLASS ${logic} (engine-written; your body is one METHOD of it):`,
       ...typeLines,
+      ...(rowLines.length > 0
+        ? [`" Rows of the SAP tables the original reads (${rows.map((r) => r.table.toUpperCase()).join(', ')}): ABAP Cloud has no type of them - type the rows by these, e.g. DATA lt_rows TYPE STANDARD TABLE OF ${rows[0].rowType} WITH EMPTY KEY.`, ...rowLines]
+        : []),
       ...consts.map((c) => `${c}.`),
       ...(attrs.length > 0 ? ["\" Attributes (the original's globals and selection inputs, same names):", ...attrs.map((a) => `DATA ${a.name} ${a.phrase}.`)] : []),
       "DATA mt_messages TYPE string_table. \" where the original shows a message of TYPE 'I', 'S' or 'W': APPEND its text",
@@ -1147,7 +1169,11 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const authWhat =
     checks.length > 0 ? `the original checks ${checkedObjects} (${checks.map((c) => `L${c.lineStart}`).join(', ')})` : 'the original makes no AUTHORITY-CHECK - decide who may run this';
   const selectionParams = contract.selection.filter((f) => f.kind === 'parameter');
-  const cdsParams = selectionParams.map((f) => ({ name: f.name, type: cdsType(f.phrase, contract) ?? 'abap.char( 255 )' }));
+  // A parameter whose type was not released is TYPE string in the class: as a CDS parameter, abap.char( 255 ) as before.
+  const cdsParams = selectionParams.map((f) => {
+    const type = cdsType(f.phrase, contract);
+    return { name: f.name, type: !type || type === 'abap.string( 0 )' ? 'abap.char( 255 )' : type };
+  });
   let exposed = proj.toUpperCase();
   let exposedAs = 'Records';
   if (architecture === 'custom-entity') {
@@ -1610,10 +1636,17 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
             `"! A test double of the access layer: pass NEW ltd_access( ) to the constructor of ${logic} and the logic runs without SAP.`,
             'CLASS ltd_access DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.',
             '  PUBLIC SECTION.',
-            `    INTERFACES ${accessIf} PARTIALLY IMPLEMENTED.`,
+            `    INTERFACES ${accessIf}.`,
             'ENDCLASS.',
             '',
+            // Every method, empty (scaffold version 11, the first SAP activation, 15.10.2026): PARTIALLY IMPLEMENTED left
+            // them out, and every golden-master case died with CX_SY_DYN_CALL_ILLEGAL_METHOD at the first access call.
             'CLASS ltd_access IMPLEMENTATION.',
+            ...accessMethods.flatMap((m) => [
+              `  METHOD ${accessIf}~${m.point.method}.`,
+              `    " No SAP in a test: ${m.point.kind === 'read' ? 'no rows are read' : m.point.kind === 'write' ? 'nothing is written' : 'the call does nothing'}.`,
+              '  ENDMETHOD.',
+            ]),
             'ENDCLASS.',
             '',
           ]

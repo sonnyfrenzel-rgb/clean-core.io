@@ -1277,6 +1277,14 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
       lines.push(
         `${n++}. Import with abapGit into a development package whose ABAP language version is ABAP for Cloud Development: on SAP S/4HANA on-premise or SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) with the open-source abapGit (New Offline, Import ZIP, or push this package to a Git repository and link it with New Online); on SAP BTP ABAP Environment or SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) with the abapGit version SAP ships for ABAP Cloud (in ADT), whose supported object types SAP documents.`,
       );
+      // The first SAP activation (BTP ABAP trial, 15.10.2026): every object imported, the pull still said "with errors".
+      const binding = entries.find((e) => /^src\/.+\.srvb\.xml$/i.test(e.path));
+      if (binding) {
+        const name = binding.path.split('/').pop()!.replace(/\.srvb\.xml$/i, '').toUpperCase();
+        lines.push(
+          `   abapGit does not transport the service group the binding creates (object type G4BA): a pull reports "Object type G4BA not supported, ${name} ignored" and ends "Pulled with errors" although every object was imported. That is expected — publish the service binding \`${name}\` once in ADT.`,
+        );
+      }
     }
     lines.push(`${n++}. Activate the objects in ADT and fix what does not activate.`);
     const unit = entries.find((e) => /\.clas\.abap$/i.test(e.path) && /test/i.test(e.path));
