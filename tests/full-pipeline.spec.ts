@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { adminSetDoc, adminApproveUser, adminSetCustomClaim } from './helpers/admin-seed';
 import { GEMINI_TEST_REAL_MODEL_HEADER } from '../lib/gemini-test-stub';
+import { DESIGN_GENERATION_CEILING_MS } from '../lib/model-stages';
 
 // Set test secret first so that imports initializing getSecret don't throw
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
@@ -130,7 +131,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
   });
 
   test('should walk through all seven phases using a safe example', async ({ page }) => {
-    test.setTimeout(300 * 1000); // 5 minutes timeout for all 5 live LLM calls
+    // Live calls: analyze, design + its NFR proposals (two calls, one write, up to
+    // the product's own ceiling), documentation, testing. The budget follows the ceiling.
+    test.setTimeout(480 * 1000);
 
     // Redirect browser console logs to terminal for CI debugging (unbuffered)
     page.on('console', msg => process.stdout.write(`[BROWSER CONSOLE] ${msg.type()}: ${msg.text()}\n`));
@@ -306,7 +309,10 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await openTool(page, 'design');
     // The design is written on opening (ADR-070, amended 03.10.2026) and its
     // document opens on the group "What we build", which holds the blueprint.
-    await page.locator('[data-design-section="blueprint"]').click({ timeout: 45000 });
+    // Design and its NFR proposals are two model calls in sequence, saved in one
+    // write (eb8987e0): wait as long as the product itself waits, not 45 s.
+    await expect(page.locator('[data-design-section="blueprint"]')).toBeVisible({ timeout: DESIGN_GENERATION_CEILING_MS + 15_000 });
+    await page.locator('[data-design-section="blueprint"]').click();
     await page.waitForSelector('text=Target Project Blueprint', { timeout: 45000 });
     
     // Verify that the files tree explorer renders the modernization directory structures
