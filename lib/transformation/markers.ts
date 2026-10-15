@@ -32,6 +32,7 @@ import { createLiteralScanner, readStatements } from '../abap/statement-reader';
 import { codeMask } from '../ts-source-scan';
 // The class names SAP releases for ABAP Cloud (~1,400, 9 kB gzip; written by the catalog sync) — never the catalog itself.
 import releasedClassList from '../abap/generated/released-classes.latest.json';
+import releasedInterfaceList from '../abap/generated/released-interfaces.latest.json';
 import {
   BODY_MAX_CHARS,
   BODY_SLICE_FACTOR,
@@ -354,6 +355,17 @@ const RELEASED_CLASSES: ReadonlySet<string> = new Set((releasedClassList as { cl
 export function isReleasedSapClass(name: string): boolean {
   return RELEASED_CLASSES.has(name.toLowerCase());
 }
+/**
+ * The interfaces SAP's `latest` list marks released (roadmap 3.0.14 item 4): a body reads a released interface's
+ * constants and types through `=>` as it does a class's (`if_abap_behv=>mk-on`, `if_oo_adt_classrun=>…`), and the
+ * guard read only the class list, so it refused them as calls outside the logic class. Synced beside the class list
+ * (`released-interfaces.latest.json`, names only).
+ */
+const RELEASED_INTERFACES: ReadonlySet<string> = new Set((releasedInterfaceList as { interfaces: string[] }).interfaces);
+/** Whether SAP releases this interface for ABAP Cloud (lower-case or not). */
+export function isReleasedSapInterface(name: string): boolean {
+  return RELEASED_INTERFACES.has(name.toLowerCase());
+}
 const OPENERS: Record<string, string> = { IF: 'ENDIF', CASE: 'ENDCASE', LOOP: 'ENDLOOP', DO: 'ENDDO', WHILE: 'ENDWHILE', TRY: 'ENDTRY' };
 
 function abapLiteralsClosed(body: string): boolean {
@@ -458,7 +470,7 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     if (ABAP_FOREIGN.test(s.text)) foreign.push(s.text.slice(0, 40));
     for (const m of s.text.matchAll(/([\w/]+)=>/g)) {
       const cls = m[1].toLowerCase();
-      if (!available.has(cls) && !ABAP_ALLOWED_CLASS.test(cls) && !RELEASED_CLASSES.has(cls)) foreign.push(`${cls}=>`);
+      if (!available.has(cls) && !ABAP_ALLOWED_CLASS.test(cls) && !RELEASED_CLASSES.has(cls) && !RELEASED_INTERFACES.has(cls)) foreign.push(`${cls}=>`);
     }
   }
   if (foreign.length > 0) out.push(refusal('foreign-call', `calls outside the logic class: ${[...new Set(foreign)].slice(0, 6).join(', ')} — neither declared by this package nor released by SAP for ABAP Cloud`));

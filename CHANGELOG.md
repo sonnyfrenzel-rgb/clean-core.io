@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.14] — unreleased
+
+### Transformation — generation pipeline
+
+- The body guard accepts SAP's released interfaces as well as its released classes: `if_abap_behv=>mk-on` is no
+  longer refused as "a call outside the logic class". The names come from the synced Cloudification Repository list
+  (`released-interfaces.latest.json`, names only, written by `npm run sync:catalog` beside the class list); an
+  unreleased or invented interface is still refused (3.0.14 item 4).
+
 ## [v3.0.13] — 2026-10-15
 
 Transformation becomes a real tool: the generated ABAP has to pass an activation check before it is

@@ -55,9 +55,10 @@ const DYNAMIC_ALLOWED: Record<string, string> = {
   // SAP's synced name lists (released CDS views, classic BAPIs; ~0.5 MB) for the
   // identifier check, fetched once when a mark or an export first needs them (3.0.12).
   'lib/sap-identifiers.ts ~> lib/sap-identifier-lists.ts': 'loads SAP name lists for the identifier check',
-  // The generation engine, fetched when Generate is pressed. It reaches only released-classes.latest.json — SAP's
-  // released class names (~36 kB, 9 kB gzip) for the body guard (acceptance run 4, 14.10.2026), never the catalog;
-  // tests/transformation-run4-defects.spec.ts holds that file's size.
+  // The generation engine, fetched when Generate is pressed. It reaches only released-classes.latest.json and
+  // released-interfaces.latest.json — SAP's released class names (~36 kB, 9 kB gzip; acceptance run 4, 14.10.2026)
+  // and interface names (~95 kB, 20 kB gzip; 3.0.14 item 4) for the body guard, never the catalog;
+  // tests/transformation-run4-defects.spec.ts and tests/transformation-3014-generation.spec.ts hold their size.
   'app/(app)/project/[projectId]/transformation/page.tsx ~> lib/transformation/engine-led.ts': 'loads the generation engine on Generate',
 };
 

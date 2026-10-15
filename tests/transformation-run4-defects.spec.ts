@@ -10,7 +10,7 @@ import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
 import { runGeneration, type OrchestratorInput } from '../lib/transformation/orchestrator';
 import { mapTypeFindings, markerSpans, nodeScaffoldCheck, type VerifyRunAnswer } from '../lib/transformation/verify';
 import { readEngineFacts } from '../lib/transformation/unit-plan';
-import { deriveReleasedClasses, RELEASED_CLASSES_FILE } from '../lib/abap/cloudification-repo';
+import { deriveReleasedClasses, RELEASED_CLASSES_FILE, RELEASED_INTERFACES_FILE } from '../lib/abap/cloudification-repo';
 import type { FillRequest } from '../lib/transformation/types';
 import { poDemo } from './helpers/transformation-scaffold';
 
@@ -168,7 +168,8 @@ test.describe('2 — a class SAP releases for ABAP Cloud may be called', () => {
       .readdirSync(dir)
       .filter((f) => f.endsWith('.ts'))
       .flatMap((f) => [...fs.readFileSync(path.join(dir, f), 'utf8').matchAll(/from '\.\.\/abap\/generated\/([^']+)'/g)].map((m) => m[1]));
-    expect([...new Set(imports)]).toEqual([RELEASED_CLASSES_FILE]);
+    // Since 3.0.14 (item 4) the released interface names beside them (tests/transformation-3014-generation.spec.ts).
+    expect([...new Set(imports)].sort()).toEqual([RELEASED_CLASSES_FILE, RELEASED_INTERFACES_FILE].sort());
   });
 });
 
