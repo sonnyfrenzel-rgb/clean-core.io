@@ -339,7 +339,7 @@ type GuiFileFinding = { objectName?: string | null; snippet?: string | null; lin
  * justify a side-by-side service instead, which the code cannot show. It never
  * says side-by-side is required: no file feature makes it so.
  */
-export function guiFileSentence(files: readonly GuiFileFinding[]): string {
+export function guiFileSentence(files: readonly GuiFileFinding[], precise = false): string {
   const by = (dir: GuiFileDirection) => files.filter((f) => guiFileDirection(f) === dir);
   const named = (list: readonly GuiFileFinding[]) => {
     const names = [...new Set(list.map((f) => (f.objectName || 'CL_GUI_FRONTEND_SERVICES').toUpperCase()))].join(', ');
@@ -350,7 +350,11 @@ export function guiFileSentence(files: readonly GuiFileFinding[]): string {
   const downloads = by('download');
   const uploads = by('upload');
   const unknown = by('unknown');
-  if (downloads.length) {
+  if (downloads.length && precise) {
+    // From 3.0.13 (`PRECISION_FIXES_FROM`): the finding shows that a file is
+    // downloaded, not what it holds — a PDF is no list (QA f1400cdf0783).
+    parts.push(`The frontend file download (${named(downloads)}) writes a file to the user's PC; what the file holds is not read here. In ABAP Cloud a download is served on-stack — a table by a Fiori list report's spreadsheet export, any other file by a RAP large object field (S/4HANA 2022 on) — so the download forces no side-by-side split.`);
+  } else if (downloads.length) {
     parts.push(`The frontend file download (${named(downloads)}) writes a list to the user's PC: in ABAP Cloud a Fiori list report exports it to a spreadsheet on-stack, so the download forces no side-by-side split.`);
   }
   if (uploads.length) {
@@ -753,7 +757,7 @@ export function routeExtensibility(
   }
   // What a frontend file feature means for the route, whichever branch chose
   // it — upload and download apart, because they have different remedies.
-  if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess)}`;
+  if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess, precisionFixesApply(engineVersion))}`;
   // From 3.0.13 (`PRECISION_FIXES_FROM`, roadmap 3.0.13 rule 2): how much of
   // an exit, BAdI or VOFM implementation's logic stands in the hook decides the
   // effort of moving it — the statements in the hook and whether it is
@@ -963,7 +967,12 @@ export function routeExtensibility(
     assumptions.push(`Custom table persistence is not yet decoupled into an ${BTP}-managed database or CAP service.`);
   }
   if (bdcCalls.length > 0) {
-    assumptions.push('BDC screen automations have no equivalent Fiori/API-based replacement yet.');
+    // From 3.0.13 (`PRECISION_FIXES_FROM`) the assumption is about this
+    // program, not about SAP: the rationale names the released API that
+    // replaces BDC, so "no replacement" contradicted it (QA 5aeec6927182).
+    assumptions.push(precisionFixesApply(engineVersion)
+      ? 'The BDC screen automations of this program are not yet replaced; what replaces them is said in the rationale.'
+      : 'BDC screen automations have no equivalent Fiori/API-based replacement yet.');
   }
   if (findings.length === 0 && includesNotRead.length > 0) {
     assumptions.push(`Part of the program was not read: the engine did not assess ${unassessedSummary} — the score and the route below describe the part that was read, not the whole object, and finding nothing there is not a clean result.`);

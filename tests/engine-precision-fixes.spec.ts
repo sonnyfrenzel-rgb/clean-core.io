@@ -85,7 +85,7 @@ test.describe('an outbound RFC does not hide a standard-table write (QA 5a559787
   });
 });
 
-test.describe('a file-name validation counts only when its failure stops the program (QA 5a559787: 7e158fe18264)', () => {
+test.describe('a file-name validation counts only when its failure is decided on: no EXCEPTIONS, or sy-subrc decided right after (QA 5a559787: 7e158fe18264)', () => {
   const src = (validation: string) =>
     ['REPORT zfile.', 'PARAMETERS p_path TYPE string.', validation, 'OPEN DATASET p_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.', ''].join('\n');
   const CALL = "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = p_path";
@@ -313,8 +313,14 @@ test.describe("the IDoc sentence attributes SAP's classification only to SAP's m
 
   test('a module in a customer or partner namespace is not said to be in SAP\'s classification file', () => {
     const own = why(program('Z_SEND_IDOC'), NEW);
-    expect(own).toContain('IDoc function modules in a customer or partner namespace are called (Z_SEND_IDOC)');
+    expect(own).toContain('Function modules named for IDoc in a customer or partner namespace are called (Z_SEND_IDOC)');
     expect(own).not.toMatch(/IDoc function modules are called/);
+    // A name is not the framework: no IDoc framework advice for a customer module alone (QA b495d64b5c10).
+    expect(own).toContain("The name alone does not show that they use SAP's IDoc framework");
+    expect(own).not.toMatch(/IDoc interface can remain|custom code cannot call these modules/);
+    expect(why(program('Z_IDOC_HELPER'), NEW)).not.toMatch(/IDoc interface can remain|custom code cannot call these modules/);
+    // Beside an SAP module the framework's advice stays.
+    expect(why(program('MASTER_IDOC_DISTRIBUTE', 'Z_IDOC_HELPER'), NEW)).toContain('an IDoc interface can remain the better fit');
     expect(why(program('/ACME/SEND_IDOC'), NEW)).toContain('customer or partner namespace are called (/ACME/SEND_IDOC)');
     // What v3.0.12 signed.
     expect(why(program('Z_SEND_IDOC'), OLD)).toMatch(/^IDoc function modules are called \(Z_SEND_IDOC\)\. SAP's classification file lists/);
@@ -325,5 +331,39 @@ test.describe("the IDoc sentence attributes SAP's classification only to SAP's m
     const mixed = why(program('MASTER_IDOC_DISTRIBUTE', 'Y_IDOC_POST'), NEW);
     expect(mixed).toMatch(/^IDoc function modules are called \(MASTER_IDOC_DISTRIBUTE\)\./);
     expect(mixed).toContain('Y_IDOC_POST is in a customer or partner namespace, which SAP\'s classification file does not cover: its level is the level of what it calls.');
+  });
+});
+
+test.describe('the route says what its findings show, not more (QA f1400cdf0783, 5aeec6927182)', () => {
+  const route = (code: string, engine: string) => routeExtensibility(buildAbapEvidence(code, 'zx.abap', 'private', undefined, engine), 'private', engine);
+
+  test('a GUI download is a file, not a list: what it holds is not claimed', () => {
+    const pdf = [
+      'REPORT zpdf.',
+      'DATA lt_bin TYPE STANDARD TABLE OF x255.',
+      "CALL FUNCTION 'GUI_DOWNLOAD'",
+      "  EXPORTING filename = 'C:\\temp\\form.pdf' filetype = 'BIN'",
+      '  TABLES data_tab = lt_bin.',
+      '',
+    ].join('\n');
+    const now = route(pdf, NEW).rationale;
+    expect(now).toContain('frontend file download (GUI_DOWNLOAD, from line 3) writes a file to the user\'s PC; what the file holds is not read here.');
+    expect(now).not.toContain('writes a list');
+    // What v3.0.12 signed.
+    expect(route(pdf, OLD).rationale).toContain('writes a list to the user\'s PC');
+  });
+
+  test('the BDC assumption does not contradict the released API the rationale names', () => {
+    const bdc = [
+      'REPORT zbdc.',
+      'DATA lt_bdc TYPE STANDARD TABLE OF bdcdata.',
+      "CALL TRANSACTION 'VA02' USING lt_bdc MODE 'N'.",
+      '',
+    ].join('\n');
+    const now = route(bdc, NEW);
+    expect(now.rationale).toContain('released API of the same business object');
+    expect(now.assumptions.join(' ')).not.toMatch(/no equivalent Fiori\/API-based replacement/);
+    expect(now.assumptions).toContain('The BDC screen automations of this program are not yet replaced; what replaces them is said in the rationale.');
+    expect(route(bdc, OLD).assumptions).toContain('BDC screen automations have no equivalent Fiori/API-based replacement yet.');
   });
 });

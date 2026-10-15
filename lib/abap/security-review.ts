@@ -74,8 +74,9 @@ export interface SecurityReviewOptions {
   /**
    * From engine 3.0.13 (`PRECISION_FIXES_FROM`, set by `buildAbapEvidence`):
    *
-   *   - a file-name validation covers a path only when its failure stops the
-   *     program — see `validationStops` below;
+   *   - a file-name validation covers a path only when its failure is
+   *     decided on — no EXCEPTIONS (a failure ends the program), or a decision
+   *     on sy-subrc in the next statement; see `validationDecided` below;
    *   - the result of an AUTHORITY-CHECK or of a file-name validation counts as
    *     evaluated only when the next statement decides on sy-subrc
    *     (`decidesOnSubrc`), not when it merely mentions it;
@@ -282,20 +283,22 @@ export function readSecurityReviewTasksFrom(
   // what was validated (QA c38f8043). Order is the order of the source, not of
   // execution.
   //
-  // From 3.0.13 the call also has to stop the program when it fails (QA review
-  // of 5a559787, 7e158fe18264). Without EXCEPTIONS a failing module raises an
+  // From 3.0.13 the failure of the call has to be decided on (QA review of
+  // 5a559787, 7e158fe18264). Without EXCEPTIONS a failing module raises an
   // exception nobody handles, and the program ends there. With EXCEPTIONS the
   // failure only sets sy-subrc, and the statement right after the call has to
   // decide on it — the rule of `authority-result-not-evaluated` above, through
-  // the same `decidesOnSubrc`. A call whose sy-subrc nobody decides on
+  // the same `decidesOnSubrc`. What that decision does (stop, skip, warn) is
+  // not checked, exactly as for AUTHORITY-CHECK (owner decision 15.10.2026,
+  // QA review of 5665fc944c10). A call whose sy-subrc nobody decides on
   // validated nothing.
   const isFileNameCheck = (s: AbapStatement) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text);
-  const validationStops = (index: number): boolean => {
+  const validationDecided = (index: number): boolean => {
     if (!options.precisionFixes) return true;
     if (!/\bEXCEPTIONS\b/i.test(maskLiterals(statements[index].text))) return true;
     return decidesOnSubrcAt(statements, index + 1);
   };
-  const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationStops(index)
+  const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationDecided(index)
     ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
     : []);
   const writtenAt = statements.map((s) => (isFileNameCheck(s) ? new Set<string>() : writtenNames(s.text)));

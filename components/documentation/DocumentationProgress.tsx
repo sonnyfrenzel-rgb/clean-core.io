@@ -25,29 +25,41 @@ import { docPartLabel, wt } from '@/lib/workspace-messages';
 
 export type DocStageTimes = Partial<Record<DocStageKey, { startedAt: number | null; endedAt: number | null }>>;
 
-/** Stamps when each stage became active and when it stopped being active — from the states, never a timer of its own. */
-export function useDocStageClock(stages: DocStageView[], now: number): DocStageTimes {
+/**
+ * The stage times after a change of states, stamped at `at`. A stage that
+ * becomes active again after it ended — *Try again* after a stop, or a second
+ * run — starts a new attempt: its time is not the stopped attempt's plus the
+ * pause (QA b6694384a2f3).
+ */
+export function nextDocStageTimes(prev: DocStageTimes, stages: readonly DocStageView[], at: number): DocStageTimes {
+  const next: DocStageTimes = { ...prev };
+  for (const stage of stages) {
+    const t = next[stage.key];
+    if (stage.state === 'active') {
+      if (!t || t.endedAt !== null) next[stage.key] = { startedAt: at, endedAt: null };
+    } else if (t && t.endedAt === null && t.startedAt !== null) {
+      next[stage.key] = { ...t, endedAt: at };
+    }
+  }
+  return next;
+}
+
+/**
+ * Stamps when each stage became active and when it stopped being active — from the states, never a timer of its own.
+ * Stamped with the clock at the change itself: the page's `now` ticks only while a run is on, so between two runs
+ * it still holds the time the last one ended.
+ */
+export function useDocStageClock(stages: DocStageView[]): DocStageTimes {
   const [times, setTimes] = useState<DocStageTimes>({});
   const signature = stages.map((s) => `${s.key}:${s.state}`).join('|');
   const last = useRef('');
   useEffect(() => {
+    // Runs after every render; only a change of the states stamps anything.
     if (last.current === signature) return;
     last.current = signature;
-    setTimes((prev) => {
-      const next: DocStageTimes = { ...prev };
-      for (const stage of stages) {
-        const t = next[stage.key];
-        if (stage.state === 'active') {
-          if (!t || t.endedAt !== null) next[stage.key] = { startedAt: t?.startedAt ?? now, endedAt: null };
-        } else if (t && t.endedAt === null && t.startedAt !== null) {
-          next[stage.key] = { ...t, endedAt: now };
-        }
-      }
-      return next;
-    });
-    // The signature carries the states; `now` is read only when they change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature]);
+    const at = Date.now();
+    setTimes((prev) => nextDocStageTimes(prev, stages, at));
+  }, [signature, stages]);
   return times;
 }
 
