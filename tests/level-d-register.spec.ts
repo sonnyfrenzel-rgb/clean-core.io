@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { levelDRegister, levelDRegisterMarkdown, LEVEL_D_NONE } from '../lib/level-d-register';
+import { buildAuditPackContents } from '../lib/audit-pack-build';
 
 /**
  * DSAG guideline review B7 (owner 13.10.2026): the Documentation tool lists
@@ -98,7 +99,6 @@ test.describe('level D register', () => {
       expect(inputs.filter((p) => /level-d-register|LevelDRegister/.test(p)), entry).toEqual([]);
     }
 
-    const { buildAuditPackContents } = await import('../lib/audit-pack-build');
     const findings = buildAbapEvidence(CODE, 'zcc_level_d.abap', 'private').findings;
     const register = levelDRegister(findings);
     expect(register).toHaveLength(3);
