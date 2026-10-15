@@ -98,11 +98,23 @@ export const ENGINE_LED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = 
   ],
 };
 
+/**
+ * A program that writes no table becomes a custom entity with a query provider
+ * — no business object, so no behavior definition (`scaffold-rap.ts`, "the
+ * architecture follows the program"). Demanding one refused every such package
+ * as incomplete (SD example on dev, 15.10.2026).
+ */
+const isQueryPackage = (generated: ProjectFile[]): boolean =>
+  generated.some((f) => f.path.trim().toLowerCase().endsWith('.ddls.asddls') && /\bdefine\s+root\s+custom\s+entity\b/i.test(f.content));
+
 /** What an engine-led package lacks, in reader's words. */
-export const missingEngineLedArtefacts = (generated: ProjectFile[], isAbapCloud: boolean): string[] =>
-  ENGINE_LED_ARTEFACTS[isAbapCloud ? 'abapCloud' : 'btp']
+export const missingEngineLedArtefacts = (generated: ProjectFile[], isAbapCloud: boolean): string[] => {
+  const query = isAbapCloud && isQueryPackage(generated);
+  return ENGINE_LED_ARTEFACTS[isAbapCloud ? 'abapCloud' : 'btp']
+    .filter((required) => !(query && required.match === 'extension' && required.suffix === '.bdef.asbdef'))
     .filter((required) => !generated.some((f) => satisfies(required, f.path)))
     .map((required) => required.label);
+};
 
 /** The last segment of a path, however the model wrote the separators. */
 export const baseName = (path: string): string => path.split(/[\\/]/).pop() ?? path;

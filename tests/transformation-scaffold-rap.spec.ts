@@ -3,6 +3,7 @@ import { deriveEngineCases } from '../lib/testing-engine-cases';
 import { buildRapScaffold } from '../lib/transformation';
 import { rapShortName } from '../lib/transformation/scaffold-rap';
 import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
+import { missingEngineLedArtefacts } from '../lib/transformation-artefacts';
 
 /**
  * The RAP / ABAP Cloud scaffold (docs/design/engine-led-transformation.md §6.3): packed fields
@@ -126,4 +127,13 @@ test('ABAP Unit: one test method per engine case; exact arithmetic written by th
   expect(tests).toContain("_exp = '0.67'.");
   expect(tests).toContain('cl_abap_unit_assert=>assert_equals(');
   expect(tests).toContain('cl_abap_unit_assert=>skip(');
+});
+
+test('a read-only package is complete without a behavior definition; a writing one still needs it (SD example on dev, 15.10.2026)', () => {
+  const trace = { path: 'traceability.json', content: '{}' };
+  const readOnly = rap(fixture('co-shape')).scaffold.files;
+  expect(readOnly.some((f) => f.path.endsWith('.bdef.asbdef'))).toBe(false);
+  expect(missingEngineLedArtefacts([...readOnly, trace], true)).toEqual([]);
+  const writing = rap(coWriting()).scaffold.files.filter((f) => !f.path.endsWith('.bdef.asbdef'));
+  expect(missingEngineLedArtefacts([...writing, trace], true)).toEqual(['behavior definition (*.bdef.asbdef)']);
 });
