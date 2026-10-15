@@ -85,7 +85,7 @@ test.describe('an outbound RFC does not hide a standard-table write (QA 5a559787
   });
 });
 
-test.describe('a file-name validation counts only when its failure stops the program (QA 5a559787: 7e158fe18264)', () => {
+test.describe('a file-name validation counts only when its failure is decided on: no EXCEPTIONS, or sy-subrc decided right after (QA 5a559787: 7e158fe18264)', () => {
   const src = (validation: string) =>
     ['REPORT zfile.', 'PARAMETERS p_path TYPE string.', validation, 'OPEN DATASET p_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.', ''].join('\n');
   const CALL = "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = p_path";
