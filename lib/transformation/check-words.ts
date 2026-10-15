@@ -73,7 +73,7 @@ function nounOf(kind: string, scope: CheckScopeWord | undefined): { one: string;
   }
   if (kind === 'guards') return { one: 'body guard', many: 'body guards', of: '' };
   if (kind === 'lint') return { one: 'lint check', many: 'lint checks', of: '' };
-  if (kind === 'abaplint') return { one: 'ABAP file', many: 'ABAP files', of: 'checked by abaplint for parser and syntax errors (shipped config)' };
+  if (kind === 'abaplint') return { one: 'ABAP file', many: 'ABAP files', of: "checked again by Clean-Core.io's server before saving, abaplint for parser and syntax errors (shipped config)" };
   if (kind === 'abap') return { one: 'ABAP file', many: 'ABAP files', of: 'checked by abaplint for parser and syntax errors (shipped config)' };
   if (kind === 'formats') return { one: 'object file', many: 'object files', of: "against SAP's ABAP file formats (AFF schemas) and abapGit's serializer format" };
   if (kind === 'types') return { one: 'TypeScript file', many: 'TypeScript files', of: "type-checked with the package's tsconfig.json (tsc --noEmit)" };

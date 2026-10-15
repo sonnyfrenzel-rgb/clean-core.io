@@ -347,3 +347,10 @@ test('no text calls the package importable: it passes the format checks, no SAP 
   expect(changelog).toMatch(/they have not\s+been import-verified in an SAP system\./);
   expect(fs.readFileSync(path.join(ROOT, 'lib', 'delivery-package.ts'), 'utf8')).toContain('nobody imported this package into an SAP system');
 });
+
+test("the browser's abaplint run and the server's second run read as two checks, not one line twice (SD example on dev, 15.10.2026)", () => {
+  const browser = checkPhrase({ kind: 'abap', total: 11, failed: 0, passed: 11, notRun: 0 });
+  const server = checkPhrase({ kind: 'abaplint', total: 11, failed: 0, passed: 11, notRun: 0 });
+  expect(browser).not.toBe(server);
+  expect(server).toMatch(/Clean-Core\.io's server/);
+});
