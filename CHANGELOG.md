@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Transformation — generation pipeline
 
+- A repair of gate errors (the activation check of a RAP body, the type check of a Node one) carries the failing
+  body whole with its errors, its signature, its declarations and the names it may call — not its ABAP slice again
+  and not the context pack. The largest units of SD, CO and PP sat just under the 28,000-character cap of a leased
+  call with their whole slice; a repair added the failure and the previous body on top, went over the cap and was
+  never sent. Measured on the six non-holdout acceptance programs: 7 units over the cap before, none after; the
+  largest gate repair is 27,272 characters (3.0.14 item 2).
 - The body guard accepts SAP's released interfaces as well as its released classes: `if_abap_behv=>mk-on` is no
   longer refused as "a call outside the logic class". The names come from the synced Cloudification Repository list
   (`released-interfaces.latest.json`, names only, written by `npm run sync:catalog` beside the class list); an

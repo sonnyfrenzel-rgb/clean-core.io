@@ -57,6 +57,20 @@ export const FILL_UNITS_PER_CALL = 4;
 export const FILL_REPAIR_FAILURE_MAX_CHARS = 2_000;
 /** The previous body a repair carries is cut to this many characters. */
 export const FILL_REPAIR_PREVIOUS_MAX_CHARS = 4_000;
+/**
+ * The previous body a gate repair carries whole up to this many characters (3.0.14 item 2): a gate repair rewrites
+ * the body so it compiles, and a body cut at 4,000 characters cannot be rewritten without losing its rest.
+ */
+export const FILL_GATE_REPAIR_PREVIOUS_MAX_CHARS = 20_000;
+/** A rule's text in a gate repair: its id and decision travel whole, the text by its start. */
+export const FILL_GATE_REPAIR_RULE_MAX_CHARS = 160;
+/**
+ * What a gate repair says in place of the unit's ABAP slice (3.0.14 item 2). The slice was in the fill call that
+ * wrote the body; the repair of a compile error needs the body, its errors and the declarations — not the routine
+ * again, and not the context pack.
+ */
+export const GATE_REPAIR_ABAP_NOTE =
+  "[Not repeated in this repair: the ABAP slice was in the call that wrote the previous body (its ranges are above). This call repairs the errors the activation or type check found in that body — keep its logic, change what the errors name, answer the whole body.]";
 
 /**
  * The code-draft rules a function body has to follow. 16 (input contract),
@@ -253,17 +267,43 @@ export interface BundleOptions {
   maxChars?: number;
   /** The most characters of a call of one unit before its context or ABAP is cut (default `LEASED_PROMPT_MAX_CHARS`). */
   maxAloneChars?: number;
+  /**
+   * These calls repair gate errors (the activation check of an ABAP candidate, the type check of a Node one; 3.0.14
+   * item 2): each unit travels as `gateRepairUnitOf` builds it — its signature, declarations, guards, names and the
+   * whole failing body with its errors, never its ABAP slice again or the context pack.
+   */
+  gateRepair?: boolean;
 }
 
-function cutRepair(r: FillRepair): FillRepair {
+function cutRepair(r: FillRepair, previousMax = FILL_REPAIR_PREVIOUS_MAX_CHARS): FillRepair {
   return {
     unitId: r.unitId,
     round: r.round,
     failure: r.failure.length > FILL_REPAIR_FAILURE_MAX_CHARS ? `${r.failure.slice(0, FILL_REPAIR_FAILURE_MAX_CHARS - 1)}…` : r.failure,
-    previousBody:
-      r.previousBody && r.previousBody.length > FILL_REPAIR_PREVIOUS_MAX_CHARS
-        ? `${r.previousBody.slice(0, FILL_REPAIR_PREVIOUS_MAX_CHARS - 1)}…`
-        : r.previousBody,
+    previousBody: r.previousBody && r.previousBody.length > previousMax ? `${r.previousBody.slice(0, previousMax - 1)}…` : r.previousBody,
+  };
+}
+
+/**
+ * A unit as a gate repair carries it (3.0.14 item 2): what the failing body needs to compile — its signature, the
+ * declarations of the types it names, its guards, its decimal facts, the names it may call, its rules by id and
+ * decision — and in place of the ABAP slice its ranges and `GATE_REPAIR_ABAP_NOTE`. The largest units' fill prompts
+ * sit just under the leased cap with their whole slice; a repair added the failure and the previous body on top
+ * and went over it, so the repair the lease holds calls for was never sent (`lease-prompt-too-large`).
+ */
+export function gateRepairUnitOf(u: FillRequestUnit, tight = false): FillRequestUnit {
+  // `tight`: the same unit when even that does not fit — rules by id and decision only, each guard's condition by its
+  // start (its id, helper, line and values stay). The body and its errors are never what gives way.
+  const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+  return {
+    unitId: u.unitId,
+    function: u.function,
+    abap: { ranges: u.abap.ranges, text: GATE_REPAIR_ABAP_NOTE },
+    rules: u.rules.map((r) => ({ id: r.id, decision: r.decision, text: tight ? '' : cut(r.text, FILL_GATE_REPAIR_RULE_MAX_CHARS), ...(r.proposal && !tight ? { proposal: r.proposal } : {}) })),
+    guards: tight ? u.guards.map((g) => ({ ...g, condition: cut(g.condition, 60) })) : u.guards,
+    facts: u.facts,
+    available: u.available,
+    ...(u.types !== undefined ? { types: u.types } : {}),
   };
 }
 
@@ -309,17 +349,22 @@ export function cutContext(context: string, max: number): { text: string; cut: n
   return { text: text.length <= max ? text : text.slice(0, max), cut: context.length - kept.join('\n').length, dropped: topics };
 }
 
-function requestOf(opts: BundleOptions, context: string, units: FillRequestUnit[]): FillRequest {
+function requestOf(opts: BundleOptions, context: string, units: FillRequestUnit[], tight = false): FillRequest {
+  const gate = opts.gateRepair === true;
   const repair = opts.repair
-    ? units.map((u) => opts.repair!.get(u.unitId)).filter((r): r is FillRepair => !!r).map(cutRepair)
+    ? units
+        .map((u) => opts.repair!.get(u.unitId))
+        .filter((r): r is FillRepair => !!r)
+        .map((r) => cutRepair(r, gate ? FILL_GATE_REPAIR_PREVIOUS_MAX_CHARS : FILL_REPAIR_PREVIOUS_MAX_CHARS))
     : [];
   return {
     schema: 'cc.fill.v1',
     track: opts.track,
     program: opts.program,
-    context,
+    // A gate repair needs no platform knowledge: the body, its errors and the declarations (3.0.14 item 2).
+    context: gate ? '' : context,
     rules: 'See CODE-DRAFT RULES in the header.',
-    units,
+    units: gate ? units.map((u) => gateRepairUnitOf(u, tight)) : units,
     repair: repair.length > 0 ? repair : null,
   };
 }
@@ -338,6 +383,10 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
   const maxChars = opts.maxChars ?? FILL_PROMPT_MAX_CHARS;
   const maxAlone = Math.max(maxChars, opts.maxAloneChars ?? LEASED_PROMPT_MAX_CHARS);
   const context = cutContext(opts.context, FILL_CONTEXT_MAX_CHARS).text;
+  // A gate repair carries the code-draft rules by their titles (3.0.14 item 2): it fixes what the activation or type
+  // check found in a body the full rules already shaped; the room goes to the whole failing body.
+  const gate = opts.gateRepair === true;
+  const gateHead = gate ? { briefRules: true } : {};
 
   const bundles: FillBundle[] = [];
   let current: FillRequestUnit[] = [];
@@ -345,26 +394,35 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
   const close = () => {
     if (current.length === 0) return;
     const request = requestOf(opts, context, current);
-    bundles.push({ unitIds: current.map((u) => u.unitId), request, prompt: fillPrompt(request), trimmed: [] });
+    bundles.push({ unitIds: current.map((u) => u.unitId), request, prompt: fillPrompt(request, gateHead), trimmed: [], ...gateHead });
     current = [];
   };
 
   for (const unit of units) {
     const tryWith = [...current, unit];
-    if (current.length < perCall && fillPrompt(requestOf(opts, context, tryWith)).length <= maxChars) {
+    if (current.length < perCall && fillPrompt(requestOf(opts, context, tryWith), gateHead).length <= maxChars) {
       current = tryWith;
       continue;
     }
     close();
     const aloneRequest = requestOf(opts, context, [unit]);
-    const alonePrompt = fillPrompt(aloneRequest);
+    const alonePrompt = fillPrompt(aloneRequest, gateHead);
     if (alonePrompt.length <= maxChars) {
       current = [unit];
       continue;
     }
     if (alonePrompt.length <= maxAlone) {
       // Too large to share a call, small enough to go alone uncut.
-      bundles.push({ unitIds: [unit.unitId], request: aloneRequest, prompt: alonePrompt, trimmed: [] });
+      bundles.push({ unitIds: [unit.unitId], request: aloneRequest, prompt: alonePrompt, trimmed: [], ...gateHead });
+      continue;
+    }
+    if (gate) {
+      // A gate repair past the cap: its rules by id and its guards' conditions by their start (`gateRepairUnitOf`
+      // tight). Its context is empty and its ABAP not repeated already; the body it asks to repair is never cut —
+      // still over the cap, the orchestrator names why it was not sent (`lease-prompt-too-large`).
+      const request = requestOf(opts, context, [unit], true);
+      const prompt = fillPrompt(request, gateHead);
+      bundles.push({ unitIds: [unit.unitId], request, prompt, trimmed: [{ unitId: unit.unitId, what: 'rules', chars: alonePrompt.length - prompt.length }], ...gateHead });
       continue;
     }
     // Alone and still too large (14.10.2026): first the code-draft rules travel
