@@ -10,85 +10,187 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [v3.0.13] — unreleased
+## [v3.0.13] — 2026-10-15
 
-Engine 3.0.13 reads more precisely what it already reported, Transformation knows when its package
-is out of date and probes the functions the model wrote, and `/api/gemini` counts every attempt —
-from the QA and security reviews of v3.0.12. This entry is completed with the release.
+Transformation becomes a real tool: the generated ABAP has to pass an activation check before it is
+called complete, it is written against a typed contract taken from the original's FORM interfaces,
+and the side-by-side route is real SAP CAP around a typed Node core. Where a package does not pass,
+it says so — *not activatable*, *not runnable* or *not verified* — instead of *complete*. The
+original's own demo cases travel as tests on both routes. Measured with the real model on the seven
+reference programs: in the fourth acceptance run 6 of 7 programs passed the activation check in all
+three runs on the RAP route, and the remaining one (PO) passed in the fifth; on the Node route the
+median is between 0 and 6 type errors per program, so that route is not yet type-clean everywhere.
+Nothing generated has been imported into an SAP system yet. After two external reviews of the SD
+example and the QA and security reviews of v3.0.12.
 
-### Engine (from 3.0.13; a run signed by an earlier engine keeps what it signed)
+### Transformation: ABAP that activates (RAP route)
 
-- **`DESTINATION 'NONE'` is the whole literal.** `'NONE''X'` is another destination, and the
-  backtick literal `` `NONE` `` is the local one, as the router already read it.
-- **A direct write to an SAP standard table is always named.** When an outbound RFC, a
-  modification or a custom-table write chooses the route, the rationale, the In-App checkpoint, the
-  In-App fit and the assumptions still say that the standard-table writes have to be replaced.
-- **An authorization check counts as evaluated only when the next statement decides on sy-subrc**
-  (`IF`, `ELSEIF`, `CHECK`, `CASE`, `ASSERT`, or `COND`/`SWITCH … THROW`); a statement that only
-  mentions or stores it keeps the review task (SEC-2026-812).
-- **A file-name validation covers a path only when its failure stops the program:**
-  `FILE_VALIDATE_NAME` / `FILE_GET_NAME` without `EXCEPTIONS`, or with them and sy-subrc decided by
-  the very next statement (SEC-2026-814).
-- **The flow from input to a dynamic clause or a path is followed to a fixed point**, however long
-  the chain and in whatever order the source writes it, instead of for eight passes
-  (SEC-2026-813).
-- **A method-local declaration of any type shadows a packed global** of the same name when the
-  code draft and the engine cases read the original's decimal places (not part of the signed run).
+- **An activation check decides the status.** Before a package is stored, abaplint runs with exactly
+  the `abaplint.json` the package ships (syntax and unknown types included), against the package's
+  own objects and declarations of the SAP superclasses it uses. A parser or syntax error makes the
+  generation *generated — not activatable*, with the counts of that run, in the record, `STATUS.md`,
+  `TRACE.md` and on the Built-on card; the raw findings go into the package (`checks/abaplint.md`),
+  and Testing cannot be closed on it. References to SAP objects the check cannot see are counted
+  apart and named. Records stored before keep their words.
+- **A typed contract before any fill.** The logic class declares the original's types as declared,
+  its constants, its globals and selection fields as attributes under their own names, and one
+  method per routine with the FORM's own `USING`/`CHANGING` parameters. Access methods are typed
+  from their call sites. The empty scaffold passes the activation check before the model writes a
+  line.
+- **Guards run in the logic path.** Every carried check of the original has a predicate with the
+  original's condition, called by the engine at the entry where that is exact, otherwise required
+  of the body at the original's line — never only as a save validation.
+- **The architecture follows the program.** A program that writes no table becomes a custom entity
+  with a query provider; one that writes keeps the business object, run by an action with the
+  selection.
+- **Customer tables go through the access layer.** A customer table the original reads gets a read
+  method, one it writes a write method, and one it types data by becomes a structure of the logic
+  class under the table's name with the fields the original uses. A body that selects from or
+  writes to a customer table directly is refused and told which method to call.
+- **Fills against the contract.** The fill request names the class's attributes, types and access
+  methods, the exact call syntax and how to call a guard. `WRITE`, `MESSAGE`, `ULINE`, SELECTs on
+  SAP tables, undeclared names and classes SAP does not list as released are refused (released
+  classes come from SAP's synced catalog). After the fills the activation check runs again, and its
+  syntax and type errors become the repair reason of the function that holds them.
+- **More room for repairs.** A generation may spend 16 further calls, after its 48, only on repairs
+  of gate errors (at most 64 per generation; hourly limits unchanged), and a third repair round runs
+  for functions the gate still fails. A single large function gives up the rules' text before
+  context lines; its ABAP slice is never cut.
+
+### Transformation: the side-by-side route is real SAP CAP
+
+- **A typed Node core.** Every structure of the original is an interface, the globals are typed
+  state with ABAP initial values, and each input table of the original is a named list typed by its
+  own structure instead of one record list for all of them. A body that reads a field its types do
+  not declare is refused, and `Number()` on any value is refused with what to write instead
+  (decimal helpers, a digits check).
+- **A real type check.** The TypeScript compiler checks every Node candidate with the package's own
+  `tsconfig.json`. Type errors go back to the function that holds them; a package with type errors
+  reads *generated — not runnable*, and one whose type check, cases or probes did not run in full
+  reads *generated — not verified*. Testing cannot be closed on either.
+- **A CAP shell around the core.** `package.json` with `@sap/cds`, a data model with one type and one
+  entity per input structure, a service with the route's decision (a simulation for a read-only
+  program, a run plus the written customer tables for a writing one), handlers that only delegate to
+  the core, an access layer with remote services on released OData APIs of the curated catalog (mock
+  data, placeholder definitions) and a refusal with its reason elsewhere, `mta.yaml` and
+  `xs-security.json` without secrets.
+- **SAP CAP is yours to install.** SAP's CDS compiler is under the SAP Developer License, so
+  Clean-Core.io's server does not run it: `STATUS.md`, the README and the Built-on card say that you
+  install SAP CAP (`@sap/cds` and its CDS compiler) and how to check and start the package
+  (`npm install`, `npm run compile`, `cds watch`); the CAP capabilities read *to be checked in your
+  environment*, never implemented. Where the compile ran (CI, specs, the acceptance suite) its result
+  is reported.
+
+### Testing: the original's demo cases are the golden master
+
+- **Both routes carry the original's demo cases.** The engine reads the in-code demo cases of the
+  original (fixture routines or a row-by-row baseline, the case switch that changes the demo data)
+  and carries them over as test data — ABAP Unit methods on the RAP route, fixtures and a test file
+  on the Node route. It computes no expected values: a case shows that it runs, not that its result
+  is right.
+- **Tests are counted honestly.** A test method counts only when it calls the code under test and
+  does not skip; a skipped engine case reads *NOT RUN — not evidence*. The testing model's ABAP Unit
+  class is checked against the class under test (undeclared methods or parameters, names over 30
+  characters, reserved names), gets one repair round and is otherwise refused.
+- **Probes reach the written functions:** a display filter, an additive recalculation and a
+  negative write are read from where the original applies them and run over the whole process; a
+  run that reaches a stub reads *not run*, never passed or failed.
+- **Testing fits a large package:** its prompt carries the code, not the metadata and documents.
+
+### Before, during and after a run
+
+- **Every click of Generate is its own run with its own lease.** Cancel closes the run's lease and
+  also aborts a pending read of the plan; a busy lease waits for a free slot instead of failing; a
+  lease is usable only after its hourly charge went through; a slot held by a dead instance frees
+  itself.
+- **Fill calls think at a low level** (median about 5 s instead of two to four minutes per call), and
+  a function too large to share a call goes alone and uncut up to 28,000 characters.
+- **The start screen shows the plan and its limits** — calls, budget, calls at once, per-call
+  deadline, time limit, prompt cap, generations this hour, expected duration; a plan that cannot
+  succeed does not start and says why. Every function row says what is happening, and every failure
+  its code.
+- **After the run the result comes first:** the package listed by object with who wrote each part
+  (engine or model), *Generate again* folded away.
+- **A rebuild against a live decision on record** carries "DRAFT AGAINST THE DECISION ON RECORD" as
+  the first line of every main file. SAP identifiers in the written bodies are checked, and a line
+  reference outside a function's own lines is marked.
+
+### Analysis precision (engine 3.0.13; a run signed by an earlier engine keeps what it signed)
+
+- **Code behind a constant gate is unreachable.** `IF <constant> <> 'X'` with a stopping arm locks
+  the rest of the routine: "In short" describes the path a run takes, a finding in locked code is
+  labelled *unreachable* (still charged), and an input used only there selects nothing.
+- **Demo switches and header rules are counted apart.** Arms of the demo case switch and checks on
+  demo parameters leave the rule register, counted apart (SD example 73 → 40 + 33); numbered rules in
+  the header comment become register candidates, "stated in the header, not read from code".
+- **Negated claims stay negated.** A header that says what the program does *not* post is not read
+  as a posting; `f <> 'X' AND f <> space` reads "is neither X nor blank"; an `IF` around the last
+  step is optional, not a check.
+- **`DESTINATION 'NONE'` is the whole literal**; a direct write to an SAP standard table is named
+  beside the driver that chose the route; an authorization check counts as evaluated only when the
+  next statement decides on `sy-subrc` (or on a copy of it), and a file-name validation only when
+  its failure stops the program (SEC-2026-812, SEC-2026-813, SEC-2026-814). RESB beside AUFK alone
+  is a reservation, and the IDoc sentence attributes SAP's classification only to SAP's modules.
 - `tests/fixtures/engine-v3.0.12-frozen.json` holds what the v3.0.12 engine answered for the 300
-  benchmark programs and the probes, in both editions; a 3.0.13 change that leaks past its gate
-  fails there, as the v3.0.11 oracle does for 3.0.12. On the 300-case benchmark no route changes;
-  the standard-table sentence joins the rationale of 5 programs and the stricter sy-subrc reading
-  adds a review task to 2.
-- **The server's date and time is a finding only where it decides something** — a comparison, a
-  deadline, a scheduled job (one finding per program, a short remedy). A value only stored
-  (`erdat = sy-datum`) is one note under the findings instead: "N fields store the server's date
-  or time as a stamp — fine in UTC unless a later step reads them as the local day", with its
-  lines (owner decision 14.10.2026). On the 300-case benchmark: 175 → 96 findings, 104 programs
-  carry the note; no score or route changes.
+  benchmark programs; a 3.0.13 change that leaks past its gate fails there.
 
-### Transformation
+### Engine rules (engine 3.0.13; none costs score points or chooses the route)
 
-- **SAP CAP is yours to install.** Where Clean-Core.io's server has no SAP CDS compiler (production:
-  `@sap/cds-compiler` is under the SAP Developer License and stays a devDependency), STATUS.md,
-  the README and the Built-on card say that SAP CAP (@sap/cds and its CDS compiler) is installed by
-  you, and how to check and start the package (`npm install`, `npm run compile`, `cds watch`); the
-  CAP capabilities read *to be checked in your environment*, never implemented. Where the compile
-  ran (CI, specs, acceptance suite), its result is reported as before (owner decision 14.10.2026).
+- **The server's date and time** is a finding where it decides something — a comparison, a
+  deadline, a scheduled job — with the remedy `sy-datlo` or `cl_abap_context_info` and a
+  day-boundary test case. A value only stored (`erdat = sy-datum`) is one note beside the findings.
+  300-case benchmark: 175 → 96 findings, 104 programs carry the note.
+- **Exit, BAdI and VOFM implementations** say whether the logic sits in the hook or is delegated.
+- **Form output** (SAPscript, Smart Forms, Adobe Forms) is read; output management is an optional
+  item. **ABAP proxies** are recognised: regenerated, not transported, with the question whether
+  the process behind them still runs.
+- **The customer's own enhancement point** (`ENHANCEMENT-POINT`/`-SECTION` in a Z program for a Z
+  spot) is no level D enhancement and costs no score points.
+- On the 300-case benchmark no route and no score changes. The demo gains one finding (the PO
+  program compares and stores `sy-datum`): 33 findings, score 37, in-app.
 
-- **The phase goes stale on a changed context.** The server compares the digest of the platform
-  knowledge a package was generated on with the one it would build now; the tool bar, the rail,
-  the workspace and Delivery read *stale* after a rule decision, the decision record or an
-  accepted requirement changed. Unknown is never stale. The Built-on card compares the date and
-  every fact, not the first fact alone.
-- **Probes that reach the written functions:** a display filter, an additive recalculation and a
-  negative write are read from where the original applies them and run through new scaffold entry
-  points over the whole process. Each names the units it reaches; a failure goes back to them, and
-  a run that reaches a stub reads *not run*, never passed or failed.
+### Level A–D beside what ATC reports
 
-### Model calls
+- **The expected ATC message stands beside the level** — "ATC expected: … priority n" or "ATC: not
+  determined" — per object in the A–D panel and on every catalog object page. No level changed;
+  `docs/design/abcd-vs-atc.md` sets out what SAP's public sources say the clean core ATC check
+  reports, and how to verify it in a trial system.
 
-- **A per-account attempt limit at `/api/gemini`**, before the body is read: 60 a minute and 300
-  an hour per instance, leased calls and administrators included, answered 429 with a
-  `Retry-After`. The account document is read once per request. The deploy pins the services'
-  maximum instance count, which bounds the limit's worst case.
-- **Administrators have an hourly model-call limit of their own** (200 an hour, in a bucket apart
-  from the 20 of every other account); a new generation lease is charged to the same bucket
-  (SEC-2026-827, SEC-2026-830).
-- **Only the limiter's own refusal reaches the caller;** any other error in the usage check is
-  logged and answered without its text (SEC-2026-831).
+### Design and Documentation
 
-### Checks and screens
+- **The RAP design speaks for its route.** No Node.js or side-by-side template text in a RAP
+  design, object names from the scaffold, no promise of consistent reads from HANA MVCC or snapshot
+  isolation; `developer-guidelines.md` is written from the package and the engine's findings.
+- **The decision record names its weighing** of keep, standard, rebuild in-app, rebuild side by side
+  and retire, and a circular reason ("as the target architecture says") is labelled as restating
+  the choice.
+- **A curated successor carries the catalog's review stamp** on the architecture canvas.
+- **Documentation says what it is doing and how long it takes:** a progress card from the first
+  moment (reading the run, reading the process, writing the description, writing SOP and RACI,
+  storing), with elapsed and expected time and a clear end. Its business layer waits as long as a
+  model call may take instead of 90 s, and a program too large for one answer is written in parts.
 
-- **The ATC gate never clears a finding its words do not classify.** Such findings put the gate in
-  a third state, *unreviewed*, which only a person's check in ATC clears (SEC-2026-811).
-- **An absent or unreadable option comparison is not labelled proposed.**
-- **The SAP Cloud ERP Private target card** keeps the short label and names the former product name
-  first in its text, as the Analyze deployment cards do.
-- **Acceptance scripts:** the report is written into a real directory and never through a link
-  (SEC-2026-815); the CSV probe accepts a formula cell only in the neutralised form the app writes
-  (SEC-2026-816).
-- **Guards that read what they claim:** citations checked on every occurrence on a line, the
-  level D register checked in the signed audit-pack bytes, the generation stages rendered in order.
+### Model calls and security
+
+- **A per-account attempt limit at `/api/gemini`** before the body is read (60 a minute, 300 an
+  hour per instance, answered 429 with `Retry-After`); administrators have an hourly model-call
+  limit of their own; only the limiter's own refusal reaches the caller (SEC-2026-827, SEC-2026-830,
+  SEC-2026-831).
+- **The ATC gate never clears a finding its words do not classify** — such findings put it in a
+  third state, *unreviewed* (SEC-2026-811). Acceptance-script fixes SEC-2026-815 and SEC-2026-816.
+- **The Transformation phase goes stale on a changed context** (a rule decision, the decision record
+  or an accepted requirement changed since generation); the Built-on card compares every fact.
+- An absent option comparison is not labelled *proposed*; the SAP Cloud ERP Private target card
+  names the former product name first in its text.
+
+### Acceptance suite
+
+- **Every reference program generated end to end before a release.** A suite runs the
+  Transformation tool's own modules for each program and route with the real model (hard cost cap)
+  or a stub, through the same gates and repair loop as the page, and records the gate result,
+  functions written, engine cases and probes, duration, calls and cost per program, as the median of
+  three runs. The external reviewers' scenarios are kept as sealed data; one program is a holdout
+  without expectations.
 
 ## [v3.0.12] — 2026-10-13
 

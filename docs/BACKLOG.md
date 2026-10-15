@@ -3,25 +3,38 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
-## Session 13.10.2026 — 3.0.13 prepared (unreleased)
+## Session 13.–15.10.2026 — 3.0.13 released
 
-**Built (dev 13.10.2026, main on Sonny's go):** engine 3.0.13 behind `PRECISION_FIXES_FROM` — `'NONE'` read as the
-whole literal, a direct standard-table write named beside an outbound RFC, sy-subrc counted only where the next
-statement decides on it, a file-name validation only where its failure stops the program, the input flow to a
-fixed point; a v3.0.12 frozen oracle (300 programs and probes, both editions); a method-local declaration
-shadowing a packed global. Transformation: the phase stale on a changed context digest, the Built-on card
-comparing every fact, probes that reach the written functions (display filter, additive recalculation, negative
-write). `/api/gemini`: a per-account attempt limit before the body is read, `--max-instances` pinned in the
-deploy, an hourly limit for administrators, only the limiter's own refusal passed to the caller. The ATC gate's
-`unreviewed` state; acceptance-script fixes. Security: SEC-2026-811 to -816, -827, -830, -831 fixed. The v3.0.12
-hotfix (abaplint as a production dependency, the model deadline, lease length and leased prompt cap, token
-usage log) merged in. Demo headline figures unchanged (32 findings, score 37, in-app); on the 300-case benchmark
-no route moves. No `firestore.rules` change. CHANGELOG has the details.
+**Built (branch rel-3.0.13, dated 15.10.2026, dev and main on Sonny's go):** a real Transformation tool. RAP route:
+an activation check with the shipped `abaplint.json` decides the status (*not activatable* with the run's counts,
+Testing not closable); a typed contract from the FORM interfaces (types, constants, globals and selection fields as
+attributes, one method per routine) that passes the check before any fill; guards in the logic path; a custom
+entity with a query provider for read-only programs; customer tables read, written and typed through the access
+layer; fills refused on `WRITE`/`MESSAGE`/`ULINE`, SAP SELECTs, undeclared names and unreleased classes; syntax and
+type errors as repair reasons; 16 gate-repair calls after the 48 (at most 64) and a third gate round. Node route:
+an in-process type check with the package's `tsconfig.json`, typed state and one input list per source structure,
+`unknown-field` and `Number()` refusals, *not runnable* / *not verified*; a real CAP shell (`@sap/cds`, data model
+per structure, service, delegating handlers, remote services on released OData APIs, `mta.yaml`) — the customer
+installs SAP CAP, our server does not run the CDS compiler (SAP Developer License). Golden master from the
+original's demo cases on both routes, tests counted only when they call the code, probes that reach the written
+functions. Hotfix 2 (never on main): a lease per run, Cancel closes it, busy waits, fills think LOW, the plan and
+its limits before the start, the result first after the run, Testing's prompt cap. Analysis precision (constant
+gates, demo switches, header rules, negated claims), design texts (route-true RAP design, decision weighing, no
+MVCC promise), engine rules (system time with a note for stored stamps, hook implementations, form output, ABAP
+proxies, own enhancement points), the expected ATC message beside the level (no level changed), Documentation
+progress and large programs in parts, the QA leftovers of hotfix 2, `/api/gemini` attempt limit and admin limit,
+SEC-2026-811 to -816, -827, -830, -831 fixed. The acceptance suite (page modules, real model or stub, sealed
+scenarios, median of three). Demo: 33 findings (one system-time finding), score 37, in-app; on the 300-case
+benchmark no route and no score moves. `SCAFFOLD_VERSION` 9. No `firestore.rules` change. CHANGELOG has the details.
 
-**Open:** acceptance with a real model key against the external reviews' probe sets; importing the abapGit
-package in a real SAP system. (ORD research dropped by the owner, 13.10.2026.) A value decided on sy-subrc and
-assigned (`rv_ok = xsdbool( sy-subrc = 0 )`, the RAP global-authorization `COND #( WHEN sy-subrc = 0 … )`) counts
-as evaluated (1484c6de), so benchmark BM-153 and BM-255 keep no review task.
+**Measured (real model, owner's machine):** acceptance run 4 — on the RAP route 6 of 7 programs activatable in all
+three runs, PO activatable in run 5 after the customer-table fix (7105f939); on the Node route the median is 0 to 6
+type errors per program — not yet type-clean everywhere.
+
+**Open (owner decisions 14.10.2026, rows in `docs/ROADMAP.md` §7):** the remaining Node type errors (number vs
+text); gate-repair prompts of the largest units above the 28,000 cap; Node scenario judging by ID; released
+interfaces in the client list; PM is no longer a clean holdout; the first import of the generated packages into
+the owner's BTP ABAP trial; Level C/D waits for evidence from a system; the Documentation reading load.
 
 ## Session 12.–13.10.2026 — 3.0.12 released
 
