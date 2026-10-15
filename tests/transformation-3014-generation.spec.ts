@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { guardContextOf, prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
+import { candidateFiles, guardContextOf, prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
+import { typeCheckCandidate } from '../lib/test-sandbox/type-check';
+import { mapTypeFindings, markerSpans } from '../lib/transformation/verify';
 import { bodyGuards, isReleasedSapClass, isReleasedSapInterface } from '../lib/transformation/markers';
 import { deriveReleasedInterfaces, RELEASED_INTERFACES_FILE } from '../lib/abap/cloudification-repo';
 import { FILL_REPAIR_PREVIOUS_MAX_CHARS, FILL_REQUEST_MARK, GATE_REPAIR_ABAP_NOTE, LEASED_PROMPT_MAX_CHARS, bundleFills, isGateRepairPrompt } from '../lib/transformation/fill-prompt';
@@ -23,6 +25,108 @@ function prep(source: string, track: 'rap' | 'node'): EngineLedPrepared {
   if (!p.ok) throw new Error(p.reason);
   return p;
 }
+
+/* ------------------------------------------------------------------ 1 */
+
+/**
+ * The shape of the acceptance runs' most frequent Node type errors (15.10.2026, SD U05 and CO U11/U16): a count
+ * declared `TYPE i`, compared with a number in a check and assigned from `lines( … )` in the step. The scaffold typed
+ * it `string` while the prompt called counts numbers — `values.lvCount > 5000` (TS2365) and `lvCount: rows.length`
+ * (TS2322) in every run; and the repair named the predicate's error as "body line 1" of the unit, so the round
+ * rewrote the step and the predicate's error stayed.
+ */
+const COUNTS = `REPORT zcc_counts.
+TYPES: BEGIN OF ty_raw,
+         cid  TYPE c LENGTH 10,
+         pos  TYPE i,
+       END OF ty_raw.
+DATA: gt_raw    TYPE STANDARD TABLE OF ty_raw WITH DEFAULT KEY,
+      gv_rows   TYPE i VALUE 7,
+      gv_big    TYPE int8.
+PARAMETERS p_max TYPE i DEFAULT 5000.
+
+START-OF-SELECTION.
+  PERFORM limit_scope.
+
+FORM limit_scope.
+  DATA: lv_index TYPE sy-tabix,
+        lv_count TYPE i.
+  lv_count = lines( gt_raw ).
+  lv_index = lv_count.
+  IF lv_count > 5000.
+    MESSAGE 'Snapshot exceeds the processing limit' TYPE 'E'.
+  ENDIF.
+  lv_index = 1.
+  gv_rows = lv_count.
+ENDFORM.
+`;
+
+test.describe('1 — a whole number is a number in the Node package, and a predicate\'s error is repaired in the predicate', () => {
+  const p = prep(COUNTS, 'node');
+  const file = (suffix: string) => p.scaffold.files.find((f) => f.path.endsWith(suffix))!.content;
+
+  test('TYPE i and sy-tabix are numbers starting at 0 (or their VALUE); int8 and the rest stay text', () => {
+    const types = file('srv/lib/types.ts');
+    expect(types).toMatch(/\n {2}pos: number;/);
+    expect(types).toMatch(/\n {2}gvRows: number;/);
+    expect(types).toMatch(/\n {2}gvBig: string;/);
+    expect(types).toMatch(/\n {2}cid: string;/);
+    expect(types).toContain('gvRows: 7,');
+    expect(types).toMatch(/\n {2}maxValue: number \| null;|\n {2}max: number \| null;/);
+    const guards = file('srv/lib/guards.ts');
+    const g = p.plan.guards.find((x) => x.condition === 'lv_count > 5000')!;
+    expect(guards).toContain(`export interface ${g.id.replace('-', '')}Values {\n  /** lv_count */\n  lvCount: number;\n}`);
+    // The input contract holds a whole number as one; int8 keeps exact text.
+    expect(file('srv/lib/input-contract.ts')).toContain('return spec.max !== null && spec.max.length <= 10 ? Number(v) : v.toString();');
+  });
+
+  test('the faithful bodies of the runs compile now: a count compared with a number, handed in from lines()', () => {
+    const g = p.plan.guards.find((x) => x.condition === 'lv_count > 5000')!;
+    const unit = p.plan.units.find((u) => u.fn === 'limitScope')!;
+    const helper = g.helper;
+    const body = [
+      'let lvIndex = 0;',
+      'const lvCount = st.local.gtRaw.length;',
+      `const r = ${helper}(sel, st, null, { lvCount });`,
+      'if (r) return r;',
+      'lvIndex = 1;',
+      'void lvIndex;',
+      'st.local.gvRows = lvCount;',
+    ].join('\n');
+    const r = typeCheckCandidate(candidateFiles(p, new Map([[unit.id, body], [g.regionId!, 'return values.lvCount > 5000;']])));
+    expect(r.ran).toBe(true);
+    expect(r.ran && r.findings.map((f) => `${f.path}:${f.code} ${f.message}`)).toEqual([]);
+  });
+
+  test('an error in a predicate is named by its check, and the repair round carries the predicate it names', async () => {
+    const g = p.plan.guards.find((x) => x.condition === 'lv_count > 5000')!;
+    const unit = p.plan.units.find((u) => u.fn === 'limitScope')!;
+    const files = candidateFiles(p, new Map([[unit.id, 'return;'], [g.regionId!, "return values.lvCount > '5000';"]]));
+    const r = typeCheckCandidate(files);
+    expect(r.ran && r.findings.length).toBeGreaterThan(0);
+    if (!r.ran) return;
+    const [failure] = mapTypeFindings(r.findings, markerSpans(files));
+    expect(failure.unitId).toBe(unit.id);
+    // Before: "body line 1 — TS2365 …", read as the step's first line.
+    expect(failure.failure).toContain(`predicate ${g.id} line 1 — TS2365`);
+    expect(failure.failure).toContain('answer the fixed predicate under "guards"');
+
+    // The orchestrator hands the predicate's previous body to the repair, by its check.
+    const seen: FillRequest[] = [];
+    let round = 0;
+    const model: FillModel = async (prompt) => {
+      const req = requestIn(prompt);
+      seen.push(req);
+      return JSON.stringify({ units: req.units.map((u) => ({ unitId: u.unitId, body: 'return;', guards: [{ id: g.id, body: req.repair ? 'return values.lvCount > 5000;' : "return values.lvCount > '5000';" }], needs: [] })) });
+    };
+    const verify: Verify = async () => ({ checks: [], failures: round++ === 0 ? [{ unitId: unit.id, check: 'types', failure: failure.failure }] : [], notRun: [] });
+    const fill = p.fillUnits.filter((u) => u.unitId === unit.id);
+    const result = await runGeneration({ units: fill, bundleOptions: { track: 'node', program: 'ZCC', context: '' }, model, guardBody: () => null, verify, budget: LEASE_MAX_CALLS, gateRepairBudget: LEASE_GATE_REPAIR_CALLS, sleep: async () => {}, now: () => 0 });
+    const repair = seen.find((q) => q.repair)!.repair![0];
+    expect(repair.previousGuards).toEqual({ [g.id]: "return values.lvCount > '5000';" });
+    expect(result.units[0].predicates[g.regionId!]).toBe('return values.lvCount > 5000;');
+  });
+});
 
 /* ------------------------------------------------------------------ 2 */
 

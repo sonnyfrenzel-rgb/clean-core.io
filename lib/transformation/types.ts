@@ -88,8 +88,13 @@ export const PLAN_VERSION = 2;
  * PARTIALLY IMPLEMENTED: every golden-master case died with CX_SY_DYN_CALL_ILLEGAL_METHOD); the fill markers are
  * plain comments (`" @cc-fill`), not ABAP Doc, which drew 71 activation warnings — the reader takes both forms. Node —
  * unchanged. Nothing signed changes (§12.3).
+ * 12 (3.0.14 items 1 and 3, the generation pipeline; the RAP test classes of 3.0.14 items 7 and 8 share this number):
+ * Node — a whole number of the original (`i`, `int1`, `int2`, `int4`, `b`, `s`, `TYPE sy-tabix`) is a `number` in
+ * `srv/lib/types.ts`, the guards' `values` and the steps' arguments, starts at `0`, and the input contract holds it as
+ * one (`int8` stays exact text); the check export hands such a value in as a number; the original's demo cases put a
+ * whole number into a number. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 11;
+export const SCAFFOLD_VERSION = 12;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -686,6 +691,11 @@ export interface FillRepair {
   /** ≤ 2,000 characters. */
   failure: string;
   previousBody: string | null;
+  /**
+   * The previous bodies of the unit's check predicates the failure names (`predicate G-0685`), by check id (3.0.14
+   * item 1): an error in a predicate is repaired in the predicate, which the repair round did not show.
+   */
+  previousGuards?: Record<string, string>;
 }
 
 export interface FillRequest {

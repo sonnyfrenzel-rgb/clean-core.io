@@ -354,6 +354,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 9: customer tables written or typed by, released SAP classes (tests/transformation-run4-defects.spec.ts).
   // 10: no field or element named with a word the Dictionary refuses (tests/transformation-scaffold-rap.spec.ts).
   // 11: the first SAP activation — built-in types for unreleased ones, SAP row types, a complete test double, plain-comment markers (tests/transformation-first-activation.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(11);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(11);
+  // 12: whole numbers are numbers on the Node track (tests/transformation-3014-generation.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(12);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(12);
 });

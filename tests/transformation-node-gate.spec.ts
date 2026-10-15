@@ -180,7 +180,8 @@ test('the verifier maps a type error by its body line; one in engine code is a s
   const p = prep(fixture('co-shape'));
   const u = p.fillUnits[0];
   const files = candidateFiles(p, new Map([[u.unitId, 'return;']]));
-  const span = markerSpans(files).find((s) => s.unitId === u.unitId)!;
+  // The unit's own body, not one of its checks' predicates (those are named by the check since 3.0.14).
+  const span = markerSpans(files).find((s) => s.unitId === u.unitId && !s.guard)!;
   const failures = mapTypeFindings(
     [
       { path: span.path, line: span.beginLine + 1, code: 'TS2339', message: "Property 'x' does not exist on type 'Selection'." },

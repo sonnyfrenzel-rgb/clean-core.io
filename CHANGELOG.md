@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Transformation — generation pipeline
 
+- Node: a whole number of the original (`TYPE i`, `int1`, `int2`, `int4`, `b`, `s`, `TYPE sy-tabix`) is a number in
+  the package — in `srv/lib/types.ts`, the guards' values, the steps' arguments, the input contract and the
+  original's demo cases (`int8` stays exact text). It was text while the fill prompt called counts numbers, and
+  `values.lvCount > 5000` or `lvCount: rows.length` were the most frequent type errors of the acceptance runs.
+  Scaffold version 12 (3.0.14 item 1).
+- A type or activation error inside a check's predicate is named by its check (`predicate G-0523 line 1 — …`), and
+  the repair round carries that predicate's previous body. Before, it read as "body line 1" of the unit, the round
+  rewrote the step, and the predicate's error stayed through every round (3.0.14 item 1).
 - A repair of gate errors (the activation check of a RAP body, the type check of a Node one) carries the failing
   body whole with its errors, its signature, its declarations and the names it may call — not its ABAP slice again
   and not the context pack. The largest units of SD, CO and PP sat just under the 28,000-character cap of a leased

@@ -142,8 +142,9 @@ test('E: a row of an internal table the program builds is a computed value; the 
   // The predicate is written from values alone — `Rec` has no field of ty_effect.
   const guard = guardBodyOf(prep);
   expect(guard(g.regionId!, "return values.lsParentKind === 'SHIP' && dec.compare(String(values.lvQty), String(values.lsParentQty)) > 0;", [])).toBeNull();
-  // Typed as the original declares them (scaffold version 7): ls_parent is a ty_effect row, its components text.
-  expect(prep.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content).toMatch(/lsParentKind: string;\n {2}\/\*\* lv_qty \*\/\n {2}lvQty: string;\n {2}\/\*\* ls_parent-qty \*\/\n {2}lsParentQty: string;/);
+  // Typed as the original declares them (scaffold version 7): ls_parent is a ty_effect row, its kind text; its qty
+  // and lv_qty are TYPE i — whole numbers, numbers since 3.0.14 (item 1).
+  expect(prep.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content).toMatch(/lsParentKind: string;\n {2}\/\*\* lv_qty \*\/\n {2}lvQty: number;\n {2}\/\*\* ls_parent-qty \*\/\n {2}lsParentQty: number;/);
 });
 
 test('E: LOOP, ASSIGNING, READ TABLE and SELECT fill a work area; a row of the input stays raw', () => {
@@ -198,9 +199,10 @@ test('F: Number() stays refused on whole numbers too, and the refusal names what
   expect(guard(g.regionId!, 'return Number(values.lvQty) > Number(values.lsParentQty);', [])).toContain('whole numbers (TYPE i) included');
 });
 
-test('F: the Node header says numbers arrive as text, forbids Number() on any value and names the helpers', () => {
+test('F: the Node header says decimals arrive as text, whole numbers as numbers, forbids Number() on any value and names the helpers', () => {
   const node = fillInstructionHeader('node');
-  expect(node).toContain('- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.');
+  // 3.0.14 item 1: whole numbers are numbers in the scaffold's types, as the header's type line already said of counts.
+  expect(node).toContain('- Decimals and digits reach a body as text; whole numbers (TYPE i, counts) are numbers. Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.');
   expect(node).toContain('- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.');
   // The old line ("… on a decimal value") read as permission for Number() on a whole number.
   expect(node).not.toContain('never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value');

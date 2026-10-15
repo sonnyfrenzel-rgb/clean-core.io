@@ -85,9 +85,17 @@ function fieldType(f: ContractField): string {
       return 'boolean';
     case 'range':
       return 'Range[]';
+    case 'integer':
+      // A whole number within JavaScript's exact integers is a number (3.0.14 item 1); an int8 stays text.
+      return `${wholeNumber(f.max) ? 'number' : 'string'}${opt}`;
     default:
       return `string${opt}`;
   }
+}
+
+/** Is an integer field with this bound a `number` in the port (`abap-shapes.ts` INTEGER_TYPES)? Up to int4's 2147483647. */
+function wholeNumber(max: string | null | undefined): boolean {
+  return typeof max === 'string' && /^\d{1,10}$/.test(max);
 }
 
 function decimalTypeName(f: ContractField): string {
@@ -202,7 +210,7 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   lines.push('');
   // Every structure the original declares, typed by its components (scalars as text: numbers are computed through dec.*).
   for (const s of shapes.structures) {
-    lines.push(`/** ${s.name.toUpperCase()} — the original's structure, L${s.line}–${s.lineEnd}. Numbers are text at their places (compute with dec.*). */`);
+    lines.push(`/** ${s.name.toUpperCase()} — the original's structure, L${s.line}–${s.lineEnd}. Decimals are text at their places (compute with dec.*); whole numbers are numbers. */`);
     lines.push(`export interface ${s.tsName} {`);
     for (const f of s.fields) lines.push(`  /** ${shapeComment(f)} */\n  ${f.key}: ${f.ts};`);
     lines.push('}');
@@ -323,7 +331,8 @@ function normalise(spec: FieldSpec, raw: unknown, path: string, errors: InputErr
       if (!/^[-+]?\d+$/.test(text)) return fail('not a whole number');
       const v = BigInt(text);
       if (spec.max !== null && (v > BigInt(spec.max) || v < -BigInt(spec.max) - BigInt(1))) return fail('outside the range of ' + spec.declaration);
-      return v.toString();
+      // Up to int4 a whole number is a number in this package (types.ts); an int8 stays exact text.
+      return spec.max !== null && spec.max.length <= 10 ? Number(v) : v.toString();
     }
     case 'digits': {
       const n = spec.digits ?? 0;
@@ -1261,7 +1270,9 @@ function checkExport(plan: UnitPlan, lists: readonly InputList[], shapes: AbapSh
         const comp = name.includes('-') ? name.slice(name.lastIndexOf('-') + 1) : name;
         // A system field as the guard's values type it (abap-shapes.ts): a count or return code a number, sy-datum text.
         const sy = name.startsWith('SY-') ? (NUMERIC_SYSTEM_FIELDS.has(comp.toLowerCase()) ? 'number' : 'text') : null;
-        return { name, key: o.key, form: sy ?? (decimals.has(name) || decimals.has(comp) ? 'decimal' : null) };
+        // A whole number as the values type it (3.0.14 item 1: `lv_count TYPE i` was not handed in, its case not run).
+        const whole = shapes.typeOf(o.name, g.line) === 'number' ? 'number' : null;
+        return { name, key: o.key, form: sy ?? whole ?? (decimals.has(name) || decimals.has(comp) ? 'decimal' : null) };
       }),
     };
   }

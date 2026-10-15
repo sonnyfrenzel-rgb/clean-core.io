@@ -180,7 +180,9 @@ export function fillInstructionHeader(track: 'node' | 'rap', opts: { briefRules?
     ...(track === 'node'
       ? [
           // Defect F (A/B 13.10.2026): "on a decimal value" read as permission for Number() on a TYPE i field.
-          '- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
+          // 3.0.14 item 1: TYPE i was text in the scaffold while this header called counts numbers — the most
+          // frequent type error of the acceptance runs (`values.lvCount > 5000` on a string). Whole numbers are numbers.
+          '- Decimals and digits reach a body as text; whole numbers (TYPE i, counts) are numbers. Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
           // Owner decision 14.10.2026: the type errors of three real acceptance runs (14.10.2026) — 46 of 85 were
           // number/text mix-ups (TS2322, TS2367: sy-subrc compared with '0'), then Scaled | null (TS2345), wrong
           // arities (TS2554) and `args`/`values` read where they do not exist (TS2304).
@@ -281,6 +283,7 @@ function cutRepair(r: FillRepair, previousMax = FILL_REPAIR_PREVIOUS_MAX_CHARS):
     round: r.round,
     failure: r.failure.length > FILL_REPAIR_FAILURE_MAX_CHARS ? `${r.failure.slice(0, FILL_REPAIR_FAILURE_MAX_CHARS - 1)}…` : r.failure,
     previousBody: r.previousBody && r.previousBody.length > previousMax ? `${r.previousBody.slice(0, previousMax - 1)}…` : r.previousBody,
+    ...(r.previousGuards ? { previousGuards: Object.fromEntries(Object.entries(r.previousGuards).map(([id, b]) => [id, b.length > FILL_REPAIR_FAILURE_MAX_CHARS ? `${b.slice(0, FILL_REPAIR_FAILURE_MAX_CHARS - 1)}…` : b])) } : {}),
   };
 }
 

@@ -56,10 +56,18 @@ export interface MarkerSpan {
   openLine?: number;
   /** The name of that function, when the engine declared it with `function <name>(`. */
   fn?: string;
+  /**
+   * The check whose predicate this region is (`G-0685` for `@cc-fill BEGIN U16.G0685`), absent for a unit's own body
+   * (3.0.14 item 1: an error in a predicate went back as "body line 1" of the unit, and the repair round rewrote the
+   * unit's body — the predicate's error stayed through every round).
+   */
+  guard?: string;
 }
 
 const BEGIN = /@cc-fill BEGIN (U[0-9A-Za-z_-]+)\b/;
 const END = /@cc-fill END (U[0-9A-Za-z_-]+)\b/;
+/** The predicate region of a check: `@cc-fill BEGIN U16.G0685` → `G0685`. */
+const PREDICATE = /@cc-fill BEGIN U[0-9A-Za-z_-]+\.(G\d+)\b/;
 
 const normPath = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//, '');
 
@@ -68,19 +76,20 @@ export function markerSpans(files: readonly FileLike[]): MarkerSpan[] {
   const spans: MarkerSpan[] = [];
   for (const file of files) {
     const lines = file.content.split('\n');
-    const open = new Map<string, number>();
+    const open = new Map<string, { line: number; guard: string | null }>();
     lines.forEach((line, i) => {
       const b = line.match(BEGIN);
       if (b) {
-        open.set(b[1], i + 1);
+        const g = line.match(PREDICATE);
+        open.set(b[1], { line: i + 1, guard: g ? `G-${g[1].slice(1)}` : null });
         return;
       }
       const e = line.match(END);
       if (e && open.has(e[1])) {
-        const beginLine = open.get(e[1])!;
+        const { line: beginLine, guard } = open.get(e[1])!;
         const openLine = functionOpenLine(lines, beginLine);
         const fn = openLine ? functionNameAbove(lines, openLine) : null;
-        spans.push({ unitId: e[1], path: normPath(file.path), beginLine, endLine: i + 1, ...(openLine ? { openLine } : {}), ...(fn ? { fn } : {}) });
+        spans.push({ unitId: e[1], path: normPath(file.path), beginLine, endLine: i + 1, ...(openLine ? { openLine } : {}), ...(fn ? { fn } : {}), ...(guard ? { guard } : {}) });
         open.delete(e[1]);
       }
     });
@@ -298,6 +307,20 @@ export function mapProbeFailures(
   return out;
 }
 
+/**
+ * How a repair reason names an error in a check's predicate (3.0.14 item 1): by the check, and where its fix goes —
+ * the repair round carries the predicate's previous body under `previousGuards`, and the answer's "guards".
+ */
+export function predicateWords(guard: string, fn?: string): string {
+  return `predicate ${guard}${fn ? ` (${fn})` : ''}`;
+}
+
+/** The note a repair reason carries once when any of its errors stands in a predicate (`predicateWords`). */
+export function predicateNote(guards: ReadonlyArray<string | undefined>): string {
+  const ids = [...new Set(guards.filter((g): g is string => !!g))];
+  return ids.length === 0 ? '' : ` (${ids.join(', ')}: in the check's predicate — its previous body is under "previousGuards"; answer the fixed predicate under "guards", the body only if it changes too)`;
+}
+
 /* ------------------------------------------------- the activation check (3.0.13) */
 
 /** At most this many findings are named in one function's repair reason; the count is complete. */
@@ -312,14 +335,14 @@ export const ABAP_FINDINGS_PER_UNIT = 8;
  */
 export function mapAbapFindings(findings: readonly AbapFinding[], spans: readonly MarkerSpan[]): CheckFailure[] {
   const errors = findings.filter((f) => f.kind === 'parser' || f.kind === 'syntax');
-  const byUnit = new Map<string, Array<{ f: AbapFinding; bodyLine: number }>>();
+  const byUnit = new Map<string, Array<{ f: AbapFinding; bodyLine: number; guard?: string }>>();
   const byFile = new Map<string, AbapFinding[]>();
   for (const f of errors) {
     const p = normPath(f.path);
     const span = spans.find((s) => s.path === p && f.line > s.beginLine && f.line < s.endLine);
     if (span) {
       const list = byUnit.get(span.unitId) ?? [];
-      list.push({ f, bodyLine: f.line - span.beginLine });
+      list.push({ f, bodyLine: f.line - span.beginLine, ...(span.guard ? { guard: span.guard } : {}) });
       byUnit.set(span.unitId, list);
     } else {
       const list = byFile.get(p) ?? [];
@@ -330,12 +353,12 @@ export function mapAbapFindings(findings: readonly AbapFinding[], spans: readonl
   const words = (f: AbapFinding) => `${f.kind === 'parser' ? 'parser error' : 'syntax error'}: ${f.message}`;
   const out: CheckFailure[] = [];
   for (const [unitId, list] of byUnit) {
-    const shown = list.slice(0, ABAP_FINDINGS_PER_UNIT).map((x) => `body line ${x.bodyLine} — ${words(x.f)}`);
+    const shown = list.slice(0, ABAP_FINDINGS_PER_UNIT).map((x) => `${x.guard ? `${predicateWords(x.guard)} line` : 'body line'} ${x.bodyLine} — ${words(x.f)}`);
     const more = list.length > shown.length ? `; and ${list.length - shown.length} more` : '';
     out.push({
       unitId,
       check: 'abap',
-      failure: `abaplint (ABAP Cloud, the package's own abaplint.json) cannot activate this body — ${list.length} error${list.length === 1 ? '' : 's'}: ${shown.join('; ')}${more}`,
+      failure: `abaplint (ABAP Cloud, the package's own abaplint.json) cannot activate this body — ${list.length} error${list.length === 1 ? '' : 's'}${predicateNote(list.map((x) => x.guard))}: ${shown.join('; ')}${more}`,
     });
   }
   for (const [path, list] of byFile) {
@@ -371,7 +394,7 @@ export const TYPE_FINDINGS_PER_UNIT = 8;
  * model.
  */
 export function mapTypeFindings(findings: readonly TypeFindingWords[], spans: readonly MarkerSpan[]): CheckFailure[] {
-  const byUnit = new Map<string, Array<{ f: TypeFindingWords; bodyLine: number; fn?: string }>>();
+  const byUnit = new Map<string, Array<{ f: TypeFindingWords; bodyLine: number; fn?: string; guard?: string }>>();
   const byFile = new Map<string, TypeFindingWords[]>();
   for (const f of findings) {
     const p = normPath(f.path);
@@ -381,7 +404,7 @@ export function mapTypeFindings(findings: readonly TypeFindingWords[], spans: re
     if (span) {
       const list = byUnit.get(span.unitId) ?? [];
       // On the signature: said as the function's, not by a body line.
-      list.push({ f, bodyLine: Math.max(0, f.line - span.beginLine), ...(span.fn ? { fn: span.fn } : {}) });
+      list.push({ f, bodyLine: Math.max(0, f.line - span.beginLine), ...(span.fn ? { fn: span.fn } : {}), ...(span.guard ? { guard: span.guard } : {}) });
       byUnit.set(span.unitId, list);
     } else {
       const list = byFile.get(p) ?? [];
@@ -393,12 +416,16 @@ export function mapTypeFindings(findings: readonly TypeFindingWords[], spans: re
   for (const [unitId, list] of byUnit) {
     const shown = list
       .slice(0, TYPE_FINDINGS_PER_UNIT)
-      .map((x) => (x.bodyLine === 0 ? `the function${x.fn ? ` ${x.fn}` : ''} — ${x.f.code} ${x.f.message} (the body must return a value on every path)` : `body line ${x.bodyLine} — ${x.f.code} ${x.f.message}`));
+      .map((x) =>
+        x.bodyLine === 0
+          ? `${x.guard ? predicateWords(x.guard, x.fn) : `the function${x.fn ? ` ${x.fn}` : ''}`} — ${x.f.code} ${x.f.message} (the body must return a value on every path)`
+          : `${x.guard ? `${predicateWords(x.guard)} line` : 'body line'} ${x.bodyLine} — ${x.f.code} ${x.f.message}`,
+      );
     const more = list.length > shown.length ? `; and ${list.length - shown.length} more` : '';
     out.push({
       unitId,
       check: 'types',
-      failure: `the TypeScript compiler (the package's own tsconfig.json) does not accept this body — ${list.length} type error${list.length === 1 ? '' : 's'}: ${shown.join('; ')}${more}`,
+      failure: `the TypeScript compiler (the package's own tsconfig.json) does not accept this body — ${list.length} type error${list.length === 1 ? '' : 's'}${predicateNote(list.map((x) => x.guard))}: ${shown.join('; ')}${more}`,
     });
   }
   for (const [path, list] of byFile) {

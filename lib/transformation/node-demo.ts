@@ -46,7 +46,7 @@ function placesOf(shapes: AbapShapes) {
       tables[name] = { key: g.key, columns: Object.fromEntries(s.fields.map((f) => [f.name, f.key])), row };
     } else if (byName.has(g.ts)) {
       structs[name] = { key: g.key, columns: Object.fromEntries(byName.get(g.ts)!.fields.map((f) => [f.name, f.key])) };
-    } else if (g.ts === 'string') {
+    } else if (g.ts === 'string' || g.ts === 'number') {
       scalars[name] = g.key;
     }
   }
@@ -98,10 +98,43 @@ function valueOf(v: DemoValue, params: Record<string, string>): string | null {
 }
 
 /**
+ * A value as the place it goes into holds it (3.0.14): a whole number where the original declares one (its initial
+ * value is a number), text everywhere else; undefined for text that is no whole number where a number belongs.
+ */
+function asHeld(initial: unknown, value: string): unknown {
+  if (typeof initial !== 'number') return value;
+  const t = value.trim();
+  return /^[-+]?\d+$/.test(t) ? Number(t) : undefined;
+}
+
+/**
  * One case of the original, run through the package's own process: its selection through the input contract,
  * its tables as the run's globals. Asserts nothing about the result — see the file comment.
  */
 export function runDemoCase(demo: OriginalDemo, c: OriginalDemoCase): DemoRun {
+  const initial = initialLocals() as unknown as Record<string, unknown>;
+  const held = (place: string, start: unknown, value: string): unknown => {
+    const v = asHeld(start, value);
+    if (v === undefined) throw new NotHeld(place);
+    return v;
+  };
+  try {
+    return runCase(demo, c, initial, held);
+  } catch (err) {
+    if (err instanceof NotHeld) return { state: 'not-run', reason: 'the value the case gives ' + err.place + ' is no whole number, which the original declares there' };
+    throw err;
+  }
+}
+
+class NotHeld extends Error {
+  place: string;
+  constructor(place: string) {
+    super(place);
+    this.place = place;
+  }
+}
+
+function runCase(demo: OriginalDemo, c: OriginalDemoCase, initial: Record<string, unknown>, held: (place: string, start: unknown, value: string) => unknown): DemoRun {
   if (c.unread.length > 0) {
     return { state: 'not-run', reason: 'the case was read only in part (' + c.unread.length + ' statement(s) not read, first at L' + c.unread[0].line + ')' };
   }
@@ -113,14 +146,15 @@ export function runDemoCase(demo: OriginalDemo, c: OriginalDemoCase): DemoRun {
     const value = valueOf(s.value, params);
     if (value === null) return { state: 'not-run', reason: 'the value the case gives ' + s.target + ' (L' + s.line + ') cannot be computed here' };
     if (s.parameter) params[s.parameter] = value;
-    else if (SCALARS[s.target]) local[SCALARS[s.target]] = value;
+    else if (SCALARS[s.target]) local[SCALARS[s.target]] = held(s.target, initial[SCALARS[s.target]], value);
     else {
       const dash = s.target.indexOf('-');
       const st = dash > 0 ? STRUCTS[s.target.slice(0, dash)] : undefined;
       const column = st ? st.columns[s.target.slice(dash + 1).toLowerCase()] : undefined;
       if (!st || !column) return { state: 'not-run', reason: 'the case sets ' + s.target + ' (L' + s.line + '), which has no place in this package' };
-      const held = (local[st.key] ?? {}) as Record<string, unknown>;
-      local[st.key] = { ...held, [column]: value };
+      const kept = (local[st.key] ?? {}) as Record<string, unknown>;
+      const start = ((initial[st.key] ?? {}) as Record<string, unknown>)[column];
+      local[st.key] = { ...kept, [column]: held(s.target, start, value) };
     }
   }
   const raw: Record<string, unknown> = {};
@@ -153,7 +187,7 @@ export function runDemoCase(demo: OriginalDemo, c: OriginalDemoCase): DemoRun {
         if (!key) return { state: 'not-run', reason: 'the component ' + table + '-' + component.toUpperCase() + ' has no place in this package' };
         const value = valueOf(v, params);
         if (value === null) return { state: 'not-run', reason: 'a value of ' + table + '-' + component.toUpperCase() + ' cannot be computed here' };
-        row[key] = value;
+        row[key] = held(table + '-' + component.toUpperCase(), row[key], value);
       }
       out.push(row);
     }
@@ -212,7 +246,7 @@ export function nodeDemoFiles(plan: UnitPlan, shapes: AbapShapes, demo: Original
     ' */',
     "import fs from 'node:fs';",
     "import { FIELDS, validateSelection } from './lib/input-contract.ts';",
-    "import type { Locals } from './lib/types.ts';",
+    "import { initialLocals, type Locals } from './lib/types.ts';",
     "import { runProcess, type ProcessOutcome } from './process.ts';",
     '',
     "/** The original's global tables a case fills: their place in Locals, their components, an initial row. */",

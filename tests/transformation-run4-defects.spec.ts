@@ -213,7 +213,8 @@ test.describe('3 — a body that does not return on every path is its own error,
       // Before: unitId null — "1 type error outside the written functions", never a repair reason.
       expect(mapped).toHaveLength(1);
       expect(mapped[0].unitId).toBe(guard.regionId!.split('.')[0]);
-      expect(mapped[0].failure).toContain(`the function ${span!.fn} — ${code}`);
+      // Since 3.0.14 (item 1) by the check whose predicate it is, with the function's name.
+      expect(mapped[0].failure).toContain(`predicate ${guard.id} (${span!.fn}) — ${code}`);
       expect(mapped[0].failure).toContain('the body must return a value on every path');
     }
     // A complete body compiles.

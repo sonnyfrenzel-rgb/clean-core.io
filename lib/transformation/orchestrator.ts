@@ -646,7 +646,9 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       const repair = new Map<string, FillRepair>(
         decision.units.map((u) => {
           const s = states.get(u.unitId)!;
-          return [u.unitId, { unitId: u.unitId, round, failure: u.failure, previousBody: s.body ?? s.refusedBody }];
+          // The predicates the failure names travel with it (3.0.14 item 1: `predicate G-0685 line 1 — TS2367 …`).
+          const named = [...s.predicates].map(([region, body]) => [`G-${region.slice(region.indexOf('.') + 2)}`, body] as const).filter(([id]) => u.failure.includes(`predicate ${id}`));
+          return [u.unitId, { unitId: u.unitId, round, failure: u.failure, previousBody: s.body ?? s.refusedBody, ...(named.length > 0 ? { previousGuards: Object.fromEntries(named) } : {}) }];
         }),
       );
       // Units failing the gate travel in calls of their own, marked as gate repairs; the others as before. A gate

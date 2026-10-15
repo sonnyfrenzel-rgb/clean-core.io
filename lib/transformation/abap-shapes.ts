@@ -12,9 +12,14 @@
  *
  * The types, by what the original declares:
  *
- *   - a scalar (`c`, `n`, `d`, `t`, `string`, `i`, `p`, a dictionary type) is
- *     `string` — numbers reach a body as text in this port, and are computed
- *     through `dec.*`; the ABAP type stays in the comment, with its places;
+ *   - a whole number (`i`, `int1`, `int2`, `int4`, `b`, `s`, a count or return
+ *     code of the system such as `sy-tabix`) is `number` (3.0.14 item 1: as
+ *     text, `lv_count > 5000` and `lv_count = lines( … )` were the most
+ *     frequent type errors of the acceptance runs);
+ *   - every other scalar (`c`, `n`, `d`, `t`, `string`, `p`, `int8`, a
+ *     dictionary type) is `string` — decimals reach a body as text in this
+ *     port, and are computed through `dec.*`; the ABAP type stays in the
+ *     comment, with its places;
  *   - a structure is its interface; a table of a line type is that type's
  *     array (`TYPE STANDARD TABLE OF ty_claim`, `TYPE tt_claim`);
  *   - a reference (`REF TO`), a component reference (`TYPE x-y`) and anything
@@ -265,7 +270,13 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     if (depth > 6) return { ts: 'unknown', init: 'null' };
     const t = readTypeExpr(rest);
     if (t.ref || !t.type) return { ts: 'unknown', init: 'null' };
-    if (t.type.includes('-')) return { ts: 'unknown', init: 'null' };
+    if (t.type.includes('-')) {
+      // `TYPE sy-tabix`, `LIKE sy-datum` (3.0.14 item 1): a system field's own type — a count or return code a
+      // number, every other one text (`sy-datum` a date). Any other component reference is not read here.
+      const sy = /^sy-(\w+)$/.exec(t.type);
+      if (!sy || t.table) return { ts: 'unknown', init: 'null' };
+      return NUMERIC_SYSTEM_FIELDS.has(sy[1]) ? { ts: 'number', init: '0' } : { ts: 'string', init: scalarInitial(SYSTEM_DATE_TIME[sy[1]] ?? 'c', null, null) };
+    }
     // Generic types (a FORM's `TYPE any`, `TYPE STANDARD TABLE`): nothing the port may assume.
     if (!t.like && t.type === 'table') return { ts: 'unknown[]', init: '[]' };
     if (!t.like && GENERIC.has(t.type)) return { ts: 'unknown', init: 'null' };
@@ -291,13 +302,17 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     if (alias) return resolve(alias.rest, depth + 1);
     // A type a FORM declares for itself is not in srv/lib/types.ts: never guessed as text.
     if (scope && localTypeNames.has(t.type)) return { ts: 'unknown', init: 'null' };
+    // A whole-number type is a number (3.0.14 item 1): counts, indexes and return codes are compared and counted as
+    // numbers (`lv_count > 5000`, `lv_matches = 1`). As text they gave the most frequent type errors of the
+    // acceptance runs — the model writes them as numbers, and the prompt says counts are numbers.
+    if (INTEGER_TYPES.has(t.type)) return { ts: 'number', init: '0' };
     return { ts: 'string', init: scalarInitial(t.type, t.length, t.decimals) };
   };
 
   const initOfTs = (ts: string): string => {
     const s = [...tsNames].find(([, n]) => n === ts);
     if (s) return structInit(structByName.get(s[0])!, 1);
-    return ts.endsWith('[]') ? '[]' : ts === 'string' ? "''" : 'null';
+    return ts.endsWith('[]') ? '[]' : ts === 'string' ? "''" : ts === 'number' ? '0' : 'null';
   };
 
   function structInit(s: (typeof structDecls)[number], depth: number): string {
@@ -310,6 +325,9 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
   const scalarOf = (rest: string, depth = 0): AbapScalar | null => {
     if (depth > 6) return null;
     const t = readTypeExpr(rest);
+    // A count or return code of the system (`TYPE sy-tabix`) is a whole number, as `resolve` types it.
+    const sy = t.type ? /^sy-(\w+)$/.exec(t.type) : null;
+    if (sy && !t.ref && !t.table && NUMERIC_SYSTEM_FIELDS.has(sy[1])) return { type: 'i', length: null, decimals: null, dictionary: false };
     if (t.ref || t.table || !t.type || t.type.includes('-')) return null;
     if (t.like) {
       const g = globalByName.get(t.type);
@@ -328,18 +346,20 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
   const fieldOf = (d: Decl): ShapeField => {
     const r = resolve(d.rest);
     // `VALUE 'X'`, `VALUE 100`, `VALUE abap_true`: the start value the original gives a scalar.
-    const value = r.ts === 'string' ? /\bVALUE\s+('(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)(?:\s|$)/i.exec(d.rest) : null;
+    const scalarTs = r.ts === 'string' || r.ts === 'number';
+    const value = scalarTs ? /\bVALUE\s+('(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)(?:\s|$)/i.exec(d.rest) : null;
     let init = r.init;
     if (value) {
       const v = value[1];
       const text = /^'/.test(v) ? v.slice(1, -1).replace(/''/g, "'") : /^`/.test(v) ? v.slice(1, -1) : /^abap_true$/i.test(v) ? 'X' : /^(?:abap_false|space)$/i.test(v) ? '' : v;
-      init = JSON.stringify(text);
+      // A number's start value as a number literal; one that is no whole number keeps the initial 0.
+      init = r.ts === 'number' ? (/^-?\d+$/.test(text.trim()) ? String(Number(text.trim())) : r.init) : JSON.stringify(text);
     }
     const abap = d.rest
       .replace(/\s+WITH\s+(?:NON-UNIQUE\s+|UNIQUE\s+)?(?:DEFAULT\s+)?KEY\b.*$/i, '')
       .replace(/\s+/g, ' ')
       .trim();
-    return { name: d.name, key: camelName(d.name), abap: abap || 'TYPE c', ts: r.ts, init, line: d.line, scalar: r.ts === 'string' ? scalarOf(d.rest) : null };
+    return { name: d.name, key: camelName(d.name), abap: abap || 'TYPE c', ts: r.ts, init, line: d.line, scalar: scalarTs ? scalarOf(d.rest) : null };
   };
 
   const seen = new Set<string>();
@@ -375,6 +395,15 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
   };
   return { structures, globals, typeOf };
 }
+
+/**
+ * The whole-number types that are a `number` in the port (3.0.14 item 1). `int8` stays text: its range is past
+ * JavaScript's exact integers, so it is computed as decimal text like a packed field.
+ */
+export const INTEGER_TYPES: ReadonlySet<string> = new Set(['i', 'int1', 'int2', 'int4', 'b', 's']);
+
+/** The system fields that are a date or a time, for their initial value (every other text field starts empty). */
+const SYSTEM_DATE_TIME: Readonly<Record<string, string>> = { datum: 'd', datlo: 'd', uzeit: 't', timlo: 't' };
 
 /** Generic ABAP types: a parameter so typed takes anything (`clike` and its kin are text in the port). */
 const GENERIC = new Set(['any', 'data', 'object']);

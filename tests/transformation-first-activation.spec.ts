@@ -70,9 +70,10 @@ function prep(source: string): EngineLedPrepared {
 const fileOf = (p: EngineLedPrepared, suffix: string) => p.scaffold.files.find((f) => f.path.endsWith(suffix))!.content;
 const syntaxOf = (r: ReturnType<typeof abapCheck>) => JSON.stringify(r.ran && r.findings.filter((f) => f.kind === 'syntax' || f.kind === 'parser').slice(0, 5));
 
-test('the scaffold version is 11', () => {
-  expect(SCAFFOLD_VERSION).toBe(11);
-  expect(prep(SOURCE).scaffold.version).toBe(11);
+test('the scaffold version is at least 11', () => {
+  // 12 (3.0.14): whole numbers are numbers on the Node track; this file's RAP text is unchanged.
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(11);
+  expect(prep(SOURCE).scaffold.version).toBe(SCAFFOLD_VERSION);
 });
 
 /* ------------------------------------------------------------------ A */
