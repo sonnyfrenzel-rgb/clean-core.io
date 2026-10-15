@@ -250,6 +250,58 @@ test('an alias of a signed path counts as the same path', async () => {
   expect(result.errors.some((e) => e.includes('more than once'))).toBe(true);
 });
 
+/**
+ * An archive whose end record is not the real one (QA full review cc210998fb05).
+ * Both shapes are built from the archive above that carries a signed path
+ * twice, so there is a duplicate to be found.
+ */
+async function withEndRecordShape(shape: 'leading-bytes' | 'second-end-record') {
+  const { bytes } = await packListingTwice();
+  const realEnd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const size = bytes.readUInt32LE(realEnd + 12);
+  const offset = bytes.readUInt32LE(realEnd + 16);
+  const lead = Buffer.alloc(7, 0x20);
+  if (shape === 'leading-bytes') {
+    const out = Buffer.concat([lead, bytes]);
+    const end = realEnd + lead.length;
+    out.writeUInt16LE(0, end + 8);
+    out.writeUInt16LE(0, end + 10);
+    return out;
+  }
+  // A second end record carried as the comment of the first.
+  const second = Buffer.alloc(22);
+  second.writeUInt32LE(0x06054b50, 0);
+  second.writeUInt32LE(size + 22, 12);
+  second.writeUInt32LE(offset, 16);
+  const out = Buffer.concat([lead, bytes, second]);
+  out.writeUInt16LE(22, realEnd + lead.length + 20);
+  return out;
+}
+
+test.describe('an archive whose end record is not the real one is refused', () => {
+  for (const shape of ['leading-bytes', 'second-end-record'] as const) {
+    test(shape, async () => {
+      const bytes = await withEndRecordShape(shape);
+      // JSZip still loads it, so a reader would be shown a verdict over it.
+      const loaded = await JSZip.loadAsync(bytes);
+      expect(Object.keys(loaded.files)).toContain('00-executive-summary.md');
+      expect(duplicateEntryNames(bytes).counted, 'the entry list was reported as counted').toBe(false);
+      const result = await verifyAuditPack(bytes as unknown as Blob);
+      expect(result.integrityValid, 'such an archive passed integrity').toBe(false);
+      expect(result.status).not.toBe('authentic');
+    });
+  }
+
+  test('a genuine archive still counts, with and without a plain comment', async () => {
+    const good = Buffer.from(await packWith());
+    expect(duplicateEntryNames(good)).toMatchObject({ counted: true, duplicates: [] });
+    const end = good.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    const commented = Buffer.concat([good, Buffer.from('note', 'utf8')]);
+    commented.writeUInt16LE(4, end + 20);
+    expect(duplicateEntryNames(commented)).toMatchObject({ counted: true, duplicates: [] });
+  });
+});
+
 test.describe('a signed file is measured as the bytes in the archive', () => {
   /**
    * The issuer hashes the UTF-8 bytes of the text it wrote

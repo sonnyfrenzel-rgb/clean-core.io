@@ -362,9 +362,27 @@ function duplicateEntryNames(buffer) {
     }
   }
   if (eocd < 0) return unchecked('no ZIP end-of-central-directory record was found');
+  // Same rules as `lib/audit-pack-verify.ts`: one end record, ending the
+  // archive, with its directory directly in front of it at the stated offset
+  // (QA full review cc210998fb05).
+  for (let i = eocd + 1; i <= b.length - 4; i++) {
+    if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');
+  }
+  const disk = b.readUInt16LE(eocd + 4);
+  const directoryDisk = b.readUInt16LE(eocd + 6);
+  const totalOnDisk = b.readUInt16LE(eocd + 8);
   const total = b.readUInt16LE(eocd + 10);
+  const directorySize = b.readUInt32LE(eocd + 12);
   let offset = b.readUInt32LE(eocd + 16);
-  if (total === 0xffff || offset === 0xffffffff) return unchecked('the archive uses the ZIP64 format, which this check does not read');
+  const commentLength = b.readUInt16LE(eocd + 20);
+  if (
+    total === 0xffff || totalOnDisk === 0xffff || disk === 0xffff || directoryDisk === 0xffff
+    || offset === 0xffffffff || directorySize === 0xffffffff
+  ) return unchecked('the archive uses the ZIP64 format, which this check does not read');
+  if (eocd + 22 + commentLength !== b.length) return unchecked('the end record does not end where the archive ends');
+  if (disk !== 0 || directoryDisk !== 0 || totalOnDisk !== total) return unchecked('the end record describes an archive split across disks');
+  if (total === 0) return unchecked('the end record declares no entries');
+  if (offset + directorySize !== eocd) return unchecked('the central directory is not where the end record places it');
 
   const seen = new Set();
   const duplicates = new Set();
@@ -390,6 +408,7 @@ function duplicateEntryNames(buffer) {
   if (walked !== total) {
     return unchecked(`the end record declares ${total} entries and the central directory holds ${walked}`);
   }
+  if (offset !== eocd) return unchecked('the central directory does not run up to the end record');
   return { duplicates: [...duplicates].sort(), counted: true };
 }
 
