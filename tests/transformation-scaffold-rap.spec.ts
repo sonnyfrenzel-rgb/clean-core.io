@@ -4,6 +4,7 @@ import { buildRapScaffold } from '../lib/transformation';
 import { rapShortName } from '../lib/transformation/scaffold-rap';
 import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
 import { missingEngineLedArtefacts } from '../lib/transformation-artefacts';
+import { isDdicReserved } from '../lib/transformation/ddic-reserved';
 
 /**
  * The RAP / ABAP Cloud scaffold (docs/design/engine-led-transformation.md §6.3): packed fields
@@ -136,4 +137,19 @@ test('a read-only package is complete without a behavior definition; a writing o
   expect(missingEngineLedArtefacts([...readOnly, trace], true)).toEqual([]);
   const writing = rap(coWriting()).scaffold.files.filter((f) => !f.path.endsWith('.bdef.asbdef'));
   expect(missingEngineLedArtefacts([...writing, trace], true)).toEqual(['behavior definition (*.bdef.asbdef)']);
+});
+
+test('no generated field or element carries a name the Dictionary refuses (first activation, BTP trial, 15.10.2026: DEFERRED)', () => {
+  /** The element names of every CDS entity and the field names of every table the scaffold writes. */
+  const names = (files: Array<{ path: string; content: string }>) => [
+    ...files.filter((f) => f.path.endsWith('.ddls.asddls')).flatMap((f) => [...f.content.matchAll(/^\s*(?:key\s+)?(\w+)\s*:/gm)].map((m) => m[1])),
+    ...files.filter((f) => f.path.endsWith('.tabl.xml')).flatMap((f) => [...f.content.matchAll(/<FIELDNAME>([^<]+)<\/FIELDNAME>/g)].map((m) => m[1])),
+  ];
+  const deferred = (s: string) => s.replace(/\bamount\b/gi, 'deferred');
+  const readOnly = rap(deferred(fixture('co-shape'))).scaffold.files;
+  const writing = rap(deferred(coWriting())).scaffold.files;
+  expect(names(readOnly)).toContain('deferred_value');
+  for (const files of [readOnly, writing, rap(fixture('pp-shape')).scaffold.files, rap(fixture('sd-shape')).scaffold.files]) {
+    expect(names(files).filter((n) => isDdicReserved(n))).toEqual([]);
+  }
 });

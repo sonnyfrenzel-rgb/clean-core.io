@@ -77,8 +77,11 @@ export const PLAN_VERSION = 2;
  * (`cl_system_uuid=>…`, the synced `released-classes.latest.json`) is no longer "a call outside the logic class".
  * Node — the scaffold text is unchanged (the type check maps a body's missing return, reported on the signature, to
  * that body; the scaffold's own type check runs before the fills). Nothing signed changes (§12.3).
+ * 10 (3.0.13, the first real activation, BTP ABAP trial, 15.10.2026): RAP — no generated table field or CDS element
+ * carries a name the Dictionary refuses; the SQL reserved words SAP keeps in TRESE (`ddic-reserved.ts`) get `_value`
+ * (the SD custom entity was refused for DEFERRED). Node — unchanged. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 9;
+export const SCAFFOLD_VERSION = 10;
 
 /* -------------------------------------------------------------- budgets */
 

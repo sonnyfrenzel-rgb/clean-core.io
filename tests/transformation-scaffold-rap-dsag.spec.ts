@@ -350,6 +350,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 7: the CAP shell and one input list per source structure on the Node track (tests/transformation-cap-shell.spec.ts).
   // 8: the contract gaps of the second real acceptance run (tests/transformation-contract-gaps.spec.ts).
   // 9: customer tables written or typed by, released SAP classes (tests/transformation-run4-defects.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(9);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(9);
+  // 10: no field or element named with a word the Dictionary refuses (tests/transformation-scaffold-rap.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(10);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(10);
 });

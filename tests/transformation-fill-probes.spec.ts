@@ -36,7 +36,7 @@ const verdicts = (run: ChecksRun) => Object.fromEntries(run.probes.filter((p) =>
 test.describe('reading the patterns from the original', () => {
   test('a component recalculated from its own value is input (plan 2): it comes with the record and starts at zero', () => {
     expect(PLAN_VERSION).toBe(2);
-    expect(SCAFFOLD_VERSION).toBe(9); // 7: one input list per source structure (tests/transformation-cap-shell.spec.ts); 8: contract gaps (tests/transformation-contract-gaps.spec.ts); 9: acceptance run 4 (tests/transformation-run4-defects.spec.ts)
+    expect(SCAFFOLD_VERSION).toBe(10); // 10: Dictionary-reserved field names (tests/transformation-scaffold-rap.spec.ts); 7: one input list per source structure (tests/transformation-cap-shell.spec.ts); 8: contract gaps (tests/transformation-contract-gaps.spec.ts); 9: acceptance run 4 (tests/transformation-run4-defects.spec.ts)
     for (const [text, want] of [
       ['<ls_item>-menge = <ls_item>-menge + p_add.', { component: 'menge', sign: '+', operand: 'p_add' }],
       ['ls-menge = p_add + ls-menge', { component: 'menge', sign: '+', operand: 'p_add' }],

@@ -79,6 +79,7 @@ import type { AuthorityCheck } from '../abap/call-graph';
 import type { AbapStatement } from '../abap/statement-reader';
 import { rapShortName, rapTableName } from './rap-names';
 import { abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
+import { ddicFieldName, isDdicReserved } from './ddic-reserved';
 import { SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /**
@@ -97,13 +98,8 @@ export interface RapScaffoldOptions {
 // rapShortName and rapTableName live in rap-names.ts (no scaffold behind them, for the client bundle); re-exported here.
 export { rapShortName, rapTableName };
 
-/** Field names a transparent table may not have (abaplint `xml_consistency`, confirmed by activation: DAY, HOUR). */
-const RESERVED_TABLE_FIELDS = new Set(['zone', 'handler', 'section', 'parameter', 'day', 'hour']);
-
-const abapField = (f: ContractField) => {
-  const name = f.key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`).slice(0, 30);
-  return RESERVED_TABLE_FIELDS.has(name) ? `${name}_value` : name;
-};
+/** A table field never carries a name the Dictionary refuses (`ddic-reserved.ts`; scaffold version 10). */
+const abapField = (f: ContractField) => ddicFieldName(f.key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`).slice(0, 30));
 
 /**
  * The table field of a record field: a packed field is DEC(2L−1, d) from its
@@ -326,7 +322,6 @@ function cdsType(phrase: string, contract: RapContract, depth = 0): string | nul
   return /^[a-z][\w]*$/i.test(named) ? named.toLowerCase() : null;
 }
 
-const CDS_RESERVED = new Set(['begin', 'number', 'position', 'key', 'define', 'select', 'from', 'where', 'as', 'association', 'composition', 'parameters', 'with', 'entity', 'view', 'case', 'when', 'then', 'else', 'end', 'cast', 'and', 'or', 'not', 'null', 'union', 'group', 'order', 'by', 'having', 'distinct', 'inner', 'left', 'right', 'outer', 'join', 'on', 'to', 'exact', 'one', 'many']);
 
 /* ---------------------------------------------------- the access layer */
 
@@ -1179,7 +1174,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       .map((c) => ({ comp: c.name, type: cdsType(c.phrase, contract) }))
       .filter((c): c is { comp: string; type: string } => c.type !== null)
       .map((c) => {
-        let name = CDS_RESERVED.has(c.comp) || c.comp === 'row_no' ? `${c.comp}_value`.slice(0, 30) : c.comp;
+        let name = isDdicReserved(c.comp) || c.comp === 'row_no' ? `${c.comp}_value`.slice(0, 30) : c.comp;
         for (let i = 2; taken.has(name); i++) name = `${c.comp.slice(0, 26)}_${i}`;
         taken.add(name);
         return { ...c, name };
