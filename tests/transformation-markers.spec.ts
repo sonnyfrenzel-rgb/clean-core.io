@@ -172,6 +172,23 @@ test('body guards: ABAP bodies (RAP)', () => {
   expect(codes('DATA lv_f TYPE f.')).toContain('binary-number');
 });
 
+// SD U02 on dev, 15.10.2026: `RETURN;` inside an IF swallowed the `ENDIF.` below it, and the repair round was told
+// only "an IF … without its end" — no line, no semicolon — so it rewrote the body with the same habit and the
+// function stayed a stub. The refusal now names the semicolon and the line of the open block.
+test('body guards (RAP): a semicolon is named where it stands, and an open block by its line', () => {
+  const ctx: BodyGuardContext = { track: 'rap', available: [], sliceChars: 500 };
+  const messages = (body: string) => bodyGuards(body, ctx).map((r) => `${r.code}: ${r.message}`);
+  const early = "CLEAR cv_rc.\nIF iv_val IS INITIAL.\n  cv_rc = 'EMPTY'.\n  RETURN;\nENDIF.\ncv_rc = 'OK'.";
+  const m = messages(early);
+  expect(m.some((x) => x.startsWith('unterminated: a semicolon') && x.includes('body line 4: RETURN;'))).toBe(true);
+  expect(m.some((x) => x.startsWith('unbalanced:') && x.includes('IF at body line 2 has no ENDIF'))).toBe(true);
+  expect(messages("LOOP AT it_x INTO DATA(ls_x).\n  cv_n = cv_n + 1.\nENDLOOP;").some((x) => x.includes('body line 3: ENDLOOP;'))).toBe(true);
+  expect(messages('cv_n = 1.\nENDIF.').some((x) => x.includes('ENDIF at body line 2 has no IF'))).toBe(true);
+  expect(messages("IF iv_a = 1.\n  TRY.\n      cv_n = 1.\n  ENDIF.").some((x) => x.includes('TRY at body line 2 has no ENDTRY'))).toBe(true);
+  // A semicolon in a literal, a template or a comment is text, not a statement end.
+  expect(messages("DATA(lv_t) = |a; b|. \" x; y\n* c; d\ncv_rc = 'a;b'.\nIF lv_t CN '0123456789'\n   OR lv_t+2(2) > '23'.\n  RETURN.\nENDIF.")).toEqual([]);
+});
+
 test('RAP regions use ABAP comment markers and splice the same way', () => {
   const { facts, plan } = planOf(fixture('co-shape'));
   const s = buildRapScaffold(plan, facts);

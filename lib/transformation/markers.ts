@@ -28,7 +28,7 @@
 
 import { sha256Hex } from '../artefact-digest';
 import { readBlocks } from '../abap/block-structure';
-import { readStatements } from '../abap/statement-reader';
+import { createLiteralScanner, readStatements } from '../abap/statement-reader';
 import { codeMask } from '../ts-source-scan';
 // The class names SAP releases for ABAP Cloud (~1,400, 9 kB gzip; written by the catalog sync) — never the catalog itself.
 import releasedClassList from '../abap/generated/released-classes.latest.json';
@@ -372,9 +372,65 @@ function abapLiteralsClosed(body: string): boolean {
   return true;
 }
 
+/**
+ * The body lines where a semicolon stands in code — outside literals, templates and comments. ABAP ends a statement
+ * with a period and has no `;` of its own (native SQL is refused as a foreign call), so each is a TypeScript habit:
+ * `RETURN;` swallowed the `ENDIF.` below it into one statement, and the only refusal the repair round saw was
+ * "an IF … without its end" with no line to look at (acceptance runs 15.10.2026: `RETURN;` in the SD main path,
+ * `ENDLOOP;` read as "the last statement has no period").
+ */
+function abapSemicolonLines(body: string): Array<{ line: number; text: string }> {
+  const out: Array<{ line: number; text: string }> = [];
+  body.split('\n').forEach((raw, i) => {
+    if (/^\*/.test(raw)) return;
+    const outside = createLiteralScanner();
+    for (let c = 0; c < raw.length; c++) {
+      const ch = raw[c];
+      if (!outside(ch)) continue;
+      if (ch === '"') return;
+      if (ch === ';') {
+        out.push({ line: i + 1, text: raw.trim().slice(0, 40) });
+        return;
+      }
+    }
+  });
+  return out;
+}
+
+/**
+ * Where an IF, CASE, LOOP, DO, WHILE or TRY of a body is not closed, or an end has no opener — in body lines, so a
+ * repair round is told which line to look at, not only that one is wrong.
+ */
+function unbalancedAt(statements: ReturnType<typeof readStatements>): string[] {
+  const closerOf = new Map(Object.entries(OPENERS).map(([open, close]) => [close, open]));
+  const stack: Array<{ keyword: string; line: number }> = [];
+  const out: string[] = [];
+  for (const s of statements) {
+    if (OPENERS[s.keyword]) {
+      stack.push({ keyword: s.keyword, line: s.lineStart });
+      continue;
+    }
+    const opener = closerOf.get(s.keyword);
+    if (!opener) continue;
+    const at = stack.map((o) => o.keyword).lastIndexOf(opener);
+    if (at === -1) {
+      out.push(`${s.keyword} at body line ${s.lineStart} has no ${opener}`);
+      continue;
+    }
+    for (const o of stack.splice(at).slice(1)) out.push(`${o.keyword} at body line ${o.line} has no ${OPENERS[o.keyword]}`);
+  }
+  for (const o of stack) out.push(`${o.keyword} at body line ${o.line} has no ${OPENERS[o.keyword]}`);
+  return out;
+}
+
 function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const out: BodyRefusal[] = [];
   if (!abapLiteralsClosed(body)) out.push(refusal('unterminated', 'an unterminated literal'));
+  const semicolons = abapSemicolonLines(body);
+  if (semicolons.length > 0) {
+    const where = semicolons.slice(0, 4).map((s) => `body line ${s.line}: ${s.text}`).join('; ');
+    out.push(refusal('unterminated', `a semicolon where ABAP ends a statement with a period (${where}) — every ABAP statement ends with ".", never ";"`));
+  }
   const code = body.split('\n').filter((l) => !/^\s*\*/.test(l) && !/^\s*"/.test(l)).join('\n').trim();
   if (code && !code.replace(/".*$/gm, '').trim().endsWith('.')) out.push(refusal('unterminated', 'the last statement has no period'));
   const statements = readStatements(body);
@@ -387,7 +443,10 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     if (OPENERS[s.keyword]) counts[s.keyword] = (counts[s.keyword] ?? 0) + 1;
     for (const [open, close] of Object.entries(OPENERS)) if (s.keyword === close) counts[open] = (counts[open] ?? 0) - 1;
   }
-  if (blocks.unterminated.length > 0 || Object.values(counts).some((n) => n !== 0)) out.push(refusal('unbalanced', 'an IF, CASE, LOOP, DO, WHILE or TRY without its end, or an end without its opener'));
+  if (blocks.unterminated.length > 0 || Object.values(counts).some((n) => n !== 0)) {
+    const where = unbalancedAt(statements);
+    out.push(refusal('unbalanced', `an IF, CASE, LOOP, DO, WHILE or TRY without its end, or an end without its opener${where.length > 0 ? ` (${where.slice(0, 4).join('; ')})` : ''}`));
+  }
   const foreign: string[] = [];
   const available = new Set(ctx.available.map((n) => n.toLowerCase()));
   for (const s of statements) {
