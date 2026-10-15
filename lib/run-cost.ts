@@ -91,7 +91,7 @@ export function describeRunCost(input: RunCostInput): RunCost {
   }
 
   return {
-    quota: `Uses 1 of your ${limit} free analysis runs (${remaining - 1} left)`,
+    quota: `Uses 1 of your ${limit} free analysis runs — ${remaining - 1} left after this one`,
     modelCall,
     blocked: false,
   };

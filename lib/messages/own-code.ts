@@ -173,9 +173,9 @@ export function ownCodeTooLarge(bytes: number, limit: number): string {
   return `Together the files are ${KB(bytes)} of source; one analysis reads at most ${KB(limit)}. Analyse the program in parts.`;
 }
 
-/** The free-runs option's help, with the account's own limit. */
-export function ownCodeFreeHelp(limit: number): string {
-  return `A new source counts once; the same source again is free. The stages after the analysis and the chat are not counted. After ${limit.toLocaleString('en')} analyses, add your own Gemini key to continue.`;
+/** The free-runs option's help; the own-key way on is the Settings sentence after it. */
+export function ownCodeFreeHelp(): string {
+  return `A new source counts once; the same source again is free. The stages after the analysis and the chat are not counted.`;
 }
 
 /** The phone summary of the Source card, under the form. */

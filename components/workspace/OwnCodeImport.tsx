@@ -11,7 +11,7 @@ import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/fireb
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { describeRunCost } from '@/lib/run-cost';
-import { COMMUNITY_QUOTA_FALLBACK, runsAreSelfFunded } from '@/lib/run-quota-rule';
+import { runsAreSelfFunded } from '@/lib/run-quota-rule';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import {
   OWN_CODE_MAX_SOURCE_BYTES,
@@ -207,8 +207,6 @@ export default function OwnCodeImport() {
   // run's, said here before the click, with whether the model is called.
   const startCallsModel = model.enabled('analyze');
   const cost = describeRunCost({ profile, metered: true, callsModel: startCallsModel });
-  const limit =
-    typeof profile?.transformationsLimit === 'number' ? profile.transformationsLimit : COMMUNITY_QUOTA_FALLBACK;
   const trimmedName = name.trim();
   const nameMissing = trimmedName.length === 0;
 
@@ -495,7 +493,7 @@ export default function OwnCodeImport() {
                       {selfFunded ? wt('ownCode.payOwnKey') : cost.quota}
                     </p>
                     <p className="m-0 text-[12px] font-medium leading-snug text-cc-ink-muted">
-                      {selfFunded ? wt('ownCode.payOwnKeyOn') : ownCodeFreeHelp(limit)}{' '}
+                      {selfFunded ? wt('ownCode.payOwnKeyOn') : ownCodeFreeHelp()}{' '}
                       {selfFunded ? null : wt('ownCode.payOwnKeyOffBefore')}{' '}
                       <Link href="/settings" data-own-code-settings="" className="font-semibold text-cc-brand-strong underline underline-offset-2">
                         {wt('ownCode.payOwnKeyOffLink')}

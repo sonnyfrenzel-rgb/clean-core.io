@@ -145,7 +145,7 @@ test.describe('own code: choose, check, start', () => {
     const paid = page.locator('[data-own-code-paid]');
     await expect(paid).toHaveAttribute('data-own-code-paid', 'free');
     await expect(paid.locator('input')).toHaveCount(0);
-    await expect(paid.locator('[data-own-code-paid-statement]')).toHaveText('Uses 1 of your 5 free analysis runs (3 left)');
+    await expect(paid.locator('[data-own-code-paid-statement]')).toHaveText('Uses 1 of your 5 free analysis runs — 3 left after this one');
     await expect(paid.locator('[data-own-code-settings]')).toHaveAttribute('href', '/settings');
     await expect(page.locator('[data-own-code-same-source]')).toContainText('this source was already analysed');
   });
