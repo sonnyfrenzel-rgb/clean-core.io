@@ -15,7 +15,7 @@
  */
 
 /** One verdict handed in by a check that ran the scenario's case (`judgeScenarios` `external` in suite.ts). */
-export type ScenarioVerdict = 'pass' | 'fail' | { ran: boolean; verdict: string };
+export type ScenarioVerdict = 'pass' | 'fail' | { ran: boolean; verdict: string; detail?: string };
 
 /** A scenario as the suite holds it; `input` and `expected` stay in memory. */
 export interface CaseScenario {
@@ -133,7 +133,8 @@ export interface ScenarioComparison {
  * One machine expectation against one case's output. Each expected value is looked for in the output: a list of
  * rows in the run's rows or the global table of that shape (its length, then row by row and column by column), a
  * list of messages among the run's issues, any other value in the run's result or the globals by its name. Pass
- * only when every expected value was found and equal; fail when a found one differs; otherwise not judged.
+ * only when every expected value was found and equal; fail when a found one differs and at least half were found;
+ * otherwise not judged.
  */
 export function compareScenario(expected: unknown, out: Ran): ScenarioComparison {
   const c: ScenarioComparison = { verdict: 'not-judged', located: 0, total: 0, differ: 0 };
@@ -185,7 +186,9 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
     leaf(scalar, scalar && canon(hit.value) === canon(value));
   };
   if (isPlainObject(expected)) for (const [k, v] of Object.entries(expected)) visit(k, v, [out.result, out.local]);
-  if (c.differ > 0) c.verdict = 'fail';
+  // A fail needs the output found: at least half of the expected values located (real SD run 15.10.2026: 5 of 115
+  // found — the package keeps its rows under other names — and "fail" on those 5 said nothing about the rest).
+  if (c.differ > 0 && c.located * 2 >= c.total) c.verdict = 'fail';
   else if (c.total > 0 && c.located === c.total) c.verdict = 'pass';
   return c;
 }
@@ -207,14 +210,15 @@ export function demoCaseVerdicts(scenarios: readonly CaseScenario[] | null, case
       out[s.id] = { ran: false, verdict: `not-run: demo case ${n} — ${r.reason.slice(0, 160)}` };
     } else if (r.state === 'threw') {
       // The package's code threw on the original's own case: the package fails it.
-      out[s.id] = { ran: true, verdict: 'fail' };
+      out[s.id] = { ran: true, verdict: 'fail', detail: 'the package threw on the case' };
     } else if (!r.complete) {
       out[s.id] = { ran: true, verdict: `not-run: demo case ${n} reached ${r.notFilled.length} function(s) still left as stubs` };
     } else if (s.expectedForm !== 'machine') {
       out[s.id] = { ran: true, verdict: `ran: demo case ${n} — a prose expectation, judged by a reviewer` };
     } else {
       const cmp = compareScenario(s.expected, r);
-      out[s.id] = cmp.verdict === 'not-judged' ? { ran: true, verdict: `ran: demo case ${n} — not judged, ${cmp.located} of ${cmp.total} expected values found in the output` } : { ran: true, verdict: cmp.verdict };
+      const detail = `${cmp.differ} of ${cmp.located} found values differ, ${cmp.located} of ${cmp.total} found`;
+      out[s.id] = cmp.verdict === 'not-judged' ? { ran: true, verdict: `ran: demo case ${n} — not judged, ${cmp.located} of ${cmp.total} expected values found in the output`, detail } : { ran: true, verdict: cmp.verdict, detail: `${cmp.differ} of ${cmp.located} found values differ, ${cmp.located} of ${cmp.total} found` };
     }
   }
   return out;

@@ -293,6 +293,10 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
     // A value the output does not hold: not judged — never a pass.
     expect(compareScenario({ status: 'OK', hidden_known: 3 }, ran({ local: { gvStatus: 'OK' } }))).toEqual({ verdict: 'not-judged', located: 1, total: 2, differ: 0 });
     expect(compareScenario({}, ran()).verdict).toBe('not-judged');
+    // The first real SD run (15.10.2026): the rows under other names, a few scalars found and off — not a fail on 5 of
+    // 115 values, but not judged, with the counts.
+    const rowsElsewhere = { status: 'OK', retries: 1, rows: [{ cid: 'C1', balance: 1 }, { cid: 'C2', balance: 2 }] };
+    expect(compareScenario(rowsElsewhere, ran({ local: { gvStatus: 'NO', gvRetries: 0, gtOut: [{ k: 1 }] } }))).toEqual({ verdict: 'not-judged', located: 2, total: 6, differ: 2 });
   });
 
   test('the verdicts: a case that threw fails, a stub is not run, prose ran for a reviewer, no harness run says why', () => {
@@ -304,8 +308,8 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
       byNumber: { '0': ran({ local: { gvStatus: 'OK' } }), '1': { state: 'threw', message: 'x is undefined' }, '7': ran() },
     };
     expect(demoCaseVerdicts(scenarios, cases, runs)).toEqual({
-      'CASE-00': { ran: true, verdict: 'pass' },
-      'CASE-01': { ran: true, verdict: 'fail' },
+      'CASE-00': { ran: true, verdict: 'pass', detail: '0 of 1 found values differ, 1 of 1 found' },
+      'CASE-01': { ran: true, verdict: 'fail', detail: 'the package threw on the case' },
       'CASE-07': { ran: true, verdict: 'ran: demo case 7 — a prose expectation, judged by a reviewer' },
     });
     const stub = demoCaseVerdicts(scenarios.slice(0, 1), cases, { ...runs, byNumber: { '0': ran({ complete: false, notFilled: ['U03'] }) } });

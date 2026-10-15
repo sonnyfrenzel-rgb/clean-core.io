@@ -206,6 +206,8 @@ export interface ScenarioTally {
   notJudged: number;
   /** Scenario id → verdict ('pass' | 'fail' | 'not-run: <why>'). IDs only, never values. */
   verdicts: Record<string, string>;
+  /** Why a case-run verdict is what it is, in counts only (`scenario-cases.ts`): "2 of 40 found values differ, …". */
+  details?: Record<string, string>;
   note: string | null;
 }
 
@@ -668,6 +670,7 @@ export function judgeScenarios(file: ScenarioFile | null, reason: string | null,
     const given = external[s.id];
     const ext = given === undefined ? undefined : typeof given === 'string' ? { ran: true, verdict: given } : given;
     if (ext && ext.ran) t.ran++;
+    if (ext && 'detail' in ext && ext.detail) (t.details ??= {})[s.id] = ext.detail;
     if (ext) v = ext.verdict;
     else if (track === 'rap' && s.expectedForm === 'machine') v = 'not-run: needs ABAP Unit execution in an SAP system';
     else if (s.harnessProbe && patterns[s.harnessProbe]) {
@@ -1099,7 +1102,7 @@ const LIMITS = [
   "The context pack is empty and no rule decisions are given: the generation runs from the source alone, not from a project's earlier tools.",
   "Inside the repair loop the checks are the page's: lints, on RAP the package formats and the activation check (abapCheck), on Node the type check (typeCheckCandidate) — their errors are the units' repair reasons. The runner's engine cases and probes are not part of the loop: they run once after the generation with the repository's harness under its execution rule (in a Node 25 child when the local Node is older), so a Node package's status reads 'not verified' unless it is partial or not runnable.",
   'A scenario counts as matched only when an executed check judged it (a harness probe, or verdicts a gate module hands in). Prose expectations and ABAP reference cases are listed as not judged: ABAP Unit needs an SAP system.',
-  "On Node a scenario that names one of the original's demo cases (by the case switch in its input, or by its ID) runs that case through the generated package in the confined executor; its output is compared with the sealed expectation in memory — every expected value found and equal is a pass, a found value that differs a fail, anything less is \"ran, not judged\". A case that reaches a function still left as a stub is not run. The comparison reads the run's rows, result, issues and globals by name; a package that keeps its output under other names is not judged, never passed.",
+  "On Node a scenario that names one of the original's demo cases (by the case switch in its input, or by its ID) runs that case through the generated package in the confined executor; its output is compared with the sealed expectation in memory — every expected value found and equal is a pass, a found value that differs a fail (when at least half were found), anything less is \"ran, not judged\" with the counts. A case that reaches a function still left as a stub is not run. The comparison reads the run's rows, result, issues and globals by name; a package that keeps its output under other names is not judged, never passed.",
   'Model calls go to the provider directly with the fill call settings of /api/gemini; the route\'s own gates (account, lease in Firestore, hourly limits) are not part of the run.',
 ];
 

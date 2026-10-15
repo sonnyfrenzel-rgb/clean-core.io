@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Acceptance suite: a Node scenario is judged by the generated package's own case of its ID. A scenario that names
   one of the original's demo cases — by the case switch in its input (`p_case`) or by its ID (`CASE-07`, `case_07`,
   `7`) — runs that case through the package in the confined executor, and its output is compared with the sealed
-  expectation in memory: every expected value found and equal passes, a found value that differs fails, anything
+  expectation in memory: every expected value found and equal passes, a found value that differs fails when at least
+  half the values were found, anything
   less is "ran, not judged". The report says per program how many scenarios ran, passed and failed; only IDs,
   verdicts and counts leave the comparison. The package's case module (`srv/fixtures.ts`) reads no file any more —
   its test reads the cases' JSON — so the executor can load it. RAP scenarios stay "not run here": they need ABAP
