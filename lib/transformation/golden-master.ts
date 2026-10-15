@@ -32,8 +32,11 @@
  *     `unread` with its line, and the case says it was read only in part.
  *
  * Expected values: none are invented. The title is what the original says the
- * case shows; the outcome is "from the original, to be confirmed once in your
- * system". Pure and deterministic: no network, no model, no React.
+ * case shows. Since 3.0.14 (item 8, owner 15.10.2026) a case compares its result
+ * where an expected result of the original is on record (`GoldenMasterExpected`,
+ * the seam for the owner's characterization samples of 3.0.17); otherwise it runs
+ * the logic and then reports itself as skipped — "not compared", never as passed.
+ * Pure and deterministic: no network, no model, no React.
  *
  * ---------------------------------------------------------------------------
  * STABLE INTERFACE (route-neutral; owner 14.10.2026: the golden master feeds
@@ -873,6 +876,25 @@ export interface GoldenMasterBinding {
   selection: Record<string, { component: string; range: boolean }>;
   /** Fixture table of the original (upper case, `GT_CLAIMS`) → component of the state type. */
   state: Record<string, string>;
+  /** The exception the logic raises where the original refuses (`zcx_<name>_refusal`, with `guard` and `text`), or null. */
+  refusalClass?: string | null;
+  /** Components of the state type an expected value may name (lower case); none known: no value is compared. */
+  stateComponents?: readonly string[];
+}
+
+/**
+ * What the original gave for one demo case — the seam for the owner's characterization samples (roadmap 3.0.17).
+ * Never derived by a model or guessed: a case without one is reported as not compared. Nothing passes it yet.
+ */
+export interface GoldenMasterExpected {
+  /** Where it comes from, said in the test: `characterization sample of 20.10.2026`. */
+  source: string;
+  /** The original refused this case (with its guard id and message text, where known) — or did not. Absent: not compared. */
+  refused?: { guard?: string; text?: string } | false;
+  /** A scalar component of the run's state after the case, as the original shows it (`gv_total` = `1250.00`). */
+  values?: Array<{ component: string; value: string }>;
+  /** The number of rows a table component holds after the case (`gt_result`: 3). */
+  rows?: Array<{ component: string; count: number }>;
 }
 
 /** Maps fixture tables to state components by name: `GT_CLAIMS` → `claims` or `gt_claims` (singular/plural alike). */
@@ -892,8 +914,8 @@ export interface GoldenMasterTestClass {
   className: string;
   /** Source lines of the local test class (definition and implementation). */
   lines: string[];
-  /** Test method per case, in case order. */
-  methods: Array<{ name: string; case: number; title: string; bound: boolean; partial: boolean }>;
+  /** Test method per case, in case order. `compared`: the case asserts an expected result of the original; else it skips after running. */
+  methods: Array<{ name: string; case: number; title: string; bound: boolean; partial: boolean; compared: boolean }>;
   /** Fixture tables with no place in the state type: rows kept in the test, not passed. */
   unboundTables: string[];
 }
@@ -1007,14 +1029,71 @@ function deltaLines(gm: GoldenMaster, c: GoldenMasterCase, table: string, column
   return out;
 }
 
+/** The ABAP of one case's expected result: assertions, and what could not be compared. */
+function expectedLines(c: GoldenMasterCase, e: GoldenMasterExpected, binding: GoldenMasterBinding): { lines: string[]; compared: number; notCompared: string[] } {
+  const lines: string[] = [...comment(`Expected: ${e.source}.`, '    ')];
+  const notCompared: string[] = [];
+  let compared = 0;
+  const known = new Set((binding.stateComponents ?? []).map((x) => x.toLowerCase()));
+  const label = (what: string) => lit(`Case ${c.number}: ${what}`.replace(/[\r\n]+/g, ' ').slice(0, 120));
+  if (e.refused !== undefined) {
+    if (!binding.refusalClass) notCompared.push('a refusal (the logic class has no refusal exception)');
+    else {
+      lines.push(`    cl_abap_unit_assert=>assert_equals( act = ls_out-refused exp = ${e.refused ? 'abap_true' : 'abap_false'}`, `      msg = ${label(e.refused ? 'the original refuses this case' : 'the original does not refuse this case')} ).`);
+      compared++;
+      if (e.refused && e.refused.guard) {
+        lines.push(`    cl_abap_unit_assert=>assert_equals( act = ls_out-guard exp = ${lit(e.refused.guard)}`, `      msg = ${label(`refused by ${e.refused.guard}`)} ).`);
+        compared++;
+      }
+      if (e.refused && e.refused.text) {
+        lines.push(`    cl_abap_unit_assert=>assert_equals( act = ls_out-text exp = ${lit(e.refused.text)}`, `      msg = ${label('the refusal text of the original')} ).`);
+        compared++;
+      }
+    }
+  } else if ((e.values?.length ?? 0) + (e.rows?.length ?? 0) > 0 && binding.refusalClass) {
+    // A result is expected, so the case must not be refused.
+    lines.push('    cl_abap_unit_assert=>assert_equals( act = ls_out-refused exp = abap_false', `      msg = ${label('the original gives a result, not a refusal')} ).`);
+  }
+  let n = 0;
+  for (const v of e.values ?? []) {
+    const comp = v.component.toLowerCase();
+    if (!/^[a-z_]\w*$/.test(comp) || !known.has(comp)) {
+      notCompared.push(`${v.component} (no component of ${binding.stateType})`);
+      continue;
+    }
+    // The expected value in the component's own type: a copy of it, assigned the original's text.
+    const exp = `lv_exp_${++n}`;
+    lines.push(`    DATA(${exp}) = ls_out-state-${comp}.`, `    ${exp} = ${lit(v.value)}.`, `    cl_abap_unit_assert=>assert_equals( act = ls_out-state-${comp} exp = ${exp}`, `      msg = ${label(`${comp} as the original shows it`)} ).`);
+    compared++;
+  }
+  for (const r of e.rows ?? []) {
+    const comp = r.component.toLowerCase();
+    if (!/^[a-z_]\w*$/.test(comp) || !known.has(comp) || !Number.isInteger(r.count) || r.count < 0) {
+      notCompared.push(`${r.component} rows (no table component of ${binding.stateType})`);
+      continue;
+    }
+    lines.push(`    cl_abap_unit_assert=>assert_equals( act = lines( ls_out-state-${comp} ) exp = ${r.count}`, `      msg = ${label(`rows of ${comp} as the original shows them`)} ).`);
+    compared++;
+  }
+  if (notCompared.length) lines.push(...comment(`Not compared: ${notCompared.join('; ')}.`, '    '));
+  return { lines, compared, notCompared };
+}
+
 /**
  * The local ABAP Unit test class of the golden master: the baseline as test
  * data, one test method per case that applies the case to the baseline and
- * calls the run entry with it, and asserts that the case runs. Expected
- * values are not asserted: they are the original's, to be confirmed once in
- * the reader's system.
+ * calls the run entry with it. A case with an expected result of the original
+ * on record (`expected`, by case number — the characterization samples of
+ * 3.0.17) asserts it; every other case runs the logic and then skips, saying
+ * its result is not yet compared — ABAP Unit reports it as skipped, never as
+ * passed (3.0.14 item 8). Nothing expected is invented.
  */
-export function goldenMasterTestClass(gm: GoldenMaster, binding: GoldenMasterBinding, program: string | null = null): GoldenMasterTestClass {
+export function goldenMasterTestClass(
+  gm: GoldenMaster,
+  binding: GoldenMasterBinding,
+  program: string | null = null,
+  expected: Readonly<Record<number, GoldenMasterExpected>> = {},
+): GoldenMasterTestClass {
   const tables = Object.keys(gm.baseline);
   const columnsOf = (t: string) => {
     const cols: string[] = [];
@@ -1030,17 +1109,19 @@ export function goldenMasterTestClass(gm: GoldenMaster, binding: GoldenMasterBin
   const onBaseline = rendererFor(gm, binding, 'is_sel');
   const onCase = rendererFor(gm, binding, 'ls_sel');
   const methodName = (n: number) => `case_${String(n).padStart(2, '0')}`.slice(0, 30);
+  const checks = new Map(gm.cases.map((c) => [c.number, expected[c.number] ? expectedLines(c, expected[c.number], binding) : null]));
   const methods = gm.cases.map((c) => ({
     name: methodName(c.number),
     case: c.number,
     title: c.title,
     bound: tables.every((t) => (c.tables[t] ?? []).length === 0 || !!binding.state[t]),
     partial: c.unread.length > 0 || gm.baselineUnread.length > 0,
+    compared: (checks.get(c.number)?.compared ?? 0) > 0,
   }));
 
   const def: string[] = [
     ...comment(
-      `The demo cases of ${program ?? 'the original'} (${gm.caseRoutine.name || 'CASE'} L${gm.caseRoutine.lineStart}-L${gm.caseRoutine.lineEnd}, baseline ${gm.baseRoutine.name} L${gm.baseRoutine.lineStart}-L${gm.baseRoutine.lineEnd}), carried over by Clean-Core.io as test data - read from the original, not written by a model. Expected values: from the original, confirm once in your system. Each method asserts that its case runs; the outcome is to be compared with the original's.`,
+      `The demo cases of ${program ?? 'the original'} (${gm.caseRoutine.name || 'CASE'} L${gm.caseRoutine.lineStart}-L${gm.caseRoutine.lineEnd}, baseline ${gm.baseRoutine.name} L${gm.baseRoutine.lineStart}-L${gm.baseRoutine.lineEnd}), carried over by Clean-Core.io as test data - read from the original, not written by a model. Each method runs its case through the logic. Where an expected result of the original is on record it is compared; otherwise the method reports the case as skipped - its result not yet compared, never as passed.`,
       '',
     ).map((l) => l.replace(/^" /, '"! ')),
     `CLASS ${GOLDEN_MASTER_TEST_CLASS} DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.`,
@@ -1051,14 +1132,24 @@ export function goldenMasterTestClass(gm: GoldenMaster, binding: GoldenMasterBin
     const n = short(t);
     def.push(`      BEGIN OF ty_${n},`, ...columns.get(t)!.map((c) => `        ${c} TYPE string,`), `      END OF ty_${n},`, `      tt_${n} TYPE STANDARD TABLE OF ty_${n} WITH EMPTY KEY,`);
   }
-  def.push('      BEGIN OF ty_data,', ...tables.map((t) => `        ${short(t)} TYPE tt_${short(t)},`), '      END OF ty_data.');
+  def.push('      BEGIN OF ty_data,', ...tables.map((t) => `        ${short(t)} TYPE tt_${short(t)},`), '      END OF ty_data,');
+  def.push(
+    '      BEGIN OF ty_outcome,',
+    '        refused TYPE abap_bool,',
+    '        guard   TYPE string,',
+    '        text    TYPE string,',
+    `        state   TYPE ${cut}=>${binding.stateType},`,
+    '      END OF ty_outcome.',
+  );
   def.push(
     '    "! The original\'s baseline rows, before any case changes them; a value relative to a parameter reads it from is_sel.',
     `    METHODS baseline IMPORTING is_sel TYPE ${selType} RETURNING VALUE(rs_data) TYPE ty_data.`,
     "    \"! The selection the original starts from: its parameters' DEFAULT values.",
     `    METHODS selection RETURNING VALUE(rs_sel) TYPE ${selType}.`,
-    '    "! Passes one case to the class under test and asserts that it runs.',
-    `    METHODS run_case IMPORTING iv_case TYPE i is_data TYPE ty_data is_sel TYPE ${selType}.`,
+    '    "! Passes one case to the class under test: fails when it does not run, returns what it gave (refused, and the state).',
+    `    METHODS run_case IMPORTING iv_case TYPE i is_data TYPE ty_data is_sel TYPE ${selType} RETURNING VALUE(rs_out) TYPE ty_outcome.`,
+    '    "! The message of a case whose result is not compared: that it ran, and how it ended.',
+    '    METHODS not_compared IMPORTING iv_case TYPE i is_out TYPE ty_outcome RETURNING VALUE(rv_msg) TYPE string.',
     ...methods.map((m) => `    METHODS ${m.name} FOR TESTING.`),
     'ENDCLASS.',
     '',
@@ -1096,10 +1187,27 @@ export function goldenMasterTestClass(gm: GoldenMaster, binding: GoldenMasterBin
   impl.push(
     '    TRY.',
     `        lo_cut->${binding.runMethod}( EXPORTING is_sel = is_sel CHANGING cs_st = ls_st ).`,
+    ...(binding.refusalClass
+      ? [
+          `      CATCH ${binding.refusalClass} INTO DATA(lx_refusal).`,
+          "        \" A refusal is the original's own outcome of a case, not a failure of the run: it is compared, or reported.",
+          '        rs_out-refused = abap_true.',
+          '        rs_out-guard = lx_refusal->guard.',
+          '        rs_out-text = lx_refusal->text.',
+        ]
+      : []),
     '      CATCH cx_root INTO DATA(lx_error).',
     "        cl_abap_unit_assert=>fail( msg = |Case { iv_case } of the original did not run: { lx_error->get_text( ) }| ).",
     '    ENDTRY.',
-    '    " The outcome in ls_st is to be confirmed once in your system against the original\'s result for this case.',
+    '    rs_out-state = ls_st.',
+    '  ENDMETHOD.',
+    '',
+    '  METHOD not_compared.',
+    '    IF is_out-refused = abap_true.',
+    "      rv_msg = |Case { iv_case } ran and was refused ({ is_out-guard }: { is_out-text }); not compared - no expected result of the original is on record|.",
+    '    ELSE.',
+    "      rv_msg = |Case { iv_case } ran; its result is not compared - no expected result of the original is on record|.",
+    '    ENDIF.',
     '  ENDMETHOD.',
     '',
   );
@@ -1107,7 +1215,6 @@ export function goldenMasterTestClass(gm: GoldenMaster, binding: GoldenMasterBin
     const m = methods.find((x) => x.case === c.number)!;
     impl.push(`  METHOD ${m.name}.`);
     impl.push(...comment(`Case ${c.number} of the original, L${c.lineStart}-L${c.lineEnd}: ${c.title}`, '    '));
-    impl.push('    " Expected: as the original shows it for this case - from the original, confirm once in your system.');
     if (c.unread.length) impl.push(...comment(`Read in part: ${c.unread.length} statement(s) of this case are not carried over (${c.unread.map((u) => `L${u.line}`).join(', ')}); check them against the original.`, '    '));
     impl.push('    DATA(ls_sel) = selection( ).');
     impl.push('    DATA(ls_data) = baseline( ls_sel ).');
@@ -1123,23 +1230,37 @@ export function goldenMasterTestClass(gm: GoldenMaster, binding: GoldenMasterBin
       if (b && b.range) impl.push(`    ls_sel-${b.component} = VALUE #(`, ...rows.flatMap((r) => rowLines(r, ['sign', 'option', 'low', 'high'], '      ', onCase)), '    ).');
       else impl.push(...comment(`Not passed: ${name} with ${rows.length} row(s) - ${binding.selectionType} has no range for it.`, '    '));
     }
-    impl.push(`    run_case( iv_case = ${c.number} is_data = ls_data is_sel = ls_sel ).`, '  ENDMETHOD.', '');
+    impl.push(`    DATA(ls_out) = run_case( iv_case = ${c.number} is_data = ls_data is_sel = ls_sel ).`);
+    const check = checks.get(c.number);
+    if (check) impl.push(...check.lines);
+    // 3.0.14 item 8: ran, but nothing compared — reported as skipped, never as passed.
+    if (!check || check.compared === 0) impl.push(`    cl_abap_unit_assert=>skip( msg = not_compared( iv_case = ${c.number} is_out = ls_out ) ).`);
+    impl.push('  ENDMETHOD.', '');
   }
   impl.push('ENDCLASS.', '');
   return { className: GOLDEN_MASTER_TEST_CLASS, lines: [...def, ...impl], methods, unboundTables };
 }
 
-/** "32 demo cases of the original carried over as ABAP Unit test data (0 bound to the logic's input yet) — expected values to be confirmed once in your system." */
+/** "3 demo cases of the original carried over as ABAP Unit test data (3 of 3 passed to the logic with all their rows) — each runs …" */
 export function goldenMasterSentence(cls: Pick<GoldenMasterTestClass, 'methods'>): string {
   const n = cls.methods.length;
   if (n === 0) return 'No demo case of the original was recognised.';
   const bound = cls.methods.filter((m) => m.bound).length;
   const partial = cls.methods.filter((m) => m.partial).length;
+  const compared = cls.methods.filter((m) => m.compared).length;
   return (
     `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data` +
     ` (${bound} of ${n} passed to the logic with all their rows${partial ? `; ${partial} read only in part` : ''})` +
-    ' — expected values to be confirmed once in your system.'
+    ` — ${goldenMasterComparedWords(n, compared)}.`
   );
+}
+
+/** How many demo cases compare a result: the same words in the sentence above and in the testing evidence. */
+export function goldenMasterComparedWords(cases: number, compared: number): string {
+  if (compared === 0)
+    return `${cases === 1 ? 'it runs' : 'each runs'} through the logic, but no result is compared yet (no expected result of the original is on record), so ABAP Unit reports ${cases === 1 ? 'it' : 'them'} as skipped, not passed`;
+  if (compared === cases) return "each is compared with the original's result on record";
+  return `${compared} compared with the original's result on record; the other ${cases - compared} run through the logic and are reported as skipped, not passed`;
 }
 
 /* ---------------------------------------------------------------- the route-neutral interface */
@@ -1227,6 +1348,10 @@ export interface ScaffoldGoldenMasterInput {
   /** Explicit fixture table → state component, where the scaffold's contract names it; otherwise matched by name. */
   state?: Record<string, string>;
   program?: string | null;
+  /** The logic's refusal exception (`zcx_<name>_refusal`): a refused case is the original's outcome, reported or compared. */
+  refusalClass?: string | null;
+  /** Expected results of the original by case number — the seam for the characterization samples (3.0.17). */
+  expected?: Readonly<Record<number, GoldenMasterExpected>>;
 }
 
 /**
@@ -1245,6 +1370,8 @@ export function goldenMasterForScaffold(source: string, input: ScaffoldGoldenMas
     accessDouble: input.accessDouble,
     selection: Object.fromEntries(input.selection.map((s) => [s.original.toUpperCase(), { component: s.component, range: s.range }])),
     state: { ...stateBindingByName(tables, input.stateComponents), ...(input.state ?? {}) },
+    refusalClass: input.refusalClass ?? null,
+    stateComponents: input.stateComponents,
   };
-  return { master, testClass: goldenMasterTestClass(master, binding, input.program ?? null) };
+  return { master, testClass: goldenMasterTestClass(master, binding, input.program ?? null, input.expected ?? {}) };
 }

@@ -5,6 +5,37 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.14] — unreleased
+
+### Transformation: the generated ABAP Unit tests check something (RAP route)
+
+From the first SAP activation of a generated package (the SD example in an SAP BTP ABAP environment
+trial, 15.10.2026): ABAP Unit ran 77 methods, 37 green, 0 red and 40 skipped, and the demo cases that
+ran green had compared nothing. Scaffold version 12.
+
+- **The engine cases run in ABAP.** Each TC_ENG_* case used to be its specification in comments
+  followed by a skip. Now the test writes the case's given/when/then as ABAP against the logic class
+  and the test double of the access layer. A check case puts the case's input where the original's
+  condition reads it (an attribute of the class, or a parameter of the check's predicate
+  `when_g<line>`), asks the predicate and asserts the original's answer. A precision case assigns the
+  value to the declared type (a selection input by the class's own selection type) and asserts the
+  value it holds, the exact decimal result, or the overflow. On the CO, PP and SD fixtures and the PO
+  demo, 102 of 122 cases now run; before, 28 did (only exact arithmetic). A predicate the model has not filled yet makes its
+  case fail, not skip.
+- **A case that cannot run says why.** An input-channel case (an empty request, "2026x", NaN, an
+  invalid date, null) and the run-identity case have no counterpart in the logic class: the typed
+  parameters of the service or the job check that input before `run( )` sees it. A check whose
+  condition gives the engine no single input value (an `OR`, a constant) or names a value of unknown
+  type keeps a skip naming exactly that. Never a pass without a comparison.
+- **The golden master no longer reports a case it did not compare as passed.** Each demo case of the
+  original still runs through the logic. With no expected result of the original on record, the case
+  then reports itself as skipped ("ran; its result is not compared"). A refusal of a case is caught
+  as its outcome, with the guard and the message, not as a failure of the run. Expected results
+  (refused or not, values, row counts) are asserted where they are on record. That is the hook for
+  the characterization samples of 3.0.17; nothing supplies them yet.
+- The testing evidence and STATUS count the demo cases that compare a result separately from the
+  ones that only ran.
+
 
 
 

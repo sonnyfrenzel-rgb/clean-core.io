@@ -67,7 +67,8 @@
 
 import { deriveEngineCases, type EngineCaseDerivation } from '../testing-engine-cases';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
-import { goldenMasterForScaffold } from './golden-master';
+import { goldenMasterForScaffold, type GoldenMasterExpected } from './golden-master';
+import { abapEngineCaseMethods } from './abap-engine-cases';
 import { rangeWords, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
@@ -93,6 +94,11 @@ export interface RapScaffoldOptions {
   cases?: EngineCaseDerivation;
   /** 3.0.13 (B6): the live decision on record this rebuild contradicts — every main file says so in its first line. */
   against?: AgainstDecision | null;
+  /**
+   * 3.0.14 item 8: the original's expected result per demo case, from the owner's characterization samples (3.0.17).
+   * A case without one runs and reports itself as not compared. Nothing passes it yet: the seam for 3.0.17.
+   */
+  goldenMasterExpected?: Readonly<Record<number, GoldenMasterExpected>>;
 }
 
 // rapShortName and rapTableName live in rap-names.ts (no scaffold behind them, for the client bundle); re-exported here.
@@ -712,6 +718,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     selection: contract.selection.map((f) => ({ original: f.name.toUpperCase(), component: f.name, range: f.kind === 'range' })),
     stateComponents: contract.globals.map((g) => g.name),
     program: plan.program,
+    refusalClass: refusal,
+    expected: options.goldenMasterExpected,
   });
   const demoFlag = golden?.master.demoFlag ? contract.selection.find((f) => f.name === golden.master.demoFlag!.toLowerCase() && f.kind === 'parameter') : undefined;
 
@@ -1598,39 +1606,69 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   if (withService) files.push({ path: `src/${srvd}.srvd.srvdsrv`, owner: 'engine', content: [`@EndUserText.label: 'Service of ${program}'`, `define service ${srvd.toUpperCase()} {`, `  expose ${exposed} as ${exposedAs};`, '}', ''].join('\n') });
 
   /* ------------------------------------------------- ABAP Unit: one test method per engine case */
-  const testDefs: string[] = [];
-  const testImpls: string[] = [];
+  // 3.0.14 item 7 (the first SAP activation, 15.10.2026: 40 of 77 methods skipped): the cases run against the logic
+  // class and the access double (abap-engine-cases.ts); a case that cannot says why in its skip.
   const packedByName = new Map(plan.fields.filter((f) => f.kind === 'packed').map((f) => [f.original, f]));
-  for (const c of cases.cases) {
-    const m = c.id.toLowerCase();
-    testDefs.push(`    METHODS ${m} FOR TESTING.`);
-    testImpls.push(`  METHOD ${m}.`, `    " ${c.name.replace(/"/g, "'")}`);
-    let written = false;
-    let variable = 0;
-    for (const e of c.engineCase.examples) {
-      testImpls.push(`    " given/when: ${e.input.replace(/"/g, "'").slice(0, 200)}`, `    " then: ${e.expected.replace(/"/g, "'").slice(0, 200)}`);
-      const call = e.call;
-      if (call?.op === 'compute' && call.compute && call.expect.kind === 'equals') {
-        const f = packedByName.get(call.compute.field) ?? packedByName.get(call.compute.field.split('-').pop() ?? '');
-        if (!f) continue;
-        const type = abapType(f);
-        const name = `lv_value_${++variable}`;
-        testImpls.push(`    DATA ${name} TYPE ${type}.`);
-        testImpls.push(`    ${name} = '${call.compute.start}'.`);
-        for (const step of call.compute.steps) testImpls.push(`    ${name} = ${name} ${step.op} '${step.b}'.`);
-        testImpls.push(`    DATA ${name}_exp TYPE ${type}.`, `    ${name}_exp = '${call.expect.value}'.`);
-        testImpls.push(`    cl_abap_unit_assert=>assert_equals( act = ${name} exp = ${name}_exp ).`);
-        written = true;
-      }
+  const selectionNames = new Set(contract.selection.map((f) => f.name));
+  /** The shape of a declaration phrase, through the class's named types. */
+  const shapeOf = (phrase: string, depth = 0): 'table' | 'structure' | 'elementary' | null => {
+    const p = phrase.trim();
+    if (depth > 6) return null;
+    if (/^TYPE\s+(?:(?:STANDARD\s+|SORTED\s+|HASHED\s+|INDEX\s+|ANY\s+)?TABLE\b|RANGE\s+OF\b)/i.test(p)) return 'table';
+    if (/^TYPE\s+(?:i|int1|int2|int4|int8|b|s|d|t|f|string|xstring|abap_bool|abap_boolean|decfloat16|decfloat34|utclong)$/i.test(p)) return 'elementary';
+    if (/^TYPE\s+[cnxp](?:\s+LENGTH\s+\d+)?(?:\s+DECIMALS\s+\d+)?$/i.test(p)) return 'elementary';
+    const named = simpleTypeName(p);
+    if (!named || named.includes('-')) return null;
+    const def = typeDefinition(contract, named);
+    if (def === 'STRUCTURE') return 'structure';
+    return def ? shapeOf(def, depth + 1) : null;
+  };
+  /** The phrase of a component of a structure-typed declaration (`TYPE ty_rcv`, `TYPE LINE OF ty_rcv_tab`). */
+  const componentPhrase = (phrase: string, component: string): string | null => {
+    let p = phrase.trim();
+    for (let i = 0; i < 6; i++) {
+      const line = /^TYPE\s+LINE\s+OF\s+([\w/]+)$/i.exec(p);
+      const named = line ? line[1] : simpleTypeName(p);
+      if (!named || named.includes('-')) return null;
+      const def = typeDefinition(contract, named);
+      if (def === 'STRUCTURE') return structureComponents(contract, named)?.find((c) => c.name.toLowerCase() === component.toLowerCase())?.phrase ?? null;
+      if (!def) return null;
+      const row = line ? tableLineOf(def) : null;
+      p = row ? `TYPE ${row}` : def;
     }
-    if (!written) testImpls.push(`    cl_abap_unit_assert=>skip( msg = '${c.id}: runs through the call contract; the ABAP when-line follows the logic class' ).`);
-    testImpls.push('  ENDMETHOD.', '');
-  }
+    return null;
+  };
+  const engineCases = abapEngineCaseMethods(cases.cases, {
+    logicClass: logic,
+    accessDouble: hasAccess ? 'ltd_access' : null,
+    nofill: cx,
+    predicates: new Map([...predicates].map(([id, p]) => [id, { name: p.name, params: p.params, engineWritten: p.condition !== null }])),
+    guards: plan.guards.map((g) => ({ id: g.id, line: g.line, rule: g.rule, carried: g.carried, effect: g.effect, outcome: g.outcome, subject: g.subject, condition: fullCondition(facts.statements, g) })),
+    attributes: new Map([...contract.selection.map((f) => [f.name, f.phrase] as const), ...contract.globals.map((g) => [g.name, g.phrase] as const)]),
+    constants: contract.constantNames,
+    elementary: new Set(contract.selection.filter((f) => f.kind !== 'range').map((f) => f.name)),
+    packedType: (field) => {
+      const f = packedByName.get(field) ?? packedByName.get(field.split('-').pop() ?? '');
+      if (!f) return null;
+      // A selection input is typed by the class's own selection type: the case then checks the declaration the package ships.
+      return f.where === 'selection' && selectionNames.has(f.original.toLowerCase()) ? `${logic}=>ty_run_selection-${f.original.toLowerCase()}` : abapType(f);
+    },
+    shapeOf: (phrase) => shapeOf(phrase),
+    componentPhrase,
+  });
   files.push({
     path: `src/${logic}.clas.testclasses.abap`,
     owner: 'engine',
     content: [
       head,
+      ...(engineCases.friends
+        ? [
+            `"! The engine cases ask the original's checks directly (the predicates when_g*) and set the attributes they read.`,
+            'CLASS ltc_engine_cases DEFINITION DEFERRED.',
+            `CLASS ${logic} DEFINITION LOCAL FRIENDS ltc_engine_cases.`,
+            '',
+          ]
+        : []),
       ...(hasAccess
         ? [
             `"! A test double of the access layer: pass NEW ltd_access( ) to the constructor of ${logic} and the logic runs without SAP.`,
@@ -1654,12 +1692,12 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       '"! Engine cases of the original (TC_ENG_*), derived by Clean-Core.io — not by a model.',
       'CLASS ltc_engine_cases DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.',
       '  PRIVATE SECTION.',
-      ...testDefs,
+      ...engineCases.defs,
       'ENDCLASS.',
       '',
       'CLASS ltc_engine_cases IMPLEMENTATION.',
       '',
-      ...testImpls,
+      ...engineCases.impls,
       'ENDCLASS.',
       '',
       // 3.0.13 (6): the original's own demo cases as test data, one method per case calling the run entry (golden-master.ts).
