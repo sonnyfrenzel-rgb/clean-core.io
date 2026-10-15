@@ -1548,6 +1548,15 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-829 | medium | P3 | 3.0.18 | scheduled |
 | SEC-2026-830 | medium | P2 | 3.0.13 | fixed |
 | SEC-2026-831 | low | P3 | 3.0.13 | fixed |
+| SEC-2026-833 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-834 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-835 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-836 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-837 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-838 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-839 | low | — | — | refuted |
+| SEC-2026-840 | low | — | — | refuted |
+| SEC-2026-841 | low | — | — | refuted |
 
 **Audit of v3.0.11 (`7793427`), 12.10.2026: 0 critical, 0 high, 2 medium, 4 low, 2 info — all 64 candidates verified, $0.42.** SEC-2026-803 (P2) and -804 (P3) go to 3.0.12; six refuted (SEC-2026-805 and -806 as -791/-792, -807 as -794, -808 and -809 as -797, -810 against the code). The reasons are in the sealed register.
 
