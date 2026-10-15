@@ -11,6 +11,7 @@ import { AnalysisRun } from '@/lib/types';
 import { canonicalizeJson } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 import type { ModelParticipation } from '@/lib/model-stages';
 import { verifyModelReceipt } from '@/lib/model-receipt';
@@ -877,10 +878,18 @@ export async function POST(req: NextRequest) {
           (typeof previousSubject === 'string'
             ? previousSubject !== profileRecord.assessmentSubject
             : typeof previousDeployment === 'string' && previousDeployment !== '' && previousDeployment !== targetDeployment);
+        // Roadmap 3.0.14, item 9: the digests of the artefacts as they stand,
+        // wherever the project stores them — read in this transaction, before
+        // its first write. The size guard below keeps measuring `freshData`,
+        // the project document as stored.
+        const artefactsInTx: Record<string, unknown> =
+          previousInTx && (sourceDiffers || profileDiffers)
+            ? await withStoredArtefacts(tx, projectRef, freshData as Record<string, unknown>)
+            : freshData;
         const sourceChange =
           previousInTx && (sourceDiffers || profileDiffers)
             ? {
-                ...buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString()),
+                ...buildSourceChangeRecord(artefactsInTx, previousInTx, runId, new Date().toISOString()),
                 ...(profileDiffers
                   ? {
                       reason: 'profile' as const,

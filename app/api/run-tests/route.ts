@@ -34,6 +34,7 @@ import { NOT_RUN_NO_CONTRACT } from '@/lib/engine-call-contract';
 import { MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
 import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
 import { signedSourceOf, type HandoverProject } from '@/lib/handover';
+import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from '@/lib/project-artefact-store';
 
 /**
  * POST /api/run-tests
@@ -138,7 +139,8 @@ async function recordRunFailure(
     return await db.runTransaction(async (tx: Transaction) => {
       const fresh = await tx.get(ref);
       if (!fresh.exists) return null;
-      const now = (fresh.data() || {}) as Record<string, unknown>;
+      // Roadmap 3.0.14, item 9: the code and the cases may live beside the project.
+      const now = await withStoredArtefacts(tx, ref, (fresh.data() || {}) as Record<string, unknown>);
       if (now.userId !== uid || !sameTestRunInputs(read, now)) return null;
       const failure = nextTestRunFailure(now.testRunFailure, {
         subject: testRunSubject(now),
@@ -293,6 +295,8 @@ export async function POST(req: Request) {
         { status: 403 },
       );
     }
+    // Roadmap 3.0.14, item 9: what runs is what the project stores, wherever it stores it.
+    projectData = await withStoredArtefacts(db, snap.ref, projectData);
   } catch {
     return NextResponse.json(
       { output: '', error: 'Project ownership verification failed.', exitCode: 1 },
@@ -806,16 +810,21 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       moved = await db.runTransaction(async (tx: Transaction) => {
         const fresh = await tx.get(projectRef);
         if (!fresh.exists) return 'project-gone' as const;
-        const now = (fresh.data() || {}) as Record<string, unknown>;
-        if (now.userId !== decodedToken.uid) return 'project-gone' as const;
+        const stored = (fresh.data() || {}) as Record<string, unknown>;
+        if (stored.userId !== decodedToken.uid) return 'project-gone' as const;
+        const now = await withStoredArtefacts(tx, projectRef, stored);
         if (!sameTestRunInputs(projectData, now)) return 'project-changed' as const;
-        tx.set(
+        // The verdicts go onto the cases where the cases are stored (roadmap
+        // 3.0.14, item 9), in this transaction.
+        const planned = await planArtefactWrite(
           projectRef,
-          storedCases.length > 0
-            ? { testCases: executedCases, testRunReceipt: receipt }
-            : { testRunReceipt: receipt },
-          { merge: true },
+          stored,
+          storedCases.length > 0 ? { testCases: executedCases, testRunReceipt: receipt } : { testRunReceipt: receipt },
+          'merge',
         );
+        if (!planned.ok) throw new Error(`the executed cases do not fit their documents (${planned.check.bytes} bytes)`);
+        tx.set(projectRef, planned.plan.projectFields, { merge: true });
+        writeArtefactParts(tx, planned.plan);
         return null;
       });
       recorded = moved === null;
@@ -989,8 +998,9 @@ async function mutationProbeResponse(input: {
   const moved = await db.runTransaction(async (tx: Transaction) => {
     const fresh = await tx.get(projectRef);
     if (!fresh.exists) return 'project-gone' as const;
-    const now = (fresh.data() || {}) as Record<string, unknown>;
-    if (now.userId !== uid) return 'project-gone' as const;
+    const stored = (fresh.data() || {}) as Record<string, unknown>;
+    if (stored.userId !== uid) return 'project-gone' as const;
+    const now = await withStoredArtefacts(tx, projectRef, stored);
     if (!sameTestRunInputs(projectData, now)) return 'project-changed' as const;
     const current = coveringTestRunReceipt(now);
     if (!current || current.executedAt !== receipt.executedAt || current.suiteDigest !== receipt.suiteDigest) return 'project-changed' as const;

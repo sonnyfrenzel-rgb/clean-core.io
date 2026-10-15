@@ -15,6 +15,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { readStoredDocumentation } from '@/lib/process-documentation';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import {
   RACI_EDIT_COLLECTION,
   RACI_EDIT_DOC,
@@ -172,8 +173,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       | { kind: 'written'; record: RaciEditRecord };
     const outcome = await db.runTransaction(async (tx: Transaction): Promise<Outcome> => {
       const fresh = await tx.get(projectRef);
-      const data = fresh.exists ? fresh.data() || {} : null;
-      if (!data || data.userId !== gate.uid) return { kind: 'gone' };
+      const storedProject = fresh.exists ? fresh.data() || {} : null;
+      if (!storedProject || storedProject.userId !== gate.uid) return { kind: 'gone' };
+      // Roadmap 3.0.14, item 9: the layer and the description, wherever the
+      // project stores them — read in this transaction.
+      const data: typeof storedProject = await withStoredArtefacts(tx, projectRef, storedProject);
       const layer = typeof data.businessDocumentation === 'string' ? data.businessDocumentation : '';
       if (!layer.trim()) return { kind: 'no-layer' };
       if (sha256Hex(layer) !== payload.layerSha256) return { kind: 'layer-changed' };

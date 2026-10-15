@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb, setAdminClaim } from '@/lib/firebase-admin';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 
 export async function POST(req: NextRequest) {
   // F-15: Defense-in-Depth — THREE independent gates must ALL pass.
@@ -65,7 +66,12 @@ export async function POST(req: NextRequest) {
     // word for what it stored.
     if (action === 'getDoc') {
       const snap = await db.collection(collectionPath).doc(docId).get();
-      return NextResponse.json({ exists: snap.exists, data: snap.exists ? snap.data() : null });
+      // A project is read back as its pages read it (roadmap 3.0.14, item 9):
+      // the artefacts it keeps in documents of its own are filled in, so a spec
+      // asserts on the project, not on where its parts are stored. A spec that
+      // asks where they are stored reads the document itself.
+      const data = snap.exists && collectionPath === 'projects' ? await withStoredArtefacts(db, snap.ref, snap.data() || {}) : snap.exists ? snap.data() : null;
+      return NextResponse.json({ exists: snap.exists, data });
     }
 
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });

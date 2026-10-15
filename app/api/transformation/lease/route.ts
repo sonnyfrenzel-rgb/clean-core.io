@@ -16,6 +16,7 @@ import { contractOfProject, MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-bui
 import { generationDirection } from '@/lib/generation-direction';
 import { generationRevision, generationStateOf } from '@/lib/generation-revision';
 import { platformContextOf } from '@/lib/transformation-context-build';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import type { InputManifest } from '@/lib/input-manifest';
 import { LEASE_MAX_PLANNED_CALLS, isRunId, leaseView } from '@/lib/transformation/lease';
 import { closeLease, confirmLeaseCharge, issueLease, readLeaseWindow, voidLease } from '@/lib/transformation/lease-store';
@@ -134,11 +135,14 @@ export async function POST(req: NextRequest) {
     }
 
     const snap = await db.collection('projects').doc(projectId).get();
-    const data = snap.exists ? (snap.data() as Record<string, unknown>) : null;
+    const stored = snap.exists ? (snap.data() as Record<string, unknown>) : null;
     // Owner only; one answer for "not there" and "not yours".
-    if (!data || data.userId !== decodedToken.uid) {
+    if (!stored || stored.userId !== decodedToken.uid) {
       return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     }
+    // Roadmap 3.0.14, item 9: the stored package is part of the generation
+    // token, wherever it is stored.
+    const data = await withStoredArtefacts(db, snap.ref, stored);
     let run: Record<string, unknown> | null = null;
     if (typeof data.activeRunId === 'string' && data.activeRunId && isFirestoreId(data.activeRunId)) {
       const runSnap = await db.collection('projects').doc(projectId).collection('runs').doc(data.activeRunId).get();

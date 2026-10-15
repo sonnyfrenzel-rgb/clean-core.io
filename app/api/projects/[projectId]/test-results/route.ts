@@ -29,6 +29,7 @@ import {
   validateConfirmation,
   type OutsideTestRecord,
 } from '@/lib/sap-test-results';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 
 /**
  * Test results from the reader's own SAP system — ADR-074, owner decision
@@ -235,8 +236,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const projectRef: DocumentReference = db.collection('projects').doc(gate.projectId);
     const outcome = await db.runTransaction(async (tx: Transaction) => {
       const fresh = await tx.get(projectRef);
-      const data = fresh.exists ? fresh.data() || {} : null;
-      if (!data || data.userId !== gate.uid) return { kind: 'gone' as const };
+      const stored = fresh.exists ? fresh.data() || {} : null;
+      if (!stored || stored.userId !== gate.uid) return { kind: 'gone' as const };
+      // Roadmap 3.0.14, item 9: the scenarios, wherever the project stores them.
+      const data: typeof stored = await withStoredArtefacts(tx, projectRef, stored);
       if (!isAbapUnitRoute(data)) return { kind: 'not-abap' as const };
       const testCases = Array.isArray(data.testCases) ? (data.testCases as Array<{ id?: unknown }>) : [];
       if (testCases.length === 0) return { kind: 'no-scenarios' as const };

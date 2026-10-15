@@ -17,6 +17,7 @@ import {
   type RepairDraftExecution,
 } from '../lib/repair-draft';
 import { adoptRepairDraft, loadDraftForRun, proposeRepairDraft, recordDraftExecution } from '../lib/repair-draft-store';
+import { withStoredArtefacts } from '../lib/project-artefact-store';
 import { coveringTestRunReceipt, testRunSubject, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '../lib/test-receipt';
 import { parseGeneratedPackage } from '../lib/generated-package';
 
@@ -249,6 +250,12 @@ async function seed(over: Record<string, unknown> = {}) {
 
 const draftsOf = (projectId: string) => db().collection('projects').doc(projectId).collection(REPAIR_DRAFT_COLLECTION);
 
+/** The project as its pages read it: since roadmap 3.0.14, item 9 an adopted package is stored beside the document. */
+async function projectNow(projectId: string): Promise<Record<string, unknown>> {
+  const ref = db().collection('projects').doc(projectId);
+  return withStoredArtefacts(db(), ref, ((await ref.get()).data() || {}) as Record<string, unknown>);
+}
+
 test.describe('the store, against the Firestore emulator', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -274,7 +281,7 @@ test.describe('the store, against the Firestore emulator', () => {
 
     // What the runner does after a compiled run of the draft.
     expect(await recordDraftExecution(db(), { projectId, draftId: d.draftId, execution: execution(stored, d) })).toBe(true);
-    const projectBefore = (await db().collection('projects').doc(projectId).get()).data()!;
+    const projectBefore = await projectNow(projectId);
     expect(projectBefore.generatedCode, 'running a draft writes nothing to the project').toBe(PKG);
     expect(projectBefore.testRunReceipt).toBeUndefined();
 
@@ -283,7 +290,7 @@ test.describe('the store, against the Firestore emulator', () => {
     });
     expect(adopted.status).toBe(200);
 
-    const after = (await db().collection('projects').doc(projectId).get()).data()!;
+    const after = await projectNow(projectId);
     expect(after.generatedCode).toBe(d.generatedCode);
     expect(coveringTestRunReceipt(after)?.draft).toEqual({ id: d.draftId, digest: d.draftDigest });
     expect((await draftsOf(projectId).doc(d.draftId).get()).data()!.adoptedAt).toBeTruthy();
@@ -314,7 +321,7 @@ test.describe('the store, against the Firestore emulator', () => {
       projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(), actorEmail: 'o@x',
     });
     expect(out).toMatchObject({ status: 409, code: 'parent-moved' });
-    const after = (await db().collection('projects').doc(projectId).get()).data()!;
+    const after = await projectNow(projectId);
     expect(after.generatedCode, 'the newer state is kept, not overwritten by the draft').toBe(regenerated);
     expect(after.testRunReceipt).toBeUndefined();
   });

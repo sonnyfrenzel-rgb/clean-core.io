@@ -5,8 +5,26 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.14] — unreleased
 
+### Large programs fit
 
+- **A project keeps its large artefacts in documents of their own.** One project used to be one
+  Firestore document of at most 1 MiB, and the SD reference program no longer fit: saving its
+  business documentation would have made the project 1,229 KB, a regenerated package 1,018 KB,
+  against a budget of 1,008 KB. Nothing was lost — the write was refused whole — but a large
+  program could not keep its artefacts. The generated package, the process documentation, the
+  business documentation and the test cases are now stored beside the project, one per artefact,
+  split over several documents where one is not enough, written and read by the server only.
+- **Existing projects load as before.** A project stored with its artefacts on the project document
+  is read exactly as it was; the next write of an artefact moves it.
+- **Nothing signed moves.** Signed runs, run manifests and audit packs are byte-identical, and every
+  digest over an artefact — the stale reading after a source change, the test-run receipt, the
+  generation token — is computed over the same content as before.
+- **The Documentation and Testing stages store through the server.** Their writes, and the checks
+  that made them safe against a second tab, run in one server transaction; the refusals read as
+  before. A refusal for size now names the artefact or the project document it is about.
+- No Firestore rules change.
 
 
 

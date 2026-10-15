@@ -48,7 +48,11 @@ test.describe('the inputs a run executed, compared at commit', () => {
     const tx = src.slice(start, src.indexOf('recorded = moved === null;', start));
     expect(tx).toContain('await tx.get(projectRef)');
     expect(tx).toMatch(/if \(!fresh\.exists\) return 'project-gone'/);
-    expect(tx).toMatch(/if \(now\.userId !== decodedToken\.uid\) return 'project-gone'/);
+    expect(tx).toMatch(/if \(stored\.userId !== decodedToken\.uid\) return 'project-gone'/);
+    // The code and the cases compared are the ones the project stores, wherever
+    // it stores them, read in this transaction (roadmap 3.0.14, item 9).
+    expect(tx).toContain('const now = await withStoredArtefacts(tx, projectRef, stored);');
+    expect(tx.indexOf('planArtefactWrite(')).toBeGreaterThan(tx.indexOf('sameTestRunInputs('));
     expect(tx).toMatch(/if \(!sameTestRunInputs\(projectData, now\)\) return 'project-changed'/);
     // The comparison comes before the write, and the write is the transaction's.
     expect(tx.indexOf('sameTestRunInputs(')).toBeLessThan(tx.search(/tx\.set\(\s*projectRef/));

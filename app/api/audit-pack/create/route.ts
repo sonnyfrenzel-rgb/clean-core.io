@@ -10,6 +10,7 @@ import { signEd25519, getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import { signOffKey } from '@/lib/artefact-digest';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
 import { PROFILE_INPUT_ID } from '@/lib/assessment-profile';
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
     if (!projectDoc.exists) {
       return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     }
-    const projectData = projectDoc.data() || {};
+    const storedProject = projectDoc.data() || {};
     const isAdmin = decodedToken.admin === true;
 
     // Owner only. The administrator claim does not open this door.
@@ -102,10 +103,15 @@ export async function POST(req: NextRequest) {
     // export, if it is ever wanted, is a separate operation with its own
     // authorisation, its own step-up and its own journal entry — not every
     // holder of the claim, silently.
-    const isOwner = projectData.userId === decodedToken.uid;
+    const isOwner = storedProject.userId === decodedToken.uid;
     if (!isOwner) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 403 });
     }
+    // Roadmap 3.0.14, item 9: the project as its pages read it — the code and
+    // the cases wherever they are stored. Only the attested file reads them (the
+    // testing closure is current only for the suite it closed); nothing signed
+    // does, so the signed bytes are the bytes they were.
+    const projectData: typeof storedProject = await withStoredArtefacts(db, projectDoc.ref, storedProject);
 
     // F-02: account-state gate — pending/suspended/stale-Terms accounts cannot mint signed audit packs.
     try {

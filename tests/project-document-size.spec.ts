@@ -7,7 +7,7 @@ import { FieldValue, Timestamp as AdminTimestamp } from 'firebase-admin/firestor
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminSetDoc, adminMergeDoc, adminGetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import {
@@ -223,7 +223,9 @@ test.describe('the generation store', () => {
     return { fingerprint: body.contract.fingerprint as string, token: body.generation.token as string };
   }
 
-  test('a package that would outgrow the project is refused with 413, and nothing is written', async ({ request }) => {
+  // Roadmap 3.0.14, item 9: the package no longer shares the project's 1 MiB —
+  // it is stored in documents of its own. What used to be refused is stored.
+  test('a package that would have outgrown the project document is stored beside it', async ({ request }) => {
     const read = await readGeneration(request);
     // Under the route's own package bound, over what the document has left.
     const generatedCode = packageOf('x'.repeat(500_000));
@@ -233,6 +235,30 @@ test.describe('the generation store', () => {
       headers: headers(),
       data: { generatedCode, testSuite: suite, expectedContractFingerprint: read.fingerprint, generationToken: read.token },
     });
+    expect(res.status(), await res.text()).toBe(200);
+    const snap = await getDoc(doc(clientDb, 'projects', PROJECT_ID));
+    const raw = snap.data() as { generatedCode?: string; status?: string; artefactStore?: { generatedCode?: { parts?: number } } };
+    expect(raw.generatedCode, 'the package is not on the project document').toBeUndefined();
+    expect(raw.artefactStore?.generatedCode?.parts).toBe(1);
+    expect(raw.status).toBe('transformed');
+    expect((await adminGetDoc('projects', PROJECT_ID))?.generatedCode).toBe(generatedCode);
+  });
+
+  test('what stays on the project document is still held to its budget: refused with 413, and nothing is written', async ({ request }) => {
+    // The analysis fills the document to its last kilobytes; the suite and the
+    // binding the store puts on it no longer fit.
+    await adminMergeDoc('projects', PROJECT_ID, { analysis: 'x'.repeat(PROJECT_DOCUMENT_BUDGET_BYTES - 2_500) });
+    const before = await adminGetDoc('projects', PROJECT_ID);
+    const read = await readGeneration(request);
+    const res = await request.post(path, {
+      headers: headers(),
+      data: {
+        generatedCode: packageOf('small'),
+        testSuite: { config: 'c'.repeat(4_000), spec: 's'.repeat(4_000) },
+        expectedContractFingerprint: read.fingerprint,
+        generationToken: read.token,
+      },
+    });
     expect(res.status(), await res.text()).toBe(413);
     const body = await res.json();
     expect(body.code).toBe(PROJECT_TOO_LARGE_CODE);
@@ -240,22 +266,8 @@ test.describe('the generation store', () => {
     expect(body.error).toContain('Nothing was saved');
     expect(body.error).toContain('analysis');
 
-    const snap = await getDoc(doc(clientDb, 'projects', PROJECT_ID));
-    const stored = snap.data() as { generatedCode?: string; status?: string; generationBinding?: unknown };
-    expect(stored.generatedCode).toBeUndefined();
-    expect(stored.generationBinding).toBeUndefined();
-    expect(stored.status).toBe('designed');
-  });
-
-  test('a package that fits is stored as before', async ({ request }) => {
-    const read = await readGeneration(request);
-    const generatedCode = packageOf('small');
-    const res = await request.post(path, {
-      headers: headers(),
-      data: { generatedCode, testSuite: suite, expectedContractFingerprint: read.fingerprint, generationToken: read.token },
-    });
-    expect(res.status(), await res.text()).toBe(200);
-    const snap = await getDoc(doc(clientDb, 'projects', PROJECT_ID));
-    expect((snap.data() as { generatedCode?: string }).generatedCode).toBe(generatedCode);
+    const after = await adminGetDoc('projects', PROJECT_ID);
+    expect(after?.generatedCode).toBe(before?.generatedCode);
+    expect(after?.testSuite).toEqual(before?.testSuite);
   });
 });

@@ -6,6 +6,7 @@ import { Project } from './types';
 import { isProjectOwner } from './project-readers';
 import { readEconomicsRecord, type EconomicsRecord } from './economics-record';
 import { storedContextDigest } from './transformation/generation-record';
+import { withStoredArtefacts } from './project-artefacts-client';
 
 /**
  * The project document with its active run spread over it.
@@ -213,7 +214,16 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) return null;
 
-    const data = docSnap.data() as Project;
+    const stored = docSnap.data() as Project;
+    // Roadmap 3.0.14, item 9: the large artefacts live beside the document and
+    // come from the server (`lib/project-artefacts-client.ts`), alongside the
+    // run read. A project without them is not asked for. A read that fails
+    // throws — an artefact that could not be read is never drawn as absent.
+    const artefacts = withStoredArtefacts(projectId, stored);
+    // Unhandled until awaited below; a run read that fails first must not turn
+    // a failed artefact read into an unhandled rejection.
+    artefacts.catch(() => undefined);
+    const data = stored;
     const owner = isProjectOwner(data, viewerUid);
     // Roadmap 3.0.13, item 3: only a project with a generation that names its
     // context asks the server for the context now; alongside the run read.
@@ -256,7 +266,8 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
     // read of its own, which would load the source code twice (`lib/shell-context.ts`).
     announceShellProject(projectId, data.name);
 
-    return withContextDigest(withEconomics(hydrateProject(docSnap.id, data, run), await economics), context ? await context : undefined);
+    const withArtefacts = await artefacts;
+    return withContextDigest(withEconomics(hydrateProject(docSnap.id, withArtefacts, run), await economics), context ? await context : undefined);
   }
   return null;
 }

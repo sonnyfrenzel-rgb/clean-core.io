@@ -189,11 +189,17 @@
       "stillAttestedNotSigned": "The audit pack still lists these fields in 07-user-attested.md: they remain a self-declaration of the signed-in account. Server-validated means truthfully recorded, not official."
     },
     "clientWritableFieldsNoStageWrites": {
+      "businessDocumentation": "Written by the Documentation stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the stage hands it to POST /api/projects/{projectId}/artefacts, which stores it in projects/{id}/artefacts (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none; a browser write would land on the project document, where it is read before the parts (inline wins).",
+      "documentation": "Written by the Documentation stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the stage hands it to POST /api/projects/{projectId}/artefacts, which stores it in projects/{id}/artefacts (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none; a browser write would land on the project document, where it is read before the parts (inline wins).",
+      "testCases": "Written by the Testing stage through the artefacts route, and with its verdicts by POST /api/run-tests. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the stage hands it to POST /api/projects/{projectId}/artefacts, which stores it in projects/{id}/artefacts (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none; a browser write would land on the project document, where it is read before the parts (inline wins).",
+      "testSuite": "Written by POST /api/projects/{projectId}/contract (Transformation) and by the Testing stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the Testing stage hands it, with the test cases, to POST /api/projects/{projectId}/artefacts, which writes it onto the project document (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none.",
+      "coverageEstimate": "Written by the Testing stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the Testing stage hands it, with the test cases, to POST /api/projects/{projectId}/artefacts, which writes it onto the project document (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none.",
+      "manualTestingRequirements": "Written by the Testing stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the Testing stage hands it, with the test cases, to POST /api/projects/{projectId}/artefacts, which writes it onto the project document (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none.",
       "legacyCode": "Reaches the project through POST /api/runs/create and through the dashboard's project creation. Client-writable by the rules, which is precisely why staleness().sourceChanged exists.",
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
       "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
-      "generatedCode": "Written by POST /api/projects/{projectId}/contract (Transformation). The one browser write left is the Documentation stage's packageCleanup spread inside its write transactions, which only removes the two Markdown files an earlier build put into the package and is empty otherwise (3.0.7, Documentation lean); a spread key is not a named write, so the stage does not list it. Stays client-writable for that cleanup.",
+      "generatedCode": "Written by POST /api/projects/{projectId}/contract (Transformation), and stored beside the project since roadmap 3.0.14, item 9. The Documentation stage's cleanup of the two Markdown files an earlier build put into the package runs inside its server write (documentationPackageCleanup, lib/project-artefact-writes.ts). Still in the client allowlist; the rules are unchanged by this release.",
       "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
     "generationBlockerTargets": [
@@ -1013,17 +1019,21 @@
         ]
       },
       "outputs": {
-        "clientWrites": [
-          "documentation",
-          "businessDocumentation",
-          "status"
-        ],
+        "clientWrites": [],
         "serverWrites": null,
         "consumedByNextStage": [
           "documentation",
           "businessDocumentation"
         ],
-        "note": "Since 3.0.7 (Documentation lean, item 4) the stage writes no package: Delivery adds both Markdown files from documentation and businessDocumentation. The one remaining touch of generatedCode is the spread of packageCleanup inside each write transaction, which removes those two files from a package an earlier build put them in and is empty otherwise. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
+        "note": "Since 3.0.7 (Documentation lean, item 4) the stage writes no package: Delivery adds both Markdown files from documentation and businessDocumentation. The one remaining touch of generatedCode is documentationPackageCleanup (lib/project-artefact-writes.ts) inside each write transaction, which removes those two files from a package an earlier build put them in and is empty otherwise. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts). Since 3.0.14 (item 9) both writes go through POST /api/projects/{projectId}/artefacts, and documentation and businessDocumentation are stored in projects/{id}/artefacts (lib/project-artefacts.ts), read back into the project by the loader.",
+        "routeWrites": {
+          "via": "POST /api/projects/{projectId}/artefacts (roadmap 3.0.14, item 9: the transactions the stage ran in the browser, with the same preconditions, on the server)",
+          "project": [
+            "documentation",
+            "businessDocumentation",
+            "status"
+          ]
+        }
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -1174,13 +1184,7 @@
         ]
       },
       "outputs": {
-        "clientWrites": [
-          "testCases",
-          "testSuite",
-          "coverageEstimate",
-          "manualTestingRequirements",
-          "status"
-        ],
+        "clientWrites": [],
         "serverWrites": {
           "via": "POST /api/s4-credentials, POST /api/run-tests, POST /api/projects/{id}/repair-drafts, POST /api/request-tenant-access",
           "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection); tenant_access_requests/{uid} (Admin SDK, written by the route before it mails the administrator - QA 04ad2108af07; the page no longer writes it)",
@@ -1196,7 +1200,17 @@
           "coverageEstimate",
           "testRunReceipt"
         ],
-        "note": "The page does not store the verdicts it shows and no client path writes one. POST /api/run-tests writes the verdicts it observed together with testRunReceipt, in one Admin-SDK write — what the server saw, the server records — bound to the active run and to the digests of generatedCode, testSuite and testCases (the case digest ignores status and message, so storing a verdict cannot freshen or retire a receipt). testRunReceipt is outside the client allowlist of firestore.rules; testCases is inside it, which is why lib/workflow-steps.ts counts passes for `proven` from the receipt and reads client-written Passed strings as 'Self-reported'. Since roadmap 8.7 the auto-heal path writes nothing from the browser: the repair of the one file repairTarget() names becomes an immutable draft in projects/{id}/repairDrafts (Admin SDK, default deny), /api/run-tests with draftId executes exactly that draft and records its receipt on the draft, and POST /api/projects/{id}/repair-drafts adopts it by compare-and-swap - generatedCode or testSuite, the verdicts and a testRunReceipt naming the draft, in one transaction."
+        "note": "The page does not store the verdicts it shows and no client path writes one. POST /api/run-tests writes the verdicts it observed together with testRunReceipt, in one Admin-SDK write — what the server saw, the server records — bound to the active run and to the digests of generatedCode, testSuite and testCases (the case digest ignores status and message, so storing a verdict cannot freshen or retire a receipt). testRunReceipt is outside the client allowlist of firestore.rules; testCases is inside it, which is why lib/workflow-steps.ts counts passes for `proven` from the receipt and reads client-written Passed strings as 'Self-reported'. Since roadmap 8.7 the auto-heal path writes nothing from the browser: the repair of the one file repairTarget() names becomes an immutable draft in projects/{id}/repairDrafts (Admin SDK, default deny), /api/run-tests with draftId executes exactly that draft and records its receipt on the draft, and POST /api/projects/{id}/repair-drafts adopts it by compare-and-swap - generatedCode or testSuite, the verdicts and a testRunReceipt naming the draft, in one transaction.",
+        "routeWrites": {
+          "via": "POST /api/projects/{projectId}/artefacts (roadmap 3.0.14, item 9: the one write of the generated suite, on the server)",
+          "project": [
+            "testCases",
+            "testSuite",
+            "coverageEstimate",
+            "manualTestingRequirements",
+            "status"
+          ]
+        }
       },
       "preconditions": {
         "enforceActiveRun": true,

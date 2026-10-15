@@ -125,9 +125,12 @@ test.describe('client, server, index and export name the same six fields', () =>
     // anything is written.
     expect(route.indexOf('verifyRequestAuth(')).toBeGreaterThan(-1);
     expect(route.indexOf('assertMfaSatisfied(')).toBeGreaterThan(route.indexOf('verifyRequestAuth('));
-    expect(route.indexOf('project.userId !== decodedToken.uid')).toBeGreaterThan(route.indexOf('assertMfaSatisfied('));
+    // `stored` is the project document as read; its artefacts are filled in
+    // only after the owner check (roadmap 3.0.14, item 9).
+    expect(route.indexOf('stored.userId !== decodedToken.uid')).toBeGreaterThan(route.indexOf('assertMfaSatisfied('));
+    expect(route.indexOf('withStoredArtefacts(tx, ref, stored)')).toBeGreaterThan(route.indexOf('stored.userId !== decodedToken.uid'));
     expect(route.indexOf('tx.set(ref,'), 'nothing is written before the owner check').toBeGreaterThan(
-      route.indexOf('project.userId !== decodedToken.uid'),
+      route.indexOf('stored.userId !== decodedToken.uid'),
     );
 
     // Every change into the journal (SCHNITT-0-UMFANG §8, package 1) — and in

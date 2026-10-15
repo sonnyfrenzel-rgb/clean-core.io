@@ -171,6 +171,12 @@ export interface ProjectSizeCheck {
   budget: number;
   /** The largest fields after the write, largest first — what the reader can act on. */
   largest: Array<{ field: string; bytes: number }>;
+  /**
+   * Roadmap 3.0.14, item 9: `'artefact'` when the refusal is about one large
+   * artefact (stored in documents of its own, `lib/project-artefact-store.ts`)
+   * rather than the project document. Absent for the project document.
+   */
+  scope?: 'artefact';
 }
 
 /** Would this write leave the project document within its budget? */
@@ -203,6 +209,14 @@ function kb(bytes: number): string {
  */
 export function projectTooLargeMessage(check: ProjectSizeCheck, what: string, draftKept = false): string {
   const fields = check.largest.map((f) => `${f.field} (${kb(f.bytes)})`).join(', ');
+  if (check.scope === 'artefact') {
+    return (
+      `Saving ${what} would need ${kb(check.bytes)} for ${fields}, more than the ${kb(check.budget)} one stored artefact can hold. ` +
+      `Nothing was saved, and the previous version is untouched. ` +
+      (draftKept ? 'The draft is still shown below — copy or download it before you leave this page. ' : '') +
+      `To make room, generate again with a smaller scope, or split the program into smaller projects.`
+    );
+  }
   return (
     `Saving ${what} would make this project ${kb(check.bytes)}, more than the ${kb(check.budget)} one project can hold. ` +
     `Nothing was saved, and the previous version is untouched. ` +
