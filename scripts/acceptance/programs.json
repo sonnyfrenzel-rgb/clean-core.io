@@ -45,7 +45,7 @@
     {
       "id": "po-mm-po-approval",
       "title": "MM emergency purchase approval (Z_MM_PO_APPROVAL, the public demo)",
-      "source": { "repo": "public/starter-examples/Z_MM_PO_APPROVAL.abap", "file": null, "entry": null, "sha256": "b720228e36a59b09b84d9a8d71b9092c3189498da1d0f46d274429a8df5cd5b2", "lines": 669 },
+      "source": { "repo": "public/starter-examples/Z_MM_PO_APPROVAL.abap", "file": null, "entry": null, "sha256": "e33f511f747d367d7a2f791e5d39b3e9259211f05db10bb9e0d0ece8057cac64", "lines": 669 },
       "tracks": ["rap", "node"],
       "holdout": false,
       "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only"] }

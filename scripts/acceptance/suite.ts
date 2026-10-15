@@ -355,9 +355,12 @@ export async function loadSource(p: ProgramEntry, sourcesDir: string): Promise<s
       buf = await entry.async('nodebuffer');
     } else buf = raw;
   }
-  const got = sha256(buf);
+  // The pin is over the text with LF line ends: a file in the repository is
+  // checked out with CRLF on Windows and LF in CI, and both are the same source.
+  const text = buf.toString('utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n');
+  const got = sha256(Buffer.from(text, 'utf8'));
   if (got !== p.source.sha256) throw new Error(`${p.id}: the source does not match its fingerprint (sha256 ${got.slice(0, 12)}…, expected ${p.source.sha256.slice(0, 12)}…)`);
-  return buf.toString('utf8').replace(/^﻿/, '');
+  return text;
 }
 
 async function openScenarioFile(p: ProgramEntry, key: string | null): Promise<{ file: ScenarioFile | null; reason: string | null }> {

@@ -19,9 +19,9 @@
  * client-writable field and asserts that no signed byte moves.
  */
 
-import { closureSentence, testingClosureReading } from '@/lib/testing-closure';
-import type { Project } from '@/lib/types';
-import { buildEvidenceChain, coversOf, type CoverEntry } from '@/lib/evidence-chain';
+import { closureSentence, testingClosureReading } from './testing-closure';
+import type { Project } from './types';
+import { buildEvidenceChain, coversOf, type CoverEntry } from './evidence-chain';
 import {
   generateExecutiveSummary,
   generateExecutiveSummaryDoc,
@@ -38,7 +38,7 @@ import {
   INPUT_MANIFEST_FILE,
   USER_ATTESTED_FILE,
   type UserAttestations,
-} from '@/lib/audit-pack';
+} from './audit-pack';
 
 export interface AuditPackSource {
   projectId: string;
