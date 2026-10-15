@@ -275,6 +275,18 @@ test.describe('the flow from input is followed however long the chain and in wha
     expect(readSecurityReviewTasks(path, { precisionFixes: false }).filter((t) => t.kind === 'file-path-from-input')).toHaveLength(1);
   });
 
+  test('a constant written to one component of a structure clears no other component (QA 3fd753f5de41: b0133ee3eb34)', () => {
+    const src = (between: string[]) => ['REPORT zdyn.', 'PARAMETERS p_where TYPE string.',
+      'DATA: BEGIN OF ls_filter, where TYPE string, description TYPE string, END OF ls_filter.',
+      'ls_filter-where = p_where.', ...between, 'SELECT * FROM vbak INTO TABLE @DATA(lt) WHERE (ls_filter-where).', ''].join('\n');
+    const dyn = (between: string[]) =>
+      readSecurityReviewTasks(src(between), { precisionFixes: true }).filter((t) => t.kind === 'dynamic-sql-from-input').length;
+    expect(dyn(["ls_filter-description = 'X'."])).toBe(1);
+    expect(dyn(['CLEAR ls_filter-description.'])).toBe(1);
+    // The whole structure overwritten still clears it.
+    expect(dyn(['CLEAR ls_filter.'])).toBe(0);
+  });
+
   test('a chain written forwards reaches the path in both engines', () => {
     expect(fileTasks(false, true)).toBe(1);
     expect(fileTasks(false, false)).toBe(1);

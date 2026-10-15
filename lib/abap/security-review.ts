@@ -512,8 +512,18 @@ function overwrittenCleanBefore(
     const target = paths[access] ?? [];
     if (at.length > target.length || at.some((p, k) => target[k] !== p)) return false;
     const code = codeWithEmbedded(s.text);
-    if (/^CLEAR\b/i.test(code)) return true;
+    // A write to one component (`ls_filter-description = 'x'`) clears no other
+    // component: it is no overwrite of the whole, and a tainted one still taints
+    // (QA review of 3fd753f5de41, b0133ee3eb34).
+    const written = /^(?:CLEAR\s+)?([^\s=]+)/i.exec(code)?.[1] ?? '';
+    const component = /^(?!DATA\()[\w/<>!]+(?:->[\w/]+)*-(?!>)/i.test(written);
     const assigned = new RegExp(String.raw`^(?:DATA\(\s*[\w/]+\s*\)|${OPERAND})\s*=\s*([\s\S]*)$`, 'i').exec(code);
+    if (component) {
+      if (assigned && !mentions(assigned[1], tainted)) continue;
+      if (/^CLEAR\b/i.test(code)) continue;
+      return false;
+    }
+    if (/^CLEAR\b/i.test(code)) return true;
     if (!assigned) return false;
     return !mentions(assigned[1], tainted);
   }
