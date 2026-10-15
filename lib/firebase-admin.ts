@@ -923,7 +923,15 @@ export async function deleteUserDataAndAccount(
   // 1. Projects — recursiveDelete so the immutable `runs/{runId}` subcollection
   //    (which holds the analysis narrative/evidence) is purged too. A plain doc
   //    delete would orphan the subcollection.
-  {
+  //
+  //    Steps 1 and 2a are what a still-open browser of the account can create
+  //    by itself (firestore.rules: projects, abap_examples, support_tickets,
+  //    files — each behind `accountActive()`, which holds while the profile
+  //    exists). So they run again in step 5b, once the profile is gone and no
+  //    such create can commit any more: a project saved in a tab while this
+  //    erasure was between here and step 5 is erased too, instead of outliving
+  //    an erasure that reported success (QA full review 5a693a12546c).
+  const sweepClientCreatable = async () => {
     const q = db.collection('projects').where('userId', '==', uid).limit(200);
     let snapshot = await q.get();
     while (snapshot.size > 0) {
@@ -932,12 +940,14 @@ export async function deleteUserDataAndAccount(
       }
       snapshot = await q.get();
     }
-  }
+    // 2a. The user-owned top-level collections a browser writes itself.
+    await deleteCollectionByUid('abap_examples');
+    await deleteCollectionByUid('support_tickets');
+    await deleteCollectionByUid('files');
+  };
+  await sweepClientCreatable();
 
   // 2. Other user-owned top-level collections
-  await deleteCollectionByUid('abap_examples');
-  await deleteCollectionByUid('support_tickets');
-  await deleteCollectionByUid('files');
   await deleteCollectionByUid('consent_events'); // F-16: purge consent records (hold uid/email)
   //    Survey answers and the free-text comment beside them: one document per
   //    campaign, `${campaign}__${uid}`, written by /api/survey/vote with the
@@ -1195,6 +1205,18 @@ export async function deleteUserDataAndAccount(
     batch.delete(db.collection('users').doc(uid));
     return batch.commit();
   });
+  // 5b. The client-creatable collections once more, now that no browser of
+  //     this account passes `accountActive()` (see step 1), and the write
+  //     ceiling such a create counts on. A failure here keeps the sign-in, so
+  //     the retry is still possible.
+  if (erasureErrors.length === 0) {
+    try {
+      await sweepClientCreatable();
+    } catch (e) {
+      erasureErrors.push(`second sweep: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+  }
   if (erasureErrors.length > 0) {
     throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);
   }

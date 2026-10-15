@@ -59,6 +59,11 @@ ran green had compared nothing. Scaffold version 12.
 
 - Transformation, side by side: Sync Scroll follows the package's trace instead of the scroll percentage — a line of the original brings its function to the top of the open file, a function brings its ABAP lines, and a newly chosen file opens at the function of the original's current line; a file with no traced function (TRACE.md, metadata, configuration) or a package without traceability says that sync does not apply, and on a phone the stacked panes say they scroll on their own (roadmap 3.0.14, item 6).
 
+### Fixes from the QA full review of v3.0.13
+
+- Security: QA cc210998fb05 — audit pack verification (web page and `scripts/verify-pack.mjs`).
+- Account deletion: a project, example, ticket or file saved in a still-open tab while the deletion runs is deleted with the account; the client-creatable data is swept a second time once the profile is gone (QA 5a693a12546c). No Firestore rules change.
+
 ## [v3.0.13] — 2026-10-15
 
 Transformation becomes a real tool: the generated ABAP has to pass an activation check before it is
