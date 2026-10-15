@@ -131,7 +131,9 @@ test('the prompt asks for a small, realistic set of roles and one Accountable pe
   expect(prompt).toContain('The roles are a proposal the business will confirm');
   // An owner can ask for a new proposal; the transaction replaces only the layer it was asked to replace.
   expect(page).toContain('data-regenerate-business-layer');
-  expect(page).toContain('current.businessDocumentation !== replacing');
+  // 3.0.14 item 9: the write runs on the server (`storeBusinessLayer`).
+  const writes = fs.readFileSync(path.join(__dirname, '..', 'lib', 'project-artefact-writes.ts'), 'utf8');
+  expect(writes).toContain('(replacingSha256 === null || sha256Hex(current) !== replacingSha256)');
 });
 
 /* ------------------------------------------------------------------------ *

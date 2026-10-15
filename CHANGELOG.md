@@ -59,8 +59,6 @@ ran green had compared nothing. Scaffold version 12.
 
 - Transformation, side by side: Sync Scroll follows the package's trace instead of the scroll percentage — a line of the original brings its function to the top of the open file, a function brings its ABAP lines, and a newly chosen file opens at the function of the original's current line; a file with no traced function (TRACE.md, metadata, configuration) or a package without traceability says that sync does not apply, and on a phone the stacked panes say they scroll on their own (roadmap 3.0.14, item 6).
 
-## [v3.0.14] — unreleased
-
 ### Transformation — generation pipeline
 
 - Acceptance suite: a Node scenario is judged by the generated package's own case of its ID. A scenario that names

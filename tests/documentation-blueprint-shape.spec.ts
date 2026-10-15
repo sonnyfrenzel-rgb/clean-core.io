@@ -271,15 +271,18 @@ test.describe('the documentation is read from the code, and a legacy blueprint i
 // `status: 'documented'` without asking whether the project still stood on the
 // run the document was built from.
 test('the documentation is written only onto the run and source it was built from', () => {
-  const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
-  const start = page.indexOf('const generateDocumentation = useCallback(');
-  const body = page.slice(start, page.indexOf('}, [projectId, project, signedSource', start));
-  const tx = body.slice(body.indexOf('runTransaction('), body.indexOf("...cleanup });"));
-  expect(tx, 'the transaction does not compare the run').toContain('current.activeRunId !== builtFromRun');
-  expect(tx, 'the transaction does not compare the source').toContain('current.legacyCode !== signedSource.source');
-  expect(tx.indexOf('throw new Error('), 'a moved run is written anyway').toBeLessThan(tx.indexOf('tx.update('));
+  // 3.0.14 item 9: the write runs on the server (`storeDocumentation` in lib/project-artefact-writes.ts).
+  const writes = fs.readFileSync(path.join(ROOT, 'lib', 'project-artefact-writes.ts'), 'utf8');
+  const start = writes.indexOf('export async function storeDocumentation(');
+  const body = writes.slice(start, writes.indexOf('export async function storeBusinessLayer(', start));
+  const tx = body.slice(body.indexOf('inTransaction('));
+  expect(tx, 'the transaction does not compare the run and the source').toContain('project.activeRunId !== fromRunId || textDigest(project.legacyCode) !== sourceSha256');
+  expect(tx.indexOf("code: 'analysis-moved'"), 'a moved run is written anyway').toBeLessThan(tx.indexOf('return commit('));
   // And the page shows the document only after it is stored.
-  expect(body.indexOf('setDocumentation(stored)')).toBeGreaterThan(body.indexOf('runTransaction('));
+  const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
+  const pageStart = page.indexOf('const generateDocumentation = useCallback(');
+  const pageBody = page.slice(pageStart, page.indexOf('}, [projectId, project, signedSource', pageStart));
+  expect(pageBody).toContain('setDocumentation(stored)');
 });
 
 test.describe('the documentation segment has an error boundary of its own', () => {
