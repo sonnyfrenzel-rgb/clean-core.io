@@ -31,6 +31,7 @@
 
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 import { sandboxFilesFromStoredCode } from './test-sandbox/files';
+import { goldenMasterComparedWords } from './transformation/golden-master';
 
 export const ABAP_NAME_MAX = 30;
 
@@ -395,19 +396,25 @@ export function abapUnitCountsSentence(c: AbapUnitCounts): string {
   return `${c.tests} of ${c.methods} ABAP Unit test ${c.methods === 1 ? 'method calls' : 'methods call'} the code under test${not.length ? `; ${not.join(' and ')} — not counted as tests` : ''}.`;
 }
 
-/** The golden master class in a test include, as the engine wrote it: its case methods, and whether their rows reach the logic. */
-export function goldenMasterInInclude(content: string): { cases: number; rowsPassed: boolean } | null {
+/**
+ * The golden master class in a test include, as the engine wrote it: its case methods, whether their rows reach the
+ * logic, and how many compare a result of the original (3.0.14 item 8: the others skip after running — not compared).
+ */
+export function goldenMasterInInclude(content: string): { cases: number; rowsPassed: boolean; compared: number } | null {
   const at = content.search(/CLASS\s+ltc_golden_master\s+DEFINITION/i);
   if (at < 0) return null;
   const rest = content.slice(at);
   const cases = (rest.match(/METHODS\s+case_\d+\s+FOR\s+TESTING/gi) ?? []).length;
   const runCase = /METHOD\s+run_case\.([\s\S]*?)ENDMETHOD\./i.exec(rest)?.[1] ?? '';
-  return { cases, rowsPassed: !/"\s*Not passed:/i.test(runCase) };
+  // A package stored before 3.0.14 asserted nothing and did not skip: none of its cases compared a result either.
+  const bodies = [...rest.matchAll(/METHOD\s+case_\d+\.([\s\S]*?)ENDMETHOD\./gi)].map((m) => m[1]);
+  const compared = bodies.filter((b) => /cl_abap_unit_assert=>assert_/i.test(b) && !/=>\s*skip\s*\(/i.test(b)).length;
+  return { cases, rowsPassed: !/"\s*Not passed:/i.test(runCase), compared };
 }
 
 export interface AbapTestEvidence {
   counts: AbapUnitCounts;
-  goldenMaster: { cases: number; rowsPassed: boolean } | null;
+  goldenMaster: { cases: number; rowsPassed: boolean; compared: number } | null;
 }
 
 /**
@@ -424,8 +431,9 @@ export function abapTestEvidence(files: ReadonlyArray<{ path: string; content: s
   const golden = includes.map((f) => goldenMasterInInclude(f.content)).find((g) => g !== null) ?? null;
   const counts = countAbapUnitTests(tests, underTest);
   // A demo case whose rows do not reach the logic runs the logic, but not the case: it is not counted as a test.
-  if (golden && !golden.rowsPassed && golden.cases > 0) {
-    const moved = Math.min(golden.cases, counts.tests);
+  // Only the cases that compare a result are counted as tests at all; the others skip (3.0.14 item 8).
+  if (golden && !golden.rowsPassed && golden.compared > 0) {
+    const moved = Math.min(golden.compared, counts.tests);
     counts.tests -= moved;
     counts.withoutData = moved;
   }
@@ -445,7 +453,7 @@ export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
   if (e.goldenMaster && e.goldenMaster.cases > 0) {
     const n = e.goldenMaster.cases;
     out.push(
-      `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data, expected values to be confirmed once in your system` +
+      `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data: ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
         (e.goldenMaster.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic (its state has no component for them), so they run the logic without the case data.'),
     );
   }

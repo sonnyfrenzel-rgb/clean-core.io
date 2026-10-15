@@ -228,12 +228,18 @@ test('the test class: one method per case calling the run entry, the case’s ro
   expect(text).toMatch(/APPEND VALUE #\(\s+org = '1000' cid = '0000000001' qty = '2' price = '12\.00'\s+\) TO ls_data-claims\./);
   expect(text).toContain("ls_sel-org = '2000'.");
   expect(text).toContain('Not passed: GV_SEALED');
-  expect(text).toContain('from the original, confirm once in your system');
-  // No assertion on an outcome: only that the case runs.
+  // 3.0.14 item 8: no expected result is on record, so nothing is asserted about the outcome — and no case passes for
+  // having run: each runs the logic, then reports itself as skipped, not compared.
   expect(text).not.toMatch(/assert_equals/);
-  expect(text).not.toMatch(/=>skip\(/);
+  expect(text).not.toContain('confirm once in your system');
+  expect(out.testClass.methods.every((m) => !m.compared)).toBe(true);
+  for (const m of out.testClass.methods) {
+    const body = new RegExp(`METHOD ${m.name}\\.([\\s\\S]*?)ENDMETHOD\\.`).exec(text)![1];
+    expect(body.indexOf('run_case(')).toBeGreaterThan(-1);
+    expect(body.indexOf('=>skip( msg = not_compared(')).toBeGreaterThan(body.indexOf('run_case('));
+  }
   expect(goldenMasterSentence(out.testClass)).toBe(
-    '3 demo cases of the original carried over as ABAP Unit test data (3 of 3 passed to the logic with all their rows) — expected values to be confirmed once in your system.',
+    '3 demo cases of the original carried over as ABAP Unit test data (3 of 3 passed to the logic with all their rows) — each runs through the logic, but no result is compared yet (no expected result of the original is on record), so ABAP Unit reports them as skipped, not passed.',
   );
 });
 
@@ -247,11 +253,11 @@ test('the RAP scaffold carries the golden master in the logic class’s test inc
   expect(lint.issues.filter((i) => i.path.endsWith('.testclasses.abap')), JSON.stringify(lint.issues)).toEqual([]);
   // Since scaffold version 6 the logic class's run state (ty_run_result) carries the original's tables: every case passes its rows.
   const evidence = abapTestEvidence(scaffold.files, null)!;
-  expect(evidence.goldenMaster).toEqual({ cases: 3, rowsPassed: true });
+  expect(evidence.goldenMaster).toEqual({ cases: 3, rowsPassed: true, compared: 0 });
   expect(evidence.counts.withoutData ?? 0).toBe(0);
   expect(include.content).toMatch(/lo_cut->run_with_state\( EXPORTING is_sel = is_sel CHANGING cs_st = ls_st \)\./);
   const sentences = abapTestEvidenceSentences(evidence);
-  expect(sentences[1]).toContain('3 demo cases of the original carried over as ABAP Unit test data, expected values to be confirmed once in your system');
+  expect(sentences[1]).toContain('3 demo cases of the original carried over as ABAP Unit test data: each runs through the logic, but no result is compared yet');
   expect(sentences[1]).not.toContain('not yet passed to the logic');
 });
 
@@ -265,10 +271,13 @@ test('STATUS on the ABAP route says which test methods are tests and how many de
   };
   const detail = testFactsOf(project as unknown as Parameters<typeof testFactsOf>[0], []).detail;
   const abap = detail.find((d) => d.startsWith('ABAP Unit: '))!;
-  // The three demo cases call the code under test with their rows (scaffold version 6); the engine cases still skip.
-  expect(abap).toMatch(/^ABAP Unit: 3 of \d+ ABAP Unit test methods call the code under test; /);
+  // 3.0.14: the three demo cases run with their rows but compare nothing, so they skip and are not counted as tests;
+  // the engine cases that ask the original's checks are.
+  const m = /^ABAP Unit: (\d+) of (\d+) ABAP Unit test methods call the code under test; (\d+) skip/.exec(abap);
+  expect(m, abap).not.toBeNull();
+  expect(Number(m![3])).toBeGreaterThanOrEqual(3);
   expect(abap).not.toContain('without its case data');
-  expect(detail).toContainEqual(expect.stringContaining('3 demo cases of the original carried over as ABAP Unit test data, expected values to be confirmed once in your system'));
+  expect(detail).toContainEqual(expect.stringContaining('3 demo cases of the original carried over as ABAP Unit test data: each runs through the logic, but no result is compared yet'));
   // Not on the Node route.
   expect(testFactsOf({ ...project, extensibilityRoute: 'Side-by-Side (BTP)' } as unknown as Parameters<typeof testFactsOf>[0], []).detail.some((d) => d.startsWith('ABAP Unit'))).toBe(false);
 });

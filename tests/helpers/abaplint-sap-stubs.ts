@@ -181,11 +181,14 @@ ENDCLASS.`,
   'cl_abap_unit_assert.clas.abap': `CLASS cl_abap_unit_assert DEFINITION PUBLIC FINAL CREATE PRIVATE.
   PUBLIC SECTION.
     CLASS-METHODS assert_equals IMPORTING act TYPE any exp TYPE any msg TYPE csequence OPTIONAL.
+    CLASS-METHODS assert_true IMPORTING act TYPE abap_bool msg TYPE csequence OPTIONAL.
     CLASS-METHODS skip IMPORTING msg TYPE csequence.
     CLASS-METHODS fail IMPORTING msg TYPE csequence OPTIONAL.
 ENDCLASS.
 CLASS cl_abap_unit_assert IMPLEMENTATION.
   METHOD assert_equals.
+  ENDMETHOD.
+  METHOD assert_true.
   ENDMETHOD.
   METHOD skip.
   ENDMETHOD.

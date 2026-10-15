@@ -88,8 +88,16 @@ export const PLAN_VERSION = 2;
  * PARTIALLY IMPLEMENTED: every golden-master case died with CX_SY_DYN_CALL_ILLEGAL_METHOD); the fill markers are
  * plain comments (`" @cc-fill`), not ABAP Doc, which drew 71 activation warnings — the reader takes both forms. Node —
  * unchanged. Nothing signed changes (§12.3).
+ * 12 (3.0.14 items 7 and 8, the first SAP activation's ABAP Unit run, 15.10.2026: 37 green, 0 red, 40 skipped): RAP —
+ * the engine cases run in ABAP (`abap-engine-cases.ts`): a guard case asks the check's predicate `when_g<line>` on the
+ * case's input (an attribute of the logic class or a parameter of the predicate; the test include makes
+ * `ltc_engine_cases` a local friend of the logic class), a precision case assigns its value to the declared type and
+ * asserts what it holds or the overflow; an input-channel or run-identity case, and an example with no value the engine
+ * knows, keeps a skip naming why. The golden-master cases run and then report themselves as skipped — their result not
+ * yet compared — unless an expected result of the original is on record (`GoldenMasterExpected`, the seam for 3.0.17);
+ * a refusal of a case is caught as its outcome, not as a failure. Node — unchanged. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 11;
+export const SCAFFOLD_VERSION = 12;
 
 /* -------------------------------------------------------------- budgets */
 

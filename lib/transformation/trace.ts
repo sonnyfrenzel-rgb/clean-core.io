@@ -42,7 +42,7 @@ function goldenMasterOf(files: readonly ScaffoldFile[]): NonNullable<Trace['gold
   for (const f of files) {
     if (!/\.clas\.testclasses\.abap$/i.test(f.path)) continue;
     const g = goldenMasterInInclude(f.content);
-    if (g && g.cases > 0) return { ...g, carrier: 'abap-unit' };
+    if (g && g.cases > 0) return { cases: g.cases, rowsPassed: g.rowsPassed, carrier: 'abap-unit' };
   }
   const demo = files.find((f) => f.path === 'test/fixtures/original-demo.json');
   if (demo && files.some((f) => f.path === 'test/original-demo.test.mjs')) {
