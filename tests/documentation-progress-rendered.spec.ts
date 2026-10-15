@@ -167,3 +167,20 @@ test('a program written in parts shows every part with its own state and time', 
   expect(html).toContain('writing · 0:28');
   expect(html).toContain('Written in 4 parts of up to 60 steps');
 });
+
+test('a stage that runs again after a stop starts a new attempt: its time is not the stopped attempt plus the pause (QA b6694384a2f3)', () => {
+  const { nextDocStageTimes } = require(path.join(OUT, 'DocumentationProgress.cjs')) as {
+    nextDocStageTimes: (prev: Times, stages: Array<{ key: string; state: string }>, at: number) => Times;
+  };
+  const stage = (state: string) => [{ key: 'business', state }];
+  let times = nextDocStageTimes({}, stage('active'), OPENED);
+  expect(times.business).toEqual({ startedAt: OPENED, endedAt: null });
+  times = nextDocStageTimes(times, stage('failed'), OPENED + 30_000);
+  expect(times.business).toEqual({ startedAt: OPENED, endedAt: OPENED + 30_000 });
+  // *Try again* five minutes later.
+  times = nextDocStageTimes(times, stage('active'), OPENED + 330_000);
+  expect(times.business).toEqual({ startedAt: OPENED + 330_000, endedAt: null });
+  // Still running: another change of states keeps the attempt's start.
+  times = nextDocStageTimes(times, stage('active'), OPENED + 340_000);
+  expect(times.business).toEqual({ startedAt: OPENED + 330_000, endedAt: null });
+});

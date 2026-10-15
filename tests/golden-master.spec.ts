@@ -186,6 +186,15 @@ test('the not-run reason of an engine case is said for the route: no Node.js cal
   expect(engineCasePromptSection(deriveEngineCases(three(), []).cases, 'abap-unit')).not.toContain('srv/engine-contract');
 });
 
+test('the ABAP Unit evidence is shown on the ABAP route, where it is read — not only inside the mocks card that route never shows (QA 4a0b5bc64faf)', () => {
+  const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
+  // The evidence is read only for an ABAP Cloud project...
+  expect(page).toMatch(/abapTestEvidenceOfProject\(/);
+  // ...so a block that renders it must be gated on that route, not on its absence.
+  const block = page.match(/\{isAbapCloud && evidence\.abapUnit && evidence\.abapUnit\.length > 0 \? \(\s*<p data-test-evidence-abap-unit=""[^>]*>\s*\{evidence\.abapUnit\.join\(' '\)\}/);
+  expect(block, 'the testing page renders the ABAP Unit evidence on the ABAP route').not.toBeNull();
+});
+
 test('a program without demo cases has no golden master; an integer CASE that touches no fixture table is not one', () => {
   expect(readGoldenMaster('REPORT z.\nSTART-OF-SELECTION.\n  WRITE / 1.\n')).toBeNull();
   const noFixture = three().replace(/PERFORM add_claim USING[^\n]*\n/g, '').replace(/PERFORM add_rate USING[^\n]*\n/g, '');

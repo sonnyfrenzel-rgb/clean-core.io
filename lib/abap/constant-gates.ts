@@ -29,8 +29,9 @@ import { readControlFlowFrom } from './control-flow';
  *   - **always true, and the `IF` arm ends the routine** — an error, abort or
  *     exit message (`TYPE 'E'|'A'|'X'`, not `INTO`), `LEAVE PROGRAM`,
  *     `LEAVE TO TRANSACTION`, `RETURN`, `STOP`, `RAISE`, or `EXIT` outside a
- *     loop, standing directly in the arm: every statement after `ENDIF` up to
- *     the end of the routine, and every other arm, is unreachable;
+ *     loop, standing directly in the arm: every statement after it in the arm,
+ *     every statement after `ENDIF` up to the end of the routine, and every
+ *     other arm, is unreachable;
  *   - **always true**, the arm going on: the other arms are unreachable;
  *   - **always false**: the `IF` arm is unreachable.
  *
@@ -204,12 +205,14 @@ export function readConstantGates(source: string): ConstantGateReport {
     const insideLoop = structure.enclosing[branch.openIndex].some((b) => LOOP_KINDS.has(b.kind));
     const nextHeader = branch.arms[1]?.headerIndex ?? branch.closeIndex;
     let stop: ConstantGate['stop'] = null;
+    let stopEnd = 0;
     if (outcome.always) {
       for (let i = head.headerIndex + 1; i < nextHeader; i++) {
         if (structure.enclosing[i].length !== depth + 1) continue;
         const kind = stopOf(statements[i], insideLoop);
         if (kind) {
           stop = { kind, line: statements[i].lineStart, text: statements[i].text };
+          stopEnd = statements[i].lineEnd;
           break;
         }
       }
@@ -237,7 +240,10 @@ export function readConstantGates(source: string): ConstantGateReport {
         if (to >= from) regions.push({ reason: 'gate-arm', gate: gateIndex, lineStart: from, lineEnd: to });
       }
       if (stop) {
-        // The rest of the routine, up to the statement that closes it.
+        // The rest of the arm after the statement that ends the run (QA 9992f1339e12)…
+        const armEnd = statements[nextHeader].lineStart - 1;
+        if (armEnd > stopEnd) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: stopEnd + 1, lineEnd: armEnd });
+        // …and the rest of the routine, up to the statement that closes it.
         const end = container.kind === 'event' ? container.lineEnd : container.lineEnd - 1;
         if (end > closeLine) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: closeLine + 1, lineEnd: end });
         if (container.kind !== 'event') stopping.add(container.name);

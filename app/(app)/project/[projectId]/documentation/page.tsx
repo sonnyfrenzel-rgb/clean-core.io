@@ -1287,7 +1287,7 @@ export default function DocumentationPage() {
     },
     wrote,
   });
-  const stageTimes = useDocStageClock(progress.stages, now);
+  const stageTimes = useDocStageClock(progress.stages);
   const progressRunning = progress.end.kind === 'running';
   const [progressEndedAt, setProgressEndedAt] = useState<number | null>(null);
   useEffect(() => {

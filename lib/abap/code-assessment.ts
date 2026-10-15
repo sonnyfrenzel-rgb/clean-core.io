@@ -615,17 +615,22 @@ export function recommendArchitecture(
     const own = ownModules.length === 0
       ? ''
       : sapModules.length === 0
-        ? `IDoc function modules in a customer or partner namespace are called (${ownModules.join(', ')}). SAP's classification file covers SAP's IDoc framework modules, not these: their level is the level of what they call. `
+        ? `Function modules named for IDoc in a customer or partner namespace are called (${ownModules.join(', ')}). The name alone does not show that they use SAP's IDoc framework, and SAP's classification file covers SAP's IDoc framework modules, not these: their level is the level of what they call. `
         : `${ownModules.join(', ')} ${ownModules.length > 1 ? 'are' : 'is'} in a customer or partner namespace, which SAP's classification file does not cover: ${ownModules.length > 1 ? 'their' : 'its'} level is the level of what ${ownModules.length > 1 ? 'they call' : 'it calls'}. `;
     const sap = sapModules.length === 0
       ? ''
       : `IDoc function modules are called (${sapModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in SAP Cloud ERP Private. `;
+    // The framework's advice follows SAP's modules only: a customer module is
+    // matched by its name, which does not make it part of the IDoc framework
+    // (QA b495d64b5c10, 3.0.13 — unreleased, so changed in place).
     return {
       architecture: 'integration',
       confidence: 80,
-      justification: sap + own
-        + 'It has to be replaced where the target is ABAP Cloud or SAP S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
-        + 'For EDI and other high-volume asynchronous document exchange an IDoc interface can remain the better fit than one API call per document; decide that with the owners of the integration.',
+      justification: sapModules.length === 0
+        ? own + 'What replaces them on an ABAP Cloud target follows from what they call, not from their name.'
+        : sap + own
+          + 'It has to be replaced where the target is ABAP Cloud or SAP S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
+          + 'For EDI and other high-volume asynchronous document exchange an IDoc interface can remain the better fit than one API call per document; decide that with the owners of the integration.',
     };
   }
 

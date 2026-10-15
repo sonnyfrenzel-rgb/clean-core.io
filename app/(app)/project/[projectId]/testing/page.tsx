@@ -1608,6 +1608,14 @@ export default function TestingSandboxPage() {
               </div>
             ) : null}
 
+            {/* 3.0.13 (6) — the ABAP Unit evidence belongs to the ABAP route;
+                the mocks card below is shown only off it (QA 4a0b5bc64faf). */}
+            {isAbapCloud && evidence.abapUnit && evidence.abapUnit.length > 0 ? (
+              <p data-test-evidence-abap-unit="" className="m-0 mt-3 cc-text-cell text-cc-ink">
+                {evidence.abapUnit.join(' ')}
+              </p>
+            ) : null}
+
             {/* The reason itself is in the notice at the top of the page. */}
             {!isAbapCloud && testRunBlocked(project) && testCases.length > 0 && (
               <div data-stale-run-hint className="mb-4">

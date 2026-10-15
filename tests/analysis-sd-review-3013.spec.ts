@@ -67,6 +67,28 @@ test.describe('constant gates (CR-A1/D01)', () => {
     expect(gates.alwaysStopping).toEqual(['PROBE_LIVE_SOURCES']);
   });
 
+  test('a statement after the stop inside the gate arm is unreachable too (QA 9992f1339e12)', () => {
+    const code = [
+      'REPORT zgate.',
+      "CONSTANTS gc_live TYPE c VALUE space.",
+      'FORM probe.',
+      "  IF gc_live <> 'X'.",
+      "    MESSAGE 'Live adapter disabled' TYPE 'E'.",
+      '    SELECT SINGLE vbeln FROM vbak INTO @DATA(lv_vbeln).',
+      '  ENDIF.',
+      '  WRITE / 1.',
+      'ENDFORM.',
+      '',
+    ].join('\n');
+    const report = readConstantGates(code);
+    expect(report.gates).toHaveLength(1);
+    expect(report.gates[0].stop?.line).toBe(5);
+    expect(report.unreachable).toEqual([
+      { reason: 'after-gate', gate: 0, lineStart: 6, lineEnd: 6 },
+      { reason: 'after-gate', gate: 0, lineStart: 8, lineEnd: 8 },
+    ]);
+  });
+
   test('a gate needs a constant: a parameter, a doubly declared name or an AND is not read', () => {
     expect(readConstantGates(source.replace("IF gc_live_probe <> 'X'.", "IF p_demo <> 'X'.")).gates).toEqual([]);
     expect(readConstantGates(source.replace("IF gc_live_probe <> 'X'.", "IF gc_live_probe <> 'X' AND p_doc IS INITIAL.")).gates).toEqual([]);
