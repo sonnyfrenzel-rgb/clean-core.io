@@ -89,6 +89,11 @@ ran green had compared nothing. Scaffold version 12.
   (`released-interfaces.latest.json`, names only, written by `npm run sync:catalog` beside the class list); an
   unreleased or invented interface is still refused (3.0.14 item 4).
 
+### Fixes from the QA full review of v3.0.13
+
+- Security: QA cc210998fb05 — audit pack verification (web page and `scripts/verify-pack.mjs`).
+- Account deletion: a project, example, ticket or file saved in a still-open tab while the deletion runs is deleted with the account; the client-creatable data is swept a second time once the profile is gone (QA 5a693a12546c). No Firestore rules change.
+
 ## [v3.0.13] — 2026-10-15
 
 Transformation becomes a real tool: the generated ABAP has to pass an activation check before it is

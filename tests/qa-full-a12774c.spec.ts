@@ -97,6 +97,46 @@ test.describe('a write in flight does not bring an erased account back (7bf0db90
     }
   });
 
+  test('a project saved while the erasure runs is erased with the account (5a693a12546c)', async () => {
+    // A still-open tab creates a project after step 1 swept the projects and
+    // before step 5 deleted the profile — the window in which the rules still
+    // let it (`accountActive()` holds while the profile exists).
+    const db = adminDb();
+    const uid = uidOf('project');
+    const late = db.collection('projects').doc(`late-${uid}`);
+    try {
+      await db.collection('users').doc(uid).set({ email: `${uid}@cleancore-test.io`, status: 'approved' });
+      const racing = new Proxy(db, {
+        get(target, prop) {
+          if (prop === 'collection') {
+            return (name: string) => {
+              if (name !== 'mfa_pending') return target.collection(name);
+              return {
+                doc: (id: string) => ({
+                  delete: async () => {
+                    await late.set({ name: 'Saved in a tab', status: 'created', userId: uid, createdAt: new Date() });
+                    await target.collection('abap_examples').doc(`late-${uid}`).set({ userId: uid, code: 'REPORT z.' });
+                    return target.collection('mfa_pending').doc(id).delete();
+                  },
+                }),
+              };
+            };
+          }
+          const value = Reflect.get(target, prop, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      }) as Firestore;
+      await deleteUserDataAndAccount(uid, { db: racing, auth: noAuth });
+      expect((await late.get()).exists, 'a project created during the erasure outlived it').toBe(false);
+      expect((await db.collection('abap_examples').doc(`late-${uid}`).get()).exists).toBe(false);
+      expect((await db.collection('users').doc(uid).get()).exists).toBe(false);
+    } finally {
+      await late.delete().catch(() => {});
+      await db.collection('abap_examples').doc(`late-${uid}`).delete().catch(() => {});
+      await db.collection('users').doc(uid).delete().catch(() => {});
+    }
+  });
+
   test('the four routes write through the guards, never with a merge-set', () => {
     const sites: Array<[string, string]> = [
       ['app/api/account/register/route.ts', 'mergeWhileProfileExists('],

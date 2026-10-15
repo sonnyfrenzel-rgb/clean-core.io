@@ -198,6 +198,43 @@ test('an alias of a signed path fails the pack here too', async () => {
   expect(code).toBe(1);
 });
 
+test('an archive whose end record is not the real one fails the pack here too', async () => {
+  // QA full review cc210998fb05; the web half is in
+  // `tests/audit-pack-archive-completeness.spec.ts`.
+  const kp = keyPair();
+  const content = '# Executive Summary\nA pack built for the command-line check.';
+  const files = [{ path: '00-executive-summary.md', sha256: sha(content), bytes: content.length }];
+  const meta = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+  const manifestHash = sha(canonicalAuditManifest({ files, ...meta }));
+  const manifest = {
+    version: '2.0', ...meta, generatedAt: new Date().toISOString(), files, manifestHash,
+    signed: true, signature: '',
+    signatureEd25519: sign(null, Buffer.from(manifestHash, 'utf8'), kp.privateKey).toString('base64'),
+  };
+  const zip = new JSZip();
+  zip.file('zz-executive-summary.md', '# Unconditional approval. Signed, nobody.');
+  zip.file('00-executive-summary.md', content);
+  zip.file('manifest.json', JSON.stringify(manifest));
+  const plain: Buffer = await zip.generateAsync({ type: 'nodebuffer' });
+  const from = Buffer.from('zz-executive-summary.md', 'utf8');
+  const to = Buffer.from('00-executive-summary.md', 'utf8');
+  let at = 0;
+  while ((at = plain.indexOf(from, at)) !== -1) {
+    to.copy(plain, at);
+    at += to.length;
+  }
+  const bytes = Buffer.concat([Buffer.alloc(7, 0x20), plain]);
+  const end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  bytes.writeUInt16LE(0, end + 8);
+  bytes.writeUInt16LE(0, end + 10);
+
+  const packPath = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+  writeFileSync(packPath, bytes);
+  const { code, out } = run([packPath, '--key', kp.rawPublicBase64]);
+  expect(out).toContain('NOT verified');
+  expect(code).toBe(1);
+});
+
 test('a user-attested file is reported as present and unsigned, and the pack still verifies', async () => {
   const kp = keyPair();
   const pack = await buildPack({ signWith: kp.privateKey, attested: { '07-user-attested.md': '# Statements\nApprover: the board, unanimously.' } });
