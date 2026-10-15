@@ -42,7 +42,7 @@ test('the production-build setup the comment above names is still there (not tha
   expect(read('playwright.config.ts')).toMatch(/command: process\.env\.CI \? 'npm start'/);
   for (const [spec, title] of [
     ['tests/generation-store-cas.spec.ts', "test('happy path:"],
-    ['tests/project-document-size.spec.ts', "test('a package that fits is stored as before'"],
+    ['tests/project-document-size.spec.ts', "test('a package that would have outgrown the project document is stored beside it'"],
   ] as const) {
     const src = read(spec);
     expect(src, spec).toContain(title);
