@@ -95,7 +95,13 @@ export const PLAN_VERSION = 2;
  * asserts what it holds or the overflow; an input-channel or run-identity case, and an example with no value the engine
  * knows, keeps a skip naming why. The golden-master cases run and then report themselves as skipped — their result not
  * yet compared — unless an expected result of the original is on record (`GoldenMasterExpected`, the seam for 3.0.17);
- * a refusal of a case is caught as its outcome, not as a failure. Node — unchanged. Nothing signed changes (§12.3).
+ * a refusal of a case is caught as its outcome, not as a failure. Nothing signed changes (§12.3).
+ * Also 12 (3.0.14 items 1 and 3, the generation pipeline):
+ * Node — a whole number of the original (`i`, `int1`, `int2`, `int4`, `b`, `s`, `TYPE sy-tabix`) is a `number` in
+ * `srv/lib/types.ts`, the guards' `values` and the steps' arguments, starts at `0`, and the input contract holds it as
+ * one (`int8` stays exact text); the check export hands such a value in as a number; the original's demo cases put a
+ * whole number into a number; `srv/fixtures.ts` reads no file (its test reads the cases' JSON), so the acceptance
+ * suite runs a case by its number in the confined executor. Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 12;
 
@@ -694,6 +700,11 @@ export interface FillRepair {
   /** ≤ 2,000 characters. */
   failure: string;
   previousBody: string | null;
+  /**
+   * The previous bodies of the unit's check predicates the failure names (`predicate G-0685`), by check id (3.0.14
+   * item 1): an error in a predicate is repaired in the predicate, which the repair round did not show.
+   */
+  previousGuards?: Record<string, string>;
 }
 
 export interface FillRequest {

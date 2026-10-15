@@ -179,7 +179,8 @@ test.describe('Node 3–6 — faithful bodies compile against the package they l
       'for (const lsClaim of st.local.gtClaims) {',
       '  if (skip_G0023(sel, st, null, { lsClaimCid: lsClaim.cid })) continue;',
       '  lvSum = dec.add(lvSum, lsClaim.amount, 2);',
-      '  st.local.gvCount = dec.add(st.local.gvCount, 1, 0);',
+      // GV_COUNT TYPE i: a whole number is a number since 3.0.14 (item 1), counted as one.
+      '  st.local.gvCount = st.local.gvCount + 1;',
       '}',
       'const parsed = dec.parse(lvSum);',
       'if (parsed) lvSum = dec.round(parsed, 2);',

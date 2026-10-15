@@ -23,7 +23,9 @@ import {
   normalizeCrFile,
   normalizeClassificationFile,
   deriveReleasedClasses,
+  deriveReleasedInterfaces,
   RELEASED_CLASSES_FILE,
+  RELEASED_INTERFACES_FILE,
   type CrFile,
   type CrClassificationFile,
 } from '../lib/abap/cloudification-repo';
@@ -88,15 +90,22 @@ async function syncOne(release: string): Promise<boolean> {
   const outFile = path.join(OUT_DIR, `cloudification-repo.${release}.json`);
 
   // The released class names the transformation's body guard reads (acceptance run 4, 14.10.2026): derived from
-  // `latest` on every sync of it, written only when the names change.
+  // `latest` on every sync of it, written only when the names change. Since 3.0.14 (item 4) the released interface
+  // names beside them, from the same list, in a file of their own.
   let classesChanged = false;
   if (release === 'latest' && !isClassification) {
-    const classesFile = path.join(OUT_DIR, RELEASED_CLASSES_FILE);
-    const classesOut = JSON.stringify(deriveReleasedClasses({ meta: artifact.meta, entries: sortedEntries }), null, 0) + '\n';
-    if (!existsSync(classesFile) || readFileSync(classesFile, 'utf8') !== classesOut) {
-      writeFileSync(classesFile, classesOut);
-      classesChanged = true;
-      console.log(`[sync] ${release}: wrote the released class names → ${classesFile}`);
+    const lists: Array<[string, string, unknown]> = [
+      ['class', RELEASED_CLASSES_FILE, deriveReleasedClasses({ meta: artifact.meta, entries: sortedEntries })],
+      ['interface', RELEASED_INTERFACES_FILE, deriveReleasedInterfaces({ meta: artifact.meta, entries: sortedEntries })],
+    ];
+    for (const [what, name, list] of lists) {
+      const listFile = path.join(OUT_DIR, name);
+      const listOut = JSON.stringify(list, null, 0) + '\n';
+      if (!existsSync(listFile) || readFileSync(listFile, 'utf8') !== listOut) {
+        writeFileSync(listFile, listOut);
+        classesChanged = true;
+        console.log(`[sync] ${release}: wrote the released ${what} names → ${listFile}`);
+      }
     }
   }
 

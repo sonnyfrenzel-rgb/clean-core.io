@@ -59,6 +59,38 @@ ran green had compared nothing. Scaffold version 12.
 
 - Transformation, side by side: Sync Scroll follows the package's trace instead of the scroll percentage — a line of the original brings its function to the top of the open file, a function brings its ABAP lines, and a newly chosen file opens at the function of the original's current line; a file with no traced function (TRACE.md, metadata, configuration) or a package without traceability says that sync does not apply, and on a phone the stacked panes say they scroll on their own (roadmap 3.0.14, item 6).
 
+## [v3.0.14] — unreleased
+
+### Transformation — generation pipeline
+
+- Acceptance suite: a Node scenario is judged by the generated package's own case of its ID. A scenario that names
+  one of the original's demo cases — by the case switch in its input (`p_case`) or by its ID (`CASE-07`, `case_07`,
+  `7`) — runs that case through the package in the confined executor, and its output is compared with the sealed
+  expectation in memory: every expected value found and equal passes, a found value that differs fails when at least
+  half the values were found, anything
+  less is "ran, not judged". The report says per program how many scenarios ran, passed and failed; only IDs,
+  verdicts and counts leave the comparison. The package's case module (`srv/fixtures.ts`) reads no file any more —
+  its test reads the cases' JSON — so the executor can load it. RAP scenarios stay "not run here": they need ABAP
+  Unit in an SAP system (3.0.14 item 3).
+- Node: a whole number of the original (`TYPE i`, `int1`, `int2`, `int4`, `b`, `s`, `TYPE sy-tabix`) is a number in
+  the package — in `srv/lib/types.ts`, the guards' values, the steps' arguments, the input contract and the
+  original's demo cases (`int8` stays exact text). It was text while the fill prompt called counts numbers, and
+  `values.lvCount > 5000` or `lvCount: rows.length` were the most frequent type errors of the acceptance runs.
+  Scaffold version 12 (3.0.14 item 1).
+- A type or activation error inside a check's predicate is named by its check (`predicate G-0523 line 1 — …`), and
+  the repair round carries that predicate's previous body. Before, it read as "body line 1" of the unit, the round
+  rewrote the step, and the predicate's error stayed through every round (3.0.14 item 1).
+- A repair of gate errors (the activation check of a RAP body, the type check of a Node one) carries the failing
+  body whole with its errors, its signature, its declarations and the names it may call — not its ABAP slice again
+  and not the context pack. The largest units of SD, CO and PP sat just under the 28,000-character cap of a leased
+  call with their whole slice; a repair added the failure and the previous body on top, went over the cap and was
+  never sent. Measured on the six non-holdout acceptance programs: 7 units over the cap before, none after; the
+  largest gate repair is 27,272 characters (3.0.14 item 2).
+- The body guard accepts SAP's released interfaces as well as its released classes: `if_abap_behv=>mk-on` is no
+  longer refused as "a call outside the logic class". The names come from the synced Cloudification Repository list
+  (`released-interfaces.latest.json`, names only, written by `npm run sync:catalog` beside the class list); an
+  unreleased or invented interface is still refused (3.0.14 item 4).
+
 ## [v3.0.13] — 2026-10-15
 
 Transformation becomes a real tool: the generated ABAP has to pass an activation check before it is

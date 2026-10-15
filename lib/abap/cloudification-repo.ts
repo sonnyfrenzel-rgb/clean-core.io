@@ -250,3 +250,27 @@ export function deriveReleasedClasses(artifact: Pick<CloudificationArtifact, 'me
     .sort();
   return { meta: { source: artifact.meta.source, release: artifact.meta.release, sourceSha256: artifact.meta.sourceSha256, count: classes.length }, classes };
 }
+
+/* ---------- released interface names for the same body guard (roadmap 3.0.14 item 4) ---------- */
+
+/**
+ * The released-interface list beside the class list (roadmap 3.0.14 item 4): the names of the interfaces SAP marks
+ * `released` in the `latest` (ABAP Cloud) list, lower-case and sorted — ~3,400 names, ~20 kB gzip. A body that reads a
+ * released interface's constant or type (`if_abap_behv=>mk-on`, `if_oo_adt_classrun=>…`) was refused as "a call
+ * outside the logic class" because only classes were listed. A file of its own, so the class list keeps its size;
+ * names only, never the catalog. Written by `scripts/sync-cloudification-repo.ts` whenever `latest` is synced.
+ */
+export interface ReleasedInterfaceList {
+  meta: { source: string; release: string; sourceSha256: string; count: number };
+  interfaces: string[];
+}
+
+export const RELEASED_INTERFACES_FILE = 'released-interfaces.latest.json';
+
+export function deriveReleasedInterfaces(artifact: Pick<CloudificationArtifact, 'meta' | 'entries'>): ReleasedInterfaceList {
+  const interfaces = Object.entries(artifact.entries)
+    .filter(([, e]) => e.tadir === 'INTF' && e.state === 'released')
+    .map(([name]) => name.toLowerCase())
+    .sort();
+  return { meta: { source: artifact.meta.source, release: artifact.meta.release, sourceSha256: artifact.meta.sourceSha256, count: interfaces.length }, interfaces };
+}

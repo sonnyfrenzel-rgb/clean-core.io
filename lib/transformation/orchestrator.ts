@@ -545,8 +545,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     return unusable(parsed.missing, 'the answer did not include this function', 'answer-unusable');
   }
 
-  const bundle = (units: FillRequestUnit[], repair: Map<string, FillRepair> | null, unitsPerCall?: number) =>
-    bundleFills(units, { ...input.bundleOptions, repair, ...(unitsPerCall ? { unitsPerCall } : {}) });
+  const bundle = (units: FillRequestUnit[], repair: Map<string, FillRepair> | null, unitsPerCall?: number, gateRepair = false) =>
+    bundleFills(units, { ...input.bundleOptions, repair, ...(unitsPerCall ? { unitsPerCall } : {}), ...(gateRepair ? { gateRepair } : {}) });
 
   const scaffoldFindings: string[] = [];
   let checksNotRun: VerifyOutcome['notRun'] = [];
@@ -646,12 +646,16 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       const repair = new Map<string, FillRepair>(
         decision.units.map((u) => {
           const s = states.get(u.unitId)!;
-          return [u.unitId, { unitId: u.unitId, round, failure: u.failure, previousBody: s.body ?? s.refusedBody }];
+          // The predicates the failure names travel with it (3.0.14 item 1: `predicate G-0685 line 1 — TS2367 …`).
+          const named = [...s.predicates].map(([region, body]) => [`G-${region.slice(region.indexOf('.') + 2)}`, body] as const).filter(([id]) => u.failure.includes(`predicate ${id}`));
+          return [u.unitId, { unitId: u.unitId, round, failure: u.failure, previousBody: s.body ?? s.refusedBody, ...(named.length > 0 ? { previousGuards: Object.fromEntries(named) } : {}) }];
         }),
       );
-      // Units failing the gate travel in calls of their own, marked as gate repairs; the others as before.
+      // Units failing the gate travel in calls of their own, marked as gate repairs; the others as before. A gate
+      // repair carries the failing body whole with its errors and declarations, not the ABAP slice again (3.0.14
+      // item 2: the largest units' repairs went over the leased cap and were never sent).
       const gateIds = new Set(decision.units.filter((u) => u.gate && gateBudget > 0).map((u) => u.unitId));
-      const gateBundles = bundle(ordered.filter((u) => gateIds.has(u.unitId)), repair);
+      const gateBundles = bundle(ordered.filter((u) => gateIds.has(u.unitId)), repair, undefined, true);
       const otherBundles = bundle(ordered.filter((u) => repair.has(u.unitId) && !gateIds.has(u.unitId)), repair);
       await runBundles([...otherBundles, ...gateBundles], (b, o) => void take(b, o, round), new Set(gateBundles));
       const rewritten = ids.filter((id) => states.get(id)!.filledBy === filledByRound(round)).length;

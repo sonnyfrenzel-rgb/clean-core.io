@@ -87,6 +87,7 @@ import { modelCompletion, MODEL_INCOMPLETE_CODE } from '../../lib/model-completi
 import { modelDeadline, MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE } from '../../lib/model-deadline';
 import { isTransientModelError } from '../../lib/model-retry';
 import type { GenerationEvent, GenerationStatus } from '../../lib/transformation/types';
+import { demoCaseVerdicts, scenarioCases, type DemoCaseRuns, type PackageDemo, type ScenarioVerdict } from './scenario-cases';
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const HERE = __dirname;
@@ -111,6 +112,9 @@ export interface Scenario {
   expectedForm: 'machine' | 'prose';
   harnessProbe?: string | null;
   pattern?: string | null;
+  /** The reviewer's input and expected outcome. Held in memory only; never written to a report. */
+  input?: unknown;
+  expected?: unknown;
 }
 
 export interface ScenarioFile {
@@ -195,11 +199,15 @@ export interface RawGateFinding {
 export interface ScenarioTally {
   total: number;
   machine: number;
+  /** Scenarios whose case of the package ran (3.0.14 item 3): matched by ID to one of the package's executable cases. */
+  ran: number;
   matched: number;
   failed: number;
   notJudged: number;
   /** Scenario id → verdict ('pass' | 'fail' | 'not-run: <why>'). IDs only, never values. */
   verdicts: Record<string, string>;
+  /** Why a case-run verdict is what it is, in counts only (`scenario-cases.ts`): "2 of 40 found values differ, …". */
+  details?: Record<string, string>;
   note: string | null;
 }
 
@@ -211,7 +219,8 @@ export interface Row {
   gatePassed: number;
   gate: { parserErrors: number | null; syntaxErrors: number | null; typeErrors: number | null; state: string };
   functions: { total: number; written: number; notWritten: number };
-  scenarios: { total: number; matched: number; failed: number; notJudged: number };
+  /** `ran` since 3.0.14 (item 3); a report from before has none. */
+  scenarios: { total: number; ran?: number; matched: number; failed: number; notJudged: number };
   engineCases: { derived: number; passed: number; failed: number; notRun: number };
   durationMs: number;
   calls: number;
@@ -233,7 +242,7 @@ export interface SuiteReport {
   capReached: boolean;
   runsPerProgram: number;
   rows: Row[];
-  totals: { programs: number; rows: number; gatePassed: number; functionsWritten: number; functionsTotal: number; scenariosMatched: number; scenariosTotal: number; calls: number; usd: number; durationMs: number };
+  totals: { programs: number; rows: number; gatePassed: number; functionsWritten: number; functionsTotal: number; scenariosRan?: number; scenariosMatched: number; scenariosFailed?: number; scenariosTotal: number; calls: number; usd: number; durationMs: number };
   diff: Array<{ key: string; changes: string[] }> | null;
   previous: string | null;
   runs: RunRecord[];
@@ -504,6 +513,19 @@ export async function nodeGate(files: FileLike[], sink?: (findings: RawGateFindi
   };
 }
 
+/** The demo cases a package carries (`test/fixtures/original-demo.json`), or null when it has none or it is unreadable. */
+export function packageDemoOf(files: readonly FileLike[]): PackageDemo | null {
+  const f = files.find((x) => x.path.replace(/\\/g, '/') === 'test/fixtures/original-demo.json');
+  if (!f) return null;
+  try {
+    const d = JSON.parse(f.content) as { switch?: { parameter?: string | null } | null; cases?: Array<{ number?: unknown }> };
+    const cases = (d.cases ?? []).filter((c) => Number.isInteger(c.number)).map((c) => ({ number: c.number as number }));
+    return { switch: d.switch ? { parameter: d.switch.parameter ?? null } : null, cases };
+  } catch {
+    return null;
+  }
+}
+
 /** Unpack the package where the harness reads it: a fresh directory under the run folder, never a link. */
 function writePackage(dir: string, files: FileLike[]): void {
   fs.rmSync(dir, { recursive: true, force: true });
@@ -523,6 +545,8 @@ interface HarnessOutcome {
 
 interface HarnessStepOutcome extends HarnessOutcome {
   node: string;
+  /** The original's demo cases the scenarios name, run through the package (`harness-step.mjs` demoCaseRuns). */
+  demoCases?: DemoCaseRuns;
 }
 
 /** Where the harness step runs: in this process (Node >= 25), under a Node 25 binary, or here with the reason that binary is missing. */
@@ -583,11 +607,12 @@ function harnessEnv(): NodeJS.ProcessEnv {
 }
 
 /** The engine cases and the failure-pattern probes, by the repository's harness under its own execution rule (`harness-step.mjs`). */
-export async function runHarnessChecks(pkgDir: string, derived: number, node: HarnessNode = harnessNode()): Promise<HarnessStepOutcome> {
+export async function runHarnessChecks(pkgDir: string, derived: number, node: HarnessNode = harnessNode(), demoCases: readonly number[] = []): Promise<HarnessStepOutcome> {
   const step = path.join(HERE, 'harness-step.mjs');
   if (node.binary) {
     const out = `${pkgDir}.harness.json`;
-    const r = spawnSync(node.binary, [step, pkgDir, String(derived), out], { cwd: ROOT, env: harnessEnv(), encoding: 'utf8', timeout: 600_000, windowsHide: true });
+    const args = [step, pkgDir, String(derived), out, ...(demoCases.length > 0 ? [demoCases.join(',')] : [])];
+    const r = spawnSync(node.binary, args, { cwd: ROOT, env: harnessEnv(), encoding: 'utf8', timeout: 600_000, windowsHide: true });
     try {
       if (r.status === 0 && fs.existsSync(out)) return JSON.parse(fs.readFileSync(out, 'utf8')) as HarnessStepOutcome;
     } catch {
@@ -605,8 +630,9 @@ export async function runHarnessChecks(pkgDir: string, derived: number, node: Ha
   // In process: Node >= 25 here, or no Node 25 to be had (the rule then scans and says why; the reason says what was missing).
   let r: HarnessStepOutcome;
   try {
-    const mod = (await import(pathToFileURL(step).href)) as { harnessStep: (pkg: string, derived: number) => Promise<HarnessStepOutcome> };
+    const mod = (await import(pathToFileURL(step).href)) as { harnessStep: (pkg: string, derived: number) => Promise<HarnessStepOutcome>; demoCaseRuns: (pkg: string, numbers: readonly number[]) => Promise<DemoCaseRuns> };
     r = await mod.harnessStep(pkgDir, derived);
+    if (demoCases.length > 0) r.demoCases = await mod.demoCaseRuns(pkgDir, demoCases);
   } catch (err) {
     // A harness that cannot be loaded is a check that did not run, never a stopped suite.
     const why = `the harness step could not be loaded: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`;
@@ -634,14 +660,18 @@ async function probePatterns(): Promise<Record<string, string[]>> {
  * never a match. A gate module that runs reference cases (ABAP Unit, the Node
  * case runner) can hand verdicts in by scenario id (`external`).
  */
-export function judgeScenarios(file: ScenarioFile | null, reason: string | null, track: Track, probes: RunRecord['probes'], patterns: Record<string, string[]>, external: Record<string, 'pass' | 'fail'> = {}): ScenarioTally {
-  const t: ScenarioTally = { total: 0, machine: 0, matched: 0, failed: 0, notJudged: 0, verdicts: {}, note: reason };
+export function judgeScenarios(file: ScenarioFile | null, reason: string | null, track: Track, probes: RunRecord['probes'], patterns: Record<string, string[]>, external: Record<string, ScenarioVerdict> = {}): ScenarioTally {
+  const t: ScenarioTally = { total: 0, machine: 0, ran: 0, matched: 0, failed: 0, notJudged: 0, verdicts: {}, note: reason };
   if (!file) return t;
   for (const s of file.scenarios) {
     t.total++;
     if (s.expectedForm === 'machine') t.machine++;
     let v: string;
-    if (external[s.id]) v = external[s.id];
+    const given = external[s.id];
+    const ext = given === undefined ? undefined : typeof given === 'string' ? { ran: true, verdict: given } : given;
+    if (ext && ext.ran) t.ran++;
+    if (ext && 'detail' in ext && ext.detail) (t.details ??= {})[s.id] = ext.detail;
+    if (ext) v = ext.verdict;
     else if (track === 'rap' && s.expectedForm === 'machine') v = 'not-run: needs ABAP Unit execution in an SAP system';
     else if (s.harnessProbe && patterns[s.harnessProbe]) {
       const st = patterns[s.harnessProbe].map((p) => probes.byPattern[p]).find(Boolean) ?? 'not-runnable';
@@ -924,6 +954,7 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
     raw = f;
   };
   rec.gate = track === 'rap' ? await abapGate(files, sink) : await nodeGate(files, sink);
+  let external: Record<string, ScenarioVerdict> = {};
   ctx.findings.push(gateFindingsRecord({ program: p.id, track, run, tool: rec.gate.tool, state: rec.gate.state, lastRoundRepairReasons: lastRound.failures }, raw));
   if (track === 'rap') {
     // An ABAP package carries its cases as ABAP Unit data; the JavaScript harness has nothing to run in it.
@@ -933,12 +964,16 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
   } else {
     const pkgDir = path.join(ctx.workDir, `${p.id}-${track}-${run}`);
     writePackage(pkgDir, files);
-    const h = await runHarnessChecks(pkgDir, prepared.facts.cases);
+    // The scenarios the package's own demo cases answer, matched by ID (3.0.14 item 3); their cases run in the
+    // harness step, and the comparison with the sealed expectation happens here, in memory.
+    const cases = scenarioCases(scen.file?.scenarios ?? null, packageDemoOf(files));
+    const h = await runHarnessChecks(pkgDir, prepared.facts.cases, harnessNode(), [...new Set(cases.values())].sort((a, b) => a - b));
     rec.engineCases = h.engineCases;
     rec.probes = h.probes;
     rec.harnessNode = h.node;
+    external = demoCaseVerdicts(scen.file?.scenarios ?? null, cases, h.demoCases ?? null);
   }
-  rec.scenarios = judgeScenarios(scen.file, scen.reason, track, rec.probes, ctx.patterns);
+  rec.scenarios = judgeScenarios(scen.file, scen.reason, track, rec.probes, ctx.patterns, external);
   return finish();
 }
 
@@ -963,7 +998,7 @@ export function rowsOf(runs: RunRecord[], programs: ProgramEntry[]): Row[] {
         state: [...new Set(rs.map((r) => r.gate.state))].join('/'),
       },
       functions: { total: median(rs.map((r) => r.functions.total)), written: median(rs.map((r) => r.functions.written)), notWritten: median(rs.map((r) => r.functions.notWritten)) },
-      scenarios: { total: rs[0]?.scenarios.total ?? 0, matched: median(rs.map((r) => r.scenarios.matched)), failed: median(rs.map((r) => r.scenarios.failed)), notJudged: median(rs.map((r) => r.scenarios.notJudged)) },
+      scenarios: { total: rs[0]?.scenarios.total ?? 0, ran: median(rs.map((r) => r.scenarios.ran ?? 0)), matched: median(rs.map((r) => r.scenarios.matched)), failed: median(rs.map((r) => r.scenarios.failed)), notJudged: median(rs.map((r) => r.scenarios.notJudged)) },
       engineCases: { derived: median(rs.map((r) => r.engineCases.derived)), passed: median(rs.map((r) => r.engineCases.passed)), failed: median(rs.map((r) => r.engineCases.failed)), notRun: median(rs.map((r) => r.engineCases.notRun)) },
       durationMs: median(rs.map((r) => r.durationMs)),
       calls: median(rs.map((r) => r.calls.count)),
@@ -994,7 +1029,9 @@ export function diffRows(now: Row[], before: Row[] | null): SuiteReport['diff'] 
     cmp('syntax errors', b.gate.syntaxErrors, r.gate.syntaxErrors, 'down');
     cmp('type errors', b.gate.typeErrors, r.gate.typeErrors, 'down');
     cmp('functions written', b.functions.written, r.functions.written, 'up');
+    cmp('scenarios ran', b.scenarios.ran ?? null, r.scenarios.ran ?? null, 'up');
     cmp('scenarios matched', b.scenarios.matched, r.scenarios.matched, 'up');
+    cmp('scenarios failed', b.scenarios.failed, r.scenarios.failed, 'down');
     cmp('engine cases passed', b.engineCases.passed, r.engineCases.passed, 'up');
     // Noise below 10 s or 20 % is not a change.
     if (b.durationMs > 0 && Math.abs(r.durationMs - b.durationMs) > 10_000 && Math.abs(r.durationMs - b.durationMs) / b.durationMs > 0.2) changes.push(`duration ${Math.round(b.durationMs / 1000)} s → ${Math.round(r.durationMs / 1000)} s`);
@@ -1015,13 +1052,13 @@ export function toMarkdown(r: SuiteReport): string {
   L.push(`${r.startedAt} · model \`${r.model}\` · node ${r.node} · ${r.runsPerProgram} run(s) per program and track (medians) · cap ${fmtUsd(r.capUsd)}, spent ${fmtUsd(r.spentUsd)}${r.capReached ? ' — **cap reached**' : ''}${r.dirty ? ' · working tree had local changes' : ''}`);
   L.push('');
   const t = r.totals;
-  L.push(`**${t.gatePassed} of ${t.rows} program/track rows pass the gate in every run · ${t.functionsWritten} of ${t.functionsTotal} functions written · ${t.scenariosMatched} of ${t.scenariosTotal} scenarios matched by execution · ${t.calls} model calls · ${fmtUsd(t.usd)} · ${Math.round(t.durationMs / 1000)} s**`);
+  L.push(`**${t.gatePassed} of ${t.rows} program/track rows pass the gate in every run · ${t.functionsWritten} of ${t.functionsTotal} functions written · ${t.scenariosRan ?? 0} of ${t.scenariosTotal} scenarios ran in the package, ${t.scenariosMatched} passed and ${t.scenariosFailed ?? 0} failed by execution · ${t.calls} model calls · ${fmtUsd(t.usd)} · ${Math.round(t.durationMs / 1000)} s**`);
   L.push('');
-  L.push('| Program | Track | Gate (passed runs) | Parser / syntax / type errors | Functions written | Scenarios matched / failed / not judged | Engine cases passed / failed / not run | Duration | Calls | Cost | Status |');
+  L.push('| Program | Track | Gate (passed runs) | Parser / syntax / type errors | Functions written | Scenarios ran · passed / failed / not judged | Engine cases passed / failed / not run | Duration | Calls | Cost | Status |');
   L.push('|---|---|---|---|---|---|---|---|---|---|---|');
   for (const x of r.rows) {
     L.push(
-      `| ${x.program}${x.holdout ? ' (holdout)' : ''} | ${x.track} | ${x.gate.state} (${x.gatePassed}/${x.runs}) | ${cell(x.gate.parserErrors)} / ${cell(x.gate.syntaxErrors)} / ${cell(x.gate.typeErrors)} | ${x.functions.written} of ${x.functions.total} | ${x.scenarios.matched} / ${x.scenarios.failed} / ${x.scenarios.notJudged} of ${x.scenarios.total} | ${x.engineCases.passed} / ${x.engineCases.failed} / ${x.engineCases.notRun} of ${x.engineCases.derived} | ${Math.round(x.durationMs / 1000)} s | ${x.calls} | ${fmtUsd(x.usd)} | ${x.statuses.join(', ')} |`,
+      `| ${x.program}${x.holdout ? ' (holdout)' : ''} | ${x.track} | ${x.gate.state} (${x.gatePassed}/${x.runs}) | ${cell(x.gate.parserErrors)} / ${cell(x.gate.syntaxErrors)} / ${cell(x.gate.typeErrors)} | ${x.functions.written} of ${x.functions.total} | ${x.scenarios.ran ?? 0} · ${x.scenarios.matched} / ${x.scenarios.failed} / ${x.scenarios.notJudged} of ${x.scenarios.total} | ${x.engineCases.passed} / ${x.engineCases.failed} / ${x.engineCases.notRun} of ${x.engineCases.derived} | ${Math.round(x.durationMs / 1000)} s | ${x.calls} | ${fmtUsd(x.usd)} | ${x.statuses.join(', ')} |`,
     );
   }
   L.push('');
@@ -1048,7 +1085,7 @@ export function toMarkdown(r: SuiteReport): string {
     L.push(`- engine cases: ${x.engineCases.passed} passed, ${x.engineCases.failed} failed, ${x.engineCases.notRun} not run of ${x.engineCases.derived}${x.engineCases.reason ? ` — ${cell(x.engineCases.reason.slice(0, 200))}` : ''}`);
     if (x.harnessNode) L.push(`- harness step under Node ${x.harnessNode}`);
     L.push(`- probes: ${x.probes.pass} pass, ${x.probes.fail} fail, ${x.probes.notRunnable} not runnable, ${x.probes.notApplicable} not applicable${x.probes.reason ? ` — ${cell(x.probes.reason.slice(0, 200))}` : ''}`);
-    L.push(`- scenarios: ${x.scenarios.matched} matched, ${x.scenarios.failed} failed, ${x.scenarios.notJudged} not judged of ${x.scenarios.total}${x.scenarios.note ? ` — ${cell(x.scenarios.note)}` : ''}`);
+    L.push(`- scenarios: ${x.scenarios.ran ?? 0} ran in the package, ${x.scenarios.matched} matched, ${x.scenarios.failed} failed, ${x.scenarios.notJudged} not judged of ${x.scenarios.total}${x.scenarios.note ? ` — ${cell(x.scenarios.note)}` : ''}`);
     const fails = Object.entries(x.scenarios.verdicts).filter(([, v]) => v === 'fail').map(([id]) => id);
     if (fails.length) L.push(`  - failed: ${fails.join(', ')}`);
     L.push(`- ${x.calls.count} model calls (${x.calls.failed} failed), ${x.calls.inputTokens} in / ${x.calls.outputTokens} out / ${x.calls.thoughtTokens} thinking tokens, ${fmtUsd(x.calls.usd)}; ${Math.round(x.durationMs / 1000)} s (plan ${x.prepareMs} ms, generation ${Math.round(x.generateMs / 1000)} s)`);
@@ -1065,6 +1102,7 @@ const LIMITS = [
   "The context pack is empty and no rule decisions are given: the generation runs from the source alone, not from a project's earlier tools.",
   "Inside the repair loop the checks are the page's: lints, on RAP the package formats and the activation check (abapCheck), on Node the type check (typeCheckCandidate) — their errors are the units' repair reasons. The runner's engine cases and probes are not part of the loop: they run once after the generation with the repository's harness under its execution rule (in a Node 25 child when the local Node is older), so a Node package's status reads 'not verified' unless it is partial or not runnable.",
   'A scenario counts as matched only when an executed check judged it (a harness probe, or verdicts a gate module hands in). Prose expectations and ABAP reference cases are listed as not judged: ABAP Unit needs an SAP system.',
+  "On Node a scenario that names one of the original's demo cases (by the case switch in its input, or by its ID) runs that case through the generated package in the confined executor; its output is compared with the sealed expectation in memory — every expected value found and equal is a pass, a found value that differs a fail (when at least half were found), anything less is \"ran, not judged\" with the counts. A case that reaches a function still left as a stub is not run. The comparison reads the run's rows, result, issues and globals by name; a package that keeps its output under other names is not judged, never passed.",
   'Model calls go to the provider directly with the fill call settings of /api/gemini; the route\'s own gates (account, lease in Firestore, hourly limits) are not part of the run.',
 ];
 
@@ -1142,7 +1180,7 @@ export async function main(argv: string[]): Promise<number> {
         const r = await runOne(p, track, run, source, scen, ctx);
         runs.push(r);
         // Counts only on the console: CI logs may be public.
-        console.log(`  ${p.id}/${track}#${run}: ${r.status} · gate ${r.gate.state} · ${r.functions.written}/${r.functions.total} written · scenarios ${r.scenarios.matched}/${r.scenarios.total} · ${r.calls.count} calls · ${fmtUsd(r.calls.usd)} · ${Math.round(r.durationMs / 1000)} s`);
+        console.log(`  ${p.id}/${track}#${run}: ${r.status} · gate ${r.gate.state} · ${r.functions.written}/${r.functions.total} written · scenarios ${r.scenarios.ran} ran, ${r.scenarios.matched} passed, ${r.scenarios.failed} failed of ${r.scenarios.total} · ${r.calls.count} calls · ${fmtUsd(r.calls.usd)} · ${Math.round(r.durationMs / 1000)} s`);
       }
     }
   }
@@ -1169,7 +1207,9 @@ export async function main(argv: string[]): Promise<number> {
       gatePassed: rows.filter((r) => r.gatePassed === r.runs && r.runs > 0).length,
       functionsWritten: rows.reduce((s, r) => s + r.functions.written, 0),
       functionsTotal: rows.reduce((s, r) => s + r.functions.total, 0),
+      scenariosRan: rows.reduce((s, r) => s + (r.scenarios.ran ?? 0), 0),
       scenariosMatched: rows.reduce((s, r) => s + r.scenarios.matched, 0),
+      scenariosFailed: rows.reduce((s, r) => s + r.scenarios.failed, 0),
       scenariosTotal: rows.reduce((s, r) => s + r.scenarios.total, 0),
       calls: runs.reduce((s, r) => s + r.calls.count, 0),
       usd: meter.spentUsd,
@@ -1200,7 +1240,7 @@ export async function main(argv: string[]): Promise<number> {
     console.log(`report: ${path.relative(ROOT, path.join(runDir, 'suite-report.md'))}`);
   }
   const t = report.totals;
-  console.log(`${t.gatePassed}/${t.rows} rows pass the gate · ${t.functionsWritten}/${t.functionsTotal} functions written · ${t.scenariosMatched}/${t.scenariosTotal} scenarios matched · ${t.calls} calls · ${fmtUsd(t.usd)}${meter.capReached ? ' · CAP REACHED' : ''}`);
+  console.log(`${t.gatePassed}/${t.rows} rows pass the gate · ${t.functionsWritten}/${t.functionsTotal} functions written · scenarios ${t.scenariosRan ?? 0} ran, ${t.scenariosMatched} passed, ${t.scenariosFailed ?? 0} failed of ${t.scenariosTotal} · ${t.calls} calls · ${fmtUsd(t.usd)}${meter.capReached ? ' · CAP REACHED' : ''}`);
   return meter.capReached ? 3 : 0;
 }
 

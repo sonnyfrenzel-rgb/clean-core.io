@@ -180,7 +180,8 @@ test('the verifier maps a type error by its body line; one in engine code is a s
   const p = prep(fixture('co-shape'));
   const u = p.fillUnits[0];
   const files = candidateFiles(p, new Map([[u.unitId, 'return;']]));
-  const span = markerSpans(files).find((s) => s.unitId === u.unitId)!;
+  // The unit's own body, not one of its checks' predicates (those are named by the check since 3.0.14).
+  const span = markerSpans(files).find((s) => s.unitId === u.unitId && !s.guard)!;
   const failures = mapTypeFindings(
     [
       { path: span.path, line: span.beginLine + 1, code: 'TS2339', message: "Property 'x' does not exist on type 'Selection'." },
@@ -422,7 +423,8 @@ test('A4: the original’s demo cases are the package’s fixture, and each runs
     const runs = runInPackage<Array<{ n: number; state: string; complete?: boolean; notFilled?: string[]; claims?: number }>>(
       dir,
       `const f = await import(${JSON.stringify(fileUrl(dir, 'srv/fixtures.ts'))});
-       const demo = f.loadOriginalDemo();
+       // srv/fixtures.ts reads no file since 3.0.14 (item 3): the case data is the JSON beside the test.
+       const demo = JSON.parse((await import('node:fs')).readFileSync(new URL(${JSON.stringify(fileUrl(dir, 'test/fixtures/original-demo.json'))}), 'utf8'));
        console.log(JSON.stringify(demo.cases.map((c) => { const r = f.runDemoCase(demo, c); return { n: c.number, state: r.state, ...(r.state === 'ran' ? { complete: r.outcome.complete, notFilled: r.outcome.notFilled, claims: r.outcome.state.local.gtClaims.length } : {}) }; })));`,
     );
     expect(runs.map((r) => r.state)).toEqual(['ran', 'ran', 'ran']);
