@@ -34,6 +34,7 @@ import {
 import type { Project } from '@/lib/types';
 import { testingClosureBasis } from '@/lib/workflow-steps';
 import { testRunSubject } from '@/lib/test-receipt';
+import { withStoredArtefacts } from '@/lib/project-artefact-store';
 
 /** The rules' size limit of `process-states/route.ts`: `deriveBusinessRules` is quadratic in the source. */
 const MAX_RULES_SOURCE_BYTES = 256 * 1024;
@@ -230,14 +231,18 @@ export async function POST(
         // `readers/route.ts:144` already use, so that the three do not drift
         // apart. Both refusals carry no `code`, so the body is the same too.
         if (!snap.exists) return { status: 404, error: 'Project not found.' };
-        const project = snap.data() || {};
+        const stored = snap.data() || {};
         // Owner only. An operator recording somebody else's sign-off is the worse
         // half of an operator reading their code, and the rules stopped allowing
         // that on 16.09.2026. An invited reader is a non-owner here and is told
         // the same as everyone else, exactly as `readers/route.ts` tells one.
-        if (project.userId !== decodedToken.uid) {
+        if (stored.userId !== decodedToken.uid) {
           return { status: 404, error: 'Project not found.' };
         }
+        // Roadmap 3.0.14, item 9: the code, the cases and the documentation,
+        // wherever the project stores them — read in this transaction, so the
+        // testing closure and the open questions judge the project as it is.
+        const project: typeof stored = await withStoredArtefacts(tx, ref, stored);
 
         // The evidence the sign-off will be bound to, taken from the immutable
         // run and from nowhere else. `firestore.rules` leaves

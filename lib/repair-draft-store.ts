@@ -13,6 +13,8 @@ import {
   type RepairDraftExecution,
   type RepairDraftRefusal,
 } from './repair-draft';
+import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from './project-artefact-store';
+import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from './firestore-doc-size';
 
 /**
  * The Firestore half of roadmap 8.7: where drafts are read and written, always
@@ -64,8 +66,9 @@ export async function proposeRepairDraft(
     return db.runTransaction(async (tx): Promise<ProposeOutcome> => {
       const snap = await tx.get(projectRef);
       if (!snap.exists) return NOT_FOUND;
-      const project = (snap.data() || {}) as Record<string, unknown>;
-      if (project.userId !== args.uid) return NOT_FOUND;
+      const stored = (snap.data() || {}) as Record<string, unknown>;
+      if (stored.userId !== args.uid) return NOT_FOUND;
+      const project = await withStoredArtefacts(tx, projectRef, stored);
       const built = buildGenerationDraft(body, project, { uid: args.uid, now: args.now, projectId: args.projectId });
       if (!built.ok) return { status: built.status, code: built.code, error: built.error };
       const ref = draftsOf(db, args.projectId).doc();
@@ -83,8 +86,10 @@ export async function proposeRepairDraft(
   return db.runTransaction(async (tx): Promise<ProposeOutcome> => {
     const snap = await tx.get(projectRef);
     if (!snap.exists) return NOT_FOUND;
-    const project = (snap.data() || {}) as Record<string, unknown>;
-    if (project.userId !== args.uid) return NOT_FOUND;
+    const stored = (snap.data() || {}) as Record<string, unknown>;
+    if (stored.userId !== args.uid) return NOT_FOUND;
+    // Roadmap 3.0.14, item 9: the code and the cases, wherever the project stores them.
+    const project = await withStoredArtefacts(tx, projectRef, stored);
     const revision = projectRevision(project);
 
     let base: RepairBase;
@@ -191,15 +196,24 @@ export async function adoptRepairDraft(
   return db.runTransaction(async (tx): Promise<AdoptOutcome> => {
     const [projectSnap, draftSnap] = await Promise.all([tx.get(projectRef), tx.get(draftRef)]);
     if (!projectSnap.exists) return NOT_FOUND;
-    const project = (projectSnap.data() || {}) as Record<string, unknown>;
-    if (project.userId !== args.uid) return NOT_FOUND;
+    const stored = (projectSnap.data() || {}) as Record<string, unknown>;
+    if (stored.userId !== args.uid) return NOT_FOUND;
+    const project = await withStoredArtefacts(tx, projectRef, stored);
     const data = draftSnap.exists ? ((draftSnap.data() || {}) as Record<string, unknown>) : null;
     if (!data || data.projectId !== args.projectId || data.createdBy !== args.uid) return draftNotFound(draftId);
 
     const decision = decideAdoption(body, project, { draft: data, execution: data.execution, adoptedAt: data.adoptedAt });
     if (!decision.ok) return { status: decision.status, code: decision.code, error: decision.error };
 
-    tx.set(projectRef, { ...decision.fields, updatedAt: args.now }, { merge: true });
+    // The adopted code and cases go where the project stores them (roadmap
+    // 3.0.14, item 9), in this transaction; a repair that would not fit is
+    // refused by name, with nothing written.
+    const planned = await planArtefactWrite(projectRef, stored, { ...decision.fields, updatedAt: args.now }, 'merge');
+    if (!planned.ok) {
+      return { status: 413, code: PROJECT_TOO_LARGE_CODE, error: projectTooLargeMessage(planned.check, 'this repair') };
+    }
+    tx.set(projectRef, planned.plan.projectFields, { merge: true });
+    writeArtefactParts(tx, planned.plan);
     tx.update(draftRef, { adoptedAt: args.now.toISOString(), adoptedBy: args.uid });
     tx.set(db.collection('audit_events').doc(), {
       actorUid: args.uid,

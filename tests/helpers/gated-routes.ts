@@ -108,6 +108,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // on the cost-assumptions route: GET hands out the owner's RACI, POST stores it.
   { file: 'app/api/projects/[projectId]/raci/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/raci` },
   { file: 'app/api/projects/[projectId]/raci/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/raci`, body: {} },
+  // Roadmap 3.0.14, item 9 — the large artefacts in documents of their own,
+  // built on the cost-assumptions route: GET hands out the generated package,
+  // the documentation and the test cases, POST stores what a stage generated.
+  // A token from before the second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/artefacts/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/artefacts` },
+  { file: 'app/api/projects/[projectId]/artefacts/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/artefacts`, body: {} },
   // ADR-078 (04.10.2026) — the requirements specification, built on the
   // cost-assumptions route: GET hands out the owner's document, POST stores it.
   // A token from before the second factor reaches neither.

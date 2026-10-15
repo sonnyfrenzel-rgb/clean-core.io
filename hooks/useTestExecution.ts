@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
+import { withStoredArtefacts } from '@/lib/project-artefacts-client';
 import { callGemini } from '@/lib/gemini';
 import type { Project, TestCase } from '@/lib/types';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
@@ -339,7 +340,8 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         // The lost request was adopted. What it wrote is read back from the
         // project — the server's record, not this hook's guess.
         const snap = await getDoc(doc(getDb(), 'projects', projectId));
-        const stored = (snap.exists() ? snap.data() : {}) as Partial<Project>;
+        // Roadmap 3.0.14, item 9: the code and the cases, wherever the project stores them.
+        const stored = (await withStoredArtefacts(projectId, snap.exists() ? snap.data() : {})) as Partial<Project>;
         const storedReceipt = stored.testRunReceipt as TestRunReceipt | undefined;
         if (storedReceipt?.draft?.id === ran.id) {
           const fields: Partial<Project> = {

@@ -92,27 +92,34 @@ test('the page gates both the generation and the stored layer on the shape check
 test('the business layer is shown only after the transaction stored it (52487ee4cacc)', () => {
   const src = page();
   const gen = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const signedSource = useMemo'));
-  const transaction = gen.indexOf('await runTransaction(');
+  // Since roadmap 3.0.14, item 9 the transaction runs on the server
+  // (`POST /api/projects/{id}/artefacts`, `lib/project-artefact-writes.ts`).
+  const stored = gen.indexOf('await storeArtefact(');
   // What is shown is what the transaction returned: this answer, or a layer another writer stored first.
   const shown = gen.indexOf('setBusinessDocumentation(storedLayer)');
   // Owner 11.10.2026: what is stored is the answer with each step's name, lines and the program's facts.
   expect(gen).toContain('const storedLayer = updatedCode.kept ?? storedText;');
-  expect(gen).toContain('tx.update(projectDoc, { businessDocumentation: storedText, ...cleanup });');
-  expect(transaction).toBeGreaterThan(-1);
-  expect(shown).toBeGreaterThan(transaction);
+  expect(gen).toContain('businessDocumentation: storedText,');
+  // A refusal is thrown before anything is shown.
+  expect(gen).toContain('if (!answer.ok) throw new Error(answer.error);');
+  expect(stored).toBeGreaterThan(-1);
+  expect(gen.indexOf('if (!answer.ok) throw new Error(answer.error);')).toBeGreaterThan(stored);
+  expect(shown).toBeGreaterThan(gen.indexOf('if (!answer.ok) throw new Error(answer.error);'));
   expect(gen.split('setBusinessDocumentation(').length - 1).toBe(1);
 });
 
 test('the business layer is written only while the run and the documentation are unchanged (0f6472d80f3f)', () => {
   const src = page();
   const gen = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const signedSource = useMemo'));
-  const body = gen.slice(gen.indexOf('await runTransaction('), gen.indexOf('tx.update('));
-  expect(body).toMatch(/current\.activeRunId !== writtenFromRun/);
-  expect(body).toMatch(/current\.documentation !== writtenFromDocumentation/);
-  expect(body).toContain('throw new Error(');
-  // Captured before the model call, not re-read after it.
-  expect(gen.indexOf('const writtenFromRun = project.activeRunId')).toBeGreaterThan(-1);
-  expect(gen.indexOf('const writtenFromDocumentation = documentation')).toBeGreaterThan(-1);
+  const request = gen.slice(gen.indexOf("action: 'business-layer'"), gen.indexOf('if (!answer.ok)'));
+  // The page names the run and the documentation it wrote from…
+  expect(request).toContain('fromRunId: project.activeRunId');
+  expect(request).toContain('documentationSha256:');
+  // …and the server compares them with the project inside its transaction.
+  const writes = fs.readFileSync(path.join(process.cwd(), 'lib/project-artefact-writes.ts'), 'utf8');
+  const store = writes.slice(writes.indexOf('export async function storeBusinessLayer'), writes.indexOf('export async function storeTestSuite'));
+  expect(store).toContain('project.activeRunId !== fromRunId || textDigest(project.documentation) !== documentationSha256');
+  expect(store.indexOf('textDigest(project.documentation)')).toBeLessThan(store.indexOf('commit('));
 });
 
 test('a failed project load is said, not shown as an empty stage (131d46bc4ffd)', () => {
@@ -129,12 +136,16 @@ test('replacing the documentation drops the business layer written from the old 
   const start = src.indexOf('const generateDocumentation = useCallback');
   expect(start, 'the documentation generator').toBeGreaterThan(-1);
   const body = src.slice(start, src.indexOf('}, [projectId, project, signedSource', start));
-  // One write: the new document, and the layer that described the old one cleared.
-  expect(body).toContain("tx.update(projectDoc, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup })");
+  // One write: the new document, and the layer that described the old one
+  // cleared — on the server since roadmap 3.0.14, item 9.
+  expect(body).toContain("action: 'documentation'");
+  const writes = fs.readFileSync(path.join(process.cwd(), 'lib/project-artefact-writes.ts'), 'utf8');
+  expect(writes).toContain("{ documentation, status: 'documented', businessDocumentation: '', ...cleanup }");
   // …and a layer file an earlier build merged into the package goes too
   // (roadmap 3.0.7: the stage writes no package; Delivery writes the file).
-  expect(body).toContain('const cleanup = packageCleanup(current.generatedCode);');
-  expect(src).toContain('DOCUMENTATION_PACKAGE_FILES.includes(');
+  expect(writes).toContain('const cleanup = documentationPackageCleanup(project.generatedCode);');
+  expect(writes).toContain('DOCUMENTATION_PACKAGE_FILES.includes(');
   // …and from the screen, after the write went through.
-  expect(body.indexOf("setBusinessDocumentation('')")).toBeGreaterThan(body.indexOf('await runTransaction'));
+  expect(body.indexOf("setBusinessDocumentation('')")).toBeGreaterThan(body.indexOf('await storeArtefact('));
+  expect(body.indexOf("setBusinessDocumentation('')")).toBeGreaterThan(body.indexOf('if (!answer.ok) throw new Error(answer.error);'));
 });

@@ -17,6 +17,7 @@ import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationTo
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
 import { workflowSteps, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
+import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
 import { projectContinueHref, projectOpenHref, projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
 import ProjectProgressCell from '@/components/ProjectProgress';
 
@@ -197,18 +198,28 @@ export default function Dashboard() {
     // after this effect was cleaned up — the account may have changed since.
     let cancelled = false;
     let live = false;
+    // Roadmap 3.0.14, item 9: the phases are read from the artefacts, and a
+    // project keeps its large ones beside its document — filled in from the
+    // server before a row is shown. Only the newest list is kept.
+    let seq = 0;
+    const show = (rows: Array<Record<string, unknown> & { id: string }>) => {
+      const mine = ++seq;
+      void withStoredArtefactRows(rows).then((full) => {
+        if (cancelled || mine !== seq) return;
+        setProjects(full);
+        setLoadingProjects(false);
+      });
+    };
     getDocs(q).then((snapshot) => {
       if (cancelled || live) return;
-      setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoadingProjects(false);
+      show(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }).catch((error) => {
       console.error('Immediate getDocs projects fetch error:', error);
     });
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       live = true;
-      setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoadingProjects(false);
+      show(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'projects');
       setLoadingProjects(false);

@@ -14,7 +14,8 @@ import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/f
 import { isFirestoreId } from '@/lib/firestore-id';
 import { generationRecordOf, traceMatchesRecord } from '@/lib/transformation/generation-record';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
-import { checkProjectWrite, projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
+import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
+import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from '@/lib/project-artefact-store';
 
 /**
  * The architecture contract of one project, and what may be generated against
@@ -83,11 +84,15 @@ function manifestOfRun(run: Record<string, unknown> | null): InputManifest | nul
   return typeof m.hash === 'string' && Array.isArray(m.inputs) ? (manifest as InputManifest) : null;
 }
 
-async function loadProjectAndRun(projectId: string, uid: string) {
+async function loadProjectAndRun(projectId: string, uid: string, withArtefacts: boolean) {
   const { db } = await getAdminDb();
   const snap = await db.collection('projects').doc(projectId).get();
   if (!snap.exists || !mayReadProject(snap.data(), uid)) return null;
-  const data = snap.data() as Record<string, unknown>;
+  // Roadmap 3.0.14, item 9: the stored package lives beside the project; the
+  // generation token covers it as it covered the inline field. The contract
+  // alone does not read it, so only a generation pays for the read.
+  const stored = snap.data() as Record<string, unknown>;
+  const data = withArtefacts ? await withStoredArtefacts(db, snap.ref, stored) : stored;
   let run: Record<string, unknown> | null = null;
   if (typeof data.activeRunId === 'string' && data.activeRunId) {
     const runSnap = await db.collection('projects').doc(projectId).collection('runs').doc(data.activeRunId).get();
@@ -149,7 +154,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     // Checked before the id forms any document path (SEC-2026-514).
     if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
-    const loaded = await loadProjectAndRun(projectId, auth.uid);
+    const loaded = await loadProjectAndRun(projectId, auth.uid, purpose === 'generation');
     // One answer for "not there" and "not yours".
     if (!loaded) return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     const { db, data, run } = loaded;
@@ -238,7 +243,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // Checked before the id forms any document path (SEC-2026-514).
     if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
-    const loaded = await loadProjectAndRun(projectId, auth.uid);
+    const loaded = await loadProjectAndRun(projectId, auth.uid, true);
     if (!loaded) return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     const { db, data, run, readAt } = loaded;
     // Reading is a share; recording what was generated is not.
@@ -442,9 +447,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const outcome = await db.runTransaction(async (tx: Transaction) => {
       const fresh = await tx.get(projectRef);
       if (!fresh.exists || !readAt || !fresh.updateTime || !fresh.updateTime.isEqual(readAt)) return 'moved' as const;
-      const size = checkProjectWrite(fresh.data(), fields, projectRef.path, 'merge');
-      if (!size.ok) return size;
-      tx.set(projectRef, fields, { merge: true });
+      // Roadmap 3.0.14, item 9: the package goes into documents of its own, in
+      // this transaction, so the update-time precondition above holds for them
+      // too; the project document gets the index and the other three fields,
+      // and the size guard measures what stays on it.
+      const planned = await planArtefactWrite(projectRef, fresh.data(), fields, 'merge');
+      if (!planned.ok) return planned.check;
+      tx.set(projectRef, planned.plan.projectFields, { merge: true });
+      writeArtefactParts(tx, planned.plan);
       return 'written' as const;
     });
     if (typeof outcome === 'object') {

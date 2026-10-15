@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { doc, runTransaction } from 'firebase/firestore';
-import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
-import { getAuth, getDb } from '@/lib/firebase';
+import { storeArtefact } from '@/lib/project-artefacts-client';
+import { getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
@@ -68,7 +67,7 @@ import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
-import { workflowSteps, generationBlockers, previousBasis, DOCUMENTATION_PACKAGE_FILES } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
@@ -103,27 +102,15 @@ const SECTION = 'rounded-cc-card border border-cc-line bg-cc-surface p-4 md:p-6 
 const H2 = 'cc-text-h2 text-cc-ink';
 
 /**
- * Roadmap 3.0.7 ("Documentation lean", item 4) — a bug fix. This stage used to
- * merge its two Markdown files into `generatedCode`, and `hasGeneratedPackage`
- * (`lib/workflow-steps.ts`) counts any file of a package: opening
- * Documentation before Transformation marked code as present. It writes no
- * package any more — Delivery adds both files from `documentation` and
- * `businessDocumentation` — and a write of this stage takes the files an
- * earlier build put there back out (`{}` when there are none, so nothing else
- * of the package is ever touched).
+ * Roadmap 3.0.7 ("Documentation lean", item 4) — this stage used to merge its
+ * two Markdown files into `generatedCode`. A write of this stage takes the
+ * files an earlier build put there back out — on the server since roadmap
+ * 3.0.14, item 9 (`documentationPackageCleanup` in
+ * `lib/project-artefact-writes.ts`). The package it left is in the answer only
+ * when it changed; `{}` otherwise, so nothing else of the package is touched.
  */
-const packageCleanup = (generatedCode: unknown): { generatedCode?: string } => {
-  if (typeof generatedCode !== 'string') return {};
-  try {
-    const parsed: unknown = JSON.parse(generatedCode);
-    if (!Array.isArray(parsed)) return {};
-    const kept = parsed.filter((f) => !(f && typeof f === 'object' && DOCUMENTATION_PACKAGE_FILES.includes(String((f as { path?: unknown }).path))));
-    return kept.length === parsed.length ? {} : { generatedCode: JSON.stringify(kept) };
-  } catch {
-    // A flat source from before packages: nothing of this stage is in it.
-    return {};
-  }
-};
+const packageCleanupOf = (fields: Record<string, unknown>): { generatedCode?: string } =>
+  typeof fields.generatedCode === 'string' ? { generatedCode: fields.generatedCode } : {};
 
 /**
  * Roadmap 2.5 — the reading BPMN view of the process the engine reconstructed.
@@ -483,37 +470,27 @@ export default function DocumentationPage() {
         sopInputs.current.facts ?? readCapabilityFacts(engineDoc.facts),
       ));
 
-      // One transaction, for the same reason as above (ade8ec0b8903). The
-      // layer was written from this run's documentation; if another tab
+      // One transaction, for the same reason as above (ade8ec0b8903), on the
+      // server since roadmap 3.0.14, item 9: the layer is kept in documents of
+      // its own, which no browser writes (`lib/project-artefact-writes.ts`).
+      // The layer was written from this run's documentation; if another tab
       // re-analysed or rewrote the documentation meanwhile, it describes
-      // something else and is not stored (0f6472d80f3f).
-      const projectDoc = doc(getDb(), 'projects', idStr);
-      const writtenFromRun = project.activeRunId;
-      const writtenFromDocumentation = documentation;
-      const updatedCode = await runTransaction(getDb(), async (tx) => {
-        const snap = await tx.get(projectDoc);
-        const current = snap.data() ?? {};
-        if (current.activeRunId !== writtenFromRun || current.documentation !== writtenFromDocumentation) {
-          throw new Error('The analysis or the documentation of this project changed while the business layer was being written, so nothing was saved. Reload the stage and generate it again.');
-        }
-        // Another browser stored a layer for this documentation meanwhile:
-        // that one is kept, and shown, instead of being written over.
-        // A regeneration replaces the layer it was asked for, and only that one.
-        if (typeof current.businessDocumentation === 'string' && current.businessDocumentation.trim()
-          && (replacing === null || current.businessDocumentation !== replacing)) {
-          return { kept: current.businessDocumentation as string, cleanup: {} };
-        }
-        // Not into the package (roadmap 3.0.7, item 4): Delivery writes the
-        // layer's file from `businessDocumentation` itself. A file an earlier
-        // build merged into the package is taken out with this write.
-        const cleanup = packageCleanup(current.generatedCode);
-        // Codex architecture-02: refused by name before the commit when the
-        // project would outgrow its 1 MiB document.
-        const size = checkProjectWrite(current, { businessDocumentation: storedText, ...cleanup }, projectDoc.path, 'update');
-        if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this business documentation'));
-        tx.update(projectDoc, { businessDocumentation: storedText, ...cleanup });
-        return { kept: null, cleanup };
+      // something else and is not stored (0f6472d80f3f). Another browser's
+      // layer for this documentation is kept, and shown, instead of being
+      // written over; a regeneration replaces the layer it was asked for, and
+      // only that one. Not into the package (roadmap 3.0.7, item 4): a file an
+      // earlier build merged into it is taken out with this write.
+      const answer = await storeArtefact(idStr, {
+        action: 'business-layer',
+        businessDocumentation: storedText,
+        fromRunId: project.activeRunId ?? null,
+        documentationSha256: typeof documentation === 'string' ? sha256Hex(documentation) : null,
+        replacingSha256: replacing === null ? null : sha256Hex(replacing),
       });
+      if (!answer.ok) throw new Error(answer.error);
+      const updatedCode = answer.kept
+        ? { kept: answer.kept, cleanup: {} }
+        : { kept: null, cleanup: packageCleanupOf(answer.fields) };
 
       // Shown only once it is stored (52487ee4cacc): a layer the transaction
       // refused is not this project's business documentation.
@@ -789,33 +766,23 @@ export default function DocumentationPage() {
       // Both generations rewrite the same `generatedCode` field. Reading it
       // back first was not enough — two tabs can both read before either
       // writes, and the later write still drops the earlier file (QA reviews of
-      // 33471220d6e9 and 146ac2e1a724: 4db1e81408f4, ade8ec0b8903). The
-      // read and the write are one transaction; disabling the buttons is a
-      // courtesy on top, not the mechanism.
-      const projectDoc = doc(getDb(), 'projects', idStr);
-      const builtFromRun = project.activeRunId;
-      const updatedCode = await runTransaction(getDb(), async (tx) => {
-        const snap = await tx.get(projectDoc);
-        // The document was built from the source of the run this page loaded.
-        // A second tab can re-analyse in between; then it describes an earlier
-        // run and is not written as the current one (QA review of 4b4586aff273).
-        const current = snap.data() ?? {};
-        if (current.activeRunId !== builtFromRun || current.legacyCode !== signedSource.source) {
-          throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
-        }
-        // The business layer (RACI, SOP) was written from the documentation
-        // this replaces, keyed to its step ids. Kept, it would be shown and
-        // exported as current beside a document whose elements it does not
-        // describe (QA full review 96b39ec78c97) — so it goes with the
-        // document it was built on. Nothing goes into the package (roadmap
-        // 3.0.7, item 4); what an earlier build put there comes out.
-        const cleanup = packageCleanup(current.generatedCode);
-        // Codex architecture-02, as for the business layer above.
-        const size = checkProjectWrite(current, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup }, projectDoc.path, 'update');
-        if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this documentation'));
-        tx.update(projectDoc, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup });
-        return cleanup;
+      // 33471220d6e9 and 146ac2e1a724: 4db1e81408f4, ade8ec0b8903). The read
+      // and the write are one transaction — on the server since roadmap
+      // 3.0.14, item 9 (`lib/project-artefact-writes.ts`); disabling the
+      // buttons is a courtesy on top, not the mechanism. The document was
+      // built from the source of the run this page loaded: a second tab can
+      // re-analyse in between, and then it is not written as the current one
+      // (QA review of 4b4586aff273). The business layer written from the
+      // document this replaces goes with it (QA full review 96b39ec78c97), and
+      // what an earlier build put into the package comes out.
+      const answer = await storeArtefact(idStr, {
+        action: 'documentation',
+        documentation: stored,
+        fromRunId: project.activeRunId ?? null,
+        sourceSha256: sha256Hex(signedSource.source),
       });
+      if (!answer.ok) throw new Error(answer.error);
+      const updatedCode = packageCleanupOf(answer.fields);
 
       // Shown only once it is stored: a document the transaction refused is
       // not this project's documentation.

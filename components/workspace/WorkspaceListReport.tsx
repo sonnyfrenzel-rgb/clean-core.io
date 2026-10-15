@@ -20,6 +20,7 @@ import { targetEditionOf } from '@/lib/target-edition';
 import { createWithinCeiling } from '@/lib/write-ceiling';
 import { ArrowDownUp, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useWorkspaceRowFacts } from '@/hooks/useWorkspaceRowFacts';
@@ -208,8 +209,17 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       limit(25),
     );
     const uid = user.uid;
-    const take = (docs: { id: string; data: () => unknown }[]) =>
-      setLoaded({ uid, rows: docs.map((d) => ({ ...(d.data() as Project), id: d.id })) });
+    // Roadmap 3.0.14, item 9: a row's phases are read from its artefacts, and
+    // a project keeps its large ones beside its document — filled in from the
+    // server first. Only the newest list is shown.
+    let seq = 0;
+    let alive = true;
+    const take = (docs: { id: string; data: () => unknown }[]) => {
+      const mine = ++seq;
+      void withStoredArtefactRows(docs.map((d): ListedProject => ({ ...(d.data() as Project), id: d.id }))).then((rows) => {
+        if (alive && mine === seq) setLoaded({ uid, rows });
+      });
+    };
     // The one-shot read only fills the list until the listener has spoken: an
     // older answer arriving after a snapshot would replace newer rows, and
     // nothing would correct it until the next change.
@@ -219,7 +229,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         if (!live) take(snap.docs);
       })
       .catch(() => undefined);
-    return onSnapshot(
+    const stop = onSnapshot(
       q,
       (snap) => {
         live = true;
@@ -227,6 +237,10 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       },
       (error) => handleFirestoreError(error, OperationType.LIST, 'projects'),
     );
+    return () => {
+      alive = false;
+      stop();
+    };
   }, [user]);
 
   // Shared with me — the projects whose `readers` carry this account (roadmap
@@ -240,8 +254,13 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
     let alive = true;
     const stops: Array<() => void> = [];
     const rows = new Map<string, ListedProject>();
+    let seq = 0;
     const publish = () => {
-      if (alive) setSharedLoaded({ uid, rows: [...rows.values()] });
+      const mine = ++seq;
+      // The same filling-in as the own list above (roadmap 3.0.14, item 9).
+      void withStoredArtefactRows([...rows.values()]).then((full) => {
+        if (alive && mine === seq) setSharedLoaded({ uid, rows: full });
+      });
     };
     (async () => {
       try {

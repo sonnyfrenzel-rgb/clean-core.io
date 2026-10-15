@@ -432,9 +432,15 @@ test('the binding is written only if the project has not been written since the 
   const body = post.slice(tx);
   expect(body.indexOf('await tx.get(projectRef)')).toBeGreaterThan(-1);
   expect(body.indexOf('fresh.updateTime.isEqual(readAt)')).toBeGreaterThan(body.indexOf('await tx.get(projectRef)'));
-  expect(body.indexOf('tx.set(projectRef, fields, { merge: true })')).toBeGreaterThan(
+  // Since roadmap 3.0.14, item 9 the package goes into documents of its own,
+  // planned and written in the same transaction, after the same precondition.
+  expect(body.indexOf('planArtefactWrite(projectRef, fresh.data(), fields')).toBeGreaterThan(
     body.indexOf('fresh.updateTime.isEqual(readAt)'),
   );
+  expect(body.indexOf('tx.set(projectRef, planned.plan.projectFields, { merge: true })')).toBeGreaterThan(
+    body.indexOf('fresh.updateTime.isEqual(readAt)'),
+  );
+  expect(body.indexOf('writeArtefactParts(tx, planned.plan)')).toBeGreaterThan(body.indexOf('fresh.updateTime.isEqual(readAt)'));
   expect(post, 'a write outside the transaction').not.toMatch(/await db\.collection\('projects'\)\.doc\(projectId\)\.set\(/);
   expect(post).toContain("code: 'project-moved'");
 });

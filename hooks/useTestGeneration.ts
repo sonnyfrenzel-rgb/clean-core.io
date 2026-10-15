@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
+import { storeArtefact } from '@/lib/project-artefacts-client';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
@@ -339,14 +338,17 @@ ${generatedText}
       
       setGenerated(generatedTestCases);
       
-      const db = getDb();
-      await updateDoc(doc(db, 'projects', projectId), {
+      // Stored by the server since roadmap 3.0.14, item 9: the scenarios are
+      // kept in documents of their own, which no browser writes. One write, as
+      // before — the four fields and the status — and refused whole.
+      const stored = await storeArtefact(projectId, {
+        action: 'test-suite',
         testCases: generatedTestCases,
         testSuite: generatedTestSuite,
         coverageEstimate,
         manualTestingRequirements,
-        status: 'testing'
       });
+      if (!stored.ok) throw new Error(stored.error);
       
       setProject((prev: Project | null) => prev ? { ...prev, testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements } : prev);
       return { testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements };

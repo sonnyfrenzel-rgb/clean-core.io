@@ -415,7 +415,9 @@ test.describe('the lease route', () => {
       'assertMfaSatisfied(req, decodedToken)',
       'assertAccountActive(decodedToken.uid',
       "modelStageEnabled(profile.exists",
-      'data.userId !== decodedToken.uid',
+      // The stored document's owner, before its artefacts are read (roadmap 3.0.14, item 9).
+      'stored.userId !== decodedToken.uid',
+      'const data = await withStoredArtefacts(db, snap.ref, stored);',
       'generationRevision(generationStateOf(data, run, platform.stamp), built.contract.fingerprint) !== generationToken',
     ]) {
       expect(at(gate), `${gate} runs after the lease is issued`).toBeLessThan(issued);

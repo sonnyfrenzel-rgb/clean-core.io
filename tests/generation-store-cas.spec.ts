@@ -1,11 +1,10 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
-import { connectAuthToEmulator, connectFirestoreToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
+import { connectAuthToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
+import { adminSetDoc, adminMergeDoc, adminGetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { generationRevision, type GenerationInputs } from '../lib/generation-revision';
@@ -47,8 +46,6 @@ let idToken = '';
 const headers = () => ({ Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' });
 
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-const clientDb = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);
-connectFirestoreToEmulator(clientDb);
 
 test.describe.configure({ mode: 'serial' });
 
@@ -95,10 +92,11 @@ interface StoredProject {
   generationBinding?: { codeSha256?: string; contractFingerprint?: string };
 }
 
+/** The project as its pages read it: the package is kept beside the document since roadmap 3.0.14, item 9. */
 async function project(): Promise<StoredProject> {
-  const snap = await getDoc(doc(clientDb, 'projects', PROJECT_ID));
-  expect(snap.exists()).toBe(true);
-  return snap.data() as StoredProject;
+  const stored = await adminGetDoc('projects', PROJECT_ID);
+  expect(stored).not.toBeNull();
+  return stored as StoredProject;
 }
 
 test.beforeAll(async () => {

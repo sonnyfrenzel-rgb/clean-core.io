@@ -69,11 +69,19 @@ test.describe('a package of documentation files is not generated code', () => {
     const src = read(PAGE);
     expect(src).not.toContain('addOrUpdateFileInWorkspace');
     expect(src).not.toContain('DOCUMENTATION_WORKSPACE_FILE');
-    // The two writes name their fields; neither is the package.
+    // The two writes name their fields; neither is the package. Since roadmap
+    // 3.0.14, item 9 they run on the server (`lib/project-artefact-writes.ts`).
     const docTx = src.slice(src.indexOf('const generateDocumentation = useCallback('), src.indexOf('const autoDocFor = useRef'));
-    expect(docTx).toContain("tx.update(projectDoc, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup })");
+    expect(docTx).toContain("action: 'documentation'");
+    expect(docTx).toContain('documentation: stored,');
     const bizTx = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const generateBusinessDocumentation'));
-    expect(bizTx).toContain('tx.update(projectDoc, { businessDocumentation: storedText, ...cleanup })');
+    expect(bizTx).toContain("action: 'business-layer'");
+    expect(bizTx).toContain('businessDocumentation: storedText,');
+    const writes = read('lib/project-artefact-writes.ts');
+    expect(writes).toContain("{ documentation, status: 'documented', businessDocumentation: '', ...cleanup }");
+    expect(writes).toContain('{ businessDocumentation: layer, ...cleanup }');
+    expect(writes.match(/const cleanup = documentationPackageCleanup\(project\.generatedCode\);/g)).toHaveLength(2);
+    expect(writes).toContain('DOCUMENTATION_PACKAGE_FILES.includes(');
   });
 
   test('Delivery still adds both documentation files to the bundle from the project fields', () => {
