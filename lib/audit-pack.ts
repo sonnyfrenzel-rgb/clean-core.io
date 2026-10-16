@@ -712,7 +712,7 @@ model-generated drafts and user-attested inputs.
 **Provenance classes**
 
 - \`server-computed\` — deterministic engine output: parser findings, SHA-256 hashes, catalog lookup, scores.
-- \`model-generated\` — AI (Google Gemini) narrative / justification; a draft for review, not a fact.
+- \`model-generated\` — AI narrative / justification by the language model named in the model card (provider, model and whose key); a draft for review, not a fact.
 - \`user-attested\` — supplied or confirmed in the signed-in user's own session (self-attested), not independently verified.
 - \`static\` — fixed disclaimer / limitations text.
 

@@ -7,9 +7,22 @@ import {
   QuotaError,
   assertMfaSatisfied,
   assertAccountActive,
-  loadGeminiApiKey,
+  loadOwnModelKey,
   getAdminDb,
+  type OwnModelKey,
 } from '@/lib/firebase-admin';
+import {
+  ALLOWED_CLAUDE_MODELS,
+  OWN_CLAUDE_MODEL,
+  PLATFORM_PROVIDER,
+  PROVIDER_LABEL,
+  RECEIPT_PROVIDER_ID,
+  stageAnswerNeedsWrite,
+  type KeyOwner,
+  type ModelKeyProvider,
+  type StageAnswerRecord,
+} from '@/lib/model-providers';
+import { callClaudeMessages, claudeEffortFor, ownKeyRefused } from '@/lib/anthropic-messages';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_HOURLY_WINDOW_MS, modelHourlyLimit } from '@/lib/model-hourly-limit';
 import {
@@ -22,7 +35,12 @@ import {
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { isTransientModelError } from '@/lib/model-retry';
 import { issueModelReceipt, MODEL_PROVIDER_ID } from '@/lib/model-receipt';
-import { ByokKeyUnreadableError } from '@/lib/byok-key';
+import {
+  ByokKeyUnreadableError,
+  OwnModelKeyMissingError,
+  OWN_KEY_REJECTED_CODE,
+  ownKeyRejectedMessage,
+} from '@/lib/byok-key';
 import {
   GEMINI_TEST_STUB_FINISH_HEADER,
   GEMINI_TEST_STUB_HEADER,
@@ -88,6 +106,16 @@ import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeout
  * call marked `gateRepair` whose prompt is such a repair (`isGateRepairPrompt`)
  * and only once the 48 are used: at most 64 calls per generation, the hourly
  * limits unchanged.
+ *
+ * 3.0.15 (data sovereignty over the model, part B) — an account's own key may
+ * be an Anthropic key: the call then goes to Anthropic's Messages API on that
+ * key and the one Claude model `lib/model-providers.ts` sets
+ * (`lib/anthropic-messages.ts`), with every gate above unchanged and the same
+ * completeness rule and receipt after it. An account with an own key is never
+ * served with the platform key: a missing or unreadable own key is refused
+ * before the provider is asked, and a provider that refuses the own key ends
+ * the call with `own-key-rejected`. The path keeps its name; the platform's own
+ * key stays Gemini (`PLATFORM_PROVIDER`) until part A.
  */
 
 // Cache the default instance so we don't create a new one per request.
@@ -210,6 +238,9 @@ async function callWithRetry<T>(
 export async function POST(request: NextRequest) {
   // The generation lease whose in-flight slot this call holds, given back in `finally`.
   let heldLease: HeldLeaseSlot | null = null;
+  // The provider of the account's own key once it is loaded — read by the catch
+  // below, which must tell "your key was refused" from any other failure.
+  let calledWithOwnKey: ModelKeyProvider | null = null;
   // The deadline of the model call (`lib/model-deadline.ts`), counted from the
   // request's arrival, so the route answers before Cloud Run ends it at 300 s.
   const arrivedAt = Date.now();
@@ -488,20 +519,41 @@ export async function POST(request: NextRequest) {
     // nothing before it, so a key the server cannot open is refused on the test
     // server too — which, now that it stubs by default, is what lets the BYOK
     // refusal specs prove it without leaving the stub.
-    let byokKey: string | null = null;
+    //
+    // 3.0.15 — data sovereignty. The own key may be Gemini's or Anthropic's
+    // (`lib/model-providers.ts`), and an account with an own key is never
+    // served with the platform key: a key the profile names and the store does
+    // not hold is refused as well (`OwnModelKeyMissingError`), and a provider
+    // that refuses the own key stops the step below (`OWN_KEY_REJECTED_CODE`).
+    // The platform key is reached only when the account has no own key at all.
+    let ownKey: OwnModelKey | null = null;
     try {
-      byokKey = await loadGeminiApiKey(decodedToken.uid);
+      ownKey = await loadOwnModelKey(decodedToken.uid, {
+        profile: profile.exists ? (profile.data() as { byokConfigured?: unknown; byokProvider?: unknown }) : null,
+      });
     } catch (keyErr: unknown) {
-      if (keyErr instanceof ByokKeyUnreadableError) {
+      if (keyErr instanceof ByokKeyUnreadableError || keyErr instanceof OwnModelKeyMissingError) {
         return NextResponse.json({ error: keyErr.message, code: keyErr.code }, { status: 503 });
       }
       throw keyErr;
     }
-    const ai = byokKey
-      ? new GoogleGenAI({ apiKey: byokKey })
-      : getDefaultAI();
+    const byokKey = ownKey?.apiKey ?? null;
+    calledWithOwnKey = ownKey?.provider ?? null;
+    const provider: ModelKeyProvider = ownKey ? ownKey.provider : PLATFORM_PROVIDER;
+    // The model the provider is asked for: a Gemini request runs as asked; with
+    // an own Claude key every stage runs on the one Claude model set in
+    // `lib/model-providers.ts`, checked against its own register.
+    const servedModel = provider === 'anthropic' ? OWN_CLAUDE_MODEL : model;
+    if (provider === 'anthropic' && !ALLOWED_CLAUDE_MODELS.has(servedModel)) {
+      return NextResponse.json({ error: `Model "${servedModel}" is not permitted.` }, { status: 400 });
+    }
+    const ai = provider !== 'gemini'
+      ? null
+      : byokKey
+        ? new GoogleGenAI({ apiKey: byokKey })
+        : getDefaultAI();
 
-    if (!ai && !stubbed) {
+    if (provider === 'gemini' && !ai && !stubbed) {
       // Roadmap 1.2 — a named reason, not just a sentence. The Analyze stage
       // reads this code and finishes the run without a narrative instead of
       // failing; before, the same 503 aborted the whole analysis and the
@@ -544,6 +596,41 @@ export async function POST(request: NextRequest) {
     const thinkingConfig = thinkingConfigFor(shape);
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
+      : provider === 'anthropic'
+      ? await callWithRetry(async () => {
+          // An own Claude key (3.0.15): the Messages API, the same schema and
+          // the same completeness rule (`lib/anthropic-messages.ts`).
+          const attemptAt = Date.now();
+          const result = await callClaudeMessages({
+            apiKey: byokKey!,
+            model: servedModel,
+            prompt,
+            jsonResponse,
+            ...(responseSchema ? { schema: responseSchema } : {}),
+            ...(claudeEffortFor(thinkingConfig) ? { effort: claudeEffortFor(thinkingConfig) } : {}),
+            signal: callSignal,
+          }).catch((providerErr: unknown) => {
+            logger.warn('gemini usage', modelUsageLog({
+              usage: undefined,
+              model: servedModel,
+              stage: stage ?? null,
+              responseShape: shape ?? null,
+              leased: lease !== null,
+              durationMs: Date.now() - attemptAt,
+              failed: true,
+            }));
+            throw providerErr;
+          });
+          logger.info('gemini usage', modelUsageLog({
+            usage: result.usage,
+            model: servedModel,
+            stage: stage ?? null,
+            responseShape: shape ?? null,
+            leased: lease !== null,
+            durationMs: Date.now() - attemptAt,
+          }));
+          return result.answer;
+        }, undefined, undefined, callSignal)
       : await callWithRetry(async () => {
           const attemptAt = Date.now();
           const result = await ai!.models.generateContent({
@@ -621,10 +708,29 @@ export async function POST(request: NextRequest) {
     // then records honestly that the narrative's origin was not established.
     // Failing here instead would turn a misconfigured deployment into one that
     // cannot generate anything, which is a worse answer to the same fact.
+    // 3.0.15 — who answered, per stage, on the account (`users/{uid}.modelAnswers`):
+    // the provider, the model and whose key. Settings shows it under each stage.
+    // Best effort, and written only when it changed: it is a display, not the
+    // trust record — the receipt below is that.
+    const keyOwner: KeyOwner = ownKey ? 'own' : 'platform';
+    const receiptProvider = RECEIPT_PROVIDER_ID[provider];
+    if (stage !== undefined && !stubbed) {
+      const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString() };
+      const previous = (profile.data() as { modelAnswers?: Record<string, unknown> } | undefined)?.modelAnswers?.[stage];
+      if (stageAnswerNeedsWrite(previous, record)) {
+        try {
+          // Through the snapshot read above: `update` fails on an erased profile rather than recreating it.
+          await profile.ref.update({ [`modelAnswers.${stage}`]: record });
+        } catch (recordErr: unknown) {
+          logger.warn('model answer record not written', { route: 'api/gemini', error: providerErrorShape(recordErr) });
+        }
+      }
+    }
+
     const signingKey = getAuditSigningKey();
     if (!signingKey) {
       console.error(MISSING_SIGNING_KEY_LOG);
-      return NextResponse.json({ text });
+      return NextResponse.json({ text, answeredBy: { provider: receiptProvider, modelId: servedModel, keyOwner } });
     }
 
     const receipt = issueModelReceipt(
@@ -632,21 +738,23 @@ export async function POST(request: NextRequest) {
       // validated above — so a store of one stage can refuse a receipt of
       // another (QA review of 8f9ea35a000e, 33a42c475f1a).
       //
-      // The provider is named here, by the handler that made the call — this one
-      // calls Google Gemini and nothing else — rather than filled in by the
-      // receipt module when nobody said (roadmap 3.0.13 b).
+      // The provider is named here, by the handler that made the call — the
+      // provider it actually called (Gemini, or Anthropic for an own Claude
+      // key, 3.0.15) — rather than filled in by the receipt module when nobody
+      // said (roadmap 3.0.13 b). The claim set is unchanged: a Gemini receipt
+      // is byte for byte what it was, and `MODEL_PROVIDER_ID` is still its id.
       {
         uid: decodedToken.uid,
         text,
-        provider: MODEL_PROVIDER_ID,
-        modelId: model,
+        provider: provider === 'gemini' ? MODEL_PROVIDER_ID : receiptProvider,
+        modelId: servedModel,
         byok: !!byokKey,
         ...(stage !== undefined ? { stage } : {}),
       },
       signingKey,
     );
 
-    return NextResponse.json({ text, receipt });
+    return NextResponse.json({ text, receipt, answeredBy: { provider: receiptProvider, modelId: servedModel, keyOwner } });
   } catch (error: unknown) {
     // The deadline ended the call: said as such, with a code, before Cloud Run
     // would have answered 504 with no body (13.10.2026). Not retried here: the
@@ -660,11 +768,21 @@ export async function POST(request: NextRequest) {
     // the log would then hold the customer's source (providerErrorShape).
     logger.error('gemini route failed', { route: 'api/gemini', error: providerErrorShape(error), network: message.includes('fetch') });
 
+    // 3.0.15 — the provider refused the account's own key. Said as such, with a
+    // code, and never retried with the platform key: the owner of this account
+    // decided its code goes through its own key only.
+    if (calledWithOwnKey && ownKeyRefused(error)) {
+      return NextResponse.json(
+        { error: ownKeyRejectedMessage(PROVIDER_LABEL[calledWithOwnKey]), code: OWN_KEY_REJECTED_CODE },
+        { status: 502 },
+      );
+    }
+
     if (message.includes('fetch')) {
       return NextResponse.json(
         {
           error:
-            'Network error when calling Gemini. This may be due to regional restrictions.',
+            'Network error when calling the model provider. This may be due to regional restrictions.',
         },
         { status: 502 },
       );

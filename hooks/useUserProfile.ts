@@ -34,6 +34,11 @@ export interface UserProfile {
   byokLast4?: string;
   byokRotatedAt?: any;
   /**
+   * 3.0.15 — the provider of the own key (`lib/model-providers.ts`). Server-written
+   * with the key; absent on a key saved before 3.0.15, which is a Gemini key.
+   */
+  byokProvider?: string;
+  /**
    * Which of the five model stages this account has switched on (roadmap 1.2).
    * Server-written, like `transformationsUsed`: only `POST /api/model-stages`
    * puts a value in here, `userClientUpdateKeys()` in `firestore.rules` keeps

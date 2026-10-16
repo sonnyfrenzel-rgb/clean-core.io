@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v3.0.15] — unreleased
 
+### Data sovereignty over the model — Claude as an own key (roadmap 3.0.15, part B)
+
+- **Your own Anthropic key beside Gemini.** Settings asks which provider your own key belongs to —
+  Google Gemini or Anthropic Claude — and stores one own key per account; saving a key of the other
+  provider replaces the saved one. With an own Claude key every model stage runs on Claude
+  (`claude-sonnet-5-5`, set in one place, `lib/model-providers.ts`) through the same server-side proxy,
+  with the same answer schemas (as structured outputs), the same completeness check and the same model
+  receipt. The key is sealed as before (AES-256-GCM under `BYOK_ENCRYPTION_KEY`, the provider bound into
+  the additional data) and never reaches the browser. Keys stored before this change carry no provider
+  and read as Gemini keys; nothing in production is migrated.
+- **The key test spends no tokens.** An Anthropic key is tested against Anthropic's Models API
+  (`GET /v1/models`) from the server.
+- **No fallback to the platform key.** An account with an own key is never served with the platform key:
+  a key the profile names and the store does not hold (`own-key-missing`), one the server cannot open, or
+  one the provider refuses (`own-key-rejected`) stops the step and says so.
+- **Who answered is shown.** Settings shows per stage which provider, model and key (your own or the
+  platform's) answered last. The model receipt names the provider that answered (`anthropic` for an own
+  Claude key; Gemini receipts unchanged), so a signed run, its audit pack and the delivery package's
+  `STATUS.md` (new "Language model" row) name provider, model and key owner of the analysis. The signed
+  payload's shape is unchanged; runs signed before name Gemini as they did.
+- **Trust page: where your code goes.** Per provider, with links to the provider's own terms instead of a
+  paraphrase, and the engine-only path named as the choice for code that may not leave.
+- The platform's own key stays Gemini (part A, after the quality comparison).
+
 ## [v3.0.14] — 2026-10-16
 
 - **Stale code says what moved** (owner 16.10.2026). Code generated before a decision was confirmed in

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { getApps, initializeApp } from 'firebase-admin/app';
-import { deleteGeminiApiKey, getAdminDb } from '../lib/firebase-admin';
+import { deleteOwnModelKey, getAdminDb } from '../lib/firebase-admin';
 import { deleteS4Credentials } from '../lib/s4-credentials';
 
 /**
@@ -28,7 +28,7 @@ test.beforeAll(() => {
 });
 
 test('a refused BYOK key delete is an error, not a silent ok', async () => {
-  await expect(deleteGeminiApiKey(RESERVED_UID)).rejects.toThrow(/reserved/i);
+  await expect(deleteOwnModelKey(RESERVED_UID)).rejects.toThrow(/reserved/i);
 });
 
 test('a refused S/4 credential delete is an error, not a silent ok', async () => {
@@ -44,7 +44,7 @@ test('a delete that worked leaves neither the key nor the claim that one is conf
     await db.collection('s4_credentials').doc(uid).set({ url: 'https://s4.example.com', secretEnc: 'ciphertext' });
     await db.collection('users').doc(uid).set({ s4Meta: { configured: true, url: 'https://s4.example.com' } }, { merge: true });
 
-    await expect(deleteGeminiApiKey(uid)).resolves.toBeUndefined();
+    await expect(deleteOwnModelKey(uid)).resolves.toBeUndefined();
     await expect(deleteS4Credentials(uid)).resolves.toBeUndefined();
 
     expect((await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get()).exists).toBe(false);
@@ -71,7 +71,7 @@ test('a key delete after an erasure does not bring the profile back (0ce264ac607
   try {
     await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({ encryptedApiKey: 'ciphertext', last4: 'AbCd' });
 
-    await expect(deleteGeminiApiKey(uid)).resolves.toBeUndefined();
+    await expect(deleteOwnModelKey(uid)).resolves.toBeUndefined();
 
     expect((await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get()).exists).toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists, 'the erased profile was recreated').toBe(false);
@@ -83,11 +83,12 @@ test('a key delete after an erasure does not bring the profile back (0ce264ac607
 
 test('the key delete is one transaction with the profile read, never a merge-set (0ce264ac607d)', () => {
   const admin = fs.readFileSync(path.join(__dirname, '..', 'lib', 'firebase-admin.ts'), 'utf8');
-  const start = admin.indexOf('export async function deleteGeminiApiKey');
+  const start = admin.indexOf('export async function deleteOwnModelKey');
   const fn = admin.slice(start, admin.indexOf('\n}\n', start));
   expect(fn).toContain('db.runTransaction(');
   expect(fn).toContain('await tx.get(profileRef)');
-  expect(fn).toContain('tx.delete(secretRef)');
+  // 3.0.15: every provider's record goes, whichever the own key was.
+  expect(fn).toContain('for (const provider of MODEL_KEY_PROVIDERS) tx.delete(secrets.doc(provider));');
   expect(fn).toMatch(/if \(!profile\.exists\) return;\s*tx\.update\(profileRef,/);
   expect(fn, 'the profile is merge-set again').not.toMatch(/\{\s*merge:\s*true\s*\}/);
 });

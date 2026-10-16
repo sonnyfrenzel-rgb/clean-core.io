@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
-import { ByokKeyUnreadableError } from '@/lib/byok-key';
+import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key';
+import { PLATFORM_PROVIDER, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
 import {
   verifyRequestAuth,
   assertMfaSatisfied,
   assertAccountActive,
   getAdminDb,
-  loadGeminiApiKey,
+  loadOwnModelKey,
   QuotaError,
   updateExistingProfile,
 } from '@/lib/firebase-admin';
@@ -33,7 +34,7 @@ import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/li
  *     button that can only fail. The key itself never leaves the server; only
  *     the boolean and which of the two it is.
  *
- * `loadGeminiApiKey` is the same lookup `/api/gemini` performs, on purpose: a
+ * `loadOwnModelKey` is the same lookup `/api/gemini` performs, on purpose: a
  * cheaper proxy (`users.byokConfigured`) can say yes while the stored secret is
  * gone, and a screen that promises what the proxy refuses is the defect this
  * step exists to remove.
@@ -46,6 +47,14 @@ interface StageAnswer {
   keyAvailable: boolean;
   /** Where a key would come from. `null` when there is none. */
   keySource: 'byok' | 'community' | null;
+  /** 3.0.15 — the provider of that key (`lib/model-providers.ts`); `null` with no key. */
+  provider: ModelKeyProvider | null;
+  /**
+   * 3.0.15 — per stage, who answered last: the provider, the model and whose
+   * key (`users/{uid}.modelAnswers`, written by `/api/gemini`). Absent for a
+   * stage that has not been answered since 3.0.15.
+   */
+  answers: Partial<Record<ModelStage, StageAnswerRecord>>;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -53,23 +62,31 @@ const UNREADABLE = Symbol('byok-key-unreadable');
 async function answerFor(uid: string): Promise<StageAnswer> {
   const { db } = await getAdminDb();
   const snap = await db.collection('users').doc(uid).get();
-  const stages = modelStagesOf(snap.exists ? (snap.data() as { modelStages?: Record<string, boolean> }) : null);
+  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown }) : null;
+  const stages = modelStagesOf(profile);
+  const answers: StageAnswer['answers'] = {};
+  for (const stage of MODEL_STAGES) {
+    const a = profile?.modelAnswers?.[stage];
+    if (isStageAnswerRecord(a)) answers[stage] = { provider: a.provider, modelId: a.modelId, keyOwner: a.keyOwner, at: a.at };
+  }
 
-  // A stored key this server cannot open (3.0.13 g) is not an available key:
+  // A stored key this server cannot open (3.0.13 g), or one the profile names
+  // and the store does not hold (3.0.15), is not an available key:
   // `/api/gemini` refuses the call rather than spend the community key on an
   // account that brought its own, so this answer must not promise one either.
-  const byokKey = await loadGeminiApiKey(uid).catch((err: unknown) => {
-    if (err instanceof ByokKeyUnreadableError) return UNREADABLE;
+  const ownKey = await loadOwnModelKey(uid, { profile }).catch((err: unknown) => {
+    if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (byokKey === UNREADABLE) return { stages, keyAvailable: false, keySource: null };
-  const keySource: StageAnswer['keySource'] = byokKey
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers };
+  const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
       ? 'community'
       : null;
+  const provider = ownKey ? ownKey.provider : keySource === 'community' ? PLATFORM_PROVIDER : null;
 
-  return { stages, keyAvailable: keySource !== null, keySource };
+  return { stages, keyAvailable: keySource !== null, keySource, provider, answers };
 }
 
 export async function GET(req: NextRequest) {

@@ -76,8 +76,39 @@ export class ByokKeyUnavailableError extends Error {
  *   - `unknown-version`: a version outside `KEY_RING`.
  *   - `key-missing`: the version's key is not set, or not 32 bytes, here.
  *   - `decrypt-failed`: the record does not open under the version's key.
+ *   - `wrong-provider`: the record names a provider other than the document
+ *     it is stored under, or one this code does not know (3.0.15).
  */
-export type ByokUnreadableReason = 'unversioned' | 'unknown-version' | 'key-missing' | 'decrypt-failed';
+export type ByokUnreadableReason = 'unversioned' | 'unknown-version' | 'key-missing' | 'decrypt-failed' | 'wrong-provider';
+
+export const OWN_KEY_MISSING_CODE = 'own-key-missing';
+export const OWN_KEY_REJECTED_CODE = 'own-key-rejected';
+
+/**
+ * Roadmap 3.0.15 — the account says it brings its own key, and the key is not
+ * there (the profile names a key or a provider whose record is gone). Thrown,
+ * never answered with `null`: `null` means "no own key", and the proxy would
+ * then serve the call with the platform key — for an account whose owner
+ * decided its code goes only through its own key.
+ */
+export class OwnModelKeyMissingError extends Error {
+  readonly code = OWN_KEY_MISSING_CODE;
+  constructor() {
+    super(
+      `Your own model key is set for this account but could not be found on this server (${OWN_KEY_MISSING_CODE}). Nothing was sent to a model, ` +
+        'and nothing is sent with the platform key instead. Save your key again in Settings, or remove it there to use the platform key.',
+    );
+    this.name = 'OwnModelKeyMissingError';
+  }
+}
+
+/** The sentence when the provider refused the account's own key (HTTP 401/403). No fallback, said so. */
+export function ownKeyRejectedMessage(providerLabel: string): string {
+  return (
+    `${providerLabel} did not accept your own key (${OWN_KEY_REJECTED_CODE}). The step stopped here; nothing was sent with the platform key instead. ` +
+    'Check or replace the key in Settings.'
+  );
+}
 
 /**
  * A stored key that cannot be opened. Thrown, not answered with `null`: `null`

@@ -97,7 +97,10 @@ test.describe('(b) provider in the model receipt', () => {
   test('the proxy names the provider at the call, and the module keeps no fallback', () => {
     const route = read('app/api/gemini/route.ts');
     const call = route.slice(route.indexOf('issueModelReceipt('));
-    expect(call.slice(0, call.indexOf('signingKey')), 'the proxy no longer names the provider it called').toMatch(/provider:\s*MODEL_PROVIDER_ID/);
+    // 3.0.15: the provider it called — Gemini's id unchanged, Anthropic's for an own Claude key.
+    expect(call.slice(0, call.indexOf('signingKey')), 'the proxy no longer names the provider it called').toMatch(
+      /provider:\s*provider === 'gemini' \? MODEL_PROVIDER_ID : receiptProvider/,
+    );
     const receipt = read('lib/model-receipt.ts');
     expect(receipt, 'the receipt module defaults the provider again').not.toMatch(/provider\s*\?\?/);
     expect(receipt, 'the provider is optional again').not.toMatch(/provider\?:\s*string/);
@@ -183,11 +186,11 @@ test.describe('(c) the BYOK tier rule', () => {
     const post = save.slice(save.indexOf('export async function POST'), save.indexOf('export async function DELETE'));
     const del = save.slice(save.indexOf('export async function DELETE'));
     expect(post).toContain('assertByokAllowed(decodedToken.uid, decodedToken.admin === true)');
-    expect(post.indexOf('assertByokAllowed(')).toBeLessThan(post.indexOf('saveGeminiApiKey('));
+    expect(post.indexOf('assertByokAllowed(')).toBeLessThan(post.indexOf('saveOwnModelKey('));
     expect(del, 'withdrawing a key must not depend on the tier').not.toContain('assertByokAllowed(');
     const testRoute = read('app/api/secrets/gemini/test/route.ts');
     expect(testRoute.indexOf('assertByokAllowed(decodedToken.uid, decodedToken.admin === true)')).toBeGreaterThan(-1);
-    expect(testRoute.indexOf('assertByokAllowed(')).toBeLessThan(testRoute.indexOf('loadGeminiApiKey(decodedToken.uid)'));
+    expect(testRoute.indexOf('assertByokAllowed(')).toBeLessThan(testRoute.indexOf('loadOwnModelKey(decodedToken.uid)'));
     const admin = read('lib/firebase-admin.ts');
     expect(admin).toMatch(/byokAllowed\(\{ isAdmin: isAdminClaim === true, tier \}\)/);
   });
@@ -197,9 +200,9 @@ test.describe('(c) the BYOK tier rule', () => {
 
 test.describe('(d) the key routes are limited per account, not per account and address', () => {
   const ROUTES = [
-    { rel: 'app/api/secrets/gemini/route.ts', from: 'export async function POST', to: 'export async function DELETE', call: "assertByokRateLimit('save', decodedToken.uid)", work: 'saveGeminiApiKey(' },
-    { rel: 'app/api/secrets/gemini/route.ts', from: 'export async function DELETE', to: null, call: "assertByokRateLimit('delete', decodedToken.uid)", work: 'deleteGeminiApiKey(' },
-    { rel: 'app/api/secrets/gemini/test/route.ts', from: 'export async function POST', to: null, call: "assertByokRateLimit('test', decodedToken.uid)", work: 'loadGeminiApiKey(' },
+    { rel: 'app/api/secrets/gemini/route.ts', from: 'export async function POST', to: 'export async function DELETE', call: "assertByokRateLimit('save', decodedToken.uid)", work: 'saveOwnModelKey(' },
+    { rel: 'app/api/secrets/gemini/route.ts', from: 'export async function DELETE', to: null, call: "assertByokRateLimit('delete', decodedToken.uid)", work: 'deleteOwnModelKey(' },
+    { rel: 'app/api/secrets/gemini/test/route.ts', from: 'export async function POST', to: null, call: "assertByokRateLimit('test', decodedToken.uid)", work: 'loadOwnModelKey(' },
   ] as const;
 
   test('every key route asks the shared limiter with the account alone, before it does the work', () => {
@@ -296,7 +299,7 @@ test.describe('(e) the key paths log codes, not errors', () => {
       'app/api/secrets/gemini/status/route.ts',
     ];
     const admin = read('lib/firebase-admin.ts');
-    const byok = admin.slice(admin.indexOf('export async function saveGeminiApiKey'), admin.indexOf('export async function deleteGeminiApiKey'));
+    const byok = admin.slice(admin.indexOf('export async function saveOwnModelKey'), admin.indexOf('export async function deleteOwnModelKey'));
     const sources: Array<[string, string]> = [...files.map((f) => [f, read(f)] as [string, string]), ['lib/firebase-admin.ts (BYOK)', byok]];
     for (const [name, src] of sources) {
       expect(src, `${name} writes to the console`).not.toMatch(/console\.(error|warn|log|info)\(/);
@@ -411,11 +414,11 @@ test.describe('(g) the BYOK key', () => {
 
   test('the store writes through the sealing module only, and the S/4 helpers are gone from it', () => {
     const admin = read('lib/firebase-admin.ts');
-    const save = admin.slice(admin.indexOf('export async function saveGeminiApiKey'), admin.indexOf('export async function loadGeminiApiKey'));
-    expect(save).toContain("sealByokSecret(apiKey, { uid, provider: 'gemini' })");
+    const save = admin.slice(admin.indexOf('export async function saveOwnModelKey'), admin.indexOf('export async function loadOwnModelKey'));
+    expect(save).toContain("sealByokSecret(apiKey, { uid, provider })");
     expect(save).toContain('keyVersion: sealed.keyVersion');
     expect(admin, 'firebase-admin seals with the S/4 key again').not.toMatch(/from '\.\/s4-credentials'/);
-    const load = admin.slice(admin.indexOf('export async function loadGeminiApiKey'), admin.indexOf('export async function deleteGeminiApiKey'));
+    const load = admin.slice(admin.indexOf('export async function loadOwnModelKey'), admin.indexOf('export async function deleteOwnModelKey'));
     expect(load).toContain('openByokSecret(');
     expect(load, 'an unreadable key is answered with null again').not.toMatch(/catch[\s\S]*return null;\s*\n\s*\}\s*\n\}/);
   });

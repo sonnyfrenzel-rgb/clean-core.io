@@ -12,7 +12,7 @@ import {
   getAdminDb,
   refundRunQuota,
   reinstatedEntitlements,
-  saveGeminiApiKey,
+  saveOwnModelKey,
 } from '../lib/firebase-admin';
 
 /**
@@ -21,7 +21,7 @@ import {
  * tests/qa-full-a12774c.spec.ts), so the interleavings are staged exactly.
  *
  * - dfa3295a22f8: the BYOK secret and the profile metadata were two writes; a
- *   failed second one left a key `loadGeminiApiKey` serves.
+ *   failed second one left a key `loadOwnModelKey` serves.
  * - 84faa2741a6a: a save in flight during an erasure wrote the secret after
  *   the secrets were purged and merge-set the erased profile back.
  * - 2cf173a1421d: the S/4 vault and the profile metadata, the same two writes.
@@ -42,7 +42,7 @@ test('a BYOK save for an account without a profile writes nothing and is a 404',
   const { db } = await getAdminDb();
   const uid = uidOf('noprofile');
   try {
-    await expect(saveGeminiApiKey(uid, 'AIza-test-key-1234')).rejects.toMatchObject({ status: 404 });
+    await expect(saveOwnModelKey(uid, 'AIza-test-key-1234', 'gemini')).rejects.toMatchObject({ status: 404 });
     expect((await geminiRef(db, uid).get()).exists, 'a key was stored for an account with no profile').toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists, 'the save created a profile').toBe(false);
   } finally {
@@ -56,7 +56,7 @@ test('a BYOK save for an existing profile stores the key and its metadata togeth
   const uid = uidOf('save');
   try {
     await db.collection('users').doc(uid).set({ status: 'approved', geminiApiKey: 'legacy-cleartext' });
-    await expect(saveGeminiApiKey(uid, 'AIza-test-key-5678')).resolves.toEqual({ byokConfigured: true, byokLast4: '5678' });
+    await expect(saveOwnModelKey(uid, 'AIza-test-key-5678', 'gemini')).resolves.toEqual({ byokConfigured: true, byokProvider: 'gemini', byokLast4: '5678' });
     expect((await geminiRef(db, uid).get()).data()?.last4).toBe('5678');
     const profile = (await db.collection('users').doc(uid).get()).data() || {};
     expect(profile.byokConfigured).toBe(true);
@@ -83,7 +83,7 @@ test('a BYOK save that commits during the erasure is erased with the profile', a
             return {
               doc: (id: string) => ({
                 delete: async () => {
-                  await saveGeminiApiKey(uid, 'AIza-in-flight-9999');
+                  await saveOwnModelKey(uid, 'AIza-in-flight-9999', 'gemini');
                   return target.collection('mfa_pending').doc(id).delete();
                 },
               }),
@@ -99,7 +99,7 @@ test('a BYOK save that commits during the erasure is erased with the profile', a
     expect((await geminiRef(db, uid).get()).exists, 'the key outlived the erasure').toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists, 'the erased profile came back').toBe(false);
     // And a save after the erasure cannot commit at all.
-    await expect(saveGeminiApiKey(uid, 'AIza-after-0000')).rejects.toMatchObject({ status: 404 });
+    await expect(saveOwnModelKey(uid, 'AIza-after-0000', 'gemini')).rejects.toMatchObject({ status: 404 });
     expect((await geminiRef(db, uid).get()).exists).toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists).toBe(false);
   } finally {

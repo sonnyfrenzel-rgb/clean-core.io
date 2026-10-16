@@ -32,6 +32,8 @@ import {
 } from 'firebase/auth';
 import ModelStagesCard from '@/components/ModelStagesCard';
 import { byokAllowed } from '@/lib/byok-eligibility';
+import OwnKeyProviderChoice from '@/components/settings/OwnKeyProviderChoice';
+import { KEY_PLACEHOLDER, PROVIDER_LABEL, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
 import CommunityMailCard from '@/components/CommunityMailCard';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -164,7 +166,16 @@ export default function SettingsPage() {
   const [isSendingTicket, setIsSendingTicket] = useState(false);
   const [ticketStatus, setTicketStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Gemini API Key (BYOK) States
+  // Own model key (BYOK) states. Roadmap 3.0.15: the key is Gemini's or
+  // Anthropic's; the saved key's provider is read from the profile (a key
+  // saved before 3.0.15 names none and is Gemini's).
+  const savedKeyProvider = ownKeyProviderOf(profile);
+  const savedProvider: ModelKeyProvider | null =
+    savedKeyProvider === null || savedKeyProvider === 'unknown' ? null : savedKeyProvider;
+  const [chosenProvider, setChosenProvider] = useState<ModelKeyProvider | null>(null);
+  const keyProvider: ModelKeyProvider = chosenProvider ?? savedProvider ?? 'gemini';
+  // The provider the last successful key test spoke to (the route says which).
+  const [testedProvider, setTestedProvider] = useState<ModelKeyProvider>('gemini');
   const [geminiKey, setGeminiKey] = useState('');
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [keySaved, setKeySaved] = useState(false);
@@ -705,7 +716,7 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ apiKey: geminiKey.trim() }),
+        body: JSON.stringify({ apiKey: geminiKey.trim(), provider: keyProvider }),
       });
 
       if (!res.ok) {
@@ -715,6 +726,8 @@ export default function SettingsPage() {
 
       setKeySaved(true);
       setGeminiKey('');
+      // The profile now names the saved provider; the choice follows it again.
+      setChosenProvider(null);
       setValidationStatus('idle'); // Reset test connection banner after saving
       setTimeout(() => setKeySaved(false), 3000);
     } catch (error) {
@@ -730,7 +743,7 @@ export default function SettingsPage() {
     const hasSavedKey = profile?.byokConfigured;
     if (!enteredKey && !hasSavedKey) {
       setValidationStatus('error');
-      setValidationError('Please enter or save a Gemini API Key first.');
+      setValidationError(`Please enter or save a ${PROVIDER_LABEL[keyProvider]} API key first.`);
       return;
     }
 
@@ -747,7 +760,7 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(enteredKey ? { apiKey: enteredKey } : {}),
+        body: JSON.stringify(enteredKey ? { apiKey: enteredKey, provider: keyProvider } : {}),
       });
 
       if (!res.ok) {
@@ -755,9 +768,11 @@ export default function SettingsPage() {
         throw new Error(errorBody.error || 'Connection test failed.');
       }
 
+      const tested = (await res.json().catch(() => ({}))) as { provider?: unknown };
+      setTestedProvider(tested.provider === 'anthropic' ? 'anthropic' : 'gemini');
       setValidationStatus('success');
     } catch (error) {
-      console.error('Gemini Key connectivity test failed:', error);
+      console.error('Own key connectivity test failed:', error);
       setValidationStatus('error');
       setValidationError(error instanceof Error ? error.message : 'Invalid API key or network error.');
     } finally {
@@ -1054,16 +1069,17 @@ export default function SettingsPage() {
   };
 
   const getTierInfo = (tier: string = 'pilot', hasCustomKey: boolean = false) => {
+    const ownKeyName = `your own ${PROVIDER_LABEL[savedProvider ?? 'gemini']} key`;
     if (hasCustomKey && (tier === 'pilot' || tier === 'pilot_byok')) {
       return {
-        label: 'Free Community Edition, with your own Gemini key',
-        text: 'Your own Gemini key is in use, so there is no limit on transformations.',
+        label: `Free Community Edition, with ${ownKeyName}`,
+        text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use, so there is no limit on transformations.`,
       };
     }
 
     switch (tier) {
-      case 'pilot_byok': return { label: 'Free Community Edition, with your own Gemini key', text: 'Your own Gemini key is in use — no limit on transformations, every feature, always free.' };
-      default: return { label: 'Free Community Edition', text: `Every feature, with 5 free transformations.${isPilotTier ? ' Add your own Gemini key below for unlimited runs.' : ''}` };
+      case 'pilot_byok': return { label: `Free Community Edition, with ${ownKeyName}`, text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use — no limit on transformations, every feature, always free.` };
+      default: return { label: 'Free Community Edition', text: `Every feature, with 5 free transformations.${isPilotTier ? ' Add your own model key below for unlimited runs.' : ''}` };
     }
   };
 
@@ -1365,23 +1381,39 @@ export default function SettingsPage() {
       {isPilotTier && (
         <CcCard
           level={2}
-          title="Your own Gemini key (BYOK)"
-          meta={profile?.byokConfigured ? <StateWord state="success">Key saved</StateWord> : undefined}
+          title="Your own model key (BYOK)"
+          meta={profile?.byokConfigured ? <StateWord state="success">{savedProvider ? `${PROVIDER_LABEL[savedProvider]} key saved` : 'Key saved'}</StateWord> : undefined}
         >
           <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-            With your own Google Gemini API key, the limit of 5 free transformations no longer applies. The key is stored encrypted on our server and used only there; it never reaches your browser again.
+            With your own Google Gemini or Anthropic API key, the limit of 5 free transformations no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
           </p>
 
           <form onSubmit={handleSaveKey} className="space-y-4 text-cc-ink">
+            <OwnKeyProviderChoice
+              value={keyProvider}
+              savedProvider={profile?.byokConfigured ? savedProvider : null}
+              onChange={(p) => {
+                setChosenProvider(p);
+                if (validationStatus !== 'idle') setValidationStatus('idle');
+              }}
+              disabled={isSavingKey || isDeletingKey}
+            />
+
             <SettingsInput
-              label="Gemini API key"
+              label={`${PROVIDER_LABEL[keyProvider]} API key`}
               value={geminiKey}
               onChange={(value) => {
                 setGeminiKey(value);
                 if (validationStatus !== 'idle') setValidationStatus('idle');
               }}
-              help={profile?.byokConfigured ? 'A key is saved. Enter a new one to replace it.' : undefined}
-              placeholder={profile?.byokConfigured ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : "AIzaSy..."}
+              help={
+                profile?.byokConfigured
+                  ? savedProvider && savedProvider !== keyProvider
+                    ? `A ${PROVIDER_LABEL[savedProvider]} key is saved. Saving this ${PROVIDER_LABEL[keyProvider]} key replaces it.`
+                    : 'A key is saved. Enter a new one to replace it.'
+                  : undefined
+              }
+              placeholder={profile?.byokConfigured && savedProvider === keyProvider ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : KEY_PLACEHOLDER[keyProvider]}
               autoComplete="off"
               mono
               reveal={{ shown: showKey, onToggle: () => setShowKey(!showKey), label: 'Show API key' }}
@@ -1389,7 +1421,7 @@ export default function SettingsPage() {
 
             {validationStatus === 'success' && (
               <CcMessageStrip state="success" headline="The key works" announce>
-                Google Gemini accepted the key. It is ready to use.
+                {PROVIDER_LABEL[testedProvider]} accepted the key. It is ready to use.
               </CcMessageStrip>
             )}
 
@@ -1741,7 +1773,7 @@ export default function SettingsPage() {
           Clean-Core.io is a free community edition, provided without warranty.
         </p>
         <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
-          The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.
+          The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini, or Anthropic Claude when your own key is a Claude key) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <CcLinkButton href="/impressum" variant="ghost">Legal notice</CcLinkButton>

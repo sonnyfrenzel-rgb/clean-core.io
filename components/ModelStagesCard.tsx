@@ -13,6 +13,7 @@ import {
   type ModelStage,
 } from '@/lib/model-stages';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { PLATFORM_PROVIDER, PROVIDER_LABEL, answeredByLine } from '@/lib/model-providers';
 
 /** Spelled out, because the sentence starts with it. */
 const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
@@ -85,7 +86,8 @@ export default function ModelStagesCard() {
         }
       >
       <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-        {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to Google Gemini. Switch any of them off and that stage says
+        {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to {PROVIDER_LABEL[model.provider ?? PLATFORM_PROVIDER]}
+        {model.keySource === 'byok' ? ' on your own key' : model.keySource === 'community' ? ' on the platform key' : ''}. Switch any of them off and that stage says
         &ldquo;not generated&rdquo; instead of asking for a key. The Analyze stage&rsquo;s evidence — the findings, the
         extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed
         either way.
@@ -120,6 +122,12 @@ export default function ModelStagesCard() {
                 valueState={saving === stage ? 'information' : saved === stage ? 'success' : undefined}
                 message={saving === stage ? 'Saving…' : saved === stage ? `Saved — ${on ? 'on' : 'off'}` : undefined}
               />
+              {/* 3.0.15 — who answered this stage last: provider, model, whose key. */}
+              {model.answers[stage] && (
+                <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted" data-model-stage-answered-by={stage}>
+                  Last answered by {answeredByLine(model.answers[stage]!)}
+                </p>
+              )}
             </li>
           );
         })}
