@@ -37,6 +37,7 @@ import { readGuardsFrom, readOriginalContract, type OriginalContract } from '../
 import { readStatements, type AbapStatement } from '../abap/statement-reader';
 import { materialRules, type MaterialRule } from '../testing-rule-trace';
 import { sliceFor } from './abap-slice';
+import { FILL_CONTEXT_MAX_CHARS, FILL_REQUEST_MARK, LEASED_PROMPT_MAX_CHARS, fillInstructionHeader } from './fill-prompt';
 import { readGoldenMaster } from './golden-master';
 import { assignBaseValues } from './base-values';
 import { guardBasisReader } from './guard-basis';
@@ -939,7 +940,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   const fields = readContractFields(facts, notCarried);
   const missingBaseValues = withInitialBase(fields, recordInputOf(facts, notCarried).accumulated, assignBaseValues(fields, facts, notCarried));
 
-  // ---- split above the hard budget (§7.2), then budgets from the slices
+  // ---- split above the hard budget or the fill prompt's cap (§7.2, 3.0.17), then budgets from the slices
   const plan: UnitPlan = {
     version: PLAN_VERSION,
     program,
@@ -965,6 +966,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
       units: 0,
       overSoftBudget: [],
       split: [],
+      promptOverCap: [],
       guards: { total: guards.length, inUnits: 0, programLevel: 0, notCarried: 0 },
       rules: { keep: 0, change: 0, drop: 0, open: 0 },
       unitsPerCall: 4,
@@ -979,6 +981,15 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     const ownLines = own ? own.lineEnd - own.lineStart + 1 : 0;
     const ownChars = own ? lines.slice(own.lineStart - 1, own.lineEnd).join('\n').length : 0;
     u.overSoftBudget = u.kind !== 'orchestrator' && (ownLines > SOFT_SLICE_LINES || ownChars > SOFT_SLICE_CHARS);
+  }
+  // A function the split could not bring within the cap (3.0.17): said here, with its reason, never left to a
+  // prompt that silently exceeds it. A parent of parts has no region of its own.
+  for (const u of plan.units) {
+    if (plan.units.some((p) => p.part?.parent === u.id)) continue;
+    const est = estimateFillPrompt(u, plan, facts);
+    if (est.chars <= LEASED_PROMPT_MAX_CHARS) continue;
+    u.promptOverCap = { chars: est.chars, reason: promptOverCapReason(u, est, facts) };
+    plan.stats.promptOverCap.push({ unitId: u.id, chars: est.chars, reason: u.promptOverCap.reason });
   }
   const routineUnits = plan.units.filter((u) => u.kind === 'routine' || u.kind === 'method');
   if (plan.units.length > MAX_UNITS_REFUSE) {
@@ -999,10 +1010,144 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   return plan;
 }
 
+/* ------------------------------------------------------ the fill prompt */
+
 /**
- * §7.2: a routine above the hard budget is split at its top-level statements
- * into `<fn>Part1…n`; the parent keeps its signature and calls the parts in
- * order (engine-written), sharing the run state.
+ * What a unit's fill prompt carries beyond its own request entry, at most, on either track (owner decision
+ * 17.10.2026, roadmap 3.0.17): the RAP route's `types` (the logic class around the body — its attributes, the
+ * access layer, one predicate line per guard, one signature per callee) and both routes' `available` helpers
+ * and guard `values`. Read off the scaffolds rather than computed from them, so the plan stays track-free and
+ * builds no scaffold. Measured 17.10.2026 on the nine shipped starter examples and eight local acceptance
+ * programs, both tracks, every unit: the estimate stayed above the real prompt (rules by title, a full
+ * 3,000-character context) by at least 338 characters, median 6,752 — the Node route carries far less class
+ * text than the RAP route, whose largest guard-free class text was 7,496 characters.
+ */
+export const PROMPT_CLASS_BASE_CHARS = 8_000;
+export const PROMPT_CLASS_PER_GUARD_CHARS = 200;
+export const PROMPT_CLASS_PER_CALLEE_CHARS = 170;
+/** The JSON escapes of a platform context of `FILL_CONTEXT_MAX_CHARS` (a line break or quote costs two). */
+const PROMPT_CONTEXT_ESCAPE_CHARS = 150;
+
+export interface FillPromptEstimate {
+  /**
+   * The prompt of this unit alone with its whole ABAP, a whole platform context (`FILL_CONTEXT_MAX_CHARS`) and the
+   * code-draft rules by title — the first thing `bundleFills` gives up before any context line. The plan splits a
+   * routine so that each part stays within `LEASED_PROMPT_MAX_CHARS` by this measure.
+   */
+  chars: number;
+  /** The same without any platform context: about the least `bundleFills` can send for this unit. */
+  least: number;
+}
+
+let headerChars: number | null = null;
+/** The larger of the two tracks' headers with the rules by title, and the mark before the request. */
+function promptHeaderChars(): number {
+  headerChars ??= Math.max(fillInstructionHeader('node', { briefRules: true }).length, fillInstructionHeader('rap', { briefRules: true }).length) + FILL_REQUEST_MARK.length;
+  return headerChars;
+}
+
+/**
+ * The fill prompt of one unit, estimated from the plan (owner decision 17.10.2026): the request entry
+ * `prepareEngineLed` writes for it — signature, ABAP slice with declarations and call sites, rules, guards,
+ * decimals, callees — serialised as `fillPrompt` serialises it, plus the header and the class text above.
+ * The guards and rules a unit carries count here: a part of 290 lines with 67 checks and 51 rules had a
+ * slice inside the hard budget and a prompt of 68,000 characters. `scripts/transformation/measure.ts` prints
+ * it; `tests/transformation-prompt-split.spec.ts` holds it above the real prompt of every unit it plans.
+ */
+export function estimateFillPrompt(unit: Unit, plan: Pick<UnitPlan, 'rules' | 'units' | 'guards' | 'program' | 'decimals'>, facts: EngineFacts): FillPromptEstimate {
+  const slice = sliceFor(unit, plan, facts);
+  const sliceUpper = slice.text.toUpperCase();
+  const byId = new Map(plan.units.map((u) => [u.id, u]));
+  const entry = {
+    unitId: unit.id,
+    function: { name: unit.fn.length >= unit.rapName.length ? unit.fn : unit.rapName, file: unit.file, signature: unit.signature, returns: 'StepResult' },
+    abap: { ranges: slice.ranges, text: slice.text, declarations: slice.declarations, callSites: slice.callSites },
+    rules: unit.rules
+      .map((id) => plan.rules.find((r) => r.id === id))
+      .filter((r): r is PlanRule => !!r && r.decision !== 'drop')
+      .map((r) => ({ id: r.id, decision: r.decision, text: r.text, ...(r.decision === 'change' && r.proposal ? { proposal: r.proposal } : {}) })),
+    guards: guardEntries(plan.guards, unit.guards, unit.id),
+    facts: {
+      decimals: plan.decimals
+        .filter((d) => sliceUpper.includes(d.name.toUpperCase()))
+        .slice(0, 12)
+        .map((d) => ({ name: d.name, digits: d.digits, decimals: d.decimals, type: `Dec<'${d.name.toUpperCase()}',${d.digits},${d.decimals}>` })),
+    },
+    available: { helpers: [], callees: unit.callees.map((id) => byId.get(id)?.signature.replace(/^export\s+/, '') ?? id) },
+  };
+  const request = (context: string) =>
+    JSON.stringify({ schema: 'cc.fill.v1', track: 'node', program: plan.program, context, rules: 'See CODE-DRAFT RULES in the header.', units: [entry], repair: null }).length;
+  const classText = PROMPT_CLASS_BASE_CHARS + PROMPT_CLASS_PER_GUARD_CHARS * unit.guards.length + PROMPT_CLASS_PER_CALLEE_CHARS * unit.callees.length;
+  const least = promptHeaderChars() + request('') + classText;
+  return { chars: least + FILL_CONTEXT_MAX_CHARS + PROMPT_CONTEXT_ESCAPE_CHARS, least };
+}
+
+/** A routine's lines `c` as part `index` of `of` — the unit the split writes, and the one it measures before it cuts. */
+function partOf(plan: Pick<UnitPlan, 'rules' | 'guards'>, u: Unit, c: { lineStart: number; lineEnd: number }, index: number, of: number): Unit {
+  return {
+    ...u,
+    id: `${u.id}P${index}`,
+    fn: `${u.fn}Part${index}`,
+    rapName: `${u.rapName.slice(0, 24)}_part${index}`,
+    file: u.file.replace(/\.ts$/, `-part${index}.ts`),
+    title: `${u.title} (part ${index} of ${of})`,
+    abap: [{ lineStart: c.lineStart, lineEnd: c.lineEnd, routine: u.routine ?? u.fn }],
+    folded: [],
+    rules: u.rules.filter((id) => plan.rules.find((r) => r.id === id)?.ranges.some((rg) => rg.lineStart >= c.lineStart && rg.lineStart <= c.lineEnd)),
+    guards: u.guards.filter((id) => {
+      const g = plan.guards.find((x) => x.id === id)!;
+      return g.line >= c.lineStart && g.line <= c.lineEnd;
+    }),
+    guardCalls: [],
+    bodyCalls: [],
+    callees: u.callees,
+    signature: `export function ${u.fn}Part${index}(sel: Selection, st: RunState, local: Record<string, unknown>): StepResult`,
+    part: { index, of, parent: u.id },
+  };
+}
+
+/** Lx or Lx–Ly. */
+const lineSpan = (r: { lineStart: number; lineEnd: number }) => (r.lineStart === r.lineEnd ? `L${r.lineStart}` : `L${r.lineStart}–L${r.lineEnd}`);
+
+/**
+ * Why a function's fill prompt is still estimated above `LEASED_PROMPT_MAX_CHARS` with the whole platform
+ * context after the split (3.0.17) — said in the plan, never left to a prompt that silently exceeds the
+ * cap. It is one statement the engine does not cut (a LOOP with its checks), or the main path, which is
+ * not split. `bundleFills` then gives up the rules' text and context lines; a call still above the cap is
+ * not sent, and the function stays a stub with this reason (`preflightFactsOf`).
+ */
+function promptOverCapReason(u: Unit, est: FillPromptEstimate, facts: EngineFacts): string {
+  const what = `${u.guards.length} check${u.guards.length === 1 ? '' : 's'} and ${u.rules.length} rule${u.rules.length === 1 ? '' : 's'}`;
+  const need = `its fill prompt is estimated at about ${est.chars.toLocaleString('en-US')} characters with the whole platform context (${est.least.toLocaleString('en-US')} without it), above the ${LEASED_PROMPT_MAX_CHARS.toLocaleString('en-US')} one fill call may carry`;
+  const tail = 'The call gives up the rules\' text and context lines first; if it still does not fit, this function is not sent and stays a stub.';
+  if (u.kind === 'orchestrator') return `The main path carries ${what}; ${need}. The main path is not split into parts. ${tail}`;
+  const range = u.abap[0];
+  const formLine = u.part ? range.lineStart - 1 : range.lineStart;
+  const endLine = u.part ? range.lineEnd + 1 : range.lineEnd;
+  const tops = topStatements(facts, formLine, endLine);
+  const who = u.part ? `Part ${u.part.index} of ${u.part.of} of ${u.routine ?? u.fn}` : (u.routine ?? u.fn);
+  const where =
+    tops.length === 1
+      ? `is one statement — ${tops[0].keyword} with its block, ${lineSpan({ lineStart: tops[0].lineStart, lineEnd: endLine - 1 })} —`
+      : `(${lineSpan(range)}) has no statement boundary at its top level the engine may cut at, and`;
+  return `${who} ${where} carries ${what}; ${need}. The engine splits a routine only between its top-level statements and never cuts a statement or its ABAP. ${tail}`;
+}
+
+/** The statements directly inside a routine whose own line is `formLine` and whose end is `endLine`. */
+function topStatements(facts: EngineFacts, formLine: number, endLine: number): AbapStatement[] {
+  return facts.statements.filter((s, i) => s.lineStart > formLine && s.lineEnd < endLine && (facts.blocks.enclosing[i]?.length ?? 0) === 1);
+}
+
+/**
+ * §7.2: a routine is split at its top-level statements into `<fn>Part1…n`
+ * when its ABAP is above the hard budget or, since 17.10.2026 (roadmap
+ * 3.0.17), when its fill prompt is: a part grows statement by statement while
+ * its lines stay within the hard budget (where the routine is above it) and
+ * its estimated prompt (`estimateFillPrompt`, the guards and rules its lines
+ * hold included) within `LEASED_PROMPT_MAX_CHARS`. Every part carries the
+ * whole ABAP of its lines. The parent keeps its signature and calls the parts
+ * in order (engine-written), sharing the run state. A single statement that
+ * does not fit stays one part, and the plan says so (`promptOverCap`).
  */
 function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
   const out: Unit[] = [];
@@ -1012,18 +1157,23 @@ function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
     const own = u.abap[0];
     const ownLines = own.lineEnd - own.lineStart + 1;
     const ownChars = facts.lines.slice(own.lineStart - 1, own.lineEnd).join('\n').length;
-    if (ownLines <= HARD_SLICE_LINES && ownChars <= HARD_SLICE_CHARS) continue;
+    const byHard = ownLines > HARD_SLICE_LINES || ownChars > HARD_SLICE_CHARS;
+    const byPrompt = estimateFillPrompt(u, plan, facts).chars > LEASED_PROMPT_MAX_CHARS;
+    if (!byHard && !byPrompt) continue;
     // Top-level statements of the routine: only the routine's own block encloses them.
-    const tops = facts.statements
-      .map((s, i) => ({ s, depth: facts.blocks.enclosing[i]?.length ?? 0 }))
-      .filter(({ s, depth }) => s.lineStart > own.lineStart && s.lineEnd < own.lineEnd && depth === 1);
+    const tops = topStatements(facts, own.lineStart, own.lineEnd);
+    const fits = (lineStart: number, lineEnd: number) => estimateFillPrompt(partOf(plan, u, { lineStart, lineEnd }, 1, 2), plan, facts).chars <= LEASED_PROMPT_MAX_CHARS;
     const cuts: Array<{ lineStart: number; lineEnd: number }> = [];
     let start = own.lineStart + 1;
     let chars = 0;
-    for (const { s } of tops) {
+    for (const [i, s] of tops.entries()) {
       const len = facts.lines.slice(s.lineStart - 1, s.lineEnd).join('\n').length;
-      if (s.lineEnd - start + 1 > HARD_SLICE_LINES - 20 || chars + len > HARD_SLICE_CHARS - 1_000) {
-        if (s.lineStart - 1 >= start) cuts.push({ lineStart: start, lineEnd: s.lineStart - 1 });
+      const overHard = byHard && (s.lineEnd - start + 1 > HARD_SLICE_LINES - 20 || chars + len > HARD_SLICE_CHARS - 1_000);
+      // The prompt is measured with the statement's whole block (a LOOP up to its ENDLOOP): up to the next top-level
+      // statement. Only where the part already holds a statement: a cut before the first one would leave an empty part.
+      const blockEnd = (tops[i + 1]?.lineStart ?? own.lineEnd) - 1;
+      if (s.lineStart - 1 >= start && (overHard || (byPrompt && !fits(start, blockEnd)))) {
+        cuts.push({ lineStart: start, lineEnd: s.lineStart - 1 });
         start = s.lineStart;
         chars = 0;
       }
@@ -1032,26 +1182,7 @@ function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
     if (own.lineEnd - 1 >= start) cuts.push({ lineStart: start, lineEnd: own.lineEnd - 1 });
     if (cuts.length < 2) continue;
     plan.stats.split.push(u.routine ?? u.fn);
-    const parts = cuts.map((c, i): Unit => ({
-      ...u,
-      id: `${u.id}P${i + 1}`,
-      fn: `${u.fn}Part${i + 1}`,
-      rapName: `${u.rapName.slice(0, 24)}_part${i + 1}`,
-      file: u.file.replace(/\.ts$/, `-part${i + 1}.ts`),
-      title: `${u.title} (part ${i + 1} of ${cuts.length})`,
-      abap: [{ lineStart: c.lineStart, lineEnd: c.lineEnd, routine: u.routine ?? u.fn }],
-      folded: [],
-      rules: u.rules.filter((id) => plan.rules.find((r) => r.id === id)?.ranges.some((rg) => rg.lineStart >= c.lineStart && rg.lineStart <= c.lineEnd)),
-      guards: u.guards.filter((id) => {
-        const g = plan.guards.find((x) => x.id === id)!;
-        return g.line >= c.lineStart && g.line <= c.lineEnd;
-      }),
-      guardCalls: [],
-      bodyCalls: [],
-      callees: u.callees,
-      signature: `export function ${u.fn}Part${i + 1}(sel: Selection, st: RunState, local: Record<string, unknown>): StepResult`,
-      part: { index: i + 1, of: cuts.length, parent: u.id },
-    }));
+    const parts = cuts.map((c, i): Unit => partOf(plan, u, c, i + 1, cuts.length));
     // Guard predicates of a part are filled by that part.
     for (const p of parts) for (const id of p.guards) {
       const g = plan.guards.find((x) => x.id === id)!;
@@ -1093,8 +1224,13 @@ export function rangeWords(ranges: readonly AbapRange[]): string {
 export function fillGuardsOf(plan: Pick<UnitPlan, 'guards' | 'units'>, unitId: string): FillRequestUnit['guards'] {
   const unit = plan.units.find((u) => u.id === unitId);
   if (!unit) return [];
-  return unit.guards.map((id) => {
-    const g = plan.guards.find((x) => x.id === id)!;
+  return guardEntries(plan.guards, unit.guards);
+}
+
+/** The guard entries of a fill request; `regionOf` names the unit a part measured before it exists will own them. */
+function guardEntries(guards: readonly PlanGuard[], ids: readonly string[], regionOf?: string): FillRequestUnit['guards'] {
+  return ids.map((id) => {
+    const g = guards.find((x) => x.id === id)!;
     return {
       id: g.id,
       rule: g.rule,
@@ -1102,7 +1238,7 @@ export function fillGuardsOf(plan: Pick<UnitPlan, 'guards' | 'units'>, unitId: s
       condition: g.condition,
       effect: g.effect,
       line: g.line,
-      regionId: g.regionId,
+      regionId: regionOf && g.regionId ? `${regionOf}.${g.id.replace('-', '')}` : g.regionId,
       placement: g.placement,
       basis: g.basis,
       values: g.operands.map((o) => o.key),

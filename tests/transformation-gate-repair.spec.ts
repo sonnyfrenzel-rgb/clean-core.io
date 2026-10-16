@@ -144,10 +144,12 @@ test.describe('the largest units of the seven acceptance programs, measured (loc
         }
       }
     }
-    // Only the holdout's VALIDATE_ORDER on the RAP route (U05). Before scaffold 15 its APPLY_CASE (then U09, 30,843
-    // characters of ABAP, on both routes) was over the cap too: the case switch of the original's demo cases, now demo
-    // data and never filled by a model. Before 14.10.2026 SD's RAP U10 (30,398) was among them.
-    expect(over.sort()).toEqual(['pm-shutdown-slot-plan/rap U05']);
+    // None (owner decision 17.10.2026, roadmap 3.0.17: a fill prompt must fit the cap). The holdout's VALIDATE_ORDER on
+    // the RAP route (U05: 5,433 characters of ABAP, 24 checks, 9 rules) was the last one over it: the split counted only
+    // its ABAP, now it counts the checks and rules a part carries too, and VALIDATE_ORDER goes in parts. Before scaffold
+    // 15 its APPLY_CASE (then U09, 30,843 characters of ABAP, on both routes) was over the cap too: the case switch of
+    // the original's demo cases, now demo data and never filled by a model. Before 14.10.2026 SD's RAP U10 (30,398) was.
+    expect(over.sort()).toEqual([]);
   });
 });
 

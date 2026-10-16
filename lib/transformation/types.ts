@@ -124,6 +124,12 @@ export const PLAN_VERSION = 2;
  * statements ABAP runs as an implicit START-OF-SELECTION (executable statements at program level); a source with no
  * entry point at all gets a process body written by the engine (`NO_ENTRY_POINT`) instead of a region the model
  * filled with an invented run order (roadmap 3.0.17 item 6). Nothing signed changes (§12.3).
+ * Also 15 (3.0.17, owner decision 17.10.2026: a fill prompt must fit the cap): both tracks — a routine is split into
+ * parts at its top-level statements when its fill prompt would be above `LEASED_PROMPT_MAX_CHARS`, the checks and rules
+ * its lines carry counted (`estimateFillPrompt` in unit-plan.ts), not only when its ABAP is above the hard budget; each
+ * part keeps the whole ABAP of its lines, and a statement too large to fit alone is named with its reason in the plan
+ * (`promptOverCap`, shown by the pre-flight) instead of a prompt over the cap; the Node parent's comment says it was
+ * split into parts.
  */
 export const SCAFFOLD_VERSION = 15;
 
@@ -292,8 +298,14 @@ export interface Unit {
   budget: { lines: number; chars: number };
   /** Over the soft budget (§7.2). */
   overSoftBudget: boolean;
-  /** Part n of m when a routine was split above the hard budget (§7.2); null otherwise. */
+  /** Part n of m when a routine was split above the hard budget or the fill prompt's cap (§7.2, 3.0.17); null otherwise. */
   part: { index: number; of: number; parent: string } | null;
+  /**
+   * Set when this function's fill prompt cannot fit one call even without platform context (3.0.17): the
+   * estimate (`estimateFillPrompt` `least`) and why the engine could not split it smaller — one statement, or
+   * the main path. Such a function is not sent; the reason is what the pre-flight and the report show.
+   */
+  promptOverCap?: { chars: number; reason: string };
 }
 
 export interface NotCarried {
@@ -393,6 +405,8 @@ export interface PlanStats {
   units: number;
   overSoftBudget: string[];
   split: string[];
+  /** Functions whose fill prompt cannot fit one call even split as far as the engine splits (`Unit.promptOverCap`). */
+  promptOverCap: Array<{ unitId: string; chars: number; reason: string }>;
   guards: { total: number; inUnits: number; programLevel: number; notCarried: number };
   rules: { keep: number; change: number; drop: number; open: number };
   /** Bundling density Track C should use (§7.2): 4 units per call, 6 above `DENSE_UNITS`. */

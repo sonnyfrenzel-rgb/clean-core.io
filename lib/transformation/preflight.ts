@@ -31,7 +31,7 @@ export interface PreflightInput {
   /** The fill calls the first wave needs (bundles), uncapped. */
   fillCalls: number;
   /** The functions whose call would carry more than the leased prompt cap, with that call's size. */
-  oversize: ReadonlyArray<{ unitIds: readonly string[]; chars: number }>;
+  oversize: ReadonlyArray<{ unitIds: readonly string[]; chars: number; reason?: string }>;
   /** The account's generations this hour, or null when they could not be read. */
   window: { used: number; limit: number; nextFreeInSeconds: number | null } | null;
 }
@@ -89,7 +89,8 @@ export function preflight(input: PreflightInput): Preflight {
     : input.oversize.flatMap((o) =>
         o.unitIds.map((unitId) => ({
           unitId,
-          issue: issue('lease-prompt-too-large', `Its call would carry ${n(o.chars)} characters, more than the ${n(LEASED_PROMPT_MAX_CHARS)} allowed.`),
+          // The plan's reason, where it could not split the function smaller (3.0.17), follows the numbers.
+          issue: issue('lease-prompt-too-large', `Its call would carry ${n(o.chars)} characters, more than the ${n(LEASED_PROMPT_MAX_CHARS)} allowed.${o.reason ? ` ${o.reason}` : ''}`),
         })),
       );
 
