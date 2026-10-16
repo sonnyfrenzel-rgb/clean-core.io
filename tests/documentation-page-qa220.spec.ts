@@ -53,7 +53,7 @@ test('a layer without control checkpoints is the current form (roadmap 3.0.7: th
   void _controls;
   expect(checkBusinessDocShape(current)).toEqual({ ok: true, problems: [] });
   // Owner 11.10.2026: the prompt moved out of the page into `lib/business-sop-prompt.ts`; the page calls it.
-  expect(page()).toContain('const prompt = businessSopPrompt(engineDoc);');
+  expect(page()).toContain('const prompt = businessSopPrompt(engineDoc, undefined, businessSteps);');
   const prompt = fs.readFileSync(path.join(process.cwd(), 'lib', 'business-sop-prompt.ts'), 'utf8');
   for (const gone of ['"kpiTarget"', '"audit_controls"', '"controlObjective"', '"assertionMethod"']) {
     expect(prompt, `the prompt still asks for ${gone}`).not.toContain(gone);

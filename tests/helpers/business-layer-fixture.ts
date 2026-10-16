@@ -7,6 +7,7 @@ import { buildProcessDocumentation } from '../../lib/process-documentation-build
 import type { ProcessDocumentation } from '../../lib/process-documentation';
 import { buildProcessDocument } from '../../lib/process-document-build';
 import type { ProcessDocument } from '../../lib/process-document';
+import { BUSINESS_STEP_LEVEL } from '../../lib/business-steps';
 
 /**
  * A stored engine documentation and a business layer for it — the fixture the
@@ -14,8 +15,10 @@ import type { ProcessDocument } from '../../lib/process-document';
  *
  * The documentation is the engine's own reading of the shipped example, built
  * exactly as the stage builds it. The business layer stands in for what a model
- * would return: it is keyed to the documentation's element ids, as the real
- * prompt asks, and it carries the gaps a reader must be shown — one step with no
+ * would return: it is keyed to the business steps — the steps "How it works"
+ * lists, which for this example are its top-level steps (owner 16.10.2026,
+ * `lib/business-steps.ts`) — as the real prompt asks, says so (`level`), and
+ * it carries the gaps a reader must be shown — one step with no
  * Accountable, one with two, one role Responsible almost everywhere, one step
  * the process does not have, and empty fields.
  */
@@ -41,12 +44,14 @@ export function processDocumentOf(source: string): ProcessDocument {
   return buildProcessDocument({ source, map });
 }
 
-/** The top-level steps a model would describe: no events, no decisions. */
+/** The top-level steps a model would describe: no events, no decisions — for this example, its business steps. */
 export function describedSteps(doc: ProcessDocumentation) {
   return doc.steps.filter((s) => s.level === null && !/^(Start|End|Decision)/.test(s.kind));
 }
 
 export interface FixtureBusinessLayer {
+  /** Written on the business level (owner 16.10.2026). */
+  level?: typeof BUSINESS_STEP_LEVEL;
   raci_matrix: Array<Record<string, string>>;
   sop_details: Array<Record<string, string>>;
   audit_controls: Array<Record<string, string>>;
@@ -85,5 +90,5 @@ export function businessLayerFor(doc: ProcessDocumentation): FixtureBusinessLaye
     mitigationAction: 'Dual approval above the limit.',
     assertionMethod: 'Quarterly review of the approval log.',
   }));
-  return { raci_matrix, sop_details, audit_controls };
+  return { level: BUSINESS_STEP_LEVEL, raci_matrix, sop_details, audit_controls };
 }

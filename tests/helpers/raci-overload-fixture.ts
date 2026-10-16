@@ -1,5 +1,6 @@
 import type { ProcessDocumentation } from '../../lib/process-documentation';
 import { describedSteps, type FixtureBusinessLayer } from './business-layer-fixture';
+import { BUSINESS_STEP_LEVEL } from '../../lib/business-steps';
 
 /**
  * The RACI the owner saw on 04.10.2026 for Z_MM_PO_APPROVAL ("unrealistically
@@ -50,5 +51,5 @@ export function overloadedLayerFor(doc: ProcessDocumentation): FixtureBusinessLa
     mitigationAction: 'Dual approval above the limit.',
     assertionMethod: 'Quarterly review of the approval log.',
   }));
-  return { raci_matrix, sop_details, audit_controls };
+  return { level: BUSINESS_STEP_LEVEL, raci_matrix, sop_details, audit_controls };
 }

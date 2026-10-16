@@ -19,8 +19,10 @@ import {
   routineRanges,
   statementsByPart,
   writableSteps,
+  documentationPart,
 } from '../lib/business-layer-parts';
 import { BUSINESS_LAYER_CEILING_MS } from '../lib/documentation-generation-lease';
+import { businessStepIds, businessStepsOf } from '../lib/business-steps';
 import { CLOUD_RUN_REQUEST_TIMEOUT_MS, MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 import { DOCUMENTATION_BUSINESS_THINKING_ENV, thinkingConfigFor } from '../lib/model-thinking';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '../lib/model-response-schema';
@@ -63,14 +65,17 @@ function largeProgram(n: number): string {
 const example = (file: string) => fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
 
 test.describe('a program that fits is written in one call, as before', () => {
-  test('the shipped examples: one part, every step, the prompt it always had', () => {
-    for (const file of ['Z_MM_PO_APPROVAL.abap', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap']) {
+  test('the shipped examples: one part, every business step, the prompt it always had', () => {
+    // Owner 16.10.2026: the rows are the business steps ("How it works"), not every element.
+    for (const [file, steps] of [['Z_MM_PO_APPROVAL.abap', 11], ['ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 15]] as const) {
       const source = example(file);
       const doc = documentationOf(source, file);
       const plan = planBusinessLayerParts(doc);
       expect(plan.whole, file).toBe(true);
       expect(plan.parts).toHaveLength(1);
-      expect(plan.parts[0].stepIds).toEqual(writableSteps(doc).map((s) => s.id));
+      expect(plan.parts[0].stepIds).toEqual(businessStepIds(doc));
+      expect(plan.steps, file).toBe(steps);
+      expect(plan.steps, file).toBeLessThan(writableSteps(doc).length);
       expect(businessLayerPartPrompt(doc, plan, 0, [], source)).toBe(businessSopPrompt(doc));
       expect(businessSopPrompt(doc)).not.toContain('THIS IS PART');
     }
@@ -91,7 +96,9 @@ test.describe('a large program is written in parts', () => {
 
   test('every step is in exactly one part, in process order, no part over the limit', () => {
     const all = plan.parts.flatMap((p) => p.stepIds);
-    expect(all).toEqual(writableSteps(doc).map((s) => s.id));
+    // Each routine the report performs is a step of its main path: 120 business steps.
+    expect(all).toEqual(businessStepIds(doc));
+    expect(all).toHaveLength(120);
     expect(new Set(all).size).toBe(all.length);
     for (const part of plan.parts) expect(part.stepIds.length).toBeLessThanOrEqual(BUSINESS_LAYER_PART_LIMITS.maxStepsPerPart);
     expect(plan.parts.map((p) => p.index)).toEqual(plan.parts.map((_, i) => i));
@@ -104,7 +111,7 @@ test.describe('a large program is written in parts', () => {
     plan.parts.forEach((part, i) => {
       const prompt = businessLayerPartPrompt(doc, plan, i, ['Process Owner', 'Clerk'], source);
       expect(prompt).toContain(`THIS IS PART ${i + 1} OF ${plan.parts.length}`);
-      expect(prompt).toContain(`for EXACTLY these element ids, and for no other: ${part.stepIds.join(', ')}.`);
+      expect(prompt).toContain(`for EXACTLY these business step ids, and for no other: ${part.stepIds.join(', ')}.`);
       expect(prompt.length).toBeLessThan(BUSINESS_LAYER_PART_LIMITS.maxPromptChars);
       expect(prompt.length).toBeLessThan(businessSopPrompt(doc).length);
       // The first part names the roles; the others are asked to reuse them.
@@ -131,29 +138,20 @@ test.describe('a large program is written in parts', () => {
     expect(byPrompt.whole).toBe(false);
   });
 
-  test('a process step is not torn apart while it fits into one part', () => {
+  test('a business step is never torn apart: its part reads every element under it', () => {
     const source1000 = example('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
     const doc1000 = documentationOf(source1000, 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
-    const limits = { ...BUSINESS_LAYER_PART_LIMITS, maxStepsPerPart: 12 };
+    const limits = { ...BUSINESS_LAYER_PART_LIMITS, maxStepsPerPart: 5 };
     const cut = planBusinessLayerParts(doc1000, limits);
     expect(cut.whole).toBe(false);
-    const byId = new Map(doc1000.steps.map((s) => [s.id, s]));
-    const top = (id: string): string => {
-      let s = byId.get(id)!;
-      while (s.level !== null && byId.get(s.level)) s = byId.get(s.level)!;
-      return s.id;
-    };
-    const partsOfGroup = new Map<string, Set<number>>();
-    const sizeOfGroup = new Map<string, number>();
-    cut.parts.forEach((p) => p.stepIds.forEach((id) => {
-      const g = top(id);
-      partsOfGroup.set(g, (partsOfGroup.get(g) ?? new Set()).add(p.index));
-      sizeOfGroup.set(g, (sizeOfGroup.get(g) ?? 0) + 1);
-    }));
-    for (const [g, parts] of partsOfGroup) {
-      if ((sizeOfGroup.get(g) ?? 0) <= limits.maxStepsPerPart) expect(parts.size, `group ${g} is torn apart`).toBe(1);
-    }
+    expect(cut.parts.flatMap((p) => p.stepIds)).toEqual(businessStepIds(doc1000));
+    const steps = new Map(businessStepsOf(doc1000).map((s) => [s.id, s]));
     for (const [i, part] of cut.parts.entries()) {
+      const slice = new Set(documentationPart(doc1000, cut, i, source1000).steps.map((s) => s.id));
+      for (const id of part.stepIds) {
+        expect(slice.has(id), `${id} in part ${i}`).toBe(true);
+        for (const t of steps.get(id)!.technical) expect(slice.has(t.id), `${t.id} under ${id} in part ${i}`).toBe(true);
+      }
       // Each part's documentation renders on its own (no flow into another part breaks it).
       expect(businessLayerPartPrompt(doc1000, cut, i, [], source1000)).toContain('Process documentation');
       expect(part.stepIds.length).toBeLessThanOrEqual(limits.maxStepsPerPart);
@@ -204,7 +202,8 @@ test.describe('the wait follows the model-call deadline, and the thinking is con
     const gen = page.slice(page.indexOf('async function runBusinessGeneration'), page.indexOf('const generateBusinessDocumentation'));
     expect(gen).toContain("{ responseShape: 'documentation-business' }");
     expect(gen).toContain('setTimeout(() => ceiling.abort(), BUSINESS_LAYER_CEILING_MS)');
-    expect(gen).toContain('planBusinessLayerParts(engineDoc)');
+    expect(gen).toContain('planBusinessLayerParts(engineDoc, undefined, businessSteps)');
+    expect(gen).toContain('businessStepsOf(engineDoc, sopInputs.current.path)');
     expect(gen).toContain('mergeBusinessLayerParts(');
   });
 
@@ -226,6 +225,11 @@ for (const [file, expectWhole] of [['SD_LE_Legacy_ABAP.txt', false], ['PM_Legacy
     const doc = documentationOf(source, file);
     const plan = planBusinessLayerParts(doc);
     if (expectWhole !== null) expect(plan.whole).toBe(expectWhole);
+    // Owner 16.10.2026: the SD reference's 196 elements are 14 business steps, written in two parts, not four.
+    if (file === 'SD_LE_Legacy_ABAP.txt') {
+      expect(plan.steps).toBe(14);
+      expect(plan.parts.length).toBe(2);
+    }
     for (const [i, part] of plan.parts.entries()) {
       expect(part.stepIds.length).toBeLessThanOrEqual(BUSINESS_LAYER_PART_LIMITS.maxStepsPerPart);
       expect(businessLayerPartPrompt(doc, plan, i, [], source).length).toBeLessThan(BUSINESS_LAYER_PART_LIMITS.maxPromptChars);

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { nav } from '@/lib/messages/navigation';
-import type { PageAnchor } from '@/lib/page-anchors';
+import { currentAnchorKey, type AnchorRect, type PageAnchor } from '@/lib/page-anchors';
 
 export type { PageAnchor } from '@/lib/page-anchors';
 
@@ -88,18 +88,17 @@ export default function PageAnchorBar({
       }
       // The section the line runs through; where two do (a side column beside
       // the main one on a wide screen), the main column's — the one further
-      // left. Before the first section, none.
-      let at: { key: string; left: number } | null = null;
-      let passed: string | null = null;
+      // left. Before the first section, none; in a part of the page the bar
+      // does not name, none — not the last section passed (owner 16.10.2026:
+      // the Documentation stage's RACI marked "Open questions").
+      const rects: AnchorRect[] = [];
       for (const { key, target } of list) {
         const el = document.getElementById(target);
         if (!el) continue;
         const r = el.getBoundingClientRect();
-        if (r.top > LINE) continue;
-        passed = key;
-        if (r.bottom > LINE && (!at || r.left < at.left)) at = { key, left: r.left };
+        rects.push({ key, top: r.top, bottom: r.bottom, left: r.left });
       }
-      setCurrent(at ? at.key : passed);
+      setCurrent(currentAnchorKey(rects, LINE));
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(measure);

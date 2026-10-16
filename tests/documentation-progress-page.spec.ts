@@ -192,7 +192,7 @@ test.describe('the Documentation tool says what it is doing', () => {
     await page.route('**/api/gemini', async (route) => {
       const prompt = String(JSON.parse(route.request().postData() ?? '{}').prompt ?? '');
       prompts.push(prompt);
-      const ids = (/for EXACTLY these element ids, and for no other: ([^\n]+)\./.exec(prompt)?.[1] ?? '').split(', ').filter(Boolean);
+      const ids = (/for EXACTLY these business step ids, and for no other: ([^\n]+)\./.exec(prompt)?.[1] ?? '').split(', ').filter(Boolean);
       await new Promise((r) => setTimeout(r, 2500));
       await route.fulfill({
         status: 200,

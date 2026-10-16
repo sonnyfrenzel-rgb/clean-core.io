@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { sapApiHubHref, sapApiHubLink, sapApiHubUrl, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
-import { buildEngineConfluenceHtml, sopStatementsHtml } from '../lib/documentation-export';
+import { buildEngineConfluenceHtml, sopStatementsHtml, sopTableHtml } from '../lib/documentation-export';
 import { buildProcessDocument } from '../lib/process-document-build';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -79,7 +79,8 @@ test('the engine documentation export escapes every value it prints', () => {
   const src = read(DOCS_EXPORT);
   expect(src).toContain('const engineHtml = `');
   const fn = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
-  const helpers = /^(esc|lines|para|item|table|tableOf|lead|empty|h2|proposal|processOverviewSvg|glanceHtml)\(/;
+  // `sopTableHtml` is exported and fed hostile text in the next test.
+  const helpers = /^(esc|lines|para|item|table|tableOf|lead|empty|h2|proposal|processOverviewSvg|glanceHtml|sopTableHtml)\(/;
   const assembled = /^(pathRows|subSteps|more|exportCSS|[A-Za-z]+Section)$/;
   const left = modelValues(fn, 'export function buildEngineConfluenceHtml', 'new Blob([engineHtml]')
     .filter((e) => !helpers.test(e) && !assembled.test(e));
@@ -116,11 +117,20 @@ test('the engine documentation export carries the business layer, escaped and ma
   for (const gone of ['audit_controls', 'kpiTarget', 'controlObjective']) expect(section).not.toContain(gone);
   const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
-  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml(') && !e.startsWith('sopStatementsHtml('));
+  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml(') && !e.startsWith('sopStatementsHtml(') && !e.startsWith('sopTableHtml('));
   expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
   // The SOP sentences go through one helper, which prints every value through the escaper (fed hostile text below).
   expect(sopStatementsHtml([{ text: '<script>x</script>', basis: 'not-in-program', anchors: [], reason: '<b>r</b>', short: 'organisational' }]))
     .not.toMatch(/<script>|<b>/);
+  // So does the SOP table, its business-level column of technical steps included (owner 16.10.2026).
+  const hostile = {
+    stepId: '<i>id</i>', number: 1, ref: '<u>1a</u>', step: null, outcome: null, narrative: null, exception: null, kpi: null,
+    roles: { R: [], A: [], C: [], I: [] }, hasRaci: false, thin: true,
+    statements: [{ text: '<script>s</script>', basis: 'proposed' as const, anchors: [], reason: null, short: null }],
+    exceptionStatement: null,
+    technical: [{ id: 'x', name: '<script>t</script>', kind: '<b>k</b>', anchor: { lineStart: 1, lineEnd: 2 }, depth: 1 }],
+  };
+  for (const business of [true, false]) expect(sopTableHtml([hostile], business)).not.toMatch(/<script>|<b>|<i>|<u>/);
 });
 
 test('the analysis and design stages build their Confluence pages only through the escaping modules', () => {

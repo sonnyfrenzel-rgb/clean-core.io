@@ -31,6 +31,9 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.sopNarrative': 'Narrative',
   'doc.sopException': 'If the step cannot be completed',
   'doc.sopStepColumn': 'Step',
+  'doc.sopTechnical': 'Technical steps',
+  'doc.sopTechnicalSummary': 'What the code does inside this step, with its lines.',
+  'doc.sopLegacyFold': 'The earlier SOP and RACI, per technical step',
 
   'doc.raciTitle': 'Who is responsible',
   'doc.raciNoRows': 'The layer assigns no roles.',
@@ -302,8 +305,23 @@ export function sopStepsCount(n: number): string {
   return plural(n, 'step', 'steps');
 }
 
-export function stepNumberLabel(n: number, name: string): string {
+export function stepNumberLabel(n: number | string, name: string): string {
   return `Step ${n}: ${name}`;
+}
+
+/** "Business level — 14 steps, the steps of “How it works”; 182 technical steps folded under them." (owner 16.10.2026) */
+export function sopLevelBusinessLine(steps: number, technical: number): string {
+  return `Business level — ${plural(steps, 'step', 'steps')}, the steps of “How it works”${technical > 0 ? `; ${plural(technical, 'technical step', 'technical steps')} folded under them` : ''}.`;
+}
+
+/** The note on a layer stored before 16.10.2026, one row per element of the process. */
+export function sopLevelLegacyLine(rows: number): string {
+  return `Written per technical step by an earlier version — ${plural(rows, 'row', 'rows')}. Regenerate SOP and RACI for one entry per step of “How it works”, with its technical steps folded underneath.`;
+}
+
+/** "3 technical steps" — under a business step's card. */
+export function sopTechnicalCount(n: number): string {
+  return plural(n, 'technical step', 'technical steps');
 }
 
 /** "Rules in this table: BR-001, BR-002" — the business rules a decision table holds. */

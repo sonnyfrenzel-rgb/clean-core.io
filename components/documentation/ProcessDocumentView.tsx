@@ -247,9 +247,26 @@ function scrollTo(event: React.MouseEvent<HTMLAnchorElement>, id: string) {
  * The page renders it as a direct child of the stage, so it stays in view
  * from the description down to the appendix at the foot.
  */
-export function DocumentChapterBar({ document: doc, openQuestions = null, className }: { document: ProcessDocument; openQuestions?: OpenQuestions | null; className?: string }) {
+export function DocumentChapterBar({
+  document: doc,
+  openQuestions = null,
+  beforeAppendix = [],
+  className,
+}: {
+  document: ProcessDocument;
+  openQuestions?: OpenQuestions | null;
+  /**
+   * Sections the stage draws between the description and its appendix — the
+   * model proposals (owner 16.10.2026): named in the page's order, so a reader
+   * in the RACI is not told they are in "Open questions".
+   */
+  beforeAppendix?: readonly PageAnchor[];
+  className?: string;
+}) {
   const outline = useMemo(() => documentOutline(doc, { openQuestions }), [doc, openQuestions]);
-  const anchors: PageAnchor[] = outline.chapters.map((c) => ({ key: c.key, target: `pd-${c.key}`, label: c.label, count: c.count, title: c.question }));
+  const chapters: PageAnchor[] = outline.chapters.map((c) => ({ key: c.key, target: `pd-${c.key}`, label: c.label, count: c.count, title: c.question }));
+  const at = chapters.findIndex((c) => c.key === 'appendix');
+  const anchors: PageAnchor[] = at < 0 ? [...chapters, ...beforeAppendix] : [...chapters.slice(0, at), ...beforeAppendix, ...chapters.slice(at)];
   return (
     <PageAnchorBar
       anchors={anchors}

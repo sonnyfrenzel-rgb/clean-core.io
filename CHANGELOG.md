@@ -77,6 +77,12 @@ ran green had compared nothing. Scaffold version 12.
   before. A refusal for size now names the artefact or the project document it is about.
 - No Firestore rules change.
 
+### Documentation: SOP and RACI on the business level
+
+- **One entry per business step.** The business SOP and the RACI used to have a row for every element of the process map — 196 for the SD reference program, "For each raw" and "No raw found?" among them, each with its own narrative, exception and guessed roles. They now have one entry per step the description lists under "How it works" (14 for the SD reference, 11 for the PO demo), and the model is asked for exactly those. Each step's technical steps (its decisions, loops, checks and calls) are folded underneath with their lines, on screen, in the Confluence page and in the delivery package's SOP file. The answer is much smaller: the SD reference is written in 2 parts instead of 4 (owner, 16.10.2026).
+- **A layer stored before still renders.** It shows folded, with a note that regenerating SOP and RACI gives the business-level form. Nothing signed changes.
+- **The "On this page" bar names the SOP & RACI card.** While the RACI was on screen, the bar marked "Open questions", because it kept the last section it had passed. The card has its own anchor now, and in a part of the page the bar does not name, nothing is marked.
+
 ### Side by side
 
 - Transformation, side by side: Sync Scroll follows the package's trace instead of the scroll percentage — a line of the original brings its function to the top of the open file, a function brings its ABAP lines, and a newly chosen file opens at the function of the original's current line; a file with no traced function (TRACE.md, metadata, configuration) or a package without traceability says that sync does not apply, and on a phone the stacked panes say they scroll on their own (roadmap 3.0.14, item 6).

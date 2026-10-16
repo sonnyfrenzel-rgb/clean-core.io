@@ -2,6 +2,7 @@ import { gradeKey, isCustomerObject, type CloudReadinessGrade } from '@/lib/abap
 import type { ProvenanceValue } from '@/lib/provenance';
 import type { CapabilityFacts } from '@/lib/documentation-capabilities';
 import { layerFacts, rowLines, rowSentences, sopStatementsOf, type SopStatement } from '@/lib/sop-provenance';
+import { BUSINESS_STEP_LEVEL } from '@/lib/business-steps';
 
 /**
  * The business reader's view of the Documentation stage — owner, 03.10.2026
@@ -251,6 +252,49 @@ export interface StoredBusinessLayer {
   audit_controls?: unknown;
   /** What the program can do, stored with the layer since 3.0.10 (`lib/documentation-capabilities.ts`). */
   facts?: unknown;
+  /** `business-step` for a layer written on the business level (owner 16.10.2026); absent before. */
+  level?: unknown;
+}
+
+/**
+ * Whether a stored layer is written on the business level — one row per step
+ * "How it works" lists, its technical steps folded under it (owner
+ * 16.10.2026, `lib/business-steps.ts`). A layer stored before has a row per
+ * element of the process; it still renders, folded, with a note that
+ * regenerating gives the business-level form.
+ */
+export function isBusinessLevelLayer(layer: StoredBusinessLayer | null | undefined): boolean {
+  return !!layer && layer.level === BUSINESS_STEP_LEVEL;
+}
+
+/** A technical step folded under a business step of the SOP, as the stored row carries it. */
+export interface SopTechnicalStep {
+  id: string;
+  name: string;
+  kind: string;
+  anchor: GlanceAnchor | null;
+  depth: number;
+}
+
+/** The technical steps a stored row carries (`stepTechnical`, written by `enrichBusinessLayer`) — never the model's. */
+export function rowTechnical(row: Record<string, unknown> | undefined): SopTechnicalStep[] {
+  if (!row || !Array.isArray(row.stepTechnical)) return [];
+  const out: SopTechnicalStep[] = [];
+  for (const t of row.stepTechnical) {
+    if (!t || typeof t !== 'object') continue;
+    const v = t as Record<string, unknown>;
+    if (typeof v.id !== 'string' || typeof v.name !== 'string') continue;
+    const lines = Array.isArray(v.lines) ? v.lines : [];
+    const first = lines.find((a): a is GlanceAnchor => !!a && typeof a === 'object' && Number.isInteger((a as GlanceAnchor).lineStart) && Number.isInteger((a as GlanceAnchor).lineEnd));
+    out.push({
+      id: v.id,
+      name: v.name,
+      kind: typeof v.kind === 'string' ? v.kind : '',
+      anchor: first ? { lineStart: first.lineStart, lineEnd: first.lineEnd } : null,
+      depth: typeof v.depth === 'number' && Number.isFinite(v.depth) ? Math.max(1, Math.floor(v.depth)) : 1,
+    });
+  }
+  return out;
 }
 
 /** A step of the process as the engine read it — from the stored documentation. */
@@ -298,6 +342,14 @@ export interface SopStep {
   statements: SopStatement[];
   /** The business exception — always an organisational proposal; null when none was written. */
   exceptionStatement: SopStatement | null;
+  /**
+   * The technical steps folded under this business step, with their lines
+   * (owner 16.10.2026) — empty for a layer stored before, whose rows are
+   * those steps themselves.
+   */
+  technical: SopTechnicalStep[];
+  /** The step's reference on the description's main path ("4a"), when it is not its number. */
+  ref: string | null;
 }
 
 /** What the statements of the SOP are judged against. */
@@ -383,7 +435,13 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[], 
   }
   const position = new Map(process.map((s, i) => [s.id, i]));
   const byId = new Map(process.map((s) => [s.id, s]));
-  const known = order.filter((id) => position.has(id)).sort((a, b) => position.get(a)! - position.get(b)!);
+  // A business-level layer is stored in the order of the business steps (the
+  // description's main path, the order a run takes); a layer stored before
+  // takes the order of the process list.
+  const business = isBusinessLevelLayer(layer);
+  const known = business
+    ? order.filter((id) => position.has(id))
+    : order.filter((id) => position.has(id)).sort((a, b) => position.get(a)! - position.get(b)!);
   const unknown = process.length ? [] : order.filter((id) => !position.has(id));
 
   const facts = judgement.facts !== undefined ? judgement.facts : layerFacts(layer);
@@ -392,7 +450,12 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[], 
     const s = sopById.get(stepId);
     const r = raciById.get(stepId);
     const ref = byId.get(stepId);
-    const judged = sopStatementsOf(s, { stepLines: ref?.lines?.length ? ref.lines : rowLines(s), facts, roles, stepSentences: rowSentences(s) });
+    // A business step's lines are its own and those of every element under it — stored with the row.
+    const stored = rowLines(s);
+    const stepLines = business && stored.length ? stored : ref?.lines?.length ? ref.lines : stored;
+    const judged = sopStatementsOf(s, { stepLines, facts, roles, stepSentences: rowSentences(s) });
+    const technical = rowTechnical(s ?? r);
+    const stepRef = text((s ?? r)?.stepRef);
     const claimed = judged.statements.map((st) => st.text).join(' ');
     const narrative = text(s?.narrative) ?? (claimed || null);
     return {
@@ -413,6 +476,8 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[], 
       thin: isThinNarrative(narrative),
       statements: judged.statements,
       exceptionStatement: judged.exception,
+      technical,
+      ref: stepRef,
     };
   });
 }
