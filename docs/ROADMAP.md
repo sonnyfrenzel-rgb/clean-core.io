@@ -1571,6 +1571,21 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-852 | low | — | — | refuted |
 | SEC-2026-853 | low | — | — | refuted |
 | SEC-2026-854 | medium | — | — | refuted |
+| SEC-2026-855 | medium | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-856 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-857 | medium | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-858 | medium | P2 | next rules deploy | scheduled |
+| SEC-2026-859 | low | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-860 | info | P3 | after 3.0.15 · security bundle | scheduled |
+| SEC-2026-861 | medium | — | — | refuted |
+| SEC-2026-862 | low | — | — | refuted |
+| SEC-2026-863 | medium | — | — | refuted |
+| SEC-2026-864 | low | — | — | refuted |
+| SEC-2026-865 | low | — | — | refuted |
+| SEC-2026-866 | low | — | — | refuted |
+| SEC-2026-867 | info | — | — | refuted |
+| SEC-2026-868 | info | — | — | refuted |
+| SEC-2026-869 | critical | P1 | 3.0.16 · patch step | scheduled |
 
 **Audit of v3.0.11 (`7793427`), 12.10.2026: 0 critical, 0 high, 2 medium, 4 low, 2 info — all 64 candidates verified, $0.42.** SEC-2026-803 (P2) and -804 (P3) go to 3.0.12; six refuted (SEC-2026-805 and -806 as -791/-792, -807 as -794, -808 and -809 as -797, -810 against the code). The reasons are in the sealed register.
 
