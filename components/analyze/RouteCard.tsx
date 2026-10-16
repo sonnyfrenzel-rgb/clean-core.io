@@ -9,7 +9,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ObjectSection from '@/components/analyze/ObjectSection';
 import { SapIdentifierChecks } from '@/components/SapIdentifierCheck';
-import type { RouteDriver } from '@/lib/abap/extensibility-router';
+import type { RouteDriver, StatedRouteBasis } from '@/lib/abap/extensibility-router';
 import { BTP, SIDE_BY_SIDE_LABEL, isSideBySideRoute, routeLabel } from '@/lib/sap-naming';
 
 /**
@@ -52,8 +52,10 @@ export interface RouteCardProps {
    * The router's drivers and assumptions for this run's evidence — `null` when
    * they were not derived (no evidence) and `'differs'` when today's engine does
    * not arrive at the signed route and score, which is said instead of showing them.
+   * `stated`: the requirements the owner stated in the source, when they set
+   * the route (from engine 3.0.17) — named as stated, never as a driver.
    */
-  derived: { drivers: readonly RouteDriver[]; assumptions: readonly string[] } | 'differs' | null;
+  derived: { drivers: readonly RouteDriver[]; assumptions: readonly string[]; stated?: StatedRouteBasis | null } | 'differs' | null;
   /** What the run did not record about its route — one muted line. */
   notRecorded: readonly string[];
   /** The workspace's Management view, where the program decision is made. */
@@ -94,6 +96,9 @@ export default function RouteCard({
   const btp = route ? isSideBySideRoute(route) : false;
   const drivers = derived && derived !== 'differs' && !overridden ? derived.drivers : null;
   const assumptions = derived && derived !== 'differs' && !overridden ? derived.assumptions : null;
+  // A route set by a requirement stated in the source has no driver; it is
+  // named as stated, not as something the engine found in the code.
+  const statedSet = derived && derived !== 'differs' && !overridden && derived.stated?.followed ? derived.stated.items : null;
 
   return (
     <ObjectSection
@@ -171,7 +176,23 @@ export default function RouteCard({
 
       {drivers ? (
         <p className="m-0 mt-3 cc-text-cell text-cc-ink" data-route-drivers={drivers.length}>
-          {drivers.length === 0 ? (
+          {drivers.length === 0 && statedSet && statedSet.length > 0 ? (
+            <span data-route-stated={statedSet.length}>
+              Nothing found in the code forces it off the stack; it is set there by a requirement stated in the
+              source, not read from the code:{' '}
+              {statedSet.map((r, i) => (
+                <React.Fragment key={`${r.lineStart}-${i}`}>
+                  {i > 0 ? (i === statedSet.length - 1 ? ' and ' : ', ') : null}
+                  {r.label ?? 'stated requirement'}{' '}
+                  <CcAnchor
+                    label={`Source line ${r.lineStart}${openLine ? ', open the source' : ''}`}
+                    onOpen={openLine ? () => openLine(r.lineStart) : undefined}
+                  >{`L${r.lineStart}`}</CcAnchor>
+                </React.Fragment>
+              ))}
+              .
+            </span>
+          ) : drivers.length === 0 ? (
             'Nothing the engine found forces it off the stack.'
           ) : (
             <>

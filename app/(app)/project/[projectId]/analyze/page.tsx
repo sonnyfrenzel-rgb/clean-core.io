@@ -931,7 +931,12 @@ export default function AnalyzePage() {
     if (!evidenceReport) return null;
     if (!routeReport) return 'differs' as const;
     const deployment = project?.s4Deployment === 'public' ? 'public' : 'private';
-    return { drivers: routeDrivers(evidenceReport, deployment, signedEngineVersionOf(project)), assumptions: routeReport.assumptions };
+    return {
+      drivers: routeDrivers(evidenceReport, deployment, signedEngineVersionOf(project)),
+      assumptions: routeReport.assumptions,
+      // From engine 3.0.17: what the owner stated in the source, when it set the route.
+      stated: routeReport.statedRequirements ?? null,
+    };
   }, [evidenceReport, routeReport, project]);
 
   /**
