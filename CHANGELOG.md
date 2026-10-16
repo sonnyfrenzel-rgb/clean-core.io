@@ -63,6 +63,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security: SEC-2026-843, SEC-2026-845 — the audit-pack verifier, on the page and on the command line,
   counts an archive's entries from its bytes and refuses one over the limit, or a ZIP64 container, before
   unpacking it.
+- Security: SEC-2026-844 — the read of a project's stored artefacts checks read access again on the
+  project document its transaction reads, and answers "not found" without it.
+- Security: SEC-2026-846 — the test-run and artefact routes pass an error's text on only for the check's
+  own refusal; any other error is logged and answered with a fixed sentence.
 
 ## [v3.0.14] — 2026-10-16
 

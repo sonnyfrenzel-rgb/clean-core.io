@@ -13,9 +13,9 @@ import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
-import { ArtefactReadError, readStoredArtefacts } from '@/lib/project-artefact-store';
+import { ArtefactReadError, readArtefactsForReader } from '@/lib/project-artefact-store';
 import { storeBusinessLayer, storeDocumentation, storeTestSuite } from '@/lib/project-artefact-writes';
-import { ARTEFACT_READ_ERROR, isStoredArtefactField } from '@/lib/project-artefacts';
+import { ARTEFACT_READ_ERROR } from '@/lib/project-artefacts';
 
 /**
  * The large artefacts of a project — roadmap 3.0.14, item 9.
@@ -47,6 +47,16 @@ type Gate =
   | { ok: true; uid: string; projectId: string }
   | { ok: false; response: NextResponse };
 
+/**
+ * A gate check that failed with anything but its own refusal (`QuotaError`):
+ * logged without the error's text and answered with a fixed sentence
+ * (SEC-2026-846, as SEC-2026-831).
+ */
+function gateCheckFailed(err: unknown, step: string): Gate {
+  logger.error('artefacts: a gate check could not run', { route: 'api/projects/artefacts', step, error: err instanceof Error ? err.name : 'unknown' });
+  return { ok: false, response: NextResponse.json({ error: 'The check could not run. Please try again shortly.' }, { status: 503 }) };
+}
+
 async function openProject(req: NextRequest, params: Promise<{ projectId: string }>, mutating: boolean): Promise<Gate> {
   const decodedToken = await verifyRequestAuth(req);
   if (!decodedToken) {
@@ -55,16 +65,16 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
-    return { ok: false, response: NextResponse.json({ error: q?.message || 'Multi-factor authentication required.' }, { status: q?.status || 403 }) };
+    if (!(mfaErr instanceof QuotaError)) return gateCheckFailed(mfaErr, 'mfa');
+    return { ok: false, response: NextResponse.json({ error: mfaErr.message || 'Multi-factor authentication required.' }, { status: mfaErr.status || 403 }) };
   }
   if (mutating) {
     try {
       // One write per generation of a stage.
       await assertRateLimit(`project-artefacts:${decodedToken.uid}`, 240, 60 * 60 * 1000);
     } catch (rateErr: unknown) {
-      const q = rateErr as { message?: string; status?: number };
-      return { ok: false, response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }) };
+      if (!(rateErr instanceof QuotaError)) return gateCheckFailed(rateErr, 'rate-limit');
+      return { ok: false, response: NextResponse.json({ error: rateErr.message || 'Too many requests.' }, { status: rateErr.status || 429 }) };
     }
     try {
       // The account gate the browser write passed until 3.0.14 (`accountActive()`
@@ -87,8 +97,8 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
       // this once per write of them (the browser caches by the index).
       await assertRateLimit(`project-artefacts-read:${decodedToken.uid}`, 2400, 60 * 60 * 1000);
     } catch (rateErr: unknown) {
-      const q = rateErr as { message?: string; status?: number };
-      return { ok: false, response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }) };
+      if (!(rateErr instanceof QuotaError)) return gateCheckFailed(rateErr, 'rate-limit');
+      return { ok: false, response: NextResponse.json({ error: rateErr.message || 'Too many requests.' }, { status: rateErr.status || 429 }) };
     }
   }
 
@@ -119,18 +129,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     const { db } = await getAdminDb();
     const projectRef: DocumentReference = db.collection('projects').doc(gate.projectId);
     // The index and the parts are read in one read-only transaction, so the
-    // parts are the ones the index names — never half of a later write.
+    // parts are the ones the index names — never half of a later write — and
+    // read access is asked again of the document that transaction reads.
     const artefacts = await db.runTransaction(
-      async (tx: Transaction) => {
-        const snap = await tx.get(projectRef);
-        const data = (snap.data() || {}) as Record<string, unknown>;
-        // Inline copies are the page's own read of the document; only what is
-        // stored outside is answered here — all of it, inline or not.
-        const index = Object.fromEntries(Object.entries(data).filter(([key]) => !isStoredArtefactField(key)));
-        return readStoredArtefacts(tx, projectRef, index);
-      },
+      async (tx: Transaction) => readArtefactsForReader(tx, projectRef, gate.uid),
       { readOnly: true },
     );
+    if (artefacts === null) return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     return NextResponse.json({ artefacts }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (err: unknown) {
     if (err instanceof ArtefactReadError) {

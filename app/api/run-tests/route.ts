@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
-import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb, QuotaError } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { isUrlSafe, readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -98,6 +98,19 @@ let activeRuns = 0;
 // of fc787674705f, 1988ea0fc1b6).
 const RUN_REQUEST_BODY_LIMITS = { maxBytes: 4 * MAX_RUN_INPUT_BYTES, timeoutMs: 30_000 };
 
+/**
+ * A gate check that failed with anything but its own refusal (`QuotaError`):
+ * logged without the error's text and answered with a fixed sentence. Only a
+ * refusal's message is the caller's to read (SEC-2026-846, as SEC-2026-831).
+ */
+function gateCheckFailed(err: unknown, step: string, extra: Record<string, unknown> = {}) {
+  logger.error('run-tests: a gate check could not run', { route: 'api/run-tests', step, error: err instanceof Error ? err.name : 'unknown' });
+  return NextResponse.json(
+    { output: '', error: 'The check could not run. Please try again shortly.', exitCode: 1, ...extra },
+    { status: 503 },
+  );
+}
+
 /** What an execution produced, whichever executor produced it. */
 interface Execution {
   buildError: string | null;
@@ -171,7 +184,8 @@ export async function POST(req: Request) {
 
   try {
     await assertMfaSatisfied(req, decodedToken);
-  } catch (mfaErr: any) {
+  } catch (mfaErr: unknown) {
+    if (!(mfaErr instanceof QuotaError)) return gateCheckFailed(mfaErr, 'mfa');
     return NextResponse.json(
       { output: '', error: mfaErr.message || 'MFA verification required.', exitCode: 1 },
       { status: 403 }
@@ -181,10 +195,11 @@ export async function POST(req: Request) {
   // F-02: account-state gate — pending/suspended/stale-Terms accounts cannot run tests.
   try {
     await assertAccountActive(decodedToken.uid, { requireApproved: true, requireCurrentTerms: true, isAdminClaim: decodedToken.admin === true });
-  } catch (gateErr: any) {
+  } catch (gateErr: unknown) {
+    if (!(gateErr instanceof QuotaError)) return gateCheckFailed(gateErr, 'account');
     return NextResponse.json(
-      { output: '', error: gateErr?.message || 'Account not permitted.', exitCode: 1 },
-      { status: gateErr?.status || 403 },
+      { output: '', error: gateErr.message || 'Account not permitted.', exitCode: 1 },
+      { status: gateErr.status || 403 },
     );
   }
 
@@ -251,10 +266,11 @@ export async function POST(req: Request) {
   // Per-user rate limit (skipped in emulator/E2E). Bounds burst abuse of the runner.
   try {
     await assertRateLimit(`run-tests:${decodedToken.uid}`, 20, 60_000);
-  } catch (rlErr: any) {
+  } catch (rlErr: unknown) {
+    if (!(rlErr instanceof QuotaError)) return gateCheckFailed(rlErr, 'rate-limit');
     return NextResponse.json(
-      { output: '', error: rlErr?.message || 'Too many test runs. Please wait a moment and retry.', exitCode: 1 },
-      { status: rlErr?.status || 429 },
+      { output: '', error: rlErr.message || 'Too many test runs. Please wait a moment and retry.', exitCode: 1 },
+      { status: rlErr.status || 429 },
     );
   }
 
@@ -488,8 +504,9 @@ export async function POST(req: Request) {
       try {
         await assertS4TenantAccess(decodedToken.uid);
       } catch (e) {
+        if (!(e instanceof QuotaError)) return gateCheckFailed(e, 's4-access', { testResults: [] });
         return NextResponse.json(
-          { output: '', error: (e as Error)?.message || 'S/4HANA live access is not permitted.', exitCode: 1, testResults: [] },
+          { output: '', error: e.message || 'S/4HANA live access is not permitted.', exitCode: 1, testResults: [] },
           { status: 403 },
         );
       }

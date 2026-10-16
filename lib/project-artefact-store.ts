@@ -6,6 +6,7 @@ import {
   ARTEFACT_PART_VALUE_BYTES,
   STORED_ARTEFACT_FIELDS,
   artefactIndexOf,
+  isStoredArtefactField,
   artefactPartData,
   artefactPartId,
   isExternalValue,
@@ -15,6 +16,7 @@ import {
   type StoredArtefactField,
 } from './project-artefacts';
 import { checkProjectWrite, estimateDocumentSize, type ProjectSizeCheck } from './firestore-doc-size';
+import { mayReadProject } from './project-readers';
 
 /**
  * The server half of roadmap 3.0.14, item 9: reading and writing the large
@@ -109,6 +111,26 @@ export async function withStoredArtefacts<T extends Record<string, unknown>>(
   if (fieldsToRead(data).length === 0) return data;
   const values = await readStoredArtefacts(reader, projectRef, data);
   return { ...data, ...values };
+}
+
+/**
+ * Every artefact stored outside the project document, for a reader, inside the
+ * caller's read-only transaction. Read access is asked of the project document
+ * this transaction reads; `null` — answered as "no such project" — when the
+ * document is gone or `uid` may no longer read it (SEC-2026-844).
+ */
+export async function readArtefactsForReader(
+  tx: ArtefactReader & { get(ref: DocumentReference): Promise<DocumentSnapshot> },
+  projectRef: DocumentReference,
+  uid: string,
+): Promise<Partial<Record<StoredArtefactField, unknown>> | null> {
+  const snap = await tx.get(projectRef);
+  const data = (snap.exists ? snap.data() || {} : {}) as Record<string, unknown>;
+  if (!snap.exists || !mayReadProject(data, uid)) return null;
+  // Inline copies are the page's own read of the document; only what is
+  // stored outside is answered here — all of it, inline or not.
+  const index = Object.fromEntries(Object.entries(data).filter(([key]) => !isStoredArtefactField(key)));
+  return readStoredArtefacts(tx, projectRef, index);
 }
 
 /** A transaction's request may carry 10 MiB; the parts of one write stay well under it. */
