@@ -354,3 +354,9 @@ test("the browser's abaplint run and the server's second run read as two checks,
   expect(browser).not.toBe(server);
   expect(server).toMatch(/Clean-Core\.io's server/);
 });
+
+test('every generated class says it is created public, so an update by abapGit does not make it private (second SAP import, 16.10.2026)', () => {
+  const xml = clasXml({ name: 'zcl_x_logic', description: 'Logic' });
+  expect(xml).toContain('<EXPOSURE>2</EXPOSURE>');
+  expect(xml.indexOf('<EXPOSURE>')).toBeLessThan(xml.indexOf('<STATE>'));
+});

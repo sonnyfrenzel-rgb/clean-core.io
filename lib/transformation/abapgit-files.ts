@@ -147,6 +147,10 @@ export function clasXml(c: ClassMeta): string {
     ['LANGU', 'E'],
     ['DESCRIPT', abapDescription(c.description)],
     ...(c.category ? ([['CATEGORY', c.category]] as Node[]) : []),
+    // Instantiation public (CREATE PUBLIC). Left out, abapGit keeps the initial 0 — private — when it UPDATES an
+    // existing class, and every `NEW` outside the class fails activation: "An instance of the class … cannot be
+    // created outside the class" (second SAP import, BTP ABAP trial, 16.10.2026; a first import took it from the source).
+    ['EXPOSURE', '2'],
     ['STATE', '1'],
     ['CLSCCINCL', 'X'],
     ['FIXPT', 'X'],
