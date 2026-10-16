@@ -415,7 +415,11 @@ test.describe('verifying a pack sealed in format 2', () => {
     globalThis.fetch = (async () => new Response(JSON.stringify({ valid: true }), { status: 200 })) as typeof fetch;
     try {
       const plain = await verifyAuditPack(await pack([]));
-      expect(plain.success, 'control: a format-2 pack without an attested file').toBe(true);
+      // A format-2 pack without an attested file is still verified only in
+      // part: its issue date and run fields are outside the signature
+      // (SEC-66dd82b-01, tests/audit-pack-unbound-metadata.spec.ts).
+      expect(plain.integrityValid, 'control: a format-2 pack without an attested file').toBe(true);
+      expect(plain.status).toBe('authentic');
       const withAttested = await verifyAuditPack(await pack([{ path: '07-user-attested.md', provenance: 'user-attested' }]));
       expect(withAttested.integrityValid, 'an old pack stopped verifying').toBe(true);
       expect(withAttested.success, 'success over contents nobody sealed').toBe(false);
@@ -424,8 +428,8 @@ test.describe('verifying a pack sealed in format 2', () => {
       expect(verdictHeadline(withAttested)).not.toBe('Authenticity & Integrity Verified');
       expect(verdictHeadline(withAttested)).toBe('Signature Verified (Attested Contents Not Checked)');
       expect(verdictState(withAttested)).toBe('warning');
-      expect(verdictHeadline(plain)).toBe('Authenticity & Integrity Verified');
-      expect(verdictState(plain)).toBe('success');
+      expect(verdictHeadline(plain)).toBe('Signature Verified (Export Details Not Covered)');
+      expect(verdictState(plain)).toBe('warning');
     } finally {
       globalThis.fetch = realFetch;
     }

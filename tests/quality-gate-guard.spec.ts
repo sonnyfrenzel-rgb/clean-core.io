@@ -98,8 +98,8 @@ test('the deploy waits for the gate, and the gate for the build and every shard'
   }
   expect(job(wf, 'e2e'), 'a step of the e2e job is conditional').not.toMatch(/\n\s+if:/);
   // Both deploy jobs wait for validate, and the app deploy only on its success.
-  expect(job(wf, 'deploy-runner')).toMatch(/\n {4}needs: \[validate, security\]\n/);
-  expect(job(wf, 'deploy')).toMatch(/\n {4}needs: \[validate, security, deploy-runner\]\n/);
+  expect(job(wf, 'deploy-runner')).toMatch(/\n {4}needs: \[validate, security, deploy-gate\]\n/);
+  expect(job(wf, 'deploy')).toMatch(/\n {4}needs: \[validate, security, deploy-gate, deploy-runner\]\n/);
   expect(job(wf, 'deploy')).toContain("needs.validate.result == 'success'");
 });
 

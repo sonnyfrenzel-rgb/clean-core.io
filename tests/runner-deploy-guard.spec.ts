@@ -43,7 +43,7 @@ const COMMON_FLAGS = [
 test.describe('the runner job', () => {
   test('passes the same gate as the app, signs in the same way, and reads no secret', () => {
     const j = job(wf(), 'deploy-runner');
-    expect(j).toMatch(/needs:\s*\[validate,\s*security\]/);
+    expect(j).toMatch(/needs:\s*\[validate,\s*security,\s*deploy-gate\]/);
     expect(j).toContain("if: vars.RUNNER_DEPLOY_ENABLED == 'true'");
     expect(j).toContain('id-token: write');
     expect(j).toContain('google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed');
@@ -73,7 +73,7 @@ test.describe('the runner job', () => {
 
   test('the app deploy waits for the runners, goes ahead when they are switched off, never when they failed', () => {
     const d = job(wf(), 'deploy');
-    expect(d).toMatch(/needs:\s*\[validate,\s*security,\s*deploy-runner\]/);
+    expect(d).toMatch(/needs:\s*\[validate,\s*security,\s*deploy-gate,\s*deploy-runner\]/);
     expect(d).toContain("needs.deploy-runner.result == 'success' || needs.deploy-runner.result == 'skipped'");
     expect(d).toContain("needs.validate.result == 'success'");
     expect(d).toContain("needs.security.result == 'success'");

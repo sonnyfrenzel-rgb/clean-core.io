@@ -8,11 +8,13 @@ import {
   signatureStateOf,
   verdictHeadline,
   verdictState,
+  partlyVerified,
   ed25519Label,
   type VerifyResult,
   type FileVerifyResult,
   type Ed25519Result,
 } from '@/lib/audit-pack-verify';
+import { bindsIssuanceMetadata } from '@/lib/audit-pack-canonical';
 import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
@@ -281,11 +283,25 @@ export default function VerifyPackPage() {
                   <dd className="m-0 mt-1 break-all font-cc-mono text-[12px] text-cc-ink">{result.manifest.runId || '—'}</dd>
                 </div>
               </dl>
+              {/* Shown values a format before 3 does not sign are said to be
+                  exactly that, beside the values (SEC-66dd82b-01). */}
+              {!bindsIssuanceMetadata(result.manifest.version) && (
+                <p className="m-0 mt-3 flex items-start gap-2 text-[12px] text-cc-warning">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  <span>
+                    The issue date, project, run, engine and catalog above are not covered by the signature in this
+                    pack&apos;s manifest version; they are the pack&apos;s own claim.
+                  </span>
+                </p>
+              )}
             </CcCard>
           )}
 
           {result.errors.length > 0 && (
-            <CcMessageStrip state={result.success ? 'warning' : 'error'} headline={result.success ? 'Notices' : 'Errors'}>
+            <CcMessageStrip
+              state={result.success || partlyVerified(result) ? 'warning' : 'error'}
+              headline={result.success || partlyVerified(result) ? 'Notices' : 'Errors'}
+            >
               <ul className="m-0 mt-1 list-disc space-y-1 pl-4">
                 {result.errors.map((err, i) => (
                   <li key={i}>{err}</li>

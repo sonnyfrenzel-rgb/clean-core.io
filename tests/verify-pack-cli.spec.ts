@@ -233,6 +233,30 @@ test('an archive whose end record is not the real one fails the pack here too', 
   const { code, out } = run([packPath, '--key', kp.rawPublicBase64]);
   expect(out).toContain('NOT verified');
   expect(code).toBe(1);
+
+  // The same archive made whole (QA full review of 66dd82b73417): the comment
+  // of the real end record carries a second directory without the decoy, and a
+  // second end record placing it exactly. JSZip reads that one and sees no
+  // duplicate; a reader taking the real one sees the decoy first.
+  const realEnd = plain.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const dirSize = plain.readUInt32LE(realEnd + 12);
+  const dirOffset = plain.readUInt32LE(realEnd + 16);
+  const firstLen = 46 + plain.readUInt16LE(dirOffset + 28) + plain.readUInt16LE(dirOffset + 30) + plain.readUInt16LE(dirOffset + 32);
+  const fakeDirectory = Buffer.from(plain.subarray(dirOffset + firstLen, dirOffset + dirSize));
+  const fakeEnd = Buffer.alloc(22);
+  fakeEnd.writeUInt32LE(0x06054b50, 0);
+  fakeEnd.writeUInt16LE(2, 8);
+  fakeEnd.writeUInt16LE(2, 10);
+  fakeEnd.writeUInt32LE(fakeDirectory.length, 12);
+  fakeEnd.writeUInt32LE(realEnd + 22, 16);
+  const nested = Buffer.concat([plain, fakeDirectory, fakeEnd]);
+  nested.writeUInt16LE(fakeDirectory.length + 22, realEnd + 20);
+  expect(Object.keys((await JSZip.loadAsync(nested)).files).sort()).toEqual(['00-executive-summary.md', 'manifest.json']);
+  const nestedPath = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+  writeFileSync(nestedPath, nested);
+  const second = run([nestedPath, '--key', kp.rawPublicBase64]);
+  expect(second.out).toContain('NOT verified');
+  expect(second.code).toBe(1);
 });
 
 test('a user-attested file is reported as present and unsigned, and the pack still verifies', async () => {

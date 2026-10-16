@@ -414,6 +414,14 @@ function duplicateEntryNames(buffer) {
   for (let i = eocd + 1; i <= b.length - 4; i++) {
     if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');
   }
+  // And before it: an end record whose comment runs exactly to the end of the
+  // archive carries the one above inside that comment — two valid end records,
+  // two central directories, and only one of them walked here.
+  for (let i = eocd - 1; i >= floor; i--) {
+    if (b.readUInt32LE(i) === 0x06054b50 && i + 22 + b.readUInt16LE(i + 20) === b.length) {
+      return unchecked('the archive carries a second end record whose comment holds the last one');
+    }
+  }
   const end = readEndRecord(b, eocd);
   const { disk, directoryDisk, totalOnDisk, total, directorySize, commentLength } = end;
   let offset = end.offset;
@@ -745,15 +753,23 @@ async function main() {
     : '';
   // A pack sealed before attested contents were bound gets a verdict that names
   // the exception instead of one sentence that covers the whole archive: the
-  // signed evidence is verified, the self-declaration inside it is not.
+  // signed evidence is verified, the self-declaration inside it is not. The
+  // same holds for the run fields and issue date printed at the top when the
+  // format does not bind them (SEC-66dd82b-01): the verdict is then not green,
+  // and it names the fields the signature leaves out.
+  const metadataNote = bound
+    ? ''
+    : `\nThe issue date, project, run, engine and catalog printed above are not covered by the signature in manifest version ${shown(manifest.version)}; they are the pack's own claim.`;
+  const attestedNote = unboundAttested
+    ? `\n${unboundAttested} attested file(s) carry no digest in this pack's manifest version, so their contents are outside the check.`
+    : '';
   console.log(
     '\n' +
       (verified
-        ? unboundAttested
-          ? c.ok('Verified. The signed evidence, the manifest and the signature all agree — checked offline, no secret involved.') +
-            c.warn(
-              `\n${unboundAttested} attested file(s) carry no digest in this pack's manifest version, so their contents are outside the check.`,
-            ) +
+        ? unboundAttested || !bound
+          ? c.warn('Verified. The signed evidence, the manifest and the signature agree — checked offline, no secret involved. Not everything printed is covered by the signature:') +
+            c.warn(attestedNote) +
+            c.warn(metadataNote) +
             c.warn(chainNote)
           : c.ok('Verified. Contents, manifest and signature all agree — checked offline, no secret involved.') +
             c.warn(chainNote)

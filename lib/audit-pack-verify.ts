@@ -184,6 +184,15 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   for (let i = eocd + 1; i <= bytes.byteLength - 4; i++) {
     if (view.getUint32(i, true) === EOCD) return unchecked('the archive carries more than one end record near its end');
   }
+  // And before it: an end record whose comment runs exactly to the end of the
+  // archive, and so carries the one above inside that comment. Both are then
+  // valid end records, each with its own central directory, and a reader that
+  // takes the earlier one sees entries this count never walked.
+  for (let i = eocd - 1; i >= floor; i--) {
+    if (view.getUint32(i, true) === EOCD && i + 22 + view.getUint16(i + 20, true) === bytes.byteLength) {
+      return unchecked('the archive carries a second end record whose comment holds the last one');
+    }
+  }
 
   const end = readEndRecord(view, eocd);
   const { disk, directoryDisk, totalOnDisk, total, directorySize, commentLength } = end;
@@ -546,8 +555,10 @@ export function ed25519Label(state: Ed25519State): string {
 
 /**
  * Authentic, but not all of it: the signature verified, and the pack carries a
- * user-attested file whose contents its manifest version does not bind (format
- * 2). `success` is false for exactly that case; the headline and its colour
+ * user-attested file whose contents its manifest version does not bind, or
+ * shows export details (issue date, project, run, engine, catalog) its manifest
+ * version does not bind (both: format 2). `success` is false for exactly those
+ * cases; the headline and its colour
  * must say so too, or the reader gets the full verdict over contents nobody
  * checked.
  */
@@ -561,8 +572,16 @@ export function verdictState(result: Pick<VerifyResult, 'status' | 'success'>): 
   return result.status === 'authentic' && !partlyVerified(result) ? 'success' : 'warning';
 }
 
-export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'success' | 'signatureValid' | 'manifest'>): string {
-  if (partlyVerified(result)) return 'Signature Verified (Attested Contents Not Checked)';
+export function verdictHeadline(
+  result: Pick<VerifyResult, 'status' | 'success' | 'signatureValid' | 'manifest'> & Partial<Pick<VerifyResult, 'fileIntegrity'>>,
+): string {
+  if (partlyVerified(result)) {
+    const attestedUnchecked = (result.fileIntegrity ?? []).some((f) => f.signed === false && f.valid && !f.expectedHash);
+    if (!attestedUnchecked && result.manifest && !bindsIssuanceMetadata(result.manifest.version)) {
+      return 'Signature Verified (Export Details Not Covered)';
+    }
+    return 'Signature Verified (Attested Contents Not Checked)';
+  }
   if (result.status === 'authentic') return 'Authenticity & Integrity Verified';
   if (result.status === 'failed') return 'Verification Failed';
   return signatureStateOf(result) === 'unchecked'
@@ -784,10 +803,14 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     // one field into its neighbour leaves the signature intact. The page prints
     // those values, so it says what they are (QA full review of v2.20.0). The
     // format cannot change for packs already issued; the reading of them can.
-    if (!bindsIssuanceMetadata(manifest.version)) {
+    // The same limit decides the verdict (SEC-66dd82b-01): a headline that reads
+    // as verified in full over values the signature does not cover is the
+    // stronger claim, so such a pack is verified in part, never in full.
+    const metadataUnbound = !bindsIssuanceMetadata(manifest.version);
+    if (metadataUnbound) {
       errors.push(
         `Manifest version ${String(manifest.version ?? '')} does not bind the issue date, and binds project, run, engine and catalog ` +
-          "only as one colon-joined string: the values shown for them are the pack's own claim.",
+          "only as one colon-joined string: the values shown for them are the pack's own claim, not covered by the signature.",
       );
     }
 
@@ -871,7 +894,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
       status = signatureVerified ? 'authentic' : 'integrity-only';
     }
 
-    const success = status === 'authentic' && !attestedUnbound;
+    const success = status === 'authentic' && !attestedUnbound && !metadataUnbound;
 
     return {
       success,

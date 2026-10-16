@@ -5,6 +5,22 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.16] — unreleased
+
+### Fixed
+- Security: SEC-66dd82b-01 — an audit pack of a manifest format that does not sign its issue date
+  and run fields is verified in part, never in full: `/verify-pack` shows the warning verdict
+  "Signature Verified (Export Details Not Covered)" and marks those export details as not covered by
+  the signature; `scripts/verify-pack.mjs` prints its verdict in yellow and names the same fields.
+  Packs of format 3 and later are unchanged.
+- Audit pack verification (web and `scripts/verify-pack.mjs`) treats an archive whose end record
+  sits inside the comment of an earlier, equally valid end record as not checked, so it never
+  passes integrity (QA full review of 66dd82b73417).
+- Deploy pipeline: the app and runner deploys of one branch run one at a time (a concurrency group
+  per service, never cancelling a running deploy), behind a new `deploy-gate` job that checks the
+  branch head before either deploy can queue; each deploy still re-reads the head as its last step
+  (QA full review of 66dd82b73417).
+
 ## [v3.0.15] — 2026-10-16
 
 ### Transformation, from the second SAP import (owner 16.10.2026)

@@ -292,6 +292,44 @@ test.describe('an archive whose end record is not the real one is refused', () =
     });
   }
 
+  // The same shape made whole (QA full review of 66dd82b73417): the comment of
+  // the real end record carries a second central directory — without the
+  // decoy — and a second end record that places it exactly. Both end records
+  // are then valid to a reader: one that takes the last sees no duplicate, one
+  // that takes the real one sees the decoy first.
+  test('a second, self-consistent end record inside the comment of the first', async () => {
+    const { bytes } = await packListingTwice();
+    const realEnd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    const size = bytes.readUInt32LE(realEnd + 12);
+    const offset = bytes.readUInt32LE(realEnd + 16);
+    // The real directory's records, minus the first one (the decoy).
+    const records: Buffer[] = [];
+    let at = offset;
+    while (at < offset + size) {
+      const len = 46 + bytes.readUInt16LE(at + 28) + bytes.readUInt16LE(at + 30) + bytes.readUInt16LE(at + 32);
+      records.push(bytes.subarray(at, at + len));
+      at += len;
+    }
+    expect(records.length).toBe(3);
+    const fakeDirectory = Buffer.concat(records.slice(1));
+    const fakeEnd = Buffer.alloc(22);
+    fakeEnd.writeUInt32LE(0x06054b50, 0);
+    fakeEnd.writeUInt16LE(2, 8);
+    fakeEnd.writeUInt16LE(2, 10);
+    fakeEnd.writeUInt32LE(fakeDirectory.length, 12);
+    fakeEnd.writeUInt32LE(realEnd + 22, 16);
+    const out = Buffer.concat([bytes, fakeDirectory, fakeEnd]);
+    out.writeUInt16LE(fakeDirectory.length + 22, realEnd + 20);
+
+    // JSZip reads the second end record, and so sees no duplicate at all.
+    const loaded = await JSZip.loadAsync(out);
+    expect(Object.keys(loaded.files).sort()).toEqual(['00-executive-summary.md', 'manifest.json']);
+    expect(duplicateEntryNames(out).counted, 'an archive with two valid end records was reported as counted').toBe(false);
+    const result = await verifyAuditPack(out as unknown as Blob);
+    expect(result.integrityValid, 'such an archive passed integrity').toBe(false);
+    expect(result.status).not.toBe('authentic');
+  });
+
   test('a genuine archive still counts, with and without a plain comment', async () => {
     const good = Buffer.from(await packWith());
     expect(duplicateEntryNames(good)).toMatchObject({ counted: true, duplicates: [] });
