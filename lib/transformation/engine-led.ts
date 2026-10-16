@@ -65,7 +65,13 @@ export function preflightFactsOf(prep: EngineLedPrepared, context: string): Omit
   return {
     functions: prep.fillUnits.length,
     fillCalls: Math.max(1, bundles.length),
-    oversize: bundles.filter((b) => b.prompt.length > LEASED_PROMPT_MAX_CHARS).map((b) => ({ unitIds: b.unitIds, chars: b.prompt.length })),
+    // The plan's reason where it could not split a function small enough (3.0.17: one statement, or the main path).
+    oversize: bundles
+      .filter((b) => b.prompt.length > LEASED_PROMPT_MAX_CHARS)
+      .map((b) => {
+        const reason = b.unitIds.map((id) => prep.plan.units.find((u) => u.id === id)?.promptOverCap?.reason).find(Boolean);
+        return { unitIds: b.unitIds, chars: b.prompt.length, ...(reason ? { reason } : {}) };
+      }),
   };
 }
 

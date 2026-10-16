@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Transformation: a fill prompt fits the cap — the checks and rules a routine carries now count when it is split**
+  (3.0.17, owner decision 17.10.2026). The engine split a routine into parts only by the lines and characters of
+  its ABAP. The checks and rules that travel with a function were not counted, so a routine of 290 lines with 67
+  checks and 51 rules stayed one part, and its fill prompt reached about 68,000 characters against the 28,000 one
+  call may carry; only the platform context was cut, and the call was not sent. The plan now estimates each
+  function's prompt the way the fill call builds it — the whole ABAP slice, the rules, the checks, the callees, the
+  class text the RAP route adds and the whole platform context — and splits at the same top-level statements until
+  every part fits. Every part keeps the whole ABAP of its lines, the checks and rules go with the part whose lines
+  hold them, and the engine-written parent still calls the parts in order. The estimate stays above the real prompt
+  of every unit of the shipped examples and the local acceptance programs, on both routes. A single statement too
+  large for one call — a LOOP with dozens of checks — is not cut: the plan names it with its reason, and the
+  pre-flight shows that reason for a function it cannot send. The shipped examples keep their functions; of the
+  local acceptance programs six now split more routines (the CAP side-by-side program 24 → 36 units), and none has a
+  call over the cap any more (before: six calls, the largest 68,415 characters). Scaffold version 15.
+  `tests/transformation-prompt-split.spec.ts`, `tests/transformation-gate-repair.spec.ts`.
 - **Transformation: "sample" is no longer read as demo data** (3.0.17, the acceptance set). The engine leaves a
   routine named as demo data out of both packages, and it decided that by finding DEMO, FIXTURE, TESTDATA or
   SAMPLE anywhere in the name. In the quality-management acceptance program the sample is the inspection sample:

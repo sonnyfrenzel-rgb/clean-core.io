@@ -10,8 +10,8 @@
  */
 
 export * from './types';
-export { planUnits, readEngineFacts, readContractFields, recordInputOf, fillGuardsOf, planDigest, rangeWords, camelName, pascalName, guardIdOf, ruleIdOnLine, csvDelimiterOf } from './unit-plan';
-export type { EngineFacts, PlanInput } from './unit-plan';
+export { planUnits, readEngineFacts, readContractFields, recordInputOf, fillGuardsOf, estimateFillPrompt, planDigest, rangeWords, camelName, pascalName, guardIdOf, ruleIdOnLine, csvDelimiterOf } from './unit-plan';
+export type { EngineFacts, FillPromptEstimate, PlanInput } from './unit-plan';
 export { sliceFor } from './abap-slice';
 export { MARKER_TAG, NEEDS_ALLOWLIST, bodyGuards, defuseMarkers, findRegions, markerLines, regionHash, regionText, scaffoldDigest, spliceBodies, verifyScaffoldDigest } from './markers';
 export { buildNodeScaffold, requiredGuardsOf, ruleRevisionOf, NODE_HELPERS, SCAFFOLD_NODE_MAJOR } from './scaffold-node';

@@ -311,6 +311,7 @@ Node prompt does, page.tsx lines 715–742). Under this design both tracks get t
 | Soft slice budget per unit | 150 ABAP lines **and** 6,000 characters | one of 118 reachable routines exceeds it (PP `READ_LIVE_SNAPSHOT`, 151 lines) |
 | Hard slice budget per unit | 300 lines / 12,000 characters | none exceed it apart from demo routines (PP `LOAD_DEMO`, 881 lines → `fixture`) |
 | Above the hard budget | split at top-level statement blocks into `<fn>_part1…n`, sharing one engine-written state object; the parent body calls them in order (engine-written) | — |
+| Fill prompt per unit (since 17.10.2026, 3.0.17) | the plan's estimate (`estimateFillPrompt`: whole slice, rules, checks, callees, the RAP class text, a whole 3,000-character context) ≤ the leased cap of 28,000; a routine above it is split the same way, each part with the whole ABAP of its lines; one statement that cannot fit is named with its reason (`promptOverCap`) | every unit of the shipped examples and eight local acceptance programs, both routes: the estimate stays above the real prompt; no call over the cap (before: six, up to 68,415) |
 | Units per program | ≤ 60 | max measured 35 (CO) |
 | Above 60 units | sibling units are bundled more densely (≤ 6 per call); above 120 the plan refuses and the fallback runs (§16.2) | — |
 | Fill call (bundle) | 1–4 units of the same call-tree neighbourhood, ≤ 14,000 characters input | §10 |

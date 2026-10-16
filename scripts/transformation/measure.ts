@@ -6,8 +6,9 @@
  *
  *   (default)          per source: lines, rules, guards, decimals, inputs, routines (all / reachable /
  *                      unreachable), folded helpers, fixtures (demo data), fill units, units over the soft
- *                      budget, guards in units / at program level, slice sizes, an estimate of the fill
- *                      prompt per unit (slice + rules + guards + 3,000 context + 900 stub), fill calls at
+ *                      budget, guards in units / at program level, slice sizes, the plan's estimate of the
+ *                      fill prompt per unit (`estimateFillPrompt`, the measure its split decides by), the
+ *                      functions whose prompt the split could not bring within the cap, fill calls at
  *                      4 units per call, the Node and RAP scaffold sizes, engine time
  *   --write <dir>      also write the Node scaffold of each source to <dir>/<name>-node/ and the RAP
  *                      scaffold to <dir>/<name>-rap/ (stubs only, with traceability.json and TRACE.md)
@@ -20,13 +21,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildNodeScaffold, buildRapScaffold, planUnits, readEngineFacts, sliceFor, withTrace } from '../../lib/transformation';
+import { buildNodeScaffold, buildRapScaffold, estimateFillPrompt, planUnits, readEngineFacts, withTrace } from '../../lib/transformation';
 import type { UnitPlan } from '../../lib/transformation';
-
-const CONTEXT_CHARS = 3_000;
-const STUB_CHARS = 900;
-const RULE_CHARS = 260;
-const GUARD_CHARS = 120;
 
 const pct = (xs: number[], p: number) => {
   if (!xs.length) return 0;
@@ -52,10 +48,8 @@ async function documentation(source: string, name: string): Promise<Record<strin
 
 function measure(file: string, plan: UnitPlan, facts: ReturnType<typeof readEngineFacts>, ms: number) {
   const routineUnits = plan.units.filter((u) => u.kind === 'routine' || u.kind === 'method');
-  const promptChars = routineUnits.map((u) => {
-    const slice = sliceFor(u, plan, facts);
-    return Math.min(slice.chars, 6_000) + u.rules.length * RULE_CHARS + u.guards.length * GUARD_CHARS + CONTEXT_CHARS + STUB_CHARS;
-  });
+  // The plan's own estimate (3.0.17), the one its split decides by; a parent of parts has no prompt of its own.
+  const promptChars = routineUnits.filter((u) => !plan.units.some((p) => p.part?.parent === u.id)).map((u) => estimateFillPrompt(u, plan, facts).chars);
   const node = buildNodeScaffold(plan, facts);
   const rap = buildRapScaffold(plan, facts);
   const size = (files: ReadonlyArray<{ content: string }>) => files.reduce((n, f) => n + f.content.length, 0);
@@ -77,6 +71,7 @@ function measure(file: string, plan: UnitPlan, facts: ReturnType<typeof readEngi
     split: plan.stats.split,
     sliceChars: { p50: pct(routineUnits.map((u) => u.budget.chars), 0.5), p90: pct(routineUnits.map((u) => u.budget.chars), 0.9), max: Math.max(0, ...routineUnits.map((u) => u.budget.chars)) },
     fillPromptEstimate: { p50: pct(promptChars, 0.5), p90: pct(promptChars, 0.9), max: Math.max(0, ...promptChars) },
+    promptOverCap: plan.stats.promptOverCap,
     fillCalls: Math.ceil(plan.stats.units / plan.stats.unitsPerCall),
     node: { files: node.files.length, chars: size(node.files), regions: node.regions.length, digest: node.digest.slice(0, 12) },
     rap: { files: rap.files.length, chars: size(rap.files), regions: rap.regions.length, digest: rap.digest.slice(0, 12) },
@@ -114,7 +109,7 @@ async function main() {
       process.stdout.write(
         `${row.file}: ${row.lines} lines · routines ${row.routines.all}/${row.routines.reachable}/${row.routines.unreachable} · folded ${row.folded} · fixtures ${row.fixtures} · ` +
           `fill units ${row.fillUnits} (+1 orchestrator) · over soft budget ${row.overSoftBudget.join(', ') || 'none'} · guards ${row.guards.inUnits} in units / ${row.guards.programLevel} program level / ${row.guards.notCarried} not carried · ` +
-          `prompt est. p50 ${row.fillPromptEstimate.p50} p90 ${row.fillPromptEstimate.p90} max ${row.fillPromptEstimate.max} · fill calls ${row.fillCalls} · ` +
+          `prompt est. p50 ${row.fillPromptEstimate.p50} p90 ${row.fillPromptEstimate.p90} max ${row.fillPromptEstimate.max} · over the cap ${row.promptOverCap.map((o) => o.unitId).join(', ') || 'none'} · fill calls ${row.fillCalls} · ` +
           `Node ${row.node.files} files / ${row.node.chars} chars / ${row.node.regions} regions · RAP ${row.rap.files} files / ${row.rap.chars} chars / ${row.rap.regions} regions · ${row.engineMs} ms\n`,
       );
       if (docs) process.stdout.write(`  documentation: ${JSON.stringify(extra.documentation)}\n`);
