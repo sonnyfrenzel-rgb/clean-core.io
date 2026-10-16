@@ -193,6 +193,8 @@ test.describe('an import waits for the look at the file, and for the file it sho
 const EMAIL = `pd-hint-${Date.now()}@cleancore-test.io`;
 const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!`;
 const PROJECT_ID = `pd-hint-project-${Date.now()}`;
+const EXAMPLE_PROJECT_ID = `pd-hint-example-${Date.now()}`;
+let OWNER_UID = '';
 
 /** A real address in a real ABAP shape: a constant typed on `ADR6-SMTP_ADDR`. */
 const SECRET_ADDRESS = 'hans.mueller@firma.de';
@@ -216,6 +218,7 @@ test.beforeAll(async () => {
   } catch { /* already connected */ }
   const cred = await createUserWithEmailAndPassword(auth, EMAIL, SIGN_IN);
   const uid = cred.user.uid;
+  OWNER_UID = uid;
   await adminSetDoc('users', uid, {
     firstName: 'Personal', lastName: 'Data', email: EMAIL, tier: 'pilot', status: 'approved',
     activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
@@ -399,4 +402,27 @@ test('editing the source afterwards takes the acknowledgement back', async ({ pa
     'the tick was taken back without a word about why (UX review of b88c77b, b160d0d08a81)',
   ).toContainText('changed');
   await expect(start, 'the analysis was still open after the source changed under the tick').toBeDisabled();
+});
+
+test('an example project the reader edited is the reader\'s code again: the hint comes back (QA review of 5fbd4c1f11c5)', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  // The 1,000-line example raises a hint on its own fictional sender address; unchanged, it is the product's own
+  // text and shows none (roadmap 3.0.17 item 4). Analyze exempted every project started from an example, so an
+  // edit there kept the exemption although the text was no longer the shipped one.
+  const example = fs.readFileSync(path.join(__dirname, '..', 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'), 'utf8');
+  await adminSetDoc('projects', EXAMPLE_PROJECT_ID, {
+    name: 'Example, then edited', userId: OWNER_UID, createdAt: new Date(), status: 'uploaded',
+    legacyCode: example, fromExample: true,
+  });
+  await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
+  await page.goto(`/project/${EXAMPLE_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
+  await expect(page.locator('textarea')).toHaveValue(/ZLEGACY_ORDER_FULFILLMENT_AUDIT/i, { timeout: 30000 });
+  const panel = page.locator('[data-personal-data-hints="analyze-personal-data"]');
+  await expect(panel, 'the unchanged example showed the hint').toHaveCount(0);
+
+  await page.locator('textarea').fill(`${example}\n* edited by the reader`);
+  await expect(panel, 'the edited example kept the exemption').toBeVisible({ timeout: 15000 });
+  await expect(panel.locator('[data-personal-data-hint="mail-address-field"]')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Start Analysis/ }), 'the edited example could start without the tick').toBeDisabled();
 });

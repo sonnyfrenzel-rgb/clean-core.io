@@ -25,6 +25,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   routes). Both are now demo data like `BUILD_DEMO`: the model fills only the logic. PM: 17 units instead of 25,
   QM: 14 instead of 20, none over budget; the two shipped examples and the test fixtures are unchanged.
   `tests/transformation-unit-plan.spec.ts`, `tests/transformation-gate-repair.spec.ts`.
+- **Transformation: the main path is ported from its own lines, or written by the engine when there is none**
+  (3.0.17 item 6). The process function — `runSteps` on Node, `run_steps` in RAP — got the original's event blocks as
+  its lines. A report that runs its statements without the keyword START-OF-SELECTION (ABAP treats them as an
+  implicit one) gave it no line at all, and the model wrote the main path from a comment listing the calls; those
+  statements are now its lines. A source with no entry point — the starter example `Z_ORDER_INTEGRITY_CHECK`,
+  classes and a FORM nobody calls — runs nothing when it is started; its process body is now written by the engine
+  and says so, instead of a region the model filled with a run order the original does not have. No shipped example
+  or test program with event blocks changes. `tests/transformation-unit-plan.spec.ts`,
+  `tests/transformation-starter-gate.spec.ts`.
+- **An example project edited in Analyze is the reader's code again** (QA review of 5fbd4c1f11c5). The Analyze tool
+  skipped the personal-data hint for every project started from an example, also after the reader changed its
+  source in the editor; only the unchanged text of a shipped example skips it now, as in the gallery and the
+  own-code import. `tests/personal-data-hint-gate.spec.ts`.
 
 - **The offline export verifier gives every check its own folder.** `scripts/verify-export.ps1` extracted an
   archive into a folder named after the clock and removed that folder first if it existed, so two checks started
@@ -39,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   gate — the engine prepares the package, the RAP scaffold is activatable for abaplint, the Node core type-checks
   with `tsc` actually run, the CAP shell compiles, every unit the model fills is anchored to lines of the original —
   ran in CI only on the PO demo: the other acceptance programs are not in the repository and were skipped there.
-  It now runs on all nine examples, both routes. It found one gap: a source with no event block leaves the
+  It now runs on all nine examples, both routes. It found one gap, fixed in the same step: a source with no event block left the
   orchestrator to the model with no line to port (roadmap 3.0.17 item 6). `tests/transformation-starter-gate.spec.ts`.
 
 - **The assistant's answer has room on a desktop** (owner 16.10.2026: "the answer window is far too small").

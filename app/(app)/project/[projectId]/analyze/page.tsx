@@ -387,10 +387,10 @@ export default function AnalyzePage() {
     }
     // The same preconditions the start button and the dialog ask for, held
     // here as well so that no caller of this function starts a run without
-    // them: a target deployment, accepted Terms, and — for anything but the
-    // example — the tick on the lines the hint panel shows for exactly this
+    // them: a target deployment, accepted Terms, and — for anything but an
+    // unchanged shipped example — the tick on the lines the hint panel shows for exactly this
     // text (QA full review of 81810c8, 7d0d04a45324).
-    const hintKeyForThisText = isFromExample || isUnchangedShippedExample(codeToAnalyze) ? '' : personalDataHintKey(scanForPersonalDataHints(codeToAnalyze));
+    const hintKeyForThisText = isUnchangedShippedExample(codeToAnalyze) ? '' : personalDataHintKey(scanForPersonalDataHints(codeToAnalyze));
     if (!deployment || !acceptedTerms || (hintKeyForThisText !== '' && hintKeyForThisText !== personalDataAckFor)) {
         setError('Select a target deployment, accept the Terms & Conditions and tick the box under any highlighted lines before starting the analysis.');
         return;
@@ -870,8 +870,8 @@ export default function AnalyzePage() {
 
   const personalDataHints = useMemo(
     () =>
-      legacyCode && !isFromExample && !isUnchangedShippedExample(legacyCode) ? scanForPersonalDataHints(legacyCode) : [],
-    [legacyCode, isFromExample],
+      legacyCode && !isUnchangedShippedExample(legacyCode) ? scanForPersonalDataHints(legacyCode) : [],
+    [legacyCode],
   );
   const personalDataKey = personalDataHintKey(personalDataHints);
   const personalDataAcknowledged = personalDataKey !== '' && personalDataAckFor === personalDataKey;
@@ -1784,7 +1784,7 @@ export default function AnalyzePage() {
               </div>
             )}
 
-            {legacyCode && !isFromExample && (!targetDeployment || !acceptedTerms || personalDataPending) && (
+            {legacyCode && (!isFromExample || personalDataPending) && (!targetDeployment || !acceptedTerms || personalDataPending) && (
               <div className="mt-8">
                 <CcMessageStrip state="warning" headline="Action Required:">
                   <span className="block">To start the modernization analysis, please complete the following steps:</span>
