@@ -123,6 +123,29 @@ test.describe('the CO shape', () => {
     expect(plan.units.map((u) => u.routine)).not.toContain('APPLY_CASE');
   });
 
+  test('a report without START-OF-SELECTION: its program-level statements are the orchestrator\'s lines (scaffold 15)', () => {
+    // ABAP runs them as an implicit START-OF-SELECTION; the orchestrator had no line of them, and the model wrote the
+    // main path from the reading-order comment alone.
+    const source = [
+      'REPORT zx.',
+      'DATA gv TYPE i.',
+      'gv = 1.',
+      'PERFORM calc.',
+      'WRITE gv.',
+      'FORM calc.',
+      '  gv = gv + 1.',
+      '  IF gv > 5.',
+      '    RETURN.',
+      '  ENDIF.',
+      'ENDFORM.',
+    ].join('\n');
+    const orch = planOf(source).plan.units.find((u) => u.kind === 'orchestrator')!;
+    expect(orch.abap).toEqual([{ lineStart: 3, lineEnd: 5, routine: 'START-OF-SELECTION (implicit)' }]);
+    // Declarations alone run nothing: no entry point, no lines.
+    const none = planOf('REPORT zy.\nDATA gv TYPE i.\nFORM calc.\n  gv = gv + 1.\nENDFORM.\n').plan.units.find((u) => u.kind === 'orchestrator')!;
+    expect(none.abap).toEqual([]);
+  });
+
   test('guards: the selection-screen check belongs to the orchestrator; a routine calls its refusing guards first', () => {
     const screen = plan.guards.find((g) => g.line === 29)!;
     expect(screen).toMatchObject({ id: 'G-0029', place: 'selection-screen', unitId: 'U00', outcome: 'refuses', regionId: 'U00.G0029' });

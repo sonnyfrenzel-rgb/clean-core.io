@@ -42,7 +42,7 @@ import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './marker
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
 import { operandsOf } from './guard-basis';
-import { SCAFFOLD_VERSION, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /** The Node major of the container; the same as `PACKAGE_NODE_MAJOR` (lib/delivery-package.ts, not imported to keep this module small — a spec holds them equal). */
 export const SCAFFOLD_NODE_MAJOR = 22;
@@ -956,7 +956,15 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes): Bu
   out.push(doc);
   out.push(`${orch.signature} {`);
   out.push(...guardLines);
-  out.push(regionText('node', orch.id, `${orch.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(orch.id)}, ${sq(orch.fn)});`));
+  if (orch.abap.length === 0) {
+    // No entry point (scaffold 15): no event block, no module and no statement at program level, so the original runs
+    // nothing when it is started. There is no line to port, and a model asked for the run order could only invent
+    // one; the engine writes the body and says why (roadmap 3.0.17 item 6).
+    out.push(...NO_ENTRY_POINT.map((l) => `  // ${l}`));
+    out.push('  return;');
+  } else {
+    out.push(regionText('node', orch.id, `${orch.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(orch.id)}, ${sq(orch.fn)});`));
+  }
   out.push('}');
   out.push('');
   out.push('export interface ProcessOutcome {');

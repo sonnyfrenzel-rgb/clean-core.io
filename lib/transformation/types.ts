@@ -120,13 +120,26 @@ export const PLAN_VERSION = 2;
  * package carried the program's core. Every other demo routine of the examples and fixtures is still one. The
  * original's demo cases are demo data by their shape too (`golden-master.ts`): the routine that builds the baseline
  * rows from literals and the one that holds the case switch — QM's BUILD_BASELINE (580 lines) went to the model in
- * five parts, PM's APPLY_CASE (30,843 characters) as its largest unit. Nothing signed changes (§12.3).
+ * five parts, PM's APPLY_CASE (30,843 characters) as its largest unit. The orchestrator's lines include the
+ * statements ABAP runs as an implicit START-OF-SELECTION (executable statements at program level); a source with no
+ * entry point at all gets a process body written by the engine (`NO_ENTRY_POINT`) instead of a region the model
+ * filled with an invented run order (roadmap 3.0.17 item 6). Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 15;
 
 /* -------------------------------------------------------------- budgets */
 
 /** §7.2: soft slice budget per unit — a unit above it is listed, not split. */
+/**
+ * What the process body says when the original has no entry point (scaffold 15, roadmap 3.0.17 item 6): written by
+ * the engine on both routes instead of a region the model would fill with an invented run order.
+ */
+export const NO_ENTRY_POINT = [
+  'Clean-Core.io (engine): the original has no entry point - no event block, no module and no statement at',
+  'program level - so starting it runs nothing, and there is no run order to port. Nothing is written here:',
+  'call the steps from the entry point your target needs.',
+];
+
 export const SOFT_SLICE_LINES = 150;
 export const SOFT_SLICE_CHARS = 6_000;
 /** §7.2: hard slice budget — a routine above it is split into parts at top-level statements. */

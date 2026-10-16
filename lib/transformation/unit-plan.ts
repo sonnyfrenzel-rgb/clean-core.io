@@ -101,6 +101,39 @@ export function readEngineFacts(source: string): EngineFacts {
  */
 const DEMO_NAME = /(?:^|_)[ZY]?(?:DEMO(?:S|DATA|CASE)?|FIXTURES?|TEST_?DATA|SAMPLE_?DATA)(?:_|$)/i;
 
+/** Program-level statements that run nothing: the program head, declarations, the selection screen, class bodies. */
+const NOT_RUN_AT_PROGRAM_LEVEL = new Set([
+  'REPORT', 'PROGRAM', 'FUNCTION-POOL', 'INCLUDE', 'TYPE-POOLS', 'TYPES', 'TYPE', 'DATA', 'CONSTANTS', 'STATICS', 'CLASS-DATA',
+  'TABLES', 'NODES', 'INFOTYPES', 'RANGES', 'FIELD-SYMBOLS', 'PARAMETERS', 'PARAMETER', 'SELECT-OPTIONS', 'SELECTION-SCREEN',
+  'CLASS', 'ENDCLASS', 'INTERFACE', 'ENDINTERFACE', 'DEFINE', 'END-OF-DEFINITION', 'TEXT',
+]);
+
+/**
+ * The statements ABAP runs as an implicit START-OF-SELECTION: executable statements at program level, outside every
+ * event block, routine, method and class (scaffold 15, 16.10.2026). A report without the keyword runs them when it is
+ * started, and they were nowhere in the orchestrator's lines: the model wrote the main path from the reading-order
+ * comment alone. Consecutive statements form one range; a macro's body is skipped.
+ */
+function implicitStartOfSelection(statements: readonly AbapStatement[], containers: Container[]): Array<{ lineStart: number; lineEnd: number; routine: string }> {
+  const ranges: Array<{ lineStart: number; lineEnd: number; routine: string }> = [];
+  let inMacro = false;
+  let open = false;
+  for (const s of statements) {
+    if (s.keyword === 'DEFINE') inMacro = true;
+    const runs = !inMacro && !NOT_RUN_AT_PROGRAM_LEVEL.has(s.keyword) && containerAt(containers, s.lineStart) === null;
+    if (s.keyword === 'END-OF-DEFINITION') inMacro = false;
+    if (!runs) {
+      open = false;
+      continue;
+    }
+    const last = ranges[ranges.length - 1];
+    if (open && last) last.lineEnd = Math.max(last.lineEnd, s.lineEnd);
+    else ranges.push({ lineStart: s.lineStart, lineEnd: s.lineEnd, routine: 'START-OF-SELECTION (implicit)' });
+    open = true;
+  }
+  return ranges;
+}
+
 /** `G-0506` — four digits, more when the line needs them. */
 export const guardIdOf = (line: number) => `G-${String(line).padStart(4, '0')}`;
 const guardTag = (line: number) => `G${String(line).padStart(4, '0')}`;
@@ -689,10 +722,12 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     title: 'Run the process steps in the original order',
     stepId: null,
     routine: null,
-    abap: blocks.containers
-      .filter((c) => c.kind === 'event' || c.kind === 'module')
-      .sort((a, b) => a.lineStart - b.lineStart)
-      .map((c) => ({ lineStart: c.lineStart, lineEnd: c.lineEnd, routine: c.name })),
+    abap: [
+      ...blocks.containers
+        .filter((c) => c.kind === 'event' || c.kind === 'module')
+        .map((c) => ({ lineStart: c.lineStart, lineEnd: c.lineEnd, routine: c.name })),
+      ...implicitStartOfSelection(statements, blocks.containers),
+    ].sort((a, b) => a.lineStart - b.lineStart),
     folded: [],
     rules: [],
     guards: [],

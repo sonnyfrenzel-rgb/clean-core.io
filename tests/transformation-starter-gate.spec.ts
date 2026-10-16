@@ -5,6 +5,7 @@ import { typeCheckCandidate, type TypeCheckResult } from '../lib/test-sandbox/ty
 import { abapCheck } from '../lib/transformation/abap-check';
 import { cdsCompileCandidate } from '../lib/transformation/cds-compile';
 import { prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
+import { NO_ENTRY_POINT } from '../lib/transformation/types';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 /**
@@ -55,14 +56,11 @@ test.describe('every shipped starter example: the package is gate-clean before a
       expect(cds.ran, cds.ran ? '' : cds.reason).toBe(true);
       if (cds.ran) expect(cds.findings.filter((f) => f.severity === 'Error'), JSON.stringify(cds.findings.slice(0, 5))).toEqual([]);
 
-      // A source with no event block has no entry point the orchestrator could port (Z_ORDER_INTEGRITY_CHECK: classes
-      // and a FORM nobody calls). Its orchestrator is still model-filled without an anchor — open in roadmap 3.0.17
-      // (item 6); every other unit, and the orchestrator of every source with an entry point, is anchored.
-      const entryPoint = /^\s*(START-OF-SELECTION|INITIALIZATION|END-OF-SELECTION|AT\s+SELECTION-SCREEN|TOP-OF-PAGE|LOAD-OF-PROGRAM)\b/im.test(source);
+      // No exception: a source with no entry point (Z_ORDER_INTEGRITY_CHECK) has its orchestrator written by the
+      // engine, so no model-filled unit is without lines of the original (roadmap 3.0.17 item 6, scaffold 15).
       for (const p of [rap, node]) {
         for (const u of p.fillUnits) {
           const ranges = u.abap.ranges;
-          if (u.unitId === 'U00' && !entryPoint) continue;
           expect(ranges.length, `${u.unitId} has no line of the original`).toBeGreaterThan(0);
           for (const r of ranges) {
             expect(r.lineStart >= 1 && r.lineEnd >= r.lineStart && r.lineEnd <= lineCount, `${u.unitId} L${r.lineStart}-${r.lineEnd} of ${lineCount}`).toBe(true);
@@ -71,4 +69,15 @@ test.describe('every shipped starter example: the package is gate-clean before a
       }
     });
   }
+
+  test('a source with no entry point: the engine writes the process body and says why, the model is not asked', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_ORDER_INTEGRITY_CHECK.txt'), 'utf8');
+    for (const track of ['rap', 'node'] as const) {
+      const p = prep(source, track);
+      expect(p.fillUnits.map((u) => u.unitId), track).not.toContain('U00');
+      expect(p.scaffold.regions.map((r) => r.regionId), track).not.toContain('U00');
+      const body = p.scaffold.files.map((f) => f.content).join('\n');
+      expect(body, track).toContain(NO_ENTRY_POINT[0]);
+    }
+  });
 });

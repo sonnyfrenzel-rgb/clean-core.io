@@ -82,7 +82,7 @@ import { rapShortName, rapTableName } from './rap-names';
 import { abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
 import { ddicFieldName, isDdicReserved } from './ddic-reserved';
 import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart } from './released-counterparts';
-import { SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /**
  * Marks a place the engine wrote and a developer completes — never the model
@@ -911,6 +911,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${p.name === 'cs_local' ? 'ls_local' : p.name}`);
         impls.push(`    ${methodOf.get(part.id)}(${exp.length ? ` EXPORTING ${exp.join(' ')}` : ''}${chg.length ? ` CHANGING ${chg.join(' ')}` : ''} ).`);
       }
+    } else if (u.kind === 'orchestrator' && u.abap.length === 0) {
+      // No entry point (scaffold 15, roadmap 3.0.17 item 6): nothing to port, so no region a model would fill with an
+      // invented run order — the engine writes the body and says why.
+      impls.push(...NO_ENTRY_POINT.map((l) => `    " ${l}`));
     } else {
       const anchor = `${name}|${u.abap.map((a) => `${a.lineStart}-${a.lineEnd}`).join(',')}|${u.rules.join(',')}|${u.guards.join(',')}`;
       impls.push(regionText('rap', u.id, anchor, '    ', `RAISE EXCEPTION NEW ${cx}( unit = '${u.id}' ).`));
