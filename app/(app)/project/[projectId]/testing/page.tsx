@@ -480,7 +480,7 @@ export default function TestingSandboxPage() {
       `[sandbox-runtime] Initiating live connectivity test...\n` +
       `[sandbox-runtime] Target tenant URL (saved): ${savedS4.url}\n` +
       `[sandbox-runtime] Authentication method: ${authLabel}\n` +
-      `[sandbox-runtime] Sending server-side HTTP handshake via /api/test-s4-connection...\n`
+      `[sandbox-runtime] Requesting the OData service description ($metadata) via /api/test-s4-connection — no record is read...\n`
     );
 
     try {
@@ -2100,7 +2100,7 @@ export default function TestingSandboxPage() {
                               >
                                 {testingConnection ? 'Checking...' : 'Check connection'}
                               </CcButton>
-                              <span className="cc-text-meta text-cc-ink-muted">No model call</span>
+                              <span data-connection-check-scope className="cc-text-meta text-cc-ink-muted">No model call · checks reachability, sign-in and the service · reads no record</span>
                             </div>
 
                             {/* The metadata read and the read-only call, folded until
@@ -2278,7 +2278,7 @@ export default function TestingSandboxPage() {
                                           onClick={() => handleReadEntitySet(et.name)}
                                           disabled={odataReadState[et.name]?.status === 'reading'}
                                         >
-                                          {odataReadState[et.name]?.status === 'reading' ? 'Reading…' : 'Read records from tenant'}
+                                          {odataReadState[et.name]?.status === 'reading' ? 'Reading…' : 'Read one record from the tenant'}
                                         </CcButton>
                                         {odataReadState[et.name]?.status === 'done' && (
                                           <span className="cc-text-meta text-cc-ink">

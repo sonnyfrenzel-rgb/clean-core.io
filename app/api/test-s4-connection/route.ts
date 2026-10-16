@@ -13,12 +13,18 @@ import {
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
+import { connectionProbeTarget, probeService, describeProbeStatus } from '@/lib/s4-connection-probe';
 
 /**
  * POST /api/test-s4-connection
  *
- * Performs a real server-side HTTP connectivity check against the user-provided
- * S/4HANA tenant URL. Supports four authentication methods:
+ * Performs a real server-side connectivity check against the user-provided
+ * S/4HANA tenant URL — and reads no business record (owner decision 17.10.2026).
+ * The only request sent to the tenant is one GET on one
+ * OData service's `$metadata` document, built by `lib/s4-connection-probe.ts`
+ * from the address's origin and path prefix; the response body is cancelled
+ * unread. It proves reachability, authentication and that the service exists.
+ * Supports four authentication methods:
  *
  *   1. Basic Authentication (username + password → Authorization: Basic)
  *   2. SAP API Hub Sandbox Key (password → APIKey header)
@@ -36,7 +42,8 @@ import { upstreamBodyShape } from '@/lib/upstream-body-shape';
  *   }
  *
  * Response:
- *   { status: 'connected' | 'failed', message: string, httpStatus?: number, details?: object }
+ *   { status: 'connected' | 'failed', message: string, httpStatus?: number, details?: object,
+ *     checked?: { reachable, signedIn, serviceFound, servicePath, recordsRead: false } }
  */
 
 // --- Helper: OAuth 2.0 Client Credentials Token Exchange ---
@@ -170,129 +177,6 @@ function parseBtpDestination(jsonString: string): BtpDestinationConfig {
   );
 }
 
-/**
- * The sentence the caller gets for a failed request: a network error code such
- * as ECONNREFUSED or ENOTFOUND when the error carries one, the application's own
- * SsrfError wording, and otherwise nothing of the error's text.
- */
-function connectionFailure(err: any): string {
-  if (err instanceof SsrfError) return err.message;
-  const code = err?.cause?.code ?? err?.code;
-  const shown = typeof code === 'string' && /^[A-Z0-9_]{1,40}$/.test(code) ? ` (${code})` : '';
-  return `Connection failed${shown}. Verify the URL, network configuration, and firewall rules.`;
-}
-
-// --- Helper: Perform the actual HTTP connectivity test ---
-async function testEndpoint(
-  url: string,
-  headers: Record<string, string>
-): Promise<{ httpStatus: number }> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-
-  let response: Response;
-  try {
-    response = await safeFetch(url, {
-      method: 'HEAD',
-      headers,
-      signal: controller.signal,
-    });
-  } catch (headError: any) {
-    if (headError.name === 'AbortError') {
-      clearTimeout(timeout);
-      throw new Error('Connection timed out after 15 seconds. Verify the URL is correct and the system is reachable.');
-    }
-
-    // Some servers don't support HEAD — try GET as fallback
-    try {
-      response = await safeFetch(url, {
-        method: 'GET',
-        headers,
-        signal: controller.signal,
-      });
-    } catch (getError: any) {
-      clearTimeout(timeout);
-      if (getError.name === 'AbortError') {
-        throw new Error('Connection timed out after 15 seconds. Verify the URL is correct and the system is reachable.');
-      }
-      throw new Error(connectionFailure(getError));
-    }
-  }
-
-  // A server that refuses HEAD answers 405 or 501 rather than throwing, so the
-  // fallback above never ran and a reachable endpoint was reported as failed
-  // (QA review of 33471220d6e9, f480d96b63d1).
-  if (response.status === 405 || response.status === 501) {
-    // The refusal's own body is not wanted; left unread, it held its connection.
-    await response.body?.cancel().catch(() => {});
-    try {
-      response = await safeFetch(url, {
-        method: 'GET',
-        headers,
-        signal: controller.signal,
-      });
-    } catch (getError: any) {
-      clearTimeout(timeout);
-      if (getError.name === 'AbortError') {
-        throw new Error('Connection timed out after 15 seconds. Verify the URL is correct and the system is reachable.');
-      }
-      throw new Error(connectionFailure(getError));
-    }
-  }
-
-  // Only the status is used. The body — a GET fallback's especially — was left
-  // open after the timer was cleared, so an endpoint that kept streaming held
-  // the upstream connection for as long as it liked (QA full review of
-  // fc787674705f, b8dfbd24e73a). Cancelled while the deadline still runs.
-  await response.body?.cancel().catch(() => {});
-  clearTimeout(timeout);
-  return { httpStatus: response.status };
-}
-
-// --- Helper: Evaluate HTTP status and return appropriate response ---
-function evaluateHttpStatus(httpStatus: number, authMethod: string) {
-  const authLabel = authMethod === 'oauth2'
-    ? 'OAuth 2.0 Bearer Token'
-    : authMethod === 'basic'
-      ? 'Basic Auth'
-      : authMethod === 'sap_hub'
-        ? 'SAP API Hub Key'
-        : 'No Auth (reachability only)';
-
-  if (httpStatus >= 200 && httpStatus < 400) {
-    return NextResponse.json({
-      status: 'connected',
-      message: `Connection successful via ${authLabel}. S/4HANA endpoint responded with HTTP ${httpStatus}.`,
-      httpStatus,
-    });
-  } else if (httpStatus === 401 || httpStatus === 403) {
-    return NextResponse.json({
-      status: 'connected',
-      message: `Endpoint reachable (HTTP ${httpStatus}) via ${authLabel}. Authentication credentials were rejected — verify your credentials.`,
-      httpStatus,
-    });
-  } else if (httpStatus === 404) {
-    return NextResponse.json({
-      status: 'failed',
-      message: `Endpoint returned HTTP 404 (Not Found). Verify the base URL path is correct.`,
-      httpStatus,
-    });
-  } else if (httpStatus >= 500) {
-    return NextResponse.json({
-      status: 'failed',
-      message: `S/4HANA system returned a server error (HTTP ${httpStatus}). The system may be undergoing maintenance.`,
-      httpStatus,
-    });
-  } else {
-    return NextResponse.json({
-      status: 'failed',
-      message: `Unexpected response: HTTP ${httpStatus}.`,
-      httpStatus,
-    });
-  }
-}
-
-
 export async function POST(req: NextRequest) {
   try {
     // --- Server-side auth: require a valid Firebase ID token ---
@@ -391,6 +275,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // The one URL this test requests: the service's $metadata, never an
+      // entity set (owner decision 17.10.2026, lib/s4-connection-probe.ts).
+      const target = connectionProbeTarget(config.url);
+      if (!target.ok) {
+        return NextResponse.json({ status: 'failed', message: target.reason }, { status: 400 });
+      }
+
       const headers: Record<string, string> = {
         'Accept': 'application/json',
         'User-Agent': 'CleanCore-Pilot/1.0 (Destination-Test)',
@@ -425,8 +316,10 @@ export async function POST(req: NextRequest) {
       // authType 'none' → no auth headers (PrincipalPropagation / NoAuthentication)
 
       try {
-        const { httpStatus } = await testEndpoint(config.url, headers);
-        return evaluateHttpStatus(httpStatus, config.authType === 'none' ? 'none' : config.authType);
+        const { httpStatus } = await probeService(target.probeUrl, headers);
+        return NextResponse.json(
+          describeProbeStatus(httpStatus, config.authType === 'none' ? 'none' : config.authType, target.servicePath),
+        );
       } catch (connErr: any) {
         return NextResponse.json(
           { status: 'failed', message: connErr.message },
@@ -450,6 +343,13 @@ export async function POST(req: NextRequest) {
         { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
         { status: 403 }
       );
+    }
+
+    // The one URL this test requests: the service's $metadata, never an
+    // entity set (owner decision 17.10.2026, lib/s4-connection-probe.ts).
+    const target = connectionProbeTarget(url);
+    if (!target.ok) {
+      return NextResponse.json({ status: 'failed', message: target.reason }, { status: 400 });
     }
 
     const headers: Record<string, string> = {
@@ -519,11 +419,11 @@ export async function POST(req: NextRequest) {
       headers['APIKey'] = password;
     }
 
-    // --- Perform real HTTP connectivity test ---
+    // --- Perform the connectivity test: $metadata only, body never read ---
     try {
-      const { httpStatus } = await testEndpoint(url, headers);
+      const { httpStatus } = await probeService(target.probeUrl, headers);
       // No declared scheme sent no credential, so it is not described as Basic Auth.
-      return evaluateHttpStatus(httpStatus, authType || 'none');
+      return NextResponse.json(describeProbeStatus(httpStatus, authType || 'none', target.servicePath));
     } catch (connErr: any) {
       const status = connErr instanceof SsrfError ? 403 : 502;
       return NextResponse.json(
