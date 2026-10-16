@@ -504,6 +504,36 @@ export function previousBasis(project: Project | null): string {
   return staleness(project).basis === 'profile' ? 'a previous target profile' : 'a previous source';
 }
 
+/**
+ * What the Transformation page and Delivery say about stale generated code, by
+ * what actually moved (owner, 16.10.2026). The source or the target profile:
+ * "built for a previous source". Only the PLATFORM KNOWLEDGE block — a rule
+ * decision, the decision record or an accepted requirement, with the source
+ * unchanged: never "a previous source", which sent the owner looking for a
+ * source change that had not happened after he confirmed the decision in
+ * Management. `null` when the code is not stale.
+ */
+export function codeStaleWords(project: Project | null): { title: string; reason: string; short: string } | null {
+  const s = staleness(project);
+  if (s.code) {
+    const prev = previousBasis(project);
+    return {
+      title: `Built for ${prev}`,
+      reason: `The code shown here was generated from ${prev} — it is not a transformation of the current one.`,
+      short: `Generated from ${prev}`,
+    };
+  }
+  if (s.context) {
+    return {
+      title: 'Built before the latest decisions',
+      reason:
+        'The code shown here was generated before a rule decision, the decision record or an accepted requirement changed — the source is the same, but the code does not build on what is decided now. The Built on card marks what changed.',
+      short: 'Generated before a rule decision, the decision record or an accepted requirement changed',
+    };
+  }
+  return null;
+}
+
 /** "the analysed source and the target deployment" — for a blocker sentence. */
 function inputList(unverified: ReadonlyArray<UnverifiedInput>): string {
   const labels = unverified.map((u) => inputLabel(u.id));

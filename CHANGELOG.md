@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v3.0.14] — unreleased
 
+- **Stale code says what moved** (owner 16.10.2026). Code generated before a decision was confirmed in
+  Management (or a rule decision or accepted requirement changed) read "Built for a previous source",
+  although the source had not moved. Transformation and Delivery now say "Built before the latest
+  decisions" and point to the Built on card; a changed source or target profile keeps its own words.
+
 ### Transformation: the generated ABAP Unit tests check something (RAP route)
 
 From the first SAP activation of a generated package (the SD example in an SAP BTP ABAP environment

@@ -4,7 +4,10 @@ import path from 'node:path';
 import { withContextDigest, withStoredGeneration } from '../lib/project-loader';
 import { basisSlotChanged, storedContextDigest, type BasisSlot } from '../lib/transformation/generation-record';
 import type { Project } from '../lib/types';
-import { nextPhaseKey, phaseActionLabel, staleness, workflowSteps } from '../lib/workflow-steps';
+import { codeStaleWords, nextPhaseKey, phaseActionLabel, staleness, workflowSteps } from '../lib/workflow-steps';
+import { contractOfProject } from '../lib/contract-build';
+import { assembleTransformationContext } from '../lib/transformation-context-build';
+import { sha256Hex } from '../lib/artefact-digest';
 
 /**
  * Roadmap 3.0.13, item 3: the Transformation phase goes stale on a changed
@@ -134,5 +137,83 @@ test.describe('the Built-on card compares every fact (QA caa5712913ad)', () => {
     const card = read('components/transformation/BuiltOnCard.tsx');
     expect(card).toContain('return basisSlotChanged(b, now);');
     expect(card).not.toContain("(current.facts[0]?.text ?? '') !== (b.facts[0] ?? '')");
+  });
+});
+
+/*
+ * Owner, 16.10.2026 (dev, SD reference project): after the generation he walked Documentation, Testing,
+ * Economics and Delivery, and the code then read "Built for a previous source". The source had not moved.
+ * The Cloud Run request log of the walk shows two `commands` POSTs from the Management view 15 minutes after
+ * the store (5.5 kB and 5.8 kB answers: `record-decision-draft`, then `confirm-decision`) — the decision was
+ * confirmed after the generation. That moves the PLATFORM KNOWLEDGE block, as it should (the block names the
+ * decision record); what was wrong is the sentence: it blamed the source.
+ */
+test.describe('stale code says what moved (owner 16.10.2026)', () => {
+  const SD = `REPORT zsd_orders.
+PARAMETERS p_min TYPE i.
+START-OF-SELECTION.
+  SELECT * FROM vbak INTO TABLE @DATA(lt_orders) UP TO 10 ROWS.
+  LOOP AT lt_orders INTO DATA(ls_order).
+    IF ls_order-auart = 'TA'.
+      WRITE: / ls_order-vbeln.
+    ENDIF.
+  ENDLOOP.
+`;
+  const digestOf = (project: Record<string, unknown>) => {
+    const built = contractOfProject({ legacyCode: SD, s4Deployment: 'private', activeRunId: 'run-1' }, null);
+    if (!built.ok) throw new Error('the fixture builds no contract');
+    const { stamp } = assembleTransformationContext({
+      source: SD, project, answers: { basis: 'source', revision: null, entries: [] },
+      evidence: built.evidence, contract: built.contract, isAbapCloud: true, grade: () => 'D',
+    });
+    return sha256Hex(stamp.text);
+  };
+  const atGeneration = { legacyCode: SD, activeRunId: 'run-1', targetArchitecture: 'rap', approvedByArchitect: true, solutionDesign: '# Design' };
+
+  test('the later tools write nothing the block reads; the confirmed decision does', () => {
+    const built = digestOf(atGeneration);
+    // What the store and the later tools write onto the project document — none of it is read by the block.
+    const walked = {
+      ...atGeneration,
+      status: 'transformed',
+      generatedCode: '[]',
+      testSuite: 'suite',
+      generationBinding: engineLed(built),
+      artefactStore: { documentation: { rev: 'r1', parts: 1, kind: 'string', bytes: 10 } },
+      documentation: '# Docs',
+      businessDocumentation: '# Business',
+      testCases: [{ id: 'TC-1' }],
+      outsideTestResult: { passed: 1 },
+      testingClosure: { v: 1, reason: 'not-testable-here' },
+      requirementsSpec: { revision: 1 },
+      updatedAt: new Date('2026-10-16T03:36:00Z'),
+    };
+    expect(digestOf(walked)).toBe(built);
+    // The decision confirmed in Management after the generation: the block names it, so it moves.
+    const confirmed = { ...walked, decision: { decisionId: 'DEC-1', revision: 1, status: 'confirmed', summary: 'Rebuild in-app on RAP.', fingerprint: 'f1', bindings: [] } };
+    expect(digestOf(confirmed)).not.toBe(built);
+  });
+
+  test('a moved decision is not called a previous source; a moved source still is', () => {
+    const p = generated(engineLed(A), B);
+    expect(staleness(p)).toMatchObject({ context: true, code: false, sourceChanged: false });
+    const words = codeStaleWords(p)!;
+    expect(words.title).toBe('Built before the latest decisions');
+    for (const text of [words.title, words.reason, words.short]) expect(text).not.toMatch(/previous source/);
+    expect(words.reason).toContain('the source is the same');
+    // A source change wins and keeps its words.
+    const moved = { ...p, auditMetadata: { inputFingerprint: { sha256: '0'.repeat(64) } } } as unknown as Project;
+    expect(codeStaleWords(moved)).toMatchObject({ title: 'Built for a previous source', short: 'Generated from a previous source' });
+    // Current code: nothing to say.
+    expect(codeStaleWords(generated(engineLed(A), A))).toBeNull();
+  });
+
+  test('the Transformation page and Delivery say it through codeStaleWords', () => {
+    const page = read('app/(app)/project/[projectId]/transformation/page.tsx');
+    expect(page).toContain('codeStaleWords(project)');
+    expect(page).not.toContain('The code shown here was generated from ${previousBasis(project)}');
+    expect(page).toContain('title={blockers.length === 0 && codeWords ? codeWords.title : `Built for ${previousBasis(project)}`}');
+    const delivery = read('app/(app)/project/[projectId]/delivery/page.tsx');
+    expect(delivery).toContain('codeStaleWords(project)?.short');
   });
 });

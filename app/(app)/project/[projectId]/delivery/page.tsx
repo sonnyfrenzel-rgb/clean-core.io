@@ -34,7 +34,7 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import { deliveryAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
-import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis, codeStaleWords } from '@/lib/workflow-steps';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcToast from '@/components/cc/Toast';
@@ -792,7 +792,7 @@ export default function DeliveryPage() {
                             !hasGeneratedCode
                               ? 'Run stage 3 to produce the code this line reports on'
                               : codeStale
-                                ? `Generated from ${previousBasis(project)} — regenerate in stage 3`
+                                ? `${codeStaleWords(project)?.short ?? `Generated from ${previousBasis(project)}`} — regenerate in stage 3`
                                 : isAbapCloud
                                   ? 'ABAP Cloud packages generated — not compiled or tested'
                                   : 'TypeScript package generated — not compiled or tested'

@@ -69,7 +69,7 @@ import TransformationObjectPage from '@/components/transformation/Transformation
 // snapshot the signed run reads; neither the engine nor a catalog is
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
 import { EVIDENCE_UNREAD, useProjectEvidence } from '@/hooks/useProjectEvidence';
-import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis, codeStaleWords } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
 // on the project document. See `lib/generation-direction.ts` for what it
@@ -1709,12 +1709,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
   /** The first reason the code cannot be generated now, for the empty package card. */
   const whyNotGenerated = prerequisites[0]?.reason ?? (blockers.length > 0 ? blockers.join(' ') : modelOff);
-  const staleNotes = [
-    ...blockers,
-    ...(phases.find((p) => p.key === 'transformation')?.state === 'stale'
-      ? [`The code shown here was generated from ${previousBasis(project)} — it is not a transformation of the current one.`]
-      : []),
-  ];
+  // Owner, 16.10.2026: what moved is said as it is — a decision confirmed after
+  // the generation is not "a previous source" (`codeStaleWords`).
+  const codeWords = phases.find((p) => p.key === 'transformation')?.state === 'stale' ? codeStaleWords(project) : null;
+  const staleNotes = [...blockers, ...(codeWords ? [codeWords.reason] : [])];
 
   /**
    * The signed score as a ring — ink on the line colour, the same ring the
@@ -2225,7 +2223,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         </div>
       )}
 
-      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
+      <StaleNotice title={blockers.length === 0 && codeWords ? codeWords.title : `Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       {/* Roadmap 3.0.12 — what would raise the quality of the code, before the
           run; never blocking, one line when nothing is open. The world before
