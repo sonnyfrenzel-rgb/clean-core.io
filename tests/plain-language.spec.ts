@@ -343,8 +343,8 @@ test.describe('plain-language wording — the owner\'s examples', () => {
 test.describe('plain-language wording — every starter example', () => {
   const files = readdirSync(EXAMPLES).filter((f) => /\.(abap|txt)$/i.test(f)).sort();
 
-  test('there are eight fixtures', () => {
-    expect(files).toHaveLength(8);
+  test('there are nine fixtures', () => {
+    expect(files).toHaveLength(9);
   });
 
   for (const file of files) {
@@ -386,7 +386,12 @@ test.describe('plain-language wording — every starter example', () => {
             expect(flow).not.toContain(forbidden);
           }
         }
-        if (edge.kind === 'sequence' && !edge.condition) expect(flow).toBe('');
+        // A loop the code leaves early (`EXIT`, `CONTINUE`) is a decision, not a
+        // multi-instance activity, and its two plain arms read "Next" and "Done"
+        // (`planFor` in lib/abap/plain-language.ts) — the rule above asks for
+        // exactly that. No shipped program had such a loop before
+        // Z_SD_FREIGHT_RATE_CHECK (3.0.15), so the two rules never met.
+        if (edge.kind === 'sequence' && !edge.condition && !decisions.has(edge.from)) expect(flow).toBe('');
       }
 
       // Deterministic: a second run gives the same words.

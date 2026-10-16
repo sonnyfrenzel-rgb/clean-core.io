@@ -116,7 +116,7 @@ test.beforeAll(async () => {
 test.describe('the shipped examples are recognised from the source text alone', () => {
   test('every example has a distinct fingerprint, and it is the one the browser produces', async ({ request }) => {
     const index = await starterExampleIndex();
-    expect(index.size, 'all eight shipped sources were read and fingerprinted').toBe(STARTER_EXAMPLES.length);
+    expect(index.size, 'every shipped source was read and fingerprinted').toBe(STARTER_EXAMPLES.length);
     expect(new Set(index.values()).size, 'one entry per example, no collisions').toBe(STARTER_EXAMPLES.length);
 
     // The half that matters: the fingerprint taken off disk equals the fingerprint
