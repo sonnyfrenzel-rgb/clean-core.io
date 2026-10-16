@@ -29,6 +29,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   none. The engine's Node/CAP package for it type-checks and its own checks pass before any model fill.
   Nine starter examples now. `tests/starter-example-freight-cap.spec.ts`.
 
+### Changed
+- **An unchanged starter example no longer shows the personal-data hint** (roadmap 3.0.17 (4), owner
+  16.10.2026). Starting the 1,000-line order audit example stopped at a panel about its own fictional sender
+  address, and two other shipped examples did the same — a warning about the product's own text, which tells a
+  newcomer nothing and puts them off. A source is now recognised as a shipped example by its SHA-256
+  fingerprint, taken after dropping a byte-order mark, turning CRLF into LF and dropping spaces at line ends
+  and blank lines at the end — transport artefacts that cannot carry a value. Recognised, it skips the hint in
+  the example gallery, the own-code import and the Analyze tool; change one character and it is the reader's
+  code again, and the hint comes back on the same lines as for any upload. The panel's wording is unchanged and
+  still claims nothing about what any source contains. The fingerprints are committed in
+  `lib/shipped-example-fingerprint.ts` and `tests/shipped-example-fingerprint.spec.ts` recomputes them from
+  `public/starter-examples/`, so an edited example fails the suite instead of drifting.
+
 ## [v3.0.16] — 2026-10-16
 
 ### Fixed
