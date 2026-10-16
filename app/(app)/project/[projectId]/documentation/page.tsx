@@ -19,6 +19,8 @@ import {
 } from '@/lib/process-documentation';
 import { buildEngineConfluenceHtml, confluenceFileName } from '@/lib/documentation-export';
 import { businessSopPrompt, enrichBusinessLayer, sopStepInfos } from '@/lib/business-sop-prompt';
+import { businessStepsOf } from '@/lib/business-steps';
+import { DOCUMENTATION_PROPOSALS_ID, documentationProposalsAnchor } from '@/lib/page-anchors';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
@@ -320,7 +322,7 @@ export default function DocumentationPage() {
    * business layer is stored with (owner 11.10.2026) — read when the answer
    * arrives; kept current by an effect below, where both are known.
    */
-  const sopInputs = useRef<{ steps: ProcessStepRef[]; facts: CapabilityFacts | null }>({ steps: [], facts: null });
+  const sopInputs = useRef<{ steps: ProcessStepRef[]; facts: CapabilityFacts | null; path: string[] | null; refs: Map<string, string> }>({ steps: [], facts: null, path: null, refs: new Map() });
 
   async function runBusinessGeneration(onPart?: () => void): Promise<void> {
     const replacing = replaceLayer.current;
@@ -344,7 +346,9 @@ export default function DocumentationPage() {
 
     // Roadmap 3.0.13: a program too large for one answer is written in parts
     // (`lib/business-layer-parts.ts`); one that fits keeps its one call.
-    const plan = planBusinessLayerParts(engineDoc);
+    // Owner 16.10.2026: written on the business level — one row per step "How it works" lists.
+    const businessSteps = businessStepsOf(engineDoc, sopInputs.current.path);
+    const plan = planBusinessLayerParts(engineDoc, undefined, businessSteps);
     // The source the documentation was read from (its digest is the run's): for the routines a part's steps call.
     const source = typeof project.legacyCode === 'string' ? project.legacyCode : null;
     const answersKey = `${project.activeRunId ?? ''}|${sha256Hex(documentation)}`;
@@ -380,7 +384,7 @@ export default function DocumentationPage() {
     // what the program does not do (`lib/business-sop-prompt.ts`).
 
     try {
-      const prompt = businessSopPrompt(engineDoc);
+      const prompt = businessSopPrompt(engineDoc, undefined, businessSteps);
 
       console.log('Generating business process compliance for project:', project.name);
       const writePart = async (index: number, roles: string[]): Promise<Record<string, unknown>> => {
@@ -466,7 +470,13 @@ export default function DocumentationPage() {
       // sentence without the source.
       const storedText = JSON.stringify(enrichBusinessLayer(
         extractJSON(responseText) as Record<string, unknown>,
-        sopStepInfos(engineDoc, new Map(sopInputs.current.steps.map((st) => [st.id, st.name])), new Map(sopInputs.current.steps.map((st) => [st.id, st.lines ?? []]))),
+        sopStepInfos(
+          engineDoc,
+          new Map(sopInputs.current.steps.map((st) => [st.id, st.name])),
+          new Map(sopInputs.current.steps.map((st) => [st.id, st.lines ?? []])),
+          businessSteps,
+          sopInputs.current.refs,
+        ),
         sopInputs.current.facts ?? readCapabilityFacts(engineDoc.facts),
       ));
 
@@ -704,9 +714,20 @@ export default function DocumentationPage() {
       };
     });
   }, [engineDoc, processMap.model, processDocument.document]);
+  /**
+   * The business steps the SOP and the RACI are written on (owner
+   * 16.10.2026): the description's main path — the steps "How it works"
+   * lists — with the reference a reader sees there ("4a").
+   */
+  const mainPath = useMemo(() => {
+    const steps = (processDocument.document?.overview.path ?? []).filter((e) => e.kind === 'step');
+    return steps.length
+      ? { ids: steps.map((e) => e.id), refs: new Map(steps.flatMap((e) => (e.kind === 'step' && e.ref ? [[e.id, e.ref] as [string, string]] : []))) }
+      : null;
+  }, [processDocument.document]);
   useEffect(() => {
-    sopInputs.current = { steps: processSteps, facts: processDocument.document?.facts ?? null };
-  }, [processSteps, processDocument.document]);
+    sopInputs.current = { steps: processSteps, facts: processDocument.document?.facts ?? null, path: mainPath?.ids ?? null, refs: mainPath?.refs ?? new Map() };
+  }, [processSteps, processDocument.document, mainPath]);
 
   /**
    * Roadmap 3.0.5, Weg C — the documentation is read out of the code.
@@ -1205,7 +1226,10 @@ export default function DocumentationPage() {
    */
   const [openedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
-  const businessPlan = useMemo(() => (engineDoc ? planBusinessLayerParts(engineDoc) : null), [engineDoc]);
+  const businessPlan = useMemo(
+    () => (engineDoc ? planBusinessLayerParts(engineDoc, undefined, businessStepsOf(engineDoc, mainPath?.ids)) : null),
+    [engineDoc, mainPath],
+  );
   const businessPlanLine = businessPlan
     ? businessPlan.whole
       ? docWholePlanLine(businessPlan.steps)
@@ -1503,14 +1527,19 @@ export default function DocumentationPage() {
   /** Whether an invited reader sees anything of the business sentences — the panel shows nothing to a reader without a proposal. */
   const sentencesShown = engineDoc && (isOwner || statementProposal.view?.state === 'proposed');
 
+  /** The proposals card in the chapter bar (owner 16.10.2026): the RACI is its own section, not "Open questions". */
+  const proposalsAnchor = documentationProposalsAnchor({
+    steps: parsedBusinessDoc && Array.isArray(parsedBusinessDoc.sop_details) ? parsedBusinessDoc.sop_details.length : null,
+  });
   const proposalsCard = (
     <section
+      id={DOCUMENTATION_PROPOSALS_ID}
       aria-labelledby="model-proposals-title"
       data-model-proposals=""
       data-business-layer-offer={!parsedBusinessDoc ? '' : undefined}
       data-business-layer-writing={isGeneratingBusinessDoc ? '' : undefined}
       aria-busy={isGeneratingBusinessDoc ? true : undefined}
-      className={clsx(SECTION, 'cc-no-print mb-6 flex flex-col gap-4')}
+      className={clsx(SECTION, 'cc-no-print mb-6 flex scroll-mt-28 flex-col gap-4')}
     >
       <div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1653,7 +1682,7 @@ export default function DocumentationPage() {
           a direct child of the stage, so it stays in view from the
           description down to the appendix at the foot. */}
       {hasDocument && !isGeneratingDoc && processDocument.document ? (
-        <DocumentChapterBar document={processDocument.document} openQuestions={openQuestionsOfProject} />
+        <DocumentChapterBar document={processDocument.document} openQuestions={openQuestionsOfProject} beforeAppendix={[proposalsAnchor]} />
       ) : null}
 
       <section aria-labelledby="documentation-stored" data-documentation-description="" className="mb-8">

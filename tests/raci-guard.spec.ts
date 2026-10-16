@@ -13,7 +13,7 @@ import {
 } from '../lib/raci-edit';
 import { raciGapWord } from '../lib/messages/documentation';
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
-import { UNKNOWN_STEP_ID, businessLayerFor, engineDocumentationOf, fixtureSource, processDocumentOf } from './helpers/business-layer-fixture';
+import { UNKNOWN_STEP_ID, businessLayerFor, describedSteps, engineDocumentationOf, fixtureSource, processDocumentOf } from './helpers/business-layer-fixture';
 import { OVERLOAD_ROLES, STEP_WITHOUT_ACCOUNTABLE, overloadedLayerFor } from './helpers/raci-overload-fixture';
 import fs from 'fs';
 import path from 'path';
@@ -161,7 +161,8 @@ test('thin SOP text is flagged, never hidden', () => {
 });
 
 const SHA = 'a'.repeat(64);
-const STEP_IDS = STEPS.slice(0, 3).map((s) => s.id);
+// The owner edits the RACI of the business steps on screen (owner 16.10.2026: the layer is on the business level).
+const STEP_IDS = describedSteps(DOC).slice(0, 3).map((s) => s.id);
 const payload = (over: Record<string, unknown> = {}) => ({
   baseRevision: 0,
   layerSha256: SHA,

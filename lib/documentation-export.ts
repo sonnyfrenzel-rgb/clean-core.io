@@ -60,15 +60,17 @@ import { BUSINESS_PAGE, businessPageLineText, type BusinessPage } from '@/lib/do
 import { SOP_BASIS, layerFacts, sopBasisText, type SopStatement } from '@/lib/sop-provenance';
 import { readCapabilityFacts } from '@/lib/documentation-capabilities';
 import type { OpenQuestions } from '@/lib/open-questions';
-import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
+import { raciGapWord, raciLetterWord, sopLevelBusinessLine, sopLevelLegacyLine } from '@/lib/messages/documentation';
 import { RACI_EDITED_IN_FILE, type RaciEditRecord } from '@/lib/raci-edit';
 import { wt } from '@/lib/workspace-messages';
 import {
   RACI_LETTERS,
+  isBusinessLevelLayer,
   lettersOf,
   raciMatrix,
   sopSteps,
   type GlanceAnchor,
+  type SopStep,
   type SopJudgement,
   type ProcessStepRef,
 } from '@/lib/business-summary';
@@ -285,19 +287,23 @@ export function buildEngineConfluenceHtml(
   const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps, judgement) : [];
   const edited = options?.raciEdit ?? null;
   const editedNote = edited ? RACI_EDITED_IN_FILE + ' · ' + edited.editedAt.slice(0, 10) + '.' : '';
+  // Owner 16.10.2026: the SOP and the RACI stand on the business level, each step's technical steps beside it.
+  const business = isBusinessLevelLayer(parsedBusinessDoc);
+  const levelLine = business
+    ? sopLevelBusinessLine(sop.length, sop.reduce((n, st) => n + st.technical.length, 0))
+    : sopLevelLegacyLine(sop.length);
   const businessSection = parsedBusinessDoc
     ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
     <p><em>${esc('Written by a language model from the process description above. Every sentence says its basis: Reconstructed only where it cites a line of its step and nothing in it contradicts the code; roles, approvals, escalations and anything the program does not do are a proposal, not in the program.')}</em></p>
+    <p class="meta" data-sop-level="${esc(business ? 'business' : 'technical')}">${esc(levelLine)}</p>
     ${edited ? `<p data-raci-edited=""><span class="tag tone-information">${esc('Confirmed')}</span> ${esc("The RACI below is the owner's, not the model's. " + editedNote)}</p>` : ''}
     ${glanceHtml(parsedBusinessDoc, steps, edited ? editedNote : null, judgement)}
     <h3>${esc('RACI assignment')}</h3>
     <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${sop.filter((st) => st.hasRaci)
-      .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${esc(st.roles.R.join(', ') || nd)}</td><td>${esc(st.roles.A.join(', ') || nd)}</td><td>${esc(st.roles.C.join(', ') || nd)}</td><td>${esc(st.roles.I.join(', ') || nd)}</td></tr>`)
+      .map((st) => `<tr><td>${esc(sopStepLabel(st))}</td><td>${esc(st.roles.R.join(', ') || nd)}</td><td>${esc(st.roles.A.join(', ') || nd)}</td><td>${esc(st.roles.C.join(', ') || nd)}</td><td>${esc(st.roles.I.join(', ') || nd)}</td></tr>`)
       .join('')}</tbody></table>
     <h3>${esc('Standard operating procedure')}</h3>
-    <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th></tr></thead><tbody>${sop
-      .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${sopStatementsHtml(st.statements)}</td><td>${sopStatementsHtml(st.exceptionStatement ? [st.exceptionStatement] : [])}</td></tr>`)
-      .join('')}</tbody></table>
+    ${sopTableHtml(sop, business)}
     <p class="meta">${esc(CONTROLS_FROM_THE_CODE)}</p>`
     : '';
 
@@ -347,6 +353,34 @@ export function buildEngineConfluenceHtml(
   return new Blob([engineHtml], { type: 'text/html;charset=utf-8' });
 }
 
+/** "4a. Check vendor" — a SOP step as a file names it: its reference on the main path, else its number, and its name. */
+export function sopStepLabel(step: SopStep): string {
+  return `${step.ref ?? String(step.number)}. ${step.step?.name ?? step.stepId}`;
+}
+
+/**
+ * The SOP as a file prints it: one row per step with its sentences and its
+ * exception, and — for a layer on the business level (owner 16.10.2026) —
+ * the technical steps of each step in a column of their own, since a pasted
+ * page has no fold to open. Every value escaped.
+ */
+export function sopTableHtml(sop: readonly SopStep[], business: boolean): string {
+  const esc = escapeHtml;
+  const head = ['Step', 'Description', 'Business exception', ...(business ? ['Technical steps'] : [])];
+  return `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${sop
+    .map((st) => `<tr><td>${esc(sopStepLabel(st))}</td><td>${sopStatementsHtml(st.statements)}</td><td>${sopStatementsHtml(st.exceptionStatement ? [st.exceptionStatement] : [])}</td>${business ? `<td data-sop-technical="${esc(String(st.technical.length))}">${technicalStepsHtml(st)}</td>` : ''}</tr>`)
+    .join('')}</tbody></table>`;
+}
+
+/** The technical steps of a business step, as a list with their kinds and lines. Every value escaped. */
+export function technicalStepsHtml(step: SopStep): string {
+  if (!step.technical.length) return '';
+  const esc = escapeHtml;
+  return `<ul>${step.technical
+    .map((t) => `<li data-sop-technical-step="">${esc(t.name)}${t.kind ? ` <small>${esc(t.kind)}</small>` : ''}${t.anchor ? ` <small>${esc(anchorWords(t.anchor))}</small>` : ''}</li>`)
+    .join('')}</ul>`;
+}
+
 /** The steps the business layer is keyed to, read from the document's appendix when the page names none. */
 function processStepsFromDocument(document: ProcessDocument): ProcessStepRef[] {
   return document.appendix.elements.map((e) => ({
@@ -391,7 +425,7 @@ function glanceHtml(
   const parts: string[] = [];
   if (parsedBusinessDoc) {
     const steps = sopSteps(parsedBusinessDoc, processSteps, judgement);
-    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.statements[0]?.text ?? s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(s.statements[0] ? SOP_BASIS[s.statements[0].basis].label : NOT_DETERMINED_LABEL)}</td></tr>`).join('');
+    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.statements[0]?.text ?? s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(s.statements[0] ? SOP_BASIS[s.statements[0].basis].label : NOT_DETERMINED_LABEL)}</td></tr>`).join('');
     parts.push(`<h3>SOP steps — Model proposal</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
     const matrix = raciMatrix(steps);
     if (matrix.steps.length > 0) {
@@ -400,9 +434,9 @@ function glanceHtml(
       // under the matrix with their letters — the full assignment follows in
       // the RACI table further down.
       const head = matrix.roles.map((r) => `<th>${esc(r.short)}${r.overloaded ? esc(` (Responsible on ${r.counts.R} of ${matrix.steps.length})`) : ''}</th>`).join('');
-      const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc([...s.gaps.map(raciGapWord), ...(s.hiddenAccountable.length ? [`A: ${s.hiddenAccountable.join(', ')}`] : [])].join(', '))}</td></tr>`).join('');
+      const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc([...s.gaps.map(raciGapWord), ...(s.hiddenAccountable.length ? [`A: ${s.hiddenAccountable.join(', ')}`] : [])].join(', '))}</td></tr>`).join('');
       const key = matrix.roles.filter((r) => r.short !== r.name).map((r) => `${r.short} = ${r.name}`).join(' · ');
-      const more = matrix.moreRoles.map((r) => `<li>${esc(r.name)}: ${esc(matrix.steps.map((st) => ({ st, l: lettersOf(st, r.name) })).filter((x) => x.l.length).map((x) => `${x.l.join('')} on ${x.st.number}`).join(', '))}</li>`).join('');
+      const more = matrix.moreRoles.map((r) => `<li>${esc(r.name)}: ${esc(matrix.steps.map((st) => ({ st, l: lettersOf(st, r.name) })).filter((x) => x.l.length).map((x) => `${x.l.join('')} on ${x.st.ref ?? x.st.number}`).join(', '))}</li>`).join('');
       parts.push(`<h3>RACI matrix — ${editedNote ? 'Edited by the owner' : 'Model proposal'}</h3><p><small>${editedNote ? `${esc(editedNote)} ` : ''}${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
     }
   }

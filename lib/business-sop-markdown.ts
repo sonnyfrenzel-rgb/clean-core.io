@@ -1,6 +1,7 @@
 import { capabilityPresence, isAbsent, readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import { docStepName, readStoredDocumentation, type ProcessDocumentation } from '@/lib/process-documentation';
-import { RACI_LETTERS, lettersOf, raciMatrix, sopSteps, stepsNotInProcess, type ProcessStepRef, type SopStep, type StoredBusinessLayer } from '@/lib/business-summary';
+import { RACI_LETTERS, isBusinessLevelLayer, lettersOf, raciMatrix, sopSteps, stepsNotInProcess, type ProcessStepRef, type SopStep, type StoredBusinessLayer } from '@/lib/business-summary';
+import { sopLevelBusinessLine, sopLevelLegacyLine } from '@/lib/messages/documentation';
 import { layerFacts, sopStatementLine, SOP_BASIS } from '@/lib/sop-provenance';
 
 /**
@@ -114,14 +115,23 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
   }
 
   out.push('## Steps', '');
+  // Owner 16.10.2026: the business level — each step of "How it works", its technical steps under it.
+  const business = isBusinessLevelLayer(layer as StoredBusinessLayer);
+  if (steps.length > 0) {
+    out.push(business ? sopLevelBusinessLine(steps.length, steps.reduce((n, s) => n + s.technical.length, 0)) : sopLevelLegacyLine(steps.length), '');
+  }
   if (steps.length === 0) out.push('The proposal names no step of the process.', '');
   const dropped = stepsNotInProcess(layer as StoredBusinessLayer, processOf(doc));
   if (dropped) out.push(`${dropped} ${dropped === 1 ? 'row names a step' : 'rows name steps'} the process does not have; ${dropped === 1 ? 'it is' : 'they are'} not printed.`, '');
   for (const step of steps) {
-    out.push(`### ${step.number}. ${nameOf(step, layer)} (${stepLines(step, layer)})`, '');
+    out.push(`### ${step.ref ?? step.number}. ${nameOf(step, layer)} (${stepLines(step, layer)})`, '');
     if (step.statements.length === 0) out.push('- Not determined — the proposal says nothing about this step.');
     for (const st of step.statements) out.push(`- ${sopStatementLine(st)}`);
     if (step.exceptionStatement) out.push(`- **If it cannot be completed:** ${sopStatementLine(step.exceptionStatement)}`);
+    if (step.technical.length) {
+      out.push('', `**Technical steps (${step.technical.length}):**`, '');
+      for (const t of step.technical) out.push(`${'  '.repeat(Math.max(0, Math.min(t.depth, 3) - 1))}  - ${cell(t.name)}${t.kind ? ` — ${cell(t.kind)}` : ''} (${lines(t.anchor)})`);
+    }
     out.push('');
   }
 
@@ -134,7 +144,7 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
     out.push(`| No. | Step | ${roles.map((r) => cell(r.name)).join(' | ')} |`);
     out.push(`| :--- | :--- | ${roles.map(() => ':---:').join(' | ')} |`);
     for (const s of matrix.steps) {
-      out.push(`| ${s.number} | ${cell(nameOf(s, layer))} | ${roles.map((r) => lettersOf(s, r.name).join(' ')).join(' | ')} |`);
+      out.push(`| ${s.ref ?? s.number} | ${cell(nameOf(s, layer))} | ${roles.map((r) => lettersOf(s, r.name).join(' ')).join(' | ')} |`);
     }
     out.push('');
   }

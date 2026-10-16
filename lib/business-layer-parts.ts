@@ -4,25 +4,22 @@
  * the SD example stopped with "the model did not answer within 90 seconds").
  *
  * What makes a call long is its answer: one RACI row and two to four claims
- * for every step the model writes. The SD reference (1,847 lines) has 196 such
- * steps and a 192,000-character prompt; the PM holdout (1,924 lines) 37 steps
- * and 118,000 characters; the two shipped examples 47 and 49 steps and
- * 52,000–58,000 characters, and those are written in one call today. So a
- * program is written in one call while it has at most
- * `maxStepsPerPart` steps and its prompt stays under `maxPromptChars`, and in
- * parts otherwise:
+ * for every step the model writes. Until 16.10.2026 that was every element of
+ * the process — 196 for the SD reference (1,847 lines). Since the owner's
+ * decision of that day the layer is written on the business level
+ * (`lib/business-steps.ts`): one row per step "How it works" lists — 14 for
+ * the SD reference, 6 for the PM holdout, 11 and 15 for the two shipped
+ * examples — with the elements under each step as its detail. So the answer
+ * is small, and a program is written in one call while it has at most
+ * `maxStepsPerPart` business steps and its prompt stays under
+ * `maxPromptChars`; in parts otherwise:
  *
- *   - **the steps** a part writes are the process elements a reader acts on —
- *     every element but the start, end and error-boundary events
- *     (`writableSteps`);
- *   - **grouped by process step**: each element belongs to the step of the
- *     main process it is drawn under (its top-level sub-process), and a group
- *     is never torn apart while it fits into one part; a group larger than a
- *     part is cut in its own order. Lanes do not partition these programs —
- *     the SD reference has two (the user and one authorization object), the
- *     PM holdout one — so the cut follows the process steps, not the lanes;
- *   - **packed in process order** into parts of at most `maxStepsPerPart`
- *     steps, at most `maxParts` parts (beyond that a part grows instead);
+ *   - **the steps** a part writes are business steps, never torn apart: a
+ *     part reads the business steps it writes with every element under them;
+ *   - **as many parts as the steps or the prompt length need**, at most
+ *     `maxParts`, the business steps packed in process order by their weight
+ *     (the step and the elements under it), so each part reads a similar
+ *     share of the documentation;
  *   - **each part reads its own slice** of the documentation
  *     (`documentationPart`): its elements, and the statements whose lines lie
  *     in their lines or in the routine an element calls; a statement no part
@@ -32,7 +29,7 @@
  *     (`rolesOfLayer`), so the joined matrix keeps one small set of roles; the
  *     others then run `parallel` at a time;
  *   - **joined** by concatenation (`mergeBusinessLayerParts`): each part keeps
- *     only rows for its own elements, and the first row for an element wins.
+ *     only rows for its own business steps, and the first row of a step wins.
  *
  * The limits are assumptions until measured with a real model (see
  * `BUSINESS_LAYER_PART_LIMITS`). Pure: no React, no network.
@@ -40,10 +37,11 @@
 
 import type { DocAnchor, DocStatement, DocStep, ProcessDocumentation } from './process-documentation';
 import { businessSopPrompt } from './business-sop-prompt';
+import { businessStepOfElement, businessStepsOf, type BusinessStep } from './business-steps';
 import { minutesWords, type DurationRange } from './transformation/duration-estimate';
 
 export interface BusinessLayerPartLimits {
-  /** Steps one model answer writes at most. 49 are written in one call today (the PO approval example). */
+  /** Business steps one model answer writes at most. */
   maxStepsPerPart: number;
   /** A prompt longer than this is split even with few steps. The PM holdout's whole prompt is 118,000. */
   maxPromptChars: number;
@@ -57,12 +55,11 @@ export interface BusinessLayerPartLimits {
  * The limits, in one place. Not measured with a real model yet — to measure
  * (no real call is made from the tests): the latency (p50/p90), the output
  * and thinking tokens (`lib/model-usage-log.ts` logs them per call) and the
- * share of usable rows of one call over 20, 40, 60 and 80 steps of the SD
- * reference, with the provider's default thinking and with LOW
- * (`GEMINI_THINKING_DOCUMENTATION_BUSINESS`, `lib/model-thinking.ts`); then
- * set `maxStepsPerPart` to the largest size whose p90 stays well inside one
- * call's deadline, and `BUSINESS_CALL_P50_MS` / `P90_MS` below to what was
- * measured.
+ * share of usable rows of one call over the SD reference, with the provider's
+ * default thinking and with LOW (`GEMINI_THINKING_DOCUMENTATION_BUSINESS`,
+ * `lib/model-thinking.ts`); then set the limits to what keeps the p90 well
+ * inside one call's deadline, and `BUSINESS_CALL_P50_MS` / `P90_MS` below to
+ * what was measured.
  */
 export const BUSINESS_LAYER_PART_LIMITS: Readonly<BusinessLayerPartLimits> = Object.freeze({
   maxStepsPerPart: 60,
@@ -79,20 +76,22 @@ export const BUSINESS_CALL_P90_MS = 180_000;
 export interface BusinessLayerPart {
   /** 0-based. */
   index: number;
-  /** The element ids this part writes rows for, in process order. */
+  /** The business step ids this part writes rows for, in process order. */
   stepIds: string[];
-  /** The step of the main process each of its groups belongs to — for the screen ("Order check, Pricing"). */
+  /** Their names — for the screen ("Order check, Pricing"). */
   groupNames: string[];
 }
 
 export interface BusinessLayerPlan {
-  /** One part: the whole program in one call, with the prompt it always had. */
+  /** One part: the whole program in one call. */
   whole: boolean;
   parts: BusinessLayerPart[];
-  /** Steps the layer covers in all. */
+  /** Business steps the layer covers in all. */
   steps: number;
   /** The whole program's prompt length — the measure beside the steps. */
   promptChars: number;
+  /** The business steps, with the elements under each (`lib/business-steps.ts`). */
+  businessSteps: BusinessStep[];
 }
 
 const EVENT = /^(?:start|end)\b|error boundary/i;
@@ -102,69 +101,44 @@ export function writableSteps(doc: ProcessDocumentation): DocStep[] {
   return doc.steps.filter((s) => !EVENT.test(s.kind));
 }
 
-/** The top-level element an element is drawn under (itself at the top level). */
-function topOf(byId: ReadonlyMap<string, DocStep>, step: DocStep): DocStep {
-  let current = step;
-  const seen = new Set<string>();
-  while (current.level !== null && !seen.has(current.id)) {
-    seen.add(current.id);
-    // A nested level is written `outer__inner`; the outer one is the way up when the inner has no element.
-    const parent = byId.get(current.level) ?? byId.get(current.level.split('__')[0]);
-    if (!parent) break;
-    current = parent;
-  }
-  return current;
-}
-
-function stepName(step: DocStep): string {
-  return step.businessName ?? step.plainName ?? step.technicalName;
-}
-
 /** The parts of the business layer of `doc` — one when it fits into one answer. */
 export function planBusinessLayerParts(
   doc: ProcessDocumentation,
   limits: BusinessLayerPartLimits = BUSINESS_LAYER_PART_LIMITS,
+  steps: readonly BusinessStep[] = businessStepsOf(doc),
 ): BusinessLayerPlan {
-  const writable = writableSteps(doc);
-  const promptChars = businessSopPrompt(doc).length;
-  if (writable.length <= limits.maxStepsPerPart && promptChars <= limits.maxPromptChars) {
-    return { whole: true, steps: writable.length, promptChars, parts: [{ index: 0, stepIds: writable.map((s) => s.id), groupNames: [] }] };
-  }
-  const byId = new Map(doc.steps.map((s) => [s.id, s]));
-  // Groups by the step of the main process, in the order the documentation holds them.
-  const groups = new Map<string, { name: string; ids: string[] }>();
-  for (const step of writable) {
-    const top = topOf(byId, step);
-    const group = groups.get(top.id) ?? { name: stepName(top), ids: [] };
-    group.ids.push(step.id);
-    groups.set(top.id, group);
+  const businessSteps = [...steps];
+  const promptChars = businessSopPrompt(doc, undefined, businessSteps).length;
+  const n = businessSteps.length;
+  const wanted = Math.min(
+    Math.max(1, limits.maxParts),
+    Math.max(1, Math.ceil(n / Math.max(1, limits.maxStepsPerPart)), Math.ceil(promptChars / Math.max(1, limits.maxPromptChars))),
+  );
+  if (wanted <= 1 || n <= 1) {
+    return { whole: true, steps: n, promptChars, businessSteps, parts: [{ index: 0, stepIds: businessSteps.map((s) => s.id), groupNames: [] }] };
   }
   // Never more than `maxParts`: a large program gets larger parts instead of more calls.
-  const size = Math.max(limits.maxStepsPerPart, Math.ceil(writable.length / Math.max(1, limits.maxParts)));
+  const perPart = Math.max(limits.maxStepsPerPart, Math.ceil(n / Math.max(1, limits.maxParts)));
+  const weight = (s: BusinessStep) => 1 + s.technical.length;
+  const target = Math.ceil(businessSteps.reduce((sum, s) => sum + weight(s), 0) / wanted);
   const parts: BusinessLayerPart[] = [];
-  let open: BusinessLayerPart | null = null;
-  const close = () => {
-    if (open && open.stepIds.length) parts.push(open);
-    open = null;
-  };
-  for (const group of groups.values()) {
-    if (group.ids.length > size) {
-      // A group larger than a part is cut in its own order.
-      close();
-      for (let i = 0; i < group.ids.length; i += size) {
-        parts.push({ index: parts.length, stepIds: group.ids.slice(i, i + size), groupNames: [group.name] });
-      }
-      continue;
+  let open: BusinessLayerPart = { index: 0, stepIds: [], groupNames: [] };
+  let load = 0;
+  for (const step of businessSteps) {
+    const full = open.stepIds.length > 0 && (load + weight(step) > target || open.stepIds.length + 1 > perPart);
+    // The last part takes what is left, so the plan stays within `wanted` parts.
+    if (full && parts.length < wanted - 1) {
+      parts.push(open);
+      open = { index: parts.length, stepIds: [], groupNames: [] };
+      load = 0;
     }
-    if (open && (open as BusinessLayerPart).stepIds.length + group.ids.length > size) close();
-    if (!open) open = { index: parts.length, stepIds: [], groupNames: [] };
-    const target: BusinessLayerPart = open;
-    target.stepIds.push(...group.ids);
-    target.groupNames.push(group.name);
+    open.stepIds.push(step.id);
+    open.groupNames.push(step.name);
+    load += weight(step);
   }
-  close();
+  if (open.stepIds.length) parts.push(open);
   parts.forEach((p, i) => { p.index = i; });
-  return { whole: parts.length <= 1, steps: writable.length, promptChars, parts };
+  return { whole: parts.length <= 1, steps: n, promptChars, businessSteps, parts };
 }
 
 /* ------------------------------------------------------------ a part's slice */
@@ -199,22 +173,47 @@ export function routineRanges(source: string | null | undefined): Map<string, Do
 const overlaps = (a: DocAnchor, b: DocAnchor) => a.lineStart <= b.lineEnd && b.lineStart <= a.lineEnd;
 const distance = (a: DocAnchor, b: DocAnchor) => (overlaps(a, b) ? 0 : Math.min(Math.abs(a.lineStart - b.lineEnd), Math.abs(b.lineStart - a.lineEnd)));
 
+/**
+ * The part each element belongs to: the part of its business step; an event
+ * the part of the element it is drawn in. An event of the main path belongs
+ * to no part.
+ */
+function partOfElements(doc: ProcessDocumentation, plan: BusinessLayerPlan): Map<string, number> {
+  const home = businessStepOfElement(plan.businessSteps);
+  const partOfStep = new Map<string, number>();
+  plan.parts.forEach((p) => p.stepIds.forEach((id) => partOfStep.set(id, p.index)));
+  const byId = new Map(doc.steps.map((s) => [s.id, s]));
+  const out = new Map<string, number>();
+  for (const step of doc.steps) {
+    let current: DocStep | undefined = step;
+    const seen = new Set<string>();
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      const business = home.get(current.id);
+      const part = business !== undefined ? partOfStep.get(business) : undefined;
+      if (part !== undefined) {
+        out.set(step.id, part);
+        break;
+      }
+      current = current.level === null ? undefined : byId.get(current.level) ?? byId.get(current.level.split('__')[0]);
+    }
+  }
+  return out;
+}
+
 /** The lines each part stands on: its elements' anchors and the routines they call. */
 function partRanges(doc: ProcessDocumentation, plan: BusinessLayerPlan, source?: string | null): DocAnchor[][] {
   const routines = routineRanges(source);
-  const byId = new Map(doc.steps.map((s) => [s.id, s]));
-  // A part also stands on the elements drawn inside its own (the events of a sub-process).
-  const inside = (ids: Set<string>) => doc.steps.filter((s) => ids.has(s.id) || (s.level !== null && ids.has(topOf(byId, s).id)));
-  return plan.parts.map((part) => {
-    const ids = new Set(part.stepIds);
-    const ranges: DocAnchor[] = [];
-    for (const step of inside(ids)) {
-      if (step.anchor) ranges.push(step.anchor);
-      const routine = routines.get(step.technicalName.toUpperCase());
-      if (routine) ranges.push(routine);
-    }
-    return ranges;
-  });
+  const partOf = partOfElements(doc, plan);
+  const ranges: DocAnchor[][] = plan.parts.map(() => []);
+  for (const step of doc.steps) {
+    const i = partOf.get(step.id);
+    if (i === undefined) continue;
+    if (step.anchor) ranges[i].push(step.anchor);
+    const routine = routines.get(step.technicalName.toUpperCase());
+    if (routine) ranges[i].push(routine);
+  }
+  return ranges;
 }
 
 /**
@@ -224,15 +223,13 @@ function partRanges(doc: ProcessDocumentation, plan: BusinessLayerPlan, source?:
  */
 export function statementsByPart(doc: ProcessDocumentation, plan: BusinessLayerPlan, source?: string | null): DocStatement[][] {
   const ranges = partRanges(doc, plan, source);
-  const byId = new Map(doc.steps.map((s) => [s.id, s]));
+  const partOf = partOfElements(doc, plan);
   const out: DocStatement[][] = plan.parts.map(() => []);
   const ownStatement = new Map<string, number>();
-  plan.parts.forEach((part, i) => {
-    for (const id of part.stepIds) {
-      const st = byId.get(id)?.statementId;
-      if (st) ownStatement.set(st, i);
-    }
-  });
+  for (const step of doc.steps) {
+    const i = partOf.get(step.id);
+    if (i !== undefined && step.statementId && !ownStatement.has(step.statementId)) ownStatement.set(step.statementId, i);
+  }
   for (const statement of doc.statements) {
     const claimed = new Set<number>();
     const own = ownStatement.get(statement.id);
@@ -258,7 +255,8 @@ export function statementsByPart(doc: ProcessDocumentation, plan: BusinessLayerP
 
 /**
  * The documentation one part reads: the whole program's summary and facts,
- * its own elements (with the events drawn inside them) and its statements.
+ * its own business steps with every element under them (the events drawn
+ * inside them included) and its statements.
  */
 export function documentationPart(
   doc: ProcessDocumentation,
@@ -267,10 +265,8 @@ export function documentationPart(
   source?: string | null,
   statements: DocStatement[][] = statementsByPart(doc, plan, source),
 ): ProcessDocumentation {
-  const part = plan.parts[index];
-  const ids = new Set(part.stepIds);
-  const byId = new Map(doc.steps.map((s) => [s.id, s]));
-  const steps = doc.steps.filter((s) => ids.has(s.id) || (EVENT.test(s.kind) && s.level !== null && ids.has(topOf(byId, s).id)));
+  const partOf = partOfElements(doc, plan);
+  const steps = doc.steps.filter((s) => partOf.get(s.id) === index);
   const kept = new Set(steps.map((s) => s.id));
   return {
     ...doc,
@@ -288,14 +284,15 @@ export function businessLayerPartPrompt(
   roles: readonly string[],
   source?: string | null,
 ): string {
-  if (plan.whole) return businessSopPrompt(doc);
+  if (plan.whole) return businessSopPrompt(doc, undefined, plan.businessSteps);
   const part = plan.parts[index];
+  const own = new Set(part.stepIds);
   return businessSopPrompt(documentationPart(doc, plan, index, source), {
     index,
     total: plan.parts.length,
     stepIds: part.stepIds,
     roles: index === 0 ? [] : roles,
-  });
+  }, plan.businessSteps.filter((s) => own.has(s.id)));
 }
 
 /* ------------------------------------------------------------ joining */

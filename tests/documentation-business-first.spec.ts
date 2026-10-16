@@ -407,7 +407,7 @@ CALL FUNCTION lv_fm.
       expect(md).not.toContain('Task:');
       const headings = [...md.matchAll(/^### (.+)$/gm)].map((m) => m[1]);
       expect(headings.length).toBeGreaterThanOrEqual(2);
-      for (const h of headings) expect(h).toMatch(/^\d+\. .+ \((?:L\d+|lines not determined)/);
+      for (const h of headings) expect(h).toMatch(/^\d+(?:[a-z](?:\.\d+)?)?\. .+ \((?:L\d+|lines not determined)/);
       const sentences = md.slice(md.indexOf('## Steps'), md.indexOf('## Who is responsible')).split('\n').filter((l) => l.startsWith('- '));
       for (const line of sentences) {
         expect(line, line).toMatch(/\((?:Reconstructed, L\d+|Model proposal(?:, cites L\d+)?|Proposal — not in the program(?:: [^)]+)?|Not determined)\)$|^- Not determined/);

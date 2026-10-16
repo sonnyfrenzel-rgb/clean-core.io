@@ -184,3 +184,64 @@ export function deliveryAnchors(content: {
   if (content.slides) out.push({ key: 'slides', target: ids.slides, label: 'Stakeholder slides', title: 'The deck built from the signed run' });
   return out;
 }
+
+/* ------------------------------------------------------------ Documentation */
+
+/**
+ * The model proposals of the Documentation stage — the business SOP and the
+ * RACI — as a chapter of its bar (owner 16.10.2026). The seven chapters are
+ * the description's (`documentOutline`); the proposals card stands after the
+ * open questions and before the appendix, so it is named there. Without its
+ * own anchor, a reader in the RACI saw "Open questions" marked: the scroll
+ * spy kept the last section it had passed.
+ */
+export const DOCUMENTATION_PROPOSALS_ID = 'model-proposals';
+
+export function documentationProposalsAnchor(content: {
+  /** Business steps of the SOP on record; null while none is. */
+  steps: number | null;
+}): PageAnchor {
+  return {
+    key: 'proposals',
+    target: DOCUMENTATION_PROPOSALS_ID,
+    label: 'SOP & RACI',
+    count: content.steps && content.steps > 0 ? n(content.steps) : null,
+    title: 'Who does what, who is accountable — a model proposal',
+  };
+}
+
+/* ------------------------------------------------------------ the scroll spy */
+
+/** Where a named section stands, as the bar measures it (viewport pixels). */
+export interface AnchorRect {
+  key: string;
+  top: number;
+  bottom: number;
+  left: number;
+}
+
+/**
+ * How far below the end of a section the reader may be and still be "in" it:
+ * the gap between two sections. Further down, they are in something the bar
+ * does not name — and nothing is marked, rather than the last section passed.
+ */
+export const ANCHOR_GAP_PX = 96;
+
+/**
+ * The section the bar marks: the one the reading line runs through (the main
+ * column's — the one furthest left — where two do); in the gap after a
+ * section, that section; below a section by more than the gap — inside a part
+ * of the page the bar does not name — none. Before the first section, none.
+ * Pure, so the rule can be held without a browser.
+ */
+export function currentAnchorKey(rects: readonly AnchorRect[], line: number, gap: number = ANCHOR_GAP_PX): string | null {
+  let at: { key: string; left: number } | null = null;
+  let passed: AnchorRect | null = null;
+  for (const r of rects) {
+    if (r.top > line) continue;
+    if (!passed || r.top >= passed.top) passed = r;
+    if (r.bottom > line && (!at || r.left < at.left)) at = { key: r.key, left: r.left };
+  }
+  if (at) return at.key;
+  return passed && line - passed.bottom <= gap ? passed.key : null;
+}

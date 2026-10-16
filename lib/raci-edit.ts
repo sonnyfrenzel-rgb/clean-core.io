@@ -247,7 +247,7 @@ export function raciFileTable(
       : `${RACI_PROPOSAL_IN_FILE} ${legend}.`,
     head: ['No.', 'Step', ...roles.map((r) => r.name), 'Check'],
     rows: matrix.steps.map((s) => [
-      String(s.number),
+      s.ref ?? String(s.number),
       s.step?.name ?? s.stepId,
       ...roles.map((r) => lettersOf(s, r.name).join(' ')),
       s.gaps.map(raciGapWord).join(', '),

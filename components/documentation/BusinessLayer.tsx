@@ -11,6 +11,7 @@ import CcTable from '@/components/cc/Table';
 import {
   MANY_RACI_ROLES,
   RACI_LETTERS,
+  isBusinessLevelLayer,
   lettersOf,
   raciMatrix,
   sopSteps,
@@ -28,7 +29,10 @@ import {
   raciLetterWord,
   sopCardsSummary,
   sopDroppedLine,
+  sopLevelBusinessLine,
+  sopLevelLegacyLine,
   sopStepsCount,
+  sopTechnicalCount,
   stepNumberLabel,
   wt,
 } from '@/lib/workspace-messages';
@@ -161,7 +165,7 @@ function stepName(step: SopStep): string {
   return step.step?.name ?? step.stepId;
 }
 
-function NumberDisc({ n }: { n: number }) {
+function NumberDisc({ n }: { n: number | string }) {
   return (
     <span
       aria-hidden={true}
@@ -201,14 +205,14 @@ function SopStrip({ steps }: { steps: SopStep[] }) {
               data-sop-step={step.stepId}
               data-sop-in-process={step.step ? 'true' : 'false'}
               data-sop-thin={step.thin ? 'true' : undefined}
-              aria-label={stepNumberLabel(step.number, stepName(step))}
+              aria-label={stepNumberLabel(step.ref ?? step.number, stepName(step))}
               className={cn(
                 'flex min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
                 step.step && !step.thin ? 'border-cc-line' : 'border-dashed border-cc-field-border',
               )}
             >
               <div className="flex min-w-0 items-start gap-2">
-                <NumberDisc n={step.number} />
+                <NumberDisc n={step.ref ?? step.number} />
                 <p className="m-0 min-w-0 cc-text-identifier text-cc-ink break-words">{stepName(step)}</p>
               </div>
               <p data-sop-outcome="" className={cn('m-0 cc-text-cell', step.outcome && !step.thin ? 'text-cc-ink' : 'text-cc-ink-muted')}>
@@ -216,6 +220,9 @@ function SopStrip({ steps }: { steps: SopStep[] }) {
               </p>
               {step.thin ? <p data-sop-thin-note="" className="m-0 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.sopThin')}</p> : null}
               {step.step ? null : <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.sopNotInProcess')}</p>}
+              {step.technical.length ? (
+                <p data-sop-technical-count={step.technical.length} className="m-0 cc-text-meta font-medium text-cc-ink-muted">{sopTechnicalCount(step.technical.length)}</p>
+              ) : null}
               <div className="mt-auto flex flex-wrap items-center gap-2">
                 <span className="inline-flex min-w-0 items-center gap-1 cc-text-meta text-cc-ink">
                   <User size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
@@ -378,7 +385,7 @@ function RaciSection({ steps, action, editing, emptyLead }: { steps: SopStep[]; 
                 cells: {
                   step: (
                     <span data-raci-row={step.stepId} className="flex min-w-0 items-start gap-2">
-                      <NumberDisc n={step.number} />
+                      <NumberDisc n={step.ref ?? step.number} />
                       <span className="min-w-0 break-words">{stepName(step)}</span>
                     </span>
                   ),
@@ -428,7 +435,7 @@ function RaciSection({ steps, action, editing, emptyLead }: { steps: SopStep[]; 
                         {matrix.steps
                           .map((s) => ({ s, letters: lettersOf(s, role.name) }))
                           .filter((x) => x.letters.length)
-                          .map((x) => `${x.letters.join('')} on ${x.s.number}`)
+                          .map((x) => `${x.letters.join('')} on ${x.s.ref ?? x.s.number}`)
                           .join(', ')}
                       </span>
                     </li>
@@ -447,7 +454,7 @@ function RaciSection({ steps, action, editing, emptyLead }: { steps: SopStep[]; 
                 className={cn('rounded-cc-row border border-cc-line p-3', !allOnPhone && i >= PHONE_ROWS && 'hidden print:block')}
               >
                 <p className="m-0 flex items-start gap-2 cc-text-identifier text-cc-ink">
-                  <NumberDisc n={step.number} />
+                  <NumberDisc n={step.ref ?? step.number} />
                   <span className="min-w-0 break-words">{stepName(step)}</span>
                 </p>
                 <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
@@ -498,6 +505,35 @@ export function RaciBlock({
 
 /* ------------------------------------------------------------- the full text */
 
+/**
+ * The technical steps of one business step, folded (owner 16.10.2026:
+ * "simple on top, complete underneath"): every element of the process under
+ * it — its decisions, loops, checks and calls — with its kind and its lines.
+ */
+function TechnicalSteps({ step }: { step: SopStep }) {
+  if (!step.technical.length) return null;
+  return (
+    <div data-sop-technical={step.technical.length} className="mt-2">
+      <CcDisclosure title={wt('doc.sopTechnical')} count={step.technical.length} summary={wt('doc.sopTechnicalSummary')} density="compact" level={4}>
+        <ul className="m-0 flex list-none flex-col gap-1 p-0">
+          {step.technical.map((t) => (
+            <li
+              key={t.id}
+              data-sop-technical-step={t.id}
+              data-sop-technical-depth={t.depth}
+              className={cn('flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 cc-text-cell text-cc-ink', t.depth === 2 && 'pl-4', t.depth > 2 && 'pl-8')}
+            >
+              <span className="min-w-0 break-words">{t.name}</span>
+              {t.kind ? <span className="cc-text-meta font-medium text-cc-ink-muted">{t.kind}</span> : null}
+              {t.anchor ? <CcAnchor label={anchorLabel(t.anchor)}>{anchorText(t.anchor)}</CcAnchor> : null}
+            </li>
+          ))}
+        </ul>
+      </CcDisclosure>
+    </div>
+  );
+}
+
 function FullSop({ steps }: { steps: SopStep[] }) {
   return (
     <div data-sop-full="" className="mt-6 border-t border-cc-line pt-3">
@@ -506,7 +542,7 @@ function FullSop({ steps }: { steps: SopStep[] }) {
           {steps.map((step) => (
             <li key={step.stepId} data-sop-full-step={step.stepId} className="rounded-cc-row border border-cc-line p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <NumberDisc n={step.number} />
+                <NumberDisc n={step.ref ?? step.number} />
                 <h4 className="m-0 cc-text-identifier text-cc-ink">{stepName(step)}</h4>
                 <span className="font-cc-mono text-[11px] text-cc-ink-muted">{step.stepId}</span>
                 <StepAnchor step={step} />
@@ -517,6 +553,7 @@ function FullSop({ steps }: { steps: SopStep[] }) {
                 <dt className="cc-text-label text-cc-ink-muted">{wt('doc.sopException')}</dt>
                 <dd className="m-0 min-w-0">{step.exceptionStatement ? <Statements statements={[step.exceptionStatement]} /> : <Missing />}</dd>
               </dl>
+              <TechnicalSteps step={step} />
             </li>
           ))}
         </ol>
@@ -555,6 +592,18 @@ export default function BusinessLayer({
   const dropped = useMemo(() => stepsNotInProcess(layer, process), [layer, process]);
   // Too many roles: the regenerate action stands in the notice above the matrix, not twice.
   const tooMany = useMemo(() => raciMatrix(steps).totalRoles > MANY_RACI_ROLES, [steps]);
+  // Owner 16.10.2026: the SOP and the RACI stand on the business level. A layer
+  // stored before (a row per technical step) still renders — folded, with the
+  // note that regenerating gives the business-level form.
+  const business = isBusinessLevelLayer(layer);
+  const technical = steps.reduce((n, s) => n + s.technical.length, 0);
+  const body = (
+    <>
+      <SopStrip steps={steps} />
+      <RaciSection steps={steps} action={tooMany && business ? action : undefined} editing={raciEditing} />
+      <FullSop steps={steps} />
+    </>
+  );
   return (
     <section
       data-stage-output="businessDocumentation"
@@ -569,14 +618,21 @@ export default function BusinessLayer({
         <CcProvenanceChip value="proposed" />
         <span className="cc-text-meta font-medium text-cc-ink-muted">{sopStepsCount(steps.length)}</span>
       </div>
-      <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">
+      <p className="m-0 mt-1 mb-1 cc-text-cell text-cc-ink-muted">
         {wt('doc.sopLead')}
         {dropped > 0 ? <span data-sop-dropped={dropped}> {sopDroppedLine(dropped)}</span> : null}
       </p>
-      {action && !tooMany ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
-      <SopStrip steps={steps} />
-      <RaciSection steps={steps} action={tooMany ? action : undefined} editing={raciEditing} />
-      <FullSop steps={steps} />
+      <p data-sop-level={business ? 'business' : 'technical'} className="m-0 mb-4 cc-text-meta font-medium text-cc-ink-muted">
+        {business ? sopLevelBusinessLine(steps.length, technical) : sopLevelLegacyLine(steps.length)}
+      </p>
+      {action && (!tooMany || !business) ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
+      {business ? body : (
+        <div data-sop-legacy="">
+          <CcDisclosure title={wt('doc.sopLegacyFold')} count={steps.length} summary={sopStepsCount(steps.length)} level={3}>
+            {body}
+          </CcDisclosure>
+        </div>
+      )}
     </section>
   );
 }
