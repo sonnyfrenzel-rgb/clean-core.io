@@ -11,6 +11,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { coveringTestRunReceipt, isTestRunReceipt } from '../lib/test-receipt';
 import { phaseTone, testEvidence, workflowSteps } from '../lib/workflow-steps';
 import type { Project } from '../lib/types';
+import { withStoredArtefacts } from '../lib/project-artefact-store';
 
 /**
  * What the chain is allowed to claim about its own inputs — the two ends of it,
@@ -63,7 +64,13 @@ let token = '';
 let uid = '';
 let db: Firestore;
 
-const read = async (path: string) => (await db.doc(path).get()).data();
+// A project is read as the server reads it: since 3.0.14 (item 9) a write can move its large artefacts
+// into documents of their own, and the receipt is taken over those.
+const read = async (path: string) => {
+  const ref = db.doc(path);
+  const data = (await ref.get()).data();
+  return data && path.split('/').length === 2 && path.startsWith('projects/') ? withStoredArtefacts(db, ref, data) : data;
+};
 
 test.beforeAll(async () => {
   test.setTimeout(120 * 1000);
