@@ -105,8 +105,9 @@ export const PLAN_VERSION = 2;
  * 13 (3.0.15 item 1, the second SAP import, 16.10.2026: ABAP Unit 134 methods, 80 green, 53 skipped, 1 red): RAP —
  * a called SAP function module with an exact counterpart in ABAP Cloud language means (`released-counterparts.ts`,
  * first DATE_CHECK_PLAUSIBILITY) is written by the engine in the default access class instead of a `@cc-open ACCESS`
- * stub that raised — every date read as implausible and the program refused every run; the test double runs the
- * same counterpart. Nothing signed changes (§12.3).
+ * stub that raised — every date read as implausible and the program refused every run; the counterpart is an explicit
+ * Gregorian validity check (digits, year, month, days of the month, leap-year rule — not a conversion round trip), the
+ * test double runs the same counterpart, and `ltc_counterparts` tests it in ABAP Unit. Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 13;
 

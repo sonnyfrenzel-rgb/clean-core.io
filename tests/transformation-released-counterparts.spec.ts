@@ -80,15 +80,54 @@ test.describe('DATE_CHECK_PLAUSIBILITY in the access layer', () => {
     expect(body).toContain(`${ENGINE_COUNTERPART_TAG} DATE_CHECK_PLAUSIBILITY`);
     expect(body).not.toContain('@cc-open');
     expect(body).toContain('DATA(lv_date) = CONV d( date ).');
-    expect(body).toContain('IF CONV d( CONV i( lv_date ) ) <> lv_date.');
-    // The exception is raised only where the function module raised PLAUSIBILITY_CHECK_FAILED — inside the IF.
-    expect(body).toMatch(/IF CONV d\( CONV i\( lv_date \) \) <> lv_date\.\n\s+RAISE EXCEPTION NEW zcx_\w+_access\( object = 'DATE_CHECK_PLAUSIBILITY' \)\.\n\s+ENDIF\./);
+    // An explicit Gregorian check, not the d -> i -> d round trip (QA review of 6af6aa60).
+    expect(body).not.toContain('CONV i( lv_date )');
+    expect(body).toMatch(/IF lv_date IS INITIAL\.\n\s+RETURN\./);
+    // The exception is raised only where the function module raised PLAUSIBILITY_CHECK_FAILED — inside the two IFs.
+    expect(body).toMatch(/IF lv_date CN '0123456789'\.\n\s+RAISE EXCEPTION NEW zcx_\w+_access\( object = 'DATE_CHECK_PLAUSIBILITY' \)\.\n\s+ENDIF\./);
+    expect(body).toMatch(/IF lv_year < 1 OR lv_month < 1 OR lv_month > 12 OR lv_day < 1 OR lv_day > lv_last_day\.\n\s+RAISE EXCEPTION NEW zcx_\w+_access\( object = 'DATE_CHECK_PLAUSIBILITY' \)\.\n\s+ENDIF\./);
+    expect(body.match(/RAISE EXCEPTION/g)).toHaveLength(2);
     // Not an unfinished method any more; the SAP read beside it still is.
     const open = abapUnfinishedMethods(cls).map((m) => m.method);
     expect(open.some((m) => /call_date_check_plausibility/.test(m))).toBe(false);
     expect(open.some((m) => /read_vbak/.test(m))).toBe(true);
     expect(method(cls, 'read_vbak')).toContain('@cc-open ACCESS');
     expect(engineCounterpartsIn(cls)).toEqual(['DATE_CHECK_PLAUSIBILITY']);
+  });
+
+  test('the explicit check, restated in TypeScript, decides every listed case as the list says — and the ABAP carries the month and leap-year rule', () => {
+    // The same rule as the generated ABAP, statement by statement.
+    const raises = (value: string): boolean => {
+      if (value === '00000000') return false;
+      if (!/^[0-9]{8}$/.test(value)) return true;
+      const year = Number(value.slice(0, 4));
+      const month = Number(value.slice(4, 6));
+      const day = Number(value.slice(6, 8));
+      const lastDay =
+        month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : month === 2 ? 28 : [4, 6, 9, 11].includes(month) ? 30 : 31;
+      return year < 1 || month < 1 || month > 12 || day < 1 || day > lastDay;
+    };
+    const cases = releasedCounterpartOf('DATE_CHECK_PLAUSIBILITY')!.cases;
+    const expected: Record<string, boolean> = {
+      '20240229': false, '99991231': false, '00010101': false, '00000000': false, '20000229': false,
+      '20230229': true, '20261301': true, '20261000': true, '2026OCT1': true, '19000229': true,
+    };
+    expect(Object.fromEntries(cases.map((k) => [k.value, k.raises]))).toEqual(expected);
+    for (const k of cases) expect(raises(k.value), k.value).toBe(k.raises);
+    // A few more the rule must get right: 31 April, 31 December, 29 February 2100, year 0000.
+    expect([raises('20260431'), raises('20261231'), raises('21000229'), raises('00000101')]).toEqual([true, false, true, true]);
+
+    // The generated ABAP states the same rule.
+    const body = method(file(rap(contractShape()), /_access\.clas\.abap$/), 'call_date_check_plausibility');
+    for (const line of [
+      'DATA(lv_year) = CONV i( lv_date(4) ).',
+      'DATA(lv_month) = CONV i( lv_date+4(2) ).',
+      'DATA(lv_day) = CONV i( lv_date+6(2) ).',
+      'WHEN lv_month = 2 AND lv_year MOD 4 = 0 AND ( lv_year MOD 100 <> 0 OR lv_year MOD 400 = 0 ) THEN 29',
+      'WHEN lv_month = 2 THEN 28',
+      'WHEN lv_month = 4 OR lv_month = 6 OR lv_month = 9 OR lv_month = 11 THEN 30',
+      'ELSE 31 ).',
+    ]) expect(body, line).toContain(line);
   });
 
   test('the test double runs the same counterpart, so a test of an implausible date sees the refusal', () => {

@@ -50,20 +50,36 @@ export const ENGINE_COUNTERPART_TAG = 'Engine-written counterpart of';
 const COUNTERPARTS: readonly ReleasedCounterpart[] = [
   {
     functionModule: 'DATE_CHECK_PLAUSIBILITY',
-    // IMPORTING VALUE(DATE) LIKE SY-DATUM, EXCEPTIONS PLAUSIBILITY_CHECK_FAILED. The function module accepts a date
-    // that survives the round trip through the day count, and raises for any other. ABAP converts a `d` value to
-    // `i` as the days since 01.01.0001 when it is a valid calendar date and to 0 otherwise (ABAP conversion rules,
-    // source type d); 0 converts back to 00000000. So the round trip holds exactly for every valid date from
-    // 00010101 to 99991231 and for the initial date 00000000, which the function module accepts as well, and fails
-    // for everything else (30 February, month 13, letters, blanks). The parameter is converted to `d` first, as the
-    // function module's typed VALUE parameter converts it at the call.
-    why: 'a valid calendar date (or the initial date) survives the round trip through the day count, as in the function module; any other value raises where it raised PLAUSIBILITY_CHECK_FAILED',
+    // IMPORTING VALUE(DATE) LIKE SY-DATUM, EXCEPTIONS PLAUSIBILITY_CHECK_FAILED. The function module accepts a valid
+    // Gregorian calendar date and raises for any other value. The check is written out explicitly — it does not lean
+    // on a conversion rule (QA review of 6af6aa60): the parameter is converted to `d` first, as the function module's
+    // typed VALUE parameter converts it at the call; the initial date 00000000 passes, as the function module accepts
+    // it (our reading of the module — to be confirmed in the SAP trial by the `ltc_counterparts` case); otherwise all
+    // eight characters must be digits, the year 0001–9999, the month 01–12 and the day 01 to the last day of that
+    // month — 29 February only in a leap year (divisible by 4, and not by 100 unless by 400). Anything else (30
+    // February, 29 February 1900, month 13, day 0, letters, blanks) raises where the module raised.
+    why: 'a valid Gregorian calendar date (or the initial date) passes, checked digit by digit, month by month and with the leap-year rule, as in the function module; any other value raises where it raised PLAUSIBILITY_CHECK_FAILED',
     body(params, exceptionClass) {
       if (params.length !== 1 || params[0].name !== 'date' || params[0].direction !== 'importing' || params[0].optional) return null;
+      const raise = `      RAISE EXCEPTION NEW ${exceptionClass}( object = 'DATE_CHECK_PLAUSIBILITY' ).`;
       return [
         '    DATA(lv_date) = CONV d( date ).',
-        '    IF CONV d( CONV i( lv_date ) ) <> lv_date.',
-        `      RAISE EXCEPTION NEW ${exceptionClass}( object = 'DATE_CHECK_PLAUSIBILITY' ).`,
+        '    IF lv_date IS INITIAL.',
+        '      RETURN. " the initial date 00000000 is accepted, as by the function module (to be confirmed in the SAP trial)',
+        '    ENDIF.',
+        "    IF lv_date CN '0123456789'.",
+        raise,
+        '    ENDIF.',
+        '    DATA(lv_year) = CONV i( lv_date(4) ).',
+        '    DATA(lv_month) = CONV i( lv_date+4(2) ).',
+        '    DATA(lv_day) = CONV i( lv_date+6(2) ).',
+        '    DATA(lv_last_day) = COND i(',
+        '      WHEN lv_month = 2 AND lv_year MOD 4 = 0 AND ( lv_year MOD 100 <> 0 OR lv_year MOD 400 = 0 ) THEN 29',
+        '      WHEN lv_month = 2 THEN 28',
+        '      WHEN lv_month = 4 OR lv_month = 6 OR lv_month = 9 OR lv_month = 11 THEN 30',
+        '      ELSE 31 ).',
+        '    IF lv_year < 1 OR lv_month < 1 OR lv_month > 12 OR lv_day < 1 OR lv_day > lv_last_day.',
+        raise,
         '    ENDIF.',
       ];
     },
@@ -76,6 +92,8 @@ const COUNTERPARTS: readonly ReleasedCounterpart[] = [
       { value: '20261301', raises: true, why: 'month 13' },
       { value: '20261000', raises: true, why: 'day 0' },
       { value: '2026OCT1', raises: true, why: 'letters' },
+      { value: '19000229', raises: true, why: 'divisible by 100, not by 400: no leap year' },
+      { value: '20000229', raises: false, why: 'divisible by 400: a leap year' },
     ],
   },
 ];
