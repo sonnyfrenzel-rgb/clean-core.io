@@ -26,6 +26,7 @@ import {
 import { isAbapUnitRoute } from './test-runnability';
 import { storedActivation, storedContextDigest, storedTypeCheck } from './transformation/generation-record';
 import { activationClosureRefusal, typeCheckClosureRefusal } from './transformation/check-words';
+import { PREVIOUS_PACKAGE, testedPackageMoved } from './test-suite-basis';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -385,6 +386,14 @@ export interface Staleness {
    */
   context: boolean;
   /**
+   * Owner 16.10.2026: the stored test suite was written for a generated package
+   * that is no longer the one on the project (`lib/test-suite-basis.ts`) — a
+   * new Transformation replaced it — and not already stale for the source.
+   * Part of `tests`; read on its own only for the wording. False on a suite
+   * stored before the record existed.
+   */
+  testsPackage: boolean;
+  /**
    * Roadmap 7.10 - what moved: the source, or (same source) the target
    * profile. `'profile'` when the change record says so (`reason: 'profile'`)
    * or the project's profile no longer matches the run's. Only the wording
@@ -420,7 +429,7 @@ export interface Staleness {
  */
 export function staleness(project: Project | null): Staleness {
   const none: Staleness = {
-    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, context: false, basis: 'source', unverifiedInputs: [],
+    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, context: false, testsPackage: false, basis: 'source', unverifiedInputs: [],
   };
   if (!project) return none;
 
@@ -472,11 +481,15 @@ export function staleness(project: Project | null): Staleness {
   // A sign-off given under one target profile is not a sign-off under another.
   const profileMoved = unverified.some((u) => u.id === PROFILE_INPUT_ID);
 
+  const testsForSource = sourceChanged || unchangedSince('testCases');
+  const testsPackage = !testsForSource && testedPackageMoved(project);
+
   return {
     sourceChanged,
     design: sourceChanged || unchangedSince('solutionDesign'),
     code: sourceChanged || unchangedSince('generatedCode'),
-    tests: sourceChanged || unchangedSince('testCases'),
+    tests: testsForSource || testsPackage,
+    testsPackage,
     docs: sourceChanged || unchangedSince('documentation'),
     signOff: ((sourceChanged || profileMoved) && project.approvedByArchitect === true) || signOffUnchanged,
     context: contextMoved(project),
@@ -502,6 +515,15 @@ function contextMoved(project: Project): boolean {
  */
 export function previousBasis(project: Project | null): string {
   return staleness(project).basis === 'profile' ? 'a previous target profile' : 'a previous source';
+}
+
+/**
+ * What the stored test suite was written for, when it is stale: "a previous
+ * generated package" when only the package moved (owner 16.10.2026), otherwise
+ * `previousBasis`.
+ */
+export function testsPreviousBasis(project: Project | null): string {
+  return staleness(project).testsPackage ? PREVIOUS_PACKAGE : previousBasis(project);
 }
 
 /** "the analysed source and the target deployment" — for a blocker sentence. */
@@ -538,7 +560,7 @@ export function handoverBlockers(project: Project | null): string[] {
   if (s.design && p.design) out.push('the solution design');
   if (s.signOff) out.push('the architecture sign-off');
   if (s.code && p.code) out.push('the generated code');
-  if (s.tests && p.tests) out.push('the test suite');
+  if (s.tests && p.tests) out.push(s.testsPackage ? `the test suite (written for ${PREVIOUS_PACKAGE})` : 'the test suite');
   if (s.docs && p.docs) out.push('the documentation');
   return out;
 }
@@ -1142,7 +1164,9 @@ export function workflowSteps(project: Project | null): RailStep[] {
           )
         : transformation,
     hasDocs && s.docs ? stale(documentation, `Written for ${prevBasis} — regenerate it.`) : documentation,
-    tests.total > 0 && s.tests ? stale(testing, `Test cases written for ${prevBasis} — regenerate the suite.`) : testing,
+    tests.total > 0 && s.tests
+      ? stale(testing, `Test cases written for ${s.testsPackage ? PREVIOUS_PACKAGE : prevBasis} — regenerate the suite.`)
+      : testing,
     hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)
       ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
       : econScoreMoved
@@ -1152,9 +1176,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
             'Out of date',
           )
         : economics,
-    blockers.length > 0
-      ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
-      : delivery,
+    blockers.length === 1 && s.testsPackage && tests.total > 0
+      ? stale(delivery, `Handover blocked — the test suite was written for ${PREVIOUS_PACKAGE}. Regenerate it in Testing.`, 'Blocked')
+      : blockers.length > 0
+        ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
+        : delivery,
   ];
 }
 
@@ -1199,7 +1225,7 @@ export function testingClosureBasis(project: Project | null): TestingClosureBasi
   }
   const testing = workflowSteps(project).find((s) => s.key === 'testing')!;
   if (testing.state === 'stale') {
-    return { ok: false, code: 'suite-stale', error: 'The test suite was written for a previous source. Regenerate it first.' };
+    return { ok: false, code: 'suite-stale', error: `The test suite was written for ${testsPreviousBasis(project)}. Regenerate it first.` };
   }
   if (testing.state === 'done') {
     return { ok: false, code: 'testing-done', error: 'Testing is already done for this suite; there is nothing to close.' };

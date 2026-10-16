@@ -30,7 +30,7 @@ import { scoreWithBand } from './clean-core-score';
 import type { Project } from './types';
 import type { ProvenanceValue } from './provenance';
 import type { PhaseKey, RailStep } from './workflow-steps';
-import { testEvidence, staleness } from './workflow-steps';
+import { testEvidence, staleness, testsPreviousBasis } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { readStoredDecision, ARCHITECTURE_OPTION, type StoredDecision } from './decision-draft';
@@ -899,7 +899,7 @@ export function handoverGroups(
     sub: tests.state === 'open'
       ? 'No test suite generated.'
       : tests.state === 'stale'
-        ? `${tests.value} — made for a previous source.`
+        ? `${tests.value} — made for ${testsPreviousBasis(project)}.`
         : tests.provenance === 'demonstrated-mock' || tests.provenance === 'imported' || tests.provenance === 'confirmed'
           ? tests.value!
           : ranWithoutVerdict
@@ -911,10 +911,12 @@ export function handoverGroups(
 
   // Delivery artefact — the package that leaves, and whether it was sealed.
   const blocked = state.blockers.length > 0;
+  // Owner 16.10.2026: only the suite is behind, because a new Transformation replaced its package.
+  const blockedBasis = state.blockers.length === 1 && staleness(project).testsPackage ? testsPreviousBasis(project) : 'a previous source';
   const delivery = group('delivery', {
     title: 'Handover package',
     sub: blocked
-      ? 'Blocked — built for a previous source.'
+      ? `Blocked — built for ${blockedBasis}.`
       : state.exportedAt
         ? 'Audit pack sealed and downloaded.'
         : 'Audit pack not sealed yet.',
@@ -1014,11 +1016,12 @@ export function handoverFacets(
 ): HandoverFacet[] {
   const phase = (k: PhaseKey) => phases.find((p) => p.key === k)!;
   const blocked = state.blockers.length > 0;
+  const blockedBasis = state.blockers.length === 1 && staleness(project).testsPackage ? testsPreviousBasis(project) : 'a previous source';
   const needed = handoverStillNeeded(project, chain, state).length;
   const delivery = phase('delivery');
 
   const handover: HandoverFacet = blocked
-    ? { key: 'handover', label: 'Handover', value: 'Blocked', sub: `${plural(state.blockers.length, 'artefact')} built for a previous source`, provenance: 'stale', basis: 'Artefacts whose digests no longer match the source under analysis.' }
+    ? { key: 'handover', label: 'Handover', value: 'Blocked', sub: `${plural(state.blockers.length, 'artefact')} built for ${blockedBasis}`, provenance: 'stale', basis: 'Artefacts whose digests no longer match the source under analysis.' }
     : state.exportedAt
       ? { key: 'handover', label: 'Handover', value: 'Handed over', sub: 'Audit pack sealed and downloaded', provenance: 'proven', basis: 'The server sealed and handed out an audit pack for this project. Acceptance by operations happens outside this product; delivery is not acceptance.' }
       : delivery.done
@@ -1027,7 +1030,7 @@ export function handoverFacets(
 
   const hasRun = !!str(project.activeRunId) && !project._runLoadFailed;
   const pack: HandoverFacet = blocked
-    ? { key: 'audit-pack', label: 'Audit pack', value: 'Blocked', sub: 'Rebuild what was made for a previous source', provenance: 'stale', basis: 'The audit-pack route refuses a pack over artefacts built for another source.' }
+    ? { key: 'audit-pack', label: 'Audit pack', value: 'Blocked', sub: `Rebuild what was made for ${blockedBasis}`, provenance: 'stale', basis: 'The audit-pack route refuses a pack over artefacts built for another source.' }
     : !hasRun
       ? { key: 'audit-pack', label: 'Audit pack', value: 'Not available', sub: 'Sealed only against a signed run', provenance: 'not-determined', basis: 'No readable signed run is on record.' }
       : project.auditMetadata?.inputFingerprint
@@ -1049,7 +1052,7 @@ export function handoverFacets(
   const quality: HandoverFacet = ev.total === 0
     ? { key: 'quality', label: 'Quality', value: 'No tests', sub: 'No test suite generated', provenance: 'not-determined', basis: 'No test cases are on record.' }
     : tests.state === 'stale'
-      ? { key: 'quality', label: 'Quality', value: 'Stale', sub: 'Written for a previous source', provenance: 'stale', basis: phase('testing').detail }
+      ? { key: 'quality', label: 'Quality', value: 'Stale', sub: `Written for ${testsPreviousBasis(project)}`, provenance: 'stale', basis: phase('testing').detail }
       : phase('testing').closedUnverified
         ? { key: 'quality', label: 'Quality', value: 'Not verified', sub: 'Testing closed without a passing run', provenance: 'confirmed', basis: phase('testing').detail }
       : tests.provenance === 'demonstrated-mock'

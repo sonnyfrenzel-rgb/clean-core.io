@@ -34,7 +34,7 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import { deliveryAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
-import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis, staleness, testsPreviousBasis } from '@/lib/workflow-steps';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcToast from '@/components/cc/Toast';
@@ -690,8 +690,13 @@ export default function DeliveryPage() {
       </div>
 
       <StaleNotice
-        title={`Handover blocked — built for ${previousBasis(project)}`}
-        reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current ${previousBasis(project) === 'a previous target profile' ? 'target profile' : 'source'} before handing over.`)}
+        title={`Handover blocked — built for ${blockers.length === 1 && staleness(project).testsPackage ? testsPreviousBasis(project) : previousBasis(project)}`}
+        reasons={
+          // Owner 16.10.2026: only the suite is behind, because a new Transformation replaced its package.
+          blockers.length === 1 && staleness(project).testsPackage
+            ? [`The test suite was written for ${testsPreviousBasis(project)} — regenerate it in Testing for the current one before handing over.`]
+            : blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current ${previousBasis(project) === 'a previous target profile' ? 'target profile' : 'source'} before handing over.`)
+        }
       />
 
       {/* The tool's anchor bar (ADR-091): under the header, its facets and status line, before the first section. */}
@@ -849,7 +854,7 @@ export default function DeliveryPage() {
                               testCaseCount === 0
                                 ? 'Nothing to verify'
                                 : testingPhase.state === 'stale'
-                                  ? `Written for ${previousBasis(project)} — regenerate in stage 5`
+                                  ? `Written for ${testsPreviousBasis(project)} — regenerate in stage 5`
                                   // ADR-094 — closed by the owner without a passing run:
                                   // named, not a blocker, never a pass.
                                   : testingClosure.state === 'current'

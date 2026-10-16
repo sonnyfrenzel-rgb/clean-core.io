@@ -105,6 +105,13 @@ export interface Project {
    */
   testRunReceipt?: import('./test-receipt').TestRunReceipt;
   /**
+   * The generated package the stored suite was written for (owner 16.10.2026,
+   * `lib/test-suite-basis.ts`). Written only by `/api/projects/{id}/artefacts`
+   * with the Admin SDK; not in the client update allowlist. Absent or `null` on
+   * a suite stored before the record existed — read as unknown, never as stale.
+   */
+  testSuiteBasis?: import('./test-suite-basis').TestSuiteBasis | null;
+  /**
    * ADR-075 — the summary of a test result from the reader's own SAP system,
    * imported from a result file or confirmed by the account. Written only by
    * `/api/projects/{id}/test-results` with the Admin SDK, beside the full
