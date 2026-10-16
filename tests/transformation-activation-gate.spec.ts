@@ -96,6 +96,20 @@ test.describe('the activation check runs with the configuration the package ship
     expect(r.ran && r.activation.syntaxErrors).toBeGreaterThanOrEqual(1);
     expect(r.ran && r.activation.activatable).toBe(false);
   });
+
+  test('a call of an SAP class ABAP Cloud does not release is an error, not an object the check cannot see (second SAP import, 16.10.2026)', () => {
+    const prep = sdPrep();
+    const run = (body: string) => {
+      const bodies = new Map<string, string>(prep.fillUnits.map((u) => [u.unitId, 'RETURN.']));
+      bodies.set(prep.fillUnits[0].unitId, body);
+      return abapCheck(candidateFiles(prep, bodies));
+    };
+    const invented = run("cl_abap_unit_test=>fail( 'x' ).");
+    expect(invented.ran && invented.activation.activatable).toBe(false);
+    expect(invented.ran && invented.activation.unresolvedNames).not.toContain('CL_ABAP_UNIT_TEST');
+    const released = run("cl_abap_unit_assert=>fail( msg = 'x' ).");
+    expect(released.ran && released.activation.syntaxErrors).toBe(0);
+  });
 });
 
 test.describe('the errors are repair reasons of the function that holds them', () => {

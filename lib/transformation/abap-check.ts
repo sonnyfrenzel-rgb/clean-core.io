@@ -43,6 +43,14 @@ import * as abaplint from '@abaplint/core';
 import { ABAPLINT_CONFIG } from './abaplint-config';
 import { SAP_STUB_FILES } from './abap-sap-stubs';
 import type { AbapActivation, AbapFinding, AbapFindingKind } from './check-words';
+import releasedClassList from '../abap/generated/released-classes.latest.json';
+import releasedInterfaceList from '../abap/generated/released-interfaces.latest.json';
+
+/** The classes and interfaces SAP releases for ABAP Cloud, lower-case (the synced lists the body guard reads too). */
+const RELEASED_NAMES: ReadonlySet<string> = new Set([
+  ...(releasedClassList as { classes: string[] }).classes,
+  ...(releasedInterfaceList as { interfaces: string[] }).interfaces,
+]);
 
 export type { AbapActivation, AbapFinding, AbapFindingKind } from './check-words';
 export { isAbapPackage } from './check-words';
@@ -78,6 +86,23 @@ const headOf = (name: string) => name.split(/~|=>|->/)[0].replace(/^\\/, '').toL
  * a class, interface or type the check could not find, or an interface whose
  * method is implemented.
  */
+/** The SAP classes and interfaces a source names that ABAP Cloud does not release, as `check_syntax` findings. */
+function unreleasedReferences(path: string, content: string, own: ReadonlySet<string>): Array<{ path: string; line: number; rule: string; message: string }> {
+  const out: Array<{ path: string; line: number; rule: string; message: string }> = [];
+  const ref = /\b((?:cl|cx|if)_[a-z0-9_]+)\s*=>|\bTYPE\s+REF\s+TO\s+((?:cl|cx|if)_[a-z0-9_]+)|\bNEW\s+((?:cl|cx)_[a-z0-9_]+)\s*\(|\bINHERITING\s+FROM\s+((?:cl|cx)_[a-z0-9_]+)|\bINTERFACES\s+(if_[a-z0-9_]+)|\bCATCH\s+(cx_[a-z0-9_]+)/gi;
+  content.split('\n').forEach((raw, i) => {
+    if (/^\*/.test(raw)) return;
+    // Literals and the comment after `"` blanked, so a name in text is not a reference.
+    const code = raw.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''").replace(/".*$/, '');
+    for (const m of code.matchAll(ref)) {
+      const name = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? m[6]).toLowerCase();
+      if (own.has(name.toUpperCase()) || own.has(name) || RELEASED_NAMES.has(name)) continue;
+      out.push({ path, line: i + 1, rule: 'check_syntax', message: `"${name.toUpperCase()}" is not released for ABAP Cloud (or does not exist)` });
+    }
+  });
+  return out;
+}
+
 function externalNameOf(message: string, own: ReadonlySet<string>): string | null {
   const patterns = [
     /^Super class "([^"]+)" not found/i,
@@ -162,6 +187,10 @@ export function abapCheck(files: ReadonlyArray<{ path: string; content: string }
   }
 
   const own = new Set(src.map((f) => objectOf(f.path)));
+  // abaplint reports no SAP name outside the shipped `errorNamespace`, so a class ABAP Cloud does not release — or
+  // one that does not exist — passed unseen (second SAP import, 16.10.2026: `cl_abap_unit_test=>fail` and
+  // `cl_aunit_assert` in a test suite). Every reference to an SAP class or interface is held against SAP's lists.
+  for (const f of src) if (/\.abap$/i.test(f.path)) raw.push(...unreleasedReferences(f.path, f.content, own));
   // Pass 1: the SAP names the findings point at.
   const external = new Set<string>();
   for (const i of raw) {
