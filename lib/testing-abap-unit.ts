@@ -401,6 +401,101 @@ function closingParen(text: string, open: number): number {
   return -1;
 }
 
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+
+/**
+ * The scopes a variable at `at` is resolved in, innermost first: the method it sits in, then its test class
+ * (definition and implementation — attributes set in `setup`). Offsets into the masked code.
+ */
+function scopesAt(masked: string, at: number): Array<[number, number]> {
+  const scopes: Array<[number, number]> = [];
+  const before = masked.slice(0, at);
+  const lastOf = (re: RegExp) => {
+    let last: RegExpExecArray | null = null;
+    for (let m = re.exec(before); m !== null; m = re.exec(before)) last = m;
+    return last;
+  };
+  const method = lastOf(/\bMETHOD\s+[\w~/]+[^.]*\./gi);
+  const endBefore = lastOf(/\bENDMETHOD\b/gi);
+  if (method && (!endBefore || endBefore.index < method.index)) {
+    const end = masked.slice(at).search(/\bENDMETHOD\b/i);
+    scopes.push([method.index, end === -1 ? masked.length : at + end]);
+  }
+  const impl = lastOf(/\bCLASS\s+([\w/]+)\s+IMPLEMENTATION\b/gi);
+  if (impl) {
+    const name = esc(impl[1]);
+    for (const head of [new RegExp(`\\bCLASS\\s+${name}\\s+DEFINITION\\b`, 'gi'), new RegExp(`\\bCLASS\\s+${name}\\s+IMPLEMENTATION\\b`, 'gi')]) {
+      const m = head.exec(masked);
+      if (!m) continue;
+      const end = masked.slice(m.index).search(/\bENDCLASS\b/i);
+      scopes.push([m.index, end === -1 ? masked.length : m.index + end]);
+    }
+  }
+  return scopes;
+}
+
+/** The expression that starts at the beginning of `text`: `NEW x( … )`, `CAST x( … )`, or a variable; or ''. */
+function leadingExpression(text: string): string {
+  const call = /^\s*(?:NEW|CAST)\s+[\w/#]+\s*\(/i.exec(text);
+  if (call) {
+    const close = closingParen(text, call[0].length - 1);
+    return close === -1 ? '' : text.slice(0, close + 1).trim();
+  }
+  return /^\s*((?:me->)?[a-z_][\w]*)(?![\w(]|->|=>)/i.exec(text)?.[1] ?? '';
+}
+
+/**
+ * Traces the value handed in as `io_access` (masked code, `at` = offset of the creation) to what it is: the test
+ * double (`ltd_access`, or a class of the suite's own declared FOR TESTING), the default access class, or unclear.
+ * A variable is resolved through its creations in the same method or test class — `DATA(v) = NEW c( )`,
+ * `v = NEW c( )`, `v = NEW #( )` with `DATA v TYPE REF TO c`, `CREATE OBJECT v [TYPE c]` — and a `CAST t( … )`
+ * through what it casts. What cannot be resolved is unclear, never the double.
+ */
+function traceAccess(masked: string, given: string, at: number, seam: AccessSeam): 'double' | 'default' | 'unclear' {
+  const ownDoubles = new Set(
+    [...masked.matchAll(/\bCLASS\s+([\w/]+)\s+DEFINITION\b([^.]*)\./gi)]
+      .filter((m) => /\bFOR\s+TESTING\b/i.test(m[2]) && !/\bINHERITING\s+FROM\b/i.test(m[2]))
+      .map((m) => m[1].toLowerCase()),
+  );
+  const ofClass = (cls: string): 'double' | 'default' | 'unclear' =>
+    cls === seam.double || (ownDoubles.has(cls) && !seam.logicClasses.includes(cls)) ? 'double' : seam.defaultAccess.includes(cls) ? 'default' : 'unclear';
+  const scopes = scopesAt(masked, at);
+  const declaredType = (v: string): string => {
+    for (const [s, e] of scopes) {
+      const m = new RegExp(`(?:^|[\\s,:])(?:me->)?${esc(v)}\\s+TYPE\\s+REF\\s+TO\\s+([\\w/]+)`, 'i').exec(masked.slice(s, e));
+      if (m) return m[1].toLowerCase();
+    }
+    return '';
+  };
+  const visiting = new Set<string>();
+  const ofExpression = (expr: string, target: string): 'double' | 'default' | 'unclear' => {
+    const call = /^\s*(NEW|CAST)\s+([\w/#]+)\s*\(/i.exec(expr);
+    if (call && call[1].toUpperCase() === 'CAST') return ofExpression(leadingExpression(expr.slice(call[0].length)), '');
+    if (call) return ofClass(call[2] === '#' ? (target ? declaredType(target) : '') : call[2].toLowerCase());
+    return expr ? ofVariable(expr) : 'unclear';
+  };
+  const ofVariable = (raw: string): 'double' | 'default' | 'unclear' => {
+    const v = raw.replace(/^me->/i, '').toLowerCase();
+    if (visiting.has(v)) return 'unclear';
+    visiting.add(v);
+    const n = esc(v);
+    const assign = new RegExp(`(?:^|\\.)\\s*(?:DATA\\s*\\(\\s*${n}\\s*\\)|(?:me->)?${n})\\s*=(?!=)\\s*`, 'gim');
+    const create = new RegExp(`\\bCREATE\\s+OBJECT\\s+(?:me->)?${n}\\b(?:\\s+TYPE\\s+([\\w/]+))?`, 'gi');
+    for (const [s, e] of scopes) {
+      const text = masked.slice(s, e);
+      const found: Array<'double' | 'default' | 'unclear'> = [];
+      for (let m = assign.exec(text); m !== null; m = assign.exec(text)) found.push(ofExpression(leadingExpression(text.slice(m.index + m[0].length)), v));
+      for (let m = create.exec(text); m !== null; m = create.exec(text)) found.push(ofClass((m[1] ?? declaredType(v)).toLowerCase()));
+      assign.lastIndex = 0;
+      create.lastIndex = 0;
+      // The innermost scope that creates the variable decides; every creation must be the double.
+      if (found.length) return found.includes('default') ? 'default' : found.every((f) => f === 'double') ? 'double' : 'unclear';
+    }
+    return 'unclear';
+  };
+  return ofExpression(leadingExpression(given), '');
+}
+
 export interface AccessDoubleResult {
   /** The test code, rewritten where the rewrite is unambiguous. */
   code: string;
@@ -420,7 +515,6 @@ export interface AccessDoubleResult {
 export function withAccessDouble(testCode: string, seam: AccessSeam | null): AccessDoubleResult {
   if (!seam || !testCode) return { code: testCode, rewritten: 0, problems: [] };
   const logic = new Set(seam.logicClasses);
-  const defaults = new Set(seam.defaultAccess);
   const masked = maskKeepingOffsets(testCode);
   const lineOf = (offset: number) => testCode.slice(0, offset).split('\n').length;
   const types = variableTypes(readStatements(testCode), new Map());
@@ -429,14 +523,18 @@ export function withAccessDouble(testCode: string, seam: AccessSeam | null): Acc
   const withDouble = `${ACCESS_PARAM} = NEW ${seam.double}( )`;
   const refuse = (offset: number, cls: string, why: string) =>
     problems.push({ kind: 'default-access', line: lineOf(offset), name: cls, on: cls, message: `Line ${lineOf(offset)}: ${why} Create it with NEW ${cls}( ${withDouble} ).` });
-  /** The arguments of a creation: empty, with io_access (and not the default access), positional, or other. */
-  const judge = (args: string): 'empty' | 'double' | 'default' | 'other' => {
+  const unclear = (cls: string) =>
+    `creates ${cls} with an ${ACCESS_PARAM} the check cannot trace to the test double ${seam.double} (a variable it cannot resolve in this test class, or another class) — it may be the default access, which calls SAP.`;
+  /**
+   * The arguments of a creation: empty, with io_access traced to the double, to the default access, untraceable
+   * (unclear), or without io_access (other). `at` is the offset of the creation in the masked code, for the scope.
+   */
+  const judge = (args: string, at: number): 'empty' | 'double' | 'default' | 'unclear' | 'other' => {
     if (args.trim() === '') return 'empty';
     const named = namedArgs(args);
     const given = named.includes(ACCESS_PARAM) ? (new RegExp(`\\b${ACCESS_PARAM}\\s*=\\s*([\\s\\S]*)$`, 'i').exec(args)?.[1] ?? '') : named.length === 0 ? args : null;
     if (given === null) return 'other';
-    const passed = /^\s*NEW\s+([\w/]+)\s*\(/i.exec(given)?.[1]?.toLowerCase();
-    return passed && defaults.has(passed) ? 'default' : 'double';
+    return traceAccess(masked, given, at, seam);
   };
 
   // NEW <logic>( … ) and <var> = NEW #( … )
@@ -451,10 +549,11 @@ export function withAccessDouble(testCode: string, seam: AccessSeam | null): Acc
     const open = m.index + m[0].length - 1;
     const close = closingParen(masked, open);
     if (close === -1) continue;
-    const verdict = judge(masked.slice(open + 1, close));
+    const verdict = judge(masked.slice(open + 1, close), m.index);
     if (verdict === 'double') continue;
     if (verdict === 'empty') edits.push({ start: open, end: close + 1, text: `( ${withDouble} )` });
     else if (verdict === 'default') refuse(m.index, cls, `creates ${cls} with the default access class, which calls SAP — not the test double.`);
+    else if (verdict === 'unclear') refuse(m.index, cls, unclear(cls));
     else refuse(m.index, cls, `creates ${cls} without ${ACCESS_PARAM}, so it uses the default access, which calls SAP.`);
   }
 
@@ -470,9 +569,17 @@ export function withAccessDouble(testCode: string, seam: AccessSeam | null): Acc
       continue;
     }
     const exporting = /^\s*EXPORTING\s+([\s\S]*)$/i.exec(rest);
-    const verdict = exporting ? judge(exporting[1]) : 'other';
+    const verdict = exporting ? judge(exporting[1], m.index) : 'other';
     if (verdict === 'double') continue;
-    refuse(m.index, cls, verdict === 'default' ? `creates ${cls} with the default access class, which calls SAP — not the test double.` : `creates ${cls} without ${ACCESS_PARAM}, so it uses the default access, which calls SAP.`);
+    refuse(
+      m.index,
+      cls,
+      verdict === 'default'
+        ? `creates ${cls} with the default access class, which calls SAP — not the test double.`
+        : verdict === 'unclear'
+          ? unclear(cls)
+          : `creates ${cls} without ${ACCESS_PARAM}, so it uses the default access, which calls SAP.`,
+    );
   }
 
   if (edits.length === 0) return { code: testCode, rewritten: 0, problems };

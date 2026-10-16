@@ -21,6 +21,9 @@ function pkg(source: string) {
   return buildRapScaffold(plan, facts, {}).files;
 }
 const logicOf = (files: ReadonlyArray<{ path: string }>) => /src\/(\w+_logic)\.clas\.abap$/.exec(files.find((f) => /_logic\.clas\.abap$/.test(f.path))!.path)![1];
+/** The access interface the logic class's constructor takes. */
+const accessInterfaceOf = (files: ReadonlyArray<{ path: string; content: string }>) =>
+  /\bio_access\s+TYPE\s+REF\s+TO\s+(\w+)/i.exec(files.find((f) => /_logic\.clas\.abap$/.test(f.path))!.content)![1].toLowerCase();
 
 const suite = (logic: string, create: string, decl = `    DATA mo_cut TYPE REF TO ${logic}.`) =>
   [
@@ -80,13 +83,92 @@ for (const [name, source] of [['sd-shape', () => fixture('sd-shape')], ['PO demo
       expect(withAccessDouble(suite(logic, `    CREATE OBJECT mo_cut TYPE ${logic}.`), seam).code).toContain(`CREATE OBJECT mo_cut TYPE ${logic} EXPORTING io_access = NEW ltd_access( ).`);
     });
 
-    test('a class created with the double, or with a double of its own, is left as written', () => {
+    test('a class created with the double, or with a variable traced to the double, is left as written', () => {
       const files = pkg(source());
       const logic = logicOf(files);
-      for (const create of [`    mo_cut = NEW ${logic}( io_access = NEW ltd_access( ) ).`, `    mo_cut = NEW ${logic}( io_access = lo_double ).`, `    mo_cut = NEW ${logic}( lo_double ).`]) {
+      const intf = accessInterfaceOf(files);
+      for (const create of [
+        `    mo_cut = NEW ${logic}( io_access = NEW ltd_access( ) ).`,
+        `    DATA(lo_double) = NEW ltd_access( ).\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
+        `    DATA(lo_double) = NEW ltd_access( ).\n    mo_cut = NEW ${logic}( lo_double ).`,
+        `    DATA lo_double TYPE REF TO ${intf}.\n    lo_double = NEW ltd_access( ).\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
+        `    DATA lo_double TYPE REF TO ltd_access.\n    lo_double = NEW #( ).\n    CREATE OBJECT mo_cut EXPORTING io_access = lo_double.`,
+        `    DATA lo_double TYPE REF TO ${intf}.\n    CREATE OBJECT lo_double TYPE ltd_access.\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
+        `    mo_cut = NEW ${logic}( io_access = CAST ${intf}( NEW ltd_access( ) ) ).`,
+      ]) {
         const out = withAccessDouble(suite(logic, create), accessSeamOf(files));
         expect(out, create).toEqual({ code: suite(logic, create), rewritten: 0, problems: [] });
       }
+    });
+
+    test('a variable created as the default access class is refused with its line, however it is created (QA 6af6aa60)', () => {
+      const files = pkg(source());
+      const logic = logicOf(files);
+      const access = logic.replace(/_logic$/, '_access');
+      const intf = accessInterfaceOf(files);
+      const call = `    mo_cut = NEW ${logic}( io_access = lo_access ).`;
+      for (const create of [
+        `    DATA(lo_access) = NEW ${access}( ).\n${call}`,
+        `    DATA lo_access TYPE REF TO ${access}.\n    CREATE OBJECT lo_access.\n${call}`,
+        `    DATA lo_access TYPE REF TO ${access}.\n    lo_access = NEW #( ).\n${call}`,
+        `    DATA lo_access TYPE REF TO ${intf}.\n    lo_access = NEW ${access}( ).\n${call}`,
+        `    DATA lo_access TYPE REF TO ${intf}.\n    CREATE OBJECT lo_access TYPE ${access}.\n${call}`,
+        // A double in a comment does not count; the code creates the default access.
+        `    " lo_access = NEW ltd_access( ).\n    DATA(lo_access) = NEW ${access}( ).\n    mo_cut = NEW ${logic}( lo_access ).`,
+        `    DATA(lo_access) = NEW ${access}( ).\n    CREATE OBJECT mo_cut EXPORTING io_access = lo_access.`,
+        `    mo_cut = NEW ${logic}( io_access = CAST ${intf}( NEW ${access}( ) ) ).`,
+      ]) {
+        const out = withAccessDouble(suite(logic, create), accessSeamOf(files));
+        expect(out.rewritten, create).toBe(0);
+        expect(out.problems, create).toHaveLength(1);
+        expect(out.problems[0], create).toMatchObject({ kind: 'default-access', line: 8 + create.split('\n').length, name: logic });
+        expect(out.problems[0].message, create).toContain('default access class, which calls SAP');
+      }
+    });
+
+    test('an io_access the check cannot trace to the double is refused as unclear — never taken for the double', () => {
+      const files = pkg(source());
+      const logic = logicOf(files);
+      for (const create of [
+        `    mo_cut = NEW ${logic}( io_access = lo_double ).`,
+        `    mo_cut = NEW ${logic}( lo_double ).`,
+        `    DATA(lo_double) = zcl_factory=>get( ).\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
+        `    DATA(lo_double) = NEW zcl_other( ).\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
+        `    mo_cut = NEW ${logic}( io_access = NEW zcl_other( ) ).`,
+        `    CREATE OBJECT mo_cut EXPORTING io_access = lo_double.`,
+      ]) {
+        const out = withAccessDouble(suite(logic, create), accessSeamOf(files));
+        expect(out.rewritten, create).toBe(0);
+        expect(out.problems, create).toHaveLength(1);
+        expect(out.problems[0], create).toMatchObject({ kind: 'default-access', line: 8 + create.split('\n').length, name: logic });
+        expect(out.problems[0].message, create).toContain('cannot trace to the test double ltd_access');
+      }
+    });
+
+    test('an attribute set to the double in setup is traced through the test class', () => {
+      const files = pkg(source());
+      const logic = logicOf(files);
+      const intf = accessInterfaceOf(files);
+      const code = [
+        'CLASS ltcl_test DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.',
+        '  PRIVATE SECTION.',
+        `    DATA mo_cut TYPE REF TO ${logic}.`,
+        `    DATA mo_access TYPE REF TO ${intf}.`,
+        '    METHODS setup.',
+        '    METHODS tc_01_runs FOR TESTING.',
+        'ENDCLASS.',
+        'CLASS ltcl_test IMPLEMENTATION.',
+        '  METHOD setup.',
+        '    mo_access = NEW ltd_access( ).',
+        '  ENDMETHOD.',
+        '  METHOD tc_01_runs.',
+        `    mo_cut = NEW ${logic}( io_access = mo_access ).`,
+        '  ENDMETHOD.',
+        'ENDCLASS.',
+      ].join('\n');
+      expect(withAccessDouble(code, accessSeamOf(files))).toEqual({ code, rewritten: 0, problems: [] });
+      const wrong = code.replace('mo_access = NEW ltd_access( ).', `mo_access = NEW ${logic.replace(/_logic$/, '_access')}( ).`);
+      expect(withAccessDouble(wrong, accessSeamOf(files)).problems.map((p) => p.line)).toEqual([13]);
     });
 
     test('the default access class handed in is refused with its line — it calls SAP', () => {
