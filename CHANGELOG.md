@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   QM: 14 instead of 20, none over budget; the two shipped examples and the test fixtures are unchanged.
   `tests/transformation-unit-plan.spec.ts`, `tests/transformation-gate-repair.spec.ts`.
 
+### Tests
+
+- **Every shipped starter example passes the Transformation gate in CI** (3.0.17, acceptance criterion 13). The
+  gate — the engine prepares the package, the RAP scaffold is activatable for abaplint, the Node core type-checks
+  with `tsc` actually run, the CAP shell compiles, every unit the model fills is anchored to lines of the original —
+  ran in CI only on the PO demo: the other acceptance programs are not in the repository and were skipped there.
+  It now runs on all nine examples, both routes. It found one gap: a source with no event block leaves the
+  orchestrator to the model with no line to port (roadmap 3.0.17 item 6). `tests/transformation-starter-gate.spec.ts`.
+
 - **The assistant's answer has room on a desktop** (owner 16.10.2026: "the answer window is far too small").
   The panel was 520 × 384 px and kept its six suggestions after the first question, so they took half of it
   and an answer showed in a slit; a long code line in an answer scrolled the whole list sideways. The panel
