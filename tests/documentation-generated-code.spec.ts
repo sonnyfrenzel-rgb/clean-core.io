@@ -78,8 +78,8 @@ test.describe('a package of documentation files is not generated code', () => {
     expect(bizTx).toContain("action: 'business-layer'");
     expect(bizTx).toContain('businessDocumentation: storedText,');
     const writes = read('lib/project-artefact-writes.ts');
-    expect(writes).toContain("{ documentation, status: 'documented', businessDocumentation: '', ...cleanup }");
-    expect(writes).toContain('{ businessDocumentation: layer, ...cleanup }');
+    expect(writes).toContain("{ documentation, status: 'documented', businessDocumentation: '', ...cleanup, ...carriedTestSuiteBasis(project, cleanup) }");
+    expect(writes).toContain('{ businessDocumentation: layer, ...cleanup, ...carriedTestSuiteBasis(project, cleanup) }');
     expect(writes.match(/const cleanup = documentationPackageCleanup\(project\.generatedCode\);/g)).toHaveLength(2);
     expect(writes).toContain('DOCUMENTATION_PACKAGE_FILES.includes(');
   });
