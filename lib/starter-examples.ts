@@ -23,7 +23,7 @@ export interface StarterExample {
   demonstrates: string;
   lines: number;
   /** Rough guide for the reader, not a promise. */
-  size: 'small' | 'large';
+  size: 'small' | 'medium' | 'large';
 }
 
 export const STARTER_EXAMPLES: StarterExample[] = [
@@ -84,6 +84,16 @@ export const STARTER_EXAMPLES: StarterExample[] = [
       'Business rules hard-coded in the program — and what cannot be determined from the code alone: a dynamic function call and two includes that are not part of the upload.',
     lines: 668,
     size: 'large',
+  },
+  {
+    file: 'Z_SD_FREIGHT_RATE_CHECK.abap',
+    name: 'Z_SD_FREIGHT_RATE_CHECK',
+    summary:
+      'Checks freight charges before goods issue: weighs each outbound delivery, prices it from the rate card and compares it with the quote of the external carrier system.',
+    demonstrates:
+      'A call to another system that makes a side-by-side extension on SAP BTP the recommended route — and the CAP package the engine builds for it.',
+    lines: 407,
+    size: 'medium',
   },
   {
     file: 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',

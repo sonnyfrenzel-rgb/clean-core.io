@@ -78,8 +78,8 @@ test.describe('Dashboard — starter examples', () => {
     // four up front, the rest one click away under "More examples".
     await panel.locator('[data-examples-more] button').first().click();
     const names = panel.locator('[data-example-kind="example"]').getByTestId('starter-example-name');
-    await expect(names).toHaveCount(8);
-    expect(STARTER_EXAMPLES).toHaveLength(8);
+    await expect(names).toHaveCount(9);
+    expect(STARTER_EXAMPLES).toHaveLength(9);
     await expect(names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ })).toBeVisible();
     await expect(names.filter({ hasText: /^Z_MM_PO_APPROVAL$/ })).toBeVisible();
     // Every card's source is served on the path the click fetches from (lib/starter-examples.ts loadStarterExample).

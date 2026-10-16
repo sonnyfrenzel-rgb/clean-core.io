@@ -108,9 +108,9 @@ function allVerdicts() {
 }
 
 test.describe('7.8 / §16 V6 — comparability per element', () => {
-  test('the eight shipped examples are classified, and the counts are pinned', () => {
+  test('the shipped examples are classified, and the counts are pinned', () => {
     const rows = allVerdicts();
-    expect(exampleFiles()).toHaveLength(8);
+    expect(exampleFiles()).toHaveLength(9);
     expect(rows.length).toBeGreaterThan(200);
 
     const byClass: Record<string, number> = {};
@@ -172,11 +172,16 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // 339 again since the note of 03.10.2026 to ADR-066: `CLOSE DATASET`
     // belongs to the file step before it and is never a step of its own —
     // **-1 `structural`** (`output` 21 → 20).
+    //
+    // 416 since 3.0.15: the ninth example, `Z_SD_FREIGHT_RATE_CHECK.abap`, adds
+    // 77 elements — **+30 `structural`**, **+18 `technical`**, **+24
+    // `business-comparable`**, **+5 `unknown`** — and no element of the eight
+    // moved.
     expect(byClass).toEqual({
-      structural: 140,
-      technical: 104,
-      'business-comparable': 71,
-      unknown: 24,
+      structural: 170,
+      technical: 122,
+      'business-comparable': 95,
+      unknown: 29,
     });
     // 48 gateways: 7 still technical by condition (14,6 %, from 27 of 68 before
     // 2.15), 18 on a business field, 23 unreadable. The business and the
@@ -188,7 +193,9 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // (`sy-subrc = 0 AND ls_eine-peinh > 0`), and one where a `READ TABLE`
     // stands between the call and the `IF` (`BAPI_PO_CREATE1`), so the return
     // code is the table read's and not the call's.
-    expect(byKind['gateway']).toEqual({ technical: 7, 'business-comparable': 18, unknown: 23 });
+    // 3.0.15: the freight charge check adds 19 gateways — 1 technical, 13 on a
+    // business field, 5 unreadable.
+    expect(byKind['gateway']).toEqual({ technical: 8, 'business-comparable': 31, unknown: 28 });
     // The shapes the reference holding almost never draws — 77 end events (61
     // before 2.17 (b) gave fifteen loop bodies a plane, and a plane an end), 10
     // error ends, 20 data objects, 22 boundary events (6 before 2.15) — and not
@@ -199,10 +206,12 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // therefore no elements: its end event, its `WRITE` and the boundary event
     // its `IF sy-subrc <> 0` folds into.
     // 83 since ADR-054: six early exits end on their own line.
-    expect(byKind['end']).toEqual({ structural: 83 });
-    expect(byKind['end-error']).toEqual({ technical: 10 });
-    expect(byKind['output']).toEqual({ structural: 20 });
-    expect(byKind['error-boundary']).toEqual({ technical: 22 });
+    // 3.0.15: the freight charge check adds 17 ends, 2 error ends, 6 data
+    // objects and 3 boundary events.
+    expect(byKind['end']).toEqual({ structural: 100 });
+    expect(byKind['end-error']).toEqual({ technical: 12 });
+    expect(byKind['output']).toEqual({ structural: 26 });
+    expect(byKind['error-boundary']).toEqual({ technical: 25 });
 
     // Every class is actually reached — a table that only ever says one thing
     // would pass every assertion below without deciding anything.
@@ -387,7 +396,7 @@ test.describe('the condition rule — written here so 2.15 can use it', () => {
     }
   });
 
-  test('the predecessor half over the eight shipped examples is counted, not assumed', () => {
+  test('the predecessor half over the shipped examples is counted, not assumed', () => {
     // Pinned like every other number of 7.8. Before the fix of `f51d99129444`
     // the full rule counted 19: one gateway passed with no known predecessor at
     // all, one sat behind an `output` node. Both then read as not proven
@@ -433,8 +442,10 @@ test.describe('the condition rule — written here so 2.15 can use it', () => {
       }
     }
     console.log(`gateways: ${gateways}, technical by condition: ${byCondition}, full 2.15 rule: ${fullRule}`);
-    expect(gateways).toBe(48);
-    expect(byCondition).toBe(7);
+    // 3.0.15: the freight charge check adds 19 gateways, one technical by
+    // condition and none that passes the whole rule.
+    expect(gateways).toBe(67);
+    expect(byCondition).toBe(8);
     expect(fullRule).toBe(3);
   });
 

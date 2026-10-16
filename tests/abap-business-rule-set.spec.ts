@@ -90,9 +90,13 @@ const PINNED: Pinned[] = [
   [PO, 14, 12, { rule: 11, control: 1 }, 6, { 'declaration-only': 3, unreached: 3 }],
   ['Z_ORDER_INTEGRITY_CHECK.txt', 1, 1, { rule: 1, control: 0 }, 0, { 'not-in-skeleton': 1 }],
   ['Z_SALES_ORDER_CREATOR.txt', 0, 0, { rule: 0, control: 0 }, 0, {}],
+  // 3.0.15: the freight charge check. Four of its rules are constants of the
+  // rate card (volume factor, fuel, express, dangerous goods) and have no
+  // element of their own; the foreign-currency test guards the comparison.
+  ['Z_SD_FREIGHT_RATE_CHECK.abap', 30, 14, { rule: 13, control: 1 }, 10, { 'declaration-only': 4 }],
 ];
 
-test.describe('the eight programs this product ships', () => {
+test.describe('the programs this product ships', () => {
   test('the pinned table covers every shipped program', () => {
     expect(PINNED.map(([file]) => file).sort()).toEqual(FILES);
   });
@@ -118,13 +122,15 @@ test.describe('the eight programs this product ships', () => {
     });
   }
 
-  test('all eight together: 140 candidates, 34 rules, one control', () => {
+  // The eight programs until 3.0.15 gave 140 candidates, 34 rules, one control and 21 rules with an element;
+  // the freight charge check adds 30, 14, one and 10.
+  test('all nine together: 170 candidates, 48 rules, two controls', () => {
     const sets = FILES.map((file) => deriveBusinessRules(read(file)));
     const sum = (pick: (s: BusinessRuleSet) => number) => sets.reduce((n, s) => n + pick(s), 0);
-    expect(sum((s) => s.counts.candidates)).toBe(140);
-    expect(sum((s) => s.counts.rules)).toBe(34);
-    expect(sum((s) => s.counts.byType.control)).toBe(1);
-    expect(sum((s) => s.counts.withProcessElement)).toBe(21);
+    expect(sum((s) => s.counts.candidates)).toBe(170);
+    expect(sum((s) => s.counts.rules)).toBe(48);
+    expect(sum((s) => s.counts.byType.control)).toBe(2);
+    expect(sum((s) => s.counts.withProcessElement)).toBe(31);
   });
 
   test('every sentence has an anchor, and every anchor quotes its lines verbatim', () => {
