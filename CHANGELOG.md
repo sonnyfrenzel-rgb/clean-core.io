@@ -11,6 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Management (or a rule decision or accepted requirement changed) read "Built for a previous source",
   although the source had not moved. Transformation and Delivery now say "Built before the latest
   decisions" and point to the Built on card; a changed source or target profile keeps its own words.
+### Testing: a new Transformation makes the suite out of date, and the generation shows its time (owner 16.10.2026)
+
+- **Regenerating the Transformation package makes Testing out of date.** Testing used to read stale only
+  when the source changed; a new package left the test cases, the suite and the stage's state looking
+  current, although they were written for and run against the previous package. The suite is now stored
+  with the digest of the package it was written for (`testSuiteBasis`, written by the server only, and
+  refused with nothing saved when a new package was stored while the suite was being written). A
+  different package on the project makes Testing stale: the rail and the tool bar say "Test cases
+  written for a previous generated package" with *Bring Testing up to date*, Delivery names the suite as
+  what blocks the handover, and closing Testing without a passing run is refused until the suite is
+  regenerated. A suite stored before this change carries no record and is not turned stale by the
+  deploy. A recorded test run already stopped covering a changed package; the phase now says why.
+- **Writing the suite shows what it is doing and for how long.** The same card as Documentation's: four
+  stages (reading the signed source, writing the scenarios and the suite, checking the answer, saving),
+  the elapsed time from the click and of the running stage, the number of model calls, and the expected
+  time of one call ("about 1–5 minutes", from seven measured calls on dev). Once written it folds to one
+  quiet line with the number of scenarios and the total time; a stop keeps the card and names the stage.
 
 ### Transformation: the generated ABAP Unit tests check something (RAP route)
 

@@ -140,7 +140,7 @@ test('replacing the documentation drops the business layer written from the old 
   // cleared — on the server since roadmap 3.0.14, item 9.
   expect(body).toContain("action: 'documentation'");
   const writes = fs.readFileSync(path.join(process.cwd(), 'lib/project-artefact-writes.ts'), 'utf8');
-  expect(writes).toContain("{ documentation, status: 'documented', businessDocumentation: '', ...cleanup }");
+  expect(writes).toContain("{ documentation, status: 'documented', businessDocumentation: '', ...cleanup, ...carriedTestSuiteBasis(project, cleanup) }");
   // …and a layer file an earlier build merged into the package goes too
   // (roadmap 3.0.7: the stage writes no package; Delivery writes the file).
   expect(writes).toContain('const cleanup = documentationPackageCleanup(project.generatedCode);');

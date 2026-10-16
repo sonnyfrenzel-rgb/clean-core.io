@@ -3,6 +3,7 @@ import type { ProvenanceValue } from './provenance';
 import type { NotDetermined } from './workspace-model';
 import type { Project } from './types';
 import { inputLabel } from './input-manifest';
+import { PREVIOUS_PACKAGE } from './test-suite-basis';
 import {
   handoverBlockers,
   staleness,
@@ -630,7 +631,8 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
   for (const blocker of blockers) {
     blocking.push({
       key: `handover-${blocker.slice(0, 24)}`,
-      label: 'Built for a previous source',
+      // Owner 16.10.2026: a suite behind a new Transformation is named as such.
+      label: blocker.includes(PREVIOUS_PACKAGE) ? 'Built for a previous generated package' : 'Built for a previous source',
       detail: blocker,
       provenance: 'stale',
     });

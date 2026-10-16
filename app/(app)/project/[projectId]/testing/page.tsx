@@ -8,6 +8,7 @@ import { getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
+import TestingProgress from '@/components/testing/TestingProgress';
 import { useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { findingsForOrigin, signedForOrigin, useScenarioOriginEngine } from '@/hooks/useScenarioOrigins';
 import { useTestExecution } from '@/hooks/useTestExecution';
@@ -52,7 +53,7 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis, testsPreviousBasis } from '@/lib/workflow-steps';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
@@ -275,7 +276,7 @@ export default function TestingSandboxPage() {
   const originEvidence = useProjectEvidence(projectId as string, !!originSha, `${project?.activeRunId ?? ''}#${originSha ?? ''}`);
   const originFindings = useMemo(() => findingsForOrigin(originEvidence, originSha), [originEvidence, originSha]);
   const originEngine = useScenarioOriginEngine(project, originFindings);
-  const { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying: genRetrying } = useTestGeneration(projectId as string, project, setProject, originFindings);
+  const { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying: genRetrying, progress: genProgress } = useTestGeneration(projectId as string, project, setProject, originFindings);
   /** Why the last generation attempt produced nothing. Empty when none has failed. */
   const [genError, setGenError] = useState('');
   /**
@@ -1294,11 +1295,13 @@ export default function TestingSandboxPage() {
   return (
     <StageFrame stage="testing" className="min-h-screen">
       <StaleNotice
-        title={`Built for ${previousBasis(project)}`}
+        title={`Built for ${generationBlockers(project, 'testing').length > 0 ? previousBasis(project) : testsPreviousBasis(project)}`}
         reasons={[
           ...generationBlockers(project, 'testing'),
+          // Owner 16.10.2026: a new Transformation leaves the suite written for
+          // the package it replaced — said as such, not as a source change.
           ...(phases.find((p) => p.key === 'testing')?.state === 'stale'
-            ? [`The test cases shown here were written for ${previousBasis(project)}. Running them tests nothing about the current one.`]
+            ? [`The test cases shown here were written for ${testsPreviousBasis(project)}. Running them tests nothing about the current one.`]
             : []),
         ]}
       />
@@ -1472,6 +1475,8 @@ export default function TestingSandboxPage() {
                 >
                   {isGenerating ? 'Generating scenarios...' : 'Generate scenarios'}
                 </CcButton>
+                {/* Owner 16.10.2026: the elapsed time, the stage and what to expect, as in the other tools. */}
+                {genProgress ? <div className="w-full"><TestingProgress progress={genProgress} /></div> : null}
                 {genRetrying ? (
                   <p data-test-generation-retry="" role="status" className="m-0 cc-text-cell text-cc-ink-muted">
                     {genRetrying}
@@ -1490,6 +1495,7 @@ export default function TestingSandboxPage() {
                     Suite" can be refused too — and there the previous suite is
                     still on the screen, so without this the button simply
                     appears to do nothing. */}
+                {genProgress ? <TestingProgress progress={genProgress} /> : null}
                 {genRetrying ? (
                   <p data-test-generation-retry="" role="status" className="m-0 cc-text-cell text-cc-ink-muted">
                     {genRetrying}

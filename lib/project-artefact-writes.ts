@@ -5,6 +5,7 @@ import { storedCoverageEstimate, storedTestSuite } from './test-suite-storage';
 import { DOCUMENTATION_PACKAGE_FILES } from './workflow-steps';
 import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE, type ProjectSizeCheck } from './firestore-doc-size';
 import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from './project-artefact-store';
+import { packageDigest, testSuiteBasisOf, TEST_SUITE_BASIS_FIELD, type TestSuiteBasis } from './test-suite-basis';
 
 /**
  * The three artefact writes the browser used to make itself — roadmap 3.0.14,
@@ -22,7 +23,9 @@ import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from './pr
  *     layer another tab stored meanwhile is kept, unless this write was asked
  *     to replace exactly that one.
  *   - `test-suite`: the scenarios, the suite, the coverage estimate and the
- *     manual requirements, in one write, as the Testing stage wrote them.
+ *     manual requirements, in one write, as the Testing stage wrote them —
+ *     with the package they were written for (`testSuiteBasis`,
+ *     `lib/test-suite-basis.ts`, owner 16.10.2026).
  *
  * Both documentation writes take the files an earlier build merged into the
  * package back out (`documentationPackageCleanup`, roadmap 3.0.7, item 4).
@@ -69,6 +72,20 @@ export function documentationPackageCleanup(generatedCode: unknown): { generated
     // A flat source from before packages: nothing of this stage is in it.
     return {};
   }
+}
+
+/**
+ * The cleanup above rewrites `generatedCode` without changing a line of code
+ * under test. A suite recorded against the package as it stood is still the
+ * suite for the cleaned one, so its record moves with it — otherwise a
+ * Documentation write would make Testing read stale.
+ */
+function carriedTestSuiteBasis(project: Record<string, unknown>, cleanup: { generatedCode?: string }): Record<string, unknown> {
+  if (cleanup.generatedCode === undefined) return {};
+  const basis = testSuiteBasisOf(project);
+  if (!basis || basis.codeSha256 !== packageDigest(project.generatedCode)) return {};
+  const carried: TestSuiteBasis = { ...basis, codeSha256: packageDigest(cleanup.generatedCode) };
+  return { [TEST_SUITE_BASIS_FIELD]: carried };
 }
 
 /** The digest a stage names a stored text by: `null` for none. */
@@ -159,7 +176,11 @@ export async function storeDocumentation(
     // The business layer was written from the documentation this replaces,
     // keyed to its step ids, so it goes with it (QA full review 96b39ec78c97).
     const cleanup = documentationPackageCleanup(project.generatedCode);
-    return commit(tx, db, args.projectId, stored, { documentation, status: 'documented', businessDocumentation: '', ...cleanup }, 'this documentation');
+    return commit(
+      tx, db, args.projectId, stored,
+      { documentation, status: 'documented', businessDocumentation: '', ...cleanup, ...carriedTestSuiteBasis(project, cleanup) },
+      'this documentation',
+    );
   });
 }
 
@@ -197,7 +218,11 @@ export async function storeBusinessLayer(
       return { status: 200, fields: {}, kept: current };
     }
     const cleanup = documentationPackageCleanup(project.generatedCode);
-    const outcome = await commit(tx, db, args.projectId, stored, { businessDocumentation: layer, ...cleanup }, 'this business documentation');
+    const outcome = await commit(
+      tx, db, args.projectId, stored,
+      { businessDocumentation: layer, ...cleanup, ...carriedTestSuiteBasis(project, cleanup) },
+      'this business documentation',
+    );
     return outcome.status === 200 ? { ...outcome, kept: null } : outcome;
   });
 }
@@ -221,6 +246,14 @@ export async function storeTestSuite(
   // Exactly the keys of TestSuite and CoverageEstimate, typed and bounded — the
   // shape the rules accepted from the browser (isValidTestSuite,
   // isValidCoverageEstimate).
+  // The package the suite was written for (owner 16.10.2026): the digest of the
+  // `generatedCode` the page built its prompt from. `null` is a page that had
+  // none; a body without the key is a page from before the record, and its
+  // suite is stored without one — unknown, which no reader turns into stale.
+  const claimed = args.body.generatedCodeSha256;
+  if (claimed !== undefined && claimed !== null && !(typeof claimed === 'string' && /^[0-9a-f]{64}$/.test(claimed))) {
+    return { status: 400, code: 'bad-request', error: 'generatedCodeSha256 must be the SHA-256 of the generated package, or null.' };
+  }
   const fields = {
     testCases,
     testSuite: storedTestSuite(args.body.testSuite),
@@ -231,6 +264,18 @@ export async function storeTestSuite(
   return inTransaction(db, args.projectId, args.uid, async (tx, stored, project) => {
     const refused = statusRefused(project);
     if (refused) return refused;
-    return commit(tx, db, args.projectId, stored, fields, 'this test suite');
+    if (claimed === undefined) return commit(tx, db, args.projectId, stored, { ...fields, [TEST_SUITE_BASIS_FIELD]: null }, 'this test suite');
+    // Written for the package the page loaded. If a new Transformation was
+    // stored meanwhile, this suite tests the previous package and is not
+    // written as the current one.
+    if (packageDigest(project.generatedCode) !== claimed) {
+      return {
+        status: 409,
+        code: 'package-moved',
+        error: 'The generated code of this project changed while the test suite was being written, so nothing was saved. Reload the stage and generate the suite again.',
+      };
+    }
+    const basis: TestSuiteBasis = { codeSha256: claimed, recordedAt: new Date().toISOString() };
+    return commit(tx, db, args.projectId, stored, { ...fields, [TEST_SUITE_BASIS_FIELD]: basis }, 'this test suite');
   });
 }
