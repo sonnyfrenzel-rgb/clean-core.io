@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Transformation: "sample" is no longer read as demo data** (3.0.17, the acceptance set). The engine leaves a
+  routine named as demo data out of both packages, and it decided that by finding DEMO, FIXTURE, TESTDATA or
+  SAMPLE anywhere in the name. In the quality-management acceptance program the sample is the inspection sample:
+  `ASSESS_SAMPLE`, the routine that judges each sample, was dropped with its eight checks, so neither the RAP nor
+  the CAP package carried the program's core. A name *part* now has to start with DEMO, FIXTURE or TESTDATA, or
+  say SAMPLE DATA. Every demo routine of the shipped examples and the test fixtures is still recognised; the QM
+  program now carries all its checks (54 in units, none left out). Scaffold version 15.
+  `tests/transformation-unit-plan.spec.ts`.
+
 - **The assistant's answer has room on a desktop** (owner 16.10.2026: "the answer window is far too small").
   The panel was 520 × 384 px and kept its six suggestions after the first question, so they took half of it
   and an answer showed in a slit; a long code line in an answer scrolled the whole list sideways. The panel

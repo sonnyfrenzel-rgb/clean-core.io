@@ -92,7 +92,13 @@ export function readEngineFacts(source: string): EngineFacts {
 
 /* --------------------------------------------------------------- naming */
 
-const DEMO_NAME = /DEMO|FIXTURE|TESTDATA|SAMPLE/i;
+/**
+ * A demo-data routine by its name: a name part that starts with DEMO, FIXTURE or TESTDATA, or says SAMPLE
+ * DATA. "Sample" alone is not demo data — in quality management it is the inspection sample, and the QM
+ * acceptance program's ASSESS_SAMPLE (the routine that judges each sample) was dropped as a fixture with
+ * its eight checks (scaffold 15, 16.10.2026). A part, not a substring: DEMOGRAPHIC_SPLIT is no demo either.
+ */
+const DEMO_NAME = /(?:^|_)[ZY]?(?:DEMO(?:S|DATA|CASE)?|FIXTURES?|TEST_?DATA|SAMPLE_?DATA)(?:_|$)/i;
 
 /** `G-0506` — four digits, more when the line needs them. */
 export const guardIdOf = (line: number) => `G-${String(line).padStart(4, '0')}`;

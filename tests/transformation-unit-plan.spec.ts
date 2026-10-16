@@ -72,6 +72,42 @@ test.describe('the CO shape', () => {
     expect(demoCheck).toMatchObject({ carried: false, place: 'not-carried', unitId: null, regionId: null });
   });
 
+  test('"sample" is not demo data: a routine that judges an inspection sample is carried, sample data is not (scaffold 15)', () => {
+    // The QM acceptance program (16.10.2026): ASSESS_SAMPLE, the routine that judges each sample, matched
+    // the old /SAMPLE/ and was dropped as a fixture with its checks.
+    const source = [
+      'REPORT zqm_sample_shape.',
+      'TYPES: BEGIN OF ty_sample, id TYPE i, measured TYPE p DECIMALS 2, known TYPE c LENGTH 1, END OF ty_sample.',
+      'DATA: gt_samples TYPE STANDARD TABLE OF ty_sample, gs_sample TYPE ty_sample, gv_reason TYPE string.',
+      'START-OF-SELECTION.',
+      '  PERFORM load_sample_data.',
+      '  LOOP AT gt_samples INTO gs_sample.',
+      '    PERFORM assess_sample USING gs_sample CHANGING gv_reason.',
+      '  ENDLOOP.',
+      'FORM assess_sample USING is_s TYPE ty_sample CHANGING cv_reason TYPE string.',
+      '  IF is_s-known IS INITIAL.',
+      "    cv_reason = 'MISSING_MEASUREMENT'.",
+      '    RETURN.',
+      '  ENDIF.',
+      '  IF is_s-measured < 0.',
+      "    cv_reason = 'NEGATIVE_MEASUREMENT'.",
+      '    RETURN.',
+      '  ENDIF.',
+      "  cv_reason = 'OK'.",
+      'ENDFORM.',
+      'FORM load_sample_data.',
+      '  gs_sample-id = 1. gs_sample-measured = 4. gs_sample-known = abap_true.',
+      '  APPEND gs_sample TO gt_samples.',
+      'ENDFORM.',
+    ].join('\n');
+    const { plan } = planOf(source);
+    expect(plan.notCarried.filter((n) => n.reason === 'fixture').map((n) => n.routine)).toEqual(['LOAD_SAMPLE_DATA']);
+    expect(plan.units.map((u) => u.routine)).toContain('ASSESS_SAMPLE');
+    const checks = plan.guards.filter((g) => g.line >= 9 && g.line <= 19);
+    expect(checks.length).toBeGreaterThan(0);
+    expect(checks.every((g) => g.carried)).toBe(true);
+  });
+
   test('guards: the selection-screen check belongs to the orchestrator; a routine calls its refusing guards first', () => {
     const screen = plan.guards.find((g) => g.line === 29)!;
     expect(screen).toMatchObject({ id: 'G-0029', place: 'selection-screen', unitId: 'U00', outcome: 'refuses', regionId: 'U00.G0029' });

@@ -114,8 +114,13 @@ export const PLAN_VERSION = 2;
  * down on the uncaught TypeError until Cloud Foundry restarted it; a selection range a check of the original refuses
  * empty (`IF s_vkorg[] IS INITIAL. MESSAGE e…`) carries one value in the call contract's base request (its DEFAULT,
  * demo data or a fixed list), so the engine cases run. The RAP text is unchanged. Nothing signed changes (§12.3).
+ * 15 (3.0.17, the acceptance set, 16.10.2026): both tracks — a routine is demo data by a name *part* that starts
+ * with DEMO, FIXTURE or TESTDATA, or says SAMPLE DATA, never by "SAMPLE" anywhere in the name: the QM program's
+ * ASSESS_SAMPLE judges the inspection sample, and it was dropped as a fixture with its eight checks, so neither
+ * package carried the program's core. Every other demo routine of the examples and fixtures is still one.
+ * Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 14;
+export const SCAFFOLD_VERSION = 15;
 
 /* -------------------------------------------------------------- budgets */
 
