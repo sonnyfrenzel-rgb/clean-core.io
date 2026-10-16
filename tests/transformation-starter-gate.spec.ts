@@ -56,6 +56,13 @@ test.describe('every shipped starter example: the package is gate-clean before a
       expect(cds.ran, cds.ran ? '' : cds.reason).toBe(true);
       if (cds.ran) expect(cds.findings.filter((f) => f.severity === 'Error'), JSON.stringify(cds.findings.slice(0, 5))).toEqual([]);
 
+      // Criterion (4), the rules: every rule of the analysis the owner did not drop is carried by a unit, or stands in
+      // a routine the package leaves out for a stated reason (demo data, unreachable), or in a selection-screen event,
+      // whose checks the engine writes into the input contract.
+      const left = new Set(rap.plan.notCarried.map((n) => n.routine));
+      const orphans = rap.plan.rules.filter((r) => r.decision !== 'drop' && !r.unitId && !(r.routine && left.has(r.routine)) && !/^AT SELECTION-SCREEN/.test(r.routine ?? ''));
+      expect(orphans.map((r) => `${r.id} ${r.routine ?? 'program level'} L${r.ranges[0]?.lineStart}`)).toEqual([]);
+
       // No exception: a source with no entry point (Z_ORDER_INTEGRITY_CHECK) has its orchestrator written by the
       // engine, so no model-filled unit is without lines of the original (roadmap 3.0.17 item 6, scaffold 15).
       for (const p of [rap, node]) {
