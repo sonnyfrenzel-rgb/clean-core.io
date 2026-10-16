@@ -132,6 +132,8 @@ for (const [name, source] of [['sd-shape', () => fixture('sd-shape')], ['PO demo
       for (const create of [
         `    mo_cut = NEW ${logic}( io_access = lo_double ).`,
         `    mo_cut = NEW ${logic}( lo_double ).`,
+        // A class of the suite's own, even FOR TESTING, may delegate to SAP: only ltd_access is the double (QA 99730bf90288).
+        `    mo_cut = NEW ${logic}( io_access = NEW ltcl_test( ) ).`,
         `    DATA(lo_double) = zcl_factory=>get( ).\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
         `    DATA(lo_double) = NEW zcl_other( ).\n    mo_cut = NEW ${logic}( io_access = lo_double ).`,
         `    mo_cut = NEW ${logic}( io_access = NEW zcl_other( ) ).`,

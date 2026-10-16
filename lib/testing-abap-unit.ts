@@ -446,19 +446,15 @@ function leadingExpression(text: string): string {
 
 /**
  * Traces the value handed in as `io_access` (masked code, `at` = offset of the creation) to what it is: the test
- * double (`ltd_access`, or a class of the suite's own declared FOR TESTING), the default access class, or unclear.
+ * double (`ltd_access` only — a class of the suite's own could delegate to SAP; QA 99730bf90288), the default access
+ * class, or unclear.
  * A variable is resolved through its creations in the same method or test class — `DATA(v) = NEW c( )`,
  * `v = NEW c( )`, `v = NEW #( )` with `DATA v TYPE REF TO c`, `CREATE OBJECT v [TYPE c]` — and a `CAST t( … )`
  * through what it casts. What cannot be resolved is unclear, never the double.
  */
 function traceAccess(masked: string, given: string, at: number, seam: AccessSeam): 'double' | 'default' | 'unclear' {
-  const ownDoubles = new Set(
-    [...masked.matchAll(/\bCLASS\s+([\w/]+)\s+DEFINITION\b([^.]*)\./gi)]
-      .filter((m) => /\bFOR\s+TESTING\b/i.test(m[2]) && !/\bINHERITING\s+FROM\b/i.test(m[2]))
-      .map((m) => m[1].toLowerCase()),
-  );
   const ofClass = (cls: string): 'double' | 'default' | 'unclear' =>
-    cls === seam.double || (ownDoubles.has(cls) && !seam.logicClasses.includes(cls)) ? 'double' : seam.defaultAccess.includes(cls) ? 'default' : 'unclear';
+    cls === seam.double ? 'double' : seam.defaultAccess.includes(cls) ? 'default' : 'unclear';
   const scopes = scopesAt(masked, at);
   const declaredType = (v: string): string => {
     for (const [s, e] of scopes) {
