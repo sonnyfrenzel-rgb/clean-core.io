@@ -7,6 +7,7 @@ import { scanCodeContent } from '@/lib/staged-code-scan';
 import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
+import { isUnchangedShippedExample } from '@/lib/shipped-example-fingerprint';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { routeWasOverridden } from '@/lib/route-override';
 import { runProjectCommand } from '@/lib/project-command-client';
@@ -389,7 +390,7 @@ export default function AnalyzePage() {
     // them: a target deployment, accepted Terms, and — for anything but the
     // example — the tick on the lines the hint panel shows for exactly this
     // text (QA full review of 81810c8, 7d0d04a45324).
-    const hintKeyForThisText = isFromExample ? '' : personalDataHintKey(scanForPersonalDataHints(codeToAnalyze));
+    const hintKeyForThisText = isFromExample || isUnchangedShippedExample(codeToAnalyze) ? '' : personalDataHintKey(scanForPersonalDataHints(codeToAnalyze));
     if (!deployment || !acceptedTerms || (hintKeyForThisText !== '' && hintKeyForThisText !== personalDataAckFor)) {
         setError('Select a target deployment, accept the Terms & Conditions and tick the box under any highlighted lines before starting the analysis.');
         return;
@@ -868,7 +869,8 @@ export default function AnalyzePage() {
   const stagedObjects = useMemo(() => repositoryObjectsOf(extractCodeInventory(legacyCode || '')), [legacyCode]);
 
   const personalDataHints = useMemo(
-    () => (legacyCode && !isFromExample ? scanForPersonalDataHints(legacyCode) : []),
+    () =>
+      legacyCode && !isFromExample && !isUnchangedShippedExample(legacyCode) ? scanForPersonalDataHints(legacyCode) : [],
     [legacyCode, isFromExample],
   );
   const personalDataKey = personalDataHintKey(personalDataHints);

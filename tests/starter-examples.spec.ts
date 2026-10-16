@@ -105,10 +105,12 @@ test.describe('Dashboard — starter examples', () => {
     await page.screenshot({ path: 'test-results/starter-example-loaded.png', fullPage: false });
   });
 
-  test('an example whose source carries personal-data shapes asks before it is written', async ({ page }) => {
-    // Z_EMPLOYEE_EXPENSE_VAL reads a personnel number. The gallery writes the
-    // source to Firestore on Start, so the hint stands in front of that write —
-    // the gate New project had before it showed this gallery (85d0ea44).
+  test('an unchanged example whose source has hint shapes starts without the personal-data hint', async ({ page }) => {
+    // Z_EMPLOYEE_EXPENSE_VAL reads a personnel number, and until 3.0.17 the
+    // gallery stopped its Start with the hint. An unchanged shipped example is
+    // the product's own text and is recognised by its fingerprint (owner
+    // 16.10.2026, lib/shipped-example-fingerprint.ts), so Start goes straight
+    // through; a changed one is held by tests/shipped-example-fingerprint.spec.ts.
     test.setTimeout(120 * 1000);
     await signInViaLanding(page, EMAIL, PASSWORD, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop());
@@ -123,13 +125,8 @@ test.describe('Dashboard — starter examples', () => {
     const card = panel.locator('[data-example-card="Z_EMPLOYEE_EXPENSE_VAL"]');
     await card.locator('[data-example-start="Z_EMPLOYEE_EXPENSE_VAL"]').click();
 
-    const ack = card.locator('[data-personal-data-ack] input[type="checkbox"]');
-    await expect(ack, 'the gallery wrote the source without showing the hint').toBeVisible({ timeout: 30000 });
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    await ack.check();
-    await card.locator('[data-example-start="Z_EMPLOYEE_EXPENSE_VAL"]').click();
     await page.waitForURL(/\/project\/[^/]+/, { timeout: 45000 });
+    await expect(page.locator('[data-personal-data-hints]'), 'the hint stood in front of a shipped example').toHaveCount(0);
   });
 
   test('the first-run guide is publicly readable and points at the examples', async ({ page }) => {

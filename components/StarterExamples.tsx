@@ -8,6 +8,7 @@ import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { landViewedCode, loadStarterExample, type StarterExample, type ViewedCode } from '@/lib/starter-examples';
 import { personalDataHintKey, scanForPersonalDataHints, type PersonalDataHint } from '@/lib/personal-data-hints';
 import PersonalDataHints from '@/components/PersonalDataHints';
+import { isUnchangedShippedExample } from '@/lib/shipped-example-fingerprint';
 import {
   COMMUNITY_QUOTA_FALLBACK,
   quotaExhausted,
@@ -86,10 +87,11 @@ export default function StarterExamples({
   const [viewing, setViewing] = useState<ViewedCode | null>(null);
   /**
    * What the last look at an example's source found, and which card it was
-   * about. Three shipped examples carry shapes that often indicate personal
-   * data (a mail address field, a person's name, a personnel number); the
-   * reader is shown them before the source is written, the same panel and the
-   * same words as every other path a source takes into the product.
+   * about. A snippet with shapes that often indicate personal data shows
+   * them before the source is written, the same panel and the same words as
+   * every other path a source takes into the product. An unchanged shipped
+   * example is recognised by its fingerprint and skips the panel: it is the
+   * product's own text, with no lines of the reader's in it (owner 16.10.2026).
    */
   const [scanned, setScanned] = useState<{ key: string; hints: PersonalDataHint[] } | null>(null);
   /** The hint set the reader said they had checked — see `personalDataHintKey`. */
@@ -129,7 +131,11 @@ export default function StarterExamples({
       const legacyCode = isExample ? await loadStarterExample(item.example.file) : item.snippet.code;
       // The last moment the source is only in the browser. Nothing is blocked:
       // the next Start goes through once the box is ticked for these lines.
-      const found = scanForPersonalDataHints(legacyCode);
+      // A shipped example that arrives unchanged is the product's own text and
+      // skips the hint (roadmap 3.0.17 (4)). The check is the fingerprint of
+      // the text actually fetched, not the card that was clicked; a snippet,
+      // or an example served changed, is scanned as before.
+      const found = isUnchangedShippedExample(legacyCode) ? [] : scanForPersonalDataHints(legacyCode);
       if (found.length > 0 && personalDataAckFor !== personalDataHintKey(found)) {
         setScanned({ key: item.key, hints: found });
         setBusy(null);

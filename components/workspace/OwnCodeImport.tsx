@@ -13,6 +13,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { describeRunCost } from '@/lib/run-cost';
 import { runsAreSelfFunded } from '@/lib/run-quota-rule';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
+import { isUnchangedShippedExample } from '@/lib/shipped-example-fingerprint';
 import {
   OWN_CODE_MAX_SOURCE_BYTES,
   assembleOwnCode,
@@ -175,8 +176,11 @@ export default function OwnCodeImport() {
   const nameTouched = typedName !== null;
   const name = typedName ?? (assembly.main ? assembly.main.object : '');
 
+  // An unchanged shipped starter example is the product's own text, not the
+  // reader's, and skips the hint; one changed character and it is theirs
+  // (roadmap 3.0.17 (4), lib/shipped-example-fingerprint.ts).
   const hints = useMemo(
-    () => (ready ? scanForPersonalDataHints(assembly.source) : []),
+    () => (ready && !isUnchangedShippedExample(assembly.source) ? scanForPersonalDataHints(assembly.source) : []),
     [ready, assembly.source],
   );
   const hintKey = personalDataHintKey(hints);
