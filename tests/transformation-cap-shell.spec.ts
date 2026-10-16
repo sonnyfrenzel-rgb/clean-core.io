@@ -19,7 +19,7 @@ import { fixture, poDemo, ROOT, fileUrl, runInPackage, writePackage } from './he
  *   - every scaffold compiles with SAP's CDS compiler (`cds-compile.ts`, a devDependency: here, never on the
  *     production server) and type-checks with the package's own tsconfig, the CAP handlers included;
  *   - the data model is one type and one entity per input structure, types as declared — never a field union;
- *   - the architecture is the RAP route's decision: a read-only program gets `simulate`, a writing one `run`;
+ *   - the architecture is the RAP route's decision: a read-only program gets `simulate`, a writing one `runProcess` (never `run`, 3.0.15);
  *   - the handlers only delegate to the core; reads go to remote services only on a released OData API;
  *   - the request carries named lists per structure, and an old single-list package still reads.
  *
@@ -59,7 +59,7 @@ test.describe('the CAP shell: cds compile and the type check, 0 errors', () => {
       const paths = p.scaffold.files.map((f) => f.path);
       for (const must of ['package.json', 'db/schema.cds', 'srv/service.cds', 'srv/service.ts', 'srv/service.js', 'mta.yaml', 'xs-security.json']) expect(paths, must).toContain(must);
       expect(p.scaffold.version).toBe(SCAFFOLD_VERSION);
-      expect(SCAFFOLD_VERSION).toBe(13);
+      expect(SCAFFOLD_VERSION).toBe(14);
 
       const cds = cdsCompileCandidate(p.scaffold.files);
       expect(cds.ran, cds.ran ? '' : cds.reason).toBe(true);
@@ -120,12 +120,12 @@ test.describe('the data model: one entity per input structure, types as declared
 
 test.describe('the architecture is the RAP route\'s decision', () => {
   for (const [name, source] of SOURCES.slice(0, 5)) {
-    test(`${name}: simulate for a read-only program, run for a writing one — as RAP's custom entity or business object`, () => {
+    test(`${name}: simulate for a read-only program, runProcess for a writing one — as RAP's custom entity or business object`, () => {
       const node = prep(source());
       const rap = prep(source(), 'rap');
       const writing = rap.scaffold.rap?.architecture === 'managed-bo';
-      expect(file(node, 'srv/service.cds')).toMatch(writing ? /action run\(/ : /action simulate\(/);
-      expect(file(node, 'srv/service.ts')).toContain(writing ? "this.on('run'" : "this.on('simulate'");
+      expect(file(node, 'srv/service.cds')).toMatch(writing ? /action runProcess\(/ : /action simulate\(/);
+      expect(file(node, 'srv/service.ts')).toContain(writing ? "this.on('runProcess'" : "this.on('simulate'");
     });
   }
 

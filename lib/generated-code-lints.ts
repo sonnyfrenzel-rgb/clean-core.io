@@ -693,11 +693,19 @@ function abapDocMissing(path: string, src: string): GeneratedCodeLintFinding[] {
 /** Tools a package declares to build, type-check or run itself — used by the scripts, not imported. */
 const TOOLING = /^(?:typescript|tsx|ts-node|nodemon|@types\/.+|eslint.*|@typescript-eslint\/.+|prettier|@playwright\/test|jest|ts-jest|vitest|mocha|c8|nyc|rimraf|cross-env|concurrently|npm-run-all|@sap\/cds-dk)$/;
 
+/**
+ * What a CAP package uses through its configuration, not an import (3.0.15 item 5e): `cds` loads the `@cap-js/*`
+ * plugins (`@cap-js/hana`, `@cap-js/sqlite`, `@cap-js/postgres` …) itself, and the XSUAA authentication its
+ * `cds.requires` names through `@sap/xssec`. Only in a package that depends on `@sap/cds` and configures it
+ * (a `cds` section in package.json, or a `.cdsrc.json`).
+ */
+const CAP_CONFIGURED = /^(?:@cap-js\/[\w.-]+|@sap\/xssec)$/;
+
 function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFinding[] {
   const out: GeneratedCodeLintFinding[] = [];
   const pkgFile = files.find((f) => f.path === 'package.json');
   if (!pkgFile) return out;
-  let pkg: { dependencies?: Record<string, unknown>; devDependencies?: Record<string, unknown>; scripts?: Record<string, unknown> };
+  let pkg: { dependencies?: Record<string, unknown>; devDependencies?: Record<string, unknown>; scripts?: Record<string, unknown>; cds?: unknown };
   try {
     pkg = JSON.parse(pkgFile.content);
   } catch {
@@ -710,7 +718,8 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
   for (const f of files) {
     if (!CODE_FILE.test(f.path)) continue;
     const s = readSource(f.path, f.content);
-    for (const m of f.content.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)(['"`])([^'"`\n]+)\1/g)) {
+    // An import, a require, or a triple-slash types reference (`/// <reference types="@cap-js/cds-types" />`).
+    for (const m of f.content.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|^\/\/\/\s*<reference\s+types\s*=\s*)(['"`])([^'"`\n]+)\1/gm)) {
       const spec = m[2];
       if (spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:')) continue;
       const parts = spec.split('/');
@@ -719,9 +728,13 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
     for (const x of stringLiterals(s)) strings.add(x.text.trim());
   }
   const lines = pkgFile.content.split(/\r?\n/);
+  const capConfigured =
+    ('@sap/cds' in (pkg.dependencies ?? {}) || '@sap/cds' in (pkg.devDependencies ?? {})) &&
+    ((typeof pkg.cds === 'object' && pkg.cds !== null) || files.some((f) => f.path === '.cdsrc.json'));
   for (const block of ['dependencies', 'devDependencies'] as const) {
     for (const name of Object.keys(pkg[block] ?? {})) {
       if (TOOLING.test(name)) continue;
+      if (capConfigured && CAP_CONFIGURED.test(name)) continue;
       if (used.has(name) || strings.has(name)) continue;
       if (new RegExp(`(?:^|[\\s;&|/])${escapeRe(name)}(?:$|[\\s;&|])`).test(scripts)) continue;
       const idx = lines.findIndex((l) => l.includes(`"${name}"`));

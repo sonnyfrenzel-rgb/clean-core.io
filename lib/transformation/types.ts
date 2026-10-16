@@ -108,8 +108,14 @@ export const PLAN_VERSION = 2;
  * stub that raised — every date read as implausible and the program refused every run; the counterpart is an explicit
  * Gregorian validity check (digits, year, month, days of the month, leap-year rule — not a conversion round trip), the
  * test double runs the same counterpart, and `ltc_counterparts` tests it in ABAP Unit. Nothing signed changes (§12.3).
+ * 14 (3.0.15 items 3 and 5, the CAP route's first deploy to SAP BTP, 16.10.2026): Node — a writing program's CAP
+ * action is `runProcess`, never `run` (a method of every `cds.Service`; CAP warned the action shadows it); the
+ * handler in `srv/service.ts` catches an error inside a step and rejects that request with 500 — CAP shut the server
+ * down on the uncaught TypeError until Cloud Foundry restarted it; a selection range a check of the original refuses
+ * empty (`IF s_vkorg[] IS INITIAL. MESSAGE e…`) carries one value in the call contract's base request (its DEFAULT,
+ * demo data or a fixed list), so the engine cases run. The RAP text is unchanged. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 13;
+export const SCAFFOLD_VERSION = 14;
 
 /* -------------------------------------------------------------- budgets */
 

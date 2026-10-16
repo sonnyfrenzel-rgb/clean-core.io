@@ -14,7 +14,8 @@
  *
  * Every candidate must fit the field's type and pass every check on the field
  * that can be decided from the field alone. A checkbox without a DEFAULT is
- * off and a selection range empty — their natural state, not a guess. An
+ * off and a selection range empty — their natural state, not a guess — unless
+ * a check refuses the range empty: then it carries one value (3.0.15). An
  * obligatory field with no candidate gets none: the contract lists it as
  * needing a value and the engine cases read "Not run — no valid base value
  * known for X" instead of failing for a value nobody chose.
@@ -100,7 +101,8 @@ function atomsOf(condition: string, constants: ReadonlyMap<string, string>): { a
       continue;
     }
     const p = parts[i].trim();
-    const init = /^([\w/~<>-]+)\s+IS\s+(NOT\s+)?INITIAL$/i.exec(p);
+    // `s_vkorg[] IS INITIAL`: the body of a selection range (3.0.15 item 5f).
+    const init = /^([\w/~<>-]+)(?:\[\])?\s+IS\s+(NOT\s+)?INITIAL$/i.exec(p);
     if (init) {
       atoms.push({ field: init[1].toLowerCase(), op: 'initial', value: null, initial: init[2] ? 'not' : 'is' });
       continue;
@@ -296,11 +298,35 @@ export function assignBaseValues(fields: ContractField[], facts: EngineFacts, no
       f.base = { value: d !== null && /^x$/i.test(d), source: d !== null ? 'default' : 'kind' };
       continue;
     }
+    const name = f.original.toLowerCase();
     if (f.kind === 'range') {
-      f.base = { value: [], source: 'kind' };
+      // Empty, its natural state — unless a check of the original refuses it empty (`IF s_vkorg[] IS INITIAL.
+      // MESSAGE e001 …`): then the base request carries one value, which the input contract reads as `I EQ value`,
+      // from the DEFAULT (a literal or a constant), the demo data or a fixed list (3.0.15 item 5f — 31 engine cases
+      // of the 1,000-line example did not run because the base request lacked the sales organisation).
+      const refusedEmpty = (checks.get(f) ?? []).some((c) => c.single && evaluate(c.atoms, c.joins, (a) => holds(a, '')) === c.rejectsWhen);
+      if (!refusedEmpty) {
+        f.base = { value: [], source: 'kind' };
+        continue;
+      }
+      const declared = f.defaultValue ? literalOf(f.defaultValue) ?? constants.get(f.defaultValue.trim().toLowerCase()) ?? null : null;
+      const candidates: Array<[Base['source'], Array<string | null>]> = [
+        ['default', [declared, initialisation.get(name) ?? null]],
+        ['demo', demo.get(component(name)) ?? []],
+        ['fixed-list', fixed.get(component(name)) ?? []],
+      ];
+      let chosen: Base | null = null;
+      for (const [source, values] of candidates) {
+        const v = values.find((x) => x !== null && x.trim() !== '' && passes(f, x));
+        if (v !== undefined && v !== null) {
+          chosen = { value: [v], source };
+          break;
+        }
+      }
+      f.base = chosen ?? { value: [], source: 'kind' };
+      if (!chosen) missing.push(f.original);
       continue;
     }
-    const name = f.original.toLowerCase();
     const sources: Array<[Base['source'], Array<string | null>]> = [
       ['default', [f.defaultValue ? literalOf(f.defaultValue) : null, initialisation.get(name) ?? null]],
       ['demo', demo.get(component(name)) ?? []],

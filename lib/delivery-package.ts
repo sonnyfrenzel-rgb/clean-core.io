@@ -768,15 +768,40 @@ function runtimePaths(entries: readonly BundleEntry[]): string[] {
 }
 
 /**
+ * The engine's CAP scaffold, as its files show it: the CAP shell (`srv/service.cds` + `srv/service.ts`), and the
+ * engine's package.json (it starts CAP) and tsconfig.json beside it.
+ */
+function engineCapScaffold(entries: readonly BundleEntry[]): boolean {
+  const reading = readPackage(entries, 'side-by-side');
+  return reading.capShellFiles && reading.capServed && entries.some((e) => e.path === 'tsconfig.json');
+}
+
+/**
  * The build and test files of a Node package, set by the templates. Returns the
  * entries with package.json normalised and tsconfig.json, Dockerfile and CI in
  * place, plus the notes the manifest carries.
  */
 export function applyNodeTemplates(
   entries: readonly BundleEntry[],
-  opts: { name: string; layout: 'package' | 'flat' },
+  opts: {
+    name: string;
+    layout: 'package' | 'flat';
+    /**
+     * The package is the engine's CAP scaffold (`facts.generation.path === 'engine-led'`, with the CAP shell's
+     * files). Its package.json, tsconfig.json and Dockerfile are the engine's, not the model's: they are kept as
+     * written (3.0.15 item 5c/5d, the CAP deploy of 16.10.2026 — the template's `start` served nothing on SAP BTP,
+     * `test` and `compile` were gone, and its tsconfig lacked `allowImportingTsExtensions`: 158 false errors).
+     */
+    engineLed?: boolean;
+  },
 ): { entries: BundleEntry[]; notes: Record<string, string[]> } {
   const notes: Record<string, string[]> = {};
+  const paths = entries.map((e) => e.path);
+  if (opts.layout === 'package' && opts.engineLed && engineCapScaffold(entries)) {
+    const out = [...entries];
+    if (!paths.includes('.github/workflows/ci.yml')) out.push({ path: '.github/workflows/ci.yml', content: packageCiWorkflow(readPackage(out, 'side-by-side').testFiles.length > 0), origin: 'template' });
+    return { entries: out, notes };
+  }
   const out = entries.filter((e) => !['tsconfig.json', 'Dockerfile', '.github/workflows/ci.yml'].includes(e.path) || e.origin === 'template');
   const replaced = entries.filter((e) => out.indexOf(e) === -1).map((e) => e.path);
   const put = (path: string, content: string, origin: FileOrigin) => {
@@ -1171,7 +1196,7 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^docs\/rule-register\.csv$/, () => 'The same rule register as CSV (UTF-8, every field quoted) for a spreadsheet.'],
   [/^docs\/cost-revision\.md$/, () => 'The cost revision the decision was priced on — its number, date and figures, read-only.'],
   [/^package\.json$/, () => 'Node.js dependencies and scripts — the scripts are set by Clean-Core.io to match the files here.'],
-  [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : 'TypeScript settings for `npm run build` (type-check only).')],
+  [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : `TypeScript settings for \`npm run ${typeof r.packageJson?.scripts?.typecheck === 'string' && typeof r.packageJson.scripts.build !== 'string' ? 'typecheck' : 'build'}\` (type-check only).`)],
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
   [/^\.github\/workflows\/ci\.yml$/, (r) => `GitHub Actions: install and build${r.testFiles.length ? ', then test,' : ''} on Node.js ${PACKAGE_NODE_MAJOR} — not run by Clean-Core.io.`],
   [/^playwright\.config\./, () => 'Playwright configuration naming the suite file.'],
@@ -1229,6 +1254,10 @@ function scriptWords(name: string, command: string): string {
   if (name === 'start') return 'starts the service';
   if (name === 'dev') return 'starts the service and restarts it on changes';
   if (name === 'test') return 'runs the test suite';
+  if (name === 'watch') return 'starts the CAP service locally and restarts it on changes';
+  if (name === 'compile') return "checks the CAP model and service with SAP's CDS compiler";
+  if (name === 'core') return "starts the core's own HTTP app, without CAP";
+  if (name === 'typecheck') return 'type-checks the sources with the tsconfig.json beside them';
   return 'as defined in package.json';
 }
 
@@ -1268,6 +1297,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
       lines.push(`${n++}. \`cds watch\`${has('watch') ? ' (or `npm run watch`)' : ''} — starts the CAP service locally.`);
     }
     if (has('build')) lines.push(`${n++}. \`npm run build\``);
+    else if (has('typecheck')) lines.push(`${n++}. \`npm run typecheck\` — type-checks the sources.`);
     if (has('test')) lines.push(`${n++}. \`npm test\` — what the last run on the platform gave is in \`STATUS.md\`.`);
     if (has('start')) lines.push(`${n++}. \`npm start\` — ${dataMode(reading).sentence}`);
     lines.push('');
@@ -1981,7 +2011,7 @@ export function finishDeliveryPackage(input: {
   let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
-    const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout });
+    const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout, engineLed: facts.generation?.path === 'engine-led' });
     entries = applied.entries;
     notes = applied.notes;
   }

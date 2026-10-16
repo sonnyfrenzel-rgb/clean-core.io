@@ -10,11 +10,14 @@
  *     compares). A writing program adds one entity per customer table it writes.
  *   - `srv/service.cds` — the service. The architecture is the one the RAP route takes
  *     (`architecture.ts`): a read-only program gets an unbound action `simulate` whose parameters are the
- *     selection and the input lists and whose answer is the run; a writing program gets an action `run` and
- *     its written customer tables as entities with exactly the operations the original performs.
+ *     selection and the input lists and whose answer is the run; a writing program gets an action `runProcess`
+ *     and its written customer tables as entities with exactly the operations the original performs. Never
+ *     `run`: every `cds.Service` has a method `run`, and an action of that name shadows it (CAP warns "custom
+ *     action 'run()' conflicts with method in base class" — 3.0.15 item 3, the BTP trial of 16.10.2026).
  *   - `srv/service.ts` (+ `srv/service.js`, which lets `cds-serve` load it on Node's type stripping) — the
  *     handler. It only delegates: the parameters go through the core's input contract
- *     (`simulateRequest`), a refusal answers 400 with one message per field, the run's answer is returned.
+ *     (`simulateRequest`), a refusal answers 400 with one message per field, the run's answer is returned; an
+ *     error inside a step answers 500 for that request and never takes the service down (3.0.15 item 5b).
  *   - `srv/access.ts` + `srv/external/*.cds` — one function per SAP object the original reads, writes or
  *     calls (`access-layer.ts`). A read goes to a remote service (`cds.connect.to`) only where this
  *     product's curated catalog names a released OData API for the table; a CDS view successor is not
@@ -56,11 +59,20 @@ export const CAP_VERSIONS = Object.freeze({
 /** The paths of the shell (and only those): what a reader of the package sees as CAP. */
 export const CAP_SHELL_PATHS = Object.freeze(['db/schema.cds', 'srv/service.cds', 'srv/service.ts', 'srv/service.js', 'srv/access.ts', 'mta.yaml', 'xs-security.json']);
 
+/**
+ * The action of the service. A writing program's is `runProcess`, never `run`: `run` is a method of every
+ * `cds.Service`, and an action of that name shadows it (3.0.15 item 3).
+ */
+export type CapAction = 'simulate' | 'runProcess';
+
+/** The action the architecture asks for (`architecture.ts`). */
+export const capActionOf = (architecture: ProgramArchitecture): CapAction => (architecture === 'writing' ? 'runProcess' : 'simulate');
+
 /** What the shell is, for the trace and the delivery readout. */
 export interface CapShellSummary {
   architecture: ProgramArchitecture;
   service: string;
-  action: 'simulate' | 'run';
+  action: CapAction;
   entities: string[];
   remote: Array<{ object: string; api: string }>;
   refused: Array<{ object: string; kind: AccessPoint['kind']; reason: string }>;
@@ -206,14 +218,14 @@ function schemaCds(input: CapShellInput, namespace: string, written: readonly Wr
 
 function serviceCds(input: CapShellInput, namespace: string, service: string, architecture: ProgramArchitecture, written: readonly WrittenTable[]): string {
   const { plan, lists } = input;
-  const action = architecture === 'writing' ? 'run' : 'simulate';
+  const action = capActionOf(architecture);
   const selection = plan.fields.filter((f) => f.where === 'selection');
   const legacy = plan.fields.filter((f) => f.where === 'record' && (f.path ?? '').startsWith('records[]'));
   const out: string[] = [];
   out.push(`// ${service} — written by Clean-Core.io (engine) for ${plan.program ?? 'the program'}.`);
   out.push(
     architecture === 'writing'
-      ? `// The original writes ${written.map((t) => t.table).join(', ') || 'SAP tables'}: an action \`run\` runs the process; the customer tables it writes are entities with the operations it performs.`
+      ? `// The original writes ${written.map((t) => t.table).join(', ') || 'SAP tables'}: an action \`${action}\` runs the process; the customer tables it writes are entities with the operations it performs.`
       : '// The original writes no table: a read-only simulation. The action `simulate` takes the selection and the input lists and answers with the run — no entity is persisted.',
   );
   out.push('// Handlers: srv/service.ts — they delegate to the core (srv/simulate.ts); the checks are the core\'s input contract.');
@@ -250,13 +262,15 @@ function serviceCds(input: CapShellInput, namespace: string, service: string, ar
 
 /* ------------------------------------------------------------- srv/service.ts */
 
-function serviceTs(service: string, action: 'simulate' | 'run', program: string | null): string {
+function serviceTs(service: string, action: CapAction, program: string | null): string {
   return String.raw`/// <reference types="@cap-js/cds-types" />
 /**
  * The handlers of ${service} (srv/service.cds) for ${program ?? 'the program'} - written by Clean-Core.io (engine).
  * They only delegate: the parameters go through the core's input contract (srv/lib/input-contract.ts) inside
  * simulateRequest, which runs the process (srv/process.ts); a refusal answers 400 with one message per field,
- * where the original's selection screen and checks refuse. No business logic here.
+ * where the original's selection screen and checks refuse. No business logic here. An error inside a step
+ * answers 500 for that request: CAP shuts the server down on an uncaught programming error (a TypeError), so
+ * the handler catches it, logs it and rejects the request with a message that names no internals.
  */
 import cds from '@sap/cds';
 import { createRunStore } from './lib/run-store.ts';
@@ -288,7 +302,13 @@ export default class ${service} extends cds.ApplicationService {
   init() {
     const store = createRunStore<Selection, RunResult>();
     this.on('${action}', (req) => {
-      const a = simulateRequest(requestOf(req.data), store);
+      let a: SimulateAnswer;
+      try {
+        a = simulateRequest(requestOf(req.data), store);
+      } catch (err) {
+        console.error('${action} failed inside a step:', err);
+        return req.reject(500, 'RUN: the run stopped on an unexpected error inside a step; the service keeps running. The server log has the details.');
+      }
       if (!a.ok) {
         for (const e of a.errors) req.error(400, e.rule + ': ' + e.message, e.field ?? undefined);
         return undefined;
@@ -606,7 +626,7 @@ export function capShellFiles(input: CapShellInput): { files: ScaffoldFile[]; pa
   const architecture = programArchitecture(input.facts);
   const namespace = `cc.${snake(input.plan.program)}`;
   const service = capServiceName(input.plan.program);
-  const action = architecture === 'writing' ? 'run' : 'simulate';
+  const action = capActionOf(architecture);
   const written = architecture === 'writing' ? writtenCustomerTables(input.facts) : [];
   const access = accessPlanOf(input);
   const files: ScaffoldFile[] = [

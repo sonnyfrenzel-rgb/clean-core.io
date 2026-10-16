@@ -32,6 +32,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `io_access` in any other form, is refused with its line and goes into the repair round. A suite stored
   earlier gets the same rewrite when Delivery places it into the test include. The prompt's last guideline,
   which still named `cl_abap_unit_test` and `cl_aunit_assert`, now names only `cl_abap_unit_assert`.
+- **The CAP route, from its first deploy to SAP BTP** (the 1,000-line starter example, generated on v3.0.14 and
+  pushed to the Cloud Foundry trial). Scaffold version 14.
+  - The CAP action of a writing program is `runProcess`, not `run`. Every CAP service already has a method
+    `run`, and CAP warned that the action shadowed it.
+  - The server's type check now runs on every CAP/Node generation. The production build compiled the call
+    that loads the TypeScript compiler to `undefined`, so every generation stored "type check not run". The
+    error that crashed the trial run (a step calling `checked` with four arguments, TS2554) now goes to the
+    repair round. The CDS compile check loads the same way.
+  - An error inside a step answers 500 for that request, and the service keeps running. Before, CAP shut
+    the server down on the uncaught `TypeError` until Cloud Foundry restarted it.
+  - The delivery package keeps the engine's `package.json`, `tsconfig.json` and `Dockerfile` for an
+    engine-led CAP package. Before, the template replaced `start: cds-serve` with a start that served
+    nothing, dropped `test` and `compile`, and shipped a tsconfig without `allowImportingTsExtensions`
+    (158 false errors).
+  - The code checks no longer report `@sap/xssec`, `@cap-js/hana`, `@cap-js/sqlite` and `@cap-js/cds-types`
+    as unused in a configured CAP package. CAP loads them through its configuration or a types reference,
+    not through an import.
+  - The engine cases' base request now carries a value for every selection range the original refuses
+    when empty (`IF s_vkorg[] IS INITIAL. MESSAGE e…`): its DEFAULT, demo data or a fixed list. Before,
+    31 cases did not run because the base request had no sales organisation.
 ### Data sovereignty over the model — Claude as an own key (roadmap 3.0.15, part B)
 
 - **Your own Anthropic key beside Gemini.** Settings asks which provider your own key belongs to —

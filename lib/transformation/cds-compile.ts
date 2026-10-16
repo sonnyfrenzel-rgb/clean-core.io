@@ -16,12 +16,11 @@
  * decision 14.10.2026). The CDS files are written by the engine alone (no fill region), so the specs' compile of
  * every scaffold shape is the compile of what ships; the package carries `npm run compile` for the reader's own check.
  *
- * Loaded with `createRequire` at run time, never bundled (like the TypeScript compiler, type-check.ts).
+ * Loaded with `serverRequire` (`lib/server-require.ts`) at run time, never bundled (like the TypeScript compiler, type-check.ts).
  * Server-only. Never throws.
  */
 
-import { createRequire } from 'node:module';
-import path from 'node:path';
+import { serverRequire } from '../server-require';
 
 export interface CdsFinding {
   path: string;
@@ -69,7 +68,7 @@ let loadError = '';
 function load(): CdsCompiler | null {
   if (loaded !== undefined) return loaded;
   try {
-    const req = createRequire(path.join(process.cwd(), 'package.json'));
+    const req = serverRequire();
     loaded = req('@sap/cds-compiler') as CdsCompiler;
   } catch (err) {
     loadError = err instanceof Error ? err.message.split('\n')[0] : String(err);

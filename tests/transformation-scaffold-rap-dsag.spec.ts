@@ -357,6 +357,6 @@ test('the scaffold version moved with the engine-written text', () => {
   // 12: the engine cases run in ABAP, the golden master says what it did not compare (tests/transformation-engine-cases-abap.spec.ts).
   // 12 also: whole numbers are numbers on the Node track (tests/transformation-3014-generation.spec.ts).
   // 13: engine-written counterparts of simple SAP function modules in the access layer (tests/transformation-released-counterparts.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(13);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(13);
+  expect(SCAFFOLD_VERSION).toBe(14);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(14);
 });

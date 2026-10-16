@@ -15,17 +15,17 @@
  * standard library and `@types/node` are read from the server's own
  * `node_modules`. Both are production dependencies — the Cloud Run build
  * installs no devDependencies (`tests/server-external-deps-guard.spec.ts`).
- * TypeScript is loaded with `createRequire` at run time, never bundled.
+ * TypeScript is loaded with `serverRequire` (`lib/server-require.ts`) at run time, never bundled.
  *
  * Server-only (the route of `/api/run-tests` and the specs); never imported
  * by a client module — the compiler is 9 MB.
  */
 
-import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import type * as TS from 'typescript';
 import { CAP_TYPES_STANDIN } from '../transformation/cap-api-declaration';
+import { serverRequire } from '../server-require';
 
 export interface TypeFinding {
   /** The candidate's own path (`srv/steps/u03-check-limit.ts`). */
@@ -89,7 +89,7 @@ let loadError = '';
 function load(): Loaded | null {
   if (loaded !== undefined) return loaded;
   try {
-    const req = createRequire(path.join(process.cwd(), 'package.json'));
+    const req = serverRequire();
     const ts = req('typescript') as typeof TS;
     const nodeTypes = path.dirname(req.resolve('@types/node/package.json'));
     loaded = { ts, typeRoots: path.dirname(nodeTypes) };
