@@ -1586,7 +1586,10 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-866 | low | — | — | refuted |
 | SEC-2026-867 | info | — | — | refuted |
 | SEC-2026-868 | info | — | — | refuted |
-| SEC-2026-869 | critical | P1 | 3.0.16 · patch step | scheduled |
+| SEC-2026-869 | critical | P1 | 3.0.16 · patch step | fixed |
+| SEC-2026-870 | high | P1 | 3.0.17 · separate dev and main secrets (needs the owner) | scheduled |
+
+**Audit of v3.0.16 (`e41e227`), 16.10.2026: 0 critical, 1 high, 0 medium, 0 low — all 4 candidates verified, delta of 15 files, $0.04.** SEC-2026-870 (P1) goes to 3.0.17 and needs the owner; SEC-2026-869 was not reported again and is fixed. The reasons are in the sealed register.
 
 **Audit of v3.0.11 (`7793427`), 12.10.2026: 0 critical, 0 high, 2 medium, 4 low, 2 info — all 64 candidates verified, $0.42.** SEC-2026-803 (P2) and -804 (P3) go to 3.0.12; six refuted (SEC-2026-805 and -806 as -791/-792, -807 as -794, -808 and -809 as -797, -810 against the code). The reasons are in the sealed register.
 
