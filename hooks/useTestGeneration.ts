@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { storeArtefact } from '@/lib/project-artefacts-client';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
@@ -18,6 +18,8 @@ import { TESTING_PROMPT_LIMIT, TESTING_PROMPT_MARGIN, codeForTestingPrompt, test
 import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
 import { abapTestProblemsSentence, checkAbapTestClass } from '@/lib/testing-abap-unit';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
+import { packageDigest, TEST_SUITE_BASIS_FIELD } from '@/lib/test-suite-basis';
+import { endTestGenProgress, enterTestGenStage, startTestGenProgress, type TestGenProgress, type TestGenStageKey } from '@/lib/testing-progress';
 
 /** What the testing stage asks the model for, in the retry and failure sentences. */
 const TEST_SUITE_NOUN = 'test suite';
@@ -37,6 +39,20 @@ export const useTestGeneration = (
   const [generated, setGenerated] = useState<TestCase[] | null>(null);
   /** The progress line while the one automatic second call runs; `null` otherwise. */
   const [retrying, setRetrying] = useState<string | null>(null);
+  /**
+   * Owner 16.10.2026: what the run is doing and for how long
+   * (`lib/testing-progress.ts`, drawn by `components/testing/TestingProgress.tsx`).
+   * `null` until the first generation of this visit; the last run stays until the next.
+   */
+  const [progress, setProgress] = useState<TestGenProgress | null>(null);
+  const progressRef = useRef<TestGenProgress | null>(null);
+  const track = (next: TestGenProgress) => {
+    progressRef.current = next;
+    setProgress(next);
+  };
+  const enter = (key: TestGenStageKey) => {
+    if (progressRef.current) track(enterTestGenStage(progressRef.current, key, Date.now()));
+  };
   // The saved suite, until this session generates a new one. Seeding useState from `project` read it once, on the
   // first render, while the project was still loading: a saved suite never appeared after a reload, and the page
   // offered to generate it again (QA review of a0c108513165).
@@ -82,6 +98,11 @@ export const useTestGeneration = (
 
   const generateTestCases = async (previousError?: string) => {
     setIsGenerating(true);
+    track(startTestGenProgress(Date.now()));
+    // The package this suite is written for (owner 16.10.2026): the server
+    // stores it beside the suite and refuses the write if the package moved
+    // meanwhile; Testing reads stale once a new Transformation replaces it.
+    const testedPackage = packageDigest(project?.generatedCode);
     try {
       const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
 
@@ -247,6 +268,7 @@ ${generatedText}
           if (attempts > 0) setRetrying(retryNotice(failure, TEST_SUITE_NOUN));
           attempts++;
           let responseText: string;
+          enter('model');
           try {
             responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
           } catch (callErr) {
@@ -255,6 +277,7 @@ ${generatedText}
             failure = unusable;
             continue;
           }
+          enter('checking');
           const read = parseModelJsonObject(responseText);
           if (read.ok) result = read.value;
           else failure = read.reason;
@@ -337,6 +360,7 @@ ${generatedText}
       const manualTestingRequirements: ManualTestRequirement[] = answer.manualTestingRequirements || [];
       
       setGenerated(generatedTestCases);
+      enter('storing');
       
       // Stored by the server since roadmap 3.0.14, item 9: the scenarios are
       // kept in documents of their own, which no browser writes. One write, as
@@ -347,13 +371,17 @@ ${generatedText}
         testSuite: generatedTestSuite,
         coverageEstimate,
         manualTestingRequirements,
+        generatedCodeSha256: testedPackage,
       });
       if (!stored.ok) throw new Error(stored.error);
       
-      setProject((prev: Project | null) => prev ? { ...prev, testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements } : prev);
+      const testSuiteBasis = (stored.fields[TEST_SUITE_BASIS_FIELD] ?? null) as Project['testSuiteBasis'];
+      setProject((prev: Project | null) => prev ? { ...prev, testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements, testSuiteBasis } : prev);
+      if (progressRef.current) track(endTestGenProgress(progressRef.current, 'written', Date.now(), generatedTestCases.length));
       return { testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements };
     } catch (err: unknown) {
       console.error(err);
+      if (progressRef.current) track(endTestGenProgress(progressRef.current, 'failed', Date.now()));
       throw err;
     } finally {
       setRetrying(null);
@@ -361,5 +389,5 @@ ${generatedText}
     }
   };
 
-  return { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying };
+  return { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying, progress };
 };
