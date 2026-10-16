@@ -59,9 +59,19 @@ test.describe('every shipped starter example: the package is gate-clean before a
       // Criterion (4), the rules: every rule of the analysis the owner did not drop is carried by a unit, or stands in
       // a routine the package leaves out for a stated reason (demo data, unreachable), or in a selection-screen event,
       // whose checks the engine writes into the input contract.
+      // A unitId has to name a unit that lists the rule, and a selection-screen rule has to stand on a check the engine
+      // places on the selection screen (QA review of a311929b1195).
       const left = new Set(rap.plan.notCarried.map((n) => n.routine));
-      const orphans = rap.plan.rules.filter((r) => r.decision !== 'drop' && !r.unitId && !(r.routine && left.has(r.routine)) && !/^AT SELECTION-SCREEN/.test(r.routine ?? ''));
-      expect(orphans.map((r) => `${r.id} ${r.routine ?? 'program level'} L${r.ranges[0]?.lineStart}`)).toEqual([]);
+      const unitById = new Map(rap.plan.units.map((u) => [u.id, u]));
+      const onSelectionCheck = (r: (typeof rap.plan.rules)[number]) =>
+        rap.plan.guards.some((g) => g.place === 'selection-screen' && r.ranges.some((x) => g.line >= x.lineStart && g.line <= x.lineEnd));
+      const orphans = rap.plan.rules.filter((r) => {
+        if (r.decision === 'drop') return false;
+        if (r.unitId) return !unitById.get(r.unitId)?.rules.includes(r.id);
+        if (r.routine && left.has(r.routine)) return false;
+        return !(/^AT SELECTION-SCREEN/.test(r.routine ?? '') && onSelectionCheck(r));
+      });
+      expect(orphans.map((r) => `${r.id} ${r.routine ?? 'program level'} L${r.ranges[0]?.lineStart} → ${r.unitId ?? 'no unit'}`)).toEqual([]);
 
       // No exception: a source with no entry point (Z_ORDER_INTEGRITY_CHECK) has its orchestrator written by the
       // engine, so no model-filled unit is without lines of the original (roadmap 3.0.17 item 6, scaffold 15).

@@ -32,7 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   statements are now its lines. A source with no entry point — the starter example `Z_ORDER_INTEGRITY_CHECK`,
   classes and a FORM nobody calls — runs nothing when it is started; its process body is now written by the engine
   and says so, instead of a region the model filled with a run order the original does not have. No shipped example
-  or test program with event blocks changes. `tests/transformation-unit-plan.spec.ts`,
+  or test program with event blocks changes; the head of a pool (CLASS-POOL, INTERFACE-POOL, FUNCTION-POOL, TYPE-POOL)
+  runs nothing and is no entry point. `tests/transformation-unit-plan.spec.ts`,
   `tests/transformation-starter-gate.spec.ts`.
 - **An example project edited in Analyze is the reader's code again** (QA review of 5fbd4c1f11c5). The Analyze tool
   skipped the personal-data hint for every project started from an example, also after the reader changed its

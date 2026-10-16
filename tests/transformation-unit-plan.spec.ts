@@ -144,6 +144,11 @@ test.describe('the CO shape', () => {
     // Declarations alone run nothing: no entry point, no lines.
     const none = planOf('REPORT zy.\nDATA gv TYPE i.\nFORM calc.\n  gv = gv + 1.\nENDFORM.\n').plan.units.find((u) => u.kind === 'orchestrator')!;
     expect(none.abap).toEqual([]);
+    // A pool's head runs nothing either (QA review of a311929b1195).
+    for (const head of ['CLASS-POOL.', 'INTERFACE-POOL.', 'FUNCTION-POOL zfg.', 'TYPE-POOL zt.']) {
+      const pool = planOf(`${head}\nDATA gv TYPE i.\nFORM calc.\n  gv = gv + 1.\nENDFORM.\n`).plan.units.find((u) => u.kind === 'orchestrator')!;
+      expect(pool.abap, head).toEqual([]);
+    }
   });
 
   test('guards: the selection-screen check belongs to the orchestrator; a routine calls its refusing guards first', () => {
