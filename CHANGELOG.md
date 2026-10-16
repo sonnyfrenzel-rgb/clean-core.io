@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audit pack verification (web and `scripts/verify-pack.mjs`) treats an archive whose end record
   sits inside the comment of an earlier, equally valid end record as not checked, so it never
   passes integrity (QA full review of 66dd82b73417).
+- Deploy pipeline: the app and runner deploys of one branch run one at a time (a concurrency group
+  per service, never cancelling a running deploy), behind a new `deploy-gate` job that checks the
+  branch head before either deploy can queue; each deploy still re-reads the head as its last step
+  (QA full review of 66dd82b73417).
 
 ## [v3.0.15] — 2026-10-16
 

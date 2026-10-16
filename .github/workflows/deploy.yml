@@ -41,13 +41,13 @@ jobs:
   # nearly at once, made the cost peak: every superseded run kept testing - and
   # calling the model - although only the newest commit is ever deployed.
   #
-  # The group sits on `build` and `e2e` only (and `e2e-claim`, which takes the
-  # e2e groups early), per branch, and nowhere else. Never
-  # at workflow level and never on validate, security, deploy-runner, deploy or
-  # smoke-production: a deploy that is running is never cancelled mid-way, and no
-  # deploy is ever a pending job a later run could cancel (the reason
-  # tests/deploy-order-guard.spec.ts gives against a workflow-level group still
-  # holds). A run whose build or shard was cancelled cannot deploy: `deploy` needs
+  # The cancelling group sits on `build` and `e2e` only (and `e2e-claim`, which
+  # takes the e2e groups early), per branch. Never at workflow level and never
+  # on validate, security, deploy-gate or smoke-production; the two deploy jobs
+  # have a group of their own without `cancel-in-progress`, so a deploy that is
+  # running is never cancelled mid-way, and a superseded run never queues there
+  # (see deploy-gate and tests/deploy-order-guard.spec.ts). A run whose build or
+  # shard was cancelled cannot deploy: `deploy` needs
   # `validate`, and `validate` succeeds only on a successful build and e2e. The
   # newer run deploys, and its own newest-commit check still decides.
   #
@@ -306,6 +306,52 @@ jobs:
       - name: Dependency Audit (production)
         run: npm audit --omit=dev --audit-level=high
 
+  # Job 1c: the newest-commit gate in front of both deploy jobs (QA full review
+  # of 66dd82b73417).
+  #
+  # The deploy jobs are serialised per target service (their `concurrency:`
+  # groups, below): without that, two runs of one branch deployed side by side,
+  # and an older run whose Cloud Run build finished last left its revision
+  # live over the newer one, although both had passed the check before
+  # deploying. A group has its own hazard: GitHub keeps one pending job per
+  # group and cancels it when a later one queues - by queue time, not by
+  # commit - so an older run reaching the group late would cancel the newer
+  # run's waiting deploy. This job closes that: it asks the remote for the
+  # branch head before either deploy job queues, and a superseded run never
+  # enters a group at all. Each deploy job then asks once more, as its last
+  # step before deploying, because a newer commit may have been pushed while it
+  # waited for the group.
+  #
+  # No secret, no Google sign-in, no install; the checkout keeps no token.
+  deploy-gate:
+    needs: [validate, security]
+    runs-on: ubuntu-latest
+    outputs:
+      current: ${{ steps.fresh.outputs.current }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Newest Commit Wins (gate)
+        id: fresh
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          head="$(git ls-remote --exit-code origin "refs/heads/$REF_NAME" | cut -f1)" || head=""
+          if ! printf '%s' "$head" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Could not read the head of $REF_NAME; not deploying without knowing it." >&2
+            exit 1
+          fi
+          if [ "$head" = "$SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer the head of $REF_NAME ($head is); the newer run deploys, this one does not."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # Job 2a: the isolated test runners (roadmap 8.9, SECURITY.md §7).
   #
   # A job in this pipeline rather than a workflow of its own, for three reasons:
@@ -324,9 +370,14 @@ jobs:
   # No secret of any kind is read in this job. The runners get RUNNER_MODE and,
   # for the live one, the app origin it may relay to — neither is a secret.
   deploy-runner:
-    needs: [validate, security]
-    if: vars.RUNNER_DEPLOY_ENABLED == 'true'
+    needs: [validate, security, deploy-gate]
+    if: vars.RUNNER_DEPLOY_ENABLED == 'true' && needs.deploy-gate.outputs.current == 'true'
     runs-on: ubuntu-latest
+    # One runner deploy per branch at a time, never cancelled once running; a
+    # superseded run never queues here (deploy-gate).
+    concurrency:
+      group: deploy-runner-${{ github.ref_name }}
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
@@ -393,11 +444,11 @@ jobs:
       # green, because the newer run deploys. A head that cannot be read stops
       # the job (fail closed).
       #
-      # Deliberately no `concurrency:` group: GitHub keeps one pending run per
-      # group and cancels it when a later one queues, by queue time and not by
-      # commit, so an older run reaching the group late would cancel the newer
-      # one's waiting deploy. Rollback is not a re-run of an old workflow run
-      # (this check refuses it) but `gcloud run services update-traffic`.
+      # The job's `concurrency:` group makes "last before deploying" hold until
+      # the deploy has finished: no second deploy of this branch runs beside
+      # it. Why the group cannot cancel a newer run's waiting deploy is written
+      # at deploy-gate. Rollback is not a re-run of an old workflow run (this
+      # check refuses it) but `gcloud run services update-traffic`.
       - name: Newest Commit Wins (runners)
         id: fresh
         env:
@@ -475,9 +526,14 @@ jobs:
   # Waits for the runners when they deploy, and goes ahead when that job is
   # switched off (skipped) — never when it failed.
   deploy:
-    needs: [validate, security, deploy-runner]
-    if: ${{ !cancelled() && needs.validate.result == 'success' && needs.security.result == 'success' && (needs.deploy-runner.result == 'success' || needs.deploy-runner.result == 'skipped') }}
+    needs: [validate, security, deploy-gate, deploy-runner]
+    if: ${{ !cancelled() && needs.validate.result == 'success' && needs.security.result == 'success' && needs.deploy-gate.outputs.current == 'true' && (needs.deploy-runner.result == 'success' || needs.deploy-runner.result == 'skipped') }}
     runs-on: ubuntu-latest
+    # One app deploy per branch (= per Cloud Run service) at a time, never
+    # cancelled once running; a superseded run never queues here (deploy-gate).
+    concurrency:
+      group: deploy-app-${{ github.ref_name }}
+      cancel-in-progress: false
     # The one job that authenticates to Google Cloud, and the only one that may
     # mint an OIDC token. It installs nothing, so no dependency's install script
     # runs beside it.
@@ -656,7 +712,8 @@ jobs:
           project_id: 'cleancore-491216'
 
       # Newest commit wins (codex code-ci-03): the same check as before the
-      # runners, and why there is no concurrency group, is described there.
+      # runners and in deploy-gate, re-read here as the last step before the
+      # deploy, inside this job's concurrency group; both are described there.
       - name: Newest Commit Wins (app)
         id: fresh
         env:
