@@ -5,7 +5,7 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v3.0.15] — unreleased
+## [v3.0.15] — 2026-10-16
 
 ### Transformation, from the second SAP import (owner 16.10.2026)
 
@@ -53,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     when empty (`IF s_vkorg[] IS INITIAL. MESSAGE e…`): its DEFAULT, demo data or a fixed list. Before,
     31 cases did not run because the base request had no sales organisation.
 ### Data sovereignty over the model — Claude as an own key (roadmap 3.0.15, part B)
+
+Built and switched off in this release: the Claude choice is not offered until the privacy policy, the
+terms and the data processing terms name Anthropic (`ANTHROPIC_OWN_KEY_OFFERED`). What applies today:
+no fallback to the platform key and "who answered" for the Gemini key.
 
 - **Your own Anthropic key beside Gemini.** Settings asks which provider your own key belongs to —
   Google Gemini or Anthropic Claude — and stores one own key per account; saving a key of the other

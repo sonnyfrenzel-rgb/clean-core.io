@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network, Route, type LucideIcon } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import { APP_VERSION } from '@/lib/version';
-import { PROVIDER_TERMS } from '@/lib/model-providers';
+import { PROVIDER_TERMS, offeredKeyProviders } from '@/lib/model-providers';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Trust & Privacy — Clean-Core.io',
@@ -73,15 +73,18 @@ export default function TrustPage() {
                 </span>
               ))}
             </li>
-            <li data-trust-provider="anthropic">
-              <strong>Your own Anthropic key</strong> — the code goes to the Anthropic API (Claude), on your key.{' '}
-              {PROVIDER_TERMS.anthropic.map((t, i) => (
-                <span key={t.href}>
-                  {i > 0 ? ' · ' : ''}
-                  <a href={t.href} rel="noopener noreferrer" target="_blank" className="text-cc-brand-strong font-semibold underline-offset-2 hover:underline">{t.label}</a>
-                </span>
-              ))}
-            </li>
+            {/* Named only once the own Claude key is offered (ANTHROPIC_OWN_KEY_OFFERED). */}
+            {offeredKeyProviders().includes('anthropic') ? (
+              <li data-trust-provider="anthropic">
+                <strong>Your own Anthropic key</strong> — the code goes to the Anthropic API (Claude), on your key.{' '}
+                {PROVIDER_TERMS.anthropic.map((t, i) => (
+                  <span key={t.href}>
+                    {i > 0 ? ' · ' : ''}
+                    <a href={t.href} rel="noopener noreferrer" target="_blank" className="text-cc-brand-strong font-semibold underline-offset-2 hover:underline">{t.label}</a>
+                  </span>
+                ))}
+              </li>
+            ) : null}
           </ul>
           <p>
             With your own key set, no call of your account uses the platform key: if your key is missing or the
