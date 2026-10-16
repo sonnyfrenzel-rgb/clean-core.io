@@ -218,7 +218,7 @@ export function demoCaseVerdicts(scenarios: readonly CaseScenario[] | null, case
       // The package's code threw on the original's own case: the package fails it.
       out[s.id] = { ran: true, verdict: 'fail', detail: 'the package threw on the case' };
     } else if (!r.complete) {
-      out[s.id] = { ran: true, verdict: `not-run: demo case ${n} reached ${r.notFilled.length} function(s) still left as stubs` };
+      out[s.id] = { ran: false, verdict: `not-run: demo case ${n} reached ${r.notFilled.length} function(s) still left as stubs` };
     } else if (s.expectedForm !== 'machine') {
       out[s.id] = { ran: true, verdict: `ran: demo case ${n} — a prose expectation, judged by a reviewer` };
     } else {

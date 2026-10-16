@@ -319,7 +319,7 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
       'CASE-07': { ran: true, verdict: 'ran: demo case 7 — a prose expectation, judged by a reviewer' },
     });
     const stub = demoCaseVerdicts(scenarios.slice(0, 1), cases, { ...runs, byNumber: { '0': ran({ complete: false, notFilled: ['U03'] }) } });
-    expect(stub['CASE-00']).toEqual({ ran: true, verdict: 'not-run: demo case 0 reached 1 function(s) still left as stubs' });
+    expect(stub['CASE-00']).toEqual({ ran: false, verdict: 'not-run: demo case 0 reached 1 function(s) still left as stubs' });
     const none = demoCaseVerdicts(scenarios.slice(0, 1), cases, { executed: false, reason: 'not executed: no Node >= 25', byNumber: {} });
     expect(none['CASE-00']).toEqual({ ran: false, verdict: 'not-run: demo case 0 — not executed: no Node >= 25' });
     // A reason the package wrote is package output and stays out of the report (QA 32ab392208dd).
