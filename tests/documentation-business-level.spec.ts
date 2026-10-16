@@ -161,6 +161,19 @@ for (const [file, howItWorks] of [['Z_MM_PO_APPROVAL.abap', 11], ['ZLEGACY_ORDER
       expect(steps_).toContain('**Technical steps (');
     });
 
+    test('only rows of a business step are stored: a row of any other id is not kept (SEC-2026-842)', () => {
+      const steps = businessStepsOf(doc);
+      const answer = businessAnswer(doc);
+      const extra = (stepId: string) => ({ stepId, r: 'Clerk', a: 'Clerk', c: '', i: '' });
+      const stored = enrichBusinessLayer({
+        raci_matrix: [...answer.raci_matrix, extra('Task_not_in_process'), extra(''), { r: 'Clerk' }],
+        sop_details: [...answer.sop_details, { stepId: 'Task_not_in_process', claims: [], businessException: '' }],
+      }, sopStepInfos(doc), doc.facts ?? null);
+      expect((stored.raci_matrix as Array<{ stepId: string }>).map((r) => r.stepId)).toEqual(steps.map((s) => s.id));
+      expect((stored.sop_details as Array<{ stepId: string }>).map((r) => r.stepId)).toEqual(steps.map((s) => s.id));
+      expect(raciMatrix(sopSteps(stored, processStepsOf(doc.steps), { facts: doc.facts ?? null })).steps).toHaveLength(howItWorks);
+    });
+
     test('a layer stored before — one row per element — still renders, and says regenerating gives the business level', async () => {
       const old = technicalLayer(doc);
       expect(isBusinessLevelLayer(old)).toBe(false);

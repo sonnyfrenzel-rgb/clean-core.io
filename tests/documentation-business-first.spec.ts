@@ -354,10 +354,9 @@ CALL FUNCTION lv_fm.
     // With them, only the engine's.
     const withFacts = enrichBusinessLayer(forged, sopStepInfos(doc), doc.facts ?? null);
     expect(withFacts.facts).toEqual(doc.facts);
-    // Step fields the model wrote on a row of a step the process does not have are dropped.
-    const row = (withFacts.sop_details as Array<Record<string, unknown>>)[0];
-    expect(row.stepLines).toBeUndefined();
-    expect(row.stepSentences).toBeUndefined();
+    // A row of a step the process does not have is not kept, nor the step fields the model wrote on it.
+    expect((withFacts.sop_details as Array<Record<string, unknown>>).some((r) => r.stepId === 'Task_not_in_process')).toBe(false);
+    expect(JSON.stringify(withFacts)).not.toContain('"stepLines":[{"lineStart":1,"lineEnd":999}]');
     const judged = sopSteps(withoutFacts, [], { facts: null });
     expect(judged.flatMap((s) => s.statements).every((st) => st.basis !== 'reconstructed')).toBe(true);
   });

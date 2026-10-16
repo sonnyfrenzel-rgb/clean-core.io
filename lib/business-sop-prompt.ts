@@ -258,13 +258,13 @@ const ENGINE_ROW_FIELDS = ['stepName', 'stepLines', 'stepSentences', 'stepRef', 
  * Since 16.10.2026 the layer is written on the business level: it says so
  * (`level: 'business-step'`), each row carries the technical steps folded
  * under it (`stepTechnical`), the rows stand in the order of the business
- * steps, and a row the model wrote for an element inside a business step —
- * a level finer than asked — is not kept.
+ * steps, and a row the model wrote for anything but a business step — an
+ * element inside one, a level finer than asked, or an id the process does not
+ * have — is not kept.
  */
 export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: readonly SopStepInfo[], facts: CapabilityFacts | null): Record<string, unknown> {
   const byId = new Map(steps.map((s) => [s.id, s]));
   const position = new Map(steps.map((s, i) => [s.id, i]));
-  const technicalIds = new Set(steps.flatMap((s) => (s.technical ?? []).map((t) => t.id)).filter((id) => !byId.has(id)));
   const rows = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
   const withStep = (row: unknown) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) return row;
@@ -291,9 +291,9 @@ export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: read
     const id = row && typeof row === 'object' ? (row as Record<string, unknown>).stepId : undefined;
     return typeof id === 'string' ? id : '';
   };
-  // In the order of the business steps; a row of an unknown id keeps its place after them.
+  // Only a row of a business step is kept, in the order of the business steps (SEC-2026-842).
   const ordered = (value: unknown) => rows(value)
-    .filter((row) => !technicalIds.has(idOf(row)))
+    .filter((row) => byId.has(idOf(row)))
     .map((row, i) => ({ row, i }))
     .sort((a, b) => (position.get(idOf(a.row)) ?? steps.length + a.i) - (position.get(idOf(b.row)) ?? steps.length + b.i))
     .map(({ row }) => withStep(row));

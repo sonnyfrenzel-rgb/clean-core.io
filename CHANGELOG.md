@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paraphrase, and the engine-only path named as the choice for code that may not leave.
 - The platform's own key stays Gemini (part A, after the quality comparison).
 
+### Security (audit of v3.0.14)
+
+- Security: SEC-2026-842 — the stored business layer keeps only the SOP and RACI rows of a business
+  step; a row of any other id is dropped when the layer is stored. Layers stored earlier render as before.
+
 ## [v3.0.14] — 2026-10-16
 
 - **Stale code says what moved** (owner 16.10.2026). Code generated before a decision was confirmed in
