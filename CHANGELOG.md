@@ -5,6 +5,37 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — on `dev`, since v3.0.16
+
+### Route, from requirements the owner states in the source (roadmap 3.0.17, owner 17.10.2026)
+
+- **The route recommendation reads the requirements a program's owner states in its comments, and says
+  they were stated, not read from the code.** The router used to read constructs only. A program with no
+  RFC to another system whose header binds operating requirements — one externally accessible service over
+  several independent ERP systems, no ERP owning the workflow state, no new ERP-side table authorized, SAP
+  BTP / CAP as the approved target — was recommended RAP, which was wrong for that owner. A new pure reader
+  (`lib/abap/stated-requirements.ts`) finds labelled requirement items (`NFR-07:`, `REQ-3`, `Requirement:`,
+  `Approved target:` …) and the items of a requirements block (`REQUIREMENTS`, `NON-FUNCTIONAL
+  REQUIREMENTS`, `OPERATING REQUIREMENTS`, `ARCHITECTURE`, `CONSTRAINTS`) in `*` and `"` comment lines,
+  keeps each with its lines and words, and classifies it as side-by-side, on-stack or neutral. A binding
+  statement (must, shall, required, mandated, approved, authorized, governance, a prohibition) counts; a
+  hedged one (could, consider, optional, preferred, future) is named but never sets the route; a mention in
+  passing ("unlike CAP", "see the BTP docs", "via the released RAP APIs") and commented-out code are no
+  statement at all, and a negated one ("must not run on SAP BTP") counts for the other side. Where binding
+  statements set a target and the code does not force the other route, the recommendation follows them: the
+  rationale quotes each statement with its lines, as stated in the source, and says what the code alone
+  would have recommended. Where the code forces the other route — an RFC call to another system against a
+  stated on-stack target, an enhancement, exit or modification (code that runs inside SAP's processing)
+  against a stated side-by-side one — the code's route stands and the conflict is named. The statements
+  never become findings or drivers, and the Clean Core score does not read them. Confidence for a route set
+  by a statement is 70 (75 with a second binding statement), below every route the code drives; a conflict
+  costs the code's route 15 points, contradictory statements 10. The Analyze route card names the stated
+  requirement with a line anchor where no construct drives the route; the option comparison's engine facts
+  say the same. Gated on the engine version (`STATED_REQUIREMENTS_FROM = '3.0.17'`): a run signed by an
+  earlier engine re-renders exactly as before, and the change goes live when `APP_VERSION` reaches v3.0.17.
+  None of the eight starter examples, the demo or the 300 benchmark cases changes route, score or words.
+  `tests/stated-requirements.spec.ts`.
+
 ## [v3.0.16] — 2026-10-16
 
 ### Fixed

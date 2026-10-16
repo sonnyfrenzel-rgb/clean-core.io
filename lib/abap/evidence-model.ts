@@ -12,6 +12,7 @@ import { BTP } from '../sap-naming';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
 import { precisionFixesApply } from './precision-fixes-gate';
+import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { gateOfLine, readConstantGates } from './constant-gates';
 import { readSecurityReviewTasksFrom } from './security-review';
 import { readSapCodeCopySignals } from './sap-code-copy';
@@ -113,6 +114,16 @@ export interface AbapEvidenceReport {
    * `findings` only; the screens recompute it from the stored source.
    */
   notes?: EvidenceNote[];
+  /**
+   * Requirements the program's owner states in the source's comments —
+   * labelled requirement items and the items of a requirements block, each
+   * with its lines and what it says about the target (`stated-requirements.ts`).
+   * From engine 3.0.17 (`STATED_REQUIREMENTS_FROM`); absent before it and when
+   * the source states none. Never a finding: a comment is not code evidence.
+   * The route reads them; like `notes`, they are recomputed from the stored
+   * source and not part of what the run signs as findings.
+   */
+  statedRequirements?: StatedRequirement[];
   summary: {
     criticalCount: number;
     highCount: number;
@@ -1704,5 +1715,16 @@ export function buildAbapEvidence(
   // The catalog answers the local function-module calls it lists (roadmap
   // 3.0.6); the rest stay not assessed.
   const coverage = assessCoverage(code, { answerCall: (name) => functionModuleCatalogAnswer(name, catalogSnapshot) });
-  return { findings, coverage, ...(notes.length ? { notes } : {}), summary };
+  // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the
+  // comments, beside the findings and never among them.
+  const statedRequirements = statedRequirementsApply(engineVersion === undefined ? APP_VERSION : engineVersion)
+    ? readStatedRequirements(code)
+    : [];
+  return {
+    findings,
+    coverage,
+    ...(notes.length ? { notes } : {}),
+    ...(statedRequirements.length ? { statedRequirements } : {}),
+    summary,
+  };
 }

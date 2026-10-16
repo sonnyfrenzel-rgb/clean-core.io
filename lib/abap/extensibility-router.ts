@@ -3,6 +3,7 @@ import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
 import { engineVersionAtLeast, scoreRuleFor } from '../score-rule';
 import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 import { precisionFixesApply } from './precision-fixes-gate';
+import { citeStatement, statedRequirementsApply, statedTargetOf, type StatedRequirement } from './stated-requirements';
 
 export interface DecisionCheckpoint {
   checkpointName: string;
@@ -36,7 +37,38 @@ export interface ExtensibilityRouteReport {
     supportingFindings: number;
   };
   assumptions: string[];
+  /**
+   * What the requirements the owner stated in the source did to the route
+   * (from 3.0.17, `STATED_REQUIREMENTS_FROM`). Absent for a run of an earlier
+   * engine and for a source that states no target, so such a report is the
+   * one it always was.
+   */
+  statedRequirements?: StatedRouteBasis;
 }
+
+/** The stated requirements that bear on the route, and what they did to it. */
+export interface StatedRouteBasis {
+  /** The target the binding statements set, or null (none, or contradictory). */
+  target: 'side-by-side' | 'on-stack' | null;
+  /** The route follows the stated target where the code alone would not. */
+  followed: boolean;
+  /** The code forces the route the statement does not name; the code's route stands. */
+  conflict: boolean;
+  /** Binding statements on both sides; they set no target. */
+  contradictory: boolean;
+  /** The items named in the rationale, in source order. */
+  items: Array<Pick<StatedRequirement, 'label' | 'lineStart' | 'lineEnd' | 'target' | 'binding'>>;
+}
+
+/**
+ * Finding kinds that run inside SAP's own processing — an enhancement or BAdI
+ * implementation, an exit or VOFM routine, a modification. A requirement that
+ * states side-by-side as the target does not move them: they are where SAP's
+ * transaction calls them, and a separate runtime is not called there. So
+ * where one is found, a stated side-by-side target is a conflict, not the route
+ * (`STATED_REQUIREMENTS_FROM`).
+ */
+const IN_PROCESS_KINDS: ReadonlySet<string> = new Set(['enhancement', 'hook-implementation', 'modification']);
 
 /**
  * A finding kind in the words a report may print.
@@ -288,8 +320,11 @@ export type RouteDriverFinding = {
 
 /**
  * The constructs that choose a side-by-side route, in the order the rule reads
- * them. Empty means on-stack: `needsBtp` is `drivers.length > 0` and nothing
- * else.
+ * them. Empty means the code forces no split: `needsBtp` is `drivers.length >
+ * 0` and nothing else. From 3.0.17 a route can still be side-by-side with no
+ * driver, when a requirement the owner states in the source sets it
+ * (`STATED_REQUIREMENTS_FROM`, `routeExtensibility`) — a statement, never a
+ * driver.
  *
  * From 3.0.12 (`ON_STACK_CONSTRUCTS_FROM`) one construct chooses it: an RFC
  * call to another system. Before, six did — custom persistence and direct
@@ -536,7 +571,22 @@ export function routeExtensibility(
   // (`GUI_FILE_NO_ROUTE_DRIVER_FROM`); a run of that engine keeps that rule.
   const guiFileRule = guiFileDrivesRoute(engineVersion);
 
-  const recommendedRoute = needsBtp ? SIDE_BY_SIDE_ROUTE : IN_APP_ROUTE;
+  // From 3.0.17 (`STATED_REQUIREMENTS_FROM`, owner decision 17.10.2026): a
+  // target the program's owner states as binding in the source sets the route
+  // when the code does not force the other one. Code can force side-by-side
+  // (`drivers`) or on-stack (a construct that runs inside SAP's processing,
+  // `IN_PROCESS_KINDS`). Only a stated side-by-side target can move the route:
+  // without drivers the code's route is on-stack already. The statement never
+  // becomes a finding or a driver, and the score does not read it.
+  const stated = statedRequirementsApply(engineVersion) ? statedTargetOf(evidence.statedRequirements) : null;
+  const inProcess = findings.filter((f) => IN_PROCESS_KINDS.has(f.kind));
+  const followStatedSide = Boolean(stated && stated.target === 'side-by-side' && !needsBtp && inProcess.length === 0);
+  const statedConflict = Boolean(
+    stated && ((stated.target === 'side-by-side' && !needsBtp && inProcess.length > 0) || (stated.target === 'on-stack' && needsBtp)),
+  );
+  const routeBtp = needsBtp || followStatedSide;
+
+  const recommendedRoute = routeBtp ? SIDE_BY_SIDE_ROUTE : IN_APP_ROUTE;
 
   const btpTriggerList = drivers.map((d) => d.label).join(', ');
   const presentCategories = [...new Set(findings.map((f) => f.kind))].map(labelFor).join(', ');
@@ -649,6 +699,20 @@ export function routeExtensibility(
     confidenceScore = Math.min(95, 80 + customWeight + outboundRfc.length * 5);
   } else {
     confidenceScore = Math.min(90, 70 + standardReads.length * 5);
+  }
+  // From 3.0.17. A route set by a stated requirement rests on words the engine
+  // cannot verify, not on constructs it read: 70, the floor of a code-based
+  // on-stack route, and 5 more when a second binding statement says the same
+  // (75 at most — below every side-by-side route the code drives). A route the
+  // owner's binding statement contradicts keeps the code's reason but loses 15,
+  // and statements that contradict each other cost 10: the requirement has to
+  // be settled before either route is certain.
+  if (followStatedSide && stated) {
+    confidenceScore = Math.min(75, 70 + (stated.binding.length - 1) * 5);
+  } else if (statedConflict) {
+    confidenceScore = Math.max(40, confidenceScore - 15);
+  } else if (stated?.contradictory) {
+    confidenceScore = Math.max(40, confidenceScore - 10);
   }
 
   // Rationale
@@ -772,7 +836,30 @@ export function routeExtensibility(
     rationale = `${rationale} Part of the program was not read. ${includesNotReadSentence}`;
   }
 
-  const targetArtifact = needsBtp ? 'CAP Node.js / Java Application' : 'RAP Business Object';
+  // From 3.0.17: what the owner stated in the source, said as stated and
+  // never as read from the code (`STATED_REQUIREMENTS_FROM`).
+  const statedLines = (list: readonly StatedRequirement[]) => list.map((r) => citeStatement(r, false)).join(', ');
+  const statedQuotes = (list: readonly StatedRequirement[]) => list.map((r) => citeStatement(r)).join('; ');
+  if (stated && followStatedSide) {
+    rationale = `Recommended side-by-side on ${BTP} because the program's owner states it as a binding requirement — stated in the source, not read from the code: ${statedQuotes(stated.binding)}. No construct in the code forces the program on-stack, so the stated target is followed. Read from the code alone, the route would be on-stack: ${rationale}`;
+  } else if (stated && statedConflict && stated.target === 'side-by-side') {
+    const first = inProcess.reduce((min, f) => Math.min(min, f.lineStart), inProcess[0].lineStart);
+    const kinds = [...new Set(inProcess.map((f) => labelFor(f.kind)))].join(', ');
+    rationale = `${rationale} The program's owner states side-by-side on ${BTP} as the target — stated in the source, not read from the code: ${statedQuotes(stated.binding)}. The code contradicts it: the ${kinds} (from line ${first}) run inside SAP's own processing and do not move off the stack as they stand, so the route stays with the code. The conflict has to be settled on the requirement.`;
+  } else if (stated && statedConflict) {
+    rationale = `${rationale} The program's owner states on-stack as the target — stated in the source, not read from the code: ${statedQuotes(stated.binding)}. The code contradicts it: ${btpTriggerList} (from line ${drivers[0].firstLine}) force a side-by-side split, so the route stays with the code. The conflict has to be settled on the requirement.`;
+  } else if (stated && stated.target) {
+    rationale = `${rationale} The program's owner states the same target in the source — stated there, not read from the code: ${statedLines(stated.binding)}.`;
+  } else if (stated && stated.contradictory) {
+    rationale = `${rationale} The requirements stated in the source contradict each other — ${statedLines(stated.sides['side-by-side'])} name side-by-side, ${statedLines(stated.sides['on-stack'])} name on-stack — so they set no target, and the route stays with the code.`;
+  } else if (stated && stated.soft.length > 0) {
+    rationale = `${rationale} The source names a target without binding it — ${stated.soft.map((r) => `${r.target} in ${citeStatement(r, false)}`).join(', ')} — which sets no route.`;
+  }
+
+  const targetArtifact = routeBtp ? 'CAP Node.js / Java Application' : 'RAP Business Object';
+  const statedSideSentence = stated && followStatedSide
+    ? `a requirement stated in the source, not read from the code: ${statedLines(stated.binding)}`
+    : '';
 
   // 3. Build checkpoints
   const checkpoints: DecisionCheckpoint[] = [
@@ -814,14 +901,15 @@ export function routeExtensibility(
     {
       checkpointName: legacyRule ? 'In-App Developer Extensibility (Tier 1)' : 'In-App Developer Extensibility (ABAP Cloud)',
       question: 'Is the logic compatible with strict ABAP Cloud (RAP) on the S/4HANA stack?',
-      evaluation: needsBtp
+      evaluation: (needsBtp
         ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.${standardWritesAlwaysNamed ? standardWritesTooSentence : ''}${commitSentence}`
         : standardWritesOnStack
         ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by ${standardWriteRemedy}.${commitSentence}`
         : onStackRework
         ? `Partial compatibility. What was found — ${reworkList} — does not run unchanged on ABAP Cloud${reworkCheckpoint}`
-        : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.',
-      resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+        : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.')
+        + (followStatedSide ? ` The target is set off the stack by ${statedSideSentence}.` : ''),
+      resultState: routeBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
       cleanCoreImpact: legacyRule
         ? 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
         : 'Target: clean core level A (ABAP Cloud) once the code uses released APIs only. Not established for the analysed code.'
@@ -831,10 +919,12 @@ export function routeExtensibility(
       question: 'Does the extension require external persistency, non-ABAP runtime, or decoupling?',
       evaluation: needsBtp
         ? `Required by the evidence that chose this route: ${btpTriggerList}.`
+        : followStatedSide
+        ? `Required by ${statedSideSentence}. Nothing the engine read in the code requires a separate ${BTP} runtime.`
         : onStackRework
         ? `Optional. Nothing found requires a separate ${BTP} runtime; what was found — ${reworkList} — is replaced on-stack.`
         : `Optional. Simple reads do not justify the architectural overhead of a separate ${BTP} runtime.`,
-      resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+      resultState: routeBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
       cleanCoreImpact: 'Target: decoupled from the S/4HANA core, with its own lifecycle. Not established for the analysed code.'
     }
   ];
@@ -891,6 +981,8 @@ export function routeExtensibility(
       // What chose the route, not a claim that CAP persistence is needed or an
       // isolation design exists (QA full review of v2.20.0, 2b515958f925).
       ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.`
+      : followStatedSide
+      ? `Recommended route: set by ${statedSideSentence}; no construct in the code points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.`
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
     pros: [
       'Maximizes upgrade readiness and isolates extensions',
@@ -909,6 +1001,9 @@ export function routeExtensibility(
       ? customWrites.length + bdcCalls.length + rfcCalls.length + nativeSql.length + (guiFileRule ? fileAccess.length : 0) + (deploymentModel === 'public' ? standardWrites.length : 0)
       // From 3.0.12 the one driver is an RFC call to another system.
       : outboundRfc.length
+    // A route set by a stated requirement has no finding behind it.
+    : followStatedSide
+    ? 0
     : standardReads.length;
 
   const evidenceCounts = {
@@ -984,6 +1079,22 @@ export function routeExtensibility(
   if (coverageIncomplete && findings.length > 0) {
     assumptions.push(`Beyond the findings, the engine did not assess ${unassessedSummary}.`);
   }
+  if (stated && stated.target) {
+    assumptions.push(`The requirements stated in the source (${statedLines(stated.binding)}) are taken as written: the engine reads them, it does not verify that they are current or approved.`);
+  }
+
+  const statedBasis: StatedRouteBasis | null = stated && (stated.target || stated.contradictory || stated.soft.length > 0)
+    ? {
+        target: stated.target,
+        followed: followStatedSide,
+        conflict: statedConflict,
+        contradictory: stated.contradictory,
+        items: (stated.target ? stated.binding : stated.contradictory ? [...stated.sides['side-by-side'], ...stated.sides['on-stack']] : stated.soft)
+          .slice()
+          .sort((a, b) => a.lineStart - b.lineStart)
+          .map(({ label, lineStart, lineEnd, target, binding }) => ({ label, lineStart, lineEnd, target, binding })),
+      }
+    : null;
 
   return {
     recommendedRoute,
@@ -1012,5 +1123,6 @@ export function routeExtensibility(
     },
     evidenceCounts,
     assumptions,
+    ...(statedBasis ? { statedRequirements: statedBasis } : {}),
   };
 }

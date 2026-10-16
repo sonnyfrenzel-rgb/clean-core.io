@@ -176,7 +176,13 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
   const writes = f.filter((x) => WRITE_KINDS.has(x.kind));
   const files = f.filter((x) => x.kind === 'gui-download');
   const program: string[] = [];
-  if (input.recommended) {
+  // From engine 3.0.17 a side-by-side route with a bound deployment and no
+  // driver is set by a requirement the owner states in the source
+  // (`STATED_REQUIREMENTS_FROM`): it is not "from the constructs below".
+  const statedRoute = input.recommended === 'side-by-side-cap' && input.drivers.length === 0 && input.deployment !== null;
+  if (statedRoute) {
+    program.push('The router recommends a side-by-side CAP application from a requirement the owner states in the source, not from a construct in the code — the rationale of the route names it with its lines. A recommendation to compare, not a reason in itself.');
+  } else if (input.recommended) {
     program.push(`The router recommends ${input.recommended === 'side-by-side-cap' ? 'a side-by-side CAP application' : 'an in-app RAP extension'} from the constructs below — a recommendation to compare, not a reason in itself.`);
   }
   if (input.requirements) {
@@ -199,7 +205,9 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
     cap.push(`The route's drivers: ${named} — the reason a split is recommended, to be weighed against replacing them on-stack.`);
   } else {
     rap.push('No construct that forces a side-by-side split was found.');
-    cap.push('No construct in the code forces a split: a side-by-side application needs a requirement the code does not show (external users, several systems, own orchestration, scale).');
+    cap.push(statedRoute
+      ? 'No construct in the code forces a split: the side-by-side recommendation rests on a requirement stated in the source, which the engine reads as written and does not verify.'
+      : 'No construct in the code forces a split: a side-by-side application needs a requirement the code does not show (external users, several systems, own orchestration, scale).');
   }
   if (files.length) rap.push('Frontend file transfers move on-stack: a download to a list report export, an upload to a RAP large object field (S/4HANA 2022 or later).');
   rap.push(input.deployment === 'public'
