@@ -12,7 +12,7 @@ import { runGeneration, type FillModel, type Verify } from '../lib/transformatio
 import { LEASE_GATE_REPAIR_CALLS, LEASE_MAX_CALLS } from '../lib/transformation/lease';
 import type { FillRequest, FillRequestUnit } from '../lib/transformation/types';
 import { judgeScenarios, loadPrograms, loadSource, packageDemoOf } from '../scripts/acceptance/suite';
-import { compareScenario, demoCaseVerdicts, scenarioCases, type CaseScenario, type DemoCaseRuns, type DemoCaseSummary, type PackageDemo } from '../scripts/acceptance/scenario-cases';
+import { canon, compareScenario, demoCaseVerdicts, scenarioCases, type CaseScenario, type DemoCaseRuns, type DemoCaseSummary, type PackageDemo } from '../scripts/acceptance/scenario-cases';
 import { pathToFileURL } from 'node:url';
 import { writePackage } from './helpers/transformation-scaffold';
 
@@ -292,6 +292,12 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
     expect(compareScenario({ rows: [{ cid: 'C1' }] }, ran({ rows: [{ cid: 'C1' }, { cid: 'C2' }] })).verdict).toBe('fail');
     // A value the output does not hold: not judged — never a pass.
     expect(compareScenario({ status: 'OK', hidden_known: 3 }, ran({ local: { gvStatus: 'OK' } }))).toEqual({ verdict: 'not-judged', located: 1, total: 2, differ: 0 });
+    // QA of ec243fb63dd7: a message matches only as itself, an identifier keeps its zeros, null is not empty text.
+    expect(compareScenario({ issues: ['failed'] }, ran({ issues: ['not failed'] })).verdict).toBe('fail');
+    expect(compareScenario({ issues: ['Failed '] }, ran({ issues: ['failed'] })).verdict).toBe('pass');
+    expect(canon('001')).not.toBe(canon(1));
+    expect(canon('1.50')).toBe(canon(1.5));
+    expect(canon(null)).not.toBe(canon(''));
     expect(compareScenario({}, ran()).verdict).toBe('not-judged');
     // The first real SD run (15.10.2026): the rows under other names, a few scalars found and off — not a fail on 5 of
     // 115 values, but not judged, with the counts.
@@ -316,6 +322,9 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
     expect(stub['CASE-00']).toEqual({ ran: true, verdict: 'not-run: demo case 0 reached 1 function(s) still left as stubs' });
     const none = demoCaseVerdicts(scenarios.slice(0, 1), cases, { executed: false, reason: 'not executed: no Node >= 25', byNumber: {} });
     expect(none['CASE-00']).toEqual({ ran: false, verdict: 'not-run: demo case 0 — not executed: no Node >= 25' });
+    // A reason the package wrote is package output and stays out of the report (QA 32ab392208dd).
+    const own = demoCaseVerdicts(scenarios.slice(0, 1), cases, { ...runs, byNumber: { '0': { state: 'not-run', reason: 'balance 4711.00 EUR' } } });
+    expect(own['CASE-00']).toEqual({ ran: false, verdict: 'not-run: demo case 0 — the package reported it not run' });
 
     // The suite counts them: ran, matched, failed — and a RAP track never runs them here.
     const file = { program: 'x', scenarios: scenarios.map((s) => ({ ...s, title: 't' })) };

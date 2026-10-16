@@ -78,13 +78,17 @@ const normKey = (k: string) => k.toLowerCase().replace(/[^a-z0-9]/g, '');
 const bareKey = (k: string) => normKey(k.replace(/^(?:gv|gs|gt|lv|ls|lt|g|l|p|s)_/i, '').replace(/^(?:gv|gs|gt|lv|ls|lt)(?=[A-Z])/, ''));
 const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** A value as compared: decimal text and numbers by their exact value, 'X' and '' as true and false, text trimmed. */
+/**
+ * A value as compared: numbers and decimal text by their exact value, 'X' and '' as true and false, text trimmed.
+ * Null stays apart from empty text, and digits without a decimal point keep their leading zeros unless the value is
+ * a number: "001" is an identifier, not 1 (QA 6d078b12be38).
+ */
 export function canon(v: unknown): string {
-  if (v === null || v === undefined) return '';
+  if (v === null || v === undefined) return '\u0000null';
   if (typeof v === 'boolean') return v ? 'X' : '';
   const t = String(v).trim();
   const m = /^([-+]?)(\d+)(?:\.(\d+))?$/.exec(t);
-  if (m) {
+  if (m && (typeof v === 'number' || m[3] !== undefined || !/^[-+]?0\d/.test(t))) {
     const whole = m[2].replace(/^0+(?=\d)/, '');
     const frac = (m[3] ?? '').replace(/0+$/, '');
     const zero = /^0+$/.test(whole) && frac === '';
@@ -171,7 +175,8 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
       leaf(true, said.length === value.length);
       for (const m of value) {
         const w = m.replace(/\s+/g, ' ').trim().toLowerCase();
-        leaf(true, said.some((s) => s === w || (w.length > 0 && s.includes(w))));
+        // Equal after case and whitespace, never a substring: "not failed" is not "failed" (QA 894abf0faca5).
+        leaf(true, said.some((s) => s === w));
       }
       return;
     }
@@ -207,7 +212,8 @@ export function demoCaseVerdicts(scenarios: readonly CaseScenario[] | null, case
     if (!runs || !runs.executed || !r) {
       out[s.id] = { ran: false, verdict: `not-run: demo case ${n} — ${(runs?.reason ?? 'the harness did not run it').slice(0, 160)}` };
     } else if (r.state === 'not-run') {
-      out[s.id] = { ran: false, verdict: `not-run: demo case ${n} — ${r.reason.slice(0, 160)}` };
+      // The package's own reason is package output: it never leaves the comparison (QA 32ab392208dd).
+      out[s.id] = { ran: false, verdict: `not-run: demo case ${n} — the package reported it not run` };
     } else if (r.state === 'threw') {
       // The package's code threw on the original's own case: the package fails it.
       out[s.id] = { ran: true, verdict: 'fail', detail: 'the package threw on the case' };
