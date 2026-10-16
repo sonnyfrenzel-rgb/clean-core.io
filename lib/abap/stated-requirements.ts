@@ -117,9 +117,13 @@ function looksLikeCode(t: string): boolean {
   return first === first.toLowerCase() && codeToken.test(t) && /[.,]$/.test(t);
 }
 
-/** A labelled requirement item: `NFR-07:`, `REQ 3`, `[ADR-2]`, `Requirement:`, `Approved target:`. */
+/**
+ * A labelled requirement item: `NFR-07:`, `REQ 3`, `[ADR-2]`, `Requirement:`, `Approved target:`. A range or a list of
+ * labels (`NFR-01..06 require …`, `REQ-1–4`, `BR-2, 3`, `NFR-1/2`) refers to items and labels none of its own: read as a
+ * label, it turned into "NFR-01" with the words ".06 require …".
+ */
 const CODE_LABEL =
-  /^[[(]?((?:NFR|FR|REQ|Req|REQT|RQ|BR|AR|ADR|CONSTR|OPS|ARC|ARCH|GOV|IR)s?[-_ .]?\d+(?:\.\d+)*[a-z]?)[\])]?(?:\s*[:.)\-–—]\s*|\s+)(?=\S)/;
+  /^[[(]?((?:NFR|FR|REQ|Req|REQT|RQ|BR|AR|ADR|CONSTR|OPS|ARC|ARCH|GOV|IR)s?[-_ .]?\d+(?:\.\d+)*[a-z]?)(?!\s*(?:\.\.|[-–—]\s*\d|to\s+\d|,\s*\d|\/\s*\d))[\])]?(?:\s*[:.)\-–—]\s*|\s+)(?=\S)/;
 const WORD_LABEL =
   /^((?:non[- ]?functional\s+)?requirement(?:\s+\d+(?:\.\d+)*)?|operating\s+requirement|constraint(?:\s+\d+)?|architecture\s+(?:decision|requirement|constraint)(?:\s+\d+)?|target\s+architecture|approved\s+target(?:\s+architecture)?|governance(?:\s+decision)?|mandated\s+target)\s*:\s*(?=\S)/i;
 

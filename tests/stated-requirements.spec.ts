@@ -141,6 +141,17 @@ ${READ_ONLY_CODE}`;
     expect(items[2].heading).toBe('ARCHITECTURE');
   });
 
+  test('a range or a list of labels refers to items and is no label of its own', () => {
+    // "NFR-01..06 require …" was read as the label NFR-01 with the words ".06 require …", and the route rationale
+    // quoted them so.
+    for (const ref of ['NFR-01..06', 'REQ-1–4', 'BR-2, 3', 'NFR-1/2', 'NFR-01 to 06']) {
+      const src = `* ARCHITECTURE\n* ${ref} require an independent side-by-side application on SAP BTP.\n${READ_ONLY_CODE}`;
+      const items = readStatedRequirements(src);
+      expect(items.map((r) => r.label), ref).toEqual([null]);
+      expect(items[0].text, ref).toContain(`${ref} require`);
+    }
+  });
+
   test('commented-out code is not a statement, not even inside a requirements block', () => {
     const src = `* REQUIREMENTS
 * CALL FUNCTION 'Z_PUSH_TO_BTP' DESTINATION 'BTP_CAP'.
