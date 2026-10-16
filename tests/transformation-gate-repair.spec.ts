@@ -144,9 +144,10 @@ test.describe('the largest units of the seven acceptance programs, measured (loc
         }
       }
     }
-    // Only the holdout's routines whose ABAP alone is near or past the cap (U09: 30,843 characters of ABAP) — and
-    // before 14.10.2026 SD's RAP U10 (30,398) was among them.
-    expect(over.sort()).toEqual(['pm-shutdown-slot-plan/node U09', 'pm-shutdown-slot-plan/rap U09', 'pm-shutdown-slot-plan/rap U13']);
+    // Only the holdout's VALIDATE_ORDER on the RAP route (U05). Before scaffold 15 its APPLY_CASE (then U09, 30,843
+    // characters of ABAP, on both routes) was over the cap too: the case switch of the original's demo cases, now demo
+    // data and never filled by a model. Before 14.10.2026 SD's RAP U10 (30,398) was among them.
+    expect(over.sort()).toEqual(['pm-shutdown-slot-plan/rap U05']);
   });
 });
 

@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   say SAMPLE DATA. Every demo routine of the shipped examples and the test fixtures is still recognised; the QM
   program now carries all its checks (54 in units, none left out). Scaffold version 15.
   `tests/transformation-unit-plan.spec.ts`.
+- **Transformation: the original's demo cases are demo data whatever their routines are called.** The engine
+  already read the demo cases by their shape for the tests (the routine that builds the baseline rows from
+  literals, and the one that switches the cases), but left them in the packages unless their names said demo.
+  The QM program's `BUILD_BASELINE` — 580 lines of literal rows — went to the model to "fill" in five parts, and
+  the PM program's `APPLY_CASE` was its largest unit (30,843 characters of ABAP, over the prompt cap on both
+  routes). Both are now demo data like `BUILD_DEMO`: the model fills only the logic. PM: 17 units instead of 25,
+  QM: 14 instead of 20, none over budget; the two shipped examples and the test fixtures are unchanged.
+  `tests/transformation-unit-plan.spec.ts`, `tests/transformation-gate-repair.spec.ts`.
 
 - **The assistant's answer has room on a desktop** (owner 16.10.2026: "the answer window is far too small").
   The panel was 520 × 384 px and kept its six suggestions after the first question, so they took half of it

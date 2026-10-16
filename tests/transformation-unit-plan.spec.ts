@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { deriveEngineCases } from '../lib/testing-engine-cases';
 import { PlanRefusal, fillGuardsOf, planUnits } from '../lib/transformation';
 import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
@@ -106,6 +108,19 @@ test.describe('the CO shape', () => {
     const checks = plan.guards.filter((g) => g.line >= 9 && g.line <= 19);
     expect(checks.length).toBeGreaterThan(0);
     expect(checks.every((g) => g.carried)).toBe(true);
+  });
+
+  test('the demo cases are demo data by their shape: the baseline and the case switch, whatever their names (scaffold 15)', () => {
+    // The QM acceptance program builds its baseline in BUILD_BASELINE (580 lines of literal rows) and the PM
+    // program switches its cases in APPLY_CASE; neither name says demo, and both went to the model to fill.
+    const original = fs.readFileSync(path.join(__dirname, 'fixtures', 'golden-master', 'three-cases.abap'), 'utf8');
+    const source = original.replace(/build_demo/gi, 'build_baseline');
+    const { plan } = planOf(source);
+    const fixtures = plan.notCarried.filter((n) => n.reason === 'fixture').map((n) => n.routine);
+    expect(fixtures).toEqual(expect.arrayContaining(['BUILD_BASELINE', 'APPLY_CASE', 'ADD_CLAIM', 'ADD_RATE']));
+    // CREDIT, the logic, is carried — folded into the orchestrator, as a small routine with one caller is.
+    expect(plan.units.some((u) => u.abap.some((a) => a.routine === 'CREDIT'))).toBe(true);
+    expect(plan.units.map((u) => u.routine)).not.toContain('APPLY_CASE');
   });
 
   test('guards: the selection-screen check belongs to the orchestrator; a routine calls its refusing guards first', () => {

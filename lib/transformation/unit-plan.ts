@@ -37,6 +37,7 @@ import { readGuardsFrom, readOriginalContract, type OriginalContract } from '../
 import { readStatements, type AbapStatement } from '../abap/statement-reader';
 import { materialRules, type MaterialRule } from '../testing-rule-trace';
 import { sliceFor } from './abap-slice';
+import { readGoldenMaster } from './golden-master';
 import { assignBaseValues } from './base-values';
 import { guardBasisReader } from './guard-basis';
 import { camelName, kebab, pascalName, rapNameOf, titleOf } from './naming';
@@ -588,12 +589,18 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   const reachable = routines.filter((r) => r.kind === 'method' || !unreachable.has(r.name));
   const helper = new Set<string>();
   const fixture = new Set<string>();
+  // The original's demo cases, read by their shape rather than their name (`golden-master.ts`): the routine
+  // that builds the baseline rows from literals and the one that holds the case switch are demo data too.
+  // The QM acceptance program's BUILD_BASELINE (580 lines of literal rows) went to the model in five parts,
+  // and the PM program's APPLY_CASE as a unit over budget (scaffold 15, 16.10.2026).
+  const demoCases = readGoldenMaster(facts.source);
+  const demoByShape = new Set(demoCases ? [demoCases.baseRoutine.name, demoCases.caseRoutine.name].filter(Boolean).map((n) => n.toUpperCase()) : []);
   for (const r of reachable) {
     if (r.kind !== 'form') continue;
     const span = r.lineEnd - r.lineStart + 1;
     const nCallers = callers.get(r.name)?.size ?? 0;
     // Demo data first: a small demo routine is still demo data, not a helper of its caller.
-    if (DEMO_NAME.test(r.name)) fixture.add(r.name);
+    if (DEMO_NAME.test(r.name) || demoByShape.has(r.name)) fixture.add(r.name);
     else if (span < FOLD_MAX_LINES && rulesIn(r) === 0 && guardsIn(r) === 0 && writesIn(r) === 0 && nCallers === 1) helper.add(r.name);
   }
   // Reached only from demo-data routines: also a fixture (§7.1 rule 6).

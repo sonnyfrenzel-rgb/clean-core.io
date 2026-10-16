@@ -117,8 +117,10 @@ export const PLAN_VERSION = 2;
  * 15 (3.0.17, the acceptance set, 16.10.2026): both tracks — a routine is demo data by a name *part* that starts
  * with DEMO, FIXTURE or TESTDATA, or says SAMPLE DATA, never by "SAMPLE" anywhere in the name: the QM program's
  * ASSESS_SAMPLE judges the inspection sample, and it was dropped as a fixture with its eight checks, so neither
- * package carried the program's core. Every other demo routine of the examples and fixtures is still one.
- * Nothing signed changes (§12.3).
+ * package carried the program's core. Every other demo routine of the examples and fixtures is still one. The
+ * original's demo cases are demo data by their shape too (`golden-master.ts`): the routine that builds the baseline
+ * rows from literals and the one that holds the case switch — QM's BUILD_BASELINE (580 lines) went to the model in
+ * five parts, PM's APPLY_CASE (30,843 characters) as its largest unit. Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 15;
 
