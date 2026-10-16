@@ -9,9 +9,11 @@
  *   npx tsx scripts/sync-cloudification-repo.ts pce-latest    # syncs a PCE file
  *   npx tsx scripts/sync-cloudification-repo.ts all           # syncs every registry entry
  *
- * Designed to run in CI (see .github/workflows/sync-catalog.yml): the workflow
- * opens a PR when the generated artifact changes, so every catalog update is
- * reviewed, versioned and lands in the Audit Pack traceability chain.
+ * Designed to run in CI (see .github/workflows/sync-catalog.yml): when the
+ * generated artifact changes, the workflow pushes it to the branch
+ * `chore/sync-cloudification-repo` (no pull request since 2026-09-14), from
+ * where it is reviewed and brought in through `dev` — so every catalog update
+ * is reviewed, versioned and lands in the Audit Pack traceability chain.
  */
 
 import { createHash } from 'crypto';
