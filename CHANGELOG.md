@@ -60,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Security: SEC-2026-842 — the stored business layer keeps only the SOP and RACI rows of a business
   step; a row of any other id is dropped when the layer is stored. Layers stored earlier render as before.
+- Security: SEC-2026-843, SEC-2026-845 — the audit-pack verifier, on the page and on the command line,
+  counts an archive's entries from its bytes and refuses one over the limit, or a ZIP64 container, before
+  unpacking it.
 
 ## [v3.0.14] — 2026-10-16
 

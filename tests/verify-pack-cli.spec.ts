@@ -342,3 +342,20 @@ test('the key document the pack names is never fetched', async () => {
     server.close();
   }
 });
+
+test('an archive over the entry limit is refused before it is unpacked here too (SEC-2026-845)', async () => {
+  // One entry more than the limit, the first local header unreadable: unpacking
+  // fails with JSZip's own error, so only a count made first names the limit.
+  const zip = new JSZip();
+  for (let i = 0; i <= 1000; i++) zip.file(`f${i}.md`, 'x');
+  const bytes = Buffer.from(await zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' }));
+  bytes[0] = 0;
+  const end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  bytes.writeUInt16LE(2, end + 8);
+  bytes.writeUInt16LE(2, end + 10);
+  const packPath = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+  writeFileSync(packPath, bytes);
+  const { code, out } = run([packPath]);
+  expect(out).toContain('more than 1000 entries');
+  expect(code).toBe(2);
+});

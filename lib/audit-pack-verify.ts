@@ -185,19 +185,12 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
     if (view.getUint32(i, true) === EOCD) return unchecked('the archive carries more than one end record near its end');
   }
 
-  const disk = view.getUint16(eocd + 4, true);
-  const directoryDisk = view.getUint16(eocd + 6, true);
-  const totalOnDisk = view.getUint16(eocd + 8, true);
-  const total = view.getUint16(eocd + 10, true);
-  const directorySize = view.getUint32(eocd + 12, true);
-  let offset = view.getUint32(eocd + 16, true);
-  const commentLength = view.getUint16(eocd + 20, true);
+  const end = readEndRecord(view, eocd);
+  const { disk, directoryDisk, totalOnDisk, total, directorySize, commentLength } = end;
+  let offset = end.offset;
   // The ZIP64 markers. This platform issues a handful of small files and never
   // a ZIP64 container, so an archive wearing them is not one of ours.
-  if (
-    total === 0xffff || totalOnDisk === 0xffff || disk === 0xffff || directoryDisk === 0xffff
-    || offset === 0xffffffff || directorySize === 0xffffffff
-  ) return unchecked('the archive uses the ZIP64 format, which this check does not read');
+  if (end.zip64) return unchecked('the archive uses the ZIP64 format, which this check does not read');
   // One end record, ending the archive; one disk; the directory directly in
   // front of the end record, at the offset it states. The issuer writes exactly
   // that, so every genuine pack meets each of these.
@@ -237,6 +230,59 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   }
   if (offset !== eocd) return unchecked('the central directory does not run up to the end record');
   return { duplicates: [...duplicates].sort(), counted: true };
+}
+
+/** The fields of the end-of-central-directory record at `at`, and whether any of them is a ZIP64 marker. */
+function readEndRecord(view: DataView, at: number) {
+  const disk = view.getUint16(at + 4, true);
+  const directoryDisk = view.getUint16(at + 6, true);
+  const totalOnDisk = view.getUint16(at + 8, true);
+  const total = view.getUint16(at + 10, true);
+  const directorySize = view.getUint32(at + 12, true);
+  const offset = view.getUint32(at + 16, true);
+  const commentLength = view.getUint16(at + 20, true);
+  const zip64 = total === 0xffff || totalOnDisk === 0xffff || disk === 0xffff || directoryDisk === 0xffff
+    || offset === 0xffffffff || directorySize === 0xffffffff;
+  return { disk, directoryDisk, totalOnDisk, total, directorySize, offset, commentLength, zip64 };
+}
+
+/**
+ * Why the archive may not be unpacked, judged from its bytes before JSZip
+ * builds an entry for each record, or null. The entry count is read where
+ * JSZip will read it: the last end record in the file, and the central
+ * directory directly in front of it, walked record by record (the count the
+ * end record declares is a claim, and JSZip itself walks until the records
+ * run out). A ZIP64 container is refused outright; no pack this service
+ * issues is one (SEC-2026-843). An archive this cannot place is left to
+ * JSZip, which refuses it on its own.
+ */
+export function archiveEntryLimitDefect(data: unknown, limit: number = PACK_LIMITS.entries): string | null {
+  let bytes: Uint8Array;
+  if (data instanceof Uint8Array) bytes = data;
+  else if (data instanceof ArrayBuffer) bytes = new Uint8Array(data);
+  else return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  for (let i = bytes.byteLength - 4; i >= 0; i--) {
+    if (view.getUint32(i, true) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0 || eocd + 22 > bytes.byteLength) return null;
+  const end = readEndRecord(view, eocd);
+  const tooMany = `The archive holds more than ${limit} entries; no pack this service issues comes near that.`;
+  if (end.zip64) return 'The archive uses the ZIP64 format; no pack this service issues does.';
+  if (end.total > limit || end.totalOnDisk > limit) return tooMany;
+  let offset = eocd - end.directorySize;
+  if (offset < 0) return null;
+  let walked = 0;
+  while (offset + 46 <= bytes.byteLength && view.getUint32(offset, true) === 0x02014b50) {
+    walked += 1;
+    if (walked > limit) return tooMany;
+    offset += 46 + view.getUint16(offset + 28, true) + view.getUint16(offset + 30, true) + view.getUint16(offset + 32, true);
+  }
+  return null;
 }
 
 export interface FileVerifyResult {
@@ -549,6 +595,9 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     if (typeof inputBytes === 'number' && inputBytes > PACK_LIMITS.archiveBytes) {
       throw new Error(`The archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no pack this service issues comes near that.`);
     }
+    // Counted from the bytes before JSZip builds an entry for each record (SEC-2026-843).
+    const entryDefect = archiveEntryLimitDefect(inputData);
+    if (entryDefect) throw new Error(entryDefect);
     const zip = await JSZip.loadAsync(inputData);
     if (Object.keys(zip.files).length > PACK_LIMITS.entries) {
       throw new Error(`The archive holds more than ${PACK_LIMITS.entries} entries; no pack this service issues comes near that.`);

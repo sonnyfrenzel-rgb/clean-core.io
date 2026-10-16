@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { createHash } from 'crypto';
-import { verifyAuditPack, zipKey, duplicateEntryNames } from '../lib/audit-pack-verify';
+import { verifyAuditPack, zipKey, duplicateEntryNames, archiveEntryLimitDefect, PACK_LIMITS } from '../lib/audit-pack-verify';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 
 /**
@@ -423,5 +423,40 @@ test.describe('a user-attested file', () => {
     const result = await verifyAuditPack((await zip.generateAsync({ type: 'nodebuffer' })) as unknown as Blob);
     expect(result.manifestHashValid).toBe(false);
     expect(result.integrityValid).toBe(false);
+  });
+});
+
+test.describe('the entry limit is counted from the bytes, before the archive is unpacked (SEC-2026-843)', () => {
+  // An archive with one entry more than the limit, whose first local header is
+  // unreadable: unpacking it fails with JSZip's own error, so only a count made
+  // before unpacking answers with the limit.
+  async function overLimit() {
+    const zip = new JSZip();
+    for (let i = 0; i <= PACK_LIMITS.entries; i++) zip.file(`f${i}.md`, 'x');
+    const bytes = Buffer.from(await zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' }));
+    bytes[0] = 0;
+    return bytes;
+  }
+
+  test('an archive over the entry limit is refused before it is unpacked', async () => {
+    const result = await verifyAuditPack((await overLimit()) as unknown as Blob);
+    expect(result.status).toBe('failed');
+    expect(result.errors.join(' ')).toContain(`more than ${PACK_LIMITS.entries} entries`);
+  });
+
+  test('a count the end record understates does not let it through', async () => {
+    const bytes = await overLimit();
+    const eocd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    bytes.writeUInt16LE(2, eocd + 8);
+    bytes.writeUInt16LE(2, eocd + 10);
+    expect(archiveEntryLimitDefect(bytes)).toContain(`more than ${PACK_LIMITS.entries} entries`);
+  });
+
+  test('a ZIP64 marker is refused before it is unpacked, and a genuine pack passes the count', async () => {
+    const bytes = Buffer.from(await packWith());
+    expect(archiveEntryLimitDefect(bytes)).toBeNull();
+    const eocd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    bytes.writeUInt32LE(0xffffffff, eocd + 16);
+    expect(archiveEntryLimitDefect(bytes)).toContain('ZIP64');
   });
 });

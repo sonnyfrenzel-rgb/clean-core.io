@@ -349,6 +349,52 @@ function zipKey(name) {
   return rooted ? `/${body}` : body || '/';
 }
 
+/** The fields of the end record at `at` — the same reading as `readEndRecord` in `lib/audit-pack-verify.ts`. */
+function readEndRecord(b, at) {
+  const disk = b.readUInt16LE(at + 4);
+  const directoryDisk = b.readUInt16LE(at + 6);
+  const totalOnDisk = b.readUInt16LE(at + 8);
+  const total = b.readUInt16LE(at + 10);
+  const directorySize = b.readUInt32LE(at + 12);
+  const offset = b.readUInt32LE(at + 16);
+  const commentLength = b.readUInt16LE(at + 20);
+  const zip64 = total === 0xffff || totalOnDisk === 0xffff || disk === 0xffff || directoryDisk === 0xffff
+    || offset === 0xffffffff || directorySize === 0xffffffff;
+  return { disk, directoryDisk, totalOnDisk, total, directorySize, offset, commentLength, zip64 };
+}
+
+/**
+ * Why the archive may not be unpacked, judged from its bytes before JSZip
+ * builds an entry for each record, or null — the same rule as
+ * `archiveEntryLimitDefect` in `lib/audit-pack-verify.ts` (SEC-2026-845): the
+ * last end record, the directory directly in front of it walked record by
+ * record, and no ZIP64 container.
+ */
+function archiveEntryLimitDefect(buffer, limit = PACK_LIMITS.entries) {
+  const b = Buffer.from(buffer);
+  let eocd = -1;
+  for (let i = b.length - 4; i >= 0; i--) {
+    if (b.readUInt32LE(i) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0 || eocd + 22 > b.length) return null;
+  const end = readEndRecord(b, eocd);
+  const tooMany = `the archive holds more than ${limit} entries; no genuine pack comes near that`;
+  if (end.zip64) return 'the archive uses the ZIP64 format; no genuine pack does';
+  if (end.total > limit || end.totalOnDisk > limit) return tooMany;
+  let offset = eocd - end.directorySize;
+  if (offset < 0) return null;
+  let walked = 0;
+  while (offset + 46 <= b.length && b.readUInt32LE(offset) === 0x02014b50) {
+    walked += 1;
+    if (walked > limit) return tooMany;
+    offset += 46 + b.readUInt16LE(offset + 28) + b.readUInt16LE(offset + 30) + b.readUInt16LE(offset + 32);
+  }
+  return null;
+}
+
 function duplicateEntryNames(buffer) {
   const unchecked = (why) => ({ duplicates: [], counted: false, why });
   const b = Buffer.from(buffer);
@@ -368,17 +414,10 @@ function duplicateEntryNames(buffer) {
   for (let i = eocd + 1; i <= b.length - 4; i++) {
     if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');
   }
-  const disk = b.readUInt16LE(eocd + 4);
-  const directoryDisk = b.readUInt16LE(eocd + 6);
-  const totalOnDisk = b.readUInt16LE(eocd + 8);
-  const total = b.readUInt16LE(eocd + 10);
-  const directorySize = b.readUInt32LE(eocd + 12);
-  let offset = b.readUInt32LE(eocd + 16);
-  const commentLength = b.readUInt16LE(eocd + 20);
-  if (
-    total === 0xffff || totalOnDisk === 0xffff || disk === 0xffff || directoryDisk === 0xffff
-    || offset === 0xffffffff || directorySize === 0xffffffff
-  ) return unchecked('the archive uses the ZIP64 format, which this check does not read');
+  const end = readEndRecord(b, eocd);
+  const { disk, directoryDisk, totalOnDisk, total, directorySize, commentLength } = end;
+  let offset = end.offset;
+  if (end.zip64) return unchecked('the archive uses the ZIP64 format, which this check does not read');
   if (eocd + 22 + commentLength !== b.length) return unchecked('the end record does not end where the archive ends');
   if (disk !== 0 || directoryDisk !== 0 || totalOnDisk !== total) return unchecked('the end record describes an archive split across disks');
   if (total === 0) return unchecked('the end record declares no entries');
@@ -478,6 +517,9 @@ async function main() {
   if (packBytes.length > PACK_LIMITS.archiveBytes) {
     throw new Error(tooLarge);
   }
+  // Counted from the bytes before JSZip builds an entry for each record (SEC-2026-845).
+  const entryDefect = archiveEntryLimitDefect(packBytes);
+  if (entryDefect) throw new Error(entryDefect);
   const zip = await JSZip.loadAsync(packBytes);
   if (Object.keys(zip.files).length > PACK_LIMITS.entries) {
     throw new Error(`the archive holds more than ${PACK_LIMITS.entries} entries; no genuine pack comes near that`);
