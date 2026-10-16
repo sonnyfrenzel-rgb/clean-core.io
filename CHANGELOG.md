@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   QM: 14 instead of 20, none over budget; the two shipped examples and the test fixtures are unchanged.
   `tests/transformation-unit-plan.spec.ts`, `tests/transformation-gate-repair.spec.ts`.
 
+- **The offline export verifier gives every check its own folder.** `scripts/verify-export.ps1` extracted an
+  archive into a folder named after the clock and removed that folder first if it existed, so two checks started
+  together shared it: the second refilled the first one's files, and a correctly signed archive could fail on the
+  other archive's content (and, the other way round, a changed archive could be read against the right files). The
+  folder now has a unique name per run. Seen as a flaky test locally; `tests/verify-export-runtime.spec.ts`
+  ("checks started together each read their own archive").
+
 ### Tests
 
 - **Every shipped starter example passes the Transformation gate in CI** (3.0.17, acceptance criterion 13). The

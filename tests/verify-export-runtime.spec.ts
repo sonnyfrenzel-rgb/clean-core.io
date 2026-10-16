@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
@@ -139,5 +139,25 @@ test.describe('the offline export verifier, executed', () => {
     const r = run(broken, true);
     expect(r.code, `a changed file did not exit 1:\n${r.out}`).toBe(1);
     expect(r.out).not.toContain('SUCCESS');
+  });
+
+  test('checks started together each read their own archive', async () => {
+    test.skip(!shell, 'No PowerShell on this machine — the runtime check cannot run here.');
+    // The extraction folder was named after the clock, so two checks started in the same moment shared it: the
+    // second removed and refilled the first one's files, and a signed archive failed on the other one's
+    // "goodbye" (seen 16.10.2026 as a flaky run of the two tests above, which run in parallel).
+    const good = await buildArchive(dir, 'together-good', { signed: true, key: KEY });
+    const bad = await JSZip.loadAsync(fs.readFileSync(good));
+    bad.file('a.txt', 'goodbye');
+    const badZip = path.join(dir, 'together-bad.zip');
+    fs.writeFileSync(badZip, await bad.generateAsync({ type: 'nodebuffer' }));
+    const runAsync = (zip: string) =>
+      new Promise<number | null>((resolve) => {
+        const p = spawn(shell!, ['-NoProfile', '-File', SCRIPT, '-ZipPath', zip, '-SigningKey', KEY], { env: { ...process.env, AUDIT_SIGNING_KEY: '' } });
+        p.on('close', (code) => resolve(code));
+      });
+    const zips = [good, badZip, good, badZip, good, badZip];
+    const codes = await Promise.all(zips.map(runAsync));
+    expect(codes).toEqual([0, 1, 0, 1, 0, 1]);
   });
 });

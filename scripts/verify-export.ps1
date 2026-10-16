@@ -8,8 +8,10 @@ if (-not $ZipPath -or -not (Test-Path -LiteralPath $ZipPath)) {
     exit 1
 }
 
-# Create a temporary directory for extraction
-$tempDir = Join-Path $PSScriptRoot ("tmp_verify_extract_" + (Get-Date -UFormat "%s"))
+# Create a temporary directory for extraction - one of its own per run. A name from the clock
+# (Get-Date -UFormat "%s") was shared by two checks started together, and the second one removed
+# and refilled the first one's files, so a check could read the other archive's files.
+$tempDir = Join-Path $PSScriptRoot ("tmp_verify_extract_" + [guid]::NewGuid().ToString("N"))
 if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
 New-Item -ItemType Directory -Path $tempDir | Out-Null
 
