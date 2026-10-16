@@ -29,6 +29,28 @@ function prep(source: string, track: 'node' | 'rap'): EngineLedPrepared {
   return p;
 }
 
+
+type Plan = EngineLedPrepared['plan'];
+
+/**
+ * Criterion (4), the rules: the ones not carried. A rule the owner did not drop is carried when its unitId names a
+ * unit that lists it, or it stands in a routine the package leaves out for a stated reason (demo data, unreachable),
+ * or in a selection-screen event on a check the engine places on the selection screen (QA reviews of a311929b1195
+ * and eef734b48fc9).
+ */
+function uncarriedRules(plan: Pick<Plan, 'rules' | 'units' | 'notCarried' | 'guards'>): Plan['rules'] {
+  const left = new Set(plan.notCarried.map((n) => n.routine));
+  const unitById = new Map(plan.units.map((u) => [u.id, u]));
+  const onSelectionCheck = (r: Plan['rules'][number]) =>
+    plan.guards.some((g) => g.place === 'selection-screen' && r.ranges.some((x) => g.line >= x.lineStart && g.line <= x.lineEnd));
+  return plan.rules.filter((r) => {
+    if (r.decision === 'drop') return false;
+    if (r.unitId) return !unitById.get(r.unitId)?.rules.includes(r.id);
+    if (r.routine && left.has(r.routine)) return false;
+    return !(/^AT SELECTION-SCREEN/.test(r.routine ?? '') && onSelectionCheck(r));
+  });
+}
+
 const typeErrors = (r: TypeCheckResult) => (r.ran ? r.findings.map((f) => `${f.path}:${f.line} ${f.code} ${f.message}`) : [`not run: ${r.reason}`]);
 
 test.describe('every shipped starter example: the package is gate-clean before any fill', () => {
@@ -61,16 +83,7 @@ test.describe('every shipped starter example: the package is gate-clean before a
       // whose checks the engine writes into the input contract.
       // A unitId has to name a unit that lists the rule, and a selection-screen rule has to stand on a check the engine
       // places on the selection screen (QA review of a311929b1195).
-      const left = new Set(rap.plan.notCarried.map((n) => n.routine));
-      const unitById = new Map(rap.plan.units.map((u) => [u.id, u]));
-      const onSelectionCheck = (r: (typeof rap.plan.rules)[number]) =>
-        rap.plan.guards.some((g) => g.place === 'selection-screen' && r.ranges.some((x) => g.line >= x.lineStart && g.line <= x.lineEnd));
-      const orphans = rap.plan.rules.filter((r) => {
-        if (r.decision === 'drop') return false;
-        if (r.unitId) return !unitById.get(r.unitId)?.rules.includes(r.id);
-        if (r.routine && left.has(r.routine)) return false;
-        return !(/^AT SELECTION-SCREEN/.test(r.routine ?? '') && onSelectionCheck(r));
-      });
+      const orphans = uncarriedRules(rap.plan);
       expect(orphans.map((r) => `${r.id} ${r.routine ?? 'program level'} L${r.ranges[0]?.lineStart} → ${r.unitId ?? 'no unit'}`)).toEqual([]);
 
       // No exception: a source with no entry point (Z_ORDER_INTEGRITY_CHECK) has its orchestrator written by the
@@ -96,5 +109,32 @@ test.describe('every shipped starter example: the package is gate-clean before a
       const body = p.scaffold.files.map((f) => f.content).join('\n');
       expect(body, track).toContain(NO_ENTRY_POINT[0]);
     }
+  });
+});
+
+test.describe('the rule check of criterion (4) itself', () => {
+  // Against a real plan, broken on purpose: a check that only ever meets valid plans proves nothing.
+  const source = fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8');
+  const plan = prep(source, 'rap').plan;
+  const carried = plan.rules.find((r) => r.unitId)!;
+
+  test('a valid plan has no uncarried rule', () => {
+    expect(carried, 'the PO demo carries rules').toBeTruthy();
+    expect(uncarriedRules(plan)).toEqual([]);
+  });
+
+  test('a unitId that names no unit is caught', () => {
+    const rules = plan.rules.map((r) => (r.id === carried.id ? { ...r, unitId: 'U99' } : r));
+    expect(uncarriedRules({ ...plan, rules }).map((r) => r.id)).toEqual([carried.id]);
+  });
+
+  test('a unit that does not list the rule is caught', () => {
+    const units = plan.units.map((u) => (u.id === carried.unitId ? { ...u, rules: u.rules.filter((id) => id !== carried.id) } : u));
+    expect(uncarriedRules({ ...plan, units }).map((r) => r.id)).toEqual([carried.id]);
+  });
+
+  test('a rule with no unit, outside every stated reason, is caught', () => {
+    const rules = plan.rules.map((r) => (r.id === carried.id ? { ...r, unitId: null, routine: 'SOMEWHERE_ELSE' } : r));
+    expect(uncarriedRules({ ...plan, rules }).map((r) => r.id)).toEqual([carried.id]);
   });
 });
