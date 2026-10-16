@@ -356,6 +356,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 11: the first SAP activation — built-in types for unreleased ones, SAP row types, a complete test double, plain-comment markers (tests/transformation-first-activation.spec.ts).
   // 12: the engine cases run in ABAP, the golden master says what it did not compare (tests/transformation-engine-cases-abap.spec.ts).
   // 12 also: whole numbers are numbers on the Node track (tests/transformation-3014-generation.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(12);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(12);
+  // 13: engine-written counterparts of simple SAP function modules in the access layer (tests/transformation-released-counterparts.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(13);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(13);
 });

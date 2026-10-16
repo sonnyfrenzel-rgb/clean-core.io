@@ -102,8 +102,13 @@ export const PLAN_VERSION = 2;
  * one (`int8` stays exact text); the check export hands such a value in as a number; the original's demo cases put a
  * whole number into a number; `srv/fixtures.ts` reads no file (its test reads the cases' JSON), so the acceptance
  * suite runs a case by its number in the confined executor. Nothing signed changes (§12.3).
+ * 13 (3.0.15 item 1, the second SAP import, 16.10.2026: ABAP Unit 134 methods, 80 green, 53 skipped, 1 red): RAP —
+ * a called SAP function module with an exact counterpart in ABAP Cloud language means (`released-counterparts.ts`,
+ * first DATE_CHECK_PLAUSIBILITY) is written by the engine in the default access class instead of a `@cc-open ACCESS`
+ * stub that raised — every date read as implausible and the program refused every run; the test double runs the
+ * same counterpart. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 12;
+export const SCAFFOLD_VERSION = 13;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -619,6 +624,8 @@ export interface Trace {
   droppedRules: string[];
   /** 3.0.13 (6, A4): the golden master — the original's demo cases carried as test data (ABAP Unit `ltc_golden_master`, or Node's test/fixtures/original-demo.json), and whether their rows reach the logic. Absent when none was written. */
   goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test' };
+  /** 3.0.15 (1): the SAP function modules the access layer replaces with an engine-written ABAP Cloud counterpart (`released-counterparts.ts`). Absent when none. */
+  engineCounterparts?: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** See `GenerationStatus`. */

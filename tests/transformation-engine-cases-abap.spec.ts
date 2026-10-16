@@ -44,9 +44,9 @@ const SOURCES: Array<[string, () => string]> = [
 /** Input-channel and run-identity cases: no counterpart in the logic class, skipped with the reason. */
 const CHANNEL = new Set(['contract-empty-request', 'contract-integer', 'contract-non-finite', 'contract-date', 'contract-null-not-zero', 'run-identity']);
 
-test('the scaffold version is 12', () => {
-  expect(SCAFFOLD_VERSION).toBe(12);
-  expect(rap(fixture('sd-shape')).scaffold.version).toBe(12);
+test('the scaffold version is 12 or later', () => {
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(12);
+  expect(rap(fixture('sd-shape')).scaffold.version).toBe(SCAFFOLD_VERSION);
 });
 
 test.describe('(7) the engine cases run in ABAP', () => {

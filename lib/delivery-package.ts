@@ -66,6 +66,7 @@ import {
 } from './transformation/check-words';
 import { SAP_STUBS_FOLDER, sapStubPackageFiles } from './transformation/abap-sap-stubs';
 import { abapGitXmlHolds } from './transformation/abapgit-check';
+import { engineCounterpartsIn } from './transformation/released-counterparts';
 import { TARGET_EDITION_NAMES } from './sap-naming';
 
 /* ------------------------------------------------------------------ types */
@@ -1358,6 +1359,11 @@ export interface StatusInputs {
    * `null` when the package holds no Node code to check.
    */
   lints?: readonly GeneratedCodeLintFinding[] | null;
+  /**
+   * 3.0.15 (1): the SAP function modules the ABAP access layer of the package replaces with an engine-written
+   * counterpart (read from the access class, `released-counterparts.ts`). Absent or empty: none.
+   */
+  engineCounterparts?: readonly string[];
 }
 
 /**
@@ -1625,6 +1631,12 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
     `Files besides STATUS.md and manifest.json: ${files.length} — ${count('implemented')} implemented, ${count('stub')} stub, ${count('proposed')} proposed. Every file, with its status and SHA-256, is in \`manifest.json\`.`,
     '',
   );
+  if (inputs.engineCounterparts?.length) {
+    lines.push(
+      `SAP calls the engine replaced with an exact counterpart in ABAP Cloud language means — written, nothing to connect: ${inputs.engineCounterparts.join(', ')}. The access class says why each is exact; every other SAP call of the access layer still raises until it is connected to a released API.`,
+      '',
+    );
+  }
   const notable = files.filter((f) => f.status === 'stub' || f.status === 'proposed');
   for (const f of notable) lines.push(`- \`${f.path}\` — ${f.status}${f.note ? `: ${f.note}` : ''}`);
   if (notable.length) lines.push('');
@@ -1979,7 +1991,8 @@ export function finishDeliveryPackage(input: {
   const beforeStatus = [...entries, decision, ...costRevision, register, registerCsv, readme].map(describeFile);
   // The code checks read the package as it ships — the model's code with the normalised package.json.
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
-  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints }), origin: 'engine' };
+  const engineCounterparts = [...new Set(entries.filter((e) => /^src\/.+_access\.clas\.abap$/i.test(e.path)).flatMap((e) => engineCounterpartsIn(e.content)))];
+  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts }), origin: 'engine' };
   const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);

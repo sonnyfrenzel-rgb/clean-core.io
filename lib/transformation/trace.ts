@@ -13,6 +13,7 @@
 import { rangeWords } from './unit-plan';
 import { ENGINE_CODE_NOTE, checkPhrase, notVerifiedPhrase, orderedChecks } from './check-words';
 import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
+import { engineCounterpartsIn } from './released-counterparts';
 import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
@@ -60,6 +61,7 @@ function goldenMasterOf(files: readonly ScaffoldFile[]): NonNullable<Trace['gold
 export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regions' | 'digest' | 'track'>, outcomes: readonly FillOutcome[], options: TraceOptions = {}): Trace {
   const byRegion = new Map(outcomes.map((o) => [o.regionId, o.state]));
   const goldenMaster = goldenMasterOf(scaffold.files);
+  const engineCounterparts = [...new Set(scaffold.files.filter((f) => /_access\.clas\.abap$/i.test(f.path)).flatMap((f) => engineCounterpartsIn(f.content)))];
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
   for (const g of plan.guards) {
@@ -137,6 +139,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     openRules: plan.rules.filter((r) => r.decision === 'open').map((r) => r.id),
     droppedRules: plan.rules.filter((r) => r.decision === 'drop').map((r) => r.id),
     ...(goldenMaster ? { goldenMaster } : {}),
+    ...(engineCounterparts.length ? { engineCounterparts } : {}),
   };
 }
 
@@ -187,6 +190,9 @@ export function traceMarkdown(trace: Trace): string {
         (gm.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic, so each case runs the logic without its data.'),
     );
   } else if (fixtures.length) lines.push(`- Demo data of the original, not carried over in this version: ${fixtureWords}.`);
+  if (trace.engineCounterparts?.length) {
+    lines.push(`- SAP function modules written by the engine in ABAP Cloud language means, not left to connect: ${trace.engineCounterparts.join(', ')} (an exact counterpart; the access class says why).`);
+  }
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;
   if (g) {

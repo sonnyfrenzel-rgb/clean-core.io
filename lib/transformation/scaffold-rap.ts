@@ -81,6 +81,7 @@ import type { AbapStatement } from '../abap/statement-reader';
 import { rapShortName, rapTableName } from './rap-names';
 import { abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
 import { ddicFieldName, isDdicReserved } from './ddic-reserved';
+import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart } from './released-counterparts';
 import { SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /**
@@ -336,6 +337,28 @@ type AccessParam = RapParam & { optional: boolean };
 interface AccessMethod {
   point: AccessPoint;
   params: AccessParam[];
+}
+
+/** Words into lines of at most `width` characters (a longer word stands alone). */
+function wrapWords(text: string, width: number): string[] {
+  const out: string[] = [];
+  let line = '';
+  for (const w of text.split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + w.length > width) {
+      out.push(line);
+      line = w;
+    } else line = line ? `${line} ${w}` : w;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+/** The arguments that hand a method's own parameters on to the same method of another implementation. */
+function delegateArgs(params: readonly AccessParam[]): string {
+  const imp = params.filter((p) => p.direction === 'importing').map((p) => `${p.name} = ${p.name}`);
+  const chg = params.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${p.name}`);
+  if (chg.length === 0) return imp.join(' ');
+  return [...(imp.length ? ['EXPORTING', ...imp] : []), 'CHANGING', ...chg].join(' ');
 }
 
 /** The `formal = actual` pairs of a CALL FUNCTION statement, by section. */
@@ -696,6 +719,47 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     return { point, params };
   });
   const accessNames = accessMethods.map((m) => m.point.method);
+  // 3.0.15 (1): a called function module with an exact ABAP Cloud counterpart is written by the engine, not left open.
+  const counterpartOf = new Map<string, { functionModule: string; why: string; body: string[]; cases: ReleasedCounterpart['cases']; param: AccessParam }>();
+  for (const m of accessMethods) {
+    if (m.point.kind !== 'call' || m.point.customer) continue;
+    const c = releasedCounterpartOf(m.point.object);
+    const body = c?.body(m.params, accessCx) ?? null;
+    if (c && body) counterpartOf.set(m.point.method, { functionModule: c.functionModule, why: c.why, body, cases: c.cases, param: m.params[0] });
+  }
+  // The counterparts' own cases as ABAP Unit tests of the default access class (no SAP in it), so the system the
+  // package is imported into checks the claim that each is exact. A parameter typed generically gets none.
+  const counterpartTests = [...counterpartOf.entries()].filter(([, c]) => !/^TYPE\s+(?:any|data|simple|csequence|clike|numeric|xsequence|[cnxp])\s*$/i.test(c.param.phrase));
+  const counterpartClass =
+    counterpartTests.length === 0
+      ? []
+      : [
+          `"! The engine-written counterparts of SAP function modules in ${accessCl}, with the module's own answer for each value.`,
+          'CLASS ltc_counterparts DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.',
+          '  PRIVATE SECTION.',
+          ...counterpartTests.map((_, i) => `    METHODS counterpart_${i + 1} FOR TESTING.`),
+          'ENDCLASS.',
+          '',
+          'CLASS ltc_counterparts IMPLEMENTATION.',
+          ...counterpartTests.flatMap(([method, c], i) => [
+            `  METHOD counterpart_${i + 1}.`,
+            `    " ${c.functionModule}: raises exactly where the function module raises.`,
+            `    DATA lv_in ${c.param.phrase}.`,
+            `    DATA(lo_access) = CAST ${accessIf}( NEW ${accessCl}( ) ).`,
+            ...c.cases.flatMap((k) => [
+              `    lv_in = '${k.value}'. " ${k.why}`,
+              '    TRY.',
+              `        lo_access->${method}( ${c.param.name} = lv_in ).`,
+              ...(k.raises
+                ? [`        cl_abap_unit_assert=>fail( msg = '${c.functionModule} must raise for ${k.value}' ).`, `      CATCH ${accessCx} ##NO_HANDLER.`]
+                : [`      CATCH ${accessCx}.`, `        cl_abap_unit_assert=>fail( msg = '${c.functionModule} must accept ${k.value}' ).`]),
+              '    ENDTRY.',
+            ]),
+            '  ENDMETHOD.',
+          ]),
+          'ENDCLASS.',
+          '',
+        ];
   const accessSignature = (m: AccessMethod) => {
     const imp = m.params.filter((p) => p.direction === 'importing');
     const chg = m.params.filter((p) => p.direction === 'changing');
@@ -1110,6 +1174,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       content: [
         head,
         `"! The default access layer of ${docText(program)}: connect each method to an API SAP has released for ABAP Cloud.`,
+        ...(counterpartOf.size > 0
+          ? [`"! Written by the engine, nothing to connect: ${[...counterpartOf.values()].map((c) => c.functionModule).join(', ')} (an exact counterpart in ABAP Cloud language means).`]
+          : []),
         `CLASS ${accessCl} DEFINITION PUBLIC FINAL CREATE PUBLIC.`,
         '  PUBLIC SECTION.',
         `    INTERFACES ${accessIf}.`,
@@ -1117,7 +1184,17 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         '',
         `CLASS ${accessCl} IMPLEMENTATION.`,
         '',
-        ...accessMethods.flatMap((m) => [
+        ...accessMethods.flatMap((m) => {
+          const counterpart = counterpartOf.get(m.point.method);
+          return counterpart ? [
+            `  METHOD ${accessIf}~${m.point.method}.`,
+            `    " ${ENGINE_COUNTERPART_TAG} ${counterpart.functionModule} (the original calls it at ${anchor(m.point)}), in ABAP Cloud language`,
+            '    " means only - no SAP call, nothing to connect.',
+            ...wrapWords(`Exact: ${counterpart.why}.`, 110).map((l) => `    " ${l}`),
+            ...counterpart.body,
+            '  ENDMETHOD.',
+            '',
+          ] : [
           `  METHOD ${accessIf}~${m.point.method}.`,
           ...(m.point.customer
             ? [
@@ -1133,7 +1210,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
           `    RAISE EXCEPTION NEW ${accessCx}( object = '${m.point.object}' ).`,
           '  ENDMETHOD.',
           '',
-        ]),
+          ];
+        }),
         'ENDCLASS.',
         '',
       ].join('\n'),
@@ -1680,11 +1758,22 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
             // Every method, empty (scaffold version 11, the first SAP activation, 15.10.2026): PARTIALLY IMPLEMENTED left
             // them out, and every golden-master case died with CX_SY_DYN_CALL_ILLEGAL_METHOD at the first access call.
             'CLASS ltd_access IMPLEMENTATION.',
-            ...accessMethods.flatMap((m) => [
-              `  METHOD ${accessIf}~${m.point.method}.`,
-              `    " No SAP in a test: ${m.point.kind === 'read' ? 'no rows are read' : m.point.kind === 'write' ? 'nothing is written' : 'the call does nothing'}.`,
-              '  ENDMETHOD.',
-            ]),
+            ...accessMethods.flatMap((m) =>
+              counterpartOf.has(m.point.method)
+                ? [
+                    // 3.0.15 (1): the engine-written counterpart needs no SAP, so the double runs it — a test of an
+                    // implausible date sees the refusal the original gives, not a check that never fails.
+                    `  METHOD ${accessIf}~${m.point.method}.`,
+                    `    " No SAP in this method: the double runs the engine-written counterpart of ${counterpartOf.get(m.point.method)!.functionModule}.`,
+                    `    CAST ${accessIf}( NEW ${accessCl}( ) )->${m.point.method}( ${delegateArgs(m.params)} ).`,
+                    '  ENDMETHOD.',
+                  ]
+                : [
+                    `  METHOD ${accessIf}~${m.point.method}.`,
+                    `    " No SAP in a test: ${m.point.kind === 'read' ? 'no rows are read' : m.point.kind === 'write' ? 'nothing is written' : 'the call does nothing'}.`,
+                    '  ENDMETHOD.',
+                  ],
+            ),
             'ENDCLASS.',
             '',
           ]
@@ -1700,6 +1789,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       ...engineCases.impls,
       'ENDCLASS.',
       '',
+      ...counterpartClass,
       // 3.0.13 (6): the original's own demo cases as test data, one method per case calling the run entry (golden-master.ts).
       ...(golden?.testClass.lines ?? []),
     ].join('\n'),

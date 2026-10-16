@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v3.0.15] — unreleased
 
+### Transformation, from the second SAP import (owner 16.10.2026)
+
+- **A simple SAP function module with an exact ABAP Cloud counterpart is written by the engine, not left as
+  a stub.** The access layer used to leave every SAP function module the original calls as an open stub that
+  raised its exception. For `DATE_CHECK_PLAUSIBILITY` the logic reads that exception as "implausible date", so
+  every timestamp read as invalid and the program refused every run in a real system until someone wired the
+  check. The default access class now carries the check in ABAP language means only: the date survives the
+  round trip through the day count (`CONV d( CONV i( lv_date ) ) = lv_date`), as the function module accepts
+  it, and raises where it raised `PLAUSIBILITY_CHECK_FAILED`. The test double runs the same code, and the test
+  include gets `ltc_counterparts`, which asks the counterpart for valid, initial and impossible dates, so the
+  SAP system the package is imported into checks the claim. The list is
+  short on purpose and lives in one module, with the reason each entry is exact
+  (`lib/transformation/released-counterparts.ts`); `CONVERSION_EXIT_ALPHA_*`, `DATE_GET_WEEK` and
+  `DATE_COMPUTE_DAY` were considered and stay open because they are not exact for every input. A call whose
+  parameters are not the module's own stays open too. STATUS.md and TRACE.md name the replaced calls. Scaffold
+  version 13.
+- **The tests the model writes run on the test double.** The one red method of 134 created the logic class
+  with `NEW zcl_<x>_logic( )`, which uses the default access that calls SAP, so it tested the missing SAP
+  connection and not the logic. The Testing prompt now names the class under test and the double
+  (`NEW <logic>( io_access = NEW ltd_access( ) )`). Before the suite is stored, `NEW <logic>( )`, `NEW #( )`
+  for a variable of that class and `CREATE OBJECT` without `EXPORTING` are rewritten to pass the double, with
+  a comment at the top of the suite saying so. A creation that passes the default access class, or no
+  `io_access` in any other form, is refused with its line and goes into the repair round. A suite stored
+  earlier gets the same rewrite when Delivery places it into the test include. The prompt's last guideline,
+  which still named `cl_abap_unit_test` and `cl_aunit_assert`, now names only `cl_abap_unit_assert`.
+
 ## [v3.0.14] — 2026-10-16
 
 - **Stale code says what moved** (owner 16.10.2026). Code generated before a decision was confirmed in
