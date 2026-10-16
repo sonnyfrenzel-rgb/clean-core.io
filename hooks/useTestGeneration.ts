@@ -163,7 +163,7 @@ ${generatedText}
         
         Generate:
         1. ABAP Unit test cases designed for Developer Extensibility: at least one per business rule listed under RULE-TRACED TEST CASES (and at least 10 overall), each with its expected result from the ORIGINAL ABAP.
-        2. A complete ABAP Unit test class definition and implementation verifying the behavior implementation class (e.g. \`BP_...\`) using \`cl_abap_unit_test\` and \`cl_aunit_assert\`.
+        2. A complete ABAP Unit test class definition and implementation verifying the behavior implementation class (e.g. \`BP_...\`) using \`cl_abap_unit_assert\` only (\`cl_abap_unit_assert=>assert_equals( act = … exp = … msg = … )\`, \`=>fail( msg = … )\`, \`=>skip( msg = … )\`). \`cl_aunit_assert\` is obsolete and not released for ABAP Cloud, and there is no class \`cl_abap_unit_test\`: either fails activation.
         3. A list of areas that could not be fully unit-tested (e.g. real external service integrations, async queues, standard authority checks) and must be verified via "human-in-the-loop" testing.
         4. A coverageEstimate object with { percentage: number (0-100), explanation: string, missingCoverage: string }.
         

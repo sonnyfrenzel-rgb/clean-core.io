@@ -326,3 +326,9 @@ test.describe('TRACE on the ABAP route points at the ABAP class', () => {
     expect(nodeTrace.units.every((u) => u.file.endsWith('.ts'))).toBe(true);
   });
 });
+
+test('the test-suite prompt asks for cl_abap_unit_assert, never for a class ABAP Cloud does not have (second SAP import, 16.10.2026)', () => {
+  const hook = fs.readFileSync(path.join(ROOT, 'hooks', 'useTestGeneration.ts'), 'utf8');
+  expect(hook).toMatch(/using \\?`cl_abap_unit_assert\\?` only/);
+  expect(hook).not.toMatch(/using \\?`cl_abap_unit_test\\?` and/);
+});
