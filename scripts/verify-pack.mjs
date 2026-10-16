@@ -414,6 +414,14 @@ function duplicateEntryNames(buffer) {
   for (let i = eocd + 1; i <= b.length - 4; i++) {
     if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');
   }
+  // And before it: an end record whose comment runs exactly to the end of the
+  // archive carries the one above inside that comment — two valid end records,
+  // two central directories, and only one of them walked here.
+  for (let i = eocd - 1; i >= floor; i--) {
+    if (b.readUInt32LE(i) === 0x06054b50 && i + 22 + b.readUInt16LE(i + 20) === b.length) {
+      return unchecked('the archive carries a second end record whose comment holds the last one');
+    }
+  }
   const end = readEndRecord(b, eocd);
   const { disk, directoryDisk, totalOnDisk, total, directorySize, commentLength } = end;
   let offset = end.offset;

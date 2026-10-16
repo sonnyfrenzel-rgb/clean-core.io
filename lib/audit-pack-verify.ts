@@ -184,6 +184,15 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   for (let i = eocd + 1; i <= bytes.byteLength - 4; i++) {
     if (view.getUint32(i, true) === EOCD) return unchecked('the archive carries more than one end record near its end');
   }
+  // And before it: an end record whose comment runs exactly to the end of the
+  // archive, and so carries the one above inside that comment. Both are then
+  // valid end records, each with its own central directory, and a reader that
+  // takes the earlier one sees entries this count never walked.
+  for (let i = eocd - 1; i >= floor; i--) {
+    if (view.getUint32(i, true) === EOCD && i + 22 + view.getUint16(i + 20, true) === bytes.byteLength) {
+      return unchecked('the archive carries a second end record whose comment holds the last one');
+    }
+  }
 
   const end = readEndRecord(view, eocd);
   const { disk, directoryDisk, totalOnDisk, total, directorySize, commentLength } = end;

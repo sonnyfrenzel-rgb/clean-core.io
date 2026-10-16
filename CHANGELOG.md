@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "Signature Verified (Export Details Not Covered)" and marks those export details as not covered by
   the signature; `scripts/verify-pack.mjs` prints its verdict in yellow and names the same fields.
   Packs of format 3 and later are unchanged.
+- Audit pack verification (web and `scripts/verify-pack.mjs`) treats an archive whose end record
+  sits inside the comment of an earlier, equally valid end record as not checked, so it never
+  passes integrity (QA full review of 66dd82b73417).
 
 ## [v3.0.15] — 2026-10-16
 
