@@ -181,6 +181,29 @@ export default function DocumentationProgress({
   const total = formatElapsed((end.kind === 'running' ? now : endedAt ?? now) - openedAt);
   const settled = end.kind === 'written' || end.kind === 'up-to-date';
   const list = <StageList stages={stages} times={times} now={now} parts={parts} />;
+  // Finished: one quiet line, not a card that keeps asking for attention (owner, 16.10.2026: "sollte
+  // verschwinden wenn fertig oder anders aussehen"). The steps stay one click away.
+  if (settled) {
+    return (
+      <section
+        aria-label={wt('doc.progressTitle')}
+        data-doc-progress=""
+        data-doc-progress-end={end.kind}
+        className="cc-no-print mb-4 text-[13px] text-cc-ink-muted"
+      >
+        <details data-doc-progress-fold="">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 [&::-webkit-details-marker]:hidden">
+            <Check size={14} aria-hidden={true} className="shrink-0 text-cc-success" />
+            <span data-doc-progress-end-text="" className="min-w-0 [overflow-wrap:anywhere]">{end.text}</span>
+            <span aria-label="Elapsed" data-doc-progress-elapsed="" className="font-cc-mono tabular-nums">{total}</span>
+            <span className="font-semibold underline-offset-2 hover:underline">{wt('doc.progressShowSteps')}</span>
+          </summary>
+          {list}
+        </details>
+        <span aria-live="polite" data-doc-progress-live="" className="sr-only">{end.text}</span>
+      </section>
+    );
+  }
   return (
     <section
       aria-labelledby="doc-progress-title"
