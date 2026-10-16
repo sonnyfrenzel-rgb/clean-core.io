@@ -5,6 +5,21 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — on `dev`, since v3.0.16
+
+### Examples: a side-by-side example without personal data (owner 16.10.2026)
+
+- **New starter example `Z_SD_FREIGHT_RATE_CHECK` (407 lines): a freight charge check before goods issue.**
+  It weighs each outbound delivery of a shipping point (real against volumetric weight), prices it from the
+  carrier rate card (zone, express uplift, fuel and dangerous goods surcharges, minimum charge) and compares
+  the result with the quote of the external carrier system, reached through an RFC destination; a quote far
+  above the rate card holds the goods issue. The call to that other system is the one construct that makes
+  the engine recommend a side-by-side extension on SAP BTP, in the Public and in the Private Edition, so the
+  CAP route is visible without overriding the design. Until now only the 1,000-line order audit routed
+  side-by-side, and it carries a fixed e-mail sender that raises the personal-data hint; this example raises
+  none. The engine's Node/CAP package for it type-checks and its own checks pass before any model fill.
+  Nine starter examples now. `tests/starter-example-freight-cap.spec.ts`.
+
 ## [v3.0.16] — 2026-10-16
 
 ### Fixed
@@ -95,19 +110,6 @@ no fallback to the platform key and "who answered" for the Gemini key.
 - **Trust page: where your code goes.** Per provider, with links to the provider's own terms instead of a
   paraphrase, and the engine-only path named as the choice for code that may not leave.
 - The platform's own key stays Gemini (part A, after the quality comparison).
-
-### Examples: a side-by-side example without personal data (owner 16.10.2026)
-
-- **New starter example `Z_SD_FREIGHT_RATE_CHECK` (407 lines): a freight charge check before goods issue.**
-  It weighs each outbound delivery of a shipping point (real against volumetric weight), prices it from the
-  carrier rate card (zone, express uplift, fuel and dangerous goods surcharges, minimum charge) and compares
-  the result with the quote of the external carrier system, reached through an RFC destination; a quote far
-  above the rate card holds the goods issue. The call to that other system is the one construct that makes
-  the engine recommend a side-by-side extension on SAP BTP, in the Public and in the Private Edition, so the
-  CAP route is visible without overriding the design. Until now only the 1,000-line order audit routed
-  side-by-side, and it carries a fixed e-mail sender that raises the personal-data hint; this example raises
-  none. The engine's Node/CAP package for it type-checks and its own checks pass before any model fill.
-  Nine starter examples now. `tests/starter-example-freight-cap.spec.ts`.
 
 ### Security (audit of v3.0.14)
 
