@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of every unit of the shipped examples and the local acceptance programs, on both routes. A single statement too
   large for one call — a LOOP with dozens of checks — is not cut: the plan names it with its reason, and the
   pre-flight shows that reason for a function it cannot send. The shipped examples keep their functions; of the
-  local acceptance programs six now split more routines (the CAP side-by-side program 24 → 36 units), and none has a
-  call over the cap any more (before: six calls, the largest 68,415 characters). Scaffold version 15.
+  local acceptance programs five now split more routines, and none has a call over the cap any more (before: one
+  call each of the PM and QM programs, about 32,000 characters). Scaffold version 15.
   `tests/transformation-prompt-split.spec.ts`, `tests/transformation-gate-repair.spec.ts`.
 - **Transformation: "sample" is no longer read as demo data** (3.0.17, the acceptance set). The engine leaves a
   routine named as demo data out of both packages, and it decided that by finding DEMO, FIXTURE, TESTDATA or
