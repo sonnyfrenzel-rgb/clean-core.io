@@ -5,7 +5,7 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v3.0.16] — unreleased
+## [v3.0.16] — 2026-10-16
 
 ### Fixed
 - Security: SEC-66dd82b-01 — an audit pack of a manifest format that does not sign its issue date
