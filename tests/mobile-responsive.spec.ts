@@ -644,6 +644,43 @@ test.describe('phone: the assistant', () => {
   });
 });
 
+/**
+ * Owner 16.10.2026 (translated): "the answer window is far too small." On a
+ * desktop the panel was 520 × 384 px and the suggestions stayed after the first
+ * question, taking half of it; a code line in the answer scrolled the whole
+ * list sideways. After one question the answer has the room, nothing scrolls
+ * sideways and no suggestion is left.
+ */
+test.describe('desktop: the assistant', () => {
+  // This file is a phone (`PHONE` above); this block is a desktop browser.
+  test.use({ isMobile: false, hasTouch: false, deviceScaleFactor: 1, viewport: { width: 1440, height: 900 } });
+  test('after one question the answer has the room — no suggestions left, nothing scrolls sideways', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    if (!acct) await seed();
+    await signIn(page);
+    // `signIn` turns the window back into the phone; this test is the desktop.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('open-chatbot')));
+    const panel = page.locator('#chatbot-panel');
+    await expect(panel).toBeVisible();
+    const box = (await panel.boundingBox())!;
+    expect(box.height, 'panel height at 1440×900').toBeGreaterThanOrEqual(640);
+    expect(box.width, 'panel width at 1440×900').toBeGreaterThanOrEqual(480);
+    await panel.locator('input').fill('What is Clean Core?');
+    await panel.locator('button[type="submit"]').click();
+    await expect.poll(async () => panel.locator('[data-chatbot-glossary-answer]').count(), { timeout: 30000 }).toBeGreaterThan(0);
+    await expect(panel.locator('[data-chatbot-suggestions]')).toBeHidden();
+    const list = await page.locator('[data-chatbot-messages]').evaluate((el) => ({
+      height: el.getBoundingClientRect().height,
+      sideways: el.scrollWidth - el.clientWidth,
+    }));
+    expect(list.height, 'room for the answers').toBeGreaterThanOrEqual(400);
+    expect(list.sideways, 'the answers never scroll sideways').toBeLessThanOrEqual(1);
+  });
+});
+
 /* -------------------------------------------------------------- full screen */
 
 /**

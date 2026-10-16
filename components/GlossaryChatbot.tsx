@@ -620,6 +620,9 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
     <>
       {/* Tables in an answer, drawn with the tokens (§1.1) and the type scale (§1.2). */}
       <style dangerouslySetInnerHTML={{ __html: `
+        .chat-answer { min-width: 0; overflow-wrap: anywhere; }
+        .chat-answer pre { white-space: pre-wrap; max-width: 100%; }
+        .chat-answer code { overflow-wrap: anywhere; }
         .chat-answer table {
           width: 100%;
           border-collapse: collapse;
@@ -693,7 +696,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               : undefined
           }
           className={cn(
-            'cc fixed right-4 bottom-20 z-cc-float flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24',
+            'cc fixed right-4 bottom-20 z-cc-float flex h-[min(760px,calc(100dvh-7rem))] max-h-[calc(100dvh-7rem)] w-[30rem] max-w-[calc(100vw-2rem)] lg:w-[36rem] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24',
             // The room the floating toggle needs below the panel, wherever the
             // toggle is shown: it is the panel's close button too, and a panel
             // standing on it covered it, so a second tap on the X landed on the
@@ -733,7 +736,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           <div
             ref={listRef}
             data-chatbot-messages=""
-            className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-cc-surface-muted p-4 [@media(max-height:480px)]:p-1"
+            className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto overscroll-contain bg-cc-surface-muted p-4 [@media(max-height:480px)]:p-1"
           >
             <div className="flex gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3 text-[12px] leading-normal text-cc-ink-muted">
               <ShieldCheck size={16} aria-hidden className="mt-px shrink-0 text-cc-ink-muted" />
@@ -759,8 +762,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   key={idx}
                   data-chatbot-message={msg.sender}
                   className={cn(
-                    'flex max-w-[85%] flex-col space-y-1',
-                    isBot ? 'items-start self-start' : 'ml-auto items-end self-end',
+                    'flex min-w-0 flex-col space-y-1',
+                    isBot ? 'max-w-full items-start self-start' : 'ml-auto max-w-[85%] items-end self-end',
                   )}
                 >
                   <div
@@ -857,7 +860,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             className={cn(
               'flex shrink-0 flex-wrap gap-2 border-t border-cc-line bg-cc-surface px-4 py-2',
               'max-sm:flex-nowrap max-sm:overflow-x-auto [@media(max-height:480px)]:flex-nowrap [@media(max-height:480px)]:overflow-x-auto',
-              asked && 'max-sm:hidden [@media(max-height:480px)]:hidden',
+              // Once the reader has asked, on every screen: on a desktop the
+              // chips took half the panel and left the answer a slit (owner,
+              // 16.10.2026).
+              asked && 'hidden',
             )}
           >
             {suggestionChips.map((chip, idx) => (

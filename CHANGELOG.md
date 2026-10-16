@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — on `dev`, since v3.0.16
 
+### Fixed
+
+- **The assistant's answer has room on a desktop** (owner 16.10.2026: "the answer window is far too small").
+  The panel was 520 × 384 px and kept its six suggestions after the first question, so they took half of it
+  and an answer showed in a slit; a long code line in an answer scrolled the whole list sideways. The panel
+  is now up to 760 px high (never more than the window allows) and 480 px wide, 576 px on a wide screen; the
+  suggestions fold away after the first question on every screen, as they already did on a phone; code in an
+  answer wraps. `tests/mobile-responsive.spec.ts` ("desktop: the assistant").
+
 ### Examples: a side-by-side example without personal data (owner 16.10.2026)
 
 - **New starter example `Z_SD_FREIGHT_RATE_CHECK` (407 lines): a freight charge check before goods issue.**
