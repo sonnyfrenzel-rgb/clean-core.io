@@ -187,7 +187,7 @@ test.describe('(8) the golden master never reports a case it did not compare as 
     expect(abaplintPackageCheck(scaffold.files).issues.filter((i) => i.path.endsWith('.testclasses.abap'))).toEqual([]);
   });
 
-  test('the seam for the characterization samples (3.0.17): an expected result on record is asserted, and the case counts as a test', () => {
+  test('the seam for the characterization samples (3.0.19): an expected result on record is asserted, and the case counts as a test', () => {
     const { scaffold } = rap(three(), {
       goldenMasterExpected: {
         1: { source: 'a characterization sample (test data)', refused: false, values: [{ component: 'gv_sealed', value: 'X' }], rows: [{ component: 'gt_claims', count: 3 }] },

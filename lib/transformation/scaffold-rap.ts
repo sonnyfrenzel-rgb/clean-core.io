@@ -96,8 +96,8 @@ export interface RapScaffoldOptions {
   /** 3.0.13 (B6): the live decision on record this rebuild contradicts — every main file says so in its first line. */
   against?: AgainstDecision | null;
   /**
-   * 3.0.14 item 8: the original's expected result per demo case, from the owner's characterization samples (3.0.17).
-   * A case without one runs and reports itself as not compared. Nothing passes it yet: the seam for 3.0.17.
+   * 3.0.14 item 8: the original's expected result per demo case, from the owner's characterization samples (3.0.19).
+   * A case without one runs and reports itself as not compared. Nothing passes it yet: the seam for 3.0.19.
    */
   goldenMasterExpected?: Readonly<Record<number, GoldenMasterExpected>>;
 }

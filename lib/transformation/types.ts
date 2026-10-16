@@ -94,7 +94,7 @@ export const PLAN_VERSION = 2;
  * `ltc_engine_cases` a local friend of the logic class), a precision case assigns its value to the declared type and
  * asserts what it holds or the overflow; an input-channel or run-identity case, and an example with no value the engine
  * knows, keeps a skip naming why. The golden-master cases run and then report themselves as skipped — their result not
- * yet compared — unless an expected result of the original is on record (`GoldenMasterExpected`, the seam for 3.0.17);
+ * yet compared — unless an expected result of the original is on record (`GoldenMasterExpected`, the seam for 3.0.19);
  * a refusal of a case is caught as its outcome, not as a failure. Nothing signed changes (§12.3).
  * Also 12 (3.0.14 items 1 and 3, the generation pipeline):
  * Node — a whole number of the original (`i`, `int1`, `int2`, `int4`, `b`, `s`, `TYPE sy-tabix`) is a `number` in

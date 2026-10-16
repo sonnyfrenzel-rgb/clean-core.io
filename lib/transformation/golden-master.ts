@@ -34,7 +34,7 @@
  * Expected values: none are invented. The title is what the original says the
  * case shows. Since 3.0.14 (item 8, owner 15.10.2026) a case compares its result
  * where an expected result of the original is on record (`GoldenMasterExpected`,
- * the seam for the owner's characterization samples of 3.0.17); otherwise it runs
+ * the seam for the owner's characterization samples of 3.0.19); otherwise it runs
  * the logic and then reports itself as skipped — "not compared", never as passed.
  * Pure and deterministic: no network, no model, no React.
  *
@@ -883,7 +883,7 @@ export interface GoldenMasterBinding {
 }
 
 /**
- * What the original gave for one demo case — the seam for the owner's characterization samples (roadmap 3.0.17).
+ * What the original gave for one demo case — the seam for the owner's characterization samples (roadmap 3.0.19).
  * Never derived by a model or guessed: a case without one is reported as not compared. Nothing passes it yet.
  */
 export interface GoldenMasterExpected {
@@ -1084,7 +1084,7 @@ function expectedLines(c: GoldenMasterCase, e: GoldenMasterExpected, binding: Go
  * data, one test method per case that applies the case to the baseline and
  * calls the run entry with it. A case with an expected result of the original
  * on record (`expected`, by case number — the characterization samples of
- * 3.0.17) asserts it; every other case runs the logic and then skips, saying
+ * 3.0.19) asserts it; every other case runs the logic and then skips, saying
  * its result is not yet compared — ABAP Unit reports it as skipped, never as
  * passed (3.0.14 item 8). Nothing expected is invented.
  */
@@ -1350,7 +1350,7 @@ export interface ScaffoldGoldenMasterInput {
   program?: string | null;
   /** The logic's refusal exception (`zcx_<name>_refusal`): a refused case is the original's outcome, reported or compared. */
   refusalClass?: string | null;
-  /** Expected results of the original by case number — the seam for the characterization samples (3.0.17). */
+  /** Expected results of the original by case number — the seam for the characterization samples (3.0.19). */
   expected?: Readonly<Record<number, GoldenMasterExpected>>;
 }
 

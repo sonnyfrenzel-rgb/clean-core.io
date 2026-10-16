@@ -34,7 +34,7 @@ import { scoreRuleFor } from '../lib/score-rule';
  *   - a negated or attributive "posted" is not a claim of a posting (CR-A4/D01);
  *   - `f <> 'X' AND f <> space` reads "neither X nor blank" (D02);
  *   - the main path lists the export as optional (D04; the steps the main
- *     block performs that only fill program tables stay with 3.0.17 P1 —
+ *     block performs that only fill program tables stay with 3.0.19 P1 —
  *     they change the skeleton of four of the eight shipped examples);
  *   - a finding in locked code keeps its points and is labelled, from engine
  *     3.0.13 only (CR-A6).
