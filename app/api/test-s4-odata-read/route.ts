@@ -22,6 +22,13 @@ import { upstreamBodyShape } from '@/lib/upstream-body-shape';
  * Executes a read-only OData GET request against a live S/4HANA tenant
  * to verify that an EntitySet is accessible and returns data.
  *
+ * This READS A BUSINESS RECORD (`$top=1`) and is therefore not part of the
+ * connection test (`/api/test-s4-connection` reads only `$metadata`, owner
+ * decision 17.10.2026). It runs only when the user starts it explicitly
+ * ("Read one record from the tenant" in the Testing stage), behind the same
+ * tenant-access gate. What leaves this route is the count and the field
+ * names of the first record — never a value.
+ *
  * Request body:
  *   {
  *     url: string,

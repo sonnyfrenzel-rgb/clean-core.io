@@ -133,13 +133,19 @@ test.describe('the tenant connection check', () => {
   });
 
   test('cancels every response body it does not read', () => {
-    const src = code(REL);
-    const fallback = src.indexOf('response.status === 405 || response.status === 501');
-    const refetch = src.indexOf("method: 'GET'", fallback);
-    expect(src.slice(fallback, refetch)).toContain('response.body?.cancel()');
+    // The request itself moved to lib/s4-connection-probe.ts (owner decision
+    // 17.10.2026: one GET on $metadata, no HEAD fallback any more); the route
+    // calls it and reads no body.
+    expect(code(REL)).toContain('await probeService(target.probeUrl, headers)');
+    expect(code(REL)).not.toMatch(/safeFetch\((url|config\.url|target\.probeUrl),/);
+    const src = code('lib/s4-connection-probe.ts');
+    expect(src.match(/await fetchImpl\(/g) || []).toHaveLength(1);
+    const request = src.indexOf("method: 'GET'");
+    expect(request).toBeGreaterThan(-1);
+    expect(src).not.toContain("method: 'HEAD'");
     const ret = src.indexOf('return { httpStatus: response.status }');
     const lastCancel = src.lastIndexOf('response.body?.cancel()', ret);
-    expect(lastCancel).toBeGreaterThan(refetch);
+    expect(lastCancel).toBeGreaterThan(request);
     // Cancelled while the deadline is still armed.
     expect(lastCancel).toBeLessThan(src.lastIndexOf('clearTimeout(timeout)', ret));
   });

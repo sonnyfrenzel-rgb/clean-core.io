@@ -1687,6 +1687,9 @@ export default function SettingsPage() {
                   {isSavingConfig ? 'Saving...' : 'Save the connection'}
                 </CcButton>
               </div>
+              <p data-connection-check-scope className="cc-text-meta text-cc-ink-muted">
+                The test sends one request for the OData service description ($metadata, schema only). It checks that the system is reachable, that the sign-in is accepted and that the service exists and is authorised. It reads no record.
+              </p>
             </form>
           ) : (
             <div className="space-y-4">

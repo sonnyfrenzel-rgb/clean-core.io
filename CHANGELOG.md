@@ -103,6 +103,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still claims nothing about what any source contains. The fingerprints are committed in
   `lib/shipped-example-fingerprint.ts` and `tests/shipped-example-fingerprint.spec.ts` recomputes them from
   `public/starter-examples/`, so an edited example fails the suite instead of drifting.
+- **Testing the S/4HANA connection reads no business record** (owner decision 17.10.2026, data protection). The
+  test sent HEAD — GET when HEAD was refused — to the saved address exactly as typed. The form asks for a system
+  address, but nothing stopped one from naming an entity set with `$top=1`, and a Gateway answers HEAD by running
+  the read and dropping the body; the body was cancelled unread, so nothing reached a log, Firestore or the
+  browser, yet the tenant still read records for a request whose only purpose was to say "connected". The test
+  now sends one request only, by owner specification (privacy by design, Art. 25 GDPR): `GET <service-root>/$metadata`
+  — the schema, which describes entity types and holds no rows; an HTTP 200 confirms authentication and the
+  authorisation for the service. No HEAD fallback, no CSRF-token fetch, no `$top`, no `$count`; the body is
+  cancelled unread. The address is reduced to its origin and a plain path prefix, its query and fragment are
+  dropped, a service named in it keeps `/sap/opu/odata/{namespace}/{service}` and loses whatever follows; without
+  one, the test checks `API_BUSINESS_PARTNER`, the service the metadata and read routes default to. An address
+  that names another OData root is refused rather than guessed at. The answer says exactly what was checked —
+  "Reachable, signed in via Basic Auth, service API_BUSINESS_PARTNER found and authorised. Checked: the service
+  description ($metadata, schema only) answered HTTP 200. No record was read." — and carries
+  `checked.recordsRead: false`; a rejected credential and
+  an unreachable host are reported as before, a missing service as a 404 that names the path. Reading one record
+  stays a separate action in the Testing stage, now labelled "Read one record from the tenant", behind the same
+  tenant-access, second-factor and rate-limit gates; it returns a count and field names, never a value. The host
+  allowlist, the SSRF checks, the stored-credential vault and the limits are unchanged. `lib/s4-connection-probe.ts`,
+  `tests/s4-connection-probe.spec.ts` (mocked SAP endpoint: no entity set, no query option, no body read).
 
 ### Route, from requirements the owner states in the source (roadmap 3.0.17, owner 17.10.2026)
 

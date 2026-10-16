@@ -282,10 +282,11 @@ Paste the full JSON export of your destination from the ${SAP_BTP_COCKPIT}.
 - **Where to find**: ${SAP_BTP_COCKPIT} > Connectivity > Destinations > Select destination > Export as JSON.
 
 ### Connection Testing
-- Click "Test Connection" to perform a live HTTP handshake that verifies:
-  - Endpoint reachability (DNS resolution)
-  - TLS certificate validity
+- Click "Test the connection" (Settings) or "Check connection" (Testing) for a live check that asks only for one OData service's description ($metadata) and verifies:
+  - Endpoint reachability (DNS resolution, TLS certificate validity)
   - Authentication status (credential verification)
+  - That the OData service exists
+- The connection check reads no business record. Reading one record is a separate action in the Testing stage ("Read one record from the tenant").
 - Click "Save Connection" to persist the configuration.
 
 ### Security
