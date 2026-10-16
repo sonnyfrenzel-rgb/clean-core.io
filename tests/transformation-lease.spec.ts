@@ -272,7 +272,7 @@ test.describe('the lease branch of /api/gemini', () => {
       "if (lease && stage !== 'transformation')",
       'ALLOWED_MODELS.has(model)',
       'prompt.length > MAX_PROMPT_LENGTH',
-      'loadGeminiApiKey(decodedToken.uid)',
+      'loadOwnModelKey(decodedToken.uid',
     ]) {
       expect(at(gate), `${gate} runs after the lease is counted`).toBeLessThan(counted);
     }

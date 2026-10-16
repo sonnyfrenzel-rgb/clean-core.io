@@ -74,6 +74,12 @@ import { canonicalizeJson, timingSafeEqualHex } from './run-signature';
  * the call now has to name the provider it called, and a receipt without one
  * is not issued. The value itself is unchanged, so every receipt and every run
  * minted under it verifies exactly as before.
+ *
+ * 3.0.15: a call on an account's own Anthropic key is receipted with the
+ * provider `anthropic` (`RECEIPT_PROVIDER_ID` in `lib/model-providers.ts`). The
+ * claim set and the MAC are unchanged — only the value differs — so a verifier
+ * reads both kinds alike, and a signed run records whichever provider its
+ * verified receipt names.
  */
 export const MODEL_PROVIDER_ID = 'google-gemini';
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getAuth } from '@/lib/firebase';
-import { MODEL_STAGES, modelStagesOf, type ModelStage } from '@/lib/model-stages';
+import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
+import { isModelKeyProvider, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
 
 /**
  * Whether a stage can call a model right now, and why not when it cannot.
@@ -26,6 +27,10 @@ export interface ModelAvailability {
   stages: Record<ModelStage, boolean>;
   keyAvailable: boolean;
   keySource: 'byok' | 'community' | null;
+  /** 3.0.15 — the provider of that key; `null` with no key or before the answer. */
+  provider: ModelKeyProvider | null;
+  /** 3.0.15 — per stage, who answered last (provider, model, whose key). */
+  answers: Partial<Record<ModelStage, StageAnswerRecord>>;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -39,6 +44,8 @@ export function useModelAvailability(): ModelAvailability {
   const [stages, setStages] = useState<Record<ModelStage, boolean>>(ALL_ON);
   const [keyAvailable, setKeyAvailable] = useState(true);
   const [keySource, setKeySource] = useState<'byok' | 'community' | null>(null);
+  const [provider, setProvider] = useState<ModelKeyProvider | null>(null);
+  const [answers, setAnswers] = useState<Partial<Record<ModelStage, StageAnswerRecord>>>({});
 
   const load = useCallback(async () => {
     try {
@@ -57,10 +64,18 @@ export function useModelAvailability(): ModelAvailability {
         stages?: Record<string, boolean>;
         keyAvailable?: boolean;
         keySource?: 'byok' | 'community' | null;
+        provider?: unknown;
+        answers?: Record<string, unknown>;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
       setKeySource(data.keySource ?? null);
+      setProvider(isModelKeyProvider(data.provider) ? data.provider : null);
+      const read: Partial<Record<ModelStage, StageAnswerRecord>> = {};
+      for (const [stage, a] of Object.entries(data.answers ?? {})) {
+        if (isModelStage(stage) && isStageAnswerRecord(a)) read[stage] = a;
+      }
+      setAnswers(read);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -95,7 +110,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

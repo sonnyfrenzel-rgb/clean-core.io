@@ -48,6 +48,7 @@ import { scoreHeroModel, type HeroFinding, type HeroGap } from './score-hero';
 import { scoreRuleFor, signedEngineVersionOf } from './score-rule';
 import type { EconomicsRecord } from './economics-record';
 import type {
+  AnalysisModelFacts,
   CostRevisionFacts,
   DecisionFacts,
   DeliveryFacts,
@@ -57,6 +58,24 @@ import type {
 } from './delivery-package';
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
+/**
+ * Roadmap 3.0.15 — the model of the signed analysis run, from its model card
+ * (the project's mirror of the run, written by `/api/runs/create`): provider,
+ * model and whose key, as the verified receipt established them. `null` when
+ * the project has no model card.
+ */
+export function analysisModelFactsOf(project: HandoverProject): AnalysisModelFacts | null {
+  const mc = project.auditMetadata?.modelCard;
+  if (!mc) return null;
+  const p = mc.modelParticipation;
+  return {
+    participation: p === 'none' || p === 'narrative' || p === 'narrative-attested' ? p : null,
+    provider: str(mc.provider),
+    modelId: str(mc.model),
+    byokUsed: mc.byokUsed === true,
+  };
+}
 const day = (iso: string | null | undefined) => (iso ? formatTextDate(iso) ?? iso.slice(0, 10) : null);
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -546,6 +565,7 @@ export function deliveryFactsOf(
       id: runId,
       engineVersion: signedEngineVersionOf(project),
       auditPackExportedAt: isoString(project.auditMetadata?.auditPackExportedAt),
+      model: analysisModelFactsOf(project),
     },
     decision: decisionFactsOf(project),
     rules: opts.rules,

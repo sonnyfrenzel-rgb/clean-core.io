@@ -231,7 +231,7 @@ test.describe('the route', () => {
       'assertRateLimit(',
       'assertMfaSatisfied(',
       'assertAccountActive(',
-      'loadGeminiApiKey(',
+      'loadOwnModelKey(',
     ]) {
       expect(counted, `${later} runs before the attempt is counted`).toBeLessThan(at(later));
     }

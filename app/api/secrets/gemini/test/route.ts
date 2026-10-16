@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyRequestAuth,
-  loadGeminiApiKey,
+  loadOwnModelKey,
+  type OwnModelKey,
   assertMfaSatisfied,
   assertAccountActive,
   assertByokAllowed,
@@ -11,17 +12,20 @@ import {
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
-import { ByokKeyUnreadableError } from '@/lib/byok-key';
+import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key';
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { isModelKeyProvider, offeredKeyProviders, type ModelKeyProvider } from '@/lib/model-providers';
+import { testAnthropicKey } from '@/lib/anthropic-messages';
 
 /**
  * POST /api/secrets/gemini/test
  *
- * Tests connectivity of a Gemini API key.
- * If body contains { apiKey }, tests that specific key.
+ * Tests an own model key — Gemini's or, since 3.0.15, Anthropic's.
+ * If body contains { apiKey, provider? }, tests that specific key (provider absent: Gemini).
  * If body is empty, loads and decrypts the user's saved key, then tests it.
+ * An Anthropic key is tested against the Models API, which spends no tokens.
  */
 export async function POST(req: NextRequest) {
   const decodedToken = await verifyRequestAuth(req);
@@ -59,25 +63,42 @@ export async function POST(req: NextRequest) {
     await assertByokAllowed(decodedToken.uid, decodedToken.admin === true);
 
     const body = await req.json().catch(() => ({}));
-    let { apiKey } = body as { apiKey?: string };
+    let { apiKey } = (body ?? {}) as { apiKey?: string };
+    // 3.0.15: the provider of an entered key; absent means Gemini, as before.
+    const requested = (body as { provider?: unknown } | null)?.provider;
+    let provider: ModelKeyProvider = 'gemini';
+    if (requested !== undefined) {
+      if (!isModelKeyProvider(requested) || !offeredKeyProviders().includes(requested)) {
+        return NextResponse.json({ error: 'Unknown or unavailable key provider.', code: 'byok-provider-unknown' }, { status: 400 });
+      }
+      provider = requested;
+    }
 
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
-      // Fallback: load saved key
-      let savedKey: string | null;
+      // No key entered: test the saved one, of whichever provider it is.
+      let saved: OwnModelKey | null;
       try {
-        savedKey = await loadGeminiApiKey(decodedToken.uid);
+        saved = await loadOwnModelKey(decodedToken.uid);
       } catch (keyErr: unknown) {
         // 3.0.13 (g): stored, but not readable here — say so rather than
         // report the key itself as failing authentication.
-        if (keyErr instanceof ByokKeyUnreadableError) {
+        if (keyErr instanceof ByokKeyUnreadableError || keyErr instanceof OwnModelKeyMissingError) {
           return NextResponse.json({ error: keyErr.message, code: keyErr.code }, { status: 503 });
         }
         throw keyErr;
       }
-      if (!savedKey) {
+      if (!saved) {
         return NextResponse.json({ error: 'No custom API key has been saved yet.' }, { status: 400 });
       }
-      apiKey = savedKey;
+      apiKey = saved.apiKey;
+      provider = saved.provider;
+    }
+
+    if (provider === 'anthropic') {
+      // Anthropic's Models API: the key is accepted or refused, and no token
+      // is spent (`lib/anthropic-messages.ts`). Server-side only.
+      await testAnthropicKey(apiKey.trim());
+      return NextResponse.json({ ok: true, provider });
     }
 
     // Call Gemini to verify key
@@ -91,7 +112,7 @@ export async function POST(req: NextRequest) {
       throw new Error('Invalid response from AI provider.');
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, provider });
   } catch (err: any) {
     if (err instanceof QuotaError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

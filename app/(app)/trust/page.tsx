@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
-import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network, type LucideIcon } from 'lucide-react';
+import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network, Route, type LucideIcon } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import { APP_VERSION } from '@/lib/version';
+import { PROVIDER_TERMS } from '@/lib/model-providers';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Trust & Privacy — Clean-Core.io',
@@ -50,9 +51,55 @@ export default function TrustPage() {
         </p>
       </Section>
 
+      {/* Roadmap 3.0.15 — "where your code goes", per provider. The providers'
+          own terms are linked, not paraphrased: what a provider does with API
+          data, for how long and where, is its statement to make and to change. */}
+      <Section icon={Route} title="Where your code goes">
+        <div data-trust-code-destinations="">
+          <p>
+            The findings, the extensibility route and the Clean Core Score are computed by our own engine on our
+            server; no model takes part in them. Only the steps that write text — the analysis narrative, business
+            names and sentences, the design, the code proposal, the documentation and the test suite — send your
+            code to a language model, and always from our server, never from your browser. Which provider receives
+            it depends on the key:
+          </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li data-trust-provider="gemini">
+              <strong>No own key, or your own Google Gemini key</strong> — the code goes to the Google Gemini API.{' '}
+              {PROVIDER_TERMS.gemini.map((t, i) => (
+                <span key={t.href}>
+                  {i > 0 ? ' · ' : ''}
+                  <a href={t.href} rel="noopener noreferrer" target="_blank" className="text-cc-brand-strong font-semibold underline-offset-2 hover:underline">{t.label}</a>
+                </span>
+              ))}
+            </li>
+            <li data-trust-provider="anthropic">
+              <strong>Your own Anthropic key</strong> — the code goes to the Anthropic API (Claude), on your key.{' '}
+              {PROVIDER_TERMS.anthropic.map((t, i) => (
+                <span key={t.href}>
+                  {i > 0 ? ' · ' : ''}
+                  <a href={t.href} rel="noopener noreferrer" target="_blank" className="text-cc-brand-strong font-semibold underline-offset-2 hover:underline">{t.label}</a>
+                </span>
+              ))}
+            </li>
+          </ul>
+          <p>
+            With your own key set, no call of your account uses the platform key: if your key is missing or the
+            provider refuses it, the step stops and says so. Settings shows, per stage, which provider, model and
+            key answered last, and the audit pack and the delivery package&apos;s <code className="bg-cc-surface-muted px-1 py-0.5 rounded font-cc-mono text-xs">STATUS.md</code> name
+            the provider, model and key owner of the signed analysis.
+          </p>
+          <p data-trust-engine-only="">
+            <strong>Code that may not leave:</strong> run the analysis without a model, and switch the model stages
+            off in Settings. The deterministic evidence — findings, route, Clean Core Score — is complete and
+            signed either way, and no code is sent to any model provider.
+          </p>
+        </div>
+      </Section>
+
       <Section icon={Lock} title="Encryption of sensitive data">
         <p>
-          S/4HANA credentials (BYOT) and your own Gemini API key (BYOK) are encrypted at rest with
+          S/4HANA credentials (BYOT) and your own model API key (BYOK, Gemini or Anthropic) are encrypted at rest with
           <strong> AES-256-GCM</strong> in a server-only collection that client apps cannot read.
           Passwords/keys follow a write-only pattern — they are never returned to the browser.
         </p>

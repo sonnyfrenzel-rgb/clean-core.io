@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyRequestAuth,
-  saveGeminiApiKey,
-  deleteGeminiApiKey,
+  saveOwnModelKey,
+  deleteOwnModelKey,
   assertMfaSatisfied,
   assertAccountActive,
   assertByokAllowed,
@@ -14,12 +14,15 @@ import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { ByokKeyUnavailableError } from '@/lib/byok-key';
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
+import { isModelKeyProvider, offeredKeyProviders } from '@/lib/model-providers';
 
 /**
  * POST /api/secrets/gemini
  *
- * Saves a user's custom Gemini API key securely.
- * Body: { apiKey: string }
+ * Saves the account's own model key securely. The path keeps its name from
+ * when Gemini was the only provider; since 3.0.15 it stores a Gemini or an
+ * Anthropic key, one per account (`lib/model-providers.ts`).
+ * Body: { apiKey: string, provider?: 'gemini' | 'anthropic' } — absent means Gemini.
  */
 export async function POST(req: NextRequest) {
   const decodedToken = await verifyRequestAuth(req);
@@ -46,15 +49,21 @@ export async function POST(req: NextRequest) {
     await assertByokRateLimit('save', decodedToken.uid);
 
     const body = await req.json().catch(() => ({}));
-    const { apiKey } = body as { apiKey?: string };
+    const { apiKey, provider: requestedProvider } = (body ?? {}) as { apiKey?: string; provider?: unknown };
 
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
       return NextResponse.json({ error: 'Missing required field: apiKey.' }, { status: 400 });
     }
+    // 3.0.15: the provider the key belongs to. Absent means Gemini — the only
+    // provider a key could belong to before, and what every older client sends.
+    const provider = requestedProvider === undefined ? 'gemini' : requestedProvider;
+    if (!isModelKeyProvider(provider) || !offeredKeyProviders().includes(provider)) {
+      return NextResponse.json({ error: 'Unknown or unavailable key provider.', code: 'byok-provider-unknown' }, { status: 400 });
+    }
 
-    let metadata: Awaited<ReturnType<typeof saveGeminiApiKey>>;
+    let metadata: Awaited<ReturnType<typeof saveOwnModelKey>>;
     try {
-      metadata = await saveGeminiApiKey(decodedToken.uid, apiKey.trim());
+      metadata = await saveOwnModelKey(decodedToken.uid, apiKey.trim(), provider);
     } catch (sealErr: unknown) {
       // 3.0.13 (g): no usable BYOK_ENCRYPTION_KEY on this deployment. Refused
       // with a reason, and nothing written — never sealed with the S/4 key
@@ -122,7 +131,7 @@ export async function DELETE(req: NextRequest) {
     // the key does check (POST above, /test, /status), which is where the gate
     // belongs (security audit of b88c77b, where this omission was read as the
     // same defect and is not).
-    await deleteGeminiApiKey(decodedToken.uid);
+    await deleteOwnModelKey(decodedToken.uid);
 
     // 3. Security Audit Logging
     const { db } = await getAdminDb();

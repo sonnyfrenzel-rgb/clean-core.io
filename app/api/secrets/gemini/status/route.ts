@@ -7,6 +7,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
+import { ownKeyProviderOf } from '@/lib/model-providers';
 
 /**
  * GET /api/secrets/gemini/status
@@ -32,14 +33,19 @@ export async function GET(req: Request) {
     await assertAccountActive(decodedToken.uid);
 
     const { db } = await getAdminDb();
-    const snap = await db.collection('user_secrets').doc(decodedToken.uid).collection('providers').doc('gemini').get();
+    // 3.0.15: the provider the profile names; a profile from before names none (Gemini).
+    const profile = (await db.collection('users').doc(decodedToken.uid).get()).data() ?? null;
+    const named = ownKeyProviderOf(profile);
+    const provider = named === null || named === 'unknown' ? 'gemini' : named;
+    const snap = await db.collection('user_secrets').doc(decodedToken.uid).collection('providers').doc(provider).get();
     if (!snap.exists) {
-      return NextResponse.json({ byokConfigured: false, last4: '', rotatedAt: null });
+      return NextResponse.json({ byokConfigured: false, provider: null, last4: '', rotatedAt: null });
     }
 
     const data = snap.data();
     return NextResponse.json({
       byokConfigured: true,
+      provider,
       last4: data?.last4 || '',
       rotatedAt: data?.rotatedAt ? data.rotatedAt.toDate().toISOString() : null,
     });

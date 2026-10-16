@@ -35,6 +35,7 @@
 import type { GenerationRecord } from './transformation/generation-record';
 import { sha256Hex } from './artefact-digest';
 import { formatTextDate } from './format';
+import { providerLabelOfReceiptId } from './model-providers';
 import { SCORE_FLOOR } from './clean-core-score';
 import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, type DecisionOption } from './decision-options';
 import type { ScoreHeroModel } from './score-hero';
@@ -330,7 +331,17 @@ export interface DeliveryFacts {
     /** The source on the project still hashes to the one the active run signed. */
     matchesSignedRun: boolean;
   };
-  run: { id: string | null; engineVersion: string | null; auditPackExportedAt: string | null };
+  run: {
+    id: string | null;
+    engineVersion: string | null;
+    auditPackExportedAt: string | null;
+    /**
+     * 3.0.15 — the language model of the signed analysis run, as its model card
+     * records it: provider, model and whose key, or that none took part. Absent
+     * on facts built before this field existed; the row is then left out.
+     */
+    model?: AnalysisModelFacts | null;
+  };
   decision: DecisionFacts;
   rules: RuleFacts;
   tests: TestFacts;
@@ -1549,6 +1560,30 @@ function auditPackLines(facts: DeliveryFacts): string[] {
   ];
 }
 
+/** What the signed analysis run's model card says about the model (roadmap 3.0.15). */
+export interface AnalysisModelFacts {
+  participation: 'narrative' | 'narrative-attested' | 'none' | null;
+  provider: string | null;
+  modelId: string | null;
+  byokUsed: boolean;
+}
+
+/**
+ * The STATUS.md line for the language model of the analysis: provider, model
+ * and key owner when a receipt established them, and said plainly otherwise.
+ * Only the analysis is named: it is the one stage whose model call is recorded
+ * with the signed run; the other stages' answers are not recorded per project.
+ */
+export function analysisModelLine(m: AnalysisModelFacts | null): string {
+  if (!m || m.participation === null) return 'Not recorded';
+  if (m.participation === 'none') return 'None — the analysis is deterministic evidence only';
+  if (m.participation === 'narrative' || !m.provider || !m.modelId) {
+    return 'Not established — the narrative was submitted without a verified record of a model call';
+  }
+  const label = providerLabelOfReceiptId(m.provider);
+  return `${label} · ${m.modelId} · ${m.byokUsed ? "the account's own key" : 'the platform key'} (analysis narrative, from the signed run)`;
+}
+
 export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string {
   const { reading, capabilities, files, lints } = inputs;
   const s = facts.source;
@@ -1563,6 +1598,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   row('Program', s.fileName ? `\`${s.fileName}\`${s.lines !== null ? ` (${s.lines.toLocaleString('en-US')} lines)` : ''}` : 'Not recorded');
   row('Source SHA-256', s.sha256 ? `\`${s.sha256}\`${s.matchesSignedRun ? '' : ' — does **not** match the source on the project any more'}` : 'Not recorded');
   row('Signed analysis run', facts.run.id ? `\`${facts.run.id}\`${facts.run.engineVersion ? ` (engine ${facts.run.engineVersion})` : ''} — see "How to verify"` : 'None');
+  if (facts.run.model !== undefined) row('Language model', analysisModelLine(facts.run.model));
   row('Target decision', decisionLine(facts.decision));
   row('Business rules', rulesLine(facts.rules));
   row('Tests', `${TEST_STATUS_WORDS[facts.tests.status]} — ${facts.tests.sentence}`);

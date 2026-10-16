@@ -2,7 +2,8 @@ import { createHash, randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
-import { sealByokSecret, openByokSecret, ByokKeyUnreadableError } from './byok-key';
+import { sealByokSecret, openByokSecret, ByokKeyUnreadableError, OwnModelKeyMissingError } from './byok-key';
+import { MODEL_KEY_PROVIDERS, ownKeyProviderOf, storedKeyProviderOf, type ModelKeyProvider } from './model-providers';
 import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
@@ -1196,12 +1197,12 @@ export async function deleteUserDataAndAccount(
   //    writes it only in a transaction that reads this profile
   //    (`mergeWhileProfileExists`), so one that committed after step 3 is
   //    deleted here, and one that did not can no longer commit.
-  //    The BYOK secret goes in it too, for the same reason: `saveGeminiApiKey`
+  //    The BYOK secret goes in it too, for the same reason: `saveOwnModelKey`
   //    writes it in a transaction that reads this profile.
   await tryDelete('users', () => {
     const batch = db.batch();
     batch.delete(db.collection('registration_requests').doc(uid));
-    batch.delete(db.collection('user_secrets').doc(uid).collection('providers').doc('gemini'));
+    for (const provider of MODEL_KEY_PROVIDERS) batch.delete(db.collection('user_secrets').doc(uid).collection('providers').doc(provider));
     batch.delete(db.collection('users').doc(uid));
     return batch.commit();
   });
@@ -1690,42 +1691,52 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 }
 
 /**
- * Saves the user's custom Gemini API key securely:
+ * Saves the account's own model key securely — one own key per account, of one
+ * provider (roadmap 3.0.15: Gemini or Anthropic):
  * 1. Seals the key with AES-256-GCM under `BYOK_ENCRYPTION_KEY`, recording the
- *    key version in the record (`lib/byok-key.ts`, roadmap 3.0.13 g). Without a
- *    usable key this throws `ByokKeyUnavailableError` before anything is
- *    written — there is no fallback to the S/4 key.
- * 2. Saves it in the server-only user_secrets collection.
- * 3. Updates the user profile with BYOK metadata (configured status, last 4 chars, timestamp)
- *    and deletes the legacy cleartext key.
+ *    key version in the record (`lib/byok-key.ts`, roadmap 3.0.13 g) and the
+ *    provider in the GCM additional data. Without a usable key this throws
+ *    `ByokKeyUnavailableError` before anything is written — there is no
+ *    fallback to the S/4 key.
+ * 2. Saves it in the server-only user_secrets collection, at
+ *    `providers/{provider}`, with the provider on the record; the other
+ *    provider's record goes in the same transaction, so an account never holds
+ *    two own keys and the proxy never has to choose between them.
+ * 3. Updates the user profile with BYOK metadata (configured status, provider,
+ *    last 4 chars, timestamp) and deletes the legacy cleartext key.
  */
-export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any> {
+export async function saveOwnModelKey(uid: string, apiKey: string, provider: ModelKeyProvider): Promise<any> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  const sealed = sealByokSecret(apiKey, { uid, provider: 'gemini' });
+  const sealed = sealByokSecret(apiKey, { uid, provider });
   const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
 
   // The secret and the profile's metadata in one transaction that reads the
   // profile (QA full review of v2.20.0). Two separate writes could leave a key
-  // `loadGeminiApiKey` serves while the save reported failure; and a merge-set
+  // `loadOwnModelKey` serves while the save reported failure; and a merge-set
   // recreated the profile of an account erased while the save was in flight.
   // Now both commit or neither does, a missing profile refuses the save, and
   // the erasure deletes this secret again in the batch that deletes the
   // profile, so a save that committed in between goes with it.
   const profileRef: DocumentReference = db.collection('users').doc(uid);
-  const secretRef: DocumentReference = db.collection('user_secrets').doc(uid).collection('providers').doc('gemini');
+  const secrets = db.collection('user_secrets').doc(uid).collection('providers');
+  const secretRef: DocumentReference = secrets.doc(provider);
   await db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(profileRef);
     if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
     tx.set(secretRef, {
       encryptedApiKey: sealed.encryptedApiKey,
       keyVersion: sealed.keyVersion,
+      provider,
       last4,
       rotatedAt: FieldValue.serverTimestamp(),
     });
+    // One own key per account: the other provider's record goes with this save.
+    for (const other of MODEL_KEY_PROVIDERS) if (other !== provider) tx.delete(secrets.doc(other));
     // Mirror metadata to the user profile and remove legacy key
     tx.update(profileRef, {
       byokConfigured: true,
+      byokProvider: provider,
       byokLast4: last4,
       byokRotatedAt: FieldValue.serverTimestamp(),
       geminiApiKey: FieldValue.delete(),
@@ -1735,30 +1746,67 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
 
   return {
     byokConfigured: true,
+    byokProvider: provider,
     byokLast4: last4,
   };
 }
 
+/** The account's own key, opened, and the provider it belongs to. */
+export interface OwnModelKey {
+  provider: ModelKeyProvider;
+  apiKey: string;
+}
+
 /**
- * Loads and decrypts the user's custom Gemini API key.
+ * Loads and decrypts the account's own model key.
  *
- * Returns null only when no key is stored. A stored key that cannot be opened —
- * it has no version or one outside the key ring, its version's key is missing
- * on this server, or it does not decrypt — throws `ByokKeyUnreadableError`
- * (3.0.13 g), logged below with its reason. It used to return null there too, and
- * null reads as "no key": `/api/gemini` then served the call with the
- * community key, unmetered, because the profile still said BYOK.
+ * Returns null only when the account has no own key: the profile names none
+ * and no record is stored. Everything else that is not a usable key throws, so
+ * no caller can read it as "no key" and serve the call with the platform key
+ * (roadmap 3.0.15, data sovereignty):
+ *
+ *   - a stored key that cannot be opened — no version or one outside the key
+ *     ring, its version's key missing here, it does not decrypt, or its record
+ *     names another provider — throws `ByokKeyUnreadableError` (3.0.13 g),
+ *     logged below with its reason. It used to return null there too, and null
+ *     reads as "no key": `/api/gemini` then served the call with the community
+ *     key, unmetered, because the profile still said BYOK;
+ *   - a profile that says an own key is configured (or names a provider) while
+ *     its record is gone, or names a provider this code does not know, throws
+ *     `OwnModelKeyMissingError`.
+ *
+ * Read bridge: a profile without `byokProvider` and a record without
+ * `provider` are keys from before 3.0.15 and read as Gemini. Nothing is
+ * migrated.
+ *
+ * `profile` is the `users/{uid}` data when the caller has read it already
+ * (`/api/gemini` has); otherwise it is read here.
  */
-export async function loadGeminiApiKey(uid: string): Promise<string | null> {
+export async function loadOwnModelKey(
+  uid: string,
+  opts: { profile?: { byokConfigured?: unknown; byokProvider?: unknown } | null } = {},
+): Promise<OwnModelKey | null> {
   await ensureInitialized();
   const { db } = await getAdminDb();
-  const snap = await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get();
-  if (!snap.exists) return null;
-  const data = snap.data();
-  if (!data || !data.encryptedApiKey) return null;
-  
+  const profile =
+    opts.profile !== undefined ? opts.profile : ((await db.collection('users').doc(uid).get()).data() ?? null);
+  const named = ownKeyProviderOf(profile);
+  if (named === 'unknown') throw new OwnModelKeyMissingError();
+  const provider: ModelKeyProvider = named ?? 'gemini';
+  const snap = await db.collection('user_secrets').doc(uid).collection('providers').doc(provider).get();
+  const data = snap.exists ? snap.data() : null;
+  if (!data || !data.encryptedApiKey) {
+    // The profile says there is an own key and there is none: stop, never the platform key.
+    if (named !== null) throw new OwnModelKeyMissingError();
+    return null;
+  }
+
   try {
-    return openByokSecret(data as { encryptedApiKey: string; keyVersion?: unknown }, { uid, provider: 'gemini' });
+    if (storedKeyProviderOf(data, provider) === null) {
+      throw new ByokKeyUnreadableError(typeof data.keyVersion === 'number' ? data.keyVersion : null, 'wrong-provider');
+    }
+    const apiKey = openByokSecret(data as { encryptedApiKey: string; keyVersion?: unknown }, { uid, provider });
+    return { provider, apiKey };
   } catch (err) {
     // A code, never the error object (3.0.13 e).
     logger.error('byok key decrypt failed', {
@@ -1771,8 +1819,8 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
 }
 
 /**
- * Deletes the user's custom Gemini API key: the encrypted secret and the
- * profile fields that say one is configured.
+ * Deletes the account's own model key: the encrypted secret of every provider
+ * (roadmap 3.0.15) and the profile fields that say one is configured.
  *
  * Both writes used to end in `.catch(() => {})`. A delete the database refused
  * left the key in place while the route answered `ok`, and when only the first
@@ -1780,7 +1828,7 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
  * errors propagate now — the route reports success only when the delete went
  * through.
  *
- * One transaction that reads the profile, the way `saveGeminiApiKey` writes
+ * One transaction that reads the profile, the way `saveOwnModelKey` writes
  * (QA 0ce264ac607d). It was two writes — the secret deleted, then the profile
  * merge-set — and the merge-set onto a profile erased in between created it
  * again, holding nothing but these fields; a save committing between the two
@@ -1788,17 +1836,18 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
  * Now the secret and the profile change together or not at all, and a missing
  * profile is updated never: the secret still goes, the profile stays gone.
  */
-export async function deleteGeminiApiKey(uid: string): Promise<void> {
+export async function deleteOwnModelKey(uid: string): Promise<void> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
   const profileRef: DocumentReference = db.collection('users').doc(uid);
-  const secretRef: DocumentReference = db.collection('user_secrets').doc(uid).collection('providers').doc('gemini');
+  const secrets = db.collection('user_secrets').doc(uid).collection('providers');
   await db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(profileRef);
-    tx.delete(secretRef);
+    for (const provider of MODEL_KEY_PROVIDERS) tx.delete(secrets.doc(provider));
     if (!profile.exists) return;
     tx.update(profileRef, {
       byokConfigured: FieldValue.delete(),
+      byokProvider: FieldValue.delete(),
       byokLast4: FieldValue.delete(),
       byokRotatedAt: FieldValue.delete(),
       geminiApiKey: FieldValue.delete(),
