@@ -237,7 +237,7 @@ function callsOf(statements: AbapStatement[], types: Map<string, string>): Call[
 
 /* ---------------------------------------------------------------- the check */
 
-export type AbapTestProblemKind = 'undeclared-method' | 'undeclared-parameter' | 'name-too-long' | 'global-test-class' | 'reserved-name' | 'no-test-class';
+export type AbapTestProblemKind = 'undeclared-method' | 'undeclared-parameter' | 'name-too-long' | 'global-test-class' | 'reserved-name' | 'no-test-class' | 'default-access';
 
 export interface AbapTestProblem {
   kind: AbapTestProblemKind;
@@ -250,7 +250,7 @@ export interface AbapTestProblem {
 }
 
 /** Local class names the engine writes into the test include itself. */
-export const RESERVED_TEST_CLASSES = ['ltd_access', 'ltc_engine_cases', 'ltc_golden_master'];
+export const RESERVED_TEST_CLASSES = ['ltd_access', 'ltc_engine_cases', 'ltc_golden_master', 'ltc_counterparts'];
 
 /**
  * The testing model's ABAP Unit code against the package it tests. `ok` only
@@ -293,6 +293,193 @@ export function abapTestProblemsSentence(problems: readonly AbapTestProblem[], m
   const shown = problems.slice(0, max).map((p) => p.message);
   const more = problems.length > max ? ` And ${problems.length - max} more.` : '';
   return `The ABAP Unit test class does not fit the class under test: ${shown.join(' ')}${more}`;
+}
+
+/* ------------------------------------------- the test double of the access layer */
+
+/**
+ * Roadmap 3.0.15 item (2), from the second SAP import (owner 16.10.2026): the one red ABAP Unit method created the
+ * logic class with `NEW zcl_<x>_logic( )` — the default access, which calls SAP — and so tested the missing SAP
+ * connection, not the logic. In an engine-led package the logic class takes the access layer in its constructor
+ * (`io_access`) and the test include holds the double (`ltd_access`); the model's tests must pass it.
+ */
+export interface AccessSeam {
+  /** The package classes whose constructor takes `io_access`, lower case. */
+  logicClasses: string[];
+  /** The test double the engine writes into the test include. */
+  double: string;
+  /** The default access classes of the package (`zcl_<x>_access`), lower case — never what a test passes. */
+  defaultAccess: string[];
+}
+
+export const ACCESS_DOUBLE = 'ltd_access';
+export const ACCESS_PARAM = 'io_access';
+
+/** The access seam of a package, or null when it has none (no logic class taking `io_access`, or no double). */
+export function accessSeamOf(packageSources: ReadonlyArray<{ path?: string; content: string }>): AccessSeam | null {
+  const hasDouble = packageSources.some((f) => new RegExp(`^\\s*CLASS\\s+${ACCESS_DOUBLE}\\s+DEFINITION\\b`, 'im').test(f.content));
+  if (!hasDouble) return null;
+  const decls = abapDeclarations(packageSources.filter((f) => !f.path || !/\.testclasses\.abap$/i.test(f.path)));
+  const logicClasses = [...decls.values()].filter((d) => d.kind === 'class' && d.methods.get('constructor')?.params.has(ACCESS_PARAM)).map((d) => d.name);
+  if (logicClasses.length === 0) return null;
+  const interfaces = new Set(
+    packageSources.flatMap((f) => [...f.content.matchAll(new RegExp(`\\b${ACCESS_PARAM}\\s+TYPE\\s+REF\\s+TO\\s+([\\w/]+)`, 'gi'))].map((m) => m[1].toLowerCase())),
+  );
+  const defaultAccess = [...decls.values()].filter((d) => d.kind === 'class' && !d.forTesting && d.interfaces.some((i) => interfaces.has(i))).map((d) => d.name);
+  return { logicClasses, double: ACCESS_DOUBLE, defaultAccess };
+}
+
+/** The prompt rule for the testing model, naming the classes of this package. */
+export function accessSeamPromptRule(seam: AccessSeam): string {
+  const cut = seam.logicClasses.join(' / ');
+  return (
+    `- THE ACCESS LAYER (CRITICAL): create the class under test ONLY with the test double the product writes into the test include: \`NEW ${seam.logicClasses[0]}( ${ACCESS_PARAM} = NEW ${seam.double}( ) )\`. ` +
+    `Never \`NEW ${cut}( )\` without \`${ACCESS_PARAM}\`, never \`CREATE OBJECT\` without it, and never pass ${seam.defaultAccess.length ? seam.defaultAccess.join(' / ') : 'the default access class'}: without the double the class uses the default access, which calls SAP, and the test tests the missing SAP connection, not the logic. ` +
+    `Do not declare ${seam.double} yourself — it is already in the test include.`
+  );
+}
+
+/** The code with comments and the text of literals and templates blanked, every offset kept. */
+function maskKeepingOffsets(code: string): string {
+  let out = '';
+  let i = 0;
+  let lineStart = true;
+  while (i < code.length) {
+    const ch = code[i];
+    if (lineStart && ch === '*') {
+      const end = code.indexOf('\n', i);
+      const stop = end === -1 ? code.length : end;
+      out += ' '.repeat(stop - i);
+      i = stop;
+      continue;
+    }
+    lineStart = ch === '\n';
+    if (ch === '"') {
+      const end = code.indexOf('\n', i);
+      const stop = end === -1 ? code.length : end;
+      out += ' '.repeat(stop - i);
+      i = stop;
+      continue;
+    }
+    if (ch === "'" || ch === '`' || ch === '|') {
+      let j = i + 1;
+      while (j < code.length && code[j] !== '\n') {
+        if (ch === '|' && code[j] === '\\') {
+          j += 2;
+          continue;
+        }
+        if (code[j] === ch) {
+          if (ch !== '|' && code[j + 1] === ch) {
+            j += 2;
+            continue;
+          }
+          break;
+        }
+        j++;
+      }
+      const stop = Math.min(j + 1, code.length);
+      out += ch + ' '.repeat(Math.max(0, stop - i - 2)) + (stop - i >= 2 ? code[stop - 1] : '');
+      i = stop;
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+  return out;
+}
+
+/** The offset of the `)` that closes the parenthesis opening at `open`, or -1. */
+function closingParen(text: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+export interface AccessDoubleResult {
+  /** The test code, rewritten where the rewrite is unambiguous. */
+  code: string;
+  /** How many places were rewritten to pass the double. */
+  rewritten: number;
+  /** The places that create the logic class without the double and could not be rewritten safely. */
+  problems: AbapTestProblem[];
+}
+
+/**
+ * Makes the model's ABAP Unit code create the logic class with the access double. Rewritten — deterministically, and
+ * said in a comment at the top of the code — are the unambiguous forms: `NEW <logic>( )`, `<var> = NEW #( )` for a
+ * variable typed as the logic class, and `CREATE OBJECT <var> [TYPE <logic>].` without EXPORTING. Refused, with the
+ * line, is any other creation that passes no `io_access`, or that passes the default access class. Without an access
+ * seam (`accessSeamOf`) the code is returned unchanged.
+ */
+export function withAccessDouble(testCode: string, seam: AccessSeam | null): AccessDoubleResult {
+  if (!seam || !testCode) return { code: testCode, rewritten: 0, problems: [] };
+  const logic = new Set(seam.logicClasses);
+  const defaults = new Set(seam.defaultAccess);
+  const masked = maskKeepingOffsets(testCode);
+  const lineOf = (offset: number) => testCode.slice(0, offset).split('\n').length;
+  const types = variableTypes(readStatements(testCode), new Map());
+  const edits: Array<{ start: number; end: number; text: string }> = [];
+  const problems: AbapTestProblem[] = [];
+  const withDouble = `${ACCESS_PARAM} = NEW ${seam.double}( )`;
+  const refuse = (offset: number, cls: string, why: string) =>
+    problems.push({ kind: 'default-access', line: lineOf(offset), name: cls, on: cls, message: `Line ${lineOf(offset)}: ${why} Create it with NEW ${cls}( ${withDouble} ).` });
+  /** The arguments of a creation: empty, with io_access (and not the default access), positional, or other. */
+  const judge = (args: string): 'empty' | 'double' | 'default' | 'other' => {
+    if (args.trim() === '') return 'empty';
+    const named = namedArgs(args);
+    const given = named.includes(ACCESS_PARAM) ? (new RegExp(`\\b${ACCESS_PARAM}\\s*=\\s*([\\s\\S]*)$`, 'i').exec(args)?.[1] ?? '') : named.length === 0 ? args : null;
+    if (given === null) return 'other';
+    const passed = /^\s*NEW\s+([\w/]+)\s*\(/i.exec(given)?.[1]?.toLowerCase();
+    return passed && defaults.has(passed) ? 'default' : 'double';
+  };
+
+  // NEW <logic>( … ) and <var> = NEW #( … )
+  const news = /\bNEW\s+([\w/#]+)\s*\(/gi;
+  for (let m = news.exec(masked); m !== null; m = news.exec(masked)) {
+    let cls = m[1].toLowerCase();
+    if (cls === '#') {
+      const before = /(?:DATA\s*\(\s*)?([a-z_]\w*)\s*\)?\s*=\s*$/i.exec(masked.slice(Math.max(0, m.index - 80), m.index));
+      cls = before ? (types.get(before[1].toLowerCase()) ?? '') : '';
+    }
+    if (!logic.has(cls)) continue;
+    const open = m.index + m[0].length - 1;
+    const close = closingParen(masked, open);
+    if (close === -1) continue;
+    const verdict = judge(masked.slice(open + 1, close));
+    if (verdict === 'double') continue;
+    if (verdict === 'empty') edits.push({ start: open, end: close + 1, text: `( ${withDouble} )` });
+    else if (verdict === 'default') refuse(m.index, cls, `creates ${cls} with the default access class, which calls SAP — not the test double.`);
+    else refuse(m.index, cls, `creates ${cls} without ${ACCESS_PARAM}, so it uses the default access, which calls SAP.`);
+  }
+
+  // CREATE OBJECT <var> [TYPE <cls>] [EXPORTING …].
+  const creates = /\bCREATE\s+OBJECT\s+([a-z_]\w*)((?:\s+TYPE\s+([\w/]+))?)([^.]*)\./gi;
+  for (let m = creates.exec(masked); m !== null; m = creates.exec(masked)) {
+    const cls = (m[3] ?? types.get(m[1].toLowerCase()) ?? '').toLowerCase();
+    if (!logic.has(cls)) continue;
+    const rest = m[4];
+    if (rest.trim() === '') {
+      const at = m.index + m[0].length - 1;
+      edits.push({ start: at, end: at, text: ` EXPORTING ${withDouble}` });
+      continue;
+    }
+    const exporting = /^\s*EXPORTING\s+([\s\S]*)$/i.exec(rest);
+    const verdict = exporting ? judge(exporting[1]) : 'other';
+    if (verdict === 'double') continue;
+    refuse(m.index, cls, verdict === 'default' ? `creates ${cls} with the default access class, which calls SAP — not the test double.` : `creates ${cls} without ${ACCESS_PARAM}, so it uses the default access, which calls SAP.`);
+  }
+
+  if (edits.length === 0) return { code: testCode, rewritten: 0, problems };
+  let code = testCode;
+  for (const e of [...edits].sort((a, b) => b.start - a.start)) code = code.slice(0, e.start) + e.text + code.slice(e.end);
+  const note = `" Clean-Core.io: ${edits.length} place${edits.length === 1 ? '' : 's'} created ${seam.logicClasses.join(' / ')} without the access layer (the default access, which calls SAP); rewritten to pass the test double: ${withDouble}.\n`;
+  return { code: note + code, rewritten: edits.length, problems };
 }
 
 /* ---------------------------------------------------------------- counting */
@@ -468,8 +655,11 @@ export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
 export function placeModelTestClasses(files: ReadonlyArray<{ path: string; content: string }>, testCode: string): { path: string; content: string } | null {
   const include = files.find((f) => /\.clas\.testclasses\.abap$/i.test(f.path));
   if (!include) return null;
+  // 3.0.15 (2): a suite stored before the check gets the same rewrite here — the class under test with the access
+  // double, never the default access that calls SAP. What cannot be rewritten safely stays as written.
+  const placed = withAccessDouble(testCode, accessSeamOf(files)).code;
   return {
     path: include.path,
-    content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model and checked by Clean-Core.io against the declarations of the classes under test.\n${testCode.replace(/\s*$/, '')}\n`,
+    content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model and checked by Clean-Core.io against the declarations of the classes under test.\n${placed.replace(/\s*$/, '')}\n`,
   };
 }

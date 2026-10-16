@@ -16,7 +16,7 @@ import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, t
 import { withInvariants } from '@/lib/testing-invariants';
 import { TESTING_PROMPT_LIMIT, TESTING_PROMPT_MARGIN, codeForTestingPrompt, testingCodeNote } from '@/lib/testing-prompt-code';
 import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
-import { abapTestProblemsSentence, checkAbapTestClass } from '@/lib/testing-abap-unit';
+import { abapTestProblemsSentence, accessSeamOf, accessSeamPromptRule, checkAbapTestClass, withAccessDouble } from '@/lib/testing-abap-unit';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { packageDigest, TEST_SUITE_BASIS_FIELD } from '@/lib/test-suite-basis';
 import { endTestGenProgress, enterTestGenStage, startTestGenProgress, type TestGenProgress, type TestGenStageKey } from '@/lib/testing-progress';
@@ -151,6 +151,15 @@ export const useTestGeneration = (
       }
       const ruleAsk = ruleTracePromptSection(rulesForTrace, tablesForTrace);
       const engineAsk = engineCasePromptSection(engineCases, isAbapCloud ? 'abap-unit' : 'node');
+      // 3.0.13 (6): the model's ABAP Unit class is checked against the declarations of the package it tests
+      // (`lib/testing-abap-unit.ts`). A class that calls an undeclared method or parameter, declares a name over
+      // 30 characters, or is not a local test class gets one repair round with the problems named; then it is refused.
+      const packageSources = isAbapCloud && typeof project?.generatedCode === 'string' ? sandboxFilesFromStoredCode(project.generatedCode) : [];
+      // 3.0.15 (2, owner 16.10.2026): in an engine-led package the logic class takes the access layer in its
+      // constructor and the test include holds the double; the prompt names both, and the answer is rewritten or
+      // refused where it creates the logic class with the default access (which calls SAP).
+      const accessSeam = packageSources.length > 0 ? accessSeamOf(packageSources) : null;
+      const accessAsk = accessSeam ? `\n        ${accessSeamPromptRule(accessSeam)}` : '';
 
       const buildPrompt = (generatedText: string): string => (isAbapCloud
         ? `Given the following context:
@@ -174,7 +183,7 @@ ${generatedText}
         - Every class and method name has at most 30 characters.
         - Use local test doubles and stubs to mock standard released table/view accesses.
         - TEST CASE ID NAMING CONVENTION (CRITICAL): The test method name in the local test class MUST incorporate or refer to the test case ID (e.g. \`methods tc_01_create_sales_order for testing.\`) so they can be mapped programmatically.
-        - Use \`cl_abap_unit_test=>fail( ... )\` or \`cl_aunit_assert=>assert_equals( ... )\` or \`cl_aunit_assert=>assert_initial( ... )\` for assertion checking.
+        - Use \`cl_abap_unit_assert=>assert_equals( ... )\`, \`cl_abap_unit_assert=>assert_initial( ... )\` or \`cl_abap_unit_assert=>fail( ... )\` for assertion checking — never \`cl_aunit_assert\` or \`cl_abap_unit_test\`.${accessAsk}
         
         Format the output as a JSON object with:
         - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom, ruleTrace)
@@ -236,10 +245,6 @@ ${generatedText}
       // (dev acceptance 14.10.2026: the SD package went past it).
       const codeView = codeForTestingPrompt(project?.generatedCode, Math.max(0, TESTING_PROMPT_LIMIT - TESTING_PROMPT_MARGIN - buildPrompt('').length));
       const basePrompt = buildPrompt(`${codeView.text}${testingCodeNote(codeView)}`);
-      // 3.0.13 (6): the model's ABAP Unit class is checked against the declarations of the package it tests
-      // (`lib/testing-abap-unit.ts`). A class that calls an undeclared method or parameter, declares a name over
-      // 30 characters, or is not a local test class gets one repair round with the problems named; then it is refused.
-      const packageSources = isAbapCloud && typeof project?.generatedCode === 'string' ? sandboxFilesFromStoredCode(project.generatedCode) : [];
       let repairReason: string | null = null;
       let checkedAnswer: Record<string, unknown> | null = null;
       for (let round = 0; round < 2 && !checkedAnswer; round++) {
@@ -308,13 +313,17 @@ ${generatedText}
 
         if (packageSources.length > 0) {
           const suite = (result as { testSuite?: { code?: unknown } }).testSuite;
-          const check = checkAbapTestClass(typeof suite?.code === 'string' ? suite.code : '', packageSources);
-          if (!check.ok) {
-            repairReason = abapTestProblemsSentence(check.problems);
+          const seamed = withAccessDouble(typeof suite?.code === 'string' ? suite.code : '', accessSeam);
+          const check = checkAbapTestClass(seamed.code, packageSources);
+          const problems = [...check.problems, ...seamed.problems];
+          if (problems.length > 0) {
+            repairReason = abapTestProblemsSentence(problems);
             if (round === 1) throw new Error(`${repairReason} Nothing was saved — the previous version is untouched.`);
             setRetrying('The ABAP Unit test class calls what the class under test does not declare — asking the model once more with the problems named…');
             continue;
           }
+          // Stored as rewritten: the class under test with the access double (the comment at the top says where).
+          if (seamed.rewritten > 0 && suite) (suite as { code?: unknown }).code = seamed.code;
         }
         checkedAnswer = result;
       }
