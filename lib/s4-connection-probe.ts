@@ -163,9 +163,9 @@ export interface ProbeVerdict {
 }
 
 /**
- * What the status means, in the words the interface shows. The 401/403 and
+ * What the status means, in the words the interface shows. The 401 and
  * 5xx answers keep the verdicts they had before (a rejected credential is
- * "reachable, credentials rejected", a 5xx is a failure); what is new is that
+ * "reachable, credentials rejected", a 5xx is a failure); a 403 (access refused) and a redirect fail; what is new is that
  * every answer says which service was checked and that no record was read.
  */
 export function describeProbeStatus(httpStatus: number, authMethod: string, servicePath: string): ProbeVerdict {
@@ -193,15 +193,26 @@ export function describeProbeStatus(httpStatus: number, authMethod: string, serv
       checked: checked(true, anonymous ? null : true, true),
     };
   }
+  // A redirect (often to a login page) confirms nothing about the service, so it is no "connected" (QA review of
+  // 33d378a056fd); a 403 is a refused access, not a rejected credential — the user may be signed in without the
+  // authorisation for this service.
   if (httpStatus >= 300 && httpStatus < 400) {
     return {
-      status: 'connected',
+      status: 'failed',
       message: `Endpoint reachable (HTTP ${httpStatus}) via ${authLabel}, but it redirected instead of describing service ${service} — the service was not confirmed. ${noRecord}`,
       httpStatus,
       checked: checked(true, null, false),
     };
   }
-  if (httpStatus === 401 || httpStatus === 403) {
+  if (httpStatus === 403) {
+    return {
+      status: 'failed',
+      message: `Endpoint reachable (HTTP 403) via ${authLabel}, but access to service ${service} was forbidden — check that the service is part of your communication arrangement and that the user is authorised for it. ${noRecord}`,
+      httpStatus,
+      checked: checked(true, null, false),
+    };
+  }
+  if (httpStatus === 401) {
     return {
       status: 'connected',
       message: `Endpoint reachable (HTTP ${httpStatus}) via ${authLabel}. Authentication credentials were rejected — verify your credentials. ${noRecord}`,

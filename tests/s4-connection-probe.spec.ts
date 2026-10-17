@@ -168,8 +168,23 @@ test.describe('the probe reads no body and requests no entity set', () => {
 test.describe('failures are reported as before', () => {
   const PROBE = `https://h.s4hana.cloud.sap${DEFAULT_PROBE_SERVICE_PATH}/$metadata`;
 
+  test('a 403 is a refused access, not a rejected credential; a redirect confirms nothing (QA review of 33d378a056fd)', async () => {
+    const sap = sapEndpoint([{ status: 403 }]);
+    const { httpStatus } = await probeService(PROBE, { Authorization: 'Basic ok' }, sap.fetchImpl);
+    const forbidden = describeProbeStatus(httpStatus, 'basic', DEFAULT_PROBE_SERVICE_PATH);
+    expect(forbidden.status).toBe('failed');
+    expect(forbidden.message).toContain('access to service');
+    expect(forbidden.message).not.toContain('credentials were rejected');
+    expect(forbidden.checked.signedIn).toBeNull();
+    for (const status of [301, 302, 307]) {
+      const redirect = describeProbeStatus(status, 'basic', DEFAULT_PROBE_SERVICE_PATH);
+      expect(redirect.status, String(status)).toBe('failed');
+      expect(redirect.checked.serviceFound).toBe(false);
+    }
+  });
+
   test('rejected credentials: reachable, credentials rejected, nothing read', async () => {
-    for (const status of [401, 403]) {
+    for (const status of [401]) {
       const sap = sapEndpoint([{ status }]);
       const { httpStatus } = await probeService(PROBE, { Authorization: 'Basic bad' }, sap.fetchImpl);
       const verdict = describeProbeStatus(httpStatus, 'basic', DEFAULT_PROBE_SERVICE_PATH);
