@@ -8,7 +8,7 @@
  */
 
 /** What an IS INITIAL on a type the engine has not read assumes — in the predicate, its JSDoc and TRACE.md. */
-export const INITIAL_ASSUMPTION = 'IS INITIAL on an unread dictionary type — initial taken as null, blank, 0, 00000000, 000000';
+export const INITIAL_ASSUMPTION = 'IS INITIAL on an unread dictionary type — initial taken as null, blank, 0, false, 00000000, 000000';
 /** The JSDoc tag of a predicate that makes that assumption, read back by the trace (`initialAssumptionsIn`). */
 export const INITIAL_ASSUMED_TAG = 'Assumed by the engine:';
 
@@ -31,10 +31,11 @@ export const INITIAL_HELPER: readonly string[] = [
   '',
   '/**',
   " * ABAP's IS INITIAL on a value as the port holds it. Written by Clean-Core.io (engine), not a model.",
-  ' * null or undefined is initial on every kind (an empty CDS String arrives as null). text and bool: blanks only;',
+  ' * null or undefined is initial on every kind (an empty CDS String arrives as null), and so is false: a flag the',
+  ' * port holds as a boolean (a CDS Boolean) is abap_false. text and bool: blanks only;',
   " * string: empty; numc: zeros or blanks; number: 0, also as decimal text ('0.00'); date: '00000000' (or",
   " * '0000-00-00'); time: '000000'; table: no rows. unknown — a dictionary type whose domain the engine has not",
-  " * read: blanks, the number 0, exactly '00000000' and exactly '000000' (the initial value of an unread date or",
+  " * read: blanks, the number 0, false, exactly '00000000' and exactly '000000' (the initial value of an unread date or",
   " * time), never a character such as '0' or '0000', which is a filled text field.",
   ' */',
   'export function isInitial(v: unknown, kind: InitialKind): boolean {',

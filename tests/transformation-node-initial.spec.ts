@@ -179,7 +179,9 @@ test.describe('IS [NOT] INITIAL is the engine\'s on every type (3.0.17 criterion
         [[], 'table', true],
         [null, 'table', true],
         [[{}], 'table', false],
-        // unknown: null, blank, the number 0, exactly '00000000' and exactly '000000'
+        // unknown: null, blank, the number 0, false (abap_false held as a boolean), exactly '00000000' and exactly '000000'
+        [false, 'unknown', true],
+        [true, 'unknown', false],
         [undefined, 'unknown', true],
         [null, 'unknown', true],
         ['', 'unknown', true],
