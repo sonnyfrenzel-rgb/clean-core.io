@@ -14,6 +14,7 @@ import { rangeWords } from './unit-plan';
 import { ENGINE_CODE_NOTE, checkPhrase, notVerifiedPhrase, orderedChecks } from './check-words';
 import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
 import { engineCounterpartsIn } from './released-counterparts';
+import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority-node';
 import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
@@ -62,6 +63,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const byRegion = new Map(outcomes.map((o) => [o.regionId, o.state]));
   const goldenMaster = goldenMasterOf(scaffold.files);
   const engineCounterparts = [...new Set(scaffold.files.filter((f) => /_access\.clas\.abap$/i.test(f.path)).flatMap((f) => engineCounterpartsIn(f.content)))];
+  const openAuthority = scaffold.files.filter((f) => f.path === AUTHORITY_FILE).flatMap((f) => openAuthorityIn(f.content));
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
   for (const g of plan.guards) {
@@ -140,6 +142,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     droppedRules: plan.rules.filter((r) => r.decision === 'drop').map((r) => r.id),
     ...(goldenMaster ? { goldenMaster } : {}),
     ...(engineCounterparts.length ? { engineCounterparts } : {}),
+    ...(openAuthority.length ? { openAuthority } : {}),
   };
 }
 
@@ -192,6 +195,11 @@ export function traceMarkdown(trace: Trace): string {
   } else if (fixtures.length) lines.push(`- Demo data of the original, not carried over in this version: ${fixtureWords}.`);
   if (trace.engineCounterparts?.length) {
     lines.push(`- SAP function modules written by the engine in ABAP Cloud language means, not left to connect: ${trace.engineCounterparts.join(', ')} (an exact counterpart; the access class says why).`);
+  }
+  if (trace.openAuthority?.length) {
+    lines.push(
+      `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only, and each run it grants says so in its issues.`,
+    );
   }
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;
