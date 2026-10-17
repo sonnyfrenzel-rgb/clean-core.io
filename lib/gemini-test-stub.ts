@@ -129,7 +129,7 @@ export function geminiTestStubFillText(prompt: string): string {
           unitId?: unknown;
           abap?: { text?: unknown };
           guards?: Array<{ id?: unknown; helper?: unknown; placement?: unknown; regionId?: unknown; values?: unknown }>;
-          authority?: Array<{ fn?: unknown; call?: unknown }>;
+          authority?: Array<{ fn?: unknown; call?: unknown; wired?: unknown }>;
         }>;
       };
       if (request.track === 'rap') track = 'rap';
@@ -145,9 +145,10 @@ export function geminiTestStubFillText(prompt: string): string {
                   .filter((g) => g.placement === 'body' && typeof g.helper === 'string')
                   .map((g) => ({ helper: g.helper as string, values: Array.isArray(g.values) ? g.values.filter((v): v is string => typeof v === 'string' && /^[A-Za-z_$][\w$]*$/.test(v)) : [] })),
                 predicates: guards.filter((g) => typeof g.regionId === 'string' && typeof g.id === 'string').map((g) => g.id as string),
-                // The original's AUTHORITY-CHECKs (scaffold version 15): called, and the answer used, as the fill checks require.
+                // The original's AUTHORITY-CHECKs (scaffold version 15): called, and the answer used, as the fill checks require;
+                // one the frame runs whole (`wired`, QA 8394df76b027) is not the body's.
                 authority: (Array.isArray(u.authority) ? u.authority : []).flatMap((a) =>
-                  typeof a.fn === 'string' && /^authority_L\d+$/.test(a.fn) ? [`${a.fn}()`] : typeof a.call === 'string' && /^authority_check\(/.test(a.call) ? [a.call.replace(/<[^<>]*>/g, 'undefined as never')] : [],
+                  a.wired ? [] : typeof a.fn === 'string' && /^authority_L\d+$/.test(a.fn) ? [`${a.fn}()`] : typeof a.call === 'string' && /^authority_check\(/.test(a.call) ? [a.call.replace(/<[^<>]*>/g, 'undefined as never')] : [],
                 ),
               };
             })

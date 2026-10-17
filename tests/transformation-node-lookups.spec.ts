@@ -264,6 +264,8 @@ const AUTH_SOURCE = [
   '  PERFORM check_plant.',
   "  gv_done = 'X'.",
   'FORM check_plant.',
+  // A statement before the check: the frame cannot run it at the entry, the body keeps it (QA 8394df76b027).
+  '  CLEAR gv_done.',
   "  AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'.",
   '  IF sy-subrc <> 0.',
   "    MESSAGE 'No authorization' TYPE 'E'.",

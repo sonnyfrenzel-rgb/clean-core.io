@@ -32,9 +32,12 @@ const AUTH_SOURCE = [
   '  PERFORM check_plant.',
   "  gv_done = 'X'.",
   'FORM check_plant.',
-  "  AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'.",
-  '  IF sy-subrc <> 0.',
-  "    MESSAGE 'No authorization' TYPE 'E'.",
+  // Inside a branch the body writes: the frame does not run it, the body keeps it (QA 8394df76b027).
+  '  IF p_werks IS NOT INITIAL.',
+  "    AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'.",
+  '    IF sy-subrc <> 0.',
+  "      MESSAGE 'No authorization' TYPE 'E'.",
+  '    ENDIF.',
   '  ENDIF.',
   'ENDFORM.',
   '',
@@ -145,8 +148,8 @@ test.describe('the lookups of the Node package (QA review of fddd9ce18548)', () 
 
   test('90667d2a91ae: two AUTHORITY-CHECKs on one line get two frame names, and the frame type-checks', () => {
     const source = AUTH_SOURCE.replace(
-      "  AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'.",
-      "  AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'. AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '02'.",
+      "    AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'.",
+      "    AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'. AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '02'.",
     );
     const p = prep(source);
     const line = lineOf(source, 'AUTHORITY-CHECK');

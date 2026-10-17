@@ -30,7 +30,7 @@ import { sha256Hex } from '../artefact-digest';
 import { engineCaseProvenance } from '../engine-case-provenance';
 import { ENGINE_RUNTIME_JS } from '../test-sandbox/engine-runtime';
 import { deriveEngineCases, ENGINE_CASES_FILE, engineCasesFile, type EngineCaseDerivation } from '../testing-engine-cases';
-import { NUMERIC_SYSTEM_FIELDS, readAbapShapes, shapeComment, type AbapShapes } from './abap-shapes';
+import { NUMERIC_SYSTEM_FIELDS, readAbapShapes, shapeComment, type AbapScalar, type AbapShapes } from './abap-shapes';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { originalDemoCases, type OriginalDemoCases } from './golden-master';
 import { nodeDemoFiles } from './node-demo';
@@ -737,8 +737,80 @@ const ABAP_OPS: Readonly<Record<string, string>> = { '=': '=', EQ: '=', '<>': '<
  * INITIAL`/`BOUND`/`ASSIGNED` on one of the check's `values`, against a literal or a constant of the source,
  * with ABAP's initial value per type: text blank, a number 0, a packed number zero, a date `00000000`, a NUMC all
  * zeros. Null — the model writes it in a fill region — for anything else (AND/OR, NOT, a second variable, a type
- * whose comparison the port cannot reproduce exactly).
+ * whose comparison the port cannot reproduce exactly), and for a type the engine has not resolved to a supported
+ * scalar (QA finding 95f6ea84e8af): a dictionary type is only known by its fixed domain (`char10`, `numc4`, `datum`,
+ * `abap_bool` …, `FIXED_DOMAINS`), a generic or unread type not at all — a dictionary date is initial at '00000000',
+ * a dictionary amount at 0, and neither is text.
  */
+/**
+ * Dictionary types whose domain is fixed and known without the dictionary (QA finding 95f6ea84e8af): the generic
+ * CHARnn/NUMCnn elements, ABAP_BOOL and its kin, and the date, time and period elements every system has. Any other
+ * dictionary type keeps its predicate a fill region.
+ */
+const FIXED_DOMAINS: Readonly<Record<string, { type: 'c' | 'n' | 'd' | 't'; length?: number }>> = {
+  abap_bool: { type: 'c', length: 1 },
+  boole_d: { type: 'c', length: 1 },
+  xfeld: { type: 'c', length: 1 },
+  flag: { type: 'c', length: 1 },
+  dats: { type: 'd' },
+  datum: { type: 'd' },
+  sydatum: { type: 'd' },
+  budat: { type: 'd' },
+  bldat: { type: 'd' },
+  erdat: { type: 'd' },
+  tims: { type: 't' },
+  uzeit: { type: 't' },
+  syuzeit: { type: 't' },
+  gjahr: { type: 'n', length: 4 },
+  monat: { type: 'n', length: 2 },
+  poper: { type: 'n', length: 3 },
+  posnr: { type: 'n', length: 6 },
+};
+
+/** The fixed domain of a dictionary type (`char10` → C 10, `numc4` → N 4, `datum` → D), or undefined. */
+function fixedDomainOf(type: string): { type: 'c' | 'n' | 'd' | 't'; length?: number } | undefined {
+  if (Object.prototype.hasOwnProperty.call(FIXED_DOMAINS, type)) return FIXED_DOMAINS[type];
+  const m = /^(char|numc)(\d{1,3})$/.exec(type);
+  return m ? { type: m[1] === 'char' ? 'c' : 'n', length: Number(m[2]) } : undefined;
+}
+
+type PredicateKind = 'number' | 'decimal' | 'char' | 'string' | 'numc' | 'date' | 'time' | 'table';
+
+/**
+ * The kind of a value the engine writes a predicate on, from its TypeScript type in the port and the ABAP scalar
+ * behind it; null where the type is not resolved to one the engine supports — a dictionary type outside
+ * `FIXED_DOMAINS`, a generic type (`TYPE any`), a reference, a structure, a type no declaration of the source names.
+ */
+function predicateKindOf(ts: string | null, scalar: AbapScalar | null): PredicateKind | null {
+  if (ts === 'number') return 'number';
+  if (ts !== null && ts.endsWith('[]') && ts !== 'unknown[]') return 'table';
+  if (ts !== 'string' || !scalar) return null;
+  const type = scalar.dictionary ? fixedDomainOf(scalar.type)?.type : scalar.type;
+  if (!type) return null;
+  if (['p', 'f', 'decfloat16', 'decfloat34', 'int8'].includes(type)) return 'decimal';
+  if (type === 'c') return 'char';
+  if (type === 'string' || type === 'xstring') return 'string';
+  if (type === 'n') return 'numc';
+  if (type === 'd') return 'date';
+  if (type === 't') return 'time';
+  return null;
+}
+
+/**
+ * The type a check reads, in words, for the fill request where its predicate stays the model's (QA finding
+ * 95f6ea84e8af): `cs_x-amount: TYPE wrbtr (dictionary type: its domain is not in the source)`.
+ */
+export function declaredTypeWords(g: Pick<PlanGuard, 'line' | 'basis' | 'operands' | 'unitId' | 'condition'>, plan: Pick<UnitPlan, 'units'>, shapes: AbapShapes): string[] {
+  return nodeGuardOperands(g as PlanGuard, plan, shapes).map((o) => {
+    const scalar = shapes.scalarOf(o.name, g.line);
+    const ts = shapes.typeOf(o.name, g.line);
+    if (scalar && /^(?:any|data|simple|clike|csequence|numeric|xsequence|object)$/.test(scalar.type)) return `${o.name}: TYPE ${scalar.type} (generic: the type of what the caller hands in)`;
+    if (scalar?.dictionary) return `${o.name}: TYPE ${scalar.type} (dictionary type: its domain is not in the source)`;
+    if (scalar) return `${o.name}: TYPE ${scalar.type}${scalar.length ? ` LENGTH ${scalar.length}` : ''}${scalar.decimals ? ` DECIMALS ${scalar.decimals}` : ''}`;
+    return `${o.name}: ${ts && ts !== 'unknown' ? `${ts} in the port` : 'type not declared in the source'}`;
+  });
+}
+
 export function enginePredicateOf(
   g: Pick<PlanGuard, 'condition' | 'line' | 'basis' | 'operands' | 'unitId'>,
   plan: Pick<UnitPlan, 'units'>,
@@ -757,40 +829,15 @@ export function enginePredicateOf(
   const v = `values.${operand.key}`;
   const ts = shapes.typeOf(subject, g.line);
   const scalar = shapes.scalarOf(subject, g.line);
-  type Kind = 'number' | 'decimal' | 'char' | 'string' | 'numc' | 'date' | 'time' | 'text' | 'unknown' | 'table';
-  const kind: Kind | null =
-    ts === 'number'
-      ? 'number'
-      : ts === null || ts === 'unknown'
-        ? 'unknown'
-        : ts.endsWith('[]')
-          ? 'table'
-          : ts !== 'string'
-            ? null
-            : !scalar || scalar.dictionary
-              ? 'text'
-              : ['p', 'f', 'decfloat16', 'decfloat34', 'int8'].includes(scalar.type)
-                ? 'decimal'
-                : scalar.type === 'c'
-                  ? 'char'
-                  : scalar.type === 'string'
-                    ? 'string'
-                    : scalar.type === 'n'
-                      ? 'numc'
-                      : scalar.type === 'd'
-                        ? 'date'
-                        : scalar.type === 't'
-                          ? 'time'
-                          : null;
+  const kind = predicateKindOf(ts, scalar);
   if (!kind) return null;
+  const domain = scalar?.dictionary ? fixedDomainOf(scalar.type) : undefined;
   const typeWord =
-    kind === 'unknown'
-      ? 'its type is not declared in the source'
-      : kind === 'text'
-        ? `${scalar ? `dictionary type ${scalar.type}` : 'its type'} is not declared in the source`
-        : kind === 'table'
-          ? 'an internal table'
-          : `${subject.startsWith('sy-') ? 'a system field, ' : 'declared '}${scalar ? `TYPE ${scalar.type}${scalar.length ? ` LENGTH ${scalar.length}` : ''}${scalar.decimals ? ` DECIMALS ${scalar.decimals}` : ''}` : 'as a whole number'}`;
+    kind === 'table'
+      ? 'an internal table'
+      : domain
+        ? `dictionary type ${scalar!.type}, domain ${domain.type.toUpperCase()}${domain.length ? ` ${domain.length}` : ''}`
+        : `${subject.startsWith('sy-') ? 'a system field, ' : 'declared '}${scalar ? `TYPE ${scalar.type}${scalar.length ? ` LENGTH ${scalar.length}` : ''}${scalar.decimals ? ` DECIMALS ${scalar.decimals}` : ''}` : 'as a whole number'}`;
   const head = `// Written by Clean-Core.io (engine), not a model: the original's condition at L${g.line}, ${condition.replace(/\*\//g, '* /')}, on ${subject} (${typeWord}).`;
 
   if (unary) {
@@ -798,13 +845,8 @@ export function enginePredicateOf(
     const test = unary[3].toUpperCase();
     let expr: string;
     let note: string;
-    if (test !== 'INITIAL') {
-      // A reference or a field symbol reaches the port as a value or as nothing.
-      if (kind !== 'unknown') return null;
-      expr = `${v} !== null && ${v} !== undefined`;
-      note = `${test === 'BOUND' ? 'Bound' : 'Assigned'}: a value is handed in (not null).`;
-      return [head, `// ${note}`, `return ${not ? `!(${expr})` : expr};`];
-    }
+    // A reference or a field symbol has no type the engine resolves: BOUND and ASSIGNED stay the model's.
+    if (test !== 'INITIAL') return null;
     switch (kind) {
       case 'number':
         expr = `${v} === 0`;
@@ -834,17 +876,9 @@ export function enginePredicateOf(
         expr = `${v}.trim() === '' || ${v} === '000000'`;
         note = "A time is initial at '000000'.";
         break;
-      case 'table':
+      default:
         expr = `${v}.length === 0`;
         note = 'An internal table is initial when it has no rows.';
-        break;
-      case 'text':
-        expr = `${v}.trim() === ''`;
-        note = "The type is not in the source: '' and blanks are taken as initial.";
-        break;
-      default:
-        expr = `${v} === null || ${v} === undefined || (typeof ${v} === 'string' && ${v}.trim() === '')`;
-        note = "The type is not in the source: null and '' (or blanks) are taken as initial.";
     }
     return [head, `// ${note}`, `return ${not ? `!(${expr})` : expr};`];
   }
@@ -888,15 +922,10 @@ export function enginePredicateOf(
       break;
     case 'char':
     case 'string':
-    case 'text':
-      // A character comparison ignores trailing blanks; an order between texts, or a digit literal against a
-      // type the source does not declare (a NUMC of the dictionary compares by value), is the model's.
-      if (equality && rhs.quoted && !(kind === 'text' && /^\d+$/.test(lit))) {
+      // A character comparison ignores trailing blanks; an order between texts is the model's.
+      if (equality && rhs.quoted) {
         expr = `${v}.replace(/ +$/, '') ${js} ${q(lit.replace(/ +$/, ''))}`;
-        note =
-          kind === 'text'
-            ? 'The type is not in the source: compared as text, trailing blanks ignored.'
-            : 'Compared as text, trailing blanks ignored, as ABAP compares character fields.';
+        note = 'Compared as text, trailing blanks ignored, as ABAP compares character fields.';
       }
       break;
     default:
@@ -906,7 +935,13 @@ export function enginePredicateOf(
   return [head, `// ${note}${via}`, `return ${expr};`];
 }
 
-function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputList[] = [], constants: ReadonlyMap<string, { text: string; quoted: boolean }> = new Map()): Built {
+function guardsFile(
+  plan: UnitPlan,
+  shapes: AbapShapes,
+  lists: readonly InputList[] = [],
+  constants: ReadonlyMap<string, { text: string; quoted: boolean }> = new Map(),
+  wired: ReadonlySet<string> = new Set(),
+): Built {
   // The row a check reads (scaffold version 7): a row of the input list its subject belongs to, else a record.
   const rowTypeOf = (g: PlanGuard): string => {
     const list = listOfPath(subjectPath(plan, g.subject));
@@ -972,7 +1007,8 @@ function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputLis
     // The engine writes a CHECK's predicate where the condition and the declared type decide it (3.0.17 criterion 3):
     // a CHECK holds where the run goes on, the inverse of an IF guard, and the model inverted it. An IF guard's
     // predicate stays the model's for now — the reach measurement and the repair rounds are built on those regions.
-    const written = g.effect === 'check' ? enginePredicateOf(g, plan, shapes, constants) : null;
+    // The check on sy-subrc the frame runs with its AUTHORITY-CHECK (QA finding 8394df76b027) is engine-written too.
+    const written = g.effect === 'check' || wired.has(g.id) ? enginePredicateOf(g, plan, shapes, constants) : null;
     if (written) {
       out.push(...written.map((l) => `  ${l}`));
     } else {
@@ -1071,8 +1107,70 @@ function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], 
   ].join('\n');
 }
 
-function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes): string[] {
-  const out: string[] = [];
+/** Statements that declare and do nothing, before a check the frame may run at the step's entry. */
+const DECLARING_KEYWORDS = new Set(['DATA', 'TYPES', 'CONSTANTS', 'FIELD-SYMBOLS', 'STATICS', 'TABLES', 'FORM', 'METHOD', 'FUNCTION', 'MODULE']);
+const CONTAINER_BLOCKS = new Set(['form', 'method', 'module', 'class', 'interface', 'define']);
+
+/**
+ * The AUTHORITY-CHECKs whose whole sequence the frame runs (QA finding 8394df76b027): the check the engine wrote
+ * (`fn`), standing at the top level of the routine with nothing before it but declarations and checks the frame runs
+ * already, and directly followed by the derived check on its sy-subrc — an IF whose only statement ends the flow
+ * (`IF sy-subrc <> 0. MESSAGE … TYPE 'E'.`, RETURN, EXIT) and whose guard refuses or stops. Every other check stays
+ * the body's, with the body checks on its answer (`authorityRefusals`, markers.ts).
+ */
+export function wireAuthority(u: Unit, plan: Pick<UnitPlan, 'guards'>, facts: Pick<EngineFacts, 'statements' | 'blocks'>, entries: readonly AuthorityEntry[]): AuthorityEntry[] {
+  if (u.kind === 'orchestrator' || u.part || entries.length === 0) return [...entries];
+  const { statements, blocks } = facts;
+  const topLevel = (i: number) => (blocks.enclosing[i] ?? []).every((b) => CONTAINER_BLOCKS.has(b.kind));
+  const ifBlockOf = (i: number) => blocks.blocks.find((b) => b.kind === 'if' && b.openIndex === i) ?? null;
+  const entryLines = new Set(u.guardCalls.map((id) => plan.guards.find((g) => g.id === id)?.line).filter((l): l is number => l !== undefined));
+  const wiredLines = new Set<number>();
+  return entries.map((e) => {
+    if (!e.fn) return e;
+    const at = statements.flatMap((s, i) => (s.keyword === 'AUTHORITY-CHECK' && s.lineStart === e.line ? [i] : []));
+    if (at.length !== 1 || !topLevel(at[0])) return e;
+    const i = at[0];
+    const next = statements[i + 1];
+    const g = next && next.keyword === 'IF' && topLevel(i + 1) ? plan.guards.find((x) => x.line === next.lineStart && x.carried && x.unitId === u.id) : undefined;
+    if (!g || g.placement !== 'body' || (g.outcome !== 'refuses' && g.outcome !== 'stops')) return e;
+    if (g.operands.length !== 1 || g.operands[0].name !== 'sy-subrc' || operandsOf(g.condition).join(',') !== 'sy-subrc') return e;
+    // The IF holds the ending alone: no ELSE, nothing the guard would skip.
+    const block = ifBlockOf(i + 1);
+    if (!block || block.closeIndex !== i + 3 || statements[i + 2].lineStart !== g.endingLine || statements[i + 3].keyword !== 'ENDIF') return e;
+    // Nothing before it in the routine that the frame does not run first.
+    const container = blocks.blocks
+      .filter((b) => (b.kind === 'form' || b.kind === 'method') && b.openIndex < i && b.closeIndex > i)
+      .sort((a, b) => b.openIndex - a.openIndex)[0];
+    if (!container) return e;
+    for (let k = container.openIndex + 1; k < i; k++) {
+      const s = statements[k];
+      if (!topLevel(k)) continue;
+      if (DECLARING_KEYWORDS.has(s.keyword) || s.keyword === 'ENDIF') continue;
+      if (entryLines.has(s.lineStart) || wiredLines.has(s.lineStart)) continue;
+      return e;
+    }
+    wiredLines.add(e.line);
+    wiredLines.add(g.line);
+    return { ...e, wired: { guard: g.id, helper: g.helper } };
+  });
+}
+
+/** The frame's call of a wired AUTHORITY-CHECK and its derived check, at the step's entry. */
+function wiredAuthorityLines(e: AuthorityEntry, plan: UnitPlan): string[] {
+  const g = plan.guards.find((x) => x.id === e.wired!.guard)!;
+  const answer = `sySubrc_L${e.line}${e.fn!.slice(`authority_L${e.line}`.length)}`;
+  const call = `${g.helper}(sel, st, null, { ${g.operands[0].key}: ${answer} })`;
+  const v = g.id.replace('-', '').toLowerCase();
+  return [
+    `  // The AUTHORITY-CHECK at L${e.line} and its check on sy-subrc at L${g.line}, run by the frame (engine): the body writes neither.`,
+    `  const ${answer} = ${e.fn}();`,
+    ...(g.outcome === 'refuses' ? [`  const ${v} = checked(st, () => ${call});`, `  if (${v}) return ${v};`] : [`  if (checked(st, () => ${call})) return;`]),
+  ];
+}
+
+function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = []): string[] {
+  // In the original's order: the raw checks and the AUTHORITY-CHECKs the frame runs whole.
+  const calls: Array<{ line: number; lines: string[] }> = auth.filter((e) => e.wired).map((e) => ({ line: e.line, lines: wiredAuthorityLines(e, plan) }));
   for (const id of u.guardCalls) {
     const g = plan.guards.find((x) => x.id === id)!;
     const v = id.replace('-', '').toLowerCase();
@@ -1084,14 +1182,9 @@ function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes): string[] {
       return `${o.key}: ${[arg, ...components.map(camelName)].join('.')}`;
     });
     const call = `${g.helper}(sel, st, null${handed.length ? `, { ${handed.join(', ')} }` : ''})`;
-    if (g.outcome === 'refuses') {
-      out.push(`  const ${v} = checked(st, () => ${call});`);
-      out.push(`  if (${v}) return ${v};`);
-    } else {
-      out.push(`  if (checked(st, () => ${call})) return;`);
-    }
+    calls.push({ line: g.line, lines: g.outcome === 'refuses' ? [`  const ${v} = checked(st, () => ${call});`, `  if (${v}) return ${v};`] : [`  if (checked(st, () => ${call})) return;`] });
   }
-  return out;
+  return calls.sort((a, b) => a.line - b.line).flatMap((c) => c.lines);
 }
 
 function guardImports(u: Unit, plan: UnitPlan): string[] {
@@ -1130,7 +1223,9 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     out.push('');
   }
   const doc = unitDoc(u, plan, auth, reads);
-  const guardLines = [...guardCallLines(u, plan, shapes), ...authorityFrameLines(auth), ...lookupFrameLines(reads)];
+  // The frame's functions first, then the checks it runs at the entry in the original's order — an AUTHORITY-CHECK
+  // the frame runs whole calls its function (QA finding 8394df76b027).
+  const guardLines = [...authorityFrameLines(auth), ...lookupFrameLines(reads), ...guardCallLines(u, plan, shapes, auth)];
   out.push(doc);
   out.push(`${u.signature} {`);
   out.push(...guardLines);
@@ -1142,7 +1237,7 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     ...callees.map((c) => c.fn),
     ...guardImports(u, plan).filter((n) => n !== 'checked'),
     'DECIMALS',
-    ...auth.flatMap((e) => (e.fn ? [e.fn] : [])),
+    ...auth.flatMap((e) => (e.fn && !e.wired ? [e.fn] : [])),
     ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
     ...lookupAvailable(reads),
   ];
@@ -1260,7 +1355,7 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, aut
     ...NODE_HELPERS,
     ...steps.map((s) => s.fn),
     ...guardImports(orch, plan).filter((n) => n !== 'checked'),
-    ...auth.flatMap((e) => (e.fn ? [e.fn] : [])),
+    ...auth.flatMap((e) => (e.fn && !e.wired ? [e.fn] : [])),
     ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
     ...lookupAvailable(reads),
   ];
@@ -1794,15 +1889,17 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/lib/run-store.ts', content: RUN_STORE_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, allLists), owner: 'engine' });
   files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, allLists), owner: 'engine' });
-  add(guardsFile(plan, shapes, lists, constantValuesOf(facts.statements)));
   // The original's AUTHORITY-CHECKs (scaffold version 15, `authority-node.ts`): the seam fails closed, and each
-  // function whose lines hold a check gets it written in its frame.
+  // function whose lines hold a check gets it written in its frame — with its check on sy-subrc where the frame can
+  // run both at the step's entry (QA finding 8394df76b027, `wireAuthority`).
   const checks = facts.graph.authorityChecks;
   const authority: Record<string, AuthorityEntry[]> = {};
   for (const u of plan.units) {
-    const entries = checks.length > 0 ? authorityEntriesOf(u, plan, checks, facts.statements) : [];
+    const entries = checks.length > 0 ? wireAuthority(u, plan, facts, authorityEntriesOf(u, plan, checks, facts.statements)) : [];
     if (entries.length > 0) authority[u.id] = entries;
   }
+  const wiredGuards = new Set(Object.values(authority).flatMap((es) => es.flatMap((e) => (e.wired ? [e.wired.guard] : []))));
+  add(guardsFile(plan, shapes, lists, constantValuesOf(facts.statements), wiredGuards));
   if (checks.length > 0) files.push({ path: AUTHORITY_FILE, content: authorityFile(plan.program, checks), owner: 'engine' });
   const lookups: Record<string, LookupEntry[]> = {};
   for (const u of plan.units) {
@@ -1853,14 +1950,27 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   for (const file of files) file.content = defuseMarkers(file.content);
   // Engine-written and before the digest: the regions are found in the files as they ship (B6).
   files.splice(0, files.length, ...withDraftHeader(files, options.against));
+  // The ABAP types a predicate the model writes reads (QA finding 95f6ea84e8af).
+  const regions = findRegions(files);
+  const regionIds = new Set(regions.map((r) => r.regionId));
+  const predicateTypes: Record<string, string[]> = {};
+  for (const g of plan.guards) {
+    if (!g.carried || !g.regionId || !regionIds.has(g.regionId)) continue;
+    const words = declaredTypeWords(g, plan, shapes);
+    if (words.length > 0) predicateTypes[g.id] = words;
+  }
   const required: Record<string, RequiredGuard[]> = {};
-  for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'node', facts.statements);
+  for (const u of plan.units) {
+    // A check on sy-subrc the frame runs with its AUTHORITY-CHECK is no call the body must make.
+    const bodyCalls = u.bodyCalls.filter((id) => !wiredGuards.has(id));
+    if (bodyCalls.length > 0) required[u.id] = requiredGuardsOf({ ...u, bodyCalls }, plan, 'node', facts.statements);
+  }
   return {
     track: 'node',
     version: SCAFFOLD_VERSION,
     files,
     units: plan.units,
-    regions: findRegions(files),
+    regions,
     digest: scaffoldDigest(files),
     adapter,
     notCarried: plan.notCarried,
@@ -1868,5 +1978,6 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     required,
     ...(Object.keys(authority).length > 0 ? { authority } : {}),
     ...(Object.keys(lookups).length > 0 ? { lookups } : {}),
+    ...(Object.keys(predicateTypes).length > 0 ? { predicateTypes } : {}),
   };
 }

@@ -678,14 +678,14 @@ function requiredGuardRefusals(body: string, ctx: BodyGuardContext): BodyRefusal
 }
 
 /**
- * The original's AUTHORITY-CHECKs keep their force (QA finding ef6865e7ade4): a body whose region holds a check must
- * call the frame's `authority_L<line>()` — or, where the engine wrote none, `authority_check(` with the check's object
- * — and use its answer: hand it on, compare it, or assign it to a name it then reads. A call as a bare statement, a
- * `void`, a closure never called, or an assignment never read leaves the check without effect and is refused; after
- * the repair rounds such a unit stays a stub with this reason (fail closed), never a silent port.
+ * The original's AUTHORITY-CHECKs keep their force (QA findings ef6865e7ade4, fd3392b066b8, 8394df76b027): a body
+ * whose region holds a check must call the frame's `authority_L<line>()` — or, where the engine wrote none,
+ * `authority_check(` with the check's object — and its answer must reach a path that ends (`used`). A check the
+ * frame runs whole with its check on sy-subrc (`wired`, scaffold-node.ts `wireAuthority`) is not the body's. After
+ * the repair rounds a refused unit stays a stub with this reason (fail closed), never a silent port.
  */
 function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
-  const entries = ctx.track === 'node' ? (ctx.authority ?? []) : [];
+  const entries = ctx.track === 'node' ? (ctx.authority ?? []).filter((e) => !e.wired) : [];
   if (entries.length === 0) return [];
   // Code only: comments and string literals cannot call a check.
   const code = body
@@ -695,58 +695,142 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const missing: string[] = [];
   const unused: string[] = [];
   const calls = (re: RegExp) => [...code.matchAll(re)].map((m) => m.index ?? 0);
-  /** The name of the call whose argument list holds `at` — through object literals only (`guard(…, { sySubrc })`). */
-  const enclosingCall = (at: number): string | null => {
+  /** The index of the bracket that closes the one at `open`, or -1. */
+  const closeOf = (open: number): number => {
+    let depth = 0;
+    for (let i = open; i < code.length; i++) {
+      const c = code[i];
+      if (c === '(' || c === '[' || c === '{') depth++;
+      else if (c === ')' || c === ']' || c === '}') {
+        depth--;
+        if (depth === 0) return i;
+      }
+    }
+    return -1;
+  };
+  /** The innermost bracket still open at `at`, or -1. */
+  const openerOf = (at: number): number => {
     let depth = 0;
     for (let i = at - 1; i >= 0; i--) {
       const c = code[i];
       if (c === ')' || c === ']' || c === '}') depth++;
       else if (c === '(' || c === '[' || c === '{') {
-        if (depth > 0) {
-          depth--;
-          continue;
-        }
-        const head = code.slice(0, i).replace(/\s+$/, '');
-        if (c === '{' && /[(,:]$/.test(head)) continue; // an object literal handed on
-        if (c !== '(') return null;
-        return /([A-Za-z_$][\w$]*)$/.exec(head)?.[1] ?? null;
-      } else if (c === ';' && depth === 0) return null;
+        if (depth === 0) return i;
+        depth--;
+      }
     }
-    return null;
+    return -1;
+  };
+  /** Does the statement at `from` (a block or one statement) do something and end the path: return, continue, break, throw? */
+  const statementExits = (from: number): { exits: boolean; end: number } => {
+    let i = from;
+    while (i < code.length && /\s/.test(code[i])) i++;
+    if (code[i] === '{') {
+      const close = closeOf(i);
+      if (close < 0) return { exits: false, end: code.length };
+      const inner = code.slice(i + 1, close).replace(/[\s;]+$/, '');
+      // The last statement of the block: after the last `;` or block end at its own level.
+      let depth = 0;
+      let boundary = -1;
+      for (let k = 0; k < inner.length; k++) {
+        const c = inner[k];
+        if (c === '(' || c === '[' || c === '{') depth++;
+        else if (c === ')' || c === ']' || c === '}') {
+          depth--;
+          if (depth === 0 && c === '}') boundary = k;
+        } else if (c === ';' && depth === 0) boundary = k;
+      }
+      const last = inner.slice(boundary + 1).trim();
+      return { exits: last !== '' && /^(?:return|continue|break|throw)\b/.test(last), end: close + 1 };
+    }
+    let depth = 0;
+    let k = i;
+    for (; k < code.length; k++) {
+      const c = code[k];
+      if (c === '(' || c === '[' || c === '{') depth++;
+      else if (c === ')' || c === ']' || c === '}') depth--;
+      else if ((c === ';' || c === '\n') && depth === 0) break;
+    }
+    return { exits: /^(?:return|continue|break|throw)\b/.test(code.slice(i, k).trim()), end: k + 1 };
+  };
+  /** After an `if (…)` whose `)` is at `close`: does its branch, or its plain `else`, end the path? */
+  const branchExits = (close: number): boolean => {
+    const then = statementExits(close + 1);
+    if (then.exits) return true;
+    const rest = code.slice(then.end);
+    const otherwise = /^\s*else\b(?!\s+if\b)/.exec(rest);
+    return otherwise ? statementExits(then.end + otherwise[0].length).exits : false;
   };
   /**
-   * Is the value at [at, end) used so that it can change the outcome (QA finding fd3392b066b8)? A strict allow-list:
-   * tested in a condition (a comparison, `!`, `&&`, `||`, `?`, `if (…)`/`while (…)` itself), handed to a check helper
-   * (`guard_…`, `stop_…`, `skip_…`, `when_…`), returned, or assigned to a name or a field that is then used so. A
-   * discard is none of these: `void rc`, `rc;`, `_ = rc`, an argument to anything else.
+   * Can the value at [at, end) change the outcome (QA findings fd3392b066b8, 8394df76b027)? Only along a path that
+   * ends: it is tested in the condition of an `if` whose branch (or plain `else`) is not empty and ends with return,
+   * continue, break or throw; it is handed to a check helper (`guard_…`, `stop_…`, `skip_…`, `when_…`, through
+   * `checked`) whose own result is used so; it is returned; or it is assigned — whole or in an expression — to a name
+   * or field whose read is used so. An empty branch, one that only logs or assigns, a ternary into a name never
+   * tested, `void rc`, `rc;`, `_ = rc` and every other call are not.
    */
   const used = (at: number, end: number, depth = 0): boolean => {
-    if (depth > 4) return false;
-    const before = code.slice(0, at).replace(/\s+$/, '');
-    const after = code.slice(end).replace(/^\s+/, '');
-    if (/^(?:===?|!==?|<=?|>=?|&&|\|\|)/.test(after) || /^\?(?![.?])/.test(after)) return true;
-    if (/(?:===?|!==?|<=?|(?<!=)>=?|&&|\|\||!)$/.test(before) && !/=>$/.test(before)) return true;
-    if (/\breturn$/.test(before)) return true;
-    if (/\b(?:if|while)\s*\($/.test(before) && /^\)/.test(after)) return true;
-    // An assignment of the whole value: then what the name or field it lands in is used for.
-    const assigned = /(?:\b(?:const|let|var)\s+)?((?:[A-Za-z_$][\w$]*\.)*)([A-Za-z_$][\w$]*)\s*(?::\s*number\s*)?=$/.exec(before);
-    if (assigned && !/[=!<>]=$/.test(before) && /^(?:;|$|\n)/.test(code.slice(end).replace(/^[ \t]+/, '')) && !/^_+$/.test(assigned[2])) {
-      const field = assigned[1] !== '';
-      const name = assigned[2];
-      const rest = code.slice(end);
-      const read = new RegExp(field ? `\\.${escapeRe(name)}(?![\\w$])` : `(?<![\\w$.])${escapeRe(name)}(?![\\w$])`, 'g');
-      return [...rest.matchAll(read)].some((m) => {
-        const start = end + (m.index ?? 0) + (field ? 1 : 0);
-        const stop = start + name.length;
-        const next = code.slice(stop);
-        if (/^\s*=(?!=)/.test(next)) return false;
-        // A property key of that name (`{ sySubrc: 0 }`) is no read; the shorthand `{ sySubrc }` is.
-        if (/^\s*:/.test(next) && /[{,]\s*$/.test(code.slice(0, start))) return false;
-        return used(start, stop, depth + 1);
-      });
+    if (depth > 6) return false;
+    let i = at;
+    for (;;) {
+      const o = openerOf(i);
+      const head = o >= 0 ? code.slice(0, o).replace(/\s+$/, '') : '';
+      if (o >= 0 && code[o] === '(') {
+        if (/\bif$/.test(head)) {
+          const close = closeOf(o);
+          return close > 0 && branchExits(close);
+        }
+        const name = /([A-Za-z_$][\w$]*)$/.exec(head)?.[1];
+        if (name && !/^(?:while|for|switch|return|typeof|void|await)$/.test(name)) {
+          if (!/^(?:guard|stop|skip|when)_/.test(name) && name !== 'checked') return false;
+          let start = o;
+          while (start > 0 && /\s/.test(code[start - 1])) start--;
+          start -= name.length;
+          return used(start, closeOf(o) + 1, depth + 1);
+        }
+        if (name) return false;
+        i = o; // a grouping paren: the expression goes on outside it
+        continue;
+      }
+      if (o >= 0 && code[o] === '[') {
+        i = o;
+        continue;
+      }
+      if (o >= 0 && code[o] === '{' && /(?:[(,:=?]|\breturn)$/.test(head)) {
+        i = o; // an object literal: what it is handed to
+        continue;
+      }
+      break;
     }
-    const call = enclosingCall(at);
-    return call !== null && /^(?:guard|stop|skip|when)_/.test(call);
+    // The statement the value stands in, from its start at this level.
+    const opener = openerOf(i);
+    let s = i;
+    for (let d = 0; s > opener + 1; s--) {
+      const c = code[s - 1];
+      if (c === ')' || c === ']' || c === '}') d++;
+      else if (c === '(' || c === '[' || c === '{') d--;
+      else if ((c === ';' || c === '\n') && d === 0) {
+        // A line break continues an expression that is still open on the line before (`=`, `?`, `&&`, an operator).
+        if (c === '\n' && /[=?:&|+\-*/,(]\s*$/.test(code.slice(opener + 1, s - 1))) continue;
+        break;
+      }
+    }
+    const statement = code.slice(s, i).replace(/^\s+/, '');
+    if (/^return\b/.test(statement)) return true;
+    const assigned = /^(?:(?:const|let|var)\s+)?((?:[A-Za-z_$][\w$]*\.)*)([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?![=>])/.exec(statement);
+    if (!assigned || /^_+$/.test(assigned[2])) return false;
+    const field = assigned[1] !== '';
+    const name = assigned[2];
+    const read = new RegExp(field ? `\\.${escapeRe(name)}(?![\\w$])` : `(?<![\\w$.])${escapeRe(name)}(?![\\w$])`, 'g');
+    return [...code.slice(end).matchAll(read)].some((m) => {
+      const start = end + (m.index ?? 0) + (field ? 1 : 0);
+      const stop = start + name.length;
+      const next = code.slice(stop);
+      if (/^\s*=(?![=>])/.test(next)) return false;
+      // A property key of that name (`{ sySubrc: 0 }`) is no read; the shorthand `{ sySubrc }` is.
+      if (/^\s*:/.test(next) && /[{,]\s*$/.test(code.slice(0, start))) return false;
+      return used(start, stop, depth + 1);
+    });
   };
   for (const e of entries) {
     if (e.fn) {

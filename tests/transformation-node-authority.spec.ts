@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import { typeCheckCandidate, type TypeCheckResult } from '../lib/test-sandbox/type-check';
-import { candidateFiles, prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
+import { candidateFiles, guardBodyOf, prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
 import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE } from '../lib/transformation/authority-node';
 import { fillPrompt } from '../lib/transformation/fill-prompt';
 import { withTrace } from '../lib/transformation/trace';
@@ -80,9 +80,18 @@ test.describe('the Node package carries the original authority check (3.0.17 cri
     // The engine-written function stands before the fill region, in the frame.
     expect(step.content.indexOf(frame)).toBeLessThan(step.content.indexOf(`@cc-fill BEGIN ${unit.id}`));
 
+    // The check stands first in its FORM and its IF sy-subrc <> 0 follows: the frame runs both (QA 8394df76b027).
+    const { guard } = authorityUnit(p);
+    const wired = `const sySubrc_L${CHECK_LINE} = authority_L${CHECK_LINE}();`;
+    expect(step.content).toContain(wired);
+    expect(step.content).toContain(`checked(st, () => ${guard.helper}(sel, st, null, { sySubrc: sySubrc_L${CHECK_LINE} }))`);
+    expect(step.content.indexOf(wired)).toBeLessThan(step.content.indexOf(`@cc-fill BEGIN ${unit.id}`));
     const fill = p.fillUnits.find((u) => u.unitId === unit.id)!;
-    expect(fill.authority).toEqual([expect.objectContaining({ line: CHECK_LINE, fn: `authority_L${CHECK_LINE}` })]);
-    expect(fill.available.helpers).toContain(`authority_L${CHECK_LINE}`);
+    expect(fill.authority).toEqual([expect.objectContaining({ line: CHECK_LINE, fn: `authority_L${CHECK_LINE}`, wired: { guard: guard.id, helper: guard.helper } })]);
+    expect(fill.guards.find((g) => g.id === guard.id)?.placement).toBe('entry');
+    // Nothing for the body to call: the function is not offered, and the guard is not required of it.
+    expect(fill.available.helpers).not.toContain(`authority_L${CHECK_LINE}`);
+    expect(p.scaffold.required[unit.id] ?? []).toEqual([]);
     const prompt = fillPrompt({ schema: 'cc.fill.v1', track: 'node', program: null, context: '', rules: '', units: [fill], repair: null });
     expect(prompt).toContain('AUTHORITY-CHECK: "authority" of a unit lists each check');
   });
@@ -93,12 +102,13 @@ test.describe('the Node package carries the original authority check (3.0.17 cri
     const { unit, guard } = authorityUnit(p);
     const orchestrator = p.plan.units.find((u) => u.kind === 'orchestrator')!;
     const bodies = new Map<string, string>();
-    // What a model is asked to write — nothing about sy-subrc left to invent.
-    bodies.set(unit.id, `const sySubrc = authority_L${CHECK_LINE}();\nconst r = ${guard.helper}(sel, st, null, { sySubrc });\nif (r) return r;`);
-    if (guard.regionId) bodies.set(guard.regionId, 'return values.sySubrc !== 0;');
+    // The frame runs the check and its sy-subrc check (QA 8394df76b027): the body has nothing left of it to write.
+    bodies.set(unit.id, 'return;');
+    expect(guardBodyOf(p)(unit.id, 'return;', [])).toBeNull();
+    if (p.scaffold.regions.some((r) => r.regionId === guard.regionId)) bodies.set(guard.regionId!, 'return values.sySubrc !== 0;');
     bodies.set(orchestrator.id, `const r = ${unit.fn}(sel, st);\nif (r) return r;\nst.local.gvDone = 'X';`);
     const files = candidateFiles(p, bodies);
-    expect(files.find((f) => f.path === unit.file)!.content).toContain(`const sySubrc = authority_L${CHECK_LINE}();`);
+    expect(files.find((f) => f.path === unit.file)!.content).toContain(`const sySubrc_L${CHECK_LINE} = authority_L${CHECK_LINE}();`);
     expect(typeErrors(typeCheckCandidate(files))).toEqual([]);
     // The scaffold alone (every body a stub) is type-clean too.
     expect(typeErrors(typeCheckCandidate(p.scaffold.files))).toEqual([]);

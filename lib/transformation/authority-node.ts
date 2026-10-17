@@ -149,7 +149,9 @@ export function authorityFrameLines(entries: readonly AuthorityEntry[]): string[
 /** The lines of a unit's doc comment that name its checks. */
 export function authorityDocLines(entries: readonly AuthorityEntry[]): string[] {
   return entries.map((e) =>
-    e.fn !== null
+    e.wired
+      ? ` * Authority (engine): the AUTHORITY-CHECK at L${e.line} (${e.check}) and its check on sy-subrc (${e.wired.guard}, ${e.wired.helper}) run in the frame, at the step's entry — the body writes neither.`
+      : e.fn !== null
       ? ` * Authority (engine): ${e.fn}() is the AUTHORITY-CHECK at L${e.line} (${e.check}) — call it where the original checks; it answers sy-subrc.`
       : ` * Authority: at L${e.line} the body calls ${e.call.replace(/\*\//g, '* /')} — it answers sy-subrc (${(e.unread ?? []).join(', ')} known only inside the routine).`,
   );

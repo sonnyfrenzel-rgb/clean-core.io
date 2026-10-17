@@ -654,6 +654,11 @@ export interface Scaffold {
   authority?: Record<string, AuthorityEntry[]>;
   /** Node only, since scaffold version 15 (3.0.17): the original's reads inside its steps, per region (`lookups-node.ts`). */
   lookups?: Record<string, LookupEntry[]>;
+  /**
+   * Node only (QA finding 95f6ea84e8af): for each check whose predicate stays a fill region, the ABAP type of each
+   * value it reads, in words — the fill request names them, so the model writes that type's initial value.
+   */
+  predicateTypes?: Record<string, string[]>;
 }
 
 /**
@@ -697,6 +702,13 @@ export interface AuthorityEntry {
   /** `authority_check(st, 'V_LIKP_VST', { 'VSTEL': sel.vstel, 'ACTVT': '03' }, 90)`. */
   call: string;
   unread?: string[];
+  /**
+   * Set where the frame runs the whole sequence (QA finding 8394df76b027): the check stands at the top level of its
+   * routine, only declarations and engine-run checks before it, and the very next statement is the derived check on
+   * its sy-subrc (`IF sy-subrc <> 0. MESSAGE … TYPE 'E'.` / RETURN …). The frame calls `fn` and hands its answer to
+   * `helper` (guard `guard`) at the step's entry; the body writes nothing for it.
+   */
+  wired?: { guard: string; helper: string };
 }
 
 /** The harness adapter (`docs/failure-patterns/README.md`, `scripts/acceptance/run.mjs`). */
@@ -814,6 +826,8 @@ export interface FillRequestUnit {
     placement?: PlanGuard['placement'];
     basis?: PlanGuard['basis'];
     values?: string[];
+    /** Node: the ABAP type of each value, where the predicate is the model's (`Scaffold.predicateTypes`). */
+    declared?: string[];
   }>;
   facts: { decimals: Array<{ name: string; digits: number; decimals: number; type: string }> };
   available: { helpers: string[]; callees: string[] };
@@ -827,7 +841,7 @@ export interface FillRequestUnit {
    * engine wrote (the body calls `fn()` where the original checks; it answers sy-subrc), or, without one, the
    * `call` the body writes there.
    */
-  authority?: Array<Pick<AuthorityEntry, 'line' | 'fn' | 'call'>>;
+  authority?: Array<Pick<AuthorityEntry, 'line' | 'fn' | 'call' | 'wired'>>;
   /**
    * Node, since scaffold version 15: the original's reads inside this unit's lines (`SELECT SINGLE`, `SELECT … INTO
    * TABLE`) — the function `fn` the engine wrote (the body calls `fn()` where the original reads), or, without one,

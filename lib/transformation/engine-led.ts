@@ -150,6 +150,7 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
     const against = req.against ?? null;
     const scaffold = req.track === 'node' ? buildNodeScaffold(plan, facts, { cases, against }) : buildRapScaffold(plan, facts, { cases, against });
     const regionIds = new Set(scaffold.regions.map((r) => r.regionId));
+    const wired = new Set(Object.values(scaffold.authority ?? {}).flatMap((es) => es.flatMap((e) => (e.wired ? [e.wired.guard] : []))));
     const byId = new Map(plan.units.map((u) => [u.id, u]));
     const fillUnits: FillRequestUnit[] = [];
     const sliceChars: Record<string, number> = {};
@@ -189,7 +190,11 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         guards: fillGuardsOf(plan, u.id)
           .map((g) => (g.regionId && !regionIds.has(g.regionId) ? { ...g, regionId: null } : g))
           // Node: the keys of `values` as the package declares them (`G0036Values` also holds the routine's parameters a check reads).
-          .map((g) => (decls ? { ...g, values: decls.get(`${g.id.replace('-', '')}Values`)?.fields ?? [] } : g)),
+          .map((g) => (decls ? { ...g, values: decls.get(`${g.id.replace('-', '')}Values`)?.fields ?? [] } : g))
+          // Node: the ABAP type of each value a predicate the model writes reads (QA finding 95f6ea84e8af).
+          .map((g) => (g.regionId && scaffold.predicateTypes?.[g.id] ? { ...g, declared: scaffold.predicateTypes[g.id] } : g))
+          // A check on sy-subrc the frame runs with its AUTHORITY-CHECK: the stub calls it (QA finding 8394df76b027).
+          .map((g) => (wired.has(g.id) ? { ...g, placement: 'entry' as const } : g)),
         facts: {
           decimals: plan.decimals
             .filter((d) => sliceUpper.includes(d.name.toUpperCase()))
@@ -199,7 +204,7 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         available: { helpers: available.filter((n) => !calleeNames.has(n)), callees },
         // The original's AUTHORITY-CHECKs in these lines (Node, scaffold version 15): the function the engine wrote
         // for each, or the exact call — the model never decides an authorization (`authority-node.ts`).
-        ...(scaffold.authority?.[u.id]?.length ? { authority: scaffold.authority[u.id].map((e) => ({ line: e.line, fn: e.fn, call: e.call })) } : {}),
+        ...(scaffold.authority?.[u.id]?.length ? { authority: scaffold.authority[u.id].map((e) => ({ line: e.line, fn: e.fn, call: e.call, ...(e.wired ? { wired: e.wired } : {}) })) } : {}),
         // The original's SELECTs in these lines (Node, scaffold version 15): answered from the request's lookup lists
         // by srv/lib/lookups.ts — the function the frame holds, or the exact call (`lookups-node.ts`).
         ...(scaffold.lookups?.[u.id]?.length
