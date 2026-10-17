@@ -33,7 +33,7 @@ import { abapDeliveryOf } from './abap-delivery';
 import { deriveBusinessRules, type BusinessRule, type BusinessRuleSet } from '../abap/business-rule-set';
 import { readCallGraphFrom, type CallGraphReport, type FormDefinition } from '../abap/call-graph';
 import { containerAt, readBlocks, type BlockStructure, type Container } from '../abap/block-structure';
-import { readGuardsFrom, readOriginalContract, type OriginalContract } from '../abap/original-contract';
+import { procedureLines, readGuardsFrom, readOriginalContract, type OriginalContract } from '../abap/original-contract';
 import { readStatements, type AbapStatement } from '../abap/statement-reader';
 import { materialRules, type MaterialRule } from '../testing-rule-trace';
 import { sliceFor } from './abap-slice';
@@ -856,6 +856,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   // ---- guards
   const inLoop = loopLines(statements);
+  const inProcedure = procedureLines(statements);
   const constants = statements.filter((st) => st.keyword === 'CONSTANTS').map((st) => /^CONSTANTSs*:?s*([w/]+)/i.exec(st.text)?.[1] ?? '').filter(Boolean);
   // A work area holds an input record when its rows are of a structure the contract maps to `record`
   // (defect E): a row of an internal table the program builds itself is a computed value.
@@ -871,10 +872,12 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     const d = rule ? decision(rule) : 'keep';
     const c = containerOf(g.line);
     const tag = guardTag(g.line);
+    // A CHECK skips the pass in a loop, leaves its FORM/METHOD/FUNCTION/MODULE outside one (the caller goes on), and
+    // ends its event block only at event level (3.0.17 criterion 3: RATE_DEVIATION's CHECK refused the whole input).
     const outcome: PlanGuard['outcome'] =
       g.effect === 'continue' || (g.effect === 'check' && inLoop.has(g.line))
         ? 'skips'
-        : g.effect === 'return' || g.effect === 'exit'
+        : g.effect === 'return' || g.effect === 'exit' || (g.effect === 'check' && inProcedure.has(g.line))
           ? 'stops'
           : 'refuses';
     const prefix = outcome === 'skips' ? 'skip' : outcome === 'stops' ? 'stop' : 'guard';

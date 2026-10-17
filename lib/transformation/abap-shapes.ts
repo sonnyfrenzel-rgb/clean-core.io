@@ -96,6 +96,13 @@ export interface AbapShapes {
    * `ls_op-effort`, `<ls_row>`, `cv_code`, `sy-subrc` — or null when no declaration says (see `typeAt`).
    */
   typeOf(name: string, line: number): string | null;
+  /**
+   * The ABAP scalar type behind a data object where `line` reads it — `lv_qty` → `p LENGTH 8 DECIMALS 3`,
+   * `cs_result-status` → `c LENGTH 10`, `sy-subrc` → `i`, `sy-datum` → `d` — or null for a structure, a table, a
+   * reference or a name no declaration of the source types (3.0.17 criterion 3: the engine writes a check's
+   * predicate where the original's condition and this type decide it).
+   */
+  scalarOf(name: string, line: number): AbapScalar | null;
 }
 
 /**
@@ -393,7 +400,30 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     }
     return ts;
   };
-  return { structures, globals, typeOf };
+  const scalarAt = (name: string, line: number): AbapScalar | null => {
+    const [base, ...components] = name.toLowerCase().trim().split('-');
+    if (!base) return null;
+    if (base === 'sy') {
+      if (components.length !== 1) return null;
+      if (NUMERIC_SYSTEM_FIELDS.has(components[0])) return { type: 'i', length: null, decimals: null, dictionary: false };
+      const dt = SYSTEM_DATE_TIME[components[0]];
+      return dt ? { type: dt, length: null, decimals: null, dictionary: false } : null;
+    }
+    const proc = procedures.filter((p) => line >= p.lineStart && line <= p.lineEnd).sort((a, b) => b.lineStart - a.lineStart)[0];
+    const scope = proc ? localDecls.get(proc.lineStart) : undefined;
+    const decl = scope?.get(base) ?? globalByName.get(base);
+    if (!decl) return null;
+    if (components.length === 0) return scalarOf(decl.rest);
+    let ts = resolve(decl.rest, 0, scope).ts;
+    let field: ShapeField | undefined;
+    for (const c of components) {
+      field = byTsName.get(ts)?.fields.find((x) => x.key === camelName(c));
+      if (!field) return null;
+      ts = field.ts;
+    }
+    return field?.scalar ?? null;
+  };
+  return { structures, globals, typeOf, scalarOf: scalarAt };
 }
 
 /**

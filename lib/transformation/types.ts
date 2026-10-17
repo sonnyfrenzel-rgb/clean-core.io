@@ -143,6 +143,15 @@ export const PLAN_VERSION = 2;
  * sy-subrc 0/4; the matching rows with sy-subrc and sy-dbcnt), the frame holding `const lookup_L156 = () => …` where
  * every WHERE value is readable (`lookups-node.ts`) — the model searched lists that do not exist or declined the unit.
  * A body that omits the frame's authority check or ignores its answer is refused (QA finding ef6865e7ade4).
+ * Also 15 (3.0.17 criterion 3, the same runs: FORM RATE_DEVIATION's `CHECK cs_result-status IS INITIAL`): both tracks
+ * and the engine cases — a CHECK outside a loop inside a FORM, METHOD, FUNCTION or MODULE leaves that routine and the
+ * run goes on (`stop_…`, the step returns), never a refusal of the input; in a loop it skips the pass (`skip_…`), and
+ * only at event level does it end the event block as a refusal (`procedureLines`, lib/abap/original-contract.ts).
+ * Node — a CHECK's predicate is written by the engine, with no fill region, where the condition is one `IS [NOT]
+ * INITIAL`/`BOUND`/`ASSIGNED` or one comparison against a literal or constant on a value the check hands in, decided
+ * by its declared type (`enginePredicateOf`): the model had inverted the CHECK's condition (an IF guard's predicate
+ * stays the model's: the reach measurement and the repair rounds are built on those regions). RAP — the body is told to
+ * leave the method (or the pass) where such a CHECK's condition does not hold.
  * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 15;
@@ -229,8 +238,9 @@ export interface PlanGuard {
   /** False for a check of a dropped rule, a fixture or an unreachable routine. */
   carried: boolean;
   /**
-   * Refuses the whole input (an error message, RAISE, LEAVE, STOP, a CHECK outside a loop), stops the step
-   * (RETURN, EXIT outside a loop) or skips one record (CONTINUE, a CHECK inside a loop).
+   * Refuses the whole input (an error message, RAISE, LEAVE, STOP, a CHECK at event level), stops the step
+   * (RETURN, EXIT outside a loop, a CHECK in a FORM/METHOD/FUNCTION/MODULE outside a loop — it leaves the routine and
+   * the run goes on) or skips one record (CONTINUE, a CHECK inside a loop).
    */
   outcome: 'refuses' | 'stops' | 'skips';
   /** The subject of a simple condition (`p_gjahr`, `ls_rcv-quota`), else null. */

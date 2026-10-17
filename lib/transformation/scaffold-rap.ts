@@ -1075,7 +1075,14 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       .filter((id) => predicates.has(id))
       .map((id) => {
         const p = predicates.get(id)!;
-        const by = engineCalled.has(id) ? 'the engine calls it already' : `call it where the original checks (L${p.guard.line}): IF ${callOf(p)} = abap_true. … ENDIF.`;
+        // A CHECK inside a routine (3.0.17 criterion 3) leaves the method, or the loop's pass, when its condition does
+        // not hold — never a refusal of the input. Written with IF, as exit_or_check (Clean ABAP) wants it.
+        const leaves = p.guard.effect === 'check' && p.guard.outcome !== 'refuses';
+        const by = engineCalled.has(id)
+          ? 'the engine calls it already'
+          : leaves
+            ? `call it where the original's CHECK stands (L${p.guard.line}): IF ${callOf(p)} = abap_false. ${p.guard.outcome === 'skips' ? 'CONTINUE' : 'RETURN'}. ENDIF.`
+            : `call it where the original checks (L${p.guard.line}): IF ${callOf(p)} = abap_true. … ENDIF.`;
         return `${signatures[p.guard.regionId ?? id]} " ${id}: ${by}`;
       });
     unitTypes[u.id] = [

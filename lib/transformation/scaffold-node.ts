@@ -701,7 +701,212 @@ interface Built {
   regions: Array<{ regionId: string; available: string[] }>;
 }
 
-function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputList[] = []): Built {
+/**
+ * The value of each constant the original declares with a literal (`CONSTANTS c_home TYPE waers VALUE 'EUR'`),
+ * lower case name → `{ text, quoted }`; `abap_true` is `X`, `abap_false` and `space` are empty.
+ */
+export function constantValuesOf(statements: readonly AbapStatement[]): Map<string, { text: string; quoted: boolean }> {
+  const out = new Map<string, { text: string; quoted: boolean }>();
+  for (const st of statements) {
+    if (st.keyword !== 'CONSTANTS') continue;
+    const m = /^CONSTANTS\s*:?\s*([\w/]+)\b.*?\bVALUE\s+('(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)\s*\.?\s*$/i.exec(st.text);
+    if (!m) continue;
+    const literal = literalOf(m[2]);
+    if (literal) out.set(m[1].toLowerCase(), literal);
+  }
+  return out;
+}
+
+/** An ABAP literal as text: `'EUR'` (quoted), `100`, `abap_true` (`X`); null for anything else. */
+function literalOf(token: string): { text: string; quoted: boolean } | null {
+  if (/^'(?:[^']|'')*'$/.test(token)) return { text: token.slice(1, -1).replace(/''/g, "'"), quoted: true };
+  if (/^`[^`]*`$/.test(token)) return { text: token.slice(1, -1), quoted: true };
+  if (/^-?\d+(?:\.\d+)?$/.test(token)) return { text: token, quoted: false };
+  if (/^abap_true$/i.test(token)) return { text: 'X', quoted: true };
+  if (/^(?:abap_false|space)$/i.test(token)) return { text: '', quoted: true };
+  return null;
+}
+
+const JS_OPS: Readonly<Record<string, string>> = { '=': '===', '<>': '!==', '<': '<', '>': '>', '<=': '<=', '>=': '>=' };
+const ABAP_OPS: Readonly<Record<string, string>> = { '=': '=', EQ: '=', '<>': '<>', NE: '<>', '<': '<', LT: '<', '>': '>', GT: '>', '<=': '<=', LE: '<=', '>=': '>=', GE: '>=' };
+
+/**
+ * The predicate of a check, written by the engine where the original's condition decides it from a value the
+ * engine hands in and its declared type (3.0.17 criterion 3: the model inverted `CHECK cs_result-status IS
+ * INITIAL` into `!== ''`, and a delivery already NO_QUOTE came out REVIEW). One comparison or an `IS [NOT]
+ * INITIAL`/`BOUND`/`ASSIGNED` on one of the check's `values`, against a literal or a constant of the source,
+ * with ABAP's initial value per type: text blank, a number 0, a packed number zero, a date `00000000`, a NUMC all
+ * zeros. Null — the model writes it in a fill region — for anything else (AND/OR, NOT, a second variable, a type
+ * whose comparison the port cannot reproduce exactly).
+ */
+export function enginePredicateOf(
+  g: Pick<PlanGuard, 'condition' | 'line' | 'basis' | 'operands' | 'unitId'>,
+  plan: Pick<UnitPlan, 'units'>,
+  shapes: AbapShapes,
+  constants: ReadonlyMap<string, { text: string; quoted: boolean }>,
+): string[] | null {
+  const condition = g.condition.trim();
+  if (condition.includes('…')) return null;
+  const operands = nodeGuardOperands(g as PlanGuard, plan, shapes);
+  const SUBJECT = String.raw`(<?[\w/~]+>?(?:-[\w/~]+)*)`;
+  const unary = new RegExp(String.raw`^${SUBJECT}\s+IS\s+(NOT\s+)?(INITIAL|BOUND|ASSIGNED)$`, 'i').exec(condition);
+  const binary = new RegExp(String.raw`^${SUBJECT}\s*(>=|<=|<>|=|>|<|\bGE\b|\bLE\b|\bNE\b|\bEQ\b|\bGT\b|\bLT\b)\s*('(?:[^']|'')*'|\x60[^\x60]*\x60|-?\d+(?:\.\d+)?|[\w/~]+)$`, 'i').exec(condition);
+  const subject = (unary ?? binary)?.[1].toLowerCase();
+  const operand = subject ? operands.find((o) => o.name === subject) : undefined;
+  if (!subject || !operand) return null;
+  const v = `values.${operand.key}`;
+  const ts = shapes.typeOf(subject, g.line);
+  const scalar = shapes.scalarOf(subject, g.line);
+  type Kind = 'number' | 'decimal' | 'char' | 'string' | 'numc' | 'date' | 'time' | 'text' | 'unknown' | 'table';
+  const kind: Kind | null =
+    ts === 'number'
+      ? 'number'
+      : ts === null || ts === 'unknown'
+        ? 'unknown'
+        : ts.endsWith('[]')
+          ? 'table'
+          : ts !== 'string'
+            ? null
+            : !scalar || scalar.dictionary
+              ? 'text'
+              : ['p', 'f', 'decfloat16', 'decfloat34', 'int8'].includes(scalar.type)
+                ? 'decimal'
+                : scalar.type === 'c'
+                  ? 'char'
+                  : scalar.type === 'string'
+                    ? 'string'
+                    : scalar.type === 'n'
+                      ? 'numc'
+                      : scalar.type === 'd'
+                        ? 'date'
+                        : scalar.type === 't'
+                          ? 'time'
+                          : null;
+  if (!kind) return null;
+  const typeWord =
+    kind === 'unknown'
+      ? 'its type is not declared in the source'
+      : kind === 'text'
+        ? `${scalar ? `dictionary type ${scalar.type}` : 'its type'} is not declared in the source`
+        : kind === 'table'
+          ? 'an internal table'
+          : `${subject.startsWith('sy-') ? 'a system field, ' : 'declared '}${scalar ? `TYPE ${scalar.type}${scalar.length ? ` LENGTH ${scalar.length}` : ''}${scalar.decimals ? ` DECIMALS ${scalar.decimals}` : ''}` : 'as a whole number'}`;
+  const head = `// Written by Clean-Core.io (engine), not a model: the original's condition at L${g.line}, ${condition.replace(/\*\//g, '* /')}, on ${subject} (${typeWord}).`;
+
+  if (unary) {
+    const not = Boolean(unary[2]);
+    const test = unary[3].toUpperCase();
+    let expr: string;
+    let note: string;
+    if (test !== 'INITIAL') {
+      // A reference or a field symbol reaches the port as a value or as nothing.
+      if (kind !== 'unknown') return null;
+      expr = `${v} !== null && ${v} !== undefined`;
+      note = `${test === 'BOUND' ? 'Bound' : 'Assigned'}: a value is handed in (not null).`;
+      return [head, `// ${note}`, `return ${not ? `!(${expr})` : expr};`];
+    }
+    switch (kind) {
+      case 'number':
+        expr = `${v} === 0`;
+        note = 'A whole number is initial at 0.';
+        break;
+      case 'decimal':
+        expr = `${v}.trim() === '' || dec.isZero(${v})`;
+        note = 'A packed number is initial at zero, at any places.';
+        break;
+      case 'char':
+        expr = `/^ *$/.test(${v})`;
+        note = 'A character field is initial when it holds only blanks.';
+        break;
+      case 'string':
+        expr = `${v} === ''`;
+        note = 'A string is initial when it is empty.';
+        break;
+      case 'numc':
+        expr = `/^[0 ]*$/.test(${v})`;
+        note = 'A numeric text (NUMC) is initial when it holds only zeros.';
+        break;
+      case 'date':
+        expr = `${v}.trim() === '' || ${v} === '00000000'`;
+        note = "A date is initial at '00000000'.";
+        break;
+      case 'time':
+        expr = `${v}.trim() === '' || ${v} === '000000'`;
+        note = "A time is initial at '000000'.";
+        break;
+      case 'table':
+        expr = `${v}.length === 0`;
+        note = 'An internal table is initial when it has no rows.';
+        break;
+      case 'text':
+        expr = `${v}.trim() === ''`;
+        note = "The type is not in the source: '' and blanks are taken as initial.";
+        break;
+      default:
+        expr = `${v} === null || ${v} === undefined || (typeof ${v} === 'string' && ${v}.trim() === '')`;
+        note = "The type is not in the source: null and '' (or blanks) are taken as initial.";
+    }
+    return [head, `// ${note}`, `return ${not ? `!(${expr})` : expr};`];
+  }
+
+  const op = ABAP_OPS[binary![2].toUpperCase()];
+  const rhsToken = binary![3];
+  const rhs = literalOf(rhsToken) ?? constants.get(rhsToken.toLowerCase()) ?? null;
+  if (!op || !rhs) return null;
+  const via = literalOf(rhsToken) ? '' : ` ${rhsToken.toLowerCase()} is the constant ${rhs.quoted ? `'${rhs.text}'` : rhs.text}.`;
+  const js = JS_OPS[op];
+  const lit = rhs.text;
+  const equality = op === '=' || op === '<>';
+  let expr: string | null = null;
+  let note = '';
+  switch (kind) {
+    case 'number':
+      if (/^-?\d+$/.test(lit.trim())) {
+        expr = `${v} ${js} ${Number(lit.trim())}`;
+        note = 'A whole number, compared as a number.';
+      }
+      break;
+    case 'decimal':
+      if (/^-?\d+(?:\.\d+)?$/.test(lit.trim())) {
+        expr = `dec.compare(${v}, ${q(lit.trim())}) ${js} 0`;
+        note = 'A packed number, compared exactly as a decimal.';
+      }
+      break;
+    case 'numc':
+      if (/^\d+$/.test(lit.trim())) {
+        expr = `dec.compare(${v}.trim() || '0', ${q(lit.trim())}) ${js} 0`;
+        note = 'A numeric text (NUMC), compared by its value.';
+      }
+      break;
+    case 'date':
+    case 'time':
+      if (rhs.quoted && new RegExp(`^\\d{${kind === 'date' ? 8 : 6}}$`).test(lit)) {
+        const initial = kind === 'date' ? '00000000' : '000000';
+        expr = `(${v}.trim() || '${initial}') ${js} ${q(lit)}`;
+        note = `A ${kind}, compared digit by digit (initial is '${initial}').`;
+      }
+      break;
+    case 'char':
+    case 'string':
+    case 'text':
+      // A character comparison ignores trailing blanks; an order between texts, or a digit literal against a
+      // type the source does not declare (a NUMC of the dictionary compares by value), is the model's.
+      if (equality && rhs.quoted && !(kind === 'text' && /^\d+$/.test(lit))) {
+        expr = `${v}.replace(/ +$/, '') ${js} ${q(lit.replace(/ +$/, ''))}`;
+        note =
+          kind === 'text'
+            ? 'The type is not in the source: compared as text, trailing blanks ignored.'
+            : 'Compared as text, trailing blanks ignored, as ABAP compares character fields.';
+      }
+      break;
+    default:
+      break;
+  }
+  if (!expr) return null;
+  return [head, `// ${note}${via}`, `return ${expr};`];
+}
+
+function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputList[] = [], constants: ReadonlyMap<string, { text: string; quoted: boolean }> = new Map()): Built {
   // The row a check reads (scaffold version 7): a row of the input list its subject belongs to, else a record.
   const rowTypeOf = (g: PlanGuard): string => {
     const list = listOfPath(subjectPath(plan, g.subject));
@@ -714,7 +919,8 @@ function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputLis
   out.push('/**');
   out.push(" * The original's checks that refuse, stop or skip — one predicate and one wrapper each (rule 15).");
   out.push(' * The wrappers (name, rule id, line, effect) are written by Clean-Core.io (engine); each predicate');
-  out.push(" * between fill markers says whether the original's condition holds, and is a model proposal.");
+  out.push(" * between fill markers says whether the original's condition holds, and is a model proposal; a predicate");
+  out.push(' * with no fill markers is written by the engine from the condition and the declared type.');
   out.push(' * Every wrapper and predicate takes (sel, st, record, values): values holds what a derived check reads,');
   out.push(' * typed as the original declares it, and is empty ({}) for a check that reads only the input.');
   out.push(' */');
@@ -763,22 +969,43 @@ function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputLis
     out.push('');
     out.push(doc);
     out.push(`${sig} {`);
-    out.push(regionText('node', g.regionId!, `${sig}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(g.regionId!)}, ${sq(pred)});`));
+    // The engine writes a CHECK's predicate where the condition and the declared type decide it (3.0.17 criterion 3):
+    // a CHECK holds where the run goes on, the inverse of an IF guard, and the model inverted it. An IF guard's
+    // predicate stays the model's for now — the reach measurement and the repair rounds are built on those regions.
+    const written = g.effect === 'check' ? enginePredicateOf(g, plan, shapes, constants) : null;
+    if (written) {
+      out.push(...written.map((l) => `  ${l}`));
+    } else {
+      out.push(regionText('node', g.regionId!, `${sig}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(g.regionId!)}, ${sq(pred)});`));
+      regions.push({ regionId: g.regionId!, available: ['dec.parse', 'dec.must', 'dec.compare', 'dec.isZero', 'dec.round', 'dec.add', 'dec.sub', 'dec.mul', 'dec.div', 'dec.fits'] });
+    }
     out.push('}');
-    regions.push({ regionId: g.regionId!, available: ['dec.parse', 'dec.must', 'dec.compare', 'dec.isZero', 'dec.round', 'dec.add', 'dec.sub', 'dec.mul', 'dec.div', 'dec.fits'] });
     // The wrapper: what the original does when the condition holds (IF) or fails (CHECK).
     const refuseWhen = g.effect === 'check' ? `!${pred}(sel, st, record${valuesArg})` : `${pred}(sel, st, record${valuesArg})`;
     const ruleWord = g.rule ?? `L${g.line}`;
-    const message = `${ruleWord}, L${g.line}: ${g.condition}${g.effect === 'check' ? ' does not hold' : ''} — ${g.ending}`;
+    // What the original's CHECK does where it stands (3.0.17 criterion 3): at event level it ends the event block.
+    const message = `${ruleWord}, L${g.line}: ${g.condition}${g.effect === 'check' ? ' does not hold' : ''} — ${g.ending}${g.effect === 'check' ? ' ends its event block' : ''}`;
     const field = subjectPath(plan, g.subject);
     if (g.outcome === 'refuses') {
-      out.push(`/** Refuses the input as the original does at L${g.line}. */`);
+      out.push(
+        g.effect === 'check'
+          ? `/** Refuses the input as the original does at L${g.line}: its CHECK stands at event level and ends the event block when the condition does not hold. */`
+          : `/** Refuses the input as the original does at L${g.line}. */`,
+      );
       out.push(`export function ${g.helper}(sel: Selection, st: RunState, ${recordParam}${valuesParam}): Refusal | null {`);
       out.push(`  return ${refuseWhen} ? new Refusal([{ field: ${field ? q(field) : 'null'}, rule: ${q(ruleWord)}, message: ${q(message.slice(0, 300))} }]) : null;`);
       out.push('}');
     } else {
       const verb = g.outcome === 'skips' ? 'Skips the record' : 'Ends the step early';
-      out.push(`/** ${verb} as the original does at L${g.line} (${g.ending}). */`);
+      const said = g.condition.replace(/\*\//g, '* /');
+      // A CHECK never refuses inside a routine: it leaves the routine, or the loop's pass (3.0.17 criterion 3).
+      out.push(
+        g.effect !== 'check'
+          ? `/** ${verb} as the original does at L${g.line} (${g.ending}). */`
+          : g.outcome === 'skips'
+            ? `/** Skips the record as the original's CHECK does at L${g.line} inside a loop: true when ${said} does not hold — the loop goes on with its next pass, no refusal. */`
+            : `/** Leaves the routine as the original's CHECK does at L${g.line}: true when ${said} does not hold — the step returns and the run goes on, no refusal. */`,
+      );
       out.push(`export function ${g.helper}(sel: Selection, st: RunState, ${recordParam}${valuesParam}): boolean {`);
       out.push(`  return ${refuseWhen};`);
       out.push('}');
@@ -795,7 +1022,7 @@ function guardsFile(plan: UnitPlan, shapes: AbapShapes, lists: readonly InputLis
   out.push('  return null;');
   out.push('}');
   out.push('');
-  return { file: { path: 'srv/lib/guards.ts', content: out.join('\n'), owner: carried.length > 0 ? 'fill' : 'engine' }, regions };
+  return { file: { path: 'srv/lib/guards.ts', content: out.join('\n'), owner: regions.length > 0 ? 'fill' : 'engine' }, regions };
 }
 
 /* ----------------------------------------------------------------- steps */
@@ -1567,7 +1794,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/lib/run-store.ts', content: RUN_STORE_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, allLists), owner: 'engine' });
   files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, allLists), owner: 'engine' });
-  add(guardsFile(plan, shapes, lists));
+  add(guardsFile(plan, shapes, lists, constantValuesOf(facts.statements)));
   // The original's AUTHORITY-CHECKs (scaffold version 15, `authority-node.ts`): the seam fails closed, and each
   // function whose lines hold a check gets it written in its frame.
   const checks = facts.graph.authorityChecks;

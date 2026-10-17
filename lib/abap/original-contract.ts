@@ -218,6 +218,23 @@ export function readGuardsFrom(statements: readonly AbapStatement[]): Guard[] {
   return guards;
 }
 
+/**
+ * The lines inside a procedure — a FORM, METHOD, FUNCTION or MODULE, from its opening statement to its end. A
+ * `CHECK` there that stands outside any loop leaves the procedure when its condition does not hold, and the
+ * caller goes on; only a `CHECK` at event level ends its event block (roadmap 3.0.17 criterion 3: FORM
+ * RATE_DEVIATION's `CHECK cs_result-status IS INITIAL` was carried as a refusal of the whole input).
+ */
+export function procedureLines(statements: readonly AbapStatement[]): Set<number> {
+  const out = new Set<number>();
+  let open: number | null = null;
+  for (const st of statements) {
+    if (PROCEDURE_OPENS.has(st.keyword)) open = st.lineStart;
+    if (open !== null) for (let l = st.lineStart; l <= st.lineEnd; l++) out.add(l);
+    if (PROCEDURE_CLOSES.has(st.keyword)) open = null;
+  }
+  return out;
+}
+
 /** The checks, the packed decimals and the selection inputs the source states, each in source order. */
 export function readOriginalContract(source: string): OriginalContract {
   const statements = readStatements(source);

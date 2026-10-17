@@ -48,7 +48,7 @@
  */
 
 import type { BusinessRule } from './abap/business-rule-set';
-import { readOriginalContract, type OriginalContract } from './abap/original-contract';
+import { procedureLines, readOriginalContract, type OriginalContract } from './abap/original-contract';
 import { readStatements } from './abap/statement-reader';
 import type { CallExpect, CallValue, EngineCaseCall, EngineCheckCall } from './engine-call-contract';
 import type { VerifiedEngineCase } from './engine-case-provenance';
@@ -591,6 +591,9 @@ function ruleOnLine(rules: readonly BusinessRule[], line: number): { id: string;
 
 function readGuardCases(source: string, contract: OriginalContract, rules: readonly BusinessRule[], fields: readonly Field[]): GuardCase[] {
   const inLoop = loopLines(source);
+  // A CHECK outside any loop but inside a FORM, METHOD, FUNCTION or MODULE leaves that procedure and the run goes on
+  // (3.0.17 criterion 3) — the plan reads its guards the same way (`planUnits`, lib/transformation/unit-plan.ts).
+  const inProcedure = procedureLines(readStatements(source));
   const lines = source.split(/\r\n|\r|\n/);
   return contract.guards.map((g): GuardCase => {
     const rule = ruleOnLine(rules, g.line);
@@ -598,7 +601,7 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
     const outcome: GuardOutcome =
       g.effect === 'continue' || (g.effect === 'check' && inLoop.has(g.line))
         ? 'skips'
-        : (g.effect === 'return' || g.effect === 'exit') && !inLoop.has(g.line)
+        : ((g.effect === 'return' || g.effect === 'exit') && !inLoop.has(g.line)) || (g.effect === 'check' && inProcedure.has(g.line))
           ? 'stops'
           : 'refuses';
     const cond = g.condition.trim();
