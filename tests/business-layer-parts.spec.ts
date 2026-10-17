@@ -200,7 +200,8 @@ test.describe('the wait follows the model-call deadline, and the thinking is con
   test('the page names the shape on its call and waits per part', () => {
     const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
     const gen = page.slice(page.indexOf('async function runBusinessGeneration'), page.indexOf('const generateBusinessDocumentation'));
-    expect(gen).toContain("{ responseShape: 'documentation-business' }");
+    // The call's options name the shape (and, since 3.0.17, take the model receipt for the AI marking).
+    expect(gen).toMatch(/callGemini\([\s\S]*?ceiling\.signal,\s*\{\s*responseShape: 'documentation-business',/);
     expect(gen).toContain('setTimeout(() => ceiling.abort(), BUSINESS_LAYER_CEILING_MS)');
     expect(gen).toContain('planBusinessLayerParts(engineDoc, undefined, businessSteps)');
     expect(gen).toContain('businessStepsOf(engineDoc, sopInputs.current.path)');
