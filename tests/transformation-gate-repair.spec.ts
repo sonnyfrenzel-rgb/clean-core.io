@@ -97,6 +97,28 @@ test.describe('the fill prompt names the recurring gate errors (14.10.2026)', ()
     expect(fillRulesText('node')).not.toMatch(/^13\. /m);
   });
 
+  test('the authority and lookup lines travel only with a unit that carries such an entry (3.0.17)', () => {
+    const full = fillInstructionHeader('node');
+    expect(full).toContain('- AUTHORITY-CHECK ("authority")');
+    expect(full).toContain('- SELECT in a step ("lookups")');
+    const bare = fillInstructionHeader('node', { authority: false, lookups: false });
+    expect(bare).not.toContain('AUTHORITY-CHECK ("authority")');
+    expect(bare).not.toContain('SELECT in a step ("lookups")');
+    const unit = (extra: Partial<FillRequestUnit>): FillRequestUnit => ({
+      unitId: 'U01',
+      function: { name: 'f', file: 'srv/steps/01-f.ts', signature: 'export function f(sel: Selection, st: RunState): StepResult', returns: 'StepResult' },
+      abap: { ranges: [{ lineStart: 1, lineEnd: 1, routine: 'F' }], text: 'WRITE 1.' },
+      rules: [], guards: [], facts: { decimals: [] }, available: { helpers: [], callees: [] },
+      ...extra,
+    });
+    const req = (u: FillRequestUnit): FillRequest => ({ schema: 'cc.fill.v1', track: 'node', program: 'ZX', context: '', rules: '', units: [u], repair: null });
+    expect(fillPrompt(req(unit({})))).not.toContain('AUTHORITY-CHECK ("authority")');
+    expect(fillPrompt(req(unit({})))).not.toContain('SELECT in a step ("lookups")');
+    const withBoth = unit({ authority: [{} as never], lookups: [{} as never] });
+    expect(fillPrompt(req(withBoth))).toContain('AUTHORITY-CHECK ("authority")');
+    expect(fillPrompt(req(withBoth))).toContain('SELECT in a step ("lookups")');
+  });
+
   test('a single unit past the cap gives up the rules\' text first — titles stay, its ABAP and context travel whole', () => {
     const abap = Array.from({ length: 230 }, (_, i) => `${String(i + 1).padStart(4, '0')}   ${'x'.repeat(90)}`).join('\n');
     const unit: FillRequestUnit = {

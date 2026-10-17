@@ -162,8 +162,13 @@ export function fillRapLines(): string[] {
 /** The words that open the code-draft rules in a header whose rules are titles only (`briefRules`). */
 export const FILL_BRIEF_RULES_NOTE = 'CODE-DRAFT RULES (by number, titles only: their full text was left out to fit this call):';
 
-/** The fixed instruction header (§8.2); `briefRules` only for a single unit past the leased cap (`bundleFills`). */
-export function fillInstructionHeader(track: 'node' | 'rap', opts: { briefRules?: boolean } = {}): string {
+/**
+ * The fixed instruction header (§8.2); `briefRules` only for a single unit past the leased cap (`bundleFills`).
+ * `authority` / `lookups` false leave out the line for a request none of whose units carries such an entry
+ * (3.0.17: the two lines cost a large unit its rules' text); left unset, both stay — the size estimate of the
+ * split (`unit-plan.ts`) reads that longest header.
+ */
+export function fillInstructionHeader(track: 'node' | 'rap', opts: { briefRules?: boolean; authority?: boolean; lookups?: boolean } = {}): string {
   const lang = track === 'node' ? 'TypeScript' : 'ABAP Cloud';
   const forbidden =
     track === 'node'
@@ -190,9 +195,13 @@ export function fillInstructionHeader(track: 'node' | 'rap', opts: { briefRules?
           '- dec.parse returns Scaled | null: null-check it or use dec.must; dec.* return text — store dec.format(x, places), never a Scaled, in a string.',
           '- Call helpers, guards and callees with exactly the arguments declared, in order (sel, st, …); a guard gets only its values keys. `args` exists only where the signature declares it, `values` only in a predicate. Never cast with `as`.',
           // 3.0.17 criterion 3 (17.10.2026): with nothing to compute sy-subrc from, the model invented it, three runs of three.
+          ...(opts.authority === false ? [] : [
           '- AUTHORITY-CHECK ("authority"): where the original checks, call its "fn" (const sySubrc = authority_L90();) or its "call", <names> filled; never decide an authorization. Hand the answer to the sy-subrc check or an if that returns or throws; omitting or ignoring it is refused. "wired": the frame does both; write neither.',
+          ]),
           // 3.0.17 criterion 3 (17.10.2026): with no input for a step's own SELECT, the model searched lists that do not exist or declined.
+          ...(opts.lookups === false ? [] : [
           '- SELECT in a step ("lookups"): where the original reads, call its "fn" (const r = lookup_L156();) or its "call", <names> filled (a <WHERE …> becomes a row predicate); it returns { row, sySubrc } (SINGLE; row null if none) or { rows, sySubrc, dbcnt }. Never search st.records/rows/local for SAP table rows.',
+          ]),
           '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
           // The helpers' declarations (runtime-node.ts DECIMAL_TS, CSV_TS), so a call has the arguments they take (3.0.13).
           '- dec.* take decimal text, a number or a dec.parse result: dec.round/format/neg/abs(a, places), dec.percentOf(amount, rate, places), dec.max/min(a, b), dec.fits(a, bound), dec.parse/must(a); csv.row(values, delim?), csv.table(columns, rows, delim?).',
@@ -211,7 +220,12 @@ export const FILL_REQUEST_MARK = '\n\nREQUEST (JSON):\n';
 
 /** The prompt string sent to `/api/gemini`: the header and the request serialised. */
 export function fillPrompt(request: FillRequest, opts: { briefRules?: boolean } = {}): string {
-  return `${fillInstructionHeader(request.track, opts)}${FILL_REQUEST_MARK}${JSON.stringify(request)}`;
+  const header = fillInstructionHeader(request.track, {
+    ...opts,
+    authority: request.units.some((u) => (u.authority?.length ?? 0) > 0),
+    lookups: request.units.some((u) => (u.lookups?.length ?? 0) > 0),
+  });
+  return `${header}${FILL_REQUEST_MARK}${JSON.stringify(request)}`;
 }
 
 /** The checks whose failures are gate errors: the activation check of an ABAP candidate, the type check of a Node one. */

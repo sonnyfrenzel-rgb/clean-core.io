@@ -233,6 +233,8 @@ test.describe('v1.19 Trust Chain Closure', () => {
         attested: manifest.attested,
         // Bound since manifest format 4 (roadmap 8.5): the handover chain is in the signed string.
         covers: manifest.covers,
+        // Bound since manifest format 5 (roadmap 3.0.17, AI Act Art. 50(2)): the run's AI statement.
+        aiGeneration: manifest.aiGeneration,
         projectId: manifest.projectId,
         runId: manifest.runId,
         runHash: manifest.runHash,
