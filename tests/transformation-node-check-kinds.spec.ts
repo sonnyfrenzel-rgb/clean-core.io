@@ -138,7 +138,7 @@ test.describe('a CHECK leaves what it stands in, and the engine writes a conditi
 
     const guards = p.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content;
     expect(guards).toContain(`// Written by Clean-Core.io (engine), not a model: the original's condition at L${ROUTINE_CHECK}, cs_item-status IS INITIAL, on cs_item-status (declared TYPE c LENGTH 10).`);
-    expect(guards).toContain('return /^ *$/.test(values.csItemStatus);');
+    expect(guards).toContain("return isInitial(values.csItemStatus, 'text');");
     expect(guards).toContain('return values.lvQty > 0;');
 
     const asked = p.fillUnits.flatMap((u) => u.guards.filter((g) => g.regionId).map((g) => g.id));

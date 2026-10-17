@@ -16,6 +16,7 @@ import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
 import { engineCounterpartsIn } from './released-counterparts';
 import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority-node';
 import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
+import { INITIAL_ASSUMPTION, initialAssumptionsIn } from './initial-node';
 import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
@@ -66,6 +67,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const engineCounterparts = [...new Set(scaffold.files.filter((f) => /_access\.clas\.abap$/i.test(f.path)).flatMap((f) => engineCounterpartsIn(f.content)))];
   const openAuthority = scaffold.files.filter((f) => f.path === AUTHORITY_FILE).flatMap((f) => openAuthorityIn(f.content));
   const lookupLists = scaffold.files.filter((f) => f.path === LOOKUPS_FILE).flatMap((f) => lookupListsIn(f.content));
+  const initialAssumptions = scaffold.files.filter((f) => f.path === 'srv/lib/guards.ts').flatMap((f) => initialAssumptionsIn(f.content));
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
   for (const g of plan.guards) {
@@ -146,6 +148,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     ...(engineCounterparts.length ? { engineCounterparts } : {}),
     ...(openAuthority.length ? { openAuthority } : {}),
     ...(lookupLists.length ? { lookupLists } : {}),
+    ...(initialAssumptions.length ? { initialAssumptions } : {}),
   };
 }
 
@@ -208,6 +211,9 @@ export function traceMarkdown(trace: Trace): string {
     lines.push(
       `- Lookup lists — the SAP tables the original reads inside its steps, handed in with the request (and the action): ${trace.lookupLists.join('; ')}. ${LOOKUPS_FILE} answers each read from its list; srv/access.ts does not fill them — wiring a list to a remote read is a developer step.`,
     );
+  }
+  if (trace.initialAssumptions?.length) {
+    lines.push(`- Assumed by the engine — ${INITIAL_ASSUMPTION}: ${trace.initialAssumptions.join('; ')}. Where the dictionary type's domain says otherwise, correct the predicate in srv/lib/guards.ts.`);
   }
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;

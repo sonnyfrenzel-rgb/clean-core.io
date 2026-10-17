@@ -150,7 +150,9 @@ export const PLAN_VERSION = 2;
  * Node — a CHECK's predicate is written by the engine, with no fill region, where the condition is one `IS [NOT]
  * INITIAL`/`BOUND`/`ASSIGNED` or one comparison against a literal or constant on a value the check hands in, decided
  * by its declared type (`enginePredicateOf`): the model had inverted the CHECK's condition (an IF guard's predicate
- * stays the model's: the reach measurement and the repair rounds are built on those regions). RAP — the body is told to
+ * stays the model's: the reach measurement and the repair rounds are built on those regions — except a single
+ * `x IS [NOT] INITIAL`, the engine's on every type through `isInitial` of srv/lib/guards.ts, a dictionary type it has
+ * not read as 'unknown': null, blank, 0, '00000000', '000000', named in the JSDoc and TRACE.md). RAP — the body is told to
  * leave the method (or the pass) where such a CHECK's condition does not hold.
  * Nothing signed changes (§12.3).
  */
@@ -771,6 +773,8 @@ export interface Trace {
   openAuthority?: string[];
   /** 3.0.17: the lookup lists and the SAP table each comes from (`kna1 ← KNA1 (L156)`, `lookups-node.ts`). Absent when none. */
   lookupLists?: string[];
+  /** 3.0.17: the checks whose IS INITIAL reads a type the engine has not read (`G-0199 (L196, lv_profl)`, `initial-node.ts`). Absent when none. */
+  initialAssumptions?: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** See `GenerationStatus`. */

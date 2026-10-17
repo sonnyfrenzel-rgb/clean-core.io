@@ -12,7 +12,9 @@ import { fileUrl, runInPackage, writePackage } from './helpers/transformation-sc
  *     the top of its routine and its `IF sy-subrc <> 0.` follows, the frame now runs both; everywhere else the
  *     answer must reach a branch that is not empty and ends the path.
  *   - 95f6ea84e8af: the engine wrote a CHECK's predicate on a dictionary or unknown type as text — wrong for a
- *     dictionary date (initial '00000000'), an amount (0) or TYPE any. Only a resolved scalar is the engine's now.
+ *     dictionary date (initial '00000000'), an amount (0) or TYPE any. A comparison is the engine's only on a resolved
+ *     scalar; a single IS INITIAL is the engine's on every type since the freight run of 17.10.2026, through
+ *     `isInitial` (an unread type as 'unknown', tests/transformation-node-initial.spec.ts).
  */
 
 const typeErrors = (r: TypeCheckResult) => (r.ran ? r.findings.map((f) => `${f.path}:${f.line} ${f.code} ${f.message}`) : [`not run: ${r.reason}`]);
@@ -141,6 +143,8 @@ const TYPES_SOURCE = [
   '  PERFORM check_date CHANGING gs_doc.',
   '  PERFORM check_status CHANGING gs_doc.',
   '  PERFORM check_any USING gv_any.',
+  '  PERFORM compare_amount CHANGING gs_doc.',
+  '  PERFORM compare_any USING gv_any.',
   '',
   'FORM check_amount CHANGING cs_doc TYPE ty_doc.',
   '  CHECK cs_doc-amount IS INITIAL.',
@@ -162,30 +166,51 @@ const TYPES_SOURCE = [
   '  gv_seen = gv_seen + 8.',
   'ENDFORM.',
   '',
+  'FORM compare_amount CHANGING cs_doc TYPE ty_doc.',
+  "  CHECK cs_doc-amount = '0.00'.",
+  '  gv_seen = gv_seen + 16.',
+  'ENDFORM.',
+  '',
+  'FORM compare_any USING iv_any TYPE any.',
+  "  CHECK iv_any = 'A'.",
+  '  gv_seen = gv_seen + 32.',
+  'ENDFORM.',
+  '',
 ].join('\n');
 
-test.describe('95f6ea84e8af: the engine writes a CHECK only on a type it has resolved', () => {
-  test('a dictionary amount and TYPE any stay the model\'s, with the type named; a fixed-domain date and CHAR10 are the engine\'s', () => {
+test.describe('95f6ea84e8af: the engine writes a comparison only on a type it has resolved; IS INITIAL on every type', () => {
+  test('a comparison on a dictionary amount or TYPE any stays the model\'s, with the type named; IS INITIAL is the engine\'s on all four', () => {
     test.setTimeout(180_000);
     const p = prep(TYPES_SOURCE);
     const at = (needle: string) => p.plan.guards.find((g) => g.condition.startsWith(needle))!;
     const regions = new Set(p.scaffold.regions.map((r) => r.regionId));
-    const amount = at('cs_doc-amount');
-    const any = at('iv_any');
+    const amount = at('cs_doc-amount IS');
+    const any = at('iv_any IS');
     const date = at('cs_doc-budat');
     const status = at('cs_doc-status');
-    expect(regions.has(amount.regionId!), 'TYPE wrbtr: its domain is not in the source').toBe(true);
-    expect(regions.has(any.regionId!), 'TYPE any').toBe(true);
+    const amountCmp = at('cs_doc-amount =');
+    const anyCmp = at('iv_any =');
+    // Roadmap 3.0.17 criterion 3 (the freight run's `lv_profl IS NOT INITIAL`): a single IS INITIAL is the engine's on
+    // every type — an unread one as 'unknown' (null, blank, 0, '00000000', '000000'), a resolved one by its kind.
+    expect(regions.has(amount.regionId!), 'TYPE wrbtr, IS INITIAL').toBe(false);
+    expect(regions.has(any.regionId!), 'TYPE any, IS INITIAL').toBe(false);
     expect(regions.has(date.regionId!), 'TYPE datum: a date').toBe(false);
     expect(regions.has(status.regionId!), 'TYPE char10: CHAR 10').toBe(false);
+    // A comparison on a type the engine has not resolved stays a fill region (the rule of 95f6ea84e8af).
+    expect(regions.has(amountCmp.regionId!), 'TYPE wrbtr: its domain is not in the source').toBe(true);
+    expect(regions.has(anyCmp.regionId!), 'TYPE any').toBe(true);
     // The fill request names the type, so the model can write its initial value.
     const asked = p.fillUnits.flatMap((u) => u.guards).filter((g) => g.regionId && regions.has(g.regionId));
-    expect(asked.find((g) => g.id === amount.id)?.declared).toEqual(['cs_doc-amount: TYPE wrbtr (dictionary type: its domain is not in the source)']);
-    expect(asked.find((g) => g.id === any.id)?.declared).toEqual(['iv_any: TYPE any (generic: the type of what the caller hands in)']);
+    expect(asked.find((g) => g.id === amountCmp.id)?.declared).toEqual(['cs_doc-amount: TYPE wrbtr (dictionary type: its domain is not in the source)']);
+    expect(asked.find((g) => g.id === anyCmp.id)?.declared).toEqual(['iv_any: TYPE any (generic: the type of what the caller hands in)']);
 
     const guards = p.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content;
     expect(guards).toContain("on cs_doc-budat (dictionary type datum, domain D).");
     expect(guards).toContain('on cs_doc-status (dictionary type char10, domain C 10).');
+    expect(guards).toContain("return isInitial(values.csDocBudat, 'date');");
+    expect(guards).toContain("return isInitial(values.csDocStatus, 'text');");
+    expect(guards).toContain("return isInitial(values.csDocAmount, 'unknown');");
+    expect(guards).toContain("return isInitial(values.ivAny, 'unknown');");
     expect(typeErrors(typeCheckCandidate(p.scaffold.files))).toEqual([]);
 
     const dir = writePackage(p.scaffold.files, 'cc-check-types-');
@@ -197,10 +222,12 @@ test.describe('95f6ea84e8af: the engine writes a CHECK only on a type it has res
           `const g = await import(${JSON.stringify(fileUrl(dir, 'srv/lib/guards.ts'))});`,
           `const d = (s) => g.when_${id(date)}({}, {}, null, { csDocBudat: s });`,
           `const c = (s) => g.when_${id(status)}({}, {}, null, { csDocStatus: s });`,
-          "console.log(JSON.stringify({ zeros: d('00000000'), empty: d(''), today: d('20261017'), blank: c('   '), set: c('OK') }));",
+          `const a = (s) => g.when_${id(amount)}({}, {}, null, { csDocAmount: s });`,
+          `const y = (s) => g.when_${id(any)}({}, {}, null, { ivAny: s });`,
+          "console.log(JSON.stringify({ zeros: d('00000000'), empty: d(''), today: d('20261017'), blank: c('   '), set: c('OK'), zeroChar: c('0'), amountZero: a(0), amountNull: a(null), amountSet: a('12.50'), anyDate: y('00000000'), anyZeroChar: y('0') }));",
         ].join('\n'),
       );
-      expect(out).toEqual({ zeros: true, empty: true, today: false, blank: true, set: false });
+      expect(out).toEqual({ zeros: true, empty: true, today: false, blank: true, set: false, zeroChar: false, amountZero: true, amountNull: true, amountSet: false, anyDate: true, anyZeroChar: false });
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

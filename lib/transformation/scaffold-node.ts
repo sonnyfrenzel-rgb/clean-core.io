@@ -43,6 +43,7 @@ import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
 import { operandsOf } from './guard-basis';
 import { AUTHORITY_FILE, authorityDocLines, authorityEntriesOf, authorityFile, authorityFrameLines } from './authority-node';
+import { INITIAL_ASSUMED_TAG, INITIAL_ASSUMPTION, INITIAL_HELPER } from './initial-node';
 import { LOOKUPS_FILE, lookupAvailable, lookupDocLines, lookupEntriesOf, lookupFrameLines, lookupImport, lookupListsOf, lookupReadsOf, lookupsFile } from './lookups-node';
 import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AuthorityEntry, type LookupEntry, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
@@ -740,7 +741,9 @@ const ABAP_OPS: Readonly<Record<string, string>> = { '=': '=', EQ: '=', '<>': '<
  * whose comparison the port cannot reproduce exactly), and for a type the engine has not resolved to a supported
  * scalar (QA finding 95f6ea84e8af): a dictionary type is only known by its fixed domain (`char10`, `numc4`, `datum`,
  * `abap_bool` …, `FIXED_DOMAINS`), a generic or unread type not at all — a dictionary date is initial at '00000000',
- * a dictionary amount at 0, and neither is text.
+ * a dictionary amount at 0, and neither is text. That rule holds for comparisons; a single `IS [NOT] INITIAL` is
+ * the engine's on every type (3.0.17 criterion 3) through `isInitial` (`initial-node.ts`), an unread type as
+ * 'unknown' — null, blank, 0, '00000000', '000000' — with the assumption named in the JSDoc and TRACE.md.
  */
 /**
  * Dictionary types whose domain is fixed and known without the dictionary (QA finding 95f6ea84e8af): the generic
@@ -811,6 +814,50 @@ export function declaredTypeWords(g: Pick<PlanGuard, 'line' | 'basis' | 'operand
   });
 }
 
+/** The kinds `isInitial` of srv/lib/guards.ts knows (3.0.17 criterion 3). */
+type InitialKind = 'text' | 'string' | 'numc' | 'number' | 'date' | 'time' | 'bool' | 'table' | 'unknown';
+
+const INITIAL_KIND: Readonly<Record<PredicateKind, InitialKind>> = {
+  number: 'number',
+  decimal: 'number',
+  char: 'text',
+  string: 'string',
+  numc: 'numc',
+  date: 'date',
+  time: 'time',
+  table: 'table',
+};
+
+const INITIAL_NOTE: Readonly<Record<PredicateKind, string>> = {
+  number: 'A whole number is initial at 0.',
+  decimal: 'A packed number is initial at zero, at any places.',
+  char: 'A character field is initial when it holds only blanks.',
+  string: 'A string is initial when it is empty.',
+  numc: 'A numeric text (NUMC) is initial when it holds only zeros.',
+  date: "A date is initial at '00000000'.",
+  time: "A time is initial at '000000'.",
+  table: 'An internal table is initial when it has no rows.',
+};
+
+/** A single `x IS [NOT] INITIAL`: the engine writes its predicate on every type a check hands in. */
+function isInitialTest(condition: string): boolean {
+  return /^<?[\w/~]+>?(?:-[\w/~]+)*\s+IS\s+(?:NOT\s+)?INITIAL$/i.test(condition.trim());
+}
+
+function resolvedTypeWord(subject: string, kind: PredicateKind, scalar: AbapScalar | null): string {
+  if (kind === 'table') return 'an internal table';
+  const domain = scalar?.dictionary ? fixedDomainOf(scalar.type) : undefined;
+  if (domain) return `dictionary type ${scalar!.type}, domain ${domain.type.toUpperCase()}${domain.length ? ` ${domain.length}` : ''}`;
+  return `${subject.startsWith('sy-') ? 'a system field, ' : 'declared '}${scalar ? `TYPE ${scalar.type}${scalar.length ? ` LENGTH ${scalar.length}` : ''}${scalar.decimals ? ` DECIMALS ${scalar.decimals}` : ''}` : 'as a whole number'}`;
+}
+
+function unreadTypeWord(scalar: AbapScalar | null, ts: string | null): string {
+  if (ts === 'unknown[]') return 'an internal table of a type not read';
+  if (scalar && /^(?:any|data|simple|clike|csequence|numeric|xsequence|object)$/.test(scalar.type)) return `generic TYPE ${scalar.type}`;
+  if (scalar?.dictionary) return `dictionary type ${scalar.type}, its domain not in the source`;
+  return 'a type the engine has not read';
+}
+
 export function enginePredicateOf(
   g: Pick<PlanGuard, 'condition' | 'line' | 'basis' | 'operands' | 'unitId'>,
   plan: Pick<UnitPlan, 'units'>,
@@ -830,58 +877,23 @@ export function enginePredicateOf(
   const ts = shapes.typeOf(subject, g.line);
   const scalar = shapes.scalarOf(subject, g.line);
   const kind = predicateKindOf(ts, scalar);
-  if (!kind) return null;
-  const domain = scalar?.dictionary ? fixedDomainOf(scalar.type) : undefined;
-  const typeWord =
-    kind === 'table'
-      ? 'an internal table'
-      : domain
-        ? `dictionary type ${scalar!.type}, domain ${domain.type.toUpperCase()}${domain.length ? ` ${domain.length}` : ''}`
-        : `${subject.startsWith('sy-') ? 'a system field, ' : 'declared '}${scalar ? `TYPE ${scalar.type}${scalar.length ? ` LENGTH ${scalar.length}` : ''}${scalar.decimals ? ` DECIMALS ${scalar.decimals}` : ''}` : 'as a whole number'}`;
-  const head = `// Written by Clean-Core.io (engine), not a model: the original's condition at L${g.line}, ${condition.replace(/\*\//g, '* /')}, on ${subject} (${typeWord}).`;
-
+  const headOf = (typeWord: string) =>
+    `// Written by Clean-Core.io (engine), not a model: the original's condition at L${g.line}, ${condition.replace(/\*\//g, '* /')}, on ${subject} (${typeWord}).`;
   if (unary) {
-    const not = Boolean(unary[2]);
-    const test = unary[3].toUpperCase();
-    let expr: string;
-    let note: string;
     // A reference or a field symbol has no type the engine resolves: BOUND and ASSIGNED stay the model's.
-    if (test !== 'INITIAL') return null;
-    switch (kind) {
-      case 'number':
-        expr = `${v} === 0`;
-        note = 'A whole number is initial at 0.';
-        break;
-      case 'decimal':
-        expr = `${v}.trim() === '' || dec.isZero(${v})`;
-        note = 'A packed number is initial at zero, at any places.';
-        break;
-      case 'char':
-        expr = `/^ *$/.test(${v})`;
-        note = 'A character field is initial when it holds only blanks.';
-        break;
-      case 'string':
-        expr = `${v} === ''`;
-        note = 'A string is initial when it is empty.';
-        break;
-      case 'numc':
-        expr = `/^[0 ]*$/.test(${v})`;
-        note = 'A numeric text (NUMC) is initial when it holds only zeros.';
-        break;
-      case 'date':
-        expr = `${v}.trim() === '' || ${v} === '00000000'`;
-        note = "A date is initial at '00000000'.";
-        break;
-      case 'time':
-        expr = `${v}.trim() === '' || ${v} === '000000'`;
-        note = "A time is initial at '000000'.";
-        break;
-      default:
-        expr = `${v}.length === 0`;
-        note = 'An internal table is initial when it has no rows.';
-    }
-    return [head, `// ${note}`, `return ${not ? `!(${expr})` : expr};`];
+    if (unary[3].toUpperCase() !== 'INITIAL') return null;
+    // IS [NOT] INITIAL is the engine's on every type (3.0.17 criterion 3): a resolved one by its kind, a dictionary
+    // field the engine has not read (`TYPE mara-profl`, `TYPE wrbtr`) or a generic one as 'unknown'. A structure
+    // stays the model's: its initial value is every component's, not one value.
+    const unread = !kind && (ts === null || ts === 'unknown' || ts === 'string');
+    const initialKind: InitialKind | null = kind ? INITIAL_KIND[kind] : ts === 'unknown[]' ? 'table' : unread ? 'unknown' : null;
+    if (!initialKind) return null;
+    const head = headOf(kind ? resolvedTypeWord(subject, kind, scalar) : unreadTypeWord(scalar, ts));
+    const note = kind ? INITIAL_NOTE[kind] : initialKind === 'table' ? INITIAL_NOTE.table : `${INITIAL_ASSUMPTION}; a character such as '0' or '0000' is not initial.`;
+    return [head, `// ${note}`, `return ${unary[2] ? '!' : ''}isInitial(${v}, '${initialKind}');`];
   }
+  if (!kind) return null;
+  const head = headOf(resolvedTypeWord(subject, kind, scalar));
 
   const op = ABAP_OPS[binary![2].toUpperCase()];
   const rhsToken = binary![3];
@@ -976,6 +988,8 @@ function guardsFile(
   out.push('  }');
   out.push('}');
   out.push('');
+  out.push(...INITIAL_HELPER);
+  out.push('');
   out.push('/** A computed value a derived check reads whose declaration the engine could not read. */');
   out.push('export type GuardValue = string | number | boolean | null;');
   out.push('/** The values of a check that reads only the input: none. */');
@@ -1000,15 +1014,21 @@ function guardsFile(
     const rowType = rowTypeOf(g);
     const recordParam = valuesType ? `record: ${rowType} | null` : `record: ${rowType} | null = null`;
     const sig = `export function ${pred}(sel: Selection, st: RunState, ${recordParam}${valuesParam}): boolean`;
-    const doc = guardDoc(g, plan);
+    // The engine writes a CHECK's predicate where the condition and the declared type decide it (3.0.17 criterion 3):
+    // a CHECK holds where the run goes on, the inverse of an IF guard, and the model inverted it. An IF guard's
+    // predicate stays the model's — the reach measurement and the repair rounds are built on those regions — except
+    // a single IS [NOT] INITIAL, which is the engine's on every type (3.0.17 criterion 3: the model wrote
+    // `values.lvProfl !== ''` for a dictionary field, and a material with no profile came out dangerous goods).
+    // The check on sy-subrc the frame runs with its AUTHORITY-CHECK (QA finding 8394df76b027) is engine-written too.
+    const written = g.effect === 'check' || wired.has(g.id) || isInitialTest(g.condition) ? enginePredicateOf(g, plan, shapes, constants) : null;
+    // An IS INITIAL on a type the engine has not read names its assumption where a developer looks (and TRACE.md).
+    const assumed = written?.some((l) => l.includes(INITIAL_ASSUMPTION)) ?? false;
+    const baseDoc = guardDoc(g, plan);
+    const subject = /^\S+/.exec(g.condition.trim())?.[0].toLowerCase() ?? '';
+    const doc = assumed ? baseDoc.replace(/\n \*\/$/, `\n * ${INITIAL_ASSUMED_TAG} ${g.id} (L${g.line}, ${subject.replace(/\*\//g, '* /')}): ${INITIAL_ASSUMPTION}.\n */`) : baseDoc;
     out.push('');
     out.push(doc);
     out.push(`${sig} {`);
-    // The engine writes a CHECK's predicate where the condition and the declared type decide it (3.0.17 criterion 3):
-    // a CHECK holds where the run goes on, the inverse of an IF guard, and the model inverted it. An IF guard's
-    // predicate stays the model's for now — the reach measurement and the repair rounds are built on those regions.
-    // The check on sy-subrc the frame runs with its AUTHORITY-CHECK (QA finding 8394df76b027) is engine-written too.
-    const written = g.effect === 'check' || wired.has(g.id) ? enginePredicateOf(g, plan, shapes, constants) : null;
     if (written) {
       out.push(...written.map((l) => `  ${l}`));
     } else {
