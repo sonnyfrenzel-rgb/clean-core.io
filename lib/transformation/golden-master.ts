@@ -53,10 +53,15 @@
  *     (`unread`: empty means the case was read whole). A value is a string as
  *     the original writes it, or `{ param, op, n }` for a value relative to a
  *     parameter (`p_key + 10`). Null: the source has no demo cases this
- *     reader recognises. The Node route writes it as
- *     `test/fixtures/original-demo.json`.
+ *     reader recognises.
  *   ORIGINAL_DEMO_FORMAT — the format string above; it changes only with an
  *     incompatible change of the shape.
+ *   originalDemoDelta(demo) / ORIGINAL_DEMO_DELTA_FORMAT
+ *     (`clean-core.original-demo/2`, 3.0.17 item 7): the same, but a case's
+ *     rows hold only the tables that differ from the baseline. The Node route
+ *     writes this form as `test/fixtures/original-demo.json`.
+ *   originalDemoCaseRows(demo, case): a case's tables in the full form, from
+ *     either form.
  *
  * Consumers inside this module (not part of the interface): the ABAP Unit
  * writer (`goldenMasterTestClass`, `goldenMasterForScaffold`) for the RAP
@@ -1277,7 +1282,7 @@ export interface OriginalDemoCase {
   /** `assignment`: a text the case assigns; `comment`: the comment on its WHEN line; `none`: the original gives none (`Case N`). */
   titleSource: 'assignment' | 'comment' | 'none';
   lines: { start: number; end: number };
-  /** Every demo table's input rows for this case (complete, not a delta). Table names upper case, as the original names them. */
+  /** Every demo table's input rows for this case (complete, not a delta; in the delta form only the tables that differ from the baseline). Table names upper case, as the original names them. */
   rows: Record<string, OriginalDemoRow[]>;
   changedTables: string[];
   /** Parameters and other variables the case assigns, in order (`P_KNOWN`, `GS_SEL-ATOMIC`, `GV_SEALED`). */
@@ -1332,6 +1337,42 @@ export function originalDemoCases(source: string): OriginalDemoCases | null {
       unread: c.unread,
     })),
   };
+}
+
+/**
+ * The delta form (roadmap 3.0.17 item 7), what the Node package carries: the same shape, but a case's `rows` hold
+ * only the tables whose rows differ from `baseline.rows`; every other table is the baseline's. A table the case
+ * empties stays, as `[]`. Most cases change one table, so the full form repeated the baseline once per case (SD:
+ * about 1 MB for 32 cases). `originalDemoCaseRows` expands a case of either form to the full one.
+ */
+export const ORIGINAL_DEMO_DELTA_FORMAT = 'clean-core.original-demo/2';
+
+export interface OriginalDemoDelta extends Omit<OriginalDemoCases, 'format'> {
+  format: typeof ORIGINAL_DEMO_DELTA_FORMAT;
+}
+
+/** The delta form of the demo cases: per case only the tables that differ from the baseline (compared row by row, value by value). */
+export function originalDemoDelta(demo: OriginalDemoCases): OriginalDemoDelta {
+  const base = demo.baseline.rows;
+  const same = (t: string, rows: OriginalDemoRow[]) => Object.prototype.hasOwnProperty.call(base, t) && JSON.stringify(rows) === JSON.stringify(base[t]);
+  return {
+    ...demo,
+    format: ORIGINAL_DEMO_DELTA_FORMAT,
+    cases: demo.cases.map((c) => ({ ...c, rows: Object.fromEntries(Object.entries(c.rows).filter(([t, rows]) => !same(t, rows))) })),
+  };
+}
+
+/**
+ * A case's tables in the full form, whichever form it was written in: the full form as it is; the delta form with
+ * every baseline table the case does not carry, in the baseline's order (the order the full form lists them in),
+ * then any table only the case has. The package's `srv/fixtures.ts` expands the same way (node-demo.ts).
+ */
+export function originalDemoCaseRows(demo: Pick<OriginalDemoCases | OriginalDemoDelta, 'format' | 'baseline'>, c: Pick<OriginalDemoCase, 'rows'>): Record<string, OriginalDemoRow[]> {
+  if (demo.format !== ORIGINAL_DEMO_DELTA_FORMAT) return c.rows;
+  const out: Record<string, OriginalDemoRow[]> = {};
+  for (const [t, rows] of Object.entries(demo.baseline.rows)) out[t] = Object.prototype.hasOwnProperty.call(c.rows, t) ? c.rows[t] : rows;
+  for (const [t, rows] of Object.entries(c.rows)) if (!Object.prototype.hasOwnProperty.call(out, t)) out[t] = rows;
+  return out;
 }
 
 /** What the scaffold knows about the class under test, in its own terms. */

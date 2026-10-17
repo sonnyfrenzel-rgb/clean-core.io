@@ -413,7 +413,8 @@ test('A4: the original’s demo cases are the package’s fixture, and each runs
   const source = fs.readFileSync(GM_FIXTURE, 'utf8');
   const p = prep(source);
   const json = JSON.parse(p.scaffold.files.find((f) => f.path === 'test/fixtures/original-demo.json')!.content);
-  expect(json.format).toBe('clean-core.original-demo/1');
+  // 3.0.17 item 7: the delta form — a case carries only the tables it changes (tests/transformation-demo-delta.spec.ts).
+  expect(json.format).toBe('clean-core.original-demo/2');
   expect(json.cases.map((c: { number: number }) => c.number)).toEqual([0, 1, 2]);
   expect(p.scaffold.files.find((f) => f.path === 'test/original-demo.test.mjs')!.content).toContain('(from the original, confirm once)');
   // Run on the scaffold as it is: every function a stub, so each case runs into one — run, not complete.
