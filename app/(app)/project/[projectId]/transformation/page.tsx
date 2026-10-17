@@ -31,6 +31,7 @@ import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import { SUPPORT_LEVEL_STATE } from '@/lib/support-level';
 import { normalisedPackageJson, packageDockerfile } from '@/lib/delivery-package';
 import { callGemini } from '@/lib/gemini';
+import type { ModelReceipt } from '@/lib/model-receipt';
 import { parseModelJsonObject, retryNotice, unusableAnswerMessage, unusableFromModelError, type UnusableAnswer } from '@/lib/model-json';
 import type { Project } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -236,6 +237,11 @@ export default function TransformationPage() {
    * (roadmap 3.0.11, `storeGeneration`).
    */
   const generationInFlight = useRef(false);
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): the receipt of the running generation's last model call, sent with the
+   * package so the server records which provider and model wrote it. Cleared when a generation starts.
+   */
+  const generationReceiptRef = useRef<ModelReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   /**
    * Roadmap 3.0.12 (owner 12.10.2026): the first generation is no longer
@@ -1070,7 +1076,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       setStageLog((log) => enterStage(log, 'model', Date.now(), notice ? { attempt, detail: notice } : { attempt }));
       let responseText: string;
       try {
-        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation', signal);
+        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation', signal, {
+          onReceipt: (receipt) => {
+            generationReceiptRef.current = receipt;
+          },
+        });
       } catch (callErr) {
         if (signal.aborted) throw callErr;
         const unusable = unusableFromModelError(callErr);
@@ -1216,6 +1226,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const generateTransformation = useCallback(async () => {
     if (generationInFlight.current) return;
     generationInFlight.current = true;
+    generationReceiptRef.current = null;
     setLoading(true);
     const startedAt = Date.now();
     setGenerationPhase(enterGenerationPhase(null, 'contract', startedAt));
@@ -1328,6 +1339,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             expectedContractFingerprint: generatedAgainst,
             generationToken,
             generation: record,
+            modelReceipt: generationReceiptRef.current,
           });
           if (!answer.ok && answer.code === PROJECT_TOO_LARGE_CODE) {
             // The one refusal where the package itself is fine: kept on screen
@@ -1521,7 +1533,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           units: prep.fillUnits,
           plan: prep.plan.units,
           bundleOptions: { track: prep.scaffold.track, program: prep.plan.program, context: platformKnowledge },
-          model: leasedFillModel(leaseNow),
+          model: leasedFillModel(leaseNow, undefined, (receipt) => {
+            generationReceiptRef.current = receipt;
+          }),
           guardBody: guardBodyOf(prep),
           normalizeBody: normalizeBodyOf(prep),
           verify,

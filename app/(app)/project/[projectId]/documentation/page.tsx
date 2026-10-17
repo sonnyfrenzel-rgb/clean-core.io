@@ -12,6 +12,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
+import type { ModelReceipt } from '@/lib/model-receipt';
 import type { Project } from '@/lib/types';
 import {
   readStoredDocumentation,
@@ -43,7 +44,10 @@ import { useProcessDocument } from '@/hooks/useProcessDocument';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import { processDocumentFileName } from '@/lib/process-document';
-import { processDocumentBlocks } from '@/lib/process-document-outline';
+import { documentOutline, processDocumentBlocks } from '@/lib/process-document-outline';
+import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
+import { aiMarkingStatement, withAiMarkings } from '@/lib/ai-marking';
+import { APP_VERSION } from '@/lib/version';
 import {
   BUSINESS_LAYER_CEILING_MS,
   businessLayerInFlight,
@@ -310,6 +314,11 @@ export default function DocumentationPage() {
   const [businessParts, setBusinessParts] = useState<DocPartView[] | null>(null);
   const [wrote, setWrote] = useState({ description: false, business: false });
   const partAnswers = useRef<{ key: string; answers: Map<number, Record<string, unknown>> } | null>(null);
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): the receipt of the last part the model answered for these answers, sent with
+   * the layer so the server records which provider and model wrote it. Kept beside the answers it belongs to.
+   */
+  const layerReceipt = useRef<{ key: string; receipt: ModelReceipt } | null>(null);
   const autoBusinessFor = useRef<string | null>(null);
   /**
    * The stored layer an owner asked to replace ("Regenerate SOP and RACI",
@@ -404,7 +413,12 @@ export default function DocumentationPage() {
               false,
               'documentation',
               ceiling.signal,
-              { responseShape: 'documentation-business' },
+              {
+                responseShape: 'documentation-business',
+                onReceipt: (receipt) => {
+                  layerReceipt.current = { key: answersKey, receipt };
+                },
+              },
             );
           } catch (err) {
             if (ceiling.signal.aborted && !stopped) {
@@ -496,6 +510,7 @@ export default function DocumentationPage() {
         fromRunId: project.activeRunId ?? null,
         documentationSha256: typeof documentation === 'string' ? sha256Hex(documentation) : null,
         replacingSha256: replacing === null ? null : sha256Hex(replacing),
+        modelReceipt: layerReceipt.current?.key === answersKey ? layerReceipt.current.receipt : null,
       });
       if (!answer.ok) throw new Error(answer.error);
       const updatedCode = answer.kept
@@ -1149,8 +1164,28 @@ export default function DocumentationPage() {
       projectName: project?.name,
       openQuestions: openQuestionsOfProject,
       raciEdit: edit,
+      ai: exportAuthorship(),
     });
     saveAs(blob, confluenceFileName(project?.name));
+  };
+
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): who wrote the model text an export carries — the business layer and the
+   * analysis model's proposal in the glance (`lib/ai-authorship.ts`). The process description itself is the engine's.
+   */
+  const exportAuthorship = () => {
+    const facts = project ? aiAuthorshipFactsOf(project, { documentationFromEngine: true }) : null;
+    return { sop: facts?.sop ?? null, analysis: facts?.analysis ?? null, appVersion: APP_VERSION };
+  };
+
+  /** The statements of the models whose text a process-document export carries: the layer's, the glance proposal's. */
+  const exportStatements = (built: NonNullable<typeof processDocument.document>, layer: unknown): string[] => {
+    const ai = exportAuthorship();
+    const proposal = documentOutline(built, { projectName: project?.name, openQuestions: openQuestionsOfProject }).glance.proposal;
+    return [
+      layer && ai.sop ? aiMarkingStatement(ai.sop, ai.appVersion) : null,
+      proposal && ai.analysis ? aiMarkingStatement(ai.analysis, ai.appVersion) : null,
+    ].filter((s): s is string => s !== null);
   };
 
   /** The process description as Markdown or Word — the same document, the same order (`processDocumentBlocks`). */
@@ -1166,10 +1201,14 @@ export default function DocumentationPage() {
       // The owner's RACI when one is saved, else the model's proposal (owner request 10.10.2026).
       raci: layer ? raciFileTable(layer, processSteps, edit) : null,
     });
+    // 3.0.17: every statement — the layer's and the glance proposal's — as a header comment line of the Markdown file,
+    // and in the Word file's core properties.
+    const statements = exportStatements(built, layer);
+    const name = processDocumentFileName(project?.name, format);
     const blob = format === 'md'
-      ? new Blob([blocksMarkdown(blocks)], { type: 'text/markdown;charset=utf-8' })
-      : await blocksDocx(blocks);
-    saveAs(blob, processDocumentFileName(project?.name, format));
+      ? new Blob([withAiMarkings(name, blocksMarkdown(blocks), statements)], { type: 'text/markdown;charset=utf-8' })
+      : await blocksDocx(blocks, { aiStatements: statements });
+    saveAs(blob, name);
   };
 
   /** A blueprint stored before 3.0.5, exactly as it was stored — the data is kept, its rendering is not. */

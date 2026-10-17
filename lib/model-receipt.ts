@@ -247,6 +247,20 @@ export function verifyModelReceipt(
     stage?: string;
   },
 ): ModelReceiptVerdict {
+  return checkReceipt(candidate, opts, narrativeDigest(opts.text), MODEL_RECEIPT_MAX_AGE_MS);
+}
+
+/**
+ * The checks of both verifiers, in one order: shape, version, MAC, account,
+ * text (when one is asked for), clock, stage. `textSha256` null skips only the
+ * text binding.
+ */
+function checkReceipt(
+  candidate: unknown,
+  opts: { uid: string; key: string; now?: number; stage?: string },
+  textSha256: string | null,
+  maxAgeMs: number,
+): ModelReceiptVerdict {
   if (candidate === null || candidate === undefined) return { ok: false, refusal: 'absent' };
   if (typeof candidate !== 'object' || Array.isArray(candidate)) return { ok: false, refusal: 'malformed' };
 
@@ -282,14 +296,43 @@ export function verifyModelReceipt(
 
   if (!timingSafeEqualHex(macOf(claims, opts.key), r.mac)) return { ok: false, refusal: 'forged' };
   if (claims.uid !== opts.uid) return { ok: false, refusal: 'wrong-account' };
-  if (!timingSafeEqualHex(claims.textSha256, narrativeDigest(opts.text))) {
+  if (textSha256 !== null && !timingSafeEqualHex(claims.textSha256, textSha256)) {
     return { ok: false, refusal: 'text-mismatch' };
   }
 
   const now = opts.now ?? Date.now();
   if (claims.iat - now > MODEL_RECEIPT_MAX_SKEW_MS) return { ok: false, refusal: 'issued-in-the-future' };
-  if (now - claims.iat > MODEL_RECEIPT_MAX_AGE_MS) return { ok: false, refusal: 'expired' };
+  if (now - claims.iat > maxAgeMs) return { ok: false, refusal: 'expired' };
   if (opts.stage !== undefined && claims.stage !== opts.stage) return { ok: false, refusal: 'wrong-stage' };
 
   return { ok: true, receipt: { ...claims, mac: r.mac } };
+}
+
+/**
+ * How old a receipt may be when it names the model of a stored artefact rather
+ * than the text of one answer: a day. An engine-led generation makes dozens of
+ * calls and runs its checks after the last one, so the ten-minute window above
+ * is not the right one; what the store asks is "did this server call this
+ * model for this account under this stage", which a day-old receipt still
+ * answers truthfully.
+ */
+export const MODEL_RECEIPT_ISSUER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Verify that a receipt was issued by this deployment, for this account,
+ * under this stage — without the text it was issued over (roadmap 3.0.17, AI
+ * Act Art. 50(2)).
+ *
+ * A stored artefact is assembled from many answers (the engine-led
+ * transformation splices dozens of bodies into its frame), so no single
+ * answer's text is at hand when it is stored. What the marking needs from the
+ * receipt is only which provider and model this server called, and the MAC
+ * vouches for those claims. The text binding is what `verifyModelReceipt`
+ * adds, and it stays required wherever one answer is stored as it came back.
+ */
+export function verifyModelReceiptIssuer(
+  candidate: unknown,
+  opts: { uid: string; key: string; stage: string; now?: number; maxAgeMs?: number },
+): ModelReceiptVerdict {
+  return checkReceipt(candidate, opts, null, opts.maxAgeMs ?? MODEL_RECEIPT_ISSUER_MAX_AGE_MS);
 }

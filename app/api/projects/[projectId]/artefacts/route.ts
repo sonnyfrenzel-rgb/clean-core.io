@@ -16,6 +16,10 @@ import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 import { ArtefactReadError, readArtefactsForReader } from '@/lib/project-artefact-store';
 import { storeBusinessLayer, storeDocumentation, storeTestSuite } from '@/lib/project-artefact-writes';
 import { ARTEFACT_READ_ERROR } from '@/lib/project-artefacts';
+import { getAuditSigningKey } from '@/lib/audit-signing-key';
+import { verifyModelReceiptIssuer } from '@/lib/model-receipt';
+import { aiModelRecordOf } from '@/lib/ai-marking';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The large artefacts of a project — roadmap 3.0.14, item 9.
@@ -156,6 +160,12 @@ const STORES = {
   'test-suite': storeTestSuite,
 } as const;
 
+/** The model stage whose receipt names the writer of a model-written artefact; the documentation is the engine's. */
+const MODEL_STAGE_OF = {
+  'business-layer': 'documentation',
+  'test-suite': 'testing',
+} as const;
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
     const gate = await openProject(req, params, true);
@@ -174,8 +184,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (!store) {
       return NextResponse.json({ error: "Expected { action: 'documentation' | 'business-layer' | 'test-suite', … } as JSON.", code: 'bad-request' }, { status: 400 });
     }
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): the business layer and the test suite
+    // are model-written; which provider and model wrote them is recorded from a
+    // receipt this deployment issued to this account under the stage, never from
+    // the page's word. None, or one that does not verify, records null — the
+    // artefact is then marked "provider and model not recorded". Never a refusal.
+    const stage = MODEL_STAGE_OF[fields.action as keyof typeof MODEL_STAGE_OF];
+    const signingKey = stage ? getAuditSigningKey() : null;
+    const verdict = stage && signingKey ? verifyModelReceiptIssuer(fields.modelReceipt, { uid: gate.uid, key: signingKey, stage }) : null;
+    const aiModel = verdict?.ok ? aiModelRecordOf(verdict.receipt, APP_VERSION) : null;
     const { db } = await getAdminDb();
-    const outcome = await store(db, { projectId: gate.projectId, uid: gate.uid, body: fields });
+    const outcome = await store(db, { projectId: gate.projectId, uid: gate.uid, body: fields, aiModel });
     if (outcome.status !== 200) {
       const refusal = outcome as { status: number; code: string; error: string; check?: { bytes: number; budget: number; largest: unknown } };
       if (refusal.check) {

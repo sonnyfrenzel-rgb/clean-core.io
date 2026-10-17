@@ -263,6 +263,30 @@ function bindsCoverage(version) {
   return Number.isFinite(major) && major >= 4;
 }
 
+/** True for a manifest whose signature binds the AI marking (roadmap 3.0.17, format 5). */
+function bindsAiGeneration(version) {
+  const major = Number.parseInt(String(version ?? ''), 10);
+  return Number.isFinite(major) && major >= 5;
+}
+
+/** The artefacts the AI marking can name — the same list as `AI_GENERATION_ARTEFACTS` in `lib/audit-pack-canonical.ts`. */
+const AI_GENERATION_ARTEFACTS = ['analysis-narrative'];
+const AI_GENERATION_KEYS = ['artefact', 'statement', 'provider', 'model', 'generatedOn', 'basis'];
+
+/** Why this AI marking cannot be read as one canonical section, or null — the same rules as `aiGenerationDefect`. */
+function aiGenerationDefect(ai) {
+  if (!ai || typeof ai !== 'object' || Array.isArray(ai)) return 'aiGeneration is not an object';
+  if (!AI_GENERATION_ARTEFACTS.includes(ai.artefact)) return `aiGeneration names an artefact that is not one of the run's: ${JSON.stringify(String(ai.artefact ?? ''))}`;
+  if (typeof ai.basis !== 'string' || ai.basis === '') return 'aiGeneration names no basis';
+  for (const key of ['statement', 'provider', 'model', 'generatedOn']) {
+    const v = ai[key];
+    if (v !== null && (typeof v !== 'string' || v === '')) return `aiGeneration.${key} is neither a non-empty string nor null`;
+  }
+  const extra = Object.keys(ai).filter((k) => !AI_GENERATION_KEYS.includes(k));
+  if (extra.length > 0) return `aiGeneration carries a field the signature does not bind: ${extra.join(', ')}`;
+  return null;
+}
+
 /** The four links and the three coverage values — the same lists as `lib/evidence-chain.ts`. */
 const CHAIN_STEPS = ['requirement', 'decision', 'receipt', 'delivery'];
 const CHAIN_STEP_LABELS = {
@@ -503,6 +527,11 @@ function canonicalDefect(manifest, attested) {
   } else if (manifest.covers !== undefined) {
     return `covers[] is present but manifest version ${JSON.stringify(String(manifest.version ?? ''))} does not bind it`;
   }
+  if (manifest.aiGeneration !== undefined) {
+    if (!bindsAiGeneration(manifest.version)) return `aiGeneration is present but manifest version ${JSON.stringify(String(manifest.version ?? ''))} does not bind it`;
+    const defect = aiGenerationDefect(manifest.aiGeneration);
+    if (defect) return defect;
+  }
   return null;
 }
 
@@ -670,6 +699,10 @@ async function main() {
           .sort((a, b) => String(a.step).localeCompare(String(b.step)))
           .map((x) => `${x.step}:${x.coverage}:${x.ref}`)
           .join(',')};`
+      : '') +
+    // Roadmap 3.0.17: the AI marking, from format 5 on and only where the manifest carries one.
+    (bindsAiGeneration(manifest.version) && manifest.aiGeneration !== undefined
+      ? `ai=${['artefact', 'statement', 'provider', 'model', 'generatedOn', 'basis'].map((k) => escapeField(manifest.aiGeneration[k] ?? '')).join(':')};`
       : '');
   const manifestHash = createHash('sha256').update(canonical).digest('hex');
   const hashOk = manifestHash === manifest.manifestHash;
@@ -700,6 +733,16 @@ async function main() {
         }`,
       );
     }
+  }
+
+  // 2c. The AI marking (roadmap 3.0.17, AI Act Art. 50(2)): bound into the digest above from format 5.
+  if (bindsAiGeneration(manifest.version) && manifest.aiGeneration) {
+    const ai = manifest.aiGeneration;
+    console.log(
+      `${c.dim('ai')}        ${
+        ai.statement ? `${shown(ai.statement, 300)}  ${c.dim(`(${shown(ai.artefact)}, not in this pack)`)}` : c.dim('no model took part in this run')
+      }`,
+    );
   }
 
   // 3. The signature.

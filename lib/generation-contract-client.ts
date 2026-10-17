@@ -151,6 +151,12 @@ export async function storeGeneration(
     generationToken: string;
     /** Roadmap 3.0.12, step E: how the package was made (`lib/transformation/generation-record.ts`). */
     generation?: unknown;
+    /**
+     * Roadmap 3.0.17 (AI Act Art. 50(2)): the receipt of the generation's last
+     * model call. The server records provider and model from it only when it
+     * verifies; without one the package is marked "provider and model not recorded".
+     */
+    modelReceipt?: unknown;
   },
 ): Promise<{ ok: true; fields: StoredGeneration } | { ok: false; error: string; code?: string }> {
   let res: Response;

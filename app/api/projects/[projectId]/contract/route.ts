@@ -16,6 +16,11 @@ import { generationRecordOf, traceMatchesRecord } from '@/lib/transformation/gen
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
 import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from '@/lib/project-artefact-store';
+import { getAuditSigningKey } from '@/lib/audit-signing-key';
+import { verifyModelReceiptIssuer } from '@/lib/model-receipt';
+import { aiModelRecordOf } from '@/lib/ai-marking';
+import { TEST_SUITE_MODEL_FIELD } from '@/lib/project-artefact-writes';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The architecture contract of one project, and what may be generated against
@@ -269,6 +274,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       generationToken?: unknown;
       /** Roadmap 3.0.12, step E: how the package was made — engine-led or the single call (`generation-record.ts`). */
       generation?: unknown;
+      /** Roadmap 3.0.17 (AI Act Art. 50(2)): the receipt of the generation's last model call, as `/api/gemini` issued it. */
+      modelReceipt?: unknown;
     };
     const record = generationRecordOf(body.generation);
     if (record && 'error' in record) {
@@ -399,12 +406,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const cdsCompile =
       nodeEngine && words ? words.cdsCompileRecordOf((await import('@/lib/transformation/cds-compile')).cdsCompileCandidate(JSON.parse(code) as Array<{ path: string; content: string }>)) : null;
 
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): which model wrote the package, from a
+    // receipt this deployment issued to this account under the transformation
+    // stage — never from what the page says. No receipt, or one that does not
+    // verify, leaves `model: null`: the package is still marked as model-written,
+    // with "provider and model not recorded". Never a refusal of the store.
+    const signingKey = getAuditSigningKey();
+    const receiptVerdict = signingKey
+      ? verifyModelReceiptIssuer(body.modelReceipt, { uid: auth.uid, key: signingKey, stage: 'transformation' })
+      : null;
+    const model = receiptVerdict?.ok ? aiModelRecordOf(receiptVerdict.receipt, APP_VERSION) : null;
+
     // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
     // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
     // the server's, from the block this request just rebuilt; the rest is the
     // page's report of a model-written package and stays `proposed`.
     const binding = {
       ...generationBinding(built.contract, { codeSha256: sha256Hex(code) }),
+      model,
       ...(record
         ? {
             path: record.path,
@@ -431,6 +450,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       testSuite: checked.testSuite,
       status: 'transformed',
       [GENERATION_BINDING_FIELD]: binding,
+      // Roadmap 3.0.17: the suite is now the package's own, so the Testing stage's record of who wrote its suite goes.
+      [TEST_SUITE_MODEL_FIELD]: null,
     };
     // Every comparison above was made on the project as it was loaded. The four
     // fields are written only if the project has not been written since —

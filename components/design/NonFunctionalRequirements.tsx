@@ -11,6 +11,8 @@ import CcTabs from '@/components/cc/Tabs';
 import CcToast from '@/components/cc/Toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from '@/lib/fileSaver';
+import { aiMarkingStatement } from '@/lib/ai-marking';
+import { APP_VERSION } from '@/lib/version';
 import type { ObjectLevelInput, RequirementPriority } from '@/lib/functional-requirements';
 import {
   NFR_CATEGORIES,
@@ -173,7 +175,11 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
   }, [proposals, source, set]);
   const proposalCount = Object.keys(modelProposals).length;
 
-  const meta = () => ({ projectName, fileName, date: today(), proposals: modelProposals });
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): the design model's proposals mark every export — copy, Markdown, Word — that
+  // prints one; their call is not recorded per project, so the statement says so. The export decides whether it
+  // prints a proposal (`lib/requirements-export.ts`); without one the file is the engine's alone and carries nothing.
+  const aiStatement = aiMarkingStatement({ provider: null, modelId: null, byok: null, generatedAt: null, appVersion: null }, APP_VERSION);
+  const meta = () => ({ projectName, fileName, date: today(), proposals: modelProposals, aiStatement });
 
   const writeClipboard = async (markdown: string, html: string | null, done: string) => {
     try {
@@ -214,10 +220,11 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
   const download = async (kind: 'md' | 'docx') => {
     if (!set) return;
     const ex = await import('@/lib/requirements-export');
+    const name = ex.exportFileName(projectName || fileName, 'non-functional', kind);
     const blob = kind === 'md'
       ? new Blob([ex.nfrMarkdown(set, meta())], { type: 'text/markdown;charset=utf-8' })
       : await ex.nfrDocx(set, meta());
-    await saveAs(blob, ex.exportFileName(projectName || fileName, 'non-functional', kind));
+    await saveAs(blob, name);
     setToast(kind === 'md' ? 'Markdown file downloaded.' : 'Word file downloaded.');
   };
 
@@ -231,10 +238,11 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
       await writeClipboard(ex.specificationMarkdown(functional, set, m), ex.specificationHtml(functional, set, m), `Copied the specification: ${functional.requirements.length} functional and ${set.requirements.length} non-functional requirements.`);
       return;
     }
+    const name = ex.exportFileName(projectName || fileName, 'specification', kind);
     const blob = kind === 'md'
       ? new Blob([ex.specificationMarkdown(functional, set, m)], { type: 'text/markdown;charset=utf-8' })
       : await ex.specificationDocx(functional, set, m);
-    await saveAs(blob, ex.exportFileName(projectName || fileName, 'specification', kind));
+    await saveAs(blob, name);
     setToast(kind === 'md' ? 'Specification downloaded as Markdown.' : 'Specification downloaded as Word file.');
   };
 

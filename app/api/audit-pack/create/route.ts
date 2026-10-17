@@ -23,7 +23,7 @@ import {
   unverifiedInputs,
 } from '@/lib/input-manifest';
 import { USER_ATTESTED_FILE, type AttestedFile } from '@/lib/audit-pack';
-import { attestationsOf, auditPackCovers, buildAuditPackContents } from '@/lib/audit-pack-build';
+import { attestationsOf, auditPackAiGeneration, auditPackCovers, buildAuditPackContents } from '@/lib/audit-pack-build';
 import { canonicalAuditManifest, MANIFEST_VERSION_ED25519, MANIFEST_VERSION_HMAC } from '@/lib/audit-pack-canonical';
 import { isFirestoreId } from '@/lib/firestore-id';
 
@@ -362,8 +362,11 @@ export async function POST(req: NextRequest) {
     const sapApiCatalogVersion: string = runData.sapApiCatalogVersion || '';
     const generatedAt = new Date().toISOString();
     const version = getSigningKeypair() ? MANIFEST_VERSION_ED25519 : MANIFEST_VERSION_HMAC;
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): the AI marking, a new field of format 5, from the signed run alone and
+    // bound into the canonical string — no earlier format changes a byte (lib/audit-pack-canonical.ts).
+    const aiGeneration = auditPackAiGeneration({ run: runData });
     const canonicalManifest = canonicalAuditManifest({
-      files, attested, covers, projectId, runId, runHash, engineVersion, sapApiCatalogVersion, version, generatedAt,
+      files, attested, covers, projectId, runId, runHash, engineVersion, sapApiCatalogVersion, version, generatedAt, aiGeneration,
     });
     const manifestHash = sha(canonicalManifest);
 
@@ -391,6 +394,7 @@ export async function POST(req: NextRequest) {
       files,
       attested,
       covers,
+      aiGeneration,
       manifestHash,
       signed: true,
       signature,

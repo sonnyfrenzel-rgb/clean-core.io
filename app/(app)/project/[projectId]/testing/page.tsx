@@ -67,6 +67,9 @@ import { coveringTestRunReceipt, viaContractOfRun } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { aiAuthorshipFactsOf, testCasesAuthorshipOf } from '@/lib/ai-authorship';
+import { aiMarkingStatement } from '@/lib/ai-marking';
+import { APP_VERSION } from '@/lib/version';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
 import TestingClosureCard from '@/components/testing/TestingClosureCard';
 import { CLOSED_NOT_VERIFIED, failureSentence, testingClosureReading } from '@/lib/testing-closure';
@@ -276,6 +279,19 @@ export default function TestingSandboxPage() {
   const originEvidence = useProjectEvidence(projectId as string, !!originSha, `${project?.activeRunId ?? ''}#${originSha ?? ''}`);
   const originFindings = useMemo(() => findingsForOrigin(originEvidence, originSha), [originEvidence, originSha]);
   const originEngine = useScenarioOriginEngine(project, originFindings);
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): the statement the suite download carries as its header comment and the
+   * Excel export as its description — null when no model wrote what they hold (`lib/ai-authorship.ts`).
+   */
+  const aiStatements = useMemo(() => {
+    if (!project) return { suite: null, cases: null };
+    const tests = aiAuthorshipFactsOf(project, { documentationFromEngine: true }).tests;
+    const cases = testCasesAuthorshipOf(project);
+    return {
+      suite: tests ? aiMarkingStatement(tests, APP_VERSION) : null,
+      cases: cases ? aiMarkingStatement(cases, APP_VERSION) : null,
+    };
+  }, [project]);
   const { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying: genRetrying, progress: genProgress } = useTestGeneration(projectId as string, project, setProject, originFindings);
   /** Why the last generation attempt produced nothing. Empty when none has failed. */
   const [genError, setGenError] = useState('');
@@ -951,6 +967,8 @@ export default function TestingSandboxPage() {
 
       const ExcelJS = await import('exceljs');
       const wb = new ExcelJS.Workbook();
+      // Roadmap 3.0.17 (AI Act Art. 50(2)): the workbook's description carries the statement — a spreadsheet has no comment.
+      if (aiStatements.cases) wb.description = aiStatements.cases;
 
       // The names of the sheets already in the workbook, lower-cased — Excel
       // treats two names as the same if they differ only in case, and ExcelJS
@@ -1906,6 +1924,7 @@ export default function TestingSandboxPage() {
                 runAt={run.kind === 'recorded' ? run.at : null}
                 tenantLocked={LIVE_TEST_EXECUTION.locked}
                 projectName={project?.name}
+                aiStatement={aiStatements.suite}
                 origin={originEngine}
                 outsideOf={isAbapCloud ? outsideOf : undefined}
                 assessmentOf={isAbapCloud ? undefined : assessmentOf}
