@@ -72,6 +72,12 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     expect(isUpdate(SYNCED as Parameters<typeof isUpdate>[0], same.map((a, i) => (i === 0 ? { ...a, archived: !a.archived } : a)))).toBe(true);
     expect(isUpdate(SYNCED as Parameters<typeof isUpdate>[0], same.slice(1))).toBe(true);
     expect(isUpdate(null, same)).toBe(true);
+    // And the sync asks it before it writes: the only write of main() comes after the isUpdate return.
+    const src = read('scripts/sync-sap-architecture-center.ts');
+    const main = src.slice(src.indexOf('async function main()'));
+    expect(main.match(/writeFileSync\(/g), 'main() writes exactly once').toHaveLength(1);
+    expect(main.indexOf('if (!isUpdate(before, architectures))'), 'main() asks isUpdate').toBeGreaterThan(-1);
+    expect(main.indexOf('if (!isUpdate(before, architectures))')).toBeLessThan(main.indexOf('writeFileSync('));
   });
 
   test('the bindings name the commit they were checked against — the synced one', () => {
