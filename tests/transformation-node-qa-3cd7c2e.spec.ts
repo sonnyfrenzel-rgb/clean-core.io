@@ -101,3 +101,29 @@ test('a63075170a5e: a continue of an inner loop is refused; the flat loop of the
     expect(why([...body]), label).toContain('ignores its answer');
   }
 });
+
+test('1584a06243c8: an unlabelled break inside a switch leaves only the switch and is refused; a break of the loop still counts', () => {
+  const p = prepareEngineLed({ source: SOURCE, track: 'node', program: null, decisions: [], contextText: 'PLATFORM KNOWLEDGE (test)' });
+  if (!p.ok) throw new Error(p.reason);
+  const line = SOURCE.split('\n').findIndex((l) => l.includes('AUTHORITY-CHECK')) + 1;
+  const unit = p.plan.units.find((u) => u.routine === 'CHECK_ITEMS')!;
+  const guard = p.plan.guards.find((g) => g.carried && g.unitId === unit.id && /sy-subrc/i.test(g.condition))!;
+  const call = `authority_check(st, 'M_MATE_WRK', { 'WERKS': ls.werks, 'ACTVT': '03' }, ${line})`;
+  const skip = `if (${guard.helper}(sel, st, null, { sySubrc: 0 })) continue;`;
+  const why = (body: string[]) => guardBodyOf(p)(unit.id, body.join('\n'), []);
+  const inSwitch = [
+    'for (const ls of st.local.gtItems) {',
+    `  const rc = ${call};`,
+    '  switch (ls.werks) {',
+    "    case '1000':",
+    '      if (rc !== 0) break;',
+    '      break;',
+    '  }',
+    `  ${skip}`,
+    '  st.local.gvDone = st.local.gvDone + 1;',
+    '}',
+  ];
+  expect(why(inSwitch)).not.toBeNull();
+  // The same break straight in the loop around the call ends the loop's pass, as the original's loop ending does.
+  expect(why(['for (const ls of st.local.gtItems) {', `  const rc = ${call};`, '  if (rc !== 0) break;', `  ${skip}`, '  st.local.gvDone = st.local.gvDone + 1;', '}'])).toBeNull();
+});

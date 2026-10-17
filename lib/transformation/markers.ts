@@ -765,6 +765,12 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     const here = loopsAround(pos);
     if (around.length === 0 || around.length !== loopEnds.depth) return false;
     if (here.length !== around.length || here.some((l, k) => l.body !== around[k].body)) return false;
+    // An unlabelled break inside a switch leaves only the switch (QA finding 1584a06243c8): the work after it runs.
+    if (!jump[1] && /^break\b/.test(text)) {
+      for (let o = openerOf(pos); o > around[around.length - 1].body; o = openerOf(o)) {
+        if (code[o] === '{' && /\bswitch\s*\([\s\S]*\)\s*$/.test(code.slice(Math.max(0, o - 200), o))) return false;
+      }
+    }
     // A label names its loop: only the one directly around the call.
     if (jump[1]) return new RegExp(`(?:^|[;{}\\s])${escapeRe(jump[1])}\\s*:\\s*$`).test(code.slice(0, around[around.length - 1].keyword));
     return true;
