@@ -137,6 +137,12 @@ export const PLAN_VERSION = 2;
  * frame (`const authority_L90 = (): number => authority_check(…)`), the body calling it where the original checks, and
  * the fill request names it (`authority`) — the model had nothing to compute sy-subrc from and invented it, three
  * runs out of three. The RAP text is unchanged.
+ * Also 15 (3.0.17 criterion 3, the same runs): Node — the original's reads inside its steps (`SELECT SINGLE`, `SELECT …
+ * INTO TABLE` on a SAP table) are input: one lookup list per table in the request and the action, its rows in
+ * `st.local.db<Table>`, and `srv/lib/lookups.ts` with one engine-written function per read (first row or null with
+ * sy-subrc 0/4; the matching rows with sy-subrc and sy-dbcnt), the frame holding `const lookup_L156 = () => …` where
+ * every WHERE value is readable (`lookups-node.ts`) — the model searched lists that do not exist or declined the unit.
+ * A body that omits the frame's authority check or ignores its answer is refused (QA finding ef6865e7ade4).
  * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 15;
@@ -481,6 +487,12 @@ export interface BodyGuardContext {
   /** Guards the body must call (placement `body`); a body that skips one, or writes its condition inline, is refused. */
   required?: readonly RequiredGuard[];
   /**
+   * Node, since scaffold version 15: the original's AUTHORITY-CHECKs in the region's lines. A body that does not call
+   * each one's `fn` (or, without one, `authority_check` with its object), or calls it and ignores the answer, is
+   * refused (QA finding ef6865e7ade4): the check is the original's, never optional.
+   */
+  authority?: readonly AuthorityEntry[];
+  /**
    * Parameters of the region's own signature beyond the step parameters every body has (`sel`, `st`, `record`, …):
    * `values` for the predicate of a derived check (`when_G0345(sel, st, record, values)`). A member call on one
    * (`values.lvCode.trim()`) reads the region's input and is no foreign call.
@@ -570,6 +582,8 @@ export type BodyRefusalCode =
   | 'binary-number'
   | 'guard-missing'
   | 'guard-inlined'
+  | 'authority-missing'
+  | 'authority-unused'
   | 'unknown-field'
   | 'cloud-statement'
   | 'unknown-name'
@@ -628,6 +642,34 @@ export interface Scaffold {
   rap?: RapClassContract;
   /** Node only, since scaffold version 15 (3.0.17): the original's authority checks per region (`authority-node.ts`). */
   authority?: Record<string, AuthorityEntry[]>;
+  /** Node only, since scaffold version 15 (3.0.17): the original's reads inside its steps, per region (`lookups-node.ts`). */
+  lookups?: Record<string, LookupEntry[]>;
+}
+
+/**
+ * One read of the original inside a unit's lines (Node, scaffold version 15): a `SELECT SINGLE` or a `SELECT … INTO
+ * TABLE` on a SAP table, answered from the request's lookup list `list` by `helper` in `srv/lib/lookups.ts`. With
+ * `fn`, the frame holds `const <fn> = (): <returns> => <call>;` and the body calls `<fn>()` where the original reads;
+ * without, `call` is what the body writes there, `open` naming what only the routine knows (`<lv_matnr>` in `call`)
+ * or the WHERE the engine did not write (the body passes it as a predicate on the row).
+ */
+export interface LookupEntry {
+  line: number;
+  /** The SAP table, upper case. */
+  table: string;
+  /** The request key of its lookup list (`kna1`). */
+  list: string;
+  /** The statement as the original writes it, on one line. */
+  read: string;
+  /** `select_kna1_L156`, the function in srv/lib/lookups.ts. */
+  helper: string;
+  /** `lookup_L156`: the frame's function; null when not written. */
+  fn: string | null;
+  /** `select_kna1_L156(st, { kunnr: args.isDelivery.kunnr })`. */
+  call: string;
+  /** `SelectSingle<Kna1Row>` or `SelectTable<LipsRow>`. */
+  returns: string;
+  open?: string[];
 }
 
 /**
@@ -696,6 +738,8 @@ export interface Trace {
   engineCounterparts?: string[];
   /** 3.0.17: the original's authority checks `srv/lib/authority.ts` leaves open, failing closed (`authority-node.ts`). Absent when none. */
   openAuthority?: string[];
+  /** 3.0.17: the lookup lists and the SAP table each comes from (`kna1 ← KNA1 (L156)`, `lookups-node.ts`). Absent when none. */
+  lookupLists?: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** See `GenerationStatus`. */
@@ -774,6 +818,12 @@ export interface FillRequestUnit {
    * `call` the body writes there.
    */
   authority?: Array<Pick<AuthorityEntry, 'line' | 'fn' | 'call'>>;
+  /**
+   * Node, since scaffold version 15: the original's reads inside this unit's lines (`SELECT SINGLE`, `SELECT … INTO
+   * TABLE`) — the function `fn` the engine wrote (the body calls `fn()` where the original reads), or, without one,
+   * the `call` the body writes there with its `open` values; `returns` is what it answers.
+   */
+  lookups?: Array<Pick<LookupEntry, 'line' | 'table' | 'list' | 'fn' | 'call' | 'returns' | 'open'>>;
 }
 
 /** A repair round's addition to a unit (§13.2 step 3). */

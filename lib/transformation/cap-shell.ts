@@ -189,7 +189,11 @@ function schemaCds(input: CapShellInput, namespace: string, written: readonly Wr
     if (seen.has(l.cds.type)) continue;
     seen.add(l.cds.type);
     const tables = lists.filter((x) => x.cds.type === l.cds.type).map((x) => `${x.global.name.toUpperCase()} (${x.filledBy.join(', ')})`);
-    out.push(`/** ${l.structure.name.toUpperCase()}, L${l.structure.line}–${l.structure.lineEnd}: a row of ${tables.join(', ')}. */`);
+    out.push(
+      l.lookup
+        ? `/** ${l.lookup.table}: the rows a step of the original reads (L${l.lookup.lines.join(', L')}) — a lookup list, the columns its reads name (srv/lib/lookups.ts). */`
+        : `/** ${l.structure.name.toUpperCase()}, L${l.structure.line}–${l.structure.lineEnd}: a row of ${tables.join(', ')}. */`,
+    );
     out.push(`type ${l.cds.type} {`);
     for (const c of l.columns) out.push(`  ${element(c.key)} : ${cdsTypeOfColumn(c)}; // ${columnNote(c)}`);
     out.push('}');
@@ -423,6 +427,8 @@ function accessTs(input: CapShellInput, access: AccessPlan, namespace: string, w
   lines.push(` * for the table (${comment(SAP_API_CATALOG_STAMP)}); the service definitions in srv/external/ are placeholders until`);
   lines.push(' * the API\'s own definition is imported (cds import). Every other access refuses with its reason.');
   lines.push(' * Not called by the core: a run takes its input as the action\'s lists. Wiring a read to a list is a developer step.');
+  const lookups = input.lists.filter((l) => l.lookup);
+  if (lookups.length) lines.push(` * The reads inside the steps are lookup lists of the action, answered by srv/lib/lookups.ts: ${lookups.map((l) => `${l.key} ← ${l.lookup!.table}`).join(', ')}.`);
   if (access.more.length) lines.push(` * Not listed (more than the layer carries): ${access.more.join(', ')}.`);
   lines.push(' */');
   lines.push("import cds from '@sap/cds';");

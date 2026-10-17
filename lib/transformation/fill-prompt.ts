@@ -190,7 +190,9 @@ export function fillInstructionHeader(track: 'node' | 'rap', opts: { briefRules?
           '- dec.parse returns Scaled | null: null-check it or use dec.must; dec.* return text — store dec.format(x, places), never a Scaled, in a string.',
           '- Call helpers, guards and callees with exactly the arguments declared, in order (sel, st, …); a guard gets only its values keys. `args` exists only where the signature declares it, `values` only in a predicate. Never cast with `as`.',
           // 3.0.17 criterion 3 (17.10.2026): with nothing to compute sy-subrc from, the model invented it, three runs of three.
-          '- AUTHORITY-CHECK: "authority" of a unit lists each check of the original in its lines. Where it names "fn", the engine wrote that function: call it where the original checks — const sySubrc = authority_L90(); — it answers sy-subrc. Otherwise write its "call" there, the <names> replaced by their values. Never decide an authorization yourself.',
+          '- AUTHORITY-CHECK: "authority" of a unit lists each check of the original in its lines. Where it names "fn", the engine wrote that function: call it where the original checks — const sySubrc = authority_L90(); — it answers sy-subrc. Otherwise write its "call" there, the <names> replaced by their values. Never decide an authorization yourself. The answer is sy-subrc of the original check: use it (hand it to the check on sy-subrc, or compare it) — a body that omits the call or ignores its answer is refused.',
+          // 3.0.17 criterion 3 (17.10.2026): with no input for a step's own SELECT, the model searched lists that do not exist or declined.
+          '- SELECT inside a step: "lookups" of a unit lists each read of the original in its lines, answered from the request\'s lookup list "list". Where it names "fn", call it where the original reads — const r = lookup_L156(); — it answers "returns": { row, sySubrc } for SELECT SINGLE (row null when none), { rows, sySubrc, dbcnt } for INTO TABLE. Otherwise write its "call" there, the <names> replaced by their values (a <WHERE …> becomes a predicate on the row). Never search st.records, st.rows or st.local for rows of an SAP table.',
           '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
           // The helpers' declarations (runtime-node.ts DECIMAL_TS, CSV_TS), so a call has the arguments they take (3.0.13).
           '- dec.* take decimal text, a number or a dec.parse result: dec.round/format/neg/abs(a, places), dec.percentOf(amount, rate, places), dec.max/min(a, b), dec.fits(a, bound), dec.parse/must(a); csv.row(values, delim?), csv.table(columns, rows, delim?).',
@@ -310,6 +312,7 @@ export function gateRepairUnitOf(u: FillRequestUnit, tight = false): FillRequest
     available: u.available,
     ...(u.types !== undefined ? { types: u.types } : {}),
     ...(u.authority !== undefined ? { authority: u.authority } : {}),
+    ...(u.lookups !== undefined ? { lookups: u.lookups } : {}),
   };
 }
 
