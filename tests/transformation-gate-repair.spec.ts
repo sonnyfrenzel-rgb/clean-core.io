@@ -85,7 +85,13 @@ test.describe('the fill prompt names the recurring gate errors (14.10.2026)', ()
     // Measured 14.10.2026 on the seven acceptance programs (see the size test below): the Node header at 6,363 and
     // the RAP header at 7,551 characters leave the largest SD Node unit 218 characters under the cap with a full
     // context pack. A new line has to be paid for elsewhere.
-    expect(fillInstructionHeader('node').length).toBeLessThanOrEqual(6_400);
+    // 17.10.2026 (3.0.17): the authority and lookup lines take the Node header to about 7,100. Since e3108973 the
+    // split no longer relies on this margin — estimateFillPrompt counts the header's real length, so a part is cut
+    // to fit the cap whatever the header costs (asserted below); the budget now only bounds growth.
+    expect(fillInstructionHeader('node').length).toBeLessThanOrEqual(7_200);
+    expect(fs.readFileSync(path.join(__dirname, '..', 'lib', 'transformation', 'unit-plan.ts'), 'utf8')).toMatch(
+      /headerChars \?\?= Math\.max\(fillInstructionHeader\('node', \{ briefRules: true \}\)\.length, fillInstructionHeader\('rap', \{ briefRules: true \}\)\.length\)/,
+    );
     expect(fillInstructionHeader('rap').length).toBeLessThanOrEqual(7_600);
     expect(FILL_RULE_NUMBERS).not.toContain(13);
     expect(fillRulesText('node')).not.toMatch(/^13\. /m);

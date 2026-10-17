@@ -161,7 +161,7 @@ test.describe('the Node package takes the original lookup reads as input lists (
     expect(fill.available.helpers).toEqual(expect.arrayContaining([`lookup_L${KNA1_LINE}`, `select_zrate_L${ZRATE_LINE}`, 'syDatum']));
     expect(p.fillUnits.find((u) => u.unitId === items.id)!.lookups).toEqual([expect.objectContaining({ line: VBAP_LINE, fn: `lookup_L${VBAP_LINE}`, returns: 'SelectTable<VbapRow>' })]);
     const prompt = fillPrompt({ schema: 'cc.fill.v1', track: 'node', program: null, context: '', rules: '', units: [fill], repair: null });
-    expect(prompt).toContain('SELECT inside a step: "lookups" of a unit lists each read');
+    expect(prompt).toContain('SELECT in a step ("lookups"): where the original reads, call its "fn"');
   });
 
   test('a trivial body using the lookups type-checks with the package tsconfig and answers the right rows when run', () => {

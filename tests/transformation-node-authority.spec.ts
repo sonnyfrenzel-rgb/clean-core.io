@@ -93,7 +93,7 @@ test.describe('the Node package carries the original authority check (3.0.17 cri
     expect(fill.available.helpers).not.toContain(`authority_L${CHECK_LINE}`);
     expect(p.scaffold.required[unit.id] ?? []).toEqual([]);
     const prompt = fillPrompt({ schema: 'cc.fill.v1', track: 'node', program: null, context: '', rules: '', units: [fill], repair: null });
-    expect(prompt).toContain('AUTHORITY-CHECK: "authority" of a unit lists each check');
+    expect(prompt).toContain('AUTHORITY-CHECK ("authority"): where the original checks, call its "fn"');
   });
 
   test('a trivial body compiles with the package tsconfig; the run is denied by default and granted only on purpose', () => {
