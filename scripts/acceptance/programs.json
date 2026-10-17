@@ -73,6 +73,14 @@
       "tracks": ["node"],
       "holdout": false,
       "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only; side-by-side (CAP) by the engine"] }
+    },
+    {
+      "id": "fi-journal-review",
+      "title": "FI journal review, holdout (owner, 17.10.2026)",
+      "source": { "repo": null, "file": "FI_Journal_Review.txt", "entry": null, "sha256": "1c850b6ec0cb1cc40967e785e160f0d714fbabf8a1da980ad8e386a4d52bd2d0", "lines": 2795 },
+      "tracks": ["rap", "node"],
+      "holdout": true,
+      "scenarios": { "sealed": null, "provenance": ["holdout: no tuned expectations - gate and case recognition only; never given to an agent, never edited to raise a figure"] }
     }
   ]
 }
