@@ -57,6 +57,22 @@
       "tracks": ["rap", "node"],
       "holdout": true,
       "scenarios": { "sealed": null, "provenance": ["holdout: no tuned expectations — gate and case recognition only; never edited to raise a figure"] }
+    },
+    {
+      "id": "sd-freight-rate-check",
+      "title": "SD freight rate check (Z_SD_FREIGHT_RATE_CHECK, the side-by-side starter example)",
+      "source": { "repo": "public/starter-examples/Z_SD_FREIGHT_RATE_CHECK.abap", "file": null, "entry": null, "sha256": "ed8c871d9857ecb3e86b8ec9ec639d42f0f074cbc478a801d27d9a7695ac2f12", "lines": 408 },
+      "tracks": ["node"],
+      "holdout": false,
+      "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only; side-by-side (CAP) by the engine"] }
+    },
+    {
+      "id": "order-fulfillment-audit-1000",
+      "title": "Order fulfillment audit (ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC, the 1,000-line starter example)",
+      "source": { "repo": "public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap", "file": null, "entry": null, "sha256": "e6096ab54038ac077ba0cc4cd7d610ab3c1f875796c91604c29490507589cb01", "lines": 1001 },
+      "tracks": ["node"],
+      "holdout": false,
+      "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only; side-by-side (CAP) by the engine"] }
     }
   ]
 }

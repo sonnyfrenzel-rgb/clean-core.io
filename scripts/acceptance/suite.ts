@@ -15,7 +15,8 @@
  * or ACCEPTANCE_PRICE_IN / ACCEPTANCE_PRICE_OUT) · --model name (default PRODUCT_GEMINI_MODEL) ·
  * --sources dir (sources not in the repository; default the owner's Desktop) · --out dir
  * (default .acceptance/runs, gitignored) · --env-file f (keys; default .env.local) · --seal (write the
- * report sealed and remove the plaintext) · --list.
+ * report sealed and remove the plaintext) · --keep-packages (keep the unpacked Node packages under
+ * <run>/packages, e.g. to push one to a Cloud Foundry trial; not with --seal) · --list.
  *
  * WHICH PIPELINE, AND WHY THIS PATH. The suite runs the very modules the
  * Transformation page runs, in the page's order and with the page's arguments:
@@ -264,6 +265,7 @@ interface Args {
   out: string;
   envFile: string | null;
   seal: boolean;
+  keepPackages: boolean;
   list: boolean;
 }
 
@@ -281,6 +283,7 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
     out: path.join(ROOT, '.acceptance', 'runs'),
     envFile: null,
     seal: false,
+    keepPackages: false,
     list: false,
   };
   const num = (v: string | undefined, name: string) => {
@@ -309,6 +312,7 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
     else if (k === '--out') a.out = path.resolve(v());
     else if (k === '--env-file') a.envFile = path.resolve(v());
     else if (k === '--seal') a.seal = true;
+    else if (k === '--keep-packages') a.keepPackages = true;
     else if (k === '--list') a.list = true;
     else throw new Error(`unknown argument ${k}`);
   }
@@ -1153,6 +1157,7 @@ export async function main(argv: string[]): Promise<number> {
   const key = env.ACCEPTANCE_SEAL_KEY || env.QA_REVIEW_KEY || null;
   const apiKey = env.GEMINI_API_KEY || null;
   if (args.mode === 'real' && !apiKey) throw new Error('--mode real needs GEMINI_API_KEY (environment, --env-file or .env.local)');
+  if (args.seal && args.keepPackages) throw new Error('--keep-packages leaves the packages in plaintext; it cannot be combined with --seal');
   if (args.seal && !key) throw new Error('--seal needs ACCEPTANCE_SEAL_KEY or QA_REVIEW_KEY');
 
   const commit = git('rev-parse', 'HEAD') || 'unknown';
@@ -1221,8 +1226,8 @@ export async function main(argv: string[]): Promise<number> {
     limits: LIMITS,
   };
 
-  // The unpacked packages were only the harness's input.
-  fs.rmSync(workDir, { recursive: true, force: true });
+  // The unpacked packages were only the harness's input, unless asked to keep them.
+  if (!args.keepPackages) fs.rmSync(workDir, { recursive: true, force: true });
   const { writeReportFiles } = (await import(pathToFileURL(path.join(HERE, 'lib', 'write-report.mjs')).href)) as { writeReportFiles: (dir: string, files: Record<string, string>) => string[] };
   if (args.seal && key) {
     const { seal } = require('../qa/lib/crypto.mjs') as { seal: (p: unknown, k: string) => unknown };
