@@ -15,8 +15,14 @@ import {
   hasAiMarking,
   withAiMarking,
   withAiMarkingHtml,
+  withAiMarkings,
   type AiAuthorship,
 } from '../lib/ai-marking';
+import { blocksMarkdown, nfrDocxParts, nfrHtml, nfrMarkdown, specificationDocxParts, specificationHtml, specificationMarkdown } from '../lib/requirements-export';
+import { specConfluenceHtml, specDocxParts, specMarkdown } from '../lib/requirements-spec-export';
+import { buildSpecDraft } from '../lib/requirements-spec';
+import { buildRequirementSet } from '../lib/functional-requirements';
+import { buildNfrSet } from '../lib/non-functional-requirements';
 import { aiAuthorshipFactsOf, modelFilledFiles } from '../lib/ai-authorship';
 import { issueModelReceipt, verifyModelReceipt, verifyModelReceiptIssuer, MODEL_PROVIDER_ID } from '../lib/model-receipt';
 import { RECEIPT_PROVIDER_ID, OWN_CLAUDE_MODEL } from '../lib/model-providers';
@@ -322,6 +328,121 @@ test.describe('the other exports', () => {
     const facts = aiAuthorshipFactsOf({ businessDocumentation: '{"roles":[]}', businessDocumentationModel: CLAUDE }, { documentationFromEngine: true });
     expect(facts.sop).toMatchObject({ provider: 'anthropic', modelId: OWN_CLAUDE_MODEL });
     expect(aiAuthorshipFactsOf({}, { documentationFromEngine: true }).sop).toBeNull();
+  });
+});
+
+/* ================================ several models, and the requirements exports */
+
+test.describe('an export names every model whose text it carries', () => {
+  const LAYER = `Generated with AI assistance (Anthropic Claude ${OWN_CLAUDE_MODEL}) by Clean-Core.io v3.0.17, 2026-10-17`;
+  const NARRATIVE = 'Generated with AI assistance (Google Gemini gemini-analysis) by Clean-Core.io v3.0.17, 2026-10-16';
+  const hostile = aiMarkingStatement({ provider: 'evil', modelId: 'm --> <script>alert(1)</script> */ "x', byok: false, generatedAt: null, appVersion: 'v1' }, 'v1');
+
+  test('the process document with the business layer and the analysis proposal: both statements in Markdown and Word', () => {
+    const md = withAiMarkings('Process.md', blocksMarkdown([{ k: 'h', level: 1, text: 'Process' }]), [LAYER, NARRATIVE]);
+    expect(md.split('\n').slice(0, 3)).toEqual([`<!-- ${LAYER} -->`, `<!-- ${NARRATIVE} -->`, '# Process']);
+    // Marking again replaces both lines, never doubles them.
+    expect(withAiMarkings('Process.md', md, [LAYER, NARRATIVE])).toBe(md);
+    expect(withAiMarkings('Process.md', '# x\n', [])).toBe('# x\n');
+    const core = blocksDocxParts([{ k: 'p', text: 'x' }], { aiStatements: [LAYER, NARRATIVE] })['docProps/core.xml'];
+    expect(core).toContain(`<dc:description>${LAYER}; ${NARRATIVE}</dc:description>`);
+    // Escaped for XML: a hostile model name is text, the part stays well-formed.
+    const hostileCore = blocksDocxParts([{ k: 'p', text: 'x' }], { aiStatements: [LAYER, hostile] })['docProps/core.xml'];
+    expect(hostileCore).not.toContain('<script>');
+    expect(hostileCore.match(/<dc:description>/g)).toHaveLength(1);
+    expect(hostileCore).toMatch(/<dc:description>[^<]*<\/dc:description><\/cp:coreProperties>$/);
+    // The page hands every statement on, not the first.
+    const page = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/documentation/page.tsx'), 'utf8');
+    expect(page).not.toMatch(/exportStatements\([^)]*\)\[0\]/);
+    expect(page).toContain('withAiMarkings(name, blocksMarkdown(blocks), statements)');
+    expect(page).toContain('blocksDocx(blocks, { aiStatements: statements })');
+  });
+
+  test('the Confluence page with both: one comment line and one meta element per statement', async () => {
+    const source = fixtureSource();
+    const doc = engineDocumentationOf(source);
+    const document = processDocumentOf(source);
+    document.purpose = { ...document.purpose, proposal: { text: 'The program approves purchase orders.', anchors: [], origin: 'narrative' } };
+    const ai = {
+      sop: { provider: CLAUDE.provider, modelId: CLAUDE.modelId, byok: true, generatedAt: CLAUDE.generatedAt, appVersion: null },
+      analysis: { provider: 'google-gemini', modelId: 'gemini-analysis', byok: false, generatedAt: '2026-10-16T08:00:00.000Z', appVersion: 'v3.0.17' },
+      appVersion: 'v3.0.17',
+    };
+    const html = await buildEngineConfluenceHtml(document, businessLayerFor(doc), { processSteps: processStepsOf(doc.steps), ai }).text();
+    expect(html.split('\n').slice(0, 2)).toEqual([`<!-- ${LAYER} -->`, `<!-- ${NARRATIVE} -->`]);
+    expect(html).toContain(`<meta name="ai-generated" content="${LAYER}"><meta name="ai-generated" content="${NARRATIVE}">`);
+  });
+
+  test('an HTML page or fragment with several statements: a comment and a meta element for each, injection-safe', () => {
+    const page = withAiMarkingHtml('<!doctype html><html><head><title>t</title></head><body></body></html>', [LAYER, NARRATIVE]);
+    expect(page.split('\n').slice(0, 3)).toEqual(['<!doctype html>', `<!-- ${LAYER} -->`, `<!-- ${NARRATIVE} --><html><head><meta name="ai-generated" content="${LAYER}"><meta name="ai-generated" content="${NARRATIVE}"><title>t</title></head><body></body></html>`]);
+    const fragment = withAiMarkingHtml('<h1>x</h1>', [hostile]);
+    const [comment, rest] = fragment.split('\n');
+    expect(comment.indexOf('-->')).toBe(comment.length - 3);
+    expect(rest.startsWith('<meta name="ai-generated" content="Generated with AI assistance (evil m -&gt; &lt;script&gt;')).toBe(true);
+    expect(rest).not.toContain('<script>');
+    expect(rest.endsWith('<h1>x</h1>')).toBe(true);
+  });
+
+  const source = fixtureSource();
+  const nfr = buildNfrSet({ source });
+  const fr = buildRequirementSet({ source });
+  const NFR_STATEMENT = 'Generated with AI assistance (provider and model not recorded) by Clean-Core.io v3.0.17, date not recorded';
+  const base = { projectName: 'Fixture', fileName: 'fixture.abap', date: '2026-10-17' };
+  const named = { retention: { text: 'Keep the rows of ZMM_PO_APPR for ten years.', references: ['ZMM_PO_APPR'] } };
+  const generic = { monitoring: { text: 'Use dashboards and alerts.', references: [] } };
+
+  test('the NFR and specification Markdown and HTML with a printed proposal are marked; without one they are not', () => {
+    const marked = { ...base, proposals: named, aiStatement: NFR_STATEMENT };
+    for (const md of [nfrMarkdown(nfr, marked), specificationMarkdown(fr, nfr, marked)]) {
+      expect(md.split('\n')[0]).toBe(`<!-- ${NFR_STATEMENT} -->`);
+      expect(md).toContain('Keep the rows of ZMM_PO_APPR');
+    }
+    for (const html of [nfrHtml(nfr, marked), specificationHtml(fr, nfr, marked)]) {
+      expect(html.startsWith(`<!-- ${NFR_STATEMENT} -->\n<meta name="ai-generated" content="${NFR_STATEMENT}">`)).toBe(true);
+    }
+    expect(nfrDocxParts(nfr, marked)['docProps/core.xml']).toContain(NFR_STATEMENT);
+    expect(specificationDocxParts(fr, nfr, marked)['docProps/core.xml']).toContain(NFR_STATEMENT);
+    // No proposal, or only generic ones the export leaves out: the engine's text alone, nothing marked.
+    for (const proposals of [null, generic]) {
+      const meta = { ...base, proposals, aiStatement: NFR_STATEMENT };
+      const outputs = [nfrMarkdown(nfr, meta), nfrHtml(nfr, meta), specificationMarkdown(fr, nfr, meta), specificationHtml(fr, nfr, meta)];
+      for (const out of outputs) expect(out).not.toContain('Generated with AI assistance');
+      expect(nfrDocxParts(nfr, meta)['docProps/core.xml']).toBeUndefined();
+      expect(specificationDocxParts(fr, nfr, meta)['docProps/core.xml']).toBeUndefined();
+    }
+    // A model's wording of a functional requirement is model text of the specification too.
+    const worded = { ...base, proposals: null, aiStatement: NFR_STATEMENT, wording: { [fr.requirements[0].id]: 'The model words it.' } };
+    expect(specificationMarkdown(fr, nfr, worded).split('\n')[0]).toBe(`<!-- ${NFR_STATEMENT} -->`);
+    // Hostile names stay inert in the comment and the attribute.
+    const hostileMeta = { ...base, proposals: named, aiStatement: hostile };
+    const md = nfrMarkdown(nfr, hostileMeta).split('\n')[0];
+    expect(md.indexOf('-->')).toBe(md.length - 3);
+    const html = nfrHtml(nfr, hostileMeta);
+    // Inside the comment the name is inert text and the comment ends where it should; after it, nothing of it is markup.
+    expect(html.split('\n')[0].indexOf('-->')).toBe(html.split('\n')[0].length - 3);
+    expect(html.slice(html.indexOf('-->') + 3)).not.toContain('<script>');
+  });
+
+  test('the requirements specification\'s Markdown and Confluence page: marked when a proposal is printed beside an open decision', () => {
+    const meta = { date: '2026-10-17', fileName: 'Z_MM_PO_APPROVAL.abap', sourceSha256: 'a'.repeat(64), revision: 1, author: 'owner@example.com', history: [], aiStatement: NFR_STATEMENT };
+    const withProposal = buildSpecDraft({ projectName: 'Fixture', fr, nfr, proposals: { slaRequirements: 'For TBD-13: business hours, 2 s.' } });
+    expect(withProposal.decisions.some((d) => d.proposal !== '')).toBe(true);
+    const md = specMarkdown(withProposal, meta);
+    expect(md.split('\n')[0]).toBe(`<!-- ${NFR_STATEMENT} -->`);
+    expect(md).toContain('Model proposal: For TBD-13');
+    const html = specConfluenceHtml(withProposal, meta);
+    expect(html.split('\n').slice(0, 2)).toEqual(['<!doctype html>', expect.stringMatching(new RegExp(`^<!-- ${NFR_STATEMENT.replace(/[()]/g, '\\$&')} --><html`))]);
+    expect(html).toContain(`<head><meta name="ai-generated" content="${NFR_STATEMENT}">`);
+    expect(specDocxParts(withProposal, meta)['docProps/core.xml']).toContain(NFR_STATEMENT);
+    const without = buildSpecDraft({ projectName: 'Fixture', fr, nfr });
+    expect(specMarkdown(without, meta)).not.toContain('Generated with AI assistance');
+    expect(specConfluenceHtml(without, meta)).not.toContain('Generated with AI assistance');
+    expect(specConfluenceHtml(without, meta).startsWith('<!doctype html><html')).toBe(true);
+    expect(specDocxParts(without, meta)['docProps/core.xml']).toBeUndefined();
+    const hostileHtml = specConfluenceHtml(withProposal, { ...meta, aiStatement: hostile });
+    expect(hostileHtml.slice(hostileHtml.indexOf('-->') + 3)).not.toContain('<script>');
+    expect(hostileHtml).toContain('<meta name="ai-generated" content="Generated with AI assistance (evil m -&gt; &lt;script&gt;');
   });
 });
 

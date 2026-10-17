@@ -11,7 +11,7 @@ import CcTabs from '@/components/cc/Tabs';
 import CcToast from '@/components/cc/Toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from '@/lib/fileSaver';
-import { aiMarkingStatement, withAiMarking } from '@/lib/ai-marking';
+import { aiMarkingStatement } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 import type { ObjectLevelInput, RequirementPriority } from '@/lib/functional-requirements';
 import {
@@ -175,13 +175,11 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
   }, [proposals, source, set]);
   const proposalCount = Object.keys(modelProposals).length;
 
-  // Roadmap 3.0.17 (AI Act Art. 50(2)): the design model's proposals mark the file; their call is not recorded per
-  // project, so the statement says so. Without a proposal the file is the engine's alone and carries no marking.
-  const aiStatement = modelProposals && Object.keys(modelProposals).length > 0
-    ? aiMarkingStatement({ provider: null, modelId: null, byok: null, generatedAt: null, appVersion: null }, APP_VERSION)
-    : null;
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): the design model's proposals mark every export — copy, Markdown, Word — that
+  // prints one; their call is not recorded per project, so the statement says so. The export decides whether it
+  // prints a proposal (`lib/requirements-export.ts`); without one the file is the engine's alone and carries nothing.
+  const aiStatement = aiMarkingStatement({ provider: null, modelId: null, byok: null, generatedAt: null, appVersion: null }, APP_VERSION);
   const meta = () => ({ projectName, fileName, date: today(), proposals: modelProposals, aiStatement });
-  const marked = (name: string, markdown: string) => (aiStatement ? withAiMarking(name, markdown, aiStatement) : markdown);
 
   const writeClipboard = async (markdown: string, html: string | null, done: string) => {
     try {
@@ -224,7 +222,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
     const ex = await import('@/lib/requirements-export');
     const name = ex.exportFileName(projectName || fileName, 'non-functional', kind);
     const blob = kind === 'md'
-      ? new Blob([marked(name, ex.nfrMarkdown(set, meta()))], { type: 'text/markdown;charset=utf-8' })
+      ? new Blob([ex.nfrMarkdown(set, meta())], { type: 'text/markdown;charset=utf-8' })
       : await ex.nfrDocx(set, meta());
     await saveAs(blob, name);
     setToast(kind === 'md' ? 'Markdown file downloaded.' : 'Word file downloaded.');
@@ -242,7 +240,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
     }
     const name = ex.exportFileName(projectName || fileName, 'specification', kind);
     const blob = kind === 'md'
-      ? new Blob([marked(name, ex.specificationMarkdown(functional, set, m))], { type: 'text/markdown;charset=utf-8' })
+      ? new Blob([ex.specificationMarkdown(functional, set, m)], { type: 'text/markdown;charset=utf-8' })
       : await ex.specificationDocx(functional, set, m);
     await saveAs(blob, name);
     setToast(kind === 'md' ? 'Specification downloaded as Markdown.' : 'Specification downloaded as Word file.');

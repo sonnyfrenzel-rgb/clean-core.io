@@ -46,7 +46,7 @@ import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from
 import { processDocumentFileName } from '@/lib/process-document';
 import { documentOutline, processDocumentBlocks } from '@/lib/process-document-outline';
 import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
-import { aiMarkingStatement, withAiMarking } from '@/lib/ai-marking';
+import { aiMarkingStatement, withAiMarkings } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 import {
   BUSINESS_LAYER_CEILING_MS,
@@ -1201,12 +1201,13 @@ export default function DocumentationPage() {
       // The owner's RACI when one is saved, else the model's proposal (owner request 10.10.2026).
       raci: layer ? raciFileTable(layer, processSteps, edit) : null,
     });
-    // 3.0.17: the statement as the Markdown file's header comment, and in the Word file's core properties.
-    const statement = exportStatements(built, layer)[0] ?? null;
+    // 3.0.17: every statement — the layer's and the glance proposal's — as a header comment line of the Markdown file,
+    // and in the Word file's core properties.
+    const statements = exportStatements(built, layer);
     const name = processDocumentFileName(project?.name, format);
     const blob = format === 'md'
-      ? new Blob([statement ? withAiMarking(name, blocksMarkdown(blocks), statement) : blocksMarkdown(blocks)], { type: 'text/markdown;charset=utf-8' })
-      : await blocksDocx(blocks, { aiStatement: statement });
+      ? new Blob([withAiMarkings(name, blocksMarkdown(blocks), statements)], { type: 'text/markdown;charset=utf-8' })
+      : await blocksDocx(blocks, { aiStatements: statements });
     saveAs(blob, name);
   };
 

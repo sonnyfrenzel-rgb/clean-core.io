@@ -351,7 +351,8 @@ export function buildEngineConfluenceHtml(
   ].filter((s): s is string => s !== null);
   // Both are assembled by `lib/ai-marking.ts`, which writes the statement on one line with no comment terminator and
   // escapes it for the attribute (fed hostile names in tests/ai-marking.spec.ts).
-  const aiCommentSection = aiStatements.length ? aiMarkingComment('markup', aiStatements[0]) + '\n' : '';
+  // One comment line and one meta element per statement: a page with the text of two models names both.
+  const aiCommentSection = aiStatements.map((s) => aiMarkingComment('markup', s) + '\n').join('');
   const aiMetaSection = aiStatements.map(aiMarkingMetaTag).join('');
 
   // The stylesheet every stage export shares (`lib/export-style.ts`), and this page's own few classes.

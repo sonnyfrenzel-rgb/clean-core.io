@@ -189,6 +189,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in an `ai=` section after `covers=`. Formats 2 to 4 sign exactly the bytes they signed before and still verify; a
   format-4 manifest that carries the field is refused, and an edited or removed marking fails the hash. The web
   verifier and `scripts/verify-pack.mjs` read it alike; the script prints it.
+- **An export with the text of several models names every one** (QA review of fddd9ce18548). The process
+  document's Markdown and Word export used only the first statement when it carried both the business layer and
+  the analysis model's proposal; it now writes one header comment line per statement, and all of them in the Word
+  file's `dc:description`, joined by `; `. The Confluence pages write one comment line and one `<meta>` per
+  statement. The delivery package's `aiGeneration` already lists every source.
+- **The NFR and specification exports carry the marking in every format.** The Markdown and HTML of the
+  non-functional requirements and of the specification (Design stage, copy and download), and the Markdown and
+  Confluence page of the requirements specification, now carry the statement themselves — header comment, and
+  comment plus `<meta name="ai-generated">` in HTML — exactly when the output prints a model proposal or a model's
+  wording; the Word files follow the same rule. Without one they are unmarked, as before.
 - No MCP endpoint exists, so the read-only MCP answers of item (3) carry the field when that step is built.
   `tests/ai-marking.spec.ts`.
 

@@ -178,22 +178,41 @@ export function aiMarkingMetaTag(statement: string): string {
 }
 
 /**
- * An HTML export with the marking: the first statement as the header comment
- * (after the doctype, which must stay first) and every statement as a
- * `<meta name="ai-generated">` in the head. Unchanged without a statement.
+ * An HTML export with the marking: every statement as a header comment line
+ * (after the doctype, which must stay first) and as a `<meta name="ai-generated">`
+ * in the head. A fragment without a head — the HTML half of a clipboard copy —
+ * carries the meta elements right below the comments. Unchanged without a statement.
  */
 export function withAiMarkingHtml(html: string, statements: readonly string[]): string {
   if (statements.length === 0) return html;
-  const comment = aiMarkingComment('markup', statements[0]);
-  const doctype = /<!doctype[^>]*>/i.exec(html);
-  const at = doctype ? doctype.index + doctype[0].length : 0;
-  let out = doctype ? `${html.slice(0, at)}\n${comment}${html.slice(at)}` : `${comment}\n${html}`;
-  const head = /<head(?:\s[^>]*)?>/i.exec(out);
-  if (head) {
-    const end = head.index + head[0].length;
-    out = `${out.slice(0, end)}${statements.map(aiMarkingMetaTag).join('')}${out.slice(end)}`;
+  const comments = statements.map((s) => aiMarkingComment('markup', s)).join('\n');
+  const metas = statements.map(aiMarkingMetaTag).join('');
+  const head = /<head(?:\s[^>]*)?>/i.exec(html);
+  // The head comes after the doctype, so the meta elements go in first and the doctype's position stays put.
+  const withMeta = head ? `${html.slice(0, head.index + head[0].length)}${metas}${html.slice(head.index + head[0].length)}` : html;
+  const doctype = /<!doctype[^>]*>/i.exec(withMeta);
+  if (doctype) {
+    const at = doctype.index + doctype[0].length;
+    return `${withMeta.slice(0, at)}\n${comments}${head ? '' : `\n${metas}`}${withMeta.slice(at)}`;
   }
-  return out;
+  return head ? `${comments}\n${withMeta}` : `${comments}\n${metas}${withMeta}`;
+}
+
+/**
+ * The content with one header comment line per statement — an export that carries the text of several models (the
+ * business layer and the analysis model's proposal, say) names every one of them. Idempotent like `withAiMarking`:
+ * the marking lines already at the top are replaced, never doubled. Unchanged without a statement or a syntax.
+ */
+export function withAiMarkings(path: string, content: string, statements: readonly string[]): string {
+  const syntax = commentSyntaxOf(path);
+  if (!syntax || statements.length === 0) return content;
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const lines = content.split(/\r?\n/);
+  const at = mustStayFirst(lines[0] ?? '') ? 1 : 0;
+  let end = at;
+  while (end < lines.length && MARKING_LINE.test(lines[end])) end++;
+  lines.splice(at, end - at, ...statements.map((s) => aiMarkingComment(syntax, s)));
+  return lines.join(eol);
 }
 
 /* ------------------------------------------------------------ comment syntax */

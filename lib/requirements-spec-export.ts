@@ -3,6 +3,7 @@ import { REQUIREMENT_STATUS_LABEL } from '@/lib/requirement-status';
 import { richPlain } from '@/lib/rich-text';
 import { EXPORT_COLORS, EXPORT_FONT, EXPORT_FONT_MONO } from '@/lib/export-style';
 import { escapeHtml } from '@/lib/export-safety';
+import { withAiMarkingHtml, withAiMarkings } from '@/lib/ai-marking';
 import {
   blocksDocx,
   blocksDocxParts,
@@ -54,7 +55,11 @@ export interface SpecExportMeta {
   history: readonly SpecHistoryEntry[];
   /** True when the document was written for an earlier source than the signed one. */
   stale?: boolean;
-  /** Roadmap 3.0.17 (AI Act Art. 50(2)): the AI marking statement, carried in the Word file's core properties. */
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): the AI marking statement of the model whose proposals the decisions print.
+   * Every export that prints one carries it — the Markdown header comment, the HTML comment and
+   * `<meta name="ai-generated">`, the Word file's core properties (`specAiStatements`); one without carries nothing.
+   */
   aiStatement?: string | null;
 }
 
@@ -255,9 +260,20 @@ export function specBlocks(spec: RequirementsSpec, meta: SpecExportMeta): DocBlo
   return blocks;
 }
 
-export const specMarkdown = (spec: RequirementsSpec, meta: SpecExportMeta): string => blocksMarkdown(specBlocks(spec, meta));
-export const specDocxParts = (spec: RequirementsSpec, meta: SpecExportMeta): Record<string, string> => blocksDocxParts(specBlocks(spec, meta), { aiStatement: meta.aiStatement });
-export const specDocx = (spec: RequirementsSpec, meta: SpecExportMeta): Promise<Blob> => blocksDocx(specBlocks(spec, meta), { aiStatement: meta.aiStatement });
+/** True when the specification prints a model's text: a proposal beside a decision that is still open (`specBlocks`). */
+export function specPrintsModelText(spec: RequirementsSpec): boolean {
+  return spec.decisions.some((d) => d.proposal.trim() !== '' && decisionOpen(d));
+}
+
+/** The statements a specification export carries: the one handed in, only when the output holds model text. */
+export function specAiStatements(spec: RequirementsSpec, meta: SpecExportMeta): string[] {
+  return meta.aiStatement && specPrintsModelText(spec) ? [meta.aiStatement] : [];
+}
+
+export const specMarkdown = (spec: RequirementsSpec, meta: SpecExportMeta): string =>
+  withAiMarkings(specFileName(spec.program, 'md'), blocksMarkdown(specBlocks(spec, meta)), specAiStatements(spec, meta));
+export const specDocxParts = (spec: RequirementsSpec, meta: SpecExportMeta): Record<string, string> => blocksDocxParts(specBlocks(spec, meta), { aiStatements: specAiStatements(spec, meta) });
+export const specDocx = (spec: RequirementsSpec, meta: SpecExportMeta): Promise<Blob> => blocksDocx(specBlocks(spec, meta), { aiStatements: specAiStatements(spec, meta) });
 
 /** The look of the Confluence page: the export tokens of `lib/export-style.ts`, nothing fetched. */
 const SPEC_HTML_CSS = `
@@ -272,7 +288,8 @@ a{color:${EXPORT_COLORS.information}}.title-page{border:1px solid ${EXPORT_COLOR
 
 /** The Confluence page: a standalone document, every value escaped by the block spellers. */
 export function specConfluenceHtml(spec: RequirementsSpec, meta: SpecExportMeta): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(spec.title)}</title><style>${SPEC_HTML_CSS}</style></head><body>${blocksHtml(specBlocks(spec, meta))}</body></html>`;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(spec.title)}</title><style>${SPEC_HTML_CSS}</style></head><body>${blocksHtml(specBlocks(spec, meta))}</body></html>`;
+  return withAiMarkingHtml(html, specAiStatements(spec, meta));
 }
 
 export function specFileName(projectName: string, ext: 'md' | 'docx' | 'html'): string {
