@@ -1,6 +1,7 @@
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
 import { containerAt, readBlocks } from './block-structure';
-import { readControlFlowFrom } from './control-flow';
+import { readControlFlowFrom, type Branch } from './control-flow';
+import { readGoldenMaster } from '../transformation/golden-master';
 
 /**
  * The demo switches of a program (roadmap 3.0.13, SD review of
@@ -26,6 +27,18 @@ import { readControlFlowFrom } from './control-flow';
  *
  * Without a demo flag nothing here is read: a `CASE` on a number is a business
  * rule in any program that does not say it runs on demo data.
+ *
+ * Roadmap 3.0.17 item 8 (owner 17.10.2026, from the QM acceptance program: 31
+ * rules of the form "CASE p_case has 32 branches; this one is for 1"). Step 2
+ * reads the call structure, and a program can perform its case routine where
+ * the flag is not tested — after the `IF`, or with the flag checked only as
+ * `IF p_demo <> 'X'. MESSAGE … ENDIF.` and no `ELSE`. So where a demo flag is
+ * declared, the golden master's case switch counts as well
+ * (`readGoldenMaster`, the recognition the transformation carries the demo
+ * cases with, by shape: a `CASE` on a selection parameter whose integer arms
+ * change the tables a baseline routine builds from literals). Its selector is
+ * a case selector, its case routine and baseline are demo routines, wherever
+ * they are performed. The demo flag stays required.
  *
  * Pure: the statement reader and the block structure, no I/O.
  */
@@ -104,7 +117,7 @@ export function readDemoSwitches(source: string): DemoSwitches | null {
       if (otherwise && branch.arms.length === 2) onRanges.push([otherwise.headerIndex + 1, branch.closeIndex]);
     }
   }
-  if (onRanges.length === 0) return null;
+  if (onRanges.length === 0) return withCaseRoutine({ flag, routines: [], selectors: [], cases: [] }, source, branches, parameters);
 
   // Where each FORM is performed.
   const performedAt = new Map<string, number[]>();
@@ -134,7 +147,7 @@ export function readDemoSwitches(source: string): DemoSwitches | null {
       }
     }
   }
-  if (demo.size === 0) return null;
+  if (demo.size === 0) return withCaseRoutine({ flag, routines: [], selectors: [], cases: [] }, source, branches, parameters);
 
   // Selection parameters other than the flag, and the fields assigned from them.
   const fromParameter = new Map<string, string>();
@@ -164,7 +177,43 @@ export function readDemoSwitches(source: string): DemoSwitches | null {
   }
   // Every field assigned from a selector parameter selects a case too.
   for (const [field, parameter] of fromParameter) if (selectors.has(parameter)) selectors.add(field);
-  return { flag, routines: [...demo].sort(), selectors: [...selectors].sort(), cases };
+  return withCaseRoutine({ flag, routines: [...demo].sort(), selectors: [...selectors].sort(), cases }, source, branches, parameters);
+}
+
+/**
+ * Roadmap 3.0.17 item 8: add the golden master's case switch to what the call
+ * structure found (see the file comment). Null when neither found anything —
+ * the answer `readDemoSwitches` gave such a source before.
+ */
+function withCaseRoutine(
+  found: DemoSwitches,
+  source: string,
+  branches: Branch[],
+  parameters: Map<string, number>,
+): DemoSwitches | null {
+  const none = found.routines.length === 0 ? null : found;
+  const gm = readGoldenMaster(source);
+  const parameter = gm?.switchParameter ?? null;
+  if (!gm || !parameter || parameter === found.flag.name || !parameters.has(parameter) || gm.cases.length < 3) return none;
+  const firstArm = gm.cases[0].lineStart;
+  const branch = branches.find(
+    (b) => b.kind === 'case' && !!b.selector && norm(b.selector) === gm.switchOperand && b.lineStart <= firstArm && b.lineEnd >= firstArm,
+  );
+  // Found by the call structure already: nothing to add.
+  if (!branch || found.cases.some((c) => c.lineStart === branch.lineStart)) return none;
+  const selectors = new Set([...found.selectors, parameter, gm.switchOperand]);
+  for (const [field, from] of Object.entries(gm.aliases)) if (from === parameter) selectors.add(field);
+  const routines = new Set([...found.routines, gm.caseRoutine.name, gm.baseRoutine.name].filter(Boolean).map(norm));
+  const arms = branch.arms.filter((a) => a.kind === 'when').length;
+  return {
+    flag: found.flag,
+    routines: [...routines].sort(),
+    selectors: [...selectors].sort(),
+    cases: [
+      ...found.cases,
+      { selector: gm.switchOperand, arms, routine: norm(gm.caseRoutine.name || branch.container || ''), lineStart: branch.lineStart, lineEnd: branch.lineEnd },
+    ],
+  };
 }
 
 /** Is this field (as a condition writes it) the demo flag or a case selector? */

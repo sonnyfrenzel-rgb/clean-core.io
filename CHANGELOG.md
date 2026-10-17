@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Analysis: the arms of the original's demo-case switch are no longer business rules** (3.0.17 item 8, owner
+  17.10.2026, from the QM acceptance program: 31 rules of the form "CASE p_case has 32 branches; this one is for
+  1", shown to business readers in Analyze and the documentation). Since 3.0.13 the rule register set a demo-case
+  switch apart only when the case routine was performed inside the test of the demo flag; a program that performs
+  it after that test, or checks the flag only with `IF p_demo <> 'X'. MESSAGE … ENDIF.`, kept every arm as a rule.
+  Where a demo flag is declared, the case switch the golden master reads by shape (`readGoldenMaster`: a `CASE` on
+  a selection parameter whose integer arms change the tables a baseline routine builds from literals) now counts as
+  a demo-case switch too, wherever it is performed: its arms are counted apart with their numbers left free, like
+  the other demo switches. Without a demo flag a `CASE` on a number stays a rule, as before, and a business `CASE`
+  (over a document type, say) stays rules. The rule set is derived from the source, not stored in a run, so no
+  engine gate applies. Shipped starter examples unchanged (none declares a demo flag), and so are the 300
+  benchmark cases (none declares one either). `tests/demo-case-switch-rules.spec.ts`.
 - **Transformation: a fill prompt fits the cap — the checks and rules a routine carries now count when it is split**
   (3.0.17, owner decision 17.10.2026). The engine split a routine into parts only by the lines and characters of
   its ABAP. The checks and rules that travel with a function were not counted, so a routine of 290 lines with 67
