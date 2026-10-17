@@ -17,6 +17,7 @@
  */
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { TARGET_ARCHITECTURES } from '../lib/project-commands';
 import { cloudServiceDetails } from '../components/design/CloudServiceIntegrations';
@@ -41,7 +42,7 @@ import {
   referencePatternsReadme,
   type ReferenceBinding,
 } from '../lib/sap-reference-architectures';
-import { isUpdate } from '../scripts/sync-sap-architecture-center';
+import { isUpdate, writeSynced } from '../scripts/sync-sap-architecture-center';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -72,12 +73,22 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     expect(isUpdate(SYNCED as Parameters<typeof isUpdate>[0], same.map((a, i) => (i === 0 ? { ...a, archived: !a.archived } : a)))).toBe(true);
     expect(isUpdate(SYNCED as Parameters<typeof isUpdate>[0], same.slice(1))).toBe(true);
     expect(isUpdate(null, same)).toBe(true);
-    // And the sync asks it before it writes: the only write of main() comes after the isUpdate return.
-    const src = read('scripts/sync-sap-architecture-center.ts');
-    const main = src.slice(src.indexOf('async function main()'));
-    expect(main.match(/writeFileSync\(/g), 'main() writes exactly once').toHaveLength(1);
-    expect(main.indexOf('if (!isUpdate(before, architectures))'), 'main() asks isUpdate').toBeGreaterThan(-1);
-    expect(main.indexOf('if (!isUpdate(before, architectures))')).toBeLessThan(main.indexOf('writeFileSync('));
+    // And the write itself: an unchanged file keeps its bytes, a change is written.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ra-sync-'));
+    const file = path.join(dir, 'sap-architecture-center.json');
+    const original = read('lib/generated/sap-architecture-center.json');
+    fs.writeFileSync(file, original);
+    const before = SYNCED as Parameters<typeof isUpdate>[0];
+    expect(writeSynced(file, before, 'f'.repeat(40), same, '2099-01-01')).toBe(false);
+    expect(fs.readFileSync(file, 'utf8')).toBe(original);
+    const changed = same.map((a, i) => (i === 0 ? { ...a, archived: !a.archived } : a));
+    expect(writeSynced(file, before, 'f'.repeat(40), changed, '2099-01-01')).toBe(true);
+    expect(JSON.parse(fs.readFileSync(file, 'utf8')).architectures[0].archived).toBe(changed[0].archived);
+    fs.rmSync(dir, { recursive: true, force: true });
+    // main() writes only through writeSynced.
+    const main = read('scripts/sync-sap-architecture-center.ts').split('async function main()')[1].split('export function writeSynced')[0];
+    expect(main).not.toContain('writeFileSync(');
+    expect(main).toContain('writeSynced(OUT_FILE');
   });
 
   test('the bindings name the commit they were checked against — the synced one', () => {

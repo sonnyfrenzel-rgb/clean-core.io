@@ -169,20 +169,23 @@ async function main() {
   if (check) {
     process.exit(diff.length === 0 ? 0 : 1);
   }
-  if (!isUpdate(before, architectures)) {
-    console.log(`[sync] ${path.relative(process.cwd(), OUT_FILE)} is current; not rewritten.`);
-    return;
-  }
-  const out: SyncedArchitectureCenter = {
-    source: `https://github.com/${REPO}`,
-    branch: BRANCH,
-    commit,
-    syncedAt: new Date().toISOString().slice(0, 10),
-    architectures,
-  };
-  mkdirSync(path.dirname(OUT_FILE), { recursive: true });
-  writeFileSync(OUT_FILE, `${JSON.stringify(out, null, 2)}\n`);
-  console.log(`[sync] wrote ${path.relative(process.cwd(), OUT_FILE)}`);
+  const wrote = writeSynced(OUT_FILE, before, commit, architectures, new Date().toISOString().slice(0, 10));
+  console.log(`[sync] ${path.relative(process.cwd(), OUT_FILE)} ${wrote ? 'written' : 'is current; not rewritten'}.`);
+}
+
+/** Write the synced metadata to `file` — only when it is an update (isUpdate). Returns whether it wrote. */
+export function writeSynced(
+  file: string,
+  before: SyncedArchitectureCenter | null,
+  commit: string,
+  architectures: SyncedReferenceArchitecture[],
+  syncedAt: string,
+): boolean {
+  if (!isUpdate(before, architectures)) return false;
+  const out: SyncedArchitectureCenter = { source: `https://github.com/${REPO}`, branch: BRANCH, commit, syncedAt, architectures };
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(out, null, 2)}\n`);
+  return true;
 }
 
 if (require.main === module) {
