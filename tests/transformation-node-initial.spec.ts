@@ -70,13 +70,13 @@ test.describe('IS [NOT] INITIAL is the engine\'s on every type (3.0.17 criterion
     const guards = p.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content;
     expect(guards).toContain("return !isInitial(values.lvX, 'unknown');");
     expect(guards).toContain('export function isInitial(v: unknown, kind: InitialKind): boolean {');
-    expect(guards).toContain(` * Assumed by the engine: ${g.id} (L${CHECK_LINE}, lv_x): IS INITIAL on an unread dictionary type — initial taken as null, blank, 0, 00000000, 000000.`);
+    expect(guards).toContain(` * Assumed by the engine: ${g.id} (L${CHECK_LINE}, lv_x): IS INITIAL on an unread dictionary type — initial taken as null, blank, 0, false, 00000000, 000000.`);
     // The fill request does not ask the model for it.
     const asked = p.fillUnits.flatMap((u) => u.guards).find((x) => x.id === g.id);
     expect(asked?.regionId ?? null).toBeNull();
     // TRACE.md names the assumption where a developer reads how the code was built.
     const trace = withTrace(p.plan, p.scaffold, p.scaffold.files, []).files.find((f) => f.path === 'TRACE.md')!.content;
-    expect(trace).toContain(`- Assumed by the engine — IS INITIAL on an unread dictionary type — initial taken as null, blank, 0, 00000000, 000000: ${g.id} (L${CHECK_LINE}, lv_x).`);
+    expect(trace).toContain(`- Assumed by the engine — IS INITIAL on an unread dictionary type — initial taken as null, blank, 0, false, 00000000, 000000: ${g.id} (L${CHECK_LINE}, lv_x).`);
     expect(typeErrors(typeCheckCandidate(p.scaffold.files))).toEqual([]);
   });
 
