@@ -768,7 +768,12 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     // An unlabelled break inside a switch leaves only the switch (QA finding 1584a06243c8): the work after it runs.
     if (!jump[1] && /^break\b/.test(text)) {
       for (let o = openerOf(pos); o > around[around.length - 1].body; o = openerOf(o)) {
-        if (code[o] === '{' && /\bswitch\s*\([\s\S]*\)\s*$/.test(code.slice(Math.max(0, o - 200), o))) return false;
+        if (code[o] !== '{') continue;
+        // The block's head: `switch (…)` with its selector matched by brackets, however long (QA finding 793964618f76).
+        const head = code.slice(0, o).replace(/\s+$/, '');
+        if (!head.endsWith(')')) continue;
+        const open = openerOf(head.length - 1);
+        if (open >= 0 && /\bswitch\s*$/.test(code.slice(0, open))) return false;
       }
     }
     // A label names its loop: only the one directly around the call.

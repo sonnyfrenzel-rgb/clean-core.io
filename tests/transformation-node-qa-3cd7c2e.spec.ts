@@ -127,3 +127,28 @@ test('1584a06243c8: an unlabelled break inside a switch leaves only the switch a
   // The same break straight in the loop around the call ends the loop's pass, as the original's loop ending does.
   expect(why(['for (const ls of st.local.gtItems) {', `  const rc = ${call};`, '  if (rc !== 0) break;', `  ${skip}`, '  st.local.gvDone = st.local.gvDone + 1;', '}'])).toBeNull();
 });
+
+test('793964618f76: a switch is recognised by its brackets, whatever the length of its selector', () => {
+  const p = prepareEngineLed({ source: SOURCE, track: 'node', program: null, decisions: [], contextText: 'PLATFORM KNOWLEDGE (test)' });
+  if (!p.ok) throw new Error(p.reason);
+  const line = SOURCE.split('\n').findIndex((l) => l.includes('AUTHORITY-CHECK')) + 1;
+  const unit = p.plan.units.find((u) => u.routine === 'CHECK_ITEMS')!;
+  const guard = p.plan.guards.find((g) => g.carried && g.unitId === unit.id && /sy-subrc/i.test(g.condition))!;
+  const call = `authority_check(st, 'M_MATE_WRK', { 'WERKS': ls.werks, 'ACTVT': '03' }, ${line})`;
+  const skip = `if (${guard.helper}(sel, st, null, { sySubrc: 0 })) continue;`;
+  const selector = Array.from({ length: 30 }, () => '(ls.werks)').join(' + ');
+  expect(selector.length).toBeGreaterThan(200);
+  const body = [
+    'for (const ls of st.local.gtItems) {',
+    `  const rc = ${call};`,
+    `  switch (${selector}) {`,
+    "    case '1000':",
+    '      if (rc !== 0) break;',
+    '      break;',
+    '  }',
+    `  ${skip}`,
+    '  st.local.gvDone = st.local.gvDone + 1;',
+    '}',
+  ].join('\n');
+  expect(guardBodyOf(p)(unit.id, body, [])).not.toBeNull();
+});
