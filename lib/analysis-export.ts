@@ -32,6 +32,8 @@ import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { SCORE_BANDS_SOURCE, scoreWithBand } from '@/lib/clean-core-score';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import { APP_VERSION } from '@/lib/version';
+import { analysisAuthorshipOf } from '@/lib/ai-authorship';
+import { aiMarkingStatement, withAiMarkingHtml } from '@/lib/ai-marking';
 import { successorSource, successorSourceNote } from '@/lib/successor-source';
 import { BTP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
@@ -520,7 +522,10 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
       `;
   }
 
-  return htmlContent;
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): the narrative is model text unless no model took part in the run
+  // (`analysisAuthorshipOf`); the engine's findings beside it are never marked.
+  const analysis = analysisAuthorshipOf(project);
+  return withAiMarkingHtml(htmlContent, analysis ? [aiMarkingStatement(analysis, APP_VERSION)] : []);
 }
 
 /** The file name the page saves the document under. */

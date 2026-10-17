@@ -336,11 +336,22 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
 
   const download = async (kind: 'md' | 'docx') => {
     if (!set) return;
-    const ex = await import('@/lib/requirements-export');
+    const [ex, marking, version] = await Promise.all([import('@/lib/requirements-export'), import('@/lib/ai-marking'), import('@/lib/version')]);
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): sentences a model reworded mark the file, with the provider and model the
+    // stored record took from its verified receipt; the engine's wording alone carries no marking.
+    const origin = record?.origin;
+    const aiStatement = wordingMap && Object.keys(wordingMap).length > 0 && origin
+      ? marking.aiMarkingStatement(
+          { provider: origin.provider, modelId: origin.modelId, byok: origin.byok, generatedAt: typeof origin.issuedAt === 'number' ? new Date(origin.issuedAt).toISOString() : record?.proposedAt ?? null, appVersion: null },
+          version.APP_VERSION,
+        )
+      : null;
+    const name = ex.requirementsFileName(projectName || fileName, kind);
+    const markdown = kind === 'md' ? ex.requirementsMarkdown(set, meta()) : '';
     const blob = kind === 'md'
-      ? new Blob([ex.requirementsMarkdown(set, meta())], { type: 'text/markdown;charset=utf-8' })
-      : await ex.requirementsDocx(set, meta());
-    await saveAs(blob, ex.requirementsFileName(projectName || fileName, kind));
+      ? new Blob([aiStatement ? marking.withAiMarking(name, markdown, aiStatement) : markdown], { type: 'text/markdown;charset=utf-8' })
+      : await ex.requirementsDocx(set, { ...meta(), aiStatement });
+    await saveAs(blob, name);
     setToast(kind === 'md' ? 'Markdown file downloaded.' : 'Word file downloaded.');
   };
 

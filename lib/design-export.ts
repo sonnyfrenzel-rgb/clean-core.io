@@ -22,6 +22,9 @@ import { CERTIFIED_SNAPSHOT_NOTE, MVCC_REFUSAL, postCheckDesign, type DesignPost
 import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { EXPORT_CSS } from '@/lib/export-style';
+import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
+import { aiMarkingStatement, withAiMarkingHtml } from '@/lib/ai-marking';
+import { APP_VERSION } from '@/lib/version';
 import { SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture, type TargetArchitectureCode } from '@/lib/project-commands';
 import { getCloudServiceKey } from '@/lib/cloud-service-key';
@@ -378,7 +381,9 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
       `;
   }
 
-  return htmlContent;
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): the design is model text; the page says so as its header comment and in its head.
+  const design = aiAuthorshipFactsOf(currentProject, { documentationFromEngine: true }).design;
+  return withAiMarkingHtml(htmlContent, design ? [aiMarkingStatement(design, APP_VERSION)] : []);
 }
 
 /** The file name the page saves the document under. */

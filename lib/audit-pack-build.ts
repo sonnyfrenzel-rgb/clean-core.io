@@ -20,6 +20,9 @@
  */
 
 import { closureSentence, testingClosureReading } from './testing-closure';
+import { AI_MARKING_BASIS, aiMarkingField } from './ai-marking';
+import type { AuditPackAiGeneration } from './audit-pack-canonical';
+import { APP_VERSION } from './version';
 import type { Project } from './types';
 import { buildEvidenceChain, coversOf, type CoverEntry } from './evidence-chain';
 import {
@@ -170,6 +173,42 @@ export function auditPackCovers(src: AuditPackSource): CoverEntry[] {
       modelParticipation: project.auditMetadata?.modelCard?.modelParticipation,
     }),
   );
+}
+
+/**
+ * The AI marking of this pack's manifest (roadmap 3.0.17, AI Act Art. 50(2)).
+ *
+ * Read from the signed run alone — its `modelParticipation`, its `model` and
+ * its `createdAt`, all inside the run's own signature — never from the project
+ * document. The pack's signed files are the engine's and carry no marking; the
+ * one model-written artefact of a run is its analysis narrative, which is not
+ * in the pack. A run no model took part in states that (`statement: null`); a
+ * narrative whose model call no receipt established is marked with "provider
+ * and model not recorded".
+ */
+export function auditPackAiGeneration(src: Pick<AuditPackSource, 'run'>): AuditPackAiGeneration {
+  const run = src.run;
+  const participation = run.modelParticipation;
+  const meta = run.aiNarrativeMeta as { responseHash?: unknown } | undefined;
+  const narrative =
+    participation === 'narrative' || participation === 'narrative-attested' || (participation === undefined && typeof meta?.responseHash === 'string');
+  const engineVersion = typeof run.analyzerVersion === 'string' && run.analyzerVersion ? run.analyzerVersion : APP_VERSION;
+  if (!narrative) {
+    return { artefact: 'analysis-narrative', statement: null, provider: null, model: null, generatedOn: null, basis: AI_MARKING_BASIS };
+  }
+  const model = (run.model ?? null) as { provider?: unknown; modelId?: unknown; byokUsed?: unknown } | null;
+  const attested = participation === 'narrative-attested' && typeof model?.provider === 'string' && model.provider && typeof model?.modelId === 'string' && model.modelId;
+  const field = aiMarkingField(
+    {
+      provider: attested ? (model!.provider as string) : null,
+      modelId: attested ? (model!.modelId as string) : null,
+      byok: attested ? model!.byokUsed === true : null,
+      generatedAt: typeof run.createdAt === 'string' ? run.createdAt : null,
+      appVersion: engineVersion,
+    },
+    engineVersion,
+  );
+  return { artefact: 'analysis-narrative', statement: field.statement, provider: field.provider, model: field.model, generatedOn: field.generatedOn, basis: field.basis };
 }
 
 /** The owner's statements, picked from the project document by name. */

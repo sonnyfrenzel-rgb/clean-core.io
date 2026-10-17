@@ -333,7 +333,7 @@ export interface CoverageResult {
  *  - `verified`    — the pack's Ed25519 signature verifies over the manifest
  *                    hash rebuilt from the archive, with a published key;
  *  - `not-present` — the pack carries no Ed25519 signature (HMAC-only packs,
- *                    format 4.0 and older);
+ *                    format 5.0 or 4.0, and older);
  *  - `failed`      — it carries one and it does not verify with the key it names;
  *  - `unchecked`   — it carries one and it could not be checked: the key
  *                    document did not answer, the key it names is not published
@@ -783,6 +783,8 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
         // can be read as a statement about this manifest, and a verifier that
         // tidied it up first would be verifying a manifest nobody sealed.
         covers: manifest.covers,
+        // Roadmap 3.0.17: the AI marking, handed over as carried for the same reason.
+        aiGeneration: manifest.aiGeneration,
       });
     } catch (err: any) {
       errors.push(err?.message || 'This manifest has no unambiguous canonical form.');

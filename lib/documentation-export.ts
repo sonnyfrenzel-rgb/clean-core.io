@@ -62,6 +62,7 @@ import { readCapabilityFacts } from '@/lib/documentation-capabilities';
 import type { OpenQuestions } from '@/lib/open-questions';
 import { raciGapWord, raciLetterWord, sopLevelBusinessLine, sopLevelLegacyLine } from '@/lib/messages/documentation';
 import { RACI_EDITED_IN_FILE, type RaciEditRecord } from '@/lib/raci-edit';
+import { aiMarkingComment, aiMarkingMetaTag, aiMarkingStatement, type AiAuthorship } from '@/lib/ai-marking';
 import { wt } from '@/lib/workspace-messages';
 import {
   RACI_LETTERS,
@@ -108,6 +109,13 @@ export interface ConfluenceExportOptions {
    * says whose it is — "Edited by the owner of the project", never an account.
    */
   raciEdit?: RaciEditRecord | null;
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): who wrote the model text the page carries — the business layer (`sop`) and
+   * the glance's proposal worded by the analysis model (`analysis`) — read by `lib/ai-authorship.ts`. A page that
+   * carries model text gets the statement as its header comment and as `<meta name="ai-generated">`; a page with
+   * the engine's reading alone gets neither.
+   */
+  ai?: { sop: AiAuthorship | null; analysis: AiAuthorship | null; appVersion: string };
 }
 
 /**
@@ -334,9 +342,21 @@ export function buildEngineConfluenceHtml(
     ${a.lanes.length ? `<h3>${esc('A.8 Lanes the code proves')}</h3><ul>${a.lanes.map(item).join('')}</ul>` : ''}
   </div>`;
 
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): the statement of every model that wrote text on this page — the business
+  // layer's, and the analysis model's for the glance proposal — as the header comment and as metadata.
+  const aiVersion = options?.ai?.appVersion ?? '';
+  const aiStatements = [
+    parsedBusinessDoc && options?.ai?.sop ? aiMarkingStatement(options.ai.sop, aiVersion) : null,
+    g.proposal && options?.ai?.analysis ? aiMarkingStatement(options.ai.analysis, aiVersion) : null,
+  ].filter((s): s is string => s !== null);
+  // Both are assembled by `lib/ai-marking.ts`, which writes the statement on one line with no comment terminator and
+  // escapes it for the attribute (fed hostile names in tests/ai-marking.spec.ts).
+  const aiCommentSection = aiStatements.length ? aiMarkingComment('markup', aiStatements[0]) + '\n' : '';
+  const aiMetaSection = aiStatements.map(aiMarkingMetaTag).join('');
+
   // The stylesheet every stage export shares (`lib/export-style.ts`), and this page's own few classes.
   const exportCSS = EXPORT_STYLE_ELEMENT;
-  const engineHtml = `<html><head><meta charset="utf-8"><title>${esc(o.title)}</title>${exportCSS}${docCSS}</head><body>
+  const engineHtml = `${aiCommentSection}<html><head><meta charset="utf-8">${aiMetaSection}<title>${esc(o.title)}</title>${exportCSS}${docCSS}</head><body>
     ${staleSection}
     ${coverSection}
     ${businessPageSection}

@@ -1,5 +1,6 @@
 import { getAuth } from 'firebase/auth';
 import { callGemini } from '../gemini';
+import type { ModelReceipt } from '../model-receipt';
 import { PRODUCT_GEMINI_MODEL } from '../constants';
 import type { LeaseReference } from './lease';
 import type { FillModel } from './orchestrator';
@@ -105,8 +106,13 @@ export async function readGenerationWindow(): Promise<GenerationWindow | null> {
   }
 }
 
-/** The fill model call under a lease: stage `transformation`, fill answer shape, aborted with the generation. */
-export function leasedFillModel(lease: LeaseReference, modelName: string = PRODUCT_GEMINI_MODEL): FillModel {
+/**
+ * The fill model call under a lease: stage `transformation`, fill answer shape, aborted with the generation.
+ *
+ * `onReceipt` (roadmap 3.0.17, AI Act Art. 50(2)) is handed the receipt of every call that answered, so the page
+ * can send the last one with the package: the server records provider and model of the generation from it.
+ */
+export function leasedFillModel(lease: LeaseReference, modelName: string = PRODUCT_GEMINI_MODEL, onReceipt?: (receipt: ModelReceipt) => void): FillModel {
   // A refusal comes back as `GeminiCallError` with `status` and `code`, which
   // the orchestrator reads (`modelErrorKind`) to retry, stop or give up a unit.
   // A repair of gate errors is marked (`meta.gateRepair`), so the server may count it against the lease's
@@ -116,5 +122,6 @@ export function leasedFillModel(lease: LeaseReference, modelName: string = PRODU
       lease: { projectId: lease.projectId, leaseId: lease.leaseId },
       responseShape: 'transformation-fill',
       ...(meta?.gateRepair ? { gateRepair: true } : {}),
+      ...(onReceipt ? { onReceipt } : {}),
     });
 }

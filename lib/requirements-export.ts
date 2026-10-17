@@ -44,6 +44,11 @@ export interface RequirementsExportMeta {
   date: string;
   /** Requirement id → the model's proposed sentence, when one was accepted. */
   wording?: Readonly<Record<string, string>> | null;
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): the statement of the model that worded sentences of this document
+   * (`lib/ai-marking.ts`), carried in the Word file's core properties. Absent: the engine's wording alone.
+   */
+  aiStatement?: string | null;
 }
 
 export const PROVENANCE_NOTE =
@@ -269,13 +274,14 @@ const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles
 
 /** The file set of the `.docx`, as text — exported so a spec can read what Word will. */
 export function requirementsDocxParts(set: RequirementSet, meta: RequirementsExportMeta): Record<string, string> {
-  return {
+  const parts = {
     '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>',
     '_rels/.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
     'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
     'word/styles.xml': STYLES,
     'word/document.xml': documentXml(set, meta),
   };
+  return meta.aiStatement ? withCoreProperties(parts, meta.aiStatement) : parts;
 }
 
 export async function requirementsDocx(set: RequirementSet, meta: RequirementsExportMeta): Promise<Blob> {
@@ -517,14 +523,40 @@ const PACKAGE_PARTS: Record<string, string> = {
   'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
 };
 
-export function blocksDocxParts(blocks: DocBlock[]): Record<string, string> {
-  return { ...PACKAGE_PARTS, 'word/styles.xml': STYLES_WITH_H4, 'word/document.xml': blocksDocument(blocks) };
+/**
+ * Roadmap 3.0.17 (AI Act Art. 50(2)): a document with model-written text carries the statement in its core
+ * properties (`docProps/core.xml`, `dc:description`) — the metadata a Word file has where a source has a comment.
+ * Without one the parts are exactly the ones before.
+ */
+export interface DocxMeta {
+  /** The AI marking statement (`lib/ai-marking.ts`), or absent for a document with the engine's text alone. */
+  aiStatement?: string | null;
 }
 
-export async function blocksDocx(blocks: DocBlock[]): Promise<Blob> {
+function withCoreProperties(parts: Record<string, string>, description: string): Record<string, string> {
+  return {
+    ...parts,
+    '[Content_Types].xml': parts['[Content_Types].xml'].replace(
+      '</Types>',
+      '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>',
+    ),
+    '_rels/.rels': parts['_rels/.rels'].replace(
+      '</Relationships>',
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>',
+    ),
+    'docProps/core.xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:description>${x(description)}</dc:description></cp:coreProperties>`,
+  };
+}
+
+export function blocksDocxParts(blocks: DocBlock[], meta: DocxMeta = {}): Record<string, string> {
+  const parts = { ...PACKAGE_PARTS, 'word/styles.xml': STYLES_WITH_H4, 'word/document.xml': blocksDocument(blocks) };
+  return meta.aiStatement ? withCoreProperties(parts, meta.aiStatement) : parts;
+}
+
+export async function blocksDocx(blocks: DocBlock[], meta: DocxMeta = {}): Promise<Blob> {
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
-  for (const [name, content] of Object.entries(blocksDocxParts(blocks))) zip.file(name, content);
+  for (const [name, content] of Object.entries(blocksDocxParts(blocks, meta))) zip.file(name, content);
   return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
 
@@ -546,6 +578,8 @@ export interface NfrExportMeta {
   /** ISO date, handed in: this module reads no clock. */
   date: string;
   proposals?: Partial<Record<NfrCategory, NfrProposalExport>> | null;
+  /** Roadmap 3.0.17: the AI marking statement, carried in the Word file's core properties (see `RequirementsExportMeta`). */
+  aiStatement?: string | null;
 }
 
 export const NFR_STATUS_WORD: Readonly<Record<NfrCategoryStatus, string>> = {
@@ -689,8 +723,8 @@ function nfrBlocks(set: NfrSet, meta: NfrExportMeta): DocBlock[] {
 
 export const nfrMarkdown = (set: NfrSet, meta: NfrExportMeta): string => blocksMarkdown(nfrBlocks(set, meta));
 export const nfrHtml = (set: NfrSet, meta: NfrExportMeta): string => blocksHtml(nfrBlocks(set, meta));
-export const nfrDocxParts = (set: NfrSet, meta: NfrExportMeta): Record<string, string> => blocksDocxParts(nfrBlocks(set, meta));
-export const nfrDocx = (set: NfrSet, meta: NfrExportMeta): Promise<Blob> => blocksDocx(nfrBlocks(set, meta));
+export const nfrDocxParts = (set: NfrSet, meta: NfrExportMeta): Record<string, string> => blocksDocxParts(nfrBlocks(set, meta), { aiStatement: meta.aiStatement });
+export const nfrDocx = (set: NfrSet, meta: NfrExportMeta): Promise<Blob> => blocksDocx(nfrBlocks(set, meta), { aiStatement: meta.aiStatement });
 
 /* ---------------------------------------------- the one specification */
 
@@ -782,8 +816,8 @@ function specificationBlocks(fr: RequirementSet, nfr: NfrSet, meta: Specificatio
 
 export const specificationMarkdown = (fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): string => blocksMarkdown(specificationBlocks(fr, nfr, meta));
 export const specificationHtml = (fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): string => blocksHtml(specificationBlocks(fr, nfr, meta));
-export const specificationDocxParts = (fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): Record<string, string> => blocksDocxParts(specificationBlocks(fr, nfr, meta));
-export const specificationDocx = (fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): Promise<Blob> => blocksDocx(specificationBlocks(fr, nfr, meta));
+export const specificationDocxParts = (fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): Record<string, string> => blocksDocxParts(specificationBlocks(fr, nfr, meta), { aiStatement: meta.aiStatement });
+export const specificationDocx = (fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): Promise<Blob> => blocksDocx(specificationBlocks(fr, nfr, meta), { aiStatement: meta.aiStatement });
 
 export function exportFileName(projectName: string, kind: 'non-functional' | 'specification', ext: 'md' | 'docx'): string {
   const base = projectName.replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'project';

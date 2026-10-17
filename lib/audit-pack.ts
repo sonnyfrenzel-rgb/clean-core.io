@@ -83,6 +83,12 @@ export interface AuditPackManifest {
    * signature from manifest format 4; absent on every pack sealed before it.
    */
   covers?: import('./evidence-chain').CoverEntry[];
+  /**
+   * The AI marking (roadmap 3.0.17, AI Act Art. 50(2)): which artefact of the
+   * run a model wrote, with the statement. Bound into the signature from
+   * manifest format 5; absent on every pack sealed before it.
+   */
+  aiGeneration?: import('./audit-pack-canonical').AuditPackAiGeneration;
   manifestHash: string;
   signed: boolean;
   signature: string;
@@ -90,7 +96,7 @@ export interface AuditPackManifest {
   /**
    * The Ed25519 signature over the same `manifestHash` string the HMAC covers,
    * base64, and the id of the key that made it (first 16 hex characters of
-   * SHA-256 over the raw public key). Present from manifest format 4.1 when the
+   * SHA-256 over the raw public key). Present from manifest format 4.1 (now 5.1) when the
    * issuer has a key configured; absent otherwise — never empty.
    */
   signatureEd25519?: string;
