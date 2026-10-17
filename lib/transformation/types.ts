@@ -130,6 +130,14 @@ export const PLAN_VERSION = 2;
  * part keeps the whole ABAP of its lines, and a statement too large to fit alone is named with its reason in the plan
  * (`promptOverCap`, shown by the pre-flight) instead of a prompt over the cap; the Node parent's comment says it was
  * split into parts.
+ * Also 15 (3.0.17 criterion 3, the side-by-side starter example's real runs, 17.10.2026): Node — the original's
+ * AUTHORITY-CHECKs are carried by the engine (`authority-node.ts`): `srv/lib/authority.ts` answers the sy-subrc of each
+ * check and fails closed (4) until a developer maps it to the target's authorization, a demo or trial granting only with
+ * `CC_AUTHORITY_DEMO=grant` and every granted run saying so; a step whose lines hold a check gets it written in its
+ * frame (`const authority_L90 = (): number => authority_check(…)`), the body calling it where the original checks, and
+ * the fill request names it (`authority`) — the model had nothing to compute sy-subrc from and invented it, three
+ * runs out of three. The RAP text is unchanged.
+ * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 15;
 
@@ -618,6 +626,25 @@ export interface Scaffold {
   required: Record<string, RequiredGuard[]>;
   /** RAP only, since scaffold version 6: the logic class's typed contract. */
   rap?: RapClassContract;
+  /** Node only, since scaffold version 15 (3.0.17): the original's authority checks per region (`authority-node.ts`). */
+  authority?: Record<string, AuthorityEntry[]>;
+}
+
+/**
+ * One AUTHORITY-CHECK of the original inside a unit's lines (Node, scaffold version 15). With `fn`, the frame holds
+ * `const <fn> = (): number => <call>;` and the body calls `<fn>()` where the original checks; without, `call` is
+ * what the body writes at `line`, `unread` naming the values only the routine knows (`<lv_ekgrp>` in `call`).
+ */
+export interface AuthorityEntry {
+  line: number;
+  object: string;
+  /** The statement as the original writes it, on one line. */
+  check: string;
+  /** `authority_L90`: the engine-written function that runs the check and answers sy-subrc; null when not written. */
+  fn: string | null;
+  /** `authority_check(st, 'V_LIKP_VST', { 'VSTEL': sel.vstel, 'ACTVT': '03' }, 90)`. */
+  call: string;
+  unread?: string[];
 }
 
 /** The harness adapter (`docs/failure-patterns/README.md`, `scripts/acceptance/run.mjs`). */
@@ -667,6 +694,8 @@ export interface Trace {
   goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test' };
   /** 3.0.15 (1): the SAP function modules the access layer replaces with an engine-written ABAP Cloud counterpart (`released-counterparts.ts`). Absent when none. */
   engineCounterparts?: string[];
+  /** 3.0.17: the original's authority checks `srv/lib/authority.ts` leaves open, failing closed (`authority-node.ts`). Absent when none. */
+  openAuthority?: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** See `GenerationStatus`. */
@@ -739,6 +768,12 @@ export interface FillRequestUnit {
    * level down — as the scaffold writes them (`type-shapes.ts`), so a body reads fields that exist (Node only).
    */
   types?: string;
+  /**
+   * Node, since scaffold version 15: the original's AUTHORITY-CHECKs in this unit's lines — the function `fn` the
+   * engine wrote (the body calls `fn()` where the original checks; it answers sy-subrc), or, without one, the
+   * `call` the body writes there.
+   */
+  authority?: Array<Pick<AuthorityEntry, 'line' | 'fn' | 'call'>>;
 }
 
 /** A repair round's addition to a unit (§13.2 step 3). */

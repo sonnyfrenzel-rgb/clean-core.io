@@ -42,7 +42,8 @@ import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './marker
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
 import { operandsOf } from './guard-basis';
-import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { AUTHORITY_FILE, authorityDocLines, authorityEntriesOf, authorityFile, authorityFrameLines } from './authority-node';
+import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AuthorityEntry, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /** The Node major of the container; the same as `PACKAGE_NODE_MAJOR` (lib/delivery-package.ts, not imported to keep this module small — a spec holds them equal). */
 export const SCAFFOLD_NODE_MAJOR = 22;
@@ -802,7 +803,7 @@ function argsInterface(u: Unit, shapes: AbapShapes): string | null {
   return `export interface ${name} {\n${members.join('\n')}\n}`;
 }
 
-function unitDoc(u: Unit, plan: UnitPlan): string {
+function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = []): string {
   const rules = u.rules.map((id) => {
     const r = plan.rules.find((x) => x.id === id);
     if (!r) return id;
@@ -822,6 +823,7 @@ function unitDoc(u: Unit, plan: UnitPlan): string {
     ` * Rules: ${rules.length ? rules.join(', ') : 'none'}`,
     ` * Guards: ${guards.length ? guards.join(', ') : 'none'}`,
     ...(u.bodyCalls.length > 0 ? [` * The body calls, where the original checks: ${bodyCallWords(u, plan)}`] : []),
+    ...authorityDocLines(auth),
     ` * Unit ${u.id}: the frame is written by Clean-Core.io (engine); the body between the markers is a model proposal.`,
     ' */',
   ].join('\n');
@@ -860,7 +862,7 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
   return [...names];
 }
 
-function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes): Built {
+function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = []): Built {
   const libDir = u.file.startsWith('srv/steps/') ? '../lib/' : './lib/';
   const callees = u.callees.map((id) => plan.units.find((x) => x.id === id)!).filter(Boolean);
   const out: string[] = [];
@@ -869,6 +871,8 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes): Built {
   out.push(`import * as dec from '${libDir}decimal.ts';`);
   out.push(`import { NotImplementedFill, Refusal } from '${libDir}errors.ts';`);
   out.push(`import { ${guardImports(u, plan).join(', ')} } from '${libDir}guards.ts';`);
+  // The original's AUTHORITY-CHECKs in these lines (scaffold version 15): computed in the frame, never by the model.
+  if (auth.length > 0) out.push(`import { authority_check } from '${libDir}authority.ts';`);
   out.push(`import { DECIMALS } from '${libDir}types.ts';`);
   out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from '${libDir}types.ts';`);
   for (const c of callees) {
@@ -881,15 +885,22 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes): Built {
     out.push(args);
     out.push('');
   }
-  const doc = unitDoc(u, plan);
-  const guardLines = guardCallLines(u, plan, shapes);
+  const doc = unitDoc(u, plan, auth);
+  const guardLines = [...guardCallLines(u, plan, shapes), ...authorityFrameLines(auth)];
   out.push(doc);
   out.push(`${u.signature} {`);
   out.push(...guardLines);
   out.push(regionText('node', u.id, `${u.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(u.id)}, ${sq(u.fn)});`));
   out.push('}');
   out.push('');
-  const available = [...NODE_HELPERS, ...callees.map((c) => c.fn), ...guardImports(u, plan).filter((n) => n !== 'checked'), 'DECIMALS'];
+  const available = [
+    ...NODE_HELPERS,
+    ...callees.map((c) => c.fn),
+    ...guardImports(u, plan).filter((n) => n !== 'checked'),
+    'DECIMALS',
+    ...auth.flatMap((e) => (e.fn ? [e.fn] : [])),
+    ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
+  ];
   return { file: { path: u.file, content: out.join('\n'), owner: 'fill' }, regions: [{ regionId: u.id, available }] };
 }
 
@@ -919,7 +930,7 @@ function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan, shapes: AbapSha
 
 /* ---------------------------------------------------------- process, app */
 
-function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes): Built {
+function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, auth: readonly AuthorityEntry[] = []): Built {
   const orch = plan.units.find((u) => u.kind === 'orchestrator')!;
   const steps = plan.units.filter((u) => u.kind !== 'orchestrator' && !u.part);
   const fnOf = new Map<string, Unit>();
@@ -942,17 +953,18 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes): Bu
   out.push("import * as dec from './lib/decimal.ts';");
   out.push("import { NotImplementedFill, Refusal } from './lib/errors.ts';");
   out.push(`import { ${['checked', 'checkSelection', ...guardImports(orch, plan).filter((n) => n !== 'checked')].join(', ')} } from './lib/guards.ts';`);
+  if (auth.length > 0) out.push("import { authority_check } from './lib/authority.ts';");
   out.push("import { initialLocals } from './lib/types.ts';");
   out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from './lib/types.ts';`);
   for (const s of steps) out.push(`import { ${s.fn} } from './${s.file.replace('srv/', '')}';`);
   out.push('');
   const doc = [
-    unitDoc(orch, plan).replace(/ \*\/$/, ''),
+    unitDoc(orch, plan, auth).replace(/ \*\/$/, ''),
     ' * Reading order of the original (engine):',
     ...(reading.length ? reading : [' *   (no PERFORM at program level)']),
     ' */',
   ].join('\n');
-  const guardLines = guardCallLines(orch, plan, shapes);
+  const guardLines = [...guardCallLines(orch, plan, shapes), ...authorityFrameLines(auth)];
   out.push(doc);
   out.push(`${orch.signature} {`);
   out.push(...guardLines);
@@ -998,7 +1010,13 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes): Bu
   out.push('  return done(null);');
   out.push('}');
   out.push('');
-  const available = [...NODE_HELPERS, ...steps.map((s) => s.fn), ...guardImports(orch, plan).filter((n) => n !== 'checked')];
+  const available = [
+    ...NODE_HELPERS,
+    ...steps.map((s) => s.fn),
+    ...guardImports(orch, plan).filter((n) => n !== 'checked'),
+    ...auth.flatMap((e) => (e.fn ? [e.fn] : [])),
+    ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
+  ];
   return { file: { path: 'srv/process.ts', content: out.join('\n'), owner: 'fill' }, regions: [{ regionId: orch.id, available }] };
 }
 
@@ -1519,13 +1537,23 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, lists), owner: 'engine' });
   files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, lists), owner: 'engine' });
   add(guardsFile(plan, shapes, lists));
+  // The original's AUTHORITY-CHECKs (scaffold version 15, `authority-node.ts`): the seam fails closed, and each
+  // function whose lines hold a check gets it written in its frame.
+  const checks = facts.graph.authorityChecks;
+  const authority: Record<string, AuthorityEntry[]> = {};
+  for (const u of plan.units) {
+    const entries = checks.length > 0 ? authorityEntriesOf(u, plan, checks, facts.statements) : [];
+    if (entries.length > 0) authority[u.id] = entries;
+  }
+  if (checks.length > 0) files.push({ path: AUTHORITY_FILE, content: authorityFile(plan.program, checks), owner: 'engine' });
   for (const u of plan.units) {
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
     if (parts.length > 0) files.push(splitParentFile(u, parts, plan, shapes));
-    else add(stepFile(u, plan, shapes));
+    else add(stepFile(u, plan, shapes, authority[u.id]));
   }
-  add(processFile(plan, facts, shapes));
+  const orchestrator = plan.units.find((u) => u.kind === 'orchestrator');
+  add(processFile(plan, facts, shapes, orchestrator ? authority[orchestrator.id] : []));
   files.push({ path: 'srv/simulate.ts', content: SIMULATE_TS, owner: 'engine' });
   files.push({ path: 'srv/app.ts', content: APP_TS, owner: 'engine' });
   files.push({ path: 'srv/server.ts', content: SERVER_TS, owner: 'engine' });
@@ -1563,5 +1591,17 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.splice(0, files.length, ...withDraftHeader(files, options.against));
   const required: Record<string, RequiredGuard[]> = {};
   for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'node', facts.statements);
-  return { track: 'node', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter, notCarried: plan.notCarried, available, required };
+  return {
+    track: 'node',
+    version: SCAFFOLD_VERSION,
+    files,
+    units: plan.units,
+    regions: findRegions(files),
+    digest: scaffoldDigest(files),
+    adapter,
+    notCarried: plan.notCarried,
+    available,
+    required,
+    ...(Object.keys(authority).length > 0 ? { authority } : {}),
+  };
 }

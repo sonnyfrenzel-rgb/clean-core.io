@@ -197,6 +197,9 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
             .map((d) => ({ name: d.name, digits: d.digits, decimals: d.decimals, type: `Dec<'${d.name.toUpperCase()}',${d.digits},${d.decimals}>` })),
         },
         available: { helpers: available.filter((n) => !calleeNames.has(n)), callees },
+        // The original's AUTHORITY-CHECKs in these lines (Node, scaffold version 15): the function the engine wrote
+        // for each, or the exact call — the model never decides an authorization (`authority-node.ts`).
+        ...(scaffold.authority?.[u.id]?.length ? { authority: scaffold.authority[u.id].map((e) => ({ line: e.line, fn: e.fn, call: e.call })) } : {}),
         // The fields of every type the signature and the callees' signatures name (defect D, 13.10.2026).
         // Of the original's globals (`Locals`), only those this function's ABAP names (3.0.13, A3).
         // RAP since scaffold version 6: the logic class around the body (scaffold-rap.ts).
