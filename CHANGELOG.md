@@ -150,7 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requirement with a line anchor where no construct drives the route; the option comparison's engine facts
   say the same. Gated on the engine version (`STATED_REQUIREMENTS_FROM = '3.0.17'`): a run signed by an
   earlier engine re-renders exactly as before, and the change goes live when `APP_VERSION` reaches v3.0.17.
-  None of the nine starter examples, the demo or the 300 benchmark cases changes route, score or words.
+  None of the nine starter examples, the demo or the 300 benchmark cases changes route, score or words. A negated phrase counts for the other side ("workflow state must not be kept outside the ERP" is no side-by-side target); a hedge in a concessive clause ("…, although RAP could be considered") no longer erases a binding target before it; a range or list of labels ("NFR-01..06") is no label of its own; and where a stated target sets the route off the stack next to direct writes to SAP standard tables, the side-by-side track is partially compatible and names the writes to replace first (QA review of 081f6457d09e).
   `tests/stated-requirements.spec.ts`.
 
 ## [v3.0.16] — 2026-10-16

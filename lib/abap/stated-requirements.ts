@@ -149,7 +149,10 @@ const BULLET = /^(?:[-•·+o]|\d+[.)]|[a-z][.)])\s+/;
 /** Sentence or clause boundaries: `;`, or a full stop followed by a blank — `Node.js` and `e.g.` stay whole. */
 function clausesOf(text: string): Array<{ start: number; text: string }> {
   const out: Array<{ start: number; text: string }> = [];
-  const re = /;|\.(?=\s+[A-Z(])|\.$/g;
+  // A concessive or contrasting clause is a clause of its own: "SAP BTP is the approved target, although RAP could be
+  // considered later" — the hedge belongs to the second part and must not erase the binding first (QA review of
+  // 081f6457d09e).
+  const re = /;|\.(?=\s+[A-Z(])|\.$|,(?=\s+(?:although|though|even\s+though|whereas|while|but|however|yet)\b)|\s(?=(?:although|whereas)\b)/g;
   let start = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
@@ -209,6 +212,19 @@ const CONTRAST = /\b(?:but|however|instead|rather|only|so|therefore|thus|which|b
 const NEGATED_AFTER =
   /^\s*(?:[\w.-]+\s+){0,2}?(?:is|are)\s+(?:not|no\s+longer)\s+(?:licensed|approved|available|authori[sz]ed|allowed|permitted|an\s+option|in\s+scope|used|wanted)\b/i;
 
+/** A phrase whose own meaning is a negation: "no single ERP may own …", "no new ERP-side …", "… is not authorized". */
+const INHERENTLY_NEGATIVE = /^\s*no\b|\bnot\s+(?:authori[sz]ed|allowed|permitted|approved)\b/i;
+
+/** A negation in the clause before a match: back to the last comma, and not answered by a contrast word after it. */
+function negatedBefore(before: string): boolean {
+  const scope = before.split(/,/).pop() ?? '';
+  let last = -1;
+  NEGATION.lastIndex = 0;
+  let n: RegExpExecArray | null;
+  while ((n = NEGATION.exec(scope))) last = n.index + n[0].length;
+  return last >= 0 && !CONTRAST.test(scope.slice(last));
+}
+
 type Side = 'side-by-side' | 'on-stack';
 const other = (s: Side): Side => (s === 'side-by-side' ? 'on-stack' : 'side-by-side');
 
@@ -232,24 +248,26 @@ function mentionsOf(text: string): Mention[] {
           const after = c.slice(m.index + m[0].length);
           if (PASSING_BEFORE.test(before) || PASSING_AFTER.test(after)) continue;
           if (side === 'on-stack' && CONSUMED_AFTER.test(after) && (CONSUMED_BEFORE.test(before) || /\breleased\b/i.test(before.slice(-30)))) continue;
-          // The negation's scope: back to the last comma or contrast word.
-          const scope = before.split(/,/).pop() ?? '';
-          let negated = false;
-          let last = -1;
-          NEGATION.lastIndex = 0;
-          let n: RegExpExecArray | null;
-          while ((n = NEGATION.exec(scope))) last = n.index + n[0].length;
-          if (last >= 0 && !CONTRAST.test(scope.slice(last))) negated = true;
-          if (NEGATED_AFTER.test(after)) negated = true;
+          const negated = negatedBefore(before) || NEGATED_AFTER.test(after);
           out.push({ side: negated ? other(side) : side, binding, phrase: m[0] });
         }
       }
     };
+    // A phrase is negated like a name: by a negation before it in the same clause. A phrase that carries no negation of
+    // its own ("state … outside the ERP") is also negated by one inside it — "Workflow state must not be kept outside
+    // the ERP" asks for the opposite (QA review of 081f6457d09e); a phrase whose meaning is a negation ("no single ERP
+    // may own …", "… is not authorized") is not turned round by its own word.
     const phrased = (patterns: RegExp[], side: Side) => {
       for (const re of patterns) {
         re.lastIndex = 0;
         let m: RegExpExecArray | null;
-        while ((m = re.exec(c))) out.push({ side, binding, phrase: m[0] });
+        while ((m = re.exec(c))) {
+          const inherent = INHERENTLY_NEGATIVE.test(m[0]);
+          NEGATION.lastIndex = 0;
+          const inside = !inherent && NEGATION.test(m[0]);
+          const negated = negatedBefore(c.slice(0, m.index)) || inside;
+          out.push({ side: negated ? other(side) : side, binding, phrase: m[0] });
+        }
       }
     };
     named(SIDE_NAMES, 'side-by-side');

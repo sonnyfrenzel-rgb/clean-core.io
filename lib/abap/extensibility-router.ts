@@ -610,7 +610,9 @@ export function routeExtensibility(
   // that has to be replaced in any case went unsaid there (QA review of
   // 5a559787, 3fe882da065d). A run of an earlier engine keeps its words.
   const standardWritesAlwaysNamed = precisionFixesApply(engineVersion) && standardWrites.length > 0;
-  const standardWritesTooSentence = needsBtp
+  // routeBtp, not needsBtp: a route a stated requirement sets off the stack (from 3.0.17) does not replace these
+  // writes on-stack either (QA review of 081f6457d09e). Before 3.0.17 the two are the same.
+  const standardWritesTooSentence = routeBtp
     ? ` ${standardWrites.length} direct write(s) to SAP standard tables have to be replaced by ${standardWriteRemedy} as well.`
     : '';
 
@@ -808,7 +810,7 @@ export function routeExtensibility(
   // a0ae65b2b30d).
   rationale = `${rationale}${commitSentence}`;
   if (standardWritesAlwaysNamed && !rationaleNamesStandardWrites) {
-    rationale = needsBtp
+    rationale = routeBtp
       ? `${rationale} The ${standardWrites.length} direct write(s) to SAP standard tables are not fixed by this route: a side-by-side service cannot write SAP's tables either, so each is replaced by ${standardWriteRemedy}.`
       : `${rationale} The ${standardWrites.length} direct write(s) to SAP standard tables are not clean core in any edition: each is replaced on-stack by ${standardWriteRemedy}.`;
   }
@@ -974,7 +976,9 @@ export function routeExtensibility(
   };
 
   const sideBySideBTP: ComparativeTrack = {
-    technicalFeasibility: modificationBlocks ? 'Incompatible' : 'Highly Compatible',
+    // A stated side-by-side target next to direct writes to SAP standard tables is not highly compatible: a service on
+    // BTP cannot write SAP's tables either, and each write is replaced first (QA review of 081f6457d09e).
+    technicalFeasibility: modificationBlocks ? 'Incompatible' : followStatedSide && standardWrites.length > 0 ? 'Partially Compatible' : 'Highly Compatible',
     fitDetails: modificationBlocks
       ? 'Not reachable as it stands either. Code that was inserted into an SAP program cannot be moved off the stack before it is removed from it.'
       : needsBtp
@@ -982,7 +986,7 @@ export function routeExtensibility(
       // isolation design exists (QA full review of v2.20.0, 2b515958f925).
       ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.`
       : followStatedSide
-      ? `Recommended route: set by ${statedSideSentence}; no construct in the code points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.`
+      ? `Recommended route: set by ${statedSideSentence}; no construct in the code points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.${standardWrites.length > 0 ? ` First, the ${standardWrites.length} direct write(s) to SAP standard tables are replaced by ${standardWriteRemedy}: a side-by-side service cannot write SAP's tables either.` : ''}`
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
     pros: [
       'Maximizes upgrade readiness and isolates extensions',

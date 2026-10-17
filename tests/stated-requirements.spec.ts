@@ -312,3 +312,33 @@ test.describe('the shipped starter examples', () => {
     });
   }
 });
+
+test.describe('QA review of 081f6457d09e', () => {
+  test('a negated phrase asks for the opposite: "state must not be kept outside the ERP" is no side-by-side target', () => {
+    const src = `* REQUIREMENTS\n* REQ-1: Workflow state must not be kept outside the ERP.\n${READ_ONLY_CODE}`;
+    const items = readStatedRequirements(src);
+    expect(items.map((r) => r.target)).not.toContain('side-by-side');
+    expect(routeOf(src, NEW).recommendedRoute).toBe(IN_APP_ROUTE);
+    // A phrase whose meaning is a negation stays what it says.
+    const own = readStatedRequirements(`* REQUIREMENTS\n* REQ-2: No single ERP may own the workflow state.\n${READ_ONLY_CODE}`);
+    expect(own.map((r) => r.target)).toEqual(['side-by-side']);
+  });
+
+  test('a stated side-by-side target next to a write to an SAP standard table: followed, but not "highly compatible", and the write is named', () => {
+    const src = `${OPERATING_HEADER}REPORT zmm_mara_fix.
+DATA ls_mara TYPE mara.
+UPDATE mara SET mtart = 'FERT' WHERE matnr = '1'.
+`;
+    const r = routeOf(src, NEW);
+    expect(r.recommendedRoute).toBe(SIDE_BY_SIDE_ROUTE);
+    expect(r.comparativeAnalysis.sideBySideBTP.technicalFeasibility).toBe('Partially Compatible');
+    expect(r.comparativeAnalysis.sideBySideBTP.fitDetails).toMatch(/direct write\(s\) to SAP standard tables are replaced/);
+    expect(r.rationale).not.toMatch(/replaced on-stack/);
+  });
+
+  test('a binding target is not erased by a hedged alternative in the same sentence', () => {
+    const src = `* REQUIREMENTS\n* REQ-1: SAP BTP is the approved target, although RAP could be considered later.\n${READ_ONLY_CODE}`;
+    const items = readStatedRequirements(src);
+    expect(items[0].target).toBe('side-by-side');
+  });
+});
