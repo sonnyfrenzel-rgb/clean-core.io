@@ -725,10 +725,51 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
    * How a path may end for the check in question (QA finding 9bdd914427a5): as strongly as the original handles its
    * sy-subrc. Return or throw always; continue or break only where the original goes on with its loop (`ends: 'loop'`:
    * CONTINUE, a CHECK or an EXIT inside the loop) — a `break` out of a loop whose protected work follows it does not
-   * stop an original that refuses or returns.
+   * stop an original that refuses or returns. And only for the loop of the original check (QA finding a63075170a5e):
+   * the call stands as deep in the body's loops as the check in the original's (`loopDepth`), and the continue or
+   * break stands in the same loops as the call — its target, the nearest loop or the one it names, is the loop
+   * directly around the call. A `continue` of an inner loop leaves the work after that loop running.
    */
-  let exitWords = /^(?:return|throw)\b/;
-  /** Does the statement at `from` (a block or one statement) do something and end the path (`exitWords`)? */
+  let loopEnds: { depth: number; callAt: number } | null = null;
+  /** The loops around `pos`, outermost first: the index of each body's `{` and of its keyword (for a label). */
+  const loopsAround = (pos: number): Array<{ body: number; keyword: number }> => {
+    const out: Array<{ body: number; keyword: number }> = [];
+    for (let o = openerOf(pos); o >= 0; o = openerOf(o)) {
+      if (code[o] !== '{') continue;
+      const head = code.slice(0, o).replace(/\s+$/, '');
+      if (/\bdo$/.test(head)) {
+        out.unshift({ body: o, keyword: head.length - 2 });
+        continue;
+      }
+      if (!head.endsWith(')')) continue;
+      let depth = 0;
+      let open = -1;
+      for (let k = head.length - 1; k >= 0; k--) {
+        if (head[k] === ')') depth++;
+        else if (head[k] === '(' && --depth === 0) {
+          open = k;
+          break;
+        }
+      }
+      const kw = /\b(for|while)\s*$/.exec(head.slice(0, Math.max(open, 0)));
+      if (open >= 0 && kw) out.unshift({ body: o, keyword: kw.index });
+    }
+    return out;
+  };
+  /** Does the statement text at `pos` end the path as strongly as the original's handling of the check? */
+  const ends = (text: string, pos: number): boolean => {
+    if (/^(?:return|throw)\b/.test(text)) return true;
+    const jump = /^(?:continue|break)\b(?:\s+([A-Za-z_$][\w$]*))?/.exec(text);
+    if (!jump || !loopEnds) return false;
+    const around = loopsAround(loopEnds.callAt);
+    const here = loopsAround(pos);
+    if (around.length === 0 || around.length !== loopEnds.depth) return false;
+    if (here.length !== around.length || here.some((l, k) => l.body !== around[k].body)) return false;
+    // A label names its loop: only the one directly around the call.
+    if (jump[1]) return new RegExp(`(?:^|[;{}\\s])${escapeRe(jump[1])}\\s*:\\s*$`).test(code.slice(0, around[around.length - 1].keyword));
+    return true;
+  };
+  /** Does the statement at `from` (a block or one statement) do something and end the path (`ends`)? */
   const statementExits = (from: number): { exits: boolean; end: number } => {
     let i = from;
     while (i < code.length && /\s/.test(code[i])) i++;
@@ -747,8 +788,9 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
           if (depth === 0 && c === '}') boundary = k;
         } else if (c === ';' && depth === 0) boundary = k;
       }
-      const last = inner.slice(boundary + 1).trim();
-      return { exits: last !== '' && exitWords.test(last), end: close + 1 };
+      const tail = inner.slice(boundary + 1);
+      const last = tail.trim();
+      return { exits: last !== '' && ends(last, i + 1 + boundary + 1 + (tail.length - tail.trimStart().length)), end: close + 1 };
     }
     let depth = 0;
     let k = i;
@@ -758,7 +800,7 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
       else if (c === ')' || c === ']' || c === '}') depth--;
       else if ((c === ';' || c === '\n') && depth === 0) break;
     }
-    return { exits: exitWords.test(code.slice(i, k).trim()), end: k + 1 };
+    return { exits: ends(code.slice(i, k).trim(), i), end: k + 1 };
   };
   /** After an `if (…)` whose `)` is at `close`: does its branch, or its plain `else`, end the path? */
   const branchExits = (close: number): boolean => {
@@ -840,17 +882,21 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     });
   };
   for (const e of entries) {
-    exitWords = e.ends === 'loop' ? /^(?:return|throw|continue|break)\b/ : /^(?:return|throw)\b/;
+    // Each call is judged from where it stands: the loops around it decide what a continue or break ends.
+    const from = (i: number) => {
+      loopEnds = e.ends === 'loop' ? { depth: e.loopDepth ?? 1, callAt: i } : null;
+      return i;
+    };
     if (e.fn) {
       const at = calls(new RegExp(`(?<![\\w$.])${escapeRe(e.fn)}\\s*\\(\\s*\\)`, 'g'));
       if (at.length === 0) missing.push(`${e.fn}() (the AUTHORITY-CHECK at L${e.line})`);
-      else if (!at.some((i) => used(i, i + (code.slice(i).match(/^[\w$]+\s*\(\s*\)/)?.[0].length ?? 0)))) unused.push(`${e.fn}() (L${e.line})`);
+      else if (!at.some((i) => used(from(i), i + (code.slice(i).match(/^[\w$]+\s*\(\s*\)/)?.[0].length ?? 0)))) unused.push(`${e.fn}() (L${e.line})`);
       continue;
     }
     const object = `'${e.object}'`;
     const at = calls(/(?<![\w$.])authority_check\s*\(/g).filter((i) => code.slice(i, i + 200).includes(object));
     if (at.length === 0) missing.push(`authority_check(st, ${object}, …, ${e.line}) (the AUTHORITY-CHECK at L${e.line})`);
-    else if (!at.some((i) => used(i, i + (code.slice(i).match(/^authority_check\s*\([^;]*?\)\s*(?=[;\n)?:&|!=<>,]|$)/)?.[0].length ?? 0)))) unused.push(`authority_check(…${object}…) (L${e.line})`);
+    else if (!at.some((i) => used(from(i), i + (code.slice(i).match(/^authority_check\s*\([^;]*?\)\s*(?=[;\n)?:&|!=<>,]|$)/)?.[0].length ?? 0)))) unused.push(`authority_check(…${object}…) (L${e.line})`);
   }
   const out: BodyRefusal[] = [];
   if (missing.length > 0) out.push(refusal('authority-missing', `the body does not call ${missing.join(', ')} — call it where the original checks and use its answer as sy-subrc`));

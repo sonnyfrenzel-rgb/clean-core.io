@@ -716,6 +716,8 @@ export interface AuthorityEntry {
    * or throw end the body's path.
    */
   ends?: 'loop';
+  /** With `ends: 'loop'`: how many LOOP, DO, WHILE or SELECT loops of its routine enclose the check (QA a63075170a5e). */
+  loopDepth?: number;
 }
 
 /** The harness adapter (`docs/failure-patterns/README.md`, `scripts/acceptance/run.mjs`). */

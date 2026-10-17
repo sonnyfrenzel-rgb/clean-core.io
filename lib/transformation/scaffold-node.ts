@@ -1170,9 +1170,9 @@ export function authorityEndings(u: Unit, plan: Pick<UnitPlan, 'guards'>, facts:
     if (!next || (next.keyword !== 'IF' && next.keyword !== 'CHECK')) return e;
     const g = plan.guards.find((x) => x.line === next.lineStart && x.carried && x.unitId === u.id && x.operands.some((o) => o.name === 'sy-subrc'));
     if (!g) return e;
-    const inLoop = (blocks.enclosing[at + 1] ?? []).some((b) => LOOPS.has(b.kind));
-    const loopLevel = g.outcome === 'skips' || (g.effect === 'exit' && inLoop);
-    return loopLevel && inLoop ? { ...e, ends: 'loop' as const } : e;
+    const loopDepth = (blocks.enclosing[at] ?? []).filter((b) => LOOPS.has(b.kind)).length;
+    const loopLevel = g.outcome === 'skips' || (g.effect === 'exit' && loopDepth > 0);
+    return loopLevel && loopDepth > 0 ? { ...e, ends: 'loop' as const, loopDepth } : e;
   });
 }
 
