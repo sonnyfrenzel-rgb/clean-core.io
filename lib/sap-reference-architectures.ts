@@ -55,7 +55,7 @@ export const VERIFIED_AT = '2026-10-17';
 export const ARCHITECTURE_CENTER_SOURCE = {
   repository: 'https://github.com/SAP/architecture-center',
   branch: 'dev',
-  commit: '79b40e802c8f927be17e200d250f849e6adb2906',
+  commit: '341f32d0e1dc19ec128395fe536eb2dd7298e1c3',
   license: 'Apache-2.0',
 } as const;
 

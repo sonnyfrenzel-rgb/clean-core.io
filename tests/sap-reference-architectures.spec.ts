@@ -22,6 +22,7 @@ import { TARGET_ARCHITECTURES } from '../lib/project-commands';
 import { cloudServiceDetails } from '../components/design/CloudServiceIntegrations';
 import { CLOUD_SERVICE_KEYS, getCloudServiceKey } from '../lib/cloud-service-key';
 import {
+  ARCHITECTURE_CENTER_SOURCE,
   ARCHIVED_DELIVERY,
   ARCHIVED_ONLY,
   DELIVERY_REFERENCE_OF_TARGET,
@@ -62,6 +63,10 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     expect(SYNCED.architectures.length).toBeGreaterThanOrEqual(34);
     expect(SYNCED.architectures.map((a) => a.id)).toContain('RA0001');
     expect(SYNCED.architectures.map((a) => a.id), 'RA0000 is the repository’s demo page').not.toContain('RA0000');
+  });
+
+  test('the bindings name the commit they were checked against — the synced one', () => {
+    expect(ARCHITECTURE_CENTER_SOURCE.commit, 'a new sync was not reviewed: check the bindings, then move the commit and VERIFIED_AT').toBe(SYNCED.commit);
   });
 
   test('each RA of the mapping is in the synced metadata with the same slug, title, date and archive state', () => {

@@ -159,9 +159,10 @@ async function main() {
   if (check) {
     process.exit(diff.length === 0 ? 0 : 1);
   }
-  // The same upstream commit with the same metadata is no update: rewriting only
-  // the date opened a bot branch every week that carried nothing to review.
-  if (before?.commit === commit && JSON.stringify(before.architectures) === JSON.stringify(architectures)) {
+  // The same metadata is no update, whatever the upstream commit: rewriting only
+  // the date opened a bot branch every week that carried nothing to review. The
+  // file keeps the commit its metadata was read at, which the bindings name.
+  if (before && JSON.stringify(before.architectures) === JSON.stringify(architectures)) {
     console.log(`[sync] ${path.relative(process.cwd(), OUT_FILE)} is current; not rewritten.`);
     return;
   }
