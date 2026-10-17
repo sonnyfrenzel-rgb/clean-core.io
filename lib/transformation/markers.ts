@@ -721,7 +721,14 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     }
     return -1;
   };
-  /** Does the statement at `from` (a block or one statement) do something and end the path: return, continue, break, throw? */
+  /**
+   * How a path may end for the check in question (QA finding 9bdd914427a5): as strongly as the original handles its
+   * sy-subrc. Return or throw always; continue or break only where the original goes on with its loop (`ends: 'loop'`:
+   * CONTINUE, a CHECK or an EXIT inside the loop) — a `break` out of a loop whose protected work follows it does not
+   * stop an original that refuses or returns.
+   */
+  let exitWords = /^(?:return|throw)\b/;
+  /** Does the statement at `from` (a block or one statement) do something and end the path (`exitWords`)? */
   const statementExits = (from: number): { exits: boolean; end: number } => {
     let i = from;
     while (i < code.length && /\s/.test(code[i])) i++;
@@ -741,7 +748,7 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
         } else if (c === ';' && depth === 0) boundary = k;
       }
       const last = inner.slice(boundary + 1).trim();
-      return { exits: last !== '' && /^(?:return|continue|break|throw)\b/.test(last), end: close + 1 };
+      return { exits: last !== '' && exitWords.test(last), end: close + 1 };
     }
     let depth = 0;
     let k = i;
@@ -751,7 +758,7 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
       else if (c === ')' || c === ']' || c === '}') depth--;
       else if ((c === ';' || c === '\n') && depth === 0) break;
     }
-    return { exits: /^(?:return|continue|break|throw)\b/.test(code.slice(i, k).trim()), end: k + 1 };
+    return { exits: exitWords.test(code.slice(i, k).trim()), end: k + 1 };
   };
   /** After an `if (…)` whose `)` is at `close`: does its branch, or its plain `else`, end the path? */
   const branchExits = (close: number): boolean => {
@@ -762,9 +769,9 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     return otherwise ? statementExits(then.end + otherwise[0].length).exits : false;
   };
   /**
-   * Can the value at [at, end) change the outcome (QA findings fd3392b066b8, 8394df76b027)? Only along a path that
-   * ends: it is tested in the condition of an `if` whose branch (or plain `else`) is not empty and ends with return,
-   * continue, break or throw; it is handed to a check helper (`guard_…`, `stop_…`, `skip_…`, `when_…`, through
+   * Can the value at [at, end) change the outcome (QA findings fd3392b066b8, 8394df76b027, 9bdd914427a5)? Only along
+   * a path that ends: it is tested in the condition of an `if` whose branch (or plain `else`) is not empty and ends
+   * with return or throw (continue or break where the original goes on with its loop); it is handed to a check helper (`guard_…`, `stop_…`, `skip_…`, `when_…`, through
    * `checked`) whose own result is used so; it is returned; or it is assigned — whole or in an expression — to a name
    * or field whose read is used so. An empty branch, one that only logs or assigns, a ternary into a name never
    * tested, `void rc`, `rc;`, `_ = rc` and every other call are not.
@@ -833,6 +840,7 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     });
   };
   for (const e of entries) {
+    exitWords = e.ends === 'loop' ? /^(?:return|throw|continue|break)\b/ : /^(?:return|throw)\b/;
     if (e.fn) {
       const at = calls(new RegExp(`(?<![\\w$.])${escapeRe(e.fn)}\\s*\\(\\s*\\)`, 'g'));
       if (at.length === 0) missing.push(`${e.fn}() (the AUTHORITY-CHECK at L${e.line})`);

@@ -1155,6 +1155,27 @@ export function wireAuthority(u: Unit, plan: Pick<UnitPlan, 'guards'>, facts: Pi
   });
 }
 
+/**
+ * How the original handles each check's sy-subrc (QA finding 9bdd914427a5): `ends: 'loop'` where the statement right
+ * after the check is the derived check on sy-subrc and it skips the pass (CONTINUE, a CHECK in the loop) or leaves
+ * the loop (EXIT inside a loop). Anything else — a refusal, a RETURN, an EXIT outside a loop, or no derived check
+ * there — keeps the strict reading: the body's path must end with return or throw.
+ */
+export function authorityEndings(u: Unit, plan: Pick<UnitPlan, 'guards'>, facts: Pick<EngineFacts, 'statements' | 'blocks'>, entries: readonly AuthorityEntry[]): AuthorityEntry[] {
+  const { statements, blocks } = facts;
+  const LOOPS = new Set(['loop', 'do', 'while', 'select']);
+  return entries.map((e) => {
+    const at = statements.findIndex((s) => s.keyword === 'AUTHORITY-CHECK' && s.lineStart === e.line);
+    const next = at >= 0 ? statements[at + 1] : undefined;
+    if (!next || (next.keyword !== 'IF' && next.keyword !== 'CHECK')) return e;
+    const g = plan.guards.find((x) => x.line === next.lineStart && x.carried && x.unitId === u.id && x.operands.some((o) => o.name === 'sy-subrc'));
+    if (!g) return e;
+    const inLoop = (blocks.enclosing[at + 1] ?? []).some((b) => LOOPS.has(b.kind));
+    const loopLevel = g.outcome === 'skips' || (g.effect === 'exit' && inLoop);
+    return loopLevel && inLoop ? { ...e, ends: 'loop' as const } : e;
+  });
+}
+
 /** The frame's call of a wired AUTHORITY-CHECK and its derived check, at the step's entry. */
 function wiredAuthorityLines(e: AuthorityEntry, plan: UnitPlan): string[] {
   const g = plan.guards.find((x) => x.id === e.wired!.guard)!;
@@ -1895,7 +1916,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   const checks = facts.graph.authorityChecks;
   const authority: Record<string, AuthorityEntry[]> = {};
   for (const u of plan.units) {
-    const entries = checks.length > 0 ? wireAuthority(u, plan, facts, authorityEntriesOf(u, plan, checks, facts.statements)) : [];
+    const entries = checks.length > 0 ? authorityEndings(u, plan, facts, wireAuthority(u, plan, facts, authorityEntriesOf(u, plan, checks, facts.statements))) : [];
     if (entries.length > 0) authority[u.id] = entries;
   }
   const wiredGuards = new Set(Object.values(authority).flatMap((es) => es.flatMap((e) => (e.wired ? [e.wired.guard] : []))));

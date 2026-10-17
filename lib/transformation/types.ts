@@ -709,6 +709,13 @@ export interface AuthorityEntry {
    * `helper` (guard `guard`) at the step's entry; the body writes nothing for it.
    */
   wired?: { guard: string; helper: string };
+  /**
+   * How the original handles the check's sy-subrc, where it can be read (QA finding 9bdd914427a5): `loop` — its next
+   * statement is the derived check and it skips the pass or leaves the loop (CONTINUE, CHECK or EXIT inside a loop),
+   * so a body's continue or break is as strong; absent — it refuses or returns, or it cannot be read, and only return
+   * or throw end the body's path.
+   */
+  ends?: 'loop';
 }
 
 /** The harness adapter (`docs/failure-patterns/README.md`, `scripts/acceptance/run.mjs`). */
