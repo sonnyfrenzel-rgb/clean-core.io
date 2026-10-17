@@ -116,10 +116,14 @@ const inUnit = (u: Unit, line: number) => u.abap.some((r) => line >= r.lineStart
 export function authorityEntriesOf(u: Unit, plan: Pick<UnitPlan, 'fields' | 'units'>, checks: readonly AuthorityCheck[], statements: readonly AbapStatement[]): AuthorityEntry[] {
   if (plan.units.some((p) => p.part?.parent === u.id)) return [];
   const constants = constantsOf(statements);
+  // Two checks on one line get two names (QA finding 90667d2a91ae): `authority_L90`, then `authority_L90_2`.
+  const onLine = new Map<number, number>();
   return checks
     .filter((c) => inUnit(u, c.lineStart))
     .sort((a, b) => a.lineStart - b.lineStart)
     .map((c) => {
+      const n = (onLine.get(c.lineStart) ?? 0) + 1;
+      onLine.set(c.lineStart, n);
       const object = objectOf(c);
       const fields = rawFields(c.text).map((f) => ({ id: f.id, ...resolveField(f.token, u, plan, constants) }));
       const unread = fields.filter((f) => f.expr === null).map((f) => f.name);
@@ -128,7 +132,7 @@ export function authorityEntriesOf(u: Unit, plan: Pick<UnitPlan, 'fields' | 'uni
         line: c.lineStart,
         object,
         check: comment(c.text).slice(0, 200),
-        fn: unread.length === 0 ? `authority_L${c.lineStart}` : null,
+        fn: unread.length === 0 ? `authority_L${c.lineStart}${n === 1 ? '' : `_${n}`}` : null,
         call: `authority_check(st, ${sq(object)}, { ${values} }, ${c.lineStart})`,
         ...(unread.length ? { unread } : {}),
       };

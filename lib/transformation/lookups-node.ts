@@ -53,6 +53,12 @@ export interface LookupCondition {
   operand: string;
   /** The key of the `where` values the function takes. */
   key: string;
+  /**
+   * How the comparison orders (QA finding cbe1c1d82c46): by value only where the operand's declared type says so —
+   * `number` for a numeric type or an unquoted number, `date` for a date (`sy-datum`, `TYPE d`) — and otherwise as
+   * text, the way ABAP compares two character fields (`'10' < '2'`; a key with leading zeros stays text).
+   */
+  compare: 'text' | 'number' | 'date';
 }
 
 /** One read of the original inside a unit. */
@@ -116,11 +122,45 @@ function parseSelect(text: string): { table: string; single: boolean; fields: st
   return { table: from[1].toUpperCase(), single, fields, target, intoTable, where };
 }
 
+const NUMERIC_SCALARS = new Set(['i', 'int1', 'int2', 'int4', 'int8', 'b', 's', 'p', 'f', 'decfloat16', 'decfloat34']);
+
+/** How a comparison with this operand orders, from what the source declares of it (see `LookupCondition.compare`). */
+function compareOf(operand: string, line: number, shapes: AbapShapes | null): LookupCondition['compare'] {
+  if (/^-?\d+$/.test(operand)) return 'number';
+  if (/^['`]/.test(operand)) return 'text';
+  if (/^sy-(?:datum|datlo)$/i.test(operand)) return 'date';
+  if (!shapes) return 'text';
+  if (shapes.typeOf(operand, line) === 'number') return 'number';
+  const scalar = shapes.scalarOf(operand, line);
+  if (!scalar || scalar.dictionary) return 'text';
+  if (scalar.type === 'd') return 'date';
+  return NUMERIC_SCALARS.has(scalar.type) ? 'number' : 'text';
+}
+
+/** Words of a WHERE that are no column (`status IS NOT INITIAL`, `f NOT IN …`). */
+const WHERE_WORDS = new Set(['and', 'or', 'not', 'is', 'null', 'initial', 'in', 'like', 'between', 'escape']);
+
+/**
+ * Every column a WHERE the engine does not write names (QA finding 0c30977361da): the left side of a comparison,
+ * of IN/LIKE/BETWEEN and of `IS [NOT] INITIAL`/`IS [NOT] NULL`, each with or without NOT — so the row type holds it
+ * and the body's predicate on the row type-checks.
+ */
+function whereColumns(where: string): string[] {
+  const text = where.replace(/'(?:[^']|'')*'|`[^`]*`/g, "''");
+  const out = new Set<string>();
+  const re = /(?:^|[\s(])(?:\w+~)?([a-z]\w*)\s*(?:=|<>|<=|>=|<|>|\b(?:EQ|NE|LT|LE|GT|GE|IN|LIKE|BETWEEN|IS|NOT)\b)/gi;
+  for (const m of text.matchAll(re)) {
+    const name = m[1].toLowerCase();
+    if (!WHERE_WORDS.has(name)) out.add(name);
+  }
+  return [...out];
+}
+
 /** A WHERE of `col op operand` joined by AND, or null when it holds anything else. */
-function conditionsOf(where: string): Array<Omit<LookupCondition, 'key'>> | null {
+function conditionsOf(where: string): Array<Omit<LookupCondition, 'key' | 'compare'>> | null {
   if (where === '') return [];
   if (/[()]|\bOR\b|\bNOT\b|\bIN\b|\bLIKE\b|\bBETWEEN\b|\bIS\b/i.test(where.replace(/'(?:[^']|'')*'/g, "''"))) return null;
-  const out: Array<Omit<LookupCondition, 'key'>> = [];
+  const out: Array<Omit<LookupCondition, 'key' | 'compare'>> = [];
   for (const part of where.split(/\s+AND\s+/i)) {
     const m = /^(?:\w+~)?(\w+)\s*(<>|<=|>=|=|<|>|\b(?:EQ|NE|LT|LE|GT|GE)\b)\s*(@?(?:'(?:[^']|'')*'|`[^`]*`|-?\d+|[\w/<>-]+))$/i.exec(part.trim());
     if (!m) return null;
@@ -133,7 +173,7 @@ function conditionsOf(where: string): Array<Omit<LookupCondition, 'key'>> | null
  * The reads inside the units the package carries — see the file comment. `mainTables`: the input lists' global
  * tables (a read into one of them is the main read, already an input list).
  */
-export function lookupReadsOf(plan: Pick<UnitPlan, 'units'>, statements: readonly AbapStatement[], mainTables: ReadonlySet<string>): LookupRead[] {
+export function lookupReadsOf(plan: Pick<UnitPlan, 'units'>, statements: readonly AbapStatement[], mainTables: ReadonlySet<string>, shapes: AbapShapes | null = null): LookupRead[] {
   const out: LookupRead[] = [];
   const seen = new Map<string, number>();
   for (const s of statements) {
@@ -146,7 +186,7 @@ export function lookupReadsOf(plan: Pick<UnitPlan, 'units'>, statements: readonl
     const conds = conditionsOf(p.where);
     const columns = new Set<string>(p.fields ?? []);
     for (const c of conds ?? []) columns.add(c.column);
-    if (conds === null) for (const m of p.where.matchAll(/(?:^|\s|\()(?:\w+~)?([a-z]\w*)\s*(?:=|<>|<=|>=|<|>|\b(?:EQ|NE|LT|LE|GT|GE|IN|LIKE|BETWEEN)\b)/gi)) columns.add(m[1].toLowerCase());
+    if (conds === null) for (const c of whereColumns(p.where)) columns.add(c);
     // SELECT * or a work area: the components the unit reads from the target.
     if (p.fields === null) {
       const re = new RegExp(`(?<![\\w-])${escapeRe(p.target)}-(\\w+)`, 'gi');
@@ -157,7 +197,7 @@ export function lookupReadsOf(plan: Pick<UnitPlan, 'units'>, statements: readonl
       conds?.map((c) => {
         const n = (keys.get(c.column) ?? 0) + 1;
         keys.set(c.column, n);
-        return { ...c, key: n === 1 ? camelName(c.column) : `${camelName(c.column)}${n}` };
+        return { ...c, key: n === 1 ? camelName(c.column) : `${camelName(c.column)}${n}`, compare: compareOf(c.operand, s.lineStart, shapes) };
       }) ?? null;
     const base = `select_${p.table.toLowerCase().replace(/^\/([^/]+)\//, '$1_').replace(/[^a-z0-9_]/g, '_')}_L${s.lineStart}`;
     const n = (seen.get(base) ?? 0) + 1;
@@ -298,9 +338,13 @@ export function lookupEntriesOf(
   statements: readonly AbapStatement[],
 ): LookupEntry[] {
   const constants = constantsOf(statements);
+  // Two reads on one line get two frame names (QA finding 90667d2a91ae): `lookup_L156`, then `lookup_L156_2`.
+  const onLine = new Map<number, number>();
   return reads
     .filter((r) => r.unitId === u.id)
     .map((r) => {
+      const nth = (onLine.get(r.line) ?? 0) + 1;
+      onLine.set(r.line, nth);
       const list = lists.find((l) => l.lookup?.table === r.table)!;
       const answer = answerOf(r, list.structure.tsName);
       if (r.conditions === null) {
@@ -325,7 +369,7 @@ export function lookupEntriesOf(
         list: list.key,
         read: r.text,
         helper: r.helper,
-        fn: open.length === 0 ? `lookup_L${r.line}` : null,
+        fn: open.length === 0 ? `lookup_L${r.line}${nth === 1 ? '' : `_${nth}`}` : null,
         call: `${r.helper}(st, { ${object} })`,
         returns: answer,
         ...(open.length ? { open } : {}),
@@ -378,13 +422,13 @@ export function lookupImport(entries: readonly LookupEntry[], libDir: string): s
   ];
 }
 
-const OP_TS: Record<LookupOp, (a: string, b: string) => string> = {
-  '=': (a, b) => `eq(${a}, ${b})`,
-  '<>': (a, b) => `!eq(${a}, ${b})`,
-  '<': (a, b) => `cmp(${a}, ${b}) < 0`,
-  '<=': (a, b) => `cmp(${a}, ${b}) <= 0`,
-  '>': (a, b) => `cmp(${a}, ${b}) > 0`,
-  '>=': (a, b) => `cmp(${a}, ${b}) >= 0`,
+const OP_TS: Record<LookupOp, (a: string, b: string, k: string) => string> = {
+  '=': (a, b, k) => `eq(${a}, ${b}${k})`,
+  '<>': (a, b, k) => `!eq(${a}, ${b}${k})`,
+  '<': (a, b, k) => `cmp(${a}, ${b}${k}) < 0`,
+  '<=': (a, b, k) => `cmp(${a}, ${b}${k}) <= 0`,
+  '>': (a, b, k) => `cmp(${a}, ${b}${k}) > 0`,
+  '>=': (a, b, k) => `cmp(${a}, ${b}${k}) >= 0`,
 };
 
 /** `srv/lib/lookups.ts` — one function per read, over the lookup lists. */
@@ -412,22 +456,31 @@ export function lookupsFile(program: string | null, reads: readonly LookupRead[]
   lines.push('const textOf = (v: unknown): string => (v === null || v === undefined ? \'\' : String(v));');
   lines.push("/** A date as YYYYMMDD (2026-10-17 and 20261017 alike), else null. */");
   lines.push("const dateOf = (s: string): string | null => (/^\\d{4}-\\d{2}-\\d{2}$/.test(s) ? s.replace(/-/g, '') : /^\\d{8}$/.test(s) ? s : null);");
-  lines.push("/** A number compared by its value: digits with a point, or without a leading zero (a character key like '0001' stays text). */");
-  lines.push("const numberOf = (s: string): number | null => (/^[-+]?\\d+(?:\\.\\d+)?$/.test(s) && (s.includes('.') || !/^[-+]?0\\d/.test(s)) ? Number(s) : null);");
-  lines.push('/** Equal as ABAP compares a character field: trailing blanks do not count; dates and numbers by their value. */');
-  lines.push('export function eq(a: unknown, b: unknown): boolean {');
-  lines.push('  return cmp(a, b) === 0;');
+  lines.push('/** A number by its value (the operand the original compares with is of a numeric type), else null. */');
+  lines.push("const numberOf = (s: string): number | null => (/^[-+]?\\d+(?:\\.\\d+)?$/.test(s) ? Number(s) : null);");
+  lines.push('/**');
+  lines.push(" * How a comparison orders, from the type the original declares for what it compares with: 'number' and 'date' by");
+  lines.push(" * value; 'text' (the default) as ABAP compares two character fields, character by character — '10' < '2', and a key");
+  lines.push(" * with leading zeros ('0001') is never read as a number.");
+  lines.push(' */');
+  lines.push("export type Compare = 'text' | 'number' | 'date';");
+  lines.push('/** Equal as the original compares: trailing blanks do not count; by value only for a numeric or a date operand. */');
+  lines.push("export function eq(a: unknown, b: unknown, as: Compare = 'text'): boolean {");
+  lines.push('  return cmp(a, b, as) === 0;');
   lines.push('}');
-  lines.push('/** The order of two values: dates and numbers by their value, other text by its characters (trailing blanks do not count). */');
-  lines.push('export function cmp(a: unknown, b: unknown): number {');
+  lines.push('/** The order of two values: by value for a numeric or a date operand, else by characters (trailing blanks do not count). */');
+  lines.push("export function cmp(a: unknown, b: unknown, as: Compare = 'text'): number {");
   lines.push("  const x = textOf(a).replace(/\\s+$/, '');");
   lines.push("  const y = textOf(b).replace(/\\s+$/, '');");
-  lines.push('  const dx = dateOf(x);');
-  lines.push('  const dy = dateOf(y);');
-  lines.push('  if (dx !== null && dy !== null) return dx < dy ? -1 : dx > dy ? 1 : 0;');
-  lines.push('  const nx = numberOf(x);');
-  lines.push('  const ny = numberOf(y);');
-  lines.push('  if (nx !== null && ny !== null) return nx < ny ? -1 : nx > ny ? 1 : 0;');
+  lines.push("  if (as === 'date') {");
+  lines.push('    const dx = dateOf(x);');
+  lines.push('    const dy = dateOf(y);');
+  lines.push('    if (dx !== null && dy !== null) return dx < dy ? -1 : dx > dy ? 1 : 0;');
+  lines.push("  } else if (as === 'number') {");
+  lines.push('    const nx = numberOf(x);');
+  lines.push('    const ny = numberOf(y);');
+  lines.push('    if (nx !== null && ny !== null) return nx < ny ? -1 : nx > ny ? 1 : 0;');
+  lines.push('  }');
   lines.push('  return x < y ? -1 : x > y ? 1 : 0;');
   lines.push('}');
   lines.push('');
@@ -452,7 +505,7 @@ export function lookupsFile(program: string | null, reads: readonly LookupRead[]
       lines.push(`  return ${run}(st.local.${l.global.key}, where);`);
     } else {
       const params = r.conditions.length ? `{ ${r.conditions.map((c) => `${c.key}: unknown`).join('; ')} }` : 'Record<string, never>';
-      const test = r.conditions.map((c) => OP_TS[c.op](`row.${camelName(c.column)}`, `where.${c.key}`));
+      const test = r.conditions.map((c) => OP_TS[c.op](`row.${camelName(c.column)}`, `where.${c.key}`, c.compare === 'text' ? '' : `, ${sq(c.compare)}`));
       lines.push(`export function ${r.helper}(st: RunState, where: ${params}): ${answer} {`);
       if (r.conditions.length === 0) lines.push('  void where;');
       lines.push(`  return ${run}(st.local.${l.global.key}, (row) => ${test.length ? test.join(' && ') : 'true'});`);

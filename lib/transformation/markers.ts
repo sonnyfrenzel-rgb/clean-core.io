@@ -695,26 +695,58 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const missing: string[] = [];
   const unused: string[] = [];
   const calls = (re: RegExp) => [...code.matchAll(re)].map((m) => m.index ?? 0);
-  /** Is the answer of the call at `at` used? */
-  const used = (at: number, end: number): boolean => {
+  /** The name of the call whose argument list holds `at` — through object literals only (`guard(…, { sySubrc })`). */
+  const enclosingCall = (at: number): string | null => {
+    let depth = 0;
+    for (let i = at - 1; i >= 0; i--) {
+      const c = code[i];
+      if (c === ')' || c === ']' || c === '}') depth++;
+      else if (c === '(' || c === '[' || c === '{') {
+        if (depth > 0) {
+          depth--;
+          continue;
+        }
+        const head = code.slice(0, i).replace(/\s+$/, '');
+        if (c === '{' && /[(,:]$/.test(head)) continue; // an object literal handed on
+        if (c !== '(') return null;
+        return /([A-Za-z_$][\w$]*)$/.exec(head)?.[1] ?? null;
+      } else if (c === ';' && depth === 0) return null;
+    }
+    return null;
+  };
+  /**
+   * Is the value at [at, end) used so that it can change the outcome (QA finding fd3392b066b8)? A strict allow-list:
+   * tested in a condition (a comparison, `!`, `&&`, `||`, `?`, `if (…)`/`while (…)` itself), handed to a check helper
+   * (`guard_…`, `stop_…`, `skip_…`, `when_…`), returned, or assigned to a name or a field that is then used so. A
+   * discard is none of these: `void rc`, `rc;`, `_ = rc`, an argument to anything else.
+   */
+  const used = (at: number, end: number, depth = 0): boolean => {
+    if (depth > 4) return false;
     const before = code.slice(0, at).replace(/\s+$/, '');
-    const assigned = /(?:\b(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::\s*number\s*)?=$/.exec(before);
-    if (assigned && !/[=!<>]=?$/.test(before.slice(0, -1))) {
-      const name = assigned[1];
+    const after = code.slice(end).replace(/^\s+/, '');
+    if (/^(?:===?|!==?|<=?|>=?|&&|\|\|)/.test(after) || /^\?(?![.?])/.test(after)) return true;
+    if (/(?:===?|!==?|<=?|(?<!=)>=?|&&|\|\||!)$/.test(before) && !/=>$/.test(before)) return true;
+    if (/\breturn$/.test(before)) return true;
+    if (/\b(?:if|while)\s*\($/.test(before) && /^\)/.test(after)) return true;
+    // An assignment of the whole value: then what the name or field it lands in is used for.
+    const assigned = /(?:\b(?:const|let|var)\s+)?((?:[A-Za-z_$][\w$]*\.)*)([A-Za-z_$][\w$]*)\s*(?::\s*number\s*)?=$/.exec(before);
+    if (assigned && !/[=!<>]=$/.test(before) && /^(?:;|$|\n)/.test(code.slice(end).replace(/^[ \t]+/, '')) && !/^_+$/.test(assigned[2])) {
+      const field = assigned[1] !== '';
+      const name = assigned[2];
       const rest = code.slice(end);
-      // A read of the name: not a new assignment to it, not a property key of that name (`{ sySubrc: 0 }`).
-      return [...rest.matchAll(new RegExp(`(?<![\\w$.])${escapeRe(name)}(?![\\w$])`, 'g'))].some((m) => {
-        const after = rest.slice((m.index ?? 0) + name.length);
-        const before = rest.slice(0, m.index ?? 0);
-        if (/^\s*=(?!=)/.test(after)) return false;
-        return !(/^\s*:/.test(after) && /[{,]\s*$/.test(before));
+      const read = new RegExp(field ? `\\.${escapeRe(name)}(?![\\w$])` : `(?<![\\w$.])${escapeRe(name)}(?![\\w$])`, 'g');
+      return [...rest.matchAll(read)].some((m) => {
+        const start = end + (m.index ?? 0) + (field ? 1 : 0);
+        const stop = start + name.length;
+        const next = code.slice(stop);
+        if (/^\s*=(?!=)/.test(next)) return false;
+        // A property key of that name (`{ sySubrc: 0 }`) is no read; the shorthand `{ sySubrc }` is.
+        if (/^\s*:/.test(next) && /[{,]\s*$/.test(code.slice(0, start))) return false;
+        return used(start, stop, depth + 1);
       });
     }
-    if (/=>$/.test(before)) return false;
-    if (before === '' || /[;{}]$/.test(before) || /\b(?:void|else|do)$/.test(before)) return false;
-    // `if (x) authority_L90();` — a statement of its own after a condition, its answer dropped.
-    if (/\b(?:if|while|for)\s*\((?:[^()]|\([^()]*\))*\)$/.test(before)) return false;
-    return true;
+    const call = enclosingCall(at);
+    return call !== null && /^(?:guard|stop|skip|when)_/.test(call);
   };
   for (const e of entries) {
     if (e.fn) {

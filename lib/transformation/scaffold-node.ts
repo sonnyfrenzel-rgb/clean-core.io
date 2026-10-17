@@ -1775,7 +1775,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   plan = withListPaths(plan, lists);
   // The original's reads inside its steps (scaffold version 15, `lookups-node.ts`): one lookup list per SAP table,
   // after the input lists, in the request, the action and the run (st.local.db<Table>).
-  const reads = lookupReadsOf(plan, facts.statements, new Set(lists.map((l) => l.global.name.toUpperCase())));
+  const reads = lookupReadsOf(plan, facts.statements, new Set(lists.map((l) => l.global.name.toUpperCase())), shapes);
   const lookupLists = lookupListsOf(reads, {
     keys: new Set([...plan.fields.filter((f) => f.where === 'selection').map((f) => f.key), 'records', 'run', ...lists.map((l) => l.key)]),
     types: new Set([...typesReserved(plan), ...shapes.structures.map((s) => s.tsName)]),

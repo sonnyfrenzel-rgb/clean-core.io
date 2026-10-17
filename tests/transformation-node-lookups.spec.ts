@@ -138,7 +138,9 @@ test.describe('the Node package takes the original lookup reads as input lists (
     expect(lookups!.content).not.toContain('@cc-fill');
     expect(lookups!.content).toContain(`export function select_kna1_L${KNA1_LINE}(st: RunState, where: { kunnr: unknown }): SelectSingle<Kna1Row> {`);
     expect(lookups!.content).toContain(`export function select_vbap_L${VBAP_LINE}(st: RunState, where: { vbeln: unknown }): SelectTable<VbapRow> {`);
-    expect(lookups!.content).toContain('cmp(row.validFrom, where.validFrom) <= 0');
+    // sy-datum is a date: compared by value; a key against a key stays text (QA finding cbe1c1d82c46).
+    expect(lookups!.content).toContain("cmp(row.validFrom, where.validFrom, 'date') <= 0");
+    expect(lookups!.content).toContain('eq(row.kunnr, where.kunnr))');
   });
 
   test('the frame names the lookup, or the request names the exact call with what is open', () => {
