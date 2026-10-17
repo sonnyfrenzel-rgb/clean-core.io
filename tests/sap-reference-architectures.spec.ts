@@ -41,6 +41,7 @@ import {
   referencePatternsReadme,
   type ReferenceBinding,
 } from '../lib/sap-reference-architectures';
+import { isUpdate } from '../scripts/sync-sap-architecture-center';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -63,6 +64,14 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     expect(SYNCED.architectures.length).toBeGreaterThanOrEqual(34);
     expect(SYNCED.architectures.map((a) => a.id)).toContain('RA0001');
     expect(SYNCED.architectures.map((a) => a.id), 'RA0000 is the repository’s demo page').not.toContain('RA0000');
+  });
+
+  test('a sync writes only when the metadata changed, not for a new commit or date alone', () => {
+    const same = SYNCED.architectures.map((a) => ({ ...a }));
+    expect(isUpdate({ ...SYNCED, commit: 'f'.repeat(40), syncedAt: '2099-01-01' } as Parameters<typeof isUpdate>[0], same)).toBe(false);
+    expect(isUpdate(SYNCED as Parameters<typeof isUpdate>[0], same.map((a, i) => (i === 0 ? { ...a, archived: !a.archived } : a)))).toBe(true);
+    expect(isUpdate(SYNCED as Parameters<typeof isUpdate>[0], same.slice(1))).toBe(true);
+    expect(isUpdate(null, same)).toBe(true);
   });
 
   test('the bindings name the commit they were checked against — the synced one', () => {

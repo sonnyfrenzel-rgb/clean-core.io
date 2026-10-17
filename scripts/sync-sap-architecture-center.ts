@@ -115,6 +115,16 @@ export function diffArchitectures(before: SyncedReferenceArchitecture[], after: 
   return lines;
 }
 
+/**
+ * Whether a sync has anything to write. The same metadata is no update, whatever
+ * the upstream commit: rewriting only the date opened a bot branch every week that
+ * carried nothing to review. The file keeps the commit its metadata was read at,
+ * which the bindings name.
+ */
+export function isUpdate(before: SyncedArchitectureCenter | null, architectures: SyncedReferenceArchitecture[]): boolean {
+  return !before || JSON.stringify(before.architectures) !== JSON.stringify(architectures);
+}
+
 async function main() {
   const check = process.argv.includes('--check');
   const commits = await getJson<Array<{ sha: string }>>(`https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1`);
@@ -159,10 +169,7 @@ async function main() {
   if (check) {
     process.exit(diff.length === 0 ? 0 : 1);
   }
-  // The same metadata is no update, whatever the upstream commit: rewriting only
-  // the date opened a bot branch every week that carried nothing to review. The
-  // file keeps the commit its metadata was read at, which the bindings name.
-  if (before && JSON.stringify(before.architectures) === JSON.stringify(architectures)) {
+  if (!isUpdate(before, architectures)) {
     console.log(`[sync] ${path.relative(process.cwd(), OUT_FILE)} is current; not rewritten.`);
     return;
   }
