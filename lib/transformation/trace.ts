@@ -15,6 +15,7 @@ import { ENGINE_CODE_NOTE, checkPhrase, notVerifiedPhrase, orderedChecks } from 
 import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
 import { engineCounterpartsIn } from './released-counterparts';
 import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority-node';
+import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
 import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
@@ -64,6 +65,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const goldenMaster = goldenMasterOf(scaffold.files);
   const engineCounterparts = [...new Set(scaffold.files.filter((f) => /_access\.clas\.abap$/i.test(f.path)).flatMap((f) => engineCounterpartsIn(f.content)))];
   const openAuthority = scaffold.files.filter((f) => f.path === AUTHORITY_FILE).flatMap((f) => openAuthorityIn(f.content));
+  const lookupLists = scaffold.files.filter((f) => f.path === LOOKUPS_FILE).flatMap((f) => lookupListsIn(f.content));
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
   for (const g of plan.guards) {
@@ -143,6 +145,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     ...(goldenMaster ? { goldenMaster } : {}),
     ...(engineCounterparts.length ? { engineCounterparts } : {}),
     ...(openAuthority.length ? { openAuthority } : {}),
+    ...(lookupLists.length ? { lookupLists } : {}),
   };
 }
 
@@ -199,6 +202,11 @@ export function traceMarkdown(trace: Trace): string {
   if (trace.openAuthority?.length) {
     lines.push(
       `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only, and each run it grants says so in its issues.`,
+    );
+  }
+  if (trace.lookupLists?.length) {
+    lines.push(
+      `- Lookup lists — the SAP tables the original reads inside its steps, handed in with the request (and the action): ${trace.lookupLists.join('; ')}. ${LOOKUPS_FILE} answers each read from its list; srv/access.ts does not fill them — wiring a list to a remote read is a developer step.`,
     );
   }
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);

@@ -72,8 +72,17 @@ export interface InputList {
   /** The CDS names: the row type (`Claim`) and the entity (`Claims`). */
   cds: { type: string; entity: string };
   columns: InputColumn[];
-  /** Why it is input: demo data fills it, a SELECT reads it, or the planner read record fields from it. */
-  filledBy: Array<'demo' | 'read' | 'record-fields'>;
+  /**
+   * Why it is input: demo data fills it, a SELECT reads it, or the planner read record fields from it — or, for a
+   * lookup list (3.0.17, `lookups-node.ts`), a step of the original reads its SAP table on its own.
+   */
+  filledBy: Array<'demo' | 'read' | 'record-fields' | 'lookup'>;
+  /**
+   * A lookup list only (scaffold version 15): the SAP table a step reads and the lines it reads it at. Its rows
+   * start the run in `st.local.<global.key>` — no table of the original; `structure` is the row type the engine
+   * declares from the columns the reads name (line 0: not a structure of the source).
+   */
+  lookup?: { table: string; lines: number[] };
 }
 
 export interface InputListFacts {

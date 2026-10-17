@@ -678,6 +678,63 @@ function requiredGuardRefusals(body: string, ctx: BodyGuardContext): BodyRefusal
 }
 
 /**
+ * The original's AUTHORITY-CHECKs keep their force (QA finding ef6865e7ade4): a body whose region holds a check must
+ * call the frame's `authority_L<line>()` — or, where the engine wrote none, `authority_check(` with the check's object
+ * — and use its answer: hand it on, compare it, or assign it to a name it then reads. A call as a bare statement, a
+ * `void`, a closure never called, or an assignment never read leaves the check without effect and is refused; after
+ * the repair rounds such a unit stays a stub with this reason (fail closed), never a silent port.
+ */
+function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
+  const entries = ctx.track === 'node' ? (ctx.authority ?? []) : [];
+  if (entries.length === 0) return [];
+  // Code only: comments and string literals cannot call a check.
+  const code = body
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g, (m) => (/^'[\w/]*'$/.test(m) ? m : "''"));
+  const missing: string[] = [];
+  const unused: string[] = [];
+  const calls = (re: RegExp) => [...code.matchAll(re)].map((m) => m.index ?? 0);
+  /** Is the answer of the call at `at` used? */
+  const used = (at: number, end: number): boolean => {
+    const before = code.slice(0, at).replace(/\s+$/, '');
+    const assigned = /(?:\b(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::\s*number\s*)?=$/.exec(before);
+    if (assigned && !/[=!<>]=?$/.test(before.slice(0, -1))) {
+      const name = assigned[1];
+      const rest = code.slice(end);
+      // A read of the name: not a new assignment to it, not a property key of that name (`{ sySubrc: 0 }`).
+      return [...rest.matchAll(new RegExp(`(?<![\\w$.])${escapeRe(name)}(?![\\w$])`, 'g'))].some((m) => {
+        const after = rest.slice((m.index ?? 0) + name.length);
+        const before = rest.slice(0, m.index ?? 0);
+        if (/^\s*=(?!=)/.test(after)) return false;
+        return !(/^\s*:/.test(after) && /[{,]\s*$/.test(before));
+      });
+    }
+    if (/=>$/.test(before)) return false;
+    if (before === '' || /[;{}]$/.test(before) || /\b(?:void|else|do)$/.test(before)) return false;
+    // `if (x) authority_L90();` — a statement of its own after a condition, its answer dropped.
+    if (/\b(?:if|while|for)\s*\((?:[^()]|\([^()]*\))*\)$/.test(before)) return false;
+    return true;
+  };
+  for (const e of entries) {
+    if (e.fn) {
+      const at = calls(new RegExp(`(?<![\\w$.])${escapeRe(e.fn)}\\s*\\(\\s*\\)`, 'g'));
+      if (at.length === 0) missing.push(`${e.fn}() (the AUTHORITY-CHECK at L${e.line})`);
+      else if (!at.some((i) => used(i, i + (code.slice(i).match(/^[\w$]+\s*\(\s*\)/)?.[0].length ?? 0)))) unused.push(`${e.fn}() (L${e.line})`);
+      continue;
+    }
+    const object = `'${e.object}'`;
+    const at = calls(/(?<![\w$.])authority_check\s*\(/g).filter((i) => code.slice(i, i + 200).includes(object));
+    if (at.length === 0) missing.push(`authority_check(st, ${object}, …, ${e.line}) (the AUTHORITY-CHECK at L${e.line})`);
+    else if (!at.some((i) => used(i, i + (code.slice(i).match(/^authority_check\s*\([^;]*?\)\s*(?=[;\n)?:&|!=<>,]|$)/)?.[0].length ?? 0)))) unused.push(`authority_check(…${object}…) (L${e.line})`);
+  }
+  const out: BodyRefusal[] = [];
+  if (missing.length > 0) out.push(refusal('authority-missing', `the body does not call ${missing.join(', ')} — call it where the original checks and use its answer as sy-subrc`));
+  if (unused.length > 0) out.push(refusal('authority-unused', `the body calls ${unused.join(', ')} but ignores its answer — it is sy-subrc of the original's check: hand it to the check on sy-subrc or compare it`));
+  return out;
+}
+
+/**
  * §9.2 — why a body may not be spliced, or `[]` when it may. Checked before
  * the splice; a refused body goes to repair with these reasons.
  */
@@ -690,6 +747,7 @@ export function bodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   }
   out.push(...(ctx.track === 'node' ? nodeBodyGuards(body, ctx) : rapBodyGuards(body, ctx)));
   out.push(...requiredGuardRefusals(body, ctx));
+  out.push(...authorityRefusals(body, ctx));
   return out;
 }
 
@@ -781,7 +839,7 @@ export function markForeignLineRefs(body: string, track: 'node' | 'rap', allowed
  * (null: the body is taken unchecked — for the engine's own tests only).
  */
 export function spliceBodies(
-  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'> & { required?: Scaffold['required']; rap?: Scaffold['rap'] },
+  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'> & { required?: Scaffold['required']; rap?: Scaffold['rap']; authority?: Scaffold['authority'] },
   bodies: readonly RegionBody[],
   guardContext: (regionId: string) => BodyGuardContext | null,
 ): SpliceResult {
@@ -802,7 +860,11 @@ export function spliceBodies(
     const given = guardContext(b.regionId);
     // The guards this region must call come from the scaffold, whatever the caller passes (rule 15).
     const abap = given?.abap ?? scaffold.rap?.regions[b.regionId];
-    const ctx = given ? { ...given, required: [...(given.required ?? []), ...(scaffold.required?.[b.regionId] ?? [])], ...(abap ? { abap } : {}) } : null;
+    // The original's authority checks too: the scaffold's, whatever the caller passes (QA finding ef6865e7ade4).
+    const authority = given?.authority ?? scaffold.authority?.[b.regionId];
+    const ctx = given
+      ? { ...given, required: [...(given.required ?? []), ...(scaffold.required?.[b.regionId] ?? [])], ...(abap ? { abap } : {}), ...(authority?.length ? { authority } : {}) }
+      : null;
     const reasons = ctx ? bodyGuards(b.body, ctx) : b.body.includes(MARKER_TAG) ? [refusal('marker', `the body contains ${MARKER_TAG}`)] : [];
     if (reasons.length > 0) {
       refused.push({ regionId: b.regionId, reasons });

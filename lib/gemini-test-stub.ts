@@ -118,14 +118,19 @@ export const GEMINI_TEST_STUB_FILL_BODY = {
 export function geminiTestStubFillText(prompt: string): string {
   const marker = 'REQUEST (JSON):\n';
   const at = prompt.indexOf(marker);
-  type StubUnit = { unitId: string; decline: boolean; calls: StubCall[]; predicates: string[] };
+  type StubUnit = { unitId: string; decline: boolean; calls: StubCall[]; predicates: string[]; authority: string[] };
   let units: StubUnit[] = [];
   let track: 'node' | 'rap' = 'node';
   if (at >= 0) {
     try {
       const request = JSON.parse(prompt.slice(at + marker.length)) as {
         track?: unknown;
-        units?: Array<{ unitId?: unknown; abap?: { text?: unknown }; guards?: Array<{ id?: unknown; helper?: unknown; placement?: unknown; regionId?: unknown; values?: unknown }> }>;
+        units?: Array<{
+          unitId?: unknown;
+          abap?: { text?: unknown };
+          guards?: Array<{ id?: unknown; helper?: unknown; placement?: unknown; regionId?: unknown; values?: unknown }>;
+          authority?: Array<{ fn?: unknown; call?: unknown }>;
+        }>;
       };
       if (request.track === 'rap') track = 'rap';
       units = Array.isArray(request.units)
@@ -140,6 +145,10 @@ export function geminiTestStubFillText(prompt: string): string {
                   .filter((g) => g.placement === 'body' && typeof g.helper === 'string')
                   .map((g) => ({ helper: g.helper as string, values: Array.isArray(g.values) ? g.values.filter((v): v is string => typeof v === 'string' && /^[A-Za-z_$][\w$]*$/.test(v)) : [] })),
                 predicates: guards.filter((g) => typeof g.regionId === 'string' && typeof g.id === 'string').map((g) => g.id as string),
+                // The original's AUTHORITY-CHECKs (scaffold version 15): called, and the answer used, as the fill checks require.
+                authority: (Array.isArray(u.authority) ? u.authority : []).flatMap((a) =>
+                  typeof a.fn === 'string' && /^authority_L\d+$/.test(a.fn) ? [`${a.fn}()`] : typeof a.call === 'string' && /^authority_check\(/.test(a.call) ? [a.call.replace(/<[^<>]*>/g, 'undefined as never')] : [],
+                ),
               };
             })
         : [];
@@ -153,7 +162,7 @@ export function geminiTestStubFillText(prompt: string): string {
         ? { unitId: u.unitId, body: '', needs: [], refused: { reason: 'gemini-test-stub: the slice asks the stub to decline this function.' } }
         : {
             unitId: u.unitId,
-            body: stubBody(track, u.calls),
+            body: stubBody(track, u.calls, u.authority),
             guards: u.predicates.map((id) => ({ id, body: GEMINI_TEST_STUB_PREDICATE[track] })),
             needs: [],
             refused: null,
@@ -191,11 +200,12 @@ interface StubCall {
  * dry run's type gate checks the call as it checks a model's; the values are
  * the stub's (`undefined as never`) — the branch never runs.
  */
-function stubBody(track: 'node' | 'rap', calls: readonly StubCall[]): string {
-  if (calls.length === 0) return GEMINI_TEST_STUB_FILL_BODY[track];
-  if (track === 'node') {
+function stubBody(track: 'node' | 'rap', calls: readonly StubCall[], authority: readonly string[] = []): string {
+  if (track === 'node' && (calls.length > 0 || authority.length > 0)) {
     const call = (c: StubCall) => `  ${c.helper}(sel, st, null, { ${c.values.map((v) => `${v}: undefined as never`).join(', ')} });`;
-    return `if (Date.now() < 0) {\n${calls.map(call).join('\n')}\n}\n${GEMINI_TEST_STUB_FILL_BODY.node}`;
+    const check = (a: string) => `  if (${a} !== 0) return undefined as never;`;
+    return `if (Date.now() < 0) {\n${[...authority.map(check), ...calls.map(call)].join('\n')}\n}\n${GEMINI_TEST_STUB_FILL_BODY.node}`;
   }
+  if (calls.length === 0) return GEMINI_TEST_STUB_FILL_BODY[track];
   return `IF 1 = 0.\n${calls.map((c) => `  ${c.helper}( ).`).join('\n')}\nENDIF.\n${GEMINI_TEST_STUB_FILL_BODY.rap}`;
 }

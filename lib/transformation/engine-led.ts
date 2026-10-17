@@ -200,6 +200,11 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         // The original's AUTHORITY-CHECKs in these lines (Node, scaffold version 15): the function the engine wrote
         // for each, or the exact call — the model never decides an authorization (`authority-node.ts`).
         ...(scaffold.authority?.[u.id]?.length ? { authority: scaffold.authority[u.id].map((e) => ({ line: e.line, fn: e.fn, call: e.call })) } : {}),
+        // The original's SELECTs in these lines (Node, scaffold version 15): answered from the request's lookup lists
+        // by srv/lib/lookups.ts — the function the frame holds, or the exact call (`lookups-node.ts`).
+        ...(scaffold.lookups?.[u.id]?.length
+          ? { lookups: scaffold.lookups[u.id].map((e) => ({ line: e.line, table: e.table, list: e.list, fn: e.fn, call: e.call, returns: e.returns, ...(e.open ? { open: e.open } : {}) })) }
+          : {}),
         // The fields of every type the signature and the callees' signatures name (defect D, 13.10.2026).
         // Of the original's globals (`Locals`), only those this function's ABAP names (3.0.13, A3).
         // RAP since scaffold version 6: the logic class around the body (scaffold-rap.ts).
@@ -293,6 +298,8 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     sliceChars: prep.sliceChars[regionId] ?? prep.sliceChars[unitId] ?? 2_000,
     guardCalls: regionId === unitId ? (unit?.guardCalls ?? []).map(helperOf).filter((h): h is string => !!h) : [],
     required: prep.scaffold.required[regionId] ?? [],
+    // The original's AUTHORITY-CHECKs in the region's lines: called and used, or the body is refused (QA ef6865e7ade4).
+    ...(prep.scaffold.authority?.[regionId]?.length ? { authority: prep.scaffold.authority[regionId] } : {}),
     ...(params.length > 0 ? { params } : {}),
     ...(Object.keys(shapes).length > 0 ? { shapes } : {}),
     ...(prep.scaffold.rap?.regions[regionId] ? { abap: prep.scaffold.rap.regions[regionId] } : {}),

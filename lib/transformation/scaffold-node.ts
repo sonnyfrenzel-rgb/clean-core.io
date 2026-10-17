@@ -43,7 +43,8 @@ import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
 import { operandsOf } from './guard-basis';
 import { AUTHORITY_FILE, authorityDocLines, authorityEntriesOf, authorityFile, authorityFrameLines } from './authority-node';
-import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AuthorityEntry, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { LOOKUPS_FILE, lookupAvailable, lookupDocLines, lookupEntriesOf, lookupFrameLines, lookupImport, lookupListsOf, lookupReadsOf, lookupsFile } from './lookups-node';
+import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AuthorityEntry, type LookupEntry, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /** The Node major of the container; the same as `PACKAGE_NODE_MAJOR` (lib/delivery-package.ts, not imported to keep this module small — a spec holds them equal). */
 export const SCAFFOLD_NODE_MAJOR = 22;
@@ -133,6 +134,7 @@ function declaredType(shapes: AbapShapes, name: string, line: number, fallback: 
 }
 
 function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes, lists: readonly InputList[]): string {
+  const lookups = lists.filter((l) => l.lookup);
   const packed = plan.fields.filter((f) => f.kind === 'packed');
   const selection = plan.fields.filter((f) => f.where === 'selection');
   const record = plan.fields.filter(inRecords);
@@ -203,7 +205,7 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   lines.push(" * A run starts with these rows in the original's global table (srv/lib/input-contract.ts seedOf).");
   lines.push(' */');
   lines.push('export interface Inputs {');
-  for (const l of lists) lines.push(`  /** ${l.global.name.toUpperCase()} (L${l.global.line}) — rows of ${l.structure.name.toUpperCase()}; ${l.filledBy.map((b) => (b === 'demo' ? "the original's demo data fills it" : b === 'read' ? 'a SELECT fills it' : 'its input fields')).join(', ')}. */\n  ${l.key}: ${l.structure.tsName}[];`);
+  for (const l of lists) lines.push(`  /** ${l.global.name.toUpperCase()} (L${l.global.line}) — rows of ${l.structure.name.toUpperCase()}; ${l.filledBy.map((b) => (b === 'demo' ? "the original's demo data fills it" : b === 'read' ? 'a SELECT fills it' : b === 'lookup' ? `a step reads it (L${l.lookup?.lines.join(', L')}): a lookup list, answered by srv/lib/lookups.ts` : 'its input fields')).join(', ')}. */\n  ${l.key}: ${l.structure.tsName}[];`);
   lines.push('}');
   lines.push('');
   lines.push('/** A validated request: the selection, the record list and the input lists. */');
@@ -217,6 +219,14 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
     lines.push('}');
     lines.push('');
   }
+  // A row of each SAP table a step reads on its own (scaffold version 15, `lookups-node.ts`): the columns the reads name.
+  for (const l of lookups) {
+    lines.push(`/** A row of ${l.lookup!.table}, as the original reads it at L${l.lookup!.lines.join(', L')}: the columns its reads name. Their types are in the dictionary: text as the request sends it. */`);
+    lines.push(`export interface ${l.structure.tsName} {`);
+    for (const c of l.columns) lines.push(`  /** ${c.name.toUpperCase()} — ${c.abap}, L${c.line}. */\n  ${c.key}: string | null;`);
+    lines.push('}');
+    lines.push('');
+  }
   lines.push(
     lists.length > 0
       ? `/** The original's global data, typed by its declarations: what the steps share in one run (st.local). The request's input lists start the run in their tables: ${lists.map((l) => `${l.key} → ${l.global.key}`).join(', ')}. */`
@@ -224,11 +234,13 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   );
   lines.push('export interface Locals {');
   for (const g of shapes.globals) lines.push(`  /** ${shapeComment(g)} */\n  ${g.key}: ${g.ts};`);
+  for (const l of lookups) lines.push(`  /** ${l.lookup!.table} — the rows of the lookup list ${l.key}; not a global of the original: srv/lib/lookups.ts reads them where a step reads ${l.lookup!.table}. */\n  ${l.global.key}: ${l.structure.tsName}[];`);
   lines.push('}');
   lines.push('');
   lines.push('/** A fresh run: every global at its ABAP initial value (or the VALUE the original declares). */');
   lines.push('export function initialLocals(): Locals {');
-  lines.push(shapes.globals.length ? `  return {\n${shapes.globals.map((g) => `    ${g.key}: ${g.init},`).join('\n')}\n  };` : '  return {};');
+  const inits = [...shapes.globals.map((g) => `    ${g.key}: ${g.init},`), ...lookups.map((l) => `    ${l.global.key}: [],`)];
+  lines.push(inits.length ? `  return {\n${inits.join('\n')}\n  };` : '  return {};');
   lines.push('}');
   lines.push('');
   lines.push('/** What one run carries through the steps. No module-level state: a new RunState per run. */');
@@ -584,8 +596,8 @@ function inputContractFile(plan: UnitPlan, lists: readonly InputList[]): string 
   }
   lines.push('];');
   lines.push('');
-  lines.push("/** The original's table each list fills, by the table's name (GT_CLAIMS → gtClaims). */");
-  lines.push(`export const LIST_GLOBALS: Readonly<Record<string, string>> = ${JSON.stringify(Object.fromEntries(lists.map((l) => [l.global.name.toUpperCase(), l.global.key])))};`);
+  lines.push("/** The original's table each input list fills, by the table's name (GT_CLAIMS → gtClaims); a lookup list fills none. */");
+  lines.push(`export const LIST_GLOBALS: Readonly<Record<string, string>> = ${JSON.stringify(Object.fromEntries(lists.filter((l) => !l.lookup).map((l) => [l.global.name.toUpperCase(), l.global.key])))};`);
   lines.push('');
   lines.push("/** The input lists as the run's start values of the original's global tables. */");
   lines.push('export function seedOf(inputs: Inputs): Partial<Locals> {');
@@ -594,7 +606,9 @@ function inputContractFile(plan: UnitPlan, lists: readonly InputList[]): string 
   lines.push('');
   lines.push("/** The rows still in the original's input tables after a run (a skipping check removes one). */");
   lines.push('export function inputRowsOf(local: Locals): number {');
-  lines.push(lists.length ? `  return ${lists.map((l) => `local.${l.global.key}.length`).join(' + ')};` : '  void local;\n  return 0;');
+  // A lookup list's rows are what a step looks up, not input records of the run.
+  const counted = lists.filter((l) => !l.lookup);
+  lines.push(counted.length ? `  return ${counted.map((l) => `local.${l.global.key}.length`).join(' + ')};` : '  void local;\n  return 0;');
   lines.push('}');
   return lines.join('\n') + '\n' + INPUT_CORE;
 }
@@ -803,7 +817,7 @@ function argsInterface(u: Unit, shapes: AbapShapes): string | null {
   return `export interface ${name} {\n${members.join('\n')}\n}`;
 }
 
-function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = []): string {
+function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = []): string {
   const rules = u.rules.map((id) => {
     const r = plan.rules.find((x) => x.id === id);
     if (!r) return id;
@@ -824,6 +838,7 @@ function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = []):
     ` * Guards: ${guards.length ? guards.join(', ') : 'none'}`,
     ...(u.bodyCalls.length > 0 ? [` * The body calls, where the original checks: ${bodyCallWords(u, plan)}`] : []),
     ...authorityDocLines(auth),
+    ...lookupDocLines(reads),
     ` * Unit ${u.id}: the frame is written by Clean-Core.io (engine); the body between the markers is a model proposal.`,
     ' */',
   ].join('\n');
@@ -862,7 +877,7 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
   return [...names];
 }
 
-function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = []): Built {
+function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = []): Built {
   const libDir = u.file.startsWith('srv/steps/') ? '../lib/' : './lib/';
   const callees = u.callees.map((id) => plan.units.find((x) => x.id === id)!).filter(Boolean);
   const out: string[] = [];
@@ -873,6 +888,8 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
   out.push(`import { ${guardImports(u, plan).join(', ')} } from '${libDir}guards.ts';`);
   // The original's AUTHORITY-CHECKs in these lines (scaffold version 15): computed in the frame, never by the model.
   if (auth.length > 0) out.push(`import { authority_check } from '${libDir}authority.ts';`);
+  // The original's reads in these lines (scaffold version 15): answered from the request's lookup lists.
+  out.push(...lookupImport(reads, libDir));
   out.push(`import { DECIMALS } from '${libDir}types.ts';`);
   out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from '${libDir}types.ts';`);
   for (const c of callees) {
@@ -885,8 +902,8 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     out.push(args);
     out.push('');
   }
-  const doc = unitDoc(u, plan, auth);
-  const guardLines = [...guardCallLines(u, plan, shapes), ...authorityFrameLines(auth)];
+  const doc = unitDoc(u, plan, auth, reads);
+  const guardLines = [...guardCallLines(u, plan, shapes), ...authorityFrameLines(auth), ...lookupFrameLines(reads)];
   out.push(doc);
   out.push(`${u.signature} {`);
   out.push(...guardLines);
@@ -900,6 +917,7 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     'DECIMALS',
     ...auth.flatMap((e) => (e.fn ? [e.fn] : [])),
     ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
+    ...lookupAvailable(reads),
   ];
   return { file: { path: u.file, content: out.join('\n'), owner: 'fill' }, regions: [{ regionId: u.id, available }] };
 }
@@ -930,7 +948,7 @@ function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan, shapes: AbapSha
 
 /* ---------------------------------------------------------- process, app */
 
-function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, auth: readonly AuthorityEntry[] = []): Built {
+function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = []): Built {
   const orch = plan.units.find((u) => u.kind === 'orchestrator')!;
   const steps = plan.units.filter((u) => u.kind !== 'orchestrator' && !u.part);
   const fnOf = new Map<string, Unit>();
@@ -954,17 +972,18 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, aut
   out.push("import { NotImplementedFill, Refusal } from './lib/errors.ts';");
   out.push(`import { ${['checked', 'checkSelection', ...guardImports(orch, plan).filter((n) => n !== 'checked')].join(', ')} } from './lib/guards.ts';`);
   if (auth.length > 0) out.push("import { authority_check } from './lib/authority.ts';");
+  out.push(...lookupImport(reads, './lib/'));
   out.push("import { initialLocals } from './lib/types.ts';");
   out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from './lib/types.ts';`);
   for (const s of steps) out.push(`import { ${s.fn} } from './${s.file.replace('srv/', '')}';`);
   out.push('');
   const doc = [
-    unitDoc(orch, plan, auth).replace(/ \*\/$/, ''),
+    unitDoc(orch, plan, auth, reads).replace(/ \*\/$/, ''),
     ' * Reading order of the original (engine):',
     ...(reading.length ? reading : [' *   (no PERFORM at program level)']),
     ' */',
   ].join('\n');
-  const guardLines = [...guardCallLines(orch, plan, shapes), ...authorityFrameLines(auth)];
+  const guardLines = [...guardCallLines(orch, plan, shapes), ...authorityFrameLines(auth), ...lookupFrameLines(reads)];
   out.push(doc);
   out.push(`${orch.signature} {`);
   out.push(...guardLines);
@@ -1016,6 +1035,7 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, aut
     ...guardImports(orch, plan).filter((n) => n !== 'checked'),
     ...auth.flatMap((e) => (e.fn ? [e.fn] : [])),
     ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
+    ...lookupAvailable(reads),
   ];
   return { file: { path: 'srv/process.ts', content: out.join('\n'), owner: 'fill' }, regions: [{ regionId: orch.id, available }] };
 }
@@ -1526,16 +1546,27 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   const originalDemo = options.originalDemo === undefined ? originalDemoCases(facts.source) : options.originalDemo;
   const lists = inputListsOf(plan, facts, shapes, new Set([...plan.fields.filter((f) => f.where === 'selection').map((f) => f.key), 'records', 'run']), originalDemo ? [originalDemo.switch.routine, originalDemo.baseline.routine] : []);
   plan = withListPaths(plan, lists);
+  // The original's reads inside its steps (scaffold version 15, `lookups-node.ts`): one lookup list per SAP table,
+  // after the input lists, in the request, the action and the run (st.local.db<Table>).
+  const reads = lookupReadsOf(plan, facts.statements, new Set(lists.map((l) => l.global.name.toUpperCase())));
+  const lookupLists = lookupListsOf(reads, {
+    keys: new Set([...plan.fields.filter((f) => f.where === 'selection').map((f) => f.key), 'records', 'run', ...lists.map((l) => l.key)]),
+    types: new Set([...typesReserved(plan), ...shapes.structures.map((s) => s.tsName)]),
+    locals: new Set(shapes.globals.map((g) => g.key)),
+    // The entities of the customer tables a writing program writes (`cap-shell.ts`) are taken as well.
+    cds: new Set([...lists.flatMap((l) => [l.cds.type, l.cds.entity]), ...facts.graph.databaseWrites.map((w) => pascalName(w.table))]),
+  });
+  const allLists = [...lists, ...lookupLists];
   // The CAP shell around the core (scaffold version 7, `cap-shell.ts`): package.json, the data model, the service.
-  const cap = capShellFiles({ plan, facts, lists, packageName: name });
+  const cap = capShellFiles({ plan, facts, lists: allLists, packageName: name });
   files.push({ path: 'package.json', content: cap.packageJson, owner: 'engine' });
   files.push({ path: 'tsconfig.json', content: TSCONFIG, owner: 'engine' });
   files.push({ path: 'srv/lib/errors.ts', content: ERRORS_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/decimal.ts', content: DECIMAL_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/csv.ts', content: CSV_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/run-store.ts', content: RUN_STORE_TS, owner: 'engine' });
-  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, lists), owner: 'engine' });
-  files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, lists), owner: 'engine' });
+  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, allLists), owner: 'engine' });
+  files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, allLists), owner: 'engine' });
   add(guardsFile(plan, shapes, lists));
   // The original's AUTHORITY-CHECKs (scaffold version 15, `authority-node.ts`): the seam fails closed, and each
   // function whose lines hold a check gets it written in its frame.
@@ -1546,14 +1577,20 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     if (entries.length > 0) authority[u.id] = entries;
   }
   if (checks.length > 0) files.push({ path: AUTHORITY_FILE, content: authorityFile(plan.program, checks), owner: 'engine' });
+  const lookups: Record<string, LookupEntry[]> = {};
+  for (const u of plan.units) {
+    const entries = reads.length > 0 ? lookupEntriesOf(u, reads, lookupLists, plan, shapes, facts.statements) : [];
+    if (entries.length > 0) lookups[u.id] = entries;
+  }
+  if (reads.length > 0) files.push({ path: LOOKUPS_FILE, content: lookupsFile(plan.program, reads, lookupLists), owner: 'engine' });
   for (const u of plan.units) {
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
     if (parts.length > 0) files.push(splitParentFile(u, parts, plan, shapes));
-    else add(stepFile(u, plan, shapes, authority[u.id]));
+    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id]));
   }
   const orchestrator = plan.units.find((u) => u.kind === 'orchestrator');
-  add(processFile(plan, facts, shapes, orchestrator ? authority[orchestrator.id] : []));
+  add(processFile(plan, facts, shapes, orchestrator ? authority[orchestrator.id] : [], orchestrator ? lookups[orchestrator.id] : []));
   files.push({ path: 'srv/simulate.ts', content: SIMULATE_TS, owner: 'engine' });
   files.push({ path: 'srv/app.ts', content: APP_TS, owner: 'engine' });
   files.push({ path: 'srv/server.ts', content: SERVER_TS, owner: 'engine' });
@@ -1603,5 +1640,6 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     available,
     required,
     ...(Object.keys(authority).length > 0 ? { authority } : {}),
+    ...(Object.keys(lookups).length > 0 ? { lookups } : {}),
   };
 }
