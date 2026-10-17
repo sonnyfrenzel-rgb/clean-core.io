@@ -7,7 +7,8 @@
  *
  * How a case runs: its selection (the parameters' DEFAULTs, the case number,
  * the case's own settings) goes through the input contract; its tables — the
- * original's global tables after the case ran on the baseline — seed the run's
+ * original's global tables after the case ran on the baseline; the JSON carries
+ * only those that differ from the baseline (3.0.17 item 7) — seed the run's
  * globals (`RunState.local`, typed by `abap-shapes.ts`); then `runProcess`.
  * That is what the original does in demo mode: fill its global tables, then
  * run its steps on them.
@@ -24,7 +25,7 @@
  * Pure: plan and shapes in, files out.
  */
 
-import type { OriginalDemoCases } from './golden-master';
+import { ORIGINAL_DEMO_DELTA_FORMAT, originalDemoDelta, type OriginalDemoCases } from './golden-master';
 import type { AbapShapes } from './abap-shapes';
 import type { ScaffoldFile, UnitPlan } from './types';
 
@@ -75,7 +76,21 @@ export interface OriginalDemo {
   demoFlag: string | null;
   parameters: Record<string, { default: string; written: string; type: string }>;
   aliases: Record<string, string>;
+  baseline?: { rows: Record<string, Array<Record<string, DemoValue>>> };
   cases: OriginalDemoCase[];
+}
+
+/**
+ * A case's tables, whole. The delta form (DELTA_FORMAT) carries per case only the tables whose rows differ from the
+ * baseline; every other table is the baseline's, in the baseline's order. The full form is taken as it is.
+ */
+export function caseRows(demo: OriginalDemo, c: OriginalDemoCase): Record<string, Array<Record<string, DemoValue>>> {
+  if (demo.format !== DELTA_FORMAT) return c.rows;
+  const own = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
+  const out: Record<string, Array<Record<string, DemoValue>>> = {};
+  for (const [table, rows] of Object.entries(demo.baseline?.rows ?? {})) out[table] = own(c.rows, table) ? c.rows[table] : rows;
+  for (const [table, rows] of Object.entries(c.rows)) if (!own(out, table)) out[table] = rows;
+  return out;
 }
 
 /** One case run: ran (with the process outcome), threw (the code under test threw), or not run, with the reason. */
@@ -169,7 +184,7 @@ function runCase(demo: OriginalDemo, c: OriginalDemoCase, initial: Record<string
   if (!sel.ok || !sel.selection) {
     return { state: 'not-run', reason: "the original's selection for this case is refused by the input contract: " + sel.errors.map((e) => e.message).join('; ') };
   }
-  for (const [table, rows] of Object.entries(c.rows)) {
+  for (const [table, rows] of Object.entries(caseRows(demo, c))) {
     const t = TABLES[table];
     if (!t) {
       if (rows.length > 0) return { state: 'not-run', reason: 'the table ' + table + ' has no place in this package' };
@@ -255,10 +270,13 @@ export function nodeDemoFiles(plan: UnitPlan, shapes: AbapShapes, demo: Original
     `const STRUCTS: Record<string, { key: string; columns: Record<string, string> }> = ${JSON.stringify(structs)};`,
     "/** The original's global scalars a case's setting may name (GV_SEALED). */",
     `const SCALARS: Record<string, string> = ${JSON.stringify(scalars)};`,
+    "/** The fixture's delta form: a case carries only the tables it changes, the rest is the baseline's (caseRows). */",
+    `const DELTA_FORMAT = ${q(ORIGINAL_DEMO_DELTA_FORMAT)};`,
   ].join('\n');
+  // The delta form (3.0.17 item 7): each case carries only the tables it changes; srv/fixtures.ts caseRows expands it.
   const json = demo
-    ? { ...demo, note: 'The original\'s demo cases, read from the original by the engine. Each runs through srv/fixtures.ts runDemoCase (npm test: test/original-demo.test.mjs) and asserts only that it runs — from the original, to be confirmed once in your system.' }
-    : { format: 'clean-core.original-demo/1', note: NO_CASES_NOTE, switch: null, demoFlag: null, parameters: {}, aliases: {}, cases: [] };
+    ? { ...originalDemoDelta(demo), note: 'The original\'s demo cases, read from the original by the engine. Each runs through srv/fixtures.ts runDemoCase (npm test: test/original-demo.test.mjs) and asserts only that it runs — from the original, to be confirmed once in your system. A case lists only the tables it changes; every other table is the baseline\'s.' }
+    : { format: ORIGINAL_DEMO_DELTA_FORMAT, note: NO_CASES_NOTE, switch: null, demoFlag: null, parameters: {}, aliases: {}, cases: [] };
   const files: ScaffoldFile[] = [
     { path: 'srv/fixtures.ts', owner: 'engine', content: `${header}\n${FIXTURES_CORE}` },
     { path: 'test/fixtures/original-demo.json', owner: 'engine', content: `${JSON.stringify(json, null, 2)}\n` },
