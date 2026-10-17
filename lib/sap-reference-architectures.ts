@@ -35,7 +35,9 @@
  * RA0019, RA0021, RA0022). An archived RA is never named here: where only
  * archived ones fitted, the binding is `none` and says so (`ARCHIVED_ONLY`). The
  * synced metadata keeps the archive state, and the spec fails the day a binding
- * points at an archived RA.
+ * points at an archived RA. The sync of 17.10.2026 found the delivery pattern
+ * archived too (RA0023, CI/CD on SAP BTP), so delivery says none as well
+ * (`ARCHIVED_DELIVERY`).
  *
  * Wording is fixed: "SAP reference pattern for the target". Never "approved",
  * "certified", "validated" or "compliant" — the text guard in the spec fails on
@@ -47,7 +49,7 @@ import type { CloudServiceKey } from '@/lib/cloud-service-key';
 export { CLOUD_SERVICE_KEYS, type CloudServiceKey } from '@/lib/cloud-service-key';
 
 /** The day every binding and every RA's metadata below was checked against the repository. */
-export const VERIFIED_AT = '2026-10-10';
+export const VERIFIED_AT = '2026-10-17';
 
 /** The repository, branch and commit the bindings were checked against. */
 export const ARCHITECTURE_CENTER_SOURCE = {
@@ -66,7 +68,7 @@ export const REFERENCE_LINE_LEAD = 'SAP-documented pattern for this target';
 export const ARCHITECTURE_CENTER_BASE = 'https://architecture.learning.sap.com/docs/ref-arch/';
 
 /** The RAs this mapping names. Only these — never one that is not in the synced metadata. */
-export type SapRaId = 'RA0001' | 'RA0023';
+export type SapRaId = 'RA0001';
 
 export interface SapReferenceArchitecture {
   id: SapRaId;
@@ -81,7 +83,6 @@ export interface SapReferenceArchitecture {
 
 export const SAP_REFERENCE_ARCHITECTURES: Readonly<Record<SapRaId, SapReferenceArchitecture>> = Object.freeze({
   RA0001: { id: 'RA0001', slug: '196eba', title: 'Designing Event-Driven Applications on SAP BTP', lastUpdate: '2025-10-10', archived: false },
-  RA0023: { id: 'RA0023', slug: 'b51e91', title: 'DevOps on SAP BTP with CI/CD and SAP Build', lastUpdate: '2026-09-28', archived: false },
 });
 
 export type ReferenceFit = 'direct' | 'partial' | 'none';
@@ -156,10 +157,14 @@ export const RFC_DRIVER_REFERENCE: ReferenceBinding = bind(null, 'none', ARCHIVE
  * "Reference patterns" section of the handover README. `rap` has none: its
  * path is the ABAP transport path.
  */
+export const ARCHIVED_DELIVERY =
+  'No current SAP delivery pattern — the one that fitted (CI/CD, transport and lifecycle on SAP BTP) was archived by SAP, found on 17.10.2026.';
+
 export const DELIVERY_REFERENCE_OF_TARGET: Readonly<Partial<Record<TargetArchitectureCode, ReferenceBinding>>> = Object.freeze({
-  cap: bind('RA0023', 'direct', 'CI/CD, transport and lifecycle of an application on SAP BTP.'),
-  integration: bind('RA0023', 'direct', 'CI/CD, transport and lifecycle of an application on SAP BTP.'),
-  event: bind('RA0023', 'direct', 'CI/CD, transport and lifecycle of an application on SAP BTP.'),
+  // Were RA0023 (direct) until SAP archived it (found by the sync of 17.10.2026).
+  cap: bind(null, 'none', ARCHIVED_DELIVERY),
+  integration: bind(null, 'none', ARCHIVED_DELIVERY),
+  event: bind(null, 'none', ARCHIVED_DELIVERY),
 });
 
 /** `rap`'s delivery line: SAP documents no BTP pattern for it, and the reader is told what applies instead. */

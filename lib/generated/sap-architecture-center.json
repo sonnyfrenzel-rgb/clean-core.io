@@ -1,8 +1,8 @@
 {
   "source": "https://github.com/SAP/architecture-center",
   "branch": "dev",
-  "commit": "79b40e802c8f927be17e200d250f849e6adb2906",
-  "syncedAt": "2026-10-10",
+  "commit": "341f32d0e1dc19ec128395fe536eb2dd7298e1c3",
+  "syncedAt": "2026-10-17",
   "architectures": [
     {
       "id": "RA0001",
@@ -57,7 +57,7 @@
       "id": "RA0008",
       "slug": "0a229d",
       "title": "SAP Integration Suite Edge Integration Cell on Hyperscalers",
-      "lastUpdate": "2025-04-18",
+      "lastUpdate": "2026-10-09",
       "archived": true
     },
     {
@@ -148,22 +148,22 @@
       "id": "RA0021",
       "slug": "6501d5",
       "title": "App2App Integration with SAP Integration Suite",
-      "lastUpdate": "2024-08-01",
+      "lastUpdate": "2026-10-09",
       "archived": true
     },
     {
       "id": "RA0022",
       "slug": "5f90af",
       "title": "API Managed Integration with SAP Integration Suite",
-      "lastUpdate": "2024-08-01",
+      "lastUpdate": "2026-10-09",
       "archived": true
     },
     {
       "id": "RA0023",
       "slug": "b51e91",
       "title": "DevOps on SAP BTP with CI/CD and SAP Build",
-      "lastUpdate": "2026-09-28",
-      "archived": false
+      "lastUpdate": "2026-10-09",
+      "archived": true
     },
     {
       "id": "RA0024",
@@ -204,7 +204,7 @@
       "id": "RA0029",
       "slug": "98efa0",
       "title": "Agentic AI & AI Agents on SAP Business AI Platform",
-      "lastUpdate": "2026-08-27",
+      "lastUpdate": "2026-10-14",
       "archived": false
     },
     {
