@@ -112,6 +112,11 @@ export interface Project {
    */
   testSuiteBasis?: import('./test-suite-basis').TestSuiteBasis | null;
   /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): which provider and model wrote the suite, from a receipt the server
+   * verified when it stored it; null when none did, absent on a suite stored before the record existed.
+   */
+  testSuiteModel?: import('./ai-marking').AiModelRecord | null;
+  /**
    * ADR-075 — the summary of a test result from the reader's own SAP system,
    * imported from a result file or confirmed by the account. Written only by
    * `/api/projects/{id}/test-results` with the Admin SDK, beside the full
@@ -142,6 +147,8 @@ export interface Project {
   manualTestingRequirements?: ManualTestRequirement[];
   documentation?: string;
   businessDocumentation?: string;
+  /** Roadmap 3.0.17: which provider and model wrote the business layer (see `testSuiteModel`). */
+  businessDocumentationModel?: import('./ai-marking').AiModelRecord | null;
   presentation?: string;
   extensibilityRoute?: string;
   s4Deployment?: 'public' | 'private';

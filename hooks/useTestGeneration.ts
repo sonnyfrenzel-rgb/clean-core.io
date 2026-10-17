@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { storeArtefact } from '@/lib/project-artefacts-client';
 import { callGemini } from '@/lib/gemini';
+import type { ModelReceipt } from '@/lib/model-receipt';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -247,6 +248,9 @@ ${generatedText}
       const basePrompt = buildPrompt(`${codeView.text}${testingCodeNote(codeView)}`);
       let repairReason: string | null = null;
       let checkedAnswer: Record<string, unknown> | null = null;
+      // Roadmap 3.0.17 (AI Act Art. 50(2)): the receipt of the call whose answer is stored, sent with it so the
+      // server records which provider and model wrote the suite.
+      let answerReceipt: ModelReceipt | null = null;
       for (let round = 0; round < 2 && !checkedAnswer; round++) {
         const prompt = repairReason
           ? `${basePrompt}\n\nYOUR PREVIOUS ABAP UNIT TEST CLASS WAS REFUSED, because it does not fit the classes under test:\n${repairReason}\nWrite the whole answer again with a test class that calls only declared methods and parameters.`
@@ -275,7 +279,11 @@ ${generatedText}
           let responseText: string;
           enter('model');
           try {
-            responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
+            responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing', undefined, {
+              onReceipt: (receipt) => {
+                answerReceipt = receipt;
+              },
+            });
           } catch (callErr) {
             const unusable = unusableFromModelError(callErr);
             if (!unusable) throw callErr;
@@ -381,11 +389,13 @@ ${generatedText}
         coverageEstimate,
         manualTestingRequirements,
         generatedCodeSha256: testedPackage,
+        modelReceipt: answerReceipt,
       });
       if (!stored.ok) throw new Error(stored.error);
       
       const testSuiteBasis = (stored.fields[TEST_SUITE_BASIS_FIELD] ?? null) as Project['testSuiteBasis'];
-      setProject((prev: Project | null) => prev ? { ...prev, testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements, testSuiteBasis } : prev);
+      const testSuiteModel = (stored.fields.testSuiteModel ?? null) as Project['testSuiteModel'];
+      setProject((prev: Project | null) => prev ? { ...prev, testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements, testSuiteModel, testSuiteBasis } : prev);
       if (progressRef.current) track(endTestGenProgress(progressRef.current, 'written', Date.now(), generatedTestCases.length));
       return { testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements };
     } catch (err: unknown) {

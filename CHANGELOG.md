@@ -153,6 +153,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   None of the nine starter examples, the demo or the 300 benchmark cases changes route, score or words. A negated phrase counts for the other side ("workflow state must not be kept outside the ERP" is no side-by-side target); a hedge in a concessive clause ("…, although RAP could be considered") no longer erases a binding target before it; a range or list of labels ("NFR-01..06") is no label of its own; and where a stated target sets the route off the stack next to direct writes to SAP standard tables, the side-by-side track is partially compatible and names the writes to replace first (QA review of 081f6457d09e).
   `tests/stated-requirements.spec.ts`.
 
+### Machine-readable marking of model-generated content (roadmap 3.0.17, AI Act Art. 50(2), owner decision 17.10.2026)
+
+- **Every artefact a model wrote or co-wrote says so, in one statement:** `Generated with AI assistance (<provider>
+  <model>) by Clean-Core.io <version>, <date>`, built in one place (`lib/ai-marking.ts`). It is the header comment
+  of the file in its own syntax — ABAP `*`, TypeScript and CDS `//`, Markdown, HTML and XML `<!-- -->`, YAML and
+  Dockerfile `#` — and the same statement as a metadata field: `aiGeneration` in the delivery package's
+  `manifest.json` (per source: the files, the JSON files a comment cannot reach, provider, model, key owner, date),
+  `<meta name="ai-generated">` in the HTML exports, the core properties of the Word exports, the description of the
+  test-case workbook. Provider and model are never written into the code: they come from the model receipt of the
+  call, which the server now verifies when it stores the generated package (`generationBinding.model`), the test
+  suite (`testSuiteModel`) and the business layer (`businessDocumentationModel`) — account, stage and MAC, without
+  the text of one answer (`verifyModelReceiptIssuer`) — or from the signed run's model card for the analysis
+  narrative. A model-written artefact whose call was not recorded is marked with "provider and model not recorded".
+- **What the engine wrote alone carries nothing.** Templates, records (README, STATUS, decision record, rule
+  register), the engine's process documentation and the deterministic findings are not marked. In an engine-led
+  package a file is co-written — and marked — only when its trace names a body the model filled in it; the
+  engine-led suite is the engine's until the Testing stage writes one. The line numbers the package's check records
+  name are moved with the header, so every line stated is a line of the file as it ships.
+- **The signed audit pack carries the marking as a new, versioned field.** Packs are issued in manifest format 5
+  (`5.0`, `5.1` with Ed25519), whose signed string binds `aiGeneration` — which artefact of the run a model wrote
+  (the analysis narrative, not in the pack), the statement, provider, model and date, read from the signed run —
+  in an `ai=` section after `covers=`. Formats 2 to 4 sign exactly the bytes they signed before and still verify; a
+  format-4 manifest that carries the field is refused, and an edited or removed marking fails the hash. The web
+  verifier and `scripts/verify-pack.mjs` read it alike; the script prints it.
+- No MCP endpoint exists, so the read-only MCP answers of item (3) carry the field when that step is built.
+  `tests/ai-marking.spec.ts`.
+
 ## [v3.0.16] — 2026-10-16
 
 ### Fixed

@@ -10,6 +10,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcStateText from '@/components/cc/StateText';
 import { CcTag } from '@/components/cc/Tag';
 import { saveAs } from '@/lib/fileSaver';
+import { withAiMarking } from '@/lib/ai-marking';
 import { cn } from '@/lib/utils';
 import {
   NOT_STATED,
@@ -368,6 +369,7 @@ export default function ScenarioList({
   runAt,
   tenantLocked,
   projectName,
+  aiStatement,
   onShowOutput,
   origin,
   outsideOf,
@@ -385,6 +387,11 @@ export default function ScenarioList({
   runAt: string | null;
   tenantLocked: boolean;
   projectName?: string;
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): the statement the downloaded suite carries as its header comment — null
+   * when no model wrote the suite (the engine's own suite of an engine-led package).
+   */
+  aiStatement?: string | null;
   onShowOutput?: () => void;
   /** The origin check's engine; without one every origin reads "not checked", with the reason. */
   origin: ScenarioOriginContext;
@@ -436,8 +443,9 @@ export default function ScenarioList({
     if (!suiteCode) return;
     const slug = (projectName || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'project';
     const name = isAbapCloud ? `${slug}.testclasses.abap` : `${slug}.test.ts`;
+    const content = aiStatement ? withAiMarking(name, suiteCode, aiStatement) : suiteCode;
     try {
-      await saveAs(new Blob([suiteCode], { type: 'text/plain;charset=utf-8' }), name);
+      await saveAs(new Blob([content], { type: 'text/plain;charset=utf-8' }), name);
     } catch {
       setCopyState('failed');
     }

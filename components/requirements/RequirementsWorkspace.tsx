@@ -21,6 +21,8 @@ import DecisionDialog from '@/components/requirements/DecisionDialog';
 import ExportMenu from '@/components/requirements/ExportMenu';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { saveAs } from '@/lib/fileSaver';
+import { aiMarkingStatement, withAiMarking, withAiMarkingHtml } from '@/lib/ai-marking';
+import { APP_VERSION } from '@/lib/version';
 import type { ObjectLevelInput } from '@/lib/functional-requirements';
 import type { NFRData } from '@/lib/non-functional-requirements';
 import {
@@ -31,6 +33,7 @@ import {
   answerDecision,
   applyRuleStates,
   buildSpecDraft,
+  decisionOpen,
   mergeReading,
   nextDecisionId,
   readSpecRecord,
@@ -381,13 +384,23 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
   const download = async (kind: 'docx' | 'md' | 'html') => {
     if (!spec) return;
     const ex = await import('@/lib/requirements-spec-export');
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): a model's proposal printed beside an open decision marks the file — the
+    // design model's call is not recorded per project, so the statement says so. Otherwise the file is the
+    // engine's reading and the account's own answers, and carries no marking.
+    const modelText = spec.decisions.some((d) => d.proposal.trim() !== '' && decisionOpen(d));
+    const aiStatement = modelText
+      ? aiMarkingStatement({ provider: null, modelId: null, byok: null, generatedAt: null, appVersion: null }, APP_VERSION)
+      : null;
+    const name = ex.specFileName(projectName || fileName, kind);
+    const markdown = kind === 'md' ? ex.specMarkdown(spec, exportMeta()) : '';
+    const html = kind === 'html' ? ex.specConfluenceHtml(spec, exportMeta()) : '';
     const blob =
       kind === 'docx'
-        ? await ex.specDocx(spec, exportMeta())
+        ? await ex.specDocx(spec, { ...exportMeta(), aiStatement })
         : kind === 'md'
-          ? new Blob([ex.specMarkdown(spec, exportMeta())], { type: 'text/markdown;charset=utf-8' })
-          : new Blob([ex.specConfluenceHtml(spec, exportMeta())], { type: 'text/html;charset=utf-8' });
-    await saveAs(blob, ex.specFileName(projectName || fileName, kind));
+          ? new Blob([aiStatement ? withAiMarking(name, markdown, aiStatement) : markdown], { type: 'text/markdown;charset=utf-8' })
+          : new Blob([withAiMarkingHtml(html, aiStatement ? [aiStatement] : [])], { type: 'text/html;charset=utf-8' });
+    await saveAs(blob, name);
     setToast(kind === 'docx' ? 'Word file downloaded.' : kind === 'md' ? 'Markdown file downloaded.' : 'Confluence page downloaded.');
   };
 

@@ -49,6 +49,12 @@ export interface CallOptions {
    * once its budget is used. The route honours the mark only on a prompt that is such a repair (`isGateRepairPrompt`).
    */
   gateRepair?: boolean;
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): handed the receipt of the call when the proxy issued one, so a stage that
+   * stores an artefact can send it along and the server records which provider and model wrote it. Never sent to
+   * the proxy; a call without a receipt does not call it.
+   */
+  onReceipt?: (receipt: ModelReceipt) => void;
 }
 
 export interface GeminiResult {
@@ -139,7 +145,9 @@ export async function callGeminiWithReceipt(
   }
 
   const data = await response.json();
-  return { text: data.text, receipt: data.receipt ?? null };
+  const receipt: ModelReceipt | null = data.receipt ?? null;
+  if (receipt && options?.onReceipt) options.onReceipt(receipt);
+  return { text: data.text, receipt };
 }
 
 export async function callGemini(

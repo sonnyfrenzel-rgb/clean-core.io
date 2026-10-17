@@ -438,13 +438,15 @@ export default function DeliveryPage() {
         // class under test, so the source and the metadata name the same class — not into a global ZCL_DEMO_RAP_TEST
         // whose metadata names a class its source does not define.
         const placed = isAbapCloud && source.kind === 'package' ? placeModelTestClasses(source.files, project.testSuite.code) : null;
+        // 3.0.17 (AI Act Art. 50(2)): the suite's writer is the Testing stage's model or the package's — named
+        // as `tests`, so the marking reads it from the suite's own record (`lib/ai-authorship.ts`).
         if (placed) {
-          bundle.file(placed.path, placed.content, 'generated');
+          bundle.file(placed.path, placed.content, 'generated', 'tests');
         } else if (isAbapCloud) {
-          for (const f of singleCallRapClassFiles('test', project.testSuite.code)) bundle.file(f.path, f.content, f.origin);
+          for (const f of singleCallRapClassFiles('test', project.testSuite.code)) bundle.file(f.path, f.content, f.origin, f.origin === 'generated' ? 'tests' : undefined);
         } else {
           const testPath = isModular ? "test.ts" : "src/test.ts";
-          bundle.file(testPath, project.testSuite.code, 'generated');
+          bundle.file(testPath, project.testSuite.code, 'generated', 'tests');
         }
       }
 

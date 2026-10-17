@@ -78,13 +78,30 @@
  * be present exactly once, so a link cannot be dropped to make a chain look
  * complete.
  *
+ * Format, version 5 (roadmap 3.0.17, AI Act Art. 50(2)) — the same string
+ * again, with one more section after `covers=`, written only when the
+ * manifest carries the AI marking, which every version-5 pack does:
+ *
+ *   ai=<artefact>:<statement>:<provider>:<model>:<generatedOn>:<basis>;
+ *
+ * every value escaped as the run-binding fields are, and an empty value only
+ * where the manifest says `null` (an empty string is refused). The pack's
+ * signed files are the engine's own and carry no marking; the field says which
+ * artefact of the run a model wrote — the analysis narrative, which is not in
+ * the pack and whose SHA-256 is signed with the run — and by which provider and
+ * model, from the run's own signed record. It is bound for the reason
+ * `covers[]` is: a statement about the pack that anyone holding it could edit
+ * would read as signed and not be. Removing it from a version-5 pack changes
+ * the string, so the marking cannot be stripped without the hash failing.
+ *
  * **Compatibility.** A manifest with no `version`, or a version below 3,
  * canonicalises exactly as before, down to the byte, so every pack already in
  * the world still verifies; a version-3 pack canonicalises exactly as it did
  * before version 4 existed, because the new section is written only from major
- * 4 on. A pack that had its `version` edited down — 4 to 3, or 3 to 2.1 —
- * produces a different string and fails the hash, so the format cannot be
- * downgraded.
+ * 4 on, and a version-4 pack canonicalises exactly as it did before version 5
+ * existed, because the `ai=` section is written only from major 5 on. A pack
+ * that had its `version` edited down — 5 to 4, 4 to 3, or 3 to 2.1 — produces a
+ * different string and fails the hash, so the format cannot be downgraded.
  */
 
 import { CHAIN_STEPS, COVERAGE_KINDS, type CoverEntry } from './evidence-chain';
@@ -112,11 +129,34 @@ export interface CanonicalManifestParts {
    * reason an attested digest may not appear in a format it is not bound by.
    */
   covers?: ReadonlyArray<CoverEntry>;
+  /**
+   * The AI marking (roadmap 3.0.17). Bound from format 5 on; a manifest below
+   * that version must not carry one.
+   */
+  aiGeneration?: AuditPackAiGeneration;
 }
 
-/** The manifest version packs are issued with from 23.09.2026; `.1` when an Ed25519 key is configured. */
-export const MANIFEST_VERSION_HMAC = '4.0';
-export const MANIFEST_VERSION_ED25519 = '4.1';
+/** The artefacts of a run the pack's AI marking can name. */
+export const AI_GENERATION_ARTEFACTS = ['analysis-narrative'] as const;
+
+/**
+ * The AI marking of an audit pack (roadmap 3.0.17, AI Act Art. 50(2)): which
+ * artefact of the run a model wrote, and the statement (`lib/ai-marking.ts`).
+ * `statement` is null when no model took part in the run; provider, model and
+ * date are null where the run did not record them.
+ */
+export interface AuditPackAiGeneration {
+  artefact: (typeof AI_GENERATION_ARTEFACTS)[number];
+  statement: string | null;
+  provider: string | null;
+  model: string | null;
+  generatedOn: string | null;
+  basis: string;
+}
+
+/** The manifest version packs are issued with from 17.10.2026 (format 5, the AI marking); `.1` when an Ed25519 key is configured. */
+export const MANIFEST_VERSION_HMAC = '5.0';
+export const MANIFEST_VERSION_ED25519 = '5.1';
 
 /** Every character the canonical form uses as a separator. No path may contain one. */
 const SEPARATOR = /[:;,]/;
@@ -156,6 +196,37 @@ export function bindsIssuanceMetadata(version: string | undefined): boolean {
 export function bindsCoverage(version: string | undefined): boolean {
   const major = Number.parseInt(String(version ?? ''), 10);
   return Number.isFinite(major) && major >= 4;
+}
+
+/** True for a manifest whose signature binds the AI marking (roadmap 3.0.17, format 5). */
+export function bindsAiGeneration(version: string | undefined): boolean {
+  const major = Number.parseInt(String(version ?? ''), 10);
+  return Number.isFinite(major) && major >= 5;
+}
+
+/**
+ * Why this AI marking cannot be read as one canonical section, or null. A
+ * value is a non-empty string or null — never an empty string, which would
+ * canonicalise the same as null. Repeated in `scripts/verify-pack.mjs`.
+ */
+function aiGenerationDefect(ai: unknown): string | null {
+  if (!ai || typeof ai !== 'object' || Array.isArray(ai)) return 'aiGeneration is not an object';
+  const a = ai as Record<string, unknown>;
+  if (!AI_GENERATION_ARTEFACTS.includes(a.artefact as never)) return `aiGeneration names an artefact that is not one of the run's: ${JSON.stringify(String(a.artefact ?? ''))}`;
+  if (typeof a.basis !== 'string' || a.basis === '') return 'aiGeneration names no basis';
+  for (const key of ['statement', 'provider', 'model', 'generatedOn'] as const) {
+    const v = a[key];
+    if (v !== null && (typeof v !== 'string' || v === '')) return `aiGeneration.${key} is neither a non-empty string nor null`;
+  }
+  const extra = Object.keys(a).filter((k) => !['artefact', 'statement', 'provider', 'model', 'generatedOn', 'basis'].includes(k));
+  if (extra.length > 0) return `aiGeneration carries a field the signature does not bind: ${extra.join(', ')}`;
+  return null;
+}
+
+/** The `ai=` section of a version-5 manifest. */
+function aiGenerationSection(a: AuditPackAiGeneration): string {
+  const f = (v: string | null) => escapeField(v ?? '');
+  return `ai=${f(a.artefact)}:${f(a.statement)}:${f(a.provider)}:${f(a.model)}:${f(a.generatedOn)}:${f(a.basis)};`;
 }
 
 /**
@@ -275,6 +346,13 @@ export function canonicalManifestDefect(m: CanonicalManifestParts): string | nul
     return `covers[] is present but manifest version ${JSON.stringify(String(m.version ?? ''))} does not bind it`;
   }
 
+  if (m.aiGeneration !== undefined) {
+    // The same rule as for covers[]: a marking in a format that does not bind it would read as signed and not be.
+    if (!bindsAiGeneration(m.version)) return `aiGeneration is present but manifest version ${JSON.stringify(String(m.version ?? ''))} does not bind it`;
+    const defect = aiGenerationDefect(m.aiGeneration);
+    if (defect) return defect;
+  }
+
   return null;
 }
 
@@ -299,5 +377,6 @@ export function canonicalAuditManifest(m: CanonicalManifestParts): string {
     const covers = [...(m.covers || [])].sort((a, b) => a.step.localeCompare(b.step));
     canonical += `covers=${covers.map((c) => `${c.step}:${c.coverage}:${c.ref}`).join(',')};`;
   }
+  if (bindsAiGeneration(m.version) && m.aiGeneration !== undefined) canonical += aiGenerationSection(m.aiGeneration);
   return canonical;
 }

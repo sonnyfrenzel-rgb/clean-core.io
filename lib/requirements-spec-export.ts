@@ -54,6 +54,8 @@ export interface SpecExportMeta {
   history: readonly SpecHistoryEntry[];
   /** True when the document was written for an earlier source than the signed one. */
   stale?: boolean;
+  /** Roadmap 3.0.17 (AI Act Art. 50(2)): the AI marking statement, carried in the Word file's core properties. */
+  aiStatement?: string | null;
 }
 
 export const SPEC_EXPORT_NOTE =
@@ -254,8 +256,8 @@ export function specBlocks(spec: RequirementsSpec, meta: SpecExportMeta): DocBlo
 }
 
 export const specMarkdown = (spec: RequirementsSpec, meta: SpecExportMeta): string => blocksMarkdown(specBlocks(spec, meta));
-export const specDocxParts = (spec: RequirementsSpec, meta: SpecExportMeta): Record<string, string> => blocksDocxParts(specBlocks(spec, meta));
-export const specDocx = (spec: RequirementsSpec, meta: SpecExportMeta): Promise<Blob> => blocksDocx(specBlocks(spec, meta));
+export const specDocxParts = (spec: RequirementsSpec, meta: SpecExportMeta): Record<string, string> => blocksDocxParts(specBlocks(spec, meta), { aiStatement: meta.aiStatement });
+export const specDocx = (spec: RequirementsSpec, meta: SpecExportMeta): Promise<Blob> => blocksDocx(specBlocks(spec, meta), { aiStatement: meta.aiStatement });
 
 /** The look of the Confluence page: the export tokens of `lib/export-style.ts`, nothing fetched. */
 const SPEC_HTML_CSS = `

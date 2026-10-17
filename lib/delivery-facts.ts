@@ -47,6 +47,7 @@ import { scoreBreakdown, type ScoredFinding } from './clean-core-score';
 import { scoreHeroModel, type HeroFinding, type HeroGap } from './score-hero';
 import { scoreRuleFor, signedEngineVersionOf } from './score-rule';
 import type { EconomicsRecord } from './economics-record';
+import { aiAuthorshipFactsOf } from './ai-authorship';
 import type {
   AnalysisModelFacts,
   CostRevisionFacts,
@@ -577,6 +578,8 @@ export function deliveryFactsOf(
     generation: storedGenerationRecord(project.generationBinding),
     // Roadmap 3.0.13 (CAP shell): the server's cds compile of the stored package, or null when none is on record.
     cdsCompile: storedCdsCompile(project.generationBinding),
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): which artefacts a model wrote, and who that model was.
+    ai: aiAuthorshipFactsOf(project, { documentationFromEngine: opts.documentationFromEngine }),
   };
 }
 

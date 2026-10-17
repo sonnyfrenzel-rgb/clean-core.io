@@ -6,6 +6,7 @@ import { DOCUMENTATION_PACKAGE_FILES } from './workflow-steps';
 import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE, type ProjectSizeCheck } from './firestore-doc-size';
 import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from './project-artefact-store';
 import { packageDigest, testSuiteBasisOf, TEST_SUITE_BASIS_FIELD, type TestSuiteBasis } from './test-suite-basis';
+import type { AiModelRecord } from './ai-marking';
 
 /**
  * The three artefact writes the browser used to make itself — roadmap 3.0.14,
@@ -39,6 +40,16 @@ import { packageDigest, testSuiteBasisOf, TEST_SUITE_BASIS_FIELD, type TestSuite
  * `db` is a parameter so the specs run every path against the emulator without
  * a server — the shape of `lib/repair-draft-store.ts`.
  */
+
+/**
+ * Roadmap 3.0.17 (AI Act Art. 50(2)): which provider and model wrote the
+ * business layer and the test suite — the record of a receipt the route
+ * verified (`lib/ai-marking.ts`), or null when none did. Written with every
+ * write of the artefact, and read only while the artefact is on the project
+ * (`lib/ai-authorship.ts`), so it never describes a text it did not write.
+ */
+export const BUSINESS_LAYER_MODEL_FIELD = 'businessDocumentationModel';
+export const TEST_SUITE_MODEL_FIELD = 'testSuiteModel';
 
 /** The stored statuses after which a stage may set its own (`isValidProjectFieldChange`). */
 const STATUS_AFTER_ANALYSIS = ['analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed'];
@@ -187,7 +198,7 @@ export async function storeDocumentation(
 /** The SOP and RACI proposal (`action: 'business-layer'`). */
 export async function storeBusinessLayer(
   db: Firestore,
-  args: { projectId: string; uid: string; body: Record<string, unknown> },
+  args: { projectId: string; uid: string; body: Record<string, unknown>; aiModel?: AiModelRecord | null },
 ): Promise<ArtefactWriteOutcome> {
   const layer = str(args.body.businessDocumentation);
   const fromRunId = str(args.body.fromRunId);
@@ -218,9 +229,11 @@ export async function storeBusinessLayer(
       return { status: 200, fields: {}, kept: current };
     }
     const cleanup = documentationPackageCleanup(project.generatedCode);
+    const layerFields = { businessDocumentation: layer, ...cleanup, ...carriedTestSuiteBasis(project, cleanup) };
+    // Roadmap 3.0.17: who wrote this layer, beside it (null when no receipt verified).
     const outcome = await commit(
       tx, db, args.projectId, stored,
-      { businessDocumentation: layer, ...cleanup, ...carriedTestSuiteBasis(project, cleanup) },
+      { ...layerFields, [BUSINESS_LAYER_MODEL_FIELD]: args.aiModel ?? null },
       'this business documentation',
     );
     return outcome.status === 200 ? { ...outcome, kept: null } : outcome;
@@ -230,7 +243,7 @@ export async function storeBusinessLayer(
 /** The test scenarios and the suite (`action: 'test-suite'`). */
 export async function storeTestSuite(
   db: Firestore,
-  args: { projectId: string; uid: string; body: Record<string, unknown> },
+  args: { projectId: string; uid: string; body: Record<string, unknown>; aiModel?: AiModelRecord | null },
 ): Promise<ArtefactWriteOutcome> {
   const { testCases, manualTestingRequirements } = args.body;
   if (!Array.isArray(testCases) || testCases.length === 0 || !testCases.every((t) => t && typeof t === 'object' && !Array.isArray(t))) {
@@ -260,6 +273,7 @@ export async function storeTestSuite(
     coverageEstimate: storedCoverageEstimate(args.body.coverageEstimate),
     manualTestingRequirements: manual,
     status: 'testing',
+    [TEST_SUITE_MODEL_FIELD]: args.aiModel ?? null,
   };
   return inTransaction(db, args.projectId, args.uid, async (tx, stored, project) => {
     const refused = statusRefused(project);

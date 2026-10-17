@@ -69,6 +69,8 @@ import { SAP_STUBS_FOLDER, sapStubPackageFiles } from './transformation/abap-sap
 import { abapGitXmlHolds } from './transformation/abapgit-check';
 import { engineCounterpartsIn } from './transformation/released-counterparts';
 import { TARGET_EDITION_NAMES } from './sap-naming';
+import { AI_MARKING_BASIS, aiMarkingField, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
+import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
 
 /* ------------------------------------------------------------------ types */
 
@@ -126,6 +128,11 @@ export interface BundleEntry {
   content: string;
   /** Unset: decided from the path in `finishDeliveryPackage`. */
   origin?: FileOrigin;
+  /**
+   * Roadmap 3.0.17: the model-written source this file comes from, when the page knows it better than the path
+   * does — the test suite, whose writer is the Testing stage's model or the package's. Unset: read from the origin.
+   */
+  ai?: AiSource;
 }
 
 /** One file as the manifest lists it. */
@@ -357,6 +364,12 @@ export interface DeliveryFacts {
    * when none is on record. The CAP capabilities are `implemented` only on a compile that ran with 0 errors.
    */
   cdsCompile?: CdsCompileCheck | null;
+  /**
+   * Roadmap 3.0.17 (AI Act Art. 50(2)): which of the project's artefacts a model wrote, and who that model was
+   * (`lib/ai-authorship.ts`). Absent on facts built before it: every model-written file is then marked with
+   * "provider and model not recorded".
+   */
+  ai?: AiAuthorshipFacts;
 }
 
 /* ------------------------------------------------------------ the collector */
@@ -368,10 +381,10 @@ export interface DeliveryFacts {
  */
 export function createDeliveryBundle() {
   const entries: BundleEntry[] = [];
-  const file = (path: string, content: string, origin?: FileOrigin) => {
+  const file = (path: string, content: string, origin?: FileOrigin, ai?: AiSource) => {
     const at = entries.findIndex((e) => e.path === path);
     if (at !== -1) entries.splice(at, 1);
-    entries.push(origin ? { path, content, origin } : { path, content });
+    entries.push({ path, content, ...(origin ? { origin } : {}), ...(ai ? { ai } : {}) });
   };
   return {
     entries,
@@ -1913,7 +1926,7 @@ function manifestRules(r: RuleFacts) {
 
 export function buildManifest(
   facts: DeliveryFacts,
-  inputs: StatusInputs & { notes: Record<string, string[]> },
+  inputs: StatusInputs & { notes: Record<string, string[]>; aiGeneration?: PackageAiGeneration | null },
 ): string {
   const { reading, capabilities, files, notes } = inputs;
   const d = facts.decision;
@@ -1923,6 +1936,9 @@ export function buildManifest(
     approval: 'review-version-not-approved-for-production',
     generatedAt: facts.generatedAt,
     generatedBy: `Clean-Core.io ${facts.appVersion}`,
+    // Roadmap 3.0.17 (AI Act Art. 50(2)): which files a model wrote or co-wrote, and the statement each carries —
+    // null when no model wrote any file of the package.
+    aiGeneration: inputs.aiGeneration ?? null,
     project: { id: facts.projectId, name: facts.projectName, route: facts.route },
     source: {
       fileName: facts.source.fileName,
@@ -1975,6 +1991,101 @@ export function buildManifest(
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
+/* ------------------------------------------------ the AI marking (3.0.17) */
+
+/** One statement of the manifest's `aiGeneration`: a model-written source and the files it wrote or co-wrote. */
+export interface PackageAiStatement extends AiMarkingField {
+  /** Which artefact of the project the files come from. */
+  source: AiSource;
+  /** Every file of the package this source wrote or co-wrote. */
+  files: string[];
+  /** Of those, the files whose format has no comments (JSON, CSV): this field is their marking. */
+  withoutHeader: string[];
+}
+
+/** `manifest.json`'s `aiGeneration`, roadmap 3.0.17 (AI Act Art. 50(2)). */
+export interface PackageAiGeneration {
+  basis: string;
+  statements: PackageAiStatement[];
+}
+
+/** Which model-written source a file comes from, or null for a file no model wrote. */
+function aiSourceOf(e: BundleEntry, facts: DeliveryFacts, filled: ReadonlySet<string> | null): AiSource | null {
+  if (e.ai) return e.ai;
+  const origin = originOf(e, facts);
+  if (origin === 'template' || origin === 'engine') return null;
+  if (origin === 'model-text') {
+    if (e.path === 'docs/business-analysis.md') return 'analysis';
+    if (e.path === 'docs/solution-design.md') return 'design';
+    if (e.path === 'docs/business-documentation.md') return 'sop';
+    return 'documentation';
+  }
+  // A file of the generated package. On the engine-led path the engine wrote every frame: a file is co-written by
+  // the model only when its trace names a body the model filled in it (`modelFilledFiles`).
+  if (facts.generation?.path === 'engine-led' && filled) return filled.has(e.path) ? 'code' : null;
+  return 'code';
+}
+
+/** A finding's line moved down by the one header line, in the files that got one. */
+function shiftedLines<T extends { path: string; line: number }>(findings: readonly T[], marked: ReadonlySet<string>): T[] {
+  return findings.map((f) => (marked.has(f.path) && f.line > 0 ? { ...f, line: f.line + 1 } : f));
+}
+
+/**
+ * The AI marking of a package (roadmap 3.0.17, AI Act Art. 50(2)): every file a model wrote or co-wrote gets the
+ * statement of its source (`lib/ai-marking.ts`) as its header comment, a file the engine wrote alone none. The
+ * server's check records name lines of the stored files; in a file that got a header those lines move by one, so
+ * the records shipped with the package are moved with them.
+ */
+export function markModelWrittenFiles(
+  entries: readonly BundleEntry[],
+  facts: DeliveryFacts,
+): { entries: BundleEntry[]; facts: DeliveryFacts; field: PackageAiGeneration | null } {
+  const authorship = facts.ai ?? UNRECORDED_AUTHORSHIP;
+  const filled = facts.generation?.path === 'engine-led' ? modelFilledFiles(entries) : null;
+  const bySource = new Map<AiSource, { files: string[]; withoutHeader: string[] }>();
+  const headed = new Set<string>();
+  const out = entries.map((e) => {
+    const source = aiSourceOf(e, facts, filled);
+    const who = source ? authorship[source] : null;
+    if (!source || !who) return e;
+    const slot = bySource.get(source) ?? { files: [], withoutHeader: [] };
+    bySource.set(source, slot);
+    slot.files.push(e.path);
+    if (!commentSyntaxOf(e.path)) {
+      slot.withoutHeader.push(e.path);
+      return e;
+    }
+    const content = withAiMarking(e.path, e.content, aiMarkingStatement(who, facts.appVersion));
+    // A file that carried a marking already (written again with the same header) has not moved.
+    if (!hasAiMarking(e.content)) headed.add(e.path);
+    return { ...e, content };
+  });
+  let next = facts;
+  const g = facts.generation;
+  if (headed.size > 0 && g) {
+    next = {
+      ...next,
+      generation: {
+        ...g,
+        ...(g.activation ? { activation: { ...g.activation, findings: shiftedLines(g.activation.findings, headed) } } : {}),
+        ...(g.cdsCompile && g.cdsCompile.ran ? { cdsCompile: { ...g.cdsCompile, findings: shiftedLines(g.cdsCompile.findings, headed) } } : {}),
+      },
+    };
+  }
+  if (headed.size > 0 && facts.cdsCompile && facts.cdsCompile.ran) {
+    next = { ...next, cdsCompile: { ...facts.cdsCompile, findings: shiftedLines(facts.cdsCompile.findings, headed) } };
+  }
+  const order: AiSource[] = ['code', 'tests', 'analysis', 'design', 'documentation', 'sop'];
+  const statements: PackageAiStatement[] = order.flatMap((source) => {
+    const slot = bySource.get(source);
+    const who = authorship[source];
+    if (!slot || !who) return [];
+    return [{ source, ...aiMarkingField(who, facts.appVersion), files: slot.files, withoutHeader: slot.withoutHeader }];
+  });
+  return { entries: out, facts: next, field: statements.length > 0 ? { basis: AI_MARKING_BASIS, statements } : null };
+}
+
 /* ------------------------------------------------------------ the assembly */
 
 export interface FinishedPackage {
@@ -2007,7 +2118,7 @@ export function finishDeliveryPackage(input: {
   /** Names the original declares as packed decimals (`packedDecimalFields`), for the decimal code check. */
   decimalFields?: readonly string[];
 }): FinishedPackage {
-  const { facts } = input;
+  let facts = input.facts;
   let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
@@ -2015,11 +2126,17 @@ export function finishDeliveryPackage(input: {
     entries = applied.entries;
     notes = applied.notes;
   }
-  // 3.0.13: the server's activation check travels with an ABAP package, and the SAP declarations its abaplint.json names.
-  const activation = facts.generation?.activation ?? null;
   if (entries.some((e) => e.path === 'abaplint.json')) {
     entries = [...entries.filter((e) => !e.path.startsWith(`${SAP_STUBS_FOLDER}/`)), ...sapStubPackageFiles().map((f) => ({ ...f, origin: 'template' as const }))];
   }
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): every file a model wrote or co-wrote carries the statement as its header
+  // comment — before anything below reads the files, so every line number the package states is a line of the file
+  // as it ships.
+  const ai = markModelWrittenFiles(entries, facts);
+  entries = ai.entries;
+  facts = ai.facts;
+  // 3.0.13: the server's activation check travels with an ABAP package, and the SAP declarations its abaplint.json names.
+  const activation = facts.generation?.activation ?? null;
   if (activation) {
     entries = [
       ...entries.filter((e) => e.path !== ABAP_CHECK_JSON_PATH && e.path !== ABAP_CHECK_MD_PATH),
@@ -2062,7 +2179,7 @@ export function finishDeliveryPackage(input: {
   const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
-  const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes }), origin: 'engine' };
+  const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes, aiGeneration: ai.field }), origin: 'engine' };
 
   const files = [status, readme, manifest, decision, ...costRevision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
   return { files, reading, capabilities, manifest: listed, lints };
