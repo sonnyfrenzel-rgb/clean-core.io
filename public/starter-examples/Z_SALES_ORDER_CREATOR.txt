@@ -67,7 +67,7 @@ FORM execute_bapi_creation.
   WRITE: / 'Initiating Sales Order creation sequence...'.
   ULINE.
 
-  * Call BAPI Function Module Simulation
+  " Call BAPI Function Module Simulation
   CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'
     EXPORTING
       order_header_in      = gs_header

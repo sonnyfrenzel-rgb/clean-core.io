@@ -28,8 +28,9 @@ test('the demo names the tolerance that holds the requisition, then the plant, t
     "gs_eban-werks = '1000'",
     "gv_emergency = abap_true AND gv_amount <= '50000.00'",
   ]);
-  // The mockup's anchors for the first two are lines the engine finds: L412, L87.
-  expect(picked.map((r) => r.processElements[0].lineStart).slice(0, 2)).toEqual([412, 87]);
+  // The mockup's anchors for the first two were L412 and L87 of the 3.0.17 source; since 3.0.18 (ten dead routines
+  // cut, the material-status and account-assignment checks called from CHECK_REQUISITION) they stand at L315 and L95.
+  expect(picked.map((r) => r.processElements[0].lineStart).slice(0, 2)).toEqual([315, 95]);
 });
 
 test('a rule that changes the outcome outranks one that does not; an undrawn rule is never named', () => {

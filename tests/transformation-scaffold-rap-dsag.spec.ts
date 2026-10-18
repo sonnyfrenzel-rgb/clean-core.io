@@ -12,6 +12,7 @@ import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
 import { OPEN_MARKER } from '../lib/transformation/scaffold-rap';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
 import { FIXTURES, fixture, planOf, poDemo, ROOT } from './helpers/transformation-scaffold';
+import { readExampleAsOf3017 } from './helpers/starter-example-files';
 
 /**
  * The RAP scaffold against the DSAG ABAP guide (roadmap 3.0.12; owner decision
@@ -123,7 +124,9 @@ test.describe('B4 — the access layer', () => {
   test('one method per SAP object the original reads, writes or calls; customer writes, customer calls and UI modules get none', () => {
     const { points } = accessPointsOf(readEngineFacts(NIGHTLY));
     expect(points.map((p) => [p.method, p.kind, p.object, p.lines])).toEqual([['read_bsid', 'read', 'BSID', [12]]]);
-    const po = accessPointsOf(readEngineFacts(poDemo())).points;
+    // The PO demo as it shipped until 3.0.17: it touched more SAP objects than the cap allows (its routines nothing
+    // called read ELBK, EKKO/EKPO, ADR6 and USR21), which is what this checks. The shipped demo touches 14 since 3.0.18.
+    const po = accessPointsOf(readEngineFacts(readExampleAsOf3017('Z_MM_PO_APPROVAL.abap'))).points;
     expect(po.map((p) => p.method)).toEqual(expect.arrayContaining(['read_eban', 'write_eban', 'read_lfa1']));
     for (const p of po) {
       // A customer object only as a table the original reads — the package does not ship it (scaffold version 7).

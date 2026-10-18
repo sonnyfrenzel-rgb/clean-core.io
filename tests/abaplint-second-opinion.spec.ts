@@ -14,6 +14,7 @@ import {
 } from './helpers/abaplint-second-opinion';
 import { readStatements } from '../lib/abap/statement-reader';
 import { readControlFlow } from '../lib/abap/control-flow';
+import { readExampleAsOf3017 } from './helpers/starter-example-files';
 
 /**
  * A second, independent reading of the ABAP this product ships.
@@ -95,9 +96,11 @@ test.describe('what the two readings agree on', () => {
   test('abaplint confirms the branch and call counts the engine specs pin', () => {
     // `abap-control-flow.spec.ts` pins 86 IF + 2 CASE for the legacy program and
     // 40 + 1 for the purchasing one. Those numbers were ours alone until now.
+    // Since 3.0.18 that spec reads both programs as they shipped until 3.0.17 (their dead code was taken out of the
+    // shipped files), so this confirmation reads the same copies; the shipped files are in the baseline above.
     const legacy = agreementCounts(
       'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
-      readExample('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'),
+      readExampleAsOf3017('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'),
     );
     expect(legacy.branchesOurs).toBe(88);
     expect(legacy.branchesAbaplint).toBe(88);
@@ -106,7 +109,7 @@ test.describe('what the two readings agree on', () => {
     expect(legacy.performsOurs).toBe(50);
     expect(legacy.performsAbaplint).toBe(50);
 
-    const po = agreementCounts('Z_MM_PO_APPROVAL.abap', readExample('Z_MM_PO_APPROVAL.abap'));
+    const po = agreementCounts('Z_MM_PO_APPROVAL.abap', readExampleAsOf3017('Z_MM_PO_APPROVAL.abap'));
     expect(po.branchesOurs).toBe(41);
     expect(po.branchesAbaplint).toBe(41);
     expect(po.statementsOurs).toBe(444);

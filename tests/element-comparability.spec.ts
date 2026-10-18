@@ -16,7 +16,7 @@ import {
   buildProcessSkeleton,
   type SkeletonNodeKind,
 } from '../lib/abap/process-skeleton';
-import { corpusFiles, examplePath } from './helpers/starter-example-files';
+import { corpusFiles, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Comparability per element — roadmap 7.8, §16 V6.
@@ -43,7 +43,7 @@ function exampleFiles(): string[] {
 }
 
 function skeletonOf(file: string) {
-  return buildProcessSkeleton(readFileSync(examplePath(file), 'utf8'));
+  return buildProcessSkeleton(readFileSync(pinnedExamplePath(file), 'utf8'));
 }
 
 /**

@@ -44,6 +44,17 @@ export function readExampleAsOf3017(file: string): string {
   return fs.readFileSync(path.join(EXAMPLES_3017_DIR, file), 'utf8');
 }
 
+/**
+ * The path a spec that pins the engine's reading of one program, line by line, reads: the 3.0.17 copy where the
+ * example changed in 3.0.18 (the PO demo and the 1,000-line example), the shipped or retired file otherwise. What the
+ * shipped examples say since 3.0.18 is pinned in tests/starter-examples-3018.spec.ts and in the guards of what the
+ * site shows (demo, landing page, reference run, line counts, fingerprints).
+ */
+export function pinnedExamplePath(file: string): string {
+  const frozen = path.join(EXAMPLES_3017_DIR, file);
+  return fs.existsSync(frozen) ? frozen : examplePath(file);
+}
+
 /** Every corpus file name, shipped and retired, sorted. */
 export function corpusFiles(): string[] {
   return [...fs.readdirSync(EXAMPLES_DIR), ...fs.readdirSync(RETIRED_EXAMPLES_DIR)].sort();

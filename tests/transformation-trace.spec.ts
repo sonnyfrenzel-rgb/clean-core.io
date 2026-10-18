@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { buildNodeScaffold, buildRapScaffold, traceMarkdown, traceOf, withTrace } from '../lib/transformation';
 import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
+import { readExampleAsOf3017 } from './helpers/starter-example-files';
 
 /**
  * traceability.json and TRACE.md (docs/design/engine-led-transformation.md §12.1): every
@@ -53,7 +54,8 @@ test('who wrote each body: model, repair rounds, or a stub', () => {
 });
 
 test('the PO demo trace names the 13 routines never reached; the RAP trace maps methods', () => {
-  const { facts, plan } = planOf(poDemo());
+  // The PO demo as it shipped until 3.0.17, with its 13 routines nothing reached (none since 3.0.18).
+  const { facts, plan } = planOf(readExampleAsOf3017('Z_MM_PO_APPROVAL.abap'));
   const md = traceMarkdown(traceOf(plan, buildNodeScaffold(plan, facts), []));
   expect(md).toContain('Not carried over — never reached in the original:');
   expect((md.match(/never reached in the original: (.*)\./)?.[1] ?? '').split('), ').length).toBe(13);

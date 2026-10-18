@@ -154,6 +154,14 @@ test.describe('plain-language wording — the owner\'s examples', () => {
       'Release indicator set?',
       'Reject',
       'Rejected: release indicator set',
+      // Since 3.0.18 the requisition check calls the material-status and account-assignment checks, and stops when
+      // one of them rejected the requisition.
+      'Check material status',
+      'Rejected?',
+      'Stopped: rejected',
+      'Check account assignment',
+      'Rejected?',
+      'Stopped: rejected',
       'Plant 1000?',
     ]);
     expect(labelsOf(skeleton, labels, 'form:READ_REQUISITION')).toEqual([

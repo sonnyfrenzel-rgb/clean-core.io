@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
-import path from 'path';
 import {
   REQUIREMENT_PRIORITIES,
   anchorHolds,
@@ -17,6 +16,7 @@ import {
   requirementsHtml,
   requirementsMarkdown,
 } from '../lib/requirements-export';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * v3.0.1 — the functional requirements of the Design stage are read from the
@@ -28,7 +28,7 @@ import {
  */
 
 const read = (file: string) =>
-  fs.readFileSync(path.resolve(__dirname, '..', 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+  fs.readFileSync(pinnedExamplePath(file), 'utf8').replace(/\r\n/g, '\n');
 
 const EXAMPLES = ['Z_MM_PO_APPROVAL.abap', 'Z_SALES_ORDER_CREATOR.txt'] as const;
 const META = { projectName: 'Fixture', fileName: 'fixture.abap', date: '2026-10-03' };

@@ -3,9 +3,9 @@ import fs from 'fs';
 import { tokenize } from '../lib/abap/declaration-parser';
 import { extractSelects } from '../lib/abap/select-parser';
 import { isAbapCommentLine } from '../lib/abap/statement-reader';
-import { examplePath } from './helpers/starter-example-files';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
-const example = (name: string) => fs.readFileSync(examplePath(name), 'utf8');
+const example = (name: string) => fs.readFileSync(pinnedExamplePath(name), 'utf8');
 
 /**
  * An indented asterisk is multiplication or a comment, and which one depends on

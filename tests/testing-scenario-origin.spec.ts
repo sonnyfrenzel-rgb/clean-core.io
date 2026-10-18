@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { buildOriginEngine } from '../lib/scenario-origin-engine';
@@ -17,6 +16,7 @@ import {
   type ScenarioOrigin,
 } from '../lib/scenario-origin';
 import { derivedFrom, scenarioFields } from '../components/testing/scenario-detail';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Test scenarios state their origin, and the product checks it (owner decision
@@ -35,7 +35,7 @@ import { derivedFrom, scenarioFields } from '../components/testing/scenario-deta
  */
 
 const PO_FILE = 'Z_MM_PO_APPROVAL.abap';
-const PO = readFileSync(join(process.cwd(), 'public/starter-examples', PO_FILE), 'utf8');
+const PO = readFileSync(pinnedExamplePath(PO_FILE), 'utf8');
 
 const stated = (raw: unknown): ScenarioOrigin => {
   const parsed = parseScenarioOrigin(raw);

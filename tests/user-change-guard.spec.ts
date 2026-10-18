@@ -30,7 +30,7 @@ import {
   signedGeneratorInput,
   type AuditPackSource,
 } from '../lib/audit-pack-build';
-import { examplePath } from './helpers/starter-example-files';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * What changes for users — roadmap 7.6.
@@ -77,7 +77,7 @@ import { examplePath } from './helpers/starter-example-files';
  */
 
 const ROOT = resolve(__dirname, '..');
-const example = (name: string) => readFileSync(examplePath(name), 'utf8');
+const example = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 const read = (rel: string) => readFileSync(resolve(ROOT, rel), 'utf8');
 
 /** The file with its comments taken out — an explanation must not satisfy its own check. */

@@ -21,7 +21,7 @@ import {
 import { objectStatus } from '../lib/object-status';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { resolveApi } from '../lib/abap/catalog-service';
-import { examplePath } from './helpers/starter-example-files';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Standard coverage per capability, E0–E4 — roadmap 7.2.
@@ -61,7 +61,7 @@ import { examplePath } from './helpers/starter-example-files';
  *   - the same sentence for "no catalogue consulted" and "catalogue had nothing" — 1.
  */
 
-const example = (name: string) => readFileSync(examplePath(name), 'utf8');
+const example = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const PO = 'Z_MM_PO_APPROVAL.abap';
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';

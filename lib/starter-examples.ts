@@ -63,7 +63,7 @@ export const STARTER_EXAMPLES: StarterExample[] = [
       'Approves emergency purchase requisitions: vendor block list, price tolerance against the info record, approval by department head or manager, and a purchase order via BAPI with a batch-input fallback.',
     demonstrates:
       'Business rules hard-coded in the program — and what cannot be determined from the code alone: a dynamic function call and two includes that are not part of the upload.',
-    lines: 668,
+    lines: 552,
     size: 'large',
   },
   {

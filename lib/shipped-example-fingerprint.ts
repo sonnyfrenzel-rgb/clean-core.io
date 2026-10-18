@@ -15,8 +15,8 @@
  * this is, never whether personal data is in it (`components/PersonalDataHints.tsx`).
  *
  * **The normalisation, and why it is this and no more.** Before hashing:
- *  - a leading byte-order mark is dropped (one file has one; `Response.text()`
- *    drops it too),
+ *  - a leading byte-order mark is dropped (the 1,000-line example had one until
+ *    3.0.18, and a re-saved file may gain one; `Response.text()` drops it too),
  *  - CRLF and lone CR become LF (git checks these files out with CRLF on Windows
  *    and LF on Linux; a download, a paste or a Windows editor flips them again),
  *  - spaces and tabs at the end of a line are dropped (two files carry some,
@@ -64,11 +64,11 @@ export function shippedExampleFingerprint(text: string): string {
  * files and prints the replacement when an entry is stale.
  */
 export const SHIPPED_EXAMPLE_FINGERPRINTS: Readonly<Record<string, string>> = {
-  'Z_MATERIAL_STOCK_CALC.txt': '7458e42f60d98b3cc74965327c29431a93740a3310f067a5c511a916053152f9',
+  'Z_MATERIAL_STOCK_CALC.txt': 'e53bd586d6f40ebbdaabd56c65b3261d675e6432430950929a0d05e13db3acfa',
   'Z_INVOICE_EXTRACTOR.txt': 'd10af353012a41a9b8f55fcb54840c23fedfb5a9c18b5a521c3143869ba822a2',
-  'Z_SALES_ORDER_CREATOR.txt': '30356090dd42381d54d5e0128feb13b1fe51e0fd6d88e107fe7a18393c1124d3',
-  'Z_MM_PO_APPROVAL.abap': 'b450a595d2277970b40e5bc6acc6b6c9ba5ade9d4e2b4debe55583cd0f1a8571',
-  'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': '99d2a34237bd30d92c2491849b8909fb2c8ffa7c492bd4a6831da17b924e3076',
+  'Z_SALES_ORDER_CREATOR.txt': '355d69f36198b14d634e67e1c675aaf4f930c11e947c28343758461b0fcb2db4',
+  'Z_MM_PO_APPROVAL.abap': 'f80b976bc0e4c640cf09ffcc168d08bab59b23e39f36521c59213b91f144ed4d',
+  'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 'c4a1aaf2cb64f491f8c607540f59304967bff8165292271259200b8b21573464',
   'Z_SD_FREIGHT_RATE_CHECK.abap': '9431c7aba7e2aecdc0086b5831de1055d30f53b78ec05ae78b115cdd9de8570e',
 };
 

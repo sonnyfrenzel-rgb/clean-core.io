@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { readControlFlow } from '../lib/abap/control-flow';
 import { readStatements } from '../lib/abap/statement-reader';
 import { readBlocks, containerAt } from '../lib/abap/block-structure';
 import { readCallGraph } from '../lib/abap/call-graph';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Where the program decides — roadmap 2.1.
@@ -19,8 +19,7 @@ import { readCallGraph } from '../lib/abap/call-graph';
  * The counts are pinned. A starter example that changes changes them, and that is
  * a decision somebody takes on purpose rather than a number that drifts.
  */
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';

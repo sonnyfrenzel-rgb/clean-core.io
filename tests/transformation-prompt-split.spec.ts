@@ -192,13 +192,15 @@ test.describe('one statement too large for a call: said in the plan with its rea
 
 test('the starter examples, shipped and retired, keep their units, split nothing, and every call fits the cap on both tracks', () => {
   // Measured 17.10.2026 before and after the prompt split: no starter routine is above the hard budget or the cap.
+  // 3.0.18: the 1,000-line example reaches all 46 routines (20 units before, when 17 were dead) and the PO demo
+  // calls its two requisition checks and lost ten dead routines (20 before).
   const UNITS: Record<string, number> = {
-    'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 20,
+    'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 39,
     'Z_BUSINESS_PARTNER_SYNC.txt': 4,
     'Z_EMPLOYEE_EXPENSE_VAL.txt': 3,
     'Z_INVOICE_EXTRACTOR.txt': 3,
     'Z_MATERIAL_STOCK_CALC.txt': 3,
-    'Z_MM_PO_APPROVAL.abap': 20,
+    'Z_MM_PO_APPROVAL.abap': 22,
     'Z_ORDER_INTEGRITY_CHECK.txt': 4,
     'Z_SALES_ORDER_CREATOR.txt': 3,
     'Z_SD_FREIGHT_RATE_CHECK.abap': 12,

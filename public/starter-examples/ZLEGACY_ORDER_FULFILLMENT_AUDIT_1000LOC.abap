@@ -1,4 +1,4 @@
-﻿REPORT zlegacy_order_fulfillment_audit MESSAGE-ID zsd_legacy.
+REPORT zlegacy_order_fulfillment_audit MESSAGE-ID zsd_legacy.
 
 *---------------------------------------------------------------------*
 * Legacy enterprise report for Clean-Core / modernization testing
@@ -29,6 +29,7 @@ DATA: gv_batch_mode      TYPE c VALUE 'X',
       gv_warning_counter TYPE i,
       gv_success_counter TYPE i,
       gv_line_count      TYPE i,
+      gv_rule_hits       TYPE i,
       gv_file_name       TYPE string,
       gv_layout          TYPE slis_layout_alv,
       gv_repid           TYPE syrepid,
@@ -166,6 +167,7 @@ START-OF-SELECTION.
   PERFORM enrich_customers.
   PERFORM enrich_materials_and_stock.
   PERFORM calculate_risk_scores.
+  PERFORM apply_order_rules.
   PERFORM remote_credit_check.
   PERFORM decide_actions.
   PERFORM process_actions.
@@ -177,6 +179,7 @@ END-OF-SELECTION.
   PERFORM build_fieldcatalog.
   PERFORM display_alv.
   PERFORM finalize_run.
+  PERFORM write_run_statistics.
 
 FORM validate_selection.
   IF s_vkorg[] IS INITIAL.
@@ -219,6 +222,9 @@ FORM initialize_run.
   gv_file_name = p_file.
   CLEAR: gt_orders, gt_items, gt_customers, gt_log.
   PERFORM add_log USING 'INFO' 'RUN' lv_guid 'Started legacy order fulfillment audit'.
+  IF p_trace = abap_true.
+    PERFORM count_orders_native.
+  ENDIF.
 ENDFORM.
 
 FORM select_orders.
@@ -441,6 +447,9 @@ FORM process_actions.
         ELSE.
           <fs_order>-message = 'Simulation: delivery block would be set'.
         ENDIF.
+        IF p_trace = abap_true AND sy-batch = abap_false.
+          PERFORM show_document_flow USING <fs_order>-vbeln.
+        ENDIF.
       WHEN 'CREATE_REVIEW_TASK'.
         PERFORM create_legacy_review_task USING <fs_order>.
       WHEN OTHERS.
@@ -497,7 +506,7 @@ ENDFORM.
 FORM create_legacy_review_task USING is_order TYPE ty_order.
   DATA lv_text TYPE char255.
   CONCATENATE 'Review order' is_order-vbeln 'risk' is_order-risk_score INTO lv_text SEPARATED BY space.
-  INSERT zsd_ord_risk FROM @VALUE #( mandt = sy-mandt vbeln = is_order-vbeln risk_score = is_order-risk_score risk_text = is_order-risk_text erdat = sy-datum ernam = sy-uname ).
+  INSERT zsd_ord_risk FROM @( VALUE #( mandt = sy-mandt vbeln = is_order-vbeln risk_score = is_order-risk_score risk_text = is_order-risk_text erdat = sy-datum ernam = sy-uname ) ).
   IF sy-subrc <> 0.
     PERFORM add_log USING 'WARN' 'ZSD_ORD_RISK' is_order-vbeln 'Could not insert risk review task'.
   ELSE.
@@ -521,7 +530,7 @@ ENDFORM.
 
 FORM persist_run_log.
   LOOP AT gt_log INTO gs_log.
-    INSERT zsd_legacy_log FROM @VALUE #( mandt = sy-mandt datum = gs_log-datum uzeit = gs_log-uzeit uname = gs_log-uname object = gs_log-object key_value = gs_log-key_value message = gs_log-message ).
+    INSERT zsd_legacy_log FROM @( VALUE #( mandt = sy-mandt datum = gs_log-datum uzeit = gs_log-uzeit uname = gs_log-uname object = gs_log-object key_value = gs_log-key_value message = gs_log-message ) ).
   ENDLOOP.
   COMMIT WORK AND WAIT.
 ENDFORM.
@@ -610,7 +619,10 @@ FORM append_fieldcat USING iv_field TYPE slis_fieldname iv_text TYPE char40 iv_l
 ENDFORM.
 
 FORM display_alv.
-  CHECK p_alv = abap_true.
+  IF p_alv = abap_false.
+    PERFORM show_review_screen.
+    RETURN.
+  ENDIF.
   gv_layout-zebra = 'X'.
   gv_layout-colwidth_optimize = 'X'.
   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
@@ -650,23 +662,23 @@ FORM finalize_run.
   PERFORM add_log USING 'INFO' 'RUN' sy-repid 'Finished legacy order fulfillment audit'.
 ENDFORM.
 
-FORM legacy_native_sql_example.
+FORM count_orders_native.
   DATA lv_count TYPE i.
   EXEC SQL.
     SELECT COUNT(*) INTO :lv_count FROM VBAK WHERE MANDT = :sy-mandt
   ENDEXEC.
   IF lv_count GT 0.
-    PERFORM add_log USING 'INFO' 'NATIVE_SQL' lv_count 'Native SQL count executed'.
+    PERFORM add_log USING 'INFO' 'NATIVE_SQL' lv_count 'Orders in the client before selection'.
   ENDIF.
 ENDFORM.
 
-FORM legacy_submit_example USING iv_vbeln TYPE vbak-vbeln.
+FORM show_document_flow USING iv_vbeln TYPE vbak-vbeln.
   SUBMIT rv_order_flow_information
     WITH p_vbeln = iv_vbeln
     AND RETURN.
 ENDFORM.
 
-FORM legacy_call_screen_example.
+FORM show_review_screen.
   CALL SCREEN 9000 STARTING AT 10 5 ENDING AT 120 25.
 ENDFORM.
 
@@ -684,312 +696,300 @@ MODULE user_command_9000 INPUT.
   ENDCASE.
 ENDMODULE.
 
-FORM legacy_business_rule_001 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '001'.
+*---------------------------------------------------------------------*
+* Order rules: sixteen checks the sales department added one by one
+* (tickets SD-1042 to SD-1190). Each one adds to the risk score of the
+* order and names its reason in the run log.
+*---------------------------------------------------------------------*
+FORM apply_order_rules.
+  DATA lv_score TYPE i.
+  DATA lv_note TYPE char100.
+  DATA lv_text TYPE char255.
+
+  CHECK gt_orders IS NOT INITIAL.
+  LOOP AT gt_orders ASSIGNING <fs_order>.
+    CLEAR: lv_score, lv_note.
+    PERFORM rule_custom_order_type USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_foreign_high_value USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_purchase_reference USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_creator_user USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_credit_status USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_billing_block USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_rejected_items USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_schedule_confirmed USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_new_customer USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_payment_terms USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_cross_border USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_material_group USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_stock_shortage USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_weekend_entry USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_duplicate_reference USING <fs_order> CHANGING lv_score lv_note.
+    PERFORM rule_overdue_delivery USING <fs_order> CHANGING lv_score lv_note.
+    IF lv_score <> 0.
+      ADD 1 TO gv_rule_hits.
+      <fs_order>-risk_score = <fs_order>-risk_score + lv_score.
+      lv_text = lv_note.
+      PERFORM add_log USING 'INFO' 'RULES' <fs_order>-vbeln lv_text.
+    ENDIF.
+  ENDLOOP.
+ENDFORM.
+
+FORM rule_custom_order_type USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Custom order types bypass the standard pricing procedure (SD-1042)
+  CASE is_order-auart.
+    WHEN 'ZOR'.
+      IF is_order-vkorg = c_default_vkorg.
+        cv_score = cv_score + 1.
+        CONCATENATE cv_note 'custom order type' INTO cv_note SEPARATED BY space.
+      ENDIF.
+    WHEN 'ZEXP'.
+      cv_score = cv_score + 3.
+      CONCATENATE cv_note 'export order type' INTO cv_note SEPARATED BY space.
+    WHEN 'RE'.
+      cv_score = cv_score + 2.
+      CONCATENATE cv_note 'returns order' INTO cv_note SEPARATED BY space.
+  ENDCASE.
+ENDFORM.
+
+FORM rule_foreign_high_value USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Large orders in a foreign currency carry an exchange-rate risk (SD-1051)
   DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
+  CHECK is_order-waerk <> 'EUR'.
   lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_001) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_001 = 'DDIC'.
+  IF lv_amount GT 500000.
     cv_score = cv_score + 5.
+    CONCATENATE cv_note 'foreign currency above 500000' INTO cv_note SEPARATED BY space.
+  ELSEIF lv_amount GT 100000.
+    cv_score = cv_score + 2.
+    CONCATENATE cv_note 'foreign currency above 100000' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_002 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '002'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
+FORM rule_purchase_reference USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Orders without a customer reference cannot be matched to a contract (SD-1063)
+  IF is_order-bstnk IS INITIAL.
     cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
+    CONCATENATE cv_note 'no customer reference' INTO cv_note SEPARATED BY space.
+  ELSEIF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
     cv_score = cv_score + 3.
     CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_002) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_002 = 'DDIC'.
-    cv_score = cv_score + 5.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_003 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '003'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
+FORM rule_creator_user USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Orders entered by interfaces or by users who have left need a second look (SD-1078)
+  DATA: lv_ustyp TYPE usr02-ustyp,
+        lv_gltgb TYPE usr02-gltgb.
+
+  SELECT SINGLE ustyp gltgb FROM usr02 INTO (lv_ustyp, lv_gltgb)
+    WHERE bname = is_order-ernam.
+  IF sy-subrc <> 0.
     cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_003) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_003 = 'DDIC'.
+    CONCATENATE cv_note 'creator no longer exists' INTO cv_note SEPARATED BY space.
+  ELSEIF lv_ustyp = 'B' OR lv_ustyp = 'C'.
     cv_score = cv_score + 5.
+    CONCATENATE cv_note 'created by a system user' INTO cv_note SEPARATED BY space.
+  ELSEIF lv_gltgb IS NOT INITIAL AND lv_gltgb < sy-datum.
+    cv_score = cv_score + 2.
+    CONCATENATE cv_note 'creator account expired' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_004 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '004'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
+FORM rule_credit_status USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Overall credit status of the order as the credit check left it (SD-1085)
+  CASE is_order-cmgst.
+    WHEN 'B'.
+      cv_score = cv_score + 10.
+      CONCATENATE cv_note 'credit check failed' INTO cv_note SEPARATED BY space.
+    WHEN 'C'.
+      cv_score = cv_score + 5.
+      CONCATENATE cv_note 'credit partly released' INTO cv_note SEPARATED BY space.
+    WHEN 'D'.
+      cv_score = cv_score + 1.
+      CONCATENATE cv_note 'credit released by hand' INTO cv_note SEPARATED BY space.
+  ENDCASE.
+ENDFORM.
+
+FORM rule_billing_block USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "A billing block without a delivery block ships goods nobody invoices (SD-1092)
+  IF is_order-faksk IS NOT INITIAL AND is_order-lifsk IS INITIAL.
+    cv_score = cv_score + 4.
+    CONCATENATE cv_note 'billing block without delivery block' INTO cv_note SEPARATED BY space.
   ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_004) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_004 = 'DDIC'.
-    cv_score = cv_score + 5.
+  "An order an earlier run already blocked is not blocked twice
+  IF is_order-lifsk = p_block.
+    cv_score = cv_score - 5.
+    CONCATENATE cv_note 'already blocked by an earlier run' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_005 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '005'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
+FORM rule_rejected_items USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Orders whose items are all rejected stay open forever (SD-1104)
+  DATA: lv_total    TYPE i,
+        lv_rejected TYPE i.
+
+  LOOP AT gt_items INTO gs_item WHERE vbeln = is_order-vbeln.
+    ADD 1 TO lv_total.
+    IF gs_item-abgru IS NOT INITIAL.
+      ADD 1 TO lv_rejected.
+    ENDIF.
+  ENDLOOP.
+  IF lv_total GT 0 AND lv_rejected = lv_total.
+    cv_score = cv_score + 8.
+    CONCATENATE cv_note 'every item rejected' INTO cv_note SEPARATED BY space.
+  ELSEIF lv_rejected GT 0.
     cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_005) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_005 = 'DDIC'.
-    cv_score = cv_score + 5.
+    CONCATENATE cv_note 'items partly rejected' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_006 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '006'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
+FORM rule_schedule_confirmed USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Confirmed quantity of the schedule lines against the ordered quantity (SD-1117)
+  DATA lv_confirmed TYPE vbep-bmeng.
+
+  SELECT SUM( bmeng ) FROM vbep INTO lv_confirmed
+    WHERE vbeln = is_order-vbeln.
+  IF lv_confirmed = 0 AND is_order-open_qty GT 0.
+    cv_score = cv_score + 6.
+    CONCATENATE cv_note 'nothing confirmed' INTO cv_note SEPARATED BY space.
+  ELSEIF lv_confirmed < is_order-open_qty.
     cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_006) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_006 = 'DDIC'.
-    cv_score = cv_score + 5.
+    CONCATENATE cv_note 'partly confirmed' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_007 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '007'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_007) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_007 = 'DDIC'.
-    cv_score = cv_score + 5.
+FORM rule_new_customer USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "A large first order from a customer created this month (SD-1126)
+  DATA: lv_erdat TYPE kna1-erdat,
+        lv_days  TYPE i.
+
+  SELECT SINGLE erdat FROM kna1 INTO lv_erdat
+    WHERE kunnr = is_order-kunnr.
+  CHECK sy-subrc = 0.
+  lv_days = sy-datum - lv_erdat.
+  IF lv_days LT 30 AND is_order-netwr GT 50000.
+    cv_score = cv_score + 6.
+    CONCATENATE cv_note 'new customer with a large order' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_008 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '008'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
+FORM rule_payment_terms USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Extended payment terms are granted by the sales manager only (SD-1133)
+  READ TABLE gt_customers INTO gs_customer WITH KEY kunnr = is_order-kunnr.
+  CHECK sy-subrc = 0.
+  IF gs_customer-zterm CP 'Z9*'.
+    cv_score = cv_score + 4.
+    CONCATENATE cv_note 'extended payment terms' INTO cv_note SEPARATED BY space.
+  ELSEIF gs_customer-zterm IS INITIAL.
     cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_008) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_008 = 'DDIC'.
-    cv_score = cv_score + 5.
+    CONCATENATE cv_note 'no payment terms in company code 1000' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_009 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '009'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
+FORM rule_cross_border USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Deliveries outside the country of the company code need export papers (SD-1149)
+  DATA: lv_bukrs TYPE tvko-bukrs,
+        lv_land1 TYPE t001-land1.
+
+  SELECT SINGLE bukrs FROM tvko INTO lv_bukrs
+    WHERE vkorg = is_order-vkorg.
+  CHECK sy-subrc = 0.
+  SELECT SINGLE land1 FROM t001 INTO lv_land1
+    WHERE bukrs = lv_bukrs.
+  READ TABLE gt_customers INTO gs_customer WITH KEY kunnr = is_order-kunnr.
+  IF sy-subrc = 0 AND gs_customer-land1 <> lv_land1.
     cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_009) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_009 = 'DDIC'.
-    cv_score = cv_score + 5.
+    CONCATENATE cv_note 'customer outside the company code country' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_010 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '010'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
+FORM rule_material_group USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Material groups Z9* are under quality review (SD-1158)
+  LOOP AT gt_items INTO gs_item WHERE vbeln = is_order-vbeln.
+    IF gs_item-matkl CP 'Z9*'.
+      cv_score = cv_score + 2.
+      CONCATENATE cv_note 'material group under review' INTO cv_note SEPARATED BY space.
+      EXIT.
+    ENDIF.
+  ENDLOOP.
+ENDFORM.
+
+FORM rule_stock_shortage USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Stock situation of the whole order, not of a single item (SD-1166)
+  DATA lv_half TYPE vbap-kwmeng.
+
+  lv_half = is_order-open_qty / 2.
+  IF is_order-stock_qty = 0 AND is_order-open_qty GT 0.
+    cv_score = cv_score + 7.
+    CONCATENATE cv_note 'no stock at all' INTO cv_note SEPARATED BY space.
+  ELSEIF is_order-stock_qty < lv_half.
     cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_010) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_010 = 'DDIC'.
-    cv_score = cv_score + 5.
+    CONCATENATE cv_note 'less than half in stock' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_011 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '011'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
+FORM rule_weekend_entry USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Orders entered on a weekend were not checked by the order desk (SD-1177)
+  DATA lv_day TYPE scal-indicator.
+
+  CALL FUNCTION 'DATE_COMPUTE_DAY'
+    EXPORTING
+      date = is_order-erdat
+    IMPORTING
+      day  = lv_day.
+  IF lv_day = '6' OR lv_day = '7'.
     cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
+    CONCATENATE cv_note 'entered on a weekend' INTO cv_note SEPARATED BY space.
   ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_011) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_011 = 'DDIC'.
-    cv_score = cv_score + 5.
+ENDFORM.
+FORM rule_duplicate_reference USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "The same customer reference on two open orders is usually a double entry (SD-1183)
+  DATA lv_other TYPE vbak-vbeln.
+
+  CHECK is_order-bstnk IS NOT INITIAL.
+  SELECT SINGLE vbeln FROM vbak INTO lv_other
+    WHERE kunnr = is_order-kunnr
+      AND bstnk = is_order-bstnk
+      AND vbeln <> is_order-vbeln.
+  IF sy-subrc = 0.
+    cv_score = cv_score + 6.
+    CONCATENATE cv_note 'customer reference also on order' lv_other INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_012 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '012'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_012) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_012 = 'DDIC'.
+FORM rule_overdue_delivery USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
+  "Schedule lines whose delivery date has passed with quantity still open (SD-1190)
+  DATA: lv_edatu TYPE vbep-edatu,
+        lv_days  TYPE i.
+
+  SELECT MIN( edatu ) FROM vbep INTO lv_edatu
+    WHERE vbeln = is_order-vbeln
+      AND bmeng > 0.
+  CHECK lv_edatu IS NOT INITIAL AND lv_edatu < sy-datum.
+  lv_days = sy-datum - lv_edatu.
+  IF lv_days GT 30.
     cv_score = cv_score + 5.
+    CONCATENATE cv_note 'delivery overdue by more than 30 days' INTO cv_note SEPARATED BY space.
+  ELSE.
+    cv_score = cv_score + 2.
+    CONCATENATE cv_note 'delivery overdue' INTO cv_note SEPARATED BY space.
   ENDIF.
 ENDFORM.
 
-FORM legacy_business_rule_013 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '013'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_013) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_013 = 'DDIC'.
-    cv_score = cv_score + 5.
-  ENDIF.
-ENDFORM.
-
-FORM legacy_business_rule_014 USING is_order TYPE ty_order CHANGING cv_score TYPE i cv_note TYPE char100.
-  DATA lv_rule_id TYPE char10 VALUE '014'.
-  DATA lv_amount TYPE p LENGTH 15 DECIMALS 2.
-  lv_amount = is_order-netwr.
-  IF is_order-auart = 'ZOR' AND is_order-vkorg = c_default_vkorg.
-    cv_score = cv_score + 1.
-    CONCATENATE 'Rule' lv_rule_id 'custom order type detected' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF lv_amount GT 100000 AND is_order-waerk <> 'EUR'.
-    cv_score = cv_score + 2.
-    CONCATENATE cv_note 'foreign high value' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  IF is_order-bstnk CP 'TEST*' OR is_order-bstnk CP 'DUMMY*'.
-    cv_score = cv_score + 3.
-    CONCATENATE cv_note 'suspicious purchase reference' INTO cv_note SEPARATED BY space.
-  ENDIF.
-  SELECT SINGLE ernam FROM vbak INTO @DATA(lv_ernam_014) WHERE vbeln = @is_order-vbeln.
-  IF sy-subrc = 0 AND lv_ernam_014 = 'DDIC'.
-    cv_score = cv_score + 5.
-  ENDIF.
+FORM write_run_statistics.
+  "Printed spool list for the batch job log of the order desk
+  gv_success_counter = gv_line_count - gv_error_counter.
+  FORMAT COLOR COL_HEADING.
+  WRITE: / 'Legacy order fulfillment audit', sy-datum, gv_runtime_start, gv_runtime_end.
+  FORMAT RESET.
+  ULINE.
+  WRITE: / 'Orders selected:  ', gv_line_count,
+         / 'Orders processed: ', gv_success_counter,
+         / 'Orders with rules:', gv_rule_hits,
+         / 'Warnings:         ', gv_warning_counter,
+         / 'Errors:           ', gv_error_counter,
+         / 'Commits:          ', gv_commit_counter.
+  ULINE.
 ENDFORM.
 * -------------------------------------------------------------------
 * End marker: exact 1000 LOC variant for Clean-Core platform tests.

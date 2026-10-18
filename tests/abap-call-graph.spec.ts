@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { readCallGraph, type SubmitCall } from '../lib/abap/call-graph';
 import { buildProcessFacts } from '../lib/abap/process-facts';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * What the program calls and what it writes — roadmap 2.2.
@@ -16,8 +16,7 @@ import { buildProcessFacts } from '../lib/abap/process-facts';
  * Measured against the two ABAP programs this product ships. The counts are
  * pinned: a starter example that changes changes them, deliberately.
  */
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';

@@ -15,7 +15,7 @@ import {
 import { groupRows, findingRows, processStepBands, accessUseOfKind } from '../lib/findings-view';
 import { readProcess } from '../lib/first-look';
 import { scoreRuleFor, isOwnTableName } from '../lib/score-rule';
-import { corpusFiles, readExample as readCorpusFile } from './helpers/starter-example-files';
+import { corpusFiles, readExample as readCorpusFile, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The Clean Core Score explained on Analyze (owner, 01.10.2026) — the screen's
@@ -23,7 +23,6 @@ import { corpusFiles, readExample as readCorpusFile } from './helpers/starter-ex
  * is something the deduction table guarantees. Pure, no server.
  */
 const ROOT = path.resolve(__dirname, '..');
-const EXAMPLES = path.join(ROOT, 'public/starter-examples');
 
 test.describe('one table for the score and its explanation', () => {
   test('the breakdown adds up to the signed score on every starter example, both editions, both score rules', () => {
@@ -50,7 +49,7 @@ test.describe('one table for the score and its explanation', () => {
   // are one more kind the engine did not assess: five points more, 23 from
   // 100 − 77. The deductions for what was found are unchanged.
   test('the example the proposal drew: 23, from 100 − 77', () => {
-    const src = fs.readFileSync(path.join(EXAMPLES, 'Z_MM_PO_APPROVAL.abap'), 'utf8');
+    const src = fs.readFileSync(pinnedExamplePath('Z_MM_PO_APPROVAL.abap'), 'utf8');
     const evidence = buildAbapEvidence(src, 'Z_MM_PO_APPROVAL.abap', 'private');
     // The rule the proposal drew under: every custom-table write charged.
     const b = scoreBreakdown(evidence.findings, evidence.coverage?.gaps.length ?? 0, scoreRuleFor('private', 'v3.0.8'));
@@ -129,7 +128,7 @@ test.describe('the bands say only what the table guarantees', () => {
 
 test.describe('the object page helpers', () => {
   test('process steps are the routines the entry block calls, FORM to ENDFORM', () => {
-    const src = fs.readFileSync(path.join(EXAMPLES, 'Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
+    const src = fs.readFileSync(pinnedExamplePath('Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
     const steps = processStepBands(readProcess(src).skeleton, src);
     expect(steps.length).toBeGreaterThan(5);
     expect(steps[0]).toMatchObject({ n: 1, label: 'CHECK_AUTHORITY', from: 95, to: 114 });
@@ -141,7 +140,7 @@ test.describe('the object page helpers', () => {
   });
 
   test('grouping by severity and by line keeps every row', () => {
-    const src = fs.readFileSync(path.join(EXAMPLES, 'Z_MM_PO_APPROVAL.abap'), 'utf8');
+    const src = fs.readFileSync(pinnedExamplePath('Z_MM_PO_APPROVAL.abap'), 'utf8');
     const rows = findingRows(buildAbapEvidence(src, 'x.abap', 'private').findings);
     for (const by of ['kind', 'severity', 'line'] as const) {
       expect(groupRows(rows, by).reduce((n, g) => n + g.rows.length, 0), by).toBe(rows.length);

@@ -9,7 +9,7 @@ import {
 } from '../lib/abap/business-rule-set';
 import { readBusinessRules } from '../lib/abap/business-rules';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
-import { corpusFiles, examplePath } from './helpers/starter-example-files';
+import { corpusFiles, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Business rules `BR-nnn` — roadmap 3.4.
@@ -46,7 +46,7 @@ import { corpusFiles, examplePath } from './helpers/starter-example-files';
  */
 
 const FILES = corpusFiles();
-const read = (name: string) => readFileSync(examplePath(name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';
