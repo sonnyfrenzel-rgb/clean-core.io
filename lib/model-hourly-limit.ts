@@ -18,6 +18,7 @@
  *
  * Both routes pick the bucket here and make one `assertRateLimit` call with it.
  */
+import { DEV_MODEL_CALLS_PER_HOUR, devLimitsLifted } from './dev-limits';
 
 /** Model calls a normal account may make per hour. */
 export const MODEL_CALLS_PER_HOUR = 20;
@@ -41,7 +42,9 @@ export interface ModelHourlyLimit {
  * request or the profile mirror.
  */
 export function modelHourlyLimit(uid: string, isAdmin: boolean): ModelHourlyLimit {
+  // The dev service only (`lib/dev-limits.ts`): the same buckets, a higher ceiling.
+  const lifted = devLimitsLifted();
   return isAdmin
-    ? { key: `gemini-admin:${uid}`, max: ADMIN_MODEL_CALLS_PER_HOUR }
-    : { key: `gemini:${uid}`, max: MODEL_CALLS_PER_HOUR };
+    ? { key: `gemini-admin:${uid}`, max: lifted ? DEV_MODEL_CALLS_PER_HOUR : ADMIN_MODEL_CALLS_PER_HOUR }
+    : { key: `gemini:${uid}`, max: lifted ? DEV_MODEL_CALLS_PER_HOUR : MODEL_CALLS_PER_HOUR };
 }

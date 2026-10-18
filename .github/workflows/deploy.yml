@@ -572,6 +572,8 @@ jobs:
               # The cost ceiling (see the deploy step): the value the service had
               # before it was written here (read 13.10.2026), not a new one.
               echo "max_instances=20" >> "$GITHUB_OUTPUT"
+              echo "dev_limits_off=" >> "$GITHUB_OUTPUT"
+              echo "dev_limits_off=" >> "$GITHUB_OUTPUT"
               ;;
             release)
               # Retired on 2026-08-31. `clean-core-test` was deleted: its serving
@@ -597,6 +599,12 @@ jobs:
               echo "db_id=ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360" >> "$GITHUB_OUTPUT"
               echo "app_url=https://dev.clean-core.io" >> "$GITHUB_OUTPUT"
               echo "max_instances=10" >> "$GITHUB_OUTPUT"
+              # Owner request 18.10.2026: the hourly generation and model-call limits are lifted on dev only
+              # (lib/dev-limits.ts; the production service ignores the switch by its service name and database).
+              echo "dev_limits_off=true" >> "$GITHUB_OUTPUT"
+              # Owner request 18.10.2026: the hourly generation and model-call limits are lifted on dev only
+              # (lib/dev-limits.ts; the production service ignores the switch by its service name and database).
+              echo "dev_limits_off=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "Unsupported branch: $REF_NAME" >&2
@@ -797,6 +805,8 @@ jobs:
             RUNNER_LIVE_URL=${{ steps.env-ctx.outputs.runner_live_url }}
             RUNNER_SERVICE_ACCOUNT=${{ steps.env-ctx.outputs.runner_sa }}
             S4_PROXY_BASE_URL=${{ steps.env-ctx.outputs.proxy_base }}
+            CC_DEV_LIMITS_OFF=${{ steps.env-ctx.outputs.dev_limits_off }}
+            CC_DEV_LIMITS_OFF=${{ steps.env-ctx.outputs.dev_limits_off }}
 
   # Job 3: Smoke check of the production revision (codex architecture-04, code-ci-03).
   #

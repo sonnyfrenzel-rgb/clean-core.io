@@ -51,6 +51,7 @@
  * Pure: no Firestore, no Next. The store and the specs call these functions.
  */
 
+import { DEV_LEASES_PER_WINDOW, devLimitsLifted } from '../dev-limits';
 import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
 
 export const LEASE_RECORD_VERSION = 1;
@@ -84,6 +85,10 @@ export const LEASE_SLOT_STALE_MS = MODEL_CALL_DEADLINE_MS + 30_000;
 /** Leases per account and window. */
 export const LEASES_PER_WINDOW = 3;
 export const LEASE_WINDOW_MS = 60 * 60 * 1000;
+/** The leases an account may start this hour: `LEASES_PER_WINDOW`, or more on the dev service only (`lib/dev-limits.ts`). */
+export function leasesPerWindow(): number {
+  return devLimitsLifted() ? DEV_LEASES_PER_WINDOW : LEASES_PER_WINDOW;
+}
 /**
  * How long a lease may wait for the hourly charge of the request that issued
  * it (`charged: false`). Past this the request is taken to have died between
@@ -369,13 +374,14 @@ export function decideLeaseIssue(input: {
     .filter((t): t is number => typeof t === 'number' && Number.isFinite(t))
     .filter((t) => t > input.now - LEASE_WINDOW_MS)
     .sort((a, b) => a - b);
-  if (recent.length >= LEASES_PER_WINDOW) {
+  const perWindow = leasesPerWindow();
+  if (recent.length >= perWindow) {
     const retryAfterSeconds = Math.max(1, Math.ceil((recent[0] + LEASE_WINDOW_MS - input.now) / 1000));
     return {
       kind: 'refuse',
       status: 429,
       code: LEASE_CODES.hourly,
-      error: `At most ${LEASES_PER_WINDOW} code generations per hour. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes.`,
+      error: `At most ${perWindow} code generations per hour. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes.`,
       retryAfterSeconds,
     };
   }
@@ -466,9 +472,10 @@ export function leaseWindowStatus(windowIssued: readonly unknown[], now: number)
     .filter((t): t is number => typeof t === 'number' && Number.isFinite(t))
     .filter((t) => t > now - LEASE_WINDOW_MS)
     .sort((a, b) => a - b);
+  const perWindow = leasesPerWindow();
   return {
-    used: Math.min(recent.length, LEASES_PER_WINDOW),
-    limit: LEASES_PER_WINDOW,
-    nextFreeInSeconds: recent.length >= LEASES_PER_WINDOW ? Math.max(1, Math.ceil((recent[0] + LEASE_WINDOW_MS - now) / 1000)) : null,
+    used: Math.min(recent.length, perWindow),
+    limit: perWindow,
+    nextFreeInSeconds: recent.length >= perWindow ? Math.max(1, Math.ceil((recent[0] + LEASE_WINDOW_MS - now) / 1000)) : null,
   };
 }
