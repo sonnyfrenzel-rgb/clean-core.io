@@ -110,6 +110,42 @@ test.describe('the activation check runs with the configuration the package ship
     const released = run("cl_abap_unit_assert=>fail( msg = 'x' ).");
     expect(released.ran && released.activation.syntaxErrors).toBe(0);
   });
+
+  test('RAISING, CREATE OBJECT … TYPE, every class of a CATCH list and a reference split across lines are references too (QA 7cb667d7d03b)', () => {
+    const source = [
+      'CLASS zcl_ccio_refs DEFINITION PUBLIC FINAL CREATE PUBLIC.',
+      '  PUBLIC SECTION.',
+      '    METHODS run',
+      '      RAISING',
+      '        cx_ccio_unreleased_raise.',
+      'ENDCLASS.',
+      'CLASS zcl_ccio_refs IMPLEMENTATION.',
+      '  METHOD run.',
+      '    DATA lo TYPE REF TO object.',
+      '    CREATE OBJECT lo TYPE cl_ccio_unreleased_create.',
+      '    CREATE OBJECT lo',
+      '      TYPE cl_ccio_unreleased_split.',
+      '    TRY.',
+      '        lo = NEW cl_abap_unit_assert( ).',
+      '      CATCH cx_sy_zerodivide cx_ccio_unreleased_catch.',
+      '    ENDTRY.',
+      "    \" CREATE OBJECT lo TYPE cl_ccio_in_a_comment.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n');
+    const r = abapCheck([{ path: 'src/zcl_ccio_refs.clas.abap', content: source }]);
+    expect(r.ran).toBe(true);
+    if (!r.ran) return;
+    const named = (name: string) => r.findings.filter((f) => f.message.includes(`"${name}" is not released for ABAP Cloud`));
+    expect(named('CX_CCIO_UNRELEASED_RAISE').map((f) => f.line)).toEqual([5]);
+    expect(named('CL_CCIO_UNRELEASED_CREATE').map((f) => f.line)).toEqual([10]);
+    expect(named('CL_CCIO_UNRELEASED_SPLIT').map((f) => f.line)).toEqual([12]);
+    expect(named('CX_CCIO_UNRELEASED_CATCH').map((f) => f.line)).toEqual([15]);
+    // A released name and a name in a comment are not.
+    expect(named('CX_SY_ZERODIVIDE')).toEqual([]);
+    expect(named('CL_ABAP_UNIT_ASSERT')).toEqual([]);
+    expect(named('CL_CCIO_IN_A_COMMENT')).toEqual([]);
+  });
 });
 
 test.describe('the errors are repair reasons of the function that holds them', () => {

@@ -89,17 +89,32 @@ const headOf = (name: string) => name.split(/~|=>|->/)[0].replace(/^\\/, '').toL
 /** The SAP classes and interfaces a source names that ABAP Cloud does not release, as `check_syntax` findings. */
 function unreleasedReferences(path: string, content: string, own: ReadonlySet<string>): Array<{ path: string; line: number; rule: string; message: string }> {
   const out: Array<{ path: string; line: number; rule: string; message: string }> = [];
-  const ref = /\b((?:cl|cx|if)_[a-z0-9_]+)\s*=>|\bTYPE\s+REF\s+TO\s+((?:cl|cx|if)_[a-z0-9_]+)|\bNEW\s+((?:cl|cx)_[a-z0-9_]+)\s*\(|\bINHERITING\s+FROM\s+((?:cl|cx)_[a-z0-9_]+)|\bINTERFACES\s+(if_[a-z0-9_]+)|\bCATCH\s+(cx_[a-z0-9_]+)/gi;
-  content.split('\n').forEach((raw, i) => {
-    if (/^\*/.test(raw)) return;
-    // Literals and the comment after `"` blanked, so a name in text is not a reference.
-    const code = raw.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''").replace(/".*$/, '');
-    for (const m of code.matchAll(ref)) {
-      const name = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? m[6]).toLowerCase();
-      if (own.has(name.toUpperCase()) || own.has(name) || RELEASED_NAMES.has(name)) continue;
-      out.push({ path, line: i + 1, rule: 'check_syntax', message: `"${name.toUpperCase()}" is not released for ABAP Cloud (or does not exist)` });
-    }
-  });
+  const ref = /\b((?:cl|cx|if)_[a-z0-9_]+)\s*=>|\bTYPE\s+REF\s+TO\s+((?:cl|cx|if)_[a-z0-9_]+)|\bNEW\s+((?:cl|cx)_[a-z0-9_]+)\s*\(|\bINHERITING\s+FROM\s+((?:cl|cx)_[a-z0-9_]+)|\bINTERFACES\s+(if_[a-z0-9_]+)|\bCREATE\s+OBJECT\s+[\w-]+\s+TYPE\s+((?:cl|cx)_[a-z0-9_]+)/gi;
+  // A list of exception classes, up to the statement's end: `CATCH cx_a cx_b`, `RAISING cx_a RESUMABLE(cx_b)`.
+  const list = /\b(?:CATCH|RAISING)\s+([^.]*)/gi;
+  // Literals, a comment line and the comment after `"` blanked, so a name in text is not a reference. The lines
+  // are joined, so a reference split across lines (`RAISING` on the next line of `METHODS`) is still one
+  // (QA 7cb667d7d03b); every line stays a line, so an offset still names its line.
+  const code = content
+    .split('\n')
+    .map((raw) => (/^\*/.test(raw) ? '' : raw.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''").replace(/".*$/, '')))
+    .join('\n');
+  const lineAt = (offset: number) => code.slice(0, offset).split('\n').length;
+  const report = (name: string, offset: number) => {
+    const n = name.toLowerCase();
+    if (own.has(n.toUpperCase()) || own.has(n) || RELEASED_NAMES.has(n)) return;
+    out.push({ path, line: lineAt(offset), rule: 'check_syntax', message: `"${n.toUpperCase()}" is not released for ABAP Cloud (or does not exist)` });
+  };
+  const found: Array<{ name: string; offset: number }> = [];
+  for (const m of code.matchAll(ref)) {
+    const name = m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? m[6];
+    found.push({ name, offset: (m.index ?? 0) + m[0].toLowerCase().lastIndexOf(name.toLowerCase()) });
+  }
+  for (const m of code.matchAll(list)) {
+    const start = (m.index ?? 0) + m[0].length - m[1].length;
+    for (const x of m[1].matchAll(/\bcx_[a-z0-9_]+/gi)) found.push({ name: x[0], offset: start + (x.index ?? 0) });
+  }
+  for (const f of found.sort((a, b) => a.offset - b.offset)) report(f.name, f.offset);
   return out;
 }
 
