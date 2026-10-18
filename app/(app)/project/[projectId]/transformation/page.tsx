@@ -881,11 +881,13 @@ export default function TransformationPage() {
 
   /**
    * The single call — today's generation, kept as the fallback of the
-   * engine-led path (roadmap 3.0.12, design §16.2): when no scaffold can be
-   * built, or the lease is refused for another reason than the reader's own
-   * limit. It keeps today's metering (one proxy call, counted against the
-   * account's hourly limit) and says on the screen, above the result and in
-   * STATUS.md why it ran. Its prompt, retry and checks are unchanged.
+   * engine-led path (roadmap 3.0.12, design §16.2) for one case only: no
+   * scaffold can be built for the program. A refused lease never reaches it
+   * (3.0.18). It runs without a generation lease: each of its model calls —
+   * at most `MAX_ATTEMPTS`, the retry included — goes through `/api/gemini`
+   * unleased and is counted there against the account's hourly model limit,
+   * like any call without a lease. It says on the screen, above the result and
+   * in STATUS.md why it ran. Its prompt, retry and checks are unchanged.
    */
   const runSingleCall = useCallback(async (args: {
     legacyCode: string;
@@ -1262,7 +1264,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       })
       .catch(() => setChainRules({ state: 'ready', register: { state: 'not-read', reason: 'the rule reader could not walk the source.' } }));
 
-    /** What the generation built on, as the screen shows it now — stored with the package (§15.4). */
+    /** What the generation built on, as the screen shows it — frozen once its inputs are read, stored with the package (§15.4). */
     const basisNow = () =>
       slotsRef.current.map((s) => ({
         key: s.key,
@@ -1414,6 +1416,12 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         },
         controller.signal,
       );
+      // The Built-on record is what the screen shows as the model work begins,
+      // taken once, here (3.0.18): a slot that lights later — the rules read
+      // above runs in parallel and the generation does not wait for it —
+      // arrived after the prompt was built, and is not recorded as something
+      // the generation built on.
+      const basisAtStart = basisNow();
       let lease: GenerationLease | null = null;
       if (!prep.ok) {
         fallbackReason = prep.reason;
@@ -1433,29 +1441,31 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         // 2. One lease for this run: one unit of the hourly model limit, at
         //    most 48 calls under it (owner, Q1). Every click is its own run
         //    (13.10.2026): a fresh run id, so a restart never reuses the lease
-        //    — and the in-flight slots — of a run that was cancelled. The
-        //    user's own limit is said as such; any other refusal falls back to
-        //    the single call, which keeps today's metering.
-        // Cancel clicked while the contract was read: no lease is bought. The
-        // lease request itself is not aborted — its answer names the lease
-        // that `finally` closes (QA review of 4459238f2ef0).
+        //    — and the in-flight slots — of a run that was cancelled. A refused
+        //    lease generates nothing (3.0.18): the server said no, so no model
+        //    call follows — the single call is the fallback of a program the
+        //    engine cannot scaffold, never of a refused lease.
+        // Cancel clicked while the contract was read: no lease is bought.
+        // Cancel while the lease is requested ends the wait under the
+        // generation's signal; a lease that arrives after it is closed by
+        // `requestGenerationLease` and never used (3.0.18).
         if (controller.signal.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
         try {
-          lease = await requestGenerationLease(projectId as string, generationToken, Math.min(prep.plannedCalls, LEASE_MAX_PLANNED_CALLS), newGenerationRunId());
+          lease = await requestGenerationLease(projectId as string, generationToken, Math.min(prep.plannedCalls, LEASE_MAX_PLANNED_CALLS), newGenerationRunId(), controller.signal);
           const bought = lease;
           closeLeaseRef.current = () => closeGenerationLease(bought);
         } catch (leaseErr) {
+          if ((leaseErr as { name?: string } | null)?.name === 'AbortError') throw leaseErr;
           const e = leaseErr as LeaseRequestError;
-          if (e.status === 429 || e.code === 'lease-hourly-limit' || e.code === 'model-hourly-limit') {
-            throw new Error(`${e.message} Nothing was generated.`);
-          }
           if (e.code === 'generation-stale') throw new Error(`${e.message} Nothing was generated — generate again from the current state.`);
-          fallbackReason = `the generation could not be prepared: ${e.message || 'the lease was refused'}`;
+          throw new Error(`${e.message || 'The generation could not be prepared.'} Nothing was generated.`);
         }
       }
       if (controller.signal.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
 
-      if (prep.ok && lease && fallbackReason === null) {
+      if (prep.ok) {
+        // Every model call of this path is under the lease; without one there is no call at all.
+        if (!lease) throw new Error('No generation lease was issued, so no model call was made. Nothing was generated.');
         const leaseNow = lease;
         // 3. The fills, up to four at a time, then the checks and at most two
         //    repair rounds for the failing functions only (§8, §13).
@@ -1584,7 +1594,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         await store(pkg.files, pkg.suite, {
           path: 'engine-led',
           engine: pkg.summary,
-          basis: basisNow(),
+          basis: basisAtStart,
           elapsedMs: Date.now() - startedAt,
         });
         const first = pkg.files.find((f) => f.path === prep.fillUnits[0]?.function.file) ?? pkg.files.find((f) => f.path === 'TRACE.md');
@@ -1594,7 +1604,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
       // ── The fallback: today's single call, with a visible note (§16.2) ──
       setGenPath('single-call');
-      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, signal: controller.signal, store, basis: basisNow, startedAt });
+      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, signal: controller.signal, store, basis: () => basisAtStart, startedAt });
     } catch (err) {
       failed = true;
       if (controller.signal.aborted || (err as { name?: string } | null)?.name === 'AbortError') {
@@ -1654,9 +1664,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             const parsedFiles = parseGeneratedCode(data.generatedCode);
             setFiles(parsedFiles);
             const hasServiceTs = parsedFiles.some(f => f.path === 'srv/service.ts');
-            // An engine-led package opens on its first step (3.0.12, step E).
+            // An engine-led package opens on its first step (3.0.12, step E) —
+            // before its service file, which it has too (3.0.18); the single
+            // call's package has no step and opens on the service as before.
             const firstStep = parsedFiles.find(f => f.path.startsWith('srv/steps/'));
-            setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (firstStep?.path || parsedFiles[0]?.path || ''));
+            setSelectedFilePath(firstStep?.path || (hasServiceTs ? 'srv/service.ts' : (parsedFiles[0]?.path || '')));
           }
           // No generation starts here (roadmap 3.0.12): the reader reads the
           // tips first and starts it with "Generate now".
@@ -1716,10 +1728,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * The plan is still being read: *Generate* waits for it, or a click before
    * it lands would start a plan the check has not seen (QA leftovers of
    * hotfix 2). A plan that cannot be read (`unavailable`) or does not apply
-   * (`null`) blocks nothing.
+   * (`null`) blocks nothing; a contract the server refused does (3.0.18).
    */
   const planPending = planWanted && (planView === undefined || planView?.state === 'reading');
-  const canStart = canGenerate && planBlocked === null && !planPending;
+  const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;
   /** Once a package exists the button replaces it, and says so. */
   const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
   /** The first reason the code cannot be generated now, for the empty package card. */
@@ -1824,8 +1836,19 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     void (async () => {
       try {
         const { decision, generation } = await fetchGenerationDecision(projectId as string, controller.signal);
-        if (!decision.ok || !generation) {
-          if (live) setPlanView(null);
+        // A refused contract is said and blocks the start (3.0.18) — it is not
+        // "no plan applies", which would let *Generate* and the automatic start
+        // through to a click whose own contract read then refuses.
+        if (!decision.ok) {
+          if (live) {
+            setContractRefusal(decision);
+            setPlanView(null);
+          }
+          return;
+        }
+        if (live) setContractRefusal(null);
+        if (!generation) {
+          if (live) setPlanView({ state: 'unavailable' });
           return;
         }
         const [{ prepareScaffold }, { preflightFactsOf }, { preflight }, { readGenerationWindow }] = await Promise.all([

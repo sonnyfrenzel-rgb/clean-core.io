@@ -52,18 +52,55 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/** One lease for one run of this project's generation, at the generation token the contract route handed out. */
-export async function requestGenerationLease(projectId: string, generationToken: string, plannedCalls: number, runId: string): Promise<GenerationLease> {
-  const res = await fetch('/api/transformation/lease', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-    body: JSON.stringify({ projectId, generationToken, plannedCalls, runId }),
+const cancelled = () => Object.assign(new Error('cancelled'), { name: 'AbortError' });
+
+/**
+ * One lease for one run of this project's generation, at the generation token the contract route handed out.
+ *
+ * Under the generation's signal (3.0.18): *Cancel* while the request is pending ends the wait at once with an
+ * `AbortError`. The request itself is not torn down — the server may already have issued and charged the lease,
+ * and only its answer names it — so a lease that arrives after the cancel is closed as soon as it arrives
+ * (`closeLate`, `closeGenerationLease` by default) and never handed to the generation.
+ */
+export async function requestGenerationLease(
+  projectId: string,
+  generationToken: string,
+  plannedCalls: number,
+  runId: string,
+  signal?: AbortSignal,
+  closeLate: (lease: LeaseReference) => void = closeGenerationLease,
+): Promise<GenerationLease> {
+  if (signal?.aborted) throw cancelled();
+  const request = (async () => {
+    const res = await fetch('/api/transformation/lease', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+      body: JSON.stringify({ projectId, generationToken, plannedCalls, runId }),
+    });
+    const body = (await res.json().catch(() => null)) as { lease?: GenerationLease; error?: string; code?: string } | null;
+    if (!res.ok || !body?.lease) {
+      throw new LeaseRequestError(body?.error || `The generation could not be prepared (HTTP ${res.status}).`, res.status, body?.code);
+    }
+    return body.lease;
+  })();
+  if (!signal) return request;
+  return new Promise<GenerationLease>((resolve, reject) => {
+    const onAbort = () => reject(cancelled());
+    signal.addEventListener('abort', onAbort, { once: true });
+    request.then(
+      (lease) => {
+        signal.removeEventListener('abort', onAbort);
+        if (signal.aborted) {
+          closeLate(lease);
+          reject(cancelled());
+        } else resolve(lease);
+      },
+      (err) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(signal.aborted ? cancelled() : err);
+      },
+    );
   });
-  const body = (await res.json().catch(() => null)) as { lease?: GenerationLease; error?: string; code?: string } | null;
-  if (!res.ok || !body?.lease) {
-    throw new LeaseRequestError(body?.error || `The generation could not be prepared (HTTP ${res.status}).`, res.status, body?.code);
-  }
-  return body.lease;
 }
 
 /**
