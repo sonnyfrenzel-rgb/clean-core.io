@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import path from 'node:path';
 import { abapCheck } from '../lib/transformation/abap-check';
 import { contractModel } from '../lib/transformation/call-contract';
 import { candidateFiles, guardContextOf, prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
@@ -9,6 +8,7 @@ import { methodParameters } from '../lib/transformation/rap-contract';
 import { NO_ENTRY_POINT, SCAFFOLD_VERSION } from '../lib/transformation/types';
 import { generatedCodeLints } from '../lib/generated-code-lints';
 import { readSource } from '../lib/first-look';
+import { readExample, readExampleAsOf3017 } from './helpers/starter-example-files';
 import { fileUrl, nodePackage, planOf, runInPackage } from './helpers/transformation-scaffold';
 
 /**
@@ -17,8 +17,7 @@ import { fileUrl, nodePackage, planOf, runInPackage } from './helpers/transforma
  * with local classes and no entry point; Z_SALES_ORDER_CREATOR calls a BAPI. Scaffold version 17. Server-free.
  */
 
-const ROOT = path.resolve(__dirname, '..');
-const read = (file: string) => fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8');
+const read = (file: string) => readExample(file);
 const ORDER_INTEGRITY = 'Z_ORDER_INTEGRITY_CHECK.txt';
 const SALES_ORDER = 'Z_SALES_ORDER_CREATOR.txt';
 
@@ -145,7 +144,7 @@ test.describe('E3 — no entry point: the process map and the transformation say
   });
 
   test('a program with an entry point is unchanged: its never-performed FORMs stay not carried, nothing is called from outside', () => {
-    const source = read('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const source = readExampleAsOf3017('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'); // the 3.0.17 copy keeps its dead routines
     const { plan } = planOf(source);
     expect(plan.calledFromOutside).toBeUndefined();
     expect(plan.notCarried.filter((n) => n.reason === 'unreachable').length).toBeGreaterThan(0);
