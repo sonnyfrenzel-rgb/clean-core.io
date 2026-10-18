@@ -1337,7 +1337,31 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
   return [...names];
 }
 
-function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = []): Built {
+/**
+ * A routine whose every statement the frame already runs — its AUTHORITY-CHECKs wired with their sy-subrc checks,
+ * nothing else (18.10.2026: the freight example's CHECK_AUTHORITY, which the model left out of its answer twice, so
+ * every run stayed incomplete). The engine writes its body; the model is not asked for it (roadmap 3.0.18 item 6).
+ */
+function frameOnly(u: Unit, plan: UnitPlan, facts: EngineFacts, auth: readonly AuthorityEntry[] = []): boolean {
+  if (u.kind === 'orchestrator' || auth.length === 0 || auth.some((e) => !e.wired)) return false;
+  const inUnit = (line: number) => u.abap.some((r) => line >= r.lineStart && line <= r.lineEnd);
+  const covered = new Set<number>(auth.map((e) => e.line));
+  for (const e of auth) {
+    const g = plan.guards.find((x) => x.id === e.wired!.guard);
+    if (!g) return false;
+    // The check's block: its IF through the ENDIF that closes it.
+    let depth = 0;
+    for (const st of facts.statements.filter((x) => x.lineStart >= g.line && inUnit(x.lineStart))) {
+      covered.add(st.lineStart);
+      if (/^IF$/i.test(st.keyword)) depth++;
+      else if (/^ENDIF$/i.test(st.keyword) && --depth <= 0) break;
+    }
+  }
+  const rest = facts.statements.filter((x) => inUnit(x.lineStart) && !covered.has(x.lineStart) && !/^(?:FORM|ENDFORM|METHOD|ENDMETHOD)$/i.test(x.keyword));
+  return rest.length === 0;
+}
+
+function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = [], engineBody = false): Built {
   const libDir = u.file.startsWith('srv/steps/') ? '../lib/' : './lib/';
   const callees = u.callees.map((id) => plan.units.find((x) => x.id === id)!).filter(Boolean);
   const out: string[] = [];
@@ -1369,7 +1393,13 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
   out.push(doc);
   out.push(`${u.signature} {`);
   out.push(...guardLines);
-  out.push(regionText('node', u.id, `${u.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(u.id)}, ${sq(u.fn)});`));
+  if (engineBody) {
+    // Every statement of the routine runs in the frame above (frameOnly): nothing is left for a body.
+    out.push('  // The rest of the routine is the frame above (engine): the original does nothing else here.');
+    out.push('  return;');
+  } else {
+    out.push(regionText('node', u.id, `${u.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(u.id)}, ${sq(u.fn)});`));
+  }
   out.push('}');
   out.push('');
   const available = [
@@ -1381,7 +1411,7 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     ...(auth.some((e) => e.fn === null) ? ['authority_check'] : []),
     ...lookupAvailable(reads),
   ];
-  return { file: { path: u.file, content: out.join('\n'), owner: 'fill' }, regions: [{ regionId: u.id, available }] };
+  return { file: { path: u.file, content: out.join('\n'), owner: engineBody ? 'engine' : 'fill' }, regions: engineBody ? [] : [{ regionId: u.id, available }] };
 }
 
 /**
@@ -2092,7 +2122,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
     if (parts.length > 0) files.push(splitParentFile(u, parts, plan, shapes));
-    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id], placements));
+    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id], placements, frameOnly(u, plan, facts, authority[u.id])));
   }
   const orchestrator = plan.units.find((u) => u.kind === 'orchestrator');
   add(processFile(plan, facts, shapes, orchestrator ? authority[orchestrator.id] : [], orchestrator ? lookups[orchestrator.id] : []));

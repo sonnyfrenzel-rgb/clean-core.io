@@ -39,3 +39,18 @@ test('a check before any PERFORM of its block stays an entry check', () => {
   const g = p.plan.guards.find((x) => x.line === 4);
   if (g) expect(g.placement).not.toBe('body');
 });
+
+// 18.10.2026: the model left the freight example's CHECK_AUTHORITY out of its answer twice — a routine whose every
+// statement (the AUTHORITY-CHECK and its sy-subrc check) the frame already runs. The engine writes its body.
+test('node: a routine the frame runs whole is the engine\'s, and the model is not asked for it', () => {
+  const p = prepareEngineLed({ source: SOURCE, track: 'node', program: null, decisions: [], contextText: 'PLATFORM KNOWLEDGE (test)' });
+  if (!p.ok) throw new Error(p.reason);
+  const unit = p.plan.units.find((u) => u.abap.some((r) => r.lineStart <= 90 && r.lineEnd >= 90) && u.kind !== 'orchestrator')!;
+  expect(unit, 'the unit of CHECK_AUTHORITY').toBeTruthy();
+  expect(p.scaffold.regions.some((r) => r.regionId === unit.id)).toBe(false);
+  expect(p.fillUnits.some((f) => f.unitId === unit.id)).toBe(false);
+  const file = p.scaffold.files.find((f) => f.path === unit.file)!;
+  expect(file.owner).toBe('engine');
+  expect(file.content).toContain('authority_L90()');
+  expect(file.content).not.toContain('NotImplementedFill(');
+});

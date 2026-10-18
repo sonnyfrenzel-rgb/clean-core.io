@@ -37,6 +37,9 @@ const SOURCE = [
   '  IF sy-subrc <> 0.',
   "    MESSAGE 'No authorization for this plant' TYPE 'E'.",
   '  ENDIF.',
+  // A statement of its own after the check, so the body is the model's (a routine the frame runs whole is the
+  // engine's since 18.10.2026 — tests/transformation-guard-after-perform.spec.ts).
+  "  gv_done = 'P'.",
   'ENDFORM.',
   '',
 ].join('\n');
