@@ -1835,7 +1835,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-040 | high | Transformation Insights are static and wrong for the track | 0.2 | fixed |
 | UX-059 | high | Forum pretends a public post, saves only locally | 0.2 | fixed |
 | UX-087 | high | Missing debt status appears in success green instead of neutral | 0.8 | fixed |
-| UX-088 | high | Clean Core Score without distinction from SAP's opposing score | 3.0.18 | scheduled |
+| UX-088 | high | Clean Core Score without distinction from SAP's opposing score | 3.0.18 | fixed |
 | UX-091 | high | Mail warning promises resending, the row cannot do it | — | fixed |
 | UX-094 | high | Old backup codes are rejected without a transition | — | deferred |
 | UX-102 | high | How-to names 6 phases, the product has 7 stages | 0.2 | fixed |
@@ -1843,10 +1843,10 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-122 | high | ToS notice pushes out the content on all routes | sofort | fixed |
 | UX-138 | high | Integrity green means sometimes existence, sometimes a check | sofort | fixed |
 | UX-145 | high | Tab "suspended" also shows Pending and Deleted | sofort | fixed |
-| UX-165 | high | Blocked start explained only by tooltip, invisible to keyboard | 3.0.18 | scheduled |
-| UX-166 | high | Documentation shows the saved and the missing state at once | 3.0.18 | scheduled |
+| UX-165 | high | Blocked start explained only by tooltip, invisible to keyboard | 3.0.18 | fixed |
+| UX-166 | high | Documentation shows the saved and the missing state at once | 3.0.18 | fixed |
 | UX-005 | medium | Route change without confirmation and undo | 0.7 | fixed |
-| UX-006 | medium | No way from a finding into the code | 3.0.18 | scheduled |
+| UX-006 | medium | No way from a finding into the code | 3.0.18 | fixed |
 | UX-012 | medium | Sticky header and tabs cover content on phone | 1.4 | fixed |
 | UX-017 | medium | Very small type makes reading harder | 1.5 | fixed |
 | UX-022 | medium | 78 button styles instead of one shared language | 1.5 | fixed |
@@ -1873,7 +1873,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-073 | medium | Tiniest type 9-10px for badges and banners | 1.5 | fixed |
 | UX-075 | medium | Eye buttons without an accessible name | 3.0.4 | fixed |
 | UX-076 | medium | Onboarding cancellation with blaming wording | 0.2 | fixed |
-| UX-089 | medium | Four terms for one value: Audit, Valuation, Asset Value, IP Score | 3.0.18 | scheduled |
+| UX-089 | medium | Four terms for one value: Audit, Valuation, Asset Value, IP Score | 3.0.18 | fixed |
 | UX-090 | medium | Deck error shows raw technical text without a next step | 0.8 | fixed |
 | UX-092 | medium | Start button blocked by scan without a reason at the button | — | fixed |
 | UX-093 | medium | Unsaved reports itself as a failed connection | — | fixed |
@@ -1881,7 +1881,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-098 | medium | Package download fails silently without a notice | sofort | fixed |
 | UX-099 | medium | Matrix close buttons without names for screen readers | sofort | fixed |
 | UX-104 | medium | First-run return leads signed-out users behind the login | 1.4 | fixed |
-| UX-106 | medium | NotGenerated names Settings but does not lead there | 3.0.18 | scheduled |
+| UX-106 | medium | NotGenerated names Settings but does not lead there | 3.0.18 | fixed |
 | UX-107 | medium | Admin button signs out instead of in | sofort | fixed |
 | UX-116 | medium | FREE badge conceals the first-run limit | sofort | fixed |
 | UX-117 | medium | Read-only board still invites questions at the bottom | sofort | fixed |
@@ -1893,7 +1893,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-127 | medium | Disabled start does not name the personal-data reason | sofort | fixed |
 | UX-131 | medium | ToS notice pushes out the work area in the first viewport | — | deferred |
 | UX-135 | medium | Quota stop in a native alert instead of the product dialog | 1.4 | fixed |
-| UX-136 | medium | Five icon buttons without text – invite barely discoverable | 3.0.18 | scheduled |
+| UX-136 | medium | Five icon buttons without text – invite barely discoverable | 3.0.18 | fixed |
 | UX-139 | medium | Refused bundle without a direct way to Transformation | sofort | fixed |
 | UX-140 | medium | Confirmation expires after an edit without explanation | sofort | fixed |
 | UX-146 | medium | Welcome mail detail readable only by hover title | 3.0.4 | fixed |
@@ -1902,12 +1902,12 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-152 | medium | Automatic approval runs without a way to cancel | sofort | fixed |
 | UX-153 | medium | Invited readers land on the analysis start | — | deferred |
 | UX-157 | medium | Approval page: counter-decision only via a second mail link | — | deferred |
-| UX-158 | medium | Invite only as an icon without a visible name, hard to find | 3.0.18 | scheduled |
-| UX-159 | medium | Workspace loading shows sighted users an empty page | 3.0.18 | scheduled |
+| UX-158 | medium | Invite only as an icon without a visible name, hard to find | 3.0.18 | fixed |
+| UX-159 | medium | Workspace loading shows sighted users an empty page | 3.0.18 | fixed |
 | UX-160 | medium | Import error without feedback to the user | 1.4 | fixed |
-| UX-161 | medium | Export without visible confirmation | 3.0.18 | scheduled |
+| UX-161 | medium | Export without visible confirmation | 3.0.18 | fixed |
 | UX-162 | medium | Pre-analysis overloads the start | — | deferred |
-| UX-167 | medium | Counter-decision hint small and low in contrast | 3.0.18 | scheduled |
+| UX-167 | medium | Counter-decision hint small and low in contrast | 3.0.18 | fixed |
 | UX-168 | medium | Technical announcement invites questions without a way to answer | D.22a | fixed |
 | UX-169 | medium | Documentation is named differently from the stage itself | D.9 | fixed |
 | UX-170 | medium | Confirmation page without a way out for an invalid link | D.26 | fixed |
@@ -1915,8 +1915,8 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-182 | medium | Line count of the demo program differs between list and starter card (669 vs 668) | 3.0 | fixed |
 | UX-184 | medium | Back link to the workspace labelled differently on settings | sofort | fixed |
 | UX-008 | low | Slideshow controls without names, arrow keys hijacked | 3.0.4 | fixed |
-| UX-011 | low | Confusing finding terms and language mix | 3.0.18 | scheduled |
-| UX-013 | low | Preview contradicts editability, start misleading | 3.0.18 | scheduled |
+| UX-011 | low | Confusing finding terms and language mix | 3.0.18 | fixed |
+| UX-013 | low | Preview contradicts editability, start misleading | 3.0.18 | fixed |
 | UX-015 | low | Back navigation behaves differently per page | 1.4 | fixed |
 | UX-016 | low | Catalog loses the workspace context | 1.4 | fixed |
 | UX-026 | low | Terms and promises change per stage | 0.2 | fixed |
@@ -1925,7 +1925,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-033 | low | Slide switch without names | 3.0.4 | fixed |
 | UX-035 | low | Long generation without cancel | after 3.0.18 | scheduled |
 | UX-050 | low | Tiny labels and status only through colour | 1.5 | fixed |
-| UX-053 | low | Error and 404 pages speak three languages | 3.0.18 | scheduled |
+| UX-053 | low | Error and 404 pages speak three languages | 3.0.18 | fixed |
 | UX-057 | low | Grounded Grounding Audit duplicated and inconsistent | 0.3 | fixed |
 | UX-058 | low | QuickAnswer reports open although collapsed | 3.0.4 | fixed |
 | UX-060 | low | Project row and icon actions not keyboard-operable | 3.0.4 | fixed |
@@ -1933,7 +1933,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-072 | low | Admin uses native confirm/alert instead of product patterns | 3.0 | fixed |
 | UX-074 | low | Settings cards with arbitrary colour stripe | 1.5 | fixed |
 | UX-078 | low | Admin rows without expanded state | 3.0.4 | fixed |
-| UX-079 | low | Disabled register button does not explain itself | 3.0.18 | scheduled |
+| UX-079 | low | Disabled register button does not explain itself | 3.0.18 | fixed |
 | UX-080 | low | Showroom tabs without visible keyboard focus | 3.0.4 | fixed |
 | UX-082 | low | Two header patterns on public pages | 3.0.6 | fixed |
 | UX-084 | low | First run names the quota differently from the header | 0.2 | fixed |
@@ -1943,16 +1943,16 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-105 | low | Dark removal without a notice to existing accounts | after 3.0.18 | scheduled |
 | UX-110 | low | Badge detail hidden only in the hover title | 3.0.4 | fixed |
 | UX-115 | low | Demo promises seven stages without taking the user along | 0.2 | fixed |
-| UX-119 | low | Empty documentation frame with a lot of empty space | 3.0.18 | scheduled |
-| UX-120 | low | New radii and type sizes without a connection to the system | 3.0.18 | scheduled |
-| UX-128 | low | New radii and one-off measures without a connection to the system | 3.0.18 | scheduled |
-| UX-134 | low | Blocked start explains itself only by hover title | 3.0.18 | scheduled |
-| UX-137 | low | New one-off radii and type without binding to the scale | 3.0.18 | scheduled |
+| UX-119 | low | Empty documentation frame with a lot of empty space | 3.0.18 | fixed |
+| UX-120 | low | New radii and type sizes without a connection to the system | 3.0.18 | fixed |
+| UX-128 | low | New radii and one-off measures without a connection to the system | 3.0.18 | fixed |
+| UX-134 | low | Blocked start explains itself only by hover title | 3.0.18 | fixed |
+| UX-137 | low | New one-off radii and type without binding to the scale | 3.0.18 | fixed |
 | UX-141 | low | Search promises discussions on read-only announcements | sofort | fixed |
 | UX-142 | low | Optional imports with an inconsistent version label | sofort | fixed |
 | UX-143 | low | Labels without a field on the approval page | sofort | fixed |
 | UX-144 | low | Workspace gate loads silently for screen readers | sofort | fixed |
-| UX-155 | low | Workspace loading empty for sighted users, only sr-only text | 3.0.18 | scheduled |
+| UX-155 | low | Workspace loading empty for sighted users, only sr-only text | 3.0.18 | fixed |
 | UX-156 | low | Return in two capitalisations | 1.5 | fixed |
 | UX-164 | low | Return in two spellings | 1.5 | fixed |
 | UX-180 | low | 30 new arbitrary width and spacing tokens undermine the design system | — | deferred |
