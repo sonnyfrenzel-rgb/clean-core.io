@@ -284,6 +284,18 @@ test.describe('the RAP route: a body without its final period (3.0.17 criterion 
     expect(fileOf(pkg.files, 'TRACE.md')).toContain(FINAL_PERIOD_NOTE);
   });
 
+  // The acceptance run of 18.10.2026: U12 of QM and U17 of FI — CSV quoting, `'"'` in a literal — were refused for a
+  // period they had: the check cut each line at its first `"`, literal or not.
+  test('a double quote inside a literal is no comment: a body that ends with its period is not refused for one', () => {
+    const prep = prepared(poDemo(), 'rap');
+    const target = plainUnit(prep);
+    const body = JSON.parse(geminiTestStubFillText(`REQUEST (JSON):\n${JSON.stringify({ track: 'rap', units: [{ unitId: target.unitId }] })}`)).units[0].body as string;
+    const quoting = `${body.replace(/\s+$/, '')}\nDATA(lv_q) = |a"b|.\nREPLACE ALL OCCURRENCES OF '"' IN lv_q WITH '""'.`;
+    expect(guardBodyOf(prep)(target.unitId, quoting, [])).not.toBe(FINAL_PERIOD_REASON);
+    // And a real end comment after the period is still read as one.
+    expect(guardBodyOf(prep)(target.unitId, `${body.replace(/\s+$/, '')} " done.`, [])).not.toBe(FINAL_PERIOD_REASON);
+  });
+
   test('a body with another defect is still refused, period or not', async () => {
     const prep = prepared(poDemo(), 'rap');
     const target = plainUnit(prep);

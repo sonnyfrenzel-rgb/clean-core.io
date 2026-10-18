@@ -478,6 +478,15 @@ export function repairFinalPeriod(body: string, check: (body: string) => readonl
   return check(repaired).length === 0 ? repaired : null;
 }
 
+/** A line of ABAP without its end comment: from the first `"` outside a literal. */
+function withoutEndComment(line: string): string {
+  const outside = createLiteralScanner();
+  for (let c = 0; c < line.length; c++) {
+    if (outside(line[c]) && line[c] === '"') return line.slice(0, c);
+  }
+  return line;
+}
+
 function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const out: BodyRefusal[] = [];
   if (!abapLiteralsClosed(body)) out.push(refusal('unterminated', 'an unterminated literal'));
@@ -487,7 +496,9 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     out.push(refusal('unterminated', `a semicolon where ABAP ends a statement with a period (${where}) — every ABAP statement ends with ".", never ";"`));
   }
   const code = body.split('\n').filter((l) => !/^\s*\*/.test(l) && !/^\s*"/.test(l)).join('\n').trim();
-  if (code && !code.replace(/".*$/gm, '').trim().endsWith('.')) out.push(refusal('unterminated', FINAL_PERIOD_REASON));
+  // A `"` inside a literal is no comment (18.10.2026: the CSV quoting units U12 of QM and U17 of FI hold '"' and were
+  // refused for a period they had).
+  if (code && !code.split('\n').map(withoutEndComment).join('\n').trim().endsWith('.')) out.push(refusal('unterminated', FINAL_PERIOD_REASON));
   const statements = readStatements(body);
   if (statements.some((s) => ABAP_FRAME.test(s.keyword) || /\bDEFINITION\b/i.test(s.text) && s.keyword === 'CLASS')) {
     out.push(refusal('declaration', 'METHOD, CLASS, FORM or another frame statement — the engine writes the frame'));
