@@ -1345,25 +1345,30 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
 function frameOnly(u: Unit, plan: UnitPlan, facts: EngineFacts, auth: readonly AuthorityEntry[] = []): boolean {
   if (u.kind === 'orchestrator' || auth.length === 0 || auth.some((e) => !e.wired)) return false;
   const inUnit = (line: number) => u.abap.some((r) => line >= r.lineStart && line <= r.lineEnd);
-  const covered = new Set<number>(auth.map((e) => e.line));
+  // Statements of the routine, each once — coverage is by statement, never by line (QA review of 8609f22dee9c: two
+  // statements on one line must not cover each other).
+  const stmts = facts.statements.filter((x) => inUnit(x.lineStart) && !/^(?:FORM|ENDFORM|METHOD|ENDMETHOD)$/i.test(x.keyword));
+  const covered = new Set<(typeof stmts)[number]>();
+  const firstAt = (line: number, keyword: RegExp) => stmts.find((x) => x.lineStart === line && keyword.test(x.keyword));
   for (const e of auth) {
+    const check = firstAt(e.line, /^AUTHORITY-CHECK$/i);
     const g = plan.guards.find((x) => x.id === e.wired!.guard);
-    if (!g) return false;
+    if (!check || !g) return false;
+    covered.add(check);
     // The check's block: its IF, the statement that ends it (MESSAGE … TYPE 'E' / RETURN — what the frame's guard does)
     // and the ENDIF. Anything else in the block is the original's own work and keeps the body the model's (QA review
     // of 0a1d2036f5ed: a log line or assignment inside the IF must not vanish).
-    covered.add(g.line);
-    if (g.endingLine) covered.add(g.endingLine);
-    let depth = 0;
-    for (const st of facts.statements.filter((x) => x.lineStart >= g.line && inUnit(x.lineStart))) {
-      if (/^IF$/i.test(st.keyword)) depth++;
-      else if (/^ENDIF$/i.test(st.keyword) && --depth <= 0) {
-        covered.add(st.lineStart);
-        break;
-      }
-    }
+    const at = stmts.findIndex((x) => x.lineStart === g.line && /^IF$/i.test(x.keyword));
+    if (at < 0) return false;
+    covered.add(stmts[at]);
+    const ending = stmts[at + 1];
+    const close = stmts[at + 2];
+    // Exactly IF, its ending, ENDIF — a block with anything more is not the frame's.
+    if (!ending || ending.lineStart !== g.endingLine || !close || !/^ENDIF$/i.test(close.keyword)) return false;
+    covered.add(ending);
+    covered.add(close);
   }
-  const rest = facts.statements.filter((x) => inUnit(x.lineStart) && !covered.has(x.lineStart) && !/^(?:FORM|ENDFORM|METHOD|ENDMETHOD)$/i.test(x.keyword));
+  const rest = stmts.filter((x) => !covered.has(x));
   return rest.length === 0;
 }
 

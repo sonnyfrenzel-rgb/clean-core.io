@@ -67,3 +67,13 @@ test('node: a routine with its own statement inside the authorization block is n
   const unit = p.plan.units.find((u) => u.abap.some((r) => r.lineStart <= 91 && r.lineEnd >= 91) && u.kind !== 'orchestrator')!;
   expect(p.scaffold.regions.some((r) => r.regionId === unit.id)).toBe(true);
 });
+
+// QA review of 8609f22dee9c: a statement on the same line as the check's IF is no part of the check.
+test('node: an assignment on the same line as the authorization IF keeps the body the model\'s', () => {
+  const src = SOURCE.replace(/ {2}IF sy-subrc <> 0\.(\r?\n {4}MESSAGE 'No authorization for this shipping point' TYPE 'E'\.)/, "  IF sy-subrc <> 0. gv_denied = 'X'.$1").replace('START-OF-SELECTION.', "DATA gv_denied TYPE c LENGTH 1.\n\nSTART-OF-SELECTION.");
+  expect(src).toContain("IF sy-subrc <> 0. gv_denied = 'X'.");
+  const p = prepareEngineLed({ source: src, track: 'node', program: null, decisions: [], contextText: 'PLATFORM KNOWLEDGE (test)' });
+  if (!p.ok) throw new Error(p.reason);
+  const unit = p.plan.units.find((u) => u.abap.some((r) => r.lineStart <= 91 && r.lineEnd >= 91) && u.kind !== 'orchestrator')!;
+  expect(p.scaffold.regions.some((r) => r.regionId === unit.id)).toBe(true);
+});
