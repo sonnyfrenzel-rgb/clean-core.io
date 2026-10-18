@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { APP_RELEASE_DATE, APP_RELEASE_DATE_ISO, APP_RELEASE_DATE_DE } from '../lib/version';
+import fs from 'node:fs';
+import path from 'node:path';
+import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO, APP_RELEASE_DATE_DE } from '../lib/version';
 
 /**
  * `lib/version.ts` keeps the release date three times, as literals on purpose
@@ -26,6 +28,15 @@ function fromGerman(s: string): string {
   expect(month).toBeGreaterThan(0);
   return `${m![3]}-${String(month).padStart(2, '0')}-${m![1].padStart(2, '0')}`;
 }
+
+// v3.0.14, v3.0.15 and v3.0.16 were released on 16 October and dated so in the
+// changelog, while the app still said 15 October (QA 59e01cf9163b, 9fb14bc35a72).
+test('the release date is the date the changelog gives this version', () => {
+  const changelog = fs.readFileSync(path.join(process.cwd(), 'CHANGELOG.md'), 'utf8');
+  const heading = new RegExp(`^## \\[${APP_VERSION.replace(/\./g, '\\.')}\\] — (\\d{4}-\\d{2}-\\d{2})`, 'm').exec(changelog);
+  expect(heading, `CHANGELOG.md has no heading for ${APP_VERSION}`).not.toBeNull();
+  expect(APP_RELEASE_DATE_ISO).toBe(heading![1]);
+});
 
 test('the three release-date literals name the same day', () => {
   expect(APP_RELEASE_DATE_ISO).toMatch(/^\d{4}-\d{2}-\d{2}$/);
