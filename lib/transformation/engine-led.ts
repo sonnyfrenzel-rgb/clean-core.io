@@ -48,6 +48,7 @@ import {
 } from './types';
 import { fillOrder, type GenerationRunResult, type UnitOutcome } from './orchestrator';
 import type { PreflightInput } from './preflight';
+import { secretInBody } from '../sensitive-text';
 
 /* ------------------------------------------------------------ preparation */
 
@@ -314,8 +315,8 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
 /** The orchestrator's `guardBody`: why a body may not be spliced into its region, or null. */
 export function guardBodyOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold' | 'sliceChars'>) {
   return (regionId: string, body: string, needs: readonly string[]): string | null => {
-    const reasons = bodyGuards(body, guardContextOf(prep, regionId, needs));
-    return reasons.length === 0 ? null : reasons.map((r) => r.message).join('; ');
+    const reasons = [...bodyGuards(body, guardContextOf(prep, regionId, needs)).map((r) => r.message), secretInBody(body)].filter((r): r is string => !!r);
+    return reasons.length === 0 ? null : reasons.join('; ');
   };
 }
 

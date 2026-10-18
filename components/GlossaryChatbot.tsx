@@ -18,12 +18,14 @@ import { readSource, decisionLines, type DecisionLine } from '@/lib/first-look';
 import { buildWorkspaceSearchIndex, type SearchResult } from '@/lib/workspace-search';
 import {
   answerCase,
-  citedAnchors,
+  droppedSentencesNote,
+  guardCaseAnswer,
   preAnsweredDecisionAnswer,
   PRE_ANSWERED_QUESTION,
-  UNANCHORED_PROPOSAL,
+  refusedProposalText,
   type CaseFact,
 } from '@/lib/case-answer';
+import { screenSensitiveText, sensitiveTextNote } from '@/lib/sensitive-text';
 import { cleanModelText } from '@/lib/model-text';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -413,8 +415,8 @@ export default function GlossaryChatbot() {
    *     roadmap 2.7. Also no model call; marked *Reconstructed*, because that
    *     is what a statement read off the code is (`DESIGN.md` §4).
    *   - **a model proposal, grounded** — the model sees the anchored evidence
-   *     and nothing else, and the reply is only shown if it cites at least one
-   *     of those anchors. Marked *Model proposal*.
+   *     and nothing else, and only the sentences of the reply that cite one of
+   *     those anchors are shown (`guardCaseAnswer`). Marked *Model proposal*.
    */
   const answerInProject = async (id: string, text: string, asked: number): Promise<void> => {
     const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;
@@ -452,11 +454,14 @@ export default function GlossaryChatbot() {
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
     const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
-    const cited = citedAnchors(cleaned, decision.anchors);
+    // Roadmap 3.0.18 item 9 — read back sentence by sentence: a sentence
+    // without an offered anchor is dropped, an invented anchor refuses the
+    // whole reply, and personal data or a secret in what is left is masked.
+    const guarded = guardCaseAnswer(cleaned, decision.facts, context.legacyCode);
 
-    if (!cleaned.trim() || cited.length === 0) {
+    if (guarded.outcome === 'refused') {
       say({
-        text: UNANCHORED_PROPOSAL,
+        text: refusedProposalText(guarded.reason),
         anchors: [],
         evidence: decision.facts,
         provenance: 'not-determined',
@@ -464,7 +469,17 @@ export default function GlossaryChatbot() {
       return;
     }
 
-    say({ text: cleaned, anchors: cited, evidence: decision.facts, provenance: 'proposed' });
+    const screened = screenSensitiveText(guarded.text);
+    const notes = [
+      ...(guarded.dropped > 0 ? [droppedSentencesNote(guarded.dropped)] : []),
+      ...(screened.findings.length > 0 ? [sensitiveTextNote(screened.findings)] : []),
+    ];
+    say({
+      text: [screened.text, ...notes].join('\n\n'),
+      anchors: guarded.anchors,
+      evidence: decision.facts,
+      provenance: 'proposed',
+    });
   };
 
   const handleSend = async (text: string) => {
