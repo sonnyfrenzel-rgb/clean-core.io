@@ -808,6 +808,57 @@ function parseCsv(text: string): string[][] {
   return records;
 }
 
+test.describe('3.0.18 item 13 (QM-09): mapped, decided and behaviour-tested are three facts', () => {
+  const TRACE = {
+    format: 'clean-core.traceability/1',
+    units: [
+      { unitId: 'U01', fn: 'checkAmount', file: 'srv/steps/check.ts', rules: [{ id: 'BR-001', decision: 'keep' }] },
+      { unitId: 'U02', fn: 'routeClaim', file: 'srv/steps/route.ts', rules: [{ id: 'BR-004', decision: 'open' }, { id: 'BR-003', decision: 'drop' }] },
+    ],
+  };
+  const ENGINE = (id: string, ruleId: string) => ({
+    id, name: `Engine ${ruleId}`, category: 'Unit', origin: 'engine',
+    engineCase: { kind: 'guard', family: 'rule', trace: { basis: 'business-rule', ruleId, lines: [{ start: 10, end: 10 }] }, examples: [] },
+  });
+  const cases = [
+    ENGINE('TC_01', 'BR-001'),
+    { id: 'TC_02', name: 'Model', category: 'Unit', ruleTrace: { ruleId: 'BR-002', kind: 'rule', lines: ['20'], expectedFromOriginal: 'share 90 %' } },
+    ENGINE('TC_03', 'BR-004'),
+    ...CASES.slice(3),
+  ];
+  const build = (withTrace: boolean, verdict: 'Passed' | 'Failed' = 'Passed') => {
+    const p = withReceipt(fiProject({ testCases: cases } as unknown as Partial<Project>), verdict);
+    const facts = factsOf(p, ruleFactsOf(ANSWERED, undefined, deliveryFacts.ruleTestInputOf(p)));
+    const entries = [...bundleOf(p), ...(withTrace ? [{ path: 'traceability.json', content: JSON.stringify(TRACE), origin: 'engine' as const }] : [])];
+    const out = finishDeliveryPackage({ entries, facts, layout: 'package' });
+    return out.files.find((f) => f.path === REGISTER)!.content;
+  };
+  const rowOf = (register: string, id: string) => register.split('\n').find((l) => l.startsWith(`| ${id} `))!;
+
+  test('the trace maps a rule to its unit; an engine case that passed makes it behaviour-tested; the answer is the decision', () => {
+    const register = build(true);
+    expect(rowOf(register, 'BR-001')).toContain('Statically mapped to U01 `checkAmount` (srv/steps/check.ts) — traceability.json');
+    expect(rowOf(register, 'BR-001')).toContain('Behaviour-tested: TC_01 passed in the covering run.');
+    expect(rowOf(register, 'BR-001')).toContain('Keep — by Controller A');
+    // Model-stated case: not behaviour-tested, not mapped — each said on its own.
+    expect(rowOf(register, 'BR-002')).toContain('Not mapped — traceability.json binds no unit of the package to this rule.');
+    expect(rowOf(register, 'BR-002')).toContain('TC_02 (passed) — expected result model-stated from the original, not an independent test.');
+    // Mapped and tested, but not decided: a Clarify is a question.
+    expect(rowOf(register, 'BR-004')).toContain('Statically mapped to U02 `routeClaim`');
+    expect(rowOf(register, 'BR-004')).toContain('Behaviour-tested: TC_03 passed');
+    expect(rowOf(register, 'BR-004')).toContain('Clarify (a question — still open)');
+    expect(register).not.toContain('no record ties the delivered code');
+    expect(register).toContain('statically mapped to a unit of the package (traceability.json): 3 of 5 · decided by an account: 3 of 5 · behaviour-tested (an engine case on it passed in the covering run): 2 of 5.');
+  });
+
+  test('without a trace the mapping says so; a failed engine case is not a test of the behaviour', () => {
+    const register = build(false, 'Failed');
+    expect(rowOf(register, 'BR-001')).toContain('Not traced — no record ties the delivered code to this rule.');
+    expect(rowOf(register, 'BR-001')).toContain('Not behaviour-tested — no engine case on this rule passed in a covering run. Cases: TC_01, engine case (failed).');
+    expect(register).toContain('statically mapped to a unit of the package (traceability.json): not traced — no traceability record · decided by an account: 3 of 5 · behaviour-tested (an engine case on it passed in the covering run): 0 of 5.');
+  });
+});
+
 test.describe('the rule register also ships as CSV (owner, 12.10.2026)', () => {
   const CSV = 'docs/rule-register.csv';
   const NASTY = 'Share "FAC", 85 %; from 2027\nsecond line, with a comma';
