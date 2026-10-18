@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import * as abaplint from '@abaplint/core';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { readExampleAsOf3017 } from './helpers/starter-example-files';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { plainContext, stepName } from '../lib/abap/plain-language';
@@ -162,7 +163,8 @@ test.describe('E8: findings inside routines nothing calls', () => {
   });
 
   test('the 1,000-line example: the uncalled FORMs are named, the dialog modules are not guessed at', () => {
-    const e = buildAbapEvidence(example('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'private', undefined, NEW);
+    // The 3.0.17 copy: 3.0.18 took the example's dead routines out (tests/helpers/starter-example-files.ts).
+    const e = buildAbapEvidence(readExampleAsOf3017('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap').replace(/^﻿/, '').replace(/\r\n/g, '\n'), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'private', undefined, NEW);
     const marked = e.findings.filter((f) => f.uncalled);
     expect(marked.length).toBe(19);
     expect(new Set(marked.map((f) => f.uncalled!.routine))).toContain('LEGACY_NATIVE_SQL_EXAMPLE');
