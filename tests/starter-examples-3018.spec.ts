@@ -108,6 +108,8 @@ test.describe('what the engine says about the shipped examples since 3.0.18 (pri
     'Z_MATERIAL_STOCK_CALC.txt': { findings: 3, rows: 3, score: 91, route: 'In-App (ABAP Cloud)', rules: 3 },
     'Z_INVOICE_EXTRACTOR.txt': { findings: 3, rows: 3, score: 87, route: 'In-App (ABAP Cloud)', rules: 0 },
     'Z_SALES_ORDER_CREATOR.txt': { findings: 0, rows: 0, score: 90, route: 'In-App (ABAP Cloud)', rules: 0 },
+    // 3.0.19, the key-user example; what the key-user engine reads of it is pinned in tests/key-user-3019.spec.ts.
+    'Z_SD_DELIVERY_PRIORITY.abap': { findings: 3, rows: 3, score: 93, route: 'In-App (ABAP Cloud)', rules: 1 },
     'Z_MM_PO_APPROVAL.abap': { findings: 24, rows: 21, score: 40, route: 'In-App (ABAP Cloud)', rules: 12 },
     'Z_SD_FREIGHT_RATE_CHECK.abap': { findings: 10, rows: 10, score: 82, route: 'Side-by-Side (SAP BTP)', rules: 14 },
     [LEGACY]: { findings: 38, rows: 30, score: 40, route: 'Side-by-Side (SAP BTP)', rules: 30 },

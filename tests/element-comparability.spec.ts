@@ -110,7 +110,7 @@ function allVerdicts() {
 test.describe('7.8 / §16 V6 — comparability per element', () => {
   test('the shipped examples are classified, and the counts are pinned', () => {
     const rows = allVerdicts();
-    expect(exampleFiles()).toHaveLength(9);
+    expect(exampleFiles()).toHaveLength(10);
     expect(rows.length).toBeGreaterThan(200);
 
     const byClass: Record<string, number> = {};
@@ -177,10 +177,15 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // 77 elements — **+30 `structural`**, **+18 `technical`**, **+24
     // `business-comparable`**, **+5 `unknown`** — and no element of the eight
     // moved.
+    //
+    // 430 since 3.0.19: the tenth example, `Z_SD_DELIVERY_PRIORITY.abap`, adds
+    // 14 elements — **+9 `structural`** (4 ends and 2 data objects among them),
+    // **+3 `technical`**, **+2 `business-comparable`** — and no element of the
+    // nine moved.
     expect(byClass).toEqual({
-      structural: 170,
-      technical: 122,
-      'business-comparable': 95,
+      structural: 179,
+      technical: 125,
+      'business-comparable': 97,
       unknown: 29,
     });
     // 48 gateways: 7 still technical by condition (14,6 %, from 27 of 68 before
@@ -208,9 +213,10 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // 83 since ADR-054: six early exits end on their own line.
     // 3.0.15: the freight charge check adds 17 ends, 2 error ends, 6 data
     // objects and 3 boundary events.
-    expect(byKind['end']).toEqual({ structural: 100 });
+    // 3.0.19: the key-user example adds 4 ends and 2 data objects.
+    expect(byKind['end']).toEqual({ structural: 104 });
     expect(byKind['end-error']).toEqual({ technical: 12 });
-    expect(byKind['output']).toEqual({ structural: 26 });
+    expect(byKind['output']).toEqual({ structural: 28 });
     expect(byKind['error-boundary']).toEqual({ technical: 25 });
 
     // Every class is actually reached — a table that only ever says one thing

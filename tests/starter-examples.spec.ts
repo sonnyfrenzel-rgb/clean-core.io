@@ -78,9 +78,10 @@ test.describe('Dashboard — starter examples', () => {
     // four up front, the rest one click away under "More examples".
     await panel.locator('[data-examples-more] button').first().click();
     const names = panel.locator('[data-example-kind="example"]').getByTestId('starter-example-name');
-    // Six since 18.10.2026: three examples that made no sense were retired (since 3.0.18 in tests/fixtures/retired-starter-examples/).
-    await expect(names).toHaveCount(6);
-    expect(STARTER_EXAMPLES).toHaveLength(6);
+    // Six since 18.10.2026: three examples that made no sense were retired (since 3.0.18 in tests/fixtures/retired-starter-examples/);
+    // seven since 3.0.19, with the key-user example Z_SD_DELIVERY_PRIORITY.
+    await expect(names).toHaveCount(7);
+    expect(STARTER_EXAMPLES).toHaveLength(7);
     await expect(names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ })).toBeVisible();
     await expect(names.filter({ hasText: /^Z_MM_PO_APPROVAL$/ })).toBeVisible();
     // Every card's source is served on the path the click fetches from (lib/starter-examples.ts loadStarterExample).

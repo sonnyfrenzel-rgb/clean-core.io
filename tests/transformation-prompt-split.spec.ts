@@ -204,6 +204,8 @@ test('the starter examples, shipped and retired, keep their units, split nothing
     // 8 since scaffold 17: six methods of three local classes (three were lost by name) and the FORM the process begins at.
     'Z_ORDER_INTEGRITY_CHECK.txt': 8,
     'Z_SALES_ORDER_CREATOR.txt': 3,
+    // 3.0.19: the key-user example — two BAdI methods, two FORMs.
+    'Z_SD_DELIVERY_PRIORITY.abap': 4,
     'Z_SD_FREIGHT_RATE_CHECK.abap': 12,
   };
   expect(corpusFiles()).toEqual(Object.keys(UNITS).sort());
