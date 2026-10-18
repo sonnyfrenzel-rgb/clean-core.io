@@ -81,7 +81,7 @@ export interface CapShellSummary {
 export interface CapShellInput {
   /** The plan with the input lists' paths (`withListPaths`). */
   plan: UnitPlan;
-  facts: Pick<EngineFacts, 'statements' | 'graph'>;
+  facts: Pick<EngineFacts, 'statements' | 'graph' | 'blocks'>;
   lists: readonly InputList[];
   packageName: string;
 }
@@ -249,11 +249,14 @@ function serviceCds(input: CapShellInput, namespace: string, service: string, ar
   out.push('');
   // Who may call (scaffold version 18): the scopes of the original's AUTHORITY-CHECKs (xs-security.json), or an
   // authenticated user where it checks none. The other fields of a check stay srv/lib/authority.ts's.
-  const scopes = capScopesOf(input.facts);
+  const all = capScopesOf(input.facts);
+  const scopes = serviceScopes(all);
+  // Checks on some paths only: srv/lib/authority.ts checks them where the original does (fail closed), no scope.
+  for (const s of all.filter((x) => !x.mandatory)) out.push(`// ${CAP_CODE_CHECK_TAG} ${s.name} (L${s.lines.join(', L')}): checked in the code, not a service scope — the original checks it on some paths only`);
   out.push(
     scopes.length > 0
-      ? `/** Authorization: a scope per object and activity of the original's AUTHORITY-CHECKs (${comment(scopes.map((s) => `${s.name} L${s.lines.join(', L')}`).join('; '))}), role template ${CAP_ROLE_TEMPLATE} in xs-security.json. */`
-      : "/** Authorization: the original checks none; any authenticated user of the subaccount may call. */",
+      ? `/** Authorization: a scope per object and activity of the original's AUTHORITY-CHECKs every run passes (${comment(scopes.map((s) => `${s.name} L${s.lines.join(', L')}`).join('; '))}), role template ${CAP_ROLE_TEMPLATE} in xs-security.json. */`
+      : "/** Authorization: no AUTHORITY-CHECK of the original is passed by every run; any authenticated user of the subaccount may call. */",
   );
   const required = capRequires(scopes);
   out.push(`@requires: ${required.length === 1 ? `'${required[0]}'` : `[${required.map((r) => `'${r}'`).join(', ')}]`}`);
@@ -526,7 +529,7 @@ function packageJson(input: CapShellInput, access: AccessPlan, architecture: Pro
   }
   requires['[production]'] = { auth: 'xsuaa', ...(architecture === 'writing' ? { db: 'hana' } : {}) };
   // Development profile only (cds serve, cds watch, the trial): the mock user holds the scopes @requires names.
-  const scopes = capScopesOf(input.facts);
+  const scopes = serviceScopes(capScopesOf(input.facts));
   if (scopes.length > 0) requires['[development]'] = { auth: { kind: 'mocked', users: { [CAP_MOCK_USER]: { roles: scopes.map((s) => s.name) } } } };
   return `${JSON.stringify(
     {
@@ -641,6 +644,35 @@ export interface CapScope {
   activity: string | null;
   /** The lines of the AUTHORITY-CHECKs this scope stands for. */
   lines: number[];
+  /**
+   * True when every run passes one of these checks (owner decision 18.10.2026): it stands at the level of a block every
+   * run reaches — an event block, or a FORM performed at the level of such a block. Only these are service scopes; a
+   * check inside an IF, CASE, loop or CATCH, or in a routine reached on some paths only, stays srv/lib/authority.ts's.
+   */
+  mandatory: boolean;
+}
+
+/** Event blocks every run of a report passes. */
+const EVERY_RUN_EVENTS = new Set(['LOAD-OF-PROGRAM', 'INITIALIZATION', 'START-OF-SELECTION', 'END-OF-SELECTION', 'AT SELECTION-SCREEN']);
+const NOT_BRANCHES = new Set(['form', 'method', 'module', 'class', 'interface', 'define']);
+
+/** Whether every run reaches the statement at `index`, read from the blocks around it and the PERFORMs to its routine. */
+function everyRunReaches(facts: Pick<EngineFacts, 'statements' | 'blocks'>, index: number, seen = new Set<string>()): boolean {
+  const { statements, blocks } = facts;
+  const st = statements[index];
+  if (!st || (blocks.enclosing[index] ?? []).some((b) => !NOT_BRANCHES.has(b.kind))) return false;
+  const around = blocks.containers.filter((c) => st.lineStart >= c.lineStart && st.lineStart <= c.lineEnd);
+  const form = around.find((c) => c.kind === 'form');
+  if (form) {
+    if (seen.has(form.name)) return false;
+    seen.add(form.name);
+    const re = new RegExp(`^PERFORM\\s+${form.name.replace(/[^\w/]/g, '')}\\b`, 'i');
+    return statements.some((p, j) => re.test(p.text) && !(p.lineStart >= form.lineStart && p.lineStart <= form.lineEnd) && everyRunReaches(facts, j, seen));
+  }
+  if (around.some((c) => c.kind !== 'event')) return false;
+  const event = around.find((c) => c.kind === 'event');
+  // No container: a statement at program level, which a report runs as START-OF-SELECTION.
+  return !event || EVERY_RUN_EVENTS.has(event.name.toUpperCase());
 }
 
 /** The role template the scopes go into: one, for whoever may run the program. */
@@ -655,7 +687,7 @@ export const CAP_MOCK_USER = 'alice';
  * of a check (a shipping point, a sales organization) are values of the run, not of the caller's role: they stay the
  * check of srv/lib/authority.ts.
  */
-export function capScopesOf(facts: Pick<EngineFacts, 'graph'>): CapScope[] {
+export function capScopesOf(facts: Pick<EngineFacts, 'graph' | 'statements' | 'blocks'>): CapScope[] {
   const out: CapScope[] = [];
   for (const c of [...facts.graph.authorityChecks].sort((a, b) => a.lineStart - b.lineStart)) {
     if (!c.object) continue;
@@ -663,18 +695,36 @@ export function capScopesOf(facts: Pick<EngineFacts, 'graph'>): CapScope[] {
     // The activity as a literal of the statement (`ID 'ACTVT' FIELD '03'`); a variable is the run's value, no scope's.
     const literal = /\bID\s+'?ACTVT'?\s+FIELD\s+'([^']*)'/i.exec(c.text)?.[1] ?? null;
     const name = `${object}${literal ? `_${literal}` : ''}`.replace(/[^A-Za-z0-9_]/g, '_');
-    const had = out.find((s) => s.name === name);
+    const at = facts.statements.findIndex((s) => s.keyword === 'AUTHORITY-CHECK' && s.lineStart === c.lineStart);
+    const mandatory = at >= 0 && everyRunReaches(facts, at);
+    const had = out.find((s) => s.name === name && s.mandatory === mandatory);
     if (had) had.lines.push(c.lineStart);
-    else out.push({ name, object, activity: literal, lines: [c.lineStart] });
+    else out.push({ name, object, activity: literal, lines: [c.lineStart], mandatory });
   }
+  // A scope a mandatory check already names is no branch check of its own.
+  return out.filter((s) => s.mandatory || !out.some((m) => m.mandatory && m.name === s.name));
+}
+
+/** The scopes of the service: the checks every run passes. */
+export const serviceScopes = (scopes: readonly CapScope[]) => scopes.filter((s) => s.mandatory);
+
+/** What `@requires` on the service names: the mandatory scopes, or an authenticated user where no check is mandatory. */
+export const capRequires = (scopes: readonly CapScope[]): string[] => (serviceScopes(scopes).length > 0 ? serviceScopes(scopes).map((s) => s.name) : ['authenticated-user']);
+
+/** The tag of a check that stays in the code, read back by the trace (`capCodeChecksIn`). */
+export const CAP_CODE_CHECK_TAG = '@cc-code-check';
+
+/** The `@cc-code-check` lines of srv/service.cds: the checks that are no service scope. */
+export function capCodeChecksIn(serviceCds: string): string[] {
+  const out: string[] = [];
+  const re = new RegExp(`^//\\s*${CAP_CODE_CHECK_TAG} (.+)$`, 'gm');
+  for (let m = re.exec(serviceCds); m !== null; m = re.exec(serviceCds)) out.push(m[1].trim());
   return out;
 }
 
-/** What `@requires` on the service names: the scopes, or an authenticated user where the original checks none. */
-export const capRequires = (scopes: readonly CapScope[]): string[] => (scopes.length > 0 ? scopes.map((s) => s.name) : ['authenticated-user']);
-
-function xsSecurity(input: CapShellInput, scopes: readonly CapScope[]): string {
+function xsSecurity(input: CapShellInput, all: readonly CapScope[]): string {
   const program = input.plan.program ?? 'the program';
+  const scopes = serviceScopes(all);
   const scopeEntries = scopes.map((s) => ({
     name: `$XSAPPNAME.${s.name}`,
     description: `${program}: AUTHORITY-CHECK OBJECT '${s.object}'${s.activity ? ` ACTVT '${s.activity}'` : ''} (L${s.lines.join(', L')})`.slice(0, 255),
@@ -689,24 +739,31 @@ function xsSecurity(input: CapShellInput, scopes: readonly CapScope[]): string {
  * The authorization of a CAP package as TRACE.md and STATUS.md state it, read back from its xs-security.json; null
  * when the file is absent or unreadable.
  */
-export function capAuthorizationIn(xsSecurityJson: string): { scopes: string[]; roleTemplate: string | null } | null {
+export function capAuthorizationIn(xsSecurityJson: string, serviceCds = ''): { scopes: string[]; roleTemplate: string | null; codeChecks: string[] } | null {
   try {
     const x = JSON.parse(xsSecurityJson) as { scopes?: Array<{ name?: unknown }>; 'role-templates'?: Array<{ name?: unknown }> };
     const scopes = (x.scopes ?? []).flatMap((s) => (typeof s.name === 'string' ? [s.name.replace(/^\$XSAPPNAME\./, '')] : []));
     const t = x['role-templates']?.[0]?.name;
-    return { scopes, roleTemplate: typeof t === 'string' ? t : null };
+    return { scopes, roleTemplate: typeof t === 'string' ? t : null, codeChecks: capCodeChecksIn(serviceCds) };
   } catch {
     return null;
   }
 }
 
 /** The sentence about the authorization for TRACE.md and STATUS.md. */
-export function capAuthorizationWords(a: { scopes: readonly string[]; roleTemplate: string | null }): string {
+export function capAuthorizationWords(a: { scopes: readonly string[]; roleTemplate: string | null; codeChecks?: readonly string[] }): string {
+  const inCode = a.codeChecks?.length
+    ? ` Checked in the code, not a service scope (the original checks them on some paths only; srv/lib/authority.ts checks each where the original does, failing closed until you map it): ${a.codeChecks.map((c) => c.replace(/: checked in the code.*$/, '')).join(', ')}.`
+    : '';
+  return capAuthorizationCore(a) + inCode;
+}
+
+function capAuthorizationCore(a: { scopes: readonly string[]; roleTemplate: string | null }): string {
   if (a.scopes.length === 0) {
-    return `Authorization on SAP BTP: the original checks no authorization; srv/service.cds requires an authenticated user (@requires: 'authenticated-user') and xs-security.json declares no scope. Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; the Dockerfile sets NODE_ENV=production, so a local container trial needs -e NODE_ENV=development as well.`;
+    return `Authorization on SAP BTP: no AUTHORITY-CHECK of the original is passed by every run; srv/service.cds requires an authenticated user (@requires: 'authenticated-user') and xs-security.json declares no scope. Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; the Dockerfile sets NODE_ENV=production, so a local container trial needs -e NODE_ENV=development as well.`;
   }
   return (
-    `Authorization on SAP BTP: xs-security.json declares a scope for each authorization object and activity the original checks (${a.scopes.join(', ')}) in the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE}, and srv/service.cds requires ${a.scopes.length === 1 ? 'it' : 'one of them'} on the service (@requires). ` +
+    `Authorization on SAP BTP: xs-security.json declares a scope for each authorization object and activity the original checks on every run (${a.scopes.join(', ')}) in the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE}, and srv/service.cds requires ${a.scopes.length === 1 ? 'it' : 'one of them'} on the service (@requires). ` +
     `The deploying admin creates a role collection from the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE} and assigns it to the users who may run the program; a user without it is refused (403) before the core runs. ` +
     `The other fields of each check (an organizational value such as a plant or a shipping point) are not part of a scope: srv/lib/authority.ts checks them where the original does, failing closed until you map it. ` +
     `Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; package.json gives ${CAP_MOCK_USER} ${a.scopes.length === 1 ? 'this scope' : 'these scopes'} for the development profile only; the Dockerfile sets NODE_ENV=production, so a local container trial needs -e NODE_ENV=development as well.`

@@ -73,7 +73,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const lookupLists = scaffold.files.filter((f) => f.path === LOOKUPS_FILE).flatMap((f) => lookupListsIn(f.content));
   const inputReads = scaffold.files.filter((f) => f.path === 'srv/lib/input-contract.ts').flatMap((f) => inputReadsIn(f.content));
   const xsSecurity = scaffold.files.find((f) => f.path === 'xs-security.json');
-  const capAuthorization = xsSecurity ? capAuthorizationIn(xsSecurity.content) : null;
+  const capAuthorization = xsSecurity ? capAuthorizationIn(xsSecurity.content, scaffold.files.find((f) => f.path === 'srv/service.cds')?.content ?? '') : null;
   const bdef = scaffold.files.find((f) => f.path.endsWith('.bdef.asbdef'));
   const rapSave = bdef ? rapSaveIn(bdef.content) : null;
   const noInput = rapNoInputIn(scaffold.files);

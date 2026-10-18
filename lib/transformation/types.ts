@@ -188,12 +188,13 @@ export const PLAN_VERSION = 2;
  * t_table) becomes the run's rows: the frame of the step runs the body in a function of its own and copies the
  * displayed global table into `st.rows` after it, only when the routine reaches the display — a raw check in the body
  * that leaves before it is evaluated by the frame (`display-node.ts`; the 1,000-line example answered `rows: []`).
- * CAP — xs-security.json declares a scope per authorization object and activity of the original's AUTHORITY-CHECKs in
- * the role template Runner, srv/service.cds carries `@requires` (an authenticated user where the original checks
+ * CAP — xs-security.json declares a scope per authorization object and activity of the original's AUTHORITY-CHECKs that
+ * every run passes (owner decision 18.10.2026; a check on some paths only stays srv/lib/authority.ts's and TRACE.md lists
+ * it as checked in the code, not a service scope) in the role template Runner, srv/service.cds carries `@requires` (an authenticated user where the original checks
  * none), and the development profile's mock user alice holds the scopes (`cap-shell.ts`). RAP — the business object
  * is `managed with unmanaged save` where the original writes through a BAPI, a standard business object or into a
  * standard table, `managed with additional save` where it writes its own table plus a change document or an update
- * function module, with a saver class (`rap-save.ts`); a query, job or action that hands the logic none of the input
+ * function module, with a saver class (`rap-save.ts`) that is not wired yet, and STATUS.md, TRACE.md and the manifest say so; a query, job or action that hands the logic none of the input
  * tables it takes says so (`@cc-no-input`, QM-03/FI-F09); a reason or message component of the visible result whose
  * type CDS cannot name reaches the custom entity as text (QM-05). TRACE.md and STATUS.md state each.
  * Nothing signed changes (§12.3).
@@ -870,7 +871,7 @@ export interface Trace {
   /** 3.0.18 (scaffold 18): each display of the original (ALV) and whether the frame makes it the run's rows (`display-node.ts`). Absent when none. */
   displays?: string[];
   /** 3.0.18 (scaffold 18): the CAP package's authorization — the scopes of xs-security.json and its role template (`cap-shell.ts`). Absent on the RAP route. */
-  capAuthorization?: { scopes: string[]; roleTemplate: string | null };
+  capAuthorization?: { scopes: string[]; roleTemplate: string | null; codeChecks?: string[] };
   /** 3.0.18 (scaffold 18): the RAP business object's implementation type and the reason the engine read (`rap-save.ts`). Absent on the Node route and for a custom entity. */
   rapSave?: string;
   /** 3.0.18 (QM-03, FI-F09): the logic's input tables no caller in the package hands in (`rapNoInputIn`). Absent when none. */

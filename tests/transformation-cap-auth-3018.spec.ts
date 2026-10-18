@@ -53,7 +53,7 @@ test.describe('the freight example: AUTHORITY-CHECK OBJECT V_LIKP_VST, ACTVT 03 
     const p = prepared(read(FREIGHT));
     const trace = withTrace(p.plan, p.scaffold, p.scaffold.files, []).files.find((f) => f.path === 'TRACE.md')!.content;
     const words = 'The deploying admin creates a role collection from the role template Runner and assigns it to the users who may run the program';
-    expect(trace).toContain('- Authorization on SAP BTP: xs-security.json declares a scope for each authorization object and activity the original checks (V_LIKP_VST_03) in the role template Runner');
+    expect(trace).toContain('- Authorization on SAP BTP: xs-security.json declares a scope for each authorization object and activity the original checks on every run (V_LIKP_VST_03) in the role template Runner');
     expect(trace).toContain(words);
     expect(trace).toContain('call with basic auth as alice, no password');
     // STATUS.md of the delivery package writes the same sentence, read from the package's xs-security.json.
@@ -62,14 +62,71 @@ test.describe('the freight example: AUTHORITY-CHECK OBJECT V_LIKP_VST, ACTVT 03 
   });
 });
 
-test('the 1,000-line example: one scope per activity of V_VBAK_VKO (03 at L200, 02 at L208)', () => {
+test('the 1,000-line example: V_VBAK_VKO 03 (L200) every run passes is the scope; 02 (L208, inside IF p_upd) stays in the code', () => {
   const scopes = capScopesOf(readEngineFacts(read(LEGACY_1000)));
-  expect(scopes.map((s) => [s.name, s.lines])).toEqual([
-    ['V_VBAK_VKO_03', [200]],
-    ['V_VBAK_VKO_02', [208]],
+  expect(scopes.map((s) => [s.name, s.lines, s.mandatory])).toEqual([
+    ['V_VBAK_VKO_03', [200], true],
+    ['V_VBAK_VKO_02', [208], false],
   ]);
   const p = prepared(read(LEGACY_1000));
-  expect(fileOf(p, 'srv/service.cds')).toContain("@requires: ['V_VBAK_VKO_03', 'V_VBAK_VKO_02']");
+  const service = fileOf(p, 'srv/service.cds');
+  // Before (owner decision 18.10.2026): @requires: ['V_VBAK_VKO_03', 'V_VBAK_VKO_02'] — any one of them let a caller in.
+  expect(service).toContain("\n@requires: 'V_VBAK_VKO_03'\n");
+  expect(service).toContain('// @cc-code-check V_VBAK_VKO_02 (L208): checked in the code, not a service scope');
+  const xs = JSON.parse(fileOf(p, 'xs-security.json'));
+  expect(xs.scopes.map((s: { name: string }) => s.name)).toEqual(['$XSAPPNAME.V_VBAK_VKO_03']);
+  expect(JSON.parse(fileOf(p, 'package.json')).cds.requires['[development]'].auth.users.alice.roles).toEqual(['V_VBAK_VKO_03']);
+  const trace = withTrace(p.plan, p.scaffold, p.scaffold.files, []).files.find((f) => f.path === 'TRACE.md')!.content;
+  expect(trace).toContain('Checked in the code, not a service scope (the original checks them on some paths only; srv/lib/authority.ts checks each where the original does, failing closed until you map it): V_VBAK_VKO_02 (L208).');
+});
+
+test('a fixture with one mandatory and two branch checks: inside an IF, and in a routine performed inside an IF', () => {
+  const source = [
+    'REPORT zauth_mix.',
+    "PARAMETERS: p_werks TYPE c LENGTH 4 DEFAULT '1000',",
+    "            p_upd AS CHECKBOX DEFAULT ' '.",
+    'START-OF-SELECTION.',
+    '  PERFORM check_display.',
+    '  IF p_upd = abap_true.',
+    '    PERFORM check_change.',
+    '  ENDIF.',
+    '  PERFORM run.',
+    'FORM check_display.',
+    "  AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '03'.",
+    '  IF sy-subrc <> 0.',
+    "    MESSAGE 'No display authorization' TYPE 'E'.",
+    '  ENDIF.',
+    'ENDFORM.',
+    'FORM check_change.',
+    "  AUTHORITY-CHECK OBJECT 'M_MATE_WRK' ID 'WERKS' FIELD p_werks ID 'ACTVT' FIELD '02'.",
+    '  IF sy-subrc <> 0.',
+    "    MESSAGE 'No change authorization' TYPE 'E'.",
+    '  ENDIF.',
+    'ENDFORM.',
+    'FORM run.',
+    '  IF p_werks IS NOT INITIAL.',
+    "    AUTHORITY-CHECK OBJECT 'M_MATE_STA' ID 'ACTVT' FIELD '03'.",
+    '  ENDIF.',
+    "  WRITE / 'done'.",
+    'ENDFORM.',
+    '',
+  ].join('\n');
+  expect(capScopesOf(readEngineFacts(source)).map((s) => [s.name, s.mandatory])).toEqual([
+    ['M_MATE_WRK_03', true],
+    ['M_MATE_WRK_02', false],
+    ['M_MATE_STA_03', false],
+  ]);
+  const p = prepared(source);
+  expect(fileOf(p, 'srv/service.cds')).toContain("\n@requires: 'M_MATE_WRK_03'\n");
+  expect(JSON.parse(fileOf(p, 'xs-security.json')).scopes.map((s: { name: string }) => s.name)).toEqual(['$XSAPPNAME.M_MATE_WRK_03']);
+  const cds = cdsCompileCandidate(p.scaffold.files);
+  expect(cds.ran, cds.ran ? '' : cds.reason).toBe(true);
+  if (cds.ran) expect(cds.findings, JSON.stringify(cds.findings)).toEqual([]);
+  // Only branch checks: no scope, an authenticated user.
+  const branchOnly = source.replace('  PERFORM check_display.\n', '');
+  const q = prepared(branchOnly);
+  expect(fileOf(q, 'srv/service.cds')).toContain("\n@requires: 'authenticated-user'\n");
+  expect(JSON.parse(fileOf(q, 'xs-security.json')).scopes).toEqual([]);
 });
 
 test('no AUTHORITY-CHECK: an authenticated user is required, no scope, no mock roles', () => {

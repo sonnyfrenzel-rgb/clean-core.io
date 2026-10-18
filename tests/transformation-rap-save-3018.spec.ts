@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { abapCheck } from '../lib/transformation/abap-check';
 import { prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
-import { rapNoInputIn, rapSaveOf } from '../lib/transformation/rap-save';
+import { RAP_SAVE_NOT_WIRED, rapNoInputIn, rapSaveOf } from '../lib/transformation/rap-save';
+import { abapOpenReasons } from '../lib/delivery-package';
 import { readEngineFacts } from '../lib/transformation/unit-plan';
 import { withTrace } from '../lib/transformation/trace';
 import { fixture, ROOT } from './helpers/transformation-scaffold';
@@ -50,6 +51,15 @@ test.describe('the implementation type follows the original', () => {
     expect(a.ok, a.why).toBe(true);
     const trace = withTrace(p.plan, p.scaffold, p.scaffold.files, []).files.find((f) => f.path === 'TRACE.md')!.content;
     expect(trace).toContain('- Implementation type of the business object: managed with unmanaged save — the original writes SAP\'s data through BAPI_PO_CREATE1 (L475), UPDATE EBAN (L240)');
+    // Owner decision 18.10.2026: the package says plainly that saving is not wired, and claims no persistence.
+    expect(RAP_SAVE_NOT_WIRED).toBe('save_modified names the access-layer methods but does not call them yet; changes are not persisted until it is wired');
+    expect(trace).toContain(`the saver writes nothing yet (${RAP_SAVE_NOT_WIRED})`);
+    expect(pool).toContain(`" Not wired yet: ${RAP_SAVE_NOT_WIRED}.`);
+    expect(pool).toContain('" @cc-open SAVE:');
+    // The file's manifest note (STATUS.md lists it among the open files) and the Known limits line of STATUS.md.
+    expect(abapOpenReasons('src/zbp_mm_po_approv_r.clas.locals_imp.abap', pool, null)).toContain(`the saver is not wired: ${RAP_SAVE_NOT_WIRED}`);
+    expect(fs.readFileSync(path.join(ROOT, 'lib', 'delivery-package.ts'), 'utf8')).toContain("if (inputs.saverUnwired) lines.push(`- Saving is not wired yet: ${RAP_SAVE_NOT_WIRED}.`);");
+    for (const f of p.scaffold.files) expect(f.content, f.path).not.toMatch(/framework saves the records|does the rest|is persisted\b/);
   });
 
   test('the 1,000-line example writes its own tables and Z_SD_LEGACY_LOG_WRITE IN UPDATE TASK: managed with additional save', () => {
@@ -60,6 +70,7 @@ test.describe('the implementation type follows the original', () => {
     expect(bdef).toMatch(/\npersistent table \w+\n/);
     expect(bdef).toContain('Z_SD_LEGACY_LOG_WRITE IN UPDATE TASK (L518)');
     expect(fileEnding(p, '.clas.locals_imp.abap')).toContain('METHOD save_modified.');
+    expect(fileEnding(p, '.clas.locals_imp.abap')).toContain(`" Not wired yet: ${RAP_SAVE_NOT_WIRED}.`);
     const a = activatable(p);
     expect(a.ok, a.why).toBe(true);
   });

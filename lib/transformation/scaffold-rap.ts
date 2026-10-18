@@ -84,7 +84,7 @@ import { ddicFieldName, isDdicReserved } from './ddic-reserved';
 import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart } from './released-counterparts';
 import { calledFromOutsideLines, NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 import { wrapAbapFiles } from './abap-line-length';
-import { RAP_NO_INPUT_TAG, rapSaveHeader, rapSaveOf, rapSaveTagLine, type RapSave } from './rap-save';
+import { RAP_NO_INPUT_TAG, RAP_SAVE_NOT_WIRED, rapSaveHeader, rapSaveOf, rapSaveTagLine, type RapSave } from './rap-save';
 
 /**
  * Marks a place the engine wrote and a developer completes — never the model
@@ -200,7 +200,7 @@ export const predicateName = (g: Pick<PlanGuard, 'id'>) => `when_${g.id.replace(
 function saverImpl(save: RapSave, accessIf: string | null, points: readonly AccessPoint[]): string[] {
   if (save.kind === 'managed') return [];
   const methods = accessIf ? points.filter((p) => p.kind !== 'read' && save.objects.includes(p.object)).map((p) => `${accessIf}~${p.method}`) : [];
-  const what = save.kind === 'unmanaged-save' ? 'Unmanaged save: the framework writes no table' : 'Additional save: the framework has saved the records';
+  const what = save.kind === 'unmanaged-save' ? 'Unmanaged save: the framework writes no table' : 'Additional save: beside the records of its own table';
   return [
     '',
     'CLASS lsc_rec IMPLEMENTATION.',
@@ -210,6 +210,7 @@ function saverImpl(save: RapSave, accessIf: string | null, points: readonly Acce
     `    " ${OPEN_MARKER} SAVE: hand what the run decided (create-rec, update-rec, delete-rec) to the access layer here -`,
     methods.length ? `    " ${methods.join(', ')}.` : '    " the access layer has no method for it yet; add one per object the original writes.',
     "    \" The save phase is the only place RAP allows these writes; no COMMIT WORK here.",
+    `    " Not wired yet: ${RAP_SAVE_NOT_WIRED}.`,
     '  ENDMETHOD.',
     '',
     'ENDCLASS.',

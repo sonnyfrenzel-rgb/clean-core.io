@@ -79,9 +79,21 @@ export function rapSaveTagLine(save: RapSave): string {
   return `// ${RAP_SAVE_TAG} ${rapSaveWords(save)}`;
 }
 
+/**
+ * The plain statement that the saver is not wired (owner decision 18.10.2026): STATUS.md, TRACE.md and the file's
+ * manifest note say it, and nothing in the package claims that a change is persisted.
+ */
+export const RAP_SAVE_NOT_WIRED = 'save_modified names the access-layer methods but does not call them yet; changes are not persisted until it is wired';
+
+/** The marker of the saver's open step (`@cc-open SAVE:`), by which the delivery reads that the saver is not wired. */
+export const RAP_SAVE_OPEN = '@cc-open SAVE:';
+
+/** True when an ABAP source holds a saver whose save_modified is not wired yet. */
+export const rapSaverUnwired = (content: string) => /^\s*METHOD\s+save_modified\s*\./im.test(content) && content.includes(RAP_SAVE_OPEN);
+
 export function rapSaveWords(save: RapSave): string {
-  if (save.kind === 'unmanaged-save') return `managed with unmanaged save — the original writes SAP's data through ${save.reasons.join(', ')}: no persistent table; the saver's save_modified is where the access layer writes`;
-  if (save.kind === 'additional-save') return `managed with additional save — the original writes its own table and, besides it, ${save.reasons.join(', ')}: the framework saves the records, the saver's save_modified does the rest`;
+  if (save.kind === 'unmanaged-save') return `managed with unmanaged save — the original writes SAP's data through ${save.reasons.join(', ')}: no persistent table, and the saver writes nothing yet (${RAP_SAVE_NOT_WIRED})`;
+  if (save.kind === 'additional-save') return `managed with additional save — the original writes its own table and, besides it, ${save.reasons.join(', ')}: the saver writes nothing yet (${RAP_SAVE_NOT_WIRED})`;
   return 'managed — the original writes only its own tables';
 }
 
