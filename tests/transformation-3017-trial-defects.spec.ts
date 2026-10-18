@@ -7,6 +7,7 @@ import { FINAL_PERIOD_NOTE, FINAL_PERIOD_REASON } from '../lib/transformation/ma
 import { withTrace } from '../lib/transformation/trace';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
 import { deriveEngineCases, replacedWhenInitial } from '../lib/testing-engine-cases';
+import { baseListOf } from '../scripts/acceptance/child/engine-cases-core.mjs';
 import { testFailureFacts, testFailureFactsBlock } from '../lib/test-failure-facts';
 import { geminiTestStubFillText } from '../lib/gemini-test-stub';
 import { fileUrl, poDemo, ROOT, runInPackage, writePackage } from './helpers/transformation-scaffold';
@@ -310,4 +311,13 @@ test.describe('the RAP route: a body without its final period (3.0.17 criterion 
     const node = prepared(poDemo());
     expect(repairBodyOf(node)(node.fillUnits[0].unitId, 'return', [])).toBeNull();
   });
+});
+
+// QA review of 0a1d2036f5ed: the base request's rows of a table decide whether an engine case that needs it filled runs.
+test('a table the base request hands in no rows of is empty; one it hands rows of is not; a non-table is not a table', () => {
+  const contract = { baseRequest: { vkorg: ['1000'], orders: [{ vbeln: '1' }], items: [] } };
+  expect(baseListOf(contract, 'GT_ORDERS')).toEqual([{ vbeln: '1' }]);
+  expect(baseListOf(contract, 'GT_ITEMS')).toEqual([]);
+  expect(baseListOf(contract, 'GT_DELIVERIES')).toEqual([]);
+  expect(baseListOf(contract, 'P_DAYS')).toBeNull();
 });

@@ -108,7 +108,11 @@ test.describe('the fingerprint list cannot drift from the files', () => {
     expect(Object.keys(SHIPPED_EXAMPLE_FINGERPRINTS).sort()).toEqual(registered);
     // A retired example's file stays as a regression fixture until 3.0.18 and is named, never silently left.
     expect(fs.readdirSync(EXAMPLES).filter((f) => !RETIRED_EXAMPLE_FILES.includes(f)).sort()).toEqual(registered);
-    for (const f of RETIRED_EXAMPLE_FILES) expect(registered, f).not.toContain(f);
+    for (const f of RETIRED_EXAMPLE_FILES) {
+      expect(registered, f).not.toContain(f);
+      // Kept as a regression fixture until 3.0.18: it must still be there (QA review of 0a1d2036f5ed).
+      expect(fs.existsSync(path.join(EXAMPLES, f)), f).toBe(true);
+    }
   });
 
   test('every entry is the fingerprint of the file as it stands', () => {

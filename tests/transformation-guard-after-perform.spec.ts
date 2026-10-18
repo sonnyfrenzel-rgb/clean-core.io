@@ -54,3 +54,16 @@ test('node: a routine the frame runs whole is the engine\'s, and the model is no
   expect(file.content).toContain('authority_L90()');
   expect(file.content).not.toContain('NotImplementedFill(');
 });
+
+// QA review of 0a1d2036f5ed: a statement of the original's own inside the sy-subrc block keeps the body the model's.
+test('node: a routine with its own statement inside the authorization block is not the engine\'s', () => {
+  const src = SOURCE.replace(
+    "    MESSAGE 'No authorization for this shipping point' TYPE 'E'.",
+    "    gv_denied = 'X'.\n    MESSAGE 'No authorization for this shipping point' TYPE 'E'.",
+  ).replace('START-OF-SELECTION.', "DATA gv_denied TYPE c LENGTH 1.\n\nSTART-OF-SELECTION.");
+  expect(src).toContain("gv_denied = 'X'.");
+  const p = prepareEngineLed({ source: src, track: 'node', program: null, decisions: [], contextText: 'PLATFORM KNOWLEDGE (test)' });
+  if (!p.ok) throw new Error(p.reason);
+  const unit = p.plan.units.find((u) => u.abap.some((r) => r.lineStart <= 91 && r.lineEnd >= 91) && u.kind !== 'orchestrator')!;
+  expect(p.scaffold.regions.some((r) => r.regionId === unit.id)).toBe(true);
+});

@@ -1349,12 +1349,18 @@ function frameOnly(u: Unit, plan: UnitPlan, facts: EngineFacts, auth: readonly A
   for (const e of auth) {
     const g = plan.guards.find((x) => x.id === e.wired!.guard);
     if (!g) return false;
-    // The check's block: its IF through the ENDIF that closes it.
+    // The check's block: its IF, the statement that ends it (MESSAGE … TYPE 'E' / RETURN — what the frame's guard does)
+    // and the ENDIF. Anything else in the block is the original's own work and keeps the body the model's (QA review
+    // of 0a1d2036f5ed: a log line or assignment inside the IF must not vanish).
+    covered.add(g.line);
+    if (g.endingLine) covered.add(g.endingLine);
     let depth = 0;
     for (const st of facts.statements.filter((x) => x.lineStart >= g.line && inUnit(x.lineStart))) {
-      covered.add(st.lineStart);
       if (/^IF$/i.test(st.keyword)) depth++;
-      else if (/^ENDIF$/i.test(st.keyword) && --depth <= 0) break;
+      else if (/^ENDIF$/i.test(st.keyword) && --depth <= 0) {
+        covered.add(st.lineStart);
+        break;
+      }
     }
   }
   const rest = facts.statements.filter((x) => inUnit(x.lineStart) && !covered.has(x.lineStart) && !/^(?:FORM|ENDFORM|METHOD|ENDMETHOD)$/i.test(x.keyword));

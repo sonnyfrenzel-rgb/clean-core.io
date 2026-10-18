@@ -179,7 +179,7 @@ function valueFor(to, contract, base) {
 }
 
 /** The base request's rows of an original table (`GT_ORDERS` → `orders`; none handed in: empty), or null for a non-table. */
-function baseListOf(contract, field) {
+export function baseListOf(contract, field) {
   const base = isObject(contract?.baseRequest) ? contract.baseRequest : null;
   if (!base) return null;
   const stem = String(field).toLowerCase().replace(/^(?:gt|lt|it|mt|t)_/, '');
