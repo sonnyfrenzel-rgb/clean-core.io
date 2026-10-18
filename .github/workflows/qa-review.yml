@@ -116,8 +116,9 @@ jobs:
     name: Smoke check of the deployed revision (sealed)
     if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'dev'
     runs-on: ubuntu-latest
-    # Waits for the deploy pipeline of the same commit (~15–25 min) before checking.
-    timeout-minutes: 60
+    # Waits for the deploy pipeline of the same commit (50-54 min on 17.10.2026) before checking. The limit is
+    # SMOKE_WAIT.jobMinutes in scripts/qa/lib/smoke.mjs; tests/qa-review-guard.spec.ts keeps the two equal.
+    timeout-minutes: 105
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
