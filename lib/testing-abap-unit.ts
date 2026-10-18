@@ -31,7 +31,7 @@
 
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 import { sandboxFilesFromStoredCode } from './test-sandbox/files';
-import { goldenMasterComparedWords } from './transformation/golden-master';
+import { goldenMasterComparedWords, notCarriedWords } from './transformation/golden-master';
 
 export const ABAP_NAME_MAX = 30;
 
@@ -601,6 +601,16 @@ export interface AbapUnitCounts {
   noCallNames: string[];
   /** Methods that call the code under test without the case data they stand for (demo cases whose rows the logic cannot take yet). Not tests. */
   withoutData?: number;
+  /**
+   * QM-02 (review of 18.10.2026): methods that call a run entry with an input contract (`run( is_selection … )`)
+   * without handing in its input (`is_input`): the class loads no data by itself, so the run sees empty tables and
+   * the expectation is no evidence of the logic. Not tests. A test of the empty run says so: `is_input = VALUE #( )`.
+   */
+  withoutInput?: number;
+  withoutInputNames?: string[];
+  /** Methods whose every assertion sits inside `IF sy-subrc = 0` (the row it reads found): a missing row passes. Not tests. */
+  guardedOnly?: number;
+  guardedOnlyNames?: string[];
 }
 
 /** Method bodies of one source: lower-case `class.method` → statements. */
@@ -628,7 +638,65 @@ function methodBodies(statements: AbapStatement[]): Map<string, { cls: string; s
  * of them, a static call or `NEW` of one, or a call of a helper of the same
  * test class that does so, makes a method a test, unless it skips.
  */
-export function countAbapUnitTests(testSources: ReadonlyArray<{ path?: string; content: string }>, underTest: Iterable<string>): AbapUnitCounts {
+/** The parameter a run entry takes its data through. */
+export const INPUT_PARAM = 'is_input';
+
+/**
+ * The run entries of the package with an input contract (QM-02): class → the methods that declare an `is_input`
+ * parameter. In an engine-led RAP package that is `run( is_selection, is_input )` of the logic class.
+ */
+export function abapInputContracts(packageSources: ReadonlyArray<{ path?: string; content: string }>): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const d of abapDeclarations(packageSources).values()) {
+    if (d.forTesting || d.kind !== 'class') continue;
+    for (const m of d.methods.values()) {
+      if (!m.params.has(INPUT_PARAM)) continue;
+      if (!out.has(d.name)) out.set(d.name, new Set());
+      out.get(d.name)!.add(m.name);
+    }
+  }
+  return out;
+}
+
+/** The prompt rule of the input contract, or null when the package's run entries take no input (QM-02). */
+export function inputContractPromptRule(packageSources: ReadonlyArray<{ path?: string; content: string }>): string | null {
+  const contracts = abapInputContracts(packageSources.filter((f) => !/\.clas\.testclasses\.abap$/i.test(f.path ?? '')));
+  if (contracts.size === 0) return null;
+  const entries = [...contracts].flatMap(([cls, methods]) => [...methods].map((m) => `${cls}->${m}( )`));
+  return (
+    `- THE INPUT CONTRACT (CRITICAL): ${entries.join(', ')} take${entries.length === 1 ? 's' : ''} the data the run works on through \`${INPUT_PARAM}\`; the class loads no demo data and reads nothing by itself. ` +
+    `Every test that calls it hands in \`${INPUT_PARAM}\` with the rows its case needs — or \`${INPUT_PARAM} = VALUE #( )\` where it tests the empty run on purpose. A test that calls it without \`${INPUT_PARAM}\` runs on empty tables and is not counted as a test. ` +
+    "Give the selection what the run's own checks require before the step under test (a demo flag, a valid case number), or expect that refusal. " +
+    'Before asserting on a row of a result table, assert that the row is there (`READ TABLE …` then `cl_abap_unit_assert=>assert_subrc( exp = 0 … )`) — never wrap the assertion in `IF sy-subrc = 0`: a missing row would pass. ' +
+    'After a run, assert that `not_filled` of its result is initial where the result has one: a function still a stub ends the run early.'
+  );
+}
+
+/** Whether every assertion of a method sits inside `IF sy-subrc = 0` / `IF … IS NOT INITIAL` / `IF line_exists( … )` without an ELSE. */
+function guardedOnly(statements: AbapStatement[]): boolean {
+  const ASSERT = /cl_abap_unit_assert=>(assert_\w+|fail)\s*\(/i;
+  const GUARD = /^IF\s+(?:sy-subrc\s*(?:=|EQ)\s*0|\S+\s+IS\s+NOT\s+INITIAL|line_exists\s*\(.*\)|\S+\s+IS\s+ASSIGNED)$/i;
+  const stack: boolean[] = [];
+  let inside = 0;
+  let outside = 0;
+  for (const s of statements) {
+    if (s.keyword === 'IF') stack.push(GUARD.test(s.text));
+    else if (s.keyword === 'ELSE' || s.keyword === 'ELSEIF') {
+      if (stack.length) stack[stack.length - 1] = false;
+    } else if (s.keyword === 'ENDIF') stack.pop();
+    else if (ASSERT.test(maskText(s.text))) {
+      if (stack.includes(true)) inside++;
+      else outside++;
+    }
+  }
+  return inside > 0 && outside === 0;
+}
+
+export function countAbapUnitTests(
+  testSources: ReadonlyArray<{ path?: string; content: string }>,
+  underTest: Iterable<string>,
+  inputContracts: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+): AbapUnitCounts {
   const cut = new Set([...underTest].map((x) => x.toLowerCase()));
   const counts: AbapUnitCounts = { methods: 0, tests: 0, skipped: 0, noCall: 0, skippedNames: [], noCallNames: [] };
   for (const src of testSources) {
@@ -665,8 +733,22 @@ export function countAbapUnitTests(testSources: ReadonlyArray<{ path?: string; c
         if (skips) {
           counts.skipped++;
           counts.skippedNames.push(key);
-        } else if (callsUnderTest(key, new Set())) counts.tests++;
-        else {
+        } else if (callsUnderTest(key, new Set())) {
+          // QM-02: a run entry with an input contract called without its input, or assertions a missing row skips.
+          const local = new Map(types);
+          for (const [k, v] of variableTypes(body?.statements ?? [], decls)) local.set(k, v);
+          const calls = body ? callsOf(body.statements, local) : [];
+          // A method that catches (a refusal it expects before any input is read) is not judged by its input.
+          const expectsRefusal = !!body && body.statements.some((x) => x.keyword === 'CATCH');
+          const noInput = !expectsRefusal && calls.some((c) => c.target !== null && !!inputContracts.get(c.target)?.has(c.method) && !namedArgs(c.args).includes(INPUT_PARAM));
+          if (noInput) {
+            counts.withoutInput = (counts.withoutInput ?? 0) + 1;
+            (counts.withoutInputNames ??= []).push(key);
+          } else if (body && guardedOnly(body.statements)) {
+            counts.guardedOnly = (counts.guardedOnly ?? 0) + 1;
+            (counts.guardedOnlyNames ??= []).push(key);
+          } else counts.tests++;
+        } else {
           counts.noCall++;
           counts.noCallNames.push(key);
         }
@@ -683,6 +765,8 @@ export function abapUnitCountsSentence(c: AbapUnitCounts): string {
   if (c.skipped) not.push(`${c.skipped} ${c.skipped === 1 ? 'skips' : 'skip'}`);
   if (c.noCall) not.push(`${c.noCall} ${c.noCall === 1 ? 'does' : 'do'} not call it`);
   if (c.withoutData) not.push(`${c.withoutData} ${c.withoutData === 1 ? 'calls' : 'call'} it without its case data`);
+  if (c.withoutInput) not.push(`${c.withoutInput} ${c.withoutInput === 1 ? 'calls' : 'call'} the run without handing in its input (${INPUT_PARAM})`);
+  if (c.guardedOnly) not.push(`${c.guardedOnly} ${c.guardedOnly === 1 ? 'asserts only when the row it reads is' : 'assert only when the row they read is'} found`);
   return `${c.tests} of ${c.methods} ABAP Unit test ${c.methods === 1 ? 'method calls' : 'methods call'} the code under test${not.length ? `; ${not.join(' and ')} — not counted as tests` : ''}.`;
 }
 
@@ -690,7 +774,7 @@ export function abapUnitCountsSentence(c: AbapUnitCounts): string {
  * The golden master class in a test include, as the engine wrote it: its case methods, whether their rows reach the
  * logic, and how many compare a result of the original (3.0.14 item 8: the others skip after running — not compared).
  */
-export function goldenMasterInInclude(content: string): { cases: number; rowsPassed: boolean; compared: number } | null {
+export function goldenMasterInInclude(content: string): { cases: number; rowsPassed: boolean; compared: number; notCarried?: number } | null {
   const at = content.search(/CLASS\s+ltc_golden_master\s+DEFINITION/i);
   if (at < 0) return null;
   const rest = content.slice(at);
@@ -699,12 +783,14 @@ export function goldenMasterInInclude(content: string): { cases: number; rowsPas
   // A package stored before 3.0.14 asserted nothing and did not skip: none of its cases compared a result either.
   const bodies = [...rest.matchAll(/METHOD\s+case_\d+\.([\s\S]*?)ENDMETHOD\./gi)].map((m) => m[1]);
   const compared = bodies.filter((b) => /cl_abap_unit_assert=>assert_/i.test(b) && !/=>\s*skip\s*\(/i.test(b)).length;
-  return { cases, rowsPassed: !/"\s*Not passed:/i.test(runCase), compared };
+  // QM-01: a case whose data the engine could not carry exactly skips without running (golden-master.ts).
+  const notCarried = bodies.filter((b) => /=>\s*skip\s*\(\s*msg\s*=\s*'Case \d+ not carried over:/i.test(b)).length;
+  return { cases, rowsPassed: !/"\s*Not passed:/i.test(runCase), compared, ...(notCarried ? { notCarried } : {}) };
 }
 
 export interface AbapTestEvidence {
   counts: AbapUnitCounts;
-  goldenMaster: { cases: number; rowsPassed: boolean; compared: number } | null;
+  goldenMaster: { cases: number; rowsPassed: boolean; compared: number; notCarried?: number } | null;
 }
 
 /**
@@ -719,7 +805,7 @@ export function abapTestEvidence(files: ReadonlyArray<{ path: string; content: s
   const tests = [...includes, ...(typeof modelSuiteCode === 'string' && modelSuiteCode.trim() ? [{ path: 'model-suite.abap', content: modelSuiteCode }] : [])];
   const underTest = abapDeclarations(classes).keys();
   const golden = includes.map((f) => goldenMasterInInclude(f.content)).find((g) => g !== null) ?? null;
-  const counts = countAbapUnitTests(tests, underTest);
+  const counts = countAbapUnitTests(tests, underTest, abapInputContracts(classes.filter((f) => !/\.clas\.testclasses\.abap$/i.test(f.path))));
   // A demo case whose rows do not reach the logic runs the logic, but not the case: it is not counted as a test.
   // Only the cases that compare a result are counted as tests at all; the others skip (3.0.14 item 8).
   if (golden && !golden.rowsPassed && golden.compared > 0) {
@@ -740,10 +826,15 @@ export function abapTestEvidenceOfProject(project: { extensibilityRoute?: unknow
 /** The evidence as the testing stage and STATUS.md say it. */
 export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
   const out = [`ABAP Unit: ${abapUnitCountsSentence(e.counts)}`];
+  const named = (names: readonly string[] | undefined) => `${(names ?? []).slice(0, 8).join(', ')}${(names?.length ?? 0) > 8 ? ` and ${(names?.length ?? 0) - 8} more` : ''}`;
+  if (e.counts.withoutInput)
+    out.push(`Test does not hand in input — its expectation is not evidence: ${named(e.counts.withoutInputNames)} call the run without ${INPUT_PARAM}, so it runs on empty tables.`);
+  if (e.counts.guardedOnly) out.push(`Test asserts only when its row is found — a missing row passes, so it is not evidence: ${named(e.counts.guardedOnlyNames)}.`);
   if (e.goldenMaster && e.goldenMaster.cases > 0) {
     const n = e.goldenMaster.cases;
     out.push(
       `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data: ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
+        (e.goldenMaster.notCarried ? `; ${notCarriedWords(e.goldenMaster.notCarried)}` : '') +
         (e.goldenMaster.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic (its state has no component for them), so they run the logic without the case data.'),
     );
   }

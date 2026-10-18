@@ -430,7 +430,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   /* ---------------------------------------------------------- the contract */
   const unitsWithBody = plan.units.filter((u) => !plan.units.some((p) => p.part?.parent === u.id));
   const parentsOfParts = plan.units.filter((u) => plan.units.some((p) => p.part?.parent === u.id));
-  const reservedNames = new Set(['run', 'run_with_state', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
+  const reservedNames = new Set(['run', 'run_with_state', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'not_filled', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
   // The SAP tables the access layer reads or writes: ABAP Cloud has no type of them, the class declares a row type each.
   const sapTables = access.points.filter((p) => !p.customer && p.kind !== 'call').map((p) => p.object.toLowerCase());
   const contract = readRapContract(facts, reservedNames, { sapTables });
@@ -785,6 +785,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     program: plan.program,
     refusalClass: refusal,
     expected: options.goldenMasterExpected,
+    notFilledComponent: 'not_filled',
   });
   const demoFlag = golden?.master.demoFlag ? contract.selection.find((f) => f.name === golden.master.demoFlag!.toLowerCase() && f.kind === 'parameter') : undefined;
 
@@ -843,8 +844,16 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     ...contract.selection.map((f) => `    ${f.name} = is_selection-${f.name}.`),
     ...(inputs.length > 0 ? ['    ms_input = is_input.'] : []),
     '    CLEAR mt_messages.',
-    ...(selectionLines.length > 0 ? ['    check_selection( ).'] : []),
-    `    ${methodOf.get('U00') ?? 'run_steps'}( ).`,
+    // QM-04 (review of 18.10.2026): a function still a stub raises the nofill exception where it is reached. It ends the
+    // run there, but not the result: what was computed up to that point is returned, and the unit is named in
+    // not_filled - as the Node route returns its outcome with notFilled.
+    '    TRY.',
+    ...(selectionLines.length > 0 ? ['        check_selection( ).'] : []),
+    `        ${methodOf.get('U00') ?? 'run_steps'}( ).`,
+    `      CATCH ${cx} INTO DATA(lx_nofill).`,
+    '        APPEND lx_nofill->unit TO rs_result-not_filled.',
+    "        APPEND |Not filled: { lx_nofill->unit } - a function of the generation is still a stub; the run ended where it was reached.| TO mt_messages.",
+    '    ENDTRY.',
     ...contract.globals.map((g) => `    rs_result-${g.name} = ${g.name}.`),
     '    rs_result-messages = mt_messages.',
     '  ENDMETHOD.',
@@ -977,6 +986,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     '    TYPES BEGIN OF ty_run_result.',
     ...contract.globals.map((g) => `    TYPES ${g.name} ${g.phrase}.`),
     '    TYPES messages TYPE string_table.',
+    "    \" The functions still stubs the run reached, by unit (U12): empty when every function it reached is filled.",
+    '    TYPES not_filled TYPE string_table.',
     '    TYPES END OF ty_run_result.',
   ];
   const privateData = [

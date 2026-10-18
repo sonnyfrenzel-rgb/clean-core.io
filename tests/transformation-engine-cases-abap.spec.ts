@@ -169,9 +169,14 @@ test.describe('(7) the engine cases run in ABAP', () => {
 
 test.describe('(8) the golden master never reports a case it did not compare as passed', () => {
   const three = () => fs.readFileSync(GM_FIXTURE, 'utf8');
+  // QM-01 (18.10.2026): case 2 of the fixture also sets GV_SEALED, which the run does not take as input, so the case is
+  // not carried over and does not run (tests/golden-master-mutations.spec.ts). These cases are about running and
+  // comparing, so they use the fixture without that one statement: every case carried exactly.
+  const carried = () => three().replace(/ {6}gv_sealed = space\.\r?\n/, '');
 
   test('without an expected result, a case runs the logic and then skips — "not compared"; counted as skipped, not as a test', () => {
-    const { scaffold } = rap(three());
+    expect(carried()).not.toBe(three());
+    const { scaffold } = rap(carried());
     const text = include(scaffold);
     for (const m of ['case_00', 'case_01', 'case_02']) {
       const b = body(text, m);
@@ -188,7 +193,7 @@ test.describe('(8) the golden master never reports a case it did not compare as 
   });
 
   test('the seam for the characterization samples (3.0.19): an expected result on record is asserted, and the case counts as a test', () => {
-    const { scaffold } = rap(three(), {
+    const { scaffold } = rap(carried(), {
       goldenMasterExpected: {
         1: { source: 'a characterization sample (test data)', refused: false, values: [{ component: 'gv_sealed', value: 'X' }], rows: [{ component: 'gt_claims', count: 3 }] },
         2: { source: 'a characterization sample (test data)', refused: { guard: 'G-0042', text: 'Held' } },

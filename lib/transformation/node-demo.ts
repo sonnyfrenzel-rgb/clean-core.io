@@ -93,6 +93,15 @@ export function caseRows(demo: OriginalDemo, c: OriginalDemoCase): Record<string
   return out;
 }
 
+/** What kind of statement of the original one not read is (MODIFY, assignment) - the words of the engine's golden master. */
+function statementKind(text: string): string {
+  if (/^[\w\-~<>]+(?:\[[^\]]*\])?\s*=/.test(text) && !/^(IF|ELSEIF|CHECK|WHEN)\b/i.test(text)) return 'assignment';
+  const t = text.trim().split(/\s+/);
+  const first = (t[0] ?? '').toUpperCase();
+  if (/^(READ|DELETE|MODIFY|INSERT|LOOP|SORT)$/.test(first) && /^(TABLE|ADJACENT)$/i.test(t[1] ?? '')) return first + ' ' + (t[1] ?? '').toUpperCase();
+  return first || 'statement';
+}
+
 /** One case run: ran (with the process outcome), threw (the code under test threw), or not run, with the reason. */
 export type DemoRun =
   | { state: 'ran'; outcome: ProcessOutcome }
@@ -147,7 +156,9 @@ class NotHeld extends Error {
 
 function runCase(demo: OriginalDemo, c: OriginalDemoCase, initial: Record<string, unknown>, held: (place: string, start: unknown, value: string) => unknown): DemoRun {
   if (c.unread.length > 0) {
-    return { state: 'not-run', reason: 'the case was read only in part (' + c.unread.length + ' statement(s) not read, first at L' + c.unread[0].line + ')' };
+    // QM-01: a case whose data is not exactly the original's is not run; the reason names the statements it could not carry.
+    const kinds = c.unread.slice(0, 3).map((u) => statementKind(u.text) + ' at L' + u.line);
+    return { state: 'not-run', reason: 'not carried over: ' + kinds.join(', ') + (c.unread.length > 3 ? ' and ' + (c.unread.length - 3) + ' more' : '') + " - the engine could not read these statements of the original, so the case's data would not be the original's" };
   }
   const params: Record<string, string> = {};
   for (const [p, v] of Object.entries(demo.parameters)) params[p] = v.default;

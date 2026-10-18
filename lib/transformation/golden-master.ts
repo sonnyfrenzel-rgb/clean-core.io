@@ -28,8 +28,14 @@
  *     … WHERE … MODIFY … INDEX`, `DELETE … WHERE`, a table rebuilt in reverse
  *     (`INSERT … INDEX 1`) and assigned back, a select-option filled through its
  *     header line, and a literal assigned to a parameter or another variable (a
- *     *setting*). A statement outside these is not guessed: it is listed under
- *     `unread` with its line, and the case says it was read only in part.
+ *     *setting*). Since the QM review of 18.10.2026 (QM-01) also: inline `DATA( )` /
+ *     `FIELD-SYMBOL( )` areas, `READ … TRANSPORTING NO FIELDS` and `READ … INDEX`, the hit branch
+ *     `IF sy-subrc = 0. … ENDIF.`, `MODIFY … INDEX sy-tabix`, `MODIFY … TRANSPORTING f … WHERE …`,
+ *     `MODIFY … FROM wa` on the row of a LOOP, `DELETE … INDEX`, `APPEND VALUE #( … )`,
+ *     `APPEND INITIAL LINE … ASSIGNING`, `INSERT … INTO TABLE`, and the case routine's own work
+ *     areas start initial. A statement outside these is not guessed: it is listed under `unread`
+ *     with its line — and such a case is **not run** in the package: its data would not be the
+ *     original's, so it skips naming the statement (`goldenMasterNotCarried`).
  *
  * Expected values: none are invented. The title is what the original says the
  * case shows. Since 3.0.14 (item 8, owner 15.10.2026) a case compares its result
@@ -418,6 +424,16 @@ function valueOf(rhs: string, m: Machine, constants: Map<string, string>): strin
   return null;
 }
 
+/** A 0-based row index from an index operand: `3`, or a variable the case set (`lv_index`, `sy-tabix`); NaN otherwise. */
+function indexOf(operand: string, m: Machine): number {
+  if (/^\d+$/.test(operand)) return Number(operand) - 1;
+  const v = m.vars.get(operand.toUpperCase());
+  return v !== undefined && /^\d+$/.test(v) ? Number(v) - 1 : NaN;
+}
+
+/** An index operand: a number, a variable, or `sy-tabix`. */
+const INDEX = String.raw`(\d+|[\w-]+)`;
+
 /** ABAP's sort on the components named: numbers as numbers, everything else as text. */
 function sortRows(rows: Row[], keys: Array<{ col: string; desc: boolean }>): void {
   const cmp = (a: string, b: string) => {
@@ -437,7 +453,19 @@ function sortRows(rows: Row[], keys: Array<{ col: string; desc: boolean }>): voi
   rows.splice(0, rows.length, ...indexed.map((x) => x.r));
 }
 
-const AREA = String.raw`(<\w+>|\w+)`;
+/** A work area or field symbol, also declared inline: `ls`, `<s>`, `DATA(ls)`, `FIELD-SYMBOL(<s>)`. */
+const AREA = String.raw`(<\w+>|\w+|DATA\(\w+\)|FIELD-SYMBOL\(<\w+>\))`;
+/** The name of an area as AREA matched it, upper case: `DATA(ls)` → `LS`. */
+const areaName = (raw: string) => raw.replace(/^(?:DATA|FIELD-SYMBOL)\((.+)\)$/i, '$1').toUpperCase();
+
+/** What kind of statement one the reader did not execute is, for the reason a case is not carried over: `MODIFY`, `assignment`. */
+export function statementKind(text: string): string {
+  if (/^[\w\-~<>]+(?:\[[^\]]*\])?\s*=/.test(text) && !/^(IF|ELSEIF|CHECK|WHEN)\b/i.test(text)) return 'assignment';
+  const t = text.trim().split(/\s+/);
+  const first = (t[0] ?? '').toUpperCase();
+  if (/^(READ|DELETE|MODIFY|INSERT|LOOP|SORT)$/.test(first) && /^(TABLE|ADJACENT)$/i.test(t[1] ?? '')) return `${first} ${(t[1] ?? '').toUpperCase()}`;
+  return first || 'statement';
+}
 
 function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmFixtureRoutine>; constants: Map<string, string>; loop: { table: string; index: number } | null }): void {
   const unread = (s: AbapStatement) => m.unread.push({ line: s.lineStart, text: s.text });
@@ -463,9 +491,19 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
     }
     if (s.keyword === 'IF') {
       const { body, next } = blockOf(list, i, 'IF', 'ENDIF');
+      let depth = 0;
+      const branches = body.some((b) => {
+        if (b.keyword === 'IF') depth++;
+        else if (b.keyword === 'ENDIF') depth--;
+        return depth === 0 && (b.keyword === 'ELSE' || b.keyword === 'ELSEIF');
+      });
       // The anchor guard of a mutation (`IF sy-subrc <> 0. MESSAGE … ENDIF.`): it stops the demo when its row is missing.
       if (/^IF\s+sy-subrc\s*(<>|NE)\s*0$/i.test(text) && body.every((b) => b.keyword === 'MESSAGE')) {
         if (m.subrc !== 0) unread(s);
+      } else if (/^IF\s+sy-subrc\s*(=|EQ)\s*0$/i.test(text) && !branches) {
+        // The hit branch of a READ (`READ … . IF sy-subrc = 0. <change the row> ENDIF.`, QM-01): run on a hit; a miss
+        // was already listed as not read with the READ.
+        if (m.subrc === 0) run(body, m, ctx);
       } else {
         unread(s);
         for (const b of body) unread(b);
@@ -484,7 +522,7 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
         continue;
       }
       const table = lp[1].toUpperCase();
-      const wa = lp[3].toUpperCase();
+      const wa = areaName(lp[3]);
       const assigning = lp[2].toUpperCase() === 'ASSIGNING';
       // The rows the loop visits; MODIFY writes back by index, a field symbol writes through.
       const visit = tableOf(m, table)
@@ -492,26 +530,60 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
         .filter(({ r }) => matches(r.v, cond));
       for (const { r, idx } of visit) {
         m.areas.set(wa, assigning ? r : copyRow(r));
+        m.vars.set('SY-TABIX', String(idx + 1));
         run(body, m, { ...ctx, loop: { table, index: idx } });
       }
       continue;
     }
     if (s.keyword === 'READ') {
-      const rd = new RegExp(String.raw`^READ\s+TABLE\s+(\w+)\s+(INTO|ASSIGNING)\s+${AREA}\s+(?:WITH\s+KEY\s+(.+)|INDEX\s+(\d+))$`, 'i').exec(text);
-      const cond = rd && rd[4] ? conditions(rd[4], ctx.constants) : null;
-      if (!rd || (rd[4] && !cond)) {
+      // READ TABLE t INTO|ASSIGNING wa | TRANSPORTING NO FIELDS, WITH KEY … | INDEX n, in either order, BINARY SEARCH ignored.
+      const head = /^READ\s+TABLE\s+(\w+)\s+(.+)$/i.exec(text);
+      let rest = head ? head[2].replace(/\s+BINARY\s+SEARCH$/i, '') : '';
+      let target: { name: string; assigning: boolean } | null = null;
+      let found = false;
+      const into = new RegExp(String.raw`(?:^|\s)(INTO|ASSIGNING)\s+${AREA}(?=\s|$)`, 'i').exec(rest);
+      if (into) {
+        target = { name: areaName(into[2]), assigning: into[1].toUpperCase() === 'ASSIGNING' };
+        rest = (rest.slice(0, into.index) + rest.slice(into.index + into[0].length)).trim();
+        found = true;
+      } else if (/(?:^|\s)TRANSPORTING\s+NO\s+FIELDS(?=\s|$)/i.test(rest)) {
+        rest = rest.replace(/(?:^|\s)TRANSPORTING\s+NO\s+FIELDS(?=\s|$)/i, ' ').trim();
+        found = true;
+      }
+      const key = /^WITH\s+KEY\s+(.+)$/i.exec(rest);
+      const at = new RegExp(String.raw`^INDEX\s+${INDEX}$`, 'i').exec(rest);
+      const cond = key ? conditions(key[1], ctx.constants) : null;
+      const index = at ? indexOf(at[1], m) : NaN;
+      if (!head || !found || (!cond && !(at && Number.isInteger(index)))) {
         unread(s);
         continue;
       }
-      const rows = tableOf(m, rd[1]);
-      const hit = cond ? rows.find((r) => matches(r.v, cond)) : rows[Number(rd[5]) - 1];
-      m.subrc = hit ? 0 : 4;
-      if (hit) m.areas.set(rd[3].toUpperCase(), rd[2].toUpperCase() === 'ASSIGNING' ? hit : copyRow(hit));
-      else unread(s);
+      const rows = tableOf(m, head[1]);
+      const pos = cond ? rows.findIndex((r) => matches(r.v, cond)) : rows[index] ? index : -1;
+      m.subrc = pos >= 0 ? 0 : 4;
+      if (pos >= 0) {
+        m.vars.set('SY-TABIX', String(pos + 1));
+        if (target) m.areas.set(target.name, target.assigning ? rows[pos] : copyRow(rows[pos]));
+      } else unread(s);
       continue;
     }
     if (s.keyword === 'APPEND') {
-      const ap = /^APPEND\s+(\w+)(?:\s+TO\s+(\w+))?$/i.exec(text);
+      const initial = new RegExp(String.raw`^APPEND\s+INITIAL\s+LINE\s+TO\s+(\w+)\s+ASSIGNING\s+${AREA}$`, 'i').exec(text);
+      if (initial) {
+        // A new empty row, filled through the field symbol by the statements that follow.
+        const row: Row = { v: {}, src: null };
+        tableOf(m, initial[1]).push(row);
+        m.areas.set(areaName(initial[2]), row);
+        continue;
+      }
+      const value = /^APPEND\s+VALUE\s+#\(\s*(.*?)\s*\)\s+TO\s+(\w+)$/i.exec(text);
+      if (value) {
+        const fields = value[1] === '' ? [] : conditions(value[1], ctx.constants);
+        if (!fields) unread(s);
+        else tableOf(m, value[2]).push({ v: Object.fromEntries(fields), src: null });
+        continue;
+      }
+      const ap = /^APPEND\s+(<\w+>|\w+)(?:\s+TO\s+(\w+))?$/i.exec(text);
       const wa = ap ? m.areas.get(ap[1].toUpperCase()) : undefined;
       if (!ap || !wa) {
         unread(s);
@@ -524,30 +596,58 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
       continue;
     }
     if (s.keyword === 'INSERT') {
-      const ins = /^INSERT\s+(\w+)\s+INTO\s+(\w+)\s+INDEX\s+1$/i.exec(text);
+      const ins = /^INSERT\s+(<\w+>|\w+)\s+INTO\s+(TABLE\s+)?(\w+)(?:\s+INDEX\s+1)?$/i.exec(text);
       const wa = ins ? m.areas.get(ins[1].toUpperCase()) : undefined;
-      if (!ins || !wa) {
+      // `INSERT wa INTO TABLE t` on a standard table appends; `INSERT wa INTO t INDEX 1` puts it first.
+      if (!ins || !wa || (!ins[2] && !/\sINDEX\s+1$/i.test(text)) || (ins[2] && /\sINDEX\s/i.test(text))) {
         unread(s);
         continue;
       }
-      tableOf(m, ins[2]).unshift(copyRow(wa));
+      if (ins[2]) tableOf(m, ins[3]).push({ v: { ...wa.v }, src: null });
+      else tableOf(m, ins[3]).unshift(copyRow(wa));
       continue;
     }
     if (s.keyword === 'MODIFY') {
-      const md = /^MODIFY\s+(\w+)\s+FROM\s+(\w+)\s+INDEX\s+(\w+)$/i.exec(text);
+      // MODIFY t FROM wa [INDEX n] [TRANSPORTING f …] [WHERE …]; without INDEX and WHERE, the row of the LOOP at t.
+      const md = new RegExp(String.raw`^MODIFY\s+(\w+)\s+FROM\s+(<\w+>|\w+)(?:\s+INDEX\s+${INDEX})?(?:\s+TRANSPORTING\s+((?:(?!\bWHERE\b)[\w\s])+?))?(?:\s+WHERE\s+(.+))?$`, 'i').exec(text);
       const wa = md ? m.areas.get(md[2].toUpperCase()) : undefined;
-      const idx = md ? (/^\d+$/.test(md[3]) ? Number(md[3]) - 1 : Number(m.vars.get(md[3].toUpperCase()) ?? NaN) - 1) : NaN;
       const table = md ? tableOf(m, md[1]) : [];
-      if (!md || !wa || !Number.isInteger(idx) || !table[idx]) {
+      const fields = md && md[4] ? md[4].trim().split(/\s+/).map((x) => x.toLowerCase()) : null;
+      const cond = md && md[5] ? conditions(md[5], ctx.constants) : null;
+      if (!md || !wa || (md[5] && (!cond || !fields || md[3]))) {
         unread(s);
         continue;
       }
-      table[idx] = { v: { ...wa.v }, src: table[idx].src };
+      const write = (idx: number) => {
+        const v = fields ? { ...table[idx].v, ...Object.fromEntries(fields.map((f) => [f, wa.v[f] ?? ''])) } : { ...wa.v };
+        table[idx] = { v, src: table[idx].src };
+      };
+      if (cond) {
+        table.forEach((r, idx) => {
+          if (matches(r.v, cond)) write(idx);
+        });
+        continue;
+      }
+      const idx = md[3] ? indexOf(md[3], m) : ctx.loop && ctx.loop.table === md[1].toUpperCase() ? ctx.loop.index : NaN;
+      if (!Number.isInteger(idx) || !table[idx]) {
+        unread(s);
+        continue;
+      }
+      write(idx);
       continue;
     }
     if (s.keyword === 'DELETE') {
       const dl = /^DELETE\s+(\w+)\s+WHERE\s+(.+)$/i.exec(text);
       const cond = dl ? conditions(dl[2], ctx.constants) : null;
+      const at = new RegExp(String.raw`^DELETE\s+(\w+)\s+INDEX\s+${INDEX}$`, 'i').exec(text);
+      // Inside a LOOP over the same table a delete by index would shift the rows the loop still visits: not read.
+      if (at && !(ctx.loop && ctx.loop.table === at[1].toUpperCase())) {
+        const t = tableOf(m, at[1]);
+        const idx = indexOf(at[2], m);
+        if (!Number.isInteger(idx) || !t[idx]) unread(s);
+        else t.splice(idx, 1);
+        continue;
+      }
       if (!dl || !cond) {
         unread(s);
         continue;
@@ -591,8 +691,8 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
     if (assign) {
       const target = assign[1].toUpperCase();
       const rhs = assign[2].trim();
-      if (/^sy-tabix$/i.test(rhs) && ctx.loop) {
-        m.vars.set(target, String(ctx.loop.index + 1));
+      if (/^sy-tabix$/i.test(rhs) && (ctx.loop || m.vars.has('SY-TABIX'))) {
+        m.vars.set(target, ctx.loop ? String(ctx.loop.index + 1) : m.vars.get('SY-TABIX')!);
         continue;
       }
       // A table assigned from a table (`gt_raw = lt_events.`).
@@ -792,9 +892,16 @@ export function readGoldenMaster(source: string): GoldenMaster | null {
   const demoFlag = demoFlagOf(statements, base.name, defaults);
   const titleVar = titleVariable(block);
 
+  // The case routine's own work areas (`DATA ls_res TYPE ty_res.`): initial at the start of each case, so a component
+  // assigned to one (`ls_res-sample = 'A1'. MODIFY … FROM ls_res TRANSPORTING sample …`) is a row value, not a setting.
+  const localAreas = (caseForm?.body ?? [])
+    .map((s) => /^DATA:?\s+(\w+)\s+(?:TYPE|LIKE)\s+(.*)$/i.exec(s.text))
+    .filter((x): x is RegExpExecArray => !!x && !/\bTABLE\s+OF\b|\bRANGE\s+OF\b|\bREF\s+TO\b/i.test(x[2]) && !tableNames.has(x[1].toUpperCase()))
+    .map((x) => x[1].toUpperCase());
   const cases: GoldenMasterCase[] = [];
   for (const arm of block.arms) {
     const machine = machineOf(new Map([...baseRows].map(([t, rows]) => [t, rows.map(copyRow)])), titleVar);
+    for (const a of localAreas) machine.areas.set(a, { v: {}, src: null });
     run(arm.body, machine, { fixtures, constants, loop: null });
     const tables: Record<string, GmRow[]> = {};
     const provenance: Record<string, Array<number | null>> = {};
@@ -885,6 +992,8 @@ export interface GoldenMasterBinding {
   refusalClass?: string | null;
   /** Components of the state type an expected value may name (lower case); none known: no value is compared. */
   stateComponents?: readonly string[];
+  /** The component of the state type that names the functions still stubs the run reached (`not_filled`), or none. */
+  notFilledComponent?: string | null;
 }
 
 /**
@@ -920,7 +1029,17 @@ export interface GoldenMasterTestClass {
   /** Source lines of the local test class (definition and implementation). */
   lines: string[];
   /** Test method per case, in case order. `compared`: the case asserts an expected result of the original; else it skips after running. */
-  methods: Array<{ name: string; case: number; title: string; bound: boolean; partial: boolean; compared: boolean }>;
+  methods: Array<{
+    name: string;
+    case: number;
+    title: string;
+    bound: boolean;
+    partial: boolean;
+    compared: boolean;
+    /** False: the case's data is not exactly the original's (`notCarried` says why); the method skips without running. */
+    carried: boolean;
+    notCarried: string[];
+  }>;
   /** Fixture tables with no place in the state type: rows kept in the test, not passed. */
   unboundTables: string[];
 }
@@ -1034,6 +1153,34 @@ function deltaLines(gm: GoldenMaster, c: GoldenMasterCase, table: string, column
   return out;
 }
 
+/**
+ * Why a case's data would not be exactly the original's on this binding (QM-01, review of 18.10.2026): a statement of
+ * the case or of the baseline the reader did not execute (`MODIFY at L1458`), a setting or select-option the selection
+ * type has no field for, a table the case changes that the state type has no component for. Empty: carried exactly.
+ */
+export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, binding: Pick<GoldenMasterBinding, 'selection' | 'state' | 'selectionType' | 'stateType'>): string[] {
+  const out: string[] = [];
+  for (const u of gm.baselineUnread) out.push(`${statementKind(u.text)} at L${u.line} of the baseline ${gm.baseRoutine.name}`);
+  for (const u of c.unread) out.push(`${statementKind(u.text)} at L${u.line}`);
+  for (const s of c.settings) {
+    const b = binding.selection[s.target] ?? binding.selection[gm.aliases[s.target] ?? ''];
+    if (!b || b.range) out.push(`${s.target} set at L${s.line} (${binding.selectionType} has no field for it)`);
+  }
+  for (const name of Object.keys(c.ranges)) {
+    const b = binding.selection[name];
+    if (!b || !b.range) out.push(`select-option ${name} (${binding.selectionType} has no range for it)`);
+  }
+  for (const t of c.changed) if (!binding.state[t]) out.push(`table ${t} (${binding.stateType} has no component for it)`);
+  return out;
+}
+
+/** The skip message of a case not carried over: at most three reasons, within ABAP's 255 characters of a literal. */
+function notCarriedMessage(n: number, reasons: readonly string[]): string {
+  const shown = reasons.slice(0, 3).map((r) => r.replace(/\s*\(.*\)$/, ''));
+  const more = reasons.length > 3 ? ` and ${reasons.length - 3} more` : '';
+  return `Case ${n} not carried over: ${shown.join(', ')}${more} - its data would not be the original's, so it is not run`.slice(0, 250);
+}
+
 /** The ABAP of one case's expected result: assertions, and what could not be compared. */
 function expectedLines(c: GoldenMasterCase, e: GoldenMasterExpected, binding: GoldenMasterBinding): { lines: string[]; compared: number; notCompared: string[] } {
   const lines: string[] = [...comment(`Expected: ${e.source}.`, '    ')];
@@ -1115,14 +1262,19 @@ export function goldenMasterTestClass(
   const onCase = rendererFor(gm, binding, 'ls_sel');
   const methodName = (n: number) => `case_${String(n).padStart(2, '0')}`.slice(0, 30);
   const checks = new Map(gm.cases.map((c) => [c.number, expected[c.number] ? expectedLines(c, expected[c.number], binding) : null]));
-  const methods = gm.cases.map((c) => ({
-    name: methodName(c.number),
-    case: c.number,
-    title: c.title,
-    bound: tables.every((t) => (c.tables[t] ?? []).length === 0 || !!binding.state[t]),
-    partial: c.unread.length > 0 || gm.baselineUnread.length > 0,
-    compared: (checks.get(c.number)?.compared ?? 0) > 0,
-  }));
+  const methods = gm.cases.map((c) => {
+    const notCarried = goldenMasterNotCarried(gm, c, binding);
+    return {
+      name: methodName(c.number),
+      case: c.number,
+      title: c.title,
+      bound: tables.every((t) => (c.tables[t] ?? []).length === 0 || !!binding.state[t]),
+      partial: c.unread.length > 0 || gm.baselineUnread.length > 0,
+      compared: notCarried.length === 0 && (checks.get(c.number)?.compared ?? 0) > 0,
+      carried: notCarried.length === 0,
+      notCarried,
+    };
+  });
 
   const def: string[] = [
     ...comment(
@@ -1204,6 +1356,14 @@ export function goldenMasterTestClass(
     '      CATCH cx_root INTO DATA(lx_error).',
     "        cl_abap_unit_assert=>fail( msg = |Case { iv_case } of the original did not run: { lx_error->get_text( ) }| ).",
     '    ENDTRY.',
+    ...(binding.notFilledComponent
+      ? [
+          `    IF ls_st-${binding.notFilledComponent} IS NOT INITIAL.`,
+          '      " A function still a stub ends the run where it is reached: the case did not run through the logic.',
+          `      cl_abap_unit_assert=>fail( msg = |Case { iv_case } reached functions still stubs: { concat_lines_of( table = ls_st-${binding.notFilledComponent} sep = \`, \` ) }| ).`,
+          '    ENDIF.',
+        ]
+      : []),
     '    rs_out-state = ls_st.',
     '  ENDMETHOD.',
     '',
@@ -1220,7 +1380,15 @@ export function goldenMasterTestClass(
     const m = methods.find((x) => x.case === c.number)!;
     impl.push(`  METHOD ${m.name}.`);
     impl.push(...comment(`Case ${c.number} of the original, L${c.lineStart}-L${c.lineEnd}: ${c.title}`, '    '));
-    if (c.unread.length) impl.push(...comment(`Read in part: ${c.unread.length} statement(s) of this case are not carried over (${c.unread.map((u) => `L${u.line}`).join(', ')}); check them against the original.`, '    '));
+    if (!m.carried) {
+      // QM-01 (review of 18.10.2026): a case whose data is not exactly the original's is not run — its name would promise
+      // what its data does not hold. It says which statement of the original it could not carry.
+      impl.push(...comment(`Not carried over: ${m.notCarried.join('; ')}. The engine could not carry this case's data exactly as the original builds it, so it is not run.`, '    '));
+      for (const u of c.unread.slice(0, 8)) impl.push(...comment(`L${u.line}: ${u.text}`.slice(0, 200), '    '));
+      impl.push(`    cl_abap_unit_assert=>skip( msg = ${lit(notCarriedMessage(c.number, m.notCarried))} ).`);
+      impl.push('  ENDMETHOD.', '');
+      continue;
+    }
     impl.push('    DATA(ls_sel) = selection( ).');
     impl.push('    DATA(ls_data) = baseline( ls_sel ).');
     for (const t of c.changed) impl.push(...deltaLines(gm, c, t, columns.get(t)!, onCase));
@@ -1253,11 +1421,17 @@ export function goldenMasterSentence(cls: Pick<GoldenMasterTestClass, 'methods'>
   const bound = cls.methods.filter((m) => m.bound).length;
   const partial = cls.methods.filter((m) => m.partial).length;
   const compared = cls.methods.filter((m) => m.compared).length;
+  const notCarried = cls.methods.filter((m) => m.carried === false).length;
   return (
     `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data` +
-    ` (${bound} of ${n} passed to the logic with all their rows${partial ? `; ${partial} read only in part` : ''})` +
+    ` (${bound} of ${n} passed to the logic with all their rows${partial ? `; ${partial} read only in part` : ''}${notCarried ? `; ${notCarriedWords(notCarried)}` : ''})` +
     ` — ${goldenMasterComparedWords(n, compared)}.`
   );
+}
+
+/** "21 not carried over exactly — …": the same words in the sentence above, the testing evidence and TRACE. */
+export function notCarriedWords(n: number): string {
+  return `${n} not carried over exactly (a statement of the original the engine could not read, or a value with no place in the target) - ${n === 1 ? 'it skips' : 'they skip'} without running, naming the statement`;
 }
 
 /** How many demo cases compare a result: the same words in the sentence above and in the testing evidence. */
@@ -1393,6 +1567,8 @@ export interface ScaffoldGoldenMasterInput {
   refusalClass?: string | null;
   /** Expected results of the original by case number — the seam for the characterization samples (3.0.19). */
   expected?: Readonly<Record<number, GoldenMasterExpected>>;
+  /** The state type's component naming the stubs a run reached (`not_filled`): a case that reaches one fails. */
+  notFilledComponent?: string | null;
 }
 
 /**
@@ -1413,6 +1589,7 @@ export function goldenMasterForScaffold(source: string, input: ScaffoldGoldenMas
     state: { ...stateBindingByName(tables, input.stateComponents), ...(input.state ?? {}) },
     refusalClass: input.refusalClass ?? null,
     stateComponents: input.stateComponents,
+    notFilledComponent: input.notFilledComponent ?? null,
   };
   return { master, testClass: goldenMasterTestClass(master, binding, input.program ?? null, input.expected ?? {}) };
 }

@@ -17,7 +17,7 @@ import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, t
 import { withInvariants } from '@/lib/testing-invariants';
 import { TESTING_PROMPT_LIMIT, TESTING_PROMPT_MARGIN, codeForTestingPrompt, testingCodeNote } from '@/lib/testing-prompt-code';
 import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
-import { abapTestProblemsSentence, accessSeamOf, accessSeamPromptRule, checkAbapTestClass, withAccessDouble } from '@/lib/testing-abap-unit';
+import { abapTestProblemsSentence, accessSeamOf, accessSeamPromptRule, checkAbapTestClass, inputContractPromptRule, withAccessDouble } from '@/lib/testing-abap-unit';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { packageDigest, TEST_SUITE_BASIS_FIELD } from '@/lib/test-suite-basis';
 import { endTestGenProgress, enterTestGenStage, startTestGenProgress, type TestGenProgress, type TestGenStageKey } from '@/lib/testing-progress';
@@ -161,6 +161,10 @@ export const useTestGeneration = (
       // refused where it creates the logic class with the default access (which calls SAP).
       const accessSeam = packageSources.length > 0 ? accessSeamOf(packageSources) : null;
       const accessAsk = accessSeam ? `\n        ${accessSeamPromptRule(accessSeam)}` : '';
+      // QM-02 (review of 18.10.2026): 13 model tests called run( ) without its input and expected filled results; the
+      // prompt names the input contract, and lib/testing-abap-unit.ts does not count such a test as one.
+      const inputRule = packageSources.length > 0 ? inputContractPromptRule(packageSources) : null;
+      const inputAsk = inputRule ? `\n        ${inputRule}` : '';
 
       const buildPrompt = (generatedText: string): string => (isAbapCloud
         ? `Given the following context:
@@ -184,7 +188,7 @@ ${generatedText}
         - Every class and method name has at most 30 characters.
         - Use local test doubles and stubs to mock standard released table/view accesses.
         - TEST CASE ID NAMING CONVENTION (CRITICAL): The test method name in the local test class MUST incorporate or refer to the test case ID (e.g. \`methods tc_01_create_sales_order for testing.\`) so they can be mapped programmatically.
-        - Use \`cl_abap_unit_assert=>assert_equals( ... )\`, \`cl_abap_unit_assert=>assert_initial( ... )\` or \`cl_abap_unit_assert=>fail( ... )\` for assertion checking — never \`cl_aunit_assert\` or \`cl_abap_unit_test\`.${accessAsk}
+        - Use \`cl_abap_unit_assert=>assert_equals( ... )\`, \`cl_abap_unit_assert=>assert_initial( ... )\` or \`cl_abap_unit_assert=>fail( ... )\` for assertion checking — never \`cl_aunit_assert\` or \`cl_abap_unit_test\`.${accessAsk}${inputAsk}
         
         Format the output as a JSON object with:
         - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom, ruleTrace)

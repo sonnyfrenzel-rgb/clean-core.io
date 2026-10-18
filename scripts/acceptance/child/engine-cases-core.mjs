@@ -357,6 +357,10 @@ export function judge(call, out) {
     const [a, b] = out.ids ?? [];
     if (!a || !b) return { status: 'fail', evidence: `simulate returned no run id (${JSON.stringify(out.ids ?? [])})` };
     if (a === b) return { status: 'fail', evidence: `two runs in the same millisecond got the same id ${a}` };
+    // The precondition (QM review 18.10.2026, QM-02): two ids of runs that processed nothing prove no separation.
+    const first = out.run;
+    if (!first || first.ok !== true) return { status: 'fail', evidence: `the first run of the base request did not succeed (${JSON.stringify(first?.errors ?? [])}) — two ids of runs that processed nothing prove no separation` };
+    if (typeof first.records !== 'number' || first.records < 1) return { status: 'fail', evidence: `the first run reported ${typeof first.records === 'number' ? `${first.records} records` : 'no record count'} — two ids of runs that processed no input prove no separation` };
     if (out.readBack !== a) return { status: 'fail', evidence: `getRun(${a}) after the second run returned ${JSON.stringify(out.readBack ?? null)} — the first run was overwritten or lost` };
     return { status: 'pass', evidence: `two ids (${a}, ${b}); the first run is still readable as itself` };
   }
@@ -645,6 +649,8 @@ async function execute(mod, call, state) {
       return {
         ids: [idA, b.answer?.runId ?? null].map((x) => (x === null || x === undefined ? null : String(x))),
         readBack: read.answer && read.answer.runId !== undefined ? String(read.answer.runId) : null,
+        // What the first run answered: two ids prove separation only for runs that processed input (QM-02).
+        run: answerOf(a),
       };
     } finally {
       restore();

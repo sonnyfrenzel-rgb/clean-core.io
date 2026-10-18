@@ -202,7 +202,16 @@ test('a program without demo cases has no golden master; an integer CASE that to
 });
 
 test('the test class: one method per case calling the run entry, the case’s rows applied to the baseline, nothing expected that the original does not say', () => {
-  const out = goldenMasterForScaffold(three(), {
+  // QM-01 (18.10.2026): case 2 also sets GV_SEALED, a global the selection has no field for — its data would not be the
+  // original's, so in three() it is not run (asserted below). The emission of its rows is held on the case without it.
+  const sealed = / {6}gv_sealed = space\.\r?\n/;
+  expect(three()).toMatch(sealed);
+  const notSealed = goldenMasterForScaffold(three(), { logicClass: 'zcl_gm_credit_logic', accessDouble: 'ltd_access', selection: [{ original: 'P_ORG', component: 'org', range: false }], stateComponents: ['claims', 'rates'] })!;
+  const m2 = notSealed.testClass.methods.find((m) => m.case === 2)!;
+  expect(m2.carried).toBe(false);
+  expect(m2.notCarried).toEqual([expect.stringMatching(/^GV_SEALED set at L\d+ \(ty_selection has no field for it\)$/)]);
+  expect(notSealed.testClass.lines.join('\n')).toMatch(/METHOD case_02\.[\s\S]*?cl_abap_unit_assert=>skip\( msg = 'Case 2 not carried over: GV_SEALED set at L\d+ - its data would not be the original''s, so it is not run' \)\.\s+ENDMETHOD\./);
+  const out = goldenMasterForScaffold(three().replace(sealed, ''), {
     logicClass: 'zcl_gm_credit_logic',
     accessDouble: 'ltd_access',
     selection: [
@@ -227,7 +236,7 @@ test('the test class: one method per case calling the run entry, the case’s ro
   expect(text).toContain("ls_data-claims[ 2 ]-qty = '0'.");
   expect(text).toMatch(/APPEND VALUE #\(\s+org = '1000' cid = '0000000001' qty = '2' price = '12\.00'\s+\) TO ls_data-claims\./);
   expect(text).toContain("ls_sel-org = '2000'.");
-  expect(text).toContain('Not passed: GV_SEALED');
+  expect(text).not.toContain('GV_SEALED');
   // 3.0.14 item 8: no expected result is on record, so nothing is asserted about the outcome — and no case passes for
   // having run: each runs the logic, then reports itself as skipped, not compared.
   expect(text).not.toMatch(/assert_equals/);
@@ -253,7 +262,8 @@ test('the RAP scaffold carries the golden master in the logic class’s test inc
   expect(lint.issues.filter((i) => i.path.endsWith('.testclasses.abap')), JSON.stringify(lint.issues)).toEqual([]);
   // Since scaffold version 6 the logic class's run state (ty_run_result) carries the original's tables: every case passes its rows.
   const evidence = abapTestEvidence(scaffold.files, null)!;
-  expect(evidence.goldenMaster).toEqual({ cases: 3, rowsPassed: true, compared: 0 });
+  // Case 2 sets GV_SEALED, which the run does not take as input: not carried over (QM-01), the other two pass their rows.
+  expect(evidence.goldenMaster).toEqual({ cases: 3, rowsPassed: true, compared: 0, notCarried: 1 });
   expect(evidence.counts.withoutData ?? 0).toBe(0);
   expect(include.content).toMatch(/lo_cut->run_with_state\( EXPORTING is_sel = is_sel CHANGING cs_st = ls_st \)\./);
   const sentences = abapTestEvidenceSentences(evidence);

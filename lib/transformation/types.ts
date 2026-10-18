@@ -161,6 +161,11 @@ export const PLAN_VERSION = 2;
  * ran with no orders. The run holds those lists in `st.handedIn` (`handedInOf`), the step's frame writes the placement
  * at its entry in the original's order (`readPlacementsOf`, input-lists.ts); a SELECT folded into the run order keeps
  * the start seeding, and TRACE.md says which. The handed-in rows are the SELECT's result: its WHERE is not applied.
+ * Also 16 (QM review of 18.10.2026, QM-01/QM-04): RAP — the golden master carries a case's deletions and field changes
+ * on existing rows (READ … IF sy-subrc = 0 … MODIFY … INDEX sy-tabix, MODIFY … TRANSPORTING … WHERE, inline field
+ * symbols, APPEND VALUE), and a case whose data it cannot carry exactly skips without running, naming the statement;
+ * `run( )` catches the nofill exception of a stub at its boundary and returns the result with the unit in
+ * `not_filled`, and a demo case that reaches a stub fails. Node — the not-run reason names the statements.
  */
 export const SCAFFOLD_VERSION = 16;
 
@@ -772,7 +777,7 @@ export interface Trace {
   openRules: string[];
   droppedRules: string[];
   /** 3.0.13 (6, A4): the golden master — the original's demo cases carried as test data (ABAP Unit `ltc_golden_master`, or Node's test/fixtures/original-demo.json), and whether their rows reach the logic. Absent when none was written. */
-  goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test' };
+  goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test'; notCarried?: number };
   /** 3.0.15 (1): the SAP function modules the access layer replaces with an engine-written ABAP Cloud counterpart (`released-counterparts.ts`). Absent when none. */
   engineCounterparts?: string[];
   /** 3.0.17: the original's authority checks `srv/lib/authority.ts` leaves open, failing closed (`authority-node.ts`). Absent when none. */
