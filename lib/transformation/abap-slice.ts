@@ -145,7 +145,8 @@ export function sliceFor(unit: Unit, plan: Pick<UnitPlan, 'rules' | 'units'>, fa
   if (cut > 0) declLines.push(`* … ${cut} more declaration${cut === 1 ? '' : 's'} not shown (budget ${SLICE_DECLARATION_CHARS} characters)`);
 
   // Call sites of the unit's routine.
-  const callSites: AbapSlice['callSites'] = unit.routine
+  // PERFORM calls a FORM: a method of the same name has none of them (scaffold 17).
+  const callSites: AbapSlice['callSites'] = unit.routine && unit.kind !== 'method'
     ? facts.graph.performs
         .filter((p) => p.target === unit.routine)
         .slice(0, SLICE_CALL_SITES)

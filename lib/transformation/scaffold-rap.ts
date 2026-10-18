@@ -82,7 +82,7 @@ import { rapShortName, rapTableName } from './rap-names';
 import { abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
 import { ddicFieldName, isDdicReserved } from './ddic-reserved';
 import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart } from './released-counterparts';
-import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { calledFromOutsideLines, NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 import { wrapAbapFiles } from './abap-line-length';
 
 /**
@@ -438,7 +438,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   /** A comment line before a declaration whose type the original names in a way ABAP Cloud does not permit. */
   const notReleased = (name: string, was: string | undefined, indent = '    '): string[] =>
     was ? [`${indent}" ${name}: the original types it by ${was}, which ABAP Cloud does not release - ${sapRowOf.get(was)?.rowType ?? 'a built-in type'} instead.`] : [];
-  const attributeNames = new Set([...contract.globals.map((g) => g.name), ...contract.selection.map((f) => f.name), ...contract.constantNames]);
+  const attributeNames = new Set([...contract.globals.map((g) => g.name), ...contract.classAttributes.map((g) => g.name), ...contract.selection.map((f) => f.name), ...contract.constantNames]);
   const takenMethod = new Set<string>([...attributeNames, 'run', 'run_with_state', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages']);
   const methodOf = new Map<string, string>();
   for (const u of plan.units) {
@@ -455,15 +455,21 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
 
   // ---- the routines' parameters (a split part takes its parent's, and the parent's locals as one structure)
   const paramsOf = new Map<string, RapParam[]>();
+  /** A METHOD unit's RETURNING parameter, from its class definition (scaffold 17). */
+  const returningOf = new Map<string, { name: string; phrase: string }>();
   const localTypes: string[] = [];
   /** Part → the components of its cs_local (FI review C). */
   const localComponentsOf = new Map<string, string[]>();
   for (const u of plan.units) {
-    if (u.kind !== 'routine' || u.part) continue;
-    paramsOf.set(u.id, u.routine ? contract.scopeOf(u.routine).params : []);
+    // A METHOD's parameters from its class definition, as a FORM's from its head (scaffold 17): a local-class method
+    // had none, and every body reading one (`mv_vbeln = iv_vbeln`) was refused for names the class does not declare.
+    if ((u.kind !== 'routine' && u.kind !== 'method') || u.part) continue;
+    const scope = u.routine ? contract.scopeOf(u.routine, u.abap[0]?.lineStart) : null;
+    paramsOf.set(u.id, scope?.params ?? []);
+    if (scope?.returning && !plan.units.some((p) => p.part?.parent === u.id)) returningOf.set(u.id, scope.returning);
   }
   for (const parent of parentsOfParts) {
-    const scope = parent.routine ? contract.scopeOf(parent.routine) : null;
+    const scope = parent.routine ? contract.scopeOf(parent.routine, parent.abap[0]?.lineStart) : null;
     const typeName = `ty_${methodOf.get(parent.id)!.slice(0, 18)}_local`;
     const comps = scope ? [...scope.locals].filter(([n, ph]) => ph && !scope.params.some((p) => p.name === n) && !n.startsWith('<')) : [];
     if (comps.length > 0) localTypes.push(`TYPES BEGIN OF ${typeName}`, ...comps.map(([n, ph]) => `TYPES ${n} ${ph}`), `TYPES END OF ${typeName}`);
@@ -504,7 +510,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     facts.blocks.containers.filter((c) => (c.kind === 'form' || c.kind === 'method') && line >= c.lineStart && line <= c.lineEnd).sort((a, b) => b.lineStart - a.lineStart)[0] ?? null;
   for (const g of carried) {
     const routine = routineOfLine(g.line);
-    const scope = routine ? contract.scopeOf(routine.name) : null;
+    const scope = routine ? contract.scopeOf(routine.name, routine.lineStart) : null;
     const condition = fullCondition(facts.statements, g);
     const { operands, unsupported } = conditionOperands(condition);
     const params: Predicate['params'] = [];
@@ -689,7 +695,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     const byFormal = new Map<string, AccessParam & { count: number }>();
     for (const st of sites) {
       const routine = routineOfLine(st.lineStart);
-      const scope = routine ? contract.scopeOf(routine.name) : null;
+      const scope = routine ? contract.scopeOf(routine.name, routine.lineStart) : null;
       for (const pair of callFunctionPairs(st.text)) {
         const formal = pair.formal.replace(/[^a-z0-9_]/g, '_').slice(0, 30);
         const hit = byFormal.get(formal);
@@ -850,6 +856,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     // return (no live adapter) on a reused instance returned the results of the run before. The attributes are declared
     // without VALUE, so CLEAR is their initial value.
     ...Array.from({ length: Math.ceil(contract.globals.length / 6) }, (_, k) => `    CLEAR: ${contract.globals.slice(k * 6, k * 6 + 6).map((g) => g.name).join(', ')}.`),
+    ...Array.from({ length: Math.ceil(contract.classAttributes.length / 6) }, (_, k) => `    CLEAR: ${contract.classAttributes.slice(k * 6, k * 6 + 6).map((g) => g.name).join(', ')}.`),
     ...(inputs.length > 0 ? ['    ms_input = is_input.'] : []),
     '    CLEAR mt_messages.',
     // QM-04 (review of 18.10.2026): a function still a stub raises the nofill exception where it is reached. It ends the
@@ -909,7 +916,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   for (const u of [...unitsWithBody, ...parentsOfParts]) {
     const name = methodOf.get(u.id)!;
     const params = paramsOf.get(u.id) ?? [];
-    const stmt = methodsStatement(name, params, { raising });
+    const returning = returningOf.get(u.id);
+    const stmt = methodsStatement(name, params, { raising, ...(returning ? { returning: `${returning.name} ${returning.phrase}` } : {}) });
     signatures[u.id] = signatureLine(stmt);
     defs.push(...unitDoc(u), ...stmt);
     impls.push(`  METHOD ${name}.`);
@@ -932,7 +940,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     } else if (u.kind === 'orchestrator' && u.abap.length === 0) {
       // No entry point (scaffold 15, roadmap 3.0.17 item 6): nothing to port, so no region a model would fill with an
       // invented run order — the engine writes the body and says why.
-      impls.push(...NO_ENTRY_POINT.map((l) => `    " ${l}`));
+      impls.push(...[...NO_ENTRY_POINT, ...calledFromOutsideLines(plan, (id) => methodOf.get(id))].map((l) => `    " ${l}`));
     } else {
       const anchor = `${name}|${u.abap.map((a) => `${a.lineStart}-${a.lineEnd}`).join(',')}|${u.rules.join(',')}|${u.guards.join(',')}`;
       impls.push(regionText('rap', u.id, anchor, '    ', `RAISE EXCEPTION NEW ${cx}( unit = '${u.id}' ).`));
@@ -941,7 +949,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       available[u.id] = [logic, 'me', ...(hasAccess ? ['mo_access'] : []), ...callees, ...preds, ...(u.kind === 'orchestrator' && inputs.length ? ['load_input'] : []), refusal];
       regionNames[u.id] = {
         attributes: attributesList,
-        params: params.map((p) => p.name),
+        params: [...params.map((p) => p.name), ...(returning ? [returning.name] : [])],
         methods: allMethods,
         access: accessNames,
         ...tableNames,
@@ -1013,6 +1021,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     ...contract.selection.flatMap((f) => [...notReleased(f.name, f.was), `    DATA ${f.name} ${f.phrase}.`]),
     ...(contract.globals.length > 0 ? ["    \" The original's globals, under their names."] : []),
     ...contract.globals.flatMap((g) => [...notReleased(g.name, g.was), `    DATA ${g.name} ${g.phrase}.`]),
+    ...(contract.classAttributes.length > 0 ? ["    \" The attributes of the original's local classes, under their names: the classes are one class here."] : []),
+    ...contract.classAttributes.flatMap((g) => [...notReleased(g.name, g.was), `    DATA ${g.name} ${g.phrase}.`]),
     ...(inputs.length > 0 ? ['    DATA ms_input TYPE ty_run_input.'] : []),
     "    \" What the original showed as a message (TYPE 'I', 'S', 'W'): one line each, in order.",
     '    DATA mt_messages TYPE string_table.',
@@ -1061,7 +1071,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       } else if (def) for (const t of def.match(/[\w/]+/g) ?? []) addType(t, depth + 1);
     };
     for (const n of contract.typeNames) if (mentions(text, n)) addType(n);
-    const attrs = [...contract.selection.map((f) => ({ name: f.name, phrase: f.phrase })), ...contract.globals].filter((a) => mentions(text, a.name));
+    const attrs = [...contract.selection.map((f) => ({ name: f.name, phrase: f.phrase })), ...contract.globals, ...contract.classAttributes].filter((a) => mentions(text, a.name));
     for (const a of attrs) for (const t of a.phrase.match(/[\w/]+/g) ?? []) addType(t);
     for (const id of u.callees) for (const p of paramsOf.get(id) ?? []) for (const t of p.phrase.match(/[\w/]+/g) ?? []) addType(t);
     for (const id of u.guards) for (const p of predicates.get(id)?.params ?? []) for (const t of p.phrase.match(/[\w/]+/g) ?? []) addType(t);

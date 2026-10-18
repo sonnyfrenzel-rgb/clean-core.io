@@ -135,6 +135,54 @@ function implicitStartOfSelection(statements: readonly AbapStatement[], containe
   return ranges;
 }
 
+/** The local class a METHOD container implements (upper case), or null when it stands in none. */
+export function ownerClassOf(containers: readonly Container[], method: Container): string | null {
+  return containers.find((k) => k.kind === 'class' && k.lineStart <= method.lineStart && method.lineEnd <= k.lineEnd)?.name ?? null;
+}
+
+/** `LCL_INVOICE=>CALCULATE_TAX`: a method by its class, the bare name where the source shows no class. */
+export const methodKey = (owner: string | null, name: string) => (owner ? `${owner}=>${name}` : name);
+
+/** The plan's key of a FORM or METHOD container: the FORM's name, a method by its class (`methodKey`). */
+export function routineKeyOf(containers: readonly Container[], c: Container): string {
+  return c.kind === 'method' ? methodKey(ownerClassOf(containers, c), c.name) : c.name;
+}
+
+/**
+ * The FORMs the original is called at when it has no entry point of its own (scaffold 17, 18.10.2026): no event
+ * block, no module, no function module and no statement at program level. The process map then begins at every FORM
+ * no PERFORM of the source names — its caller is outside this source (`formEntries`, lib/abap/process-skeleton.ts;
+ * DESIGN.md §5.8) — and draws what those perform as their steps. The transformation said the same program had no
+ * entry point and dropped the FORM as never reached: the order-integrity example's only process was in no package.
+ * Both now say one thing — no entry point, the process begins at these FORMs, called from outside — and these FORMs
+ * and the ones they perform are carried. Empty when the original has an entry point. In source order.
+ */
+export function calledFromOutsideOf(facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>): string[] {
+  const { statements, blocks, graph } = facts;
+  if (blocks.containers.some((c) => c.kind === 'event' || c.kind === 'module' || c.kind === 'function')) return [];
+  if (implicitStartOfSelection(statements, blocks.containers).length > 0) return [];
+  const forms = new Set(graph.forms.map((f) => f.name));
+  const roots = graph.neverPerformed.filter((n) => forms.has(n));
+  // Routines that only perform one another in a ring: the process map's own fallback, every unreached FORM.
+  const beginnings = roots.length > 0 ? roots : graph.unreachable.filter((n) => forms.has(n));
+  const unreached = new Set(graph.unreachable);
+  const out = new Set<string>();
+  const visit = (name: string) => {
+    if (out.has(name) || !forms.has(name) || !unreached.has(name)) return;
+    out.add(name);
+    for (const e of graph.edges) if (e.from === name && e.fromKind === 'form') visit(e.to);
+  };
+  for (const b of beginnings) visit(b);
+  return graph.forms.filter((f) => out.has(f.name)).map((f) => f.name);
+}
+
+/** The FORMs of `calledFromOutsideOf` the process begins at — those no other of them performs — with their units. */
+function calledFromOutsideEntries(outside: ReadonlySet<string>, graph: CallGraphReport, unitOf: (routine: string) => Unit | null): NonNullable<UnitPlan['calledFromOutside']> {
+  const performed = new Set(graph.edges.filter((e) => e.from !== null && outside.has(e.from) && e.from !== e.to).map((e) => e.to));
+  const begins = graph.forms.filter((f) => outside.has(f.name) && !performed.has(f.name));
+  return (begins.length > 0 ? begins : graph.forms.filter((f) => outside.has(f.name))).map((f) => ({ routine: f.name, line: f.lineStart, unitId: unitOf(f.name)?.id ?? null }));
+}
+
 /** `G-0506` — four digits, more when the line needs them. */
 export const guardIdOf = (line: number) => `G-${String(line).padStart(4, '0')}`;
 const guardTag = (line: number) => `G${String(line).padStart(4, '0')}`;
@@ -576,6 +624,13 @@ export interface PlanInput {
 }
 
 interface Routine {
+  /**
+   * The routine's key in the plan: the FORM's name, or `CLASS=>METHOD` for a method of a local class (scaffold 17,
+   * 18.10.2026). Methods of different classes share names — `CALCULATE_TAX` of an invoice and of a credit note — and
+   * keyed by the bare name the second replaced the first: the order-integrity example's five methods became three
+   * units, and the two lost ones were in no list of what is not carried.
+   */
+  key: string;
   name: string;
   kind: 'form' | 'method';
   lineStart: number;
@@ -596,31 +651,39 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   const decision = (id: string | null): RuleDecision => (id ? decisionOf(decisions.get(id)?.answer) : 'keep');
 
   // ---- routines: FORMs, then methods of local classes (in source order)
-  const routines: Routine[] = graph.forms.map((f) => ({ name: f.name, kind: 'form', lineStart: f.lineStart, lineEnd: f.lineEnd, parameters: f.parameters, owner: null }));
-  const classes = blocks.containers.filter((c) => c.kind === 'class');
+  const routines: Routine[] = graph.forms.map((f) => ({ key: f.name, name: f.name, kind: 'form', lineStart: f.lineStart, lineEnd: f.lineEnd, parameters: f.parameters, owner: null }));
   for (const c of blocks.containers) {
     if (c.kind !== 'method') continue;
-    const owner = classes.find((k) => k.lineStart <= c.lineStart && c.lineEnd <= k.lineEnd)?.name ?? null;
-    routines.push({ name: c.name, kind: 'method', lineStart: c.lineStart, lineEnd: c.lineEnd, parameters: [], owner });
+    const owner = ownerClassOf(blocks.containers, c);
+    routines.push({ key: methodKey(owner, c.name), name: c.name, kind: 'method', lineStart: c.lineStart, lineEnd: c.lineEnd, parameters: [], owner });
   }
   if (routines.length === 0 && !blocks.containers.some((c) => c.kind === 'event')) {
     throw new PlanRefusal('no-routine', 'The source holds no routine and no event block — nothing to anchor a function to.');
   }
-  const byName = new Map(routines.map((r) => [r.name, r]));
+  const byName = new Map(routines.map((r) => [r.key, r]));
+  /** The key of the routine a FORM or METHOD container is (`routineKeyOf`). */
+  const keyOf = (c: Container) => routineKeyOf(blocks.containers, c);
   const unreachable = new Set(graph.unreachable);
+  // No entry point (scaffold 17): the FORMs the process map begins at, called from outside — carried, not unreachable.
+  const outsideCalled = new Set(calledFromOutsideOf(facts));
 
   // ---- callers (PERFORM edges; '(program)' for event blocks and program level), as the measurement counts them
+  // A caller by its key: a method's PERFORM is the call of that class's method, not of every method of its name.
+  const fromKey = (e: { from: string | null; lineStart: number }): string | null => {
+    const c = e.from === null ? null : containerAt(blocks.containers, e.lineStart);
+    return c && (c.kind === 'form' || c.kind === 'method') && c.name === e.from ? keyOf(c) : e.from;
+  };
   const callers = new Map<string, Set<string>>();
   for (const e of graph.edges) {
     if (!callers.has(e.to)) callers.set(e.to, new Set());
-    callers.get(e.to)!.add(e.from ?? '(program)');
+    callers.get(e.to)!.add(fromKey(e) ?? '(program)');
   }
   const within = (line: number, r: { lineStart: number; lineEnd: number }) => line >= r.lineStart && line <= r.lineEnd;
-  const rulesIn = (r: Routine) => material.filter((m) => (m.routine ?? '').toUpperCase() === r.name).length;
+  const rulesIn = (r: Routine) => material.filter((m) => (m.routine ?? '').toUpperCase() === r.name && (r.kind === 'form' || m.ranges.some((x) => within(x.lineStart, r)))).length;
   const guardsIn = (r: Routine) => contract.guards.filter((g) => within(g.line, r)).length;
   const writesIn = (r: Routine) => graph.databaseWrites.filter((w) => within(w.lineStart, r)).length;
 
-  const reachable = routines.filter((r) => r.kind === 'method' || !unreachable.has(r.name));
+  const reachable = routines.filter((r) => r.kind === 'method' || !unreachable.has(r.name) || outsideCalled.has(r.name));
   const helper = new Set<string>();
   const fixture = new Set<string>();
   // The original's demo cases, read by their shape rather than their name (`golden-master.ts`): the routine
@@ -657,15 +720,17 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   for (const e of [...graph.edges].sort((a, b) => a.lineStart - b.lineStart)) {
     if (e.from === null || e.fromKind === 'event' || e.fromKind === 'program' || e.fromKind === 'module') rootCalls.push({ line: e.lineStart, to: e.to });
     else {
-      if (!outgoing.has(e.from)) outgoing.set(e.from, []);
-      outgoing.get(e.from)!.push(e.to);
+      const from = fromKey(e)!;
+      if (!outgoing.has(from)) outgoing.set(from, []);
+      outgoing.get(from)!.push(e.to);
     }
   }
   for (const cb of [...graph.callbacks].sort((a, b) => a.lineStart - b.lineStart)) {
     if (cb.from === null || cb.fromKind !== 'form') rootCalls.push({ line: cb.lineStart, to: cb.to });
     else {
-      if (!outgoing.has(cb.from)) outgoing.set(cb.from, []);
-      outgoing.get(cb.from)!.push(cb.to);
+      const from = fromKey(cb)!;
+      if (!outgoing.has(from)) outgoing.set(from, []);
+      outgoing.get(from)!.push(cb.to);
     }
   }
   rootCalls.sort((a, b) => a.line - b.line);
@@ -678,7 +743,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     for (const next of outgoing.get(name) ?? []) visit(next);
   };
   for (const c of rootCalls) visit(c.to);
-  for (const r of [...reachable].sort((a, b) => a.lineStart - b.lineStart)) visit(r.name);
+  for (const r of [...reachable].sort((a, b) => a.lineStart - b.lineStart)) visit(r.key);
 
   // ---- folding: a helper goes into its single caller; chains resolve to the first non-folded host
   const hostOf = (name: string, depth = 0): string | null => {
@@ -694,6 +759,8 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   // ---- units
   const units: Unit[] = [];
   const unitOfRoutine = new Map<string, Unit>();
+  /** Unit id → the key of its routine. */
+  const keyOfUnit = new Map<string, string>();
   const folded: Array<{ routine: string; into: string }> = [];
   const notCarried: NotCarried[] = [];
   const usedFns = new Set<string>(['runSteps', 'runProcess', 'checkSelection']);
@@ -758,6 +825,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
       title: titleOf(r.name),
       stepId: null,
       routine: r.name,
+      ...(r.owner ? { owner: r.owner } : {}),
       abap: [{ lineStart: r.lineStart, lineEnd: r.lineEnd, routine: r.name }],
       folded: [],
       rules: [],
@@ -779,9 +847,10 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     const unit = routineUnit(r, r.kind === 'method' ? 'method' : 'routine');
     units.push(unit);
     unitOfRoutine.set(name, unit);
+    keyOfUnit.set(unit.id, name);
   }
   for (const r of routines) {
-    if (r.kind === 'form' && unreachable.has(r.name)) notCarried.push({ routine: r.name, reason: 'unreachable', lineStart: r.lineStart, lineEnd: r.lineEnd });
+    if (r.kind === 'form' && unreachable.has(r.name) && !outsideCalled.has(r.name)) notCarried.push({ routine: r.name, reason: 'unreachable', lineStart: r.lineStart, lineEnd: r.lineEnd });
     else if (fixture.has(r.name)) notCarried.push({ routine: r.name, reason: 'fixture', lineStart: r.lineStart, lineEnd: r.lineEnd });
   }
   for (const name of order) {
@@ -808,16 +877,16 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   // ---- callees: the units a unit's lines (own and folded) perform
   for (const u of units) {
-    const names = u.kind === 'orchestrator' ? null : new Set([u.routine!, ...u.folded]);
+    const names = u.kind === 'orchestrator' ? null : new Set([keyOfUnit.get(u.id) ?? u.routine!, ...u.folded]);
     const targets: string[] = [];
     for (const e of graph.edges) {
-      const fromHere = names ? e.from !== null && names.has(e.from) : e.from === null || e.fromKind === 'event' || e.fromKind === 'program' || e.fromKind === 'module' || (e.from !== null && u.folded.includes(e.from));
+      const fromHere = names ? e.from !== null && names.has(fromKey(e)!) : e.from === null || e.fromKind === 'event' || e.fromKind === 'program' || e.fromKind === 'module' || (e.from !== null && u.folded.includes(e.from));
       if (!fromHere) continue;
       const callee = unitOf(e.to);
       if (callee && callee.id !== u.id && !targets.includes(callee.id)) targets.push(callee.id);
     }
     for (const cb of graph.callbacks) {
-      const fromHere = names ? cb.from !== null && names.has(cb.from) : cb.from === null || cb.fromKind !== 'form' || u.folded.includes(cb.from);
+      const fromHere = names ? cb.from !== null && names.has(fromKey(cb)!) : cb.from === null || cb.fromKind !== 'form' || u.folded.includes(cb.from);
       if (!fromHere) continue;
       const callee = unitOf(cb.to);
       if (callee && callee.id !== u.id && !targets.includes(callee.id)) targets.push(callee.id);
@@ -833,7 +902,8 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     const c = firstLine !== null ? containerOf(firstLine) : null;
     let unit: Unit | null = null;
     const routine = m.routine ? m.routine.toUpperCase() : null;
-    if (routine && byName.has(routine)) unit = unitOf(routine);
+    const at = c && (c.kind === 'form' || c.kind === 'method') && c.name === routine ? keyOf(c) : routine;
+    if (at && byName.has(at)) unit = unitOf(at);
     else if (c && (c.kind === 'event' || c.kind === 'module')) unit = EVENT_FOR_SELECTION.test(c.name) ? null : orchestrator;
     else if (!routine) unit = orchestrator;
     return {
@@ -886,7 +956,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     let unit: Unit | null = null;
     if (d !== 'drop') {
       if (c && (c.kind === 'form' || c.kind === 'method')) {
-        unit = unitOf(c.name);
+        unit = unitOf(keyOf(c));
         if (unit) place = unit.kind === 'orchestrator' ? 'orchestrator' : 'unit';
       } else if (c && c.kind === 'event' && EVENT_FOR_SELECTION.test(c.name)) {
         unit = orchestrator;
@@ -962,11 +1032,12 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     csvDelimiter: csvDelimiterOf(statements),
     notCarried: notCarried.sort((a, b) => a.lineStart - b.lineStart),
     folded,
+    ...(outsideCalled.size > 0 ? { calledFromOutside: calledFromOutsideEntries(outsideCalled, graph, unitOf) } : {}),
     abapDelivery: abapDeliveryOf(facts),
     stats: {
       routines: routines.length,
       reachable: reachable.length,
-      unreachable: routines.filter((r) => r.kind === 'form' && unreachable.has(r.name)).length,
+      unreachable: routines.filter((r) => r.kind === 'form' && unreachable.has(r.name) && !outsideCalled.has(r.name)).length,
       folded: folded.length,
       fixtures: notCarried.filter((x) => x.reason === 'fixture').length,
       routineUnits: 0,

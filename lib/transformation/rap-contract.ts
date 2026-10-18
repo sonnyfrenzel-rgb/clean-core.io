@@ -65,6 +65,11 @@ export interface RapParam {
 }
 
 export interface RoutineScope {
+  /**
+   * A METHOD's RETURNING parameter, read from its declaration in the class definition — the class's own, else an
+   * ancestor's for a REDEFINITION (scaffold 17). Absent for a FORM, and for a method that returns nothing.
+   */
+  returning?: { name: string; phrase: string };
   /** Lower-case name → its declaration phrase, the routine's parameters and DATA first. */
   locals: Map<string, string>;
   /** Types the routine declares itself (not visible in the class). */
@@ -110,8 +115,18 @@ export interface RapContract {
    * does not permit, with what it named (`TYPES p_file TYPE c LENGTH 128` → `rlgrap-filename`).
    */
   typeNotes: Map<string, string>;
-  /** The scope of a routine (upper-case FORM or METHOD name). */
-  scopeOf(routine: string): RoutineScope;
+  /**
+   * The scope of a routine (upper-case FORM or METHOD name). `line`, a line inside the routine, picks one of several
+   * routines of that name — methods of different local classes (scaffold 17); without it, the first.
+   */
+  scopeOf(routine: string, line?: number): RoutineScope;
+  /**
+   * The instance and static attributes the original's local classes declare (`DATA`/`CLASS-DATA` in a CLASS …
+   * DEFINITION), as attributes of the one logic class the routines become (scaffold 17): a method's body reads them
+   * (`rv_tax = mv_netwr * '0.19'`), and undeclared every faithful body was refused. One per name — the classes are
+   * flattened into one; a name the program also declares globally is the global's. In source order.
+   */
+  classAttributes: AbapDecl[];
   /** A phrase a METHODS parameter can carry for this declaration phrase, naming a type when it must (hint: the parameter). */
   paramPhrase(phrase: string | null, hint: string, generic?: 'table' | 'any'): string;
   /** A declaration phrase with LIKE resolved in this scope, or null when it cannot be. */
@@ -360,6 +375,105 @@ function writesTo(statements: readonly AbapStatement[], name: string): boolean {
     if (/^SUBTRACT\b/i.test(t) && new RegExp(`\\bFROM\\s+${n}(?![\\w-])`, 'i').test(t)) return true;
   }
   return false;
+}
+
+interface ClassDefinition {
+  name: string;
+  parent: string | null;
+  attributes: Array<{ name: string; phrase: string; length: string | null; line: number; text: string }>;
+  /** Upper-case method name → its METHODS statement (without the keyword). */
+  methods: Map<string, { text: string; line: number }>;
+}
+
+/**
+ * The local classes' definitions (scaffold 17): `CLASS x DEFINITION [INHERITING FROM y]` … `ENDCLASS`, with the
+ * `DATA`/`CLASS-DATA` attributes (no structure) and the `METHODS`/`CLASS-METHODS` declarations each holds.
+ */
+function readClassDefinitions(statements: readonly AbapStatement[], containers: readonly Container[]): Map<string, ClassDefinition> {
+  const out = new Map<string, ClassDefinition>();
+  for (const c of containers) {
+    if (c.kind !== 'class') continue;
+    const head = statements.find((s) => s.lineStart === c.lineStart && s.keyword === 'CLASS');
+    const m = head ? /^CLASS\s+([\w/]+)\s+DEFINITION\b([\s\S]*)$/i.exec(head.text) : null;
+    if (!head || !m || /\b(?:DEFERRED|LOAD)\b/i.test(m[2])) continue;
+    const def: ClassDefinition = { name: m[1].toUpperCase(), parent: /\bINHERITING\s+FROM\s+([\w/]+)/i.exec(m[2])?.[1].toUpperCase() ?? null, attributes: [], methods: new Map() };
+    let inStructure = 0;
+    for (const st of statements) {
+      if (st.lineStart <= c.lineStart || st.lineStart > c.lineEnd || st.nativeSql) continue;
+      const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '');
+      if (st.keyword === 'DATA' || st.keyword === 'CLASS-DATA') {
+        if (/^BEGIN\s+OF\b/i.test(rest)) inStructure++;
+        else if (/^END\s+OF\b/i.test(rest)) inStructure = Math.max(0, inStructure - 1);
+        else if (inStructure === 0) {
+          const d = splitDecl(rest);
+          if (d && !d.name.startsWith('<')) def.attributes.push({ name: d.name.toLowerCase(), phrase: d.phrase, length: d.length, line: st.lineStart, text: st.text });
+        }
+      } else if (st.keyword === 'METHODS' || st.keyword === 'CLASS-METHODS') {
+        const name = /^([\w/~]+)/.exec(rest)?.[1].toUpperCase();
+        if (name && !def.methods.has(name)) def.methods.set(name, { text: rest, line: st.lineStart });
+      }
+    }
+    if (!out.has(def.name)) out.set(def.name, def);
+  }
+  return out;
+}
+
+/** The declaration of a method of a class: its own, or the nearest ancestor's when it is a REDEFINITION or absent. */
+function methodDeclarationOf(classes: ReadonlyMap<string, ClassDefinition>, owner: string, method: string): { text: string; line: number } | null {
+  let cls = classes.get(owner);
+  for (let depth = 0; cls && depth < 16; depth++) {
+    const d = cls.methods.get(method);
+    if (d && !/\bREDEFINITION\b/i.test(d.text)) return d;
+    cls = cls.parent ? classes.get(cls.parent) : undefined;
+  }
+  return null;
+}
+
+type MethodSection = 'importing' | 'exporting' | 'changing' | 'returning';
+
+/**
+ * The parameters of a METHODS declaration without its keyword (`calculate_tax ABSTRACT RETURNING VALUE(rv_tax) TYPE
+ * vbak-netwr`), in order, each with its section and type phrase (OPTIONAL and DEFAULT dropped).
+ */
+export function methodParameters(text: string): Array<{ name: string; section: MethodSection; phrase: string | null; original: string }> {
+  const tokens = text.replace(/\.\s*$/, '').replace(/\(\s*/g, '(').replace(/\s*\)/g, ')').split(/\s+/).filter(Boolean).slice(1);
+  const out: Array<{ name: string; section: MethodSection; phrase: string | null; original: string }> = [];
+  let section: MethodSection | null = null;
+  let current: { name: string; section: MethodSection } | null = null;
+  const words: string[] = [];
+  const close = () => {
+    if (current) {
+      const phrase = words.join(' ').replace(/\s+\b(?:OPTIONAL|DEFAULT)\b[\s\S]*$/i, '').trim();
+      out.push({ ...current, phrase: phrase || null, original: `${current.section.toUpperCase()} ${current.name}${phrase ? ` ${phrase}` : ''}` });
+    }
+    current = null;
+    words.length = 0;
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const up = t.toUpperCase();
+    if (up === 'IMPORTING' || up === 'EXPORTING' || up === 'CHANGING' || up === 'RETURNING') {
+      close();
+      section = up.toLowerCase() as MethodSection;
+      continue;
+    }
+    if (up === 'RAISING' || up === 'EXCEPTIONS' || up === 'REDEFINITION' || up === 'ABSTRACT' || up === 'FINAL') {
+      close();
+      section = null;
+      continue;
+    }
+    if (!section) continue;
+    const next = tokens[i + 1]?.toUpperCase();
+    if (next === 'TYPE' || next === 'LIKE') {
+      close();
+      const name = (/^(?:VALUE|REFERENCE)\(([\w/]+)\)$/i.exec(t)?.[1] ?? t).toLowerCase();
+      if (/^[a-z_][\w/]*$/i.test(name)) current = { name, section };
+      continue;
+    }
+    if (current) words.push(t);
+  }
+  close();
+  return out;
 }
 
 /** The contract of a program — see the file comment. */
@@ -614,7 +728,24 @@ export function readRapContract(
       globalScope.set(name, resolved);
     }
   }
-  for (const n of [...typeNames, ...globals.map((g) => g.name), ...selection.map((s) => s.name), ...constantNames]) usedNames.add(n.toLowerCase());
+  // ---- the local classes' definitions (scaffold 17): their attributes, their methods' declarations, their parents
+  const classes = readClassDefinitions(statements, containers);
+  const classAttributes: AbapDecl[] = [];
+  for (const def of classes.values()) {
+    for (const a of def.attributes) {
+      const name = a.name;
+      if (globalScope.has(name) || typeNames.has(name) || classAttributes.some((x) => x.name === name)) continue;
+      const original = resolveIn(normalisePhrase(a.phrase, a.length), null);
+      if (!original) {
+        skipped.push({ line: a.line, text: a.text.slice(0, 80) });
+        continue;
+      }
+      const { phrase: resolved, was } = cloud(original);
+      classAttributes.push({ name, phrase: resolved, line: a.line, ...(was ? { was } : {}) });
+    }
+  }
+  for (const a of classAttributes) globalScope.set(a.name, a.phrase);
+  for (const n of [...typeNames, ...globals.map((g) => g.name), ...classAttributes.map((g) => g.name), ...selection.map((s) => s.name), ...constantNames]) usedNames.add(n.toLowerCase());
 
   const paramPhrase: RapContract['paramPhrase'] = (phrase, hint, generic = 'any') => {
     if (!phrase) return generic === 'table' ? 'TYPE STANDARD TABLE' : 'TYPE any';
@@ -634,11 +765,13 @@ export function readRapContract(
 
   // ---- routine scopes
   const scopes = new Map<string, RoutineScope>();
-  const scopeOf = (routine: string): RoutineScope => {
-    const key = routine.toUpperCase();
+  const scopeOf = (routine: string, line?: number): RoutineScope => {
+    const name = routine.toUpperCase();
+    const named = containers.filter((c) => (c.kind === 'form' || c.kind === 'method') && c.name === name);
+    const container = (line !== undefined ? named.find((c) => c.lineStart <= line && line <= c.lineEnd) : undefined) ?? named[0];
+    const key = container ? `${name}@${container.lineStart}` : name;
     const hit = scopes.get(key);
     if (hit) return hit;
-    const container = containers.find((c) => (c.kind === 'form' || c.kind === 'method') && c.name === key);
     const locals = new Map<string, string>();
     const localTypes = new Set<string>();
     const params: RapParam[] = [];
@@ -647,6 +780,7 @@ export function readRapContract(
       scopes.set(key, empty);
       return empty;
     }
+    let returning: RoutineScope['returning'];
     const own = statements.filter((s) => s.lineStart >= container.lineStart && s.lineStart <= container.lineEnd && !s.nativeSql);
     const head = own.find((s) => s.lineStart === container.lineStart && /^(?:FORM|METHOD)$/i.test(s.keyword));
     if (head && container.kind === 'form') {
@@ -666,6 +800,21 @@ export function readRapContract(
         } else typed = paramPhrase(resolved, p.name);
         const direction: RapParam['direction'] = p.section === 'using' && !writesTo(body, p.name) ? 'importing' : 'changing';
         params.push({ name: p.name, direction, phrase: typed, original: p.original });
+      }
+    }
+    if (head && container.kind === 'method') {
+      // The signature is in the class definition (scaffold 17): the class's own METHODS, else an ancestor's when the
+      // class redefines it. Without it the method had no parameters and every body reading one was refused.
+      const owner = containers.find((k) => k.kind === 'class' && k.lineStart <= container.lineStart && container.lineEnd <= k.lineEnd)?.name ?? null;
+      const declared = owner ? methodDeclarationOf(classes, owner, name) : null;
+      for (const p of declared ? methodParameters(declared.text) : []) {
+        const decl = p.phrase ? normalisePhrase(p.phrase, null) : null;
+        const raw = decl ? resolveIn(decl, null) : null;
+        const resolved = raw ? cloud(raw).phrase : null;
+        locals.set(p.name, resolved ?? 'TYPE any');
+        const typed = paramPhrase(resolved, p.name);
+        if (p.section === 'returning') returning = { name: p.name, phrase: typed };
+        else params.push({ name: p.name, direction: p.section === 'importing' ? 'importing' : 'changing', phrase: typed, original: p.original });
       }
     }
     for (const s of own) {
@@ -692,7 +841,7 @@ export function readRapContract(
       if (r && !usesLocalType) locals.set(d.name.toLowerCase(), r);
       else locals.set(d.name.toLowerCase(), '');
     }
-    const scope = { locals, localTypes, params };
+    const scope: RoutineScope = { locals, localTypes, params, ...(returning ? { returning } : {}) };
     scopes.set(key, scope);
     return scope;
   };
@@ -715,7 +864,7 @@ export function readRapContract(
   const sapRows: SapRow[] = [];
   if (rowTypeOf.size > 0) {
     // Every routine's declarations are read now, so a local typed by an SAP table marks its row type as needed.
-    for (const c of containers) if ((c.kind === 'form' || c.kind === 'method') && c.name) scopeOf(c.name);
+    for (const c of containers) if ((c.kind === 'form' || c.kind === 'method') && c.name) scopeOf(c.name, c.lineStart);
     /** The same-named component of the structure a SELECT reads into, where the program declares that structure. */
     const selectInto = (target: string, field: string, scope: ReadonlyMap<string, string> | null): string | null => {
       const declared = scope?.get(target.toLowerCase()) || globalScope.get(target.toLowerCase());
@@ -762,6 +911,7 @@ export function readRapContract(
     constants,
     constantNames,
     globals,
+    classAttributes,
     selection,
     skipped,
     typeNames,
@@ -798,7 +948,7 @@ function customerTablesOf(
   facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>,
   declaredTypes: ReadonlySet<string>,
   globalScope: ReadonlyMap<string, string>,
-  scopeOf: (routine: string) => RoutineScope,
+  scopeOf: (routine: string, line?: number) => RoutineScope,
   resolve: (phrase: string, scope: ReadonlyMap<string, string> | null) => string | null,
 ): CustomerTable[] {
   const { statements } = facts;
@@ -831,7 +981,7 @@ function tableFieldsOf(
   facts: Pick<EngineFacts, 'statements' | 'blocks' | 'graph'>,
   tables: ReadonlySet<string>,
   globalScope: ReadonlyMap<string, string>,
-  scopeOf: (routine: string) => RoutineScope,
+  scopeOf: (routine: string, line?: number) => RoutineScope,
   resolve: (phrase: string, scope: ReadonlyMap<string, string> | null) => string | null,
   selectInto: ((target: string, field: string, scope: ReadonlyMap<string, string> | null) => string | null) | null,
 ): Map<string, Map<string, string | null>> {
@@ -867,7 +1017,7 @@ function tableFieldsOf(
     if (/^-?\d+$/.test(e)) return 'TYPE i';
     if (!/^<?[a-z_][\w/]*>?$/.test(e)) return null;
     const routine = routineOf(line);
-    const scope = routine ? scopeOf(routine) : null;
+    const scope = routine ? scopeOf(routine, line) : null;
     const declared = scope?.locals.get(e) || globalScope.get(e) || null;
     if (!declared) return null;
     const r = resolve(declared, scope?.locals ?? null);
@@ -922,7 +1072,7 @@ function tableFieldsOf(
         '';
       const into = /\b(?:INTO|APPENDING) (?:CORRESPONDING FIELDS OF )?(?:TABLE )?@?([\w/]+)/i.exec(flat)?.[1] ?? null;
       const routine = routineOf(st.lineStart);
-      const scope = routine ? scopeOf(routine).locals : null;
+      const scope = routine ? scopeOf(routine, st.lineStart).locals : null;
       for (const token of list.replace(/\bAS \w+/gi, ' ').split(/[\s,()]+/)) {
         const m = /^(?:([\w/]+)~)?([a-z_]\w*)$/i.exec(token);
         if (!m || /^(?:SINGLE|DISTINCT|FOR|UPDATE|COUNT|SUM|MIN|MAX|AVG|CAST|AS|DATA)$/i.test(m[2])) continue;

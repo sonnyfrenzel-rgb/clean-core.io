@@ -45,7 +45,7 @@ import { operandsOf } from './guard-basis';
 import { AUTHORITY_FILE, authorityDocLines, authorityEntriesOf, authorityFile, authorityFrameLines } from './authority-node';
 import { INITIAL_ASSUMED_TAG, INITIAL_ASSUMPTION, INITIAL_HELPER } from './initial-node';
 import { LOOKUPS_FILE, lookupAvailable, lookupDocLines, lookupEntriesOf, lookupFrameLines, lookupImport, lookupListsOf, lookupReadsOf, lookupsFile } from './lookups-node';
-import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AuthorityEntry, type LookupEntry, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { calledFromOutsideLines, NO_ENTRY_POINT, SCAFFOLD_VERSION, type AuthorityEntry, type LookupEntry, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /** The Node major of the container; the same as `PACKAGE_NODE_MAJOR` (lib/delivery-package.ts, not imported to keep this module small — a spec holds them equal). */
 export const SCAFFOLD_NODE_MAJOR = 22;
@@ -1471,7 +1471,8 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, aut
   const orch = plan.units.find((u) => u.kind === 'orchestrator')!;
   const steps = plan.units.filter((u) => u.kind !== 'orchestrator' && !u.part);
   const fnOf = new Map<string, Unit>();
-  for (const u of plan.units) if (u.routine && !u.part) fnOf.set(u.routine, u);
+  // PERFORM targets are FORMs: a method of the same name is not one (scaffold 17).
+  for (const u of plan.units) if (u.routine && !u.part && u.kind !== 'method') fnOf.set(u.routine, u);
   for (const f of plan.folded) fnOf.set(f.routine, plan.units.find((u) => u.id === f.into)!);
   const reading = facts.graph.edges
     .filter((e) => e.from === null || e.fromKind === 'event' || e.fromKind === 'program' || e.fromKind === 'module')
@@ -1510,7 +1511,7 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, aut
     // No entry point (scaffold 15): no event block, no module and no statement at program level, so the original runs
     // nothing when it is started. There is no line to port, and a model asked for the run order could only invent
     // one; the engine writes the body and says why (roadmap 3.0.17 item 6).
-    out.push(...NO_ENTRY_POINT.map((l) => `  // ${l}`));
+    out.push(...[...NO_ENTRY_POINT, ...calledFromOutsideLines(plan, (id) => plan.units.find((u) => u.id === id)?.fn)].map((l) => `  // ${l}`));
     out.push('  return;');
   } else {
     out.push(regionText('node', orch.id, `${orch.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(orch.id)}, ${sq(orch.fn)});`));
@@ -1729,8 +1730,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 `;
 
-function engineContractFile(plan: UnitPlan, lists: readonly InputList[], statements: readonly AbapStatement[], shapes: AbapShapes): string {
-  const model = contractModel(plan);
+function engineContractFile(plan: UnitPlan, lists: readonly InputList[], statements: readonly AbapStatement[], shapes: AbapShapes, requestLists: readonly string[] = lists.map((l) => l.key)): string {
+  const model = contractModel(plan, requestLists);
   // A work area the original reads an input table's rows into (LOOP AT gt_raw INTO ls_raw) names that list's
   // columns: LS_RAW-KNOWN_AT is raw[].knownAt, not the first structure's KNOWN_AT (scaffold version 7).
   for (const [area, list] of workAreasOf(statements, lists)) {
@@ -2140,7 +2141,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/simulate.ts', content: SIMULATE_TS, owner: 'engine' });
   files.push({ path: 'srv/app.ts', content: APP_TS, owner: 'engine' });
   files.push({ path: 'srv/server.ts', content: SERVER_TS, owner: 'engine' });
-  files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan, lists, facts.statements, shapes), owner: 'engine' });
+  files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan, lists, facts.statements, shapes, allLists.map((l) => l.key)), owner: 'engine' });
   // The original's demo cases (3.0.13, A4): the golden master as data, a loader that runs one case through the
   // process with the case's tables as the run's globals, and a test that runs them all (`node-demo.ts`).
   files.push(...nodeDemoFiles(plan, shapes, originalDemo));
@@ -2164,7 +2165,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     csv: 'srv/lib/csv.ts',
     runStore: 'srv/lib/run-store.ts',
   };
-  const adapter = acceptanceAdapter(plan, { packageName: name, modules, delimiter: plan.csvDelimiter, fill: fillProbeConfigs(plan, facts) });
+  const adapter = acceptanceAdapter(plan, { packageName: name, modules, delimiter: plan.csvDelimiter, lists: allLists.map((l) => l.key), fill: fillProbeConfigs(plan, facts) });
   files.push({ path: 'acceptance-adapter.json', content: `${JSON.stringify(adapter, null, 2)}\n`, owner: 'engine' });
 
   // traceability.json and TRACE.md are not part of the scaffold: they say who filled each function, so they
