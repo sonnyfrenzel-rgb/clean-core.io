@@ -14,9 +14,16 @@
  * SAP's own release data underneath it — the SAP Cloudification Repository
  * (`scripts/sync-cloudification-repo.ts`, weekly, `npm run sync:catalog`) —
  * and the identifier list `lib/abap/generated/sap-identifiers.json`
- * (`npm run sync:identifiers`). Wherever a hit in this layer is shown, its
- * release is shown with it (`SAP_API_CATALOG_STAMP`), so a 2024 mapping never
- * reads as current.
+ * (`npm run sync:identifiers`). Where a hit in this layer is shown, its
+ * release is shown with it, so a 2024 mapping never reads as current: the
+ * successor of a finding says "compiled for 2024.FPS02" (`lib/successor-source.ts`),
+ * and the catalog object page, the architecture canvas, the SAP reference check
+ * and the CAP shell carry the whole stamp (`SAP_API_CATALOG_STAMP`, release and
+ * review date). The module listing only marks a hit "(curated)" and links to
+ * its object page. Not stamped: the data-coupling recommendation of
+ * `code-assessment.ts` — its own map, or a contextual successor below — which
+ * goes into the signed run labelled a candidate to check (QA review of
+ * 73b8cad63d3e, bb6acd2be22d).
  */
 
 // The release and review date live in a module of their own, so a client

@@ -31,6 +31,8 @@ const POSITIONAL: Readonly<Record<string, number>> = {
   buildAbapEvidence: 5,
   findingsOf: 5,
   recommendArchitecture: 5,
+  // 3.0.18: the contextual successor it names is gated (QA review of 73b8cad63d3e, 966feb41218f).
+  extractDataCoupling: 2,
 };
 
 /** Object argument: the first argument must be an object literal naming `engineVersion`. */
@@ -80,6 +82,10 @@ const NEW_RUN = new Set([
   'lib/demo-workspace.ts#buildDemoWorkspace',
   'components/demo/DemoDesign.tsx#DemoDesign',
   'scripts/diagnose-design-pipeline.ts#main', // a diagnostic over this engine
+  // 3.0.18 (`extractDataCoupling`): each reads a source no run has signed yet.
+  'app/(app)/project/[projectId]/analyze/page.tsx#handleAnalyze', // the analysis being made
+  'lib/example-catalog.ts#describeSnippet', // a shipped example, described by this engine
+  'lib/own-code-import.ts#countSource', // an upload being staged, before any run
 ]);
 
 function calleeName(expr: ts.Expression): string | null {

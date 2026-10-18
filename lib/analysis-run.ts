@@ -267,7 +267,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         criticalityScore: computeCriticalityScore(legacyCode),
         worklist,
         codeInventory: extractCodeInventory(legacyCode),
-        dataCoupling: extractDataCoupling(legacyCode),
+        dataCoupling: extractDataCoupling(legacyCode, APP_VERSION),
         evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
         originalRecommendation: routeReport.recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
         recommendationConfidence: routeReport.confidenceScore,

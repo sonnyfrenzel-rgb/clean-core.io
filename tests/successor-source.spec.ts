@@ -80,7 +80,8 @@ test('the engine names the curated successor for VBAK, SAP names its own', () =>
 });
 
 test('the source note never calls a curated mapping SAP', () => {
-  expect(successorSourceNote('Verified')).toBe('Clean-Core.io curated mapping');
+  // With the release the curated catalog was compiled for (3.0.18, QA bb6acd2be22d): a 2024 mapping never reads as current.
+  expect(successorSourceNote('Verified')).toBe('Clean-Core.io curated mapping, compiled for 2024.FPS02');
   expect(successorSourceNote('Verified')).not.toMatch(/\bSAP\b/);
   expect(successorSourceNote('Catalog Match')).toBe('SAP catalog');
   expect(successorSourceNote('Candidate')).toBe('candidate');

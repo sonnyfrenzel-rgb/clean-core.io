@@ -11,8 +11,16 @@
  *
  * Every surface that shows a successor next to its source reads this module,
  * so a curated pairing is never labelled as SAP's — external audit PRV-01.
- * Pure: no imports, safe for client components, exports and server routes.
+ * The curated label carries the release the catalog was compiled for, so a
+ * 2024 mapping does not read as current (3.0.18; QA review of 73b8cad63d3e,
+ * bb6acd2be22d). That release has not changed since the catalog was written,
+ * so the label is true of every run that shows it; the review date is not, and
+ * stays out.
+ * Pure: imports only the catalog stamp (itself free of imports), safe for
+ * client components, exports and server routes.
  */
+
+import { SAP_API_CATALOG_VERSION } from './abap/sap-api-catalog-stamp';
 
 export type SuccessorSource = 'sap' | 'curated' | 'unconfirmed';
 
@@ -26,7 +34,7 @@ export function successorSource(confidence: string | null | undefined): Successo
 /** The words for each source. */
 export const SUCCESSOR_SOURCE_LABEL: Readonly<Record<Exclude<SuccessorSource, 'unconfirmed'>, string>> = Object.freeze({
   sap: 'SAP catalog',
-  curated: 'Clean-Core.io curated mapping',
+  curated: `Clean-Core.io curated mapping, compiled for ${SAP_API_CATALOG_VERSION}`,
 });
 
 /**

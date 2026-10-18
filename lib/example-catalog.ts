@@ -21,6 +21,7 @@
 import { STARTER_EXAMPLES, type StarterExample } from './starter-examples';
 import { STAGE_EXAMPLE_FILE } from './three-views-stage';
 import { extractDataCoupling } from './abap/code-assessment';
+import { APP_VERSION } from './version';
 import { countSourceLines } from '@/lib/source-lines';
 
 /** A short code snippet shipped with the dashboard. Starts as a named project. */
@@ -101,7 +102,7 @@ export function describeSnippet(code: string): SnippetDescription {
   const kind = KIND_RULES.find((r) => r.rx.test(code))?.kind ?? 'ABAP source';
   const reads: string[] = [];
   const writes: string[] = [];
-  for (const entry of extractDataCoupling(code)) {
+  for (const entry of extractDataCoupling(code, APP_VERSION)) {
     if ((entry as { possibleTargetOf?: unknown }).possibleTargetOf) continue;
     if (entry.accessType === 'Read' || entry.accessType === 'Read/Write') reads.push(entry.tableName);
     if (entry.accessType === 'Write' || entry.accessType === 'Read/Write') writes.push(entry.tableName);

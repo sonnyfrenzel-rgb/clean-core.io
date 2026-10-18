@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, primarySuccessor, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
 import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META, expectedAtcMessage } from '@/lib/abap/abcd-classification';
+import { SAP_API_CATALOG_REVIEWED, SAP_API_CATALOG_VERSION } from '@/lib/abap/sap-api-catalog-stamp';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import CcTag from '@/components/cc/Tag';
 import { publicButton } from '@/components/landing/public-button';
@@ -441,7 +442,8 @@ export default async function CatalogObjectPage({
               <p className="text-xs text-cc-ink-muted mt-3">Repository state: {entry.releaseState}</p>
             )}
             <p className="text-xs text-cc-ink-muted mt-1" data-successor-source={curated ? 'curated' : 'sap'}>
-              Source: {curated ? "Clean-Core.io curated (field-level), not SAP's Cloudification Repository" : 'SAP official (Cloudification Repository)'}
+              {/* The curated layer's release and review date beside its hit (QA review of 73b8cad63d3e, bb6acd2be22d). */}
+              Source: {curated ? `Clean-Core.io curated (field-level), compiled for ${SAP_API_CATALOG_VERSION}, reviewed ${SAP_API_CATALOG_REVIEWED}; not SAP's Cloudification Repository` : 'SAP official (Cloudification Repository)'}
             </p>
             {entry?.conceptNote && (
               <p className="text-sm text-cc-ink-muted mt-3">Note: {entry.conceptNote}</p>
