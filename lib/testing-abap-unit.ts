@@ -31,7 +31,7 @@
 
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 import { sandboxFilesFromStoredCode } from './test-sandbox/files';
-import { goldenMasterComparedWords, goldenMasterStates, notCarriedWords } from './transformation/golden-master';
+import { goldenMasterComparedWords, goldenMasterStates, notCarriedWords, type GoldenMasterSapResult } from './transformation/golden-master';
 
 export const ABAP_NAME_MAX = 30;
 
@@ -858,7 +858,7 @@ export function abapTestEvidenceOfProject(project: { extensibilityRoute?: unknow
 }
 
 /** The evidence as the testing stage and STATUS.md say it. */
-export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
+export function abapTestEvidenceSentences(e: AbapTestEvidence, sap: GoldenMasterSapResult | null = null): string[] {
   // Owner decision 18.10.2026: the engine's classes are what the acceptance counts; the testing model's class is a
   // proposal (its preconditions and expectations are the model's) and is counted apart, never as evidence.
   const out = [e.engine ? `ABAP Unit, the engine's classes (${ENGINE_CLASS_WORDS} — what the acceptance counts): ${abapUnitCountsSentence(e.engine)}` : `ABAP Unit: ${abapUnitCountsSentence(e.counts)}`];
@@ -866,7 +866,8 @@ export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
     const n = e.goldenMaster.cases;
     const notCarried = e.goldenMaster.notCarried ?? 0;
     out.push(
-      `${goldenMasterStates(n, e.goldenMaster.rowsPassed ? n - notCarried : 0, e.goldenMaster.compared)} — ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
+      // 3.0.18 item 13: the fourth state from the SAP result on record, when there is one for this package.
+      `${goldenMasterStates(n, e.goldenMaster.rowsPassed ? n - notCarried : 0, e.goldenMaster.compared, sap)} — ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
         (notCarried ? `; ${notCarriedWords(notCarried)}` : '') +
         (e.goldenMaster.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic (its state has no component for them), so they run the logic without the case data.'),
     );

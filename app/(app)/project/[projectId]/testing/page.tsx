@@ -326,8 +326,10 @@ export default function TestingSandboxPage() {
   // 3.0.13 (6): read once per stored package and suite, not on every render.
   const abapUnitEvidence = useMemo(() => {
     const e = abapTestEvidenceOfProject({ extensibilityRoute: project?.extensibilityRoute, generatedCode: generatedCodeText, testSuite: project?.testSuite });
-    return e ? abapTestEvidenceSentences(e) : null;
-  }, [project?.extensibilityRoute, generatedCodeText, project?.testSuite]);
+    // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one.
+    const outsideNow = outsideReading(project);
+    return e ? abapTestEvidenceSentences(e, outsideNow.state === 'current' ? outsideNow.summary : null) : null;
+  }, [project, generatedCodeText]);
   /** 3.0.12 — does the generated code export the call contract the engine cases run against? Read, never run. */
   const callContract = useMemo(() => callContractPresence(sandboxFilesFromStoredCode(generatedCodeText ?? '')), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);
@@ -1466,6 +1468,7 @@ export default function TestingSandboxPage() {
                     ? 'Turn the testing stage back on in Settings to generate it.'
                     : 'Add your own Gemini API key in Settings to generate it.'
                 }
+                settingsLink
               />
             ) : testCases.length === 0 ? (
               <div data-testing-generate="" className="flex flex-col items-start gap-3">

@@ -542,7 +542,7 @@ export default function WorkspaceProcess({
                   </div>
                 ) : null}
                 {lines.length > 0 ? (
-                  <div className={fullSource ? 'max-h-[28rem] overflow-y-auto' : undefined}>
+                  <div className={fullSource ? 'max-h-112 overflow-y-auto' : undefined}>
                     <CcCodeSurface
                       lines={lines}
                       label={marked ? codeCardLabel(signed.fileName, marked) : signed.fileName}
@@ -606,7 +606,7 @@ export default function WorkspaceProcess({
             label: wt('biz.tabStepsByLine'),
             count: stepsByLine.length,
             content: (
-              <ol data-workspace-steps-by-line="" className="m-0 flex max-h-[28rem] list-none flex-col gap-1 overflow-y-auto p-0">
+              <ol data-workspace-steps-by-line="" className="m-0 flex max-h-112 list-none flex-col gap-1 overflow-y-auto p-0">
                 {stepsByLine.map((element) => (
                   <li key={element.id} className="flex items-center gap-2">
                     <CcAnchor

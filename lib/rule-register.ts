@@ -85,6 +85,15 @@ export interface RuleTestCase {
   id: string;
   /** The covering run's verdict for this case, or null when no covering run is on record. */
   verdict: string | null;
+  /** An engine case (`origin: 'engine'`, its trace names the rule) — derived from the original, not model-stated. */
+  engine?: boolean;
+}
+
+/** A unit of the generated package that `traceability.json` binds to the rule. */
+export interface RuleUnitBinding {
+  unitId: string;
+  fn: string;
+  file: string;
 }
 
 /** One row: current meaning → proposal → decision → implementation → test, with evidence and revision. */
@@ -103,11 +112,13 @@ export interface RuleRow {
   by: string | null;
   at: string | null;
   /**
-   * Whether the delivered code implements the decision. No record ties the
-   * generated code to a rule, so this is always null today and the register
-   * says so — never inferred from the code's text.
+   * Roadmap 3.0.18 item 13 (QM-09): the units of the generated package the
+   * package's `traceability.json` binds to this rule — a static mapping (where
+   * the rule is carried), never a proof that the code implements the decision.
+   * Null when no traceability record is at hand; an empty list when there is
+   * one and no unit carries the rule. Never inferred from the code's text.
    */
-  implementation: string | null;
+  implementation: RuleUnitBinding[] | null;
   /** Test cases whose trace names this rule (`lib/testing-rule-trace.ts`). */
   tests: RuleTestCase[];
   /** Where it stands in the source ("line 5 · lines 9 to 12"), or null. */
@@ -178,18 +189,79 @@ const NO_TESTS: RuleTestInput = { cases: [], verdicts: null };
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
+/** The rule an engine case breaks or keeps (`engineCase.trace.ruleId`), or null. */
+function engineCaseRule(tc: Record<string, unknown>): string | null {
+  if (tc.origin !== 'engine') return null;
+  const data = tc.engineCase as { trace?: { ruleId?: unknown } } | undefined;
+  return typeof data?.trace?.ruleId === 'string' && data.trace.ruleId ? data.trace.ruleId : null;
+}
+
 function testsByRule(input: RuleTestInput): Map<string, RuleTestCase[]> {
   const out = new Map<string, RuleTestCase[]>();
   for (const tc of input.cases) {
-    const trace = ruleTraceOf(tc);
-    if (!trace) continue;
+    const engineRule = engineCaseRule(tc);
+    const ruleId = engineRule ?? ruleTraceOf(tc)?.ruleId ?? null;
+    if (!ruleId) continue;
     const id = String(tc.id ?? '');
     if (!id) continue;
-    const list = out.get(trace.ruleId) ?? [];
-    list.push({ id, verdict: input.verdicts ? input.verdicts[id] ?? null : null });
-    out.set(trace.ruleId, list);
+    const list = out.get(ruleId) ?? [];
+    list.push({ id, verdict: input.verdicts ? input.verdicts[id] ?? null : null, ...(engineRule ? { engine: true } : {}) });
+    out.set(ruleId, list);
   }
   return out;
+}
+
+/**
+ * Behaviour-tested (3.0.18 item 13, QM-09): an engine case on the rule passed in
+ * the run that covers the current code and cases. A model-stated case, a case
+ * without a covering run, or a failed one is not.
+ */
+export function behaviourTested(row: Pick<RuleRow, 'tests'>): boolean {
+  return row.tests.some((t) => t.engine === true && t.verdict === 'Passed');
+}
+
+/** Statically mapped (3.0.18 item 13, QM-09): `traceability.json` binds at least one unit to the rule. */
+export const staticallyMapped = (row: Pick<RuleRow, 'implementation'>): boolean => (row.implementation?.length ?? 0) > 0;
+
+/** Decided: an account kept, changed or dropped it. A Clarify is a question, not a decision. */
+export const decided = (row: Pick<RuleRow, 'answer'>): boolean => row.answer !== null && row.answer !== 'clarify';
+
+/** The trace of a generated package, as far as the register reads it: which unit carries which rule. */
+export interface RuleTraceRecord {
+  units: ReadonlyArray<{ unitId: string; fn: string; file: string; rules: ReadonlyArray<{ id: string }> }>;
+}
+
+/** The trace in a package's `traceability.json`, or null when there is none or it cannot be read. */
+export function ruleTraceRecordOf(content: string | null | undefined): RuleTraceRecord | null {
+  if (typeof content !== 'string' || !content.trim()) return null;
+  try {
+    const parsed = JSON.parse(content) as { format?: unknown; units?: unknown };
+    if (typeof parsed.format !== 'string' || !parsed.format.startsWith('clean-core.traceability/') || !Array.isArray(parsed.units)) return null;
+    const units = parsed.units
+      .filter((u): u is { unitId: string; fn: string; file: string; rules: unknown } => !!u && typeof u === 'object'
+        && typeof (u as { unitId?: unknown }).unitId === 'string' && typeof (u as { fn?: unknown }).fn === 'string' && typeof (u as { file?: unknown }).file === 'string')
+      .map((u) => ({
+        unitId: u.unitId,
+        fn: u.fn,
+        file: u.file,
+        rules: Array.isArray(u.rules) ? u.rules.filter((r): r is { id: string } => !!r && typeof (r as { id?: unknown }).id === 'string') : [],
+      }));
+    return { units };
+  } catch {
+    return null;
+  }
+}
+
+/** The register with every row's static mapping read from the package's trace (3.0.18 item 13, QM-09). */
+export function withImplementationTrace(register: RuleRegister, trace: RuleTraceRecord | null): RuleRegister {
+  if (register.state !== 'read' || !trace) return register;
+  const rows = register.rows.map((row) => ({
+    ...row,
+    implementation: trace.units
+      .filter((u) => u.rules.some((r) => r.id === row.id))
+      .map((u) => ({ unitId: u.unitId, fn: u.fn, file: u.file })),
+  }));
+  return { ...register, rows };
 }
 
 function rowsOf(subjects: readonly StateSubject[], bySubject: Readonly<Record<string, StateEntry>>, tests: RuleTestInput): RuleRow[] {
@@ -277,6 +349,15 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
   };
 }
 
+/** The three facts of QM-09, counted; `mapped` is null when no row carries a trace (no traceability record). */
+export function ruleEvidenceCounts(rows: readonly RuleRow[]): { mapped: number | null; decided: number; tested: number } {
+  return {
+    mapped: rows.length && rows.every((r) => r.implementation === null) ? null : rows.filter(staticallyMapped).length,
+    decided: rows.filter(decided).length,
+    tested: rows.filter(behaviourTested).length,
+  };
+}
+
 /** The three per-rule states, counted. */
 export function ruleStateCounts(rows: readonly RuleRow[]): Record<RuleRowState, number> {
   return {
@@ -303,10 +384,22 @@ export function ruleRowWords(row: RuleRow): {
     row.proposal ?? (row.answer === null || row.answer === 'clarify' ? 'None — the current meaning is the working assumption.' : 'None on record.');
   const who = [row.by ? `by ${row.by}` : null, row.at ? `on ${day(row.at)}` : null].filter(Boolean).join(' ');
   const decision = row.answer ? `${RULE_ANSWER_WORDS[row.answer]}${who ? ` — ${who}` : ''}` : 'None on record — open.';
-  const implementation = row.implementation ?? 'Not traced — no record ties the delivered code to this rule.';
-  const test = row.tests.length
-    ? `${row.tests.map((t) => `${t.id} (${t.verdict ? t.verdict.toLowerCase() : 'no covering run'})`).join(', ')} — expected result model-stated from the original, not an independent test.`
-    : 'None — no test case traces this rule.';
+  // 3.0.18 item 13 (QM-09): three facts kept apart — mapped statically (this column), decided (Decision), behaviour-tested (Test).
+  const implementation = row.implementation === null
+    ? 'Not traced — no record ties the delivered code to this rule.'
+    : row.implementation.length
+      ? `Statically mapped to ${row.implementation.map((u) => `${u.unitId} \`${u.fn}\` (${u.file})`).join(', ')} — traceability.json; where the rule is carried, not a proof that the code implements the decision.`
+      : 'Not mapped — traceability.json binds no unit of the package to this rule.';
+  const passed = row.tests.filter((t) => t.engine && t.verdict === 'Passed');
+  const cases = row.tests.map((t) => `${t.id}${t.engine ? ', engine case' : ''} (${t.verdict ? t.verdict.toLowerCase() : 'no covering run'})`).join(', ');
+  const modelOnly = row.tests.length > 0 && row.tests.every((t) => !t.engine);
+  const test = !row.tests.length
+    ? 'None — no test case traces this rule.'
+    : passed.length
+      ? `Behaviour-tested: ${passed.map((t) => t.id).join(', ')} passed in the covering run. All cases: ${cases}.`
+      : modelOnly
+        ? `${cases} — expected result model-stated from the original, not an independent test.`
+        : `Not behaviour-tested — no engine case on this rule passed in a covering run. Cases: ${cases}.`;
   const evidence = row.evidence ? `Source, ${row.evidence}` : 'Not anchored';
   const revision = row.revision !== null ? `Confirmation revision ${row.revision}` : '—';
   return { proposal, decision, implementation, test, evidence, revision };
@@ -334,6 +427,13 @@ export function ruleRegisterMarkdown(register: RuleRegister): string[] {
   );
   const c = ruleStateCounts(register.rows);
   lines.push(`${RULE_STATE_WORDS.open}: ${c.open} · ${RULE_STATE_WORDS.approved}: ${c.approved} · ${RULE_STATE_WORDS['changed-on-purpose']}: ${c['changed-on-purpose']}`, '');
+  // 3.0.18 item 13 (QM-09): three facts, three numbers — none stands in for another.
+  const f = ruleEvidenceCounts(register.rows);
+  lines.push(
+    `Three facts, kept apart: statically mapped to a unit of the package (traceability.json): ${f.mapped === null ? 'not traced — no traceability record' : `${f.mapped} of ${register.rows.length}`} · `
+    + `decided by an account: ${f.decided} of ${register.rows.length} · behaviour-tested (an engine case on it passed in the covering run): ${f.tested} of ${register.rows.length}.`,
+    '',
+  );
   lines.push(`| ${RULE_REGISTER_COLUMNS.join(' | ')} |`, `|${RULE_REGISTER_COLUMNS.map(() => '---').join('|')}|`);
   for (const row of register.rows) {
     const w = ruleRowWords(row);

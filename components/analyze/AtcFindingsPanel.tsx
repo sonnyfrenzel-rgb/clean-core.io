@@ -148,7 +148,7 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
         </CcFilterBar>
       </div>
 
-      <div className="max-h-[28rem] overflow-y-auto border-t border-cc-line">
+      <div className="max-h-112 overflow-y-auto border-t border-cc-line">
         {filtered.length === 0 ? (
           <div className="px-6 py-4">
             <CcNoMatches title="No objects match these filters" onClear={clear} />

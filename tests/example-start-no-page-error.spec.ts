@@ -53,7 +53,7 @@ function recordPageErrors(page: Page): string[] {
 }
 
 async function expectNoErrorBoundary(page: Page) {
-  await expect(page.getByText('Something went wrong!')).toHaveCount(0);
+  await expect(page.getByText(/Something went wrong/)).toHaveCount(0);
 }
 
 test.describe('screens that load code on demand throw nothing (owner 02.10.2026)', () => {

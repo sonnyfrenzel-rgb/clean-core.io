@@ -16,7 +16,7 @@ import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
 import { OPTION_COMPARISON_PROMPT_RULE, OPTION_COMPARISON_SCHEMA } from '@/lib/design-option-comparison';
-import { DESIGN_CONSISTENCY_PROMPT_RULE, RAP_TEMPLATE_PROMPT_RULE, programOfSource, rapObjectNamesPromptRule } from '@/lib/design-post-checks';
+import { CUSTOM_ENTITY_AUTH_NOTE, DESIGN_CONSISTENCY_PROMPT_RULE, RAP_TEMPLATE_PROMPT_RULE, programOfSource, rapDeliveredFromSource, rapObjectNamesPromptRule } from '@/lib/design-post-checks';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -344,6 +344,9 @@ export default function DesignPage() {
         engineVersion: signedEngineVersionOf(projData),
       });
       const isAbapCloud = !isSideBySideRoute(route);
+      // 3.0.18 item 13 (QM-07, FI-F02): the RAP variant the package will be — a custom entity has no table, BDEF or DCL.
+      const designSource = engineEvidenceRef.current.source ?? projData?.legacyCode ?? null;
+      const rapVariant = isAbapCloud ? rapDeliveredFromSource(designSource)?.variant ?? null : null;
 
       const prompt = isAbapCloud 
         ? `Act as a Senior SAP Enterprise Architect. Analyze the engine evidence (and the analysis narrative, where there is one) and design a modern, clean SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture.
@@ -357,7 +360,7 @@ interface DesignData {
     runtimePlatform: string; // Value MUST be: "SAP S/4HANA Core (Developer Extensibility)"
   };
   nodeAppBlueprint: {
-    projectStructure: Array<{ path: string; purpose: string }>; // The RAP artifact layout: CDS root and projection views, Behavior Definition (BDEF), Service Definition (SRVD), Service Binding (SRVB), and the Behavior Implementation class (ABP). ${rapObjectNamesPromptRule(programOfSource(engineEvidenceRef.current.source ?? projData?.legacyCode ?? null))}
+    projectStructure: Array<{ path: string; purpose: string }>; // The RAP artifact layout: ${rapVariant === 'custom-entity' ? 'the custom entity and its query provider class, the logic class, Service Definition (SRVD) and Service Binding (SRVB)' : 'CDS root and projection views, Behavior Definition (BDEF), Service Definition (SRVD), Service Binding (SRVB), and the Behavior Implementation class (ABP)'}. ${rapObjectNamesPromptRule(programOfSource(designSource), rapVariant)}
     apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>; // Exposed RAP UI service operations or REST service definitions
   };
   cloudServices: Array<{
@@ -372,7 +375,7 @@ interface DesignData {
   securityHardening: Array<{
     category: string; // e.g. IAM, Authorization, Dictionary, Audit
     requirement: string; // ABAP Cloud / RAP security rule ONLY. MUST use only ABAP-native concepts. NEVER reference Node.js, npm, passport, helmet, or any non-ABAP technology. Example: 'Authority Check on V_KNA1_VKO authorization object'
-    packageOrConfig: string; // ABAP-native implementation ONLY. Examples: 'AUTHORITY-CHECK OBJECT V_KNA1_VKO', 'CDS access control DCL', 'ABAP Cloud restricted syntax check', 'IAM App / Business Catalog'. NEVER use npm packages or Node.js code.
+    packageOrConfig: string; // ABAP-native implementation ONLY. Examples: 'AUTHORITY-CHECK OBJECT V_KNA1_VKO', ${rapVariant === 'custom-entity' ? `'AUTHORITY-CHECK in the query provider class'` : `'CDS access control DCL'`}, 'ABAP Cloud restricted syntax check', 'IAM App / Business Catalog'. NEVER use npm packages or Node.js code.${rapVariant === 'custom-entity' ? ` ${CUSTOM_ENTITY_AUTH_NOTE}` : ''}
   }>;
   roadmap: Array<{
     phase: string; // Phase index (e.g. Phase 0, Phase 1, Phase 2, Phase 3)

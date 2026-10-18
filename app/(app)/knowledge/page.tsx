@@ -52,7 +52,7 @@ const faqs = [
   },
   {
     question: "How do you run a SAP Clean Core assessment?",
-    answer: "Assess maturity across all five dimensions honestly. For the extensibility dimension specifically, that means getting object-level visibility into your custom ABAP — what touches standard tables or unreleased objects — and attaching KPIs: a Clean Core Score and an A–D readiness grade — a lookup in SAP’s published object data for SAP objects, an estimate for your own Z/Y objects, so remediation is prioritised. Clean-Core.io provides a free first pass on that extensibility slice; SAP Cloud ALM, LeanIX, Signavio and ATC remain the authoritative, cross-dimension toolchain."
+    answer: "Assess maturity across all five dimensions honestly. For the extensibility dimension specifically, that means getting object-level visibility into your custom ABAP — what touches standard tables or unreleased objects — and attaching KPIs: a Clean Core Score (Clean-Core.io's own 5–100 measure, higher is better — not SAP's Technical Debt Score, which runs the other way) and an A–D readiness grade — a lookup in SAP’s published object data for SAP objects, an estimate for your own Z/Y objects, so remediation is prioritised. Clean-Core.io provides a free first pass on that extensibility slice; SAP Cloud ALM, LeanIX, Signavio and ATC remain the authoritative, cross-dimension toolchain."
   }
 ];
 
@@ -125,7 +125,7 @@ export default function KnowledgePage() {
       {/* GEO Quick Answer Block */}
       <QuickAnswer
         question="What is the SAP Clean Core approach, and how do you assess readiness?"
-        answer="SAP Clean Core is a set of guiding principles for keeping the S/4HANA core standard and upgradeable across five dimensions — business processes, extensibility (custom code), data, integration, and operations. A Clean Core assessment measures maturity across those dimensions. For the extensibility dimension specifically it means getting object-level visibility into custom ABAP (what touches standard tables or unreleased objects) and attaching KPIs — a Clean Core Score and an A–D readiness grade — a lookup in SAP’s published object data for SAP objects, an estimate for your own Z/Y objects — so the highest-risk objects are remediated first. It is complementary to SAP ADT/ATC and the SAP toolchain (Cloud ALM, LeanIX, Signavio), which remain the authoritative checks."
+        answer="SAP Clean Core is a set of guiding principles for keeping the S/4HANA core standard and upgradeable across five dimensions — business processes, extensibility (custom code), data, integration, and operations. A Clean Core assessment measures maturity across those dimensions. For the extensibility dimension specifically it means getting object-level visibility into custom ABAP (what touches standard tables or unreleased objects) and attaching KPIs — a Clean Core Score (Clean-Core.io's own 5–100 measure, higher is better — not SAP's Technical Debt Score, which runs the other way) and an A–D readiness grade — a lookup in SAP’s published object data for SAP objects, an estimate for your own Z/Y objects — so the highest-risk objects are remediated first. It is complementary to SAP ADT/ATC and the SAP toolchain (Cloud ALM, LeanIX, Signavio), which remain the authoritative checks."
       />
 
       {/* Interactive FAQ & Glossary client component */}

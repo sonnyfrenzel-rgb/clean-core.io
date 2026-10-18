@@ -65,6 +65,7 @@ import { readLuwStates, type LuwModel } from './luw-states';
 import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTarget } from './method-resolution';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { containerAt, readBlocks, type Block as NestingBlock } from './block-structure';
+import { enclosingBranches, negateCondition, type EnclosingBranch } from './enclosing-branches';
 
 /**
  * A caveat **on** a statement — never in its place.
@@ -1964,12 +1965,18 @@ function branchAssignment(statement: AbapStatement, stack: Block[], statements: 
   if (plural) {
     core = returning ? `${plural} receive ${value}.` : `${plural} set ${nounPhrase(assign[1])} to ${value}.`;
   } else {
+    // 3.0.18 item 13 (QM-06): an ELSE names the conditions that did not hold, not a bare "Otherwise".
+    const own = branch.kind === 'else'
+      ? enclosingBranches(statements, structureOf(statements), statement.index).find((b) => b.line === branch.head.lineStart)
+      : undefined;
     const subject =
       branch.kind === 'else'
-        ? lead('Otherwise')
+        ? own && own.earlier.length ? lead(`If ${own.earlier.map(notClause).join(' and ')}`, true) : lead('Otherwise')
         : lead(`If ${conditionClause(branch.head.text, subrcClauseAt(statements, branch.head.index))}`, true);
     core = `${compose(subject, `${nounPhrase(assign[1])} is set to ${value}`)}.`;
   }
+  // 3.0.18 item 13 (QM-06, FI-F11): the branches around this one, which decide whether it runs at all.
+  core = within(withinPhrase(statements, statement.index, branch.head.lineStart), core);
   return { anchors: [range(statement), range(branch.head)], core, grain: 'group', tag: 'branch' };
 }
 
@@ -2970,6 +2977,65 @@ function startSentence(text: string): string {
   return /^(?:the|a|an|processing|list|nothing|it)\b/.test(text) ? capitalize(text) : text;
 }
 
+// ---------------------------------------------------------------------------
+// The branches around a rule — roadmap 3.0.18 item 13 (QM-06, FI-F11)
+// ---------------------------------------------------------------------------
+
+const STRUCTURES = new WeakMap<readonly AbapStatement[], ReturnType<typeof readBlocks>>();
+
+function structureOf(statements: readonly AbapStatement[]): ReturnType<typeof readBlocks> {
+  let structure = STRUCTURES.get(statements);
+  if (!structure) {
+    structure = readBlocks(statements as AbapStatement[]);
+    STRUCTURES.set(statements, structure);
+  }
+  return structure;
+}
+
+/** "the field lv_first is not F" — the opposite of one condition, or that it does not hold. */
+function notClause(condition: string): string {
+  const negated = negateCondition(condition);
+  return negated ? conditionClause(negated) : `the condition "${condition}" does not hold`;
+}
+
+/** `'A' OR 'B'` → "A or B". */
+function whenValues(values: string): string {
+  return values.split(/\s+OR\s+/i).map((v) => valueText(v.trim())).join(' or ');
+}
+
+/** One enclosing branch as a clause: what must hold for the code inside it to run at all. */
+function enclosingClause(branch: EnclosingBranch, statements: readonly AbapStatement[]): string {
+  if (branch.kind === 'if') {
+    const head = statements.find((s) => s.lineStart === branch.chainLine && s.keyword.toUpperCase() === 'IF');
+    return conditionClause(branch.condition ?? '', head ? subrcClauseAt(statements, head.index) : undefined);
+  }
+  if (branch.kind === 'elseif') return [...branch.earlier.map(notClause), conditionClause(branch.condition ?? '')].join(' and ');
+  if (branch.kind === 'else') return branch.earlier.map(notClause).join(' and ');
+  const subject = nounPhrase(plain(branch.selector ?? 'the value'));
+  if (branch.kind === 'when') return `${subject} is ${whenValues(branch.condition ?? '')}`;
+  return `${subject} is none of ${branch.earlier.map(whenValues).join(', ')}`;
+}
+
+/**
+ * "Only when the field lv_first is F (L6)" — the conditions of the branches a
+ * sentence stands in, outermost first, each with its line; null at the top of
+ * a routine. A short rule read alone says something the code does not when an
+ * outer test decides whether it runs at all (QM-06: "If critical or no retest →
+ * FAIL" without the enclosing "first test failed").
+ */
+function withinPhrase(statements: readonly AbapStatement[], index: number, skipLine?: number): string | null {
+  const branches = enclosingBranches(statements, structureOf(statements), index).filter((b) => b.line !== skipLine);
+  if (branches.length === 0) return null;
+  return `Only when ${branches.map((b) => `${enclosingClause(b, statements)} (L${b.line})`).join(' and ')}`;
+}
+
+/** A sentence placed after "Only when …:" — its first word in lower case unless it is code or an acronym. */
+function within(phrase: string | null, core: string): string {
+  if (!phrase) return core;
+  const rest = /^[A-Z][a-z]+\b/.test(core) ? core.charAt(0).toLowerCase() + core.slice(1) : core;
+  return `${phrase}: ${rest}`;
+}
+
 /**
  * The sentences of a branching: one per branch, and for `IF … ELSE` additionally
  * the sentence about both outcomes — „Bei Treffer wird X ausgegeben, sonst Y".
@@ -3033,7 +3099,17 @@ function branchSentences(
   // concatenation of the branch sentences; there the branches stay.
   const chain = drafts.find((draft) => draft.tag?.startsWith('chain'));
   if (chain && /; otherwise /.test(chain.core)) return [chain];
-  return drafts.filter((draft) => !draft.tag?.startsWith('chain'));
+  // 3.0.18 item 13 (QM-06): an ELSE said on its own as "Otherwise, …" has lost
+  // the condition it is the opposite of — it names what did not hold instead.
+  return drafts
+    .filter((draft) => !draft.tag?.startsWith('chain'))
+    .map((draft, k) => {
+      const part = parts[k];
+      if (!part || part.branch.kind !== 'else' || part.subject.text !== 'Otherwise') return draft;
+      const earlier = branches.filter((b) => b.kind !== 'else').map((b) => b.head.text.replace(/^(?:IF|ELSEIF)\s+/i, '').replace(/\.\s*$/, '').trim());
+      if (earlier.length === 0) return draft;
+      return { ...draft, core: `${compose(lead(`If ${earlier.map(notClause).join(' and ')}`, true), part.phrase)}.` };
+    });
 }
 
 /**
@@ -3183,9 +3259,11 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
     const first = branches.find(
       (draft) => draft.tag === `branch${statements[i].lineStart}` || draft.tag === `chain${statements[i].lineStart}`,
     );
-    if (guard && !first) out.push(build(guard));
+    // 3.0.18 item 13 (QM-06, FI-F11): a rule inside another branch says the conditions it runs under.
+    const outer = guard || branches.length ? withinPhrase(statements, i) : null;
+    if (guard && !first) out.push(build({ ...guard, core: within(outer, guard.core) }));
     for (const draft of branches) {
-      out.push(build(draft));
+      out.push(build({ ...draft, core: within(outer, draft.core) }));
       for (const anchor of draft.anchors.slice(1)) {
         // A chain `WRITE: / a, b.` is several statements on the same line.
         for (const covered of statements) {

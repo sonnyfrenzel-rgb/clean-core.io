@@ -215,6 +215,9 @@
   /* Form and depth, §1.4 — workspace values. The public pages keep their own. */
   --cc-radius-card: 12px;
   --cc-radius-row: 8px;
+  /* A segment inside a segmented control: the row radius less the group's
+     2 px padding, so the inner and outer corners run parallel (UX-120). */
+  --cc-radius-segment: calc(var(--cc-radius-row) - 2px);
   --cc-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
   --cc-shadow-dialog: 0 16px 48px rgb(11 28 48 / 0.18);
 
@@ -332,6 +335,7 @@
 
   --radius-cc-card: var(--cc-radius-card);
   --radius-cc-row: var(--cc-radius-row);
+  --radius-cc-segment: var(--cc-radius-segment);
 
   --shadow-cc: var(--cc-shadow);
   --shadow-cc-dialog: var(--cc-shadow-dialog);

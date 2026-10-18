@@ -158,7 +158,8 @@ test.describe('the marks travel into the text a reader gets', () => {
       strategicNextSteps: ['Check F0380 (Process Collections Worklist).'],
     };
     const md = formatAnalysisToMarkdown(JSON.stringify(analysis));
-    expect(md).toContain("F2358 [name does not match SAP's");
+    // 3.0.18 item 13 (QM-08): in the standard-fit text a contradicted ID's sentence is dropped, SAP's title said in its place.
+    expect(md).toContain("A model sentence naming F2358 was dropped — name does not match SAP's (SAP: F2358 is “Monitor Purchase Order Items”");
     expect(md).toContain("SAP_COM_0093 [name does not match SAP's (SAP: SAP_COM_0093 is “Identity Management Integration”");
     expect(md).toContain('BDC [not verified — check before use]');
     expect(md).toContain('F0380 [verified: SAP lists F0380 as “Process Collections Worklist”');
@@ -275,7 +276,8 @@ test.describe('the prompts carry the rules (source guards)', () => {
       ['app/(app)/project/[projectId]/analyze/page.tsx', /<SapIdentifierChecks/],
       // The route card of the stored analysis checks the model's target and rationale (QA bead0ed34426).
       ['app/(app)/project/[projectId]/analyze/page.tsx', /targetArtifact=\{analysisData\.extensibilityRouting\?\.targetArtifact[^}]*\}[\s\S]{0,600}?\bmodelWords\b/],
-      ['lib/markdownFormatter.ts', /annotateSapReferences as checked[\s\S]*\bchecked\(data\.standardFit/],
+      // 3.0.18 item 13: the standard-fit text runs the sentence-level check (`sapCheckedNarrative`).
+      ['lib/markdownFormatter.ts', /annotateSapReferences as checked[\s\S]*\bsapCheckedNarrative\(data\.standardFit/],
       // The HTML exports mark through an annotator that also collects the CC BY 4.0 attributions (SAP-docs).
       ['lib/design-export.ts', /const checked = sapRefs\.annotate;[\s\S]*esc\(checked\(map\.sapStandardApiName\)\)[\s\S]*const attributionSection = sapAttributionHtml\(sapRefs\.attributions\(\), esc\);[\s\S]*\$\{attributionSection\}/],
       ['lib/analysis-export.ts', /const checked = sapRefs\.annotate;[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)[\s\S]*sapAttributionHtml\(sapRefs\.attributions\(\), esc\)/],

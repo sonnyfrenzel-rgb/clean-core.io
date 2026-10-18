@@ -823,6 +823,28 @@ export function annotateSapReferences(text: unknown): string {
   return annotateInto(text, null);
 }
 
+/**
+ * A model narrative through the identifier check, sentence by sentence —
+ * roadmap 3.0.18 item 13 (QM-08, FI-F12). A sentence whose SAP identifier
+ * contradicts the SAP data held here is dropped, and SAP's own title stands in
+ * its place with its source; every other identifier keeps its mark, an unknown
+ * one "not verified — check before use". The QM and FI reviews found a scope
+ * item and a Fiori app ID paired with another area in text that reached a
+ * document without passing this check (the model's purpose of a program).
+ */
+export function sapCheckedNarrative(text: unknown, annotate: (sentence: string) => string = annotateSapReferences): string {
+  if (typeof text !== 'string') return text == null ? '' : String(text);
+  if (!text.trim()) return text;
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => {
+      const wrong = findSapIdentifiers(sentence).filter((c) => c.status === 'mismatch');
+      if (!wrong.length) return annotate(sentence);
+      return wrong.map((c) => `[A model sentence naming ${c.id} was dropped — ${sapIdMark(c)}.]`).join(' ');
+    })
+    .join(' ');
+}
+
 function annotateInto(text: unknown, sink: Set<string> | null): string {
   if (typeof text !== 'string') return text == null ? '' : String(text);
   if (!text) return text;

@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
 import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
@@ -18,6 +18,7 @@ import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Shie
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcToast from '@/components/cc/Toast';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { workspaceProcessHref } from '@/lib/workspace-back-href';
 import { CcTag } from '@/components/cc/Tag';
@@ -658,6 +659,10 @@ export default function AnalyzePage() {
    * takes its look from `lib/export-style.ts`. The page asks for the file and
    * saves it.
    */
+  /** The toast after a finished download (UX-161, DESIGN.md §2.6). */
+  const [exportToast, setExportToast] = useState<string | null>(null);
+  const closeExportToast = useCallback(() => setExportToast(null), []);
+
   const exportToConfluence = async () => {
     if (!project?.analysis) return;
     // Loaded on the click: the export recomputes the evidence, so it imports
@@ -671,7 +676,11 @@ export default function AnalyzePage() {
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
     const fileSaver = await import('file-saver');
     const save = fileSaver.saveAs || fileSaver.default?.saveAs || fileSaver.default;
-    save(blob, analysisExportFileName(project.name));
+    const exportFileName = analysisExportFileName(project.name);
+    save(blob, exportFileName);
+    // Said once the file is handed to the browser: which file, and that it was
+    // only downloaded — nothing was sent to Confluence (UX-161).
+    setExportToast(`Downloaded ${exportFileName}. It is on your device only; nothing was sent to Confluence.`);
     
     // The export is no longer written back into the project document.
     //
@@ -879,6 +888,20 @@ export default function AnalyzePage() {
   const personalDataPending = personalDataHints.length > 0 && !personalDataAcknowledged;
   /** Ticked once for other lines than the ones now shown: the tick is gone, and the box says why. */
   const personalDataAckStale = personalDataHints.length > 0 && personalDataAckFor !== '' && personalDataAckFor !== personalDataKey;
+
+  /**
+   * Why "Start Analysis" is closed, or null when it is open. Shown under the
+   * button and tied to it with `aria-describedby` (UX-013, UX-134, UX-165).
+   */
+  const startBlockedReason: string | null = stagedScanBlock
+    ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.`
+    : !targetDeployment
+      ? 'Select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) above to start.'
+      : !acceptedTerms
+        ? 'Accept the Terms & Conditions in the Security section above to start.'
+        : personalDataPending
+          ? 'Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.'
+          : null;
 
   /**
    * The route's confidence as the run signed it (`recommendationConfidence`) —
@@ -1409,6 +1432,7 @@ export default function AnalyzePage() {
                   findings={evidenceFindings}
                   totalLines={sourceLines}
                   code={legacyCode}
+                  onOpenLine={legacyCode && sourceLines > 0 ? openSourceLine : undefined}
                 />
               ) : (
                 <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
@@ -1818,51 +1842,36 @@ export default function AnalyzePage() {
                 Cancel, back to My workspace
               </CcButton>
 
-              <CcButton
-                variant="primary"
-                density="cozy"
-                busy={loading}
-                onClick={() => {
-                  if (!targetDeployment) {
-                    setError('Please select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) before starting the analysis.');
-                    // Scroll to top where error displays
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
-                  }
-                  if (!acceptedTerms) {
-                    setError('Please agree to the Terms & Conditions of Clean-Core.io (Free Community Edition) before starting the analysis.');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
-                  }
-                  if (personalDataPending) {
-                    setError('Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
-                  }
-                  setError('');
-                  setModalSelection(targetDeployment);
-                  setShowConceptQuestion(true);
-                }}
-                disabled={loading || !legacyCode || !acceptedTerms || stagedScanBlock !== null || personalDataPending}
-                /*
-                  A disabled button swallows its own click, so the `if
-                  (personalDataPending)` branch in the handler above can never
-                  run and its explanation never reaches anybody. The security
-                  block already said why here; the personal-data block did not,
-                  and the only account of it sat in a box further up the page.
-                  UX review of bc2f7863464c. Same sentence as the unreachable
-                  handler, so the two cannot drift apart.
-                */
-                title={
-                  stagedScanBlock
-                    ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.`
-                    : personalDataPending
-                      ? 'Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.'
-                      : undefined
-                }
-              >
-                Start Analysis <ArrowRight size={16} aria-hidden="true" />
-              </CcButton>
+              {/*
+                Why Start is closed, said on the page next to the button and
+                tied to it (UX-013, UX-134, UX-165). It used to stand only in a
+                hover title — invisible to a keyboard and to a phone — and a
+                missing target model did not close the button at all: the
+                click set an error and scrolled to the top of the page. One
+                reason at a time, in the order a reader can clear them.
+              */}
+              <div className="flex flex-col items-center gap-2 sm:items-end">
+                <CcButton
+                  variant="primary"
+                  density="cozy"
+                  busy={loading}
+                  onClick={() => {
+                    if (startBlockedReason) return;
+                    setError('');
+                    setModalSelection(targetDeployment);
+                    setShowConceptQuestion(true);
+                  }}
+                  disabled={loading || !legacyCode || startBlockedReason !== null}
+                  aria-describedby={startBlockedReason ? 'analyze-start-blocked-reason' : undefined}
+                >
+                  Start Analysis <ArrowRight size={16} aria-hidden="true" />
+                </CcButton>
+                {startBlockedReason && !loading && (
+                  <p id="analyze-start-blocked-reason" data-start-blocked-reason="" className="m-0 max-w-md cc-text-meta text-cc-ink-muted sm:text-right">
+                    {startBlockedReason}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )
@@ -2039,6 +2048,10 @@ export default function AnalyzePage() {
 
         </div>
       </CcDialog>
+
+      <CcToast open={exportToast !== null} onDismiss={closeExportToast}>
+        <span data-analyze-export-toast="">{exportToast}</span>
+      </CcToast>
     </StageFrame>
   );
 }

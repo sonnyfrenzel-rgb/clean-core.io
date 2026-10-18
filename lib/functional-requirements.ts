@@ -7,6 +7,7 @@ import {
 } from '@/lib/abap/process-skeleton';
 import { deriveBusinessRulesFrom, type BusinessRule } from '@/lib/abap/business-rule-set';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
+import { enclosingBranches, negateCondition, type EnclosingBranch } from '@/lib/abap/enclosing-branches';
 import {
   conditionToPhrase,
   humaniseField,
@@ -273,6 +274,8 @@ function isEarlyEnd(node: SkeletonNode): boolean {
 
 interface Ctx {
   source: string;
+  /** The facts the skeleton was built from — the nesting a rule's outer branches are read off (3.0.18 item 13). */
+  facts: ReturnType<typeof buildProcessFacts>;
   lines: string[];
   plain: PlainContext;
   labels: PlainLabels;
@@ -417,6 +420,39 @@ type Draft = Omit<FunctionalRequirement, 'id' | 'provenance'>;
 
 /* ---- rules */
 
+/** One outer branch in the requirement's words: what must hold for the code inside it to run at all. */
+function enclosingPhrase(ctx: Ctx, branch: EnclosingBranch): string {
+  const holds = (c: string) => conditionPhrase(ctx, c, branch.line) ?? `the code condition ${c} holds`;
+  const not = (c: string) => {
+    const negated = negateCondition(c);
+    return (negated && conditionPhrase(ctx, negated, branch.line)) || `the code condition ${c} does not hold`;
+  };
+  const subject = branch.selector ? lcFirst(humaniseField(branch.selector, ctx.plain)) : 'the value';
+  const values = (v: string) => v.split(/\s+OR\s+/i).map((x) => x.trim()).join(' or ');
+  switch (branch.kind) {
+    case 'if': return lcFirst(holds(branch.condition ?? ''));
+    case 'elseif': return [...branch.earlier.map(not), holds(branch.condition ?? '')].map(lcFirst).join(' and ');
+    case 'else': return branch.earlier.map(not).map(lcFirst).join(' and ');
+    case 'when': return `${subject} is ${values(branch.condition ?? '')}`;
+    default: return `${subject} is none of ${branch.earlier.map(values).join(', ')}`;
+  }
+}
+
+/**
+ * Roadmap 3.0.18 item 13 (QM-06, FI-F11): " (only inside the branch where
+ * first F, L6)" — the outer branches the condition at `line` stands in, read
+ * off the nesting the skeleton is built from; empty at the top of a routine. A
+ * short rule without them says the inner test decides on its own.
+ */
+function withinWords(ctx: Ctx, line: number | undefined): string {
+  if (!line) return '';
+  const index = ctx.facts.statements.findIndex((s) => s.lineStart === line);
+  if (index < 0) return '';
+  const branches = enclosingBranches(ctx.facts.statements, ctx.facts.structure, index);
+  if (!branches.length) return '';
+  return ` (only inside the branch where ${branches.map((b) => `${enclosingPhrase(ctx, b)}, L${b.line}`).join('; and where ')})`;
+}
+
 /** The parameter that is tested — not the `CONSTANTS` line that declares its value. */
 function testedParameter(rule: BusinessRule) {
   return rule.parameters.find((p) => p.origin !== 'constant') ?? rule.parameters[0];
@@ -495,7 +531,8 @@ function ruleDraft(ctx: Ctx, rule: BusinessRule): Draft | null {
   const step = stepFromRegion
     ?? (routine ? ctx.steps.find((s) => s.routine.toUpperCase() === routine) ?? null : null)
     ?? (anchors[0] ? ctx.stepOfLine(anchors[0].lineStart) : null);
-  const cond = ruleCondition(ctx, rule);
+  const tested = testedParameter(rule);
+  const cond = `${ruleCondition(ctx, rule)}${tested && tested.origin !== 'constant' ? withinWords(ctx, tested.lineStart) : ''}`;
   const isControl = rule.type === 'control';
 
   let whenPhrase: string | null = null;
@@ -586,7 +623,7 @@ function decisionDrafts(ctx: Ctx, coveredGateways: Set<string>): Draft[] {
     const yes = armPhrase(ctx, conditional, step);
     const no = armPhrase(ctx, other, step);
     if (!yes && !no) continue;
-    const condLc = lcFirst(cond);
+    const condLc = `${lcFirst(cond)}${withinWords(ctx, node.anchor.lineStart)}`;
     for (const a of arms) for (const n of a.nodes) ctx.consumed.add(n.id);
     const statement = yes
       ? `The system shall ${yes} when ${condLc}${no ? `; otherwise it shall ${no}` : ''}.`
@@ -1130,7 +1167,7 @@ export function buildRequirementSet(input: RequirementInput): RequirementSet {
   }
   for (const s of steps) s.objects = objectsByStep.get(s.id) ?? [];
 
-  const ctx: Ctx = { source, lines, plain, labels, skeleton, byId, outs, ins, stepOfRegion, steps, stepOfLine, objectsByStep, consumed: new Set() };
+  const ctx: Ctx = { source, facts, lines, plain, labels, skeleton, byId, outs, ins, stepOfRegion, steps, stepOfLine, objectsByStep, consumed: new Set() };
 
   const drafts: Draft[] = [];
   const coveredGateways = new Set<string>();
