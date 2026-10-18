@@ -15,7 +15,7 @@
  * The counts keep apart what the acceptance counts (C(7), owner decision 18.10.2026): the engine's test classes
  * (`ltc_engine_cases`, `ltc_golden_master`, `ltc_counterparts`) are evidence; a class the testing model wrote
  * (`ltcl_…`) is a proposal, and a red method of it reads "model proposal, red in SAP: <message>" — never passed,
- * never counted with the engine's.
+ * never counted with the engine's (`splitSapUnitRun`, lib/testing-abap-unit.ts).
  *
  * The runner is the owner's local tool outside the repository (it holds the trial's OAuth tokens; nothing here
  * reads them): `--trial-runner <dir>` or CCIO_ADT_RUNNER, default `~/ccio-trial/adt-runner`. Every SAP and Git
@@ -24,6 +24,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+
+import { isEngineTestClass, splitSapUnitRun, type SapUnitMethod } from '../../lib/testing-abap-unit';
 
 /** Where a program's package lives on the trial: its ABAP package and the private repository abapGit pulls. */
 export interface TrialTarget {
@@ -42,9 +44,6 @@ export const TRIAL_TARGETS: Readonly<Record<string, TrialTarget>> = {
 export const TRIAL_NOT_IMPORTED: Readonly<Record<string, string>> = {
   'fi-journal-review': 'not imported: the BTP ABAP trial shows every import to all trial users (owner decision, 3.0.17)',
 };
-
-/** The engine's test classes: what C(7) counts. */
-export const ENGINE_TEST_CLASSES = ['ltc_engine_cases', 'ltc_golden_master', 'ltc_counterparts'];
 
 export interface PullOutcome {
   ok: boolean;
@@ -228,14 +227,19 @@ export function keptPackageOf(dirName: string): { program: string; run: number }
   return m ? { program: m[1], run: Number(m[2]) } : null;
 }
 
+/** A method of the runner's output as a method of an SAP run. */
+export const sapMethodOf = (m: UnitMethod): SapUnitMethod => ({
+  testClass: m.testClass,
+  method: m.method,
+  outcome: m.kind === 'green' ? 'passed' : m.kind === 'red' ? 'failed' : 'skipped',
+  message: m.message || null,
+});
+
 const tally = (ms: readonly UnitMethod[]): UnitTally => ({
   green: ms.filter((m) => m.kind === 'green').length,
   red: ms.filter((m) => m.kind === 'red').length,
   skipped: ms.filter((m) => m.kind === 'skipped').length,
 });
-
-/** The engine's or the model's: a class the engine writes counts; any other test class is the testing model's. */
-export const isEngineTestClass = (name: string) => ENGINE_TEST_CLASSES.includes(name.toLowerCase());
 
 /** One kept package on the trial. */
 export function trialRapPackage(pkgDir: string, program: string, runNo: number, runner: TrialRunner, opts: { targets?: Readonly<Record<string, TrialTarget>>; label: string }): TrialRecord {
@@ -307,9 +311,8 @@ export function trialRapPackage(pkgDir: string, program: string, runNo: number, 
   }
   rec.engineUnit = tally(all.filter((m) => isEngineTestClass(m.testClass)));
   rec.modelUnit = tally(all.filter((m) => !isEngineTestClass(m.testClass)));
-  rec.red = all
-    .filter((m) => m.kind === 'red')
-    .map((m) => `${isEngineTestClass(m.testClass) ? '' : 'model proposal, red in SAP: '}${m.testClass}=>${m.method}${m.message ? ` — ${m.message}` : ''}`);
+  // The words of lib/testing-abap-unit.ts: a red method of the model's class is "model proposal, red in SAP: …".
+  rec.red = splitSapUnitRun(all.map(sapMethodOf)).red;
   rec.state = rec.classes.some((c) => !c.ok) ? 'failed' : 'ran';
   if (rec.state === 'failed') rec.reason = `ABAP Unit did not run on ${rec.classes.filter((c) => !c.ok).map((c) => c.name).join(', ')}: ${rec.classes.find((c) => !c.ok)!.failure}`;
   return rec;
