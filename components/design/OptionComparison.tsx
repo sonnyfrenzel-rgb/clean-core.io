@@ -36,7 +36,7 @@ export default function OptionComparison({ design }: { design: unknown }) {
       </div>
       {view.state === 'absent' ? (
         <p data-design-not-written="Options compared" className="m-0 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2 text-[13px] text-cc-ink-muted">
-          Options compared: not written in this design — it was written before the design compared the SAP standard, RAP and CAP. Regenerate to have the model compare them on the engine&apos;s facts.
+          Options compared: no comparison of the SAP standard, RAP and CAP is present in this design. Regenerate to have the model compare them on the engine&apos;s facts.
         </p>
       ) : view.state === 'malformed' ? (
         <p data-option-comparison-malformed="" className="m-0 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2 text-[13px] text-cc-ink-muted">

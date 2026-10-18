@@ -346,6 +346,38 @@ export function mergeBusinessLayerParts(answers: ReadonlyArray<Record<string, un
   return { ...first, raci_matrix: join('raci_matrix'), sop_details: join('sop_details') };
 }
 
+/* ------------------------------------------------------------ the other parts */
+
+/**
+ * Writes parts 1..total-1, `parallel` at a time, after the first. On the first
+ * failure no further part starts and `stop` runs (the page aborts the calls in
+ * flight); the run still ends only once every worker has settled, so the lease
+ * is not released while a sibling can still change part state or the answers
+ * (QA 7a654675c749). The first failure is rethrown.
+ */
+export async function writeRemainingParts(
+  total: number,
+  parallel: number,
+  write: (index: number) => Promise<unknown>,
+  stop: () => void,
+): Promise<void> {
+  let next = 1;
+  let failure: { err: unknown } | null = null;
+  const worker = async () => {
+    while (!failure && next < total) {
+      const index = next++;
+      await write(index);
+    }
+  };
+  const count = Math.min(Math.max(1, Math.floor(parallel) || 1), total - 1);
+  await Promise.all(Array.from({ length: Math.max(0, count) }, () => worker().catch((err: unknown) => {
+    if (failure) return;
+    failure = { err };
+    stop();
+  })));
+  if (failure) throw (failure as { err: unknown }).err;
+}
+
 /* ------------------------------------------------------------ how long */
 
 /** Rounds of calls: the first part alone, the rest `parallel` at a time. */

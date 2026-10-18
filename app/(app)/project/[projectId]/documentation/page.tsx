@@ -64,6 +64,7 @@ import {
   mergeBusinessLayerParts,
   planBusinessLayerParts,
   rolesOfLayer,
+  writeRemainingParts,
 } from '@/lib/business-layer-parts';
 import { documentationProgress, type DocPartView } from '@/lib/documentation-progress';
 import DocumentationProgress, { useDocStageClock } from '@/components/documentation/DocumentationProgress';
@@ -453,21 +454,11 @@ export default function DocumentationPage() {
       // The first part names the roles; the others reuse them, a few at a time.
       const first = await writePart(0, []);
       const roles = rolesOfLayer(first);
-      let next = 1;
-      const worker = async () => {
-        while (!stopped && next < plan.parts.length) {
-          const index = next++;
-          await writePart(index, roles);
-        }
-      };
-      try {
-        await Promise.all(Array.from({ length: Math.min(BUSINESS_LAYER_PART_LIMITS.parallel, plan.parts.length - 1) }, worker));
-      } catch (err) {
-        // One part stopped: the others are not waited for, and nothing is stored.
+      // One part stopped: the others are aborted and waited for, and nothing is stored.
+      await writeRemainingParts(plan.parts.length, BUSINESS_LAYER_PART_LIMITS.parallel, (index) => writePart(index, roles), () => {
         stopped = true;
         for (const c of ceilings) c.abort();
-        throw err;
-      }
+      });
       // The parts joined (the one call as it came); the joined layer passes the same check as one answer.
       const joinedText = JSON.stringify(plan.whole ? answers.get(0) ?? {} : mergeBusinessLayerParts(plan.parts.map((p) => answers.get(p.index) ?? {})));
       phase = 'storing';
@@ -1369,13 +1360,15 @@ export default function DocumentationPage() {
     </StageFrame>
   );
 
+  // The progress card stays with its end state and its *Try again* (a reload) — QA 302cd4adf10e.
   if (loadError) return (
     <StageFrame stage="documentation">
+      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
+      {progressCard}
       <div className="max-w-xl">
         <CcMessageStrip
           state="error"
           headline="This stage could not be opened"
-          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
         >
           <span data-load-error>{loadError}</span>
         </CcMessageStrip>
