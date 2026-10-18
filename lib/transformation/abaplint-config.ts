@@ -57,6 +57,8 @@ export const ABAPLINT_RULES = {
   abapdoc: { checkLocal: false },
   obsolete_statement: true,
   check_subrc: true,
+  /** SAP refuses an ABAP source line over 255 characters (QM trial import, 18.10.2026); `abap-line-length.ts` wraps them. */
+  line_length: { length: 255 },
   /**
    * The abapGit metadata files (3.0.12, abapGit package): well-formed XML, a class's or interface's
    * name and description against its source, a transparent table with delivery class and size category.

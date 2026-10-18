@@ -26,6 +26,7 @@
  * Pure and deterministic. No network, no model.
  */
 
+import { wrapAbapLine } from './abap-line-length';
 import { sha256Hex } from '../artefact-digest';
 import { readBlocks } from '../abap/block-structure';
 import { createLiteralScanner, readStatements } from '../abap/statement-reader';
@@ -1101,6 +1102,8 @@ export function spliceBodies(
       const indented = body
         .split('\n')
         .map((l) => (l.trim() ? `${r.indent}${l}` : ''))
+        // RAP: no line over 255 characters (abap-line-length.ts) — a statement may span lines.
+        .flatMap((l) => (scaffold.track === 'rap' ? wrapAbapLine(l) : [l]))
         .join('\n');
       content += f.content.slice(at, r.start) + indented + '\n';
       at = r.end;

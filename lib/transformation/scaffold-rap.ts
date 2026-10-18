@@ -83,6 +83,7 @@ import { abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, in
 import { ddicFieldName, isDdicReserved } from './ddic-reserved';
 import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart } from './released-counterparts';
 import { NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { wrapAbapFiles } from './abap-line-length';
 
 /**
  * Marks a place the engine wrote and a developer completes — never the model
@@ -1852,6 +1853,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   for (const file of files) file.content = defuseMarkers(file.content);
   // 3.0.13 (B6): a rebuild against a live decision on record says so in the first line of every main file.
   files.splice(0, files.length, ...withDraftHeader(files, options.against));
+  // 18.10.2026 (QM trial import): no ABAP line over 255 characters — an original's condition can be longer.
+  files.splice(0, files.length, ...wrapAbapFiles(files));
   const guards: RapClassContract['guards'] = {};
   for (const p of predicates.values()) {
     guards[p.guard.id] = { predicate: p.name, call: callOf(p), calledBy: engineCalled.has(p.guard.id) ? 'engine' : 'body', written: p.condition !== null ? 'engine' : 'model' };
