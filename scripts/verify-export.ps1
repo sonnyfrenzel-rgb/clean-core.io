@@ -40,21 +40,52 @@ $canonicalManifest = ""
 
 # Sort files by path to build the canonical representation
 $sortedFiles = $manifest.files | Sort-Object -Property path
+# SEC-c41f149-05.
+$extractRoot = [System.IO.Path]::GetFullPath($tempDir).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+$listed = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
 foreach ($file in $sortedFiles) {
-    $filePath = Join-Path $tempDir $file.path
-    if (-not (Test-Path -LiteralPath $filePath)) {
-        Write-Warning "File missing: $($file.path)"
+    $relPath = [string]$file.path
+    $segments = @($relPath -split '[\\/]')
+    if (-not $relPath -or [System.IO.Path]::IsPathRooted($relPath) -or $relPath.Contains(':') -or ($segments -contains '..')) {
+        Write-Warning "Manifest path is not a file of this archive: $relPath"
+        $allPassed = $false
+        continue
+    }
+    $filePath = [System.IO.Path]::GetFullPath((Join-Path $tempDir $relPath))
+    if (-not $filePath.StartsWith($extractRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Warning "Manifest path is not a file of this archive: $relPath"
+        $allPassed = $false
+        continue
+    }
+    # SEC-c41f149-02.
+    if (-not $listed.Add($relPath.Replace('\', '/'))) {
+        Write-Warning "Manifest lists a file twice: $relPath"
+        $allPassed = $false
+        continue
+    }
+    if (-not (Test-Path -LiteralPath $filePath -PathType Leaf)) {
+        Write-Warning "File missing: $relPath"
         $allPassed = $false
         continue
     }
 
     $localHash = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash.ToLower()
     if ($localHash -ne $file.sha256) {
-        Write-Warning "Hash mismatch for $($file.path): expected $($file.sha256), got $localHash"
+        Write-Warning "Hash mismatch for ${relPath}: expected $($file.sha256)"
         $allPassed = $false
     }
-    
+
     $canonicalManifest += $file.path + ":" + $file.sha256 + ";"
+}
+
+# SEC-c41f149-02.
+foreach ($entry in @(Get-ChildItem -LiteralPath $tempDir -Recurse -File -Force)) {
+    $entryPath = $entry.FullName.Substring($extractRoot.Length).Replace('\', '/')
+    if ($entryPath -eq 'manifest.json') { continue }
+    if (-not $listed.Contains($entryPath)) {
+        Write-Warning "File in the archive that the manifest does not list: $entryPath"
+        $allPassed = $false
+    }
 }
 
 if (-not $allPassed) {
