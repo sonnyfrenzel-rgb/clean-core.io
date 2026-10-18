@@ -187,8 +187,10 @@ test.describe('code that cites the guide cites an adopted section', () => {
     const cited = DSAG_CITATIONS.find((c) => c.status !== 'not-adopted')!.sections[0];
     const good = dsagGuidelineComment(cited.file, cited.heading);
     // A malformed citation appended to an exempt line is no longer hidden by it.
-    const appended = citationProblems('lib/dsag-citations.ts', `${CONVENTION_LINES[0]} // DSAG ABAP guideline: nothing here`);
-    expect(appended.some((p) => p.includes('malformed citation: // DSAG ABAP guideline: nothing here'))).toBe(true);
+    for (const convention of CONVENTION_LINES) {
+      const appended = citationProblems('lib/dsag-citations.ts', `${convention} // DSAG ABAP guideline: nothing here`);
+      expect(appended.some((p) => p.includes('malformed citation: // DSAG ABAP guideline: nothing here')), convention).toBe(true);
+    }
     // Two on one line: the second is read, whether the first is good or not.
     expect(citationProblems('lib/x.ts', `    ${good} ${good}`)).toEqual([]);
     expect(citationProblems('lib/x.ts', `    ${good} // DSAG ABAP guideline: ${cited.file}`)).toHaveLength(1);

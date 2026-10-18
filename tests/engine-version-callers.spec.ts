@@ -36,6 +36,21 @@ const POSITIONAL: Readonly<Record<string, number>> = {
 /** Object argument: the first argument must be an object literal naming `engineVersion`. */
 const NAMED = new Set(['architectureCanvasModel', 'buildArchitectureContract', 'engineDesignContext']);
 
+/**
+ * Where a checked function takes its version: the argument at `index`, itself (`prop: false`) or as the property
+ * `engineVersion` of an object literal there (`prop: true`; for a component, its JSX attribute). `min`: the call must
+ * pass at least that many arguments.
+ */
+interface Rule {
+  index: number;
+  prop: boolean;
+  min?: number;
+}
+const BASE_RULES: ReadonlyMap<string, Rule> = new Map<string, Rule>([
+  ...Object.entries(POSITIONAL).map(([name, n]): [string, Rule] => [name, { index: n - 1, prop: false, min: n }]),
+  ...[...NAMED].map((name): [string, Rule] => [name, { index: 0, prop: true }]),
+]);
+
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
   if (!fs.existsSync(dir)) return out;
@@ -97,6 +112,8 @@ interface Call {
   source: string;
   /** `file#function` of the call. */
   place: string;
+  /** When the version is forwarded: the function that forwards it, and where it takes it — its callers are read next. */
+  wrapper?: Rule & { name: string };
 }
 
 function functionName(fn: ts.Node): string | null {
@@ -190,7 +207,13 @@ function constInitialiser(name: string, at: ts.Node): ts.Expression | undefined 
   return undefined;
 }
 
-function versionSource(expr: ts.Expression | undefined, call: ts.Node, sf: ts.SourceFile, place: string, guarded: (fn: string) => boolean): { ok: boolean; source: string } {
+function versionSource(
+  expr: ts.Expression | undefined,
+  call: ts.Node,
+  sf: ts.SourceFile,
+  place: string,
+  guarded: (fn: string) => boolean,
+): { ok: boolean; source: string; wrapper?: Rule & { name: string } } {
   if (!expr) return { ok: false, source: 'missing' };
   if (isRebuildCall(expr)) return { ok: true, source: 'rebuild' };
   if (ts.isIdentifier(expr) && expr.text === 'APP_VERSION') {
@@ -206,42 +229,56 @@ function versionSource(expr: ts.Expression | undefined, call: ts.Node, sf: ts.So
     // A wrapper whose callers may leave the version out hands the default on:
     // forwarded is fine only from a parameter a caller must fill, or from a
     // function this guard checks itself (QA leftovers of hotfix 2).
-    const wrapper = functionName(parameterOfEnclosing(root, call)!.fn) ?? '<anonymous>';
+    const { fn, param } = parameterOfEnclosing(root, call)!;
+    const name = functionName(fn);
+    const wrapper = name ?? '<anonymous>';
+    // A named wrapper's own callers are read next (`scanTexts`), optional or not: a required parameter says a caller
+    // passes a version, not which one (QA b0cc7527e22e, c16a443a0113: `wrap(APP_VERSION)` in a rebuild passed).
+    const traced = name ? { wrapper: { name, index: fn.parameters.indexOf(param), prop: !(ts.isIdentifier(param.name) && root === leaf) } } : {};
     if (forwardedOptional(root, leaf, call, sf) && !guarded(wrapper)) {
-      return { ok: false, source: `forwarded from an optional parameter of ${wrapper}, whose callers this guard does not check` };
+      return { ok: false, source: `forwarded from an optional parameter of ${wrapper}, whose callers this guard does not check`, ...traced };
     }
-    return { ok: true, source: 'forwarded' };
+    return { ok: true, source: 'forwarded', ...traced };
   }
   if (ts.isIdentifier(expr) && isRebuildCall(constInitialiser(expr.text, expr))) return { ok: true, source: 'rebuild' };
   return { ok: false, source: expr.getText(sf) };
 }
 
-function callsInText(rel: string, text: string): Call[] {
+/** The version a call hands a checked function, by that function's rule. */
+function versionArgument(args: readonly ts.Expression[], rule: Rule): ts.Expression | undefined {
+  if (rule.min !== undefined && args.length < rule.min) return undefined;
+  const arg = args[rule.index];
+  if (!rule.prop || !arg) return arg;
+  const prop = ts.isObjectLiteralExpression(arg)
+    ? arg.properties.find(
+        (p): p is ts.PropertyAssignment | ts.ShorthandPropertyAssignment =>
+          (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && ts.isIdentifier(p.name) && p.name.text === 'engineVersion',
+      )
+    : undefined;
+  return !prop ? undefined : ts.isPropertyAssignment(prop) ? prop.initializer : (prop.name as ts.Identifier);
+}
+
+/** The version a JSX element hands its component: the `engineVersion={…}` attribute. */
+function jsxVersion(node: ts.JsxOpeningElement | ts.JsxSelfClosingElement): ts.Expression | undefined {
+  const attr = node.attributes.properties.find((p): p is ts.JsxAttribute => ts.isJsxAttribute(p) && ts.isIdentifier(p.name) && p.name.text === 'engineVersion');
+  return attr?.initializer && ts.isJsxExpression(attr.initializer) ? attr.initializer.expression : undefined;
+}
+
+function callsInText(rel: string, text: string, rules: ReadonlyMap<string, Rule> = BASE_RULES): Call[] {
   const sf = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, true, rel.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const calls: Call[] = [];
   const visit = (node: ts.Node) => {
-    if (ts.isCallExpression(node)) {
-      const name = calleeName(node.expression);
-      if (name && (Object.hasOwn(POSITIONAL, name) || NAMED.has(name))) {
-        const fn = enclosingFunctions(node).map(functionName).find((n): n is string => !!n) ?? '<module>';
-        const place = `${rel}#${fn}`;
-        let version: ts.Expression | undefined;
-        if (Object.hasOwn(POSITIONAL, name)) {
-          version = node.arguments.length >= POSITIONAL[name] ? node.arguments[POSITIONAL[name] - 1] : undefined;
-        } else {
-          const first = node.arguments[0];
-          const prop = first && ts.isObjectLiteralExpression(first)
-            ? first.properties.find(
-                (p): p is ts.PropertyAssignment | ts.ShorthandPropertyAssignment =>
-                  (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && ts.isIdentifier(p.name) && p.name.text === 'engineVersion',
-              )
-            : undefined;
-          version = !prop ? undefined : ts.isPropertyAssignment(prop) ? prop.initializer : (prop.name as ts.Identifier);
-        }
-        const { ok, source } = versionSource(version, node, sf, place, (fn) => Object.hasOwn(POSITIONAL, fn) || NAMED.has(fn));
-        const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
-        calls.push({ file: rel, line, name, ok, source, place });
-      }
+    const jsx = ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node) ? node : null;
+    const name = ts.isCallExpression(node) ? calleeName(node.expression) : jsx && ts.isIdentifier(jsx.tagName) ? jsx.tagName.text : null;
+    const rule = name ? rules.get(name) : undefined;
+    // A component takes its version as an attribute of its props object.
+    if (name && rule && (!jsx || (rule.prop && rule.index === 0))) {
+      const fn = enclosingFunctions(node).map(functionName).find((n): n is string => !!n) ?? '<module>';
+      const place = `${rel}#${fn}`;
+      const version = jsx ? jsxVersion(jsx) : versionArgument((node as ts.CallExpression).arguments, rule);
+      const { ok, source, wrapper } = versionSource(version, node, sf, place, (f) => rules.has(f));
+      const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
+      calls.push({ file: rel, line, name, ok, source, place, ...(wrapper ? { wrapper } : {}) });
     }
     ts.forEachChild(node, visit);
   };
@@ -249,12 +286,30 @@ function callsInText(rel: string, text: string): Call[] {
   return calls;
 }
 
-function callsIn(file: string): Call[] {
-  return callsInText(path.relative(ROOT, file).replace(/\\/g, '/'), fs.readFileSync(file, 'utf8'));
+/**
+ * Every call, following the version through the functions that forward it: a wrapper's callers are checked as the
+ * listed functions' are — by the version they pass in — until no new wrapper turns up. A wrapper whose callers this
+ * scan cannot find (imported under another name, or handed on as a value) fails: nothing then says where its version
+ * comes from.
+ */
+function scanTexts(files: ReadonlyArray<readonly [string, string]>): Call[] {
+  const rules = new Map(BASE_RULES);
+  for (;;) {
+    const calls = files.flatMap(([rel, text]) => callsInText(rel, text, rules));
+    const fresh = calls.filter((c) => c.wrapper && !rules.has(c.wrapper.name));
+    if (fresh.length === 0) {
+      const called = new Set(calls.map((c) => c.name));
+      const orphans = new Set([...rules.keys()].filter((name) => !BASE_RULES.has(name) && !called.has(name)));
+      return calls.map((c) => (c.wrapper && orphans.has(c.wrapper.name) ? { ...c, ok: false, source: `forwarded by ${c.wrapper.name}, whose callers this guard cannot find` } : c));
+    }
+    for (const c of fresh) rules.set(c.wrapper!.name, { index: c.wrapper!.index, prop: c.wrapper!.prop });
+  }
 }
 
 test.describe('Engine version — every caller names it (3.0.12)', () => {
-  const calls = DIRS.flatMap((d) => sourceFiles(path.join(ROOT, d))).flatMap(callsIn);
+  const calls = scanTexts(
+    DIRS.flatMap((d) => sourceFiles(path.join(ROOT, d))).map((file) => [path.relative(ROOT, file).replace(/\\/g, '/'), fs.readFileSync(file, 'utf8')] as const),
+  );
 
   test('the guard sees the callers it is about', () => {
     // A guard that finds nothing proves nothing: a rename would empty it.
@@ -332,6 +387,37 @@ test.describe('Engine version — every caller names it (3.0.12)', () => {
     expect(verdict('interface O { engineVersion: string | null }\nexport function wrap(o: O) { return findingsOf(s, f, d, k, o.engineVersion); }')).toEqual([[true, 'forwarded']]);
     // A function this guard checks may forward its optional version: its own callers are read.
     expect(verdict('export function findingsOf(s: string, f: string, d: D, k: K, engineVersion?: string) { return buildAbapEvidence(s, f, d, k, engineVersion); }')).toEqual([[true, 'forwarded']]);
+  });
+
+  test("a forwarded version is checked at the wrapper's callers, through every level (QA b0cc7527e22e, c16a443a0113)", () => {
+    const verdict = (...files: Array<[string, string]>) => scanTexts(files).map((c) => [c.place, c.ok, c.source]);
+    const wrap: [string, string] = ['lib/wrap.ts', 'export function wrap(engineVersion: string | null) { return buildAbapEvidence(s, f, d, k, engineVersion); }'];
+    // A required parameter says a caller passes a version, not which: the current engine into a rebuild fails.
+    expect(verdict(wrap, ['lib/rebuild.ts', 'export function g(project: P) { return wrap(APP_VERSION); }'])).toEqual([
+      ['lib/wrap.ts#wrap', true, 'forwarded'],
+      ['lib/rebuild.ts#g', false, 'APP_VERSION outside a new run (lib/rebuild.ts#g)'],
+    ]);
+    expect(verdict(wrap, ['lib/rebuild.ts', 'export function g(project: P) { return wrap(engineVersionOfProject(project)); }']).every(([, ok]) => ok)).toBe(true);
+    // Two levels: the outer wrapper's caller is read too.
+    expect(verdict(wrap, ['lib/outer.ts', 'export function outer(engineVersion: string | null) { return wrap(engineVersion); }'], ['lib/rebuild.ts', 'export function g(project: P) { return outer(APP_VERSION); }']))
+      .toContainEqual(['lib/rebuild.ts#g', false, 'APP_VERSION outside a new run (lib/rebuild.ts#g)']);
+    // A wrapper taking it as a property, called as a function and as a component.
+    const prop: [string, string] = ['components/W.tsx', 'export function W({ engineVersion }: { engineVersion: string | null }) { return findingsOf(s, f, d, k, engineVersion); }'];
+    expect(verdict(prop, ['lib/rebuild.ts', 'export function g(project: P) { return W({ engineVersion: APP_VERSION }); }'])).toContainEqual(['lib/rebuild.ts#g', false, 'APP_VERSION outside a new run (lib/rebuild.ts#g)']);
+    expect(verdict(prop, ['components/Page.tsx', 'export function Page({ project }: Q) { return <W engineVersion={APP_VERSION} />; }'])).toContainEqual(['components/Page.tsx#Page', false, 'APP_VERSION outside a new run (components/Page.tsx#Page)']);
+    expect(verdict(prop, ['components/Page.tsx', 'export function Page({ project }: Q) { return <W engineVersion={engineVersionOfProject(project)} />; }']).every(([, ok]) => ok)).toBe(true);
+    // An optional version left out at a caller is the default again.
+    const optional: [string, string] = ['lib/wrap.ts', 'export function wrap(engineVersion?: string) { return buildAbapEvidence(s, f, d, k, engineVersion); }'];
+    expect(verdict(optional, ['lib/rebuild.ts', 'export function g(project: P) { return wrap(); }'])).toContainEqual(['lib/rebuild.ts#g', false, 'missing']);
+    // A wrapper nobody calls under its name: where its version comes from is unknown.
+    expect(verdict(wrap, ['lib/rebuild.ts', "import { wrap as w } from './wrap'; export function g(project: P) { return w(APP_VERSION); }"]))
+      .toEqual([['lib/wrap.ts#wrap', false, 'forwarded by wrap, whose callers this guard cannot find']]);
+  });
+
+  test('the real wrappers are followed to their callers', () => {
+    // useProcessOverlays <- ProcessMap <- the pages; designContextFor <- the Design page.
+    const traced = new Set(calls.map((c) => c.name));
+    for (const name of ['useProcessOverlays', 'ProcessMap', 'designContextFor']) expect(traced.has(name), name).toBe(true);
   });
 });
 

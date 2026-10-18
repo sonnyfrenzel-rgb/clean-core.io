@@ -203,15 +203,22 @@ test.describe('code that cites an SAP reference cites a registered citation', ()
     return out;
   }
 
-  /** A comment, not a quotation of one: `//` at the start of the line or after code, never right after a backtick or quote. */
+  /**
+   * A comment, not a quotation of one: `//` at the start of the line or after code, never right after a backtick or
+   * quote. Every occurrence on a line is read, each up to the next: a quoted prefix earlier on the line no longer
+   * hides a comment after it (the rule `citationProblems` in tests/dsag-citations.spec.ts holds, QA b2e60db1f363).
+   */
   function commentsIn(file: string, text: string, prefix: string): { at: string; text: string }[] {
     const out: { at: string; text: string }[] = [];
     const marker = prefix.trim();
     text.split(/\r?\n/).forEach((line, i) => {
-      const at = line.indexOf(marker);
-      if (at < 0 || (at > 0 && /[`'"]/.test(line[at - 1]))) return;
-      if (at > 0 && !/[\s;{}(),]/.test(line[at - 1])) return;
-      out.push({ at: `${file}:${i + 1}`, text: line.slice(at).replace(/\s+$/, '') });
+      const starts: number[] = [];
+      for (let at = line.indexOf(marker); at >= 0; at = line.indexOf(marker, at + marker.length)) starts.push(at);
+      starts.forEach((at, k) => {
+        if (at > 0 && /[`'"]/.test(line[at - 1])) return;
+        if (at > 0 && !/[\s;{}(),]/.test(line[at - 1])) return;
+        out.push({ at: `${file}:${i + 1}`, text: line.slice(at, starts[k + 1] ?? line.length).replace(/\s+$/, '') });
+      });
     });
     return out;
   }
@@ -273,6 +280,10 @@ test.describe('code that cites an SAP reference cites a registered citation', ()
     for (const bad of ['// SAP sample: flight', '// SAP sample: SAP-samples/abap-platform-refscen-flight src/x', '// SAP sample:']) {
       expect(sample(`    ${bad}`), bad).toEqual([`lib/x.ts:1 malformed citation: ${bad}`]);
     }
+    // A quoted prefix earlier on the line hides no comment after it; two on one line are both read.
+    expect(sample(`const p = '// SAP sample: '; // SAP sample: flight`)).toEqual(['lib/x.ts:1 malformed citation: // SAP sample: flight']);
+    expect(sample(`    ${good} ${good}`)).toEqual([]);
+    expect(sample(`    ${good} // SAP sample: flight`)).toEqual(['lib/x.ts:1 malformed citation: // SAP sample: flight']);
     // Well formed but not registered: reported as before.
     expect(sample('    // SAP sample: SAP-samples/x@0123abcd src/none')).toEqual(['lib/x.ts:1 // SAP sample: SAP-samples/x@0123abcd src/none']);
     expect(clean(`    ${cleanAbapComment('Prefer RETURNING to EXPORTING')}`).every((p) => !p.includes('malformed'))).toBe(true);
