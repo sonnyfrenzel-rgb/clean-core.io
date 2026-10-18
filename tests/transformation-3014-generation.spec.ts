@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -214,7 +215,7 @@ test.describe('2 — a gate repair of the largest units fits the leased call: th
     // The holdout is left out: no figure is tuned on it (programs.json).
     const programs = loadPrograms().filter((p) => !p.holdout);
     const missing = programs.filter((p) => !p.source.repo && !fs.existsSync(path.join(SOURCES, p.source.file ?? '')));
-    test.skip(missing.length > 0, `the owner's sources are not on this machine (${missing.map((p) => p.source.file).join(', ')})`);
+    skipWithoutReference(missing.length > 0, `the owner's sources are not on this machine (${missing.map((p) => p.source.file).join(', ')})`);
     const before: string[] = [];
     const over: string[] = [];
     for (const p of programs) {
@@ -263,6 +264,11 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
       ['0', 0],
     ]);
     expect(scenarioCases([scen('CASE-07', { input: { p_case: 7 } })], null).size).toBe(0);
+    // QA 958d07e8b2ff: a null, empty or boolean case switch is no case 0 — `Number(null)` is 0. A probe has no ID to
+    // fall back on, so nothing is matched; digits as text still name their case.
+    const probe = (id: string, p_case: unknown) => scen(id, { group: 'probe', input: { p_case } });
+    const odd = scenarioCases([probe('N', null), probe('E', ''), probe('B', false), probe('W', '  '), probe('S', ' 7 '), probe('F', 1.5)], demo);
+    expect([...odd.entries()]).toEqual([['S', 7]]);
   });
 
   const ran = (over: Partial<Extract<DemoCaseSummary, { state: 'ran' }>> = {}): Extract<DemoCaseSummary, { state: 'ran' }> => ({
@@ -299,6 +305,17 @@ test.describe("3 — a Node scenario is judged by the package's own case of its 
     expect(canon('1.50')).toBe(canon(1.5));
     expect(canon(null)).not.toBe(canon(''));
     expect(compareScenario({}, ran()).verdict).toBe('not-judged');
+    // QA d791179ee1b0: each expected message takes one of the run's — two "A" are not met by "A" and "B".
+    expect(compareScenario({ issues: ['A', 'A'] }, ran({ issues: ['A', 'B'] })).verdict).toBe('fail');
+    expect(compareScenario({ issues: ['A', 'B'] }, ran({ issues: ['B', 'a'] })).verdict).toBe('pass');
+    // QA 1c24cdfb94f8: an empty list is compared — with the run's rows, or with the output's list of that name — and a
+    // list of plain values element by element.
+    expect(compareScenario({ rows: [] }, ran())).toEqual({ verdict: 'pass', located: 1, total: 1, differ: 0 });
+    expect(compareScenario({ rows: [] }, ran({ rows: [{ cid: 'C1' }] })).verdict).toBe('fail');
+    expect(compareScenario({ gt_out: [] }, ran({ local: { gtOut: [] } })).verdict).toBe('pass');
+    expect(compareScenario({ gt_out: [] }, ran()).verdict).toBe('not-judged');
+    expect(compareScenario({ codes: ['A', '01'] }, ran({ local: { gtCodes: ['A', '01'] } }))).toEqual({ verdict: 'pass', located: 3, total: 3, differ: 0 });
+    expect(compareScenario({ codes: ['A', '01'] }, ran({ local: { gtCodes: ['A', '1'] } })).verdict).toBe('fail');
     // The first real SD run (15.10.2026): the rows under other names, a few scalars found and off — not a fail on 5 of
     // 115 values, but not judged, with the counts.
     const rowsElsewhere = { status: 'OK', retries: 1, rows: [{ cid: 'C1', balance: 1 }, { cid: 'C2', balance: 2 }] };

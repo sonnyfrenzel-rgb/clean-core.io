@@ -110,3 +110,90 @@ test.describe('a gate check passes an error\'s text on only for its own refusal 
     });
   }
 });
+
+/**
+ * The same rule, executed (QA c6d71cc211db): both routes bundled as they are,
+ * with the gate checks as the only seam — a stand-in for `@/lib/firebase-admin`
+ * and `@/lib/rate-limit` whose checks throw what a test hands them. A refusal
+ * answers its own text and status; any other error answers the fixed sentence,
+ * and its text appears nowhere in the response.
+ */
+test.describe('a gate check that throws, through the route itself (SEC-2026-846)', () => {
+  const OUT = path.join(ROOT, 'tmp', 'security-gate-error', String(process.pid));
+  const STAND_IN = `
+const g = globalThis;
+class QuotaError extends Error { constructor(message, status) { super(message); this.name = 'QuotaError'; this.status = status; } }
+const check = (name) => async () => { const make = g.__gateThrows && g.__gateThrows[name]; if (make) throw make(QuotaError); };
+module.exports = {
+  QuotaError,
+  verifyRequestAuth: async () => ({ uid: 'u-gate' }),
+  assertMfaSatisfied: check('mfa'),
+  assertAccountActive: check('account'),
+  assertS4TenantAccess: check('s4'),
+  assertRateLimit: check('rate'),
+  refuseInactiveAccount: async () => null,
+  getAdminDb: async () => { throw new Error('no database behind this test'); },
+};
+`;
+  type Make = (Q: new (m: string, s: number) => Error) => Error;
+  const throws = (name: string, make: Make | null) => {
+    const g = globalThis as { __gateThrows?: Record<string, Make> };
+    g.__gateThrows = make ? { [name]: make } : {};
+  };
+  type Handler = (req: unknown, ctx?: unknown) => Promise<Response>;
+  let artefactsGet: Handler;
+  let runTestsPost: Handler;
+  let NextRequestCtor: new (url: string, init?: Record<string, unknown>) => unknown;
+  const SECRET = 'projects/p-1 internal 10.0.0.7 credential-fragment';
+
+  test.beforeAll(async () => {
+    test.setTimeout(180_000);
+    const { build } = await import('esbuild');
+    fs.mkdirSync(OUT, { recursive: true });
+    fs.writeFileSync(path.join(OUT, 'gates.cjs'), STAND_IN);
+    const seams = {
+      name: 'gate-seams',
+      setup(b: { onResolve: (o: { filter: RegExp }, f: () => { path: string }) => void }) {
+        b.onResolve({ filter: /^@\/lib\/(firebase-admin|rate-limit|account-read-gate)$/ }, () => ({ path: path.join(OUT, 'gates.cjs') }));
+      },
+    };
+    const bundle = async (entry: string, out: string) => {
+      await build({ entryPoints: [path.join(ROOT, entry)], outfile: path.join(OUT, out), bundle: true, format: 'cjs', platform: 'node', packages: 'external', plugins: [seams], alias: { '@': ROOT }, logLevel: 'silent' });
+      return require(path.join(OUT, out)) as Record<string, Handler>;
+    };
+    artefactsGet = (await bundle('app/api/projects/[projectId]/artefacts/route.ts', 'artefacts.cjs')).GET;
+    runTestsPost = (await bundle('app/api/run-tests/route.ts', 'run-tests.cjs')).POST;
+    NextRequestCtor = require('next/server').NextRequest;
+  });
+  test.afterAll(() => {
+    throws('', null);
+    fs.rmSync(OUT, { recursive: true, force: true });
+  });
+
+  const artefacts = () => artefactsGet(new NextRequestCtor('http://localhost/api/projects/p1/artefacts', { headers: { Authorization: 'Bearer t' } }), { params: Promise.resolve({ projectId: 'p1' }) });
+  const runTests = () => runTestsPost(new Request('http://localhost/api/run-tests', { method: 'POST', headers: { Authorization: 'Bearer t', 'Content-Type': 'application/json' }, body: '{}' }));
+  const FIXED = 'The check could not run. Please try again shortly.';
+
+  for (const [route, call, steps] of [
+    ['artefacts GET', artefacts, ['mfa', 'rate']],
+    ['run-tests POST', runTests, ['mfa', 'account']],
+  ] as const) {
+    for (const step of steps) {
+      test(`${route}: an unexpected error in the ${step} check answers 503 and the fixed sentence, never its text`, async () => {
+        throws(step, () => Object.assign(new Error(SECRET), { code: 'internal' }));
+        const res = await call();
+        const text = await res.text();
+        expect(res.status).toBe(503);
+        expect(JSON.parse(text).error).toBe(FIXED);
+        expect(text).not.toContain('credential-fragment');
+      });
+      test(`${route}: the ${step} check's own refusal answers its text and status`, async () => {
+        const status = step === 'rate' ? 429 : 403;
+        throws(step, (Q) => new Q(`refused by ${step}`, status));
+        const res = await call();
+        expect(res.status).toBe(status);
+        expect((await res.json()).error).toBe(`refused by ${step}`);
+      });
+    }
+  }
+});

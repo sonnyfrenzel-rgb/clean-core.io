@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
@@ -221,7 +222,7 @@ const DESKTOP = 'C:/Users/felix/OneDrive/Desktop';
 for (const [file, expectWhole] of [['SD_LE_Legacy_ABAP.txt', false], ['PM_Legacy_ABAP.txt', null]] as const) {
   test(`size reference ${file}`, () => {
     const full = path.join(DESKTOP, file);
-    test.skip(!fs.existsSync(full), 'the reference is not on this machine');
+    skipWithoutReference(!fs.existsSync(full), 'the reference is not on this machine');
     const source = fs.readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
     const doc = documentationOf(source, file);
     const plan = planBusinessLayerParts(doc);

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import { typeCheckCandidate } from '../lib/test-sandbox/type-check';
@@ -54,7 +55,7 @@ test.describe('the CAP shell: cds compile and the type check, 0 errors', () => {
   for (const [name, source] of SOURCES) {
     test(`${name}: the shell is there, compiles and type-checks`, () => {
       const text = source();
-      test.skip(text === '', `${name} is not on this machine — the repository's fixtures stand for it`);
+      skipWithoutReference(text === '', `${name} is not on this machine — the repository's fixtures stand for it`);
       const p = prep(text);
       const paths = p.scaffold.files.map((f) => f.path);
       for (const must of ['package.json', 'db/schema.cds', 'srv/service.cds', 'srv/service.ts', 'srv/service.js', 'mta.yaml', 'xs-security.json']) expect(paths, must).toContain(must);
@@ -102,7 +103,7 @@ test.describe('the data model: one entity per input structure, types as declared
   });
 
   test('SD (local file): three input structures stay three types — claims, policies, events — never one record', () => {
-    test.skip(!fs.existsSync(SD_DESKTOP), `${SD_DESKTOP} is not on this machine`);
+    skipWithoutReference(!fs.existsSync(SD_DESKTOP), `${SD_DESKTOP} is not on this machine`);
     const p = prep(fs.readFileSync(SD_DESKTOP, 'utf8'));
     const schema = file(p, 'db/schema.cds');
     for (const t of ['Claim', 'Policy', 'Event', 'Uom']) expect(schema).toMatch(new RegExp(`^type ${t} \\{`, 'm'));

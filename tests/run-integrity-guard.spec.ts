@@ -134,6 +134,7 @@ test.describe('an unsigned pack is not a successful verification', () => {
     // And not over a user-attested file whose contents the format did not seal
     // (tests/hardening-v220-cf.spec.ts holds that behaviour).
     // 3.0.16 (SEC-2026-869): nor over issuance metadata the signature does not cover.
+    // Executed with a genuinely signed legacy pack in tests/audit-pack-unbound-metadata.spec.ts.
     expect(s).toContain("const success = status === 'authentic' && !attestedUnbound && !metadataUnbound;");
     expect(s).not.toMatch(/success\s*=\s*status === 'authentic' \|\|/);
   });

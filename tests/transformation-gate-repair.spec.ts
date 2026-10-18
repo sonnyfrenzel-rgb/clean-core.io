@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -157,7 +158,7 @@ test.describe('the largest units of the seven acceptance programs, measured (loc
     test.setTimeout(180_000);
     const programs = loadPrograms();
     const missing = programs.filter((p) => !p.source.repo && !fs.existsSync(path.join(SOURCES, p.source.file ?? '')));
-    test.skip(missing.length > 0, `the owner's sources are not on this machine (${missing.map((p) => p.source.file).join(', ')})`);
+    skipWithoutReference(missing.length > 0, `the owner's sources are not on this machine (${missing.map((p) => p.source.file).join(', ')})`);
     const over: string[] = [];
     for (const p of programs) {
       const source = await loadSource(p, SOURCES);

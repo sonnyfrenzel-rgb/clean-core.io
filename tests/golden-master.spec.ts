@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
 import { ORIGINAL_DEMO_FORMAT, goldenMasterForScaffold, goldenMasterSentence, originalDemoCases, readGoldenMaster } from '../lib/transformation/golden-master';
@@ -422,7 +423,7 @@ const SD = process.env.CC_GOLDEN_SD ?? path.join(desktop, 'SD_LE_Legacy_ABAP.txt
 const PM = process.env.CC_GOLDEN_PM ?? path.join(desktop, 'PM_Legacy_ABAP.txt');
 
 test('ZSD_RETURN_CREDIT_RECON: 32 demo cases with their titles and input rows, every one read whole', () => {
-  test.skip(!fs.existsSync(SD), `the SD acceptance program is not on this machine (${SD})`);
+  skipWithoutReference(!fs.existsSync(SD), `the SD acceptance program is not on this machine (${SD})`);
   const gm = readGoldenMaster(fs.readFileSync(SD, 'utf8'))!;
   expect(gm.cases.map((c) => c.number)).toEqual(Array.from({ length: 32 }, (_, i) => i));
   expect(gm.cases.every((c) => c.titleSource === 'assignment' && c.unread.length === 0)).toBe(true);
@@ -434,7 +435,7 @@ test('ZSD_RETURN_CREDIT_RECON: 32 demo cases with their titles and input rows, e
 });
 
 test('ZPM_SHUTDOWN_SLOT_PLAN (holdout): 28 demo cases with their titles and input rows, every one read whole', () => {
-  test.skip(!fs.existsSync(PM), `the PM holdout program is not on this machine (${PM})`);
+  skipWithoutReference(!fs.existsSync(PM), `the PM holdout program is not on this machine (${PM})`);
   const gm = readGoldenMaster(fs.readFileSync(PM, 'utf8'))!;
   expect(gm.cases.map((c) => c.number)).toEqual(Array.from({ length: 28 }, (_, i) => i));
   expect(gm.cases.every((c) => c.titleSource === 'comment' && c.unread.length === 0)).toBe(true);

@@ -445,6 +445,14 @@ test.describe('protocol 3: the confined probe pass (roadmap 3.0.12)', () => {
       expect(res.ok, JSON.stringify(body).slice(0, 200)).toBe(false);
       if (!res.ok) expect(res.status).toBe(400);
     }
+    // Protocol 3 without the probe flag asks for no probe pass (QA 37864043648b): a plain run, or an engine pass that
+    // still goes as protocol 2 — never a probe pass derived from an adapter the request did not ask to run.
+    for (const files of [FILES, PFILES]) {
+      const plain = parseRunRequest(request({ files, protocol: RUNNER_PROTOCOL_VERSION }), { serviceMode: 'mock' });
+      expect(plain.ok && plain.value.probes, `files: ${files.length}`).toBeUndefined();
+      expect(plain.ok && plain.value.protocol, `files: ${files.length}`).toBeUndefined();
+    }
+    expect(parseRunRequest(probeRequest({ probes: false }), { serviceMode: 'mock' }).ok).toBe(false);
   });
 
   test('the probe report is hash-bound: another driver or file is refused; a runner before protocol 3 is named', () => {

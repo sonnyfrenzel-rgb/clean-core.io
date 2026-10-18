@@ -378,6 +378,11 @@ test.describe('the store, against the Firestore emulator', () => {
     const stale = await storeDocumentation(db(), { projectId, uid: 'owner', body: { documentation, fromRunId: 'run-1', sourceSha256: sha256Hex('REPORT other.') } });
     expect(stale).toMatchObject({ status: 409, code: 'analysis-moved' });
     expect((await raw(ref)).businessDocumentation).toBe('an old layer');
+    // Built from the same source under a run the project no longer stands on: refused the same way (QA ad17306daa6d).
+    const otherRun = await storeDocumentation(db(), { projectId, uid: 'owner', body: { documentation, fromRunId: 'run-0', sourceSha256: sha256Hex(SOURCE) } });
+    expect(otherRun).toMatchObject({ status: 409, code: 'analysis-moved' });
+    const unmoved = await withStoredArtefacts(db(), ref, await raw(ref));
+    expect([unmoved.documentation, unmoved.status, unmoved.businessDocumentation]).toEqual([undefined, 'analyzed', 'an old layer']);
     // Not the owner: the stranger's answer.
     expect(await storeDocumentation(db(), { projectId, uid: 'stranger', body: { documentation, fromRunId: 'run-1', sourceSha256: sha256Hex(SOURCE) } })).toMatchObject({ status: 404 });
     // Not an engine document: refused before anything is read.

@@ -23,7 +23,6 @@ test('every path on www moves permanently to the same path on clean-core.io, bef
 });
 
 test('the server answers a www request with a permanent redirect to clean-core.io', async ({ request, baseURL }) => {
-  test.skip(!baseURL, 'needs the web server');
   const res = await request.get(`${baseURL}/how-to?x=1`, { headers: { host: 'www.clean-core.io' }, maxRedirects: 0 });
   expect([301, 308]).toContain(res.status());
   expect(res.headers()['location']).toBe('https://clean-core.io/how-to?x=1');

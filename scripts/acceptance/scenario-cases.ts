@@ -59,8 +59,11 @@ export function scenarioCases(scenarios: readonly CaseScenario[] | null, demo: P
     let n: number | null = null;
     if (param && isPlainObject(s.input)) {
       const hit = Object.entries(s.input).find(([k]) => k.toLowerCase() === param);
-      const v = hit ? Number(hit[1]) : NaN;
-      if (Number.isInteger(v)) n = v;
+      // Only a whole number or its digits: `Number(null)`, `Number(false)` and `Number('')` are 0, and a null input is
+      // not case 0 (QA 958d07e8b2ff).
+      const raw = hit?.[1];
+      const v = typeof raw === 'number' ? raw : typeof raw === 'string' && /^\s*\d{1,3}\s*$/.test(raw) ? Number(raw) : NaN;
+      if (Number.isInteger(v) && v >= 0) n = v;
     }
     if (n === null && s.group === 'reference') {
       const m = /^(?:case[-_ ]?)?(\d{1,3})$/i.exec(s.id);
@@ -136,7 +139,8 @@ export interface ScenarioComparison {
 /**
  * One machine expectation against one case's output. Each expected value is looked for in the output: a list of
  * rows in the run's rows or the global table of that shape (its length, then row by row and column by column), a
- * list of messages among the run's issues, any other value in the run's result or the globals by its name. Pass
+ * list of messages among the run's issues (each one used once), an empty list or a list of plain values by its name
+ * (length, then element by element), any other value in the run's result or the globals by its name. Pass
  * only when every expected value was found and equal; fail when a found one differs and at least half were found;
  * otherwise not judged.
  */
@@ -173,11 +177,29 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
       // The run's issues: as many as expected, each expected message among them (case and spacing aside).
       const said = out.issues.map((m) => m.replace(/\s+/g, ' ').trim().toLowerCase());
       leaf(true, said.length === value.length);
+      // Each expected message takes one of the run's: ["A", "A"] is not met by ["A", "B"] (QA d791179ee1b0).
+      const left = [...said];
       for (const m of value) {
         const w = m.replace(/\s+/g, ' ').trim().toLowerCase();
         // Equal after case and whitespace, never a substring: "not failed" is not "failed" (QA 894abf0faca5).
-        leaf(true, said.some((s) => s === w));
+        const at = left.indexOf(w);
+        if (at >= 0) left.splice(at, 1);
+        leaf(true, at >= 0);
       }
+      return;
+    }
+    if (Array.isArray(value) && !value.some((x) => isPlainObject(x) || Array.isArray(x))) {
+      // An empty list or a list of plain values: the output's list of that name (an empty `rows` is the run's rows),
+      // its length, then element by element (QA 1c24cdfb94f8).
+      const hit = locate(key, within);
+      const list = hit.found && Array.isArray(hit.value) ? hit.value : value.length === 0 && normKey(key) === 'rows' ? out.rows : null;
+      if (!list) {
+        leaf(false, false);
+        for (let i = 0; i < value.length; i++) leaf(false, false);
+        return;
+      }
+      leaf(true, list.length === value.length);
+      value.forEach((v, i) => leaf(i < list.length, i < list.length && !isPlainObject(list[i]) && !Array.isArray(list[i]) && canon(list[i]) === canon(v)));
       return;
     }
     if (isPlainObject(value)) {
