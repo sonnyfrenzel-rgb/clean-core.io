@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
 import {
   deriveBusinessRules,
   rulesForElement,
@@ -10,6 +9,7 @@ import {
 } from '../lib/abap/business-rule-set';
 import { readBusinessRules } from '../lib/abap/business-rules';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Business rules `BR-nnn` — roadmap 3.4.
@@ -45,9 +45,8 @@ import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
  * those guard 2.8 and the table, not this file.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const FILES = readdirSync(EXAMPLES).sort();
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const FILES = corpusFiles();
+const read = (name: string) => readFileSync(examplePath(name), 'utf8');
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';

@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
 import { buildAbapEvidence, type AbapEvidenceReport, type EvidenceKind } from '../lib/abap/evidence-model';
 import { extractDataCoupling, computeComplexityScore } from '../lib/abap/code-assessment';
 import { routeExtensibility, type ExtensibilityRouteReport } from '../lib/abap/extensibility-router';
@@ -8,6 +7,7 @@ import { buildProcessFacts, type ProcessFacts } from '../lib/abap/process-facts'
 import type { DataCouplingEntry } from '../lib/types';
 import * as T from './helpers/abap-transforms';
 import { APP_VERSION } from '../lib/version';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Metamorphic properties of the deterministic ABAP engine.
@@ -43,9 +43,8 @@ import { APP_VERSION } from '../lib/version';
  * property.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const FILES = readdirSync(EXAMPLES).sort();
-const source = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const FILES = corpusFiles();
+const source = (name: string) => readFileSync(examplePath(name), 'utf8');
 
 /**
  * The inputs for the properties that are about where a statement ends.

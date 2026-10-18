@@ -15,6 +15,7 @@ import {
 import { groupRows, findingRows, processStepBands, accessUseOfKind } from '../lib/findings-view';
 import { readProcess } from '../lib/first-look';
 import { scoreRuleFor, isOwnTableName } from '../lib/score-rule';
+import { corpusFiles, readExample as readCorpusFile } from './helpers/starter-example-files';
 
 /**
  * The Clean Core Score explained on Analyze (owner, 01.10.2026) — the screen's
@@ -27,8 +28,8 @@ const EXAMPLES = path.join(ROOT, 'public/starter-examples');
 test.describe('one table for the score and its explanation', () => {
   test('the breakdown adds up to the signed score on every starter example, both editions, both score rules', () => {
     let compared = 0;
-    for (const file of fs.readdirSync(EXAMPLES)) {
-      const src = fs.readFileSync(path.join(EXAMPLES, file), 'utf8');
+    for (const file of corpusFiles()) {
+      const src = readCorpusFile(file);
       for (const edition of ['public', 'private'] as const) {
         const evidence = buildAbapEvidence(src, file, edition);
         const gaps = evidence.coverage && !evidence.coverage.complete ? evidence.coverage.gaps.length : 0;

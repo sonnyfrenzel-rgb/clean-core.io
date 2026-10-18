@@ -1,9 +1,9 @@
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import * as abaplint from '@abaplint/core';
 import { readStatements } from '../../lib/abap/statement-reader';
 import { readControlFlow } from '../../lib/abap/control-flow';
 import { readCallGraph } from '../../lib/abap/call-graph';
+import { examplePath } from './starter-example-files';
 
 /**
  * A second, independent reading of the same ABAP — and where it disagrees with ours.
@@ -72,7 +72,11 @@ export interface Disagreement {
   abaplint: string;
 }
 
-/** The eight ABAP sources this product ships in `public/starter-examples/`. */
+/**
+ * The eight ABAP sources the engine is pinned on: the six this product ships in `public/starter-examples/` and the
+ * three retired on 18.10.2026, kept in `tests/fixtures/retired-starter-examples/` (the freight check is not part of
+ * the baseline).
+ */
 export const SHIPPED_EXAMPLES = [
   'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
   'Z_BUSINESS_PARTNER_SYNC.txt',
@@ -84,10 +88,8 @@ export const SHIPPED_EXAMPLES = [
   'Z_SALES_ORDER_CREATOR.txt',
 ] as const;
 
-const EXAMPLES_DIR = join(process.cwd(), 'public/starter-examples');
-
 export function readExample(name: string): string {
-  return readFileSync(join(EXAMPLES_DIR, name), 'utf8');
+  return readFileSync(examplePath(name), 'utf8');
 }
 
 /**

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   classifyCondition,
@@ -16,6 +16,7 @@ import {
   buildProcessSkeleton,
   type SkeletonNodeKind,
 } from '../lib/abap/process-skeleton';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Comparability per element — roadmap 7.8, §16 V6.
@@ -34,16 +35,15 @@ import {
  * else is counted on the eight programs, and the counts are pinned.
  */
 
-const EXAMPLES = join(process.cwd(), 'public', 'starter-examples');
 
 function exampleFiles(): string[] {
-  return readdirSync(EXAMPLES)
+  return corpusFiles()
     .filter((name) => /\.(abap|txt)$/i.test(name))
     .sort();
 }
 
 function skeletonOf(file: string) {
-  return buildProcessSkeleton(readFileSync(join(EXAMPLES, file), 'utf8'));
+  return buildProcessSkeleton(readFileSync(examplePath(file), 'utf8'));
 }
 
 /**

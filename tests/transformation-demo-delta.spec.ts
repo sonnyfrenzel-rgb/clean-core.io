@@ -4,6 +4,7 @@ import path from 'node:path';
 import { buildNodeScaffold } from '../lib/transformation';
 import { ORIGINAL_DEMO_DELTA_FORMAT, originalDemoCaseRows, originalDemoCases, type OriginalDemoCases, type OriginalDemoDelta } from '../lib/transformation/golden-master';
 import { fileUrl, planOf, ROOT, runInPackage, writePackage } from './helpers/transformation-scaffold';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Roadmap 3.0.17 item (7): the Node package's demo cases (`test/fixtures/original-demo.json`) carry per case only
@@ -14,7 +15,7 @@ import { fileUrl, planOf, ROOT, runInPackage, writePackage } from './helpers/tra
  */
 
 const SOURCES = [
-  ...fs.readdirSync(path.join(ROOT, 'public', 'starter-examples')).map((f) => path.join(ROOT, 'public', 'starter-examples', f)),
+  ...corpusFiles().map((f) => examplePath(f)),
   path.join(ROOT, 'tests', 'fixtures', 'golden-master', 'three-cases.abap'),
   path.join(ROOT, 'tests', 'fixtures', 'sd-locked-probe-demo.abap'),
 ];

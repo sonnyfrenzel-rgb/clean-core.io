@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
-import path from 'path';
 import { LEASED_PROMPT_MAX_CHARS, bundleFills, fillPrompt } from '../lib/transformation/fill-prompt';
 import { prepareEngineLed, preflightFactsOf, type EngineLedPrepared } from '../lib/transformation/engine-led';
 import { preflight } from '../lib/transformation/preflight';
@@ -8,6 +7,7 @@ import { sliceFor } from '../lib/transformation/abap-slice';
 import { estimateFillPrompt, planUnits, readEngineFacts } from '../lib/transformation/unit-plan';
 import { HARD_SLICE_CHARS, HARD_SLICE_LINES, type FillRequestUnit } from '../lib/transformation/types';
 import { promptSplitSource } from './helpers/prompt-split-source';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Owner decision 17.10.2026 (roadmap 3.0.17): a fill prompt must fit the cap. A routine used to be split into parts
@@ -190,8 +190,7 @@ test.describe('one statement too large for a call: said in the plan with its rea
   }
 });
 
-test('the shipped starter examples keep their units, split nothing, and every call fits the cap on both tracks', () => {
-  const dir = path.join(__dirname, '..', 'public', 'starter-examples');
+test('the starter examples, shipped and retired, keep their units, split nothing, and every call fits the cap on both tracks', () => {
   // Measured 17.10.2026 before and after the prompt split: no starter routine is above the hard budget or the cap.
   const UNITS: Record<string, number> = {
     'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 20,
@@ -204,9 +203,9 @@ test('the shipped starter examples keep their units, split nothing, and every ca
     'Z_SALES_ORDER_CREATOR.txt': 3,
     'Z_SD_FREIGHT_RATE_CHECK.abap': 12,
   };
-  expect(fs.readdirSync(dir).sort()).toEqual(Object.keys(UNITS).sort());
+  expect(corpusFiles()).toEqual(Object.keys(UNITS).sort());
   for (const [file, count] of Object.entries(UNITS)) {
-    const source = fs.readFileSync(path.join(dir, file), 'utf8');
+    const source = fs.readFileSync(examplePath(file), 'utf8');
     const plan = planUnits(source);
     expect(plan.units.length, file).toBe(count);
     expect(plan.stats.split, file).toEqual([]);

@@ -14,6 +14,7 @@ import { coveringTestRunReceipt, isTestRunReceipt, TEST_RUN_RECEIPT_VERSION } fr
 import { EVIDENCE_CEILING, fitOfLevel } from '../lib/evidence-level';
 import { objectStatus } from '../lib/object-status';
 import { receiptFor } from './helpers/test-receipt';
+import { examplePath } from './helpers/starter-example-files';
 
 /**
  * Counter-check scenarios and the receipt that earns them — roadmap 7.3.
@@ -63,8 +64,7 @@ import { receiptFor } from './helpers/test-receipt';
  * exercised. It asserts on the version alone now.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const example = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const example = (name: string) => readFileSync(examplePath(name), 'utf8');
 
 const PO = 'Z_MM_PO_APPROVAL.abap';
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';

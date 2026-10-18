@@ -9,6 +9,7 @@ import { layoutModel, planeDrawing, type Direction } from '../lib/bpmn/layout';
 import { measureDrawing, segmentHitsBox, ZERO_METRICS } from '../lib/bpmn/layout-quality';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { textWidth, wrapText } from '../lib/bpmn/text-metrics';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * The BPMN layout is readable — counted, not eyeballed.
@@ -26,10 +27,10 @@ import { textWidth, wrapText } from '../lib/bpmn/text-metrics';
  */
 
 const EXAMPLES = path.join(__dirname, '..', 'public', 'starter-examples');
-const files = fs.readdirSync(EXAMPLES).filter((f) => /\.(abap|txt)$/.test(f)).sort();
+const files = corpusFiles().filter((f) => /\.(abap|txt)$/.test(f)).sort();
 
 function modelOf(file: string, names: 'plain' | 'technical' = 'technical'): ExportModel {
-  const source = fs.readFileSync(path.join(EXAMPLES, file), 'utf8').replace(/\r\n/g, '\n');
+  const source = fs.readFileSync(examplePath(file), 'utf8').replace(/\r\n/g, '\n');
   const skeleton = buildProcessSkeleton(source);
   return buildExportModel(skeleton, names === 'plain' ? { labels: plainLabels(skeleton, source) } : {});
 }

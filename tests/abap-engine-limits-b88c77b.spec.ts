@@ -8,6 +8,7 @@ import { buildProcessSkeleton, buildProcessSkeletonFrom } from '../lib/abap/proc
 import { deriveBusinessRules, deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { tokenize, parseDeclarations } from '../lib/abap/declaration-parser';
 import type { AbapStatement } from '../lib/abap/statement-reader';
+import { examplePath } from './helpers/starter-example-files';
 
 /**
  * What the deterministic engine does with a source that is large or deep —
@@ -57,8 +58,7 @@ import type { AbapStatement } from '../lib/abap/statement-reader';
  * product, and a faster reading that reads something else is a defect.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(examplePath(name), 'utf8');
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
 const sha = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
