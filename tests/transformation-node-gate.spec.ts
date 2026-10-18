@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import { typeCheckCandidate, typeCheckedPaths, CANDIDATE_TS_OPTIONS } from '../lib/test-sandbox/type-check';
@@ -71,7 +72,7 @@ test.describe('the scaffold alone type-checks with its own tsconfig.json, with t
   // The real review programs live outside the repository (the SD source, and the PM holdout): checked where they are.
   for (const [name, file] of [['SD source', SD_DESKTOP], ['PM holdout', PM_DESKTOP]] as const) {
     test(`${name} (local file): 0 type errors`, () => {
-      test.skip(!fs.existsSync(file), `${file} is not on this machine — the repository's fixtures above stand for it`);
+      skipWithoutReference(!fs.existsSync(file), `${file} is not on this machine — the repository's fixtures above stand for it`);
       const p = prep(fs.readFileSync(file, 'utf8'));
       const r = typeCheckCandidate(p.scaffold.files);
       expect(r.ran && r.errors).toBe(0);
@@ -341,7 +342,7 @@ test.describe('no unit loses ABAP text to fit a prompt (B7)', () => {
   }
 
   test('SD source (local file): no unit loses ABAP text, none loses platform knowledge', () => {
-    test.skip(!fs.existsSync(SD_DESKTOP), `${SD_DESKTOP} is not on this machine`);
+    skipWithoutReference(!fs.existsSync(SD_DESKTOP), `${SD_DESKTOP} is not on this machine`);
     const p = prep(fs.readFileSync(SD_DESKTOP, 'utf8'));
     const bundles = bundleFills(ordered(p), { track: 'node', program: p.plan.program, context });
     expect(bundles.flatMap((b) => b.unitIds).sort()).toEqual(p.fillUnits.map((u) => u.unitId).sort());

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -214,7 +215,7 @@ test.describe('2 — a gate repair of the largest units fits the leased call: th
     // The holdout is left out: no figure is tuned on it (programs.json).
     const programs = loadPrograms().filter((p) => !p.holdout);
     const missing = programs.filter((p) => !p.source.repo && !fs.existsSync(path.join(SOURCES, p.source.file ?? '')));
-    test.skip(missing.length > 0, `the owner's sources are not on this machine (${missing.map((p) => p.source.file).join(', ')})`);
+    skipWithoutReference(missing.length > 0, `the owner's sources are not on this machine (${missing.map((p) => p.source.file).join(', ')})`);
     const before: string[] = [];
     const over: string[] = [];
     for (const p of programs) {

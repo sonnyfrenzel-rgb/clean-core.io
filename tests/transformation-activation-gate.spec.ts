@@ -107,8 +107,16 @@ test.describe('the activation check runs with the configuration the package ship
     const invented = run("cl_abap_unit_test=>fail( 'x' ).");
     expect(invented.ran && invented.activation.activatable).toBe(false);
     expect(invented.ran && invented.activation.unresolvedNames).not.toContain('CL_ABAP_UNIT_TEST');
+    // Not activatable for this reason (QA 6498a4a0ffc4): a syntax error naming the class, nothing else.
+    if (!invented.ran) throw new Error(invented.reason);
+    expect(invented.activation.parserErrors).toBe(0);
+    expect(invented.findings.filter((f) => f.kind === 'syntax').map((f) => f.message)).toEqual([
+      '"CL_ABAP_UNIT_TEST" is not released for ABAP Cloud (or does not exist)',
+    ]);
+    // The released class is accepted: the same package with it activates.
     const released = run("cl_abap_unit_assert=>fail( msg = 'x' ).");
     expect(released.ran && released.activation.syntaxErrors).toBe(0);
+    expect(released.ran && released.activation.activatable).toBe(true);
   });
 });
 

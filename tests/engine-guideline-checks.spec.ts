@@ -7,6 +7,7 @@ import { recommendArchitecture, extractCodeInventory, extractDataCoupling } from
 import { GUIDELINE_CHECKS_FROM, guidelineChecksApply } from '../lib/abap/guideline-checks-gate';
 import { KIND_LABEL } from '../lib/findings-view';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { gradeFromInventory } from '../lib/abap/abcd-classification';
 
 /**
  * Roadmap 3.0.12 — the checks taken over from the review of the DSAG ABAP
@@ -344,6 +345,10 @@ test.describe('C5 classic ALV and IDoc are worded as classic technology that may
     const old = evidence(src, OLD).filter((f) => f.kind === 'dynpro');
     expect(old.find((f) => f.lineStart === 2)!.title).toBe('Legacy Screen Painter (Dynpro) UI Pattern');
     expect(old.find((f) => f.lineStart === 2)!.severity).toBe('Medium');
+    // The level itself, as the classification panel computes it (QA 224b8be44e2f): B, and C at high criticality — never D.
+    expect(gradeFromInventory({ type: 'Dynpro' })).toBe('B');
+    expect(gradeFromInventory({ type: 'Screen', criticality: 'Medium' })).toBe('B');
+    expect(gradeFromInventory({ type: 'Dynpro', criticality: 'High' })).toBe('C');
   });
 
   test('a GUI file transfer through a listed classic API is level B; WS_DOWNLOAD is not on the list', () => {

@@ -18,7 +18,10 @@ import {
  * call ran on until the request went away, and the browser read "Unknown
  * error". The route now ends the call itself before that limit, with a code.
  *
- * Server-free: the helper is pure, the route is read in its source.
+ * Server-free: the helper is pure, the route is read in its source. The route
+ * itself runs in `tests/gemini-route-deadline.spec.ts` — a provider that never
+ * answers until its signal aborts, a 504 with this code, the signal observed
+ * (emulators; under CI a missing emulator fails it instead of skipping).
  */
 
 const ROOT = path.resolve(__dirname, '..');

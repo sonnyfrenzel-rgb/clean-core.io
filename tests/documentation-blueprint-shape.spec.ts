@@ -283,6 +283,17 @@ test('the documentation is written only onto the run and source it was built fro
   const pageStart = page.indexOf('const generateDocumentation = useCallback(');
   const pageBody = page.slice(pageStart, page.indexOf('}, [projectId, project, signedSource', pageStart));
   expect(pageBody).toContain('setDocumentation(stored)');
+  // After the store has answered and its refusal has thrown, never before (QA e2fcf7adb146): the only
+  // `setDocumentation(` and the project update follow `if (!answer.ok) throw`, which follows the awaited store.
+  const storedAt = pageBody.indexOf('const answer = await storeArtefact(');
+  const refusedAt = pageBody.indexOf('if (!answer.ok) throw new Error(answer.error);');
+  expect(storedAt, 'the page no longer awaits the store').toBeGreaterThan(-1);
+  expect(refusedAt, 'a refused store no longer stops the page').toBeGreaterThan(storedAt);
+  for (const shown of [/setDocumentation\(/g, /setProject\(/g]) {
+    const at = [...pageBody.matchAll(shown)].map((m) => m.index!);
+    expect(at.length, String(shown)).toBeGreaterThan(0);
+    expect(at.every((i) => i > refusedAt), `${shown} runs before the store answered`).toBe(true);
+  }
 });
 
 test.describe('the documentation segment has an error boundary of its own', () => {
