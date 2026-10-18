@@ -50,3 +50,12 @@ test('the RAP scaffold and the splice of model bodies wrap, and abaplint checks 
   expect(markers).toContain("scaffold.track === 'rap' ? wrapAbapLine(l) : [l]");
   expect(ABAPLINT_RULES).toMatchObject({ line_length: { length: 255 } });
 });
+
+// The PM trial import (18.10.2026): a custom entity element named `resource` failed activation —
+// "RESOURCE is a reserved word (choose another field name)".
+test('a CDS element is never named resource', async () => {
+  const { isDdicReserved, ddicFieldName } = await import('../lib/transformation/ddic-reserved');
+  expect(isDdicReserved('resource')).toBe(true);
+  expect(isDdicReserved('RESOURCE')).toBe(true);
+  expect(ddicFieldName('resource')).toBe('resource_value');
+});

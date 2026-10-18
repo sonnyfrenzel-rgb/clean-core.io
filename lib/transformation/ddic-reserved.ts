@@ -25,7 +25,9 @@ const SQL92 =
   'true union unique unknown update upper usage user using value values varchar varying view when whenever where ' +
   'with work write year zone';
 const CDS = 'association composition define entity exact many number one parameters';
-const REFUSED_BEFORE = 'handler parameter';
+// Names SAP refused in a real import: `resource` as a CDS element of the PM custom entity (BTP trial, 18.10.2026:
+// "RESOURCE is a reserved word (choose another field name)").
+const REFUSED_BEFORE = 'handler parameter resource';
 
 const RESERVED: ReadonlySet<string> = new Set(`${SQL92} ${CDS} ${REFUSED_BEFORE}`.split(/\s+/));
 
