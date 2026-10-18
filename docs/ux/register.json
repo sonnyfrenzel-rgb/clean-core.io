@@ -2374,7 +2374,7 @@
     {
       "id": "UX-180",
       "fingerprint": "a343c04d3148",
-      "title": "30 neue Willkür-Tokens für Breiten und Abstände unterlaufen das Design-System",
+      "title": "30 new arbitrary width and spacing tokens undermine the design system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
@@ -2386,7 +2386,7 @@
     {
       "id": "UX-181",
       "fingerprint": "1b6b7a565a33",
-      "title": "Stufenname 'Economics' weicht von der URL '/tco' und bestehenden Bezeichnungen ab",
+      "title": "Stage name 'Economics' differs from the URL '/tco' and existing labels",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
