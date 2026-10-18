@@ -16,7 +16,7 @@ import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
 import { OPTION_COMPARISON_PROMPT_RULE, OPTION_COMPARISON_SCHEMA } from '@/lib/design-option-comparison';
-import { CUSTOM_ENTITY_AUTH_NOTE, DESIGN_CONSISTENCY_PROMPT_RULE, RAP_TEMPLATE_PROMPT_RULE, programOfSource, rapDeliveredFromSource, rapObjectNamesPromptRule } from '@/lib/design-post-checks';
+import { CUSTOM_ENTITY_AUTH_NOTE, DESIGN_CONSISTENCY_PROMPT_RULE, RAP_TEMPLATE_PROMPT_RULE, prePostingPromptRule, programOfSource, rapDeliveredFromSource, rapObjectNamesPromptRule } from '@/lib/design-post-checks';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -389,7 +389,7 @@ ${SAP_REFERENCE_PROMPT_RULES}
 
 OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
-${DESIGN_CONSISTENCY_PROMPT_RULE} ${RAP_TEMPLATE_PROMPT_RULE}
+${DESIGN_CONSISTENCY_PROMPT_RULE} ${RAP_TEMPLATE_PROMPT_RULE} ${prePostingPromptRule(designSource, 'rap')}
 
 ${designContext}
 
@@ -441,7 +441,7 @@ ${SAP_REFERENCE_PROMPT_RULES}
 
 OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
-${DESIGN_CONSISTENCY_PROMPT_RULE}
+${DESIGN_CONSISTENCY_PROMPT_RULE} ${prePostingPromptRule(designSource, 'cap')}
 
 ${designContext}
 

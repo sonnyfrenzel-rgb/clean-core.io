@@ -25,6 +25,7 @@ import {
   RAP_VARIANT_WORDS,
   annotateSapReferencesCompact,
   postCheckDesign,
+  prePostingDecisionWords,
 } from './design-post-checks';
 
 /** What the exports of model text may be given beside it. */
@@ -227,6 +228,15 @@ export function formatDesignToMarkdown(rawJson: string, options?: ModelTextExpor
       if (!data.dataSync) md += `## Data Synchronization & Integration Pattern\n`;
       if (post.mvccRefused.length) md += `> ${MVCC_REFUSAL}\n\n`;
       if (post.twoCutoffs) md += `> ${CERTIFIED_SNAPSHOT_NOTE} (Read from the names of the program's selection parameters.)\n\n`;
+    }
+    // 3.0.18 item 13 (FI-F01): where the original posts, one binding pre-posting check point, every channel through it.
+    if (post.prePosting) {
+      md += `## Architecture Decision: Binding Pre-Posting Check Point\n`;
+      for (const line of prePostingDecisionWords(post.prePosting)) md += `${line}\n\n`;
+      md += `| Channel | Reaches the posting through |\n`;
+      md += `| :--- | :--- |\n`;
+      for (const c of post.prePosting.channels) md += `| ${c.channel} | ${c.reaches} |\n`;
+      md += `\n> Read by the engine from the source: the posting calls and the original's own check before them — not the model's proposal.\n\n`;
     }
     
     if (Array.isArray(data.sapStandardApiMapping) && data.sapStandardApiMapping.length > 0) {
