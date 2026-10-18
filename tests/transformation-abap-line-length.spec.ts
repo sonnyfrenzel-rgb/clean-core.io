@@ -59,3 +59,16 @@ test('a CDS element is never named resource', async () => {
   expect(isDdicReserved('RESOURCE')).toBe(true);
   expect(ddicFieldName('resource')).toBe('resource_value');
 });
+
+// The FI holdout run (18.10.2026): the golden master carries a CONCATENATE result as one literal of 300 characters.
+test('a literal longer than a line is split into chunks joined with &&, none ending on a blank or splitting a quote pair', () => {
+  const body = `${'A1:'.repeat(60)}It''s ${'x y '.repeat(40)}end`;
+  const line = `        ( id = 'A001' body = '${body}' )`;
+  const out = wrapAbapLine(line);
+  for (const l of out) expect(l.length).toBeLessThanOrEqual(ABAP_MAX_LINE);
+  const joined = out.join(' ');
+  const chunks = [...joined.matchAll(/'((?:[^']|'')*)'/g)].map((m) => m[1]).filter((c) => c !== 'A001');
+  expect(chunks.join('')).toBe(body);
+  for (const c of chunks.slice(0, -1)) expect(c.endsWith(' ')).toBe(false);
+  expect(joined).toContain(' && ');
+});

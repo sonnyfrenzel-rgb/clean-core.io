@@ -966,6 +966,8 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
     const why = 'ABAP package: the cases are ABAP Unit data and the probes call JavaScript exports — running either needs an SAP system';
     rec.engineCases = { derived: prepared.facts.cases, passed: 0, failed: 0, notRun: prepared.facts.cases, reason: why };
     rec.probes = { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: why, byPattern: {} };
+    // Kept on request, so the package can be imported into an SAP system (the trial runner, 18.10.2026).
+    if (ctx.args.keepPackages) writePackage(path.join(ctx.workDir, `${p.id}-${track}-${run}`), files);
   } else {
     const pkgDir = path.join(ctx.workDir, `${p.id}-${track}-${run}`);
     writePackage(pkgDir, files);

@@ -59,6 +59,14 @@
       "scenarios": { "sealed": null, "provenance": ["holdout: no tuned expectations — gate and case recognition only; never edited to raise a figure"] }
     },
     {
+      "id": "qm-inspection-evidence",
+      "title": "QM inspection evidence (ZQM_INSPECTION_EVIDENCE), the acceptance set's large RAP case",
+      "source": { "repo": null, "file": "QM_Legacy_ABAP.txt", "entry": null, "sha256": "2fe794429035e1c4bde7c22f1c8450e435cdc3b3860bce0f557efbb8ae71693d", "lines": 1714 },
+      "tracks": ["rap", "node"],
+      "holdout": true,
+      "scenarios": { "sealed": null, "provenance": ["holdout: no tuned expectations — gate and case recognition only; never edited to raise a figure"] }
+    },
+    {
       "id": "sd-freight-rate-check",
       "title": "SD freight rate check (Z_SD_FREIGHT_RATE_CHECK, the side-by-side starter example)",
       "source": { "repo": "public/starter-examples/Z_SD_FREIGHT_RATE_CHECK.abap", "file": null, "entry": null, "sha256": "ed8c871d9857ecb3e86b8ec9ec639d42f0f074cbc478a801d27d9a7695ac2f12", "lines": 408 },

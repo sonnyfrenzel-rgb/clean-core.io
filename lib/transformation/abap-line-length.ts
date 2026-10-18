@@ -68,12 +68,38 @@ function wrapComment(line: string, max: number): string[] {
   return out.every((l) => l.length <= max) ? out : [line];
 }
 
+/**
+ * A literal longer than a line can hold, as chunks joined with `&&` (FI holdout, 18.10.2026: the golden master
+ * carries a CONCATENATE result of 300 characters as one literal). A chunk never ends on a blank — a text literal
+ * drops its trailing blanks — and never splits a doubled quote.
+ */
+function splitLongLiterals(code: string, room: number): string {
+  const limit = Math.max(40, Math.min(200, room - 20));
+  return code.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`/g, (lit) => {
+    if (lit.length <= limit) return lit;
+    const q = lit[0];
+    const body = lit.slice(1, -1);
+    const parts: string[] = [];
+    let at = 0;
+    while (at < body.length) {
+      let end = Math.min(body.length, at + limit - 2);
+      // Inside a literal the quote only appears doubled: a cut with an odd count of quotes before it splits a pair.
+      const unsafe = (e: number) => body[e - 1] === ' ' || body.slice(at, e).split(q).length % 2 === 0;
+      while (end < body.length && end > at + 1 && unsafe(end)) end--;
+      if (end <= at + 1) end = Math.min(body.length, at + limit - 2);
+      parts.push(`${q}${body.slice(at, end)}${q}`);
+      at = end;
+    }
+    return parts.join(' && ');
+  });
+}
+
 /** One source line as one or more lines of at most `max` characters, where it can break. */
 export function wrapAbapLine(line: string, max: number = ABAP_MAX_LINE): string[] {
   if (line.length <= max) return [line];
   if (/^\*/.test(line) || /^\s*"/.test(line)) return wrapComment(line, max);
   const end = codeEnd(line);
-  const code = line.slice(0, end).trimEnd();
+  const code = splitLongLiterals(line.slice(0, end).trimEnd(), max - (/^\s*/.exec(line)![0].length + 2));
   const comment = line.slice(end);
   const indent = /^\s*/.exec(line)![0];
   const lines: string[] = [];
