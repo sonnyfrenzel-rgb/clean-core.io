@@ -250,7 +250,9 @@ export function readConstantGates(source: string, options: ConstantGateOptions =
       for (let i = head.headerIndex + 1; i < nextHeader; i++) {
         if (structure.enclosing[i].length !== depth + 1) continue;
         const kind = stopOf(statements[i], insideLoop);
-        if (kind === 'raise' && inTry && /^RAISE\s+(?:RESUMABLE\s+)?EXCEPTION\b/i.test(statements[i].text)) {
+        // A resumable exception may RESUME after CATCH BEFORE UNWIND: it ends nothing for sure (QA 4453a4e9519c).
+        if (kind === 'raise' && /^RAISE\s+RESUMABLE\b/i.test(statements[i].text)) break;
+        if (kind === 'raise' && inTry && /^RAISE\s+EXCEPTION\b/i.test(statements[i].text)) {
           caughtRaise = true;
           stopEnd = statements[i].lineEnd;
           break;

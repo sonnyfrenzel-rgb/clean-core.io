@@ -117,6 +117,12 @@ FORM run USING gc_mode TYPE c.
   WRITE 'work'.
 ENDFORM.`;
 
+  test('a RAISE RESUMABLE EXCEPTION may resume: nothing after it is marked unreachable (QA 4453a4e9519c)', () => {
+    const resumable = CAUGHT.replace('RAISE EXCEPTION TYPE zcx_stop.', 'RAISE RESUMABLE EXCEPTION TYPE zcx_stop.');
+    expect(resumable).toContain('RAISE RESUMABLE');
+    expect(isUnreachableLine(readConstantGates(resumable, READS), 10)).toBe(false);
+  });
+
   test('a FORM parameter of the constant\'s name shadows it, so no gate is read', () => {
     expect(readConstantGates(SHADOWED, READS).gates).toEqual([]);
     expect(readConstantGates(SHADOWED).gates).toHaveLength(1);
@@ -291,6 +297,14 @@ START-OF-SELECTION.
     // Inside the loop, after the CHECK, the access is still covered.
     const inLoop = looped.replace('  ENDDO.\n  OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.', '  OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.\n  ENDDO.');
     expect(tasks(inLoop, true)).not.toContain('file-path-from-input');
+  });
+
+  test('a SELECT loop nested in the CHECK loop closes itself, not the CHECK loop (QA f2b34a9673f5)', () => {
+    const looped = VALIDATE
+      .replace("  CALL FUNCTION 'FILE_VALIDATE_NAME'", "  DO 1 TIMES.\n  CALL FUNCTION 'FILE_VALIDATE_NAME'")
+      .replace("  IF sy-subrc <> 0.\n    MESSAGE 'Invalid path' TYPE 'I'.\n  ENDIF.", '  CHECK sy-subrc = 0.\n  SELECT carrid FROM scarr INTO @DATA(lv_c).\n  ENDSELECT.\n  ENDDO.');
+    expect(looped).toContain('ENDSELECT.');
+    expect(tasks(looped, true)).toContain('file-path-from-input');
   });
 
   test('a COND covers the access only when the arm failure takes throws (QA fdaf20ecaa28)', () => {

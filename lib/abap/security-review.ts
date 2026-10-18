@@ -213,9 +213,22 @@ function stopsFlow(statement: AbapStatement): boolean {
  */
 function leavesLoopBefore(statements: readonly AbapStatement[], from: number, to: number): boolean {
   let depth = 0;
+  // SELECT loops opened after the CHECK: their ENDSELECT closes them, not the CHECK's loop (QA f2b34a9673f5).
+  let selects = 0;
   for (let i = from + 1; i < to && i < statements.length; i++) {
     const c = maskLiterals(statements[i].text).trim();
-    if (/^ENDSELECT\b/i.test(c)) return true;
+    if (/^SELECT\b/i.test(c) && !/^SELECT\s+SINGLE\b/i.test(c) && !/\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\b/i.test(c)) {
+      selects += 1;
+      continue;
+    }
+    if (/^ENDSELECT\b/i.test(c)) {
+      if (selects > 0) {
+        selects -= 1;
+        continue;
+      }
+      if (depth === 0) return true;
+      continue;
+    }
     if (CLOSES.test(c)) {
       if (depth === 0) {
         if (/^(?:ENDDO|ENDWHILE|ENDLOOP|ENDPROVIDE)\b/i.test(c)) return true;

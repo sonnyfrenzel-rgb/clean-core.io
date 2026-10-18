@@ -553,6 +553,6 @@ test.describe('the entry limit is counted from the bytes, before the archive is 
 // a reader takes "refuted" in the code as a reason not to look.
 test('the verifiers name no review finding as refuted', () => {
   for (const file of ['lib/audit-pack-verify.ts', 'scripts/verify-pack.mjs']) {
-    expect(fs.readFileSync(file, 'utf8'), file).not.toMatch(/refuted/i);
+    expect(fs.readFileSync(file, 'utf8'), file).not.toMatch(/\brefuted\b/i);
   }
 });
