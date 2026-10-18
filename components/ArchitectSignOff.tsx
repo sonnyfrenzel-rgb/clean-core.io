@@ -16,7 +16,7 @@ import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 // `keep` and `standard` are chosen in the Management view (ADR-079); the panel
 // shows them when they are on record and does not offer them — Design signs off
 // the route of a rebuild, and Retire as before.
-export type TargetArchitecture = 'rap' | 'cap' | 'integration' | 'event' | 'retire' | 'keep' | 'standard';
+export type TargetArchitecture = 'rap' | 'cap' | 'integration' | 'event' | 'retire' | 'keep' | 'standard' | 'keyuser';
 
 interface ArchitectureOption {
   value: TargetArchitecture;

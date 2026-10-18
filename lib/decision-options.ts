@@ -50,7 +50,7 @@ export const DIRECT_CHOICE_CODE: Readonly<Record<Exclude<DecisionOption, 'rebuil
 /** The option a stored architecture code stands for, or `null` for an unknown code. */
 export function optionOfArchitecture(code: string | null | undefined): DecisionOption | null {
   if (code === 'keep' || code === 'standard' || code === 'retire') return code;
-  if (code === 'rap' || code === 'cap' || code === 'integration' || code === 'event') return 'rebuild';
+  if (code === 'rap' || code === 'cap' || code === 'integration' || code === 'event' || code === 'keyuser') return 'rebuild';
   return null;
 }
 

@@ -87,12 +87,17 @@ export type ServerOnlyProjectField = (typeof SERVER_ONLY_PROJECT_FIELDS)[number]
 /* ------------------------------------------------------ target architecture */
 
 /**
- * The codes a sign-off may store. The four Rebuild routes are signed off in
+ * The codes a sign-off may store. The Rebuild routes are signed off in
  * Design; `keep`, `standard` and `retire` build nothing and are chosen in the
  * Management view directly (ADR-079) — through the same command, bound to the
  * same run, with the same departure check.
+ *
+ * `keyuser` (roadmap 3.0.19): rebuilt with SAP's key-user tools — configured
+ * in the system from the engine's key-user step list (`lib/key-user-steps.ts`),
+ * no code generated. A Rebuild route, signed off in Design like RAP and CAP;
+ * appended, never inserted, so no stored code changes meaning.
  */
-export const TARGET_ARCHITECTURES = ['rap', 'cap', 'integration', 'event', 'retire', 'keep', 'standard'] as const;
+export const TARGET_ARCHITECTURES = ['rap', 'cap', 'integration', 'event', 'retire', 'keep', 'standard', 'keyuser'] as const;
 export type TargetArchitectureCode = (typeof TARGET_ARCHITECTURES)[number];
 
 export function isTargetArchitecture(value: unknown): value is TargetArchitectureCode {

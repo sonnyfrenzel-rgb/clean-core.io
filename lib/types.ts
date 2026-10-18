@@ -183,7 +183,7 @@ export interface Project {
   criticalityScore?: number;
   codeInventory?: CodeInventoryItem[];
   dataCoupling?: DataCouplingEntry[];
-  targetArchitecture?: 'rap' | 'cap' | 'integration' | 'event' | 'retire' | 'keep' | 'standard';
+  targetArchitecture?: 'rap' | 'cap' | 'integration' | 'event' | 'retire' | 'keep' | 'standard' | 'keyuser';
   approvedByArchitect?: boolean;
   architectJustifiedOverride?: string;
   architectSignOffAt?: unknown;
@@ -399,7 +399,7 @@ export interface AnalysisData {
       checkpointName: string;
       question: string;
       evaluation: string;
-      resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Neutral';
+      resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Key-User Preferred' | 'Neutral';
       cleanCoreImpact: string;
     }>;
     comparativeAnalysis?: {

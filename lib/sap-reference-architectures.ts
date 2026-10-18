@@ -122,6 +122,7 @@ export const REFERENCE_OF_TARGET: Readonly<Record<TargetArchitectureCode, readon
   retire: [bind(null, 'none', 'Nothing is built when the object is retired, so there is no target architecture to compare with a pattern.')],
   keep: [bind(null, 'none', 'The object stays as it is; no target architecture is built.')],
   standard: [bind(null, 'none', 'SAP standard takes over the function; no extension architecture is built.')],
+  keyuser: [bind(null, 'none', 'Key-user extensions are configured in the system with SAP\u2019s key-user apps; the Architecture Center does not cover them, and no extension architecture is built.')],
 });
 
 const IN_APP_BLOCK =

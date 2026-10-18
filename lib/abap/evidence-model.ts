@@ -14,6 +14,8 @@ import { guidelineChecksApply } from './guideline-checks-gate';
 import { precisionFixesApply } from './precision-fixes-gate';
 import { engineReadsApply } from './engine-reads-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
+import { keyUserApplies } from './key-user-gate';
+import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
 import { gateOfLine, readConstantGates } from './constant-gates';
 import { readCallGraph } from './call-graph';
 import { readSecurityReviewTasksFrom } from './security-review';
@@ -137,6 +139,14 @@ export interface AbapEvidenceReport {
    * source and not part of what the run signs as findings.
    */
   statedRequirements?: StatedRequirement[];
+  /**
+   * The parts of the program SAP's key-user tools could cover, each with its
+   * limit and the lines it replaces, and the parts that stay code, each with
+   * why (`key-user-candidates.ts`). From engine 3.0.19 (`KEY_USER_FROM`);
+   * absent before it. Never a finding: like `statedRequirements` it is
+   * recomputed from the stored source.
+   */
+  keyUser?: KeyUserReading;
   summary: {
     criticalCount: number;
     highCount: number;
@@ -1920,11 +1930,17 @@ export function buildAbapEvidence(
   const statedRequirements = statedRequirementsApply(engineVersion === undefined ? APP_VERSION : engineVersion)
     ? readStatedRequirements(code)
     : [];
+  // From 3.0.19 (`KEY_USER_FROM`): the key-user candidates, beside the
+  // findings and read from them; a run of an earlier engine has none.
+  const keyUser = keyUserApplies(engineVersion === undefined ? APP_VERSION : engineVersion)
+    ? readKeyUserCandidates({ code, fileName, findings, coverageGaps: coverage.gaps.map((g) => g.gap) })
+    : null;
   return {
     findings,
     coverage,
     ...(notes.length ? { notes } : {}),
     ...(statedRequirements.length ? { statedRequirements } : {}),
+    ...(keyUser ? { keyUser } : {}),
     summary,
   };
 }

@@ -5,12 +5,15 @@ import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 import { precisionFixesApply } from './precision-fixes-gate';
 import { readClaimsApply } from './read-claims-gate';
 import { citeStatement, statedRequirementsApply, statedTargetOf, type StatedRequirement } from './stated-requirements';
+import { keyUserApplies } from './key-user-gate';
+import type { KeyUserBlockerCode, KeyUserReading, KeyUserScope, KeyUserTool } from './key-user-candidates';
 
 export interface DecisionCheckpoint {
   checkpointName: string;
   question: string;
   evaluation: string;
-  resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Neutral';
+  /** `Key-User Preferred` from 3.0.19 (`KEY_USER_FROM`), on the key-user checkpoint only, where the whole program is key user. */
+  resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Key-User Preferred' | 'Neutral';
   cleanCoreImpact: string;
 }
 
@@ -45,6 +48,42 @@ export interface ExtensibilityRouteReport {
    * one it always was.
    */
   statedRequirements?: StatedRouteBasis;
+  /**
+   * Key user as the fourth option beside standard, RAP and CAP (from 3.0.19,
+   * `KEY_USER_FROM`): what the engine read of the key-user candidates
+   * (`AbapEvidenceReport.keyUser`). Absent for a run of an earlier engine, so
+   * such a report is the one it always was. `recommendedRoute` stays the code
+   * route — the route the code part takes, and the whole program's should the
+   * key-user candidates not hold.
+   */
+  keyUser?: KeyUserRouteBasis;
+}
+
+/** The key-user reading as the route report carries it — counts, ids and reasons, never the step list. */
+export interface KeyUserRouteBasis {
+  scope: KeyUserScope;
+  /** True only for `whole-program`: key user is the recommended option, and code is built for no part. */
+  recommended: boolean;
+  parts: KeyUserReading['parts'];
+  /** `A` only where the whole program is key user: a key-user extension uses released extension points only. */
+  levelByConstruction: 'A' | null;
+  candidates: Array<{ id: string; tool: KeyUserTool; app: string; part: string; firstLine: number }>;
+  rejected: Array<{ id: string; wouldBe: KeyUserTool; part: string; verdict: 'code' | 'not-determined'; reason: string; codes: KeyUserBlockerCode[] }>;
+  sentence: string;
+}
+
+/** The route report's view of a key-user reading. */
+export function keyUserRouteBasis(reading: KeyUserReading): KeyUserRouteBasis {
+  const firstLine = (anchors: ReadonlyArray<{ lineStart: number }>) => anchors.reduce((min, a) => Math.min(min, a.lineStart), anchors[0]?.lineStart ?? 0);
+  return {
+    scope: reading.scope,
+    recommended: reading.scope === 'whole-program',
+    parts: reading.parts,
+    levelByConstruction: reading.levelByConstruction,
+    candidates: reading.candidates.map((c) => ({ id: c.id, tool: c.tool, app: c.app, part: c.part.name, firstLine: firstLine(c.anchors) })),
+    rejected: reading.rejected.map((r) => ({ id: r.id, wouldBe: r.wouldBe, part: r.part.name, verdict: r.verdict, reason: r.reason, codes: [...new Set(r.blockers.map((b) => b.code))] })),
+    sentence: reading.sentence,
+  };
 }
 
 /** The stated requirements that bear on the route, and what they did to it. */
@@ -638,6 +677,8 @@ export function routeExtensibility(
     stated && ((stated.target === 'side-by-side' && !needsBtp && inProcess.length > 0) || (stated.target === 'on-stack' && needsBtp)),
   );
   const routeBtp = needsBtp || followStatedSide;
+  // From 3.0.19 (`KEY_USER_FROM`): the key-user candidates the evidence read.
+  const keyUser = keyUserApplies(engineVersion) && evidence.keyUser ? keyUserRouteBasis(evidence.keyUser) : null;
 
   const recommendedRoute = routeBtp ? SIDE_BY_SIDE_ROUTE : IN_APP_ROUTE;
 
@@ -908,6 +949,16 @@ export function routeExtensibility(
     rationale = `${rationale} Part of the program was not read. ${includesNotReadSentence}`;
   }
 
+  // From 3.0.19 (`KEY_USER_FROM`): where the whole program is key user, the
+  // rationale leads with it and says what the code route would be; where it
+  // splits, it says which parts are key user and that code is built for the
+  // rest only.
+  if (keyUser?.recommended) {
+    rationale = `Key-user extensibility covers the whole program: ${keyUser.sentence} No code is generated for it. Should a candidate not hold once its limit is checked, that part is built in code on this route: ${rationale}`;
+  } else if (keyUser && keyUser.scope === 'partial') {
+    rationale = `${rationale} Key-user extensibility: ${keyUser.sentence}`;
+  }
+
   // From 3.0.17: what the owner stated in the source, said as stated and
   // never as read from the code (`STATED_REQUIREMENTS_FROM`).
   const statedLines = (list: readonly StatedRequirement[]) => list.map((r) => citeStatement(r, false)).join(', ');
@@ -928,7 +979,9 @@ export function routeExtensibility(
     rationale = `${rationale} The source names a target without binding it — ${stated.soft.map((r) => `${r.target} in ${citeStatement(r, false)}`).join(', ')} — which sets no route.`;
   }
 
-  const targetArtifact = routeBtp ? 'CAP Node.js / Java Application' : 'RAP Business Object';
+  const targetArtifact = keyUser?.recommended
+    ? 'Key-user extensions (configured in the system, no code)'
+    : routeBtp ? 'CAP Node.js / Java Application' : 'RAP Business Object';
   const statedSideSentence = stated && followStatedSide
     ? `a requirement stated in the source, not read from the code: ${statedLines(stated.binding)}`
     : '';
@@ -957,7 +1010,11 @@ export function routeExtensibility(
     {
       checkpointName: legacyRule ? 'Key User Extensibility (Tier 3)' : 'Key User Extensibility',
       question: 'Can the extension be implemented using low-code/no-code Key User tools?',
-      evaluation: findings.length === 0 && coverageIncomplete
+      // From 3.0.19 (`KEY_USER_FROM`): what the engine read of the key-user
+      // candidates, part by part, instead of a sentence that holds for every program.
+      evaluation: keyUser
+        ? keyUserEvaluation(keyUser)
+        : findings.length === 0 && coverageIncomplete
         ? `Not established. No pattern was found, but ${unassessedSummary || 'part of the code'} was not assessed by any detector \u2014 feasibility cannot be judged from what was not read.`
         : findings.length === 0
           ? 'No blocker found: the code shows no database write, external integration or other legacy pattern. Whether its logic can be expressed with Key User tools is not assessed by the engine.'
@@ -967,8 +1024,12 @@ export function routeExtensibility(
       // "trivially feasible", and one finding of any kind is not "infeasible"
       // (QA full review of v2.20.0, 1d5ab9d90793). The impact below is what the
       // track offers, not a property of the analysed code (c658f64f147e).
-      resultState: 'Neutral',
-      cleanCoreImpact: 'Target property of Key User extensions: they use released extension points only. Not established for the analysed code.'
+      resultState: keyUser?.recommended ? 'Key-User Preferred' : 'Neutral',
+      cleanCoreImpact: keyUser?.recommended
+        ? 'Clean core level A by construction: a key-user extension uses released extension points only. The score measures the code as it stands, not the key-user extension that replaces it.'
+        : keyUser && keyUser.scope === 'partial'
+        ? 'The key-user parts are clean core level A by construction; the code part reaches the level of the route it is built on.'
+        : 'Target property of Key User extensions: they use released extension points only. Not established for the analysed code.'
     },
     {
       checkpointName: legacyRule ? 'In-App Developer Extensibility (Tier 1)' : 'In-App Developer Extensibility (ABAP Cloud)',
@@ -1208,5 +1269,17 @@ export function routeExtensibility(
     evidenceCounts,
     assumptions,
     ...(statedBasis ? { statedRequirements: statedBasis } : {}),
+    ...(keyUser ? { keyUser } : {}),
   };
+}
+
+/** The key-user checkpoint's evaluation from 3.0.19: the reading, then what keeps each other part in code. */
+function keyUserEvaluation(keyUser: KeyUserRouteBasis): string {
+  const reasons = keyUser.rejected.slice(0, 4).map((r) => `${r.id}: ${r.reason}`).join(' ');
+  const more = keyUser.rejected.length > 4 ? ` … ${keyUser.rejected.length - 4} more.` : '';
+  if (keyUser.recommended) {
+    return `Indicated for the whole program. ${keyUser.sentence} Each candidate holds only once its limit is checked in the target system.`;
+  }
+  if (keyUser.scope === 'partial') return `Indicated in part. ${keyUser.sentence}${reasons ? ` ${reasons}${more}` : ''}`;
+  return `Not indicated. ${keyUser.sentence}${reasons ? ` ${reasons}${more}` : ''}`;
 }
