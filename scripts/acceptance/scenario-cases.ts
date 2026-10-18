@@ -59,7 +59,10 @@ export function scenarioCases(scenarios: readonly CaseScenario[] | null, demo: P
     let n: number | null = null;
     if (param && isPlainObject(s.input)) {
       const hit = Object.entries(s.input).find(([k]) => k.toLowerCase() === param);
-      const v = hit ? Number(hit[1]) : NaN;
+      // A number, or digits as text: `Number()` reads null, '' and false as 0 and true as 1, which would match a
+      // null-input scenario to demo case 0 (QA 958d07e8b2ff).
+      const raw = hit?.[1];
+      const v = typeof raw === 'number' ? raw : typeof raw === 'string' && /^\s*\d+\s*$/.test(raw) ? Number(raw) : NaN;
       if (Number.isInteger(v)) n = v;
     }
     if (n === null && s.group === 'reference') {
@@ -173,11 +176,31 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
       // The run's issues: as many as expected, each expected message among them (case and spacing aside).
       const said = out.issues.map((m) => m.replace(/\s+/g, ' ').trim().toLowerCase());
       leaf(true, said.length === value.length);
+      // Each expected message takes one message of the run, so ["A", "A"] is not met by ["A", "B"] (QA d791179ee1b0).
+      const left = [...said];
       for (const m of value) {
         const w = m.replace(/\s+/g, ' ').trim().toLowerCase();
         // Equal after case and whitespace, never a substring: "not failed" is not "failed" (QA 894abf0faca5).
-        leaf(true, said.some((s) => s === w));
+        const at = left.indexOf(w);
+        if (at >= 0) left.splice(at, 1);
+        leaf(true, at >= 0);
       }
+      return;
+    }
+    if (Array.isArray(value)) {
+      // An empty list, or a list of values (QA 1c24cdfb94f8): compared with the list of that name — the run's rows
+      // or issues by those names — by its length, then element by element in order.
+      const hit = locate(key, within);
+      const list = hit.found && Array.isArray(hit.value)
+        ? hit.value
+        : normKey(key) === 'rows' ? out.rows : /issue|message/i.test(key) ? out.issues : null;
+      if (!list) {
+        leaf(false, false);
+        for (let i = 0; i < value.length; i++) leaf(false, false);
+        return;
+      }
+      leaf(true, list.length === value.length);
+      value.forEach((v, i) => leaf(i < list.length, i < list.length && !isPlainObject(v) && !Array.isArray(v) && canon(list[i]) === canon(v)));
       return;
     }
     if (isPlainObject(value)) {
