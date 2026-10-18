@@ -700,6 +700,17 @@ const TOOLING = /^(?:typescript|tsx|ts-node|nodemon|@types\/.+|eslint.*|@typescr
  * (a `cds` section in package.json, or a `.cdsrc.json`).
  */
 const CAP_CONFIGURED = /^(?:@cap-js\/[\w.-]+|@sap\/xssec)$/;
+/**
+ * The packages of that list that are used only when the configuration names what they serve — the database kind of
+ * `@cap-js/hana` and `@cap-js/postgres`, the authentication kinds that run on `@sap/xssec` — so a configuration that
+ * names neither does not excuse them (QA 3adfcf87ca21). `@cap-js/sqlite` is the development database `cds` takes by
+ * default, and the other `@cap-js/*` packages are plugins `cds` loads by being declared: both stay excused.
+ */
+const CAP_CONFIGURED_BY: Readonly<Record<string, RegExp>> = {
+  '@cap-js/hana': /:\s*"hana"/,
+  '@cap-js/postgres': /:\s*"postgres"/,
+  '@sap/xssec': /:\s*"(?:xsuaa|ias|jwt)"/,
+};
 
 function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFinding[] {
   const out: GeneratedCodeLintFinding[] = [];
@@ -731,10 +742,13 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
   const capConfigured =
     ('@sap/cds' in (pkg.dependencies ?? {}) || '@sap/cds' in (pkg.devDependencies ?? {})) &&
     ((typeof pkg.cds === 'object' && pkg.cds !== null) || files.some((f) => f.path === '.cdsrc.json'));
+  const cdsConfig = capConfigured
+    ? [JSON.stringify(pkg.cds ?? {}), ...files.filter((f) => f.path === '.cdsrc.json').map((f) => f.content)].join('\n')
+    : '';
   for (const block of ['dependencies', 'devDependencies'] as const) {
     for (const name of Object.keys(pkg[block] ?? {})) {
       if (TOOLING.test(name)) continue;
-      if (capConfigured && CAP_CONFIGURED.test(name)) continue;
+      if (capConfigured && CAP_CONFIGURED.test(name) && (CAP_CONFIGURED_BY[name]?.test(cdsConfig) ?? true)) continue;
       if (used.has(name) || strings.has(name)) continue;
       if (new RegExp(`(?:^|[\\s;&|/])${escapeRe(name)}(?:$|[\\s;&|])`).test(scripts)) continue;
       const idx = lines.findIndex((l) => l.includes(`"${name}"`));
