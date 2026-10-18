@@ -1,4 +1,5 @@
 import { readStatements, type AbapStatement } from './statement-reader';
+import { formalParameterNames } from './call-graph';
 
 /**
  * The original's contract as its source states it — the checks that refuse,
@@ -257,10 +258,25 @@ export function readOriginalContract(source: string): OriginalContract {
       return global.get(name);
     },
   };
+  //
+  // The formal parameters of a FORM, and of a method as its METHODS
+  // declaration names them, shadow a global of the same name in the procedure
+  // the same way (QA delta of 73b8cad63d3e). A method name declared in two
+  // classes shadows the parameters of both: which class a METHOD belongs to
+  // is not read here.
+  const methodParameters = new Map<string, string[]>();
+  for (const statement of statements) {
+    const name = /^(?:CLASS-)?METHODS\s*:?\s*([\w/]+)/i.exec(statement.text)?.[1]?.toLowerCase();
+    if (name) methodParameters.set(name, [...(methodParameters.get(name) ?? []), ...formalParameterNames(statement)]);
+  }
   for (const statement of statements) {
     if (statement.nativeSql) continue;
-    if (PROCEDURE_OPENS.has(statement.keyword)) local = new Map();
-    else if (PROCEDURE_CLOSES.has(statement.keyword)) local = null;
+    if (PROCEDURE_OPENS.has(statement.keyword)) {
+      local = new Map();
+      const method = statement.keyword === 'METHOD' ? /^METHOD\s+(?:[\w/]+~)?([\w/]+)/i.exec(statement.text)?.[1]?.toLowerCase() : undefined;
+      const parameters = statement.keyword === 'FORM' ? formalParameterNames(statement) : method ? methodParameters.get(method) ?? [] : [];
+      for (const p of parameters) local.set(p.toLowerCase(), null);
+    } else if (PROCEDURE_CLOSES.has(statement.keyword)) local = null;
     const d = decimalOf(statement) ?? aliasOf(statement, known);
     if (d) {
       decimals.push(d);

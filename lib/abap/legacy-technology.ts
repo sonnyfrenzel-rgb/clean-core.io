@@ -59,7 +59,15 @@ export interface LegacyTechnologyUse {
 
 const MGW_SUPER = /^\/IWBEP\/CL_MGW_(?:PUSH_)?ABS_(?:DATA|MODEL)$/i;
 
-export function readLegacyTechnology(source: string, statements: AbapStatement[] = readStatements(source)): LegacyTechnologyUse[] {
+/**
+ * `engineReads` — from engine 3.0.18 (`ENGINE_READS_FROM`): every CDS view
+ * whose annotations generate a BOPF object is reported, not only the first.
+ */
+export function readLegacyTechnology(
+  source: string,
+  statements: AbapStatement[] = readStatements(source),
+  options: { engineReads?: boolean } = {},
+): LegacyTechnologyUse[] {
   const uses: LegacyTechnologyUse[] = [];
 
   /* -------------------------------------------------------------- BOPF */
@@ -136,7 +144,7 @@ export function readLegacyTechnology(source: string, statements: AbapStatement[]
   }
 
   /* -------------------------------------------- CDS source (DDL) lines */
-  uses.push(...readCdsSource(source));
+  uses.push(...readCdsSource(source, options.engineReads === true));
 
   return uses.sort((a, b) => a.lineStart - b.lineStart);
 }
@@ -182,7 +190,7 @@ function cdsCodeLines(source: string): string[] {
   return out;
 }
 
-function readCdsSource(source: string): LegacyTechnologyUse[] {
+function readCdsSource(source: string, perView: boolean): LegacyTechnologyUse[] {
   const lines = cdsCodeLines(source);
   const uses: LegacyTechnologyUse[] = [];
   const nameAfter = (from: number, re: RegExp): string | undefined => {
@@ -211,8 +219,11 @@ function readCdsSource(source: string): LegacyTechnologyUse[] {
     }
     // A CDS view whose annotations generate a BOPF business object.
     if (/^\s*@ObjectModel\.(?:transactionalProcessingEnabled|writeActivePersistence|writeDraftPersistence)\s*:/i.test(lines[i])) {
-      if (uses.some((u) => u.kind === 'bopf' && !u.sapObject)) continue;
       const view = nameAfter(i, /\bdefine\s+(?:root\s+)?view\s+(?:entity\s+)?([\w/]+)/i);
+      // One use per view (from 3.0.18): a second annotation of the same view
+      // adds nothing, a second view is a second object. Before, the first
+      // annotation of the source stood for all of them.
+      if (uses.some((u) => u.kind === 'bopf' && !u.sapObject && (!perView || u.customObject === view))) continue;
       uses.push({
         kind: 'bopf',
         lineStart: i + 1,

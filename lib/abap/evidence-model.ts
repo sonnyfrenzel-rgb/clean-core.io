@@ -12,6 +12,7 @@ import { BTP } from '../sap-naming';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
 import { precisionFixesApply } from './precision-fixes-gate';
+import { engineReadsApply } from './engine-reads-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { gateOfLine, readConstantGates } from './constant-gates';
 import { readSecurityReviewTasksFrom } from './security-review';
@@ -395,6 +396,9 @@ export function buildAbapEvidence(
   const guideline = guidelineChecksApply(engineVersion === undefined ? APP_VERSION : engineVersion);
   // From 3.0.13 (`PRECISION_FIXES_FROM`); a run of an earlier engine keeps what it signed.
   const fixes = precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion);
+  // From 3.0.18 (`ENGINE_READS_FROM`): the engine says only what it read; a run
+  // of an earlier engine keeps what it signed.
+  const reads = engineReadsApply(engineVersion === undefined ? APP_VERSION : engineVersion);
   // From 3.0.13: the statements read once for the engine rules, and the program
   // units they stand in — the program an enhancement point is declared in
   // decides whether it is the customer's own.
@@ -970,7 +974,13 @@ export function buildAbapEvidence(
     }
     const guiModule = guideline ? calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)') : null;
     if (guideline && (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText))) {
-      const direction = guiModule
+      // From 3.0.18 (`ENGINE_READS_FROM`) a file-picker dialog is what it is: the
+      // user picks a path, and no file moves through this call.
+      const dialog = reads && !guiModule
+        && /\b(?:FILE_OPEN_DIALOG|FILE_SAVE_DIALOG|DIRECTORY_BROWSE)\b/i.test(codeText)
+        && !/\b(?:GUI_UPLOAD|GUI_DOWNLOAD)\b/i.test(codeText);
+      const direction = dialog ? 'dialog'
+        : guiModule
         ? (/UPLOAD/.test(guiModule) ? 'upload' : 'download')
         : /\b(?:GUI_UPLOAD|FILE_OPEN_DIALOG)\b/i.test(codeText) && !/\b(?:GUI_DOWNLOAD|FILE_SAVE_DIALOG)\b/i.test(codeText)
           ? 'upload'
@@ -986,7 +996,9 @@ export function buildAbapEvidence(
         objectType: guiModule ? 'Function Module' : 'Class',
         lineStart: stmt.line,
         snippet: text,
-        technicalDetail: direction === 'upload'
+        technicalDetail: direction === 'dialog'
+          ? 'Opens a file or folder selection dialog on the user\'s PC through the SAP GUI frontend services (cl_gui_frontend_services): the user picks a path; this call transfers no file.'
+          : direction === 'upload'
           ? 'Reads a file from the user\'s PC through the SAP GUI frontend services (GUI_UPLOAD, WS_UPLOAD or cl_gui_frontend_services).'
           : direction === 'download'
             ? 'Writes a file to the user\'s PC through the SAP GUI frontend services (GUI_DOWNLOAD, WS_DOWNLOAD or cl_gui_frontend_services).'
@@ -996,7 +1008,9 @@ export function buildAbapEvidence(
         cleanCoreImpact: listedClassicApi(guiModule ?? 'CL_GUI_FRONTEND_SERVICES')
           ? `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. SAP lists ${guiModule ?? 'CL_GUI_FRONTEND_SERVICES'} as a classic API, and SAP Note 3578329 counts SAP GUI technology used through classic APIs as clean core level B: the transfer may stay while the users work in SAP GUI.`
           : `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. ${guiModule} is not on SAP's list of classic APIs (GUI_UPLOAD, GUI_DOWNLOAD and CL_GUI_FRONTEND_SERVICES are), so it is not level B under SAP Note 3578329.`,
-        recommendation: direction === 'download'
+        recommendation: direction === 'dialog'
+          ? 'Replace the path selection with the file selection of a Fiori upload control (on-stack); where the program then transfers the file, that transfer is its own finding.'
+          : direction === 'download'
           ? 'Replace the download with the export of a Fiori Elements list report backed by a RAP service — on-stack; no separate runtime is needed for it.'
           : direction === 'upload'
             ? 'Replace the upload with a RAP large object (attachment) field and a Fiori upload control (S/4HANA 2022 or later) — on-stack. A side-by-side service only where a requirement the code does not show calls for one (external users, files from several systems).'
@@ -1428,7 +1442,7 @@ export function buildAbapEvidence(
     const adbcLines = dependencies.adbc.map((execution) => execution.line);
     // One reading of the statements for the three detectors.
     const read = readStatements(code);
-    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines, precisionFixes: fixes })) {
+    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines, precisionFixes: fixes, engineReads: reads })) {
       addFinding({
         kind: 'security-review',
         title: `Security review: ${task.title}`,
@@ -1492,7 +1506,7 @@ export function buildAbapEvidence(
       });
     }
 
-    for (const use of readLegacyTechnology(code, read)) {
+    for (const use of readLegacyTechnology(code, read, { engineReads: reads })) {
       const more = use.lines.length > 1 ? ` It is used on ${use.lines.length} lines (${use.lines.slice(0, 8).join(', ')}${use.lines.length > 8 ? ', …' : ''}).` : '';
       if (use.kind === 'bopf') {
         addFinding({
@@ -1560,7 +1574,7 @@ export function buildAbapEvidence(
     // A value only stored (erdat = sy-datum, a created-on stamp) decides
     // nothing here: it is one note for the program, not a finding (owner
     // decision 14.10.2026).
-    const allTimeUses = readSystemTimeUses(read, units);
+    const allTimeUses = readSystemTimeUses(read, units, { engineReads: reads });
     const decisions = allTimeUses.filter((u) => u.use !== 'write');
     const USE_WORDS: Record<string, string> = {
       comparison: 'compared', deadline: 'used for a deadline', 'job-schedule': 'used to schedule a job (JOB_CLOSE)',
@@ -1601,7 +1615,7 @@ export function buildAbapEvidence(
     // The methods of one BAdI implementation are one hook: grouped by class and
     // interface, so a BAdI with fourteen methods is one finding, not fourteen.
     const hookGroups: Array<{ kind: string; name: string; block: number; members: ReturnType<typeof readHookImplementations> }> = [];
-    for (const hook of readHookImplementations(read, fileName)) {
+    for (const hook of readHookImplementations(read, fileName, { engineReads: reads })) {
       const name = hook.kind === 'badi' ? `${hook.owner ? `${hook.owner} · ` : ''}${hook.name.split('~')[0]}` : hook.name;
       // One CLASS … IMPLEMENTATION block and one interface make one group.
       const block = hook.ownerBlock ?? 0;
@@ -1669,7 +1683,7 @@ export function buildAbapEvidence(
     }
 
     // (4) ABAP proxies, and the question behind every interface.
-    for (const proxy of readAbapProxies(read)) {
+    for (const proxy of readAbapProxies(read, { engineReads: reads })) {
       addFinding({
         kind: 'abap-proxy',
         title: `ABAP ${proxy.direction} proxy ${proxy.name}`,
@@ -1679,8 +1693,11 @@ export function buildAbapEvidence(
         objectType: proxy.direction === 'consumer' ? 'ABAP Consumer Proxy' : 'ABAP Provider Proxy',
         lineStart: proxy.lineStart,
         snippet: statements.find((s) => s.line === proxy.lineStart)?.text.trim() ?? proxy.name,
+        // From 3.0.18 a proxy class the source only defines is not said to be called.
         technicalDetail: proxy.direction === 'consumer'
-          ? `${proxy.name} is a generated consumer proxy: the program calls a service of another system through it.`
+          ? proxy.called === false
+            ? `${proxy.name} is a generated consumer proxy (it inherits from CL_PROXY_CLIENT) for a service of another system. This source defines it and shows no call of it.`
+            : `${proxy.name} is a generated consumer proxy: the program calls a service of another system through it.`
           : `${proxy.name} is the generated interface of a provider (inbound) proxy: another system calls this code through it.`,
         cleanCoreImpact: 'A proxy class is generated from the service interface (Enterprise Services Repository or WSDL) and regenerated in the target system against that definition — it is not moved as code. The implementation around it is.',
         recommendation: 'Regenerate the proxy in the target system from the service definition instead of transporting the generated class. First ask the process owner whether the process behind this interface still runs: if nothing calls it or uses its answer any more, it is a candidate to retire rather than to move.',
@@ -1703,7 +1720,7 @@ export function buildAbapEvidence(
   // constant gate is marked, never dropped — it keeps its points, and the table
   // says why no run reaches it. A run of an earlier engine keeps the findings it signed.
   if (precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion)) {
-    const gates = readConstantGates(code);
+    const gates = readConstantGates(code, { engineReads: reads });
     if (gates.unreachable.length) {
       for (const finding of findings) {
         const gate = gateOfLine(gates, finding.lineStart);

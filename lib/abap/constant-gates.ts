@@ -1,24 +1,24 @@
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
 import { containerAt, readBlocks, type Container } from './block-structure';
 import { readControlFlowFrom } from './control-flow';
+import { formalParameterNames } from './call-graph';
 
 /**
- * Code a constant locks away (roadmap 3.0.13, SD review of ZSD_RETURN_CREDIT_RECON,
- * 14.10.2026, CR-A1/D01).
+ * Code a constant locks away (roadmap 3.0.13, SD review, 14.10.2026, CR-A1/D01).
  *
- * The reviewed program carries a live probe of sales orders behind
+ * A program can carry a live path behind a switch that is off:
  *
- *     CONSTANTS gc_live_probe TYPE ty_flag VALUE space.
+ *     CONSTANTS gc_live TYPE c LENGTH 1 VALUE space.
  *     …
- *     IF gc_live_probe <> 'X'.
- *       MESSAGE 'Live adapter deliberately disabled …' TYPE 'E'.
+ *     IF gc_live <> 'X'.
+ *       MESSAGE 'Live path disabled' TYPE 'E'.
  *     ENDIF.
  *     SELECT … FROM vbak …
  *
  * The constant never equals `'X'`, so the `IF` always holds, the error message
- * always ends the run, and every read after `ENDIF` is code no run reaches. The
- * documentation led with those reads ("A read-only report on sales orders …,
- * selected by document") — a description of the one path that cannot run.
+ * always ends the run, and every read after `ENDIF` is code no run reaches. A
+ * documentation that leads with those reads describes the one path that cannot
+ * run.
  *
  * This reads such gates, and nothing more clever: a condition that compares
  * one constant this source declares once — by `=`, `<>` (or `EQ`/`NE`),
@@ -39,6 +39,19 @@ import { readControlFlowFrom } from './control-flow';
  * parameter, is not read: which declaration wins is scope, and scope is not
  * read here. A condition joined by `AND`/`OR`, a `CASE`, or a gate at program
  * level outside any routine or event block is not read either.
+ *
+ * From engine 3.0.18 (`ENGINE_READS_FROM`, `engineReads`), the stop is read
+ * only as far as the source shows it (QA delta of 73b8cad63d3e):
+ *
+ *   - a gate inside another block — an `IF` arm, a loop, a `TRY`, a `WHEN` —
+ *     is reached only on some paths: it locks away the rest of that arm of the
+ *     block, never the rest of the routine, and the routine is not one that
+ *     always stops (`enclosed`);
+ *   - `RAISE EXCEPTION` inside a `TRY` may be caught there, and execution goes
+ *     on in the `CATCH`: it is no stop (a classic `RAISE` and `RAISE SHORTDUMP`
+ *     are not caught by a `CATCH`, and still are);
+ *   - a parameter of a `FORM`, `METHODS` or `CLASS-METHODS` declaration is a
+ *     declaration of its name: a constant of that name is not read.
  *
  * Pure: the statement reader and the block structure, no I/O.
  */
@@ -61,6 +74,16 @@ export interface ConstantGate extends SourceRange {
   /** The routine or event block the gate stands in (upper-cased name), with its kind. */
   routine: string | null;
   routineKind: Container['kind'] | null;
+  /**
+   * From 3.0.18: the gate stands inside another block of the routine, so not
+   * every run of the routine reaches it — its stop ends the runs that do.
+   */
+  enclosed?: true;
+}
+
+export interface ConstantGateOptions {
+  /** From engine 3.0.18 (`ENGINE_READS_FROM`): read the stop and the scope as the module comment says. */
+  engineReads?: boolean;
 }
 
 export interface UnreachableRegion extends SourceRange {
@@ -106,11 +129,15 @@ function equal(a: Value, b: Value): boolean | null {
 const DECLARATION = /^CONSTANTS\s+([\w/]+)\s+(?:TYPE|LIKE)\s+[\s\S]*?\bVALUE\s+('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+|space|abap_true|abap_false|IS\s+INITIAL)\s*$/i;
 const NAME_DECLARED = /^(?:DATA|CONSTANTS|PARAMETERS|PARAMETER|SELECT-OPTIONS|STATICS|CLASS-DATA|FIELD-SYMBOLS|TABLES|RANGES)\s+([<>\w/]+)/i;
 
-/** Constants the source declares exactly once and no other declaration shadows, with their values. */
-function readConstants(statements: readonly AbapStatement[]): Map<string, { value: Value; written: string; line: number }> {
+/**
+ * Constants the source declares exactly once and no other declaration shadows, with their values.
+ * With `parameters` (from 3.0.18) a formal parameter of a FORM or a method declaration shadows too.
+ */
+function readConstants(statements: readonly AbapStatement[], parameters: boolean): Map<string, { value: Value; written: string; line: number }> {
   const declared = new Map<string, number>();
   const constants = new Map<string, { value: Value; written: string; line: number }>();
   for (const s of statements) {
+    if (parameters) for (const p of formalParameterNames(s)) declared.set(p, (declared.get(p) ?? 0) + 1);
     const name = NAME_DECLARED.exec(s.text)?.[1]?.toUpperCase();
     if (!name || /\bBEGIN\s+OF\b/i.test(s.text)) continue;
     declared.set(name, (declared.get(name) ?? 0) + 1);
@@ -177,16 +204,21 @@ function stopOf(s: AbapStatement, insideLoop: boolean): GateStop | null {
 }
 
 const LOOP_KINDS = new Set(['loop', 'do', 'while', 'select', 'provide']);
+/** Blocks inside a routine that not every run enters, or enters more than once (3.0.18). */
+const FLOW_KINDS = new Set(['if', 'case', 'loop', 'do', 'while', 'try', 'select', 'at', 'provide']);
+/** The statements that open the next arm of a block (3.0.18). */
+const ARM_HEADERS = new Set(['ELSE', 'ELSEIF', 'WHEN', 'CATCH', 'CLEANUP']);
 
 /** Read the constant gates of one source. Empty when it has none — the common case. */
-export function readConstantGates(source: string): ConstantGateReport {
+export function readConstantGates(source: string, options: ConstantGateOptions = {}): ConstantGateReport {
+  const reads = options.engineReads === true;
   let statements: AbapStatement[];
   try {
     statements = readStatements(source);
   } catch {
     return EMPTY;
   }
-  const constants = readConstants(statements);
+  const constants = readConstants(statements, reads);
   if (constants.size === 0) return EMPTY;
   const structure = readBlocks(statements);
   const { branches } = readControlFlowFrom(statements, structure);
@@ -204,12 +236,18 @@ export function readConstantGates(source: string): ConstantGateReport {
     const depth = structure.enclosing[branch.openIndex].length;
     const insideLoop = structure.enclosing[branch.openIndex].some((b) => LOOP_KINDS.has(b.kind));
     const nextHeader = branch.arms[1]?.headerIndex ?? branch.closeIndex;
+    // From 3.0.18: the blocks of the routine around the gate. The innermost
+    // bounds what a stop locks away; a TRY among them may catch a raise.
+    const around = reads ? structure.enclosing[branch.openIndex].filter((b) => FLOW_KINDS.has(b.kind)) : [];
+    const inTry = around.some((b) => b.kind === 'try');
     let stop: ConstantGate['stop'] = null;
     let stopEnd = 0;
     if (outcome.always) {
       for (let i = head.headerIndex + 1; i < nextHeader; i++) {
         if (structure.enclosing[i].length !== depth + 1) continue;
         const kind = stopOf(statements[i], insideLoop);
+        // A class-based exception raised inside a TRY may be caught there: no stop.
+        if (kind === 'raise' && inTry && /^RAISE\s+(?:RESUMABLE\s+)?EXCEPTION\b/i.test(statements[i].text)) break;
         if (kind) {
           stop = { kind, line: statements[i].lineStart, text: statements[i].text };
           stopEnd = statements[i].lineEnd;
@@ -230,6 +268,7 @@ export function readConstantGates(source: string): ConstantGateReport {
       routineKind: container.kind,
       lineStart: head.header.lineStart,
       lineEnd: head.header.lineEnd,
+      ...(around.length ? { enclosed: true as const } : {}),
     });
     const closeLine = statements[branch.closeIndex].lineEnd;
     if (outcome.always) {
@@ -243,10 +282,24 @@ export function readConstantGates(source: string): ConstantGateReport {
         // The rest of the arm after the statement that ends the run (QA 9992f1339e12)…
         const armEnd = statements[nextHeader].lineStart - 1;
         if (armEnd > stopEnd) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: stopEnd + 1, lineEnd: armEnd });
-        // …and the rest of the routine, up to the statement that closes it.
-        const end = container.kind === 'event' ? container.lineEnd : container.lineEnd - 1;
-        if (end > closeLine) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: closeLine + 1, lineEnd: end });
-        if (container.kind !== 'event') stopping.add(container.name);
+        if (around.length) {
+          // …and, for a gate inside another block (3.0.18), the rest of the
+          // arm it stands in: the runs that skip the block go on after it.
+          const inner = around[around.length - 1];
+          let blockArmEnd = statements[inner.closeIndex].lineStart - 1;
+          for (let i = branch.closeIndex + 1; i < inner.closeIndex; i++) {
+            if (structure.enclosing[i].length === depth && ARM_HEADERS.has(statements[i].keyword)) {
+              blockArmEnd = statements[i].lineStart - 1;
+              break;
+            }
+          }
+          if (blockArmEnd > closeLine) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: closeLine + 1, lineEnd: blockArmEnd });
+        } else {
+          // …and the rest of the routine, up to the statement that closes it.
+          const end = container.kind === 'event' ? container.lineEnd : container.lineEnd - 1;
+          if (end > closeLine) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: closeLine + 1, lineEnd: end });
+          if (container.kind !== 'event') stopping.add(container.name);
+        }
       }
     } else {
       const from = head.header.lineEnd + 1;
@@ -280,9 +333,8 @@ export function gateOfLine(report: ConstantGateReport, line: number): ConstantGa
 }
 
 /**
- * The gate in one sentence, for a reader: "the constant GC_LIVE_PROBE is
- * space, so the condition at L1332 always holds and the error message at L1333
- * ends the run".
+ * The gate in one sentence, for a reader: "the constant GC_LIVE is space, so
+ * the condition at L12 always holds and the error message at L13 ends the run".
  */
 export function gateSentence(gate: ConstantGate): string {
   const value = /^space$/i.test(gate.value) ? 'space (blank)' : gate.value;

@@ -508,14 +508,17 @@ export function gradeFromSapStatesForUse(s: SapObjectStates, use: ObjectUse | nu
  * object — kept apart from the grade on purpose (roadmap 3.0.13, "Level C/D
  * against what ATC reports"; `docs/design/abcd-vs-atc.md`).
  *
- * The grade is our merge of SAP's two files; the ATC check reads the
- * classification file first, and the public sources say it reports an object
- * that file lists as classic API as information (priority 3), one it lists as
- * noAPI as an error (priority 1), and an SAP object it does not list as
- * "internal API", a warning (priority 2) — whatever the release file says
- * about ABAP Cloud. Where no public source says what the check reports (a
- * deprecated object, a direct write, a type reference, the customer's own
- * objects, an estimate), the answer is "not determined", never a guess. Not
+ * The grade is our merge of SAP's two files. An object the release file calls
+ * released draws no finding, also where the classification file lists it as
+ * classic API (`docs/design/abcd-vs-atc.md` §3); otherwise the public sources
+ * say the check reports an object the classification file lists as classic API
+ * as information (priority 3), one it lists as noAPI as an error (priority 1),
+ * and an SAP object it does not list as "internal API", a warning (priority 2)
+ * — whatever else the release file says. Released and noAPI at once is a
+ * contradiction no source resolves. Where no public source says what the
+ * check reports (that contradiction, a deprecated object, a direct write, a
+ * type reference, the customer's own objects, an estimate), the answer is
+ * "not determined", never a guess. Not
  * verified in an SAP system yet: the doc above carries the recipe for that.
  *
  * Informational only: no grade is derived from it, so the level rule's
@@ -546,6 +549,12 @@ export function expectedAtcMessage(
   // messages of its own for database reads and updates, and no public source
   // we could read gives their priority (`docs/design/abcd-vs-atc.md`).
   if (g.use) return ATC_NOT_DETERMINED;
+  // Released and listed as noAPI at once: the two files contradict each other,
+  // and no public source says which one the check follows there — not
+  // determined, rather than "no finding" (QA delta of 73b8cad63d3e). Released
+  // and unlisted, or released and classic API, is "no finding": the release
+  // file answers released first (`docs/design/abcd-vs-atc.md` §3, rows 1–2).
+  if (g.cloudView === 'usable' && g.classicView === 'not-recommended') return ATC_NOT_DETERMINED;
   if (g.cloudView === 'usable') return { priority: 0, finding: null, text: 'ATC expected: no finding (released API)' };
   if (g.classicView === 'classic-api') return atcExpected(3, 'classic API');
   if (g.classicView === 'not-recommended') return atcExpected(1, 'noAPI');
