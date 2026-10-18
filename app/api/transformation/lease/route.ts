@@ -18,20 +18,21 @@ import { generationRevision, generationStateOf } from '@/lib/generation-revision
 import { platformContextOf } from '@/lib/transformation-context-build';
 import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import type { InputManifest } from '@/lib/input-manifest';
-import { LEASE_MAX_PLANNED_CALLS, isRunId, leaseView } from '@/lib/transformation/lease';
+import { LEASE_CODES, LEASE_MAX_PLANNED_CALLS, isRunId, leaseView } from '@/lib/transformation/lease';
 import { closeLease, confirmLeaseCharge, issueLease, readLeaseWindow, voidLease } from '@/lib/transformation/lease-store';
 
 /**
  * POST /api/transformation/lease — one generation's model budget
  * (`docs/design/engine-led-transformation.md` §11; owner decision 12.10.2026).
  *
- *   IN : { projectId, generationToken, plannedCalls, runId? }
+ *   IN : { projectId, generationToken, plannedCalls, runId }
  *   OUT: { lease: { projectId, leaseId, budget, used, expiresAt, maxInFlight }, reused }
  *
  * `runId` names one click of *Generate* (13.10.2026): the open lease is
  * returned only to the same run (a retry of this request); a new run gets a
  * new lease and the old one is superseded, so a restart never inherits the
- * in-flight slots of a cancelled run.
+ * in-flight slots of a cancelled run. It is required (3.0.18): without it a
+ * new run and a retry look the same, and two runs would share one lease.
  *
  * DELETE { projectId, leaseId } — *Cancel*: the owner closes the run's lease.
  * GET — the account's generations this hour: { used, limit, nextFreeInSeconds }.
@@ -112,8 +113,8 @@ export async function POST(req: NextRequest) {
     if (typeof generationToken !== 'string' || generationToken.length === 0 || generationToken.length > 256) {
       return NextResponse.json({ error: 'Name the generation this lease is for: generationToken.', code: 'no-generation-token' }, { status: 400 });
     }
-    if (runId !== undefined && !(isRunId(runId) && isFirestoreId(runId))) {
-      return NextResponse.json({ error: 'runId must be 8 to 64 letters, digits, - or _.', code: 'bad-request' }, { status: 400 });
+    if (!(isRunId(runId) && isFirestoreId(runId))) {
+      return NextResponse.json({ error: 'Name the run this lease is for: runId, 8 to 64 letters, digits, - or _.', code: 'bad-request' }, { status: 400 });
     }
     if (typeof plannedCalls !== 'number' || !Number.isInteger(plannedCalls) || plannedCalls < 1 || plannedCalls > LEASE_MAX_PLANNED_CALLS) {
       return NextResponse.json(
@@ -180,7 +181,18 @@ export async function POST(req: NextRequest) {
     // Issued unpaid (`charged: false`): until the charge below went through, a
     // concurrent retry of this run is answered lease-busy and a call under the
     // lease is refused, so nobody uses a lease whose charge may still fail.
-    const outcome = await issueLease(db, { projectId, uid: decodedToken.uid, generationToken, runId: isRunId(runId) ? runId : null, plannedCalls, now, charged: false });
+    // Issued against the project document read above (3.0.18): one that
+    // changed since the token was checked gets no lease and costs no charge.
+    const outcome = await issueLease(db, {
+      projectId,
+      uid: decodedToken.uid,
+      generationToken,
+      runId,
+      plannedCalls,
+      now,
+      charged: false,
+      against: { ref: snap.ref, updateTime: snap.updateTime },
+    });
     if (outcome.kind === 'refused') {
       return NextResponse.json(
         { error: outcome.error, code: outcome.code, ...(outcome.retryAfterSeconds ? { retryAfterSeconds: outcome.retryAfterSeconds } : {}) },
@@ -204,7 +216,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: q?.message || 'Too many requests.', code: 'model-hourly-limit' }, { status: q?.status || 429 });
     }
     const paid = await confirmLeaseCharge(db, { projectId, leaseId: outcome.lease.leaseId });
-    return NextResponse.json({ lease: leaseView(paid ?? outcome.lease), reused: false });
+    // A lease closed (by *Cancel*) or gone before its charge was confirmed is
+    // no lease to generate under (3.0.18): said as a failure, never as success.
+    if (!paid || paid.status !== 'open') {
+      return NextResponse.json(
+        { error: 'The generation lease was closed before it could be used. Nothing was generated — generate again.', code: LEASE_CODES.closed },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json({ lease: leaseView(paid), reused: false });
   } catch (err: unknown) {
     logger.error('transformation lease failed', { route: 'api/transformation/lease', error: errMessage(err) });
     return NextResponse.json({ error: 'The generation could not be prepared. Please try again.' }, { status: 500 });

@@ -445,7 +445,8 @@ test.describe('the lease route', () => {
     expect(confirm).toBeGreaterThan(charge);
     // The void of a refused charge returns before the confirmation.
     expect(at('voidLease(db,')).toBeLessThan(confirm);
-    expect(src.slice(confirm)).toMatch(/^confirmLeaseCharge[\s\S]*?leaseView\(paid \?\? outcome\.lease\), reused: false/);
+    // 3.0.18: a confirmation that finds no open lease is a failure, never the unconfirmed lease.
+    expect(src.slice(confirm)).toMatch(/^confirmLeaseCharge[\s\S]*?if \(!paid \|\| paid\.status !== 'open'\)[\s\S]*?leaseView\(paid\), reused: false/);
   });
 
   test('the route is behind the second factor in the gated-route list', () => {
@@ -453,8 +454,9 @@ test.describe('the lease route', () => {
   });
 
   test('a lease is issued to the run the request names; Cancel closes it behind auth and the second factor (13.10.2026)', () => {
-    expect(src).toMatch(/issueLease\(db, \{ projectId, uid: decodedToken\.uid, generationToken, runId: isRunId\(runId\) \? runId : null, plannedCalls, now, charged: false \}\)/);
-    expect(src).toMatch(/if \(runId !== undefined && !\(isRunId\(runId\) && isFirestoreId\(runId\)\)\) \{\s*return NextResponse\.json\(/);
+    // 3.0.18: the run id is required — without it a new run and a retry look the same.
+    expect(src).toMatch(/issueLease\(db, \{\s*projectId,\s*uid: decodedToken\.uid,\s*generationToken,\s*runId,\s*plannedCalls,\s*now,\s*charged: false,/);
+    expect(src).toMatch(/if \(!\(isRunId\(runId\) && isFirestoreId\(runId\)\)\) \{\s*return NextResponse\.json\(/);
     const del = src.slice(src.indexOf('export async function DELETE'));
     expect(del).toContain('signedInOwner(req)');
     expect(del).toContain('closeLease(db, { projectId, leaseId }, { uid: who.uid })');
@@ -484,7 +486,7 @@ test.describe('the lease route', () => {
 
   test('the page sends a fresh run id per click and closes the lease on Cancel', () => {
     const page = code('app/(app)/project/[projectId]/transformation/page.tsx');
-    expect(page).toMatch(/requestGenerationLease\(projectId as string, generationToken, [^\n]*, newGenerationRunId\(\)\)/);
+    expect(page).toMatch(/requestGenerationLease\(projectId as string, generationToken, [^\n]*, newGenerationRunId\(\), controller\.signal\)/);
     expect(page).toContain('closeLeaseRef.current = () => closeGenerationLease(bought);');
     const cancel = page.slice(page.indexOf('const cancelGeneration = useCallback'), page.indexOf('const cancelGeneration = useCallback') + 400);
     expect(cancel).toMatch(/abortRef\.current\.abort\(\);\s*closeLeaseRef\.current\?\.\(\);/);

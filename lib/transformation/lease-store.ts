@@ -1,4 +1,4 @@
-import type { Firestore, Transaction } from 'firebase-admin/firestore';
+import type { DocumentReference, Firestore, Timestamp, Transaction } from 'firebase-admin/firestore';
 import {
   LEASE_COLLECTION,
   LEASE_WINDOW_COLLECTION,
@@ -35,6 +35,20 @@ export type IssueOutcome =
   | { kind: 'issued'; lease: LeaseRecord; superseded: string[] }
   | { kind: 'refused'; status: number; code: string; error: string; retryAfterSeconds?: number };
 
+/** The project document as the caller read and checked it: issued only while it is still that version (3.0.18). */
+export interface IssuedAgainst {
+  ref: DocumentReference;
+  updateTime: Timestamp | undefined;
+}
+
+/** The refusal of an issue whose project changed after the caller checked its generation token. */
+export const PROJECT_MOVED_REFUSAL = {
+  kind: 'refused' as const,
+  status: 409,
+  code: 'generation-stale',
+  error: 'The project changed after this generation was prepared. Reload the page and generate from the current state.',
+};
+
 /**
  * Issue a lease for one generation, or return the open one of the same
  * generation. The caller has checked the project, its owner and the
@@ -56,13 +70,26 @@ export async function issueLease(
      * through; until then it is neither reused nor usable (roadmap 3.0.13).
      */
     charged: boolean;
+    /**
+     * The project document the caller checked the generation token against (3.0.18). Read again in this
+     * transaction: a project that changed in between gets no lease, so no charge is taken for a run whose
+     * token is already stale. Omitted (the store specs): not checked.
+     */
+    against?: IssuedAgainst;
   },
 ): Promise<IssueOutcome> {
   const col = leasesOf(db, args.projectId);
   const winRef = windowOf(db, args.uid);
   const newRef = col.doc();
   return db.runTransaction(async (tx: Transaction): Promise<IssueOutcome> => {
-    const [openSnap, winSnap] = await Promise.all([tx.get(col.where('status', '==', 'open')), tx.get(winRef)]);
+    const [openSnap, winSnap, projectSnap] = await Promise.all([
+      tx.get(col.where('status', '==', 'open')),
+      tx.get(winRef),
+      args.against ? tx.get(args.against.ref) : Promise.resolve(null),
+    ]);
+    if (args.against && !sameVersion(projectSnap?.exists ? projectSnap.updateTime : undefined, args.against.updateTime)) {
+      return PROJECT_MOVED_REFUSAL;
+    }
     const open = openSnap.docs.map((d) => d.data());
     const windowIssued = winSnap.exists && Array.isArray(winSnap.data()?.issued) ? (winSnap.data()!.issued as unknown[]) : [];
     const decision = decideLeaseIssue({
@@ -94,6 +121,11 @@ export async function issueLease(
     tx.set(winRef, { issued: decision.window, expiresAt: new Date(args.now + LEASE_WINDOW_MS) });
     return { kind: 'issued', lease, superseded: decision.supersede };
   });
+}
+
+/** Both known and equal: a document read twice is the same version only when its update times say so. */
+function sameVersion(now: Timestamp | undefined, then: Timestamp | undefined): boolean {
+  return Boolean(now && then && now.isEqual(then));
 }
 
 /**

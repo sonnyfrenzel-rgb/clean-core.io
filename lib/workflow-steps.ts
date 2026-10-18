@@ -503,6 +503,9 @@ export function staleness(project: Project | null): Staleness {
  * (`Staleness.context`). Both have to be known; the digest is the server's on
  * both sides — written into the binding by the store, read by the loader.
  */
+/** What a suite was written for when only the context of its package moved (3.0.18) — never "a previous source". */
+export const CONTEXT_STALE_PACKAGE = 'code generated before a rule decision, the decision record or an accepted requirement changed';
+
 function contextMoved(project: Project): boolean {
   const built = storedContextDigest(project);
   const now = project._contextDigest;
@@ -1196,7 +1199,12 @@ export function workflowSteps(project: Project | null): RailStep[] {
     hasDocs && s.docs ? stale(documentation, `Written for ${prevBasis} — regenerate it.`) : documentation,
     tests.total > 0 && s.tests
       ? stale(testing, `Test cases written for ${s.testsPackage ? PREVIOUS_PACKAGE : prevBasis} — regenerate the suite.`)
-      : testing,
+      : tests.total > 0 && hasGenerated && s.context
+        // The suite tests a package that is stale itself (3.0.18): it cannot
+        // stand as current, or be closed, while the code it tests does not
+        // build on what is decided now.
+        ? stale(testing, `Test cases written for ${CONTEXT_STALE_PACKAGE} — regenerate the code, then the suite.`)
+        : testing,
     hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)
       ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
       : econScoreMoved
@@ -1255,6 +1263,10 @@ export function testingClosureBasis(project: Project | null): TestingClosureBasi
   }
   const testing = workflowSteps(project).find((s) => s.key === 'testing')!;
   if (testing.state === 'stale') {
+    const s = staleness(project);
+    if (!s.tests && s.context) {
+      return { ok: false, code: 'suite-stale', error: `The test suite was written for ${CONTEXT_STALE_PACKAGE}. Regenerate the code, then the suite.` };
+    }
     return { ok: false, code: 'suite-stale', error: `The test suite was written for ${testsPreviousBasis(project)}. Regenerate it first.` };
   }
   if (testing.state === 'done') {

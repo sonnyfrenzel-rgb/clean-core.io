@@ -66,8 +66,9 @@ async function tokenOf(request: APIRequestContext, projectId: string): Promise<s
   return body.generation.token as string;
 }
 
-const lease = (request: APIRequestContext, projectId: string, generationToken: string, as = owner.token) =>
-  request.post('/api/transformation/lease', { headers: headers(as), data: { projectId, generationToken, plannedCalls: 9 } });
+// One run id per project: the second request of the same run is a retry (reused); the route requires it (3.0.18).
+const lease = (request: APIRequestContext, projectId: string, generationToken: string, as = owner.token, runId = `run-${projectId}`) =>
+  request.post('/api/transformation/lease', { headers: headers(as), data: { projectId, generationToken, plannedCalls: 9, runId } });
 
 const unit: FillRequestUnit = {
   unitId: 'U01',

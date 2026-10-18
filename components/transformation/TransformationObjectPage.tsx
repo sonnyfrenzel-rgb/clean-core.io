@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Braces, Check, CircleDashed, Container, FileCode2, FileText, Folder, Layers, Boxes, FlaskConical } from 'lucide-react';
+import { ArrowRight, Braces, Check, ChevronRight, CircleDashed, Container, FileCode2, FileText, Folder, Layers, Boxes, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -537,7 +537,7 @@ export default function TransformationObjectPage({
                               {g.kind} · {g.files.length} {g.files.length === 1 ? 'file' : 'files'} · {g.lines} {g.lines === 1 ? 'line' : 'lines'}
                             </span>
                           </span>
-                          <span className="col-start-2 min-w-0 sm:col-start-auto" data-package-author={g.author}>
+                          <span className="col-start-2 flex min-w-0 items-center gap-2 sm:col-start-auto" data-package-author={g.author}>
                             {g.author === 'engine' ? (
                               <CcProvenanceChip value="reconstructed" note="built by the engine" />
                             ) : g.author === 'model' ? (
@@ -545,6 +545,8 @@ export default function TransformationObjectPage({
                             ) : (
                               <CcProvenanceChip value="proposed" />
                             )}
+                            {/* The row's disclosure cue (3.0.18): the native marker is hidden, so the chevron says the row opens, and turns with it. */}
+                            <ChevronRight size={16} aria-hidden={true} className="ml-auto shrink-0 text-cc-ink-muted transition-transform group-open:rotate-90" data-package-disclosure="" />
                           </span>
                         </summary>
                         <ul className="m-0 list-none border-t border-cc-line px-3 py-2">

@@ -12,8 +12,9 @@ import { fetchGenerationDecision } from '../lib/generation-contract-client';
  *   - *Cancel* while the contract is read ends that read: the generation's
  *     signal reaches `fetchGenerationDecision`, and an aborted read is a cancel
  *     (`AbortError`), never a refusal the screen would show as the contract's
- *     answer. The lease request stays un-aborted, so the lease its answer names
- *     can be closed (QA review of 4459238f2ef0);
+ *     answer. Since 3.0.18 the lease request is under the same signal: the wait
+ *     ends at once, and a lease that arrives after the cancel is closed by the
+ *     client (`tests/qa-3018-transformation.spec.ts`);
  *   - *Generate* waits until the plan before the click has loaded: `canStart`
  *     is false while it is read, and after a generation, until it is read again.
  *
@@ -82,13 +83,12 @@ test.describe('the contract read under the generation\'s signal', () => {
 });
 
 test.describe('the page', () => {
-  test('the generation and the plan read the contract under their own signal; the lease request has none', () => {
+  test('the generation and the plan read the contract under their own signal; the lease request under the generation\'s', () => {
     const src = page();
     const generation = src.slice(src.indexOf('const generateTransformation = useCallback'), src.indexOf('const planPending'));
     expect(generation).toContain('await fetchGenerationDecision(projectId as string, controller.signal);');
-    // The lease request is deliberately not aborted: its answer names the lease `finally` closes.
-    expect(generation).toMatch(/lease = await requestGenerationLease\(projectId as string, generationToken, [^;]*newGenerationRunId\(\)\);/);
-    expect(generation).not.toMatch(/requestGenerationLease\([^;]*signal/);
+    // 3.0.18: Cancel ends the wait for the lease; the client closes a lease that arrives after it.
+    expect(generation).toMatch(/lease = await requestGenerationLease\(projectId as string, generationToken, [^;]*newGenerationRunId\(\), controller\.signal\);/);
     const plan = src.slice(src.indexOf('if (!planWanted) return;'));
     expect(plan.slice(0, 600)).toContain('await fetchGenerationDecision(projectId as string, controller.signal);');
   });
@@ -96,7 +96,7 @@ test.describe('the page', () => {
   test('Generate waits while the plan is read, and after a generation until it is read again', () => {
     const src = page();
     expect(src).toContain("const planPending = planWanted && (planView === undefined || planView?.state === 'reading');");
-    expect(src).toContain('const canStart = canGenerate && planBlocked === null && !planPending;');
+    expect(src).toContain('const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;');
     // `planWanted` is known where `canStart` is computed.
     expect(src.indexOf('const planWanted =')).toBeLessThan(src.indexOf('const planPending ='));
     // A finished generation drops the plan it started from before reading it again.
