@@ -314,7 +314,8 @@ export default class ${service} extends cds.ApplicationService {
         return req.reject(500, 'RUN: the run stopped on an unexpected error inside a step; the service keeps running. The server log has the details.');
       }
       if (!a.ok) {
-        for (const e of a.errors) req.error(400, e.rule + ': ' + e.message, e.field ?? undefined);
+        // The line once: a check's message starts with its rule already (3.0.17 criterion 3, "L188: L188, L188: …").
+        for (const e of a.errors) req.error(400, e.message.startsWith(e.rule + ':') || e.message.startsWith(e.rule + ',') ? e.message : e.rule + ': ' + e.message, e.field ?? undefined);
         return undefined;
       }
       return answerOf(a);

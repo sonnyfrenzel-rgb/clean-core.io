@@ -29,7 +29,7 @@ test('the declarations come from the scaffold itself: interfaces with their fiel
   const prep = prepared();
   const decls = typeDeclarations(prep.scaffold.files);
   expect(decls.get('Selection')!.fields).toEqual(['stamp']);
-  expect(decls.get('RunState')!.fields).toEqual(['selection', 'records', 'rows', 'result', 'issues', 'notFilled', 'local']);
+  expect(decls.get('RunState')!.fields).toEqual(['selection', 'records', 'rows', 'result', 'issues', 'notFilled', 'local', 'handedIn', 'placed']);
   expect(decls.get('CheckConservationArgs')!.fields).toEqual(['cvCode']);
   expect(decls.get('StepResult')!.text).toBe('type StepResult = Refusal | void;');
   expect(decls.get('Refusal')!.text).toBe('class Refusal { constructor(errors: RefusalError[]) }');
@@ -78,7 +78,7 @@ test('a body that reads a field its parameter types do not have is refused — t
   const g = prep.plan.guards.find((x) => x.unitId === u.id)!;
   expect(parameterShapes(typeDeclarations(prep.scaffold.files), regionSignature(prep.scaffold.files, u.id)!)).toEqual({
     sel: ['stamp'],
-    st: ['selection', 'records', 'rows', 'result', 'issues', 'notFilled', 'local'],
+    st: ['selection', 'records', 'rows', 'result', 'issues', 'notFilled', 'local', 'handedIn', 'placed'],
     args: ['cvCode'],
   });
   const call = `  if (${g.helper}(sel, st, null, { lvQty })) { args.cvCode.value = 'RETURNS_EXCEED_SHIPMENT'; return; }`;

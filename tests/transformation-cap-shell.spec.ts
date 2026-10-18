@@ -59,7 +59,7 @@ test.describe('the CAP shell: cds compile and the type check, 0 errors', () => {
       const paths = p.scaffold.files.map((f) => f.path);
       for (const must of ['package.json', 'db/schema.cds', 'srv/service.cds', 'srv/service.ts', 'srv/service.js', 'mta.yaml', 'xs-security.json']) expect(paths, must).toContain(must);
       expect(p.scaffold.version).toBe(SCAFFOLD_VERSION);
-      expect(SCAFFOLD_VERSION).toBe(15);
+      expect(SCAFFOLD_VERSION).toBe(16);
 
       const cds = cdsCompileCandidate(p.scaffold.files);
       expect(cds.ran, cds.ran ? '' : cds.reason).toBe(true);

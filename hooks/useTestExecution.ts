@@ -12,6 +12,7 @@ import type { TestRunFailure } from '@/lib/testing-closure';
 import { isMutationProbeReport, probeBasis, type MutationProbeReport } from '@/lib/testing-mutation';
 import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { testFailureFactsBlock } from '@/lib/test-failure-facts';
 import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
@@ -133,8 +134,10 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
 
   const explainTestFailure = async (rawOutput: string, errorOutput: string) => {
     try {
-      const prompt = `The following test execution failed. Please explain to a non-technical user WHY it failed in 2-3 short sentences. Focus on the business logic mismatch or the technical issue, not the stack trace.
-      
+      // The refusals the output names (3.0.17 criterion 3): the model is handed them, so it cannot invent a cause.
+      const facts = testFailureFactsBlock(`${rawOutput}\n${errorOutput}`);
+      const prompt = `${facts}The following test execution failed. Please explain to a non-technical user WHY it failed in 2-3 short sentences. Focus on the business logic mismatch or the technical issue, not the stack trace.
+
       OUTPUT:
       ${rawOutput}
       

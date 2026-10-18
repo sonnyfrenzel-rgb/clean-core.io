@@ -440,6 +440,43 @@ function unbalancedAt(statements: ReturnType<typeof readStatements>): string[] {
   return out;
 }
 
+/** The refusal of an ABAP body whose last statement has no period (`rapBodyGuards`). */
+export const FINAL_PERIOD_REASON = 'the last statement has no period';
+
+/** What TRACE.md says of a body the engine completed with its final period (`repairFinalPeriod`). */
+export const FINAL_PERIOD_NOTE = 'the engine added the final period of the body: a missing period after the last statement was the only defect the checks on fills found';
+
+/**
+ * A mechanical repair of an ABAP body (3.0.17 criterion 3: U12 of the QM run on dev and U17 of the FI holdout were
+ * left as stubs for one missing period): when the ONLY refusal of the checks on fills is that the last statement has
+ * no period, the period is appended — before a trailing `"` comment — and the same checks run again on the result.
+ * Returns the repaired body when they then pass; null in every other case (another refusal, or still refused), so no
+ * other failure is ever masked.
+ */
+export function repairFinalPeriod(body: string, check: (body: string) => readonly BodyRefusal[]): string | null {
+  const first = check(body);
+  if (first.length !== 1 || first[0].message !== FINAL_PERIOD_REASON) return null;
+  const lines = body.replace(/\s+$/, '').split('\n');
+  let at = lines.length - 1;
+  while (at >= 0 && (!lines[at].trim() || /^\s*\*/.test(lines[at]) || /^\s*"/.test(lines[at]))) at--;
+  if (at < 0) return null;
+  const line = lines[at];
+  // The comment of the last code line starts at a `"` outside a literal.
+  let cut = line.length;
+  const outside = createLiteralScanner();
+  for (let c = 0; c < line.length; c++) {
+    if (!outside(line[c])) continue;
+    if (line[c] === '"') {
+      cut = c;
+      break;
+    }
+  }
+  const code = line.slice(0, cut).replace(/\s+$/, '');
+  lines[at] = `${code}.${cut < line.length ? ` ${line.slice(cut)}` : ''}`;
+  const repaired = lines.join('\n');
+  return check(repaired).length === 0 ? repaired : null;
+}
+
 function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const out: BodyRefusal[] = [];
   if (!abapLiteralsClosed(body)) out.push(refusal('unterminated', 'an unterminated literal'));
@@ -449,7 +486,7 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     out.push(refusal('unterminated', `a semicolon where ABAP ends a statement with a period (${where}) — every ABAP statement ends with ".", never ";"`));
   }
   const code = body.split('\n').filter((l) => !/^\s*\*/.test(l) && !/^\s*"/.test(l)).join('\n').trim();
-  if (code && !code.replace(/".*$/gm, '').trim().endsWith('.')) out.push(refusal('unterminated', 'the last statement has no period'));
+  if (code && !code.replace(/".*$/gm, '').trim().endsWith('.')) out.push(refusal('unterminated', FINAL_PERIOD_REASON));
   const statements = readStatements(body);
   if (statements.some((s) => ABAP_FRAME.test(s.keyword) || /\bDEFINITION\b/i.test(s.text) && s.keyword === 'CLASS')) {
     out.push(refusal('declaration', 'METHOD, CLASS, FORM or another frame statement — the engine writes the frame'));

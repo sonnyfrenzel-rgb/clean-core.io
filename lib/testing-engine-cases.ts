@@ -66,6 +66,7 @@ export type EngineCaseKind =
   | 'precision-exact-arithmetic'
   | 'guard-breaks-one'
   | 'guard-exclusion-necessary'
+  | 'guard-authority-closed'
   | 'contract-empty-request'
   | 'contract-integer'
   | 'contract-non-finite'
@@ -840,7 +841,33 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
 
 /* ----------------------------------------------------- input contract */
 
-function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id'>> {
+/**
+ * The fields the original itself replaces when they are initial (3.0.17 criterion 3): `IF p_lim IS INITIAL OR p_lim
+ * GT c_max_items. p_lim = 5000.` — an IF one of whose OR-ed conditions is `<field> IS INITIAL`, whose first statement
+ * assigns the field. There a missing value is the original's initial value and is replaced, never refused: the case
+ * "a missing value is not zero" claims nothing about it. Upper-case name → the lines of the IF and the assignment.
+ */
+export function replacedWhenInitial(source: string): Map<string, { line: number; assignedAt: number; to: string }> {
+  const out = new Map<string, { line: number; assignedAt: number; to: string }>();
+  const statements = readStatements(source);
+  for (let i = 0; i + 1 < statements.length; i++) {
+    const m = /^IF\s+([\s\S]+)$/i.exec(statements[i].text.trim());
+    if (!m) continue;
+    const initial = m[1]
+      .split(/\s+OR\s+/i)
+      .map((part) => /^\(?\s*([\w/~-]+)\s+IS\s+INITIAL\s*\)?$/i.exec(part.trim())?.[1])
+      .filter((x): x is string => !!x);
+    if (initial.length === 0) continue;
+    const assign = /^([\w/~-]+)\s*=\s*([\s\S]+)$/.exec(statements[i + 1].text.trim());
+    if (!assign) continue;
+    const target = assign[1].toUpperCase();
+    if (!initial.some((f) => f.toUpperCase() === target) || out.has(target)) continue;
+    out.set(target, { line: statements[i].lineStart, assignedAt: statements[i + 1].lineStart, to: assign[2].trim() });
+  }
+  return out;
+}
+
+function contractCases(fields: readonly Field[], replaced: ReadonlyMap<string, { line: number; assignedAt: number; to: string }> = new Map()): Array<Omit<EngineTestCase, 'id'>> {
   const out: Array<Omit<EngineTestCase, 'id'>> = [];
   const inputs = fields.filter((f) => f.input);
   const obligatory = inputs.filter((f) => f.obligatory);
@@ -952,8 +979,16 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
   const numeric = dataFields.filter((f) => f.kind === 'packed' || f.kind === 'integer').slice(0, MAX_CONTRACT_FIELDS);
   if (numeric.length > 0) {
     const examples: EngineCaseExample[] = [];
+    const kept: string[] = [];
     for (const f of numeric) {
       const n = fieldWord(f);
+      const own = replaced.get(n.toUpperCase());
+      if (own && !f.obligatory) {
+        // The original replaces its initial value itself: a missing value there is neither refused nor "not zero".
+        kept.push(`${n} (L${own.line}: the original replaces an initial ${n} with ${own.to} at L${own.assignedAt})`);
+        examples.push({ input: `${n} = 0`, expected: 'accepted as the value zero — not as missing', call: { op: 'validate', set: [{ field: n, to: { value: '0' } }], expect: { kind: 'zero', field: n } } });
+        continue;
+      }
       examples.push(
         {
           input: `${n} missing (null)`,
@@ -974,12 +1009,60 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
         trace: contractTrace(numeric),
         name: 'A missing value is not zero',
         description:
-          'ABAP has no null: an initial field is 0 or blank. The target receives JSON and CSV, where a missing value and 0 differ — a credit limit of 0 is not "no credit limit" (FI review). A missing value must not silently become 0, and an explicit 0 must not be read as missing.',
+          'ABAP has no null: an initial field is 0 or blank. The target receives JSON and CSV, where a missing value and 0 differ — a credit limit of 0 is not "no credit limit" (FI review). A missing value must not silently become 0, and an explicit 0 must not be read as missing.' +
+          (kept.length > 0 ? ` Not claimed for a field whose initial value the original replaces itself — there a missing value is the initial one, replaced as the original does: ${kept.join('; ')}.` : ''),
         examples,
       }),
     );
   }
   return out;
+}
+
+const ENCLOSING_OPEN = /^(?:IF|LOOP|CASE|DO|WHILE|TRY|SELECT|PROVIDE|AT)\b/i;
+const ENCLOSING_CLOSE = /^(?:ENDIF|ENDLOOP|ENDCASE|ENDDO|ENDWHILE|ENDTRY|ENDSELECT|ENDPROVIDE|ENDAT)\b/i;
+
+/**
+ * The original refuses a caller without the authorization (3.0.17 criterion 3): the first AUTHORITY-CHECK that stands
+ * at the top level of its routine and is followed directly by a check on its sy-subrc that refuses. On the Node route
+ * the engine cases run with the original's authorization checks granted for the test (`CC_AUTHORITY_DEMO=grant`);
+ * this case runs the base request without the grant — `srv/lib/authority.ts` answers 4, as it does in the service
+ * until it is mapped — and expects the refusal by that check. Null when the source has no such check.
+ */
+function authorityCase(source: string, guards: readonly GuardCase[]): Omit<EngineTestCase, 'id'> | null {
+  const statements = readStatements(source);
+  let depth = 0;
+  for (let i = 0; i < statements.length; i++) {
+    const st = statements[i];
+    const text = st.text.trim();
+    if (/^(?:FORM|METHOD|FUNCTION|MODULE)\b/i.test(text)) depth = 0;
+    else if (ENCLOSING_CLOSE.test(text)) depth = Math.max(0, depth - 1);
+    else if (/^SELECT\b/i.test(text) && /\bSINGLE\b|\bINTO\s+TABLE\b|\bAPPENDING\b/i.test(text)) {
+      // a SELECT that is not a loop opens nothing
+    } else if (/^(?:AT\s+(?:SELECTION-SCREEN|LINE-SELECTION|USER-COMMAND|PF\d+))\b/i.test(text)) {
+      depth = 0;
+    } else if (ENCLOSING_OPEN.test(text)) depth++;
+    if (!/^AUTHORITY-CHECK\b/i.test(text) || depth > 0) continue;
+    const next = statements[i + 1];
+    const g = next ? guards.find((x) => x.line === next.lineStart && x.outcome === 'refuses' && x.rejectsWhen === 'holds' && /^sy-subrc\s*(?:<>|\bNE\b)\s*0$/i.test(x.condition)) : undefined;
+    if (!g) continue;
+    const object = /OBJECT\s+'([^']+)'/i.exec(text)?.[1] ?? null;
+    const what = `the AUTHORITY-CHECK at L${st.lineStart}${object ? ` (object ${object})` : ''}`;
+    return makeCase({
+      kind: 'guard-authority-closed',
+      family: 'guard',
+      trace: { basis: 'business-rule', ...(g.ruleId ? { ruleId: g.ruleId } : {}), lines: [{ start: g.line, end: g.line }, { start: st.lineStart, end: st.lineStart }], quote: g.quote },
+      name: `Without the authorization, ${what} refuses the run (${guardName(g)})`,
+      description: `The original checks the caller's authorization at L${st.lineStart} and refuses at L${g.line} when it is missing (${g.ending}). The port must not run without it: its authorization seam fails closed until it is mapped to the target's authorization. The other engine cases run with the authorization granted for the test; this one runs without it.`,
+      examples: [
+        {
+          input: `the base request, run without the authorization granted for the test`,
+          expected: `refused by ${guardName(g)} — the authorization check answers "not authorized"`,
+          call: { op: 'simulate', authority: 'denied', set: [], expect: { kind: 'refused', rule: g.ruleId ?? `L${g.line}` } },
+        },
+      ],
+    });
+  }
+  return null;
 }
 
 function runIdentityCase(): Omit<EngineTestCase, 'id'> {
@@ -1076,8 +1159,11 @@ export function deriveEngineCases(source: string, rules: readonly BusinessRule[]
   }
   drafted.push(...shownPrecision.map((x) => x.c));
 
-  drafted.push(...contractCases(fields));
+  drafted.push(...contractCases(fields, replacedWhenInitial(source)));
   drafted.push(runIdentityCase());
+  // After every other case, so the ids of the cases before it stay what they were (scaffold version 16).
+  const authority = authorityCase(source, guards);
+  if (authority) drafted.push(authority);
 
   const width = Math.max(2, String(drafted.length).length);
   const cases = drafted.map((c, i) => ({ id: `${ENGINE_CASE_PREFIX}${String(i + 1).padStart(width, '0')}`, ...c }));

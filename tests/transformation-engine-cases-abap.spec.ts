@@ -135,7 +135,7 @@ test.describe('(7) the engine cases run in ABAP', () => {
         return [name, `${cases.length - skipped}/${cases.length}`];
       }),
     );
-    expect(counts).toEqual({ 'co-shape': '32/41', 'pp-shape': '26/30', 'sd-shape': '20/25', 'PO demo': '24/26' });
+    expect(counts).toEqual({ 'co-shape': '32/41', 'pp-shape': '26/30', 'sd-shape': '20/25', 'PO demo': '24/27' });
   });
 
   test('deterministic: the same source gives the same include', () => {

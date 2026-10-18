@@ -50,6 +50,8 @@ const confinement = createConfinement({
   // The import probe's instrument (FP-TEST-03): the stand-in server reports listen() here, on stderr.
   emit: (event) => errWrite(`${EVENT}${stringify(event)}\n`),
   nodeEnv: process.env.NODE_ENV,
+  // The original's AUTHORITY-CHECKs are granted for this test run only (CC_AUTHORITY_DEMO=grant); the service denies them.
+  authorityGrant: true,
   platform: process.platform,
   version: process.version,
 });

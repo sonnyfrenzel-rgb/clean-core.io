@@ -36,7 +36,7 @@ import { originalDemoCases, type OriginalDemoCases } from './golden-master';
 import { nodeDemoFiles } from './node-demo';
 import { acceptanceAdapter, contractModel } from './call-contract';
 import { capShellFiles } from './cap-shell';
-import { inputListsOf, listOfPath, withListPaths, workAreasOf, type InputList } from './input-lists';
+import { INPUT_READ_TAG, inputListsOf, listOfPath, readPlacementsOf, withListPaths, workAreasOf, type InputList, type ReadPlacement } from './input-lists';
 import { fillProbeConfigs } from './fill-probes';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
@@ -134,7 +134,7 @@ function declaredType(shapes: AbapShapes, name: string, line: number, fallback: 
   return ts ?? fallback;
 }
 
-function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes, lists: readonly InputList[]): string {
+function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes, lists: readonly InputList[], placements: readonly ReadPlacement[] = []): string {
   const lookups = lists.filter((l) => l.lookup);
   const packed = plan.fields.filter((f) => f.kind === 'packed');
   const selection = plan.fields.filter((f) => f.where === 'selection');
@@ -203,10 +203,11 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   lines.push('');
   lines.push('/**');
   lines.push(" * The input lists, one per input table of the original, each typed by its own structure (scaffold version 7).");
-  lines.push(" * A run starts with these rows in the original's global table (srv/lib/input-contract.ts seedOf).");
+  lines.push(" * A run starts with these rows in the original's global table (srv/lib/input-contract.ts seedOf) — except a list a SELECT");
+  lines.push(" * of a step fills: its rows reach the table at that step's entry, where the SELECT fills it (handedInOf, scaffold version 16).");
   lines.push(' */');
   lines.push('export interface Inputs {');
-  for (const l of lists) lines.push(`  /** ${l.global.name.toUpperCase()} (L${l.global.line}) — rows of ${l.structure.name.toUpperCase()}; ${l.filledBy.map((b) => (b === 'demo' ? "the original's demo data fills it" : b === 'read' ? 'a SELECT fills it' : b === 'lookup' ? `a step reads it (L${l.lookup?.lines.join(', L')}): a lookup list, answered by srv/lib/lookups.ts` : 'its input fields')).join(', ')}. */\n  ${l.key}: ${l.structure.tsName}[];`);
+  for (const l of lists) lines.push(`  /** ${l.global.name.toUpperCase()} (L${l.global.line}) — rows of ${l.structure.name.toUpperCase()}; ${l.filledBy.map((b) => (b === 'demo' ? "the original's demo data fills it" : b === 'read' ? readWords(l, placements) : b === 'lookup' ? `a step reads it (L${l.lookup?.lines.join(', L')}): a lookup list, answered by srv/lib/lookups.ts` : 'its input fields')).join(', ')}. */\n  ${l.key}: ${l.structure.tsName}[];`);
   lines.push('}');
   lines.push('');
   lines.push('/** A validated request: the selection, the record list and the input lists. */');
@@ -257,6 +258,14 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   lines.push('  notFilled: string[];');
   lines.push("  /** Working data of the steps: the original's global data, typed (Locals). */");
   lines.push('  local: Locals;');
+  lines.push('  /**');
+  lines.push("   * The request's rows of each input list a SELECT of the original fills (engine, scaffold version 16): the frame of the step");
+  lines.push("   * whose routine holds that SELECT puts them into the original's table where the SELECT fills it — not at run start,");
+  lines.push("   * where the original's own steps would clear them first (srv/lib/input-contract.ts handedInOf). Steps never write it.");
+  lines.push('   */');
+  lines.push('  readonly handedIn: Partial<Locals>;');
+  lines.push("  /** The tables of handedIn a step's frame has filled so far (engine): until then their rows are the request's, not yet read. */");
+  lines.push('  readonly placed: Set<string>;');
   lines.push('}');
   lines.push('');
   lines.push('/** A step refuses the input (Refusal), or goes on (nothing). */');
@@ -524,7 +533,15 @@ export function requestFromCsv(text: string, query: Record<string, string | unde
 }
 `;
 
-function inputContractFile(plan: UnitPlan, lists: readonly InputList[]): string {
+/** How an input list a SELECT fills gets its rows (scaffold version 16, `readPlacementsOf`). */
+function readWords(l: InputList, placements: readonly ReadPlacement[]): string {
+  const p = placements.find((x) => x.list.key === l.key);
+  if (!p) return 'a SELECT fills it';
+  if (!p.places) return `a SELECT fills it; its rows start the run in the table — ${p.startReason}`;
+  return `a SELECT fills it; its rows reach the table where it does — ${p.places.map((x) => `L${x.line} in ${x.fn} (${x.unitId})`).join(', ')} — taken as its result, without its WHERE or UP TO`;
+}
+
+function inputContractFile(plan: UnitPlan, lists: readonly InputList[], placements: readonly ReadPlacement[] = []): string {
   const lines: string[] = [];
   lines.push('/**');
   lines.push(' * The input contract — one validator for JSON, query and CSV (rules 15–17, 19).');
@@ -600,16 +617,44 @@ function inputContractFile(plan: UnitPlan, lists: readonly InputList[]): string 
   lines.push("/** The original's table each input list fills, by the table's name (GT_CLAIMS → gtClaims); a lookup list fills none. */");
   lines.push(`export const LIST_GLOBALS: Readonly<Record<string, string>> = ${JSON.stringify(Object.fromEntries(lists.filter((l) => !l.lookup).map((l) => [l.global.name.toUpperCase(), l.global.key])))};`);
   lines.push('');
-  lines.push("/** The input lists as the run's start values of the original's global tables. */");
+  // A list a SELECT of a step fills (scaffold version 16): its rows reach the table at that step's entry, not at run start.
+  const placed = new Set(placements.filter((p) => p.places).map((p) => p.list.key));
+  const atStart = lists.filter((l) => !placed.has(l.key));
+  const atSelect = lists.filter((l) => placed.has(l.key));
+  lines.push('/**');
+  lines.push(" * The input lists as the run's start values of the original's global tables — every list but those a SELECT of a step fills.");
+  for (const p of placements) {
+    if (p.places) continue;
+    lines.push(` * ${INPUT_READ_TAG} ${p.list.key} ← ${p.list.global.name.toUpperCase()}: its rows start the run in the table — ${p.startReason}; taken as the SELECT's result, without its WHERE or UP TO.`);
+  }
+  lines.push(' */');
   lines.push('export function seedOf(inputs: Inputs): Partial<Locals> {');
-  lines.push(lists.length ? `  return { ${lists.map((l) => `${l.global.key}: inputs.${l.key}`).join(', ')} };` : '  void inputs;\n  return {};');
+  lines.push(atStart.length ? `  return { ${atStart.map((l) => `${l.global.key}: inputs.${l.key}`).join(', ')} };` : '  void inputs;\n  return {};');
   lines.push('}');
   lines.push('');
-  lines.push("/** The rows still in the original's input tables after a run (a skipping check removes one). */");
-  lines.push('export function inputRowsOf(local: Locals): number {');
+  lines.push('/**');
+  lines.push(" * The input lists a SELECT of the original fills in a step of its own (scaffold version 16): the run holds them in");
+  lines.push(" * st.handedIn, and that step's frame puts them into the table at its entry — where the original's SELECT fills it, after");
+  lines.push(" * whatever the steps before it cleared. The rows are taken as the SELECT's result: its WHERE and UP TO are not applied.");
+  for (const p of placements) {
+    if (!p.places) continue;
+    lines.push(` * ${INPUT_READ_TAG} ${p.list.key} ← ${p.list.global.name.toUpperCase()}: its rows reach the table where the SELECT fills it (${p.places.map((x) => `L${x.line} in ${x.fn}, ${x.unitId}${x.appending ? ', appending' : ''}`).join('; ')}); taken as the SELECT's result, without its WHERE or UP TO.`);
+  }
+  lines.push(' */');
+  lines.push('export function handedInOf(inputs: Inputs): Partial<Locals> {');
+  lines.push(atSelect.length ? `  return { ${atSelect.map((l) => `${l.global.key}: inputs.${l.key}`).join(', ')} };` : '  void inputs;\n  return {};');
+  lines.push('}');
+  lines.push('');
+  lines.push("/**");
+  lines.push(" * The rows still in the original's input tables after a run (a skipping check removes one). A list a SELECT of a step fills");
+  lines.push(" * counts its table once the step's frame filled it (`placed`), and the request's rows until then (scaffold version 16).");
+  lines.push(' */');
+  lines.push('export function inputRowsOf(local: Locals, handedIn: Partial<Locals> = {}, placed: ReadonlySet<string> = new Set()): number {');
   // A lookup list's rows are what a step looks up, not input records of the run.
   const counted = lists.filter((l) => !l.lookup);
-  lines.push(counted.length ? `  return ${counted.map((l) => `local.${l.global.key}.length`).join(' + ')};` : '  void local;\n  return 0;');
+  const rowsOf = (l: InputList) => (placed.has(l.key) ? `(placed.has(${q(l.global.key)}) ? local.${l.global.key}.length : (handedIn.${l.global.key}?.length ?? 0))` : `local.${l.global.key}.length`);
+  lines.push(counted.length ? `  return ${counted.map(rowsOf).join(' + ')};` : '  void local;\n  return 0;');
+  if (counted.length && placed.size === 0) lines.push('  void handedIn;', '  void placed;');
   lines.push('}');
   return lines.join('\n') + '\n' + INPUT_CORE;
 }
@@ -953,6 +998,7 @@ function guardsFile(
   lists: readonly InputList[] = [],
   constants: ReadonlyMap<string, { text: string; quoted: boolean }> = new Map(),
   wired: ReadonlySet<string> = new Set(),
+  authorityOf: ReadonlyMap<string, { line: number; object: string | null }> = new Map(),
 ): Built {
   // The row a check reads (scaffold version 7): a row of the input list its subject belongs to, else a record.
   const rowTypeOf = (g: PlanGuard): string => {
@@ -1040,7 +1086,11 @@ function guardsFile(
     const refuseWhen = g.effect === 'check' ? `!${pred}(sel, st, record${valuesArg})` : `${pred}(sel, st, record${valuesArg})`;
     const ruleWord = g.rule ?? `L${g.line}`;
     // What the original's CHECK does where it stands (3.0.17 criterion 3): at event level it ends the event block.
-    const message = `${ruleWord}, L${g.line}: ${g.condition}${g.effect === 'check' ? ' does not hold' : ''} — ${g.ending}${g.effect === 'check' ? ' ends its event block' : ''}`;
+    // The line once (3.0.17 criterion 3: "L188: L188, L188: p_days LT 0" — the rule word of a check with no business rule
+    // is its line already); a check on the sy-subrc of an AUTHORITY-CHECK names that check, so a refusal says why.
+    const auth = authorityOf.get(g.id);
+    const authWords = auth ? `the authorization check at L${auth.line}${auth.object ? ` (AUTHORITY-CHECK OBJECT '${auth.object}', ${AUTHORITY_FILE})` : ` (${AUTHORITY_FILE})`} refused — ` : '';
+    const message = `${ruleWord === `L${g.line}` ? ruleWord : `${ruleWord}, L${g.line}`}: ${authWords}${g.condition}${g.effect === 'check' ? ' does not hold' : ''} — ${g.ending}${g.effect === 'check' ? ' ends its event block' : ''}`;
     const field = subjectPath(plan, g.subject);
     if (g.outcome === 'refuses') {
       out.push(
@@ -1100,7 +1150,7 @@ function argsInterface(u: Unit, shapes: AbapShapes): string | null {
   return `export interface ${name} {\n${members.join('\n')}\n}`;
 }
 
-function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = []): string {
+function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = []): string {
   const rules = u.rules.map((id) => {
     const r = plan.rules.find((x) => x.id === id);
     if (!r) return id;
@@ -1122,6 +1172,11 @@ function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], 
     ...(u.bodyCalls.length > 0 ? [` * The body calls, where the original checks: ${bodyCallWords(u, plan)}`] : []),
     ...authorityDocLines(auth),
     ...lookupDocLines(reads),
+    ...placements.flatMap((p) =>
+      (p.places ?? [])
+        .filter((at) => at.unitId === u.id)
+        .map((at) => ` * Input: at L${at.line} the original's SELECT fills ${p.list.global.name.toUpperCase()}; the frame puts the request's rows of ${p.list.key} into st.local.${p.list.global.key} before the body runs — the body reads them there and writes no SELECT.`),
+    ),
     ` * Unit ${u.id}: the frame is written by Clean-Core.io (engine); the body between the markers is a model proposal.`,
     ' */',
   ].join('\n');
@@ -1209,9 +1264,36 @@ function wiredAuthorityLines(e: AuthorityEntry, plan: UnitPlan): string[] {
   ];
 }
 
-function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = []): string[] {
-  // In the original's order: the raw checks and the AUTHORITY-CHECKs the frame runs whole.
-  const calls: Array<{ line: number; lines: string[] }> = auth.filter((e) => e.wired).map((e) => ({ line: e.line, lines: wiredAuthorityLines(e, plan) }));
+/**
+ * The frame's lines that put the request's rows of an input list into the original's table where the step's SELECT
+ * fills it (scaffold version 16, `readPlacementsOf`): `INTO TABLE` replaces the table's content, `APPENDING` adds to
+ * it. A fresh copy of each row, as a SELECT reads it again; nothing happens where the run was handed none (a demo case
+ * replays the original's tables as they stand).
+ */
+function readPlacementLines(u: Unit, placements: readonly ReadPlacement[]): Array<{ line: number; lines: string[] }> {
+  const out: Array<{ line: number; lines: string[] }> = [];
+  for (const p of placements) {
+    for (const at of p.places ?? []) {
+      if (at.unitId !== u.id) continue;
+      const g = p.list.global.key;
+      const table = p.list.global.name.toUpperCase();
+      out.push({
+        line: at.line,
+        lines: [
+          `  // L${at.line} SELECT … ${at.appending ? 'APPENDING' : 'INTO'} TABLE ${table} (engine): the request's rows of ${p.list.key} reach the table here, where the original's SELECT fills it — taken as its result, without its WHERE or UP TO.`,
+          at.appending
+            ? `  if (st.handedIn.${g}) { st.local.${g}.push(...st.handedIn.${g}.map((r) => ({ ...r }))); st.placed.add(${q(g)}); }`
+            : `  if (st.handedIn.${g}) { st.local.${g} = st.handedIn.${g}.map((r) => ({ ...r })); st.placed.add(${q(g)}); }`,
+        ],
+      });
+    }
+  }
+  return out;
+}
+
+function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], placements: readonly ReadPlacement[] = []): string[] {
+  // In the original's order: the raw checks, the AUTHORITY-CHECKs the frame runs whole, and the SELECTs that fill an input list.
+  const calls: Array<{ line: number; lines: string[] }> = [...auth.filter((e) => e.wired).map((e) => ({ line: e.line, lines: wiredAuthorityLines(e, plan) })), ...readPlacementLines(u, placements)];
   for (const id of u.guardCalls) {
     const g = plan.guards.find((x) => x.id === id)!;
     const v = id.replace('-', '').toLowerCase();
@@ -1238,7 +1320,7 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
   return [...names];
 }
 
-function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = []): Built {
+function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = []): Built {
   const libDir = u.file.startsWith('srv/steps/') ? '../lib/' : './lib/';
   const callees = u.callees.map((id) => plan.units.find((x) => x.id === id)!).filter(Boolean);
   const out: string[] = [];
@@ -1263,10 +1345,10 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     out.push(args);
     out.push('');
   }
-  const doc = unitDoc(u, plan, auth, reads);
+  const doc = unitDoc(u, plan, auth, reads, placements);
   // The frame's functions first, then the checks it runs at the entry in the original's order — an AUTHORITY-CHECK
-  // the frame runs whole calls its function (QA finding 8394df76b027).
-  const guardLines = [...authorityFrameLines(auth), ...lookupFrameLines(reads), ...guardCallLines(u, plan, shapes, auth)];
+  // the frame runs whole calls its function (QA finding 8394df76b027), a SELECT that fills an input list puts its rows.
+  const guardLines = [...authorityFrameLines(auth), ...lookupFrameLines(reads), ...guardCallLines(u, plan, shapes, auth, placements)];
   out.push(doc);
   out.push(`${u.signature} {`);
   out.push(...guardLines);
@@ -1283,6 +1365,22 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     ...lookupAvailable(reads),
   ];
   return { file: { path: u.file, content: out.join('\n'), owner: 'fill' }, regions: [{ regionId: u.id, available }] };
+}
+
+/**
+ * The checks on the sy-subrc of an AUTHORITY-CHECK — the statement right after it, a carried check whose operand is
+ * sy-subrc — with the check's line and object: a refusal by one names the authorization check (3.0.17 criterion 3).
+ */
+function authorityGuardsOf(plan: Pick<UnitPlan, 'guards'>, statements: readonly AbapStatement[], checks: ReadonlyArray<{ lineStart: number; object?: string }>): Map<string, { line: number; object: string | null }> {
+  const out = new Map<string, { line: number; object: string | null }>();
+  for (const c of checks) {
+    const at = statements.findIndex((s) => s.keyword === 'AUTHORITY-CHECK' && s.lineStart === c.lineStart);
+    const next = at >= 0 ? statements[at + 1] : undefined;
+    if (!next) continue;
+    const g = plan.guards.find((x) => x.carried && x.line === next.lineStart && x.operands.some((o) => o.name === 'sy-subrc'));
+    if (g && !out.has(g.id)) out.set(g.id, { line: c.lineStart, object: c.object ?? null });
+  }
+  return out;
 }
 
 /** The parent of a split routine: engine-written, calls its parts in order with one shared local state. */
@@ -1371,10 +1469,12 @@ function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes, aut
   out.push('');
   out.push('/**');
   out.push(' * One run: a fresh state, the selection checks, then runSteps. A stub is recorded, never hidden.');
-  out.push(" * `seed`: globals the run starts with instead of their initial value — the original's demo tables (srv/fixtures.ts).");
+  out.push(" * `seed`: globals the run starts with instead of their initial value — the original's demo tables (srv/fixtures.ts),");
+  out.push(' * the input lists no SELECT of a step fills (seedOf).');
+  out.push(" * `handedIn`: the input lists a SELECT of a step fills (handedInOf) — that step's frame puts them into the table (scaffold version 16).");
   out.push(' */');
-  out.push('export function runProcess(sel: Selection, records: Rec[], seed: Partial<Locals> = {}): ProcessOutcome {');
-  out.push('  const st: RunState = { selection: sel, records: records.slice(), rows: [], result: {}, issues: [], notFilled: [], local: { ...initialLocals(), ...seed } };');
+  out.push('export function runProcess(sel: Selection, records: Rec[], seed: Partial<Locals> = {}, handedIn: Partial<Locals> = {}): ProcessOutcome {');
+  out.push('  const st: RunState = { selection: sel, records: records.slice(), rows: [], result: {}, issues: [], notFilled: [], local: { ...initialLocals(), ...seed }, handedIn, placed: new Set<string>() };');
   out.push('  const done = (refusal: Refusal | null): ProcessOutcome => {');
   out.push('    const notFilled = [...new Set(st.notFilled)];');
   out.push('    return { refusal, complete: notFilled.length === 0, notFilled, state: st };');
@@ -1407,7 +1507,7 @@ const SIMULATE_TS = String.raw`/**
  * One simulation: validate, run the process, store the run under a fresh id.
  * Shared by the HTTP app and the call contract. Written by Clean-Core.io (engine).
  */
-import { inputRowsOf, seedOf, splitRequest, validateRequest, type InputError } from './lib/input-contract.ts';
+import { handedInOf, inputRowsOf, seedOf, splitRequest, validateRequest, type InputError } from './lib/input-contract.ts';
 import type { RunRecord, RunStore } from './lib/run-store.ts';
 import { CONTEXT_DIGEST, RULE_REVISION, SOURCE_REVISION, type Selection } from './lib/types.ts';
 import { runProcess } from './process.ts';
@@ -1434,7 +1534,7 @@ export function simulateRequest(raw: unknown, store: RunStore<Selection, RunResu
   const v = validateRequest(raw);
   if (!v.ok || !v.normalized) return { ok: false, runId: null, records: 0, errors: v.errors, complete: false, notFilled: [], run: null };
   const { selection, records, inputs } = splitRequest(v.normalized);
-  const outcome = runProcess(selection, records, seedOf(inputs));
+  const outcome = runProcess(selection, records, seedOf(inputs), handedInOf(inputs));
   if (outcome.refusal) {
     return { ok: false, runId: null, records: 0, errors: outcome.refusal.errors, complete: outcome.complete, notFilled: outcome.notFilled, run: null };
   }
@@ -1446,7 +1546,7 @@ export function simulateRequest(raw: unknown, store: RunStore<Selection, RunResu
     contextDigest: CONTEXT_DIGEST,
     complete: outcome.complete,
     notFilled: outcome.notFilled,
-    records: st.records.length + inputRowsOf(st.local),
+    records: st.records.length + inputRowsOf(st.local, st.handedIn, st.placed),
     result: { rows: st.rows, result: st.result, issues: st.issues },
   });
   return { ok: true, runId: run.runId, records: run.records, errors: [], complete: run.complete, notFilled: [...run.notFilled], run };
@@ -1589,7 +1689,7 @@ function engineContractFile(plan: UnitPlan, lists: readonly InputList[], stateme
     "import * as dec from './lib/decimal.ts';",
     "import { NotImplementedFill } from './lib/errors.ts';",
     "import * as guards from './lib/guards.ts';",
-    "import { LIST_GLOBALS, seedOf, splitRequest, validateRequest, type InputError } from './lib/input-contract.ts';",
+    "import { handedInOf, LIST_GLOBALS, seedOf, splitRequest, validateRequest, type InputError } from './lib/input-contract.ts';",
     "import { createRunStore } from './lib/run-store.ts';",
     "import { DECIMALS, initialLocals, type Locals, type Request, type Selection } from './lib/types.ts';",
     "import { simulateRequest, type RunResult } from './simulate.ts';",
@@ -1702,8 +1802,9 @@ function checkExport(plan: UnitPlan, lists: readonly InputList[], shapes: AbapSh
     "  const empty = typeof asked === 'object' && asked !== null && (asked as { special?: unknown }).special === 'empty';",
     '  // The table the check tests, asked empty: an input list empties its own table, otherwise the record list.',
     '  const emptyList = empty && spec.table !== null ? LIST_GLOBALS[spec.table] : undefined;',
-    '  const local = { ...initialLocals(), ...seedOf(inputs), ...(emptyList ? { [emptyList]: [] } : {}) } as Locals;',
-    '  const st = { selection, records: empty && !emptyList ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local };',
+    "  // A predicate is asked on the request's rows as they stand where it checks: every input list in its table (scaffold version 16).",
+    '  const local = { ...initialLocals(), ...seedOf(inputs), ...handedInOf(inputs), ...(emptyList ? { [emptyList]: [] } : {}) } as Locals;',
+    '  const st = { selection, records: empty && !emptyList ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local, handedIn: {}, placed: new Set<string>() };',
     '  const missingValues = spec.operands.filter((o) => !(o.name in given)).map((o) => o.name);',
     '  if (missingValues.length > 0) return { ok: false, missingValues, errors: [] as InputError[] };',
     '  const unsupported = spec.operands.filter((o) => o.form === null).map((o) => o.name);',
@@ -1741,7 +1842,7 @@ const SHIMS_TS = String.raw`/**
 import { exportCsv } from '../srv/app.ts';
 import * as csv from '../srv/lib/csv.ts';
 import * as dec from '../srv/lib/decimal.ts';
-import { CSV_DELIMITER, LIST_GLOBALS, seedOf, splitRequest, validateRequest } from '../srv/lib/input-contract.ts';
+import { CSV_DELIMITER, handedInOf, LIST_GLOBALS, seedOf, splitRequest, validateRequest } from '../srv/lib/input-contract.ts';
 import { createRunStore } from '../srv/lib/run-store.ts';
 import type { RunState, Selection } from '../srv/lib/types.ts';
 import { runProcess } from '../srv/process.ts';
@@ -1773,7 +1874,7 @@ function processRun(request: unknown): ProcessRun {
   const v = validateRequest(request);
   if (!v.ok || !v.normalized) return { state: 'refused' };
   const { selection, records, inputs } = splitRequest(v.normalized);
-  const outcome = runProcess(selection, records, seedOf(inputs));
+  const outcome = runProcess(selection, records, seedOf(inputs), handedInOf(inputs));
   if (outcome.refusal) return { state: 'refused' };
   if (!outcome.complete) return { state: 'incomplete', notFilled: outcome.notFilled };
   return { state: 'complete', st: outcome.state };
@@ -1826,6 +1927,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createEngineState, runEngineCase } from './engine-runtime.mjs';
 import * as contract from '../srv/engine-contract.ts';
+/*@cc-authority-grant*/
 
 const { cases } = JSON.parse(fs.readFileSync(new URL('./engine-cases.json', import.meta.url), 'utf8'));
 const state = createEngineState();
@@ -1842,6 +1944,24 @@ for (const c of cases) {
   });
 }
 `;
+
+/**
+ * The engine-case test file. A package that carries the original's AUTHORITY-CHECKs (scaffold version 16) grants them
+ * for this test run — explicitly, said in the output — so the cases test what follows the authorization, not the
+ * fail-closed seam; the case with `authority: 'denied'` withdraws the grant and expects the refusal. Only this test
+ * process is granted: the service reads its own environment and stays fail closed.
+ */
+function casesTestMjs(authority: boolean): string {
+  const grant = authority
+    ? [
+        "// The original's AUTHORITY-CHECKs: srv/lib/authority.ts denies every check (fail closed) unless CC_AUTHORITY_DEMO=grant.",
+        '// Granted here for this test run only, and said so: the cases test what follows the authorization. The service is not granted.',
+        "process.env.CC_AUTHORITY_DEMO = 'grant';",
+        "console.log('# authorization: every AUTHORITY-CHECK of the original is granted for this test run (CC_AUTHORITY_DEMO=grant, test only); one case runs without the grant and expects the refusal');",
+      ].join('\n')
+    : '';
+  return CASES_TEST_MJS.replace('/*@cc-authority-grant*/\n', grant ? `${grant}\n` : '');
+}
 
 /* ----------------------------------------------------------------- misc */
 
@@ -1920,6 +2040,8 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     cds: new Set([...lists.flatMap((l) => [l.cds.type, l.cds.entity]), ...facts.graph.databaseWrites.map((w) => pascalName(w.table))]),
   });
   const allLists = [...lists, ...lookupLists];
+  // Where the rows of a list a SELECT fills reach its table (scaffold version 16): at the entry of the step that holds the SELECT.
+  const placements = readPlacementsOf(lists, plan.units, facts.statements);
   // The CAP shell around the core (scaffold version 7, `cap-shell.ts`): package.json, the data model, the service.
   const cap = capShellFiles({ plan, facts, lists: allLists, packageName: name });
   files.push({ path: 'package.json', content: cap.packageJson, owner: 'engine' });
@@ -1928,8 +2050,8 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/lib/decimal.ts', content: DECIMAL_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/csv.ts', content: CSV_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/run-store.ts', content: RUN_STORE_TS, owner: 'engine' });
-  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, allLists), owner: 'engine' });
-  files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, allLists), owner: 'engine' });
+  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes, allLists, placements), owner: 'engine' });
+  files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, allLists, placements), owner: 'engine' });
   // The original's AUTHORITY-CHECKs (scaffold version 15, `authority-node.ts`): the seam fails closed, and each
   // function whose lines hold a check gets it written in its frame — with its check on sy-subrc where the frame can
   // run both at the step's entry (QA finding 8394df76b027, `wireAuthority`).
@@ -1940,7 +2062,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     if (entries.length > 0) authority[u.id] = entries;
   }
   const wiredGuards = new Set(Object.values(authority).flatMap((es) => es.flatMap((e) => (e.wired ? [e.wired.guard] : []))));
-  add(guardsFile(plan, shapes, lists, constantValuesOf(facts.statements), wiredGuards));
+  add(guardsFile(plan, shapes, lists, constantValuesOf(facts.statements), wiredGuards, authorityGuardsOf(plan, facts.statements, checks)));
   if (checks.length > 0) files.push({ path: AUTHORITY_FILE, content: authorityFile(plan.program, checks), owner: 'engine' });
   const lookups: Record<string, LookupEntry[]> = {};
   for (const u of plan.units) {
@@ -1952,7 +2074,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
     if (parts.length > 0) files.push(splitParentFile(u, parts, plan, shapes));
-    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id]));
+    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id], placements));
   }
   const orchestrator = plan.units.find((u) => u.kind === 'orchestrator');
   add(processFile(plan, facts, shapes, orchestrator ? authority[orchestrator.id] : [], orchestrator ? lookups[orchestrator.id] : []));
@@ -1970,7 +2092,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     owner: 'engine',
   });
   files.push({ path: 'test/engine-runtime.mjs', content: ENGINE_RUNTIME_JS, owner: 'engine' });
-  files.push({ path: 'test/engine-cases.test.mjs', content: CASES_TEST_MJS, owner: 'engine' });
+  files.push({ path: 'test/engine-cases.test.mjs', content: casesTestMjs(checks.length > 0), owner: 'engine' });
   files.push({ path: 'test/acceptance-shims.ts', content: SHIMS_TS, owner: 'engine' });
   files.push({ path: 'Dockerfile', content: DOCKERFILE, owner: 'engine' });
 

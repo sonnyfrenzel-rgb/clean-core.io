@@ -60,6 +60,16 @@ function adapterError(message) {
   return Object.assign(new Error(message), { adapter: true });
 }
 
+/** The message of a refusal by the original's authorization check (`… the authorization check at L197 …`), or null. */
+function authorityRefusal(answer) {
+  const errors = answer && typeof answer === 'object' && Array.isArray(answer.errors) ? answer.errors : [];
+  for (const e of errors.slice(0, 20)) {
+    const m = e && typeof e === 'object' && typeof e.message === 'string' ? e.message : '';
+    if (/authorization check at L\d+/i.test(m)) return m.slice(0, 240);
+  }
+  return null;
+}
+
 function short(value) {
   let s;
   try {
@@ -243,7 +253,12 @@ async function runIdCollision(cfg, ctx) {
   }
   const idA = idOf(a);
   const idB = idOf(b);
-  if (idA === undefined || idA === null || idA === '') throw adapterError(`no run id at '${cfg.id}' in ${short(a)}`);
+  if (idA === undefined || idA === null || idA === '') {
+    // Refused by the original's authorization check (3.0.17 criterion 3): no run, so no id — not a mapping defect.
+    const authority = authorityRefusal(a);
+    if (authority) throw new Error(`the request is refused by the original's authorization check (${authority}) — srv/lib/authority.ts denies it until it is granted, and this run did not grant it (CC_AUTHORITY_DEMO=grant, test only)`);
+    throw adapterError(`no run id at '${cfg.id}' in ${short(a)}`);
+  }
   const ids = new Set();
   const loop = Number.isInteger(cfg.loop) ? cfg.loop : 200;
   for (let i = 0; i < loop; i++) ids.add(idOf(await call(cfg.create, fill(i % 2 ? cfg.argsB : cfg.argsA, {}))));

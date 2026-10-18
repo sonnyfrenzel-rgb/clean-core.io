@@ -107,6 +107,8 @@ const CHANNEL_WHY: Readonly<Record<string, string>> = {
   'contract-date': 'an invalid date is refused by the typed date parameter of the service or the job before run( ) sees it',
   'contract-null-not-zero': 'ABAP has no null: a missing value is the typed parameter of the service or the job, not the logic class',
   'run-identity': "the logic class keeps no run id: a run's identity is the job's or the business object's key",
+  'guard-authority-closed':
+    "AUTHORITY-CHECK is the system's on the ABAP route, not the logic class's: run the job or the service with a test user that lacks the authorization",
 };
 
 /** Does the condition hold on the subject's initial value? null when that cannot be told exactly. */

@@ -32,7 +32,7 @@ import type { BlockStructure } from '../abap/block-structure';
 import type { CallGraphReport } from '../abap/call-graph';
 import type { AbapShapes, AbapScalar, ShapeField, ShapeStructure } from './abap-shapes';
 import { camelName, pascalName } from './naming';
-import type { ContractField, UnitPlan } from './types';
+import type { ContractField, Unit, UnitPlan } from './types';
 
 export type InputColumnKind = 'packed' | 'integer' | 'digits' | 'date' | 'text';
 
@@ -314,5 +314,83 @@ export function workAreasOf(statements: readonly AbapStatement[], lists: readonl
       if (m) out.set(m[1].toUpperCase(), l);
     }
   }
+  return out;
+}
+
+/** One SELECT of the original that fills an input list, and the step whose routine holds it. */
+export interface ReadPlace {
+  line: number;
+  /** `SELECT … APPENDING TABLE`: the rows are added; `INTO TABLE` replaces the table's content. */
+  appending: boolean;
+  unitId: string;
+  fn: string;
+}
+
+/**
+ * Where the request's rows of an input list a SELECT fills reach the original's table (3.0.17 criterion 3, the
+ * 1,000-line starter example's trial run, 18.10.2026): the original's FORM INITIALIZE_RUN clears GT_ORDERS and only
+ * then FORM SELECT_ORDERS fills it by its SELECT, so rows the run started with were wiped before any step saw them
+ * and every valid request ran with no orders. A list a SELECT fills gets its rows at the entry of the step whose
+ * routine holds that SELECT — the frame writes it (scaffold version 16) — and not at run start.
+ *
+ * `places` is null when the original's demo data fills the list too, or a SELECT that fills it has no step of its own (folded into the run
+ * order, or it stands in no unit): its rows then start the run in the table, as before, and `startReason` says why.
+ * A list no SELECT fills (demo data, record fields, a lookup list) is not returned: its rows start the run.
+ * The handed-in rows are taken as the SELECT's result: its WHERE and UP TO are not applied to them.
+ */
+export interface ReadPlacement {
+  list: InputList;
+  /** The lines of the SELECTs that fill the list. */
+  selects: number[];
+  places: ReadPlace[] | null;
+  startReason: string | null;
+}
+
+export function readPlacementsOf(
+  lists: readonly InputList[],
+  units: ReadonlyArray<Pick<Unit, 'id' | 'kind' | 'fn' | 'abap' | 'part'>>,
+  statements: readonly AbapStatement[],
+): ReadPlacement[] {
+  const parents = new Set(units.flatMap((u) => (u.part ? [u.part.parent] : [])));
+  const holder = (line: number) =>
+    units.find((u) => !parents.has(u.id) && u.abap.some((r) => line >= r.lineStart && line <= r.lineEnd)) ?? null;
+  const out: ReadPlacement[] = [];
+  for (const list of lists) {
+    if (list.lookup || !list.filledBy.includes('read')) continue;
+    const selects = statements.filter((st) => reads(st.text, list.global.name));
+    if (selects.length === 0) continue;
+    const places: ReadPlace[] = [];
+    let startReason: string | null = null;
+    // Demo data fills it too (co-shape: LOAD_DEMO_RECEIVERS or READ_RECEIVERS, by P_DEMO): the rows stand for either, so
+    // they start the run as before — placed at the SELECT they would be lost on the demo path.
+    if (list.filledBy.includes('demo')) {
+      out.push({ list, selects: selects.map((s) => s.lineStart), places: null, startReason: "the original's demo data fills it as well, so its rows stand for either and are not tied to the SELECT" });
+      continue;
+    }
+    for (const st of selects) {
+      const u = holder(st.lineStart);
+      if (!u) {
+        startReason = `the SELECT at L${st.lineStart} stands in no function of this package`;
+        break;
+      }
+      if (u.kind === 'orchestrator') {
+        startReason = `the SELECT at L${st.lineStart} is in a routine folded into the run order (${u.fn}, ${u.id}), which has no step of its own`;
+        break;
+      }
+      places.push({ line: st.lineStart, appending: /\bAPPENDING\b/i.test(st.text), unitId: u.id, fn: u.fn });
+    }
+    out.push({ list, selects: selects.map((s) => s.lineStart), places: startReason ? null : places, startReason });
+  }
+  return out;
+}
+
+/** The tag of an input list a SELECT fills, read back by the trace (`inputReadsIn`). */
+export const INPUT_READ_TAG = '@cc-input-read';
+
+/** The `@cc-input-read` lines of an input contract: one per list a SELECT fills, as TRACE.md states them. */
+export function inputReadsIn(content: string): string[] {
+  const out: string[] = [];
+  const re = new RegExp(`^ \\*\\s+${INPUT_READ_TAG} (.+)$`, 'gm');
+  for (let m = re.exec(content); m !== null; m = re.exec(content)) out.push(m[1].trim());
   return out;
 }

@@ -101,6 +101,9 @@ const confinement = createConfinement({
   setInterval,
   clearInterval,
   nodeEnv: 'test',
+  // The original's AUTHORITY-CHECKs are granted for this test run only (CC_AUTHORITY_DEMO=grant, said in every report);
+  // srv/lib/authority.ts still denies them in the service, and the case with authority: 'denied' runs without the grant.
+  authorityGrant: true,
   platform: process.platform,
   version: process.version,
 });

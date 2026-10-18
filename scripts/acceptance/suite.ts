@@ -68,7 +68,7 @@ import { pathToFileURL } from 'node:url';
 import { GoogleGenAI } from '@google/genai';
 import JSZip from 'jszip';
 
-import { prepareEngineLed, preflightFactsOf, guardBodyOf, normalizeBodyOf, candidateFiles, assembleEngineLed, type CheckSummary, type EngineLedPrepared } from '../../lib/transformation/engine-led';
+import { prepareEngineLed, preflightFactsOf, guardBodyOf, normalizeBodyOf, repairBodyOf, candidateFiles, assembleEngineLed, type CheckSummary, type EngineLedPrepared } from '../../lib/transformation/engine-led';
 import { runGeneration, type CheckKind, type FillModel, type GenerationRunResult, type Verify } from '../../lib/transformation/orchestrator';
 import { createRunnerVerifier, abapScaffoldCheck, nodeScaffoldCheck, markerSpans, unitAt, type TypeCheckAnswer, type VerifyRunAnswer } from '../../lib/transformation/verify';
 import { packageFormatsHook } from '../../lib/transformation/abapgit-check';
@@ -908,6 +908,7 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
       model,
       guardBody: guardBodyOf(prepared),
       normalizeBody: normalizeBodyOf(prepared),
+      repairBody: repairBodyOf(prepared),
       verify,
       // As on the page: on Node complete only when these ran in full; the scaffold's own gate first (RAP activation, Node type check).
       ...(prepared.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),

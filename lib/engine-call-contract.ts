@@ -116,6 +116,11 @@ export interface EngineCaseCall {
    * `set` applied, appended to the list. `empty`: the request `{}`.
    */
   mode?: 'request' | 'append' | 'empty';
+  /**
+   * `denied` (3.0.17 criterion 3): the call runs without the authorization grant the engine cases otherwise run with
+   * (`CC_AUTHORITY_DEMO=grant`, test only) — the original's AUTHORITY-CHECK then answers 4 and the run is refused.
+   */
+  authority?: 'denied';
   set: CallSet[];
   expect: CallExpect;
 }

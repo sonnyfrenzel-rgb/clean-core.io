@@ -22,7 +22,7 @@
 
 import { deriveEngineCases } from '../testing-engine-cases';
 import { LEASED_PROMPT_MAX_CHARS, bundleFills } from './fill-prompt';
-import { bodyGuards, markForeignLineRefs, spliceBodies } from './markers';
+import { bodyGuards, FINAL_PERIOD_NOTE, markForeignLineRefs, repairFinalPeriod, spliceBodies } from './markers';
 import { buildNodeScaffold } from './scaffold-node';
 import { buildRapScaffold } from './scaffold-rap';
 import type { AgainstDecision } from './decision-header';
@@ -337,6 +337,19 @@ export function givenLinesOf(prep: Pick<EngineLedPrepared, 'fillUnits'>, regionI
   return out;
 }
 
+/**
+ * The orchestrator's `repairBody` (3.0.17 criterion 3): an ABAP body whose only refusal is a missing final period gets
+ * it, and passes only if the same checks then accept it (`repairFinalPeriod`). The Node route repairs nothing.
+ */
+export function repairBodyOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold' | 'sliceChars'>) {
+  return (regionId: string, body: string, needs: readonly string[]): { body: string; note: string } | null => {
+    if (prep.scaffold.track !== 'rap') return null;
+    const ctx = guardContextOf(prep, regionId, needs);
+    const repaired = repairFinalPeriod(body, (b) => bodyGuards(b, ctx));
+    return repaired === null ? null : { body: repaired, note: FINAL_PERIOD_NOTE };
+  };
+}
+
 /** The orchestrator's `normalizeBody`: line references a body's comments make outside its given lines, marked (B5). */
 export function normalizeBodyOf(prep: Pick<EngineLedPrepared, 'fillUnits' | 'scaffold'>) {
   const cache = new Map<string, Set<number>>();
@@ -484,6 +497,8 @@ export function assembleEngineLed(
       failing.push({ unitId: t.unitId, title: title(t.unitId), failure: u.failures[0] });
       t.note = `checks still failing: ${u.failures[0]}`;
     }
+    // A mechanical repair of the engine on an accepted body (a missing final period) is said, never hidden.
+    if (!refused && u.state === 'written' && u.repairs?.length) t.note = [t.note, ...u.repairs].filter(Boolean).join('; ');
   }
   // Node route (3.0.13, A1/A2/A5): complete only when the type check ran with 0 errors and the engine cases and
   // probes ran in full; a type error makes it not runnable, anything that did not run makes it not verified.

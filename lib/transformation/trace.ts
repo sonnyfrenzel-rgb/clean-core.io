@@ -16,6 +16,7 @@ import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
 import { engineCounterpartsIn } from './released-counterparts';
 import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority-node';
 import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
+import { inputReadsIn } from './input-lists';
 import { INITIAL_ASSUMPTION, initialAssumptionsIn } from './initial-node';
 import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
@@ -67,6 +68,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const engineCounterparts = [...new Set(scaffold.files.filter((f) => /_access\.clas\.abap$/i.test(f.path)).flatMap((f) => engineCounterpartsIn(f.content)))];
   const openAuthority = scaffold.files.filter((f) => f.path === AUTHORITY_FILE).flatMap((f) => openAuthorityIn(f.content));
   const lookupLists = scaffold.files.filter((f) => f.path === LOOKUPS_FILE).flatMap((f) => lookupListsIn(f.content));
+  const inputReads = scaffold.files.filter((f) => f.path === 'srv/lib/input-contract.ts').flatMap((f) => inputReadsIn(f.content));
   const initialAssumptions = scaffold.files.filter((f) => f.path === 'srv/lib/guards.ts').flatMap((f) => initialAssumptionsIn(f.content));
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
@@ -147,6 +149,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     ...(goldenMaster ? { goldenMaster } : {}),
     ...(engineCounterparts.length ? { engineCounterparts } : {}),
     ...(openAuthority.length ? { openAuthority } : {}),
+    ...(inputReads.length ? { inputReads } : {}),
     ...(lookupLists.length ? { lookupLists } : {}),
     ...(initialAssumptions.length ? { initialAssumptions } : {}),
   };
@@ -204,7 +207,12 @@ export function traceMarkdown(trace: Trace): string {
   }
   if (trace.openAuthority?.length) {
     lines.push(
-      `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only, and each run it grants says so in its issues.`,
+      `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only, and each run it grants says so in its issues. The engine cases, the failure-pattern probes and npm test run with ${AUTHORITY_DEMO_ENV}=grant set for the test only — they test what follows the authorization, not the authorization itself; one engine case runs without the grant and expects the refusal.`,
+    );
+  }
+  if (trace.inputReads?.length) {
+    lines.push(
+      `- Input lists a SELECT of the original fills — the request's rows stand for what it reads: ${trace.inputReads.join('; ')} The handed-in rows are not filtered by the SELECT's WHERE (its selection, date or row limit): they are taken as its result, so a request hands in only the rows the selection would read.`,
     );
   }
   if (trace.lookupLists?.length) {

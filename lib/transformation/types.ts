@@ -155,8 +155,14 @@ export const PLAN_VERSION = 2;
  * not read as 'unknown': null, blank, 0, '00000000', '000000', named in the JSDoc and TRACE.md). RAP — the body is told to
  * leave the method (or the pass) where such a CHECK's condition does not hold.
  * Nothing signed changes (§12.3).
+ * 16 (3.0.17 criterion 3, the 1,000-line starter example's trial run, 18.10.2026): Node — an input list a SELECT of a
+ * step fills gets its rows where that SELECT fills the table, not at run start: the original's FORM INITIALIZE_RUN
+ * clears GT_ORDERS before FORM SELECT_ORDERS reads it, the model ported the CLEAR faithfully, and every valid request
+ * ran with no orders. The run holds those lists in `st.handedIn` (`handedInOf`), the step's frame writes the placement
+ * at its entry in the original's order (`readPlacementsOf`, input-lists.ts); a SELECT folded into the run order keeps
+ * the start seeding, and TRACE.md says which. The handed-in rows are the SELECT's result: its WHERE is not applied.
  */
-export const SCAFFOLD_VERSION = 15;
+export const SCAFFOLD_VERSION = 16;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -771,6 +777,8 @@ export interface Trace {
   engineCounterparts?: string[];
   /** 3.0.17: the original's authority checks `srv/lib/authority.ts` leaves open, failing closed (`authority-node.ts`). Absent when none. */
   openAuthority?: string[];
+  /** 3.0.17 (scaffold 16): each input list a SELECT fills and where its rows reach the table (`readPlacementsOf`, input-lists.ts). Absent when none. */
+  inputReads?: string[];
   /** 3.0.17: the lookup lists and the SAP table each comes from (`kna1 ← KNA1 (L156)`, `lookups-node.ts`). Absent when none. */
   lookupLists?: string[];
   /** 3.0.17: the checks whose IS INITIAL reads a type the engine has not read (`G-0199 (L196, lv_profl)`, `initial-node.ts`). Absent when none. */

@@ -68,6 +68,7 @@ import {
 import { SAP_STUBS_FOLDER, sapStubPackageFiles } from './transformation/abap-sap-stubs';
 import { abapGitXmlHolds } from './transformation/abapgit-check';
 import { engineCounterpartsIn } from './transformation/released-counterparts';
+import { inputReadsIn } from './transformation/input-lists';
 import { TARGET_EDITION_NAMES } from './sap-naming';
 import { AI_MARKING_BASIS, aiMarkingField, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
 import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
@@ -1418,6 +1419,13 @@ export interface StatusInputs {
    * counterpart (read from the access class, `released-counterparts.ts`). Absent or empty: none.
    */
   engineCounterparts?: readonly string[];
+  /**
+   * 3.0.17 (scaffold 16): the Node package's input lists a SELECT of the original fills, and where their rows reach the
+   * table (read from srv/lib/input-contract.ts, `inputReadsIn`). Absent or empty: none.
+   */
+  inputReads?: readonly string[];
+  /** 3.0.17: the Node package carries the original's AUTHORITY-CHECKs in srv/lib/authority.ts (fail closed). */
+  authoritySeam?: boolean;
 }
 
 /**
@@ -1713,6 +1721,18 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   if (inputs.engineCounterparts?.length) {
     lines.push(
       `SAP calls the engine replaced with an exact counterpart in ABAP Cloud language means — written, nothing to connect: ${inputs.engineCounterparts.join(', ')}. The access class says why each is exact; every other SAP call of the access layer still raises until it is connected to a released API.`,
+      '',
+    );
+  }
+  if (inputs.inputReads?.length) {
+    lines.push(
+      `Input lists a SELECT of the original fills — the request's rows stand for what it reads: ${inputs.inputReads.join('; ')} The SELECT's WHERE (its selection, date or row limit) is not applied to rows handed in: they are taken as its result. Wiring a list to a read of your system is a developer step.`,
+      '',
+    );
+  }
+  if (inputs.authoritySeam) {
+    lines.push(
+      "Authorization: srv/lib/authority.ts denies every AUTHORITY-CHECK of the original (fail closed) until you map it to your target's authorization. The engine cases, the failure-pattern probes and `npm test` run with CC_AUTHORITY_DEMO=grant set for the test only — they test what follows the authorization; one engine case runs without the grant and expects the refusal. The service grants nothing.",
       '',
     );
   }
@@ -2175,7 +2195,8 @@ export function finishDeliveryPackage(input: {
   // The code checks read the package as it ships — the model's code with the normalised package.json.
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
   const engineCounterparts = [...new Set(entries.filter((e) => /^src\/.+_access\.clas\.abap$/i.test(e.path)).flatMap((e) => engineCounterpartsIn(e.content)))];
-  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts }), origin: 'engine' };
+  const inputReads = entries.filter((e) => e.path === 'srv/lib/input-contract.ts').flatMap((e) => inputReadsIn(e.content));
+  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts, inputReads, authoritySeam: entries.some((e) => e.path === 'srv/lib/authority.ts') }), origin: 'engine' };
   const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);

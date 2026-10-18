@@ -77,6 +77,27 @@ export const ENGINE_OUTCOME_MARKER = '@@CC-ENGINE-OUTCOME ';
 
 const NOT_EXPRESSIBLE = "not expressible through the call contract — asserted by the model's test only";
 
+/**
+ * The original's AUTHORITY-CHECKs in a Node package (3.0.17 criterion 3): `srv/lib/authority.ts` denies every check
+ * (fail closed) unless `CC_AUTHORITY_DEMO=grant` is in its environment. The engine cases run with that grant — set
+ * explicitly by the caller (`createConfinement({ authorityGrant: true })`, the generated test file) and said in the
+ * report — so they test what follows the authorization; a case with `authority: 'denied'` runs without it and proves
+ * the seam refuses. A refusal of the package names its check (`… the authorization check at L197 …`): read only to say
+ * why a run was refused, never as a verdict.
+ */
+export const AUTHORITY_DEMO_ENV = 'CC_AUTHORITY_DEMO';
+const AUTHORITY_REFUSAL = /authorization check at L\d+/i;
+
+/** The first error message of an answer that names an authorization check, or undefined. */
+function authorityRefusalOf(answer) {
+  const list = Array.isArray(answer?.errors) ? answer.errors : [];
+  for (const e of list.slice(0, 20)) {
+    const m = isObject(e) && typeof e.message === 'string' ? e.message : '';
+    if (AUTHORITY_REFUSAL.test(m)) return m.slice(0, 240);
+  }
+  return undefined;
+}
+
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** Errors JavaScript throws by itself: a crash, not a refusal the code decided on. */
@@ -251,6 +272,8 @@ function answerIn(raw) {
   if (raw.threw !== undefined) return { threw: str(String(raw.threw), 200), crash: raw.crash === true };
   const out = { ok: raw.ok === true ? true : raw.ok === false ? false : undefined, errors: errorsOf(raw) };
   if (typeof raw.records === 'number' && Number.isFinite(raw.records)) out.records = raw.records;
+  // Words only, never a verdict: why a refused base request was refused (the original's authorization check).
+  if (out.ok === false && typeof raw.authority === 'string' && AUTHORITY_REFUSAL.test(raw.authority)) out.authority = str(raw.authority, 240);
   return out;
 }
 
@@ -452,6 +475,14 @@ export function judgeControl(control) {
     // `cause` lets a caller that knows whose code that is count it as a failure.
     return { ok: false, cause: 'base-threw', reason: `the code behind the contract threw on the accepted baseRequest in simulate (${s.threw})` };
   }
+  if (s && s.ok === false && typeof s.authority === 'string') {
+    // Refused by the original's authorization check, not by the mapping (3.0.17 criterion 3): the run did not grant it.
+    return {
+      ok: false,
+      cause: 'authority',
+      reason: `the contract's baseRequest is refused by the original's authorization check (${s.authority}) — srv/lib/authority.ts denies every check until it is granted, and this run did not grant it (${AUTHORITY_DEMO_ENV}=grant, test only)`,
+    };
+  }
   if (!s || s.ok === false) {
     return { ok: false, reason: `the contract's baseRequest is refused by simulate (${JSON.stringify(s?.errors ?? [])}) — the mapping does not fit the code` };
   }
@@ -518,6 +549,8 @@ function answerOf(r) {
   if (r.threw !== undefined) return { threw: r.threw, crash: r.crash };
   const out = { ok: r.answer?.ok === true ? true : r.answer?.ok === false ? false : undefined, errors: errorsOf(r.answer) };
   if (typeof r.answer?.records === 'number') out.records = r.answer.records;
+  const authority = out.ok === false ? authorityRefusalOf(r.answer) : undefined;
+  if (authority !== undefined) out.authority = authority;
   return out;
 }
 
@@ -531,6 +564,29 @@ function answerOf(r) {
  */
 export function createEngineState(hooks = null) {
   return { control: undefined, hooks };
+}
+
+/**
+ * Runs `fn` with the authorization grant withdrawn (`authority: 'denied'`): through the confinement's hook, or — where
+ * the package runs unconfined (the generated test file, the specs) — on this process's environment, restored after.
+ */
+async function withoutAuthorityGrant(state, fn) {
+  const hook = state && state.hooks && state.hooks.denyAuthority;
+  let restore;
+  if (typeof hook === 'function') restore = hook();
+  else if (typeof process !== 'undefined' && process.env) {
+    const had = Object.prototype.hasOwnProperty.call(process.env, AUTHORITY_DEMO_ENV);
+    const before = process.env[AUTHORITY_DEMO_ENV];
+    delete process.env[AUTHORITY_DEMO_ENV];
+    restore = () => {
+      if (had) process.env[AUTHORITY_DEMO_ENV] = before;
+    };
+  }
+  try {
+    return await fn();
+  } finally {
+    if (typeof restore === 'function') restore();
+  }
 }
 
 function freezeClock(state, at) {
@@ -622,8 +678,13 @@ async function execute(mod, call, state) {
     }
     return out;
   }
-  const r = await attempt(() => mod.simulate(built.request), state);
+  const run = () => attempt(() => mod.simulate(built.request), state);
+  const r = call.authority === 'denied' ? await withoutAuthorityGrant(state, run) : await run();
   if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
+  // A run that reached a stub says nothing about the authorization check it may not have reached.
+  if (call.authority === 'denied' && r.threw === undefined && r.answer?.ok === true && r.answer?.complete === false) {
+    return { notRunnable: 'the run reached a function still left as a stub, so the authorization check was not shown to refuse' };
+  }
   return { ...answerOf(r), path: mapped };
 }
 
@@ -737,7 +798,9 @@ const HOST_ONLY_GLOBALS = [
  * capabilities the stand-ins use, all taken by the trusted caller:
  *   `{ now(), random(), randomUUID(), getRandomValues(a), structuredClone(v),
  *      setTimeout, clearTimeout, setInterval, clearInterval,
- *      emit?(event), nodeEnv?, platform?, version? }`.
+ *      emit?(event), nodeEnv?, platform?, version?, authorityGrant? }`.
+ * `authorityGrant: true` sets CC_AUTHORITY_DEMO=grant in the package's environment — for a test run only, said
+ * by its caller — and `hooks.denyAuthority()` withdraws it for one call (`authority: 'denied'`), returning a restore.
  * Returns `{ load(source), setClock(clock), hooks, provides }`:
  *   - `load(source)` evaluates one CommonJS bundle of the package (esbuild's
  *     output; the caller bundles, nothing is resolved from disk in here) in a
@@ -761,6 +824,8 @@ export function createConfinement(host) {
       // the report channel is gone: nothing left to tell
     }
   };
+  // The environment of the package loaded last: `hooks.denyAuthority` withdraws its grant for one call.
+  let currentEnv = null;
   const refusals = new WeakSet();
   const refuse = (text) => {
     const err = new Error(text);
@@ -931,6 +996,15 @@ export function createConfinement(host) {
     provides: CONFINED_MODULES,
     hooks: harden({
       notRunnable,
+      denyAuthority: () => {
+        const env = currentEnv;
+        if (!env || !Object.prototype.hasOwnProperty.call(env, AUTHORITY_DEMO_ENV)) return () => {};
+        const before = env[AUTHORITY_DEMO_ENV];
+        delete env[AUTHORITY_DEMO_ENV];
+        return () => {
+          env[AUTHORITY_DEMO_ENV] = before;
+        };
+      },
       freezeClock: (at) => {
         const previous = clock;
         clock = () => at;
@@ -955,6 +1029,8 @@ export function createConfinement(host) {
       // Per load: a process stand-in the package may write to without reaching anything.
       const env = {};
       if (typeof host.nodeEnv === 'string') env.NODE_ENV = host.nodeEnv;
+      if (host.authorityGrant === true) env[AUTHORITY_DEMO_ENV] = 'grant';
+      currentEnv = env;
       const sink = { write: () => true, isTTY: false, on: () => sink, once: () => sink, end: noop };
       const proc = {
         env,

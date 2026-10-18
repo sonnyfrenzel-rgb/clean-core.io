@@ -132,6 +132,12 @@ export interface OrchestratorInput {
    * comment that is not among the function's ABAP lines is marked as such). Identity when absent.
    */
   normalizeBody?: (regionId: string, body: string) => string;
+  /**
+   * A deterministic repair of a body the guards would refuse for a mechanical defect only (3.0.17 criterion 3: an ABAP
+   * body without its final period, `repairFinalPeriod`): the repaired body and what TRACE.md says of it, or null. The
+   * guards then run on the repaired body as on any other. Identity when absent.
+   */
+  repairBody?: (regionId: string, body: string, needs: readonly string[]) => { body: string; note: string } | null;
   verify: Verify;
   /**
    * The checks of the scaffold before any fill (3.0.13, ABAP route: the activation check). Reported, never
@@ -174,6 +180,8 @@ export interface UnitOutcome {
   failures: string[];
   /** The accepted predicate bodies of the unit's guards, by fill region (`U02.G0506`, design §9.1). */
   predicates: Record<string, string>;
+  /** What the engine repaired in the accepted body (`repairBody`), said in TRACE.md; absent when nothing. */
+  repairs?: string[];
   /** The code of why there is no body (`error-codes.ts`), and the HTTP status when a server said it. */
   code?: string | null;
   status?: number | null;
@@ -288,6 +296,8 @@ interface UnitState {
   body: string | null;
   /** A body the guards refused (for the repair's "previous body"); never spliced. */
   refusedBody: string | null;
+  /** What the engine repaired in the accepted body and its predicates (`repairBody`). */
+  repairs: string[];
   filledBy: FilledBy;
   /** Why there is no body, when there is none. */
   reason: string | null;
@@ -334,7 +344,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     ...input.units.filter((u) => !order.includes(u.unitId)),
   ];
   const states = new Map<string, UnitState>(
-    ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, code: null, status: null, final: false, failures: [], predicates: new Map(), predicateGaps: [] } as UnitState]),
+    ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, code: null, status: null, final: false, failures: [], predicates: new Map(), predicateGaps: [], repairs: [] } as UnitState]),
   );
 
   // The budget's calls and, apart, the gate-repair calls beyond it (owner decision 14.10.2026): a call marked
@@ -506,6 +516,9 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         emit({ t: 'fill', unitId: answer.unitId, state: 'refused', at: now(), reason: `the model declined: ${answer.refused.reason}`, code: 'model-declined' });
         continue;
       }
+      // A mechanical defect only (a missing final period): the engine repairs it, and the same checks read the result.
+      const repaired = input.repairBody?.(answer.unitId, answer.body, answer.needs) ?? null;
+      if (repaired) answer.body = repaired.body;
       const refusal = input.guardBody(answer.unitId, answer.body, answer.needs);
       if (refusal) {
         // A refused body is never spliced, and never replaces a body that was accepted before.
@@ -520,6 +533,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         continue;
       }
       st.body = answer.body;
+      st.repairs = repaired ? [repaired.note] : [];
       st.refusedBody = null;
       st.reason = null;
       st.code = null;
@@ -534,10 +548,15 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
           if (!st.predicates.has(g.regionId)) st.predicateGaps.push(`the predicate of ${g.id} (${g.helper}) was not written`);
           continue;
         }
-        const why = input.guardBody(g.regionId, given, answer.needs);
+        const fixed = input.repairBody?.(g.regionId, given, answer.needs) ?? null;
+        const predicate = fixed ? fixed.body : given;
+        const why = input.guardBody(g.regionId, predicate, answer.needs);
         if (why) {
           if (!st.predicates.has(g.regionId)) st.predicateGaps.push(`the predicate of ${g.id} was refused by the checks on fills: ${why}`);
-        } else st.predicates.set(g.regionId, given);
+        } else {
+          st.predicates.set(g.regionId, predicate);
+          if (fixed) st.repairs.push(`${g.id}: ${fixed.note}`);
+        }
       }
       st.failures = st.predicateGaps.map((p) => `body guards: ${p}`);
       emit({ t: 'fill', unitId: answer.unitId, state: 'written', at: now() });
@@ -693,6 +712,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       reason: written ? null : st.reason,
       failures: written ? st.failures : [],
       predicates: written ? Object.fromEntries(st.predicates) : {},
+      ...(written && st.repairs.length > 0 ? { repairs: [...st.repairs] } : {}),
       code: written ? null : st.code,
       status: written ? null : st.status,
     };

@@ -1388,7 +1388,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { requestGenerationLease, leasedFillModel, newGenerationRunId, closeGenerationLease },
         { runGeneration },
         { createRunnerVerifier, runnerOverHttp, packageFormatsHook, abapScaffoldCheck, nodeScaffoldCheck },
-        { guardBodyOf, normalizeBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
+        { guardBodyOf, normalizeBodyOf, repairBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
         { sha256Hex },
         { affSchemaSource },
         { preflight },
@@ -1538,6 +1538,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           }),
           guardBody: guardBodyOf(prep),
           normalizeBody: normalizeBodyOf(prep),
+          repairBody: repairBodyOf(prep),
           verify,
           // Complete only when these ran in full (3.0.13, A2/A5): a skipped or not-run case is never evidence.
           ...(prep.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),
