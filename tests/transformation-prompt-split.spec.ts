@@ -200,7 +200,8 @@ test('the shipped starter examples keep their units, split nothing, and every ca
     'Z_INVOICE_EXTRACTOR.txt': 3,
     'Z_MATERIAL_STOCK_CALC.txt': 3,
     'Z_MM_PO_APPROVAL.abap': 20,
-    'Z_ORDER_INTEGRITY_CHECK.txt': 4,
+    // 8 since scaffold 17: six methods of three local classes (three were lost by name) and the FORM the process begins at.
+    'Z_ORDER_INTEGRITY_CHECK.txt': 8,
     'Z_SALES_ORDER_CREATOR.txt': 3,
     'Z_SD_FREIGHT_RATE_CHECK.abap': 12,
   };

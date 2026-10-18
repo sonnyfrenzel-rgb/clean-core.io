@@ -45,8 +45,13 @@ export function baseValueOf(f: ContractField): unknown {
 /** True when the contract has a record list. */
 export const hasRecords = (plan: Pick<UnitPlan, 'fields'>) => plan.fields.some((f) => f.where === 'record');
 
-/** The `CONTRACT` of `srv/engine-contract.ts`. */
-export function contractModel(plan: Pick<UnitPlan, 'fields'> & Partial<Pick<UnitPlan, 'missingBaseValues'>>): ContractModel {
+/**
+ * The `CONTRACT` of `srv/engine-contract.ts`. `lists` are the request keys of the package's input and lookup lists
+ * (`LISTS` of srv/lib/input-contract.ts): a base request with no value of its own is one of them, empty — `run: true`
+ * only where the package has no field and no list, the one case its input check knows `run` (scaffold 17; until then
+ * every engine case of the order-integrity example read Not run, its base request refused as an unknown option).
+ */
+export function contractModel(plan: Pick<UnitPlan, 'fields'> & Partial<Pick<UnitPlan, 'missingBaseValues'>>, lists: readonly string[] = []): ContractModel {
   const baseRequest: Record<string, unknown> = {};
   // One base row per list the record fields name: `records` until scaffold version 7, one list per input
   // structure since (`claims[].price`, input-lists.ts).
@@ -62,7 +67,10 @@ export function contractModel(plan: Pick<UnitPlan, 'fields'> & Partial<Pick<Unit
     else if (list) rows.get(list)![f.key] = value;
   }
   for (const [list, row] of rows) baseRequest[list] = [row];
-  if (Object.keys(baseRequest).length === 0) baseRequest.run = true;
+  if (Object.keys(baseRequest).length === 0) {
+    if (lists.length > 0) baseRequest[lists[0]] = [];
+    else baseRequest.run = true;
+  }
   return { version: 1, baseRequest, fields, missingBaseValues: [...(plan.missingBaseValues ?? [])] };
 }
 
@@ -71,6 +79,8 @@ export interface AdapterOptions {
   /** Modules the import probe loads (never `srv/server.ts`, the one file that listens). */
   modules: Record<string, string>;
   delimiter: string;
+  /** The request keys of the package's lists, as `contractModel` takes them. */
+  lists?: readonly string[];
   /** The display-filter, recalculation and negative-write entries (`fillProbeConfigs`, fill-probes.ts). */
   fill?: Partial<Record<'display-filter' | 'recalc-additive' | 'negative-write', Record<string, unknown>>>;
 }
@@ -88,7 +98,7 @@ function numericProbeField(plan: Pick<UnitPlan, 'fields'>): ContractField | null
 
 /** `acceptance-adapter.json` for a Node scaffold. */
 export function acceptanceAdapter(plan: Pick<UnitPlan, 'fields' | 'decimals'> & Partial<Pick<UnitPlan, 'missingBaseValues'>>, options: AdapterOptions): AcceptanceAdapter {
-  const contract = contractModel(plan);
+  const contract = contractModel(plan, options.lists);
   const probes: Record<string, unknown> = {};
   probes['rounding-commercial'] = {
     call: { module: 'shims', export: 'percentOf' },

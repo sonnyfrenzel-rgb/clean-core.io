@@ -572,12 +572,62 @@ const SAP_CLAIM_STRING =
 const SAP_API_STRING = /\bAPI_[A-Z0-9_]+\b|\bBAPI_[A-Z0-9_]+/;
 const SUCCESS_STRING = /\bsuccessfully\s+(?:updated|posted|created|saved|written|synchroni[sz]ed|sent)\b/i;
 
+/**
+ * The spans of `throw …;` statements: what a thrown error says is a refusal or a failure — that nothing was done — and
+ * never the claim of an update this check looks for (3.0.18, E10: the engine's access layer refuses a BAPI with no
+ * released successor by naming it, `throw new AccessRefused("BAPI_SALESORDER_CREATEFROMDAT2", …)`, and the check
+ * stopped every generation of the sales-order example as an engine-code failure).
+ */
+function throwSpans(s: Source, code: string): Array<[number, number]> {
+  return codeMatches(s.src, s.mask, /\bthrow\b/g).map((m) => {
+    const end = code.indexOf(';', m.index);
+    const close = s.blocks.filter((b) => b.open < m.index && m.index < b.close).reduce((c, b) => Math.min(c, b.close), s.src.length);
+    return [m.index, end < 0 ? close : Math.min(end, close)] as [number, number];
+  });
+}
+
+/**
+ * A function whose body is one `throw` refuses whatever it is named after: it claims no call (3.0.18, E10). The body
+ * is the first block after the parameter list; a return type spelled as an object literal makes it read as no body,
+ * and the name is then reported as before.
+ */
+function refusesOnly(s: Source, code: string, at: number): boolean {
+  const open = s.src.indexOf('(', at);
+  if (open < 0 || !s.mask[open]) return false;
+  const close = matchClose(s.src, s.mask, open);
+  const body = close < 0 ? undefined : s.blocks.filter((b) => b.open > close).sort((a, b) => a.open - b.open)[0];
+  if (!body) return false;
+  return /^\s*throw\s[^;{}]*;?\s*$/.test(code.slice(body.open + 1, body.close));
+}
+
+/**
+ * The fill regions of an engine-written file (`@cc-fill BEGIN` … `@cc-fill END`). A name declared outside them is the
+ * engine's frame — a step function is named after the original's routine for the trace (`EXECUTE_BAPI_CREATION` →
+ * `executeBapiCreation`) — and is no claim of the model's (3.0.18, E10). Empty for a file without markers, where
+ * every name counts as before.
+ */
+function fillRegions(src: string): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  const re = /@cc-fill BEGIN\b[\s\S]*?@cc-fill END\b/g;
+  for (let m = re.exec(src); m; m = re.exec(src)) out.push([m.index, m.index + m[0].length]);
+  return out;
+}
+
 function claimedIntegration(s: Source): GeneratedCodeLintFinding[] {
   const out: GeneratedCodeLintFinding[] = [];
   const code = s.src.split('').map((c, i) => (s.mask[i] ? c : ' ')).join('');
   if (HTTP_CLIENT.test(code) || /@sap-cloud-sdk\/|['"]axios['"]|['"]undici['"]/.test(s.src)) return out;
-  const names = codeMatches(s.src, s.mask, /\b(class|function)\s+([\w$]+)/g).filter((m) => SAP_NAME.test(m[2]));
-  const strings = stringLiterals(s).filter((x) => SAP_CLAIM_STRING.test(x.text) || SAP_API_STRING.test(x.text) || (SUCCESS_STRING.test(x.text) && (names.length > 0 || SAP_NAME.test(x.text))));
+  const sapNamed = codeMatches(s.src, s.mask, /\b(class|function)\s+([\w$]+)/g).filter((m) => SAP_NAME.test(m[2]));
+  const regions = fillRegions(s.src);
+  const inRegion = (at: number) => regions.some(([a, b]) => a < at && at < b);
+  // Reported: a name the model chose (inside a fill region, or in a file without any) that does more than refuse.
+  // Every SAP name still makes a success message suspect, whoever chose it.
+  const names = sapNamed.filter((m) => (regions.length === 0 || inRegion(m.index)) && !(m[1] === 'function' && refusesOnly(s, code, m.index + m[0].length)));
+  const throws = throwSpans(s, code);
+  const thrown = (at: number) => throws.some(([a, b]) => a < at && at < b);
+  const strings = stringLiterals(s).filter(
+    (x) => !thrown(x.at) && (SAP_CLAIM_STRING.test(x.text) || SAP_API_STRING.test(x.text) || (SUCCESS_STRING.test(x.text) && (sapNamed.length > 0 || SAP_NAME.test(x.text)))),
+  );
   for (const m of names) {
     out.push(
       finding(

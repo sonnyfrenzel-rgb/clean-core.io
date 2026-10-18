@@ -166,8 +166,17 @@ export const PLAN_VERSION = 2;
  * symbols, APPEND VALUE), and a case whose data it cannot carry exactly skips without running, naming the statement;
  * `run( )` catches the nofill exception of a stub at its boundary and returns the result with the unit in
  * `not_filled`, and a demo case that reaches a stub fails. Node — the not-run reason names the statements.
+ * 17 (3.0.18, the end-to-end check of every starter example, 18.10.2026): both tracks — a method of a local class is a
+ * unit by its class (`CLASS=>METHOD`): two classes' CALCULATE_TAX were one unit and the other was dropped unlisted (E1).
+ * RAP — a method carries the parameters and RETURNING of its declaration in the class definition (an ancestor's for a
+ * REDEFINITION), and the local classes' attributes are attributes of the logic class (E2). Both — an original with no
+ * entry point carries the FORMs the process map begins at, called from outside, and the engine-written process body
+ * names them (E3). Node — the base request of a package with lists and no base value is a list, empty, not
+ * `run: true`, which its input check refuses where there is a list (E4). The claimed-integration lint reads a thrown
+ * message and a function that only throws as a refusal, and the engine's frame names as no claim (E10).
+ * Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 16;
+export const SCAFFOLD_VERSION = 17;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -181,6 +190,33 @@ export const NO_ENTRY_POINT = [
   'program level - so starting it runs nothing, and there is no run order to port. Nothing is written here:',
   'call the steps from the entry point your target needs.',
 ];
+
+/**
+ * Scaffold 17: the lines after `NO_ENTRY_POINT` that name where the process begins, as the process map draws it — the
+ * FORMs no PERFORM of the source names, called from outside it (`UnitPlan.calledFromOutside`) — and the function each
+ * became (`nameOf`, the track's name of a unit). Empty when the plan names none. Lines of at most 110 characters.
+ */
+export function calledFromOutsideLines(plan: Pick<UnitPlan, 'calledFromOutside'>, nameOf: (unitId: string) => string | undefined): string[] {
+  const entries = plan.calledFromOutside ?? [];
+  if (entries.length === 0) return [];
+  const words = entries.map((e) => {
+    const name = e.unitId ? nameOf(e.unitId) : undefined;
+    return `FORM ${e.routine} (L${e.line})${name ? ` - here ${name} (${e.unitId})` : ''}`;
+  });
+  const text =
+    `The process map begins where the original is called from outside: ${words.join('; ')}. No PERFORM in this ` +
+    `source names ${entries.length === 1 ? 'it' : 'them'}, so the caller is outside this source and not determined.`;
+  const out: string[] = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    if (line && line.length + 1 + word.length > 110) {
+      out.push(line);
+      line = word;
+    } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) out.push(line);
+  return out;
+}
 
 export const SOFT_SLICE_LINES = 150;
 export const SOFT_SLICE_CHARS = 6_000;
@@ -313,6 +349,11 @@ export interface Unit {
   stepId: string | null;
   /** Upper-cased routine (FORM/METHOD) of the unit; null for the orchestrator. */
   routine: string | null;
+  /**
+   * The local class a METHOD unit implements, upper case (scaffold 17): methods of different classes share names, and
+   * the class tells them apart. Absent for a FORM, and for a method the source shows no class of.
+   */
+  owner?: string;
   /** The unit's own lines first, then folded helpers. */
   abap: AbapRange[];
   /** Routines folded into this unit's slice (§7.1 rule 3). */
@@ -397,6 +438,12 @@ export interface UnitPlan {
   csvDelimiter: string;
   notCarried: NotCarried[];
   folded: Array<{ routine: string; into: string }>;
+  /**
+   * Scaffold 17: where the original has no entry point, the FORMs the process begins at — no PERFORM of the source
+   * names them, so their caller is outside it (`calledFromOutsideOf`, unit-plan.ts) — with the unit each became.
+   * Absent when the original has an entry point. Not part of the plan digest: the units it names are.
+   */
+  calledFromOutside?: Array<{ routine: string; line: number; unitId: string | null }>;
   /** How the RAP track delivers the process — UI service, Application Job or both — and why (`abap-delivery.ts`). */
   abapDelivery: AbapDelivery;
   stats: PlanStats;
