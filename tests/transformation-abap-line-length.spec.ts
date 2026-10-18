@@ -61,14 +61,25 @@ test('a CDS element is never named resource', async () => {
 });
 
 // The FI holdout run (18.10.2026): the golden master carries a CONCATENATE result as one literal of 300 characters.
-test('a literal longer than a line is split into chunks joined with &&, none ending on a blank or splitting a quote pair', () => {
-  const body = `${'A1:'.repeat(60)}It''s ${'x y '.repeat(40)}end`;
-  const line = `        ( id = 'A001' body = '${body}' )`;
-  const out = wrapAbapLine(line);
-  for (const l of out) expect(l.length).toBeLessThanOrEqual(ABAP_MAX_LINE);
-  const joined = out.join(' ');
-  const chunks = [...joined.matchAll(/'((?:[^']|'')*)'/g)].map((m) => m[1]).filter((c) => c !== 'A001');
-  expect(chunks.join('')).toBe(body);
-  for (const c of chunks.slice(0, -1)) expect(c.endsWith(' ')).toBe(false);
-  expect(joined).toContain(' && ');
-});
+// Every chunk but the last is a string literal, which keeps its blanks (QA review of 0dc9c0d8bf27: 40+ blanks).
+const decode = (joined: string) =>
+  [...joined.matchAll(/'((?:[^']|'')*)'|`((?:[^`]|``)*)`/g)]
+    .map((m) => (m[1] !== undefined ? m[1] : m[2].replace(/``/g, '`').replace(/'/g, "''")))
+    .filter((c) => c !== 'A001');
+
+for (const [name, body] of [
+  ['quotes and words', `${'A1:'.repeat(60)}It''s ${'x y '.repeat(40)}end`],
+  ['a long run of blanks', `${'B'.repeat(150)}${' '.repeat(90)}C${'D'.repeat(80)}`],
+] as const) {
+  test(`a literal longer than a line is split with &&, no blank or quote pair lost: ${name}`, () => {
+    const line = `        ( id = 'A001' body = '${body}' )`;
+    const out = wrapAbapLine(line);
+    for (const l of out) expect(l.length).toBeLessThanOrEqual(ABAP_MAX_LINE);
+    const joined = out.join(' ');
+    expect(joined).toContain(' && ');
+    expect(decode(joined).join('')).toBe(body);
+    // Only the last chunk is a text literal; the others keep their blanks as string literals.
+    const texts = [...joined.matchAll(/'((?:[^']|'')*)'/g)].map((m) => m[1]).filter((c) => c !== 'A001');
+    expect(texts.length).toBe(1);
+  });
+}

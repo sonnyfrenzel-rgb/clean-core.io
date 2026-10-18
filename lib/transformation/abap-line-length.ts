@@ -82,12 +82,13 @@ function splitLongLiterals(code: string, room: number): string {
     const parts: string[] = [];
     let at = 0;
     while (at < body.length) {
-      let end = Math.min(body.length, at + limit - 2);
+      let end = Math.min(body.length, at + limit - 4);
       // Inside a literal the quote only appears doubled: a cut with an odd count of quotes before it splits a pair.
-      const unsafe = (e: number) => body[e - 1] === ' ' || body.slice(at, e).split(q).length % 2 === 0;
-      while (end < body.length && end > at + 1 && unsafe(end)) end--;
-      if (end <= at + 1) end = Math.min(body.length, at + limit - 2);
-      parts.push(`${q}${body.slice(at, end)}${q}`);
+      if (end < body.length && body.slice(at, end).split(q).length % 2 === 0) end--;
+      const chunk = body.slice(at, end);
+      // Every chunk but the last is a string literal (`…`), which keeps its blanks — a text literal ('…') would
+      // drop trailing ones (QA review of 0dc9c0d8bf27). The last chunk ends where the original ends: as written.
+      parts.push(end < body.length && q === "'" ? `\`${chunk.replace(/''/g, "'").replace(/`/g, '``')}\`` : `${q}${chunk}${q}`);
       at = end;
     }
     return parts.join(' && ');
