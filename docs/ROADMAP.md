@@ -1598,12 +1598,12 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-868 | info | — | — | refuted |
 | SEC-2026-869 | critical | P1 | 3.0.16 · patch step | fixed |
 | SEC-2026-870 | high | P1 | 3.0.17 · separate dev and main secrets (needs the owner) | scheduled |
-| SEC-2026-871 | medium | P2 | 3.0.18 · item 1 | scheduled |
-| SEC-2026-872 | medium | P2 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-871 | medium | P2 | 3.0.18 · item 1 | fixed |
+| SEC-2026-872 | medium | P2 | 3.0.18 · item 1 | fixed |
 | SEC-2026-873 | medium | P2 | 3.0.18 · item 1 | scheduled |
-| SEC-2026-874 | low | P3 | 3.0.18 · item 1 | scheduled |
-| SEC-2026-875 | info | P3 | 3.0.18 · item 1 | scheduled |
-| SEC-2026-876 | info | P3 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-874 | low | P3 | 3.0.18 · item 1 | fixed |
+| SEC-2026-875 | info | P3 | 3.0.18 · item 1 | fixed |
+| SEC-2026-876 | info | P3 | 3.0.18 · item 1 | fixed |
 | SEC-2026-877 | low | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-878 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-879 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
