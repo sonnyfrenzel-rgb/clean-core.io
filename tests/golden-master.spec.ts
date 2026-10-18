@@ -248,7 +248,8 @@ test('the test class: one method per case calling the run entry, the case’s ro
     expect(body.indexOf('=>skip( msg = not_compared(')).toBeGreaterThan(body.indexOf('run_case('));
   }
   expect(goldenMasterSentence(out.testClass)).toBe(
-    '3 demo cases of the original carried over as ABAP Unit test data (3 of 3 passed to the logic with all their rows) — each runs through the logic, but no result is compared yet (no expected result of the original is on record), so ABAP Unit reports them as skipped, not passed.',
+    // FI review A (18.10.2026): four states, never one count — created, carried completely, compared, passed in SAP.
+    'Demo cases of the original as ABAP Unit: 3 case methods created; 3 of 3 with their data carried completely; 0 of 3 compare a result of the original; passed in SAP: not known here (ABAP Unit runs only in your system). 3 of 3 pass all their rows to the logic — each runs through the logic, but no result is compared yet (no expected result of the original is on record), so ABAP Unit reports them as skipped, not passed.',
   );
 });
 
@@ -262,12 +263,14 @@ test('the RAP scaffold carries the golden master in the logic class’s test inc
   expect(lint.issues.filter((i) => i.path.endsWith('.testclasses.abap')), JSON.stringify(lint.issues)).toEqual([]);
   // Since scaffold version 6 the logic class's run state (ty_run_result) carries the original's tables: every case passes its rows.
   const evidence = abapTestEvidence(scaffold.files, null)!;
-  // Case 2 sets GV_SEALED, which the run does not take as input: not carried over (QM-01), the other two pass their rows.
-  expect(evidence.goldenMaster).toEqual({ cases: 3, rowsPassed: true, compared: 0, notCarried: 1 });
+  // Case 2 sets GV_SEALED: in the scaffold it is a component of the run's input, so the case carries it through the
+  // case's context (FI review B) and every case is carried exactly.
+  expect(evidence.goldenMaster).toEqual({ cases: 3, rowsPassed: true, compared: 0 });
+  expect(include.content).toMatch(/METHOD case_02\.[\s\S]*?DATA\(ls_ctx\) = context\( ls_sel \)\.\s+ls_ctx-gv_sealed = ''\. " L\d+[\s\S]*?is_ctx = ls_ctx \)\./);
   expect(evidence.counts.withoutData ?? 0).toBe(0);
   expect(include.content).toMatch(/lo_cut->run_with_state\( EXPORTING is_sel = is_sel CHANGING cs_st = ls_st \)\./);
   const sentences = abapTestEvidenceSentences(evidence);
-  expect(sentences[1]).toContain('3 demo cases of the original carried over as ABAP Unit test data: each runs through the logic, but no result is compared yet');
+  expect(sentences[1]).toContain('Demo cases of the original as ABAP Unit: 3 case methods created; 3 of 3 with their data carried completely; 0 of 3 compare a result of the original; passed in SAP: not known here (ABAP Unit runs only in your system) — each runs through the logic, but no result is compared yet');
   expect(sentences[1]).not.toContain('not yet passed to the logic');
 });
 
@@ -287,7 +290,7 @@ test('STATUS on the ABAP route says which test methods are tests and how many de
   expect(m, abap).not.toBeNull();
   expect(Number(m![3])).toBeGreaterThanOrEqual(3);
   expect(abap).not.toContain('without its case data');
-  expect(detail).toContainEqual(expect.stringContaining('3 demo cases of the original carried over as ABAP Unit test data: each runs through the logic, but no result is compared yet'));
+  expect(detail).toContainEqual(expect.stringContaining('Demo cases of the original as ABAP Unit: 3 case methods created; 3 of 3 with their data carried completely; 0 of 3 compare a result of the original; passed in SAP: not known here (ABAP Unit runs only in your system) — each runs through the logic, but no result is compared yet'));
   // Not on the Node route.
   expect(testFactsOf({ ...project, extensibilityRoute: 'Side-by-Side (BTP)' } as unknown as Parameters<typeof testFactsOf>[0], []).detail.some((d) => d.startsWith('ABAP Unit'))).toBe(false);
 });

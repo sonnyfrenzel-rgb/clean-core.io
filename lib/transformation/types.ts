@@ -777,7 +777,7 @@ export interface Trace {
   openRules: string[];
   droppedRules: string[];
   /** 3.0.13 (6, A4): the golden master — the original's demo cases carried as test data (ABAP Unit `ltc_golden_master`, or Node's test/fixtures/original-demo.json), and whether their rows reach the logic. Absent when none was written. */
-  goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test'; notCarried?: number };
+  goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test'; notCarried?: number; compared?: number };
   /** 3.0.15 (1): the SAP function modules the access layer replaces with an engine-written ABAP Cloud counterpart (`released-counterparts.ts`). Absent when none. */
   engineCounterparts?: string[];
   /** 3.0.17: the original's authority checks `srv/lib/authority.ts` leaves open, failing closed (`authority-node.ts`). Absent when none. */

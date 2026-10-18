@@ -786,6 +786,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     refusalClass: refusal,
     expected: options.goldenMasterExpected,
     notFilledComponent: 'not_filled',
+    inputComponents: inputs.map((g) => g.name),
   });
   const demoFlag = golden?.master.demoFlag ? contract.selection.find((f) => f.name === golden.master.demoFlag!.toLowerCase() && f.kind === 'parameter') : undefined;
 

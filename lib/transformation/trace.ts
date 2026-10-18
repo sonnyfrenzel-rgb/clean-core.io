@@ -12,7 +12,7 @@
 
 import { rangeWords } from './unit-plan';
 import { ENGINE_CODE_NOTE, checkPhrase, notVerifiedPhrase, orderedChecks } from './check-words';
-import { GOLDEN_MASTER_TEST_CLASS, notCarriedWords } from './golden-master';
+import { GOLDEN_MASTER_TEST_CLASS, goldenMasterStates, notCarriedWords } from './golden-master';
 import { engineCounterpartsIn } from './released-counterparts';
 import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority-node';
 import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
@@ -47,7 +47,7 @@ function goldenMasterOf(files: readonly ScaffoldFile[]): NonNullable<Trace['gold
   for (const f of files) {
     if (!/\.clas\.testclasses\.abap$/i.test(f.path)) continue;
     const g = goldenMasterInInclude(f.content);
-    if (g && g.cases > 0) return { cases: g.cases, rowsPassed: g.rowsPassed, carrier: 'abap-unit', ...(g.notCarried ? { notCarried: g.notCarried } : {}) };
+    if (g && g.cases > 0) return { cases: g.cases, rowsPassed: g.rowsPassed, carrier: 'abap-unit', compared: g.compared, ...(g.notCarried ? { notCarried: g.notCarried } : {}) };
   }
   const demo = files.find((f) => f.path === 'test/fixtures/original-demo.json');
   if (demo && files.some((f) => f.path === 'test/original-demo.test.mjs')) {
@@ -198,7 +198,7 @@ export function traceMarkdown(trace: Trace): string {
   } else if (gm && gm.cases > 0) {
     // 3.0.13 (6): the golden master wrote the original's demo cases as ABAP Unit test data (golden-master.ts).
     lines.push(
-      `- Demo cases of the original, carried as ABAP Unit test data: ${gm.cases} case${gm.cases === 1 ? '' : 's'} in the test class ${GOLDEN_MASTER_TEST_CLASS}${fixtures.length ? `, read from ${fixtureWords}` : ''}` +
+      `- ${goldenMasterStates(gm.cases, gm.rowsPassed ? gm.cases - (gm.notCarried ?? 0) : 0, gm.compared ?? 0)}. In the test class ${GOLDEN_MASTER_TEST_CLASS}${fixtures.length ? `, read from ${fixtureWords}` : ''}` +
         (gm.notCarried ? `; ${notCarriedWords(gm.notCarried)}` : '') +
         (gm.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic, so each case runs the logic without its data.'),
     );

@@ -142,6 +142,8 @@ export interface GoldenMaster {
   aliases: Record<string, string>;
   /** Statements of the baseline routine the reader did not execute. */
   baselineUnread: GmUnread[];
+  /** What the baseline routine assigns besides rows (`gv_now = p_at.`, `gv_poster = 'FI_CLERK'.`): the scalar context every case starts from. */
+  baselineSettings: GmSetting[];
   /** Parameter (upper case) → its type as declared (`SY-DATUM`, `I`, `CHECKBOX`), and its DEFAULT as written (`sy-datum`). */
   parameterTypes: Record<string, string>;
   parameterDefaults: Record<string, string>;
@@ -362,6 +364,8 @@ interface Machine {
   /** Select-options: a name without `[]` is their header line. */
   headerLines: Set<string>;
   title: string | null;
+  /** Local data objects of the routine being read (`DATA lv_x TYPE c.`, a FORM's USING parameter): their values live in `vars`, never a setting. */
+  locals: Set<string>;
 }
 
 const copyRow = (r: Row): Row => ({ v: { ...r.v }, src: r.src });
@@ -414,10 +418,19 @@ export function gmExpression(value: string): { param: string; op: '+' | '-'; n: 
   return m ? { param: m[1], op: m[2] as '+' | '-', n: m[3] } : null;
 }
 
-/** A literal, or a parameter plus or minus an integer literal; null otherwise. */
+/** A system field the original reads (`sy-datum`), kept as such: the marker and the field, rendered per route. */
+export const GM_SYSTEM = '\u0002';
+const SYSTEM_FIELDS = /^SY-(DATUM|UZEIT|UNAME|DATLO|TIMLO)$/i;
+
+/** A literal, a parameter plus or minus an integer literal, a local or a component of a work area the case holds, a system field; null otherwise. */
 function valueOf(rhs: string, m: Machine, constants: Map<string, string>): string | null {
   const lit = literalValue(rhs, constants);
   if (lit !== null) return lit;
+  const name = rhs.trim().toUpperCase();
+  if (SYSTEM_FIELDS.test(name)) return `${GM_SYSTEM}${name}`;
+  if (/^\w+$/.test(name) && m.locals.has(name) && m.vars.has(name)) return m.vars.get(name)!;
+  const dash = /^(<?\w+>?)-(\w+)$/.exec(name);
+  if (dash && m.areas.has(dash[1]) && !m.params.has(name)) return m.areas.get(dash[1])!.v[dash[2].toLowerCase()] ?? '';
   const expr = /^([\w-]+)\s*([+-])\s*(\d+)$/.exec(rhs.trim());
   if (expr && m.params.has(expr[1].toUpperCase())) return `${GM_EXPRESSION}${expr[1].toUpperCase()}${expr[2]}${expr[3]}`;
   if (/^[\w-]+$/.test(rhs) && m.params.has(rhs.toUpperCase())) return `${GM_EXPRESSION}${rhs.toUpperCase()}+0`;
@@ -467,7 +480,36 @@ export function statementKind(text: string): string {
   return first || 'statement';
 }
 
-function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmFixtureRoutine>; constants: Map<string, string>; loop: { table: string; index: number } | null }): void {
+interface RunContext {
+  fixtures: Map<string, GmFixtureRoutine>;
+  constants: Map<string, string>;
+  loop: { table: string; index: number } | null;
+  /** The FORMs of the source: a PERFORM of one that is no fixture routine is followed (FI review, 18.10.2026). */
+  forms?: Map<string, Form>;
+  depth?: number;
+}
+
+/** `CONCATENATE a b … INTO t [SEPARATED BY s] [RESPECTING BLANKS]`: the target and the value, or null when an operand is not known. */
+function concatenated(text: string, m: Machine, constants: Map<string, string>): { target: string; value: string } | null {
+  const c = /^CONCATENATE\s+(.+?)\s+INTO\s+([\w\-~<>]+)((?:\s+SEPARATED\s+BY\s+\S+)?)((?:\s+RESPECTING\s+BLANKS)?)$/i.exec(text);
+  if (!c) return null;
+  const blanks = c[4].trim() !== '';
+  const part = (tok: string): string | null => {
+    const v = valueOf(tok, m, constants);
+    if (v === null || v.startsWith(GM_EXPRESSION) || v.startsWith(GM_SYSTEM)) return null;
+    // A text field literal loses its trailing blanks, unless RESPECTING BLANKS; a string literal keeps them.
+    return tok.startsWith("'") && !blanks ? v.replace(/ +$/, '') : v;
+  };
+  const ops = tokens(c[1]).map(part);
+  if (ops.some((x) => x === null)) return null;
+  const sepTok = /SEPARATED\s+BY\s+(\S+)/i.exec(c[3])?.[1];
+  // SEPARATED BY space is one blank (a separator keeps its blanks).
+  const sep = !sepTok ? '' : /^space$/i.test(sepTok) ? ' ' : part(sepTok);
+  if (sep === null) return null;
+  return { target: c[2].toUpperCase(), value: ops.join(sep) };
+}
+
+function run(list: AbapStatement[], m: Machine, ctx: RunContext): void {
   const unread = (s: AbapStatement) => m.unread.push({ line: s.lineStart, text: s.text });
   /** `wa-f` / `<s>-f`: the area and the component, when the area is one the arm holds. */
   const component = (target: string): { area: Row; col: string } | null => {
@@ -485,8 +527,74 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
       else unread(s);
       continue;
     }
-    if (s.keyword === 'DATA' || s.keyword === 'FIELD-SYMBOLS' || s.keyword === 'RETURN' || s.keyword === 'MESSAGE') {
+    if (s.keyword === 'DATA' && /^DATA\(\w+\)\s*=/i.test(text)) {
+      // An inline declaration with its value: a local.
+      const d = /^DATA\((\w+)\)\s*=\s*(.+)$/i.exec(text)!;
+      const v = valueOf(d[2].trim(), m, ctx.constants);
+      if (v === null) unread(s);
+      else {
+        m.locals.add(d[1].toUpperCase());
+        m.vars.set(d[1].toUpperCase(), v);
+      }
+      continue;
+    }
+    if (s.keyword === 'DATA') {
+      // A local of the routine being read: initial, a work area or a scalar; an internal table is a table.
+      const d = /^DATA:?\s+(\w+)\s+(?:TYPE|LIKE)\s+(.*)$/i.exec(text);
+      if (d && !/\bTABLE\s+OF\b|\bRANGE\s+OF\b|\bREF\s+TO\b/i.test(d[2]) && !m.tableNames.has(d[1].toUpperCase())) {
+        const n = d[1].toUpperCase();
+        m.locals.add(n);
+        m.areas.set(n, { v: {}, src: null });
+        const init = /\bVALUE\s+(\S+)$/i.exec(d[2]);
+        const v = init ? literalValue(init[1], ctx.constants) : '';
+        if (v === null) unread(s);
+        else m.vars.set(n, v);
+      }
+      continue;
+    }
+    if (s.keyword === 'FIELD-SYMBOLS' || s.keyword === 'RETURN' || s.keyword === 'MESSAGE') {
       if (s.keyword === 'MESSAGE') unread(s);
+      continue;
+    }
+    if (s.keyword === 'PERFORM' && ctx.forms) {
+      // A PERFORM of a routine that is no fixture routine (FI review: `PERFORM fixture_approve USING …` inside a case):
+      // its body is read with its USING parameters bound to the arguments' values, its locals its own.
+      const t = tokens(text);
+      const form = ctx.forms.get((t[1] ?? '').toUpperCase());
+      const using = t.findIndex((x) => x.toUpperCase() === 'USING');
+      const args = using < 0 ? [] : t.slice(using + 1);
+      const formals = form ? formParams(form.head) : [];
+      const values = args.map((a) => valueOf(a, m, ctx.constants));
+      if (form && (ctx.depth ?? 0) < 6 && !/\b(CHANGING|TABLES|IN\s+PROGRAM)\b/i.test(text) && args.length === formals.length && values.every((v) => v !== null)) {
+        const saved = { locals: m.locals, vars: new Map(m.vars), areas: new Map(m.areas) };
+        m.locals = new Set();
+        formals.forEach((f, k) => {
+          m.locals.add(f);
+          m.vars.set(f, values[k]!);
+        });
+        run(form.body, m, { ...ctx, loop: null, depth: (ctx.depth ?? 0) + 1 });
+        // The routine's locals end with it; what it changed in the tables and in global work areas stays.
+        for (const n of m.locals) {
+          if (saved.areas.has(n)) m.areas.set(n, saved.areas.get(n)!);
+          else m.areas.delete(n);
+        }
+        m.locals = saved.locals;
+        const tabix = m.vars.get('SY-TABIX');
+        m.vars = saved.vars;
+        if (tabix !== undefined) m.vars.set('SY-TABIX', tabix);
+        continue;
+      }
+      unread(s);
+      continue;
+    }
+    if (s.keyword === 'CONCATENATE') {
+      const c = concatenated(text, m, ctx.constants);
+      const comp = c ? component(c.target) : null;
+      if (!c) unread(s);
+      else if (comp) comp.area.v[comp.col] = c.value;
+      else if (m.locals.has(c.target)) m.vars.set(c.target, c.value);
+      else if (m.titleVar && c.target === m.titleVar) m.title = c.value;
+      else m.settings.push({ target: c.target, value: c.value, line: s.lineStart });
       continue;
     }
     if (s.keyword === 'IF') {
@@ -695,6 +803,13 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
         m.vars.set(target, ctx.loop ? String(ctx.loop.index + 1) : m.vars.get('SY-TABIX')!);
         continue;
       }
+      // A work area copied from another (`ls_new = ls_old.`): every component, keys included (FI review). A scalar
+      // local copied is a value (valueOf).
+      const from = /^<?\w+>?$/.test(rhs) ? m.areas.get(rhs.toUpperCase()) : undefined;
+      if (from && !m.tables.has(target) && (Object.keys(from.v).length > 0 || !m.vars.has(rhs.toUpperCase()))) {
+        m.areas.set(target, { v: { ...from.v }, src: null });
+        continue;
+      }
       // A table assigned from a table (`gt_raw = lt_events.`).
       if (IDENT.test(rhs) && !rhs.includes('-') && m.tables.has(rhs.toUpperCase()) && (m.tables.has(target) || m.tableNames.has(target))) {
         const from = tableOf(m, rhs).map(copyRow);
@@ -713,6 +828,10 @@ function run(list: AbapStatement[], m: Machine, ctx: { fixtures: Map<string, GmF
       const comp = component(target);
       if (comp) {
         comp.area.v[comp.col] = value;
+        continue;
+      }
+      if (m.locals.has(target)) {
+        m.vars.set(target, value);
         continue;
       }
       m.settings.push({ target, value, line: s.lineStart });
@@ -870,9 +989,11 @@ export function readGoldenMaster(source: string): GoldenMaster | null {
     tableNames,
     headerLines,
     title: null,
+    locals: new Set(),
   });
   const baseMachine = machineOf(new Map(fixtureTables.map((t) => [t, []])), null);
-  run(base.body, baseMachine, { fixtures, constants, loop: null });
+  const formsByName = new Map(forms.filter((f) => !fixtures.has(f.name) && f !== caseForm && f !== base).map((f) => [f.name, f]));
+  run(base.body, baseMachine, { fixtures, constants, loop: null, forms: formsByName });
   const baseRows = new Map<string, Row[]>();
   for (const t of fixtureTables) baseRows.set(t, (baseMachine.tables.get(t) ?? []).map((r, i) => ({ v: r.v, src: i })));
 
@@ -901,8 +1022,15 @@ export function readGoldenMaster(source: string): GoldenMaster | null {
   const cases: GoldenMasterCase[] = [];
   for (const arm of block.arms) {
     const machine = machineOf(new Map([...baseRows].map(([t, rows]) => [t, rows.map(copyRow)])), titleVar);
-    for (const a of localAreas) machine.areas.set(a, { v: {}, src: null });
-    run(arm.body, machine, { fixtures, constants, loop: null });
+    // The global work areas as the baseline left them (a case that sets two components of gs_item and appends it
+    // appends the baseline's keys with them, FI review); the case routine's own locals start initial.
+    for (const [n, a] of baseMachine.areas) if (!baseMachine.locals.has(n) && !n.startsWith('<')) machine.areas.set(n, copyRow(a));
+    for (const a of localAreas) {
+      machine.areas.set(a, { v: {}, src: null });
+      machine.locals.add(a);
+      machine.vars.set(a, '');
+    }
+    run(arm.body, machine, { fixtures, constants, loop: null, forms: formsByName });
     const tables: Record<string, GmRow[]> = {};
     const provenance: Record<string, Array<number | null>> = {};
     const changed: string[] = [];
@@ -944,6 +1072,7 @@ export function readGoldenMaster(source: string): GoldenMaster | null {
     baseline,
     aliases,
     baselineUnread: baseMachine.unread,
+    baselineSettings: baseMachine.settings,
     parameterTypes: types,
     parameterDefaults: rawDefaults,
     parameters: defaults,
@@ -994,6 +1123,13 @@ export interface GoldenMasterBinding {
   stateComponents?: readonly string[];
   /** The component of the state type that names the functions still stubs the run reached (`not_filled`), or none. */
   notFilledComponent?: string | null;
+  /**
+   * The components of the state the run takes as its input (`ty_run_input`, lower case): a global the original's demo
+   * path assigns (`gv_now = p_at`) reaches the logic only through one of them (FI review B, 18.10.2026). Given, the
+   * baseline's and a case's assignments to them are carried; any other assignment the selection cannot take means the
+   * case is not carried over. Absent: the baseline's assignments are not read (the binding of a caller before this).
+   */
+  inputComponents?: readonly string[] | null;
 }
 
 /**
@@ -1074,6 +1210,15 @@ const TODAY = /^SY-(DATUM|DATLO)$/i;
  */
 function rendererFor(gm: GoldenMaster, binding: GoldenMasterBinding, sel: string): Render {
   return (value) => {
+    if (value.startsWith(GM_SYSTEM)) {
+      const f = value.slice(1).toUpperCase();
+      const call = /^SY-(DATUM|DATLO)$/.test(f)
+        ? 'cl_abap_context_info=>get_system_date( )'
+        : /^SY-(UZEIT|TIMLO)$/.test(f)
+          ? 'cl_abap_context_info=>get_system_time( )'
+          : 'cl_abap_context_info=>get_user_technical_name( )';
+      return `CONV string( ${call} )`;
+    }
     const e = gmExpression(value);
     if (!e) return lit(value);
     const type = gm.parameterTypes[e.param] ?? '';
@@ -1158,13 +1303,18 @@ function deltaLines(gm: GoldenMaster, c: GoldenMasterCase, table: string, column
  * the case or of the baseline the reader did not execute (`MODIFY at L1458`), a setting or select-option the selection
  * type has no field for, a table the case changes that the state type has no component for. Empty: carried exactly.
  */
-export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, binding: Pick<GoldenMasterBinding, 'selection' | 'state' | 'selectionType' | 'stateType'>): string[] {
+export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, binding: Pick<GoldenMasterBinding, 'selection' | 'state' | 'selectionType' | 'stateType' | 'inputComponents'>): string[] {
   const out: string[] = [];
   for (const u of gm.baselineUnread) out.push(`${statementKind(u.text)} at L${u.line} of the baseline ${gm.baseRoutine.name}`);
   for (const u of c.unread) out.push(`${statementKind(u.text)} at L${u.line}`);
+  if (binding.inputComponents) {
+    for (const s of gm.baselineSettings ?? []) {
+      if (settingPlace(gm, binding, s.target, 'baseline') === null) out.push(`${s.target} set at L${s.line} of the baseline (neither ${binding.selectionType} nor the run's input has a place for it)`);
+    }
+  }
   for (const s of c.settings) {
-    const b = binding.selection[s.target] ?? binding.selection[gm.aliases[s.target] ?? ''];
-    if (!b || b.range) out.push(`${s.target} set at L${s.line} (${binding.selectionType} has no field for it)`);
+    const place = settingPlace(gm, binding, s.target);
+    if (place === null) out.push(`${s.target} set at L${s.line} (${binding.selectionType} has no field for it${binding.inputComponents ? ", nor the run's input" : ''})`);
   }
   for (const name of Object.keys(c.ranges)) {
     const b = binding.selection[name];
@@ -1172,6 +1322,24 @@ export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, bi
   }
   for (const t of c.changed) if (!binding.state[t]) out.push(`table ${t} (${binding.stateType} has no component for it)`);
   return out;
+}
+
+/**
+ * Where an assignment of the original's demo path goes in the test: a field of the selection (`ls_sel-p_at`), a
+ * component of the run's input in the case's state (`ls_ctx-gv_now`), or nowhere (null).
+ */
+export function settingPlace(gm: GoldenMaster, binding: Pick<GoldenMasterBinding, 'selection' | 'inputComponents'>, target: string, of: 'case' | 'baseline' = 'case'): { kind: 'selection' | 'context'; path: string } | null {
+  const own = binding.selection[target];
+  if (own && !own.range) return { kind: 'selection', path: own.component };
+  const inputs = new Set((binding.inputComponents ?? []).map((x) => x.toLowerCase()));
+  const lower = target.toLowerCase();
+  const input = /^[a-z_][\w-]*$/.test(lower) && inputs.has(lower.split('-')[0]) ? { kind: 'context' as const, path: lower } : null;
+  // The baseline's `gv_now = p_at.` is itself what makes gv_now an alias of p_at: it reaches the run through the input.
+  // A case's `gs_sel-atomic = space.` goes through the parameter the run fills it from.
+  if (of === 'baseline' && input) return input;
+  const alias = binding.selection[gm.aliases[target] ?? ''];
+  if (alias && !alias.range) return { kind: 'selection', path: alias.component };
+  return input;
 }
 
 /** The skip message of a case not carried over: at most three reasons, within ABAP's 255 characters of a literal. */
@@ -1260,6 +1428,8 @@ export function goldenMasterTestClass(
   const selType = `${cut}=>${binding.selectionType}`;
   const onBaseline = rendererFor(gm, binding, 'is_sel');
   const onCase = rendererFor(gm, binding, 'ls_sel');
+  // FI review B (18.10.2026): the scalar context of the demo path reaches the run through its input, case by case.
+  const withContext = !!binding.inputComponents;
   const methodName = (n: number) => `case_${String(n).padStart(2, '0')}`.slice(0, 30);
   const checks = new Map(gm.cases.map((c) => [c.number, expected[c.number] ? expectedLines(c, expected[c.number], binding) : null]));
   const methods = gm.cases.map((c) => {
@@ -1304,7 +1474,13 @@ export function goldenMasterTestClass(
     "    \"! The selection the original starts from: its parameters' DEFAULT values.",
     `    METHODS selection RETURNING VALUE(rs_sel) TYPE ${selType}.`,
     '    "! Passes one case to the class under test: fails when it does not run, returns what it gave (refused, and the state).',
-    `    METHODS run_case IMPORTING iv_case TYPE i is_data TYPE ty_data is_sel TYPE ${selType} RETURNING VALUE(rs_out) TYPE ty_outcome.`,
+    ...(withContext
+      ? [
+          "    \"! The scalar context the original's demo path assigns before it evaluates (the baseline's assignments to the run's input).",
+          `    METHODS context IMPORTING is_sel TYPE ${selType} RETURNING VALUE(rs_st) TYPE ${cut}=>${binding.stateType}.`,
+        ]
+      : []),
+    `    METHODS run_case IMPORTING iv_case TYPE i is_data TYPE ty_data is_sel TYPE ${selType}${withContext ? ` is_ctx TYPE ${cut}=>${binding.stateType}` : ''} RETURNING VALUE(rs_out) TYPE ty_outcome.`,
     '    "! The message of a case whose result is not compared: that it ran, and how it ended.',
     '    METHODS not_compared IMPORTING iv_case TYPE i is_out TYPE ty_outcome RETURNING VALUE(rv_msg) TYPE string.',
     ...methods.map((m) => `    METHODS ${m.name} FOR TESTING.`),
@@ -1323,6 +1499,13 @@ export function goldenMasterTestClass(
     impl.push(`    rs_data-${short(t)} = VALUE #(`, ...rows.flatMap((r) => rowLines(r, columns.get(t)!, '      ', onBaseline)), '    ).');
   }
   impl.push('  ENDMETHOD.', '');
+  if (withContext) {
+    impl.push('  METHOD context.');
+    const ctxSettings = (gm.baselineSettings ?? []).filter((s) => settingPlace(gm, binding, s.target, 'baseline')?.kind === 'context');
+    if (ctxSettings.length === 0) impl.push(`    " ${gm.baseRoutine.name} assigns nothing to the run's input besides its rows.`);
+    for (const s of ctxSettings) impl.push(`    rs_st-${settingPlace(gm, binding, s.target, 'baseline')!.path} = ${onBaseline(s.value)}. " L${s.line}`);
+    impl.push('  ENDMETHOD.', '');
+  }
   impl.push('  METHOD selection.');
   const skipped = [gm.switchParameter, gm.demoFlag].filter((x): x is string => !!x);
   for (const [p, v] of Object.entries(gm.parameters)) {
@@ -1332,11 +1515,17 @@ export function goldenMasterTestClass(
     if (v !== '') impl.push(`    rs_sel-${b.component} = ${lit(v)}.`);
     else if (TODAY.test(gm.parameterDefaults[p] ?? '')) impl.push(`    rs_sel-${b.component} = cl_abap_context_info=>get_system_date( ). " DEFAULT ${gm.parameterDefaults[p]}`);
   }
+  // What the baseline routine assigns to a selection field overrides its DEFAULT, as in the original.
+  if (withContext)
+    for (const s of gm.baselineSettings ?? []) {
+      const place = settingPlace(gm, binding, s.target, 'baseline');
+      if (place?.kind === 'selection') impl.push(`    rs_sel-${place.path} = ${rendererFor(gm, binding, 'rs_sel')(s.value)}. " ${gm.baseRoutine.name} L${s.line}`);
+    }
   if (skipped.length) impl.push(...comment(`Not set: ${skipped.join(', ')} - the demo switch and the case number are the original's way to choose this data; the test passes the data itself.`, '    '));
   impl.push('  ENDMETHOD.', '');
   impl.push('  METHOD run_case.');
   impl.push(`    DATA(lo_cut) = NEW ${cut}( ${binding.accessDouble ? `io_access = NEW ${binding.accessDouble}( ) ` : ''}).`);
-  impl.push(`    DATA(ls_st) = VALUE ${cut}=>${binding.stateType}( ).`);
+  impl.push(withContext ? '    DATA(ls_st) = is_ctx.' : `    DATA(ls_st) = VALUE ${cut}=>${binding.stateType}( ).`);
   for (const t of tables) {
     if (binding.state[t]) impl.push(`    ls_st-${binding.state[t]} = CORRESPONDING #( is_data-${short(t)} ).`);
     else impl.push(...comment(`Not passed: ${t} (is_data-${short(t)}) - ${binding.stateType} has no component for it yet.`, '    '));
@@ -1392,10 +1581,13 @@ export function goldenMasterTestClass(
     impl.push('    DATA(ls_sel) = selection( ).');
     impl.push('    DATA(ls_data) = baseline( ls_sel ).');
     for (const t of c.changed) impl.push(...deltaLines(gm, c, t, columns.get(t)!, onCase));
+    const ctxLines: string[] = [];
     for (const s of c.settings) {
       // A variable filled straight from a parameter (`gs_sel-atomic = p_atom.`) is set through that parameter.
       const b = binding.selection[s.target] ?? binding.selection[gm.aliases[s.target] ?? ''];
+      const place = withContext ? settingPlace(gm, binding, s.target) : null;
       if (b && !b.range) impl.push(`    ls_sel-${b.component} = ${onCase(s.value)}.${binding.selection[s.target] ? '' : ` " ${s.target} = ${gm.aliases[s.target]}`}`);
+      else if (place?.kind === 'context') ctxLines.push(`    ls_ctx-${place.path} = ${onCase(s.value)}. " L${s.line}`);
       else impl.push(...comment(`Not passed: ${s.target} = ${gmExpression(s.value) ? s.value.slice(1) : lit(s.value)} (L${s.line}) - ${binding.selectionType} has no field for it.`, '    '));
     }
     for (const [name, rows] of Object.entries(c.ranges)) {
@@ -1403,7 +1595,8 @@ export function goldenMasterTestClass(
       if (b && b.range) impl.push(`    ls_sel-${b.component} = VALUE #(`, ...rows.flatMap((r) => rowLines(r, ['sign', 'option', 'low', 'high'], '      ', onCase)), '    ).');
       else impl.push(...comment(`Not passed: ${name} with ${rows.length} row(s) - ${binding.selectionType} has no range for it.`, '    '));
     }
-    impl.push(`    DATA(ls_out) = run_case( iv_case = ${c.number} is_data = ls_data is_sel = ls_sel ).`);
+    if (withContext) impl.push('    DATA(ls_ctx) = context( ls_sel ).', ...ctxLines);
+    impl.push(`    DATA(ls_out) = run_case( iv_case = ${c.number} is_data = ls_data is_sel = ls_sel${withContext ? ' is_ctx = ls_ctx' : ''} ).`);
     const check = checks.get(c.number);
     if (check) impl.push(...check.lines);
     // 3.0.14 item 8: ran, but nothing compared — reported as skipped, never as passed.
@@ -1423,10 +1616,18 @@ export function goldenMasterSentence(cls: Pick<GoldenMasterTestClass, 'methods'>
   const compared = cls.methods.filter((m) => m.compared).length;
   const notCarried = cls.methods.filter((m) => m.carried === false).length;
   return (
-    `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data` +
-    ` (${bound} of ${n} passed to the logic with all their rows${partial ? `; ${partial} read only in part` : ''}${notCarried ? `; ${notCarriedWords(notCarried)}` : ''})` +
+    `${goldenMasterStates(n, n - notCarried, compared)}. ${bound} of ${n} pass all their rows to the logic${partial ? `; ${partial} read only in part` : ''}${notCarried ? `; ${notCarriedWords(notCarried)}` : ''}` +
     ` — ${goldenMasterComparedWords(n, compared)}.`
   );
+}
+
+/**
+ * The four states of the demo cases, never one count (FI review A, 18.10.2026): the case methods created, those whose
+ * data is carried completely, those that compare a result of the original, and whether they passed in SAP — which
+ * Clean-Core.io cannot know: ABAP Unit runs only in the reader's system.
+ */
+export function goldenMasterStates(created: number, carried: number, compared: number): string {
+  return `Demo cases of the original as ABAP Unit: ${created} case ${created === 1 ? 'method' : 'methods'} created; ${carried} of ${created} with their data carried completely; ${compared} of ${created} compare a result of the original; passed in SAP: not known here (ABAP Unit runs only in your system)`;
 }
 
 /** "21 not carried over exactly — …": the same words in the sentence above, the testing evidence and TRACE. */
@@ -1447,7 +1648,7 @@ export function goldenMasterComparedWords(cases: number, compared: number): stri
 export const ORIGINAL_DEMO_FORMAT = 'clean-core.original-demo/1';
 
 /** A value as the original writes it, or relative to a parameter (`p_key + 10` → `{ param: 'P_KEY', op: '+', n: 10 }`). */
-export type OriginalDemoValue = string | { param: string; op: '+' | '-'; n: number };
+export type OriginalDemoValue = string | { param: string; op: '+' | '-'; n: number } | { system: string };
 export type OriginalDemoRow = Record<string, OriginalDemoValue>;
 
 export interface OriginalDemoCase {
@@ -1482,6 +1683,7 @@ export interface OriginalDemoCases {
 }
 
 const plainValue = (v: string): OriginalDemoValue => {
+  if (v.startsWith(GM_SYSTEM)) return { system: v.slice(1) };
   const e = gmExpression(v);
   return e ? { param: e.param, op: e.op, n: Number(e.n) } : v;
 };
@@ -1569,6 +1771,8 @@ export interface ScaffoldGoldenMasterInput {
   expected?: Readonly<Record<number, GoldenMasterExpected>>;
   /** The state type's component naming the stubs a run reached (`not_filled`): a case that reaches one fails. */
   notFilledComponent?: string | null;
+  /** The components of the run's input (`ty_run_input`): the scalar context of the demo path goes there (FI review B). */
+  inputComponents?: readonly string[] | null;
 }
 
 /**
@@ -1590,6 +1794,7 @@ export function goldenMasterForScaffold(source: string, input: ScaffoldGoldenMas
     refusalClass: input.refusalClass ?? null,
     stateComponents: input.stateComponents,
     notFilledComponent: input.notFilledComponent ?? null,
+    inputComponents: input.inputComponents ?? null,
   };
   return { master, testClass: goldenMasterTestClass(master, binding, input.program ?? null, input.expected ?? {}) };
 }

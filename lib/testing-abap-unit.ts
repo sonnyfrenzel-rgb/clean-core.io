@@ -31,7 +31,7 @@
 
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 import { sandboxFilesFromStoredCode } from './test-sandbox/files';
-import { goldenMasterComparedWords, notCarriedWords } from './transformation/golden-master';
+import { goldenMasterComparedWords, goldenMasterStates, notCarriedWords } from './transformation/golden-master';
 
 export const ABAP_NAME_MAX = 30;
 
@@ -826,18 +826,19 @@ export function abapTestEvidenceOfProject(project: { extensibilityRoute?: unknow
 /** The evidence as the testing stage and STATUS.md say it. */
 export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
   const out = [`ABAP Unit: ${abapUnitCountsSentence(e.counts)}`];
+  if (e.goldenMaster && e.goldenMaster.cases > 0) {
+    const n = e.goldenMaster.cases;
+    const notCarried = e.goldenMaster.notCarried ?? 0;
+    out.push(
+      `${goldenMasterStates(n, e.goldenMaster.rowsPassed ? n - notCarried : 0, e.goldenMaster.compared)} — ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
+        (notCarried ? `; ${notCarriedWords(notCarried)}` : '') +
+        (e.goldenMaster.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic (its state has no component for them), so they run the logic without the case data.'),
+    );
+  }
   const named = (names: readonly string[] | undefined) => `${(names ?? []).slice(0, 8).join(', ')}${(names?.length ?? 0) > 8 ? ` and ${(names?.length ?? 0) - 8} more` : ''}`;
   if (e.counts.withoutInput)
     out.push(`Test does not hand in input — its expectation is not evidence: ${named(e.counts.withoutInputNames)} call the run without ${INPUT_PARAM}, so it runs on empty tables.`);
   if (e.counts.guardedOnly) out.push(`Test asserts only when its row is found — a missing row passes, so it is not evidence: ${named(e.counts.guardedOnlyNames)}.`);
-  if (e.goldenMaster && e.goldenMaster.cases > 0) {
-    const n = e.goldenMaster.cases;
-    out.push(
-      `${n} demo ${n === 1 ? 'case' : 'cases'} of the original carried over as ABAP Unit test data: ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
-        (e.goldenMaster.notCarried ? `; ${notCarriedWords(e.goldenMaster.notCarried)}` : '') +
-        (e.goldenMaster.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic (its state has no component for them), so they run the logic without the case data.'),
-    );
-  }
   return out;
 }
 

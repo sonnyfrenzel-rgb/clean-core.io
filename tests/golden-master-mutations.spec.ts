@@ -135,6 +135,7 @@ test('a case whose data the engine cannot carry exactly is not run: it skips nam
   expect(body).toContain(`L${LINE_OF_ADJACENT}: DELETE ADJACENT DUPLICATES FROM gt_res COMPARING lot`);
   expect(body).toContain(`cl_abap_unit_assert=>skip( msg = 'Case 6 not carried over: DELETE ADJACENT at L${LINE_OF_ADJACENT} - its data would not be the original''s, so it is not run' ).`);
   expect(goldenMasterSentence(out.testClass)).toContain('; 1 not carried over exactly (a statement of the original the engine could not read');
+  expect(goldenMasterSentence(out.testClass)).toContain('7 case methods created; 6 of 7 with their data carried completely; 0 of 7 compare a result of the original; passed in SAP: not known here');
 
   // A setting with no field in the selection is a difference in data as well.
   const withSetting = SRC.replace("      gv_case_text = 'Two confirmation samples'.", "      gv_case_text = 'Two confirmation samples'.\n      p_demo = 'Y'.");
