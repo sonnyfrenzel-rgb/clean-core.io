@@ -1626,8 +1626,31 @@ export function goldenMasterSentence(cls: Pick<GoldenMasterTestClass, 'methods'>
  * data is carried completely, those that compare a result of the original, and whether they passed in SAP — which
  * Clean-Core.io cannot know: ABAP Unit runs only in the reader's system.
  */
-export function goldenMasterStates(created: number, carried: number, compared: number): string {
-  return `Demo cases of the original as ABAP Unit: ${created} case ${created === 1 ? 'method' : 'methods'} created; ${carried} of ${created} with their data carried completely; ${compared} of ${created} compare a result of the original; passed in SAP: not known here (ABAP Unit runs only in your system)`;
+export function goldenMasterStates(created: number, carried: number, compared: number, sap: GoldenMasterSapResult | null = null): string {
+  return `Demo cases of the original as ABAP Unit: ${created} case ${created === 1 ? 'method' : 'methods'} created; ${carried} of ${created} with their data carried completely; ${compared} of ${created} compare a result of the original; ${passedInSapWords(sap)}`;
+}
+
+/**
+ * A result from the reader's own SAP system on record for the current package (ADR-075, `lib/sap-test-results.ts`):
+ * the ABAP Unit methods it counts. Absent where none is on record — then "passed in SAP" is not known here.
+ */
+export interface GoldenMasterSapResult {
+  kind: 'imported' | 'confirmed';
+  passed: number;
+  failed: number;
+  skipped: number;
+}
+
+/**
+ * The fourth state as its own number (3.0.18 item 13): what a result from the reader's SAP system says, counted
+ * over every ABAP Unit method of the package — the summary on record does not split it by demo case, and the
+ * sentence says so instead of putting the package's count on the demo cases.
+ */
+export function passedInSapWords(sap: GoldenMasterSapResult | null): string {
+  if (!sap) return 'passed in SAP: not known here (ABAP Unit runs only in your system)';
+  const total = sap.passed + sap.failed + sap.skipped;
+  const where = sap.kind === 'imported' ? 'the result imported from your system' : 'the result you confirmed as run in your system (a self-declaration)';
+  return `passed in SAP: ${sap.passed} of ${total} ABAP Unit test ${total === 1 ? 'method' : 'methods'} in ${where}${sap.failed ? `, ${sap.failed} failed` : ''}${sap.skipped ? `, ${sap.skipped} skipped` : ''} — counted over every method of the package, not per demo case`;
 }
 
 /** "21 not carried over exactly — …": the same words in the sentence above, the testing evidence and TRACE. */
