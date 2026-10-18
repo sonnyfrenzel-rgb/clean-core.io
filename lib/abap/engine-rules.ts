@@ -9,7 +9,17 @@ import { maskLiterals, type AbapStatement } from './statement-reader';
  * (`PRECISION_FIXES_FROM`), so a signed run of an earlier engine keeps what it
  * signed. None of these facts costs score points or chooses the route: each is
  * a question or a rework item the reader needs, not a clean core violation.
+ *
+ * `EngineRuleOptions.engineReads` — from engine 3.0.18 (`ENGINE_READS_FROM`,
+ * QA delta of 73b8cad63d3e): `IS [NOT] INITIAL` on the server's date or time
+ * and a decision on a plain copy of it count; a hook is delegated only when it
+ * holds nothing but the calls that hand its work on; a `CO_` class is a proxy
+ * only where a `TRY` that catches a proxy fault uses it.
  */
+
+export interface EngineRuleOptions {
+  engineReads?: boolean;
+}
 
 const CUSTOMER = /^[ZY]/i;
 
@@ -52,8 +62,16 @@ const JOB_SCHEDULE_PARAMETERS = /\b(SDLSTRTDT|SDLSTRTTM|LASTSTRTDT|LASTSTRTTM)\b
  * `JOB_CLOSE` with a start date or time (`SDLSTRTDT`, `SDLSTRTTM`, …) joins it:
  * the start is read in the system's time zone.
  */
-export function readSystemTimeUses(statements: readonly AbapStatement[], units: ProgramUnits = readProgramUnits(statements)): SystemTimeLine[] {
+export function readSystemTimeUses(
+  statements: readonly AbapStatement[],
+  units: ProgramUnits = readProgramUnits(statements),
+  options: EngineRuleOptions = {},
+): SystemTimeLine[] {
+  const reads = options.engineReads === true;
   const out: SystemTimeLine[] = [];
+  // From 3.0.18: plain copies of the server's date or time, per program unit
+  // (`lv_date = sy-datum.`), by upper-cased name → the field copied.
+  const copies = new Map<number, Map<string, string>>();
   for (const [index, statement] of statements.entries()) {
     const unit = units.unitOf[index];
     if (statement.nativeSql) continue;
@@ -65,11 +83,24 @@ export function readSystemTimeUses(statements: readonly AbapStatement[], units: 
       continue;
     }
     if (statement.keyword === 'WRITE') continue;
-    const pattern = /@?\bsy-(datum|uzeit)\b(\+\d+)?(\(\d+\))?/gi;
+    const copied = reads ? (copies.get(unit) ?? new Map<string, string>()) : null;
+    if (copied) {
+      copies.set(unit, copied);
+      const statementCode = code.trim().replace(/\.$/, '').trim();
+      const copy = /^(?:DATA\(\s*([\w/]+)\s*\)|([\w/]+))\s*=\s*@?sy-(datum|uzeit)$/i.exec(statementCode);
+      const move = /^MOVE\s+sy-(datum|uzeit)\s+TO\s+([\w/]+)$/i.exec(statementCode);
+      if (copy) { copied.set((copy[1] || copy[2]).toUpperCase(), `SY-${copy[3].toUpperCase()}`); continue; }
+      if (move) { copied.set(move[2].toUpperCase(), `SY-${move[1].toUpperCase()}`); continue; }
+      // A copy written again with anything else is no copy any more.
+      const rewritten = /^(?:DATA\(\s*([\w/]+)\s*\)|([\w/]+))\s*=/i.exec(statementCode) ?? /^(?:CLEAR|MOVE\b[\s\S]*?\bTO)\s+()([\w/]+)$/i.exec(statementCode);
+      if (rewritten) copied.delete((rewritten[1] || rewritten[2]).toUpperCase());
+    }
+    const names = copied && copied.size ? [...copied.keys()].map((n) => n.replace(/[/]/g, '\\/')).join('|') : '';
+    const pattern = new RegExp(String.raw`@?\bsy-(datum|uzeit)\b(\+\d+)?(\(\d+\))?${names ? String.raw`|(?<![\w/-])(${names})(?![\w/-])(\+\d+)?(\(\d+\))?` : ''}`, 'gi');
     let match: RegExpExecArray | null;
     let found: SystemTimeLine | null = null;
     while ((match = pattern.exec(code)) && !found) {
-      const field = `SY-${match[1].toUpperCase()}`;
+      const field = match[1] ? `SY-${match[1].toUpperCase()}` : copied!.get(match[4].toUpperCase())!;
       const before = code.slice(0, match.index).trimEnd();
       const after = code.slice(match.index + match[0].length).trimStart();
       const prevToken = (before.match(/(\S+)$/)?.[1] ?? '').toUpperCase();
@@ -78,6 +109,8 @@ export function readSystemTimeUses(statements: readonly AbapStatement[], units: 
         || /\b(WHERE|HAVING|ON)\b/i.test(before);
       const use: SystemTimeUse | null =
         RELATIONAL.test(prevToken) || RELATIONAL.test(nextToken) || (prevToken === '=' && inCondition) ? 'comparison'
+        // From 3.0.18: `IF sy-datum IS INITIAL`, `IF sy-uzeit IS NOT INITIAL`.
+        : reads && nextToken === 'IS' && inCondition && /^IS\s+(?:NOT\s+)?INITIAL\b/i.test(after) ? 'comparison'
         : nextToken === '+' || nextToken === '-' || prevToken === '+' || prevToken === '-' ? 'deadline'
         : prevToken === '=' && !PARAMETER_PASSING.test(before) && storedField(before) ? 'write'
         : null;
@@ -169,7 +202,8 @@ const HOOK_END: Record<HookKind, string> = {
  * (`ZX…`) without the `FUNCTION EXIT_…` frame is read as one hook when the
  * file name says so.
  */
-export function readHookImplementations(statements: readonly AbapStatement[], fileName = ''): HookImplementation[] {
+export function readHookImplementations(statements: readonly AbapStatement[], fileName = '', options: EngineRuleOptions = {}): HookImplementation[] {
+  const onlyCalls = options.engineReads === true;
   // A class that implements IF_BADI_INTERFACE implements a new BAdI through
   // whatever interface the BAdI definition names; those are BAdI methods too.
   const badiInterfaces = new Set<string>();
@@ -194,29 +228,40 @@ export function readHookImplementations(statements: readonly AbapStatement[], fi
     if (!hook) continue;
     const end = statements.findIndex((s, j) => j > i && s.keyword === HOOK_END[hook.kind]);
     const body = statements.slice(i + 1, end < 0 ? statements.length : end);
-    const measured = measureHook(hook.kind, hook.name, statements[i].lineStart, (end < 0 ? statements[statements.length - 1] : statements[end]).lineEnd, body);
+    const measured = measureHook(hook.kind, hook.name, statements[i].lineStart, (end < 0 ? statements[statements.length - 1] : statements[end]).lineEnd, body, onlyCalls);
     // An empty method is a stub the interface requires, not an implementation.
     if (measured.statements > 0 || measured.includes.length > 0) out.push(hook.kind === 'badi' ? { ...measured, ...(owner ? { owner } : {}), ownerBlock } : measured);
     if (end > i) i = end;
   }
   const file = fileName.replace(/\.[^.]*$/, '').toUpperCase();
   if (out.length === 0 && /^ZX\w+/.test(file) && statements.length > 0 && !statements.some((s) => /^(REPORT|PROGRAM|FUNCTION-POOL|CLASS|FORM|FUNCTION)$/.test(s.keyword))) {
-    out.push(measureHook('customer-exit', file, statements[0].lineStart, statements[statements.length - 1].lineEnd, [...statements]));
+    out.push(measureHook('customer-exit', file, statements[0].lineStart, statements[statements.length - 1].lineEnd, [...statements], onlyCalls));
   }
   return out;
 }
 
-function measureHook(kind: HookKind, name: string, lineStart: number, lineEnd: number, body: readonly AbapStatement[]): HookImplementation {
+/** The class a statement hands work to (`ZCL_X=>run( )`, `NEW zcl_x( )`), `(object)` for a call through an object, or null. */
+function delegationTargetOf(statement: AbapStatement): string | null {
+  if (statement.keyword === 'RAISE') return null;
+  const t = maskLiterals(statement.text).replace(/\b[ZY]\w*CX_\w+/gi, '');
+  return /\b([ZY][\w\/]*)\s*=>\s*\w+/i.exec(t)?.[1] ?? /\bNEW\s+([ZY][\w\/]*)\s*\(/i.exec(t)?.[1] ?? /\bCALL\s+METHOD\s+([ZY][\w\/]*)\s*=>/i.exec(t)?.[1] ?? (/(->|\bCALL\s+METHOD\b)/i.test(t) ? '(object)' : null);
+}
+
+function measureHook(kind: HookKind, name: string, lineStart: number, lineEnd: number, body: readonly AbapStatement[], onlyCalls = false): HookImplementation {
   // An `INCLUDE ZX…` inside a customer exit is where its logic stands, so it
   // counts; an include of SAP's own does not.
   const executable = body.filter((s) => (!DECLARATION.has(s.keyword) && s.keyword !== 'INCLUDE') || /^INCLUDE\s+[ZY]/i.test(s.text));
   // A raised exception is no delegation, and neither is a call of an exception class.
-  const classCall = executable
-    .filter((s) => s.keyword !== 'RAISE')
-    .map((s) => maskLiterals(s.text).replace(/\b[ZY]\w*CX_\w+/gi, ''))
-    .map((t) => /\b([ZY][\w\/]*)\s*=>\s*\w+/i.exec(t)?.[1] ?? /\bNEW\s+([ZY][\w\/]*)\s*\(/i.exec(t)?.[1] ?? /\bCALL\s+METHOD\s+([ZY][\w\/]*)\s*=>/i.exec(t)?.[1] ?? (/(->|\bCALL\s+METHOD\b)/i.test(t) ? '(object)' : null))
-    .find((c) => c);
-  const delegatedTo = classCall && executable.length <= DELEGATION_LIMIT ? classCall.toUpperCase() : null;
+  const classCall = executable.map(delegationTargetOf).find((c) => c);
+  // From 3.0.18 (`onlyCalls`): delegated means the hook holds nothing but the
+  // hand-over — creating the object (`CREATE OBJECT`, `NEW`, also only once:
+  // `IF mo_x IS NOT BOUND. … ENDIF.`) and calling it. An assignment, a check on
+  // data or a raise beside the call is logic in the hook.
+  const handsOverOnly = !onlyCalls || executable.every((s) => delegationTargetOf(s) !== null
+    || /^CREATE\s+OBJECT\b/i.test(s.text)
+    || /^IF\s+(?:NOT\s+)?[\w/>-]+\s+IS\s+(?:NOT\s+)?BOUND\s*\.?$/i.test(s.text.trim())
+    || s.keyword === 'ENDIF');
+  const delegatedTo = classCall && executable.length <= DELEGATION_LIMIT && handsOverOnly ? classCall.toUpperCase() : null;
   const includes = executable.map((s) => /^INCLUDE\s+([ZY][\w\/]*)/i.exec(s.text)?.[1]?.toUpperCase()).filter((n): n is string => Boolean(n));
   return {
     kind, name, lineStart, lineEnd,
@@ -272,6 +317,12 @@ export interface AbapProxyUse {
   /** The proxy class (consumer) or proxy interface (provider). */
   name: string;
   lineStart: number;
+  /**
+   * From 3.0.18, for a consumer proxy: whether the source shows a call of it —
+   * an object of the class created or called. A class the source only defines
+   * (`INHERITING FROM CL_PROXY_CLIENT`) and never calls is `false`.
+   */
+  called?: boolean;
 }
 
 /**
@@ -283,8 +334,15 @@ export interface AbapProxyUse {
  * `CX_AI_APPLICATION_FAULT`), so an ordinary class with "CO_" in its name is
  * not mistaken for one. A provider (inbound) proxy is implemented through its
  * generated interface `<prefix>II_<service>`.
+ *
+ * From 3.0.18 (`engineReads`) the fault handling has to belong to the class: a
+ * `TRY` whose `CATCH` names a proxy fault and whose body creates or calls the
+ * class, or an object declared with it. A fault caught elsewhere in the source
+ * makes no `CO_` class a proxy. A consumer proxy says whether the source shows
+ * a call of it (`called`).
  */
-export function readAbapProxies(statements: readonly AbapStatement[]): AbapProxyUse[] {
+export function readAbapProxies(statements: readonly AbapStatement[], options: EngineRuleOptions = {}): AbapProxyUse[] {
+  const reads = options.engineReads === true;
   const out: AbapProxyUse[] = [];
   const seen = new Set<string>();
   const add = (use: AbapProxyUse) => {
@@ -293,16 +351,63 @@ export function readAbapProxies(statements: readonly AbapStatement[]): AbapProxy
     seen.add(key);
     out.push(use);
   };
-  const handlesFault = statements.some((s) => /\bCX_AI_(SYSTEM|APPLICATION)_FAULT\b/i.test(maskLiterals(s.text)));
-  for (const s of statements) {
-    const code = maskLiterals(s.text);
+  const FAULT = /\bCX_AI_(SYSTEM|APPLICATION)_FAULT\b/i;
+  const codes = statements.map((s) => maskLiterals(s.text));
+  const handlesFault = codes.some((c) => FAULT.test(c));
+  // From 3.0.18: objects declared with a class (`lo_proxy TYPE REF TO zco_x`),
+  // by class, and the statements in the body of a TRY that catches a proxy fault.
+  const refsOf = new Map<string, Set<string>>();
+  const guarded = new Set<number>();
+  if (reads) {
+    for (const c of codes) {
+      const ref = /^(?:DATA|CLASS-DATA|STATICS)\s*:?\s*([\w\/]+)\s+TYPE\s+REF\s+TO\s+([\w\/]+)/i.exec(c);
+      if (ref) refsOf.set(ref[2].toUpperCase(), (refsOf.get(ref[2].toUpperCase()) ?? new Set()).add(ref[1].toUpperCase()));
+      const inline = /^DATA\(\s*([\w\/]+)\s*\)\s*=\s*NEW\s+([\w\/]+)\s*\(/i.exec(c);
+      if (inline) refsOf.set(inline[2].toUpperCase(), (refsOf.get(inline[2].toUpperCase()) ?? new Set()).add(inline[1].toUpperCase()));
+    }
+    const open: Array<{ body: number[]; inBody: boolean; catchesFault: boolean }> = [];
+    statements.forEach((s, i) => {
+      if (s.keyword === 'TRY') { open.forEach((t) => t.inBody && t.body.push(i)); open.push({ body: [], inBody: true, catchesFault: false }); return; }
+      const top = open[open.length - 1];
+      if (!top) return;
+      if (s.keyword === 'CATCH' || s.keyword === 'CLEANUP') {
+        top.inBody = false;
+        if (s.keyword === 'CATCH' && FAULT.test(codes[i])) top.catchesFault = true;
+        return;
+      }
+      if (s.keyword === 'ENDTRY') {
+        open.pop();
+        if (top.catchesFault) for (const j of top.body) guarded.add(j);
+        return;
+      }
+      for (const t of open) if (t.inBody) t.body.push(i);
+    });
+  }
+  const mentions = (code: string, name: string): boolean => {
+    const names = [name, ...(refsOf.get(name) ?? [])].map((n) => n.replace(/[/]/g, '\\/'));
+    return new RegExp(String.raw`(?<![\w/-])(?:${names.join('|')})(?![\w/])`, 'i').test(code);
+  };
+  const callsOf = (name: string): boolean => {
+    const refs = [...(refsOf.get(name) ?? [])].map((n) => n.replace(/[/]/g, '\\/'));
+    return codes.some((c) => new RegExp(String.raw`\bNEW\s+${name.replace(/[/]/g, '\\/')}\s*\(|\bCREATE\s+OBJECT\s+[\w/]+\s+TYPE\s+${name.replace(/[/]/g, '\\/')}\b`, 'i').test(c)
+      || (refs.length > 0 && new RegExp(String.raw`(?<![\w/-])(?:${refs.join('|')})\s*->|\bCREATE\s+OBJECT\s+(?:${refs.join('|')})\b`, 'i').test(c)));
+  };
+  for (const [index, s] of statements.entries()) {
+    const code = codes[index];
     const consumerDef = /^CLASS\s+([\w\/]+)\s+DEFINITION\b[\s\S]*\bINHERITING\s+FROM\s+CL_PROXY_CLIENT\b/i.exec(code);
-    if (consumerDef) { add({ direction: 'consumer', name: consumerDef[1].toUpperCase(), lineStart: s.lineStart }); continue; }
+    if (consumerDef) {
+      const name = consumerDef[1].toUpperCase();
+      add({ direction: 'consumer', name, lineStart: s.lineStart, ...(reads ? { called: callsOf(name) } : {}) });
+      continue;
+    }
     const provider = /^INTERFACES\s+([ZY][\w\/]*II_[\w\/]+)/i.exec(code);
     if (provider) { add({ direction: 'provider', name: provider[1].toUpperCase(), lineStart: s.lineStart }); continue; }
     if (!handlesFault) continue;
     const consumerUse = /\b(?:TYPE\s+REF\s+TO|NEW|TYPE)\s+([ZY][\w\/]*?CO_[\w\/]+)/i.exec(code);
-    if (consumerUse) add({ direction: 'consumer', name: consumerUse[1].toUpperCase(), lineStart: s.lineStart });
+    if (!consumerUse) continue;
+    const name = consumerUse[1].toUpperCase();
+    if (reads && ![...guarded].some((j) => mentions(codes[j], name))) continue;
+    add({ direction: 'consumer', name, lineStart: s.lineStart, ...(reads ? { called: true } : {}) });
   }
   return out;
 }

@@ -459,7 +459,8 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const command = commandOnlyReader(text, calls);
   // Roadmap 3.0.13 (SD review CR-A1/D01): a read behind a constant gate no run
   // passes is not something the program reads; it is named apart, with the gate.
-  const gates = readConstantGates(text);
+  // Read as this engine reads it (3.0.18): the summary takes no engine version.
+  const gates = readConstantGates(text, { engineReads: true });
   const allReads = capability.reads.map((r) => objectOf(r.name, r.line));
   const lockedRead = (o: { line: number }) => gates.unreachable.length > 0 && isUnreachableLine(gates, o.line);
   const reads = allReads.filter((o) => !lockedRead(o));
@@ -467,7 +468,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   // The gate behind the first locked read; without one, a gate that always stops its routine.
   const lockingGate = lockedReads.length
     ? gates.gates[gates.unreachable.find((r) => lockedReads[0].line >= r.lineStart && lockedReads[0].line <= r.lineEnd)!.gate]
-    : gates.gates.find((g) => g.always && g.stop && g.routineKind !== 'event') ?? null;
+    : gates.gates.find((g) => g.always && g.stop && !g.enclosed && g.routineKind !== 'event') ?? null;
   // A write that runs only on a user's command is marked (SD review, 12.10.2026).
   // A table written anywhere in the normal flow is not command-only, whichever write came first.
   const writtenInFlow = new Set([

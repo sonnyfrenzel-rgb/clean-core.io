@@ -1,8 +1,8 @@
 import type { SourceRange } from './statement-reader';
 
 /**
- * Rules the header comment states (roadmap 3.0.13, SD review of
- * ZSD_RETURN_CREDIT_RECON, 14.10.2026, CR-A2).
+ * Rules the header comment states (roadmap 3.0.13, SD review, 14.10.2026,
+ * CR-A2).
  *
  * The reviewed program's header specified sixteen numbered rules (`R01` …
  * `R16`: filter by both cutoffs before deduplication, round once per claim,
@@ -122,10 +122,28 @@ export function readHeaderRules(source: string): HeaderRuleCandidate[] {
   return out;
 }
 
-/** "R01–R16" — the numbered ids as one range when they run in order, else listed. */
+/**
+ * "R01–R16" — the numbered ids, a run of three or more consecutive numbers of
+ * one prefix as a range, everything else listed as written: "R01, R03, R04",
+ * never "R01–R04" when R02 is absent (QA delta of 73b8cad63d3e).
+ */
 export function headerRuleRange(candidates: readonly HeaderRuleCandidate[]): string {
   const ids = candidates.filter((c) => c.kind === 'rule').map((c) => c.id);
-  if (ids.length === 0) return '';
-  if (ids.length <= 2) return ids.join(', ');
-  return `${ids[0]}–${ids[ids.length - 1]}`;
+  const parts: string[] = [];
+  let run: Array<{ id: string; prefix: string; n: number }> = [];
+  const flush = () => {
+    if (run.length >= 3) parts.push(`${run[0].id}–${run[run.length - 1].id}`);
+    else parts.push(...run.map((r) => r.id));
+    run = [];
+  };
+  for (const id of ids) {
+    const m = /^(.*?)(\d+)$/.exec(id);
+    const item = { id, prefix: m ? m[1] : id, n: m ? Number(m[2]) : NaN };
+    const last = run[run.length - 1];
+    if (last && !(m && item.prefix === last.prefix && item.n === last.n + 1)) flush();
+    if (m) run.push(item);
+    else parts.push(id);
+  }
+  flush();
+  return parts.join(', ');
 }

@@ -280,6 +280,24 @@ function readFormParameters(tail: string): FormParameter[] {
   return out;
 }
 
+/**
+ * The formal parameter names a `FORM`, `METHODS` or `CLASS-METHODS` statement
+ * declares, upper-cased — for a reader that has to know which global a name
+ * inside the routine no longer means (roadmap 3.0.18). The exceptions after
+ * `RAISING` / `EXCEPTIONS` are not parameters.
+ */
+export function formalParameterNames(statement: AbapStatement): string[] {
+  const code = statement.text.replace(/\.\s*$/, '');
+  const form = /^FORM\s+[\w/]+/i.exec(code);
+  if (form) return readFormParameters(code.slice(form[0].length).replace(/\bRAISING\b[\s\S]*$/i, '')).map((p) => p.name);
+  const method = /^(?:CLASS-)?METHODS\s*:?\s*[\w/~]+/i.exec(code);
+  if (!method) return [];
+  const tail = code.slice(method[0].length)
+    .replace(/\b(?:RAISING|EXCEPTIONS)\b[\s\S]*$/i, '')
+    .replace(/\b(?:IMPORTING|EXPORTING|RETURNING)\b/gi, 'USING');
+  return readFormParameters(tail).map((p) => p.name);
+}
+
 function siteOf(statement: AbapStatement, containers: Container[]): CallSite {
   const container = containerAt(containers, statement.lineStart);
   return {

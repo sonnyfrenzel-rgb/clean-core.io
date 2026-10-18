@@ -4,8 +4,8 @@ import { readControlFlowFrom, type Branch } from './control-flow';
 import { readGoldenMaster } from '../transformation/golden-master';
 
 /**
- * The demo switches of a program (roadmap 3.0.13, SD review of
- * ZSD_RETURN_CREDIT_RECON, 14.10.2026, CR-A3).
+ * The demo switches of a program (roadmap 3.0.13, SD review, 14.10.2026,
+ * CR-A3).
  *
  * A program written to be tried out carries its own test data and a selection
  * parameter that picks a variation of it: `P_DEMO` on, `P_CASE` 0..31, and an

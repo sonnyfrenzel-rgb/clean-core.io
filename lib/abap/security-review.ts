@@ -88,6 +88,20 @@ export interface SecurityReviewOptions {
    * passes in source order.
    */
   precisionFixes?: boolean;
+  /**
+   * From engine 3.0.18 (`ENGINE_READS_FROM`, set by `buildAbapEvidence`;
+   * only together with `precisionFixes`):
+   *
+   *   - a file-name validation with EXCEPTIONS covers a path only when its
+   *     failure cannot reach the access — `CHECK sy-subrc = 0`, an `IF` on the
+   *     failure that stops (`RETURN`, `EXIT`, `LEAVE`, `STOP`, `RAISE`, an error
+   *     message), or the access inside the arm of success; a decision that only
+   *     logs or warns covers nothing (`validationCovers`);
+   *   - `INSERT REPORT` with a literal program name is a generated program;
+   *   - a clean write to the very component a dynamic clause or a path reads
+   *     (`ls_filter-where = 'X'.`) clears that component.
+   */
+  engineReads?: boolean;
 }
 
 /**
@@ -166,6 +180,107 @@ export function decidesOnSubrcAt(statements: readonly AbapStatement[], index: nu
 /** What engine 3.0.12 counted as reading sy-subrc: any mention of it. */
 function mentionsSubrc(statement: AbapStatement | undefined): boolean {
   return statement !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(statement.text));
+}
+
+const SUBRC_SUCCESS = /^(?:SY-SUBRC\s*(?:=|\bEQ\b)\s*0|0\s*(?:=|\bEQ\b)\s*SY-SUBRC|SY-SUBRC\s+IS\s+INITIAL)$/i;
+const SUBRC_FAILURE = /^(?:SY-SUBRC\s*(?:<>|\bNE\b|>|\bGT\b)\s*0|0\s*(?:<>|\bNE\b|<|\bLT\b)\s*SY-SUBRC|SY-SUBRC\s+IS\s+NOT\s+INITIAL)$/i;
+
+/** A statement that ends the routine or the program: no statement after it in its arm runs. */
+function stopsFlow(statement: AbapStatement): boolean {
+  const code = maskLiterals(statement.text).trim();
+  if (/^(?:RETURN|STOP|LEAVE\s+(?:PROGRAM|TO\s+TRANSACTION|TO\s+LIST-PROCESSING))\b/i.test(code)) return true;
+  if (/^RAISE\b/i.test(code) && !/^RAISE\s+EVENT\b/i.test(code)) return true;
+  if (/^MESSAGE\b/i.test(code) && !/\bINTO\b/i.test(code)) return /\bTYPE\s+'[EAX]'/i.test(statement.text) || /^MESSAGE\s+[EAX]\d/i.test(code);
+  return false;
+}
+
+/**
+ * From 3.0.18: true when the failure of the call at `call` (a module called
+ * with EXCEPTIONS, whose failure only sets sy-subrc) cannot reach the
+ * statement at `access`. Read from the decision right after the call (or
+ * right after a copy of sy-subrc): `CHECK`/`ASSERT` on success, a `COND`/
+ * `SWITCH … THROW`, an `IF` on failure whose own arm stops with the access
+ * after `ENDIF`, an `IF` on success whose `ELSE` stops, or the access inside the
+ * arm (`IF` or `WHEN 0`) that only success enters. `EXIT` and `CONTINUE` are not
+ * read as stops: what they leave depends on a loop around the check. Anything
+ * else — a decision that logs, warns or sets a flag — does not cover it.
+ */
+function failureCannotReach(statements: readonly AbapStatement[], call: number, access: number): boolean {
+  let at = call + 1;
+  let first = statements[at];
+  if (!first) return false;
+  let rename: ((text: string) => string) = (t) => t;
+  const copyCode = maskLiterals(first.text).trim().replace(/\.$/, '').trim();
+  const copy = /^(?:DATA\(\s*([\w/]+)\s*\)|([\w/]+))\s*=\s*SY-SUBRC$/i.exec(copyCode) ?? /^MOVE\s+SY-SUBRC\s+TO\s+()([\w/]+)$/i.exec(copyCode);
+  if (copy) {
+    const name = (copy[1] || copy[2]).toUpperCase();
+    const named = new RegExp(String.raw`(^|[^\w/-])${name}(?![\w/])`, 'gi');
+    rename = (t) => t.replace(named, '$1sy-subrc');
+    at += 1;
+    first = statements[at];
+    if (!first) return false;
+  }
+  const code = rename(maskLiterals(first.text)).trim().replace(/\.$/, '').trim().replace(/\s+/g, ' ');
+  if (!decidesOnSubrc({ ...first, text: code })) return false;
+  const condition = (keyword: string) => code.replace(new RegExp(String.raw`^${keyword}\s+`, 'i'), '').trim();
+  if (/^(?:CHECK|ASSERT)\b/i.test(code)) return access > at && SUBRC_SUCCESS.test(condition(code.split(' ')[0]));
+  if (/\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code)) return access > at;
+  if (!/^(?:IF|CASE)\b/i.test(code)) return false;
+
+  // The arms of the block opened at `at`, and its end, at its own depth.
+  const arms: Array<{ header: number; condition: string | null }> = [{ header: at, condition: /^IF\b/i.test(code) ? condition('IF') : null }];
+  let close = -1;
+  let depth = 0;
+  for (let i = at + 1; i < statements.length; i++) {
+    const c = maskLiterals(statements[i].text).trim();
+    if (CLOSES.test(c)) {
+      if (depth === 0) { close = i; break; }
+      depth -= 1;
+      continue;
+    }
+    if (depth === 0 && BRANCHES.test(c)) {
+      const text = rename(c).replace(/\.$/, '').trim().replace(/\s+/g, ' ');
+      arms.push({ header: i, condition: /^ELSE\b/i.test(text) && !/^ELSEIF\b/i.test(text) ? null : text.replace(/^(?:ELSEIF|WHEN)\s+/i, '') });
+      continue;
+    }
+    if (OPENS.test(c) && !/^AT\s+(?:SELECTION-SCREEN|LINE-SELECTION|USER-COMMAND|PF\d+)\b/i.test(c)) depth += 1;
+  }
+  if (close < 0) return false;
+  const armOf = (index: number): number => {
+    if (index <= at || index >= close) return -1;
+    let arm = -1;
+    for (let k = 0; k < arms.length; k++) if (arms[k].header < index) arm = k;
+    return arm;
+  };
+  /** The arm's own statements (not nested ones) include a stop. */
+  const armStops = (k: number): boolean => {
+    const end = k + 1 < arms.length ? arms[k + 1].header : close;
+    let d = 0;
+    for (let i = arms[k].header + 1; i < end; i++) {
+      const c = maskLiterals(statements[i].text).trim();
+      if (CLOSES.test(c)) { d -= 1; continue; }
+      if (OPENS.test(c)) { d += 1; continue; }
+      if (d === 0 && stopsFlow(statements[i])) return true;
+    }
+    return false;
+  };
+  const accessArm = armOf(access);
+  if (/^CASE\b/i.test(code)) {
+    // `CASE sy-subrc. WHEN 0.` — only success enters that arm.
+    return /^CASE\s+SY-SUBRC$/i.test(code) && accessArm >= 1 && arms[accessArm].condition === '0';
+  }
+  const head = arms[0].condition ?? '';
+  if (SUBRC_SUCCESS.test(head)) {
+    if (accessArm === 0) return true;
+    // After ENDIF: every other arm has to stop, and an ELSE has to be there.
+    return access > close && arms.length > 1 && arms[arms.length - 1].condition === null
+      && arms.slice(1).every((_, k) => armStops(k + 1));
+  }
+  if (SUBRC_FAILURE.test(head)) {
+    if (accessArm >= 1 && arms[accessArm].condition === null && arms.length === 2) return true;
+    return access > close && armStops(0);
+  }
+  return false;
 }
 
 export function readSecurityReviewTasks(source: string, options: SecurityReviewOptions = {}): SecurityReviewTask[] {
@@ -271,7 +386,7 @@ export function readSecurityReviewTasksFrom(
   const fromInput = (operand: string, access: number): boolean => {
     const base = baseName(operand);
     if (base === '' || !tainted.has(base)) return false;
-    return !(options.precisionFixes && overwrittenCleanBefore(statements, paths, base, access, tainted));
+    return !(options.precisionFixes && overwrittenCleanBefore(statements, paths, base, access, tainted, options.engineReads ? operand : null));
   };
 
   // A path resolved or validated through the logical file name modules before
@@ -298,14 +413,22 @@ export function readSecurityReviewTasksFrom(
     if (!/\bEXCEPTIONS\b/i.test(maskLiterals(statements[index].text))) return true;
     return decidesOnSubrcAt(statements, index + 1);
   };
+  //
+  // From 3.0.18 (`engineReads`) a decision is not enough: with EXCEPTIONS the
+  // call covers an access only when its failure cannot reach it
+  // (`failureCannotReach`) — a decision that logs or warns and goes on leaves
+  // the path as unvalidated as no call (QA delta of 73b8cad63d3e).
   const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationDecided(index)
     ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
     : []);
+  const handled = (index: number) => options.precisionFixes === true && options.engineReads === true
+    && /\bEXCEPTIONS\b/i.test(maskLiterals(statements[index].text));
   const writtenAt = statements.map((s) => (isFileNameCheck(s) ? new Set<string>() : writtenNames(s.text)));
   const validatedBefore = (operand: string, access: number): boolean => {
     const name = baseName(operand);
     return fileNameChecks.some((c) => c.index < access && c.names.has(name)
-      && !writtenAt.slice(c.index + 1, access).some((w) => w.has(name)));
+      && !writtenAt.slice(c.index + 1, access).some((w) => w.has(name))
+      && (!handled(c.index) || failureCannotReach(statements, c.index, access)));
   };
 
   const adbcLines = new Set(options.adbcLines ?? []);
@@ -401,7 +524,13 @@ export function readSecurityReviewTasksFrom(
     // DSAG ABAP guideline: security/security-examples.md § ABAP Command Injection (Report)
     // The guideline says GENERATE REPORT executes the program; it generates it
     // (compiles the load). SUBMIT or PERFORM runs it. The task says what the statement does.
-    const generated = /^INSERT\s+REPORT\s+\S+\s+FROM\b/i.test(code)
+    // The program name may be a literal (`INSERT REPORT 'ZGEN' FROM lt_src`):
+    // masked, it is quotes around blanks, which `\S+` alone does not span
+    // (from 3.0.18, `engineReads`).
+    const insertReport = options.engineReads
+      ? /^INSERT\s+REPORT\s+(?:'[^']*'|`[^`]*`|\S+)\s+FROM\b/i
+      : /^INSERT\s+REPORT\s+\S+\s+FROM\b/i;
+    const generated = insertReport.test(code)
       ? 'INSERT REPORT writes ABAP source into the repository'
       : /^GENERATE\s+SUBROUTINE\s+POOL\b/i.test(code)
         ? 'GENERATE SUBROUTINE POOL compiles ABAP source held in an internal table into a temporary program'
@@ -500,6 +629,11 @@ function controlPaths(statements: readonly AbapStatement[]): string[][] {
  * and runs on every way to `access` — it stands in the same block and branch,
  * or in one that encloses it. What reaches the clause then is that value, not
  * the input.
+ *
+ * `operand` (from 3.0.18) is the operand as the clause reads it: when that is a
+ * component (`ls_filter-where`), a clean write to that very component is an
+ * overwrite of what reaches the clause; a write to another component still is
+ * none.
  */
 function overwrittenCleanBefore(
   statements: readonly AbapStatement[],
@@ -507,7 +641,10 @@ function overwrittenCleanBefore(
   name: string,
   access: number,
   tainted: Set<string>,
+  operand: string | null = null,
 ): boolean {
+  const read = operand?.trim().toUpperCase().replace(/^!/, '') ?? '';
+  const readsComponent = /^(?!DATA\()[\w/<>]+(?:->[\w/]+)*-(?!>)/i.test(read);
   for (let i = access - 1; i >= 0; i--) {
     const s = statements[i];
     if (!writtenNames(s.text).has(name)) continue;
@@ -522,6 +659,9 @@ function overwrittenCleanBefore(
     const component = /^(?!DATA\()[\w/<>!]+(?:->[\w/]+)*-(?!>)/i.test(written);
     const assigned = new RegExp(String.raw`^(?:DATA\(\s*[\w/]+\s*\)|${OPERAND})\s*=\s*([\s\S]*)$`, 'i').exec(code);
     if (component) {
+      // The component the clause reads, written clean or cleared: that is what reaches it.
+      if (readsComponent && written.toUpperCase().replace(/^!/, '').replace(/\.$/, '') === read
+        && ((assigned && !mentions(assigned[1], tainted)) || /^CLEAR\b/i.test(code))) return true;
       if (assigned && !mentions(assigned[1], tainted)) continue;
       if (/^CLEAR\b/i.test(code)) continue;
       return false;
