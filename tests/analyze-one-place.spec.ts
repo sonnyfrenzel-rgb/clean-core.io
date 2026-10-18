@@ -183,7 +183,7 @@ test.describe('the stage, rendered', () => {
     await expect(plan).toContainText('Model proposal');
     await trigger.click();
     await expect(plan.locator('[data-action-plan-origin]')).toBeVisible();
-    await expect(plan).toContainText('Legacy Asset Valuation');
+    await expect(plan).toContainText('Legacy Asset Value');
     await expect(plan.locator('[data-money-not-determined]').first()).toBeVisible();
   });
 

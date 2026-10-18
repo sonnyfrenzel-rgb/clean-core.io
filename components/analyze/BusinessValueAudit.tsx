@@ -27,13 +27,16 @@ export default function BusinessValueAudit({ bizFallback }: BusinessValueAuditPr
     <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between">
       <div className="space-y-6">
         <div>
-          <span className="cc-text-label text-cc-ink-muted">Business Value Audit</span>
-          <h3 className="cc-text-h2 text-cc-ink mt-2">Legacy Asset Valuation</h3>
+          {/* One name for one figure (UX-089): it was "Business Value Audit",
+              "Legacy Asset Valuation", "Legacy Asset Value" and "IP Score" on
+              one card. The eyebrow names the area, the rest names the value. */}
+          <span className="cc-text-label text-cc-ink-muted">Business value</span>
+          <h3 className="cc-text-h2 text-cc-ink mt-2">Legacy Asset Value</h3>
           <p className="cc-text-cell text-cc-ink-muted mt-1">Quality audit of the legacy custom codebase. It puts no money on it.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Legacy Asset Score — the model's number, and marked as such. */}
+          {/* Legacy Asset Value — the model's number, and marked as such. */}
           <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
               <span className="cc-text-label text-cc-ink-muted">Legacy Asset Value</span>
@@ -42,8 +45,8 @@ export default function BusinessValueAudit({ bizFallback }: BusinessValueAuditPr
             {bizFallback.legacyAssetScore !== null ? (
               <>
                 <div className="flex items-baseline gap-2">
-                  <span className="cc-text-title text-cc-ink">{bizFallback.legacyAssetScore}%</span>
-                  <span className="cc-text-meta text-cc-ink-muted">IP Score</span>
+                  <span className="cc-text-title text-cc-ink">{bizFallback.legacyAssetScore}</span>
+                  <span className="cc-text-meta text-cc-ink-muted">of 100, the model&apos;s estimate</span>
                 </div>
                 <div className="h-1.5 w-full bg-cc-line rounded-full mt-3 overflow-hidden">
                   <div className={`h-full rounded-full ${SCORE_BAR}`} style={{ width: `${bizFallback.legacyAssetScore}%` }}></div>

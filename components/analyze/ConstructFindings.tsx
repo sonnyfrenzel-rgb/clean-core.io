@@ -25,7 +25,7 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
       <div className="space-y-4">
         <div>
           <h3 className="cc-text-h2 text-cc-ink">
-            Construct Findings <span className="font-medium text-cc-ink-muted">(0 findings)</span>
+            Statically Identified Constructs <span className="font-medium text-cc-ink-muted">(0 findings)</span>
           </h3>
           <p className="cc-text-cell text-cc-ink-muted mt-1">Deterministic static analysis of ABAP language constructs against target platform support matrix.</p>
         </div>

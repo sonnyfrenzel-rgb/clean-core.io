@@ -79,11 +79,12 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.623Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
       "reportedSeverity": "high",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/EvidenceFindingsTable.tsx:127-132 — line chips in the findings list are now CcAnchor buttons that open the source panel (added in 794d3486); but components/analyze/AnchoredNarrative.tsx:73-79 renders the model summary's line badges as CcAnchor without onOpen, which components/cc/Anchor.tsx:49 renders as a non-interactive element. Rescheduled: Half done: the summary's line anchors still lead nowhere; wiring them to the existing openSourceLine() (EvidenceFindingsTable.tsx:108) is a small fix with no new screen."
+      "updatedAt": "2026-10-18T18:41:01.854Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/EvidenceFindingsTable.tsx:127-132 — line chips in the findings list are now CcAnchor buttons that open the source panel (added in 794d3486); but components/analyze/AnchoredNarrative.tsx:73-79 renders the model summary's line badges as CcAnchor without onOpen, which components/cc/Anchor.tsx:49 renders as a non-interactive element. Rescheduled: Half done: the summary's line anchors still lead nowhere; wiring them to the existing openSourceLine() (EvidenceFindingsTable.tsx:108) is a small fix with no new screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-007",
@@ -145,11 +146,12 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.876Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/ConstructFindings.tsx:28 heads the empty list 'Construct Findings (0 findings)' and :58 the filled list 'Statically Identified Constructs (n findings)'. The German 'Statischer Finding' filter and 'Gaps Backlog Worklist' are gone (GapsWorklist.tsx deleted in 018e1e26). Rescheduled: One list still has two names depending on state; a one-word text fix."
+      "updatedAt": "2026-10-18T18:41:02.044Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/ConstructFindings.tsx:28 heads the empty list 'Construct Findings (0 findings)' and :58 the filled list 'Statically Identified Constructs (n findings)'. The German 'Statischer Finding' filter and 'Gaps Backlog Worklist' are gone (GapsWorklist.tsx deleted in 018e1e26). Rescheduled: One list still has two names depending on state; a one-word text fix.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-012",
@@ -172,11 +174,12 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.997Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/analyze/page.tsx:1753-1758 — the label half is fixed ('Legacy Source Code', help 'Editable…', D.10b 8c23191a); but the Start Analysis button at 1845 is disabled only on loading/!legacyCode/!acceptedTerms/scan block/personal data, not on a missing target model, so a click without one still sets an error and scrolls to the top (1825-1829). Rescheduled: Start still looks ready without a target model and fails after a scroll; add !targetDeployment to disabled with the reason at the button."
+      "updatedAt": "2026-10-18T18:41:02.228Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/analyze/page.tsx:1753-1758 — the label half is fixed ('Legacy Source Code', help 'Editable…', D.10b 8c23191a); but the Start Analysis button at 1845 is disabled only on loading/!legacyCode/!acceptedTerms/scan block/personal data, not on a missing target model, so a click without one still sets an error and scrolls to the top (1825-1829). Rescheduled: Start still looks ready without a target model and fails after a scroll; add !targetDeployment to disabled with the reason at the button.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-014",
@@ -714,11 +717,12 @@
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.207Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): app/error.tsx:38-51 still shows 'Something went wrong!' with the raw `{error.message || 'Unknown error'}` in a mono box and a large rounded-3xl card with publicButton, while components/ErrorBoundary.tsx:53-82 and app/not-found.tsx:39-57 use the workspace cc card (rounded-cc-card, CcButton/CcLinkButton). There is no 'Back to home' way on app/error.tsx, only 'Try Again'. Rescheduled: Wording/defect fix on an existing page: hide the raw message behind details, align the card and add a way home."
+      "updatedAt": "2026-10-18T18:41:02.417Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): app/error.tsx:38-51 still shows 'Something went wrong!' with the raw `{error.message || 'Unknown error'}` in a mono box and a large rounded-3xl card with publicButton, while components/ErrorBoundary.tsx:53-82 and app/not-found.tsx:39-57 use the workspace cc card (rounded-cc-card, CcButton/CcLinkButton). There is no 'Back to home' way on app/error.tsx, only 'Try Again'. Rescheduled: Wording/defect fix on an existing page: hide the raw message behind details, align the card and add a way home.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-054",
@@ -1074,11 +1078,12 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.605Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 5.1): components/LandingModals.tsx:1036-1046 — Register is disabled while `!agreedGDPR || !agreedTerms` with no explanation; only the Google button gets the hint (1061-1065 'Accept the data protection notice and the terms above to continue with Google.'). Rescheduled: A one-line microcopy fix (show the same hint for Register) on the existing sign-up dialog; sign-up fields stay unchanged."
+      "updatedAt": "2026-10-18T18:41:02.594Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 5.1): components/LandingModals.tsx:1036-1046 — Register is disabled while `!agreedGDPR || !agreedTerms` with no explanation; only the Google button gets the hint (1061-1065 'Accept the data protection notice and the terms above to continue with Google.'). Rescheduled: A one-line microcopy fix (show the same hint for Register) on the existing sign-up dialog; sign-up fields stay unchanged.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-080",
@@ -1198,10 +1203,11 @@
       "area": "release",
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
       "createdAt": "2026-09-15T17:19:09.741Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.3): The score itself is fixed: components/analyze/CleanCoreScoreSection.tsx:165-171 says 'higher is better — not a compliance percentage and not an SAP measure' and links to /clean-core-score, which states the contrast with SAP's Technical Debt Score (app/(app)/clean-core-score/page.tsx:63,95; analyze fix 3173c476). The Knowledge Hub FAQ answers still say only 'attaching KPIs: a Clean Core Score and an A–D readiness grade...' (app/(app)/knowledge/page.tsx:55 and :128), with no direction and no 'not an SAP metric'. The only hint is the 'What is the Clean Core Score?' link at :185. Rescheduled: Small text fix: add 'Clean-Core.io's own, higher is better, not SAP's Technical Debt Score' to the two knowledge FAQ answers."
+      "updatedAt": "2026-10-18T18:41:02.756Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.3): The score itself is fixed: components/analyze/CleanCoreScoreSection.tsx:165-171 says 'higher is better — not a compliance percentage and not an SAP measure' and links to /clean-core-score, which states the contrast with SAP's Technical Debt Score (app/(app)/clean-core-score/page.tsx:63,95; analyze fix 3173c476). The Knowledge Hub FAQ answers still say only 'attaching KPIs: a Clean Core Score and an A–D readiness grade...' (app/(app)/knowledge/page.tsx:55 and :128), with no direction and no 'not an SAP metric'. The only hint is the 'What is the Clean Core Score?' link at :185. Rescheduled: Small text fix: add 'Clean-Core.io's own, higher is better, not SAP's Technical Debt Score' to the two knowledge FAQ answers.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-089",
@@ -1211,10 +1217,11 @@
       "area": "release",
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
       "createdAt": "2026-09-15T17:19:09.814Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/BusinessValueAudit.tsx still uses 'Business Value Audit' (:30), 'Legacy Asset Valuation' (:31), 'Legacy Asset Value' (:39) and 'IP Score' (:46) for one figure. The card is now shown in the Economics stage (components/tco/BusinessValuePlan.tsx:69). Rescheduled: Wording fix in one component, no new UI: settle on one name and drop or explain 'IP Score'."
+      "updatedAt": "2026-10-18T18:41:02.930Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/BusinessValueAudit.tsx still uses 'Business Value Audit' (:30), 'Legacy Asset Valuation' (:31), 'Legacy Asset Value' (:39) and 'IP Score' (:46) for one figure. The card is now shown in the Economics stage (components/tco/BusinessValuePlan.tsx:69). Rescheduled: Wording fix in one component, no new UI: settle on one name and drop or explain 'IP Score'.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-090",
@@ -1427,10 +1434,11 @@
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:12.272Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Partly fixed. Design links to Settings (app/(app)/project/[projectId]/design/page.tsx:1070), the Documentation business layer does too (documentation/page.tsx:1511), and the Transformation prerequisites box has 'Open Settings' (transformation/page.tsx:2254). Still text only: components/NotGenerated.tsx:48-49 renders the hint as plain text, so the Testing empty state (testing/page.tsx:1460-1468) and the Transformation code pane (transformation/page.tsx:2100-2106) say 'Add your own Gemini API key in Settings' with no link. Rescheduled: A usability defect fixed by an optional link in NotGenerated, with no new screen."
+      "updatedAt": "2026-10-18T18:41:03.101Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Partly fixed. Design links to Settings (app/(app)/project/[projectId]/design/page.tsx:1070), the Documentation business layer does too (documentation/page.tsx:1511), and the Transformation prerequisites box has 'Open Settings' (transformation/page.tsx:2254). Still text only: components/NotGenerated.tsx:48-49 renders the hint as plain text, so the Testing empty state (testing/page.tsx:1460-1468) and the Transformation code pane (transformation/page.tsx:2100-2106) say 'Add your own Gemini API key in Settings' with no link. Rescheduled: A usability defect fixed by an optional link in NotGenerated, with no new screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-107",
@@ -1594,10 +1602,11 @@
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
       "createdAt": "2026-09-18T04:40:55.548Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): The 'Not generated' model-key box is gone (documentation needs no model since 3.0.5), but without a signed run the stage still shows an empty-state with a disabled button and plain text 'Run the analysis in stage 1 first' (app/(app)/project/[projectId]/documentation/page.tsx:1788-1808) and a dashed 'No process map yet' box inside the full map/handbook frame (page.tsx:1866-1876, components/documentation/HandbookStage.tsx:122-155, 501-504) - no link to Analyze, no next action. Rescheduled: Small: give the empty states a link to the Analyze tool and collapse the empty map frame; no new screen. Not verified against a current screenshot."
+      "updatedAt": "2026-10-18T18:41:03.276Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): The 'Not generated' model-key box is gone (documentation needs no model since 3.0.5), but without a signed run the stage still shows an empty-state with a disabled button and plain text 'Run the analysis in stage 1 first' (app/(app)/project/[projectId]/documentation/page.tsx:1788-1808) and a dashed 'No process map yet' box inside the full map/handbook frame (page.tsx:1866-1876, components/documentation/HandbookStage.tsx:122-155, 501-504) - no link to Analyze, no next action. Rescheduled: Small: give the empty states a link to the Analyze tool and collapse the empty map frame; no new screen. Not verified against a current screenshot.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-120",
@@ -1607,10 +1616,11 @@
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
       "createdAt": "2026-09-18T04:41:03.445Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): text-[16px]/[18px]/[17px]/[12rem] no longer occur in app/ or components/. Remaining: rounded-[6px] in components/cc/SegmentedControl.tsx:32 (not on the DESIGN.md:149-151 radius scale) and rounded-[8px] in components/process-revisions/RevisionHistory.tsx:64 (equals --cc-radius-row, app/globals.css:217, but written as a literal instead of rounded-cc-row). Rescheduled: Token cleanup: replace the literal 8px with rounded-cc-row and either document the 6px inner segment radius in DESIGN.md or map it to the scale."
+      "updatedAt": "2026-10-18T18:41:03.467Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): text-[16px]/[18px]/[17px]/[12rem] no longer occur in app/ or components/. Remaining: rounded-[6px] in components/cc/SegmentedControl.tsx:32 (not on the DESIGN.md:149-151 radius scale) and rounded-[8px] in components/process-revisions/RevisionHistory.tsx:64 (equals --cc-radius-row, app/globals.css:217, but written as a literal instead of rounded-cc-row). Rescheduled: Token cleanup: replace the literal 8px with rounded-cc-row and either document the 6px inner segment radius in DESIGN.md or map it to the scale.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-121",
@@ -1711,10 +1721,11 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:35.020Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Same as UX-120: [12rem], [17px] are gone; rounded-[6px] remains at components/cc/SegmentedControl.tsx:32 and rounded-[8px] at components/process-revisions/RevisionHistory.tsx:64, neither expressed through the cc radius tokens (app/globals.css:333-334). Rescheduled: Duplicate of UX-120; same small token cleanup."
+      "updatedAt": "2026-10-18T18:41:03.643Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Same as UX-120: [12rem], [17px] are gone; rounded-[6px] remains at components/cc/SegmentedControl.tsx:32 and rounded-[8px] at components/process-revisions/RevisionHistory.tsx:64, neither expressed through the cc radius tokens (app/globals.css:333-334). Rescheduled: Duplicate of UX-120; same small token cleanup.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-129",
@@ -1784,11 +1795,12 @@
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.266Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
       "reportedSeverity": "high",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/analyze/page.tsx:1846 still sets native disabled on 'Start Analysis' when stagedScanBlock or personalDataPending, and :1856-1862 gives the reason only via title; no aria-describedby to the visible reasons (security box :1715-1717, 'Action Required' strip :1792-1808) and no inline reason under the button. Rescheduled: Accessibility defect on the core path; aria-disabled plus aria-describedby/inline reason, no new screen."
+      "updatedAt": "2026-10-18T18:41:03.853Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/analyze/page.tsx:1846 still sets native disabled on 'Start Analysis' when stagedScanBlock or personalDataPending, and :1856-1862 gives the reason only via title; no aria-describedby to the visible reasons (security box :1715-1717, 'Action Required' strip :1792-1808) and no inline reason under the button. Rescheduled: Accessibility defect on the core path; aria-disabled plus aria-describedby/inline reason, no new screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-135",
@@ -1812,10 +1824,11 @@
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.561Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/dashboard/page.tsx:511-531: Continue now has visible text, but Invite, Duplicate, Export JSON and Delete are still CcIconButton with label/title only (UserPlus at :511-518). The text menu in components/workspace/WorkspaceRowActions.tsx:142 is not used by /dashboard. Rescheduled: Small: visible 'Invite' label (or the existing row-actions menu) on the row; no new screen."
+      "updatedAt": "2026-10-18T18:41:04.038Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/dashboard/page.tsx:511-531: Continue now has visible text, but Invite, Duplicate, Export JSON and Delete are still CcIconButton with label/title only (UserPlus at :511-518). The text menu in components/workspace/WorkspaceRowActions.tsx:142 is not used by /dashboard. Rescheduled: Small: visible 'Invite' label (or the existing row-actions menu) on the row; no new screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-137",
@@ -1825,10 +1838,11 @@
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.692Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): text-[16px]/[18px] gone; [28rem] remains as a scroll max-height (components/analyze/AtcFindingsPanel.tsx:151, components/workspace/WorkspaceProcess.tsx:545, :609), rounded-[6px] at components/cc/SegmentedControl.tsx:32 and rounded-[8px] at components/process-revisions/RevisionHistory.tsx:64 outside the token scale. Rescheduled: Duplicate of UX-120 plus the 28rem height; same small token cleanup."
+      "updatedAt": "2026-10-18T18:41:04.230Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): text-[16px]/[18px] gone; [28rem] remains as a scroll max-height (components/analyze/AtcFindingsPanel.tsx:151, components/workspace/WorkspaceProcess.tsx:545, :609), rounded-[6px] at components/cc/SegmentedControl.tsx:32 and rounded-[8px] at components/process-revisions/RevisionHistory.tsx:64 outside the token scale. Rescheduled: Duplicate of UX-120 plus the 28rem height; same small token cleanup.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-138",
@@ -2060,10 +2074,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:17.836Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): app/(app)/project/[projectId]/page.tsx:233-238 and :263-268 still render only <div role=\"status\" class=\"py-16\"><span class=\"sr-only\">Loading the workspace…</span></div>; no loading.tsx exists under app/(app). Since 3.0.1 this gate is hit by every account opening a project. Rescheduled: Small accessibility/feedback defect: add a visible indicator, keep role=status."
+      "updatedAt": "2026-10-18T18:41:04.406Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): app/(app)/project/[projectId]/page.tsx:233-238 and :263-268 still render only <div role=\"status\" class=\"py-16\"><span class=\"sr-only\">Loading the workspace…</span></div>; no loading.tsx exists under app/(app). Since 3.0.1 this gate is hit by every account opening a project. Rescheduled: Small accessibility/feedback defect: add a visible indicator, keep role=status.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-156",
@@ -2099,10 +2114,11 @@
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:02.749Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/dashboard/page.tsx:511-518: Invite is still a CcIconButton with UserPlus and only label/title 'Invite someone to read this project', next to icon-only Duplicate, Export, Delete (:519-531). Rescheduled: Duplicate of UX-136; give Invite a visible label."
+      "updatedAt": "2026-10-18T18:41:04.587Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/dashboard/page.tsx:511-518: Invite is still a CcIconButton with UserPlus and only label/title 'Invite someone to read this project', next to icon-only Duplicate, Export, Delete (:519-531). Rescheduled: Duplicate of UX-136; give Invite a visible label.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-159",
@@ -2112,10 +2128,11 @@
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:02.992Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): Same as UX-155: app/(app)/project/[projectId]/page.tsx:235-237 and :265-267 show only an sr-only 'Loading the workspace…' in a role=status div. Rescheduled: Duplicate of UX-155."
+      "updatedAt": "2026-10-18T18:41:04.741Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): Same as UX-155: app/(app)/project/[projectId]/page.tsx:235-237 and :265-267 show only an sr-only 'Loading the workspace…' in a role=status div. Rescheduled: Duplicate of UX-155.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-160",
@@ -2139,10 +2156,11 @@
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:03.492Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): app/(app)/project/[projectId]/analyze/page.tsx:661-714 exportToConfluence saves the file via file-saver and silently deletes stale analysis_confluence_* blobs; no confirmation or note after the download, and components/requirements/ExportMenu.tsx has no status/announce. Rescheduled: Small feedback fix: a short confirmation naming the file and that it is only downloaded; no new screen."
+      "updatedAt": "2026-10-18T18:41:04.920Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): app/(app)/project/[projectId]/analyze/page.tsx:661-714 exportToConfluence saves the file via file-saver and silently deletes stale analysis_confluence_* blobs; no confirmation or note after the download, and components/requirements/ExportMenu.tsx has no status/announce. Rescheduled: Small feedback fix: a short confirmation naming the file and that it is only downloaded; no new screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-162",
@@ -2190,10 +2208,11 @@
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:11.544Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.10b): Same as UX-134: app/(app)/project/[projectId]/analyze/page.tsx:1846 native disabled and :1856-1862 title-only reason on 'Start Analysis'; no aria-describedby, no inline reason under the button. Rescheduled: Duplicate of UX-134; accessibility defect on the core path."
+      "updatedAt": "2026-10-18T18:41:05.079Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.10b): Same as UX-134: app/(app)/project/[projectId]/analyze/page.tsx:1846 native disabled and :1856-1862 title-only reason on 'Start Analysis'; no aria-describedby, no inline reason under the button. Rescheduled: Duplicate of UX-134; accessibility defect on the core path.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-166",
@@ -2203,10 +2222,11 @@
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:11.773Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.16a): app/(app)/project/[projectId]/documentation/page.tsx:1780-1808: when the stored blueprint is rejected and there is no signed source, the stage shows the warning 'A blueprint is stored … not shown' (blueprint-schema.ts:38-40), the title 'Replace the stored blueprint' with a disabled 'Replace with the code reading' button, and 'There is no source here that the active run signed. Run the analysis in stage 1 first.' at once; below, 'No process map yet' (:1869). Rescheduled: Contradictory state text; show one state (no signed run -> go to Analyze) - logic/text fix, no new screen."
+      "updatedAt": "2026-10-18T18:41:05.239Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.16a): app/(app)/project/[projectId]/documentation/page.tsx:1780-1808: when the stored blueprint is rejected and there is no signed source, the stage shows the warning 'A blueprint is stored … not shown' (blueprint-schema.ts:38-40), the title 'Replace the stored blueprint' with a disabled 'Replace with the code reading' button, and 'There is no source here that the active run signed. Run the analysis in stage 1 first.' at once; below, 'No process map yet' (:1869). Rescheduled: Contradictory state text; show one state (no signed run -> go to Analyze) - logic/text fix, no new screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-167",
@@ -2216,10 +2236,11 @@
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:11.985Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.18",
-      "updatedAt": "2026-10-18T21:00:00.000Z",
-      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.21): app/(app)/admin/approve-tenant/page.tsx:292-297 — the counter-decision hint ('To approve instead, open the Approve link in the same mail. Each link works once, and using either closes both.') is still a `cc-text-meta` line (12px/600, app/globals.css:441-445) placed below the single button. Contrast is solved: the page is light since b4fa8695 (D.21) and text-cc-ink-muted is #4b5563 (app/globals.css:146), and the wording is mirrored for approve/reject. Rescheduled: Only size and placement remain (12px meta below the button vs. body size above it) — a small text/layout fix on an existing screen."
+      "updatedAt": "2026-10-18T18:41:05.415Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.21): app/(app)/admin/approve-tenant/page.tsx:292-297 — the counter-decision hint ('To approve instead, open the Approve link in the same mail. Each link works once, and using either closes both.') is still a `cc-text-meta` line (12px/600, app/globals.css:441-445) placed below the single button. Contrast is solved: the page is light since b4fa8695 (D.21) and text-cc-ink-muted is #4b5563 (app/globals.css:146), and the wording is mirrored for approve/reject. Rescheduled: Only size and placement remain (12px meta below the button vs. body size above it) — a small text/layout fix on an existing screen.",
+      "fixedIn": "e6829efd"
     },
     {
       "id": "UX-168",

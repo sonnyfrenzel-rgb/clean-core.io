@@ -1468,6 +1468,7 @@ export default function TestingSandboxPage() {
                     ? 'Turn the testing stage back on in Settings to generate it.'
                     : 'Add your own Gemini API key in Settings to generate it.'
                 }
+                settingsLink
               />
             ) : testCases.length === 0 ? (
               <div data-testing-generate="" className="flex flex-col items-start gap-3">

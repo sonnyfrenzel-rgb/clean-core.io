@@ -2104,6 +2104,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
                             ? 'Turn the transformation stage back on in Settings to generate it.'
                             : 'Add your own Gemini API key in Settings to generate it.'
                       }
+                      settingsLink={!modelAvailability.enabled('transformation')}
                     />
                   </div>
                 ) : (

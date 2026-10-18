@@ -17,6 +17,7 @@ import { useFollowHash } from '@/hooks/useFollowHash';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import { CC_SKELETON_DELAY_MS, useCcDelayedFlag } from '@/components/cc/delay';
 import type { Project } from '@/lib/types';
 
 /**
@@ -232,9 +233,7 @@ export default function ProjectWorkspacePage() {
   // gate read as a dead page (UX review of b88c77b, 3e936f9d57f8).
   if (profileLoading) {
     return (
-      <div data-workspace-gate="loading" role="status" className="py-16">
-        <span className="sr-only">Loading the workspace…</span>
-      </div>
+      <WorkspaceLoading />
     );
   }
 
@@ -262,9 +261,7 @@ export default function ProjectWorkspacePage() {
 
   if (state === 'loading' || buildUp === null || redirecting) {
     return (
-      <div data-workspace-gate="loading" role="status" className="py-16">
-        <span className="sr-only">Loading the workspace…</span>
-      </div>
+      <WorkspaceLoading />
     );
   }
 
@@ -278,5 +275,24 @@ export default function ProjectWorkspacePage() {
       buildUp={buildUp}
       startRun={startRun}
     />
+  );
+}
+
+/**
+ * The loading gate, for every reader (UX-155, UX-159). It was a status with an
+ * sr-only sentence and nothing else, so a sighted reader looked at an empty
+ * page. Not a skeleton — nothing of the shell is known yet, and a skeleton
+ * would promise a layout — but the same sentence on screen, quiet, and only
+ * once loading has taken 300 ms (§2.8), so a fast load does not blink.
+ */
+function WorkspaceLoading() {
+  const shown = useCcDelayedFlag(true, CC_SKELETON_DELAY_MS);
+  return (
+    <div data-workspace-gate="loading" role="status" className="py-16">
+      {/* One node throughout: only its class changes, so the status is not announced twice. */}
+      <p data-workspace-gate-text={shown ? 'shown' : 'pending'} className={shown ? 'm-0 cc-text-cell text-cc-ink-muted' : 'sr-only'}>
+        Loading the workspace…
+      </p>
+    </div>
   );
 }

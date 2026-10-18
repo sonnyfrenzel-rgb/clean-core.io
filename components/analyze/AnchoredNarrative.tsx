@@ -27,6 +27,7 @@ export default function AnchoredNarrative({
   findings,
   totalLines,
   code,
+  onOpenLine,
   className = '',
 }: {
   text: string;
@@ -34,6 +35,8 @@ export default function AnchoredNarrative({
   totalLines: number;
   /** The analysed source: a raw line range is then held against the engine's anchors, not the length alone (3.0.12). */
   code?: string | null;
+  /** Opens the analysed source at a line; without it the anchors are text (UX-006). */
+  onOpenLine?: (line: number) => void;
   className?: string;
 }) {
   const engine = useMemo(
@@ -72,7 +75,8 @@ export default function AnchoredNarrative({
                 {s.anchors.map((a, j) => (
                   <CcAnchor
                     key={j}
-                    label={`${a.findingId ? `Finding ${a.findingId}` : 'Cited line range'}, line ${a.lineStart}${a.lineEnd !== a.lineStart ? ` to ${a.lineEnd}` : ''}`}
+                    label={`${a.findingId ? `Finding ${a.findingId}` : 'Cited line range'}, line ${a.lineStart}${a.lineEnd !== a.lineStart ? ` to ${a.lineEnd}` : ''}${onOpenLine ? ', open the source' : ''}`}
+                    onOpen={onOpenLine ? () => onOpenLine(a.lineStart) : undefined}
                   >
                     L{a.lineStart}
                     {a.lineEnd !== a.lineStart ? `–${a.lineEnd}` : ''}

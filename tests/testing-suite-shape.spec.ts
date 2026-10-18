@@ -316,7 +316,8 @@ test.describe('the testing segment has an error boundary of its own', () => {
 
   test('the root boundary is left alone', () => {
     const root = fs.readFileSync(path.join(ROOT, 'app', 'error.tsx'), 'utf8');
-    expect(root).toContain('Something went wrong!');
+    // Restyled onto the workspace card in 3.0.18 (UX-053) — still the full-screen root card.
+    expect(root).toContain('Something went wrong');
     expect(root).toContain('min-h-screen');
   });
 });
