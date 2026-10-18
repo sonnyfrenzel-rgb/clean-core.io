@@ -79,7 +79,7 @@ test('D: the main path loads the run\'s input once, where the original runs its 
   expect(rctx.abap?.loadInput).toBe('never');
   expect(bodyGuards('load_input( ).', rctx).map((r) => r.message)).toContainEqual(expect.stringContaining("only the main path loads the run's input"));
   // The fill prompt says the same.
-  expect(fs.readFileSync(path.join(__dirname, '..', 'lib', 'transformation', 'fill-prompt.ts'), 'utf8')).toContain('once, where it runs the first of them');
+  expect(fs.readFileSync(path.join(__dirname, '..', 'lib', 'transformation', 'fill-prompt.ts'), 'utf8')).toContain('call load_input( ) once if the class lists it');
 });
 
 test('E: run( ) starts every run from the initial state — every attribute the run returns is cleared first', () => {
