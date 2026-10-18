@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { createSurveyToken } from '../lib/survey/token';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS } from '../lib/survey/definition';
 

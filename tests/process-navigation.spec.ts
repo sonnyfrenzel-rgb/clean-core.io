@@ -1,4 +1,4 @@
-﻿import { test, expect, type Page } from '@playwright/test';
+﻿import { test, expect, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';

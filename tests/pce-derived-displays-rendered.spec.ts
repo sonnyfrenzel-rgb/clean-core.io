@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { adminMergeDoc } from './helpers/admin-seed';
 import { catalogSnapshotRefFor } from '../lib/abap/catalog-snapshots';

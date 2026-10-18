@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { findingRows } from '../lib/findings-view';
 import { transformationFigures } from '../lib/transformation-view';

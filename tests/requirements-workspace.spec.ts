@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Browser } from '@playwright/test';
+import { test, expect, type Page, type Browser } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import JSZip from 'jszip';

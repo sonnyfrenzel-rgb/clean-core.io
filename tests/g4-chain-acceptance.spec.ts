@@ -35,7 +35,7 @@
  * exists there (`resolveRunnerTarget`), which is exactly the "mock runner" this
  * acceptance is about.
  */
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Page } from './helpers/test';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';

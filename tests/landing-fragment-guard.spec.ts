@@ -14,7 +14,7 @@
  * each of them in the rendered landing — a fragment built at runtime is not in
  * the source.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { FEATURE_SLUGS } from '../lib/features-content';

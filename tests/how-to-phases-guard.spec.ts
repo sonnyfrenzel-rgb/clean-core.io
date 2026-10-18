@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { PHASES } from '../lib/workflow-steps';
 import { HOW_TO_PHASE_CONTENT } from '../lib/how-to-content';
 

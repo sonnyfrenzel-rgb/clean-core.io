@@ -22,7 +22,7 @@
  * imported by nothing in the app, so no route could render it, and D.22c
  * removed it; that one is read from the whole source tree, and says so.
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';

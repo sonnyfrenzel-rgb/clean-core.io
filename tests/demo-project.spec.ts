@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { fillEconomics } from './helpers/economics';
 import fs from 'fs';
 import path from 'path';

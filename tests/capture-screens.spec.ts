@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { fillEconomics } from './helpers/economics';
 import { pathToFileURL } from 'url';
 import fs from 'fs';

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';

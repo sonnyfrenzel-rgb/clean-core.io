@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 
 /**
  * The public header fits the window at every desktop width (QA 05e3d386d6a6).

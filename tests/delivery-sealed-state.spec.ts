@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';

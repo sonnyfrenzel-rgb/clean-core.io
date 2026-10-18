@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 
 /**
  * Smoke test of the public pages, signed out.

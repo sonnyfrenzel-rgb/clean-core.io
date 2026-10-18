@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { designAnswer, storedRouteOf } from '../lib/design-recommendation';
 import { recommendedArchitecture } from '../lib/project-commands';
 import { contractOfProject } from '../lib/contract-build';
