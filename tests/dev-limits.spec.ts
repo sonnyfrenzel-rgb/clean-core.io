@@ -32,4 +32,8 @@ test('the pipeline sets the switch for dev only', () => {
   expect(main).toContain('echo "dev_limits_off=" >> "$GITHUB_OUTPUT"');
   expect(dev).toContain('echo "dev_limits_off=true" >> "$GITHUB_OUTPUT"');
   expect(yml).toContain('CC_DEV_LIMITS_OFF=${{ steps.env-ctx.outputs.dev_limits_off }}');
+  // Each key exactly once (QA review of 757d83cb0752: a doubled entry in the env map can fail the deploy).
+  expect(yml.split('CC_DEV_LIMITS_OFF=').length - 1).toBe(1);
+  expect(main.split('dev_limits_off=').length - 1).toBe(1);
+  expect(dev.split('dev_limits_off=').length - 1).toBe(1);
 });
