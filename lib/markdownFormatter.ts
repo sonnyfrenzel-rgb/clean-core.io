@@ -13,6 +13,7 @@ import {
   annotateSapReferences as checked,
   catalogNoteForMapping,
   coverageClaims,
+  sapCheckedNarrative,
   sapReferenceAppendixMarkdown,
 } from './sap-reference-check';
 import { checkModelLineRefs, engineLineAnchors } from './abap/narrative-anchors';
@@ -89,8 +90,9 @@ export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExp
       md += `## Target Standard Process & SAP Fit\n`;
       md += `> Model proposal. SAP identifiers below are checked against SAP data this product holds.\n\n`;
       md += `- **Fit Potential (model's estimate, not a measured fit):** ${data.standardFit.potential || 'N/A'}\n`;
-      md += `- **Target Standard Process:** \`${checked(data.standardFit.targetStandardProcess || 'N/A')}\`\n`;
-      md += `- **Technical Rationale:** ${checked(data.standardFit.rationale || 'N/A')}\n`;
+      // 3.0.18 item 13 (QM-08, FI-F12): a sentence whose SAP ID contradicts SAP's data is dropped, SAP's title shown.
+      md += `- **Target Standard Process:** \`${sapCheckedNarrative(data.standardFit.targetStandardProcess || 'N/A')}\`\n`;
+      md += `- **Technical Rationale:** ${sapCheckedNarrative(data.standardFit.rationale || 'N/A')}\n`;
       if (data.standardFit.potential === 'High' || coverageClaims(`${data.standardFit.rationale ?? ''} ${data.recommendations?.cloudReadiness ?? ''}`).length) {
         md += `- **Note:** ${COVERAGE_CLAIM_NOTE}\n`;
       }
