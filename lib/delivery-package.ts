@@ -69,6 +69,9 @@ import { SAP_STUBS_FOLDER, sapStubPackageFiles } from './transformation/abap-sap
 import { abapGitXmlHolds } from './transformation/abapgit-check';
 import { engineCounterpartsIn } from './transformation/released-counterparts';
 import { inputReadsIn } from './transformation/input-lists';
+import { capAuthorizationIn, capAuthorizationWords } from './transformation/cap-shell';
+import { rapNoInputIn, rapNoInputWords } from './transformation/rap-save';
+
 import { TARGET_EDITION_NAMES } from './sap-naming';
 import { AI_MARKING_BASIS, aiMarkingField, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
 import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
@@ -1426,6 +1429,10 @@ export interface StatusInputs {
   inputReads?: readonly string[];
   /** 3.0.17: the Node package carries the original's AUTHORITY-CHECKs in srv/lib/authority.ts (fail closed). */
   authoritySeam?: boolean;
+  /** 3.0.18: the CAP package's scopes and role template (xs-security.json, `capAuthorizationIn`). Absent: none read. */
+  capAuthorization?: { scopes: string[]; roleTemplate: string | null } | null;
+  /** 3.0.18 (QM-03, FI-F09): the RAP logic's input tables no caller hands in (`rapNoInputIn`). Absent or empty: none. */
+  noInput?: readonly string[];
 }
 
 /**
@@ -1635,6 +1642,12 @@ export function analysisModelLine(m: AnalysisModelFacts | null): string {
   return `${label} · ${m.modelId} · ${m.byokUsed ? "the account's own key" : 'the platform key'} (analysis narrative, from the signed run)`;
 }
 
+/** The CAP package's authorization, read from its xs-security.json (a Node package only); null otherwise. */
+const capAuthorizationOf = (entries: ReadonlyArray<{ path: string; content: string }>) => {
+  const x = entries.find((e) => e.path === 'xs-security.json');
+  return x && entries.some((e) => e.path === 'srv/service.cds') ? capAuthorizationIn(x.content) : null;
+};
+
 export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string {
   const { reading, capabilities, files, lints } = inputs;
   const s = facts.source;
@@ -1736,6 +1749,8 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
       '',
     );
   }
+  if (inputs.capAuthorization) lines.push(capAuthorizationWords(inputs.capAuthorization), '');
+  if (inputs.noInput?.length) lines.push(rapNoInputWords(inputs.noInput), '');
   const notable = files.filter((f) => f.status === 'stub' || f.status === 'proposed');
   for (const f of notable) lines.push(`- \`${f.path}\` — ${f.status}${f.note ? `: ${f.note}` : ''}`);
   if (notable.length) lines.push('');
@@ -2203,7 +2218,7 @@ export function finishDeliveryPackage(input: {
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
   const engineCounterparts = [...new Set(entries.filter((e) => /^src\/.+_access\.clas\.abap$/i.test(e.path)).flatMap((e) => engineCounterpartsIn(e.content)))];
   const inputReads = entries.filter((e) => e.path === 'srv/lib/input-contract.ts').flatMap((e) => inputReadsIn(e.content));
-  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts, inputReads, authoritySeam: entries.some((e) => e.path === 'srv/lib/authority.ts') }), origin: 'engine' };
+  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts, inputReads, authoritySeam: entries.some((e) => e.path === 'srv/lib/authority.ts'), capAuthorization: capAuthorizationOf(entries), noInput: rapNoInputIn(entries.filter((e) => e.path.startsWith('src/'))) }), origin: 'engine' };
   const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);

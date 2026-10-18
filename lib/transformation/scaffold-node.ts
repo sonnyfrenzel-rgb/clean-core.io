@@ -38,6 +38,7 @@ import { acceptanceAdapter, contractModel } from './call-contract';
 import { capShellFiles } from './cap-shell';
 import { INPUT_READ_TAG, inputListsOf, listOfPath, readPlacementsOf, withListPaths, workAreasOf, type InputList, type ReadPlacement } from './input-lists';
 import { fillProbeConfigs } from './fill-probes';
+import { DISPLAY_TAG, displaySitesOf, displayWords, type DisplaySite } from './display-node';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
@@ -1167,7 +1168,7 @@ function argsInterface(u: Unit, shapes: AbapShapes): string | null {
   return `export interface ${name} {\n${members.join('\n')}\n}`;
 }
 
-function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = []): string {
+function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = [], displays: readonly DisplaySite[] = []): string {
   const rules = u.rules.map((id) => {
     const r = plan.rules.find((x) => x.id === id);
     if (!r) return id;
@@ -1194,6 +1195,13 @@ function unitDoc(u: Unit, plan: UnitPlan, auth: readonly AuthorityEntry[] = [], 
         .filter((at) => at.unitId === u.id)
         .map((at) => ` * Input: at L${at.line} the original's SELECT fills ${p.list.global.name.toUpperCase()}; the frame puts the request's rows of ${p.list.key} into st.local.${p.list.global.key} before the body runs — the body reads them there and writes no SELECT.`),
     ),
+    ...displays
+      .filter((d) => d.unitId === u.id)
+      .map((d) =>
+        d.notPlaced
+          ? ` * Output: at L${d.line} the original displays ${d.table} (${d.via}); the frame does not place it as the run's rows — ${d.notPlaced}.`
+          : ` * Output: at L${d.line} the original displays ${d.table} (${d.via}); the frame sets the run's rows (st.rows) to a copy of st.local.${d.key} after the body, when the routine reaches the display — the body writes no display and does not set st.rows.`,
+      ),
     ` * Unit ${u.id}: the frame is written by Clean-Core.io (engine); the body between the markers is a model proposal.`,
     ' */',
   ].join('\n');
@@ -1308,20 +1316,48 @@ function readPlacementLines(u: Unit, placements: readonly ReadPlacement[]): Arra
   return out;
 }
 
+/** The frame's call of a check: the routine's parameters it reads handed in from the step's own arguments (`nodeGuardOperands`). */
+function frameGuardCall(g: PlanGuard, u: Unit, plan: UnitPlan, shapes: AbapShapes): string {
+  const handed = nodeGuardOperands(g, plan, shapes).map((o) => {
+    const [base, ...components] = o.name.split('-');
+    const p = u.parameters.find((x) => x.name.toLowerCase() === base);
+    const arg = `args.${camelName(base)}${p?.direction === 'changing' ? '.value' : ''}`;
+    return `${o.key}: ${[arg, ...components.map(camelName)].join('.')}`;
+  });
+  return `${g.helper}(sel, st, null${handed.length ? `, { ${handed.join(', ')} }` : ''})`;
+}
+
+/**
+ * The frame around the body of a step that displays a table (scaffold version 18, `display-node.ts`): before the
+ * body, whether the routine reaches its display — each raw check in the body that leaves the routine before it,
+ * evaluated once (it reads only the request); the body runs in a function of its own, so a `return` of the body still
+ * comes back to the frame; then, unless the body refused, the displayed table becomes the run's rows.
+ */
+function displayFrame(d: DisplaySite, u: Unit, plan: UnitPlan, shapes: AbapShapes): { before: string[]; after: string[] } {
+  const exits = d.exits.map((id) => plan.guards.find((g) => g.id === id)!);
+  const before = exits.length
+    ? [
+        `  // L${d.line} display (engine): the original reaches it only when its check${exits.length === 1 ? '' : 's'} at ${exits.map((g) => `L${g.line}`).join(', ')} let${exits.length === 1 ? 's' : ''} the routine go on — evaluated here, before the body (${exits.length === 1 ? 'it reads' : 'they read'} only the request).`,
+        `  const reaches = ${exits.map((g) => `checked(st, () => ${frameGuardCall(g, u, plan, shapes)}) === false`).join(' && ')};`,
+      ]
+    : [];
+  const guardLines = new Map(exits.map((g) => [g.id, g.line]));
+  const after = [
+    '  const left = body();',
+    '  if (left) return left;',
+    `  // ${DISPLAY_TAG} ${displayWords(d, u.fn, guardLines)}`,
+    `  ${exits.length ? 'if (reaches) ' : ''}st.rows = st.local.${d.key}.map((r) => ({ ...r }));`,
+  ];
+  return { before, after };
+}
+
 function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], placements: readonly ReadPlacement[] = []): string[] {
   // In the original's order: the raw checks, the AUTHORITY-CHECKs the frame runs whole, and the SELECTs that fill an input list.
   const calls: Array<{ line: number; lines: string[] }> = [...auth.filter((e) => e.wired).map((e) => ({ line: e.line, lines: wiredAuthorityLines(e, plan) })), ...readPlacementLines(u, placements)];
   for (const id of u.guardCalls) {
     const g = plan.guards.find((x) => x.id === id)!;
     const v = id.replace('-', '').toLowerCase();
-    // The routine's parameters the check reads, from the step's own arguments (`nodeGuardOperands`).
-    const handed = nodeGuardOperands(g, plan, shapes).map((o) => {
-      const [base, ...components] = o.name.split('-');
-      const p = u.parameters.find((x) => x.name.toLowerCase() === base);
-      const arg = `args.${camelName(base)}${p?.direction === 'changing' ? '.value' : ''}`;
-      return `${o.key}: ${[arg, ...components.map(camelName)].join('.')}`;
-    });
-    const call = `${g.helper}(sel, st, null${handed.length ? `, { ${handed.join(', ')} }` : ''})`;
+    const call = frameGuardCall(g, u, plan, shapes);
     calls.push({ line: g.line, lines: g.outcome === 'refuses' ? [`  const ${v} = checked(st, () => ${call});`, `  if (${v}) return ${v};`] : [`  if (checked(st, () => ${call})) return;`] });
   }
   return calls.sort((a, b) => a.line - b.line).flatMap((c) => c.lines);
@@ -1372,7 +1408,7 @@ function frameOnly(u: Unit, plan: UnitPlan, facts: EngineFacts, auth: readonly A
   return rest.length === 0;
 }
 
-function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = [], engineBody = false): Built {
+function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly AuthorityEntry[] = [], reads: readonly LookupEntry[] = [], placements: readonly ReadPlacement[] = [], engineBody = false, displays: readonly DisplaySite[] = []): Built {
   const libDir = u.file.startsWith('srv/steps/') ? '../lib/' : './lib/';
   const callees = u.callees.map((id) => plan.units.find((x) => x.id === id)!).filter(Boolean);
   const out: string[] = [];
@@ -1397,7 +1433,8 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     out.push(args);
     out.push('');
   }
-  const doc = unitDoc(u, plan, auth, reads, placements);
+  const display = engineBody ? undefined : displays.find((d) => d.unitId === u.id && !d.notPlaced);
+  const doc = unitDoc(u, plan, auth, reads, placements, displays);
   // The frame's functions first, then the checks it runs at the entry in the original's order — an AUTHORITY-CHECK
   // the frame runs whole calls its function (QA finding 8394df76b027), a SELECT that fills an input list puts its rows.
   const guardLines = [...authorityFrameLines(auth), ...lookupFrameLines(reads), ...guardCallLines(u, plan, shapes, auth, placements)];
@@ -1408,9 +1445,18 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     // Every statement of the routine runs in the frame above (frameOnly): nothing is left for a body.
     out.push('  // The rest of the routine is the frame above (engine): the original does nothing else here.');
     out.push('  return;');
+  } else if (display) {
+    // The original's display as the run's rows (scaffold version 18): the body runs inside the frame.
+    const frame = displayFrame(display, u, plan, shapes);
+    out.push(...frame.before);
+    out.push('  const body = (): StepResult => {');
+    out.push(regionText('node', u.id, `${u.signature}\n${guardLines.join('\n')}\n${doc}`, '    ', `throw new NotImplementedFill(${sq(u.id)}, ${sq(u.fn)});`));
+    out.push('  };');
+    out.push(...frame.after);
   } else {
     out.push(regionText('node', u.id, `${u.signature}\n${guardLines.join('\n')}\n${doc}`, '  ', `throw new NotImplementedFill(${sq(u.id)}, ${sq(u.fn)});`));
   }
+  for (const d of displays) if (d.unitId === u.id && d.notPlaced) out.push(`  // ${DISPLAY_TAG} ${displayWords(d, u.fn)}`);
   out.push('}');
   out.push('');
   const available = [
@@ -2102,6 +2148,8 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   const allLists = [...lists, ...lookupLists];
   // Where the rows of a list a SELECT fills reach its table (scaffold version 16): at the entry of the step that holds the SELECT.
   const placements = readPlacementsOf(lists, plan.units, facts.statements);
+  // The original's list displays (scaffold version 18, `display-node.ts`): the displayed table becomes the run's rows.
+  const displays = displaySitesOf(plan, facts.statements, facts.blocks, shapes);
   // The CAP shell around the core (scaffold version 7, `cap-shell.ts`): package.json, the data model, the service.
   const cap = capShellFiles({ plan, facts, lists: allLists, packageName: name });
   files.push({ path: 'package.json', content: cap.packageJson, owner: 'engine' });
@@ -2134,7 +2182,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
     if (parts.length > 0) files.push(splitParentFile(u, parts, plan, shapes));
-    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id], placements, frameOnly(u, plan, facts, authority[u.id])));
+    else add(stepFile(u, plan, shapes, authority[u.id], lookups[u.id], placements, frameOnly(u, plan, facts, authority[u.id]), displays));
   }
   const orchestrator = plan.units.find((u) => u.kind === 'orchestrator');
   add(processFile(plan, facts, shapes, orchestrator ? authority[orchestrator.id] : [], orchestrator ? lookups[orchestrator.id] : []));

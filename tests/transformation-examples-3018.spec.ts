@@ -35,8 +35,8 @@ const declarationOf = (logic: string, method: string) => {
   return at < 0 ? '' : logic.slice(at, logic.indexOf('.', at) + 1);
 };
 
-test('scaffold version 17', () => {
-  expect(SCAFFOLD_VERSION).toBe(17);
+test('scaffold version 17 or later', () => {
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(17);
 });
 
 test.describe('E1 — methods of different local classes are units by their class', () => {

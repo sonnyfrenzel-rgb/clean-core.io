@@ -56,7 +56,7 @@ test.describe('the activation check runs with the configuration the package ship
     expect(json.rules.check_syntax).toBe(true);
     expect(json.rules.unknown_types).toBe(true);
     expect(json.dependencies).toEqual([{ folder: '/checks/sap-stubs', files: '/*.*' }]);
-    expect(SAP_STUB_FILES.map((f) => f.object)).toEqual(['IF_MESSAGE', 'CX_ROOT', 'CX_STATIC_CHECK', 'CX_DYNAMIC_CHECK', 'CX_NO_CHECK', 'CL_ABAP_BEHAVIOR_HANDLER']);
+    expect(SAP_STUB_FILES.map((f) => f.object)).toEqual(['IF_MESSAGE', 'CX_ROOT', 'CX_STATIC_CHECK', 'CX_DYNAMIC_CHECK', 'CX_NO_CHECK', 'CL_ABAP_BEHAVIOR_HANDLER', 'CL_ABAP_BEHAVIOR_SAVER']);
   });
 
   test('the scaffold is activatable; references to SAP objects it cannot see are counted apart, never as errors', () => {

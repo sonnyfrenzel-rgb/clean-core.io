@@ -85,6 +85,14 @@ CLASS cl_abap_behavior_handler IMPLEMENTATION.
   METHOD new_message_with_text.
   ENDMETHOD.
 ENDCLASS.`,
+  'cl_abap_behavior_saver.clas.abap': `CLASS cl_abap_behavior_saver DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.
+  PROTECTED SECTION.
+    METHODS save_modified.
+ENDCLASS.
+CLASS cl_abap_behavior_saver IMPLEMENTATION.
+  METHOD save_modified.
+  ENDMETHOD.
+ENDCLASS.`,
   'if_rap_query_paging.intf.abap': `INTERFACE if_rap_query_paging PUBLIC.
   CONSTANTS page_size_unlimited TYPE int8 VALUE -1.
   METHODS get_offset RETURNING VALUE(rv_offset) TYPE int8.

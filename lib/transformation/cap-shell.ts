@@ -247,6 +247,16 @@ function serviceCds(input: CapShellInput, namespace: string, service: string, ar
     out.push(`type InputRecord { ${legacy.map((f) => `${element(f.key)} : ${f.kind === 'packed' ? `Decimal(${f.digits ?? 15}, ${f.places})` : 'String'};`).join(' ')} }`);
   }
   out.push('');
+  // Who may call (scaffold version 18): the scopes of the original's AUTHORITY-CHECKs (xs-security.json), or an
+  // authenticated user where it checks none. The other fields of a check stay srv/lib/authority.ts's.
+  const scopes = capScopesOf(input.facts);
+  out.push(
+    scopes.length > 0
+      ? `/** Authorization: a scope per object and activity of the original's AUTHORITY-CHECKs (${comment(scopes.map((s) => `${s.name} L${s.lines.join(', L')}`).join('; '))}), role template ${CAP_ROLE_TEMPLATE} in xs-security.json. */`
+      : "/** Authorization: the original checks none; any authenticated user of the subaccount may call. */",
+  );
+  const required = capRequires(scopes);
+  out.push(`@requires: ${required.length === 1 ? `'${required[0]}'` : `[${required.map((r) => `'${r}'`).join(', ')}]`}`);
   out.push(`service ${service} {`);
   const params: string[] = [];
   for (const f of selection) params.push(`    /** ${comment(`${f.original} — ${f.declaration}${f.obligatory ? ', obligatory' : ''}, L${f.line}`)} */\n    ${element(f.key)} : ${cdsTypeOfField(f)}`);
@@ -515,6 +525,9 @@ function packageJson(input: CapShellInput, access: AccessPlan, architecture: Pro
     };
   }
   requires['[production]'] = { auth: 'xsuaa', ...(architecture === 'writing' ? { db: 'hana' } : {}) };
+  // Development profile only (cds serve, cds watch, the trial): the mock user holds the scopes @requires names.
+  const scopes = capScopesOf(input.facts);
+  if (scopes.length > 0) requires['[development]'] = { auth: { kind: 'mocked', users: { [CAP_MOCK_USER]: { roles: scopes.map((s) => s.name) } } } };
   return `${JSON.stringify(
     {
       name: input.packageName,
@@ -619,8 +632,85 @@ function mtaYaml(input: CapShellInput, access: AccessPlan, architecture: Program
   return lines.join('\n');
 }
 
-function xsSecurity(input: CapShellInput): string {
-  return `${JSON.stringify({ xsappname: input.packageName, 'tenant-mode': 'dedicated', scopes: [], 'role-templates': [] }, null, 2)}\n`;
+/** One scope of the package: an authorization object of the original with the activity it checks. */
+export interface CapScope {
+  /** The scope's local name, as `@requires` names it: `V_LIKP_VST_03`. */
+  name: string;
+  object: string;
+  /** The ACTVT value the original checks (a literal), or null when it checks none or names it by a variable. */
+  activity: string | null;
+  /** The lines of the AUTHORITY-CHECKs this scope stands for. */
+  lines: number[];
+}
+
+/** The role template the scopes go into: one, for whoever may run the program. */
+export const CAP_ROLE_TEMPLATE = 'Runner';
+/** The mock user of the development profile who holds the scopes (`cds serve` with mocked auth, a trial). */
+export const CAP_MOCK_USER = 'alice';
+
+/**
+ * The scopes of the package, read from the original's AUTHORITY-CHECKs (scaffold version 18, roadmap 3.0.18 item 14):
+ * one per authorization object and the activity it checks (`ID 'ACTVT' FIELD '03'` → `V_LIKP_VST_03`), in the order
+ * the original checks them. A check whose object the engine cannot read (a variable) gives no scope. The other fields
+ * of a check (a shipping point, a sales organization) are values of the run, not of the caller's role: they stay the
+ * check of srv/lib/authority.ts.
+ */
+export function capScopesOf(facts: Pick<EngineFacts, 'graph'>): CapScope[] {
+  const out: CapScope[] = [];
+  for (const c of [...facts.graph.authorityChecks].sort((a, b) => a.lineStart - b.lineStart)) {
+    if (!c.object) continue;
+    const object = c.object.toUpperCase();
+    // The activity as a literal of the statement (`ID 'ACTVT' FIELD '03'`); a variable is the run's value, no scope's.
+    const literal = /\bID\s+'?ACTVT'?\s+FIELD\s+'([^']*)'/i.exec(c.text)?.[1] ?? null;
+    const name = `${object}${literal ? `_${literal}` : ''}`.replace(/[^A-Za-z0-9_]/g, '_');
+    const had = out.find((s) => s.name === name);
+    if (had) had.lines.push(c.lineStart);
+    else out.push({ name, object, activity: literal, lines: [c.lineStart] });
+  }
+  return out;
+}
+
+/** What `@requires` on the service names: the scopes, or an authenticated user where the original checks none. */
+export const capRequires = (scopes: readonly CapScope[]): string[] => (scopes.length > 0 ? scopes.map((s) => s.name) : ['authenticated-user']);
+
+function xsSecurity(input: CapShellInput, scopes: readonly CapScope[]): string {
+  const program = input.plan.program ?? 'the program';
+  const scopeEntries = scopes.map((s) => ({
+    name: `$XSAPPNAME.${s.name}`,
+    description: `${program}: AUTHORITY-CHECK OBJECT '${s.object}'${s.activity ? ` ACTVT '${s.activity}'` : ''} (L${s.lines.join(', L')})`.slice(0, 255),
+  }));
+  const roleTemplates = scopes.length
+    ? [{ name: CAP_ROLE_TEMPLATE, description: `Runs ${program}: the scopes of the original's AUTHORITY-CHECKs`.slice(0, 255), 'scope-references': scopeEntries.map((s) => s.name) }]
+    : [];
+  return `${JSON.stringify({ xsappname: input.packageName, 'tenant-mode': 'dedicated', scopes: scopeEntries, 'role-templates': roleTemplates }, null, 2)}\n`;
+}
+
+/**
+ * The authorization of a CAP package as TRACE.md and STATUS.md state it, read back from its xs-security.json; null
+ * when the file is absent or unreadable.
+ */
+export function capAuthorizationIn(xsSecurityJson: string): { scopes: string[]; roleTemplate: string | null } | null {
+  try {
+    const x = JSON.parse(xsSecurityJson) as { scopes?: Array<{ name?: unknown }>; 'role-templates'?: Array<{ name?: unknown }> };
+    const scopes = (x.scopes ?? []).flatMap((s) => (typeof s.name === 'string' ? [s.name.replace(/^\$XSAPPNAME\./, '')] : []));
+    const t = x['role-templates']?.[0]?.name;
+    return { scopes, roleTemplate: typeof t === 'string' ? t : null };
+  } catch {
+    return null;
+  }
+}
+
+/** The sentence about the authorization for TRACE.md and STATUS.md. */
+export function capAuthorizationWords(a: { scopes: readonly string[]; roleTemplate: string | null }): string {
+  if (a.scopes.length === 0) {
+    return `Authorization on SAP BTP: the original checks no authorization; srv/service.cds requires an authenticated user (@requires: 'authenticated-user') and xs-security.json declares no scope. Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password.`;
+  }
+  return (
+    `Authorization on SAP BTP: xs-security.json declares a scope for each authorization object and activity the original checks (${a.scopes.join(', ')}) in the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE}, and srv/service.cds requires ${a.scopes.length === 1 ? 'it' : 'one of them'} on the service (@requires). ` +
+    `The deploying admin creates a role collection from the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE} and assigns it to the users who may run the program; a user without it is refused (403) before the core runs. ` +
+    `The other fields of each check (an organizational value such as a plant or a shipping point) are not part of a scope: srv/lib/authority.ts checks them where the original does, failing closed until you map it. ` +
+    `Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; package.json gives ${CAP_MOCK_USER} ${a.scopes.length === 1 ? 'this scope' : 'these scopes'} for the development profile only.`
+  );
 }
 
 /* ------------------------------------------------------------------ build */
@@ -648,7 +738,7 @@ export function capShellFiles(input: CapShellInput): { files: ScaffoldFile[]; pa
     for (const [table, e] of r.entities) files.push({ path: `srv/external/data/${r.api}-${table}.csv`, content: mockCsv(e), owner: 'engine' });
   }
   files.push({ path: 'mta.yaml', content: mtaYaml(input, access, architecture), owner: 'engine' });
-  files.push({ path: 'xs-security.json', content: xsSecurity(input), owner: 'engine' });
+  files.push({ path: 'xs-security.json', content: xsSecurity(input, capScopesOf(input.facts)), owner: 'engine' });
   const entities = [...new Set(input.lists.map((l) => l.cds.entity)), ...written.map((t) => t.entity)];
   return {
     files,
