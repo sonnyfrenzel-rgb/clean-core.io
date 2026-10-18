@@ -23,7 +23,7 @@ proposal or a hypothesis, it says so.
 
 | Piece | Where | What it does — and what it does not |
 |---|---|---|
-| The four options | `lib/decision-options.ts:22-48` | Keep · Rebuild · **Move to SAP standard** · Retire. "Standard" is chosen **directly in Management** and "builds nothing" (`:37`, `DIRECT_CHOICE_CODE` `:47`); only Rebuild is signed off in Design. |
+| The four options | `lib/decision-options.ts:22-48` | Keep · Rebuild · **Move to SAP standard** · Retire. "Standard" is chosen **directly in Management** and "builds nothing" (`:37`, `DIRECT_CHOICE_CODE` `:47`); only Rebuild is confirmed in Design. |
 | The evidence per option | `lib/decision-option-signals.ts:25-27`, `:259-266` | The standard option is **always `not-determined`**: "Whether SAP standard does what this program does is a business question the code cannot answer." This is the product's own honesty rule and the concept must keep it. |
 | Decision record | `lib/project-decision.ts` (header `:1-66`, bindings `:89-97`, `DECISION_VERSION = 1` `:74`) | Binds need revision, option, cost revision, contract, run; confirmed by the account as a self-declaration (`SELF_DECLARATION` `:86`). Reversibility already knows "retire with confirmed drops" (`:290`). |
 | "Standard weighed?" | `lib/standard-fit-gate.ts:110-140` | Standard counts as weighed only when the confirmed decision is `standard`, or the design's option comparison weighed it on facts (a model proposal). Drives a warning before a rebuild (`:159-164`) and the Transformation prompt (`lib/transformation-context.ts:371-387`: "THE DECISION ON RECORD IS TO MOVE TO SAP STANDARD — IT BUILDS NOTHING"). |
@@ -35,7 +35,7 @@ proposal or a hypothesis, it says so.
 | Scope item data | `lib/sap-scope-items.ts:44-97` (13 IDs with SAP page), `lib/sap-curated-lists.ts:1-21` (~100 IDs, title only, owner list of 13.10.) | ID→title lookups. **There is no mapping program/table/process → scope item anywhere**, and SAP's terms forbid scraping help.sap.com / me.sap.com (owner rule). |
 | Need states (3.5) | `lib/process-states.ts:46` (`keep · change · drop · clarify`), `:54` value source incl. `customizing`; route `app/api/projects/[projectId]/process-states/route.ts:36-60` | Per element and rule, immutable need revisions by the account. |
 | As-is / to-be (3.6) | `lib/process-target.ts:5-46`, `buildTargetModel` `:321`, `compareIstSoll` `:522` | Pure to-be derivation and side-by-side (stays · changes · goes · open · added), anchors only copied, "not a statement about the code", not in any audit pack (`:40-43`). **No UI or route consumes it yet** (grep: only `tests/process-target.spec.ts`). |
-| BPMN export | `lib/bpmn/export.ts:16-35`, `buildBpmnExport` `:116` | Deterministic BPMN 2.0 XML from the skeleton, every node with `cc:` trace and status `reconstructed`; "no claim about a target tool". Signavio import not verified (roadmap 4.3). |
+| BPMN export | `lib/bpmn/export.ts:16-35`, `buildBpmnExport` `:116` | Deterministic BPMN 2.0 XML from the skeleton, every node with `cc:` trace and status `reconstructed`; "no claim about a target tool"; the exchange with SAP Signavio runs through these files (roadmap 4.3). |
 | Design option comparison | `lib/design-option-comparison.ts:1-36`, `comparisonWeighsStandard` `:376` | Standard vs RAP vs CAP, engine facts + model answer + check that refuses circular reasons. Model text, proposal. |
 | Phase contract | `lib/workflow-steps.ts:74` (`PhaseState = empty · partial · done · stale`), `:738` `workflowSteps`, design `:825-837`, transformation `:846-859`, delivery gaps `:1069-1073`, delivery `:1086-1125`, `workflowSummary` `:1225`, `nextPhaseKey`, `toolOnRecord` | **No state for "not applicable"**. Delivery needs generated code + tests + documentation (`:1069-1073`), so a no-code decision can never reach Delivery today. The only precedent for closing a phase without its evidence is ADR-094 (testing closed "not verified", `:897-914`, `testingClosureBasis` `:1247`). |
 | Tool bar | `lib/workspace-model.ts:964-973` (`toolMark`), `components/workspace/ToolBar.tsx:83,112,275` | Marks derive only from `PhaseState`. |
@@ -268,8 +268,8 @@ need revision.
   modellers (`export.ts:19-24`).
 - **Gap list** as Markdown and CSV (one row per element) — the delta-requirement list a
   fit-to-standard workshop works through.
-- Wording stays "BPMN 2.0 XML, import into Signavio not verified" until 4.3 has a log (roadmap
-  3.0 done-criteria, `docs/ROADMAP.md:191-195`).
+- The export keeps the wording the product uses for its BPMN 2.0 XML exchange today (roadmap 3.0 done-criteria,
+  `docs/ROADMAP.md:191-195`).
 
 ---
 

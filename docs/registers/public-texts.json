@@ -1625,6 +1625,27 @@
       }
     },
     {
+      "path": "docs/design/fit-to-standard-concept.md",
+      "kind": "plan",
+      "purpose": "Concept for roadmap 3.0.20 fit to standard: gate by kind of program, the gap BPMN, Transformation and Testing not applicable, the package without code, steps F1-F10 with acceptance criteria; the owner's nine decisions of 18.10.2026 on top",
+      "audience": "Sonny, agents",
+      "saysToday": "Concept of 18.10.2026 with the owner's decisions; nothing built yet.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The binding concept of an open roadmap step (3.0.20); it is archived once the step is built.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ROADMAP.md"
+      ],
+      "measured": {
+        "lines": 436
+      }
+    },
+    {
       "path": "docs/drafts/README-3.0.md",
       "kind": "draft",
       "purpose": "Draft of the README for 3.0 (preparation 3.0.8)",
