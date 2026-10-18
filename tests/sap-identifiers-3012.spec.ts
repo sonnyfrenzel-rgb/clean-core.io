@@ -551,7 +551,8 @@ test.describe('model line references are held against the engine’s anchors (SD
   test('every export of model text passes the source', () => {
     const delivery = read('app/(app)/project/[projectId]/delivery/page.tsx');
     expect(delivery).toContain('formatAnalysisToMarkdown(project.analysis, { code: project.legacyCode })');
-    expect(delivery).toContain('formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode })');
+    // 3.0.18 item 13: the design export also gets the package's files (`packageFiles`) beside the source.
+    expect(delivery).toContain('formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode, ');
     expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).toMatch(/<AnchoredNarrative[\s\S]{0,200}code=\{legacyCode\}/);
     expect(read('lib/process-document-build.ts')).toContain('anchorNarrative(stripModelMarkdown(text), [], lines.length, engineLineAnchors(source))');
   });

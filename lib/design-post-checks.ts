@@ -40,8 +40,14 @@
  */
 
 import { rapShortName, rapTableName } from './transformation/rap-names';
+import { programArchitecture } from './transformation/architecture';
+import { abapDeliveryOf } from './transformation/abap-delivery';
+import { accessPointsOf } from './transformation/access-layer';
 import { programNameOf } from './abap/callback-registrations';
 import { readStatements } from './abap/statement-reader';
+import { readBlocks } from './abap/block-structure';
+import { readCallGraphFrom } from './abap/call-graph';
+import { readOriginalContract } from './abap/original-contract';
 import { findSapIdentifiers, occurrencesToMark, sapIdMark, sapIdStateWord, type SapIdCheck } from './sap-reference-check';
 
 /* ------------------------------------------------------------------ route */
@@ -116,6 +122,10 @@ export interface RapDesignNames {
   accessInterface: string;
   accessClass: string;
   job: string;
+  /** The custom entity of a program that writes no table (`z<short>_ce`). */
+  entity: string;
+  /** Its query provider (`zcl_<short>_query`). */
+  query: string;
 }
 
 export function rapDesignNames(program: string | null): RapDesignNames {
@@ -132,8 +142,119 @@ export function rapDesignNames(program: string | null): RapDesignNames {
     accessInterface: `zif_${s}_access`,
     accessClass: `zcl_${s}_access`,
     job: `zcl_${s}_job`,
+    entity: `z${s}_ce`,
+    query: `zcl_${s}_query`,
   };
 }
+
+/* ------------------------------------------------- what the package delivers */
+
+/**
+ * The RAP variant a package is: a managed business object over the record
+ * table (the original writes a table), or a custom entity with a query
+ * provider (a report or simulation) — `lib/transformation/architecture.ts`.
+ */
+export type RapVariant = 'managed-bo' | 'custom-entity';
+
+/** One ABAP object of the package, as abapGit names its file: `zsd_x_r` + `ddls`. */
+export interface RapObject {
+  name: string;
+  type: string;
+}
+
+/**
+ * What the RAP package delivers — roadmap 3.0.18 item 13 (QM-07, FI-F02). The
+ * design described a table, a behavior definition and a DCL with `pfcg_auth`
+ * for a package that delivers a custom entity, and listed objects the package
+ * does deliver as "not generated". The list is the package's file list when
+ * one is at hand (`basis: 'package'`), else the objects the scaffold writes for
+ * this source, read with the scaffold's own decisions (architecture, job,
+ * service, access layer — `basis: 'source'`; `tests/design-delivered-objects.spec.ts`
+ * holds it against `buildRapScaffold` on the starter examples).
+ */
+export interface RapDelivered {
+  variant: RapVariant | null;
+  objects: RapObject[];
+  basis: 'package' | 'source';
+}
+
+const OBJECT_FILE = /^(?:.*\/)?([a-z0-9_/#]+?)\.([a-z]{4})(?:\.[a-z0-9_.]+)?$/i;
+
+/** The objects a package's file paths name, each once, in path order; abapGit's package file left out. */
+export function rapObjectsOfFiles(paths: readonly string[]): RapObject[] {
+  const seen = new Set<string>();
+  const out: RapObject[] = [];
+  for (const p of paths) {
+    const m = OBJECT_FILE.exec(p.trim());
+    if (!m || m[2].toLowerCase() === 'devc' || p.startsWith('.')) continue;
+    const key = `${m[1].toLowerCase()}.${m[2].toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ name: m[1].toLowerCase(), type: m[2].toLowerCase() });
+  }
+  return out;
+}
+
+/** The variant a list of objects is: a behavior definition makes a business object, a `_ce` view a custom entity. */
+export function rapVariantOfObjects(objects: readonly RapObject[]): RapVariant | null {
+  if (objects.some((o) => o.type === 'bdef')) return 'managed-bo';
+  if (objects.some((o) => o.type === 'ddls' && /_ce$/.test(o.name))) return 'custom-entity';
+  return null;
+}
+
+/** The delivered objects from a package's file list. */
+export function rapDeliveredFromFiles(paths: readonly string[]): RapDelivered {
+  const objects = rapObjectsOfFiles(paths);
+  return { variant: rapVariantOfObjects(objects), objects, basis: 'package' };
+}
+
+/** The objects the RAP scaffold writes for this source, or null when there is no readable source. */
+export function rapDeliveredFromSource(code: string | null | undefined): RapDelivered | null {
+  if (typeof code !== 'string' || !code.trim()) return null;
+  try {
+    const text = code.replace(/\r\n?/g, '\n');
+    const statements = readStatements(text);
+    const graph = readCallGraphFrom(statements, readBlocks(statements));
+    const contract = readOriginalContract(text);
+    const n = rapDesignNames(programNameOf(statements));
+    const variant: RapVariant = programArchitecture({ graph }) === 'writing' ? 'managed-bo' : 'custom-entity';
+    const delivery = abapDeliveryOf({ statements, graph, contract });
+    const withJob = delivery.kind !== 'ui-service';
+    const withService = delivery.kind !== 'application-job';
+    const hasAccess = accessPointsOf({ statements, graph }, { customerWrites: true, files: true }).points.length > 0;
+    const o = (name: string, type: string): RapObject => ({ name, type });
+    const objects: RapObject[] = [
+      o(n.logic, 'clas'), o(`zcx_${n.short}_refusal`, 'clas'), o(`zcx_${n.short}_nofill`, 'clas'),
+      ...(hasAccess ? [o(n.accessInterface, 'intf'), o(n.accessClass, 'clas'), o(`zcx_${n.short}_access`, 'clas')] : []),
+      ...(variant === 'custom-entity'
+        ? [o(n.entity, 'ddls'), o(n.query, 'clas')]
+        : [o(n.table, 'tabl'), o(n.root, 'ddls'), o(n.projection, 'ddls'), o(`z${n.short}_p`, 'ddls'), o(n.root, 'dcls'), o(n.projection, 'dcls'), o(n.root, 'bdef'), o(n.behaviorPool, 'clas')]),
+      ...(withJob ? [o(n.job, 'clas'), o(`zcl_${n.short}_job_setup`, 'clas')] : []),
+      ...(withService ? [o(n.serviceDefinition, 'srvd'), o(n.serviceBinding, 'srvb')] : []),
+    ];
+    return { variant, objects, basis: 'source' };
+  } catch {
+    return null;
+  }
+}
+
+/** The variant in words. */
+export const RAP_VARIANT_WORDS: Readonly<Record<RapVariant, string>> = Object.freeze({
+  'custom-entity': 'a custom entity with a query provider (the original writes no table)',
+  'managed-bo': 'a managed business object over its record table (the original writes a table)',
+});
+
+/**
+ * Said where a design proposes CDS access control for a custom entity. SAP: a
+ * custom entity has no CDS access control; its query provider class is where
+ * the authorization is checked.
+ */
+export const CUSTOM_ENTITY_AUTH_NOTE =
+  'A custom entity is not protected by a CDS access control (DCL): its rows come from the query provider class, not from a view an access control could restrict. '
+  + 'The query provider checks the authorization (AUTHORITY-CHECK) before it returns rows.';
+
+/** A security row or a text that proposes CDS access control: DCL, `define role`, `pfcg_auth`, "access control". */
+const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\b(?:CDS\s+)?access\s+controls?\b|\.dcls\b|\basdcls\b/i;
 
 /** The program a source declares (`REPORT`/`PROGRAM`), as the engine reads it; `null` when it declares none. */
 export function programOfSource(code: string | null | undefined): string | null {
@@ -167,8 +288,15 @@ export interface RapNameAlignment<T> {
   beyond: string[];
 }
 
-function scaffoldNameFor(name: string, type: string, purpose: string, names: RapDesignNames, taken: Set<string>): string | null {
+function scaffoldNameFor(name: string, type: string, purpose: string, names: RapDesignNames, taken: Set<string>, variant: RapVariant | null = null): string | null {
   const projection = PROJECTION.test(name) || /\bprojection\b/i.test(purpose);
+  // 3.0.18 item 13 (QM-07): a custom entity package has one view — the entity — and a query class; nothing else of a business object.
+  if (variant === 'custom-entity') {
+    if (type === 'ddls') return projection ? null : names.entity;
+    if (type === 'dcls' || type === 'bdef' || type === 'tabl') return null;
+    if (type === 'clas' && (/query|provider/i.test(name) || /\bquery\b/i.test(purpose))) return names.query;
+    if (type === 'clas' && /^zbp_/i.test(name)) return null;
+  }
   switch (type) {
     case 'ddls':
     case 'dcls':
@@ -177,6 +305,7 @@ function scaffoldNameFor(name: string, type: string, purpose: string, names: Rap
       return projection ? null : names.root;
     case 'clas':
       if (/^zbp_/i.test(name)) return names.behaviorPool;
+      if (/query|provider/i.test(name)) return variant === 'managed-bo' ? null : names.query;
       if (/test/i.test(name)) return null;
       if (/job/i.test(name)) return names.job;
       if (/access|adapter|reader/i.test(name)) return names.accessClass;
@@ -213,7 +342,7 @@ function renameIn(value: unknown, renames: ReadonlyArray<{ from: string; to: str
  * The design with its RAP artifact list on the scaffold's names (see the file
  * comment, 2). Paths keep their folder; the file name becomes the scaffold's.
  */
-export function alignRapDesignNames<T>(design: T, program: string | null): RapNameAlignment<T> {
+export function alignRapDesignNames<T>(design: T, program: string | null, delivered: RapDelivered | null = null): RapNameAlignment<T> {
   if (!isObj(design) || !isObj(design.nodeAppBlueprint) || !Array.isArray(design.nodeAppBlueprint.projectStructure)) {
     return { design, renamed: [], beyond: [] };
   }
@@ -221,11 +350,20 @@ export function alignRapDesignNames<T>(design: T, program: string | null): RapNa
   const taken = new Set<string>();
   const renames = new Map<string, string>();
   const beyond: string[] = [];
+  // 3.0.18 item 13 (QM-07, FI-F02): what the package delivers decides, never a fixed list of roles.
+  const deliveredKeys = delivered ? new Set(delivered.objects.map((o) => `${o.name}.${o.type}`)) : null;
   const structure = design.nodeAppBlueprint.projectStructure.map((entry: unknown) => {
     const path = typeof entry === 'string' ? entry : isObj(entry) && typeof entry.path === 'string' ? entry.path : '';
     const purpose = isObj(entry) && typeof entry.purpose === 'string' ? entry.purpose : '';
     const m = /^(.*\/)?([A-Za-z0-9_/]+?)\.([a-z]{4})(?:\.[A-Za-z0-9.]+)?$/.exec(path.trim());
-    const target = m ? scaffoldNameFor(m[2], m[3].toLowerCase(), purpose, names, taken) : null;
+    const type = m ? m[3].toLowerCase() : '';
+    // An object the package delivers under the model's own name stays, and is never "not generated".
+    if (m && deliveredKeys?.has(`${m[2].toLowerCase()}.${type}`)) {
+      taken.add(m[2].toLowerCase());
+      return entry;
+    }
+    const mapped = m ? scaffoldNameFor(m[2], type, purpose, names, taken, delivered?.variant ?? null) : null;
+    const target = mapped && (!deliveredKeys || deliveredKeys.has(`${mapped}.${type}`)) ? mapped : null;
     if (!m || !target) {
       if (path) beyond.push(path);
       return entry;
@@ -233,7 +371,7 @@ export function alignRapDesignNames<T>(design: T, program: string | null): RapNa
     taken.add(target);
     const from = m[2].toLowerCase();
     if (from !== target) renames.set(from, target);
-    const file = `${m[1] ?? 'src/'}${target}.${SCAFFOLD_FILE[m[3].toLowerCase()]}`;
+    const file = `${m[1] ?? 'src/'}${target}.${SCAFFOLD_FILE[type] ?? type}`;
     return typeof entry === 'string' ? file : { ...(entry as Record<string, unknown>), path: file };
   });
   const renamed = [...renames].map(([from, to]) => ({ from, to })).sort((a, b) => b.from.length - a.from.length);
@@ -363,21 +501,47 @@ export interface DesignPostCheck<T> {
   remnants: string[];
   mvccRefused: string[];
   twoCutoffs: boolean;
+  /** What the package delivers (3.0.18 item 13), or null on the CAP route or without a source or package. */
+  delivered: RapDelivered | null;
+  /** Security rows proposing CDS access control for a custom entity, taken out of the design (3.0.18 item 13, QM-07). */
+  dclRefused: string[];
 }
 
 /** The checks of this module on one parsed design, in the order they apply. */
-export function postCheckDesign<T>(design: T, code?: string | null): DesignPostCheck<T> {
+export function postCheckDesign<T>(design: T, code?: string | null, packageFiles?: readonly string[] | null): DesignPostCheck<T> {
   const route = designRouteOf(design);
   const program = programOfSource(code);
   const twoCutoffs = readsAtTwoCutoffs(code);
   const mvcc = refuseMvccClaimsIn(design);
   if (route !== 'rap') {
-    return { design: mvcc.design, route, program, renamed: [], beyond: [], remnants: [], mvccRefused: mvcc.refused, twoCutoffs };
+    return { design: mvcc.design, route, program, renamed: [], beyond: [], remnants: [], mvccRefused: mvcc.refused, twoCutoffs, delivered: null, dclRefused: [] };
   }
   const remnants = rapTemplateRemnants(mvcc.design);
+  // 3.0.18 item 13: the package's own file list when there is one, else what the scaffold writes for this source.
+  const fromFiles = packageFiles && packageFiles.length ? rapDeliveredFromFiles(packageFiles) : null;
+  const delivered = fromFiles && fromFiles.objects.length ? fromFiles : rapDeliveredFromSource(code);
   // Without a source the scaffold's names cannot be derived: the model's stay, and the export says so.
-  const aligned = program ? alignRapDesignNames(mvcc.design, program) : { design: mvcc.design, renamed: [], beyond: [] };
-  return { design: aligned.design, route, program, renamed: aligned.renamed, beyond: aligned.beyond, remnants, mvccRefused: mvcc.refused, twoCutoffs };
+  const aligned = program ? alignRapDesignNames(mvcc.design, program, delivered) : { design: mvcc.design, renamed: [], beyond: [] };
+  const refusal = delivered?.variant === 'custom-entity' ? refuseCustomEntityDcl(aligned.design) : { design: aligned.design, refused: [] };
+  return { design: refusal.design, route, program, renamed: aligned.renamed, beyond: aligned.beyond, remnants, mvccRefused: mvcc.refused, twoCutoffs, delivered, dclRefused: refusal.refused };
+}
+
+/**
+ * The security rows of a custom-entity design that propose CDS access control
+ * (DCL, `pfcg_auth`, `define role`), taken out and returned: SAP protects a
+ * custom entity in its query provider, not by an access control
+ * (`CUSTOM_ENTITY_AUTH_NOTE`). Pure.
+ */
+export function refuseCustomEntityDcl<T>(design: T): { design: T; refused: string[] } {
+  if (!isObj(design) || !Array.isArray(design.securityHardening)) return { design, refused: [] };
+  const refused: string[] = [];
+  const kept = design.securityHardening.filter((row: unknown) => {
+    const text = strings(row).map((s) => s.text).join(' ');
+    if (!DCL_CLAIM.test(text)) return true;
+    refused.push(isObj(row) && typeof row.requirement === 'string' ? row.requirement : text);
+    return false;
+  });
+  return { design: { ...design, securityHardening: kept } as T, refused };
 }
 
 /* ---------------------------------------------------------------- prompt */
@@ -386,8 +550,19 @@ export function postCheckDesign<T>(design: T, code?: string | null): DesignPostC
  * The prompt's rule for the RAP artifact list: the names the scaffold will
  * generate, so the design and the package agree (SD review CR-D7).
  */
-export function rapObjectNamesPromptRule(program: string | null): string {
+export function rapObjectNamesPromptRule(program: string | null, variant: RapVariant | null = null): string {
   const n = rapDesignNames(program);
+  // 3.0.18 item 13 (QM-07, FI-F02): the variant the package delivers — a custom entity has no table, no behavior
+  // definition and no access control, and the design must not describe them.
+  if (variant === 'custom-entity') {
+    return (
+      `The package for ${program ?? 'this program'} is a custom entity: the original writes no table. Use exactly these object names, which the engine's RAP scaffold generates — never invent others: `
+      + `custom entity ${n.entity} with its query provider class ${n.query} (IF_RAP_QUERY_PROVIDER), logic class ${n.logic}, `
+      + `service definition ${n.serviceDefinition}, service binding ${n.serviceBinding}. `
+      + 'Do not describe a database table, a behavior definition, a behavior pool, a projection view or a CDS access control (DCL): the package delivers none of them. '
+      + `${CUSTOM_ENTITY_AUTH_NOTE} Endpoint paths use the same service definition and binding names.`
+    );
+  }
   return (
     `Use exactly these object names, which the engine's RAP scaffold generates for ${program ?? 'this program'} — never invent others: `
     + `table ${n.table}, root view entity and behavior definition ${n.root}, projection view ${n.projection}, behavior pool ${n.behaviorPool}, `

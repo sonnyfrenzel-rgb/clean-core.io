@@ -41,7 +41,7 @@ import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, typ
 import type { ScoreHeroModel } from './score-hero';
 import type { DecisionWeighing } from './decision-weighing';
 import type { ScoreRule } from './score-rule';
-import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
+import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, ruleTraceRecordOf, withImplementationTrace, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
 import {
   ABAP_CHECK_JSON_PATH,
@@ -2162,6 +2162,8 @@ export function finishDeliveryPackage(input: {
   const ai = markModelWrittenFiles(entries, facts);
   entries = ai.entries;
   facts = ai.facts;
+  // 3.0.18 item 13 (QM-09): the register reads which unit carries which rule from the package's own trace.
+  facts = { ...facts, rules: withImplementationTrace(facts.rules, ruleTraceRecordOf(entries.find((e) => e.path === 'traceability.json')?.content)) };
   // 3.0.13: the server's activation check travels with an ABAP package, and the SAP declarations its abaplint.json names.
   const activation = facts.generation?.activation ?? null;
   if (activation) {

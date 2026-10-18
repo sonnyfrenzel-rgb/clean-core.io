@@ -39,7 +39,7 @@ import { BTP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
 import { EXPORT_CSS, severityClass, toneClass } from '@/lib/export-style';
 // SAP identifiers the model wrote, each followed by its check (external review F-03/F-09).
-import { COVERAGE_CLAIM_NOTE, coverageClaims, sapAttributionHtml, sapReferenceAnnotator } from '@/lib/sap-reference-check';
+import { COVERAGE_CLAIM_NOTE, coverageClaims, sapAttributionHtml, sapCheckedNarrative, sapReferenceAnnotator } from '@/lib/sap-reference-check';
 
 export interface AnalysisExportInput {
   project: Project;
@@ -241,9 +241,9 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
 
             <h2>Standard Fit Assessment</h2>
             <p class="muted">Model proposal. SAP identifiers are checked against SAP data this product holds.</p>
-            <p><strong>Target Standard Process ID / Module:</strong> ${esc(checked(data.standardFit?.targetStandardProcess || 'N/A'))}</p>
+            <p><strong>Target Standard Process ID / Module:</strong> ${esc(sapCheckedNarrative(data.standardFit?.targetStandardProcess || 'N/A', checked))}</p>
             <p><strong>Standardization Potential (model's estimate, not a measured fit):</strong> <span class="tag tone-neutral">${esc(data.standardFit?.potential || 'not determined')}</span></p>
-            <p>${esc(checked(data.standardFit?.rationale))}</p>
+            <p>${esc(sapCheckedNarrative(data.standardFit?.rationale, checked))}</p>
             ${coverageNote}
 
             <h2>SAP Extensibility Routing Decision Path</h2>

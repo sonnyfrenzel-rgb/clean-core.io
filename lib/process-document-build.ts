@@ -28,6 +28,7 @@ import { readingOrder, readingPath, type PathItem } from '@/lib/process-document
 import { objectSites, sitesByElement, type ObjectSite } from '@/lib/process-overlays';
 import { selectionInputs, summaryOf, type HandbookObject } from '@/lib/process-handbook';
 import { stripModelMarkdown } from '@/lib/model-text';
+import { sapCheckedNarrative } from '@/lib/sap-reference-check';
 import { FR_TOPICS_COVERED_BY_NFR } from '@/lib/requirements-export';
 import {
   PROCESS_DOCUMENT_FORMAT,
@@ -1496,7 +1497,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       const contradicts = summaryFacts ? !checkPurposeProposal(anchored.map((s) => s.text).join(' '), summaryFacts).ok : false;
       if (anchored.length && !contradicts) {
         purposeProposal = {
-          text: anchored.map((s) => s.text.trim()).join(' '),
+          // 3.0.18 item 13 (QM-08, FI-F12): the model's SAP identifiers pass the check before the document shows them.
+          text: sapCheckedNarrative(anchored.map((s) => s.text.trim()).join(' ')),
           anchors: distinctAnchors(anchored.flatMap((s) => s.anchors.map((a) => anchor(a.lineStart, a.lineEnd)))),
           origin: 'narrative',
         };

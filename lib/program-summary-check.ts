@@ -2,6 +2,7 @@ import { containsAmount } from '@/lib/money-honesty';
 import { BTP } from '@/lib/sap-naming';
 import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { stripModelMarkdown } from '@/lib/model-text';
+import { sapCheckedNarrative } from '@/lib/sap-reference-check';
 import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
 
 /**
@@ -165,7 +166,8 @@ export function purposeProposalOf(narrative: string | null | undefined, facts: P
   const sentences = clean.split(/(?<=[.!?])\s+/).filter((s) => s.length > 0).slice(0, 2);
   const proposal = sentences.join(' ').trim();
   if (!proposal || proposal.length > 600) return null;
-  return checkPurposeProposal(proposal, facts).ok ? proposal : null;
+  // 3.0.18 item 13 (QM-08, FI-F12): its SAP identifiers pass the check — a mismatch is dropped with SAP's title.
+  return checkPurposeProposal(proposal, facts).ok ? sapCheckedNarrative(proposal) : null;
 }
 
 /** The tag beside a quoted header comment — a tag, not one of the nine provenance values (DESIGN.md §4). */

@@ -10,6 +10,7 @@ import { buildRapScaffold } from '../lib/transformation';
 import { abaplintPackageCheck } from '../lib/transformation/abaplint-check';
 import { planOf } from './helpers/transformation-scaffold';
 import { testFactsOf } from '../lib/delivery-facts';
+import { OUTSIDE_RESULT_VERSION, outsideSubjectOf } from '../lib/sap-test-results';
 
 /**
  * Roadmap 3.0.13 item (6), the golden master (owner 14.10.2026): the
@@ -295,6 +296,33 @@ test('STATUS on the ABAP route says which test methods are tests and how many de
   expect(detail).toContainEqual(expect.stringContaining('Demo cases of the original as ABAP Unit: 3 case methods created; 3 of 3 with their data carried completely; 0 of 3 compare a result of the original; passed in SAP: not known here (ABAP Unit runs only in your system) — each runs through the logic, but no result is compared yet'));
   // Not on the Node route.
   expect(testFactsOf({ ...project, extensibilityRoute: 'Side-by-Side (BTP)' } as unknown as Parameters<typeof testFactsOf>[0], []).detail.some((d) => d.startsWith('ABAP Unit'))).toBe(false);
+});
+
+test('3.0.18 item 13: with a result from the reader\'s SAP system on record, "passed in SAP" is its own number in STATUS', () => {
+  const { facts, plan } = planOf(three());
+  const scaffold = buildRapScaffold(plan, facts);
+  const base = {
+    extensibilityRoute: 'ABAP Cloud (RAP)',
+    generatedCode: JSON.stringify(scaffold.files.map((f) => ({ path: f.path, content: f.content }))),
+    testCases: [{ id: 'TC_01', name: 'x' }],
+  };
+  const confirmed = {
+    v: OUTSIDE_RESULT_VERSION, kind: 'confirmed' as const, subject: outsideSubjectOf(base as unknown as Parameters<typeof outsideSubjectOf>[0]),
+    recordedAt: '2026-10-18T10:00:00.000Z', recordedBy: 'owner-uid', scenarioCount: 1,
+    passed: 70, failed: 4, skipped: 3, coverage: null, file: null, system: 'S4T', ranOn: '2026-10-18',
+  };
+  const detail = testFactsOf({ ...base, outsideTestResult: confirmed } as unknown as Parameters<typeof testFactsOf>[0], []).detail;
+  const line = detail.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))!;
+  // Four states, four numbers: created, carried completely, compared, passed in SAP — the last never "not known" when SAP said.
+  expect(line).toContain('3 case methods created; 3 of 3 with their data carried completely; 0 of 3 compare a result of the original; passed in SAP: 70 of 77 ABAP Unit test methods in the result you confirmed as run in your system (a self-declaration), 4 failed, 3 skipped — counted over every method of the package, not per demo case');
+  expect(line).not.toContain('not known here');
+  // A result for another package state is out of date and says nothing.
+  const stale = { ...confirmed, subject: { ...confirmed.subject, codeDigest: 'other' } };
+  const before = testFactsOf({ ...base, outsideTestResult: stale } as unknown as Parameters<typeof testFactsOf>[0], []).detail;
+  expect(before.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))).toContain('passed in SAP: not known here');
+  // The Testing page passes the same record.
+  const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
+  expect(page).toMatch(/abapTestEvidenceSentences\(e, outsideNow\.state === 'current' \? outsideNow\.summary : null\)/);
 });
 
 test('a test method that only skips, or never calls the code under test, is not counted as a test', () => {
