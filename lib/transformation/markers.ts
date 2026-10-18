@@ -571,9 +571,59 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
       out.push(refusal('customer-write', `a database write to customer tables this package does not ship: ${words.join(', ')}`));
     }
   }
+  if (ctx.abap?.localComponents) out.push(...localStateRefusals(statements, ctx.abap));
+  if (ctx.abap?.loadInput) out.push(...loadInputRefusals(statements, ctx.abap.loadInput));
   if (ctx.abap?.sapTypes) out.push(...sapTypeRefusals(statements, ctx.abap));
   if (ctx.abap) out.push(...unknownAbapNames(body, statements, ctx.abap));
   return out;
+}
+
+/** Statement text with literals and templates blanked. */
+const codeOf = (s: { text: string }) => s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''");
+
+/**
+ * The shared locals of a split routine (FI review C, 18.10.2026: part 2 of a routine wrote cs_local-ls_company-currency
+ * where the parent's local is ls_c — four syntax errors shipped as "not activatable"): every `cs_local-<component>` a
+ * part names must be one of its cs_local, and a component used bare, neither declared in the body nor an attribute,
+ * is the parent's local and is written cs_local-<component>.
+ */
+function localStateRefusals(statements: ReturnType<typeof readStatements>, names: AbapRegionNames): BodyRefusal[] {
+  const comps = new Set((names.localComponents ?? []).map((c) => c.toLowerCase()));
+  const attrs = new Set(names.attributes.map((a) => a.toLowerCase()));
+  const declared = new Set<string>();
+  for (const s of statements) {
+    const d = /^(?:DATA|STATICS|CONSTANTS|FIELD-SYMBOLS)\s*:?\s*(<?[\w/]+>?)/i.exec(s.text);
+    if (d) declared.add(d[1].toLowerCase());
+    for (const m of s.text.matchAll(/\b(?:DATA|FINAL|FIELD-SYMBOL)\(\s*(<?[\w/]+>?)\s*\)/gi)) declared.add(m[1].toLowerCase());
+  }
+  const unknown = new Set<string>();
+  const bare = new Set<string>();
+  for (const s of statements) {
+    const code = codeOf(s);
+    for (const m of code.matchAll(/\bcs_local-([\w]+)/gi)) if (!comps.has(m[1].toLowerCase())) unknown.add(`cs_local-${m[1]}`);
+    for (const m of code.matchAll(/(^|[^\w\-~>])([A-Za-z_]\w*)(?![\w(])/g)) {
+      const n = m[2].toLowerCase();
+      if (comps.has(n) && !declared.has(n) && !attrs.has(n)) bare.add(m[2]);
+    }
+  }
+  const list = [...comps].join(', ');
+  const out: BodyRefusal[] = [];
+  if (unknown.size > 0) out.push(refusal('unknown-name', `names components of cs_local it does not have: ${[...unknown].slice(0, 8).join(', ')} — cs_local holds the parent routine's locals, under their original names: ${list}`));
+  if (bare.size > 0) out.push(refusal('unknown-name', `uses the parent routine's locals without cs_local: ${[...bare].slice(0, 8).join(', ')} — every part shares them as cs_local-<name> (${list})`));
+  return out;
+}
+
+/**
+ * The run's input is loaded once (FI review D, 18.10.2026: an orchestrator wrote `load_input( ). gv_now = p_at.
+ * load_input( ).`, and the second call overwrote the clock the original assigns after its demo data): the orchestrator
+ * calls load_input( ) exactly once, where the original runs its first demo-data routine; no other body calls it.
+ */
+function loadInputRefusals(statements: ReturnType<typeof readStatements>, mode: 'once' | 'never'): BodyRefusal[] {
+  const calls = statements.filter((s) => /(^|[^\w>~-])(?:me->)?load_input\s*\(/i.test(codeOf(s))).length;
+  if (mode === 'never' && calls > 0) return [refusal('unknown-name', "calls load_input( ) — only the main path loads the run's input, once, where the original runs its demo-data routines")];
+  if (mode === 'once' && calls > 1) return [refusal('unknown-name', `calls load_input( ) ${calls} times — call it once, where the original runs its first demo-data routine: a second call overwrites what the original assigns after its demo data (a clock, a user)`)];
+  if (mode === 'once' && calls === 0) return [refusal('unknown-name', 'does not call load_input( ) — where the original runs its demo-data routines, the run takes its input: call load_input( ) there, once')];
+  return [];
 }
 
 /**

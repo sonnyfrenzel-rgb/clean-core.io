@@ -283,10 +283,11 @@ test('STATUS on the ABAP route says which test methods are tests and how many de
     testCases: [{ id: 'TC_01', name: 'x' }],
   };
   const detail = testFactsOf(project as unknown as Parameters<typeof testFactsOf>[0], []).detail;
-  const abap = detail.find((d) => d.startsWith('ABAP Unit: '))!;
+  // Owner decision 18.10.2026: the engine's classes are counted apart from the testing model's (a proposal).
+  const abap = detail.find((d) => d.startsWith("ABAP Unit, the engine's classes"))!;
   // 3.0.14: the three demo cases run with their rows but compare nothing, so they skip and are not counted as tests;
   // the engine cases that ask the original's checks are.
-  const m = /^ABAP Unit: (\d+) of (\d+) ABAP Unit test methods call the code under test; (\d+) skip/.exec(abap);
+  const m = /^ABAP Unit, the engine's classes \(ltc_engine_cases, ltc_golden_master — what the acceptance counts\): (\d+) of (\d+) ABAP Unit test methods call the code under test; (\d+) skip/.exec(abap);
   expect(m, abap).not.toBeNull();
   expect(Number(m![3])).toBeGreaterThanOrEqual(3);
   expect(abap).not.toContain('without its case data');

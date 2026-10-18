@@ -18,7 +18,7 @@ import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority
 import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
 import { inputReadsIn } from './input-lists';
 import { INITIAL_ASSUMPTION, initialAssumptionsIn } from './initial-node';
-import { goldenMasterInInclude } from '../testing-abap-unit';
+import { ABAP_UNIT_EVIDENCE_LINE, goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
 export interface TraceOptions {
@@ -203,6 +203,7 @@ export function traceMarkdown(trace: Trace): string {
         (gm.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic, so each case runs the logic without its data.'),
     );
   } else if (fixtures.length) lines.push(`- Demo data of the original, not carried over in this version: ${fixtureWords}.`);
+  if (gm && gm.carrier === 'abap-unit') lines.push(`- ${ABAP_UNIT_EVIDENCE_LINE}`);
   if (trace.engineCounterparts?.length) {
     lines.push(`- SAP function modules written by the engine in ABAP Cloud language means, not left to connect: ${trace.engineCounterparts.join(', ')} (an exact counterpart; the access class says why).`);
   }

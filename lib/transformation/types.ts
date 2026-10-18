@@ -562,6 +562,16 @@ export interface AbapRegionNames {
   sapTypes?: Record<string, string | null>;
   /** SAP tables the access layer reads → the access method that reads them (`vbak` → `read_vbak`). */
   sapReads?: Record<string, string>;
+  /**
+   * A part of a split routine (FI review C, 18.10.2026): the components of its `cs_local`, the parent's locals every part
+   * shares. A body that names another (`cs_local-ls_company`) is refused with these listed.
+   */
+  localComponents?: string[];
+  /**
+   * The run's input (FI review D): `once` — the orchestrator calls `load_input( )` exactly once, where the original runs
+   * its first demo-data routine; `never` — any other body; absent — the class has no input.
+   */
+  loadInput?: 'once' | 'never';
 }
 
 /**

@@ -456,6 +456,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   // ---- the routines' parameters (a split part takes its parent's, and the parent's locals as one structure)
   const paramsOf = new Map<string, RapParam[]>();
   const localTypes: string[] = [];
+  /** Part → the components of its cs_local (FI review C). */
+  const localComponentsOf = new Map<string, string[]>();
   for (const u of plan.units) {
     if (u.kind !== 'routine' || u.part) continue;
     paramsOf.set(u.id, u.routine ? contract.scopeOf(u.routine).params : []);
@@ -466,6 +468,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     const comps = scope ? [...scope.locals].filter(([n, ph]) => ph && !scope.params.some((p) => p.name === n) && !n.startsWith('<')) : [];
     if (comps.length > 0) localTypes.push(`TYPES BEGIN OF ${typeName}`, ...comps.map(([n, ph]) => `TYPES ${n} ${ph}`), `TYPES END OF ${typeName}`);
     for (const part of plan.units.filter((p) => p.part?.parent === parent.id)) {
+      if (comps.length > 0) localComponentsOf.set(part.id, comps.map(([n]) => n.toLowerCase()));
       paramsOf.set(part.id, [
         ...(paramsOf.get(parent.id) ?? []).map((p) => ({ ...p })),
         ...(comps.length > 0 ? [{ name: 'cs_local', direction: 'changing' as const, phrase: `TYPE ${typeName}`, original: `the locals of ${parent.routine ?? parent.fn}` }] : []),
@@ -843,6 +846,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   impls.push(
     '  METHOD run.',
     ...contract.selection.map((f) => `    ${f.name} = is_selection-${f.name}.`),
+    // FI review E (18.10.2026): a run starts from the original's initial state, never from the previous run's — an early
+    // return (no live adapter) on a reused instance returned the results of the run before. The attributes are declared
+    // without VALUE, so CLEAR is their initial value.
+    ...Array.from({ length: Math.ceil(contract.globals.length / 6) }, (_, k) => `    CLEAR: ${contract.globals.slice(k * 6, k * 6 + 6).map((g) => g.name).join(', ')}.`),
     ...(inputs.length > 0 ? ['    ms_input = is_input.'] : []),
     '    CLEAR mt_messages.',
     // QM-04 (review of 18.10.2026): a function still a stub raises the nofill exception where it is reached. It ends the
@@ -932,7 +939,16 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       const callees = u.callees.map((id) => methodOf.get(id) ?? id);
       const preds = u.guards.filter((id) => predicates.has(id)).map((id) => predicates.get(id)!.name);
       available[u.id] = [logic, 'me', ...(hasAccess ? ['mo_access'] : []), ...callees, ...preds, ...(u.kind === 'orchestrator' && inputs.length ? ['load_input'] : []), refusal];
-      regionNames[u.id] = { attributes: attributesList, params: params.map((p) => p.name), methods: allMethods, access: accessNames, ...tableNames };
+      regionNames[u.id] = {
+        attributes: attributesList,
+        params: params.map((p) => p.name),
+        methods: allMethods,
+        access: accessNames,
+        ...tableNames,
+        ...(localComponentsOf.has(u.id) ? { localComponents: localComponentsOf.get(u.id)! } : {}),
+        // FI review D: the main path loads the run's input once; a part of a split main path is not judged alone.
+        ...(inputs.length > 0 && !(u.part && unitById.get(u.part.parent)?.kind === 'orchestrator') ? { loadInput: u.kind === 'orchestrator' ? ('once' as const) : ('never' as const) } : {}),
+      };
     }
     impls.push('  ENDMETHOD.', '');
   }
@@ -1107,7 +1123,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       ...consts.map((c) => `${c}.`),
       ...(attrs.length > 0 ? ["\" Attributes (the original's globals and selection inputs, same names):", ...attrs.map((a) => `DATA ${a.name} ${a.phrase}.`)] : []),
       "DATA mt_messages TYPE string_table. \" where the original shows a message of TYPE 'I', 'S' or 'W': APPEND its text",
-      ...(u.kind === 'orchestrator' && inputs.length > 0 ? [`METHODS load_input. " call it where the original runs ${fixtureNames.slice(0, 4).join(', ')}`] : []),
+      ...(u.kind === 'orchestrator' && inputs.length > 0 ? [`METHODS load_input. " call it once, where the original runs the first of ${fixtureNames.slice(0, 4).join(', ')}`] : []),
       ...(callees.length > 0 ? ["\" Methods it calls (the original's PERFORMs):", ...callees] : []),
       ...(preds.length > 0 ? ["\" Guards (each returns the original's condition):", ...preds] : []),
       ...(hasAccess ? [`" SAP access, only through mo_access (INTERFACE ${accessIf}):`, ...accessMethods.map((m) => signatureLine(accessSignature(m)).replace(/^METHODS /, 'mo_access->'))] : []),

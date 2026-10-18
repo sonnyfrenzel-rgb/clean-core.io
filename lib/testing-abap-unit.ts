@@ -249,6 +249,22 @@ export interface AbapTestProblem {
   message: string;
 }
 
+/**
+ * What TRACE.md says of the ABAP Unit classes (owner decision 18.10.2026): which count, and that the testing model's
+ * class is a proposal. The PM trial on SAP: 46 green, 4 red, 46 skipped — all 4 red were methods of the model's class
+ * with wrong preconditions; the engine's case of the same check was green.
+ */
+export const ABAP_UNIT_EVIDENCE_LINE =
+  "ABAP Unit evidence: the engine's classes ltc_engine_cases and ltc_golden_master are what the acceptance counts. A test class the testing model writes (ltcl_…, added to the test include at delivery) is a proposal, not evidence: Clean-Core.io checks its calls against the declarations, not its preconditions or expected results.";
+
+/** The engine's test classes as STATUS names them. */
+export const ENGINE_CLASS_WORDS = 'ltc_engine_cases, ltc_golden_master';
+
+/** "ABAP Unit, the testing model's class ltcl_test — a proposal, not evidence" (owner decision 18.10.2026). */
+export function modelClassWords(classes: readonly string[]): string {
+  return `ABAP Unit, the testing model's ${classes.length === 1 ? 'class' : 'classes'} ${classes.join(', ') || 'ltcl_…'} — a proposal, not evidence`;
+}
+
 /** Local class names the engine writes into the test include itself. */
 export const RESERVED_TEST_CLASSES = ['ltd_access', 'ltc_engine_cases', 'ltc_golden_master', 'ltc_counterparts'];
 
@@ -696,6 +712,8 @@ export function countAbapUnitTests(
   testSources: ReadonlyArray<{ path?: string; content: string }>,
   underTest: Iterable<string>,
   inputContracts: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+  /** Count only the test classes this accepts (by lower-case name): the engine's apart from the testing model's. */
+  only: (testClass: string) => boolean = () => true,
 ): AbapUnitCounts {
   const cut = new Set([...underTest].map((x) => x.toLowerCase()));
   const counts: AbapUnitCounts = { methods: 0, tests: 0, skipped: 0, noCall: 0, skippedNames: [], noCallNames: [] };
@@ -723,7 +741,7 @@ export function countAbapUnitTests(
       return false;
     };
     for (const d of decls.values()) {
-      if (!d.forTesting || d.kind !== 'class') continue;
+      if (!d.forTesting || d.kind !== 'class' || !only(d.name)) continue;
       for (const meth of d.methods.values()) {
         if (!meth.forTesting) continue;
         const key = `${d.name}.${meth.name}`;
@@ -789,7 +807,14 @@ export function goldenMasterInInclude(content: string): { cases: number; rowsPas
 }
 
 export interface AbapTestEvidence {
+  /** Every test class together. */
   counts: AbapUnitCounts;
+  /**
+   * Owner decision 18.10.2026: the engine's classes (ltc_engine_cases, ltc_golden_master, ltc_counterparts) — what the
+   * 3.0.17 acceptance C(7) counts — apart from the testing model's (ltcl_…), a proposal and not evidence.
+   */
+  engine?: AbapUnitCounts;
+  model?: AbapUnitCounts & { classes: string[] };
   goldenMaster: { cases: number; rowsPassed: boolean; compared: number; notCarried?: number } | null;
 }
 
@@ -805,15 +830,24 @@ export function abapTestEvidence(files: ReadonlyArray<{ path: string; content: s
   const tests = [...includes, ...(typeof modelSuiteCode === 'string' && modelSuiteCode.trim() ? [{ path: 'model-suite.abap', content: modelSuiteCode }] : [])];
   const underTest = abapDeclarations(classes).keys();
   const golden = includes.map((f) => goldenMasterInInclude(f.content)).find((g) => g !== null) ?? null;
-  const counts = countAbapUnitTests(tests, underTest, abapInputContracts(classes.filter((f) => !/\.clas\.testclasses\.abap$/i.test(f.path))));
+  const contracts = abapInputContracts(classes.filter((f) => !/\.clas\.testclasses\.abap$/i.test(f.path)));
+  const underTestNames = [...underTest];
+  const counts = countAbapUnitTests(tests, underTestNames, contracts);
+  const isEngine = (c: string) => RESERVED_TEST_CLASSES.includes(c);
+  const engine = countAbapUnitTests(tests, underTestNames, contracts, isEngine);
+  const modelCounts = countAbapUnitTests(tests, underTestNames, contracts, (c) => !isEngine(c));
+  const modelClasses = [...new Set(tests.flatMap((t) => [...abapDeclarations([t]).values()].filter((d) => d.forTesting && d.kind === 'class' && !isEngine(d.name)).map((d) => d.name)))];
   // A demo case whose rows do not reach the logic runs the logic, but not the case: it is not counted as a test.
   // Only the cases that compare a result are counted as tests at all; the others skip (3.0.14 item 8).
   if (golden && !golden.rowsPassed && golden.compared > 0) {
     const moved = Math.min(golden.compared, counts.tests);
     counts.tests -= moved;
     counts.withoutData = moved;
+    const movedEngine = Math.min(golden.compared, engine.tests);
+    engine.tests -= movedEngine;
+    engine.withoutData = movedEngine;
   }
-  return { counts, goldenMaster: golden };
+  return { counts, engine, ...(modelCounts.methods > 0 ? { model: { ...modelCounts, classes: modelClasses } } : {}), goldenMaster: golden };
 }
 
 /** The evidence of a project on the ABAP route, from its stored package and test suite; null on another route or without ABAP classes. */
@@ -825,7 +859,9 @@ export function abapTestEvidenceOfProject(project: { extensibilityRoute?: unknow
 
 /** The evidence as the testing stage and STATUS.md say it. */
 export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
-  const out = [`ABAP Unit: ${abapUnitCountsSentence(e.counts)}`];
+  // Owner decision 18.10.2026: the engine's classes are what the acceptance counts; the testing model's class is a
+  // proposal (its preconditions and expectations are the model's) and is counted apart, never as evidence.
+  const out = [e.engine ? `ABAP Unit, the engine's classes (${ENGINE_CLASS_WORDS} — what the acceptance counts): ${abapUnitCountsSentence(e.engine)}` : `ABAP Unit: ${abapUnitCountsSentence(e.counts)}`];
   if (e.goldenMaster && e.goldenMaster.cases > 0) {
     const n = e.goldenMaster.cases;
     const notCarried = e.goldenMaster.notCarried ?? 0;
@@ -839,6 +875,7 @@ export function abapTestEvidenceSentences(e: AbapTestEvidence): string[] {
   if (e.counts.withoutInput)
     out.push(`Test does not hand in input — its expectation is not evidence: ${named(e.counts.withoutInputNames)} call the run without ${INPUT_PARAM}, so it runs on empty tables.`);
   if (e.counts.guardedOnly) out.push(`Test asserts only when its row is found — a missing row passes, so it is not evidence: ${named(e.counts.guardedOnlyNames)}.`);
+  if (e.model) out.push(`${modelClassWords(e.model.classes)}: ${abapUnitCountsSentence(e.model)} A green or red method there says nothing about the logic until a reviewer confirms its preconditions and expected result.`);
   return out;
 }
 
@@ -855,6 +892,6 @@ export function placeModelTestClasses(files: ReadonlyArray<{ path: string; conte
   const placed = withAccessDouble(testCode, accessSeamOf(files)).code;
   return {
     path: include.path,
-    content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model and checked by Clean-Core.io against the declarations of the classes under test.\n${placed.replace(/\s*$/, '')}\n`,
+    content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model - a proposal, not evidence: Clean-Core.io checked its calls against the declarations, not its preconditions or expected results. The acceptance counts ltc_engine_cases and ltc_golden_master.\n${placed.replace(/\s*$/, '')}\n`,
   };
 }
