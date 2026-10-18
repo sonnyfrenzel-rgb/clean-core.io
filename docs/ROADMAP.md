@@ -1598,6 +1598,22 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-868 | info | — | — | refuted |
 | SEC-2026-869 | critical | P1 | 3.0.16 · patch step | fixed |
 | SEC-2026-870 | high | P1 | 3.0.17 · separate dev and main secrets (needs the owner) | scheduled |
+| SEC-2026-871 | medium | P2 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-872 | medium | P2 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-873 | medium | P2 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-874 | low | P3 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-875 | info | P3 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-876 | info | P3 | 3.0.18 · item 1 | scheduled |
+| SEC-2026-877 | low | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-878 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-879 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-880 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-881 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-882 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-883 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-884 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+
+**Audit of v3.0.17 (`c41f149`), 18.10.2026: 0 critical, 0 high, 3 medium, 2 low, 9 info — 129 candidates, delta of 152 files.** SEC-2026-871 to -876 go to 3.0.18 item 1; SEC-2026-877 to -884 are statements in code comments with no runtime effect and wait for the owner's decision on comment hygiene. The report's hardening list asks for the dependency advisories to be checked against the installed tree (3.0.18 item 1). The reasons are in the sealed register.
 
 **Audit of v3.0.16 (`e41e227`), 16.10.2026: 0 critical, 1 high, 0 medium, 0 low — all 4 candidates verified, delta of 15 files, $0.04.** SEC-2026-870 (P1) goes to 3.0.17 and needs the owner; SEC-2026-869 was not reported again and is fixed. The reasons are in the sealed register.
 
