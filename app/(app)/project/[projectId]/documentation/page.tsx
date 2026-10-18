@@ -19,7 +19,7 @@ import {
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { buildEngineConfluenceHtml, confluenceFileName } from '@/lib/documentation-export';
-import { businessSopPrompt, enrichBusinessLayer, sopStepInfos } from '@/lib/business-sop-prompt';
+import { businessSopPrompt, enrichBusinessLayer, missingBusinessSteps, sopStepInfos } from '@/lib/business-sop-prompt';
 import { businessStepsOf } from '@/lib/business-steps';
 import { DOCUMENTATION_PROPOSALS_ID, documentationProposalsAnchor } from '@/lib/page-anchors';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
@@ -473,17 +473,24 @@ export default function DocumentationPage() {
       // step and the program's capability facts, so every rendering — the
       // delivery package's file included — names each step and judges each
       // sentence without the source.
-      const storedText = JSON.stringify(enrichBusinessLayer(
+      const stepInfos = sopStepInfos(
+        engineDoc,
+        new Map(sopInputs.current.steps.map((st) => [st.id, st.name])),
+        new Map(sopInputs.current.steps.map((st) => [st.id, st.lines ?? []])),
+        businessSteps,
+        sopInputs.current.refs,
+      );
+      const enriched = enrichBusinessLayer(
         extractJSON(responseText) as Record<string, unknown>,
-        sopStepInfos(
-          engineDoc,
-          new Map(sopInputs.current.steps.map((st) => [st.id, st.name])),
-          new Map(sopInputs.current.steps.map((st) => [st.id, st.lines ?? []])),
-          businessSteps,
-          sopInputs.current.refs,
-        ),
+        stepInfos,
         sopInputs.current.facts ?? readCapabilityFacts(engineDoc.facts),
-      ));
+      );
+      // An answer that skipped a business step is not stored with the step silently missing (QA 25e9fd59af86).
+      const missing = missingBusinessSteps(enriched, stepInfos);
+      if (missing.length) {
+        throw new Error(`The answer left out ${missing.length === 1 ? 'the step' : `${missing.length} steps`} ${missing.map((s) => `“${s.name}”`).join(', ')}, so nothing was saved. Generate again.`);
+      }
+      const storedText = JSON.stringify(enriched);
 
       // One transaction, for the same reason as above (ade8ec0b8903), on the
       // server since roadmap 3.0.14, item 9: the layer is kept in documents of

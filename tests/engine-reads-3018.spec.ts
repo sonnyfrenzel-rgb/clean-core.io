@@ -95,6 +95,9 @@ ENDFORM.`;
   test('a RAISE EXCEPTION a CATCH of the same TRY may take up ends nothing', () => {
     const now = readConstantGates(CAUGHT, READS);
     expect(now.gates[0].stop).toBeNull();
+    // It still leaves the TRY body: what follows it there is never reached (QA 92e791c30e02).
+    expect(isUnreachableLine(now, 10)).toBe(true);
+    expect(isUnreachableLine(now, 11)).toBe(false);
     expect(isUnreachableLine(now, 12)).toBe(false);
     expect(isUnreachableLine(now, 14)).toBe(false);
     expect(now.alwaysStopping).toEqual([]);
@@ -163,6 +166,12 @@ test.describe('the server\'s date and time', () => {
     // Written again with something else, the copy no longer carries the server's date.
     const rewritten = code.replace('IF lv_date', "lv_date = '20260101'.\nIF lv_date");
     expect(uses(rewritten, true)).toEqual([]);
+    // So is a copy filled again from the database or by a call (QA 38a0b0c63bac).
+    expect(uses(code.replace('IF lv_date', 'SELECT SINGLE budat FROM bkpf INTO @lv_date.\nIF lv_date'), true)).toEqual([]);
+    expect(uses(code.replace('IF lv_date', 'SELECT SINGLE budat, cpudt FROM bkpf INTO (@lv_due, @lv_date).\nIF lv_date'), true)).toEqual([]);
+    expect(uses(code.replace('IF lv_date', "CALL FUNCTION 'Z_DATE' IMPORTING e_date = lv_date.\nIF lv_date"), true)).toEqual([]);
+    // A statement that only reads the copy leaves it a copy.
+    expect(uses(code.replace('IF lv_date', "CALL FUNCTION 'Z_DATE' EXPORTING i_date = lv_date.\nIF lv_date"), true).map((u) => u.use)).toEqual(['comparison']);
     // In the evidence of a 3.0.18 run, and not in one signed before.
     expect(findings(code, NEW, 'system-time')).toHaveLength(1);
     expect(findings(code, OLD, 'system-time')).toHaveLength(0);
@@ -272,6 +281,25 @@ START-OF-SELECTION.
     // Without EXCEPTIONS a failure ends the program: covered, as before.
     const unhandled = VALIDATE.replace("    EXCEPTIONS\n      validation_failed = 1\n      OTHERS = 2.", '    .').replace('physical_filename = p_file\n    .', 'physical_filename = p_file.');
     expect(tasks(unhandled, true)).not.toContain('file-path-from-input');
+  });
+
+  test('a CHECK that only leaves a loop iteration does not cover an access after the loop (QA 804c2856d240)', () => {
+    const looped = VALIDATE
+      .replace("  CALL FUNCTION 'FILE_VALIDATE_NAME'", "  DO 1 TIMES.\n  CALL FUNCTION 'FILE_VALIDATE_NAME'")
+      .replace("  IF sy-subrc <> 0.\n    MESSAGE 'Invalid path' TYPE 'I'.\n  ENDIF.", '  CHECK sy-subrc = 0.\n  ENDDO.');
+    expect(tasks(looped, true)).toContain('file-path-from-input');
+    // Inside the loop, after the CHECK, the access is still covered.
+    const inLoop = looped.replace('  ENDDO.\n  OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.', '  OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.\n  ENDDO.');
+    expect(tasks(inLoop, true)).not.toContain('file-path-from-input');
+  });
+
+  test('a COND covers the access only when the arm failure takes throws (QA fdaf20ecaa28)', () => {
+    const cond = (expr: string) => VALIDATE.replace("  IF sy-subrc <> 0.\n    MESSAGE 'Invalid path' TYPE 'I'.\n  ENDIF.", `  DATA(lv_ok) = ${expr}.`);
+    expect(tasks(cond("COND string( WHEN sy-subrc <> 0 THEN `warn` ELSE THROW zcx_bad( ) )"), true)).toContain('file-path-from-input');
+    expect(tasks(cond("COND string( WHEN sy-subrc = 0 THEN THROW zcx_bad( ) ELSE `warn` )"), true)).toContain('file-path-from-input');
+    expect(tasks(cond("COND string( WHEN sy-subrc <> 0 THEN THROW zcx_bad( ) ELSE `ok` )"), true)).not.toContain('file-path-from-input');
+    expect(tasks(cond("COND string( WHEN sy-subrc = 0 THEN `ok` ELSE THROW zcx_bad( ) )"), true)).not.toContain('file-path-from-input');
+    expect(tasks(cond("SWITCH string( sy-subrc WHEN 0 THEN `ok` ELSE THROW zcx_bad( ) )"), true)).not.toContain('file-path-from-input');
   });
 
   test('INSERT REPORT with a literal program name is a generated program', () => {

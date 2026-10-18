@@ -288,6 +288,9 @@ test.describe('(5e) the code checks know what a CAP package uses through its con
     expect(unusedOf({ requires: { db: { kind: 'sqlite' } } })).toEqual(['@cap-js/hana', '@sap/xssec']);
     expect(unusedOf({ requires: { '[production]': { auth: 'xsuaa' } } })).toEqual(['@cap-js/hana']);
     expect(unusedOf({ requires: { '[production]': { auth: { kind: 'xsuaa' }, db: 'hana' } } })).toEqual([]);
+    // A value of the same spelling under another key excuses nothing (QA 51233ed8f1e9).
+    expect(unusedOf({ requires: { db: { kind: 'sqlite' }, reporting: { target: 'hana', mode: 'xsuaa' } } })).toEqual(['@cap-js/hana', '@sap/xssec']);
+    expect(unusedOf({ requires: { db: { '[production]': { kind: 'hana' } } }, '[hybrid]': { requires: { auth: 'ias' } } })).toEqual([]);
   });
 });
 

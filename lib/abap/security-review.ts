@@ -205,6 +205,51 @@ function stopsFlow(statement: AbapStatement): boolean {
  * read as stops: what they leave depends on a loop around the check. Anything
  * else — a decision that logs, warns or sets a flag — does not cover it.
  */
+/**
+ * Does a loop around the statement at `from` close before `to`? Walked
+ * forward: a loop close at the statement's own depth is the end of a loop it
+ * stands in. An `ENDSELECT` counts wherever it stands — its `SELECT` is not
+ * told apart from a single read here, so it is read as the closing kind.
+ */
+function leavesLoopBefore(statements: readonly AbapStatement[], from: number, to: number): boolean {
+  let depth = 0;
+  for (let i = from + 1; i < to && i < statements.length; i++) {
+    const c = maskLiterals(statements[i].text).trim();
+    if (/^ENDSELECT\b/i.test(c)) return true;
+    if (CLOSES.test(c)) {
+      if (depth === 0) {
+        if (/^(?:ENDDO|ENDWHILE|ENDLOOP|ENDPROVIDE)\b/i.test(c)) return true;
+        continue;
+      }
+      depth -= 1;
+      continue;
+    }
+    if (OPENS.test(c) && !/^AT\s+(?:SELECTION-SCREEN|LINE-SELECTION|USER-COMMAND|PF\d+)\b/i.test(c)) depth += 1;
+  }
+  return false;
+}
+
+/**
+ * Does the `COND`/`SWITCH` throw on the arm the failure takes (QA
+ * fdaf20ecaa28)? Read only in the forms that show it: `WHEN <failure> THEN
+ * THROW`, one `WHEN <success> THEN … ELSE THROW`, or `SWITCH …( sy-subrc
+ * WHEN 0 THEN … ELSE THROW`. Anything else is not read as covering the access.
+ */
+function throwsOnFailure(code: string): boolean {
+  const cond = /\bCOND\b[^(]*\(\s*WHEN\s+([\s\S]+?)\s+THEN\s+([\s\S]*)$/i.exec(code);
+  if (cond) {
+    const [, test, rest] = cond;
+    if (SUBRC_FAILURE.test(test.trim()) && /^THROW\b/i.test(rest.trim())) return true;
+    if (SUBRC_SUCCESS.test(test.trim())) {
+      const arm = /^((?:(?!\bWHEN\b|\bELSE\b)[\s\S])*?)\s+ELSE\s+THROW\b/i.exec(rest);
+      if (arm && !/\bTHROW\b/i.test(arm[1])) return true;
+    }
+    return false;
+  }
+  const sw = /\bSWITCH\b[^(]*\(\s*SY-SUBRC\s+WHEN\s+0\s+THEN\s+((?:(?!\bWHEN\b|\bELSE\b)[\s\S])*?)\s+ELSE\s+THROW\b/i.exec(code);
+  return sw !== null;
+}
+
 function failureCannotReach(statements: readonly AbapStatement[], call: number, access: number): boolean {
   let at = call + 1;
   let first = statements[at];
@@ -223,8 +268,13 @@ function failureCannotReach(statements: readonly AbapStatement[], call: number, 
   const code = rename(maskLiterals(first.text)).trim().replace(/\.$/, '').trim().replace(/\s+/g, ' ');
   if (!decidesOnSubrc({ ...first, text: code })) return false;
   const condition = (keyword: string) => code.replace(new RegExp(String.raw`^${keyword}\s+`, 'i'), '').trim();
-  if (/^(?:CHECK|ASSERT)\b/i.test(code)) return access > at && SUBRC_SUCCESS.test(condition(code.split(' ')[0]));
-  if (/\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code)) return access > at;
+  if (/^(?:CHECK|ASSERT)\b/i.test(code)) {
+    if (!(access > at && SUBRC_SUCCESS.test(condition(code.split(' ')[0])))) return false;
+    // A CHECK inside a loop only leaves the iteration: an access after the
+    // loop is still reached on failure (QA 804c2856d240). ASSERT ends the run.
+    return /^ASSERT\b/i.test(code) || !leavesLoopBefore(statements, at, access);
+  }
+  if (/\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code)) return access > at && throwsOnFailure(code);
   if (!/^(?:IF|CASE)\b/i.test(code)) return false;
 
   // The arms of the block opened at `at`, and its end, at its own depth.

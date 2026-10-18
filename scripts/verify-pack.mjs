@@ -436,7 +436,7 @@ function duplicateEntryNames(buffer) {
   // archive, with its directory directly in front of it at the stated offset
   // (QA full review cc210998fb05). A comment holding the signature bytes is not
   // counted either: JSZip reads the last signature as the end record wherever it
-  // sits, and the issuer writes no comment (QA d95794576b4a, refuted; pinned in
+  // sits, and the issuer writes no comment (QA d95794576b4a; the behaviour is pinned in
   // `tests/verify-pack-cli.spec.ts`).
   for (let i = eocd + 1; i <= b.length - 4; i++) {
     if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');

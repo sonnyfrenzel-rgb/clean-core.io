@@ -706,11 +706,41 @@ const CAP_CONFIGURED = /^(?:@cap-js\/[\w.-]+|@sap\/xssec)$/;
  * names neither does not excuse them (QA 3adfcf87ca21). `@cap-js/sqlite` is the development database `cds` takes by
  * default, and the other `@cap-js/*` packages are plugins `cds` loads by being declared: both stay excused.
  */
-const CAP_CONFIGURED_BY: Readonly<Record<string, RegExp>> = {
-  '@cap-js/hana': /:\s*"hana"/,
-  '@cap-js/postgres': /:\s*"postgres"/,
-  '@sap/xssec': /:\s*"(?:xsuaa|ias|jwt)"/,
+const CAP_CONFIGURED_BY: Readonly<Record<string, { service: 'db' | 'auth'; kinds: readonly string[] }>> = {
+  '@cap-js/hana': { service: 'db', kinds: ['hana'] },
+  '@cap-js/postgres': { service: 'db', kinds: ['postgres'] },
+  '@sap/xssec': { service: 'auth', kinds: ['xsuaa', 'ias', 'jwt'] },
 };
+
+/**
+ * The kinds a CAP configuration names for `requires.db` and `requires.auth`: as a string (`db: "hana"`) or a
+ * `kind`, in any profile (`[production]`) around or inside them. Read from the parsed configuration, never from
+ * any string value anywhere in it (QA 51233ed8f1e9).
+ */
+function capRequiredKinds(configs: readonly unknown[]): { db: Set<string>; auth: Set<string> } {
+  const out = { db: new Set<string>(), auth: new Set<string>() };
+  const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+  const isProfile = (key: string) => /^\[[^\]]+\]$/.test(key);
+  const service = (v: unknown, into: Set<string>) => {
+    if (typeof v === 'string') { into.add(v); return; }
+    if (!isObject(v)) return;
+    if (typeof v.kind === 'string') into.add(v.kind);
+    for (const [k, inner] of Object.entries(v)) if (isProfile(k)) service(inner, into);
+  };
+  const requires = (v: unknown) => {
+    if (!isObject(v)) return;
+    service(v.db, out.db);
+    service(v.auth, out.auth);
+    for (const [k, inner] of Object.entries(v)) if (isProfile(k)) requires(inner);
+  };
+  const config = (v: unknown) => {
+    if (!isObject(v)) return;
+    requires(v.requires);
+    for (const [k, inner] of Object.entries(v)) if (isProfile(k)) config(inner);
+  };
+  for (const c of configs) config(c);
+  return out;
+}
 
 function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFinding[] {
   const out: GeneratedCodeLintFinding[] = [];
@@ -742,13 +772,19 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
   const capConfigured =
     ('@sap/cds' in (pkg.dependencies ?? {}) || '@sap/cds' in (pkg.devDependencies ?? {})) &&
     ((typeof pkg.cds === 'object' && pkg.cds !== null) || files.some((f) => f.path === '.cdsrc.json'));
-  const cdsConfig = capConfigured
-    ? [JSON.stringify(pkg.cds ?? {}), ...files.filter((f) => f.path === '.cdsrc.json').map((f) => f.content)].join('\n')
-    : '';
+  const capKinds = capConfigured
+    ? capRequiredKinds([pkg.cds, ...files.filter((f) => f.path === '.cdsrc.json').map((f) => {
+        try { return JSON.parse(f.content) as unknown; } catch { return null; }
+      })])
+    : { db: new Set<string>(), auth: new Set<string>() };
+  const capNames = (name: string): boolean => {
+    const by = CAP_CONFIGURED_BY[name];
+    return !by || by.kinds.some((k) => capKinds[by.service].has(k));
+  };
   for (const block of ['dependencies', 'devDependencies'] as const) {
     for (const name of Object.keys(pkg[block] ?? {})) {
       if (TOOLING.test(name)) continue;
-      if (capConfigured && CAP_CONFIGURED.test(name) && (CAP_CONFIGURED_BY[name]?.test(cdsConfig) ?? true)) continue;
+      if (capConfigured && CAP_CONFIGURED.test(name) && capNames(name)) continue;
       if (used.has(name) || strings.has(name)) continue;
       if (new RegExp(`(?:^|[\\s;&|/])${escapeRe(name)}(?:$|[\\s;&|])`).test(scripts)) continue;
       const idx = lines.findIndex((l) => l.includes(`"${name}"`));

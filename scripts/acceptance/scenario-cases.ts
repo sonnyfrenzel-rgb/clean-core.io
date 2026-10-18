@@ -57,15 +57,19 @@ export function scenarioCases(scenarios: readonly CaseScenario[] | null, demo: P
   const param = demo.switch?.parameter?.toLowerCase() ?? null;
   for (const s of scenarios) {
     let n: number | null = null;
+    // A scenario that sets the case switch names its case there or names none: an invalid switch value never falls
+    // back on a case-shaped ID (QA 9b82fb010d1e).
+    let switchGiven = false;
     if (param && isPlainObject(s.input)) {
       const hit = Object.entries(s.input).find(([k]) => k.toLowerCase() === param);
+      switchGiven = hit !== undefined;
       // Only a whole number or its digits: `Number(null)`, `Number(false)` and `Number('')` are 0, and a null input is
       // not case 0 (QA 958d07e8b2ff).
       const raw = hit?.[1];
       const v = typeof raw === 'number' ? raw : typeof raw === 'string' && /^\s*\d{1,3}\s*$/.test(raw) ? Number(raw) : NaN;
       if (Number.isInteger(v) && v >= 0) n = v;
     }
-    if (n === null && s.group === 'reference') {
+    if (n === null && !switchGiven && s.group === 'reference') {
       const m = /^(?:case[-_ ]?)?(\d{1,3})$/i.exec(s.id);
       if (m) n = Number(m[1]);
     }

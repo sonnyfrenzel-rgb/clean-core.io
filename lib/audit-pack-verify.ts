@@ -184,7 +184,7 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   // holding the signature bytes: JSZip takes the last signature in the file
   // wherever it sits (`lastIndexOfSignature`) and reads such a comment as the
   // end record, so the archive is not one JSZip reads as written — and the
-  // issuer writes no comment (QA 2d8e6cde70c7, refuted; pinned in
+  // issuer writes no comment (QA 2d8e6cde70c7; the behaviour is pinned in
   // `tests/audit-pack-archive-completeness.spec.ts`).
   for (let i = eocd + 1; i <= bytes.byteLength - 4; i++) {
     if (view.getUint32(i, true) === EOCD) return unchecked('the archive carries more than one end record near its end');

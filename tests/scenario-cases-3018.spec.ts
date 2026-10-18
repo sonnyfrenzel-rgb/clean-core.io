@@ -23,6 +23,20 @@ test('a case-switch input of null, empty text or a boolean names no demo case (Q
   expect(Object.fromEntries(matched)).toEqual({ 'S-seven': 7, 'S-seven-text': 7 });
 });
 
+test('a reference scenario whose case switch is invalid does not fall back on its ID (QA 9b82fb010d1e)', () => {
+  const demo = { switch: { parameter: 'P_CASE' }, cases: [{ number: 0 }, { number: 1 }, { number: 7 }] };
+  const ref = (id: string, input?: Record<string, unknown>) => ({ id, group: 'reference', expectedForm: 'machine' as const, ...(input ? { input } : {}) });
+  const matched = scenarioCases([
+    ref('CASE-00', { p_case: null }),
+    ref('CASE-01', { p_case: '' }),
+    ref('CASE-07', { p_case: 7 }),
+    // No switch in the input: the ID still names the case.
+    ref('case_01', { amount: 1 }),
+    ref('7'),
+  ], demo);
+  expect(Object.fromEntries(matched)).toEqual({ 'CASE-07': 7, case_01: 1, '7': 7 });
+});
+
 test('expected messages are counted: ["A", "A"] is not met by ["A", "B"] (QA d791179ee1b0)', () => {
   expect(compareScenario({ issues: ['A', 'A'] }, ran({ issues: ['A', 'B'] })).verdict).toBe('fail');
   expect(compareScenario({ issues: ['A', 'B'] }, ran({ issues: ['B', 'A'] })).verdict).toBe('pass');

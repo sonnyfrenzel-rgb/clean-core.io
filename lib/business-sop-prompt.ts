@@ -262,6 +262,22 @@ const ENGINE_ROW_FIELDS = ['stepName', 'stepLines', 'stepSentences', 'stepRef', 
  * element inside one, a level finer than asked, or an id the process does not
  * have — is not kept.
  */
+/**
+ * The business steps a stored layer has no SOP row or no RACI row for, in the
+ * order of the steps (QA 25e9fd59af86). `enrichBusinessLayer` keeps only rows
+ * of known steps; an answer that skipped one would otherwise be stored with
+ * the step silently missing from the SOP, the RACI and every file.
+ */
+export function missingBusinessSteps(layer: Record<string, unknown>, steps: readonly SopStepInfo[]): SopStepInfo[] {
+  const ids = (value: unknown) => new Set((Array.isArray(value) ? value : []).flatMap((row) => {
+    const id = row && typeof row === 'object' ? (row as Record<string, unknown>).stepId : undefined;
+    return typeof id === 'string' ? [id] : [];
+  }));
+  const sop = ids(layer.sop_details);
+  const raci = ids(layer.raci_matrix);
+  return steps.filter((s) => !sop.has(s.id) || !raci.has(s.id));
+}
+
 export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: readonly SopStepInfo[], facts: CapabilityFacts | null): Record<string, unknown> {
   const byId = new Map(steps.map((s) => [s.id, s]));
   const position = new Map(steps.map((s, i) => [s.id, i]));

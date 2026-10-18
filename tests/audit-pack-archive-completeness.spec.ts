@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
 import JSZip from 'jszip';
 import { createHash } from 'crypto';
 import { verifyAuditPack, zipKey, duplicateEntryNames, archiveEntryLimitDefect, PACK_LIMITS } from '../lib/audit-pack-verify';
@@ -546,4 +547,12 @@ test.describe('the entry limit is counted from the bytes, before the archive is 
     bytes.writeUInt32LE(0xffffffff, eocd + 16);
     expect(archiveEntryLimitDefect(bytes)).toContain('ZIP64');
   });
+});
+
+// A verifier's source states what it does, never a review's verdict on itself (QA 127de3f792d7, 6ffbd959930e):
+// a reader takes "refuted" in the code as a reason not to look.
+test('the verifiers name no review finding as refuted', () => {
+  for (const file of ['lib/audit-pack-verify.ts', 'scripts/verify-pack.mjs']) {
+    expect(fs.readFileSync(file, 'utf8'), file).not.toMatch(/refuted/i);
+  }
 });

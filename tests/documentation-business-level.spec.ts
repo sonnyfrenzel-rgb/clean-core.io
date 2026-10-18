@@ -11,7 +11,7 @@ import { buildProcessDocumentation } from '../lib/process-documentation-build';
 import { buildProcessDocument } from '../lib/process-document-build';
 import type { ProcessDocumentation } from '../lib/process-documentation';
 import { BUSINESS_STEP_LEVEL, businessStepIds, businessStepsOf } from '../lib/business-steps';
-import { businessSopPrompt, enrichBusinessLayer, sopStepInfos } from '../lib/business-sop-prompt';
+import { businessSopPrompt, enrichBusinessLayer, missingBusinessSteps, sopStepInfos } from '../lib/business-sop-prompt';
 import { writableSteps } from '../lib/business-layer-parts';
 import { isBusinessLevelLayer, processStepsOf, raciMatrix, sopSteps, type StoredBusinessLayer } from '../lib/business-summary';
 import { raciFileTable } from '../lib/raci-edit';
@@ -188,6 +188,23 @@ for (const [file, howItWorks] of [['Z_MM_PO_APPROVAL.abap', 11], ['ZLEGACY_ORDER
       expect(raci.map((r) => r.stepId)).toEqual(steps.map((s) => s.id));
       expect(sop[0].narrative).not.toBe('A second narrative for the same step.');
       expect(raci[0].r).toBe('Clerk');
+    });
+
+    test('an answer that left out a business step is named as incomplete, and the stage does not store it (QA 25e9fd59af86)', () => {
+      const steps = businessStepsOf(doc);
+      const answer = businessAnswer(doc);
+      const infos = sopStepInfos(doc);
+      expect(missingBusinessSteps(enrichBusinessLayer(answer, infos, doc.facts ?? null), infos)).toEqual([]);
+      const last = steps[steps.length - 1].id;
+      const withoutSop = enrichBusinessLayer({ ...answer, sop_details: answer.sop_details.filter((r: { stepId: string }) => r.stepId !== last) }, infos, doc.facts ?? null);
+      expect(missingBusinessSteps(withoutSop, infos).map((s) => s.id)).toEqual([last]);
+      const withoutRaci = enrichBusinessLayer({ ...answer, raci_matrix: answer.raci_matrix.filter((r: { stepId: string }) => r.stepId !== steps[0].id) }, infos, doc.facts ?? null);
+      expect(missingBusinessSteps(withoutRaci, infos).map((s) => s.id)).toEqual([steps[0].id]);
+      // The documentation stage checks the enriched layer before it stores it.
+      const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/project/[projectId]/documentation/page.tsx'), 'utf8');
+      const check = page.indexOf('missingBusinessSteps(enriched');
+      expect(check).toBeGreaterThan(0);
+      expect(check).toBeLessThan(page.indexOf("action: 'business-layer'"));
     });
 
     test('a layer stored before — one row per element — still renders, and says regenerating gives the business level', async () => {

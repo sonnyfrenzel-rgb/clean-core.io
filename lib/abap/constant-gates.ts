@@ -242,12 +242,19 @@ export function readConstantGates(source: string, options: ConstantGateOptions =
     const inTry = around.some((b) => b.kind === 'try');
     let stop: ConstantGate['stop'] = null;
     let stopEnd = 0;
+    // A class-based exception raised inside a TRY may be caught there: it ends
+    // no run, but it still leaves the arm and the block it stands in, so what
+    // follows it there up to the next arm is never reached (QA 92e791c30e02).
+    let caughtRaise = false;
     if (outcome.always) {
       for (let i = head.headerIndex + 1; i < nextHeader; i++) {
         if (structure.enclosing[i].length !== depth + 1) continue;
         const kind = stopOf(statements[i], insideLoop);
-        // A class-based exception raised inside a TRY may be caught there: no stop.
-        if (kind === 'raise' && inTry && /^RAISE\s+(?:RESUMABLE\s+)?EXCEPTION\b/i.test(statements[i].text)) break;
+        if (kind === 'raise' && inTry && /^RAISE\s+(?:RESUMABLE\s+)?EXCEPTION\b/i.test(statements[i].text)) {
+          caughtRaise = true;
+          stopEnd = statements[i].lineEnd;
+          break;
+        }
         if (kind) {
           stop = { kind, line: statements[i].lineStart, text: statements[i].text };
           stopEnd = statements[i].lineEnd;
@@ -278,7 +285,7 @@ export function readConstantGates(source: string, options: ConstantGateOptions =
         const to = statements[branch.closeIndex].lineStart - 1;
         if (to >= from) regions.push({ reason: 'gate-arm', gate: gateIndex, lineStart: from, lineEnd: to });
       }
-      if (stop) {
+      if (stop || caughtRaise) {
         // The rest of the arm after the statement that ends the run (QA 9992f1339e12)…
         const armEnd = statements[nextHeader].lineStart - 1;
         if (armEnd > stopEnd) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: stopEnd + 1, lineEnd: armEnd });

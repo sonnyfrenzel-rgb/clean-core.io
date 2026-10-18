@@ -200,6 +200,11 @@ function isRebuildCall(expr: ts.Expression | undefined): boolean {
 function constInitialiser(name: string, at: ts.Node): ts.Expression | undefined {
   for (let n: ts.Node | undefined = at.parent; n; n = n.parent) {
     if (ts.isFunctionLike(n) && n.parameters.some((p) => bindingNames(p.name).includes(name))) return undefined;
+    // A loop's own variable and a caught error are bindings of their scope too: they shadow, and are no
+    // rebuilt constant (QA f85c1356b210).
+    if ((ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)) && n.initializer && ts.isVariableDeclarationList(n.initializer)
+      && n.initializer.declarations.some((d) => bindingNames(d.name).includes(name))) return undefined;
+    if (ts.isCatchClause(n) && n.variableDeclaration && bindingNames(n.variableDeclaration.name).includes(name)) return undefined;
     const statements = ts.isBlock(n) || ts.isSourceFile(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n) ? n.statements : undefined;
     for (const st of statements ?? []) {
       if (!ts.isVariableStatement(st)) continue;
@@ -377,6 +382,12 @@ test.describe('Engine version — every caller names it (3.0.12)', () => {
     // The constant of the enclosing scope, and of a block around it, still count.
     expect(verdict('export function b(project: P) { const e = engineVersionOfProject(project); if (x) { return buildAbapEvidence(s, f, d, k, e); } }')).toEqual([[true, 'rebuild']]);
     expect(verdict('const e = engineVersionOfProject(p0); export function b() { return buildAbapEvidence(s, f, d, k, e); }')).toEqual([[true, 'rebuild']]);
+    // An inner binding of the same name shadows the rebuilt one (QA f85c1356b210): a block's const, a loop's
+    // variable, a caught error.
+    expect(verdict('export function b(project: P) { const e = engineVersionOfProject(project); if (x) { const e = APP_VERSION; return buildAbapEvidence(s, f, d, k, e); } }')).toEqual([[false, 'e']]);
+    expect(verdict('export function b(project: P) { const e = engineVersionOfProject(project); for (const e of [APP_VERSION]) { buildAbapEvidence(s, f, d, k, e); } }')).toEqual([[false, 'e']]);
+    expect(verdict('export function b(project: P) { const e = engineVersionOfProject(project); for (let e = APP_VERSION; x; ) { buildAbapEvidence(s, f, d, k, e); } }')).toEqual([[false, 'e']]);
+    expect(verdict('export function b(project: P) { const e = engineVersionOfProject(project); try { x(); } catch (e) { buildAbapEvidence(s, f, d, k, e); } }')).toEqual([[false, 'e']]);
   });
 
   test('a wrapper that forwards an optional version is refused unless the guard checks its callers (QA leftovers of hotfix 2)', () => {

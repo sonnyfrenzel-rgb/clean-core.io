@@ -94,6 +94,17 @@ export function readSystemTimeUses(
       // A copy written again with anything else is no copy any more.
       const rewritten = /^(?:DATA\(\s*([\w/]+)\s*\)|([\w/]+))\s*=/i.exec(statementCode) ?? /^(?:CLEAR|MOVE\b[\s\S]*?\bTO)\s+()([\w/]+)$/i.exec(statementCode);
       if (rewritten) copied.delete((rewritten[1] || rewritten[2]).toUpperCase());
+      // So is one filled by a statement that is no assignment: an Open SQL or
+      // READ target (`INTO @lv_date`, `INTO (@a, @lv_date)`), a parameter the
+      // call writes back, `GET TIME FIELD` (QA 38a0b0c63bac).
+      for (const name of [...copied.keys()]) {
+        const n = name.replace(/[/]/g, '\\/');
+        const end = String.raw`(?![\w/-])`;
+        const target = new RegExp(String.raw`\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?(?:TABLE\s+)?(?:\(\s*(?:@?[\w/-]+\s*,\s*)*)?@?${n}${end}`, 'i');
+        const passed = new RegExp(String.raw`\b(?:IMPORTING|CHANGING|RECEIVING|TABLES)\b[\s\S]*?=\s*${n}${end}`, 'i');
+        const time = new RegExp(String.raw`^GET\s+TIME\s+(?:STAMP\s+)?FIELD\s+${n}${end}`, 'i');
+        if (target.test(statementCode) || passed.test(statementCode) || time.test(statementCode)) copied.delete(name);
+      }
     }
     const names = copied && copied.size ? [...copied.keys()].map((n) => n.replace(/[/]/g, '\\/')).join('|') : '';
     const pattern = new RegExp(String.raw`@?\bsy-(datum|uzeit)\b(\+\d+)?(\(\d+\))?${names ? String.raw`|(?<![\w/-])(${names})(?![\w/-])(\+\d+)?(\(\d+\))?` : ''}`, 'gi');
