@@ -625,8 +625,12 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
       const emptyRejects = (rejectsWhen === 'holds') === isInitialHolds;
       breaking = emptyRejects ? 'empty (initial: no rows, blank, or 0)' : 'filled (not initial)';
       passing = emptyRejects ? 'filled (not initial)' : 'empty (initial)';
-      if (emptyRejects) breakingCall = { special: 'empty' };
-      else passingCall = { special: 'empty' };
+      // The passing side of an emptiness check needs the base request to hold a value there (18.10.2026: the freight
+      // starter's deliveries are empty, so "filled" was never true and the case failed instead of not running).
+      if (emptyRejects) {
+        breakingCall = { special: 'empty' };
+        passingCall = { special: 'filled' };
+      } else passingCall = { special: 'empty' };
     } else if (cmp) {
       subject = cmp[1];
       operator = OPS[cmp[2].toUpperCase()] ?? cmp[2];

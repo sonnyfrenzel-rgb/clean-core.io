@@ -232,7 +232,8 @@ export function abapEngineCaseMethods(cases: readonly EngineTestCase[], ctx: Aba
     const at = placeOf(p, field);
     if ('why' in at) return at.why;
     let source: { kind: 'literal'; text: string } | { kind: 'clear' } | { kind: 'filled' } | { kind: 'from'; expr: string };
-    if ('filled' in to) source = { kind: 'filled' };
+    // `{ special: 'filled' }` is the Node contract's "the base request's value, filled": in ABAP the test fills it itself.
+    if ('filled' in to || ('special' in to && to.special === 'filled')) source = { kind: 'filled' };
     else if ('value' in to) {
       if (to.value === null) return `${field} = null has no ABAP value`;
       source = { kind: 'literal', text: lit(to.value) };

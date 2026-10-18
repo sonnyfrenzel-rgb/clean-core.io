@@ -70,6 +70,9 @@ export const NODE_HELPERS: readonly string[] = [
 ];
 
 const q = (s: string) => JSON.stringify(s);
+/** The DEFAULT a selection field takes when a request leaves it out, as a literal for FIELDS; `null` when it has none. */
+const defaultOf = (f: ContractField): string =>
+  f.where === 'selection' && f.kind !== 'flag' && f.kind !== 'range' && f.base?.source === 'default' && typeof f.base.value === 'string' ? q(f.base.value) : 'null';
 /** A single-quoted string literal (ids and names only: letters, digits, dots, underscores). */
 const sq = (s: string) => `'${s.replace(/[^\w.]/g, '')}'`;
 
@@ -392,8 +395,20 @@ export function validateRequest(raw: unknown): Validation {
     errors.push({ field: key, rule: 'INPUT', message: listed ? 'records: this package takes one list per input structure (' + LISTS.map((l) => l.key).join(', ') + '), not one record list' : key + ': the original offers no such option' });
   }
   const out: Record<string, unknown> = {};
+  // A selection field left out takes the original's DEFAULT, as the selection screen shows it, and the answer names it
+  // (18.10.2026: P_DAYS of the 1,000-line example was held as null and computed as nothing).
+  const notices: InputError[] = [];
   for (const spec of selectionSpecs) {
-    const v = normalise(spec, raw[spec.key], spec.key, errors);
+    const given = raw[spec.key];
+    if ((given === undefined || given === null) && typeof spec.deflt === 'string' && !spec.obligatory) {
+      const d = normalise(spec, spec.deflt, spec.key, errors);
+      if (d !== undefined) {
+        out[spec.key] = d;
+        notices.push({ field: spec.key, rule: 'L' + spec.line, message: spec.original + ' (' + spec.key + '): not given - the DEFAULT of the original applies, ' + spec.deflt + ' (L' + spec.line + ')' });
+      }
+      continue;
+    }
+    const v = normalise(spec, given, spec.key, errors);
     if (v !== undefined) out[spec.key] = v;
   }
   const records: Array<Record<string, unknown>> = [];
@@ -454,7 +469,7 @@ export function validateRequest(raw: unknown): Validation {
     errors.push({ field: required.length === 1 ? required[0].key : null, rule: 'INPUT', message: 'empty selection: no rows in ' + required.map((l) => l.key).join(', ') });
   }
   if (errors.length > 0) return { ok: false, errors, normalized: null };
-  return { ok: true, errors: [], normalized: { ...(out as unknown as Selection), records: records as unknown as Rec[], ...(inputs as unknown as Inputs) } };
+  return { ok: true, errors: notices, normalized: { ...(out as unknown as Selection), records: records as unknown as Rec[], ...(inputs as unknown as Inputs) } };
 }
 
 /** A validated request in its parts: the selection, the record list, the input lists. */
@@ -566,6 +581,8 @@ function inputContractFile(plan: UnitPlan, lists: readonly InputList[], placemen
   lines.push('  readonly declaration: string;');
   lines.push('  /** The length of a text field, where the original declares it; a longer value is refused. */');
   lines.push('  readonly length: number | null;');
+  lines.push("  /** A selection field the request leaves out takes the original's DEFAULT (as text), and the answer names it; null: none. */");
+  lines.push('  readonly deflt?: string | null;');
   lines.push('}');
   lines.push('/** One input list: the request key, the original\'s table it fills, its structure\'s components. */');
   lines.push('export interface ListSpec {');
@@ -591,7 +608,7 @@ function inputContractFile(plan: UnitPlan, lists: readonly InputList[], placemen
   lines.push('export const FIELDS: readonly FieldSpec[] = [');
   for (const f of plan.fields.filter((x) => x.where === 'selection' || inRecords(x))) {
     lines.push(
-      `  { original: ${q(f.original)}, key: ${q(f.key)}, where: ${q(f.where)}, kind: ${q(f.kind)}, digits: ${f.digits ?? 'null'}, places: ${f.places}, max: ${f.max ? q(f.max) : 'null'}, obligatory: ${f.obligatory}, line: ${f.line}, declaration: ${q(f.declaration)}, length: null },`,
+      `  { original: ${q(f.original)}, key: ${q(f.key)}, where: ${q(f.where)}, kind: ${q(f.kind)}, digits: ${f.digits ?? 'null'}, places: ${f.places}, max: ${f.max ? q(f.max) : 'null'}, obligatory: ${f.obligatory}, line: ${f.line}, declaration: ${q(f.declaration)}, length: null, deflt: ${defaultOf(f)} },`,
     );
   }
   lines.push('];');
@@ -1549,7 +1566,8 @@ export function simulateRequest(raw: unknown, store: RunStore<Selection, RunResu
     records: st.records.length + inputRowsOf(st.local, st.handedIn, st.placed),
     result: { rows: st.rows, result: st.result, issues: st.issues },
   });
-  return { ok: true, runId: run.runId, records: run.records, errors: [], complete: run.complete, notFilled: [...run.notFilled], run };
+  // A successful run keeps the notices of the input contract (a DEFAULT applied for a field left out).
+  return { ok: true, runId: run.runId, records: run.records, errors: v.errors, complete: run.complete, notFilled: [...run.notFilled], run };
 }
 `;
 

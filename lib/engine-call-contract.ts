@@ -52,6 +52,8 @@ export type CallValue =
   | { value: string | null }
   /** Values JSON cannot carry, a missing key, and an empty value (`[]` for a list, `''` otherwise). */
   | { special: 'NaN' | 'Infinity' | '-Infinity' | 'missing' | 'empty' }
+  /** The base request's value, which must be filled (not initial): a case cannot run where the base request has none. */
+  | { special: 'filled' }
   /** The value another field of the base request has. */
   | { sameAs: string }
   /** A value different from another field of the base request. */

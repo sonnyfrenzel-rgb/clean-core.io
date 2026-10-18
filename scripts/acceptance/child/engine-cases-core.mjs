@@ -165,6 +165,7 @@ function valueFor(to, contract, base) {
   if (to.special === '-Infinity') return { value: -Infinity };
   if (to.special === 'missing') return { value: { __missing: true } };
   if (to.special === 'empty') return { value: { __empty: true } };
+  if (to.special === 'filled') return { value: { __filled: true } };
   const other = to.sameAs ?? to.differentFrom;
   if (typeof other === 'string') {
     const r = resolveField(contract, other);
@@ -190,6 +191,14 @@ export function buildRequest(contract, call) {
     const v = valueFor(s.to, contract, base);
     if (v.error) return { notRunnable: v.error };
     const p = splitPath(r.path);
+    if (v.value && v.value.__filled) {
+      // The base request's own value, which must be filled: without one the case shows nothing about the check.
+      const cur = p.list ? readField(request, r.path) : getAt(request, p.key);
+      if (cur === undefined || cur === null || cur === '' || cur === 0 || (Array.isArray(cur) && cur.length === 0)) {
+        return { notRunnable: `the base request has no value for ${String(s.field).toUpperCase()}, so it cannot show the check with it filled` };
+      }
+      continue;
+    }
     if (!p.list) {
       setAt(request, p.key, v.value);
       continue;
@@ -641,6 +650,11 @@ async function execute(mod, call, state) {
       const a = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)), state);
       if (a.notRunnable !== undefined) return { notRunnable: a.notRunnable };
       if (a.threw !== undefined) return { threw: a.threw, crash: a.crash };
+      // A base request that carries no input rows (the freight starter's deliveries are empty) cannot show two runs
+      // apart: that is no evidence either way, so the case does not run — it is not a failure of the package.
+      if (a.answer?.ok === true && a.answer?.records === 0) {
+        return { notRunnable: 'the base request carries no input rows, so two runs of it process nothing and prove no separation' };
+      }
       const b = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)), state);
       if (b.notRunnable !== undefined) return { notRunnable: b.notRunnable };
       const idA = a.answer?.runId ?? null;
@@ -722,6 +736,7 @@ async function executeCheck(mod, call, state) {
       mapped.push(s);
       continue;
     }
+    if (isObject(s.to) && s.to.special === 'filled') return { notRunnable: `no filled value for ${String(s.field).toUpperCase()} can be handed to the check` };
     if (isObject(s.to) && s.to.special === 'empty') {
       values[String(s.field).toUpperCase()] = { special: 'empty' };
       continue;
