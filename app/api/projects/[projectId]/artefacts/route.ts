@@ -36,9 +36,12 @@ import { ARTEFACT_READ_ERROR } from '@/lib/project-artefacts';
  * The artefacts sit at `projects/{projectId}/artefacts/{field}-{n}`, written
  * and read through the Admin SDK only. `firestore.rules` has no match for that
  * path, so no browser reads or writes it, and project deletion
- * (`recursiveDelete`) takes it along. No rules change. Nothing here reaches a
- * run, a signature or an audit pack: the artefacts are what they were on the
- * project document, in another place.
+ * (`recursiveDelete`) takes it along. No rules change. This route itself signs
+ * nothing. The artefacts are what they were on the project document, in
+ * another place, and they do reach a run and an audit pack: the run and pack
+ * routes join them back with `withStoredArtefacts`
+ * (`app/api/runs/create/route.ts`, `app/api/audit-pack/create/route.ts`;
+ * pinned in `tests/project-artefact-store.spec.ts`).
  */
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
