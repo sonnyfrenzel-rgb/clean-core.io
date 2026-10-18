@@ -5,7 +5,28 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — on `dev`, since v3.0.16
+## [v3.0.17] — 2026-10-18
+
+### Acceptance — RAP and CAP proven on SAP (roadmap 3.0.17, criterion 5)
+
+Run on the SAP BTP trial on 18 October 2026 with the packages the engine of this release generates (acceptance
+suite, one generation per case; the SAP side driven through ADT — abapGit pull, mass activation, ABAP Unit — and
+Cloud Foundry `cf push` with only the trial manifest added). No hand edit in any package.
+
+| Case | Route | Generation | On SAP | Tests |
+|---|---|---|---|---|
+| SD return credit reconciliation | RAP | 32 of 32 functions | 55 objects activated, 0 errors | ABAP Unit 25 green, 0 red, 54 skipped |
+| PM shutdown slot plan | RAP | 21 of 21 | activated, 0 errors | ABAP Unit 6 green, 0 red, 46 skipped |
+| QM inspection evidence | RAP | 17 of 17 | activated, 0 errors | ABAP Unit 30 green, 0 red, 48 skipped |
+| Freight rate check (starter example) | CAP | 11 of 11 (1 engine-written) | `cf push` builds and starts | valid selection answered with 3 rows (90.00 + 12.5 % fuel = 101.25, NO_RATE, MANUAL); missing obligatory input refused 400 with the original's field; malformed body 400, service up; `npm test` 14 passed, 0 failed, 28 not run |
+| 1,000-line order audit (starter example) | CAP | 20 of 20 | `cf push` builds and starts | valid selection: 4 records, complete; `days < 0` refused 400 with the original's message; malformed body 400, service up; `npm test` 14 passed, 0 failed, 18 not run |
+| FI journal review (holdout) | RAP, checked locally only | 20 of 21 | not imported: the BTP ABAP trial shows every import to all trial users | gate passed; U10P2 a stub with its reason (a split part used the parent's locals) |
+
+Every skipped ABAP Unit method names its reason (no recorded result of the original to compare, or a case ABAP's
+typed parameters make inexpressible); none is skipped for missing code. The model-written test class counts as a
+proposal, not evidence (owner decision 18.10.2026), and is not in these figures. Known and scheduled for 3.0.18:
+the original's ALV list does not yet become the run's rows (the 1,000-line example answers `rows: []` with its
+records processed); an error inside a step (expected: 500, service up) was not separately provoked in this run.
 
 ### Fixed
 
@@ -830,7 +851,7 @@ and a large program no longer freezes the page — after an external review of a
 
 Analyze leads with the score and what moves it, a failed test run can be closed honestly, and the
 delivery package, the tests and the documentation say what they are based on — after an external
-review of a real FI case.
+review of a real FI case.e
 
 ### What everyone notices
 
