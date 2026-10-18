@@ -15,6 +15,7 @@ import { precisionFixesApply } from './precision-fixes-gate';
 import { engineReadsApply } from './engine-reads-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { gateOfLine, readConstantGates } from './constant-gates';
+import { readCallGraph } from './call-graph';
 import { readSecurityReviewTasksFrom } from './security-review';
 import { readSapCodeCopySignals } from './sap-code-copy';
 import { readLegacyTechnology } from './legacy-technology';
@@ -60,7 +61,11 @@ export type EvidenceKind =
   | 'hook-implementation'
   | 'form-output'
   | 'abap-proxy'
-  | 'own-enhancement-point';
+  | 'own-enhancement-point'
+  // From engine 3.0.18 (`ENGINE_READS_FROM`): a classic API on the ABAP Cloud
+  // route, and a file on the application server.
+  | 'classic-api'
+  | 'dataset-io';
 
 export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
 
@@ -94,6 +99,13 @@ export interface EvidenceFinding {
    * makes it. Absent everywhere else, and in every run of an earlier engine.
    */
   unreachable?: { gateLine: number; constant: string };
+  /**
+   * From engine 3.0.18 (`ENGINE_READS_FROM`): the finding stands in a FORM no
+   * entry point of the program reaches (`call-graph.ts`). It still counts, like
+   * `unreachable`; this says which routine nothing calls. Absent everywhere
+   * else, and in every run of an earlier engine.
+   */
+  uncalled?: { routine: string };
 }
 
 export interface AbapEvidenceReport {
@@ -1230,7 +1242,67 @@ export function buildAbapEvidence(
             source: 'catalog-match',
           });
         }
+        // From 3.0.18 (`ENGINE_READS_FROM`): a classic API is SAP's answer for
+        // classic ABAP, not for ABAP Cloud — the release file does not list it
+        // as released, so code on the ABAP Cloud route cannot call it. The
+        // call stayed an answered coverage line only, the program came out with
+        // no finding, and the route read "No legacy pattern was detected" over
+        // a sales-order program built on BAPI_SALESORDER_CREATEFROMDAT2
+        // (starter examples check, 18.10.2026, E6). A call another finding of
+        // this line already names (GUI_UPLOAD, SAPOffice mail) is said there.
+        // It costs no score points: SAP Note 3578329 counts a documented
+        // classic API as clean core level B.
+        if (
+          reads &&
+          answer?.state.toLowerCase() === 'classicapi' &&
+          !findings.some((f) => f.lineStart === stmt.line && f.objectName === fm)
+        ) {
+          addFinding({
+            kind: 'classic-api',
+            title: `Call of function module ${fm}, a classic API not released for ABAP Cloud`,
+            severity: 'Medium',
+            confidence: 'High',
+            objectName: fm,
+            objectType: 'Function Module',
+            lineStart: stmt.line,
+            snippet: text,
+            technicalDetail: answer.answer,
+            cleanCoreImpact: 'Classic ABAP in SAP Cloud ERP Private may call a classic API (clean core level B, SAP Note 3578329). ABAP Cloud code may not: it calls only APIs SAP releases for ABAP Cloud, so on the ABAP Cloud route this call has no counterpart as written.',
+            recommendation: 'On the ABAP Cloud route, replace the call with the released API of the same business object (a released RAP business object interface, called through EML, or a released class), or keep it in classic ABAP behind a wrapper the ABAP Cloud code calls. Check the SAP catalog page of the module for a named successor.',
+            targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
+            source: 'catalog-match',
+          });
+        }
       }
+    }
+
+    // From 3.0.18 (`ENGINE_READS_FROM`): a file on the application server.
+    // `OPEN DATASET`, `READ DATASET`, `TRANSFER` and `DELETE DATASET` were a
+    // coverage gap only ("no detector evaluates dataset I/O"): the route stayed
+    // In-App with nothing said about the file, and the RAP package could not
+    // activate, because ABAP Cloud has no such statement (starter examples
+    // check, 18.10.2026, E7). `CLOSE DATASET` belongs to the file statement
+    // before it and is not reported again.
+    if (reads && (/^\s*(?:OPEN|READ|DELETE)\s+DATASET\b/i.test(codeText) || /^\s*TRANSFER\b/i.test(codeText))) {
+      const op = /^\s*(OPEN|READ|DELETE|TRANSFER)\b/i.exec(codeText)![1].toUpperCase();
+      const file = op === 'TRANSFER'
+        ? /\bTO\s+([\w/<>~-]+)/i.exec(codeText)?.[1]
+        : /^\s*\w+\s+DATASET\s+([\w/<>~-]+)/i.exec(codeText)?.[1];
+      const what = op === 'OPEN' ? 'opens' : op === 'READ' ? 'reads' : op === 'DELETE' ? 'deletes' : 'writes to';
+      addFinding({
+        kind: 'dataset-io',
+        title: `File on the application server (${op === 'TRANSFER' ? 'TRANSFER' : `${op} DATASET`})`,
+        severity: 'Medium',
+        confidence: 'High',
+        // No objectName: the file operand is a data object of the program, not an SAP object a level or a
+        // roll-call could grade.
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `The statement ${what} a file on the application server's file system${file ? ` (${file.toUpperCase()})` : ''}.`,
+        cleanCoreImpact: 'ABAP Cloud has no access to the application server\'s file system: OPEN DATASET, READ DATASET, TRANSFER and DELETE DATASET are not part of ABAP for Cloud Development, so this file handling does not move into a RAP package as written.',
+        recommendation: 'Hand the file over through an interface instead: an outbound or inbound integration (SAP Integration Suite, for example its SFTP adapter), a released API the receiving system calls, or a RAP large-object field where a person exchanges the file. The ABAP Cloud logic produces or takes the content; the transport of the file is the interface\'s.',
+        targetOptions: ['Integration Suite', 'Developer Extensibility / RAP', 'Side-by-Side CAP'],
+      });
     }
 
     // Credit Management custom logic — the module name is a literal, so `text`.
@@ -1729,9 +1801,37 @@ export function buildAbapEvidence(
     }
   }
 
+  // From 3.0.18 (`ENGINE_READS_FROM`, starter examples check of 18.10.2026,
+  // E8): a finding inside a FORM no entry point of the program reaches is
+  // marked the way a finding behind a constant gate is — 21 of the 45 findings
+  // of the 1,000-line example stood in seventeen routines nothing calls, every
+  // finding of the reference run's "stays hand work" bucket among them, and
+  // nothing said so. Marked, not dropped: the routine ships with the program,
+  // `PERFORM … IN PROGRAM` from another program can still call it, and one
+  // edit opens it — the same reason the constant gate's findings keep their
+  // points (SD review CR-A6). Only where reachability is certain (no
+  // `PERFORM (name)`) and the source is a program with an entry of its own; a
+  // subroutine pool or an include is called from outside.
+  if (reads) {
+    const hasEntry = statements.some((s) => /^\s*(?:REPORT|PROGRAM)\b/i.test(s.text));
+    const graph = hasEntry ? readCallGraph(code) : null;
+    if (graph && graph.reachabilityCertain && graph.unreachable.length > 0) {
+      const dead = graph.forms.filter((f) => graph.unreachable.includes(f.name));
+      for (const finding of findings) {
+        if (finding.unreachable) continue;
+        const form = dead.find((f) => finding.lineStart >= f.lineStart && finding.lineStart <= f.lineEnd);
+        if (form) finding.uncalled = { routine: form.name };
+      }
+    }
+  }
+
   // The catalog answers the local function-module calls it lists (roadmap
   // 3.0.6); the rest stay not assessed.
-  const coverage = assessCoverage(code, { answerCall: (name) => functionModuleCatalogAnswer(name, catalogSnapshot) });
+  const coverage = assessCoverage(code, {
+    answerCall: (name) => functionModuleCatalogAnswer(name, catalogSnapshot),
+    // From 3.0.18 the file statements are findings (`dataset-io` above).
+    datasetAssessed: reads,
+  });
   // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the
   // comments, beside the findings and never among them.
   const statedRequirements = statedRequirementsApply(engineVersion === undefined ? APP_VERSION : engineVersion)

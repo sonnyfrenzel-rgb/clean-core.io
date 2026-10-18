@@ -359,6 +359,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 13: engine-written counterparts of simple SAP function modules in the access layer (tests/transformation-released-counterparts.spec.ts).
   // 15: "sample" alone is not demo data (tests/transformation-unit-plan.spec.ts).
   // 16: an input list a SELECT of a step fills gets its rows there, on the Node track (tests/transformation-3017-trial-defects.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(16);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(16);
+  // 17: an application server file is a method of the access layer (tests/examples-3018-engine.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(17);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(17);
 });

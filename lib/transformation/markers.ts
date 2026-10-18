@@ -534,6 +534,18 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
       ),
     );
   }
+  // Scaffold version 17 (starter examples check, 18.10.2026, E7): a file on the application server. ABAP Cloud has
+  // none of these statements, the package did not activate after three repair rounds, and the refusal never said
+  // what to write instead: the access layer has a method per file.
+  const files = statements.filter((s) => /^(?:(?:OPEN|READ|CLOSE|DELETE)\s+DATASET|TRANSFER)\b/i.test(s.text)).map((s) => s.text.split(/\s+/).slice(0, 2).join(' '));
+  if (files.length > 0) {
+    out.push(
+      refusal(
+        'cloud-statement',
+        `statements on application server files ABAP Cloud does not have: ${[...new Set(files)].slice(0, 6).join(', ')} — collect the lines in a string_table and hand them to mo_access (its write_file_, read_file_ or delete_file_ method of that file); there is no OPEN or CLOSE`,
+      ),
+    );
+  }
   const sapTables: string[] = [];
   for (const s of statements) {
     if (!/^(?:SELECT|OPEN\s+CURSOR|WITH)\b/i.test(s.text)) continue;

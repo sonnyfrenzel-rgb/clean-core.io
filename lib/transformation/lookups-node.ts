@@ -99,6 +99,15 @@ function unitOfLine(plan: Pick<UnitPlan, 'units'>, line: number): Unit | null {
   return holding[0] ?? null;
 }
 
+/** Does the unit declare this data object itself (`DATA ls_x …`, `DATA: ls_x …`, `DATA(ls_x)`, a FORM parameter)? */
+function declaredIn(u: Unit, statements: readonly AbapStatement[], name: string): boolean {
+  const n = escapeRe(name);
+  const decl = new RegExp(`^(?:DATA|STATICS|FIELD-SYMBOLS)\\b[\\s:]*(?:[\\s\\S]*?,\\s*)?${n}(?![\\w-])`, 'i');
+  const inline = new RegExp(`\\b(?:DATA|FINAL)\\(\\s*${n}\\s*\\)`, 'i');
+  const param = new RegExp(`^(?:FORM|METHOD)\\b[\\s\\S]*\\b(?:USING|CHANGING|TABLES|IMPORTING|EXPORTING|RETURNING)\\b[\\s\\S]*(?<![\\w-])(?:VALUE\\(\\s*)?${n}(?![\\w-])`, 'i');
+  return statements.some((st) => inUnit(u, st.lineStart) && (decl.test(st.text) || inline.test(st.text) || param.test(st.text)));
+}
+
 /** The clauses of one SELECT, or null when it is not a lookup the engine carries. */
 function parseSelect(text: string): { table: string; single: boolean; fields: string[] | null; target: string; intoTable: boolean; where: string } | null {
   const t = text.replace(/\.\s*$/, '').trim();
@@ -187,10 +196,15 @@ export function lookupReadsOf(plan: Pick<UnitPlan, 'units'>, statements: readonl
     const columns = new Set<string>(p.fields ?? []);
     for (const c of conds ?? []) columns.add(c.column);
     if (conds === null) for (const c of whereColumns(p.where)) columns.add(c);
-    // SELECT * or a work area: the components the unit reads from the target.
+    // SELECT * or a work area: the components the unit reads from the target. A work area the unit does not declare
+    // is the program's own (scaffold version 17, starter examples check 18.10.2026, E5): `SELECT SINGLE * FROM eban
+    // INTO gs_eban` in READ_REQUISITION, and CHECK_REQUISITION reads gs_eban-matnr, -werks, -frgkz — the row type
+    // held only the ten components READ_REQUISITION names, and a request that sent MATNR was refused as "not a
+    // component of EBAN". Every component the program reads from a global work area is a column.
     if (p.fields === null) {
       const re = new RegExp(`(?<![\\w-])${escapeRe(p.target)}-(\\w+)`, 'gi');
-      for (const st of statements) if (inUnit(u, st.lineStart)) for (const m of st.text.matchAll(re)) columns.add(m[1].toLowerCase());
+      const local = declaredIn(u, statements, p.target);
+      for (const st of statements) if (!local || inUnit(u, st.lineStart)) for (const m of st.text.matchAll(re)) columns.add(m[1].toLowerCase());
     }
     const keys = new Map<string, number>();
     const conditions =

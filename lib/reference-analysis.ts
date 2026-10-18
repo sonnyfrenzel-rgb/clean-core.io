@@ -40,6 +40,12 @@ export interface ReferenceBucket {
   label: string;
   /** One sentence on what it means for them. */
   meaning: string;
+  /**
+   * How many of them stand in a routine no entry point of the program calls
+   * (`EvidenceFinding.uncalled`, engine 3.0.18 on): still findings, but no run
+   * of the program reaches them as it stands. 0 for an earlier engine.
+   */
+  uncalled: number;
 }
 
 export interface ReferenceAnalysis {
@@ -135,10 +141,12 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
   const route = routeExtensibility(evidence, 'private', APP_VERSION);
 
   const counts = { resolved: 0, decision: 0, handedBack: 0 };
+  const uncalled = { resolved: 0, decision: 0, handedBack: 0 };
   const kinds = new Set<string>();
   for (const f of evidence.findings) {
     const b = bucketOf(f);
     counts[b] += 1;
+    if (f.uncalled) uncalled[b] += 1;
     if (b === 'handedBack') kinds.add(f.kind);
   }
 
@@ -152,18 +160,21 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
     catalogVersion: getMergedCatalogVersion(),
     resolved: {
       count: counts.resolved,
+      uncalled: uncalled.resolved,
       label: 'the tool settles',
       meaning:
         'Points at a released SAP successor — SAP’s own where it names one, the curated mapping otherwise. The finding says which. You review it; you do not have to find it.',
     },
     decision: {
       count: counts.decision,
+      uncalled: uncalled.decision,
       label: 'your decision',
       meaning:
         'Transformable, but somebody has to weigh business intent against the target design. The tool shows the evidence and stops.',
     },
     handedBack: {
       count: counts.handedBack,
+      uncalled: uncalled.handedBack,
       label: 'stays hand work',
       meaning:
         'Out of reach for any generator. Flagged and isolated rather than guessed at, so nothing false reaches your draft.',

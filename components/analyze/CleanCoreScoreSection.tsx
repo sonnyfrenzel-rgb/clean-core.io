@@ -307,8 +307,15 @@ function deductionDetail(d: HeroDeduction): string {
       ? `first ${d.first}, each further ${d.additional}`
       : `${d.first} for the first`;
   // Engine 3.0.13 on (SD review CR-A6): charged all the same, but said.
+  // Engine 3.0.18 on: a routine nothing calls is a reason too.
+  const why = d.unreachable
+    ? [
+        ...(d.unreachable.gates.length ? [`behind constant ${d.unreachable.gates.map((g) => g.constant).join(', ')}`] : []),
+        ...(d.unreachable.routines?.length ? [`in ${d.unreachable.routines.length === 1 ? 'a routine' : 'routines'} nothing calls: ${d.unreachable.routines.slice(0, 3).join(', ')}${d.unreachable.routines.length > 3 ? ` and ${d.unreachable.routines.length - 3} more` : ''}`] : []),
+      ].join('; ')
+    : '';
   const locked = d.unreachable
-    ? ` · ${d.unreachable.lines.length === d.lines.length ? 'all' : plural(d.unreachable.lines.length, 'line', 'lines')} unreachable (behind constant ${d.unreachable.gates.map((g) => g.constant).join(', ')})`
+    ? ` · ${d.unreachable.lines.length === d.lines.length ? 'all' : plural(d.unreachable.lines.length, 'line', 'lines')} unreachable (${why})`
     : '';
   return `${plural(d.count, 'finding', 'findings')}${objects} · ${rule}${locked}`;
 }

@@ -1621,6 +1621,20 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         }
         return fit(`Start the report ${report}`);
       }
+      case 'task': {
+        // A change to an internal table (`MODIFY gt_stock FROM gs_stock`) is
+        // labelled with the table's name by the skeleton; as a routine name it
+        // read "Gt stock" in the Business view. It is a change to the program's
+        // own working list, and the label says so — never a write to SAP data.
+        if (node.detail?.internalTable === true) {
+          const item = itemOf(node.label);
+          const op = detailString(node, 'operation').toUpperCase();
+          if (op === 'DELETE') return fit(`Remove the ${item} from the list`);
+          if (op === 'INSERT' || op === 'APPEND') return fit(`Add the ${item} to the list`);
+          return fit(`Update the ${item} in the list`);
+        }
+        return fit(humaniseRoutine(node.label) || 'Step');
+      }
       case 'call-opaque': {
         if (/^PERFORM$/i.test(node.label)) return 'Call routine';
         const name = node.label.replace(/\(.*$/, '').split(/->|=>/).pop() ?? node.label;

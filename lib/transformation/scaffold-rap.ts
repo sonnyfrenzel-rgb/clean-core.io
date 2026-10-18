@@ -410,7 +410,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const accessCx = `zcx_${s}_access`;
   const job = `zcl_${s}_job`;
   const jobSetup = `zcl_${s}_job_setup`;
-  const access = accessPointsOf(facts, { customerWrites: true });
+  // Files on the application server too (scaffold version 17): ABAP Cloud has no DATASET statement.
+  const access = accessPointsOf(facts, { customerWrites: true, files: true });
   const hasAccess = access.points.length > 0;
   const delivery = plan.abapDelivery;
   const withJob = delivery.kind !== 'ui-service';
@@ -432,7 +433,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const parentsOfParts = plan.units.filter((u) => plan.units.some((p) => p.part?.parent === u.id));
   const reservedNames = new Set(['run', 'run_with_state', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'not_filled', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
   // The SAP tables the access layer reads or writes: ABAP Cloud has no type of them, the class declares a row type each.
-  const sapTables = access.points.filter((p) => !p.customer && p.kind !== 'call').map((p) => p.object.toLowerCase());
+  const sapTables = access.points.filter((p) => !p.customer && (p.kind === 'read' || p.kind === 'write')).map((p) => p.object.toLowerCase());
   const contract = readRapContract(facts, reservedNames, { sapTables });
   const sapRowOf = new Map(contract.sapRows.map((r) => [r.table, r]));
   /** A comment line before a declaration whose type the original names in a way ABAP Cloud does not permit. */
@@ -661,6 +662,13 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     return named && contract.typeNames.has(named.toLowerCase()) ? `TYPE ${logic}=>${named}` : phrase;
   };
   const accessMethods: AccessMethod[] = access.points.map((point) => {
+    // A file on the application server (scaffold version 17): its lines as a table of strings, whole.
+    if (point.kind === 'file') {
+      if (point.file === 'delete') return { point, params: [] };
+      return point.file === 'read'
+        ? { point, params: [{ name: 'ct_lines', direction: 'changing', phrase: 'TYPE string_table', original: 'the lines of the file', optional: false }] }
+        : { point, params: [{ name: 'it_lines', direction: 'importing', phrase: 'TYPE string_table', original: 'the lines the original transfers', optional: false }] };
+    }
     if (point.kind === 'read') {
       return {
         point,
@@ -1190,7 +1198,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   /* ------------------------------------------------------- the access layer */
   if (hasAccess) {
     const anchor = (p: AccessPoint) => p.lines.map((l) => `L${l}`).join(', ');
-    const verb = (p: AccessPoint) => (p.kind === 'read' ? 'Reads' : p.kind === 'write' ? 'Writes' : 'Calls');
+    const verb = (p: AccessPoint) =>
+      p.kind === 'file'
+        ? p.file === 'read' ? 'Reads the application server file' : p.file === 'delete' ? 'Deletes the application server file' : 'Writes the application server file'
+        : p.kind === 'read' ? 'Reads' : p.kind === 'write' ? 'Writes' : 'Calls';
     files.push({
       path: `src/${accessIf}.intf.abap`,
       owner: 'engine',
@@ -1236,7 +1247,13 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
             '',
           ] : [
           `  METHOD ${accessIf}~${m.point.method}.`,
-          ...(m.point.customer
+          ...(m.point.kind === 'file'
+            ? [
+                `    " ${OPEN_MARKER} ACCESS: the original ${verb(m.point).toLowerCase()} ${m.point.object} at ${anchor(m.point)}. ABAP Cloud has no access to`,
+                "    \" the application server's files: hand the lines to an interface here (SAP Integration Suite, for example its SFTP",
+                '    " adapter, or a released API the other side calls); until then this raises.',
+              ]
+            : m.point.customer
             ? [
                 `    " ${OPEN_MARKER} ACCESS: the original ${verb(m.point).toLowerCase()} ${m.point.object}, a customer table this package does not ship, at ${anchor(m.point)}.`,
                 m.point.kind === 'write'
@@ -1810,7 +1827,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
                   ]
                 : [
                     `  METHOD ${accessIf}~${m.point.method}.`,
-                    `    " No SAP in a test: ${m.point.kind === 'read' ? 'no rows are read' : m.point.kind === 'write' ? 'nothing is written' : 'the call does nothing'}.`,
+                    `    " No SAP in a test: ${m.point.kind === 'file' ? 'no file is touched' : m.point.kind === 'read' ? 'no rows are read' : m.point.kind === 'write' ? 'nothing is written' : 'the call does nothing'}.`,
                     '  ENDMETHOD.',
                   ],
             ),

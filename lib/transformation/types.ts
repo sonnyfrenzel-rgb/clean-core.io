@@ -166,8 +166,16 @@ export const PLAN_VERSION = 2;
  * symbols, APPEND VALUE), and a case whose data it cannot carry exactly skips without running, naming the statement;
  * `run( )` catches the nofill exception of a stub at its boundary and returns the result with the unit in
  * `not_filled`, and a demo case that reaches a stub fails. Node — the not-run reason names the statements.
+ * 17 (3.0.18, the starter examples check of 18.10.2026): RAP — a file on the application server (OPEN/READ/TRANSFER/
+ * CLOSE/DELETE DATASET) is a method of the access layer per file, `write_file_<file>( it_lines )`, `read_file_<file>(
+ * CHANGING ct_lines )` or `delete_file_<file>( )` (`access-layer.ts`), and a body with a DATASET statement is refused
+ * naming it (`markers.ts`): ABAP Cloud has none of them, and the invoice example's package did not activate after three
+ * repair rounds. Node — a `SELECT *` into a work area the step does not declare types its lookup row with every
+ * component the program reads from it, not only those of the step (`lookups-node.ts`): the purchase-requisition
+ * example's row held 10 of the EBAN fields the program reads, and a request sending MATNR was refused.
+ * Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 16;
+export const SCAFFOLD_VERSION = 17;
 
 /* -------------------------------------------------------------- budgets */
 

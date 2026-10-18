@@ -55,7 +55,7 @@ const fileOf = (files: ReadonlyArray<{ path: string; content: string }>, p: stri
 test.describe('the trial run of the 1,000-line starter example (3.0.17 criterion 3)', () => {
   test('defect 1: the request\'s orders and items reach the steps although the run clears the tables first', () => {
     test.setTimeout(180_000);
-    expect(SCAFFOLD_VERSION).toBe(16);
+    expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(16);
     const p = prepared(read(EXAMPLE));
     const orchestrator = p.plan.units.find((u) => u.kind === 'orchestrator')!;
     const selectOrders = unitOf(p, 'SELECT_ORDERS');
