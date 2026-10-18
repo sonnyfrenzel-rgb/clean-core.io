@@ -23,7 +23,7 @@ Signavio API connection. Rules that hold everywhere:
   address, including source code, with expiry and revocation.
 Deliberately not built: tenants, SSO, guests, role mandates, a self-hosted edition,
 ALM adapters, portfolio steering (owners, waves, capacity). A read-only batch run with
-an aggregated portfolio view is planned (3.0.20, owner decision 11.10.2026; 3.0.18 is a quality release
+an aggregated portfolio view is planned (3.0.21, owner decision 11.10.2026; 3.0.18 is a quality release
 without new features and the own Claude key is 3.0.19, owner decision 18.10.2026), open only to
 accounts with their own model key (BYOK) — every program stays its own project and signed
 run; nothing aggregated is signed. Besides `ROADMAP.md`, only `docs/roadmap/` is
