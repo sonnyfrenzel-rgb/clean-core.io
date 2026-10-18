@@ -1349,6 +1349,26 @@ test.describe('weekly pipeline health', () => {
       expect(BOT_BRANCHES, `${f} → ${branch}`).toContain(branch);
     }
   });
+
+  // Every sync force-pushes its bot branch, so two runs at once would let the older
+  // snapshot replace the newer one (QA 52ea69571e50, 2a9df4a99535 and their repeats).
+  // The checkout comment names the setting rather than promising more than it does
+  // (QA 89a74fba2f7f, c3ba2380fe08, dbadd595eb4f and their repeats).
+  test('every scheduled sync workflow runs one at a time and names its credential setting, not a guarantee', () => {
+    const syncs = fs.readdirSync(path.join(ROOT, '.github/workflows')).filter((f) => /^sync-.*\.ya?ml$/.test(f));
+    expect(syncs.length).toBeGreaterThanOrEqual(5);
+    for (const f of syncs) {
+      const wf = read(`.github/workflows/${f}`).replace(/\r\n/g, '\n');
+      const at = wf.indexOf('\nconcurrency:');
+      expect(at, `${f}: a workflow-level concurrency group`).toBeGreaterThan(-1);
+      expect(at, `${f}: concurrency before jobs`).toBeLessThan(wf.indexOf('\njobs:'));
+      const block = wf.slice(at, wf.indexOf('\njobs:'));
+      expect(block, f).toMatch(new RegExp(`\\n  group: ${f.replace(/\.ya?ml$/, '')}\\n`));
+      expect(block, f).toMatch(/\n  cancel-in-progress: false\n/);
+      expect(wf.match(/^\s*concurrency:/gm) ?? [], f).toHaveLength(1);
+      expect(wf, f).not.toContain('so no token is left in .git/config');
+    }
+  });
 });
 
 test.describe('the deployed revision can be told apart', () => {

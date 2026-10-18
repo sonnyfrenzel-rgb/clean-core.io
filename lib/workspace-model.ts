@@ -383,8 +383,14 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
   // its own it named a mock execution that no server saw. Such a case reads as
   // what the record holds: no test run (`testEvidence` counts it as without a
   // verdict). The mock chip comes from the server-written receipt below.
-  const tests = Array.isArray(project?.testCases) ? project!.testCases! : [];
-  const failed = tests.filter((t) => t?.status === 'Failed').length;
+  //
+  // The same holds for *failed*: a stored `Failed` is the same client-writable
+  // string, so the status reads the phase's `runFailed` instead — failures a
+  // server-written receipt reports, a current failed run, or a failing result
+  // from the reader's SAP system (`workflowSteps`, `testEvidence.attestedFailures`).
+  // A `Failed` the case list alone carries stays the owner's label there
+  // ("Self-reported"), not an execution that failed.
+  //
   // A recorded run is a sandbox run against mocks — `TestRunReceipt.environment`
   // names it, and today it is always `mock`. The Testing and Handover views say
   // *Demonstrated · mock* about it (lib/handover.ts); this facet said *Proven*,
@@ -408,7 +414,7 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
             ? // ADR-094 — closed by the owner without a passing run: on record,
               // not verified, never `done` and never green.
               'draft'
-          : failed > 0 || outsideFailed
+          : by.testing.runFailed || outsideFailed
             ? 'failed'
             : statusOfPhase(by.testing),
     detail: by.testing.detail,

@@ -331,7 +331,9 @@ export async function POST(request: NextRequest) {
         // A call marked as a repair of gate errors may spend the lease's gate-repair calls once its budget is
         // used (owner decision 14.10.2026, `LEASE_GATE_REPAIR_CALLS`). The mark is honoured only on a prompt that
         // is such a repair (`isGateRepairPrompt`): a fill or any other call marked so is refused here, before the
-        // lease is read, and could never reach those calls.
+        // lease is read. Both the mark and the prompt come from the caller — the gates run in the browser, so the
+        // server never sees the failure itself; what bounds the reserve is the lease (this account, one unit of the
+        // hourly limit, at most `LEASE_MAX_CALLS_PER_GENERATION` calls), not the provenance of the mark.
         if (gateRepair && !isGateRepairPrompt(leased.prompt)) {
           return NextResponse.json(
             { error: 'Only a repair of activation or type-check errors may use the calls a generation holds for them.', code: LEASE_CODES.gateRepair },

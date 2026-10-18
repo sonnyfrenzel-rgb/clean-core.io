@@ -434,7 +434,10 @@ function duplicateEntryNames(buffer) {
   if (eocd < 0) return unchecked('no ZIP end-of-central-directory record was found');
   // Same rules as `lib/audit-pack-verify.ts`: one end record, ending the
   // archive, with its directory directly in front of it at the stated offset
-  // (QA full review cc210998fb05).
+  // (QA full review cc210998fb05). A comment holding the signature bytes is not
+  // counted either: JSZip reads the last signature as the end record wherever it
+  // sits, and the issuer writes no comment (QA d95794576b4a, refuted; pinned in
+  // `tests/verify-pack-cli.spec.ts`).
   for (let i = eocd + 1; i <= b.length - 4; i++) {
     if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');
   }

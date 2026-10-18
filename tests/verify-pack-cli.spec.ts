@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { createHash, generateKeyPairSync, sign, type KeyObject } from 'crypto';
 import { spawnSync } from 'child_process';
-import { mkdtempSync, writeFileSync } from 'fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import http from 'http';
@@ -257,6 +257,36 @@ test('an archive whose end record is not the real one fails the pack here too', 
   const second = run([nestedPath, '--key', kp.rawPublicBase64]);
   expect(second.out).toContain('NOT verified');
   expect(second.code).toBe(1);
+});
+
+test('a comment holding the end-record signature is never verified here either, and JSZip itself refuses it', async () => {
+  // QA d95794576b4a, 6e4db9c1c496 (refuted, pinned here): JSZip takes the last
+  // signature in the file wherever it sits, so it reads the comment's bytes as
+  // the end record. A plain comment verifies; one holding the signature does
+  // not, whichever offset inside the comment it has. The web half is in
+  // `tests/audit-pack-archive-completeness.spec.ts`.
+  const kp = keyPair();
+  const good = readFileSync(await buildPack({ signWith: kp.privateKey }));
+  const end = good.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const write = (bytes: Buffer) => {
+    const p = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+    writeFileSync(p, bytes);
+    return p;
+  };
+  const plain = Buffer.concat([good, Buffer.from('note', 'utf8')]);
+  plain.writeUInt16LE(4, end + 20);
+  const ok = run([write(plain), '--key', kp.rawPublicBase64]);
+  expect(ok.out).toContain('Verified.');
+  expect(ok.code).toBe(0);
+  for (const tail of [0, 5, 30]) {
+    const comment = Buffer.concat([Buffer.from('see '), Buffer.from([0x50, 0x4b, 0x05, 0x06]), Buffer.alloc(tail, 0x2e)]);
+    const out = Buffer.concat([good, comment]);
+    out.writeUInt16LE(comment.length, end + 20);
+    await expect(JSZip.loadAsync(out), `tail ${tail}: JSZip read the archive`).rejects.toThrow(/Corrupted zip/);
+    const r = run([write(out), '--key', kp.rawPublicBase64]);
+    expect(r.out, `tail ${tail}`).not.toContain('Verified.');
+    expect(r.code, `tail ${tail}`).not.toBe(0);
+  }
 });
 
 test('a user-attested file is reported as present and unsigned, and the pack still verifies', async () => {

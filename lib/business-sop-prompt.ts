@@ -291,9 +291,11 @@ export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: read
     const id = row && typeof row === 'object' ? (row as Record<string, unknown>).stepId : undefined;
     return typeof id === 'string' ? id : '';
   };
-  // Only a row of a business step is kept, in the order of the business steps (SEC-2026-842).
+  // Only a row of a business step is kept, in the order of the business steps (SEC-2026-842),
+  // and one row per step: the first, as the readers (`sopSteps`) and the join of parts
+  // (`mergeBusinessLayerParts`) take it, so a second row never travels in the stored layer (QA 0ebc16d6bf43).
   const ordered = (value: unknown) => rows(value)
-    .filter((row) => byId.has(idOf(row)))
+    .filter((row, i, all) => byId.has(idOf(row)) && all.findIndex((other) => idOf(other) === idOf(row)) === i)
     .map((row, i) => ({ row, i }))
     .sort((a, b) => (position.get(idOf(a.row)) ?? steps.length + a.i) - (position.get(idOf(b.row)) ?? steps.length + b.i))
     .map(({ row }) => withStep(row));

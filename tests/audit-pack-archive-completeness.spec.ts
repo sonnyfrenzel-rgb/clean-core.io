@@ -338,6 +338,55 @@ test.describe('an archive whose end record is not the real one is refused', () =
     commented.writeUInt16LE(4, end + 20);
     expect(duplicateEntryNames(commented)).toMatchObject({ counted: true, duplicates: [] });
   });
+
+  // QA 2d8e6cde70c7, 9c815f217613 (refuted, pinned here): a comment holding the
+  // end-record signature is not a valid pack to this verifier's reader. JSZip
+  // takes the last signature in the file wherever it sits, so it reads the bytes
+  // in the comment as the end record and refuses the archive; the counter says
+  // "not counted" rather than counting a record JSZip never reads. The issuer
+  // writes no comment at all (`/api/audit-pack/create`).
+  test('a comment holding the end-record signature is never counted, and JSZip itself refuses it', async () => {
+    const good = Buffer.from(await packWith());
+    const end = good.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    for (const tail of [0, 5, 30]) {
+      const comment = Buffer.concat([Buffer.from('see '), Buffer.from([0x50, 0x4b, 0x05, 0x06]), Buffer.alloc(tail, 0x2e)]);
+      const out = Buffer.concat([good, comment]);
+      out.writeUInt16LE(comment.length, end + 20);
+      await expect(JSZip.loadAsync(out), `tail ${tail}: JSZip read the archive`).rejects.toThrow(/Corrupted zip/);
+      expect(duplicateEntryNames(out).counted, `tail ${tail}`).toBe(false);
+      const result = await verifyAuditPack(out as unknown as Blob);
+      expect(result.status, `tail ${tail}`).not.toBe('authentic');
+    }
+  });
+
+  // QA be3f93e047ce (refuted, pinned here): an end record in the comment cannot
+  // slip more entries past the pre-unpack count than the count saw, because the
+  // count reads the record JSZip reads — the last signature — and walks from the
+  // place JSZip walks from. Whatever that record says, JSZip either refuses the
+  // archive or loads no more entries than the count allowed.
+  test('an end record in the comment never lets JSZip load more entries than the pre-unpack count allowed', async () => {
+    const zip = new JSZip();
+    for (const name of ['a.md', 'b.md', 'c.md']) zip.file(name, name);
+    const good: Buffer = await zip.generateAsync({ type: 'nodebuffer' });
+    const end = good.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    const size = good.readUInt32LE(end + 12);
+    const offset = good.readUInt32LE(end + 16);
+    expect(archiveEntryLimitDefect(good, 2), 'three entries over a limit of two').not.toBeNull();
+    for (const [fakeSize, fakeOffset, fakeTotal] of [[0, 0, 0], [size, offset, 1], [50, offset, 1], [size, offset, 3]]) {
+      const fake = Buffer.alloc(22);
+      fake.writeUInt32LE(0x06054b50, 0);
+      fake.writeUInt16LE(fakeTotal, 8);
+      fake.writeUInt16LE(fakeTotal, 10);
+      fake.writeUInt32LE(fakeSize, 12);
+      fake.writeUInt32LE(fakeOffset, 16);
+      const comment = Buffer.concat([Buffer.from('xx'), fake]);
+      const out = Buffer.concat([good, comment]);
+      out.writeUInt16LE(comment.length, end + 20);
+      if (archiveEntryLimitDefect(out, 2) !== null) continue;
+      const loaded = await JSZip.loadAsync(out).then((z) => Object.keys(z.files).length, () => 0);
+      expect(loaded, `fake record ${fakeSize}/${fakeOffset}/${fakeTotal}`).toBeLessThanOrEqual(2);
+    }
+  });
 });
 
 test.describe('a signed file is measured as the bytes in the archive', () => {

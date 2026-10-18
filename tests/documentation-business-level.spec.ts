@@ -174,6 +174,22 @@ for (const [file, howItWorks] of [['Z_MM_PO_APPROVAL.abap', 11], ['ZLEGACY_ORDER
       expect(raciMatrix(sopSteps(stored, processStepsOf(doc.steps), { facts: doc.facts ?? null })).steps).toHaveLength(howItWorks);
     });
 
+    test('one row per business step is stored: a second row of a step is not kept, the first is (QA 0ebc16d6bf43)', () => {
+      const steps = businessStepsOf(doc);
+      const answer = businessAnswer(doc);
+      const first = steps[0].id;
+      const stored = enrichBusinessLayer({
+        raci_matrix: [...answer.raci_matrix, { stepId: first, r: 'Somebody else', a: 'Somebody else', c: '', i: '' }],
+        sop_details: [...answer.sop_details, { stepId: first, narrative: 'A second narrative for the same step.', businessException: '' }],
+      }, sopStepInfos(doc), doc.facts ?? null);
+      const sop = stored.sop_details as Array<{ stepId: string; narrative: string }>;
+      const raci = stored.raci_matrix as Array<{ stepId: string; r: string }>;
+      expect(sop.map((r) => r.stepId)).toEqual(steps.map((s) => s.id));
+      expect(raci.map((r) => r.stepId)).toEqual(steps.map((s) => s.id));
+      expect(sop[0].narrative).not.toBe('A second narrative for the same step.');
+      expect(raci[0].r).toBe('Clerk');
+    });
+
     test('a layer stored before — one row per element — still renders, and says regenerating gives the business level', async () => {
       const old = technicalLayer(doc);
       expect(isBusinessLevelLayer(old)).toBe(false);

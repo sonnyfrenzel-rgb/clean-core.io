@@ -25,6 +25,14 @@ on:
 permissions:
   contents: read
 
+# One sync at a time, as in sync-sap-references.yml: a manual run started while
+# the scheduled one is still going would force-push the same bot branch from
+# another state. A later run waits; one still pending when a newer one queues is
+# dropped, which loses nothing — the newer one syncs the same upstream.
+concurrency:
+  group: sync-catalog
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -35,7 +43,10 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           # Nothing in this job pushes; npm install scripts, tsx and
-          # demo:regenerate run here, so no token is left in .git/config.
+          # demo:regenerate run here.
+          # persist-credentials: false is what keeps this checkout's token out of
+          # .git/config; it is a setting, not a guarantee — recheck it whenever this
+          # checkout or any credential handling in this job changes.
           persist-credentials: false
 
       - name: Setup Node.js

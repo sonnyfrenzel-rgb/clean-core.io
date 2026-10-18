@@ -117,3 +117,41 @@ test.describe('a client-written `Simulated` names no execution', () => {
     expect(execution(p).status).not.toBe('mock-only');
   });
 });
+
+/*
+ * Roadmap row "the failed execution status no longer read from a client-writable
+ * field" (found 11.10.2026 while fixing aad42f51c028). A stored `Failed` is the
+ * same client-writable string as `Simulated`: on its own it named a failed
+ * execution no server saw. The status now reads the phase's `runFailed`.
+ */
+test.describe('a client-written `Failed` names no failed execution', () => {
+  const marked = [
+    { id: 'TC_01', title: 'adds', status: 'Passed' },
+    { id: 'TC_02', title: 'adds again', status: 'Failed' },
+  ];
+
+  test('without a receipt the case list alone does not make Execution failed', () => {
+    const p = project({ testCases: marked });
+    delete (p as unknown as Record<string, unknown>).testRunReceipt;
+    const testing = workflowSteps(p).find((s) => s.key === 'testing')!;
+    // Not vacuous: the phase reads the label as the owner's, not as a run.
+    expect(testing.badge).toBe('Self-reported');
+    expect(testing.runFailed).toBeFalsy();
+    expect(execution(p).status).not.toBe('failed');
+  });
+
+  test('a receipt that passed both cases outranks a stored `Failed`', () => {
+    const p = project({ testCases: marked });
+    (p as unknown as Record<string, unknown>).testRunReceipt = receiptFor(p as unknown as Record<string, unknown>, [
+      { id: 'TC_01', status: 'Passed' },
+      { id: 'TC_02', status: 'Passed' },
+    ]);
+    expect(execution(p).status).not.toBe('failed');
+  });
+
+  test('a failure the receipt reports still reads failed', () => {
+    const p = project({ testCases: marked });
+    expect(workflowSteps(p).find((s) => s.key === 'testing')!.runFailed).toBe(true);
+    expect(execution(p).status).toBe('failed');
+  });
+});

@@ -126,6 +126,32 @@ test.describe('(7) the engine cases run in ABAP', () => {
     expect(b).toContain('exp = abap_false');
   });
 
+  test('a check against a quoted zero is broken by a filled value, never by a cleared one (QA 7b6b773c5216)', () => {
+    // The PO demo's flag case, which the engine wrote no value for, read against `gv_count = '0'` on an integer:
+    // a cleared integer is 0, which the condition holds for, so "cleared" is not a value that breaks it.
+    const { cases } = rap(poDemo());
+    const flag = cases.find((c) => c.engineCase.trace.quote?.startsWith('CHECK gv_rejected = abap_false'))!;
+    expect(flag.engineCase.examples[0].call).toBeUndefined();
+    const line = flag.engineCase.trace.lines[0].start;
+    const out = abapEngineCaseMethods([flag], {
+      logicClass: 'zcl_t_logic',
+      accessDouble: null,
+      nofill: 'zcx_t_nofill',
+      predicates: new Map([['G-0001', { name: 'when_g0001', params: [], engineWritten: true }]]),
+      guards: [{ id: 'G-0001', line, rule: null, carried: true, effect: 'check', outcome: 'refuses', subject: 'GV_COUNT', condition: "gv_count = '0'" }],
+      attributes: new Map([['gv_count', 'TYPE i']]),
+      constants: new Set(),
+      elementary: new Set(['gv_count']),
+      packedType: () => null,
+      shapeOf: () => 'elementary',
+      componentPhrase: () => null,
+    });
+    const text = out.impls.join('\n');
+    expect(text).not.toMatch(/=>skip\(/);
+    expect(text).not.toContain('CLEAR lo_cut->gv_count.');
+    expect(text).toContain("lo_cut->gv_count = '1'.");
+  });
+
   test('counts per fixture: executable cases far outnumber the honest skips (version 11: every guard and contract case skipped)', () => {
     const counts = Object.fromEntries(
       SOURCES.map(([name, source]) => {

@@ -457,6 +457,15 @@ test.describe('every reader and writer goes through the store', () => {
     expect(tests).toContain("action: 'test-suite'");
   });
 
+  test('a suite the store refused is never shown as the generated suite (QA 04b13ecce33f)', () => {
+    const hook = read('hooks/useTestGeneration.ts');
+    const refused = hook.indexOf('if (!stored.ok) throw new Error(stored.error);');
+    expect(refused).toBeGreaterThan(hook.indexOf("action: 'test-suite'"));
+    // One place sets the generated suite, and it is after the store accepted it.
+    expect(hook.match(/setGenerated\(generatedTestCases\)/g) ?? []).toHaveLength(1);
+    expect(hook.indexOf('setGenerated(generatedTestCases)')).toBeGreaterThan(refused);
+  });
+
   test('the browser loads the artefacts wherever it reads a project document', () => {
     expect(read('lib/project-loader.ts')).toMatch(/withStoredArtefacts\(projectId, stored\)/);
     expect(read('hooks/useTestExecution.ts')).toContain('withStoredArtefacts(projectId');

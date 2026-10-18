@@ -379,8 +379,7 @@ ${generatedText}
       const generatedTestSuite: TestSuite = storedTestSuite({ ...modelSuite, code: invariants.suiteCode });
       const coverageEstimate: CoverageEstimate = storedCoverageEstimate(answer.coverageEstimate);
       const manualTestingRequirements: ManualTestRequirement[] = answer.manualTestingRequirements || [];
-      
-      setGenerated(generatedTestCases);
+
       enter('storing');
       
       // Stored by the server since roadmap 3.0.14, item 9: the scenarios are
@@ -396,7 +395,10 @@ ${generatedText}
         modelReceipt: answerReceipt,
       });
       if (!stored.ok) throw new Error(stored.error);
-      
+      // Only once the server has stored it: a suite it refused (a stale package
+      // digest, say) is not shown as the generated suite (QA 04b13ecce33f).
+      setGenerated(generatedTestCases);
+
       const testSuiteBasis = (stored.fields[TEST_SUITE_BASIS_FIELD] ?? null) as Project['testSuiteBasis'];
       const testSuiteModel = (stored.fields.testSuiteModel ?? null) as Project['testSuiteModel'];
       setProject((prev: Project | null) => prev ? { ...prev, testCases: generatedTestCases, testSuite: generatedTestSuite, coverageEstimate, manualTestingRequirements, testSuiteModel, testSuiteBasis } : prev);

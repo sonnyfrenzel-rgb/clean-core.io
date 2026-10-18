@@ -275,6 +275,20 @@ test.describe('(5e) the code checks know what a CAP package uses through its con
     const unused = lints.filter((l) => l.id === 'unused-dependency').map((l) => l.message.split('"')[1]).sort();
     expect(unused).toEqual(['@cap-js/hana', '@sap/xssec']);
   });
+
+  // QA 3adfcf87ca21: any CAP configuration used to excuse every one of these packages.
+  test('a configured CAP package that names no HANA database and no XSUAA still gets @cap-js/hana and @sap/xssec reported', () => {
+    const unusedOf = (cds: unknown) => {
+      const pkg = { name: 'x', dependencies: { '@sap/cds': '^9', '@sap/xssec': '^4', '@cap-js/hana': '^2' }, devDependencies: { '@cap-js/sqlite': '^2' }, cds };
+      return generatedCodeLints([
+        { path: 'package.json', content: JSON.stringify(pkg, null, 2) },
+        { path: 'srv/a.ts', content: "import cds from '@sap/cds';\nexport default cds.service.impl(() => {});\n" },
+      ]).filter((l) => l.id === 'unused-dependency').map((l) => l.message.split('"')[1]).sort();
+    };
+    expect(unusedOf({ requires: { db: { kind: 'sqlite' } } })).toEqual(['@cap-js/hana', '@sap/xssec']);
+    expect(unusedOf({ requires: { '[production]': { auth: 'xsuaa' } } })).toEqual(['@cap-js/hana']);
+    expect(unusedOf({ requires: { '[production]': { auth: { kind: 'xsuaa' }, db: 'hana' } } })).toEqual([]);
+  });
 });
 
 test.describe('(5f) the base request satisfies the selection the original refuses empty', () => {
