@@ -56,8 +56,8 @@ const SYNTHETIC = (call: string) =>
   ].join('\n');
 
 test('the scaffold version is 13 or later', () => {
-  expect(SCAFFOLD_VERSION).toBe(17);
-  expect(rap(contractShape()).version).toBe(17);
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(13);
+  expect(rap(contractShape()).version).toBe(SCAFFOLD_VERSION);
 });
 
 test('the list holds DATE_CHECK_PLAUSIBILITY, and every entry says why it is exact', () => {

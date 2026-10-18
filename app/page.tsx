@@ -903,6 +903,7 @@ export default function Home() {
                       <div>
                         <b>{b.label}</b>
                         <p>{b.meaning}</p>
+                        {b.uncalled > 0 && <p>{b.uncalled} of them in routines the program never calls.</p>}
                       </div>
                     </li>
                   ))}

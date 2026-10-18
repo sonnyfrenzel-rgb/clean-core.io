@@ -122,6 +122,9 @@ const KIND_LABELS: Record<string, string> = {
   'form-output': 'form output',
   'abap-proxy': 'ABAP proxies',
   'own-enhancement-point': 'enhancement points in your own code',
+  // The kinds of 3.0.18 (`ENGINE_READS_FROM`, `evidence-model.ts`).
+  'classic-api': 'classic APIs not released for ABAP Cloud',
+  'dataset-io': 'files on the application server',
 };
 
 const labelFor = (kind: string) => KIND_LABELS[kind] ?? kind;
@@ -702,6 +705,9 @@ export function routeExtensibility(
     // From 3.0.13: an enhancement point in the customer's own code is no level
     // D technology, but ABAP Cloud has no enhancement points either.
     ...(precisionFixesApply(engineVersion) ? ['own-enhancement-point'] : []),
+    // From 3.0.18: a classic API and a file on the application server do not
+    // run in ABAP Cloud either; neither forces a side-by-side split.
+    ...(readClaims ? ['classic-api', 'dataset-io'] : []),
     ...(localRfc.length > 0 ? ['rfc-call'] : []),
   ]);
   const reworkKinds = [...new Set([
@@ -874,6 +880,20 @@ export function routeExtensibility(
   // What a frontend file feature means for the route, whichever branch chose
   // it — upload and download apart, because they have different remedies.
   if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess, precisionFixesApply(engineVersion), readClaims)}`;
+  // From 3.0.18 (`READ_CLAIMS_FROM`; the findings exist from that engine on):
+  // what a file on the application server and a classic API mean for the
+  // route, whichever branch chose it.
+  if (readClaims) {
+    const datasets = findings.filter((f) => f.kind === 'dataset-io');
+    if (datasets.length > 0) {
+      rationale = `${rationale} The program handles a file on the application server (${datasets.length} statement(s), from line ${Math.min(...datasets.map((f) => f.lineStart))}). ABAP Cloud has no access to the application server's file system: the file is handed over through an interface (SAP Integration Suite, for example its SFTP adapter, or a released API the other side calls), and the ABAP Cloud logic only produces or takes its content.`;
+    }
+    const classic = findings.filter((f) => f.kind === 'classic-api');
+    if (classic.length > 0) {
+      const names = [...new Set(classic.map((f) => f.objectName).filter(Boolean))];
+      rationale = `${rationale} ${names.join(', ')} ${names.length === 1 ? 'is a classic API' : 'are classic APIs'} SAP does not release for ABAP Cloud: on this route ${names.length === 1 ? 'its call is' : 'their calls are'} replaced by the released API of the same business object, or kept in classic ABAP behind a wrapper.`;
+    }
+  }
   // From 3.0.13 (`PRECISION_FIXES_FROM`, roadmap 3.0.13 rule 2): how much of
   // an exit, BAdI or VOFM implementation's logic stands in the hook decides the
   // effort of moving it — the statements in the hook and whether it is

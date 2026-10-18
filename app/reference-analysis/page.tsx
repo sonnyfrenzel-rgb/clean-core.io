@@ -137,6 +137,11 @@ export default function ReferenceAnalysisPage() {
               <div>
                 <h3 className="font-bold text-cc-ink capitalize">{b.label}</h3>
                 <p className="text-sm text-cc-ink-muted leading-relaxed mt-1">{b.meaning}</p>
+                {b.uncalled > 0 && (
+                  <p className="text-sm text-cc-ink-muted mt-2">
+                    {b.uncalled} of them stand in routines no entry point of the program calls.
+                  </p>
+                )}
                 {b.label === r.handedBack.label && r.handedBackKinds.length > 0 && (
                   <p className="text-sm text-cc-ink-muted mt-2">
                     In this file: {r.handedBackKinds.join(', ')}.

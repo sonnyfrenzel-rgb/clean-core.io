@@ -83,6 +83,8 @@ export const SCORE_DEDUCTIONS: readonly ScoreDeductionRule[] = Object.freeze([
   { kind: 'rfc-call', first: 8, additional: 2, cap: 12, label: 'Remote function calls' },
   { kind: 'update-task', first: 5, additional: 2, cap: 10, label: 'Update tasks' },
   { kind: 'gui-download', first: 5, additional: 2, cap: 10, label: 'File transfers through the SAP GUI' },
+  // From engine 3.0.18: no run of an earlier engine has the finding, so no signed score moves.
+  { kind: 'dataset-io', first: 5, additional: 2, cap: 10, label: 'Files on the application server' },
   { kind: 'dynpro', first: 5, additional: 1, cap: 8, label: 'Classic screens (Dynpro)' },
   { kind: 'standard-table-read', first: 2, additional: 1, cap: 5, label: 'Direct reads of SAP standard tables' },
 ]);

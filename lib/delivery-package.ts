@@ -1884,8 +1884,15 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
   lines.push('| Deduction | Findings | First | Each further | Cap | Points | Lines |', '|---|---:|---:|---:|---:|---:|---|');
   for (const x of m.deductions) {
     // From engine 3.0.13 a finding behind a constant gate is still charged, and labelled (SD review CR-A6).
+    // From engine 3.0.18 a finding in a routine nothing calls is labelled the same way.
+    const why = x.unreachable
+      ? [
+          ...(x.unreachable.gates.length ? [`behind ${x.unreachable.gates.map((g) => `constant ${g.constant} at line ${g.line}`).join(', ')}, which no run passes`] : []),
+          ...(x.unreachable.routines?.length ? [`in ${x.unreachable.routines.join(', ')}, which no entry point of the program calls`] : []),
+        ].join('; ')
+      : '';
     const locked = x.unreachable
-      ? ` — ${x.unreachable.lines.length === x.lines.length ? 'all' : x.unreachable.lines.join(', ')} unreachable: behind ${x.unreachable.gates.map((g) => `constant ${g.constant} at line ${g.line}`).join(', ')}, which no run passes; charged all the same`
+      ? ` — ${x.unreachable.lines.length === x.lines.length ? 'all' : x.unreachable.lines.join(', ')} unreachable: ${why}; charged all the same`
       : '';
     lines.push(`| ${x.label} | ${x.count} | ${x.first} | ${x.additional} | ${x.cap} | −${x.points}${x.capped ? ' (capped)' : ''} | ${x.lines.length ? x.lines.join(', ') : '—'}${locked} |`);
   }

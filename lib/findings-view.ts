@@ -144,6 +144,9 @@ export const KIND_LABEL: Readonly<Record<EvidenceKind, { one: string; many: stri
   'form-output': { one: 'Form output', many: 'Form output' },
   'abap-proxy': { one: 'ABAP proxy', many: 'ABAP proxies' },
   'own-enhancement-point': { one: 'Enhancement point in your own code', many: 'Enhancement points in your own code' },
+  // From engine 3.0.18 (`ENGINE_READS_FROM`, lib/abap/engine-reads-gate.ts).
+  'classic-api': { one: 'Call of a classic API not released for ABAP Cloud', many: 'Calls of classic APIs not released for ABAP Cloud' },
+  'dataset-io': { one: 'File on the application server', many: 'Files on the application server' },
 };
 
 export function kindLabel(kind: string, count: number): string {

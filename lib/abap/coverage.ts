@@ -88,6 +88,13 @@ export interface CoverageOptions {
    * `functionModuleCatalogAnswer` (`catalog-service.ts`).
    */
   answerCall?: (name: string) => { name: string; state: string; file: 'release' | 'classification'; answer: string } | null;
+  /**
+   * From engine 3.0.18 (`ENGINE_READS_FROM`) the evidence engine reports
+   * application-server file access as a finding (`dataset-io`), so it is no
+   * longer a construct no detector judges. The engine passes true from that
+   * version; every other caller, and a run of an earlier engine, keeps the gap.
+   */
+  datasetAssessed?: boolean;
 }
 
 interface Rule {
@@ -252,6 +259,7 @@ export function assessCoverage(code: string, options: CoverageOptions = {}): Cov
       includesNotRead: programIncludesOf(upper).filter((name) => !carried.has(name)),
     };
     for (const rule of RULES) {
+      if (rule.gap === 'file-io' && options.datasetAssessed) continue;
       if (!rule.test(upper, at)) continue;
       // What the catalog already knows is not a gap: a local call of a
       // function module SAP's files list is answered by them.
