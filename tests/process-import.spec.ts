@@ -15,7 +15,7 @@ import { parseBpmn } from '../lib/process-map';
  */
 
 const EXAMPLE = path.resolve(
-  __dirname, '..', 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
+  __dirname, '..', 'tests', 'fixtures', 'starter-examples-3.0.17', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
 );
 
 function ist(): string {

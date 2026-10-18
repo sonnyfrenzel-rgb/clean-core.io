@@ -13,6 +13,7 @@ import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { processStage } from '../lib/first-look';
 import { buildProcessMapModel, EARLY_END_WORD } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The process skeleton — roadmap 2.3.
@@ -27,8 +28,7 @@ import { applyNaming, namingContextOf } from '../lib/process-naming';
  * `lib/abap/process-skeleton.ts` — which was measured by taking each of them out
  * in turn and watching this spec go red.
  */
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 const skeletonOf = (name: string) => buildProcessSkeleton(read(name));
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';

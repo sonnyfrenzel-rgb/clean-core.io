@@ -22,6 +22,7 @@ import { buildProcessDocumentation } from '../lib/process-documentation-build';
 import { processDocumentationToMarkdown } from '../lib/process-documentation';
 import { processSummaryOf } from '../lib/process-summary';
 import { programFactsBlock } from '../lib/analysis-prompt';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * "In short" — what a Z program is for, one text model for First insights,
@@ -177,7 +178,7 @@ test.describe('simple on top: the Business view reads without code', () => {
   test('the jargon guard holds on every starter example and on the benchmark learning cases', () => {
     const split = JSON.parse(read('tests/prozess-benchmark/split.json')) as { learn: string[] };
     const sources = [
-      ...fs.readdirSync(path.join(process.cwd(), 'public/starter-examples')).map((f) => `public/starter-examples/${f}`),
+      ...corpusFiles().map((f) => path.relative(process.cwd(), examplePath(f))),
       ...split.learn.map((id) => `tests/prozess-benchmark/cases/${id}/source.abap`).filter((f) => fs.existsSync(path.join(process.cwd(), f))),
     ];
     expect(sources.length).toBeGreaterThan(20);

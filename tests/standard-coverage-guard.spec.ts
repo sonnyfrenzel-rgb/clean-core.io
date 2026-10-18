@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import {
   deriveStandardCoverage,
   type CatalogLookup,
@@ -22,6 +21,7 @@ import {
 import { objectStatus } from '../lib/object-status';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { resolveApi } from '../lib/abap/catalog-service';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Standard coverage per capability, E0–E4 — roadmap 7.2.
@@ -61,8 +61,7 @@ import { resolveApi } from '../lib/abap/catalog-service';
  *   - the same sentence for "no catalogue consulted" and "catalogue had nothing" — 1.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const example = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const example = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const PO = 'Z_MM_PO_APPROVAL.abap';
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';

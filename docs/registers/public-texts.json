@@ -3114,14 +3114,14 @@
       "executed": "2026-10-02"
     },
     {
-      "path": "public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt",
+      "path": "tests/fixtures/retired-starter-examples/Z_BUSINESS_PARTNER_SYNC.txt",
       "kind": "abap-sample",
-      "purpose": "ABAP sample program Z_BUSINESS_PARTNER_SYNC for tests and first use",
-      "audience": "Users (load example), tests",
+      "purpose": "ABAP sample program Z_BUSINESS_PARTNER_SYNC, retired as a starter example, kept as an engine test fixture",
+      "audience": "tests",
       "saysToday": "ABAP source code, no statement about the product.",
       "wrongWith30": [],
       "decision": "keep",
-      "reason": "Publicly served example; the source code stays as it is.",
+      "reason": "Owner decision 18.10.2026: no longer offered as a starter example; moved from public/starter-examples/ in 3.0.18 and kept as a regression fixture of the engine specs. The source code stays as it is.",
       "effort": "none",
       "guard": {
         "removed": "exempt",
@@ -3136,14 +3136,14 @@
       }
     },
     {
-      "path": "public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt",
+      "path": "tests/fixtures/retired-starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt",
       "kind": "abap-sample",
-      "purpose": "ABAP sample program Z_EMPLOYEE_EXPENSE_VAL for tests and first use",
-      "audience": "Users (load example), tests",
+      "purpose": "ABAP sample program Z_EMPLOYEE_EXPENSE_VAL, retired as a starter example, kept as an engine test fixture",
+      "audience": "tests",
       "saysToday": "ABAP source code, no statement about the product.",
       "wrongWith30": [],
       "decision": "keep",
-      "reason": "Publicly served example; the source code stays as it is.",
+      "reason": "Owner decision 18.10.2026: no longer offered as a starter example; moved from public/starter-examples/ in 3.0.18 and kept as a regression fixture of the engine specs. The source code stays as it is.",
       "effort": "none",
       "guard": {
         "removed": "exempt",
@@ -3193,14 +3193,14 @@
       }
     },
     {
-      "path": "public/starter-examples/Z_ORDER_INTEGRITY_CHECK.txt",
+      "path": "tests/fixtures/retired-starter-examples/Z_ORDER_INTEGRITY_CHECK.txt",
       "kind": "abap-sample",
-      "purpose": "ABAP sample program Z_ORDER_INTEGRITY_CHECK for tests and first use",
-      "audience": "Users (load example), tests",
+      "purpose": "ABAP sample program Z_ORDER_INTEGRITY_CHECK, retired as a starter example, kept as an engine test fixture",
+      "audience": "tests",
       "saysToday": "ABAP source code, no statement about the product.",
       "wrongWith30": [],
       "decision": "keep",
-      "reason": "Publicly served example; the source code stays as it is.",
+      "reason": "Owner decision 18.10.2026: no longer offered as a starter example; moved from public/starter-examples/ in 3.0.18 and kept as a regression fixture of the engine specs. The source code stays as it is.",
       "effort": "none",
       "guard": {
         "removed": "exempt",

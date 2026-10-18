@@ -18,6 +18,7 @@ import { raciFileTable } from '../lib/raci-edit';
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { businessSopMarkdown } from '../lib/business-sop-markdown';
 import { currentAnchorKey, documentationProposalsAnchor, DOCUMENTATION_PROPOSALS_ID } from '../lib/page-anchors';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Owner decision 16.10.2026, testing 3.0.14 on dev with the SD reference
@@ -48,7 +49,7 @@ import { currentAnchorKey, documentationProposalsAnchor, DOCUMENTATION_PROPOSALS
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.resolve(ROOT, 'tmp', 'documentation-business-level', String(process.pid));
-const example = (file: string) => fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+const example = (file: string) => fs.readFileSync(pinnedExamplePath(file), 'utf8').replace(/\r\n/g, '\n');
 
 function read(file: string) {
   const source = example(file);

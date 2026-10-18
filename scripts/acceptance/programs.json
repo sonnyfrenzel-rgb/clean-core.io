@@ -45,7 +45,7 @@
     {
       "id": "po-mm-po-approval",
       "title": "MM emergency purchase approval (Z_MM_PO_APPROVAL, the public demo)",
-      "source": { "repo": "public/starter-examples/Z_MM_PO_APPROVAL.abap", "file": null, "entry": null, "sha256": "e33f511f747d367d7a2f791e5d39b3e9259211f05db10bb9e0d0ece8057cac64", "lines": 669 },
+      "source": { "repo": "public/starter-examples/Z_MM_PO_APPROVAL.abap", "file": null, "entry": null, "sha256": "149310e0465c44106a2771097db569446a5ef1ffffaf9a09887636439fcf486e", "lines": 553 },
       "tracks": ["rap", "node"],
       "holdout": false,
       "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only"] }
@@ -77,7 +77,7 @@
     {
       "id": "order-fulfillment-audit-1000",
       "title": "Order fulfillment audit (ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC, the 1,000-line starter example)",
-      "source": { "repo": "public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap", "file": null, "entry": null, "sha256": "e6096ab54038ac077ba0cc4cd7d610ab3c1f875796c91604c29490507589cb01", "lines": 1001 },
+      "source": { "repo": "public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap", "file": null, "entry": null, "sha256": "b8a02c4d2cf8e8af6319f1bcd93d8d9fd2fd05a4fcb0856aca46dffe557fe6d6", "lines": 1001 },
       "tracks": ["node"],
       "holdout": false,
       "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only; side-by-side (CAP) by the engine"] }

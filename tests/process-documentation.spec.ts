@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
-import path from 'path';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import {
   applyNaming,
@@ -23,6 +22,7 @@ import {
 } from '../lib/process-documentation';
 import { PROVENANCE, PROVENANCE_VALUES } from '../lib/provenance';
 import { sha256Hex } from '../lib/artefact-digest';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Roadmap 3.0.5, Weg C — stage 4 writes `documentation` out of the engine.
@@ -37,11 +37,10 @@ import { sha256Hex } from '../lib/artefact-digest';
  * `generatedCode.substring(0, 1000)` and could not (known limit L-04).
  */
 
-const ROOT = path.resolve(__dirname, '..');
 const EXAMPLES = ['Z_MM_PO_APPROVAL.abap', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'] as const;
 
 const read = (file: string) =>
-  fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+  fs.readFileSync(pinnedExamplePath(file), 'utf8').replace(/\r\n/g, '\n');
 
 function mapOf(source: string, fileName: string, record: ProcessNamingRecord | null = null) {
   const bpmn = buildBpmnExportFromSource(source, { processName: fileName, sourceFileName: fileName });

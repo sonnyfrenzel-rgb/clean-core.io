@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test';
-import fs from 'fs';
-import path from 'path';
 import {
   assignPublicCloudFit,
   isKeepEligible,
@@ -17,6 +15,7 @@ import { RETIREMENT_WINDOW_DAYS } from '../lib/abap/usage-model';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { gradeSapObjectUse, hasNoReleasedApiPath, NO_PATH_OBJECTS } from '../lib/abap/catalog-service';
 import type { GradedObject } from '../lib/abap/abcd-classification';
+import { corpusFiles, readExample as readCorpusFile } from './helpers/starter-example-files';
 
 /**
  * Roadmap 6.7 — Public-Cloud-Fit and the four buckets (ADR-033), with CR-17 and
@@ -761,12 +760,11 @@ test.describe('own work beats Keep, not only the path question (f9695d22d124)', 
  * does to the totals.
  */
 test.describe('the shipped examples, against the real catalog', () => {
-  const EXAMPLES = path.resolve(__dirname, '..', 'public', 'starter-examples');
 
   function assignEverything(platform: 'public' | 'private'): PublicCloudFitAssignment[] {
     const out: PublicCloudFitAssignment[] = [];
-    for (const file of fs.readdirSync(EXAMPLES).sort()) {
-      const code = fs.readFileSync(path.join(EXAMPLES, file), 'utf8');
+    for (const file of corpusFiles()) {
+      const code = readCorpusFile(file);
       const findings = buildAbapEvidence(code, file, platform).findings;
       out.push(
         ...resolvePublicCloudFit(

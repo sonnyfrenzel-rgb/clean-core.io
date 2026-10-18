@@ -18,6 +18,7 @@ import type { ProcessStateView, StateEntry } from '../lib/process-states';
 import type { Project } from '../lib/types';
 import { adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
+import { examplePath } from './helpers/starter-example-files';
 
 /**
  * The Business view, reworked with the owner on 03.10.2026:
@@ -37,7 +38,7 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
  */
 
 const read = (file: string) =>
-  fs.readFileSync(path.resolve('public/starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+  fs.readFileSync(examplePath(file), 'utf8').replace(/\r\n/g, '\n');
 const EXPENSE = read('Z_EMPLOYEE_EXPENSE_VAL.txt');
 const PO = read('Z_MM_PO_APPROVAL.abap');
 const ABAP_TOKENS = /sy-subrc|\bIF\b|<>|abap_true|abap_false/;

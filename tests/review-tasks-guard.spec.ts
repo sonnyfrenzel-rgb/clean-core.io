@@ -26,6 +26,7 @@ import {
   reviewTasksTitle,
 } from '../components/ReviewTasks';
 import { signInViaLanding } from './helpers/sign-in';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Roadmap 7.5 — *review tasks instead of sham knowledge*, and V25-A05: "a window
@@ -93,8 +94,7 @@ const code = (rel: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
-const EXAMPLES = join(ROOT, 'public/starter-examples');
-const example = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const example = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const PO = 'Z_MM_PO_APPROVAL.abap';
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
@@ -730,7 +730,7 @@ test.describe('the panel a reader actually meets', () => {
       userId: uid,
       createdAt: new Date(),
       status: 'analyzed',
-      legacyCode: readFileSync(join(process.cwd(), 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8'),
+      legacyCode: readFileSync(join(process.cwd(), 'tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'), 'utf8'),
       activeRunId: `${RENDER_PROJECT_ID}-run`,
       cleanCoreScore: 41,
     });

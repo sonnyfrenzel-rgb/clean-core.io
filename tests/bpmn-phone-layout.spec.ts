@@ -12,6 +12,7 @@ import {
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { phoneFitWidth } from '../components/process-map/bpmn-view';
+import { examplePath } from './helpers/starter-example-files';
 
 /**
  * The phone's narrow layout is a view, never a file (ADR-072, amended 04.10.2026).
@@ -27,7 +28,7 @@ import { phoneFitWidth } from '../components/process-map/bpmn-view';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const read = (file: string) => fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+const read = (file: string) => fs.readFileSync(examplePath(file), 'utf8').replace(/\r\n/g, '\n');
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
 const BIG = 'Z_MM_PO_APPROVAL.abap';
 const SMALL = 'Z_SALES_ORDER_CREATOR.txt';

@@ -78,9 +78,10 @@ test('the demo counts its distinct findings wherever it counts findings, never i
   // changes both numbers on purpose, and this line with them. 27 and 26 since
   // the 3.0.13 engine rules (lib/abap/engine-rules.ts): "The server's date or
   // time decides (sy-datum, sy-uzeit)" is one more distinct finding, with a
-  // target route.
-  const DEMO_DISTINCT_FINDINGS = 27;
-  const DEMO_FINDINGS_WITH_TARGET = 26;
+  // target route. 21 and 20 since 3.0.18: the PO demo lost the ten routines nothing called, and with them six
+  // distinct findings (ENQUEUE, ELBK, EKKO/EKPO, ZMM_BUDGET, ADR6/USR21, the second EBAN write); the review task stays.
+  const DEMO_DISTINCT_FINDINGS = 21;
+  const DEMO_FINDINGS_WITH_TARGET = 20;
   expect(distinctFindings, 'the demo was regenerated: re-derive the pinned counts below').toBe(DEMO_DISTINCT_FINDINGS);
   const demo = buildDemoProject();
   const rows = findingRows(demo.analyze.findings);

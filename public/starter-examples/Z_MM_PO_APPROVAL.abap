@@ -83,6 +83,14 @@ FORM check_requisition.
     PERFORM reject USING 'Requisition is blocked for release'.
     RETURN.
   ENDIF.
+  PERFORM check_material_status.
+  IF gv_rejected = abap_true.
+    RETURN.
+  ENDIF.
+  PERFORM check_account_assignment.
+  IF gv_rejected = abap_true.
+    RETURN.
+  ENDIF.
   "Plant 1000 is the central warehouse
   IF gs_eban-werks = '1000'.
     gv_skip_limit = abap_true.
@@ -205,20 +213,6 @@ FORM check_account_assignment.
   ENDCASE.
 ENDFORM.
 
-FORM determine_delivery_date CHANGING cv_date TYPE eindt.
-  DATA lv_days TYPE i.
-
-  IF gv_emergency = abap_true.
-    lv_days = 2.
-  ELSE.
-    lv_days = gs_eban-webaz + 5.
-  ENDIF.
-  cv_date = sy-datum + lv_days.
-  IF cv_date < gs_eban-lfdat.
-    cv_date = gs_eban-lfdat.
-  ENDIF.
-ENDFORM.
-
 *&---------------------------------------------------------------------*
 *&      Form  CHECK_VENDOR
 *&---------------------------------------------------------------------*
@@ -274,37 +268,6 @@ FORM read_info_record.
   ENDIF.
 ENDFORM.
 
-FORM lock_requisition.
-  DATA lv_tries TYPE i.
-
-  DO 3 TIMES.
-    CALL FUNCTION 'ENQUEUE_EMEBANE'
-      EXPORTING
-        banfn          = p_banfn
-      EXCEPTIONS
-        foreign_lock   = 1
-        system_failure = 2
-        OTHERS         = 3.
-    IF sy-subrc = 0.
-      RETURN.
-    ENDIF.
-    ADD 1 TO lv_tries.
-    WAIT UP TO 2 SECONDS.
-  ENDDO.
-  MESSAGE e006 WITH 'Requisition is locked by another user' p_banfn.
-ENDFORM.
-
-FORM read_vendor_rating CHANGING cv_score TYPE i.
-  SELECT SINGLE gesbu FROM elbk INTO @DATA(lv_score)
-    WHERE lifnr = @gs_eban-flief
-      AND ekorg = @c_purch_org.
-  IF sy-subrc = 0.
-    cv_score = lv_score.
-  ELSE.
-    cv_score = 50.
-  ENDIF.
-ENDFORM.
-
 FORM check_material_status.
   DATA lv_mmsta TYPE marc-mmsta.
 
@@ -314,56 +277,6 @@ FORM check_material_status.
   IF lv_mmsta = '01' OR lv_mmsta = 'Z9'.
     PERFORM reject USING 'Material is blocked for purchasing in this plant'.
   ENDIF.
-ENDFORM.
-
-FORM read_contract CHANGING cv_konnr TYPE konnr
-                            cv_ktpnr TYPE ktpnr.
-  SELECT k~ebeln, p~ebelp
-    FROM ekko AS k
-    INNER JOIN ekpo AS p ON p~ebeln = k~ebeln
-    WHERE k~lifnr = @gs_eban-flief
-      AND k~bstyp = 'K'
-      AND k~kdatb <= @sy-datum
-      AND k~kdate >= @sy-datum
-      AND p~matnr = @gs_eban-matnr
-    ORDER BY k~kdate DESCENDING
-    INTO (@cv_konnr, @cv_ktpnr)
-    UP TO 1 ROWS.
-  ENDSELECT.
-ENDFORM.
-
-FORM check_budget CHANGING cv_ok TYPE abap_bool.
-  DATA: lv_budget TYPE bapicurext,
-        lv_used   TYPE bapicurext.
-
-  SELECT SINGLE budget used FROM zmm_budget INTO (lv_budget, lv_used)
-    WHERE kostl = gs_eban-kostl
-      AND gjahr = sy-datum(4).
-  IF sy-subrc <> 0.
-    cv_ok = abap_true.
-    RETURN.
-  ENDIF.
-  IF lv_used + gv_amount > lv_budget.
-    cv_ok = abap_false.
-  ELSE.
-    cv_ok = abap_true.
-  ENDIF.
-ENDFORM.
-
-FORM derive_purchasing_group CHANGING cv_ekgrp TYPE ekgrp.
-  cv_ekgrp = gs_eban-ekgrp.
-  IF gv_emergency = abap_true.
-    cv_ekgrp = 'E01'.
-  ENDIF.
-ENDFORM.
-
-FORM check_open_orders CHANGING cv_open TYPE bapicurext.
-  SELECT SUM( p~netwr ) FROM ekko AS k
-    INNER JOIN ekpo AS p ON p~ebeln = k~ebeln
-    INTO @cv_open
-    WHERE k~lifnr = @gs_eban-flief
-      AND k~bsart = @c_doc_type
-      AND p~elikz = @space.
 ENDFORM.
 
 *&---------------------------------------------------------------------*
@@ -381,16 +294,6 @@ FORM check_limit USING iv_amount TYPE bapicurext.
     IF lv_ok = abap_false.
       gv_message = 'Amount above the release limit'.
     ENDIF.
-  ENDIF.
-ENDFORM.
-
-FORM check_currency.
-  "Price unit 0 comes from the old interface data
-  IF gs_eban-waers IS INITIAL.
-    gs_eban-waers = 'EUR'.
-  ENDIF.
-  IF gs_eban-peinh = 0.
-    gs_eban-peinh = 1.
   ENDIF.
 ENDFORM.
 
@@ -450,16 +353,6 @@ FORM log_approval.
   INSERT zmm_po_appr FROM ls_appr.
 ENDFORM.
 
-FORM set_requisition_status USING iv_status TYPE char1.
-  "H = on hold, A = approved, R = rejected
-  UPDATE eban SET statu = iv_status
-    WHERE banfn = p_banfn
-      AND bnfpo = p_bnfpo.
-  IF sy-subrc <> 0.
-    MESSAGE w008 WITH 'Status not updated for' p_banfn.
-  ENDIF.
-ENDFORM.
-
 FORM find_department_head CHANGING cv_approver TYPE xubname.
   SELECT SINGLE uname FROM zmm_dept_head INTO cv_approver
     WHERE kostl = gs_eban-kostl.
@@ -478,15 +371,6 @@ FORM find_manager CHANGING cv_approver TYPE xubname.
   SELECT SINGLE usrid FROM pa0105 INTO cv_approver
     WHERE pernr = lv_pernr
       AND subty = '0001'.
-ENDFORM.
-
-FORM get_requester_mail CHANGING cv_mail TYPE ad_smtpadr.
-  SELECT SINGLE smtp_addr FROM adr6 INTO cv_mail
-    WHERE persnumber = ( SELECT persnumber FROM usr21
-                          WHERE bname = gs_eban-afnam ).
-  IF sy-subrc <> 0.
-    CLEAR cv_mail.
-  ENDIF.
 ENDFORM.
 
 *&---------------------------------------------------------------------*

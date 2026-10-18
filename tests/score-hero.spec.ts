@@ -24,7 +24,7 @@ import { APP_VERSION } from '../lib/version';
  */
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const EXAMPLE = read('public/starter-examples/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
+const EXAMPLE = read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
 
 function heroFor(edition: 'public' | 'private', engine: string) {
   const evidence = buildAbapEvidence(EXAMPLE, 'Z_MM_PO_APPROVAL.abap', edition);

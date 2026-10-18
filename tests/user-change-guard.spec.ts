@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import {
   CARRIER_KINDS,
   POINTER_NOTE,
@@ -30,6 +30,7 @@ import {
   signedGeneratorInput,
   type AuditPackSource,
 } from '../lib/audit-pack-build';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * What changes for users — roadmap 7.6.
@@ -76,8 +77,7 @@ import {
  */
 
 const ROOT = resolve(__dirname, '..');
-const EXAMPLES = join(ROOT, 'public/starter-examples');
-const example = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const example = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 const read = (rel: string) => readFileSync(resolve(ROOT, rel), 'utf8');
 
 /** The file with its comments taken out — an explanation must not satisfy its own check. */

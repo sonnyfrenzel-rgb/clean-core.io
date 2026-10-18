@@ -4,6 +4,7 @@ import path from 'node:path';
 import { deriveEngineCases } from '../lib/testing-engine-cases';
 import { PlanRefusal, fillGuardsOf, planUnits } from '../lib/transformation';
 import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
+import { readExampleAsOf3017 } from './helpers/starter-example-files';
 
 /**
  * The unit plan of the engine-led transformation (docs/design/engine-led-transformation.md §7):
@@ -19,8 +20,9 @@ import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
 const names = (plan: ReturnType<typeof planOf>['plan']) => plan.units.map((u) => u.routine ?? u.kind);
 
 test.describe('the PO demo, as measured for the design (§10)', () => {
+  // The design was measured on the PO demo as it shipped until 3.0.17, with its twelve routines nothing performed.
   test('22 reachable of 35 routines, 13 unreachable, 3 folded — 19 fill units and the orchestrator', () => {
-    const { plan } = planOf(poDemo());
+    const { plan } = planOf(readExampleAsOf3017('Z_MM_PO_APPROVAL.abap'));
     expect(plan.stats.routines).toBe(35);
     expect(plan.stats.reachable).toBe(22);
     expect(plan.stats.unreachable).toBe(13);
@@ -45,6 +47,21 @@ test.describe('the PO demo, as measured for the design (§10)', () => {
       expect(u.abap[0].routine).toBe(u.routine);
     }
     expect(planOf(poDemo()).plan.digest).toBe(plan.digest);
+  });
+
+  test('since 3.0.18: 25 routines, every one reached, 4 folded — 21 fill units and the orchestrator, every guard carried', () => {
+    // The ten routines nothing called are cut, and CHECK_REQUISITION calls the material-status and account-assignment
+    // checks, so the two guards that stood in unreached code are carried by units now.
+    const { plan } = planOf(poDemo());
+    expect(plan.stats.routines).toBe(25);
+    expect(plan.stats.reachable).toBe(25);
+    expect(plan.stats.unreachable).toBe(0);
+    expect(plan.stats.folded).toBe(4);
+    expect(plan.stats.routineUnits).toBe(21);
+    expect(plan.stats.units).toBe(22);
+    expect(plan.notCarried).toEqual([]);
+    expect(plan.stats.guards).toMatchObject({ total: 17, notCarried: 0 });
+    expect(plan.stats.overSoftBudget).toEqual([]);
   });
 });
 

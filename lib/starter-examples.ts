@@ -13,7 +13,8 @@
  *
  * 18.10.2026 (owner decision, after an end-to-end check of every example): Z_ORDER_INTEGRITY_CHECK (nothing runs —
  * no entry point), Z_EMPLOYEE_EXPENSE_VAL (no clean-core problem in it) and Z_BUSINESS_PARTNER_SYNC (syntax errors,
- * synchronises nothing) are no longer offered; their files stay as test fixtures until they move in 3.0.18.
+ * synchronises nothing) are no longer offered. Since 3.0.18 their files are regression fixtures of the engine's specs in
+ * `tests/fixtures/retired-starter-examples/` and nothing under `public/` names them.
  */
 
 export interface StarterExample {
@@ -62,7 +63,7 @@ export const STARTER_EXAMPLES: StarterExample[] = [
       'Approves emergency purchase requisitions: vendor block list, price tolerance against the info record, approval by department head or manager, and a purchase order via BAPI with a batch-input fallback.',
     demonstrates:
       'Business rules hard-coded in the program — and what cannot be determined from the code alone: a dynamic function call and two includes that are not part of the upload.',
-    lines: 668,
+    lines: 552,
     size: 'large',
   },
   {
@@ -85,13 +86,6 @@ export const STARTER_EXAMPLES: StarterExample[] = [
     size: 'large',
   },
 ];
-
-/**
- * Files still in `public/starter-examples/` that are no longer offered (owner decision 18.10.2026, see the file
- * comment): kept as fixtures of the engine's regression specs until they move to `tests/` in 3.0.18. No list, card
- * or fingerprint names them.
- */
-export const RETIRED_EXAMPLE_FILES: readonly string[] = Object.freeze(['Z_BUSINESS_PARTNER_SYNC.txt', 'Z_EMPLOYEE_EXPENSE_VAL.txt', 'Z_ORDER_INTEGRITY_CHECK.txt']);
 
 /** Fetches a starter example's source from the static asset path. */
 export async function loadStarterExample(file: string): Promise<string> {

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { RETIRED_EXAMPLE_FILES, STARTER_EXAMPLES } from '../lib/starter-examples';
+import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { scanForPersonalDataHints } from '../lib/personal-data-hints';
 import {
   SHIPPED_EXAMPLE_FINGERPRINTS,
@@ -10,6 +10,7 @@ import {
   normaliseShippedExampleSource,
   shippedExampleFingerprint,
 } from '../lib/shipped-example-fingerprint';
+import { RETIRED_EXAMPLES_DIR } from './helpers/starter-example-files';
 
 /**
  * An unchanged starter example skips the personal-data hint; a changed one does
@@ -47,8 +48,9 @@ test.describe('every shipped starter example skips the hint', () => {
     });
   }
 
-  test('the three that would raise a hint are among them — the exemption is not vacuous', () => {
-    for (const file of [BIG, 'Z_EMPLOYEE_EXPENSE_VAL.txt', 'Z_BUSINESS_PARTNER_SYNC.txt']) {
+  // Three until 3.0.18; the other two (Z_EMPLOYEE_EXPENSE_VAL, Z_BUSINESS_PARTNER_SYNC) were retired on 18.10.2026.
+  test('the one that would raise a hint is among them — the exemption is not vacuous', () => {
+    for (const file of [BIG]) {
       expect(scanForPersonalDataHints(read(file)).length, `${file} no longer raises a hint`).toBeGreaterThan(0);
     }
   });
@@ -106,12 +108,12 @@ test.describe('the fingerprint list cannot drift from the files', () => {
   test('one entry per registered example, and one registered example per file', () => {
     const registered = STARTER_EXAMPLES.map((e) => e.file).sort();
     expect(Object.keys(SHIPPED_EXAMPLE_FINGERPRINTS).sort()).toEqual(registered);
-    // A retired example's file stays as a regression fixture until 3.0.18 and is named, never silently left.
-    expect(fs.readdirSync(EXAMPLES).filter((f) => !RETIRED_EXAMPLE_FILES.includes(f)).sort()).toEqual(registered);
-    for (const f of RETIRED_EXAMPLE_FILES) {
+    // Since 3.0.18 nothing retired is left in the served folder: the three examples retired on 18.10.2026 are
+    // regression fixtures in tests/fixtures/retired-starter-examples/, and no fingerprint names them.
+    expect(fs.readdirSync(EXAMPLES).sort()).toEqual(registered);
+    for (const f of fs.readdirSync(RETIRED_EXAMPLES_DIR)) {
       expect(registered, f).not.toContain(f);
-      // Kept as a regression fixture until 3.0.18: it must still be there (QA review of 0a1d2036f5ed).
-      expect(fs.existsSync(path.join(EXAMPLES, f)), f).toBe(true);
+      expect(Object.keys(SHIPPED_EXAMPLE_FINGERPRINTS), f).not.toContain(f);
     }
   });
 

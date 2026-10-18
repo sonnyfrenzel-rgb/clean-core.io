@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
 import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../lib/abap/process-skeleton';
 import { FIELD_TERMS, TABLE_TERMS } from '../lib/abap/business-glossary';
 import { FIELD_TERMS_EN, TABLE_TERMS_EN } from '../lib/abap/plain-glossary';
@@ -16,6 +15,7 @@ import {
   stepName,
   PLAIN_LABEL_PROVENANCE,
 } from '../lib/abap/plain-language';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Plain-language labels for the process map — deterministic, no model.
@@ -25,10 +25,9 @@ import {
  * this module deliberately says something else the test says so and why.
  */
 
-const EXAMPLES = join(__dirname, '..', 'public', 'starter-examples');
 
 function readExample(name: string): string {
-  return readFileSync(join(EXAMPLES, name), 'utf8').replace(/\r\n/g, '\n');
+  return readFileSync(examplePath(name), 'utf8').replace(/\r\n/g, '\n');
 }
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
@@ -155,6 +154,14 @@ test.describe('plain-language wording — the owner\'s examples', () => {
       'Release indicator set?',
       'Reject',
       'Rejected: release indicator set',
+      // Since 3.0.18 the requisition check calls the material-status and account-assignment checks, and stops when
+      // one of them rejected the requisition.
+      'Check material status',
+      'Rejected?',
+      'Stopped: rejected',
+      'Check account assignment',
+      'Rejected?',
+      'Stopped: rejected',
       'Plant 1000?',
     ]);
     expect(labelsOf(skeleton, labels, 'form:READ_REQUISITION')).toEqual([
@@ -341,7 +348,7 @@ test.describe('plain-language wording — the owner\'s examples', () => {
 });
 
 test.describe('plain-language wording — every starter example', () => {
-  const files = readdirSync(EXAMPLES).filter((f) => /\.(abap|txt)$/i.test(f)).sort();
+  const files = corpusFiles().filter((f) => /\.(abap|txt)$/i.test(f)).sort();
 
   test('there are nine fixtures', () => {
     expect(files).toHaveLength(9);

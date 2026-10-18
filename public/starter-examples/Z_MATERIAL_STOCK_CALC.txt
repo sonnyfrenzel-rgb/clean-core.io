@@ -13,7 +13,7 @@ TYPES: BEGIN OF ty_stock,
          werks TYPE marc-werks,
          lgort TYPE mard-lgort,
          labst TYPE mard-labst,
-         netpr TYPE sscrfields-ucomm, "Legacy stand-in for price
+         netpr TYPE p LENGTH 11 DECIMALS 2, "Unit price after markup
          value TYPE p DECIMALS 2,
        END OF ty_stock.
 

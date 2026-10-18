@@ -58,13 +58,14 @@ test.describe('countSourceLines - the editor rule', () => {
 });
 
 test.describe('the starter examples count as an editor shows them', () => {
-  test('Z_MM_PO_APPROVAL counts 668, with LF, CRLF and as checked out', () => {
+  // 552 since 3.0.18 (668 until 3.0.17): the PO demo lost the ten routines nothing called.
+  test('Z_MM_PO_APPROVAL counts 552, with LF, CRLF and as checked out', () => {
     const source = readStarter('Z_MM_PO_APPROVAL.abap');
     const lf = source.replace(/\r\n/g, '\n');
     expect(lf.endsWith('\n'), 'the example ends in a newline - the case this decision is about').toBe(true);
-    expect(countSourceLines(source)).toBe(668);
-    expect(countSourceLines(lf)).toBe(668);
-    expect(countSourceLines(lf.replace(/\n/g, '\r\n'))).toBe(668);
+    expect(countSourceLines(source)).toBe(552);
+    expect(countSourceLines(lf)).toBe(552);
+    expect(countSourceLines(lf.replace(/\n/g, '\r\n'))).toBe(552);
   });
 
   test('every starter example counts what the starter list states', () => {
@@ -73,23 +74,23 @@ test.describe('the starter examples count as an editor shows them', () => {
     }
   });
 
-  test('the screens that count a staged source say 668 for it', () => {
+  test('the screens that count a staged source say 552 for it', () => {
     const source = readStarter('Z_MM_PO_APPROVAL.abap');
-    expect(runScope(source)).toBe('Reading 1 program, 668 lines');
-    expect(readProgram(source)?.lines).toBe(668);
+    expect(runScope(source)).toBe('Reading 1 program, 552 lines');
+    expect(readProgram(source)?.lines).toBe(552);
   });
 });
 
-test.describe('the demo says 668 wherever it states the line count', () => {
+test.describe('the demo says 552 wherever it states the line count', () => {
   test('the demo project, its dashboard row and its IT view', () => {
     const demo = buildDemoProject();
     expect(demo.sourceFile).toBe(DEMO_SOURCE_FILE);
-    expect(demo.totalLines).toBe(668);
-    expect(demo.economics.loc).toBe(668);
-    expect(demoListRow().lines, 'the dashboard demo row').toBe(668);
+    expect(demo.totalLines).toBe(552);
+    expect(demo.economics.loc).toBe(552);
+    expect(demoListRow().lines, 'the dashboard demo row').toBe(552);
     const starter = STARTER_EXAMPLES.find((e) => e.file === DEMO_SOURCE_FILE);
-    expect(starter?.lines, 'the starter list').toBe(668);
+    expect(starter?.lines, 'the starter list').toBe(552);
     const it = findingsOf(readStarter(DEMO_SOURCE_FILE), DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot);
-    expect(it.coverage?.lines, 'the IT view').toBe(668);
+    expect(it.coverage?.lines, 'the IT view').toBe(552);
   });
 });

@@ -241,7 +241,7 @@ test.describe('the figure is computed from the evidence', () => {
   });
 
   test('Z_EMPLOYEE_EXPENSE_VAL uses no SAP object: "No SAP dependency"; a fresh project without a run stays not determined', () => {
-    const code = read('public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt');
+    const code = read('tests/fixtures/retired-starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt');
     const findings = findingsOf(code, 'Z_EMPLOYEE_EXPENSE_VAL.txt', 'private');
     expect(findings.rows.filter((r) => r.objectName)).toEqual([]);
     const calls = sapCallsOf(findings);

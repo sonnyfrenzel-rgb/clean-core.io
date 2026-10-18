@@ -30,7 +30,7 @@ import { fileUrl, poDemo, ROOT, runInPackage, writePackage } from './helpers/tra
  * Server-free.
  */
 
-const EXAMPLE = path.join(ROOT, 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+const EXAMPLE = path.join(ROOT, 'tests', 'fixtures', 'starter-examples-3.0.17', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
 const FREIGHT = path.join(ROOT, 'public', 'starter-examples', 'Z_SD_FREIGHT_RATE_CHECK.abap');
 const read = (file: string) => fs.readFileSync(file, 'utf8');
 
