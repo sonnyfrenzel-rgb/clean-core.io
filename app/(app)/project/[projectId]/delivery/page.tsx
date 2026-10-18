@@ -470,7 +470,8 @@ export default function DeliveryPage() {
       const docs = bundle.folder("docs");
       // The model's raw line references are held against the engine's anchors of the source (3.0.12).
       if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis, { code: project.legacyCode }));
-      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode }));
+      // 3.0.18 item 13 (QM-07, FI-F02): the design names the objects this package delivers, read from its files.
+      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode, packageFiles: source.kind === 'package' ? source.files.map((f) => f.path) : null }));
       if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
       if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation));
       // developer-guidelines.md is written below, once the engine's findings are read (lib/developer-guidelines.ts).

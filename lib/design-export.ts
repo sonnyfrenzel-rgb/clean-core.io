@@ -18,7 +18,7 @@ import type { Project, DesignData } from '@/lib/types';
 import { escapeHtml } from '@/lib/utils';
 import { sapApiHubLink } from '@/lib/export-safety';
 import { cleanAndParseJSON } from '@/lib/design-response';
-import { CERTIFIED_SNAPSHOT_NOTE, MVCC_REFUSAL, postCheckDesign, type DesignPostCheck } from '@/lib/design-post-checks';
+import { CERTIFIED_SNAPSHOT_NOTE, CUSTOM_ENTITY_AUTH_NOTE, MVCC_REFUSAL, RAP_VARIANT_WORDS, postCheckDesign, type DesignPostCheck } from '@/lib/design-post-checks';
 import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { EXPORT_CSS } from '@/lib/export-style';
@@ -305,6 +305,9 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
                 ${structureRows}
               </tbody>
             </table>
+            ${post?.delivered?.objects.length ? `<p class="muted">Delivered objects (${post.delivered.basis === 'package' ? "read from the package's files" : 'as the scaffold writes them for this source'}): ${post.delivered.objects.map((o) => `<code>${esc(o.name)}</code> (${esc(o.type.toUpperCase())})`).join(', ')}.${post.delivered.variant ? ` The package is ${esc(RAP_VARIANT_WORDS[post.delivered.variant])}.` : ''}</p>` : ''}
+            ${post?.beyond.length ? `<p class="muted">Not in the package (a proposal beyond it): ${post.beyond.map((b) => `<code>${esc(b)}</code>`).join(', ')}.</p>` : ''}
+            ${post?.delivered?.variant === 'custom-entity' ? `<p class="muted">${esc(CUSTOM_ENTITY_AUTH_NOTE)}</p>` : ''}
 
             <h2>Designed API Catalog</h2>
             <table>
@@ -346,6 +349,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
                 ${securityRows}
               </tbody>
             </table>
+            ${post?.dclRefused.length ? `<p class="muted">Refused — CDS access control proposed for a custom entity: ${post.dclRefused.map((r) => esc(r)).join('; ')}. ${esc(CUSTOM_ENTITY_AUTH_NOTE)}</p>` : ''}
 
             <h2>Modernization Roadmap</h2>
             <div class="card-grid">

@@ -44,6 +44,9 @@ const SOURCE = [
   'SELECT-OPTIONS s_show FOR gv_cid NO INTERVALS.',
   'START-OF-SELECTION.',
   '  WRITE / p_org.',
+  // 3.0.18 item 13 (QM-07): the package is a managed business object only where the original writes a table;
+  // this stub writes its log so that the renaming of the business object's names stays under test.
+  '  MODIFY zsd_claim_log FROM gs_log.',
 ].join('\n');
 
 /** The RAP design as the model wrote it for the SD example (solution-design.md of the review package). */
