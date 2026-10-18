@@ -143,7 +143,7 @@ test.describe('B4 — the access layer', () => {
     const { scaffold, plan } = rap(poDemo());
     const intf = file(scaffold, 'zif_mm_po_approv_access.intf.abap');
     expect(intf).toContain('INTERFACE zif_mm_po_approv_access PUBLIC.');
-    expect(intf).toMatch(/"! Reads EBAN where the original does, L\d+.*\n {2}METHODS read_eban\n {4}IMPORTING\n {6}is_selection TYPE zcl_mm_po_approv_logic=>ty_run_selection OPTIONAL\n {4}CHANGING\n {6}ct_rows TYPE STANDARD TABLE\n {4}RAISING zcx_mm_po_approv_access\./);
+    expect(intf).toMatch(/"! Reads EBAN where the original does, L\d+.*\n {2}METHODS read_eban\n {4}IMPORTING\n {6}is_selection TYPE zif_mm_po_approv_access=>ty_run_selection OPTIONAL\n {4}CHANGING\n {6}ct_rows TYPE STANDARD TABLE\n {4}RAISING zcx_mm_po_approv_access\./);
     const impl = file(scaffold, 'zcl_mm_po_approv_access.clas.abap');
     expect(impl).toContain('INTERFACES zif_mm_po_approv_access.');
     expect(impl).toContain(`" ${OPEN_MARKER} ACCESS: the original reads EBAN at L`);
