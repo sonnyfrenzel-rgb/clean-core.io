@@ -194,9 +194,16 @@ function replacementProvenance(entry: { confidence?: string } | undefined): {
  * constant a dynamic call would name it by? The name stands in a literal, so
  * the literal is read; but only a literal in one of those two places. Anywhere
  * else — a log message, a value assigned to a text field — it is a word.
+ *
+ * `dynamic` — from engine 3.0.18 (`ENGINE_READS_FROM`; QA full review of
+ * c41f14953c1d, 1dcf075d8530): the names a dynamic `CALL FUNCTION <name>` of
+ * this source calls (`dynamicCallNames`). A constant counts only when it is one
+ * of them; a constant no call uses names no call. `null` is the reading of the
+ * engines before: every constant whose value matches counts.
  */
-function namesModule(text: string, pattern: string): boolean {
+function namesModule(text: string, pattern: string, dynamic: ReadonlySet<string> | null = null): boolean {
   if (new RegExp(`^\\s*CALL\\s+FUNCTION\\s+['\`](?:${pattern})['\`]`, 'i').test(text)) return true;
+  if (dynamic) return calledModule(text, pattern, dynamic) !== null;
   return /^\s*CONSTANTS\b/i.test(text) && new RegExp(`['\`](?:${pattern})['\`]`, 'i').test(text);
 }
 
@@ -207,12 +214,70 @@ function namesModule(text: string, pattern: string): boolean {
  * level is looked up for that module (owner, 11.10.2026: "levels are missing
  * here" — the ALV and GUI file-transfer rows named no object and showed "?").
  */
-function calledModule(text: string, pattern: string): string | null {
+function calledModule(text: string, pattern: string, dynamic: ReadonlySet<string> | null = null): string | null {
   const call = new RegExp(`^\\s*CALL\\s+FUNCTION\\s+['\`](${pattern})['\`]`, 'i').exec(text);
   if (call) return call[1].toUpperCase();
   if (!/^\s*CONSTANTS\b/i.test(text)) return null;
-  const constant = new RegExp(`['\`](${pattern})['\`]`, 'i').exec(text);
-  return constant ? constant[1].toUpperCase() : null;
+  const value = new RegExp(`['\`](${pattern})['\`]`, 'i');
+  if (!dynamic) {
+    const constant = value.exec(text);
+    return constant ? constant[1].toUpperCase() : null;
+  }
+  // From 3.0.18: the declaration whose value matches, and only if a call uses its name.
+  for (const part of constantDeclarations(text)) {
+    const name = /^\s*([\w/]+)/.exec(part)?.[1]?.toUpperCase();
+    const constant = value.exec(part);
+    if (name && constant && dynamic.has(name)) return constant[1].toUpperCase();
+  }
+  return null;
+}
+
+/** The declarations of one `CONSTANTS` statement: a chain cut at its commas, outside every literal. */
+function constantDeclarations(text: string): string[] {
+  const body = text.replace(/^\s*CONSTANTS\s*:?/i, '');
+  const masked = maskLiterals(body);
+  const parts: string[] = [];
+  let from = 0;
+  for (let i = 0; i <= masked.length; i++) {
+    if (i === masked.length || masked[i] === ',') {
+      parts.push(body.slice(from, i));
+      from = i + 1;
+    }
+  }
+  return parts;
+}
+
+const NAME = String.raw`[A-Za-z_][\w/]*(?:-[\w/]+)*`;
+
+/**
+ * From engine 3.0.18 (`ENGINE_READS_FROM`): the names a dynamic
+ * `CALL FUNCTION <name>` calls in this source, upper-cased — the name itself,
+ * the last component of `a-b`, and one step back through a plain copy
+ * (`lv_fm = c_fm.` or `MOVE c_fm TO lv_fm.` before `CALL FUNCTION lv_fm`).
+ */
+function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<string> {
+  const names = new Set<string>();
+  const add = (name: string) => {
+    const upper = name.toUpperCase();
+    names.add(upper);
+    const component = upper.split('-').pop();
+    if (component) names.add(component);
+  };
+  const masked = statements.map((st) => maskLiterals(st.text.trim()));
+  const call = new RegExp(`^CALL\\s+FUNCTION\\s+(${NAME})`, 'i');
+  for (const text of masked) {
+    const m = call.exec(text);
+    if (m) add(m[1]);
+  }
+  const assign = new RegExp(`^(?:DATA\\(\\s*)?(${NAME})\\s*\\)?\\s*=\\s*(${NAME})\\s*$`, 'i');
+  const move = new RegExp(`^MOVE\\s+(${NAME})\\s+TO\\s+(${NAME})\\s*$`, 'i');
+  for (const text of masked) {
+    const a = assign.exec(text);
+    const m = a ? null : move.exec(text);
+    const [target, source] = a ? [a[1], a[2]] : m ? [m[2], m[1]] : [null, null];
+    if (target && source && names.has(target.toUpperCase())) add(source);
+  }
+  return names;
 }
 
 /** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */
@@ -436,6 +501,8 @@ export function buildAbapEvidence(
   const findings: EvidenceFinding[] = [];
   const notes: EvidenceNote[] = [];
   const statements = tokenize(code);
+  // From 3.0.18 (`ENGINE_READS_FROM`): a constant names a module only where a call uses it.
+  const dynamicNames = reads ? dynamicCallNames(statements) : null;
   let idCounter = 1;
   const isPublicCloud = deployment === 'public';
 
@@ -904,7 +971,7 @@ export function buildAbapEvidence(
     // `statement-reader.ts` documents. So this reads `text`, not `codeText` —
     // but only the literal a `CALL FUNCTION` (or a constant) names: in
     // `PERFORM add_log USING 'GUI_DOWNLOAD'` the name is a message.
-    const alvModule = calledModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY');
+    const alvModule = calledModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY', dynamicNames);
     if (alvModule && guideline) {
       // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): an ALV list is classic
       // technology, not a defect to replace on sight.
@@ -984,7 +1051,7 @@ export function buildAbapEvidence(
         });
       }
     }
-    const guiModule = guideline ? calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)') : null;
+    const guiModule = guideline ? calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)', dynamicNames) : null;
     if (guideline && (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText))) {
       // From 3.0.18 (`ENGINE_READS_FROM`) a file-picker dialog is what it is: the
       // user picks a path, and no file moves through this call.
@@ -1178,7 +1245,14 @@ export function buildAbapEvidence(
 
     // Hardcoded environmental values — the one detector whose subject *is* the
     // content of a literal, so it reads `text` on purpose.
-    if (/(?:['"](?:C:\\|PRD|CLNT|SYS|HTTP:\/\/|HTTPS:\/\/))/i.test(text)) {
+    //
+    // From 3.0.18 (`ENGINE_READS_FROM`; QA full review of c41f14953c1d,
+    // ae38972224d6): `PRD`, `CLNT` and `SYS` are a system or client name only
+    // where no letter follows (`'PRD'`, `'PRD100'`, `'SYS_A'`) or `CLNT` does
+    // (`'PRDCLNT100'`) — `'Systemfehler'` and `'PRDHA'` are words.
+    if (reads
+      ? /['"](?:C:\\|(?:PRD|SYS)(?:CLNT|(?![A-Z]))|CLNT(?![A-Z])|HTTPS?:\/\/)/i.test(text)
+      : /(?:['"](?:C:\\|PRD|CLNT|SYS|HTTP:\/\/|HTTPS:\/\/))/i.test(text)) {
       addFinding({
         kind: 'hardcoded-value',
         title: 'Hardcoded Environmental Parameter',
@@ -1194,7 +1268,7 @@ export function buildAbapEvidence(
     }
 
     // SAPOffice legacy mailing — a function-module name, read from `text`.
-    if (namesModule(text, 'SO_NEW_DOCUMENT_SEND_API1')) {
+    if (namesModule(text, 'SO_NEW_DOCUMENT_SEND_API1', dynamicNames)) {
       addFinding({
         kind: 'legacy-mail',
         title: 'Legacy Mail Service (SO_NEW_DOCUMENT_SEND_API1)',
@@ -1306,7 +1380,16 @@ export function buildAbapEvidence(
     }
 
     // Credit Management custom logic — the module name is a literal, so `text`.
-    if (/Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i.test(text) && /CALL\s+FUNCTION/i.test(text)) {
+    // From 3.0.18 (`ENGINE_READS_FROM`; QA full review of c41f14953c1d,
+    // 9e7373e53138): only that literal — the called module's name — and the
+    // code around it; the words of any other literal (`iv_text = 'credit risk
+    // ok'`) are text, not credit logic.
+    const CREDIT_WORDS = /Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i;
+    const creditCall = reads
+      ? /\bCALL\s+FUNCTION\b/i.test(codeText)
+        && (CREDIT_WORDS.test(codeText) || CREDIT_WORDS.test(staticCallTarget(text) ?? ''))
+      : CREDIT_WORDS.test(text) && /CALL\s+FUNCTION/i.test(text);
+    if (creditCall) {
       const creditModule = staticCallTarget(text);
       addFinding({
         kind: 'credit-management',
