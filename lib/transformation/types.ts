@@ -182,8 +182,9 @@ export const PLAN_VERSION = 2;
  * component the program reads from it, not only those of the step (`lookups-node.ts`): the purchase-requisition
  * example's row held 10 of the EBAN fields the program reads, and a request sending MATNR was refused.
  * Nothing signed changes (§12.3).
+ * 18 (3.0.18, SEC-c41f149-01): Node — `srv/lib/authority.ts` (`authority-node.ts`). Nothing signed changes.
  */
-export const SCAFFOLD_VERSION = 17;
+export const SCAFFOLD_VERSION = 18;
 
 /* -------------------------------------------------------------- budgets */
 

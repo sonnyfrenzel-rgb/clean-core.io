@@ -209,7 +209,7 @@ export function traceMarkdown(trace: Trace): string {
   }
   if (trace.openAuthority?.length) {
     lines.push(
-      `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only, and each run it grants says so in its issues. The engine cases, the failure-pattern probes and npm test run with ${AUTHORITY_DEMO_ENV}=grant set for the test only — they test what follows the authorization, not the authorization itself; one engine case runs without the grant and expects the refusal.`,
+      `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only — never in the production profile (NODE_ENV=production, or CDS_ENV naming production), where it is ignored — and each run it grants says so in its issues. The engine cases, the failure-pattern probes and npm test run with ${AUTHORITY_DEMO_ENV}=grant set for the test only — they test what follows the authorization, not the authorization itself; one engine case runs without the grant and expects the refusal.`,
     );
   }
   if (trace.inputReads?.length) {

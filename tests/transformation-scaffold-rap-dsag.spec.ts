@@ -360,6 +360,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 15: "sample" alone is not demo data (tests/transformation-unit-plan.spec.ts).
   // 16: an input list a SELECT of a step fills gets its rows there, on the Node track (tests/transformation-3017-trial-defects.spec.ts).
   // 17: methods by their class, a method's declared signature, no entry point, the base request of lists (tests/transformation-examples-3018.spec.ts); an application server file is a method of the access layer (tests/examples-3018-engine.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(17);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(17);
+  // 18: SEC-c41f149-01, the Node seam srv/lib/authority.ts (tests/transformation-node-authority.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(18);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(18);
 });
