@@ -28,6 +28,7 @@ const ROOT = path.resolve(__dirname, '..');
 const OUT = path.resolve(ROOT, 'tmp', 'follow-hash-scrollbar');
 let bundle = '';
 let choiceBundle = '';
+let shiftBundle = '';
 
 const STUB = `import { useSyncExternalStore } from 'react';
 const subscribe = (cb: () => void) => {
@@ -63,6 +64,42 @@ function App() {
       <div style={{ height: 1500 }} />
       <Fold />
       <div style={{ height: 6000 }} />
+    </div>
+  );
+}
+createRoot(document.getElementById('root')!).render(<App />);
+`;
+
+/**
+ * Roadmap row "a same-page choice link settles short of its place" (found by
+ * `tests/choice-walk.spec.ts`, 11.10.2026). `?inside`: once the place is in
+ * view, a block inside it grows above the node the browser anchors to, so the
+ * browser scrolls the page by itself and the place, not moved in the document,
+ * ends up above the viewport. `?bottom`: the place stands near the end of a page
+ * that is still growing under it, so the first bring-into-view stops at the
+ * bottom of the page and the place short of the top edge.
+ */
+const SHIFT_ENTRY = `import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { useFollowHash } from '@/hooks/useFollowHash';
+function App() {
+  useFollowHash();
+  const [inner, setInner] = useState(0);
+  const [below, setBelow] = useState(location.search.includes('bottom') ? 200 : 6000);
+  useEffect(() => {
+    const t1 = setTimeout(() => (location.search.includes('bottom') ? setBelow(3000) : setInner(26)), 300);
+    const t2 = setTimeout(() => (location.search.includes('bottom') ? setBelow(6000) : setInner(52)), 600);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+  return (
+    <div>
+      <div style={{ height: 1500 }} />
+      <section id="place">
+        <div style={{ height: inner, overflowAnchor: 'none' }} />
+        {/* Taller than the viewport for ?inside, so the browser anchors to a node inside the place. */}
+        <p style={{ margin: 0, height: location.search.includes('bottom') ? 200 : 2000 }}>the card</p>
+      </section>
+      <div style={{ height: below }} />
     </div>
   );
 }
@@ -116,6 +153,8 @@ createRoot(document.getElementById('root')!).render(<App />);
   fs.writeFileSync(stub, STUB);
   const choiceEntry = path.join(OUT, 'choice-entry.tsx');
   fs.writeFileSync(choiceEntry, CHOICE_ENTRY);
+  const shiftEntry = path.join(OUT, 'shift-entry.tsx');
+  fs.writeFileSync(shiftEntry, SHIFT_ENTRY);
   const bundleOf = async (file: string) =>
     (
       await build({
@@ -132,6 +171,7 @@ createRoot(document.getElementById('root')!).render(<App />);
     ).outputFiles[0].text;
   bundle = await bundleOf(entry);
   choiceBundle = await bundleOf(choiceEntry);
+  shiftBundle = await bundleOf(shiftEntry);
 });
 
 const servePage = (page: Page, bodyStyle = 'margin:0', code = () => bundle) =>
@@ -271,5 +311,42 @@ test.describe("a choice's address: re-follow, reveal, focus (package A)", () => 
     await page.evaluate(() => window.dispatchEvent(new WheelEvent('wheel')));
     await page.waitForTimeout(1500);
     expect(await activeIn(page, 'plain')).toBe(false);
+  });
+});
+
+test.describe('a page that moves by itself is not the reader (settles short, roadmap after 3.0.10)', () => {
+  const settledTop = async (page: Page) => {
+    // Settled: the follow ends half a second after the last move, at most five seconds in.
+    await page.waitForTimeout(2500);
+    return page.evaluate(() => Math.round(document.getElementById('place')!.getBoundingClientRect().top));
+  };
+
+  test('growth inside the place that the browser anchors away is followed, not read as a scroll', async ({ page }) => {
+    await servePage(page, 'margin:0', () => shiftBundle);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?inside#place');
+    expect(Math.abs(await settledTop(page)), 'the place settled off its top edge').toBeLessThanOrEqual(1);
+  });
+
+  test('a place that first stops at the bottom of a growing page is brought to its top edge', async ({ page }) => {
+    await servePage(page, 'margin:0', () => shiftBundle);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?bottom#place');
+    expect(Math.abs(await settledTop(page)), 'the place settled short of its top edge').toBeLessThanOrEqual(1);
+  });
+
+  test('and a scrollbar drag during such growth still ends the follow', async ({ page }) => {
+    await servePage(page, 'margin:0', () => shiftBundle);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?inside#place');
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+    await page.evaluate(async () => {
+      for (let i = 0; i < 10; i++) {
+        window.scrollTo(0, 0);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+    });
+    await page.waitForTimeout(1500);
+    expect(await page.evaluate(() => window.scrollY), 'the follow pulled the reader back').toBe(0);
   });
 });
