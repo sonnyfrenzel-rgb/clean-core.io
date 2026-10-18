@@ -159,7 +159,8 @@ for (const width of [1280, 390] as const) {
       await expect(page.locator('[data-quality-tip="requirements"]')).toContainText('Write the requirements specification');
       await expect(page.locator('[data-quality-tip="target"]')).toContainText('Confirm the target in Design');
       await expect(page.locator('[data-quality-tip="decision"]')).toContainText('Record the decision');
-      await expect(page.locator('[data-generate-now]')).toBeEnabled();
+      // Enabled once the plan before the click is read (3.0.18 (2): Generate waits for it).
+      await expect(page.locator('[data-generate-now]')).toBeEnabled({ timeout: 60_000 });
       // Nothing on record weighs SAP standard: a warning above the tips, never a gate (owner, 12.10.2026).
       const warning = page.locator('[data-decision-warning="standard-fit-open"]');
       await expect(warning).toContainText('Standard fit is not assessed yet — SAP standard may already cover this.');
