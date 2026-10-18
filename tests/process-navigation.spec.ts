@@ -74,7 +74,7 @@ import { TERMS_VERSION } from '../lib/constants';
  */
 
 const EXAMPLE = path.resolve(
-  __dirname, '..', 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
+  __dirname, '..', 'tests', 'fixtures', 'starter-examples-3.0.17', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
 );
 const FILE_NAME = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PROCESS_NAME = 'Order fulfilment audit';

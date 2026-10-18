@@ -6,6 +6,7 @@ import {
   scanForPersonalDataHints,
   type PersonalDataHint,
 } from '../lib/personal-data-hints';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * The hint about personal data, tested as a hint.
@@ -270,7 +271,7 @@ test.describe('the hint list is not a second copy of the data', () => {
  * ==================================================================== */
 
 test.describe('the shipped ABAP examples, which is where every pattern was checked', () => {
-  const read = (name: string) => fs.readFileSync(path.join(EXAMPLES, name), 'utf8');
+  const read = (name: string) => fs.readFileSync(examplePath(name), 'utf8');
 
   test('the three that carry something, and what it is', () => {
     expect(kinds(read('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap'))).toEqual([
@@ -293,7 +294,7 @@ test.describe('the shipped ABAP examples, which is where every pattern was check
   });
 
   test('no ABAP file is mistaken for a table with a heading row', () => {
-    for (const name of fs.readdirSync(EXAMPLES)) {
+    for (const name of corpusFiles()) {
       expect(kinds(read(name)), `${name} was read as a delimited export`).not.toContain(
         'table-column',
       );

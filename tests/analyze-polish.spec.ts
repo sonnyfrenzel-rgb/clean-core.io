@@ -14,7 +14,7 @@ import { analysisAnswer } from '../components/analyze/analysis-answer';
  * `tests/analyze-polish-rendered.spec.ts`; this half pins the rules.
  */
 const ROOT = path.resolve(__dirname, '..');
-const EXAMPLE = fs.readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
+const EXAMPLE = fs.readFileSync(path.join(ROOT, 'tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 test.describe('1. the file name of a project started from an example', () => {

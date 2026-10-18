@@ -8,6 +8,7 @@ import { buildProcessSkeleton, buildProcessSkeletonFrom } from '../lib/abap/proc
 import { deriveBusinessRules, deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { tokenize, parseDeclarations } from '../lib/abap/declaration-parser';
 import type { AbapStatement } from '../lib/abap/statement-reader';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * What the deterministic engine does with a source that is large or deep —
@@ -57,8 +58,7 @@ import type { AbapStatement } from '../lib/abap/statement-reader';
  * product, and a faster reading that reads something else is a defect.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
 const sha = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -315,7 +315,9 @@ test.describe('a source whose statements run over many lines', () => {
       'Z_BUSINESS_PARTNER_SYNC.txt': { statements: 56, digest: '6106ee1deb8327c849b3455ab919eb8a69f24658961805fd8894aac7fe48b657' },
       'Z_EMPLOYEE_EXPENSE_VAL.txt': { statements: 55, digest: 'a5a713c52094aca21e4ce1ed1ab2c84726c6f6a23df20bb9462c8608091ac7ae' },
       'Z_INVOICE_EXTRACTOR.txt': { statements: 31, digest: '24dc545fef3689becfd96b5fef8ac7ff209fead0b2f4acc202b7789200d8fef7' },
-      'Z_MATERIAL_STOCK_CALC.txt': { statements: 45, digest: 'e3f59263b3cd2a7ccb0989b5bbf6f58f58c66bba2d1d6ef0d497316d2aba833f' },
+      // 3.0.18: the source's line 16 types the price as a packed number instead of `sscrfields-ucomm`; same count,
+      // that one statement's text differs (the PO demo and the 1,000-line example are read in their 3.0.17 form here).
+      'Z_MATERIAL_STOCK_CALC.txt': { statements: 45, digest: '4b8f42af69a5277df5cdd6426ac59605dc9a4550d8070a4dd72b4087df1214ad' },
       'Z_MM_PO_APPROVAL.abap': { statements: 388, digest: 'fc2c33c1be80282526c744279a9e6f18f9072ff68e31b2fc4eb8a3f65018ce15' },
       'Z_ORDER_INTEGRITY_CHECK.txt': { statements: 53, digest: '5c3daf720abb2939bfebcd5c06691226682dbea054cbfb703aae598818e6f9e9' },
       'Z_SALES_ORDER_CREATOR.txt': { statements: 38, digest: '6f54c75c3851fcbfa64435d14ce3b90bc74bb164c7103568268adbeb7560ee1e' },

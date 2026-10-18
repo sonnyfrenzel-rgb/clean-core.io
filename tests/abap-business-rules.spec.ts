@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { readBusinessRules, type RuleCandidate } from '../lib/abap/business-rules';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The numbers nobody wrote down — roadmap 2.8.
@@ -30,8 +30,7 @@ import { readBusinessRules, type RuleCandidate } from '../lib/abap/business-rule
  * All three were restored and the suite is green again.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';

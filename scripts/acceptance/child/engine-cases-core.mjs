@@ -82,8 +82,8 @@ const NOT_EXPRESSIBLE = "not expressible through the call contract — asserted 
  * (fail closed) unless `CC_AUTHORITY_DEMO=grant` is in its environment. The engine cases run with that grant — set
  * explicitly by the caller (`createConfinement({ authorityGrant: true })`, the generated test file) and said in the
  * report — so they test what follows the authorization; a case with `authority: 'denied'` runs without it and proves
- * the seam refuses. A refusal of the package names its check (`… the authorization check at L197 …`): read only to say
- * why a run was refused, never as a verdict.
+ * the seam refuses. A refusal of the package names its check (`… the authorization check at L197 …`); `AUTHORITY_REFUSAL`
+ * matches it to carry the reason a base request was refused, and it does not decide whether a case passes.
  */
 export const AUTHORITY_DEMO_ENV = 'CC_AUTHORITY_DEMO';
 const AUTHORITY_REFUSAL = /authorization check at L\d+/i;

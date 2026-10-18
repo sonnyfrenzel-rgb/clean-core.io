@@ -581,6 +581,11 @@ const present = (project: Project | null) => {
  * previous source. Empty when nothing blocks it. The delivery page disables its
  * downloads on a non-empty list; `/api/audit-pack/create` enforces its own part
  * server-side.
+ *
+ * 3.0.18 (QA full review of c41f14953c1d, 1c3210b0f3ee): code generated before
+ * the PLATFORM KNOWLEDGE block moved (`Staleness.context`) blocks too, and so
+ * does a suite written for that code — the rail already marks both stale. Their
+ * entries say what moved (`CONTEXT_BLOCKERS`), never "a previous source".
  */
 export function handoverBlockers(project: Project | null): string[] {
   const s = staleness(project);
@@ -590,12 +595,51 @@ export function handoverBlockers(project: Project | null): string[] {
   else if (s.unverifiedInputs.length > 0) {
     out.push(`the analysis (${inputList(s.unverifiedInputs)} cannot be shown to be what the signed run used)`);
   }
+  const contextOnly = s.context && !s.code && p.code;
   if (s.design && p.design) out.push('the solution design');
   if (s.signOff) out.push('the architecture sign-off');
   if (s.code && p.code) out.push('the generated code');
+  else if (contextOnly) out.push(CONTEXT_BLOCKERS.code);
   if (s.tests && p.tests) out.push(s.testsPackage ? `the test suite (written for ${PREVIOUS_PACKAGE})` : 'the test suite');
+  else if (contextOnly && p.tests) out.push(CONTEXT_BLOCKERS.tests);
   if (s.docs && p.docs) out.push('the documentation');
   return out;
+}
+
+/** The handover blockers a moved context adds (3.0.18) — named by what moved, not by a source. */
+export const CONTEXT_BLOCKERS = {
+  code: 'the generated code (generated before a rule decision, the decision record or an accepted requirement changed)',
+  tests: `the test suite (written for ${CONTEXT_STALE_PACKAGE})`,
+} as const;
+
+export const isContextBlocker = (b: string): boolean => b === CONTEXT_BLOCKERS.code || b === CONTEXT_BLOCKERS.tests;
+
+/**
+ * The Delivery page's notice for `handoverBlockers` — its title and one reason
+ * per blocker. A context blocker is told to regenerate the code, then the
+ * suite; every other one keeps the words it had.
+ */
+export function handoverNotice(project: Project | null): { title: string; reasons: string[] } {
+  const blockers = handoverBlockers(project);
+  const s = staleness(project);
+  if (blockers.length === 1 && s.testsPackage) {
+    // Owner 16.10.2026: only the suite is behind, because a new Transformation replaced its package.
+    return {
+      title: `Handover blocked — built for ${testsPreviousBasis(project)}`,
+      reasons: [`The test suite was written for ${testsPreviousBasis(project)} — regenerate it in Testing for the current one before handing over.`],
+    };
+  }
+  const prev = previousBasis(project);
+  const current = prev === 'a previous target profile' ? 'target profile' : 'source';
+  const cap = (b: string) => `${b.charAt(0).toUpperCase()}${b.slice(1)}`;
+  return {
+    title: blockers.length > 0 && blockers.every(isContextBlocker)
+      ? 'Handover blocked — built before the latest decisions'
+      : `Handover blocked — built for ${prev}`,
+    reasons: blockers.map((b) => isContextBlocker(b)
+      ? `${cap(b)} — regenerate the code in Transformation, then the suite, before handing over.`
+      : `${cap(b)} — regenerate it for the current ${current} before handing over.`),
+  };
 }
 
 /**
@@ -1216,6 +1260,8 @@ export function workflowSteps(project: Project | null): RailStep[] {
         : economics,
     blockers.length === 1 && s.testsPackage && tests.total > 0
       ? stale(delivery, `Handover blocked — the test suite was written for ${PREVIOUS_PACKAGE}. Regenerate it in Testing.`, 'Blocked')
+      : blockers.length > 0 && blockers.every(isContextBlocker)
+        ? stale(delivery, `Handover blocked — ${blockers.join(', ')}. Regenerate the code in Transformation, then the suite.`, 'Blocked')
       : blockers.length > 0
         ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
         : delivery,

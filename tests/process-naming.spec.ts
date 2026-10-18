@@ -145,7 +145,7 @@ test.describe('naming is a model stage of its own, offered to every account', ()
 
 test.describe('the prompt carries ids, kinds, technical names and conditions — nothing else of the source', () => {
   test('every node of the shipped purchase-requisition example is in it, with its id, kind and label', () => {
-    const source = readFileSync(join(process.cwd(), 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8');
+    const source = readFileSync(join(process.cwd(), 'tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'), 'utf8');
     const ctx = namingContextOf(source);
     const prompt = buildNamingPrompt(ctx);
     // 110 since roadmap 2.15: three `IF sy-subrc` of this program stood behind a

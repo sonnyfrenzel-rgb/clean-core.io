@@ -101,7 +101,7 @@ test.describe('every shipped starter example: the package is gate-clean before a
   }
 
   test('a source with no entry point: the engine writes the process body and says why, the model is not asked', () => {
-    const source = fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_ORDER_INTEGRITY_CHECK.txt'), 'utf8');
+    const source = fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'retired-starter-examples', 'Z_ORDER_INTEGRITY_CHECK.txt'), 'utf8');
     for (const track of ['rap', 'node'] as const) {
       const p = prep(source, track);
       expect(p.fillUnits.map((u) => u.unitId), track).not.toContain('U00');

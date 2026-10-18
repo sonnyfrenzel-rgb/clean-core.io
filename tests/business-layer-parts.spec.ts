@@ -27,6 +27,7 @@ import { businessStepIds, businessStepsOf } from '../lib/business-steps';
 import { CLOUD_RUN_REQUEST_TIMEOUT_MS, MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 import { DOCUMENTATION_BUSINESS_THINKING_ENV, thinkingConfigFor } from '../lib/model-thinking';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '../lib/model-response-schema';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * Roadmap 3.0.13 — the business layer (SOP and RACI) of a program too large
@@ -63,7 +64,7 @@ function largeProgram(n: number): string {
   return out.join('\n');
 }
 
-const example = (file: string) => fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+const example = (file: string) => fs.readFileSync(pinnedExamplePath(file), 'utf8').replace(/\r\n/g, '\n');
 
 test.describe('a program that fits is written in one call, as before', () => {
   test('the shipped examples: one part, every business step, the prompt it always had', () => {

@@ -1659,6 +1659,24 @@ test.describe('the smoke check of a deployed revision, dev and production', () =
     for (const route of ['/', '/?auth=signin', '/api/health', '/verify-pack']) expect(SMOKE_ROUTES).toContain(route);
   });
 
+  test('the dev check outwaits a 55-minute deploy pipeline, and its job outlasts the wait (3.0.18 item 10)', async () => {
+    // The pipeline ran 50-54 minutes on 17.10.2026; the check waited 45 inside a 60-minute job and timed out.
+    const { SMOKE_WAIT } = await lib('smoke.mjs');
+    expect(SMOKE_WAIT.pipelineMinutes, 'margin over a 55-minute pipeline').toBeGreaterThanOrEqual(55 + 15);
+    expect(SMOKE_WAIT.jobMinutes, 'pipeline wait, revision wait, setup and checks').toBeGreaterThanOrEqual(SMOKE_WAIT.pipelineMinutes + SMOKE_WAIT.revisionMinutes + 10);
+    const wf = read('.github/workflows/qa-review.yml').replace(/\r\n/g, '\n');
+    const start = wf.indexOf('\n  smoke:\n');
+    const smokeJob = wf.slice(start, start + 1 + wf.slice(start + 1).search(/\n  [a-z-]+:\n/));
+    expect(smokeJob.match(/timeout-minutes: (\d+)/)?.[1], 'qa-review.yml smoke job').toBe(String(SMOKE_WAIT.jobMinutes));
+    // The waits come from SMOKE_WAIT, not from a literal next to the call.
+    const cli = read('scripts/qa/smoke.mjs');
+    expect(cli).toContain("waitForRun('deploy.yml', sha, { timeoutMs: SMOKE_WAIT.pipelineMinutes * 60_000 })");
+    expect(cli).not.toMatch(/\d+ \* 60_000/);
+    expect(read('scripts/qa/lib/smoke.mjs')).toContain('timeoutMs = SMOKE_WAIT.revisionMinutes * 60_000');
+    // The local loop waits at least as long as the job may run.
+    expect(read('scripts/qa/await.mjs')).toContain("`--timeout=${SMOKE_WAIT.jobMinutes + 10}`");
+  });
+
   test('the rollback is named, exactly, and never run', async () => {
     const { rollbackCommands } = await lib('smoke.mjs');
     expect(rollbackCommands('clean-core')).toContain('gcloud run services update-traffic clean-core --to-revisions=<previous>=100 --region=europe-west1 --project=cleancore-491216');

@@ -6,6 +6,7 @@ import { inputLabel } from './input-manifest';
 import { PREVIOUS_PACKAGE } from './test-suite-basis';
 import {
   handoverBlockers,
+  isContextBlocker,
   staleness,
   workflowSteps,
   type RailStep,
@@ -632,7 +633,12 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
     blocking.push({
       key: `handover-${blocker.slice(0, 24)}`,
       // Owner 16.10.2026: a suite behind a new Transformation is named as such.
-      label: blocker.includes(PREVIOUS_PACKAGE) ? 'Built for a previous generated package' : 'Built for a previous source',
+      // 3.0.18: code (and its suite) behind a moved decision is named as such.
+      label: blocker.includes(PREVIOUS_PACKAGE)
+        ? 'Built for a previous generated package'
+        : isContextBlocker(blocker)
+          ? 'Built before the latest decisions'
+          : 'Built for a previous source',
       detail: blocker,
       provenance: 'stale',
     });

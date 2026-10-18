@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { extractDataCoupling, extractCodeInventory, recommendArchitecture } from '../lib/abap/code-assessment';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { createLiteralScanner } from '../lib/abap/statement-reader';
 import type { DataCouplingEntry } from '../lib/types';
 import { SIDE_BY_SIDE_ROUTE } from '../lib/sap-naming';
+import { examplePath } from './helpers/starter-example-files';
 
 /**
  * The dependencies the engine could not see, and the ones it invented — roadmap
@@ -341,7 +341,7 @@ test.describe('a name declared in the source is a variable (Fallbuch §8)', () =
   });
 
   test('the shipped example says the same thing', () => {
-    const source = readFileSync(join(process.cwd(), 'public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt'), 'utf8');
+    const source = readFileSync(examplePath('Z_BUSINESS_PARTNER_SYNC.txt'), 'utf8');
     const names = tables(source);
     expect(names, 'GT_BP_DATA is declared on line 20 of that file').not.toContain('GT_BP_DATA');
     expect(names, 'the tables it really reads are still there').toEqual(expect.arrayContaining(['BUT000', 'ADRC']));

@@ -25,7 +25,7 @@ import { join } from 'node:path';
 import { open, seal } from './lib/crypto.mjs';
 import { jobsOf, sleep, waitForRun } from './lib/gh.mjs';
 import { commitIdOrNull } from './lib/git-delta.mjs';
-import { SKIPPED_CHECKS, renderSmoke, rollbackCommands, runChecks, targetFrom, waitForRevision } from './lib/smoke.mjs';
+import { SKIPPED_CHECKS, SMOKE_WAIT, renderSmoke, rollbackCommands, runChecks, targetFrom, waitForRevision } from './lib/smoke.mjs';
 import { LOCAL_DIR, loadDotEnv } from './lib/store.mjs';
 
 const OUT_DIR = process.env.QA_OUT_DIR || join(LOCAL_DIR, 'out');
@@ -70,7 +70,7 @@ async function main() {
   // deploy workflow itself, behind a deploy job that succeeded.
   let pipeline = null;
   if (target.waitForPipeline) {
-    const run = await waitForRun('deploy.yml', sha, { timeoutMs: 45 * 60_000 });
+    const run = await waitForRun('deploy.yml', sha, { timeoutMs: SMOKE_WAIT.pipelineMinutes * 60_000 });
     pipeline = run ? { conclusion: run.timedOut ? 'timed out' : run.conclusion, jobs: jobsOf(run.databaseId) } : { conclusion: 'no pipeline run found', jobs: [] };
   }
 

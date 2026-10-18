@@ -255,7 +255,7 @@ test.describe('what could not be read says so', () => {
 /* ------------------------------------- 4. the measurement, on the real engine */
 
 test.describe('the route’s own derivation, on the product’s largest example', () => {
-  const EXAMPLE = 'public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
+  const EXAMPLE = 'tests/fixtures/starter-examples-3.0.17/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
   test('45 findings, 32 with an object, and not one requirement borrowed from a neighbour', () => {
     const built = findingsOf(read(EXAMPLE), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
@@ -428,7 +428,7 @@ test.describe('the IT view on a real project, in a browser', () => {
     await adminSetDoc('projects', PROJECT_ID, {
       name: 'Emergency purchase approval', userId: cred.user.uid,
       createdAt: new Date(), status: 'created',
-      legacyCode: read('public/starter-examples/Z_MM_PO_APPROVAL.abap'),
+      legacyCode: read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'),
     });
   });
 

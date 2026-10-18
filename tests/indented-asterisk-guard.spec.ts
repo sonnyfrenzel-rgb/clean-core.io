@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
-import path from 'path';
 import { tokenize } from '../lib/abap/declaration-parser';
 import { extractSelects } from '../lib/abap/select-parser';
 import { isAbapCommentLine } from '../lib/abap/statement-reader';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
-const ROOT = path.resolve(__dirname, '..');
-const example = (name: string) => fs.readFileSync(path.join(ROOT, 'public/starter-examples', name), 'utf8');
+const example = (name: string) => fs.readFileSync(pinnedExamplePath(name), 'utf8');
 
 /**
  * An indented asterisk is multiplication or a comment, and which one depends on

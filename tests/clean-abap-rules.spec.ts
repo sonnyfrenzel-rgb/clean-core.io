@@ -4,6 +4,7 @@ import path from 'path';
 import * as abaplint from '@abaplint/core';
 import { ABAPLINT_RENAMED_ANCHORS, CLEAN_ABAP_RULES, adoptedCleanAbapRuleKeys, cleanAbapAbaplintRules, cleanAbapCitedSections } from '../lib/clean-abap-rules';
 import { buildRapScaffold, planUnits, readEngineFacts } from '../lib/transformation';
+import { corpusFiles, examplePath } from './helpers/starter-example-files';
 
 /**
  * Clean ABAP for the RAP path (owner decision 13.10.2026): the table of abaplint rules that cite
@@ -120,7 +121,7 @@ const GOOD = klass(
 const EXAMPLES = path.join(ROOT, 'public', 'starter-examples');
 const FIXTURES = path.join(ROOT, 'tests', 'fixtures', 'transformation');
 const SOURCES = [
-  ...fs.readdirSync(EXAMPLES).map((f) => path.join(EXAMPLES, f)),
+  ...corpusFiles().map((f) => examplePath(f)),
   ...fs.readdirSync(FIXTURES).filter((f) => f.endsWith('.abap')).map((f) => path.join(FIXTURES, f)),
 ];
 

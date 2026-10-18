@@ -62,11 +62,11 @@ test.describe('the freight example: AUTHORITY-CHECK OBJECT V_LIKP_VST, ACTVT 03 
   });
 });
 
-test('the 1,000-line example: one scope per activity of V_VBAK_VKO (03 at L197, 02 at L205)', () => {
+test('the 1,000-line example: one scope per activity of V_VBAK_VKO (03 at L200, 02 at L208)', () => {
   const scopes = capScopesOf(readEngineFacts(read(LEGACY_1000)));
   expect(scopes.map((s) => [s.name, s.lines])).toEqual([
-    ['V_VBAK_VKO_03', [197]],
-    ['V_VBAK_VKO_02', [205]],
+    ['V_VBAK_VKO_03', [200]],
+    ['V_VBAK_VKO_02', [208]],
   ]);
   const p = prepared(read(LEGACY_1000));
   expect(fileOf(p, 'srv/service.cds')).toContain("@requires: ['V_VBAK_VKO_03', 'V_VBAK_VKO_02']");

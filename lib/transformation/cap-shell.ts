@@ -703,13 +703,13 @@ export function capAuthorizationIn(xsSecurityJson: string): { scopes: string[]; 
 /** The sentence about the authorization for TRACE.md and STATUS.md. */
 export function capAuthorizationWords(a: { scopes: readonly string[]; roleTemplate: string | null }): string {
   if (a.scopes.length === 0) {
-    return `Authorization on SAP BTP: the original checks no authorization; srv/service.cds requires an authenticated user (@requires: 'authenticated-user') and xs-security.json declares no scope. Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password.`;
+    return `Authorization on SAP BTP: the original checks no authorization; srv/service.cds requires an authenticated user (@requires: 'authenticated-user') and xs-security.json declares no scope. Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; the Dockerfile sets NODE_ENV=production, so a local container trial needs -e NODE_ENV=development as well.`;
   }
   return (
     `Authorization on SAP BTP: xs-security.json declares a scope for each authorization object and activity the original checks (${a.scopes.join(', ')}) in the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE}, and srv/service.cds requires ${a.scopes.length === 1 ? 'it' : 'one of them'} on the service (@requires). ` +
     `The deploying admin creates a role collection from the role template ${a.roleTemplate ?? CAP_ROLE_TEMPLATE} and assigns it to the users who may run the program; a user without it is refused (403) before the core runs. ` +
     `The other fields of each check (an organizational value such as a plant or a shipping point) are not part of a scope: srv/lib/authority.ts checks them where the original does, failing closed until you map it. ` +
-    `Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; package.json gives ${CAP_MOCK_USER} ${a.scopes.length === 1 ? 'this scope' : 'these scopes'} for the development profile only.`
+    `Development profile (cds serve, a trial): mocked users — call with basic auth as ${CAP_MOCK_USER}, no password; package.json gives ${CAP_MOCK_USER} ${a.scopes.length === 1 ? 'this scope' : 'these scopes'} for the development profile only; the Dockerfile sets NODE_ENV=production, so a local container trial needs -e NODE_ENV=development as well.`
   );
 }
 

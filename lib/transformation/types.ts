@@ -182,7 +182,8 @@ export const PLAN_VERSION = 2;
  * component the program reads from it, not only those of the step (`lookups-node.ts`): the purchase-requisition
  * example's row held 10 of the EBAN fields the program reads, and a request sending MATNR was refused.
  * Nothing signed changes (§12.3).
- * 18 (3.0.18 item 14 and the package halves of item 13, 18.10.2026): Node — the original's ALV display
+ * 18 (3.0.18, SEC-c41f149-01): Node — `srv/lib/authority.ts` (`authority-node.ts`). Nothing signed changes.
+ * 19 (3.0.18 item 14 and the package halves of item 13, 18.10.2026): Node — the original's ALV display
  * (`REUSE_ALV_GRID_DISPLAY` / `REUSE_ALV_LIST_DISPLAY` with TABLES t_outtab, `cl_salv_table=>factory` with CHANGING
  * t_table) becomes the run's rows: the frame of the step runs the body in a function of its own and copies the
  * displayed global table into `st.rows` after it, only when the routine reaches the display — a raw check in the body
@@ -197,7 +198,7 @@ export const PLAN_VERSION = 2;
  * type CDS cannot name reaches the custom entity as text (QM-05). TRACE.md and STATUS.md state each.
  * Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 18;
+export const SCAFFOLD_VERSION = 19;
 
 /* -------------------------------------------------------------- budgets */
 

@@ -57,7 +57,7 @@ test.describe('1 — a customer table the original writes and types data by', ()
   });
 
   test('the access layer writes it: write_zmm_po_appr( is_row | it_rows ), the row typed by the class', () => {
-    expect(intf).toMatch(/"! Writes ZMM_PO_APPR \(a customer table of the original system, not in this package\) where the original does, L450/);
+    expect(intf).toMatch(/"! Writes ZMM_PO_APPR \(a customer table of the original system, not in this package\) where the original does, L353/);
     expect(intf).toMatch(/METHODS write_zmm_po_appr\n\s+IMPORTING\n\s+is_row TYPE zcl_\w+_logic=>zmm_po_appr OPTIONAL\n\s+it_rows TYPE STANDARD TABLE OPTIONAL/);
     expect(intf).toContain('METHODS write_zmm_po_attach');
     // The CAP shell keeps writing customer tables as entities of its own: no write method there.

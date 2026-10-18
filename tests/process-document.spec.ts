@@ -26,6 +26,7 @@ import { documentOutline, longTables, processDocumentBlocks } from '../lib/proce
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { blocksMarkdown, blocksDocxParts } from '../lib/requirements-export';
 import { escapeHtml } from '../lib/export-safety';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The process description of the Documentation stage — as data, over the two
@@ -52,7 +53,7 @@ const EXAMPLES = [
 ] as const;
 
 function sourceOf(file: string): string {
-  return fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', file), 'utf8').replace(/\r\n/g, '\n');
+  return fs.readFileSync(pinnedExamplePath(file), 'utf8').replace(/\r\n/g, '\n');
 }
 
 function mapOf(source: string, file: string) {

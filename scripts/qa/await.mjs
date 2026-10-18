@@ -3,9 +3,9 @@
  * The maintainer's end of the loop: wait for the QA run of a pushed commit,
  * fetch its sealed artifacts, open them locally and print what needs doing.
  *
- *   node scripts/qa/await.mjs [commit] [--timeout=60]           the delta review and smoke check of a push to dev
+ *   node scripts/qa/await.mjs [commit] [--timeout=115]          the delta review and smoke check of a push to dev
  *   node scripts/qa/await.mjs <commit> --full [--timeout=120]    the full review of a release on main
- *   node scripts/qa/await.mjs <head> --slice [--timeout=60]      a manual slice review (workflow_dispatch) ending at <head>
+ *   node scripts/qa/await.mjs <head> --slice [--timeout=115]     a manual slice review (workflow_dispatch) ending at <head>
  *
  * Exit codes — the loop is driven by these, so they are part of the contract:
  *   0  go: no blocking finding and the smoke check passed (--full: no blocking finding and nothing unread;
@@ -31,14 +31,15 @@ import { join } from 'node:path';
 import { gh, ghJson, jobsOf, killSwitch, sliceRunFor, waitForJob, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
 import { isBlocking, needsAnotherRound, readNothing, renderHeader, renderText } from './lib/report.mjs';
-import { renderSmoke } from './lib/smoke.mjs';
+import { SMOKE_WAIT, renderSmoke } from './lib/smoke.mjs';
 import { LOCAL_DIR, loadDotEnv, sealedReports } from './lib/store.mjs';
 
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const FULL = process.argv.includes('--full');
 /** A manual slice: its run belongs to the tip it was dispatched on, so it is found by its artifact's head (gh.mjs sliceRunFor). */
 const SLICE = !FULL && process.argv.includes('--slice');
-const timeoutMin = Number((process.argv.find((a) => a.startsWith('--timeout=')) || (FULL ? '--timeout=120' : '--timeout=60')).split('=')[1]);
+/** A dev push is done when its smoke job is: that job's own limit plus queueing (3.0.18 item 10). */
+const timeoutMin = Number((process.argv.find((a) => a.startsWith('--timeout=')) || (FULL ? '--timeout=120' : `--timeout=${SMOKE_WAIT.jobMinutes + 10}`)).split('=')[1]);
 
 /** 'revoked', 'on' or 'unknown' (see killSwitch); anything but 'on' stops. */
 const switchState = () => killSwitch('QA_REVIEW_ENABLED');

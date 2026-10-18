@@ -35,7 +35,7 @@ const activatable = (p: EngineLedPrepared) => {
 test.describe('the implementation type follows the original', () => {
   test('the PO approval writes through BAPI_PO_CREATE1 and into EBAN: managed with unmanaged save, no persistent table, a saver', () => {
     test.setTimeout(180_000);
-    expect(rapSaveOf(readEngineFacts(read('Z_MM_PO_APPROVAL.abap')))).toMatchObject({ kind: 'unmanaged-save', reasons: ['BAPI_PO_CREATE1 (L591)', 'UPDATE EBAN (L246, L455)'] });
+    expect(rapSaveOf(readEngineFacts(read('Z_MM_PO_APPROVAL.abap')))).toMatchObject({ kind: 'unmanaged-save', reasons: ['BAPI_PO_CREATE1 (L475)', 'UPDATE EBAN (L240)'] });
     const p = prepared(read('Z_MM_PO_APPROVAL.abap'));
     const bdef = fileEnding(p, '.bdef.asbdef');
     // Before: `managed implementation in class … unique;` with `persistent table zmm_po_appro_rec`.
@@ -49,7 +49,7 @@ test.describe('the implementation type follows the original', () => {
     const a = activatable(p);
     expect(a.ok, a.why).toBe(true);
     const trace = withTrace(p.plan, p.scaffold, p.scaffold.files, []).files.find((f) => f.path === 'TRACE.md')!.content;
-    expect(trace).toContain('- Implementation type of the business object: managed with unmanaged save — the original writes SAP\'s data through BAPI_PO_CREATE1 (L591), UPDATE EBAN (L246, L455)');
+    expect(trace).toContain('- Implementation type of the business object: managed with unmanaged save — the original writes SAP\'s data through BAPI_PO_CREATE1 (L475), UPDATE EBAN (L240)');
   });
 
   test('the 1,000-line example writes its own tables and Z_SD_LEGACY_LOG_WRITE IN UPDATE TASK: managed with additional save', () => {
@@ -58,7 +58,7 @@ test.describe('the implementation type follows the original', () => {
     const bdef = fileEnding(p, '.bdef.asbdef');
     expect(bdef.split('\n')[0]).toBe('managed with additional save implementation in class zbp_legacy_order_r unique;');
     expect(bdef).toMatch(/\npersistent table \w+\n/);
-    expect(bdef).toContain('Z_SD_LEGACY_LOG_WRITE IN UPDATE TASK (L509)');
+    expect(bdef).toContain('Z_SD_LEGACY_LOG_WRITE IN UPDATE TASK (L518)');
     expect(fileEnding(p, '.clas.locals_imp.abap')).toContain('METHOD save_modified.');
     const a = activatable(p);
     expect(a.ok, a.why).toBe(true);
@@ -94,7 +94,7 @@ test.describe('QM-03 / FI-F09: a package whose callers hand the logic no input s
   });
 
   test('a package whose logic takes no input table says nothing', () => {
-    const p = prepared(read('Z_BUSINESS_PARTNER_SYNC.txt'));
+    const p = prepared(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'retired-starter-examples', 'Z_BUSINESS_PARTNER_SYNC.txt'), 'utf8'));
     expect(rapNoInputIn(p.scaffold.files)).toEqual([]);
   });
 });

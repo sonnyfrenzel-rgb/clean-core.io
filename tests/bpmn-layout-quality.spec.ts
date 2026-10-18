@@ -9,6 +9,7 @@ import { layoutModel, planeDrawing, type Direction } from '../lib/bpmn/layout';
 import { measureDrawing, segmentHitsBox, ZERO_METRICS } from '../lib/bpmn/layout-quality';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { textWidth, wrapText } from '../lib/bpmn/text-metrics';
+import { corpusFiles, examplePath, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The BPMN layout is readable — counted, not eyeballed.
@@ -26,10 +27,10 @@ import { textWidth, wrapText } from '../lib/bpmn/text-metrics';
  */
 
 const EXAMPLES = path.join(__dirname, '..', 'public', 'starter-examples');
-const files = fs.readdirSync(EXAMPLES).filter((f) => /\.(abap|txt)$/.test(f)).sort();
+const files = corpusFiles().filter((f) => /\.(abap|txt)$/.test(f)).sort();
 
-function modelOf(file: string, names: 'plain' | 'technical' = 'technical'): ExportModel {
-  const source = fs.readFileSync(path.join(EXAMPLES, file), 'utf8').replace(/\r\n/g, '\n');
+function modelOf(file: string, names: 'plain' | 'technical' = 'technical', at: (file: string) => string = examplePath): ExportModel {
+  const source = fs.readFileSync(at(file), 'utf8').replace(/\r\n/g, '\n');
   const skeleton = buildProcessSkeleton(source);
   return buildExportModel(skeleton, names === 'plain' ? { labels: plainLabels(skeleton, source) } : {});
 }
@@ -77,8 +78,10 @@ for (const file of files) {
 }
 
 test('the business reading draws the report events as one flow, and the technical one keeps their bands', () => {
-  const plain = modelOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'plain');
-  const technical = modelOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'technical');
+  // The 1,000-line example as it shipped until 3.0.17: since 3.0.18 its CALL SCREEN 9000 is reached, and the two
+  // dynpro modules of that screen stand as flows of their own beside the merged report events.
+  const plain = modelOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'plain', pinnedExamplePath);
+  const technical = modelOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'technical', pinnedExamplePath);
   expect(technical.root.bands.length).toBeGreaterThan(1);
   expect(plain.root.bands.length).toBe(1);
   // One start, one normal end on the top plane; every step of the technical top plane is still there.

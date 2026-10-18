@@ -170,7 +170,7 @@ test.describe('the target profile names the snapshot that answered', () => {
   });
 
   test('the findings route answers with the snapshot, the kind words and what was read', () => {
-    const src = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
+    const src = read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap');
     const built = findingsOf(src, 'Z_MM_PO_APPROVAL.abap', 'private', 'pce-latest');
     expect(built.catalog?.registryKey).toBe('pce-latest');
     // As an editor counts them: the final newline adds no line (UX-182).
@@ -236,7 +236,7 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
   });
 
   test('a table changed through batch input is a write, graded as one, and said so (3.0.7)', () => {
-    const src = read('public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const src = read('tests/fixtures/starter-examples-3.0.17/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
     const built = findingsOf(src, 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
     const change = built.rows.find((r) => r.kind === 'batch-input' && r.objectName === 'VBAK');
     expect(change, 'the batch input to VA02 names no table it changes').toBeTruthy();
@@ -257,7 +257,7 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
     // The inventory a run stores (`extractCodeInventory`) names the objects and
     // records no lines; before the ranges were read from the source, every use
     // of the demo read "outside the listed own objects".
-    const src = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
+    const src = read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap');
     const built = findingsOf(src, 'Z_MM_PO_APPROVAL.abap', 'private', 'pce-latest');
     const inventory = extractCodeInventory(src);
     expect(inventory.every((i) => i.lineStart === undefined)).toBe(true);
@@ -420,7 +420,7 @@ test.describe('the IT view on a real project', () => {
     await adminSetDoc('projects', PROJECT_ID, {
       name: 'Emergency purchase approval', userId: cred.user.uid,
       createdAt: new Date(), status: 'created', s4Deployment: 'private',
-      legacyCode: read('public/starter-examples/Z_MM_PO_APPROVAL.abap'),
+      legacyCode: read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'),
     });
   });
 

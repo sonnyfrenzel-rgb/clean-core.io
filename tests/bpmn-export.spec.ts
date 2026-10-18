@@ -13,6 +13,7 @@ import { shortCondition } from '../lib/bpmn/layout';
 import { escapeAttribute, escapeText, ncName } from '../lib/bpmn/xml';
 import { cleanCoreHints, countHints, GATEWAY_WITHOUT_CONDITION } from '../lib/process-hints';
 import { parseBpmn } from '../lib/process-map';
+import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The BPMN export — roadmap 2.6.
@@ -28,8 +29,7 @@ import { parseBpmn } from '../lib/process-map';
  * against the count, so 2.5 can trust them.
  */
 
-const EXAMPLES = join(process.cwd(), 'public/starter-examples');
-const read = (name: string) => readFileSync(join(EXAMPLES, name), 'utf8');
+const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';
 

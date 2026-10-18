@@ -12,6 +12,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
+import { screenSensitiveValue } from '@/lib/sensitive-text';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import type { Project } from '@/lib/types';
 import {
@@ -490,7 +491,9 @@ export default function DocumentationPage() {
       if (missing.length) {
         throw new Error(`The answer left out ${missing.length === 1 ? 'the step' : `${missing.length} steps`} ${missing.map((s) => `“${s.name}”`).join(', ')}, so nothing was saved. Generate again.`);
       }
-      const storedText = JSON.stringify(enriched);
+      // Roadmap 3.0.18 item 9 (3): secrets and personal data in the model's layer are masked before it is stored, so
+      // the screen and every export of it carry the masked text (`lib/sensitive-text.ts`).
+      const storedText = JSON.stringify(screenSensitiveValue(enriched).value);
 
       // One transaction, for the same reason as above (ade8ec0b8903), on the
       // server since roadmap 3.0.14, item 9: the layer is kept in documents of

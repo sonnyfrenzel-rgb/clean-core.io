@@ -16,7 +16,7 @@ import { fileUrl, planOf, ROOT, runInPackage, typecheck, writePackage } from './
  */
 
 const EXAMPLE = path.join(ROOT, 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
-const BP_SYNC = path.join(ROOT, 'public', 'starter-examples', 'Z_BUSINESS_PARTNER_SYNC.txt');
+const BP_SYNC = path.join(ROOT, 'tests', 'fixtures', 'retired-starter-examples', 'Z_BUSINESS_PARTNER_SYNC.txt');
 const read = (file: string) => fs.readFileSync(file, 'utf8');
 
 function prepared(source: string): EngineLedPrepared {
@@ -67,7 +67,7 @@ test.describe('the original\'s display is read', () => {
     const at = (body: string[]) => sitesOf([...head, 'FORM show.', ...body, 'ENDFORM.', 'FORM again.', '  PERFORM show.', 'ENDFORM.', ''].join('\n'));
     const call = ["  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'", '    TABLES', '      t_outtab = gt_rows.'];
     // At the routine's level, behind a check at its entry: placed — the frame leaves before the body when the check
-    // does not hold, so it evaluates nothing more (a check in the body is evaluated: the 1,000-line example below).
+    // does not hold, so it evaluates nothing more (a check in the body is evaluated: the run below).
     const behindCheck = at(['  CHECK p_show = abap_true.', ...call]);
     expect(behindCheck).toHaveLength(1);
     expect(behindCheck[0].notPlaced).toBeNull();
@@ -92,22 +92,39 @@ test.describe('the original\'s display is read', () => {
   });
 });
 
-test.describe('the 1,000-line example: DISPLAY_ALV shows GT_ORDERS behind CHECK p_alv = abap_true (L613)', () => {
+type Answer = { ok: boolean; errors: unknown[]; rows: Array<Record<string, unknown>> };
+
+/** One simulation through the package's own entry, with `extra` merged into the contract's base request. */
+function simulate(dir: string, extra: string): Answer {
+  return runInPackage<Answer>(
+    dir,
+    [
+      `const { CONTRACT } = await import(${JSON.stringify(fileUrl(dir, 'srv/engine-contract.ts'))});`,
+      `const { simulateRequest } = await import(${JSON.stringify(fileUrl(dir, 'srv/simulate.ts'))});`,
+      `const { createRunStore } = await import(${JSON.stringify(fileUrl(dir, 'srv/lib/run-store.ts'))});`,
+      `const request = { ...CONTRACT.baseRequest, ${extra} };`,
+      'const a = simulateRequest(request, createRunStore());',
+      'console.log(JSON.stringify({ ok: a.ok, errors: a.errors, rows: a.run ? a.run.result.rows : [] }));',
+    ].join('\n'),
+  );
+}
+
+test.describe('the 1,000-line example: DISPLAY_ALV shows GT_ORDERS (L628) behind IF p_alv = abap_false … RETURN (L622)', () => {
   const source = read(EXAMPLE);
 
-  test('the frame of displayAlv runs the body in a function of its own and places the rows after it', () => {
+  test('the frame runs the body in a function of its own and places the rows after it; the check at entry leaves before', () => {
     const p = prepared(source);
     const u = unitOf(p, 'DISPLAY_ALV');
+    const g = p.plan.guards.find((x) => x.unitId === u.id && x.line === 622)!;
+    expect(g.placement).toBe('entry');
     const file = p.scaffold.files.find((f) => f.path === u.file)!.content;
-    expect(file).toContain('const reaches = checked(st, () => skip_G0613(sel, st, null)) === false;');
-    expect(file).toContain('  const body = (): StepResult => {');
-    expect(file).toContain('  if (reaches) st.rows = st.local.gtOrders.map((r) => ({ ...r }));');
-    expect(file.indexOf('const reaches')).toBeLessThan(file.indexOf(`@cc-fill BEGIN ${u.id} `));
-    expect(file.indexOf(`@cc-fill END ${u.id}`)).toBeLessThan(file.indexOf('if (reaches) st.rows'));
-    expect(displaysIn(file)).toEqual(["L616 CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' … t_outtab = GT_ORDERS → the run's rows (displayAlv, U19), only when the routine reaches it (its check at L613)"]);
+    expect(file).toContain(`  if (checked(st, () => ${g.helper}(sel, st, null))) return;\n  const body = (): StepResult => {`);
+    expect(file).toContain('  st.rows = st.local.gtOrders.map((r) => ({ ...r }));');
+    expect(file.indexOf(`@cc-fill END ${u.id}`)).toBeLessThan(file.indexOf('st.rows = st.local.gtOrders'));
+    expect(displaysIn(file)).toEqual([`L628 CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' … t_outtab = GT_ORDERS → the run's rows (displayAlv, ${u.id})`]);
     // TRACE.md says where the rows come from.
     const trace = withTrace(p.plan, p.scaffold, p.scaffold.files, []).files.find((f) => f.path === 'TRACE.md')!.content;
-    expect(trace).toContain("- The run's rows — what the original displays: L616 CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' … t_outtab = GT_ORDERS → the run's rows (displayAlv, U19)");
+    expect(trace).toContain(`- The run's rows — what the original displays: L628 CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' … t_outtab = GT_ORDERS → the run's rows (displayAlv, ${u.id})`);
   });
 
   test('p_alv = X: the run answers the orders as its rows; p_alv blank: no rows, as the original shows none', () => {
@@ -116,37 +133,26 @@ test.describe('the 1,000-line example: DISPLAY_ALV shows GT_ORDERS behind CHECK 
     const orchestrator = p.plan.units.find((u) => u.kind === 'orchestrator')!;
     const selectOrders = unitOf(p, 'SELECT_ORDERS');
     const display = unitOf(p, 'DISPLAY_ALV');
+    const g = p.plan.guards.find((x) => x.unitId === display.id && x.line === 622)!;
     const bodies = new Map<string, string>([
       [orchestrator.id, [`let res = ${selectOrders.fn}(sel, st);`, 'if (res) return res;', `res = ${display.fn}(sel, st);`, 'if (res) return res;'].join('\n')],
       [selectOrders.id, 'return;'],
-      // The model's faithful port: the CHECK, then nothing it can do on a server — it ends with `return`.
-      [display.id, 'if (checked(st, () => skip_G0613(sel, st, null))) return;\nreturn;'],
-      ['U19.G0613', 'return sel.alv === true;'],
+      // The model's port: nothing it can do on a server — the body ends with `return`, and the frame still places the rows.
+      [display.id, 'return;'],
+      [g.regionId!, 'return sel.alv === false;'],
     ]);
     for (const id of [orchestrator.id, selectOrders.id, display.id]) expect(guardBodyOf(p)(id, bodies.get(id)!, []), id).toBeNull();
     const dir = writePackage(candidateFiles(p, bodies), 'cc-3018-display-');
     try {
       const tc = typecheck(dir);
       expect(tc.ok, tc.output.slice(0, 2000)).toBe(true);
-      type Answer = { ok: boolean; errors: unknown[]; rows: Array<Record<string, unknown>> };
-      const run = (alv: boolean) =>
-        runInPackage<Answer>(
-          dir,
-          [
-            `const { CONTRACT } = await import(${JSON.stringify(fileUrl(dir, 'srv/engine-contract.ts'))});`,
-            `const { simulateRequest } = await import(${JSON.stringify(fileUrl(dir, 'srv/simulate.ts'))});`,
-            `const { createRunStore } = await import(${JSON.stringify(fileUrl(dir, 'srv/lib/run-store.ts'))});`,
-            `const request = { ...CONTRACT.baseRequest, alv: ${alv}, orders: [{ vbeln: '0000000001' }, { vbeln: '0000000002' }] };`,
-            'const a = simulateRequest(request, createRunStore());',
-            'console.log(JSON.stringify({ ok: a.ok, errors: a.errors, rows: a.run ? a.run.result.rows : [] }));',
-          ].join('\n'),
-        );
-      const shown = run(true);
+      const orders = "orders: [{ vbeln: '0000000001' }, { vbeln: '0000000002' }]";
+      const shown = simulate(dir, `alv: true, ${orders}`);
       expect(shown.errors).toEqual([]);
       expect(shown.ok).toBe(true);
       // Before: rows: [] — the orders were processed and the run answered none of them.
       expect(shown.rows.map((r) => r.vbeln)).toEqual(['0000000001', '0000000002']);
-      const hidden = run(false);
+      const hidden = simulate(dir, `alv: false, ${orders}`);
       expect(hidden.ok).toBe(true);
       expect(hidden.rows).toEqual([]);
     } finally {
@@ -155,7 +161,61 @@ test.describe('the 1,000-line example: DISPLAY_ALV shows GT_ORDERS behind CHECK 
   });
 });
 
-test('Z_BUSINESS_PARTNER_SYNC: a display with no check before it always gives the rows', () => {
+test('a check in the body before the display (after a PERFORM): the frame evaluates it before the body, and a body that returns early still gets its rows', () => {
+  test.setTimeout(240_000);
+  const source = [
+    'REPORT zdisp.',
+    'TYPES: BEGIN OF ty_row, id TYPE c LENGTH 10, END OF ty_row.',
+    'DATA gt_rows TYPE STANDARD TABLE OF ty_row WITH DEFAULT KEY.',
+    'DATA gs_row TYPE ty_row.',
+    "PARAMETERS p_show AS CHECKBOX DEFAULT 'X'.",
+    'START-OF-SELECTION.',
+    '  PERFORM show.',
+    '  PERFORM again.',
+    'FORM show.',
+    '  PERFORM prep.',
+    '  CHECK p_show = abap_true.',
+    "  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'",
+    '    TABLES',
+    '      t_outtab = gt_rows.',
+    'ENDFORM.',
+    'FORM again.',
+    '  PERFORM show.',
+    'ENDFORM.',
+    'FORM prep.',
+    '  CLEAR gt_rows.',
+    "  gs_row-id = 'A1'.",
+    '  APPEND gs_row TO gt_rows.',
+    'ENDFORM.',
+    '',
+  ].join('\n');
+  const p = prepared(source);
+  const show = unitOf(p, 'SHOW');
+  const g = p.plan.guards.find((x) => x.unitId === show.id && x.line === 11)!;
+  expect(g.placement).toBe('body');
+  const file = p.scaffold.files.find((f) => f.path === show.file)!.content;
+  expect(file).toContain(`  const reaches = checked(st, () => ${g.helper}(sel, st, null)) === false;`);
+  expect(file).toContain('  if (reaches) st.rows = st.local.gtRows.map((r) => ({ ...r }));');
+  expect(file.indexOf('const reaches')).toBeLessThan(file.indexOf(`@cc-fill BEGIN ${show.id} `));
+  const orchestrator = p.plan.units.find((u) => u.kind === 'orchestrator')!;
+  const bodies = new Map<string, string>([
+    [orchestrator.id, `return ${show.fn}(sel, st);`],
+    // The faithful port: the rows, then the check — which returns, and returns again at the end.
+    [show.id, ["st.local.gtRows = [{ id: 'A1' }];", `if (checked(st, () => ${g.helper}(sel, st, null))) return;`, 'return;'].join('\n')],
+    [g.regionId!, 'return sel.show === true;'],
+  ]);
+  const dir = writePackage(candidateFiles(p, bodies), 'cc-3018-display-body-');
+  try {
+    const tc = typecheck(dir);
+    expect(tc.ok, tc.output.slice(0, 2000)).toBe(true);
+    expect(simulate(dir, 'show: true').rows).toEqual([{ id: 'A1' }]);
+    expect(simulate(dir, 'show: false').rows).toEqual([]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('Z_BUSINESS_PARTNER_SYNC (a retired example, kept as a fixture): a display with no check before it always gives the rows', () => {
   const p = prepared(read(BP_SYNC));
   const u = unitOf(p, 'DISPLAY_ALV');
   const file = p.scaffold.files.find((f) => f.path === u.file)!.content;

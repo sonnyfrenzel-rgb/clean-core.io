@@ -103,7 +103,8 @@ test.describe('the demo is a real run, not a story about one', () => {
     expect(demo.economics.loc, 'the demo economics models on the whole source').toBe(
       source.replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').length,
     );
-    expect(demo.economics.loc).toBe(668);
+    // 552 since 3.0.18, when the PO demo lost the ten routines nothing called (668 until then).
+    expect(demo.economics.loc).toBe(552);
     expect(demo.economics.loc).toBe(demo.totalLines);
   });
 

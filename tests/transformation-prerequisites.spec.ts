@@ -172,7 +172,19 @@ test('a design without a narrative is enough: the click starts or says why — n
   // The enabled button, clicked: it asks the server (the generation started)
   // and the stage answers — a contract refusal or the error, nothing silent.
   const button = page.locator('[data-generate-code]');
-  await expect(button).toBeEnabled({ timeout: 90_000 });
+  // Since 3.0.18 (2) a contract the server refused in the plan read is said
+  // before any click and keeps the button disabled; otherwise the enabled
+  // click asks the server and the stage answers.
+  const refusedUpFront = page.locator('[data-contract-refusal]');
+  await expect
+    .poll(async () => (await refusedUpFront.count()) > 0 || (await button.isEnabled()), { timeout: 90_000 })
+    .toBe(true);
+  if ((await refusedUpFront.count()) > 0) {
+    await expect(button).toBeDisabled();
+    await expect(refusedUpFront.first()).not.toHaveText(/^\s*$/);
+    await shot(page, 'click-answer-1280');
+    return;
+  }
   const asked = page.waitForRequest((r) => /\/api\/projects\/[^/]+\/contract$/.test(new URL(r.url()).pathname), { timeout: 30_000 });
   await button.click();
   await asked;

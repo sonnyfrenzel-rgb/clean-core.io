@@ -40,6 +40,54 @@ test.describe('one pinned image-capable model, and it can only read', () => {
     expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: UX_MODEL.price.input, completion: UX_MODEL.price.output } });
   });
 
+  test('the body a UX call sends carries only parameters every eligible endpoint of the pinned model supports (3.0.18 item 10)', async () => {
+    // The UX run of 06.10.2026 (d9278367) died on HTTP 404 "no model or endpoint matches ... the required
+    // parameters": with require_parameters one unsupported parameter (then `temperature`) leaves no endpoint.
+    // OpenRouter's endpoint list for openai/gpt-6-luna, read 18.10.2026 (GET /api/v1/models/openai/gpt-6-luna/endpoints):
+    // every endpoint at or below the $0.10/$0.50 ceiling supports these, plus seed/tools/verbosity we do not send;
+    // input modalities file, image, text; max completion tokens 128,000.
+    const SUPPORTED = ['max_tokens', 'reasoning', 'response_format'];
+    // Not sampling or generation parameters: the model id, the conversation, and OpenRouter's own routing/accounting.
+    const ENVELOPE = ['messages', 'model', 'provider', 'usage'];
+    const { UX_MODEL, BUDGETS } = await lib('config.mjs');
+    const { callReviewer } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
+    for (const [mode, budget] of Object.entries(BUDGETS) as [string, { maxOutputTokens: number; effort: string }][]) {
+      let sent: Record<string, unknown> | null = null;
+      const fetchImpl = async (_url: string, init: { body: string }) => {
+        sent = JSON.parse(init.body);
+        return { ok: false, status: 401, headers: { get: () => null } };
+      };
+      // Exactly the shape scripts/ux/review.mjs passes: text plus screenshots, the mode's output allowance and effort.
+      await expect(
+        callReviewer({
+          apiKey: 'k',
+          model: UX_MODEL.model,
+          price: UX_MODEL.price,
+          inputs: ['image'],
+          name: 'ux_review',
+          title: 'Clean-Core.io UX Review',
+          system: 's',
+          user: [{ type: 'text', text: 't' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AA==' } }],
+          schema: { type: 'object' },
+          effort: budget.effort,
+          maxTokens: budget.maxOutputTokens,
+          fetchImpl,
+          retries: 0,
+        }),
+      ).rejects.toThrow(/401/);
+      expect(sent, mode).not.toBeNull();
+      const body = sent as unknown as Record<string, Record<string, unknown>>;
+      expect(Object.keys(body).filter((k) => !ENVELOPE.includes(k)).sort(), `${mode}: generation parameters`).toEqual(SUPPORTED);
+      expect(Object.keys(body.reasoning), `${mode}: reasoning`).toEqual(['effort']);
+      expect(Object.keys(body.provider).sort(), `${mode}: provider`).toEqual(['allow_fallbacks', 'data_collection', 'max_price', 'require_parameters']);
+      expect(body.max_tokens as unknown as number, `${mode}: within the endpoints' completion limit`).toBeLessThanOrEqual(128_000);
+      for (const k of ['temperature', 'top_p', 'top_k', 'frequency_penalty', 'presence_penalty', 'stop', 'tools', 'tool_choice']) expect(body, `${mode}: ${k}`).not.toHaveProperty(k);
+    }
+    // The design review goes through the same builder.
+    expect(read('scripts/ux/design-review.mjs')).toMatch(/import \{ callReviewer \} from '\.\.\/qa\/lib\/openrouter\.mjs';/);
+    expect(read('scripts/ux/review.mjs')).not.toMatch(/fetch\(\s*['"`]https:\/\/openrouter/);
+  });
+
   test('a review of screenshots is accepted only from a model that reads images, and every report names who answered', () => {
     const src = read('scripts/ux/review.mjs');
     // Every call that carries pictures asks callReviewer to confirm the model against the public model list

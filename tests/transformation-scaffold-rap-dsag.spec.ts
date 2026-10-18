@@ -12,6 +12,7 @@ import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
 import { OPEN_MARKER } from '../lib/transformation/scaffold-rap';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
 import { FIXTURES, fixture, planOf, poDemo, ROOT } from './helpers/transformation-scaffold';
+import { readExampleAsOf3017 } from './helpers/starter-example-files';
 
 /**
  * The RAP scaffold against the DSAG ABAP guide (roadmap 3.0.12; owner decision
@@ -123,7 +124,9 @@ test.describe('B4 — the access layer', () => {
   test('one method per SAP object the original reads, writes or calls; customer writes, customer calls and UI modules get none', () => {
     const { points } = accessPointsOf(readEngineFacts(NIGHTLY));
     expect(points.map((p) => [p.method, p.kind, p.object, p.lines])).toEqual([['read_bsid', 'read', 'BSID', [12]]]);
-    const po = accessPointsOf(readEngineFacts(poDemo())).points;
+    // The PO demo as it shipped until 3.0.17: it touched more SAP objects than the cap allows (its routines nothing
+    // called read ELBK, EKKO/EKPO, ADR6 and USR21), which is what this checks. The shipped demo touches 14 since 3.0.18.
+    const po = accessPointsOf(readEngineFacts(readExampleAsOf3017('Z_MM_PO_APPROVAL.abap'))).points;
     expect(po.map((p) => p.method)).toEqual(expect.arrayContaining(['read_eban', 'write_eban', 'read_lfa1']));
     for (const p of po) {
       // A customer object only as a table the original reads — the package does not ship it (scaffold version 7).
@@ -360,6 +363,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 15: "sample" alone is not demo data (tests/transformation-unit-plan.spec.ts).
   // 16: an input list a SELECT of a step fills gets its rows there, on the Node track (tests/transformation-3017-trial-defects.spec.ts).
   // 17: methods by their class, a method's declared signature, no entry point, the base request of lists (tests/transformation-examples-3018.spec.ts); an application server file is a method of the access layer (tests/examples-3018-engine.spec.ts).
+  // 18: SEC-c41f149-01, the Node seam srv/lib/authority.ts (tests/transformation-node-authority.spec.ts); 19: tests/transformation-rap-save-3018.spec.ts.
   expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(17);
   expect(rap(fixture('co-shape')).scaffold.version).toBe(SCAFFOLD_VERSION);
 });
