@@ -897,10 +897,14 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
       }
     }
     const basis = basisReader.basisOf(g.line, g.condition);
+    // A check the original makes only after it has performed a routine is no entry check: run at entry, it would
+    // answer before that routine (the freight example's `gt_deliveries IS INITIAL` at L75 ran before its
+    // authority check at L73, so an unauthorised run with no deliveries answered ok — owner decision 18.10.2026).
+    const afterPerform = !!c && statements.some((st) => st.lineStart >= c.lineStart && st.lineStart < g.line && /^PERFORM\b/i.test(st.text));
     const placement: PlanGuard['placement'] =
       place === 'not-carried'
         ? 'none'
-        : basis.basis === 'derived' || outcome === 'skips'
+        : basis.basis === 'derived' || outcome === 'skips' || (afterPerform && place !== 'selection-screen')
           ? 'body'
           : place === 'selection-screen'
             ? 'selection'
