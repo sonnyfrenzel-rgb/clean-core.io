@@ -736,7 +736,8 @@ async function executeCheck(mod, call, state) {
       mapped.push(s);
       continue;
     }
-    if (isObject(s.to) && s.to.special === 'filled') return { notRunnable: `no filled value for ${String(s.field).toUpperCase()} can be handed to the check` };
+    // Not part of the request: the check reads the field from the state the base request builds, as before.
+    if (isObject(s.to) && s.to.special === 'filled') continue;
     if (isObject(s.to) && s.to.special === 'empty') {
       values[String(s.field).toUpperCase()] = { special: 'empty' };
       continue;
