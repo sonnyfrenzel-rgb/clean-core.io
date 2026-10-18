@@ -54,8 +54,8 @@ function uncarriedRules(plan: Pick<Plan, 'rules' | 'units' | 'notCarried' | 'gua
 const typeErrors = (r: TypeCheckResult) => (r.ran ? r.findings.map((f) => `${f.path}:${f.line} ${f.code} ${f.message}`) : [`not run: ${r.reason}`]);
 
 test.describe('every shipped starter example: the package is gate-clean before any fill', () => {
-  test('the list is the registry — nine examples, each file present', () => {
-    expect(STARTER_EXAMPLES.length).toBeGreaterThanOrEqual(9);
+  test('the list is the registry — six examples since 18.10.2026 (three retired), each file present', () => {
+    expect(STARTER_EXAMPLES.length).toBeGreaterThanOrEqual(6);
     for (const e of STARTER_EXAMPLES) expect(fs.existsSync(path.join(ROOT, 'public', 'starter-examples', e.file)), e.file).toBe(true);
   });
 

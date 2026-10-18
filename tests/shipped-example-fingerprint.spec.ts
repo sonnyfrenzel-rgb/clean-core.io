@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { STARTER_EXAMPLES } from '../lib/starter-examples';
+import { RETIRED_EXAMPLE_FILES, STARTER_EXAMPLES } from '../lib/starter-examples';
 import { scanForPersonalDataHints } from '../lib/personal-data-hints';
 import {
   SHIPPED_EXAMPLE_FINGERPRINTS,
@@ -106,7 +106,9 @@ test.describe('the fingerprint list cannot drift from the files', () => {
   test('one entry per registered example, and one registered example per file', () => {
     const registered = STARTER_EXAMPLES.map((e) => e.file).sort();
     expect(Object.keys(SHIPPED_EXAMPLE_FINGERPRINTS).sort()).toEqual(registered);
-    expect(fs.readdirSync(EXAMPLES).sort()).toEqual(registered);
+    // A retired example's file stays as a regression fixture until 3.0.18 and is named, never silently left.
+    expect(fs.readdirSync(EXAMPLES).filter((f) => !RETIRED_EXAMPLE_FILES.includes(f)).sort()).toEqual(registered);
+    for (const f of RETIRED_EXAMPLE_FILES) expect(registered, f).not.toContain(f);
   });
 
   test('every entry is the fingerprint of the file as it stands', () => {

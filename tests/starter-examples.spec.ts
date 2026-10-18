@@ -106,8 +106,8 @@ test.describe('Dashboard — starter examples', () => {
   });
 
   test('an unchanged example whose source has hint shapes starts without the personal-data hint', async ({ page }) => {
-    // Z_EMPLOYEE_EXPENSE_VAL reads a personnel number, and until 3.0.17 the
-    // gallery stopped its Start with the hint. An unchanged shipped example is
+    // The 1,000-line example holds hint shapes (since 18.10.2026 the only offered one that does — Z_EMPLOYEE_EXPENSE_VAL,
+    // which read a personnel number, was retired), and until 3.0.17 the gallery stopped such a Start with the hint. An unchanged shipped example is
     // the product's own text and is recognised by its fingerprint (owner
     // 16.10.2026, lib/shipped-example-fingerprint.ts), so Start goes straight
     // through; a changed one is held by tests/shipped-example-fingerprint.spec.ts.
@@ -122,8 +122,8 @@ test.describe('Dashboard — starter examples', () => {
     const panel = page.getByTestId('starter-examples');
     await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
     await panel.locator('[data-examples-more] button').first().click();
-    const card = panel.locator('[data-example-card="Z_EMPLOYEE_EXPENSE_VAL"]');
-    await card.locator('[data-example-start="Z_EMPLOYEE_EXPENSE_VAL"]').click();
+    const card = panel.locator('[data-example-card="ZLEGACY_ORDER_FULFILLMENT_AUDIT"]');
+    await card.locator('[data-example-start="ZLEGACY_ORDER_FULFILLMENT_AUDIT"]').click();
 
     await page.waitForURL(/\/project\/[^/]+/, { timeout: 45000 });
     await expect(page.locator('[data-personal-data-hints]'), 'the hint stood in front of a shipped example').toHaveCount(0);

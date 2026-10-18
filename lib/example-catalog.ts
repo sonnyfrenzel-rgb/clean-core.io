@@ -38,8 +38,10 @@ export const START_HERE_WHY =
 /** The three next examples, each with the one thing it is the best example of. */
 export const NEXT_EXAMPLES: readonly { file: string; goal: string }[] = Object.freeze([
   { file: 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', goal: 'A big process stays readable' },
-  { file: 'Z_INVOICE_EXTRACTOR.txt', goal: 'Code with no ABAP Cloud equivalent' },
-  { file: 'Z_SALES_ORDER_CREATOR.txt', goal: 'Classic BAPIs and their released successors' },
+  // 18.10.2026: the two that did not run cleanly end to end (application-server files, an unreleased BAPI the analysis
+  // did not name) left "Next" until they do; they stay in the list below.
+  { file: 'Z_SD_FREIGHT_RATE_CHECK.abap', goal: 'A side-by-side CAP package that runs on SAP BTP' },
+  { file: 'Z_MATERIAL_STOCK_CALC.txt', goal: 'Direct table reads and their released successors' },
 ]);
 
 function byFile(file: string): StarterExample {

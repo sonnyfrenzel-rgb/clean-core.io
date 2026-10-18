@@ -10,6 +10,10 @@
  * ABAP text never enters the client bundle. The engine's regression specs read
  * these same files, so what a visitor sees here is exactly what the analyzer is
  * known to handle.
+ *
+ * 18.10.2026 (owner decision, after an end-to-end check of every example): Z_ORDER_INTEGRITY_CHECK (nothing runs —
+ * no entry point), Z_EMPLOYEE_EXPENSE_VAL (no clean-core problem in it) and Z_BUSINESS_PARTNER_SYNC (syntax errors,
+ * synchronises nothing) are no longer offered; their files stay as test fixtures until they move in 3.0.18.
  */
 
 export interface StarterExample {
@@ -36,14 +40,6 @@ export const STARTER_EXAMPLES: StarterExample[] = [
     size: 'small',
   },
   {
-    file: 'Z_ORDER_INTEGRITY_CHECK.txt',
-    name: 'Z_ORDER_INTEGRITY_CHECK',
-    summary: 'Audits sales orders against invoices using an abstract class hierarchy.',
-    demonstrates: 'ABAP OO inheritance and awkward SQL joins — the harder end of the range.',
-    lines: 99,
-    size: 'small',
-  },
-  {
     file: 'Z_INVOICE_EXTRACTOR.txt',
     name: 'Z_INVOICE_EXTRACTOR',
     summary: 'Reads billing documents and writes them to a CSV on the application server.',
@@ -57,22 +53,6 @@ export const STARTER_EXAMPLES: StarterExample[] = [
     summary: 'Creates sales orders in bulk via BAPI_SALESORDER_CREATEFROMDAT2.',
     demonstrates: 'Classic BAPI calls and their released OData successors.',
     lines: 98,
-    size: 'small',
-  },
-  {
-    file: 'Z_BUSINESS_PARTNER_SYNC.txt',
-    name: 'Z_BUSINESS_PARTNER_SYNC',
-    summary: 'Synchronises business partner data through a classic ALV grid.',
-    demonstrates: 'Presentation logic welded to data access.',
-    lines: 113,
-    size: 'small',
-  },
-  {
-    file: 'Z_EMPLOYEE_EXPENSE_VAL.txt',
-    name: 'Z_EMPLOYEE_EXPENSE_VAL',
-    summary: 'Validates travel expenses against hard-coded policy limits.',
-    demonstrates: 'Business rules buried in code instead of configuration.',
-    lines: 105,
     size: 'small',
   },
   {
@@ -105,6 +85,13 @@ export const STARTER_EXAMPLES: StarterExample[] = [
     size: 'large',
   },
 ];
+
+/**
+ * Files still in `public/starter-examples/` that are no longer offered (owner decision 18.10.2026, see the file
+ * comment): kept as fixtures of the engine's regression specs until they move to `tests/` in 3.0.18. No list, card
+ * or fingerprint names them.
+ */
+export const RETIRED_EXAMPLE_FILES: readonly string[] = Object.freeze(['Z_BUSINESS_PARTNER_SYNC.txt', 'Z_EMPLOYEE_EXPENSE_VAL.txt', 'Z_ORDER_INTEGRITY_CHECK.txt']);
 
 /** Fetches a starter example's source from the static asset path. */
 export async function loadStarterExample(file: string): Promise<string> {
