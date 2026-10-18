@@ -3,6 +3,7 @@ import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
 import { engineVersionAtLeast, scoreRuleFor } from '../score-rule';
 import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 import { precisionFixesApply } from './precision-fixes-gate';
+import { readClaimsApply } from './read-claims-gate';
 import { citeStatement, statedRequirementsApply, statedTargetOf, type StatedRequirement } from './stated-requirements';
 
 export interface DecisionCheckpoint {
@@ -187,17 +188,34 @@ export function guiFileDrivesRoute(engineVersion: string | null | undefined): bo
   return !engineVersionAtLeast(engineVersion, GUI_FILE_NO_ROUTE_DRIVER_FROM);
 }
 
-/** Upload, download, or not readable — what a frontend file finding does, read off what it calls. */
-export type GuiFileDirection = 'upload' | 'download' | 'unknown';
+/** Upload, download, a path dialog only (from 3.0.18), or not readable — what a frontend file finding does, read off what it calls. */
+export type GuiFileDirection = 'upload' | 'download' | 'dialog' | 'unknown';
 
 /**
  * The direction of one frontend file finding, from the module or method it
- * calls: `GUI_UPLOAD` / `WS_UPLOAD` / `FILE_OPEN_DIALOG` read a file from the
- * user's PC; `GUI_DOWNLOAD` / `WS_DOWNLOAD` / `FILE_SAVE_DIALOG` write one.
- * `CL_GUI_FRONTEND_SERVICES` with neither in the statement is not guessed.
+ * calls: `GUI_UPLOAD` / `WS_UPLOAD` read a file from the user's PC;
+ * `GUI_DOWNLOAD` / `WS_DOWNLOAD` write one. `CL_GUI_FRONTEND_SERVICES` with
+ * neither in the statement is not guessed.
+ *
+ * Before 3.0.18 `FILE_OPEN_DIALOG` counted as an upload and `FILE_SAVE_DIALOG`
+ * as a download. A dialog only lets the user choose a path; it transfers no
+ * file (QA review of 73b8cad63d3e, 85a961a86168). With `dialogsChoosePaths`
+ * (`READ_CLAIMS_FROM`) a statement that calls a dialog and no transfer is a
+ * `dialog`; a run of an earlier engine keeps the reading it signed.
  */
-export function guiFileDirection(finding: { objectName?: string | null; snippet?: string | null }): GuiFileDirection {
+export function guiFileDirection(
+  finding: { objectName?: string | null; snippet?: string | null },
+  dialogsChoosePaths = false,
+): GuiFileDirection {
   const text = `${finding.objectName ?? ''} ${finding.snippet ?? ''}`;
+  if (dialogsChoosePaths) {
+    const up = /\b(?:GUI|WS)_UPLOAD\b/i.test(text);
+    const down = /\b(?:GUI|WS)_DOWNLOAD\b/i.test(text);
+    if (up && !down) return 'upload';
+    if (down && !up) return 'download';
+    if (!up && !down && /\bFILE_(?:OPEN|SAVE)_DIALOG\b/i.test(text)) return 'dialog';
+    return 'unknown';
+  }
   const up = /\b(?:GUI|WS)_UPLOAD\b|\bFILE_OPEN_DIALOG\b/i.test(text);
   const down = /\b(?:GUI|WS)_DOWNLOAD\b|\bFILE_SAVE_DIALOG\b/i.test(text);
   if (up && !down) return 'upload';
@@ -270,6 +288,18 @@ export const ON_STACK_CONSTRUCTS_FROM = '3.0.12';
  */
 export const PUBLIC_TARGET_ASSUMPTION =
   'SAP S/4HANA Cloud Public Edition selected as the target — custom code uses released APIs only (clean core level A); an unreleased API cannot be wrapped.';
+
+/**
+ * The same assumption from 3.0.18 (`READ_CLAIMS_FROM`). The words above read
+ * as a statement about the analysed code — "custom code uses released APIs
+ * only (clean core level A)" — and stood next to the unreleased-API and
+ * standard-table-write findings that contradict it (QA review of 73b8cad63d3e,
+ * c2e130b255d1). This one states the target's rule and says that selecting the
+ * target does not establish it for the code. Runs of an earlier engine keep
+ * the words above.
+ */
+export const PUBLIC_TARGET_RULE_ASSUMPTION =
+  'SAP S/4HANA Cloud Public Edition selected as the target — the target admits custom code that uses released APIs only (clean core level A), and an unreleased API cannot be wrapped there; selecting the target does not establish that the analysed code meets this.';
 
 /** Whether BDC, native SQL, a local RFC and Public Edition table writes can choose the route for a run of this engine version. */
 export function legacyConstructsDriveRoute(engineVersion: string | null | undefined): boolean {
@@ -374,8 +404,8 @@ type GuiFileFinding = { objectName?: string | null; snippet?: string | null; lin
  * justify a side-by-side service instead, which the code cannot show. It never
  * says side-by-side is required: no file feature makes it so.
  */
-export function guiFileSentence(files: readonly GuiFileFinding[], precise = false): string {
-  const by = (dir: GuiFileDirection) => files.filter((f) => guiFileDirection(f) === dir);
+export function guiFileSentence(files: readonly GuiFileFinding[], precise = false, dialogsChoosePaths = false): string {
+  const by = (dir: GuiFileDirection) => files.filter((f) => guiFileDirection(f, dialogsChoosePaths) === dir);
   const named = (list: readonly GuiFileFinding[]) => {
     const names = [...new Set(list.map((f) => (f.objectName || 'CL_GUI_FRONTEND_SERVICES').toUpperCase()))].join(', ');
     const first = list.reduce((min, f) => Math.min(min, f.lineStart), list[0].lineStart);
@@ -385,6 +415,8 @@ export function guiFileSentence(files: readonly GuiFileFinding[], precise = fals
   const downloads = by('download');
   const uploads = by('upload');
   const unknown = by('unknown');
+  // Empty before 3.0.18: `guiFileDirection` reads a dialog as a transfer there.
+  const dialogs = by('dialog');
   if (downloads.length && precise) {
     // From 3.0.13 (`PRECISION_FIXES_FROM`): the finding shows that a file is
     // downloaded, not what it holds — a PDF is no list (QA f1400cdf0783).
@@ -394,6 +426,12 @@ export function guiFileSentence(files: readonly GuiFileFinding[], precise = fals
   }
   if (uploads.length) {
     parts.push(`The frontend file upload (${named(uploads)}) reads a file from the user's PC: a RAP business object takes a file as a large object (attachment) field from S/4HANA 2022 on, so the upload alone forces no side-by-side split — a side-by-side service needs a requirement the code does not show, such as external users, files arriving from several systems, or a volume the S/4HANA stack should not carry.`);
+  }
+  if (dialogs.length) {
+    // Named by the method the statement calls: `dialog` is only read off one.
+    const methods = [...new Set(dialogs.flatMap((f) => (`${f.objectName ?? ''} ${f.snippet ?? ''}`.match(/\bFILE_(?:OPEN|SAVE)_DIALOG\b/gi) ?? []).map((m) => m.toUpperCase())))];
+    const first = dialogs.reduce((min, f) => Math.min(min, f.lineStart), dialogs[0].lineStart);
+    parts.push(`The frontend file dialogs (${methods.join(', ')}, from line ${first}) let the user choose a file path; the dialog itself reads or writes no file, and whether the program transfers one is not shown by this call. SAP GUI's file dialogs do not run in ABAP Cloud, where a Fiori app has the user choose the file in the browser, so they force no side-by-side split.`);
   }
   if (unknown.length) {
     parts.push(`The frontend file services (${named(unknown)}) do not run in ABAP Cloud and are replaced on-stack — an export by a Fiori list report, an upload by a RAP large object field (S/4HANA 2022 on); they force no side-by-side split.`);
@@ -420,6 +458,8 @@ const firstLineOf = (list: readonly LinedFinding[]) => list.reduce((min, f) => M
 export function onStackSentences(
   found: { nativeSql: readonly LinedFinding[]; bdc: readonly LinedFinding[]; localRfc: readonly LinedFinding[] },
   deploymentModel: 'public' | 'private',
+  /** From 3.0.18 (`READ_CLAIMS_FROM`): a local call shows no release status, and the sentence claims none. */
+  releaseNotShown = false,
 ): string {
   const parts: string[] = [];
   const { nativeSql, bdc, localRfc } = found;
@@ -440,7 +480,15 @@ export function onStackSentences(
     ].filter(Boolean);
     const how = forms.length ? `${forms.join(', ')}, ` : '';
     const parallel = forms.includes('DESTINATION IN GROUP');
-    parts.push(`The function module call(s) read as RFC that stay in this system (${localRfc.length}×, ${how}from line ${firstLineOf(localRfc)}) integrate no other system, so they force no side-by-side split. In ABAP Cloud the called function is reached through a released API${parallel ? ', and parallel processing through the released class CL_ABAP_PARALLEL' : ''}.`);
+    // Before 3.0.18 the sentence ended "In ABAP Cloud the called function is
+    // reached through a released API": where a call goes shows nothing about
+    // whether what it calls is released (QA review of 73b8cad63d3e,
+    // 809758fb0146). Runs of an earlier engine keep those words.
+    if (releaseNotShown) {
+      parts.push(`The function module call(s) read as RFC that stay in this system (${localRfc.length}×, ${how}from line ${firstLineOf(localRfc)}) integrate no other system, so they force no side-by-side split. Whether the called function is released for ABAP Cloud is not established here: on an ABAP Cloud target the call has to reach a released API, and is replaced by one where the function is not released${parallel ? '; parallel processing runs through the released class CL_ABAP_PARALLEL' : ''}.`);
+    } else {
+      parts.push(`The function module call(s) read as RFC that stay in this system (${localRfc.length}×, ${how}from line ${firstLineOf(localRfc)}) integrate no other system, so they force no side-by-side split. In ABAP Cloud the called function is reached through a released API${parallel ? ', and parallel processing through the released class CL_ABAP_PARALLEL' : ''}.`);
+    }
   }
   return parts.join(' ');
 }
@@ -553,6 +601,8 @@ export function routeExtensibility(
   // extensibility holds custom tables on-stack there too
   // (`ON_STACK_CONSTRUCTS_FROM`). A run of an earlier engine keeps the rule.
   const legacyRule = legacyConstructsDriveRoute(engineVersion);
+  // From 3.0.18 the router says only what the findings show (`READ_CLAIMS_FROM`).
+  const readClaims = readClaimsApply(engineVersion);
   const customPersistenceForcesBtp = legacyRule && deploymentModel === 'public' && customWrites.length > 0;
   // Before 3.0.12 every RFC call was a trigger; from then on only a call to
   // another system is, and a local one (`DESTINATION 'NONE'`, `IN GROUP`) is
@@ -818,12 +868,12 @@ export function routeExtensibility(
   // whichever branch chose it — each names its finding and line and says what
   // replaces it on-stack (`ON_STACK_CONSTRUCTS_FROM`).
   if (!legacyRule) {
-    const onStack = onStackSentences({ nativeSql, bdc: bdcCalls, localRfc }, deploymentModel);
+    const onStack = onStackSentences({ nativeSql, bdc: bdcCalls, localRfc }, deploymentModel, readClaims);
     if (onStack) rationale = `${rationale} ${onStack}`;
   }
   // What a frontend file feature means for the route, whichever branch chose
   // it — upload and download apart, because they have different remedies.
-  if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess, precisionFixesApply(engineVersion))}`;
+  if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess, precisionFixesApply(engineVersion), readClaims)}`;
   // From 3.0.13 (`PRECISION_FIXES_FROM`, roadmap 3.0.13 rule 2): how much of
   // an exit, BAdI or VOFM implementation's logic stands in the hook decides the
   // effort of moving it — the statements in the hook and whether it is
@@ -923,6 +973,9 @@ export function routeExtensibility(
         ? `Required by the evidence that chose this route: ${btpTriggerList}.`
         : followStatedSide
         ? `Required by ${statedSideSentence}. Nothing the engine read in the code requires a separate ${BTP} runtime.`
+        // From 3.0.18: not "simple reads" for a program that writes SAP's tables (`READ_CLAIMS_FROM`).
+        : readClaims && standardWrites.length > 0
+        ? `Optional. Nothing found requires a separate ${BTP} runtime, and none would make the ${standardWrites.length} direct write(s) to SAP standard tables valid: each is replaced by ${standardWriteRemedy} on either track${onStackRework ? `; what else was found — ${reworkList} — is replaced on-stack` : ''}.`
         : onStackRework
         ? `Optional. Nothing found requires a separate ${BTP} runtime; what was found — ${reworkList} — is replaced on-stack.`
         : `Optional. Simple reads do not justify the architectural overhead of a separate ${BTP} runtime.`,
@@ -978,13 +1031,20 @@ export function routeExtensibility(
   const sideBySideBTP: ComparativeTrack = {
     // A stated side-by-side target next to direct writes to SAP standard tables is not highly compatible: a service on
     // BTP cannot write SAP's tables either, and each write is replaced first (QA review of 081f6457d09e).
-    technicalFeasibility: modificationBlocks ? 'Incompatible' : followStatedSide && standardWrites.length > 0 ? 'Partially Compatible' : 'Highly Compatible',
+    // From 3.0.18 (`READ_CLAIMS_FROM`) the same holds whatever chose the route: the track was "Highly Compatible", and
+    // with no driver "feasible … for simple read-only reports", next to a write to SAP's tables (QA review of
+    // 73b8cad63d3e, e77bc4837a04).
+    technicalFeasibility: modificationBlocks
+      ? 'Incompatible'
+      : (followStatedSide || readClaims) && standardWrites.length > 0 ? 'Partially Compatible' : 'Highly Compatible',
     fitDetails: modificationBlocks
       ? 'Not reachable as it stands either. Code that was inserted into an SAP program cannot be moved off the stack before it is removed from it.'
       : needsBtp
       // What chose the route, not a claim that CAP persistence is needed or an
       // isolation design exists (QA full review of v2.20.0, 2b515958f925).
-      ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.`
+      ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.${readClaims && standardWrites.length > 0 ? ` First, the ${standardWrites.length} direct write(s) to SAP standard tables are replaced by ${standardWriteRemedy}: a side-by-side service cannot write SAP's tables either.` : ''}`
+      : readClaims && !followStatedSide && standardWrites.length > 0
+      ? `Not the recommended route: no construct in the code points off the ABAP Cloud stack. Moving off the stack does not fix the ${standardWrites.length} direct write(s) to SAP standard tables either: a side-by-side service cannot write SAP's tables, so each is replaced by ${standardWriteRemedy} on either track.`
       : followStatedSide
       ? `Recommended route: set by ${statedSideSentence}; no construct in the code points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.${standardWrites.length > 0 ? ` First, the ${standardWrites.length} direct write(s) to SAP standard tables are replaced by ${standardWriteRemedy}: a side-by-side service cannot write SAP's tables either.` : ''}`
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
@@ -1033,7 +1093,7 @@ export function routeExtensibility(
   } else {
     assumptions.push(
       deploymentModel === 'public'
-        ? PUBLIC_TARGET_ASSUMPTION
+        ? readClaims ? PUBLIC_TARGET_RULE_ASSUMPTION : PUBLIC_TARGET_ASSUMPTION
         : 'SAP Cloud ERP Private selected as the target — where an API is not released, a wrapper plus an influence request to SAP is available.',
     );
   }

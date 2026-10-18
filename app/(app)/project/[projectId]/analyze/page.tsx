@@ -524,7 +524,7 @@ export default function AnalyzePage() {
       }
 
       const inventory = extractCodeInventory(codeToAnalyze);
-      const coupling = extractDataCoupling(codeToAnalyze);
+      const coupling = extractDataCoupling(codeToAnalyze, APP_VERSION);
       const complexityScore = computeComplexityScore(codeToAnalyze);
       const criticalityScore = computeCriticalityScore(codeToAnalyze);
 

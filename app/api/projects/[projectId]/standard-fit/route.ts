@@ -10,7 +10,7 @@ import { deriveCounterCheckScenariosFrom } from '@/lib/abap/counter-check';
 import { deriveUserChangeFrom } from '@/lib/abap/user-change';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
-import { resolveApi } from '@/lib/abap/catalog-service';
+import { successorInProgram } from '@/lib/abap/catalog-service';
 import { complianceReviewHints, examinedTablesFromDependencies } from '@/lib/compliance-review-hints';
 import { buildStandardFitView } from '@/lib/standard-fit-view';
 import { readSource } from '@/lib/first-look';
@@ -37,8 +37,14 @@ export const dynamic = 'force-dynamic';
 /** The same ceiling `process-states` uses: the rule reader is quadratic in the source. */
 const MAX_ANALYSED_SOURCE_BYTES = 256 * 1024;
 
-/** The catalogue the product ships, asked the one question 7.2 needs. */
-const CATALOG: CatalogLookup = { successorFor: (object) => resolveApi(object)?.view ?? null };
+/**
+ * The catalogue the product ships, asked the one question 7.2 needs — in the
+ * context of the tables this program reads, so AUFK beside AFKO is answered as
+ * a production order (`successorInProgram`; QA review of 73b8cad63d3e, 579d04bb65ff).
+ */
+function catalogFor(tablesInProgram: ReadonlySet<string>): CatalogLookup {
+  return { successorFor: (object) => successorInProgram(object, tablesInProgram) };
+}
 
 export async function GET(
   req: NextRequest,
@@ -101,11 +107,14 @@ export async function GET(
     const ctx = plainContext(source);
     const wording = plainWordingFor(source, reading.skeleton);
     const words = (text: string | null) => !!text && (text.match(/[A-Za-z]/g) ?? []).length >= 3;
+    const dependencies = readTableDependencies(source).dependencies;
+    // The tables read or written, as `evidence-model.ts` counts them for a contextual successor.
+    const catalog = catalogFor(new Set(dependencies.filter((d) => d.access !== 'reference' && !d.possibleTargetOf).map((d) => d.table)));
     const view = buildStandardFitView({
-      coverage: deriveStandardCoverageFrom(source, ruleSet, { catalog: CATALOG }),
+      coverage: deriveStandardCoverageFrom(source, ruleSet, { catalog }),
       scenarios: deriveCounterCheckScenariosFrom(ruleSet),
-      users: deriveUserChangeFrom(source, ruleSet, { catalog: CATALOG }),
-      compliance: complianceReviewHints(examinedTablesFromDependencies(readTableDependencies(source).dependencies)),
+      users: deriveUserChangeFrom(source, ruleSet, { catalog }),
+      compliance: complianceReviewHints(examinedTablesFromDependencies(dependencies)),
       name: (subject, ruleIds) => {
         // The rule's own phrase ("plant 1000") reads better than the field
         // alone ("Plant"); the field is the fallback, the code the last resort.

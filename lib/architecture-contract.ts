@@ -103,7 +103,7 @@ import { sha256Hex } from './artefact-digest';
 import { referenceDigest, type InputManifest, type ManifestInput, INPUT_IDS } from './input-manifest';
 import type { ProvenanceValue } from './provenance';
 import type { AbapEvidenceReport, EvidenceFinding } from './abap/evidence-model';
-import { PUBLIC_TARGET_ASSUMPTION, routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
+import { PUBLIC_TARGET_ASSUMPTION, PUBLIC_TARGET_RULE_ASSUMPTION, routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
 import { APP_VERSION } from './version';
 import {
   FINGERPRINTED_PLATFORM_NAME as FORMER_NAME,
@@ -830,7 +830,8 @@ export function buildArchitectureContract(args: {
     // bytes. Citations keep the router's own indices.
     const assumptionsAt = (route.assumptions || [])
       .map((text, index) => ({ text, index }))
-      .filter((a) => deployment || a.text !== PUBLIC_TARGET_ASSUMPTION);
+      // Its 3.0.18 wording too (`READ_CLAIMS_FROM`).
+      .filter((a) => deployment || (a.text !== PUBLIC_TARGET_ASSUMPTION && a.text !== PUBLIC_TARGET_RULE_ASSUMPTION));
     const assumptions = assumptionsAt.map((a) => a.text);
     fields.push({
       key: 'preconditions',

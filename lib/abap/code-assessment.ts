@@ -13,6 +13,8 @@ import { successorInContext } from './sap-api-catalog';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
 import { precisionFixesApply } from './precision-fixes-gate';
+import { readClaimsApply } from './read-claims-gate';
+import { isCustomerObject, isNamespacedObject } from './abcd-classification';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -172,7 +174,21 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
  *     itself is reported where an unresolved question belongs: as an unassessed
  *     construct in the coverage.
  */
-export function extractDataCoupling(code: string): DataCouplingEntry[] {
+export function extractDataCoupling(
+  code: string,
+  /**
+   * The engine the coupling is read with; omitted, this one (`APP_VERSION`).
+   * The successor that depends on context (AUFK beside the production order
+   * tables) is 3.0.12's (`GUIDELINE_CHECKS_FROM`) and its RESB rule 3.0.13's
+   * (`PRECISION_FIXES_FROM`), the same gates `evidence-model.ts` reads them
+   * by; before, the plain mapping stands (QA review of 73b8cad63d3e,
+   * 966feb41218f).
+   */
+  engineVersion?: string | null,
+): DataCouplingEntry[] {
+  const engine = engineVersion === undefined ? APP_VERSION : engineVersion;
+  const contextual = guidelineChecksApply(engine);
+  const precisionFixes = precisionFixesApply(engine);
   const entries: DataCouplingEntry[] = [];
 
   interface TableStats {
@@ -274,7 +290,7 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     if (referenceOnly) {
       recommendation = referenceRecommendation(tableName, stats.routes, stats.programs);
     } else if (isStandard && hasReplacement) {
-      const inContext = successorInContext(tableName, tablesHere);
+      const inContext = contextual ? successorInContext(tableName, tablesHere, { precisionFixes }) : null;
       recommendation = inContext
         ? `Use CDS ${inContext.entry.view} (${inContext.context}${inContext.readHere.length ? `: ${inContext.readHere.join(', ')}` : ''})`
         : STANDARD_TABLE_MAP[tableName];
@@ -503,7 +519,10 @@ function calledFunctionModules(code: string): string[] {
  * claim about those programs, decided in a regex. It belongs on the roadmap with
  * an argument, not here.
  */
-/** A function module in a customer or partner namespace: `Z…`, `Y…` or a `/namespace/` one — not SAP's IDoc framework. */
+/**
+ * A function module in a customer or partner namespace: `Z…`, `Y…` or a `/namespace/` one — not SAP's IDoc framework.
+ * The reading of engines 3.0.13–3.0.17 only; from 3.0.18 a `/namespace/` is no one's by name (`READ_CLAIMS_FROM`).
+ */
 function isCustomerNamespace(name: string): boolean {
   return /^(?:[ZY]|\/)/i.test(name);
 }
@@ -609,14 +628,27 @@ export function recommendArchitecture(
     // SAP's modules: a module in a customer or partner namespace (`Z…`, `Y…`, `/…/`) is
     // not in SAP's file, and its level is that of what it calls (QA leftovers
     // of hotfix 2, roadmap 3.0.13).
-    const fixes = precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion);
-    const ownModules = fixes ? idocModules.filter(isCustomerNamespace) : [];
-    const sapModules = idocModules.filter((name) => !ownModules.includes(name));
+    const engine = engineVersion === undefined ? APP_VERSION : engineVersion;
+    const fixes = precisionFixesApply(engine);
+    // From 3.0.18 (`READ_CLAIMS_FROM`) a `/namespace/` module is not called the
+    // customer's or a partner's: a reserved namespace can be SAP's too (/AIF/ is
+    // SAP_BASIS), and the name does not say whose it is (`isNamespacedObject`,
+    // QA review of 73b8cad63d3e, e742385fcfac). It is neither in SAP's
+    // framework sentence nor in the customer one; its owner is said to be open.
+    const readClaims = readClaimsApply(engine);
+    const ownModules = !fixes ? [] : readClaims ? idocModules.filter(isCustomerObject) : idocModules.filter(isCustomerNamespace);
+    const reservedModules = readClaims ? idocModules.filter(isNamespacedObject) : [];
+    const sapModules = idocModules.filter((name) => !ownModules.includes(name) && !reservedModules.includes(name));
+    const ownWords = readClaims ? 'the customer namespace' : 'a customer or partner namespace';
     const own = ownModules.length === 0
       ? ''
-      : sapModules.length === 0
-        ? `Function modules named for IDoc in a customer or partner namespace are called (${ownModules.join(', ')}). The name alone does not show that they use SAP's IDoc framework, and SAP's classification file covers SAP's IDoc framework modules, not these: their level is the level of what they call. `
-        : `${ownModules.join(', ')} ${ownModules.length > 1 ? 'are' : 'is'} in a customer or partner namespace, which SAP's classification file does not cover: ${ownModules.length > 1 ? 'their' : 'its'} level is the level of what ${ownModules.length > 1 ? 'they call' : 'it calls'}. `;
+      : sapModules.length === 0 && reservedModules.length === 0
+        ? `Function modules named for IDoc in ${ownWords} are called (${ownModules.join(', ')}). The name alone does not show that they use SAP's IDoc framework, and SAP's classification file covers SAP's IDoc framework modules, not these: their level is the level of what they call. `
+        : `${ownModules.join(', ')} ${ownModules.length > 1 ? 'are' : 'is'} in ${ownWords}, which SAP's classification file does not cover: ${ownModules.length > 1 ? 'their' : 'its'} level is the level of what ${ownModules.length > 1 ? 'they call' : 'it calls'}. `;
+    const many = reservedModules.length > 1;
+    const reserved = reservedModules.length === 0
+      ? ''
+      : `${reservedModules.join(', ')} ${many ? 'are' : 'is'} in a reserved namespace, which can belong to SAP, to a partner or to the customer; the name does not say whose ${many ? 'they are' : 'it is'}, so whether SAP's classification file lists ${many ? 'them' : 'it'}, and at which level, is not established here. `;
     const sap = sapModules.length === 0
       ? ''
       : `IDoc function modules are called (${sapModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in SAP Cloud ERP Private. `;
@@ -627,8 +659,8 @@ export function recommendArchitecture(
       architecture: 'integration',
       confidence: 80,
       justification: sapModules.length === 0
-        ? own + 'What replaces them on an ABAP Cloud target follows from what they call, not from their name.'
-        : sap + own
+        ? own + reserved + 'What replaces them on an ABAP Cloud target follows from what they call, not from their name.'
+        : sap + own + reserved
           + 'It has to be replaced where the target is ABAP Cloud or SAP S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
           + 'For EDI and other high-volume asynchronous document exchange an IDoc interface can remain the better fit than one API call per document; decide that with the owners of the integration.',
     };

@@ -32,6 +32,7 @@
 import { looksLikeAbap } from './abap-input-check';
 import { scanCodeContent } from './staged-code-scan';
 import { extractDataCoupling } from './abap/code-assessment';
+import { APP_VERSION } from './version';
 import { readStatements } from './abap/statement-reader';
 import { countSourceLines } from '@/lib/source-lines';
 
@@ -368,7 +369,7 @@ export function countSource(source: string): OwnCodeCounts {
   }
   const tablesRead: string[] = [];
   const tablesWritten: string[] = [];
-  for (const entry of extractDataCoupling(source)) {
+  for (const entry of extractDataCoupling(source, APP_VERSION)) {
     if ((entry as { possibleTargetOf?: unknown }).possibleTargetOf) continue;
     if (entry.accessType === 'Read' || entry.accessType === 'Read/Write') tablesRead.push(entry.tableName);
     if (entry.accessType === 'Write' || entry.accessType === 'Read/Write') tablesWritten.push(entry.tableName);

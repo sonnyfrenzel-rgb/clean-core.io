@@ -541,7 +541,7 @@ export function buildDemoProject(): DemoProject {
     transformation: { plan, unplanned },
     documentation: {
       inventory: extractCodeInventory(source),
-      coupling: extractDataCoupling(source),
+      coupling: extractDataCoupling(source, APP_VERSION),
       process: demoProcess(source),
     },
     testing: {

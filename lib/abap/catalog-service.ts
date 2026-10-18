@@ -17,7 +17,7 @@
  *   getMergedCatalogVersion() — traceability string for Audit Pack / model card.
  */
 
-import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION, type SapApiEntry, type SapApiObjectType } from './sap-api-catalog';
+import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION, successorInContext, type SapApiEntry, type SapApiObjectType } from './sap-api-catalog';
 import type { CloudificationArtifact, NormalizedEntry } from './cloudification-repo';
 import {
   gradeFromSapStates,
@@ -212,6 +212,18 @@ export function primarySuccessor(objectName: string): PrimarySuccessor | undefin
   if (sap?.name) return { name: sap.name, type: tadirToType(sap.tadir), source: 'sap' };
   if (entry?.view) return { name: entry.view, type: entry.type, source: 'curated' };
   return undefined;
+}
+
+/**
+ * The successor `resolveApi` names, read in the context of the program that
+ * reads the object: AUFK beside the production order tables is a production
+ * order, not an internal order (`successorInContext`). `resolveApi` alone knows
+ * no program, so a caller that has one — the Standard fit layer — asks this
+ * instead; the evidence engine and the data coupling apply the same rules
+ * themselves (QA review of 73b8cad63d3e, 579d04bb65ff). Null when neither names one.
+ */
+export function successorInProgram(objectName: string, tablesInProgram: Iterable<string>): string | null {
+  return successorInContext(objectName, tablesInProgram)?.entry.view ?? resolveApi(objectName)?.view ?? null;
 }
 
 export const MERGED_CATALOG_SIZE =Object.keys(MERGED_TABLE_MAP).length;

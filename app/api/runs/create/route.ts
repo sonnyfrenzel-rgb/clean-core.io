@@ -412,7 +412,7 @@ export async function POST(req: NextRequest) {
     // below, which is how a recomputation later finds the same rule.
     const extensibilityReport = routeExtensibility(evidenceReport, targetDeployment, APP_VERSION);
     const codeInventory = extractCodeInventory(legacyCode);
-    const dataCoupling = extractDataCoupling(legacyCode);
+    const dataCoupling = extractDataCoupling(legacyCode, APP_VERSION);
     const complexityScore = computeComplexityScore(legacyCode);
     const criticalityScore = computeCriticalityScore(legacyCode);
     const cleanCoreScore = extensibilityReport.cleanCoreScore;
