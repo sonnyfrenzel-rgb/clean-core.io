@@ -141,6 +141,54 @@ test.describe('the offline export verifier, executed', () => {
     expect(r.out).not.toContain('SUCCESS');
   });
 
+  test('SEC-c41f149-02', async () => {
+    test.skip(!shell, 'No PowerShell on this machine — the runtime check cannot run here.');
+    const zip = await buildArchive(dir, 'extra', { signed: true, key: KEY });
+    const buf = await JSZip.loadAsync(fs.readFileSync(zip));
+    buf.file('src/extra.ts', 'export const extra = 1;\n');
+    const extra = path.join(dir, 'extra-edited.zip');
+    fs.writeFileSync(extra, await buf.generateAsync({ type: 'nodebuffer' }));
+    const r = run(extra, true);
+    expect(r.code, r.out).toBe(1);
+    expect(r.out).toContain('src/extra.ts');
+    expect(r.out).not.toContain('SUCCESS');
+
+    // A manifest that names one file twice.
+    const twice = await JSZip.loadAsync(fs.readFileSync(zip));
+    const manifest = JSON.parse(await twice.file('manifest.json')!.async('string'));
+    manifest.files = [...manifest.files, manifest.files[0]];
+    twice.file('manifest.json', JSON.stringify(manifest, null, 2));
+    const twiceZip = path.join(dir, 'twice-edited.zip');
+    fs.writeFileSync(twiceZip, await twice.generateAsync({ type: 'nodebuffer' }));
+    const t = run(twiceZip, true);
+    expect(t.code, t.out).toBe(1);
+    expect(t.out).not.toContain('SUCCESS');
+  });
+
+  test('SEC-c41f149-05', async () => {
+    test.skip(!shell, 'No PowerShell on this machine — the runtime check cannot run here.');
+    const outside = path.join(dir, 'outside.txt');
+    fs.writeFileSync(outside, 'not part of any archive');
+    const outsideHash = sha256(fs.readFileSync(outside));
+    for (const [name, p] of [
+      // From the extraction folder (scripts/tmp_verify_extract_<id>) to the file above.
+      ['relative', `../${path.relative(path.join(ROOT, 'scripts'), outside).split(path.sep).join('/')}`],
+      ['absolute', outside],
+    ] as const) {
+      const zip = await buildArchive(dir, `path-${name}`, { signed: true, key: KEY });
+      const buf = await JSZip.loadAsync(fs.readFileSync(zip));
+      const manifest = JSON.parse(await buf.file('manifest.json')!.async('string'));
+      manifest.files = [...manifest.files, { path: p, sha256: '0'.repeat(64) }];
+      buf.file('manifest.json', JSON.stringify(manifest, null, 2));
+      const edited = path.join(dir, `path-${name}-edited.zip`);
+      fs.writeFileSync(edited, await buf.generateAsync({ type: 'nodebuffer' }));
+      const r = run(edited, true);
+      expect(r.code, `${name}:\n${r.out}`).toBe(1);
+      expect(r.out, name).not.toContain(outsideHash);
+      expect(r.out, name).not.toContain('SUCCESS');
+    }
+  });
+
   test('checks started together each read their own archive', async () => {
     test.skip(!shell, 'No PowerShell on this machine — the runtime check cannot run here.');
     // The extraction folder was named after the clock, so two checks started in the same moment shared it: the

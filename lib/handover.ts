@@ -30,7 +30,7 @@ import { scoreWithBand } from './clean-core-score';
 import type { Project } from './types';
 import type { ProvenanceValue } from './provenance';
 import type { PhaseKey, RailStep } from './workflow-steps';
-import { testEvidence, staleness, testsPreviousBasis } from './workflow-steps';
+import { testEvidence, staleness, testsPreviousBasis, isContextBlocker } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { readStoredDecision, ARCHITECTURE_OPTION, type StoredDecision } from './decision-draft';
@@ -700,6 +700,14 @@ export function handoverNextStep(
   const travels = openLinks === 0
     ? 'Every link of the chain has a record.'
     : `${plural(openLinks, 'link')} of the chain ${openLinks === 1 ? 'stays' : 'stay'} not determined and ${openLinks === 1 ? 'travels' : 'travel'} with the package, named.`;
+  if (blockers.length > 0 && blockers.every(isContextBlocker)) {
+    // 3.0.18: the source is the same; a decision moved after the code was generated.
+    return {
+      kind: 'blocked',
+      headline: 'Regenerate what was made before the latest decisions',
+      reason: `${plural(blockers.length, 'artefact')} ${blockers.length === 1 ? 'was' : 'were'} made before a rule decision, the decision record or an accepted requirement changed. Nothing leaves this page until ${blockers.length === 1 ? 'it is' : 'they are'} regenerated.`,
+    };
+  }
   if (blockers.length > 0) {
     return {
       kind: 'blocked',

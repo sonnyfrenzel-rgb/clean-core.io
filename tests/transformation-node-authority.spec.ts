@@ -147,6 +147,17 @@ test.describe('the Node package carries the original authority check (3.0.17 cri
 
       // Anything else in the variable grants nothing.
       expect(run(`process.env.${AUTHORITY_DEMO_ENV} = 'yes';`).refused).toBe(true);
+
+      // SEC-c41f149-01.
+      for (const profile of ["process.env.NODE_ENV = 'production';", "process.env.CDS_ENV = 'hybrid,production';"]) {
+        const held = run(`process.env.${AUTHORITY_DEMO_ENV} = 'grant'; ${profile}`);
+        expect(held.refused, profile).toBe(true);
+        expect(held.done, profile).toBe('');
+        expect(held.issues, profile).toEqual([expect.objectContaining({ severity: 'error', rule: 'AUTH', message: expect.stringContaining('production profile') })]);
+      }
+      expect(run(`process.env.${AUTHORITY_DEMO_ENV} = 'grant'; process.env.NODE_ENV = 'test';`).refused).toBe(false);
+      const seam = traced.find((f) => f.path === AUTHORITY_FILE)!.content;
+      expect(seam).toContain("if (demoGrantSet() && typeof console !== 'undefined') {");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

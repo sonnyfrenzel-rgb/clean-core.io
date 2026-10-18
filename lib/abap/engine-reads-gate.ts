@@ -19,6 +19,11 @@ import { engineVersionAtLeast } from '../score-rule';
  *     (`legacy-technology.ts`);
  *   - a file-picker dialog is a path selection, not an upload or a download
  *     (`evidence-model.ts`);
+ *   - a constant names a function module only where a dynamic `CALL FUNCTION`
+ *     uses it; `PRD`, `CLNT` and `SYS` at the front of a literal are a system
+ *     name only where no letter follows; credit words are read in the code and
+ *     the called module's name, not in other literals (`evidence-model.ts`, QA
+ *     full review of c41f14953c1d);
  *   - the security review: a file-name validation with `EXCEPTIONS` covers a
  *     path only when its failure cannot reach the access, `INSERT REPORT` with a
  *     literal name is a generated program, and a clean overwrite of the very
