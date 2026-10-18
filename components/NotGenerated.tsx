@@ -1,6 +1,7 @@
 import { MinusCircle } from 'lucide-react';
 import clsx from 'clsx';
 import CcEmptyState from '@/components/cc/EmptyState';
+import CcLinkButton from '@/components/cc/LinkButton';
 import { NOT_GENERATED, modelAbsenceReason, type ModelAbsence, type ModelStage } from '@/lib/model-stages';
 
 /**
@@ -27,6 +28,7 @@ export default function NotGenerated({
   stage,
   why,
   hint,
+  settingsLink = false,
   className,
 }: {
   /** What is missing, as a noun phrase: "Analysis narrative". */
@@ -37,6 +39,11 @@ export default function NotGenerated({
   why?: string;
   /** What the reader can do about it, when there is something. */
   hint?: string;
+  /**
+   * The hint sends the reader to Settings: then the way there is a link, not a
+   * word to look for (UX-106).
+   */
+  settingsLink?: boolean;
   className?: string;
 }) {
   return (
@@ -44,6 +51,15 @@ export default function NotGenerated({
       <CcEmptyState
         illustration={<MinusCircle size={20} className="text-cc-ink-muted" aria-hidden="true" />}
         title={`${NOT_GENERATED} — ${what}`}
+        action={
+          settingsLink ? (
+            <span data-not-generated-settings-link="">
+              <CcLinkButton href="/settings" variant="secondary">
+                Open Settings
+              </CcLinkButton>
+            </span>
+          ) : undefined
+        }
       >
         {why ?? modelAbsenceReason(absence, stage)}
         {hint ? <> {hint}</> : null}

@@ -61,7 +61,7 @@ export default function RevisionHistory({ revisions, from = null, to = null, onP
                 data-revision-origin={revision.origin}
                 data-revision-picked={picked ? role ?? 'yes' : undefined}
                 className={[
-                  'flex w-full flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-[8px] border px-3 py-2 text-left',
+                  'flex w-full flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-cc-row border px-3 py-2 text-left',
                   picked ? 'border-cc-information-border bg-cc-information-bg' : 'border-cc-line bg-cc-surface',
                   onPick ? 'hover:border-cc-ink-muted' : '',
                 ].join(' ')}

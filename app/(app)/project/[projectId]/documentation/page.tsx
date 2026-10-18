@@ -97,6 +97,7 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { checkBusinessDocShape, STORED_BLUEPRINT_REJECTED } from './blueprint-schema';
 import CcButton from '@/components/cc/Button';
 import CcEmptyState from '@/components/cc/EmptyState';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -1775,6 +1776,29 @@ export default function DocumentationPage() {
               The owner of this project writes it by opening this stage; it appears here once it is saved.
             </span>
           </CcMessageStrip>
+        ) : !signedSource ? (
+          /* One state, with the way out (UX-119, UX-166): without the source
+             the active run signed there is nothing to read, so the stage no
+             longer shows "Replace", a closed button and "run the analysis
+             first" at once — it says the one thing and links to Analyze. */
+          <div data-documentation-needs-run="" className="space-y-4">
+            <CcEmptyState
+              title="Run the analysis first"
+              action={
+                <CcLinkButton
+                  href={`/project/${Array.isArray(projectId) ? projectId[0] : projectId}/analyze`}
+                  variant="primary"
+                  density="cozy"
+                >
+                  Open Analyze
+                </CcLinkButton>
+              }
+            >
+              The documentation is read from exactly the source the active analysis run signed, and this project has
+              no such run, or its source changed since.
+              {storedBlueprintRejected ? ' The blueprint stored for it cannot be shown; reading the code after the analysis replaces it.' : null}
+            </CcEmptyState>
+          </div>
         ) : (
           <div className="space-y-4">
             {storedBlueprintRejected && (
@@ -1792,20 +1816,14 @@ export default function DocumentationPage() {
                   variant="primary"
                   density="cozy"
                   onClick={generateDocumentation}
-                  disabled={!signedSource || !processMap.model}
+                  disabled={!processMap.model}
                   busy={isGeneratingDoc}
                   data-generate-blueprint
                 >
                   {storedBlueprintRejected ? 'Replace with the code reading' : 'Read the documentation from the code'}
                 </CcButton>
               }
-              cost={
-                signedSource ? t('run.noModelCall') : (
-                  <span data-documentation-needs-run>
-                    There is no source here that the active run signed. Run the analysis in stage 1 first.
-                  </span>
-                )
-              }
+              cost={t('run.noModelCall')}
             >
               Read from the whole signed source, every statement with its lines. No language model is involved.
             </CcEmptyState>
@@ -1827,6 +1845,15 @@ export default function DocumentationPage() {
         className="cc-no-print mb-8 scroll-mt-24"
       >
         <h2 id="documentation-explore" className="m-0 cc-text-h2 text-cc-ink">Explore the process</h2>
+        {!signedSource ? (
+          /* No signed source, no map and no chapters: one line instead of the
+             full map-and-handbook frame around an empty box (UX-119). */
+          <p data-documentation-explore-empty="" className="m-0 mt-1 max-w-3xl cc-text-cell text-cc-ink-muted">
+            The process map and its handbook are drawn from a signed analysis of the code. They appear here once the
+            analysis has run.
+          </p>
+        ) : (
+        <>
         <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
           The process drawn from the code, with the chapter of each step beside it. Select a step to read its chapter;
           a link to this page keeps the level and the step that are open.
@@ -1866,16 +1893,16 @@ export default function DocumentationPage() {
           ) : (
             <div className="rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted p-4">
               <p className="m-0 cc-text-h3 text-cc-ink">
-                {signedSource && processMap.status !== 'failed' ? 'Reading the process from the code…' : 'No process map yet'}
+                {processMap.status !== 'failed' ? 'Reading the process from the code…' : 'No process map yet'}
               </p>
               <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                {signedSource
-                  ? processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'
-                  : 'The map is drawn from a signed analysis of the code. Run the analysis first.'}
+                {processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'}
               </p>
             </div>
           )}
         />
+        </>
+        )}
       </section>
 
       {/* Roadmap 3.2 — what was kept, and what changed between two of them. */}

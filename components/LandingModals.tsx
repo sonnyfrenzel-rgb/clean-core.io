@@ -1032,15 +1032,22 @@ export default function LandingModals() {
 
               {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
 
-              <div className="flex flex-col">
+              <div className="flex flex-col gap-2">
                 <CcButton
                   type="submit"
                   variant="primary"
                   density="cozy"
                   disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword) || !agreedGDPR || !agreedTerms}
+                  aria-describedby={!agreedGDPR || !agreedTerms ? 'register-consent-hint' : undefined}
                 >
                   {isSubmitting ? 'Registering...' : 'Register'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
+                {/* The same reason the Google button gives, for the same gate (UX-079). */}
+                {(!agreedGDPR || !agreedTerms) && (
+                  <p id="register-consent-hint" data-register-consent-hint="" className="m-0 text-center text-[12px] font-medium text-cc-ink-muted">
+                    Accept the data protection notice and the terms above to register.
+                  </p>
+                )}
               </div>
 
               <OrContinueWith />

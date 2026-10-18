@@ -29,7 +29,7 @@ export const CC_SEGMENTED_GROUP =
 
 export function ccSegmentClass(selected: boolean): string {
   return cn(
-    'inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[12px] whitespace-nowrap pointer-coarse:min-h-11 pointer-coarse:px-3',
+    'inline-flex items-center gap-1 rounded-cc-segment px-2 py-1 text-[12px] whitespace-nowrap pointer-coarse:min-h-11 pointer-coarse:px-3',
     'disabled:opacity-60 disabled:cursor-not-allowed',
     selected ? 'bg-cc-ink text-cc-on-dark font-semibold' : 'bg-transparent text-cc-ink-muted font-medium',
   );

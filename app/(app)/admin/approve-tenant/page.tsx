@@ -278,24 +278,27 @@ function TenantApprovalContent() {
               button could only ever be refused. The other decision is the
               other link of the same mail — and whichever is used first
               closes both (UX-152). */}
-          <div className="flex flex-col gap-2">
-            <div>
-              {actionParam === 'reject' ? (
-                <CcButton variant="ghost" tone="danger" density="cozy" onClick={handleReject} data-tenant-decision="reject">
-                  Decline Request
-                </CcButton>
-              ) : (
-                <CcButton variant="primary" density="cozy" onClick={handleApprove} data-tenant-decision="approve">
-                  Approve Request <ArrowRight size={16} aria-hidden={true} />
-                </CcButton>
-              )}
-            </div>
-            <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
+          {/* The other way out stands before the button and at body size, so
+              it is read before the decision rather than found after it in a
+              12 px line underneath (UX-167). */}
+          <div className="flex flex-col gap-3">
+            <p id="tenant-decision-other-link" data-tenant-decision-hint="" className="m-0 cc-text-body text-cc-ink">
               {actionParam === 'reject'
                 ? 'To approve instead, open the Approve link in the same mail.'
                 : 'To decline instead, open the Decline link in the same mail.'}{' '}
               Each link works once, and using either closes both.
             </p>
+            <div>
+              {actionParam === 'reject' ? (
+                <CcButton variant="ghost" tone="danger" density="cozy" onClick={handleReject} data-tenant-decision="reject" aria-describedby="tenant-decision-other-link">
+                  Decline Request
+                </CcButton>
+              ) : (
+                <CcButton variant="primary" density="cozy" onClick={handleApprove} data-tenant-decision="approve" aria-describedby="tenant-decision-other-link">
+                  Approve Request <ArrowRight size={16} aria-hidden={true} />
+                </CcButton>
+              )}
+            </div>
           </div>
         </Panel>
       )}

@@ -508,14 +508,17 @@ export default function Dashboard() {
             >
               Continue
             </CcButton>
-            <CcIconButton
-              label="Invite someone to read this project"
-              title="Invite someone to read this project"
+            {/* Named on the row, not only in a hover title: sharing is the one
+                row action a reader would not guess from an icon (UX-136, UX-158). */}
+            <CcButton
+              variant="ghost"
+              icon={<UserPlus size={16} aria-hidden={true} />}
               data-invite-open=""
+              aria-label="Invite someone to read this project"
               onClick={() => setInviting({ id: project.id, name: project.name })}
             >
-              <UserPlus size={16} aria-hidden={true} />
-            </CcIconButton>
+              Invite
+            </CcButton>
             <CcIconButton label="Duplicate Project" title="Duplicate Project" onClick={() => handleCopyProject(project)}>
               <Copy size={16} aria-hidden={true} />
             </CcIconButton>
