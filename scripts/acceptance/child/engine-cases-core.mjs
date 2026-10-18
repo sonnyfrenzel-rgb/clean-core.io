@@ -178,6 +178,17 @@ function valueFor(to, contract, base) {
   return { error: 'the call names no value' };
 }
 
+/** The base request's rows of an original table (`GT_ORDERS` → `orders`; none handed in: empty), or null for a non-table. */
+function baseListOf(contract, field) {
+  const base = isObject(contract?.baseRequest) ? contract.baseRequest : null;
+  if (!base) return null;
+  const stem = String(field).toLowerCase().replace(/^(?:gt|lt|it|mt|t)_/, '');
+  const key = stem.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+  if (Array.isArray(base[key])) return base[key];
+  // A table the base request does not hand in at all starts the check empty, like an empty list.
+  return /^(?:gt|lt|it|mt)_/i.test(String(field)) ? [] : null;
+}
+
 /** The request one call sends, or `{ notRunnable }` with the reason. */
 export function buildRequest(contract, call) {
   if (call.mode === 'empty') return { request: {} };
@@ -736,8 +747,13 @@ async function executeCheck(mod, call, state) {
       mapped.push(s);
       continue;
     }
-    // Not part of the request: the check reads the field from the state the base request builds, as before.
-    if (isObject(s.to) && s.to.special === 'filled') continue;
+    // Not part of the request: the check reads the field from the state the base request builds. A table the base
+    // request hands in as a list (GT_ORDERS → orders) must have rows there, or the case shows nothing about the check.
+    if (isObject(s.to) && s.to.special === 'filled') {
+      const list = baseListOf(contract, s.field);
+      if (list && list.length === 0) return { notRunnable: `the base request has no rows of ${String(s.field).toUpperCase()}, so it cannot show the check with it filled` };
+      continue;
+    }
     if (isObject(s.to) && s.to.special === 'empty') {
       values[String(s.field).toUpperCase()] = { special: 'empty' };
       continue;
