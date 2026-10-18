@@ -17,6 +17,15 @@ import { DEV_URL, PROD_URL, SIGNING_KEY_PATH, SMOKE_HEADERS, SMOKE_ROUTES } from
  * never claims more than it looked at.
  */
 
+/**
+ * How long the dev smoke check waits, in minutes (3.0.18 item 10, owner's go 18.10.2026). The deploy pipeline
+ * of a dev push ran 50-54 minutes on 17.10.2026 (six E2E shards, the runner and the app deploy), while the check
+ * waited 45 minutes inside a 60-minute job and so timed out before the deploy had finished. The pipeline wait
+ * now leaves 25 minutes over a 55-minute pipeline, the revision wait follows it, and the job's own limit in
+ * qa-review.yml (held equal by tests/qa-review-guard.spec.ts) covers both plus setup and the checks.
+ */
+export const SMOKE_WAIT = Object.freeze({ pipelineMinutes: 80, revisionMinutes: 10, jobMinutes: 105 });
+
 export const SMOKE_TARGETS = {
   dev: { name: 'dev', url: DEV_URL, service: 'clean-core-dev', file: 'qa-smoke.enc.json', artifact: 'qa-smoke', waitForPipeline: true },
   production: { name: 'production', url: PROD_URL, service: 'clean-core', file: 'prod-smoke.enc.json', artifact: 'prod-smoke', waitForPipeline: false },
@@ -75,7 +84,7 @@ export const sameCommit = (sha, commit) => typeof commit === 'string' && /^[0-9a
  * before it. `superseded()` is asked whenever another commit is serving: when it says yes, a newer deploy
  * replaced this one and waiting is pointless.
  */
-export async function waitForRevision(base, sha, { timeoutMs = 10 * 60_000, intervalMs = 20_000, superseded = () => false, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+export async function waitForRevision(base, sha, { timeoutMs = SMOKE_WAIT.revisionMinutes * 60_000, intervalMs = 20_000, superseded = () => false, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const deadline = Date.now() + timeoutMs;
   let last = null;
   while (Date.now() < deadline) {

@@ -300,7 +300,7 @@ refutation list has to be opened with the old key and rewritten with the new one
 node scripts/qa/review.mjs --dry                            # delta, pre-check, batches, estimated cost — no call
 QA_BASE_OVERRIDE=<sha> QA_HEAD=<sha> node scripts/qa/review.mjs --dry  # for a specific range
 node scripts/qa/review.mjs --local                          # real review locally (costs money), plaintext to .qa-review/out/
-node scripts/qa/await.mjs <sha> --timeout=60                # fetch the result of a pushed commit
+node scripts/qa/await.mjs <sha> --timeout=115               # fetch the result of a pushed commit
 node scripts/qa/await.mjs <head> --slice                    # fetch the result of a manual slice ending at <head>
 node scripts/qa/refute.mjs <fingerprint> "<reason>"         # file a refuted finding
 gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run the review of a range (full ids;

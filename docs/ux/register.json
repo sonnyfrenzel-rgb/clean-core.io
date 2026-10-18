@@ -50,9 +50,11 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.494Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.2",
-      "updatedAt": "2026-09-15T10:32:44.494Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "dce20e6b",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.2): fixed. lib/analysis-export.ts:138-163,250,269 — the Confluence page is built here now; when the model returned no checkpoints or comparison it writes 'Not determined for this run … Nothing is inferred here from the chosen route.' instead of the invented tables; the 'Perfect technical fit' fallback is gone from the analyze page. Fallbacks removed (git log -S 'Perfect technical fit'); export moved to lib/analysis-export.ts later in f8024872 (D.28)."
     },
     {
       "id": "UX-005",
@@ -62,10 +64,12 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.539Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.7",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:44.539Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "9220b85d",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.7): fixed. components/analyze/RouteCard.tsx:29 — 'There is no route switch here any more'; analyze/page.tsx:987-989 says the same; no 'Switch Track'/'Override Route' string remains in app/ or components/. The one-click route switch was removed (3.0.7 declutter wave, 'no route switch')."
     },
     {
       "id": "UX-006",
@@ -76,9 +80,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.623Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "3.0.18",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:44.623Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/EvidenceFindingsTable.tsx:127-132 — line chips in the findings list are now CcAnchor buttons that open the source panel (added in 794d3486); but components/analyze/AnchoredNarrative.tsx:73-79 renders the model summary's line badges as CcAnchor without onOpen, which components/cc/Anchor.tsx:49 renders as a non-interactive element. Rescheduled: Half done: the summary's line anchors still lead nowhere; wiring them to the existing openSourceLine() (EvidenceFindingsTable.tsx:108) is a small fix with no new screen."
     },
     {
       "id": "UX-007",
@@ -88,9 +93,11 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.673Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-15T10:32:44.673Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "8c23191a",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. app/(app)/project/[projectId]/analyze/page.tsx:2115-2172 — DeploymentChoice is a role=radiogroup of native <input type=\"radio\"> inside label cards, used both on the page (1691) and in the confirmation dialog (1998); no div/span onClick without a role remains in app/ or components/. Target cards became native radios in D.10b; the dialog is CcDialog with focus handling."
     },
     {
       "id": "UX-008",
@@ -139,9 +146,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.876Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:44.876Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/ConstructFindings.tsx:28 heads the empty list 'Construct Findings (0 findings)' and :58 the filled list 'Statically Identified Constructs (n findings)'. The German 'Statischer Finding' filter and 'Gaps Backlog Worklist' are gone (GapsWorklist.tsx deleted in 018e1e26). Rescheduled: One list still has two names depending on state; a one-word text fix."
     },
     {
       "id": "UX-012",
@@ -151,9 +159,10 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.924Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
-      "updatedAt": "2026-09-15T10:32:44.924Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): fixed. app/(app)/project/[projectId]/analyze/page.tsx — no sticky/fixed element and no tabs remain (grep for sticky/isSticky/CcTabs finds nothing; comment at 980-986 records the four tabs' removal); CodeInventoryTable/DataCouplingTable were deleted; components/analyze/UsageRiskMatrix.tsx:262-263 keeps min-w-[600px] inside an overflow-x-auto wrapper. Fixed across several commits: tabs removed in 01d3d2bb, the fixed decision header in a3a6176c, the tables in 3173c476 — no single fixing commit."
     },
     {
       "id": "UX-013",
@@ -164,9 +173,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.997Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:44.997Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/analyze/page.tsx:1753-1758 — the label half is fixed ('Legacy Source Code', help 'Editable…', D.10b 8c23191a); but the Start Analysis button at 1845 is disabled only on loading/!legacyCode/!acceptedTerms/scan block/personal data, not on a missing target model, so a click without one still sets an error and scrolls to the top (1825-1829). Rescheduled: Start still looks ready without a target model and fails after a scroll; add !targetDeployment to disabled with the reason at the button."
     },
     {
       "id": "UX-014",
@@ -202,10 +212,12 @@
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.194Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:45.194Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "12ed4cd0",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): fixed. app/catalog/layout.tsx:11-20 now renders PublicHeader, whose components/HeaderAuthButton.tsx:45-53 shows a 'Go to Workspace' button (router.push('/dashboard')) to a signed-in user; the old 'Knowledge Base'/'Home' header is gone. D.24 gave the catalog the shared public header with a workspace way back for signed-in users."
     },
     {
       "id": "UX-017",
@@ -215,9 +227,10 @@
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.261Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-15T10:32:45.261Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. app/(app)/knowledge/page.tsx:105,140, app/catalog/layout.tsx (no badges any more, just PublicHeader/PublicFooter) and components/HowToClient.tsx:86,157,181 use text-xs (12px) at the smallest; components/SiteFooter.tsx:65 micro labels are 11px/600 caps, the DESIGN.md:122 floor. No text below 11px is left in app/ or components/. The cited 8-10px text is gone; it went through block D, so no single commit."
     },
     {
       "id": "UX-018",
@@ -239,10 +252,11 @@
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.379Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0",
       "reportedSeverity": "critical",
-      "updatedAt": "2026-09-16T12:25:46.468Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): fixed. components/analyze/TargetScopeMapping.tsx:70-76 shows the model's word in place of 90/50/15 % bars; components/analyze/CoverageVerdict.tsx:28-38 no longer turns a missing summary or zero findings into 'fully'; delivery/page.tsx:781-805 shows generated code neutral with 'not compiled or tested', green only for a recorded run (838-843); the 'BPMN-Compatible' badge is gone from documentation/page.tsx; Confluence fallbacks gone (UX-004). Every cited overclaim is gone, removed over several commits (e.g. dce20e6b for the export) — no single fixing commit."
     },
     {
       "id": "UX-020",
@@ -252,10 +266,11 @@
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.441Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0",
       "reportedSeverity": "critical",
-      "updatedAt": "2026-09-16T12:25:46.564Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): fixed. app/(app)/verify-pack/page.tsx:155-177 — named file input plus a CcButton to choose it; components/GlossaryTerm.tsx:48-80 is a <button> with Escape and focus return; components/cc/Dialog.tsx:22-23 traps focus, makes the page inert, closes on Escape; components/cc/Switch.tsx:63 role='switch'; outline-none is left in 3 places, each with a focus-visible ring. The keyboard path was fixed across block D and 3.0.4 (e.g. 148b62f5) — no single fixing commit."
     },
     {
       "id": "UX-021",
@@ -277,10 +292,11 @@
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.550Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:45.550Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. components/cc/Button.tsx:8-25 — four variants and no className prop ('The count before this file was 78'); held by tests/cc-style-guard.spec.ts; components/NavigationButtons.tsx (the cited file) was deleted in a3a6176c. Button language introduced in 5b599e53 (1.5) and migrated across block D; no single fixing commit."
     },
     {
       "id": "UX-023",
@@ -316,9 +332,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.713Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "after 3.0.18",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:45.713Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Mostly fixed: route switch removed (RouteCard.tsx:29), no native confirm/alert left (MessageBox), SamplePackageDownload.tsx and FileUpload.tsx deleted (bfb831cc, 861dfd12), dialogs trap focus (cc/Dialog.tsx:22-23). Still open: documentation/page.tsx:1458-1466 shows elapsed time and an expected duration during the model's SOP/RACI generation but no cancel and no word on whether leaving the page loses it. Rescheduled: The remaining part is a cancel control for model calls (same as UX-035), which is new interaction, not a text fix."
     },
     {
       "id": "UX-026",
@@ -356,10 +373,12 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.875Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.3",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:45.875Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "72898e71",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.3): fixed. app/(app)/project/[projectId]/tco/page.tsx:710-719 — the range is min={Math.min(1000, sourceLoc ?? 1000)} and max={Math.max(50000, sourceLoc ?? 50000)}, so a 12-line source sits at the slider's minimum and can be returned to; help text 'Starts at the lines of your source.' The slider range now includes the source's own size."
     },
     {
       "id": "UX-029",
@@ -383,9 +402,10 @@
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.972Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
-      "updatedAt": "2026-09-15T10:32:45.972Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): fixed. The analyze page's fixed decision header is gone (removed in a3a6176c); the How-to hotspots went with the screenshots (components/HowToClient.tsx:16-29); ProcessStrip.tsx was deleted (bfb831cc); the floating assistant (components/GlossaryChatbot.tsx:655-661) stays on the float layer and the shell's main reserves pb-32 under it (app/(app)/layout.tsx:435-436). Each part removed or changed in a different commit; no single fixing commit."
     },
     {
       "id": "UX-031",
@@ -395,10 +415,12 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.027Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.2",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:46.027Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "dd71b0e7",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.2): fixed. app/(app)/project/[projectId]/delivery/page.tsx:1046-1077 — with no business documentation the card says 'Not generated — written on the <Documentation> stage.' and shows a visible 'Go to <Documentation>' link button; no hover tooltip remains. D.19 replaced the hover tooltip with a visible sentence (commit message says so); the link button followed later."
     },
     {
       "id": "UX-032",
@@ -408,9 +430,11 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.081Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.3",
-      "updatedAt": "2026-09-15T10:32:46.081Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "2e8309ab",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.3): fixed. app/(app)/project/[projectId]/tco/page.tsx:1153-1164 — a print:block footer lists the inputs: LoC, developer and key-user day rates, modernisation investment, upgrade and feature-pack cadence (marked 'assumed, not stated' when not set), and the target score of 95 as an assumption. The printout now carries its own cost figures."
     },
     {
       "id": "UX-033",
@@ -420,10 +444,12 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.133Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:46.133Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. components/PresentationViewer.tsx:333,342 — prev/next buttons labelled 'Previous slide: <title>' / 'Next slide: <title>'; :133 the slide counter is aria-live='polite'. Labels and the live counter added in 3.0.4 (refined in b4431623)."
     },
     {
       "id": "UX-034",
@@ -433,9 +459,11 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.189Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
-      "updatedAt": "2026-09-15T10:32:46.189Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. 148b62f5 (3.0.4, 'der Task-Drawer liess die Tastatur hinter sich weiterlaufen') fixed the drawer's keyboard handling and e7095b1d made it a CcDialog (focus trap, Escape, focus return per components/cc/Dialog.tsx:22-23); the task drawer no longer exists in documentation/page.tsx (no 'Close Specification'/drawer left). Fixed in 3.0.4; the drawer was later removed with the old blueprint."
     },
     {
       "id": "UX-035",
@@ -446,9 +474,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.245Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "after 3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:46.245Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/documentation/page.tsx:1458-1466 — during the SOP/RACI model generation the page shows 'Writing the SOP and the RACI (model)…', elapsed time and an expected duration, and stops itself at a ceiling (385-407), but offers no cancel and does not say whether leaving the page loses the run; testing/page.tsx:1489-1494 'Generating scenarios...' has no cancel either. Rescheduled: Progress exists now; a user cancel (and a leave hint) is a new control, not a quality fix."
     },
     {
       "id": "UX-036",
@@ -458,9 +487,11 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.297Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-15T10:32:46.297Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "dd71b0e7",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. No text-[7-10px] class is left anywhere in app/ or components/ (grep: 0 hits; smallest arbitrary size is text-[11px]). app/globals.css:373-375 sets the type floor ('cc-text-label 11 / 600 / CAPS ... Nothing is smaller than --cc-text-min'), and tests/cc-token-guard.spec.ts:196 pins --cc-text-min to 11px. Note: the floor is 11px for micro labels and column heads, not the 12px the finding recommended; that is the DESIGN.md decision. The 9px/10px type was removed page by page in block D; dd71b0e7 (D.19) removed it from delivery/page.tsx (the cited location), and e7095b1d (D.16a) removed it from documentation/page.tsx."
     },
     {
       "id": "UX-037",
@@ -496,10 +527,12 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.466Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.7",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:46.466Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "ef2d95e0",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.7): fixed. app/(app)/project/[projectId]/transformation/page.tsx:2481-2482,2486-2493 — the ticks are presented honestly as 'Your checklist' / 'Kept in this browser only' and '… ticked in this browser — your own checklist, gone when the page reloads. Not saved, and nobody signs anything here.' (the recommendation's second option). Sign-off language replaced by an honest personal-checklist label (ADR-083, 'no checklist poses as a sign-off')."
     },
     {
       "id": "UX-040",
@@ -522,10 +555,11 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.569Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:46.569Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. components/design/SecurityHardeningChecklist.tsx:148-155 and components/design/CloudServiceIntegrations.tsx:408-416 are CcButtons with aria-haspopup='dialog'; transformation/page.tsx:2126-2139 minimap markers are <button> with aria-label 'Go to line N: …'; the global :focus-visible ring is in app/globals.css:583-641; no div/span onClick remains. Keyboard and names fixed during block D (several commits); residual: minimap buttons are 16px (w-4 h-4), below the 24px target the finding also asked for."
     },
     {
       "id": "UX-042",
@@ -535,10 +569,11 @@
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.619Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:46.619Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. components/cc/Button.tsx declares the four variants and tests/cc-style-guard.spec.ts:18-20, 67-70 and 354-397 hold 'four button styles, each identical to itself' over rendered [data-cc-button]; the cited one-offs are gone (NavigationButtons deleted in a3a6176c, Jira/Upgrade modals in 861dfd12), components/ErrorBoundary.tsx:72-79 uses CcButton, app/not-found.tsx:51-56 CcLinkButton, app/error.tsx:49 publicButton('primary'). No <button> with an inline bg- class remains in app/ or components/. One button language with a guard; it arrived over several commits (cc library 5b599e53, migration through block D), so no single fix commit."
     },
     {
       "id": "UX-043",
@@ -548,10 +583,11 @@
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.677Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:46.677Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. No text-[8px]/[9px]/[10px] is left in app/ or components/; the smallest size is 11px (202 uses, mostly micro labels/mono anchors), the floor set by DESIGN.md:119-122 ('Lower limit 11 px') and enforced by tests/cc-token-guard.spec.ts:390 and the rendered guard listed at DESIGN.md:1192. The cited components/Stepper.tsx and VerificationRail.tsx were deleted in a3a6176c (3.0.1 workspace). 8-10px type is gone and an 11px floor is guarded; the remaining 11px is the decided micro-label step, not a defect; no single commit."
     },
     {
       "id": "UX-044",
@@ -561,9 +597,10 @@
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.729Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "1.6",
-      "updatedAt": "2026-09-15T12:20:08.818Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.6): Dark mode was removed: tests/dark-mode-guard.spec.ts:5-16 (added in 1a1ebbbb, roadmap 1.6) asserts no dark: variant, no .dark rule and no theme switch, and names UX-044 as the trigger; components/Stepper.tsx was deleted in a3a6176c and components/Skeleton.tsx in 6f8f7e9e. There is no dark mode any more, so a broken dark project row/stepper cannot occur."
     },
     {
       "id": "UX-045",
@@ -573,10 +610,12 @@
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.779Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:46.779Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. components/GlossaryTerm.tsx:74-91 — the trigger is a <button> with aria-expanded/aria-controls, Escape closes and returns focus (48-55), popover has role=tooltip (93-95); components/CollapsibleAccordion.tsx:143-157 — the info button has aria-label 'About: …', aria-expanded and opens on focus; dialogs use CcDialog with a named close button (components/cc/Dialog.tsx:184, 210). components/JiraIntegrationModal.tsx is gone (861dfd12); components/LegalOverlay.tsx has no history at that path. 148b62f5 (3.0.4) names UX-045 in its message; GlossaryTerm was later rewritten in 08851d7c and the accordion info button made keyboard-reachable in aa5bb360."
     },
     {
       "id": "UX-046",
@@ -622,9 +661,11 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.988Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.2",
-      "updatedAt": "2026-09-15T10:32:46.988Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "fddb71e4",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.2): fixed. components/design/DesignDocument.tsx:182-188,226-293 — every design section with no content now renders NotWritten: '<Section>: not written in this design. Regenerate to have the model write it against the contract.' (the child components still return null, but are only rendered when they have content). Honest per-section empty state added when the design document was rebuilt by question."
     },
     {
       "id": "UX-050",
@@ -634,10 +675,12 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.044Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:47.044Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "3cf51724",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. app/(app)/project/[projectId]/transformation/page.tsx:2048 uses cc-text-label (app/globals.css:447-451, 11px/600 caps, muted ink documented at 1319-1322 as clearing 4.5:1); 'Compliance HUD' and the Strict Legacy Mode banner are gone (comment at 2058-2066); minimap markers carry the level in words (2118-2130). Moved to the type and colour tokens in D.15; 11px caps is DESIGN.md §1.2's deliberate floor, not the 9-10px low-contrast text of the finding."
     },
     {
       "id": "UX-051",
@@ -672,9 +715,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.207Z",
       "status": "eingeplant",
-      "step": "3.0",
+      "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:47.207Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): app/error.tsx:38-51 still shows 'Something went wrong!' with the raw `{error.message || 'Unknown error'}` in a mono box and a large rounded-3xl card with publicButton, while components/ErrorBoundary.tsx:53-82 and app/not-found.tsx:39-57 use the workspace cc card (rounded-cc-card, CcButton/CcLinkButton). There is no 'Back to home' way on app/error.tsx, only 'Try Again'. Rescheduled: Wording/defect fix on an existing page: hide the raw message behind details, align the card and add a way home."
     },
     {
       "id": "UX-054",
@@ -720,9 +764,11 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.427Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.3",
-      "updatedAt": "2026-09-15T10:32:47.427Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "3cf51724",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.3): fixed. app/(app)/project/[projectId]/transformation/page.tsx:2445 dialog title 'Grounding Audit'; components/transformation/TransformationObjectPage.tsx:426,434 facet 'Grounding audit' with button 'View grounding audit'; 'Overall Support Rollup' renamed 'Signed source-analysis score' (transformation/page.tsx:2466). 'Grounded Grounding Audit' and 'Compliance HUD' removed in D.15 (git log -S); one name used throughout."
     },
     {
       "id": "UX-058",
@@ -732,9 +778,11 @@
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.482Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
-      "updatedAt": "2026-09-15T10:32:47.482Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. components/QuickAnswer.tsx:55-71 — the heading holds the button (h2 > button, not a heading inside a button), and line 61 `aria-expanded={open === null ? undefined : open}` claims no state before hydration (comment cites UX-058); the collapsed body carries aria-hidden (78). 148b62f5 message: 'UX-058 QuickAnswer no longer claims open before hydration'; the heading order came with D.8/D.33."
     },
     {
       "id": "UX-059",
@@ -757,10 +805,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.592Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:47.592Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "0e145414",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. app/(app)/dashboard/page.tsx:476-485: the row has a CcIconButton with label 'Deliverables of <name>', aria-expanded={isOpen} and aria-controls. Lines 511-531: Invite, Duplicate, Export and Delete are CcIconButtons with labels. components/cc/IconButton.tsx:31,58 makes label required and renders it as aria-label. The comment 'UX-060: the row toggles on a click...' and the labelled buttons came in with D.22a."
     },
     {
       "id": "UX-061",
@@ -770,9 +820,10 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.645Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "1.6",
-      "updatedAt": "2026-09-15T12:20:08.910Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.6): Dark mode no longer exists. tests/dark-mode-guard.spec.ts:5-36 says there is no dark mode, names UX-061/UX-062, and checks that no dark: variant, .dark rule or theme wiring exists. app/(app)/layout.tsx:74-80 says the theme bootstrapper is gone. The light-only replacement cannot have a half-dark table. Dark mode was removed in roadmap 1.6 (1a1ebbbb, 'there is no dark mode, and a guard keeps it that way'), as the finding's fallback suggested."
     },
     {
       "id": "UX-062",
@@ -782,9 +833,10 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.697Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "1.6",
-      "updatedAt": "2026-09-15T12:20:08.977Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.6): As for UX-061: tests/dark-mode-guard.spec.ts:5-36 checks that no dark: variant, .dark rule or theme switch exists. app/(app)/settings/page.tsx:1498-1503 notes that the Light/Dark/System selector was removed. The only remaining 'dark' match is components/cc/Button.tsx:61, a button variant named dark, not a theme. There is no dark theme any more, so a table that stays white in dark mode cannot happen."
     },
     {
       "id": "UX-063",
@@ -794,10 +846,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.752Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:47.752Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "0e145414",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.5): fixed. app/(app)/dashboard/page.tsx:683 renders <StarterExamples> as the only example gallery. Lines 51-55 say the personal example library went with the redesign. No 'Legacy Code Database' or 'Show Preloaded Examples' string is left in app/, components/ or lib/ (grep: no files). D.22a ('List Report, eine Beispielgalerie') removed the second example library."
     },
     {
       "id": "UX-064",
@@ -807,10 +861,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.807Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:47.807Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "db842453",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. app/(app)/settings/page.tsx uses only CcButton variants (e.g. :1209 variant=\"primary\", :1240 variant=\"ghost\" tone=\"danger\", :1250 variant=\"primary\"). The only raw <button> left is the reveal button at :136. tests/cc-style-guard.spec.ts:19 holds the product to four button styles (it had 78). Settings moved to the cc library in D.20a (76b49d97) and D.20b (db842453); the last bg-gradient in settings went in db842453."
     },
     {
       "id": "UX-065",
@@ -820,10 +876,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.860Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:47.860Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "e8985721",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. The auto-save toggle is gone. The assistant-button setting is now a native checkbox: app/(app)/settings/page.tsx:1505-1514, <CcCheckbox label=\"Show the floating assistant button...\">. Two-factor authentication is a state word plus explicit buttons (:1198-1252), not a toggle. Where a switch is used, components/cc/Switch.tsx:63-64 renders role=\"switch\" aria-checked. e8985721 removed the 'Auto-save projects' toggle and put a checkbox in place of the remaining switch-like control. CcSwitch with switch semantics came in ae19f452."
     },
     {
       "id": "UX-066",
@@ -833,10 +891,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.904Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:47.904Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "65b0ffa8",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): fixed. app/(app)/settings/page.tsx:1830 step title is '1. Add the account to your authenticator'. :1851-1853 the button reads 'I have added it'. :1914-1917 tells the reader to open the app or type the setup key, and :1920-1931 records that the QR code was removed. Nothing claims a scan. 65b0ffa8 ('der MFA-Knopf behauptet keinen gescannten QR-Code') removed 'I have scanned it'."
     },
     {
       "id": "UX-067",
@@ -846,10 +906,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.951Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:47.951Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "76b49d97",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. No alert(, confirm( or window.prompt call is left in app/ or components/ (grep: only a comment in admin/page.tsx:33). Account deletion is a CcMessageBox: app/(app)/settings/page.tsx:2061-2117 lists the consequences, asks for the typed e-mail address (plus the MFA code and password), and shows inline field errors. Removing the key is a CcMessageBox at :2050-2059. D.20a ('native Dialoge ... auf die cc-Bibliothek') replaced the settings prompts. The StarterExamples alert went in 0e145414."
     },
     {
       "id": "UX-068",
@@ -859,10 +921,11 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.018Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "3.0.4",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:48.018Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): components/LandingSlideshow.tsx was deleted in 6c4f6a47. Replacements do not repeat the problem: components/landing/ViewsStage.tsx:73-78 uses CcSegmentedControl (a radio group with arrow keys), and the How-to carousel components/HowToClient.tsx:98, 154-162, 179 has focus-visible rings and named CcIconButtons instead of 8px dots. The slideshow with 8px progress dots no longer exists; 148b62f5 also added focus rings and 44px targets to the How-to carousel."
     },
     {
       "id": "UX-069",
@@ -872,10 +935,12 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.072Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:48.072Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. components/LandingModals.tsx:700 — the access dialogs are a CcDialog whose close button is a CcIconButton labelled by t('action.close') (components/cc/Dialog.tsx:210); the password toggle components/LandingModals.tsx:114-126 has aria-label 'Show password' and aria-pressed={shown}, used at 895 and 1125. 148b62f5 (3.0.4) named the icon buttons and gave the eye buttons aria-pressed (message cites UX-069/UX-075); the dialog moved to CcDialog in ff09ab0d."
     },
     {
       "id": "UX-070",
@@ -885,10 +950,11 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.115Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:48.115Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. The cited components/BenefitCard.tsx and PilotWarningBanner.tsx were deleted in ffa37d17 (new landing 3.0.6); components/SectionHeader.tsx:50 eyebrow is now text-xs bold caps; app/page.tsx has no text-[8-11px], and nothing below 11px is left in app/ or components/ (DESIGN.md:122 floor, guarded per DESIGN.md:1192). The 8-10px landing labels are gone; it happened across the landing rebuild and block D, so no single commit."
     },
     {
       "id": "UX-071",
@@ -910,10 +976,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.226Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.226Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "b4fa8695",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): fixed. app/(app)/admin/page.tsx:32-39: errors that used to be a native alert() are now a message strip (actionError), and a delete waits on a Message Box (pendingDelete). No confirm( or alert( call is left in the file. D.21 ('Bestaetigung als Message Box') did it; the 10-second undo the finding suggested was not built, and the confirmation box covers the risk."
     },
     {
       "id": "UX-073",
@@ -923,9 +991,11 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.275Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-15T10:32:48.275Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "0e145414",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. No text-[7-10px] class is left in app/ or components/ (grep: 0 hits). Badges are CcTag, and the 11px micro label is the floor (app/globals.css:373-375; tests/cc-token-guard.spec.ts:196). The 10px product banner from layout.tsx is gone entirely (3.0.6). 0e145414 (D.22a) removed the 9px/10px classes from dashboard/page.tsx and StarterExamples.tsx; 52adeb35 removed the in-product banner."
     },
     {
       "id": "UX-074",
@@ -935,10 +1005,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.338Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.338Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "db842453",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. The 'Decorative side accent' gradient stripes are gone; grep for 'side accent' or 'absolute left-0 top-0 bottom-0' in app/ and components/ returns nothing. Settings cards are plain CcCard (e.g. app/(app)/settings/page.tsx:1181 <CcCard level={2} title=\"Sign-in security\">, :1497). D.20b ('Darstellung auf Tokens ... und cc-Karten') removed the 'Decorative side accent' string."
     },
     {
       "id": "UX-075",
@@ -948,9 +1020,11 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.382Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
-      "updatedAt": "2026-09-15T10:32:48.382Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "76b49d97",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. app/(app)/settings/page.tsx:135-144: the one reveal button has aria-label={reveal.label} and aria-pressed={reveal.shown}. The labels are 'Show current password' (:1279), 'Show new password' (:1305), 'Show API key' (:1419) and 'Show password' (:1662). The app-wide focus ring comes from D.3. D.20a introduced aria-pressed={reveal.shown} with named reveal buttons."
     },
     {
       "id": "UX-076",
@@ -985,10 +1059,12 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.547Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.547Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. components/admin/UsageQuotaPanel.tsx:386-404: the row's button has aria-expanded={open} and aria-controls={`usage-detail-${uid}`}, and the detail region at :435 has that id. The 'UX-078: the row says whether its detail is open' comment and the aria attributes came in with 3.0.4 (148b62f5)."
     },
     {
       "id": "UX-079",
@@ -999,9 +1075,10 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.605Z",
       "status": "eingeplant",
-      "step": "5.1",
+      "step": "3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.605Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 5.1): components/LandingModals.tsx:1036-1046 — Register is disabled while `!agreedGDPR || !agreedTerms` with no explanation; only the Google button gets the hint (1061-1065 'Accept the data protection notice and the terms above to continue with Google.'). Rescheduled: A one-line microcopy fix (show the same hint for Register) on the existing sign-up dialog; sign-up fields stay unchanged."
     },
     {
       "id": "UX-080",
@@ -1025,10 +1102,11 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.718Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "3.0.4",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.718Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): components/LandingSlideshow.tsx was deleted in 6c4f6a47 and the float-slow/drift-up hero keyframes left app/page.tsx in ffa37d17 (no match in app/page.tsx or app/globals.css today). The replacement components/landing/ViewsStage.tsx:31-40 checks prefers-reduced-motion and then does not play, plays once and pauses on hover/focus (44-69). The autoplay slideshow and hero particles are gone; the new landing stage respects reduced motion."
     },
     {
       "id": "UX-082",
@@ -1038,10 +1116,12 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.772Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.6",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.772Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "70780b27",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.6): fixed. components/PublicHeader.tsx:5-15 is the one public header; app/features/layout.tsx:1-18 and app/catalog/layout.tsx use it (12ed4cd0, D.24), and the legal pages wear it through app/datenschutz/layout.tsx and app/impressum/layout.tsx (both render <PublicHeader />, comment 'They now wear the same frame as every other public page (D.24, UX-082)'); app/terms and app/licenses have their own layout.tsx and no <header> left in their pages. D.24 (12ed4cd0) unified features/catalog and D.26 (70780b27) moved the legal pages onto the same header."
     },
     {
       "id": "UX-083",
@@ -1051,10 +1131,11 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.827Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "3.0",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.827Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0): components/SamplePackageDownload.tsx was deleted in bfb831cc (3.0.6: the showroom is dropped, the landing leads into the real demo); no public package download is left. The remaining ZIP downloads in app/(app)/project/[projectId]/delivery/page.tsx:537-541 and 572-574 show an error strip (setBundleError / setAuditPackError) and do not just log to the console. The landing sample-package download no longer exists, and the delivery downloads that remain report failures in the UI."
     },
     {
       "id": "UX-084",
@@ -1077,9 +1158,11 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.935Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-15T10:32:48.935Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "db842453",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. Settings fields are CcField, whose label is 13px semibold in sentence case: components/cc/Field.tsx:101 <label className=\"text-[13px] font-semibold text-cc-ink\">. Status shows as a StateWord ('On'/'Off', app/(app)/settings/page.tsx:1198-1200). No text-[10px] is left in settings/page.tsx. The last text-[10px] in settings/page.tsx went in D.20b (db842453); the fields moved to CcField in D.20a/e8985721."
     },
     {
       "id": "UX-086",
@@ -1101,9 +1184,11 @@
       "area": "release",
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
       "createdAt": "2026-09-15T17:19:09.663Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.8",
-      "updatedAt": "2026-09-15T17:19:09.663Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "ebf9f51c",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.8): fixed. components/analyze/BusinessValueAudit.tsx:62-64: the debt level, including 'Debt not computed', is a CcTag, and components/cc/Tag.tsx:9 says a tag has 'muted ink, no icon, no state colour'. The green classes are gone. D.13 removed bg-green-100 from BusinessValueAudit."
     },
     {
       "id": "UX-088",
@@ -1114,8 +1199,9 @@
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
       "createdAt": "2026-09-15T17:19:09.741Z",
       "status": "eingeplant",
-      "step": "0.3",
-      "updatedAt": "2026-09-15T17:19:09.741Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.3): The score itself is fixed: components/analyze/CleanCoreScoreSection.tsx:165-171 says 'higher is better — not a compliance percentage and not an SAP measure' and links to /clean-core-score, which states the contrast with SAP's Technical Debt Score (app/(app)/clean-core-score/page.tsx:63,95; analyze fix 3173c476). The Knowledge Hub FAQ answers still say only 'attaching KPIs: a Clean Core Score and an A–D readiness grade...' (app/(app)/knowledge/page.tsx:55 and :128), with no direction and no 'not an SAP metric'. The only hint is the 'What is the Clean Core Score?' link at :185. Rescheduled: Small text fix: add 'Clean-Core.io's own, higher is better, not SAP's Technical Debt Score' to the two knowledge FAQ answers."
     },
     {
       "id": "UX-089",
@@ -1126,8 +1212,9 @@
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
       "createdAt": "2026-09-15T17:19:09.814Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-15T17:19:09.814Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): components/analyze/BusinessValueAudit.tsx still uses 'Business Value Audit' (:30), 'Legacy Asset Valuation' (:31), 'Legacy Asset Value' (:39) and 'IP Score' (:46) for one figure. The card is now shown in the Economics stage (components/tco/BusinessValuePlan.tsx:69). Rescheduled: Wording fix in one component, no new UI: settle on one name and drop or explain 'IP Score'."
     },
     {
       "id": "UX-090",
@@ -1327,9 +1414,10 @@
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:07.088Z",
       "status": "eingeplant",
-      "step": "1.6",
+      "step": "after 3.0.18",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-17T06:39:07.088Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.6): The product says nothing to users about the removal. app/(app)/layout.tsx:74-80 and app/(app)/settings/page.tsx:1498-1503 explain it only in code comments, and no UI text in app/ or components/ mentions dark mode (grep: only those comments, plus CodeHighlighter and CodeSurface comments). Rescheduled: A one-time notice to existing accounts needs new UI and dismiss state. A month after removal and after the 3.0 rebuild its value is low, so it could also be declined."
     },
     {
       "id": "UX-106",
@@ -1340,8 +1428,9 @@
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:12.272Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-17T06:39:12.272Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Partly fixed. Design links to Settings (app/(app)/project/[projectId]/design/page.tsx:1070), the Documentation business layer does too (documentation/page.tsx:1511), and the Transformation prerequisites box has 'Open Settings' (transformation/page.tsx:2254). Still text only: components/NotGenerated.tsx:48-49 renders the hint as plain text, so the Testing empty state (testing/page.tsx:1460-1468) and the Transformation code pane (transformation/page.tsx:2100-2106) say 'Add your own Gemini API key in Settings' with no link. Rescheduled: A usability defect fixed by an optional link in NotGenerated, with no new screen."
     },
     {
       "id": "UX-107",
@@ -1388,9 +1477,11 @@
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:36.415Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
-      "updatedAt": "2026-09-17T06:39:36.415Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. app/(app)/admin/page.tsx:486-495: the provider's reason is visible text in the row note, 'Mail provider: {req.welcomeMailDetail}', and the comment says 'UX-110 / UX-146: ... sat only in the badge's hover title ... It is text now.' 3.0.4 (148b62f5) introduced the 'UX-110 / UX-146' visible detail text."
     },
     {
       "id": "UX-111",
@@ -1448,10 +1539,11 @@
       "area": "release",
       "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
       "createdAt": "2026-09-17T07:23:37.374Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-17T07:23:37.374Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 0.2): fixed. Every demo screen carries a strip (components/demo/DemoWorkspace.tsx:223-249) with DEMO_UNSIGNED_NOTICE ('No signed run, no audit pack and no export comes out of this screen', lib/demo-marks.ts:96-98) and a link 'Try an example or your own code' to /dashboard. The demo Delivery says 'No pack leaves this screen. There is no download here' (components/delivery/DemoDelivery.tsx:163-169). The first-run guide's download step (first-run/page.tsx:78,111) walks a started starter example, not the demo. The honest notices date from the demo's first commit 2486f1a8, which is already an ancestor of the reviewed a19945ef. There is no fixing commit; the finding overstated the gap."
     },
     {
       "id": "UX-116",
@@ -1474,9 +1566,11 @@
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
       "createdAt": "2026-09-18T04:40:55.243Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T04:40:55.243Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "44dd1266",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to sofort): fixed. The announcements board no longer exists: app/(app)/dashboard/page.tsx:51-52 says 'The read-only announcements board is gone (owner 02.10.2026, outdated; ADR-061)'. 'ask technical questions' is not in app/, components/ or lib/ (grep: no files). 44dd1266 replaced the inviting sentence; f03e031e (3.0.1) then removed the whole board."
     },
     {
       "id": "UX-118",
@@ -1486,9 +1580,11 @@
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
       "createdAt": "2026-09-18T04:40:55.404Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-18T04:40:55.404Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "80c8a2b5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. lib/messages/navigation.ts:23 defines one wording 'Back to My workspace'; components/BackLink.tsx:66, app/(app)/settings/page.tsx:1095 and app/(app)/admin/page.tsx:516 all render nav('nav.backToMyWorkspace'); the analyze 'Back to My Workspace' pill was replaced by the path (app/(app)/layout.tsx:242-243). tests/back-link-wording.spec.ts holds the wording. One label for the way back to the project list everywhere, stages say 'Back to project workspace'."
     },
     {
       "id": "UX-119",
@@ -1499,8 +1595,9 @@
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
       "createdAt": "2026-09-18T04:40:55.548Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-18T04:40:55.548Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): The 'Not generated' model-key box is gone (documentation needs no model since 3.0.5), but without a signed run the stage still shows an empty-state with a disabled button and plain text 'Run the analysis in stage 1 first' (app/(app)/project/[projectId]/documentation/page.tsx:1788-1808) and a dashed 'No process map yet' box inside the full map/handbook frame (page.tsx:1866-1876, components/documentation/HandbookStage.tsx:122-155, 501-504) - no link to Analyze, no next action. Rescheduled: Small: give the empty states a link to the Analyze tool and collapse the empty map frame; no new screen. Not verified against a current screenshot."
     },
     {
       "id": "UX-120",
@@ -1511,8 +1608,9 @@
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
       "createdAt": "2026-09-18T04:41:03.445Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-18T04:41:03.445Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): text-[16px]/[18px]/[17px]/[12rem] no longer occur in app/ or components/. Remaining: rounded-[6px] in components/cc/SegmentedControl.tsx:32 (not on the DESIGN.md:149-151 radius scale) and rounded-[8px] in components/process-revisions/RevisionHistory.tsx:64 (equals --cc-radius-row, app/globals.css:217, but written as a literal instead of rounded-cc-row). Rescheduled: Token cleanup: replace the literal 8px with rounded-cc-row and either document the 6px inner segment radius in DESIGN.md or map it to the scale."
     },
     {
       "id": "UX-121",
@@ -1614,8 +1712,9 @@
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:35.020Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-18T10:55:35.020Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): Same as UX-120: [12rem], [17px] are gone; rounded-[6px] remains at components/cc/SegmentedControl.tsx:32 and rounded-[8px] at components/process-revisions/RevisionHistory.tsx:64, neither expressed through the cc radius tokens (app/globals.css:333-334). Rescheduled: Duplicate of UX-120; same small token cleanup."
     },
     {
       "id": "UX-129",
@@ -1686,9 +1785,10 @@
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.266Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "3.0.18",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-18T19:08:59.266Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/project/[projectId]/analyze/page.tsx:1846 still sets native disabled on 'Start Analysis' when stagedScanBlock or personalDataPending, and :1856-1862 gives the reason only via title; no aria-describedby to the visible reasons (security box :1715-1717, 'Action Required' strip :1792-1808) and no inline reason under the button. Rescheduled: Accessibility defect on the core path; aria-disabled plus aria-describedby/inline reason, no new screen."
     },
     {
       "id": "UX-135",
@@ -1698,9 +1798,11 @@
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.422Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
-      "updatedAt": "2026-09-18T19:08:59.422Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "0e145414",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): fixed. app/(app)/dashboard/page.tsx has no alert() any more; a blocked create sets quotaBlocked and renders an announced CcMessageStrip 'Limit reached.' (:590-603), beside the exhausted strip with 'Go to settings' (:576-588). Native alert replaced by the product message strip in the D.22a dashboard rebuild."
     },
     {
       "id": "UX-136",
@@ -1711,8 +1813,9 @@
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.561Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-18T19:08:59.561Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/dashboard/page.tsx:511-531: Continue now has visible text, but Invite, Duplicate, Export JSON and Delete are still CcIconButton with label/title only (UserPlus at :511-518). The text menu in components/workspace/WorkspaceRowActions.tsx:142 is not used by /dashboard. Rescheduled: Small: visible 'Invite' label (or the existing row-actions menu) on the row; no new screen."
     },
     {
       "id": "UX-137",
@@ -1723,8 +1826,9 @@
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
       "createdAt": "2026-09-18T19:08:59.692Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-18T19:08:59.692Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): text-[16px]/[18px] gone; [28rem] remains as a scroll max-height (components/analyze/AtcFindingsPanel.tsx:151, components/workspace/WorkspaceProcess.tsx:545, :609), rounded-[6px] at components/cc/SegmentedControl.tsx:32 and rounded-[8px] at components/process-revisions/RevisionHistory.tsx:64 outside the token scale. Rescheduled: Duplicate of UX-120 plus the 28rem height; same small token cleanup."
     },
     {
       "id": "UX-138",
@@ -1825,9 +1929,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:11.687Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-24T07:21:11.687Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "e35920ac",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to sofort): fixed. app/(app)/admin/page.tsx:375 labels the third tab 'Not active (n)' (the filter at :334 deliberately groups all non-approved), matching the header count 'Not active' at :531; every tab shows its count. Tab now named for what it holds, with counts."
     },
     {
       "id": "UX-146",
@@ -1837,9 +1943,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:12.289Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
-      "updatedAt": "2026-09-24T07:21:12.289Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "148b62f5",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 3.0.4): fixed. app/(app)/admin/page.tsx:488-495 renders the provider detail as visible text in the row note ('Mail provider: {req.welcomeMailDetail}', data-welcome-mail-detail), not only in a title. Detail readable by keyboard, touch and screen reader."
     },
     {
       "id": "UX-147",
@@ -1849,9 +1957,10 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:12.826Z",
-      "status": "eingeplant",
+      "status": "widerlegt",
       "step": "sofort",
-      "updatedAt": "2026-09-24T07:21:12.826Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Obsolete, checked 18.10.2026 (3.0.18 item 11; was scheduled to sofort): The announcements board is gone from the dashboard (app/(app)/dashboard/page.tsx:51-52: 'The read-only announcements board is gone (owner 02.10.2026, outdated; ADR-061)'); 'Active Discussions' no longer occurs in app/ or components/. Before removal it had been renamed 'Announcements' in e35920ac. Wording fixed in e35920ac, board later removed entirely; nothing replaces it."
     },
     {
       "id": "UX-148",
@@ -1861,10 +1970,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:13.369Z",
-      "status": "eingeplant",
-      "reason": "Product decision for Sonny: before acceptance the page deliberately shows nothing about the project (link bound to a confirmed address, name only after POST accept, invitation page:67/89); the mail names the inviter (lib/invitation-email.ts:85). What may be visible beforehand is a trade-off against leaks through forwarded links.",
-      "updatedAt": "2026-09-24T08:26:00.389Z",
-      "step": "sofort"
+      "status": "behoben",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to sofort): fixed. app/(app)/invitation/[projectId]/[invitationId]/page.tsx:166-183 shows 'Invited by' and 'Link expires on' to the signed-in invited account before acceptance; :185-189 explains the link is bound to one confirmed address; the project name stays behind acceptance (:20-28). Context shown without leaking the project name.",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "step": "sofort",
+      "fixedIn": "c6f74942"
     },
     {
       "id": "UX-149",
@@ -1874,9 +1984,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:13.907Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-24T07:21:13.907Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "e35920ac",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to sofort): fixed. app/(app)/project/[projectId]/documentation/error.tsx:70-79 and testing/error.tsx:77-78 keep the action sentence on top and fold the raw message into <details> 'Technical details'. Raw error collapsed as recommended."
     },
     {
       "id": "UX-150",
@@ -1910,10 +2022,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:15.604Z",
-      "status": "eingeplant",
-      "reason": "Security-relevant, leaves the UX flow: GET-triggered approval/rejection via mail link (app/api/request-tenant-access/route.ts:73-74 creates auto=true and action=reject, approve-tenant/page.tsx:176-187 executes them), already named in the Grok review 26.08. Belongs in the security register.",
-      "updatedAt": "2026-09-24T08:26:00.607Z",
-      "step": "sofort"
+      "status": "behoben",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to sofort): fixed. app/(app)/admin/approve-tenant/page.tsx:174-177: no automatic action any more; approve/reject only on click of the buttons at :284 and :288. Auto-approve/auto-reject removed; links act only on an explicit click.",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "step": "sofort",
+      "fixedIn": "3a56171c"
     },
     {
       "id": "UX-153",
@@ -1948,8 +2061,9 @@
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:17.836Z",
       "status": "eingeplant",
-      "step": "1.4",
-      "updatedAt": "2026-09-24T07:21:17.836Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): app/(app)/project/[projectId]/page.tsx:233-238 and :263-268 still render only <div role=\"status\" class=\"py-16\"><span class=\"sr-only\">Loading the workspace…</span></div>; no loading.tsx exists under app/(app). Since 3.0.1 this gate is hit by every account opening a project. Rescheduled: Small accessibility/feedback defect: add a visible indicator, keep role=status."
     },
     {
       "id": "UX-156",
@@ -1959,9 +2073,11 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:18.523Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-24T07:21:18.523Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "db842453",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. app/(app)/settings/page.tsx:1094-1096 renders CcLinkButton ghost with nav('nav.backToMyWorkspace') - no uppercase class (CC_BUTTON_BASE in components/cc/Button.tsx:70-71 has none); same text as components/BackLink.tsx:66. Uppercase settings link replaced in D.20b; wording unified later in 80c8a2b5."
     },
     {
       "id": "UX-157",
@@ -1984,8 +2100,9 @@
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:02.749Z",
       "status": "eingeplant",
-      "step": "1.5",
-      "updatedAt": "2026-09-24T12:35:02.749Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): app/(app)/dashboard/page.tsx:511-518: Invite is still a CcIconButton with UserPlus and only label/title 'Invite someone to read this project', next to icon-only Duplicate, Export, Delete (:519-531). Rescheduled: Duplicate of UX-136; give Invite a visible label."
     },
     {
       "id": "UX-159",
@@ -1996,8 +2113,9 @@
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:02.992Z",
       "status": "eingeplant",
-      "step": "1.4",
-      "updatedAt": "2026-09-24T12:35:02.992Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): Same as UX-155: app/(app)/project/[projectId]/page.tsx:235-237 and :265-267 show only an sr-only 'Loading the workspace…' in a role=status div. Rescheduled: Duplicate of UX-155."
     },
     {
       "id": "UX-160",
@@ -2007,9 +2125,11 @@
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:03.233Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
-      "updatedAt": "2026-09-24T12:35:03.233Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "a2cbd340",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): fixed. app/(app)/project/[projectId]/analyze/page.tsx:1898-1911 and :1932-1943 await runProjectCommand and set state only after it; a refusal throws into components/analyze/UsageUpload.tsx:210-217 / AtcUpload.tsx:143-150, which keep the preview and show an error strip (UsageUpload.tsx:451-456 'Not imported — the server did not confirm the save', AtcUpload.tsx:327-330). Import shows as imported only once stored; failure is visible."
     },
     {
       "id": "UX-161",
@@ -2020,8 +2140,9 @@
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:03.492Z",
       "status": "eingeplant",
-      "step": "1.4",
-      "updatedAt": "2026-09-24T12:35:03.492Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.4): app/(app)/project/[projectId]/analyze/page.tsx:661-714 exportToConfluence saves the file via file-saver and silently deletes stale analysis_confluence_* blobs; no confirmation or note after the download, and components/requirements/ExportMenu.tsx has no status/announce. Rescheduled: Small feedback fix: a short confirmation naming the file and that it is only downloaded; no new screen."
     },
     {
       "id": "UX-162",
@@ -2055,9 +2176,11 @@
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:04.218Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
-      "updatedAt": "2026-09-24T12:35:04.218Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "db842453",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to 1.5): fixed. Same as UX-156: app/(app)/settings/page.tsx:1094-1096 and components/BackLink.tsx:66 both render 'Back to My workspace' (lib/messages/navigation.ts:23) without text-transform. Duplicate of UX-156; capitalisation fixed in D.20b, wording unified in 80c8a2b5."
     },
     {
       "id": "UX-165",
@@ -2068,8 +2191,9 @@
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:11.544Z",
       "status": "eingeplant",
-      "step": "D.10b",
-      "updatedAt": "2026-09-24T18:18:11.544Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.10b): Same as UX-134: app/(app)/project/[projectId]/analyze/page.tsx:1846 native disabled and :1856-1862 title-only reason on 'Start Analysis'; no aria-describedby, no inline reason under the button. Rescheduled: Duplicate of UX-134; accessibility defect on the core path."
     },
     {
       "id": "UX-166",
@@ -2080,8 +2204,9 @@
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:11.773Z",
       "status": "eingeplant",
-      "step": "D.16a",
-      "updatedAt": "2026-09-24T18:18:11.773Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.16a): app/(app)/project/[projectId]/documentation/page.tsx:1780-1808: when the stored blueprint is rejected and there is no signed source, the stage shows the warning 'A blueprint is stored … not shown' (blueprint-schema.ts:38-40), the title 'Replace the stored blueprint' with a disabled 'Replace with the code reading' button, and 'There is no source here that the active run signed. Run the analysis in stage 1 first.' at once; below, 'No process map yet' (:1869). Rescheduled: Contradictory state text; show one state (no signed run -> go to Analyze) - logic/text fix, no new screen."
     },
     {
       "id": "UX-167",
@@ -2092,8 +2217,9 @@
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:11.985Z",
       "status": "eingeplant",
-      "step": "D.21",
-      "updatedAt": "2026-09-24T18:18:11.985Z"
+      "step": "3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to D.21): app/(app)/admin/approve-tenant/page.tsx:292-297 — the counter-decision hint ('To approve instead, open the Approve link in the same mail. Each link works once, and using either closes both.') is still a `cc-text-meta` line (12px/600, app/globals.css:441-445) placed below the single button. Contrast is solved: the page is light since b4fa8695 (D.21) and text-cc-ink-muted is #4b5563 (app/globals.css:146), and the wording is mirrored for approve/reject. Rescheduled: Only size and placement remain (12px meta below the button vs. body size above it) — a small text/layout fix on an existing screen."
     },
     {
       "id": "UX-168",
@@ -2103,9 +2229,11 @@
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:12.199Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "D.22a",
-      "updatedAt": "2026-09-24T18:18:12.199Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "44dd1266",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to D.22a): fixed. The sentence 'Feel free to ask technical questions…' was removed in 44dd1266 (QA fix: the read-only announcements board no longer invites posting or questions); the board itself was then dropped in f03e031e (3.0.1), as recorded in app/(app)/dashboard/page.tsx:51-52 ('The read-only announcements board is gone (owner 02.10.2026, outdated; ADR-061)'). No 'forum' or announcement text remains in app/ or components/. The inviting sentence was removed, and later the whole board."
     },
     {
       "id": "UX-169",
@@ -2115,9 +2243,11 @@
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:12.437Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "D.9",
-      "updatedAt": "2026-09-24T18:18:12.437Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "fixedIn": "472315d9",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to D.9): fixed. components/StageHeader.tsx:54-58 — the stage title comes from PHASES in lib/workflow-steps.ts (lib/workflow-steps.ts:185 `label: 'Documentation'`), the comment cites UX-169 ('Documentation' in the stepper vs 'Process Blueprint & Mapping'); documentation/page.tsx:1617-1619 passes `stage=\"documentation\"`, and the dashboard reads the same label (app/(app)/dashboard/page.tsx:861 `PHASES.find((p) => p.key === 'documentation')?.label`). 'Process Blueprint & Mapping' no longer appears in app/ or components/ except in that comment. Stage title and dashboard deliverable now share one name from PHASES (D.9; dashboard side in 0e145414, D.22a)."
     },
     {
       "id": "UX-170",
@@ -2127,9 +2257,10 @@
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:12.649Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "D.26",
-      "updatedAt": "2026-09-24T18:18:12.649Z"
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Checked 18.10.2026 (3.0.18 item 11; was scheduled to D.26): fixed. app/auth/action/AuthActionClient.tsx:13-27 and 97-109 — every invalid or expired code ends in an error card with a specific next step (e.g. expired: 'Open the invitation link again while signed in, and we will send you a fresh one'; used: 'sign in again and open the invitation link') and a 'Write to {CONTACT_EMAIL}' button; the success state links to sign-in (87-92). The finding only read the server shell app/auth/action/page.tsx:30-50. Not a dead end; the way out has existed since the page was created in cea71e98, which is an ancestor of the finding's origin a12774cd — so no fix commit; there is no explicit 'Back to sign-in' link in the error state, but the text and contact button cover it."
     },
     {
       "id": "UX-171",
@@ -2176,8 +2307,9 @@
       "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",
       "createdAt": "2026-09-28T06:18:31.009Z",
       "status": "eingeplant",
-      "step": "Block D",
-      "updatedAt": "2026-09-28T06:18:31.009Z"
+      "step": "after 3.0.18",
+      "updatedAt": "2026-10-18T21:00:00.000Z",
+      "reason": "Still open, checked 18.10.2026 (3.0.18 item 11; was scheduled to Block D): One-off arbitrary sizes are still spread across 66 files (101 w-/h-/min-/max-[…] values in app/ and components/), e.g. components/cc/MessagePopover.tsx:180 `w-[470px]`, components/process-map/ProcessOutline.tsx:338 `w-[17px]`, components/ProcessFlow.tsx:123 `w-[210px] min-h-[96px]`, components/GlossaryChatbot.tsx:699 `w-[30rem]`/`w-[36rem]`; no token or guard covers arbitrary widths/heights. Rescheduled: A cross-product token refactor of sizes across ~66 files, not a small quality fix."
     },
     {
       "id": "UX-175",
