@@ -20,7 +20,8 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { csvCell } from '@/lib/csv-formula';
 import { buildEvidenceChain } from '@/lib/evidence-chain';
 import { recordedProfileOf } from '@/lib/assessment-target';
-import { profileCoverage } from '@/lib/assessment-profile';
+import { profileCoverage, PROFILE_INPUT_ID } from '@/lib/assessment-profile';
+import { INPUT_IDS } from '@/lib/input-manifest';
 // The escaper the HTML/Word executive summary below uses at every interpolation.
 // It is imported rather than defined here: one escaper, shared with the stage
 // exports, and its output is unchanged, so the signed bytes of a pack issued
@@ -820,10 +821,16 @@ export function generateInputManifestFile(project: Project): string {
       }
     : {
         recorded: false,
+        // SEC-2026-873 (owner decision 18.10.2026).
         note:
           'This run was signed before the input manifest existed. ' +
           'Its inputs can only be read from the individual fields of the run: the source fingerprint ' +
-          'in 01-input-fingerprint.json, the engine and catalog versions in 04-model-card.md.',
+          'in 01-input-fingerprint.json, the engine and catalog versions in 04-model-card.md. ' +
+          'When this pack was made, only the source was compared with the signed run, and only where ' +
+          '01-input-fingerprint.json carries its digest. The other inputs (the deployment target, the SAP ' +
+          'catalog, the rule set and the target profile) were not checked.',
+        checkedWhenPacked: [INPUT_IDS.source],
+        notCheckedWhenPacked: [INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, PROFILE_INPUT_ID],
       };
   return JSON.stringify(
     {

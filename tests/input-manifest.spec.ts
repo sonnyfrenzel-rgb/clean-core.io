@@ -206,6 +206,11 @@ test.describe('the signature and the pack', () => {
     expect(doc.recorded).toBe(false);
     expect(doc.note).toContain('signed before the input manifest existed');
     expect(doc.inputs).toBeUndefined();
+    // SEC-2026-873 (owner decision 18.10.2026): the signed note says what was checked when the pack was made.
+    expect(doc.note).toContain('only the source was compared with the signed run');
+    expect(doc.note).toContain('were not checked');
+    expect(doc.checkedWhenPacked).toEqual([INPUT_IDS.source]);
+    expect(doc.notCheckedWhenPacked).toEqual([INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, 'profile:assessment']);
   });
 
   test('the canonical manifest form is untouched — packs sealed before 0.5 still hash the same', () => {

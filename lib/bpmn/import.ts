@@ -24,7 +24,7 @@ import { diffProcessRevisions, MAX_REVISION_XML, type RevisionDiff } from '../pr
  *   - **by name** — the id was rewritten (`sid-…`), but exactly one as-is element
  *     of the same type carries exactly this name and no other element of the
  *     file claimed it — across the model, then inside each recognised
- *     sub-process, then by the recognised element it is entered from. The
+ *     sub-process, then by the recognised element it is entered from or leads to. The
  *     element then takes the as-is id back, so a later comparison names it as
  *     the same step. A name that stays ambiguous is not guessed.
  *
@@ -404,13 +404,28 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
     .filter((f) => f.$type === 'bpmn:SequenceFlow' && f.targetRef === element)
     .map((f) => idOf(f.sourceRef))
     .filter((id): id is string => !!id);
-  type Pass = 'global' | 'scoped' | 'neighbour';
+  // And where it leads — for elements nothing enters: two start events of one
+  // name on one level (the PBO and PAI modules of a screen, each "Start" before
+  // its own "Done") differ only in the recognised element they lead to.
+  const istOutgoing = new Map<string, string[]>();
+  for (const twin of istById.values()) {
+    if (twin.type !== 'bpmn:SequenceFlow' || !twin.source || !twin.target) continue;
+    istOutgoing.set(twin.source, [...(istOutgoing.get(twin.source) ?? []), twin.target]);
+  }
+  const fileOutgoing = (element: ModdleElement): string[] => all
+    .filter((f) => f.$type === 'bpmn:SequenceFlow' && f.sourceRef === element)
+    .map((f) => idOf(f.targetRef))
+    .filter((id): id is string => !!id);
+  type Pass = 'global' | 'scoped' | 'neighbour' | 'successor';
   const namePass = (pass: Pass): number => {
     const scoped = pass !== 'global';
+    const near = pass === 'neighbour' || pass === 'successor';
+    const istNear = pass === 'neighbour' ? istIncoming : istOutgoing;
+    const fileNear = pass === 'neighbour' ? fileIncoming : fileOutgoing;
     const index = new Map<string, string[]>();
     for (const [id, twin] of istById) {
       if (claimed.has(id) || !FLOW_NODE_TYPES.has(twin.type) || !twin.name.trim()) continue;
-      const from = pass === 'neighbour' ? (istIncoming.get(id) ?? []).filter((x) => claimed.has(x)).sort().join(',') : '';
+      const from = near ? (istNear.get(id) ?? []).filter((x) => claimed.has(x)).sort().join(',') : '';
       const key = `${twin.type}|${twin.name.trim()}|${scoped ? twin.parent ?? '' : ''}|${from}`;
       index.set(key, [...(index.get(key) ?? []), id]);
     }
@@ -419,8 +434,8 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
       if (!element.id || claimed.has(element.id) || !element.name?.trim()) continue;
       const parent = subProcessOf(element)?.id ?? null;
       if (scoped && parent !== null && !claimed.has(parent)) continue;
-      const from = pass === 'neighbour' ? fileIncoming(element).filter((x) => claimed.has(x)).sort().join(',') : '';
-      if (pass === 'neighbour' && !from) continue;
+      const from = near ? fileNear(element).filter((x) => claimed.has(x)).sort().join(',') : '';
+      if (near && !from) continue;
       const key = `${element.$type}|${element.name.trim()}|${scoped ? parent ?? '' : ''}|${from}`;
       wanted.set(key, [...(wanted.get(key) ?? []), element]);
     }
@@ -436,7 +451,7 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
   };
   matchedByName += namePass('global');
   for (let round = 0; round < 50; round += 1) {
-    const found = namePass('scoped') + namePass('neighbour');
+    const found = namePass('scoped') + namePass('neighbour') + namePass('successor');
     matchedByName += found;
     if (found === 0) break;
   }
