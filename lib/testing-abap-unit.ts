@@ -896,3 +896,138 @@ export function placeModelTestClasses(files: ReadonlyArray<{ path: string; conte
     content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model - a proposal, not evidence: Clean-Core.io checked its calls against the declarations, not its preconditions or expected results. The acceptance counts ltc_engine_cases and ltc_golden_master.\n${placed.replace(/\s*$/, '')}\n`,
   };
 }
+
+
+/* ------------------------------------------- a real ABAP Unit run of the testing model's class (3.0.18 item 13) */
+
+/**
+ * One method of an ABAP Unit run in SAP: the ADT runner's result on the trial (`scripts/acceptance/trial-rap.ts`), or
+ * a result file from the reader's system (`lib/test-result-import.ts`: `classname`, `name`, the failure message).
+ */
+export interface SapUnitMethod {
+  testClass: string;
+  method: string;
+  outcome: 'passed' | 'failed' | 'skipped';
+  message: string | null;
+}
+
+/** How a red method of the testing model's class is named — never passed, never counted with the engine's. */
+export const MODEL_RED_IN_SAP = 'model proposal, red in SAP';
+
+/** The engine's test classes (ltc_engine_cases, ltc_golden_master, ltc_counterparts): what C(7) counts. */
+export const isEngineTestClass = (name: string) => RESERVED_TEST_CLASSES.includes(name.toLowerCase()) && name.toLowerCase() !== ACCESS_DOUBLE;
+
+export interface SapUnitSplit {
+  engine: { passed: number; failed: number; skipped: number };
+  /** The testing model's classes: a proposal, not evidence (owner decision 18.10.2026, C(7)). */
+  model: { passed: number; failed: number; skipped: number };
+  /** Every red method in words: "ltc_engine_cases=>tc_eng_g12 — …", "model proposal, red in SAP: ltcl_test=>tc_03 — …". */
+  red: string[];
+}
+
+/** A run in SAP split as the acceptance counts it (owner decision 18.10.2026): the engine's classes apart from the model's. */
+export function splitSapUnitRun(methods: readonly SapUnitMethod[]): SapUnitSplit {
+  const count = (ms: readonly SapUnitMethod[]) => ({
+    passed: ms.filter((m) => m.outcome === 'passed').length,
+    failed: ms.filter((m) => m.outcome === 'failed').length,
+    skipped: ms.filter((m) => m.outcome === 'skipped').length,
+  });
+  const engine = methods.filter((m) => isEngineTestClass(m.testClass));
+  const model = methods.filter((m) => !isEngineTestClass(m.testClass));
+  const red = methods
+    .filter((m) => m.outcome === 'failed')
+    .map((m) => `${isEngineTestClass(m.testClass) ? '' : `${MODEL_RED_IN_SAP}: `}${m.testClass.toLowerCase()}=>${m.method.toLowerCase()}${m.message ? ` — ${m.message}` : ''}`);
+  return { engine: count(engine), model: count(model), red };
+}
+
+/** At most this many methods go into the one repair round: the round repairs what SAP named, not the class. */
+export const MAX_MODEL_REPAIR_METHODS = 12;
+
+export interface ModelTestRepairRequest {
+  /** The red methods of the model's classes that the suite implements, with SAP's message. */
+  methods: Array<{ testClass: string; method: string; message: string | null }>;
+  /** The repair section for the testing prompt: exactly these methods, SAP's message each. */
+  prompt: string;
+}
+
+/** The `METHOD name. … ENDMETHOD.` spans of a class's implementation in a source (lower-case names, character offsets). */
+function methodSpans(code: string, testClass: string): Map<string, { start: number; end: number }> {
+  const out = new Map<string, { start: number; end: number }>();
+  const impl = new RegExp(`^[ \\t]*CLASS\\s+${testClass.replace(/[^\w/]/g, '')}\\s+IMPLEMENTATION\\s*\\.`, 'im').exec(code);
+  if (!impl) return out;
+  const from = impl.index + impl[0].length;
+  const endClass = /^[ \t]*ENDCLASS\s*\./im.exec(code.slice(from));
+  const body = code.slice(from, endClass ? from + endClass.index : code.length);
+  for (const m of body.matchAll(/^[ \t]*METHOD\s+([\w/~]+)\s*\.[\s\S]*?^[ \t]*ENDMETHOD\s*\./gim)) {
+    out.set(m[1].toLowerCase(), { start: from + (m.index ?? 0), end: from + (m.index ?? 0) + m[0].length });
+  }
+  return out;
+}
+
+/**
+ * The bounded repair of the testing model's class against a real ABAP Unit run (roadmap 3.0.18 item 13; the PM trial
+ * of 18.10.2026: 4 red methods, all of the model's class, all with wrong preconditions — the engine's case of the same
+ * check was green). Only the red methods of the model's classes that the suite implements, at most
+ * MAX_MODEL_REPAIR_METHODS, each with SAP's message; null when there is none. One round: what is still red after the
+ * next run stays a proposal, red in SAP.
+ */
+export function modelTestRepairRequest(suiteCode: string, run: readonly SapUnitMethod[]): ModelTestRepairRequest | null {
+  const methods = run
+    .filter((m) => m.outcome === 'failed' && !isEngineTestClass(m.testClass))
+    .filter((m) => methodSpans(suiteCode, m.testClass).has(m.method.toLowerCase()))
+    .slice(0, MAX_MODEL_REPAIR_METHODS)
+    .map((m) => ({ testClass: m.testClass.toLowerCase(), method: m.method.toLowerCase(), message: m.message }));
+  if (methods.length === 0) return null;
+  return {
+    methods,
+    prompt: [
+      'ABAP UNIT RAN IN SAP. These methods of your test class failed there, with SAP\'s message:',
+      ...methods.map((m) => `- ${m.testClass}=>${m.method}: ${m.message ?? 'no message'}`),
+      'A failed method here is a test whose preconditions or expected result do not fit the class under test (the engine\'s own cases of the same checks are separate). '
+        + 'Rewrite exactly these methods: set up the input the logic reads, and expect what the ORIGINAL ABAP gives for it. '
+        + 'Answer with one METHOD … ENDMETHOD. block per method named above and nothing else; every other method stays as it is.',
+    ].join('\n'),
+  };
+}
+
+export interface ModelTestRepairMerge {
+  code: string;
+  /** `class=>method` replaced by the answer. */
+  replaced: string[];
+  /** What the answer was not allowed to change, or did not answer: kept as before. */
+  refused: Array<{ method: string; reason: string }>;
+}
+
+/**
+ * The answer of the one repair round merged into the suite: only the methods the request named, each inside its own
+ * class's implementation; a method the request did not name is refused and the suite keeps its version, a requested
+ * method the answer does not hold stays as it was. The merged class goes through `checkAbapTestClass` like any other.
+ */
+export function mergeRepairedModelMethods(suiteCode: string, answer: string, request: ModelTestRepairRequest): ModelTestRepairMerge {
+  const asked = new Map(request.methods.map((m) => [m.method, m.testClass]));
+  const given = new Map<string, string>();
+  const refused: ModelTestRepairMerge['refused'] = [];
+  for (const m of answer.matchAll(/^[ \t]*METHOD\s+([\w/~]+)\s*\.[\s\S]*?^[ \t]*ENDMETHOD\s*\./gim)) {
+    const name = m[1].toLowerCase();
+    if (!asked.has(name)) refused.push({ method: name, reason: 'not one of the methods SAP named red: the suite keeps its version' });
+    else given.set(name, m[0].trim());
+  }
+  let code = suiteCode;
+  const replaced: string[] = [];
+  // From the end of the source backwards, so the offsets of the spans still to replace stay valid.
+  const targets = request.methods
+    .map((m) => ({ ...m, span: methodSpans(suiteCode, m.testClass).get(m.method) }))
+    .filter((m): m is typeof m & { span: { start: number; end: number } } => !!m.span)
+    .sort((a, b) => b.span.start - a.span.start);
+  for (const t of targets) {
+    const block = given.get(t.method);
+    if (!block) {
+      refused.push({ method: t.method, reason: 'not answered: the method stays as it was, red in SAP' });
+      continue;
+    }
+    const indent = /^[ \t]*/.exec(code.slice(t.span.start))![0];
+    code = `${code.slice(0, t.span.start)}${block.split('\n').map((l, i) => (i === 0 ? `${indent}${l.trimStart()}` : l)).join('\n')}${code.slice(t.span.end)}`;
+    replaced.push(`${t.testClass}=>${t.method}`);
+  }
+  return { code, replaced: replaced.reverse(), refused };
+}

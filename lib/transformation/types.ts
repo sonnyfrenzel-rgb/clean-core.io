@@ -197,6 +197,11 @@ export const PLAN_VERSION = 2;
  * function module, with a saver class (`rap-save.ts`) that is not wired yet, and STATUS.md, TRACE.md and the manifest say so; a query, job or action that hands the logic none of the input
  * tables it takes says so (`@cc-no-input`, QM-03/FI-F09); a reason or message component of the visible result whose
  * type CDS cannot name reaches the custom entity as text (QM-05). TRACE.md and STATUS.md state each.
+ *    Also in 19 (item 13, the PM trial of 18.10.2026): RAP — the types the access interface's methods take (a table
+ * type handed to a function module, the run's selection, a customer table's row) and what they read are declared in
+ * the interface; the logic class keeps each name as an alias (`TYPES tt_csv TYPE zif_x_access=>tt_csv`), so the
+ * interface needs nothing of the class that holds a reference to it — no activation cycle (`access-types.ts`); the
+ * shipped abaplint.json runs `cyclic_oo`.
  * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 19;

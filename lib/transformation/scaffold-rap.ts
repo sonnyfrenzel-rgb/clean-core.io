@@ -84,6 +84,7 @@ import { ddicFieldName, isDdicReserved } from './ddic-reserved';
 import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart } from './released-counterparts';
 import { calledFromOutsideLines, NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 import { wrapAbapFiles } from './abap-line-length';
+import { hoistAccessTypes, type HoistedAccessTypes } from './access-types';
 import { RAP_NO_INPUT_TAG, RAP_SAVE_NOT_WIRED, rapSaveHeader, rapSaveOf, rapSaveTagLine, type RapSave } from './rap-save';
 
 /**
@@ -768,6 +769,46 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     const params = [...byFormal.values()].map(({ count, ...p }) => ({ ...p, optional: count < sites.length }));
     return { point, params };
   });
+  const ownTypes = [
+    ...(contract.types.length > 0 ? [`    " The original's types, as it declares them.`] : []),
+    ...contract.types.flatMap((t) => {
+      const row = contract.sapRows.find((r) => r.rowType && new RegExp(`^TYPES (?:BEGIN OF )?${r.rowType}(?: |$)`, 'i').test(t));
+      const rowNote = row ? [`    " ${row.rowType}: a row of ${row.table.toUpperCase()} with the fields the original uses - ABAP Cloud has no type ${row.table.toUpperCase()}.`] : [];
+      return [...rowNote, ...notReleased(/^TYPES ([\w/]+)/i.exec(t)?.[1] ?? '', contract.typeNotes.get(t)), `    ${t}.`];
+    }),
+    ...(contract.constants.length > 0 ? ["    \" The original's constants."] : []),
+    ...contract.constants.map((c) => `    ${c}.`),
+    ...(contract.namedTypes.length + localTypes.length > 0 ? ['    " Types the method parameters need, named by the engine.'] : []),
+    ...contract.namedTypes.map((t) => `    ${t}.`),
+    ...localTypes.map((t) => `    ${t}.`),
+    "    \" The run's selection: the original's PARAMETERS and SELECT-OPTIONS under their names.",
+    '    TYPES BEGIN OF ty_run_selection.',
+    ...(contract.selection.length > 0 ? contract.selection.flatMap((f) => [...notReleased(f.name, f.was), `    TYPES ${f.name} ${f.phrase}.`]) : ['    TYPES no_selection TYPE c LENGTH 1.']),
+    '    TYPES END OF ty_run_selection.',
+    ...(inputs.length > 0
+      ? [
+          `    " The run's input: what the original's demo-data routines (${fixtureNames.slice(0, 6).join(', ')}) fill - not carried; the caller hands it in.`,
+          '    TYPES BEGIN OF ty_run_input.',
+          ...inputs.map((g) => `    TYPES ${g.name} ${g.phrase}.`),
+          '    TYPES END OF ty_run_input.',
+        ]
+      : []),
+    "    \" The run's result: every global of the original, and the messages it showed.",
+    '    TYPES BEGIN OF ty_run_result.',
+    ...contract.globals.map((g) => `    TYPES ${g.name} ${g.phrase}.`),
+    '    TYPES messages TYPE string_table.',
+    "    \" The functions still stubs the run reached, by unit (U12): empty when every function it reached is filled.",
+    '    TYPES not_filled TYPE string_table.',
+    '    TYPES END OF ty_run_result.',
+  ];
+  // The types the access interface takes live in the interface (3.0.18 item 13, the PM trial): it named the logic
+  // class's types and the logic class holds a reference to it, a cycle (abaplint cyclic_oo). The class keeps an alias.
+  const neededByAccess = new Set(accessMethods.flatMap((m) => m.params.flatMap((p) => [...p.phrase.matchAll(new RegExp(`\\b${logic}=>([\\w/]+)`, 'gi'))].map((x) => x[1].toLowerCase()))));
+  const hoisted: HoistedAccessTypes = hasAccess ? hoistAccessTypes(ownTypes, neededByAccess, accessIf) : { classTypes: ownTypes, interfaceTypes: [], moved: [] };
+  const typesBlock = hoisted.classTypes;
+  for (const m of accessMethods) {
+    for (const p of m.params) p.phrase = p.phrase.replace(new RegExp(`\\b${logic}=>([\\w/]+)`, 'gi'), (all, name: string) => (hoisted.moved.includes(name.toLowerCase()) ? `${accessIf}=>${name}` : all));
+  }
   const accessNames = accessMethods.map((m) => m.point.method);
   // 3.0.15 (1): a called function module with an exact ABAP Cloud counterpart is written by the engine, not left open.
   const counterpartOf = new Map<string, { functionModule: string; why: string; body: string[]; cases: ReleasedCounterpart['cases']; param: AccessParam }>();
@@ -1023,38 +1064,6 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     impls.push('  ENDMETHOD.', '');
   }
 
-  const typesBlock = [
-    ...(contract.types.length > 0 ? [`    " The original's types, as it declares them.`] : []),
-    ...contract.types.flatMap((t) => {
-      const row = contract.sapRows.find((r) => r.rowType && new RegExp(`^TYPES (?:BEGIN OF )?${r.rowType}(?: |$)`, 'i').test(t));
-      const rowNote = row ? [`    " ${row.rowType}: a row of ${row.table.toUpperCase()} with the fields the original uses - ABAP Cloud has no type ${row.table.toUpperCase()}.`] : [];
-      return [...rowNote, ...notReleased(/^TYPES ([\w/]+)/i.exec(t)?.[1] ?? '', contract.typeNotes.get(t)), `    ${t}.`];
-    }),
-    ...(contract.constants.length > 0 ? ["    \" The original's constants."] : []),
-    ...contract.constants.map((c) => `    ${c}.`),
-    ...(contract.namedTypes.length + localTypes.length > 0 ? ['    " Types the method parameters need, named by the engine.'] : []),
-    ...contract.namedTypes.map((t) => `    ${t}.`),
-    ...localTypes.map((t) => `    ${t}.`),
-    "    \" The run's selection: the original's PARAMETERS and SELECT-OPTIONS under their names.",
-    '    TYPES BEGIN OF ty_run_selection.',
-    ...(contract.selection.length > 0 ? contract.selection.flatMap((f) => [...notReleased(f.name, f.was), `    TYPES ${f.name} ${f.phrase}.`]) : ['    TYPES no_selection TYPE c LENGTH 1.']),
-    '    TYPES END OF ty_run_selection.',
-    ...(inputs.length > 0
-      ? [
-          `    " The run's input: what the original's demo-data routines (${fixtureNames.slice(0, 6).join(', ')}) fill - not carried; the caller hands it in.`,
-          '    TYPES BEGIN OF ty_run_input.',
-          ...inputs.map((g) => `    TYPES ${g.name} ${g.phrase}.`),
-          '    TYPES END OF ty_run_input.',
-        ]
-      : []),
-    "    \" The run's result: every global of the original, and the messages it showed.",
-    '    TYPES BEGIN OF ty_run_result.',
-    ...contract.globals.map((g) => `    TYPES ${g.name} ${g.phrase}.`),
-    '    TYPES messages TYPE string_table.',
-    "    \" The functions still stubs the run reached, by unit (U12): empty when every function it reached is filled.",
-    '    TYPES not_filled TYPE string_table.',
-    '    TYPES END OF ty_run_result.',
-  ];
   const privateData = [
     ...(hasAccess ? ['    "! The access layer: every SAP read, write and call of the original goes through it (rule 25).', `    DATA mo_access TYPE REF TO ${accessIf}.`] : []),
     ...(contract.selection.length > 0 ? ["    \" The original's selection inputs, under their names."] : []),
@@ -1253,6 +1262,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         '"! so ABAP Unit can replace this layer with a test double, and a released API can replace the original object in one place.',
         ...(access.more.length > 0 ? [`"! Not listed (more than ${access.points.length}): ${access.more.slice(0, 20).join(', ')}.`] : []),
         `INTERFACE ${accessIf} PUBLIC.`,
+        ...hoisted.interfaceTypes.map(keptDefaultKey),
         ...accessMethods.flatMap((m) => [
           `  "! ${verb(m.point)} ${m.point.object}${m.point.customer ? ' (a customer table of the original system, not in this package)' : ''} where the original does, ${anchor(m.point)}; a failure raises ${accessCx} instead of a return code.`,
           ...accessSignature(m),

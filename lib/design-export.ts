@@ -18,7 +18,7 @@ import type { Project, DesignData } from '@/lib/types';
 import { escapeHtml } from '@/lib/utils';
 import { sapApiHubLink } from '@/lib/export-safety';
 import { cleanAndParseJSON } from '@/lib/design-response';
-import { CERTIFIED_SNAPSHOT_NOTE, CUSTOM_ENTITY_AUTH_NOTE, MVCC_REFUSAL, RAP_VARIANT_WORDS, postCheckDesign, type DesignPostCheck } from '@/lib/design-post-checks';
+import { CERTIFIED_SNAPSHOT_NOTE, CUSTOM_ENTITY_AUTH_NOTE, MVCC_REFUSAL, RAP_VARIANT_WORDS, postCheckDesign, prePostingDecisionWords, type DesignPostCheck } from '@/lib/design-post-checks';
 import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { EXPORT_CSS } from '@/lib/export-style';
@@ -333,6 +333,10 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
             <p>${esc(dataSyncText)}</p>
             ${post?.mvccRefused.length ? `<p class="muted">${esc(MVCC_REFUSAL)}</p>` : ''}
             ${post?.twoCutoffs ? `<p class="muted">${esc(CERTIFIED_SNAPSHOT_NOTE)}</p>` : ''}
+            ${post?.prePosting ? `<h2>Architecture Decision: Binding Pre-Posting Check Point</h2>
+            ${prePostingDecisionWords(post.prePosting).map((l) => `<p>${esc(l)}</p>`).join('')}
+            <table><thead><tr><th>Channel</th><th>Reaches the posting through</th></tr></thead><tbody>${post.prePosting.channels.map((c) => `<tr><td>${esc(c.channel)}</td><td>${esc(c.reaches)}</td></tr>`).join('')}</tbody></table>
+            <p class="muted">Read by the engine from the source: the posting calls and the original's own check before them — not the model's proposal.</p>` : ''}
 
             ${apiMappingSection}
 
