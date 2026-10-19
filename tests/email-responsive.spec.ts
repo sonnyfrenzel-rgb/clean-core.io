@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import { wrapEmailDocument } from '../lib/email-layout';
 

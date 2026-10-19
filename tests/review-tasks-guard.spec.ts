@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { initializeApp, getApps } from 'firebase/app';

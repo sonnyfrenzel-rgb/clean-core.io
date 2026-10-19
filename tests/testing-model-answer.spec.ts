@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { adminGetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 

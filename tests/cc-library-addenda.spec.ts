@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { createGalleryAdmin, openGallery, type GalleryAdmin } from './helpers/cc-gallery';

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminGetDoc, adminMergeDoc } from './helpers/admin-seed';
 import { SIDE_BY_SIDE_ROUTE } from '../lib/sap-naming';

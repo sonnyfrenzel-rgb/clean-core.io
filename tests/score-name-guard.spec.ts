@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { buildKnowledgeBase } from '../lib/chatbot-knowledge';
 import { GET as llmsTxt } from '../app/llms.txt/route';
 

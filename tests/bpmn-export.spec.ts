@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';

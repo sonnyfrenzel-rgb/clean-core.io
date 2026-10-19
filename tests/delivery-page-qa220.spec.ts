@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
