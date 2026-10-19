@@ -2,8 +2,8 @@
   "source": "https://github.com/1DSAG/ABAP-Leitfaden",
   "site": "https://1dsag.github.io/ABAP-Leitfaden",
   "branch": "main",
-  "commit": "100600dfc9d98136b1992bde20e201049cbb1116",
-  "syncedAt": "2026-10-13",
+  "commit": "5aee2c2d8083a1200af9b8985fba4272db6d46a6",
+  "syncedAt": "2026-10-19",
   "licence": {
     "spdx": "CC-BY-4.0",
     "file": "LICENSE",
@@ -468,14 +468,14 @@
       "heading": "Sauberen und modernen ABAP Code schreiben",
       "level": 1,
       "anchor": "sauberen-und-modernen-abap-code-schreiben",
-      "hash": "7f0994119814c6b9e81b75483650cd2f29ace7a76394c2a459ae84614ae78023"
+      "hash": "7c14c30a86ddb3490fb5817c45b7e690a5d1b5d5a98095f72244106acfdae539"
     },
     {
       "file": "docs/abap/clean_and_modern_abap.md",
       "heading": "Clean ABAP als Basis",
       "level": 2,
       "anchor": "clean-abap-als-basis",
-      "hash": "a45397c906dfa0ed5e9d15904ecc28a278ddc972bf488d50036e4e5f34484aa0"
+      "hash": "4dfbb0fea61cadbfcf6501d79e854974a78285fb61340bc655211018057f14d6"
     },
     {
       "file": "docs/abap/clean_and_modern_abap.md",
@@ -902,7 +902,7 @@
       "heading": "ABAP RESTful Application Programming Model (RAP)",
       "level": 1,
       "anchor": "abap-restful-application-programming-model-rap",
-      "hash": "bfb00bbcf90e6da5b2c306322dc6c6dfe1380290b05c2e3c97dfbba635e4bf18"
+      "hash": "8637e5f46800df4082b5f45b356039ea38bd9198100bc3b05b1fd094598f5015"
     },
     {
       "file": "docs/abap/restful_abap.md",
@@ -1000,7 +1000,7 @@
       "heading": "Verfügbarkeitsübersicht der Features",
       "level": 2,
       "anchor": "verfügbarkeitsübersicht-der-features",
-      "hash": "cc18a5a93772d4bd3226dc5dad644270678a3b7faa86903e72b5a45d51c5843c"
+      "hash": "312eddd278972055ac61e0f361b07c0e307e176b55d050d8ac08cf39cc565524"
     },
     {
       "file": "docs/application-lifecycle-management/alm-general_information.md",
@@ -3730,7 +3730,7 @@
       "heading": "ABAP Unit: Testtechniken",
       "level": 1,
       "anchor": "abap-unit-testtechniken",
-      "hash": "9e60c6c86d6512086a144f662edcad0531e864b497310cc31f85c64983816167"
+      "hash": "ca2cb094d9f13b377a098b9e400ff9039eeb234dacc7a273a802b7e01a1e5f66"
     },
     {
       "file": "docs/testing/abap-unit_basics.md",
@@ -3744,7 +3744,7 @@
       "heading": "Behandlung von Daten in Unit Tests",
       "level": 2,
       "anchor": "behandlung-von-daten-in-unit-tests",
-      "hash": "a82739d56dc5da9083e3bf18e3fd9d635476b5f408c203243b030bd5055f1abd"
+      "hash": "b126d6e70af17920e6f288c33fb93870c5793b59163bc20306df4766b51c3b7f"
     },
     {
       "file": "docs/testing/abap-unit_basics.md",
@@ -3779,7 +3779,7 @@
       "heading": "Testmethodiken und Prinzipien",
       "level": 2,
       "anchor": "testmethodiken-und-prinzipien",
-      "hash": "28db0b798737a18be0816ca164f36adb56fda50ad0d82411eeceb473d274decd"
+      "hash": "15672b05b2054e3e7477ead44f59db4324edd70a8ea879acbb2c794dcce94da9"
     },
     {
       "file": "docs/testing/abap-unit_basics.md",
@@ -3905,14 +3905,14 @@
       "heading": "Auflösen von Abhängigkeiten mit Mocking, Faking, Stubbing und Spying",
       "level": 3,
       "anchor": "auflösen-von-abhängigkeiten-mit-mocking-faking-stubbing-und-spying",
-      "hash": "e4eebfff608025f8e5a95f230962c2c273b15751ed1b4ea81e413757b409fa33"
+      "hash": "08546a59ad4349379e0cd5c1bd8c97581e4334070b21a7e03545b8a29b9f9c9e"
     },
     {
       "file": "docs/testing/abap-unit_basics.md",
       "heading": "Test-Doubles",
       "level": 4,
       "anchor": "test-doubles",
-      "hash": "ae31dc0278be0b219225498d7c6500cbfcc2a70662d86fab20613cdab537cd82"
+      "hash": "8cb2eb083a3c237130b5affe047e70b5b116e066b724a1cccaf5deb5e801ae2a"
     },
     {
       "file": "docs/testing/abap-unit_basics.md",
@@ -3933,14 +3933,14 @@
       "heading": "ABAP Unit: erweiterte Techniken",
       "level": 1,
       "anchor": "abap-unit-erweiterte-techniken",
-      "hash": "2ed091cc24e70726fa7133c00a6f2f553beb3936d7605bac8788886abc10cb76"
+      "hash": "79a9ef50acc7fc00f1e3e5ee3ea7ff57914cd17e0b7484e3d774df3a58d3ac1d"
     },
     {
       "file": "docs/testing/abap_unit_advanced.md",
       "heading": "Erweiterte Testtechniken mit ABAP Unit",
       "level": 2,
       "anchor": "erweiterte-testtechniken-mit-abap-unit",
-      "hash": "872bb0d41046b2a65ba937a886452dc3a033d5c9cf4d88785393d243199d8aef"
+      "hash": "8c11e433eac4cd84fed40d17af3389441f69d4d062313b7acae7505fe4ecf921"
     },
     {
       "file": "docs/testing/abap_unit_advanced.md",
@@ -3982,7 +3982,7 @@
       "heading": "SAP Komponenten wie BAPIs & Funktionsbausteine in Unit Test",
       "level": 3,
       "anchor": "sap-komponenten-wie-bapis--funktionsbausteine-in-unit-test",
-      "hash": "391fc71af90bf990f5fa640607c0b8584a0812fa1d7356e309e040258f34ff63"
+      "hash": "5b930530b7740cdf9bfa77401e9bf1cbe3b984715cf8ab09d3f2793f1c03e08c"
     },
     {
       "file": "docs/testing/abap_unit_advanced.md",
@@ -4213,7 +4213,7 @@
       "heading": "Empfehlungen",
       "level": 1,
       "anchor": "empfehlungen",
-      "hash": "da04bd04847ce9e5d924332bd7aff9afb6e380450943cf35a0bb369f140686e6"
+      "hash": "70a789c2f6c59769c06cf140bfa36ad46012a968ad1c456a8d003884262f1ac9"
     },
     {
       "file": "docs/testing/recommendations.md",
@@ -4227,7 +4227,7 @@
       "heading": "Verantwortlichkeiten",
       "level": 2,
       "anchor": "verantwortlichkeiten",
-      "hash": "290a62565d28563768cbf5a4c056aa2dce4558c6f59f4d2066582d241926fd05"
+      "hash": "9200ae9f2056703aed39c191b09fa31bb4944411177ca9d4cabc8858dac76b56"
     },
     {
       "file": "docs/testing/recommendations.md",
