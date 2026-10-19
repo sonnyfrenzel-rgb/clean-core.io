@@ -65,6 +65,10 @@ async function seed(prefix: string): Promise<SeededProject> {
     createdAt: new Date(),
     status: 'designed',
     legacyCode: SOURCE,
+    // The deployment target the run's manifest records: without it on the project the browser cannot show the
+    // input still matches, the stage says "The signed run's inputs cannot all be shown to still match" as a
+    // blocker and the tips never appear (CI run 39203588718).
+    s4Deployment: 'private',
     cleanCoreScore: 58,
     activeRunId: account.runId,
     solutionDesign: DESIGN,

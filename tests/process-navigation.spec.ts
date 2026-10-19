@@ -35,6 +35,7 @@ import {
   LEVEL_OVERLAY_NOTE,
 } from '../lib/process-overlays';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { engineVersionOfProject } from '../lib/run-engine-version';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 
@@ -983,7 +984,11 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     const model = readingModel(source);
     const nav = buildNavigation(model);
     const calls = readCallGraph(source);
-    const findings = buildAbapEvidence(source, FILE_NAME).findings;
+    // The overlay shows what the project's run signed (`useProcessOverlays`, `engineVersionOfProject`): the seeded
+    // run records no engine, so the map reads it with the engine before versioning - not with today's, whose
+    // 3.0.18 classic-api finding marks one element more (CI run 39203588718: 17 on the page, 18 here).
+    const engine = engineVersionOfProject({ activeRunId: RUN_ID });
+    const findings = buildAbapEvidence(source, FILE_NAME, undefined, undefined, engine).findings;
     const overlay = buildFindingsOverlay(model, nav, findings, calls);
     expect(overlay.ids.length, 'the example marks no element with a finding').toBeGreaterThan(0);
 
