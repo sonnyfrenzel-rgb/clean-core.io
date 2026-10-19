@@ -5,6 +5,180 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.18] — 2026-10-19
+
+A quality release with no new feature (owner decision 18.10.2026). Every change below is a fix of something that
+was wrong, a check that now proves what it claims, or a starter example that now runs cleanly end to end. Engine
+output that moved is gated to engine 3.0.18: runs signed by an earlier engine rebuild unchanged.
+
+### Acceptance — the 3.0.18 packages on SAP (roadmap 3.0.18 items 13 and 14)
+
+The acceptance suite now drives the SAP BTP trial itself (`--trial-rap`: push to the trial repository, abapGit
+pull, activation, ABAP Unit through ADT, no hand work). Its first run, on the packages kept from the 3.0.17
+acceptance: SD 18 objects activated, 0 errors, ABAP Unit 25 green / 0 red / 54 skipped; PM 18, 0, 6 / 0 / 46; QM
+30, 0, 30 / 0 / 48 — the 3.0.17 figures, now without hand work. The run with the packages this release generates
+follows below.
+
+### What moved, measured
+
+- **Starter examples** (3.0.18 end-to-end check of every example). The PO demo and the 1,000-line example are now
+  valid ABAP with no dead code: abaplint finds no parser error, no unreached routine and no clone on any shipped
+  example. PO demo: 668 → 552 lines, 33 → 26 findings (two of them the 3.0.18 classic-API rule: SAP_WAPI_CREATE_EVENT,
+  BAPI_PO_CREATE1), score 37 → 40, rules 12 (all now carried by a unit), process steps 84 → 97. 1,000-line example: still 1,000 lines; the fourteen copies of one routine became sixteen
+  distinct order rules, the native SQL count, the document-flow `SUBMIT` and `CALL SCREEN 9000` are part of the run
+  (switched by `P_TRACE` and `P_ALV`, which did nothing before); 45 → 40 findings (two of them the 3.0.18
+  classic-API rule: GUID_CREATE, DATE_COMPUTE_DAY), score 45 → 40, 20 → 39 fill units. The invoice extractor
+  reads its application-server file as three findings (6 findings, score 83).
+  `Z_ORDER_INTEGRITY_CHECK`, `Z_EMPLOYEE_EXPENSE_VAL` and `Z_BUSINESS_PARTNER_SYNC` left the site in 3.0.17 and are
+  now test fixtures. The 3.0.17 copies of the two changed examples stay as fixtures for the engine specs that need
+  dead code and clones to read. `tests/starter-examples-3018.spec.ts`.
+- **Process benchmark (300 blind cases):** unchanged by every change of this release — W1 81.9 %, W2 82.2 %, W3
+  66.4 % node hits, W1+W2 check half 82.6 %, edges 71.6 %. The targets of item 8 (W1+W2 ≥ 87 %, W3 ≥ 75 %, edges
+  ≥ 78 %) are **not met**; item 8 is cut from this release by owner decision (18.10.2026) and moves to the next
+  quality slot, never into a feature release.
+
+### Fixed — security
+
+- The v3.0.17 security audit: SEC-2026-871, -872, -874, -875, -876 fixed; SEC-2026-873 fixed by owner decision (b);
+  SEC-2026-877 to -884 (statements in code comments, no runtime effect) wait for the owner's decision on comment
+  hygiene. Details stay in the sealed register.
+- Next.js 15.5.25 → 15.5.28 (a moderate advisory for self-hosted ISR pages; the site serves ISR pages on Cloud Run).
+
+### Fixed — the engine says only what it read (items 4 and the QA full review of v3.0.17)
+
+- **A constant is a module call only when the program calls through it.** A `CONSTANTS` declaration whose value
+  names a function module (`'REUSE_ALV_GRID_DISPLAY'`, say) counted as a call of that module, even when nothing
+  called it; it now counts only when a dynamic `CALL FUNCTION` uses it, directly, through a structure component or
+  through a plain copy made before the call.
+- **A literal that starts with "Sys" is no system identifier.** `'Systemfehler …'` produced a High hardcoded-system
+  finding; `PRD`, `SYS` and `CLNT` now need the shape of a system or client identifier.
+- **Credit-management words in a literal are text, not logic.** `iv_text = 'credit risk ok'` beside an unrelated
+  BAPI call produced a High credit-management finding; the words are now read in the code with literals masked.
+- **The starter examples' engine defects E1–E10:** methods are units by their class (`CLASS=>METHOD`), with their
+  declared signature; a program with no entry point gets one verdict, said alike in the process map and the
+  transformation; the base request of a package with lists and no base value is an empty list its input check
+  accepts; a classic API on the ABAP Cloud route and a file on the application server are findings that cost points
+  (the coverage gap they left is gone); findings inside routines nothing calls are marked "uncalled" and still
+  charged (owner decision CR-A6); a global work area types its lookup rows with every component the program reads;
+  a change to an internal table reads as a change of the list in the Business view; the engine's own refusals carry
+  no P0.
+- **The carried QA findings** (3.0.18 items 1–7; about 250 findings resolved): a local RFC is no evidence of a released API, a file
+  dialog is no completed transfer, Side-by-Side is not "highly compatible" with direct SAP table writes, a Public
+  Edition target no longer assumes Level A against findings; contextual successors and the catalog's freshness
+  stamp where they are promised; SAP-owned slash namespaces are not customer modules; a caught or resumable `RAISE`
+  ends nothing, a gate inside a conditional block marks nothing unreachable, FORM parameters shadow constants; a
+  nested `SELECT … ENDSELECT` closes itself; sparse rule IDs are listed, not ranged.
+- **Handover:** code built before the latest decisions (a changed generation context) and the suite written for it
+  now block the handover, and every place that names the blocker says "built before the latest decisions".
+
+### Fixed — the screens do what they say (items 2, 3, 12 and the UX register)
+
+- **Transformation: Cancel, lease and reload do what the screen says.** Cancel ends a pending contract read and
+  lease request, and a lease that arrives after it is closed unused; a refused lease generates nothing; a refused
+  contract is said before any click and keeps *Generate* disabled, and *Generate* waits until the plan before the
+  click is read; the lease route needs a run id, answers 409 for a charge confirmation without an open lease and
+  re-reads the project in its transaction; a reload opens an engine-led Node package at its first step; a changed
+  generation context makes Testing stale.
+- **Documentation ends cleanly:** after a failed part every sibling call settles before the run ends and releases
+  its lease; a load error keeps the progress card with *Try again*; a failed artefact read ends the dashboard's
+  loading state with a message.
+- **The UX register:** every entry still scheduled to a released step is decided against today's code (57 fixed,
+  7 obsolete through the rebuild, 25 open); the 21 scheduled to 3.0.18 are fixed — among them the error page shows
+  a workspace card with the technical details folded away instead of the raw message, a disabled Analyze start
+  and Register button say why under them, line anchors in the model summary open the source, the dashboard's Invite is a labelled
+  button, the workspace says "Loading the workspace…" visibly after 300 ms, the Confluence export confirms that
+  nothing was sent, the score's FAQ says it is Clean-Core.io's own measure and not SAP's Technical Debt Score.
+- A same-page choice link settles at its place; the failed Execution status reads the receipt-backed result, not a
+  client-written field.
+
+### Fixed — the delivery packages (items 6, 13, 14)
+
+- **The original's ALV display becomes the run's rows (CAP/Node).** `REUSE_ALV_GRID_DISPLAY`/`_LIST_DISPLAY` with
+  `t_outtab` and `cl_salv_table=>factory` are read; the engine-written frame runs the body and then sets the rows to
+  a copy of the displayed table, only when the routine reaches the display (a check at its entry or one on the
+  request decides). The 1,000-line example answers its orders as rows with `P_ALV = X` and none without; where the
+  engine cannot prove the display is reached, the frame says why in TRACE.md.
+- **CAP authorization from the original's AUTHORITY-CHECKs.** Every check every run passes becomes a scope
+  (`$XSAPPNAME.<object>_<activity>`) in the `Runner` role template of `xs-security.json` and the service's
+  `@requires`; checks inside branches stay fail-closed in `srv/lib/authority.ts` and are listed as "checked in the
+  code, not a service scope"; with none, the service requires an authenticated user. The development mock user
+  `alice` carries the scopes. STATUS.md and TRACE.md say which role collection to assign. The demo grant of the
+  authority seam applies only outside the production profile; a local container trial needs
+  `-e NODE_ENV=development`.
+- **The RAP implementation type follows the original:** a program that writes through a BAPI, a standard business
+  object or a standard table gets `managed with unmanaged save`; one that writes its own table plus a change
+  document or an update-task function `with additional save`; the reason stands in the behaviour definition and in
+  TRACE.md. The saver names the access-layer methods but does not call them yet — STATUS.md lists it under known
+  limits ("changes are not persisted until it is wired").
+- **No activation cycle between the access interface and the logic class:** the types the interface takes live in
+  the interface, the class keeps their names as aliases; the shipped `abaplint.json` checks `cyclic_oo`.
+- **Honest packages:** where query and job hand no input to the logic class, the package calls itself a business
+  library (QM-03, FI-F09); reason and message columns of the visible result reach the custom entity (QM-05); a
+  unit the engine wrote entirely is never sent to the model; the SAP reference scan reads every valid reference
+  form; a quoted zero no longer fails an inferred passing case; ABAP lines stay within 255 characters.
+- **ABAP Unit results:** a red method of the model-written test class reads "model proposal, red in SAP" and is
+  never counted as passed (owner decision C(7)); the four test states — case method created, case data carried
+  completely, result compared, passed in SAP — stay four numbers wherever an SAP result is on record.
+- Scaffold version 19.
+
+### Fixed — documentation and design say what is true (item 13)
+
+- **A short rule keeps its parent condition** (QM-06, FI-F11): business statements, functional requirements and
+  the process document's rule rows say "Only when <outer condition> (Lnn): …", and an ELSE says which conditions
+  did not hold.
+- **The design describes the package that is delivered** (QM-07, FI-F02): the list of delivered objects comes from
+  the package's own files, a delivered object is never called "not generated", and DCL with `pfcg_auth` is refused
+  for a custom entity, with SAP's reason that a custom entity is protected in its query class.
+- **A binding pre-posting check point** (FI-F01): where the program posts (`BAPI_ACC_*_POST` and the like), the
+  design states the architecture decision — the check runs in the logic immediately before the posting call — with
+  a channel matrix, and names the original's own check or says it is missing.
+- **The rule register keeps three facts apart** (QM-09): statically mapped to a unit (from the package's trace),
+  decided by an account, and behaviour-tested by a passing engine case.
+- **SAP identifiers in model text are checked** (QM-08, FI-F12): a sentence whose scope item or app ID contradicts
+  SAP's own record is dropped and SAP's title stands in its place; an unknown ID stays "to check".
+
+### Fixed — model text is checked before it is shown (item 9)
+
+- **"Ask this case" is grounded sentence by sentence.** Measured first, on 48 live answers over the six starter
+  examples: no unanchored sentence today, but six declines were mislabelled as "named none of the evidence". Now a
+  sentence without an offered anchor is dropped with a note, an invented anchor refuses the whole answer, a decline
+  is said as a decline, and names and numbers in a sentence must appear in the facts or lines it cites.
+- **The case prompt treats evidence as data:** every value is quoted inside a fenced block, comment lines are
+  marked as comments.
+- **A rule-based check for secrets and personal data** on case answers, fill bodies and documentation exports:
+  passwords, private keys, API keys and tokens, e-mail addresses, IBANs (check digits verified) and phone numbers
+  are masked; a fill body carrying a secret is refused, naming its kind, never its value.
+
+### Fixed — tests prove what they claim, and the machinery (items 5, 10, 11)
+
+- **Guards that prove what they claim:** the gate error texts are checked through the routes themselves; the
+  activation gate fails for the right reason; documentation is shown only after its store; the owner-reference
+  skips fail a release run (`CC_REQUIRE_REFERENCES=1`); the engine-version guard follows wrappers that forward a
+  version to their callers; the level-D register is checked in the bundles and the signed bytes instead of by a
+  literal source scan; every citation on a line is read; the scenario checker reads no null switch as case 0 and
+  consumes each expected message once.
+- **The acceptance suite drives the SAP trial itself** (`--trial-rap`): every kept RAP package is pushed to its
+  trial repository, pulled, activated and run in ABAP Unit through ADT, and the numbers go into the suite report.
+- **No abandoned Firestore channel after a test:** Playwright closes the context with its page still open, so the
+  page's `pagehide` never ran and every test left its last channel open in the emulator. A shared test fixture
+  closes every page before its context goes; a guard keeps every page spec on it.
+- **The QA machinery:** the dev smoke check waits 80 minutes for the deploy pipeline inside a 105-minute job (the
+  pipeline ran 52–54 minutes, the check gave up at 45); the UX review's request body is pinned to the parameters
+  the pinned model supports.
+- The ten slowest server-free specs named — compute-bound 300-case sweeps, none waiting for a window.
+- Release records: the app's release dates match this file; both pack verifiers read a ZIP comment that contains
+  an end-of-central-directory signature alike; every sync workflow runs one at a time.
+
+### Not in this release
+
+- Item 8 (the benchmark targets) — cut, see above.
+- One manual UX review run to confirm the 06.10.2026 HTTP 404 is gone (the request body is pinned by a test; the run
+  needs the owner's go).
+- Offering the bounded repair of red model test methods on a screen (the core is built; where to offer it would be
+  new UI).
+- The reason columns of the QM program's characteristic and sample results as a second entity (owner decision
+  18.10.2026: a later feature).
+
 ## [v3.0.17] — 2026-10-18
 
 ### Acceptance — RAP and CAP proven on SAP (roadmap 3.0.17, criterion 5)
