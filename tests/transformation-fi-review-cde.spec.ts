@@ -116,7 +116,7 @@ test('owner 18.10.2026: the testing model\'s class is a proposal, counted apart 
   expect(e.model).toMatchObject({ methods: 1, tests: 1, classes: ['ltcl_test'] });
   expect(e.engine!.methods).toBe(e.counts.methods - 1);
   const sentences = abapTestEvidenceSentences(e);
-  expect(sentences[0]).toMatch(/^ABAP Unit, the engine's classes \(ltc_engine_cases, ltc_golden_master — what the acceptance counts\): \d+ of \d+ /);
+  expect(sentences[0]).toMatch(/^ABAP Unit, the engine's classes \(ltc_engine_cases, ltc_golden_master, ltc_counterparts — what the acceptance counts\): \d+ of \d+ /);
   expect(sentences[sentences.length - 1]).toBe(
     "ABAP Unit, the testing model's class ltcl_test — a proposal, not evidence: 1 of 1 ABAP Unit test method calls the code under test. A green or red method there says nothing about the logic until a reviewer confirms its preconditions and expected result.",
   );

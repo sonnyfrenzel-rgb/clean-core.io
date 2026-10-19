@@ -84,6 +84,7 @@ import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { wt } from '@/lib/workspace-messages';
 import { targetEditionOf } from '@/lib/target-edition';
 import TestEvidenceCard from '@/components/testing/TestEvidenceCard';
+import AbapUnitEvidence from '@/components/testing/AbapUnitEvidence';
 import { useMaterialRules } from '@/hooks/useMaterialRules';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries } from '@/lib/rules-editor';
@@ -1634,11 +1635,7 @@ export default function TestingSandboxPage() {
 
             {/* 3.0.13 (6) — the ABAP Unit evidence belongs to the ABAP route;
                 the mocks card below is shown only off it (QA 4a0b5bc64faf). */}
-            {isAbapCloud && evidence.abapUnit && evidence.abapUnit.length > 0 ? (
-              <p data-test-evidence-abap-unit="" className="m-0 mt-3 cc-text-cell text-cc-ink">
-                {evidence.abapUnit.join(' ')}
-              </p>
-            ) : null}
+            <AbapUnitEvidence project={project} />
 
             {/* The reason itself is in the notice at the top of the page. */}
             {!isAbapCloud && testRunBlocked(project) && testCases.length > 0 && (

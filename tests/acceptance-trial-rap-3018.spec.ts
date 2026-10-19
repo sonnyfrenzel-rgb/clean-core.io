@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { parseArgs, runTrialStage, toMarkdown, trialPackagesFrom, type SuiteReport } from '../scripts/acceptance/suite';
+import { parseArgs, runTrialStage, suiteExitCode, toMarkdown, trialPackagesFrom, type SuiteReport } from '../scripts/acceptance/suite';
 import {
   keptRapPackages,
   parseActivation,
@@ -14,6 +14,7 @@ import {
   trialRapPackage,
   trialTotals,
   type ActivationOutcome,
+  type TrialRecord,
   type TrialRunner,
   type TrialTarget,
   type UnitOutcome,
@@ -129,6 +130,16 @@ test.describe('the trial stage of the acceptance suite', () => {
       expect(r.activation).toMatchObject({ passes: 2, activated: 12, errors: 0, stillInactive: [] });
       const stuck = trialRapPackage(dir, 'qm-inspection-evidence', 1, mockRunner(log, { activations: [first, first] }), { label: 'x' });
       expect(stuck.activation).toMatchObject({ passes: 2, errors: 1, stillInactive: ['ZCL_PM_SHUTDOWN_LOGIC'], messages: ['ZIF_PM_SHUTDOWN_ACCESS dependency not active'] });
+      // QA review of 62eae6a082bb: adt.mjs exits 0 on a refused activation - the package failed, and no ABAP Unit
+      // runs on the objects that were active before.
+      expect(stuck.state).toBe('failed');
+      expect(stuck.reason).toMatch(/^activation failed: SAP refused it; 1 error\(s\), first: ZIF_PM_SHUTDOWN_ACCESS dependency not active; still inactive: ZCL_PM_SHUTDOWN_LOGIC/);
+      const unitLog: MockLog = { calls: [] };
+      const refused = parseActivation('activating 11: ZCL_PM_SHUTDOWN_LOGIC\nactivation: FAILED\n  E ZCL_PM_SHUTDOWN_LOGIC syntax error\n');
+      const once = trialRapPackage(dir, 'qm-inspection-evidence', 1, mockRunner(unitLog, { activations: [refused] }), { label: 'x' });
+      expect(once.state).toBe('failed');
+      expect(unitLog.calls.some((c) => c.startsWith('unit'))).toBe(false);
+      expect(trialTotals([once]).ran).toBe(0);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -176,6 +187,19 @@ test.describe('the trial stage of the acceptance suite', () => {
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  test('a package that failed on the trial makes the suite exit non-zero (QA review of 62eae6a082bb)', () => {
+    const rec = (state: TrialRecord['state']) => ({ state }) as unknown as TrialRecord;
+    expect(suiteExitCode(false, undefined)).toBe(0);
+    expect(suiteExitCode(false, [rec('ran'), rec('not-run')])).toBe(0);
+    expect(suiteExitCode(false, [rec('ran'), rec('failed')])).toBe(4);
+    expect(suiteExitCode(true, [rec('failed')])).toBe(3);
+    // The suite's own exit and the trial stage alone both go through it.
+    const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'acceptance', 'suite.ts'), 'utf8');
+    expect(src).toContain('return suiteExitCode(meter.capReached, report.trial);');
+    expect(src).toContain('return suiteExitCode(false, trial);');
+    expect(src).not.toMatch(/return meter\.capReached \? 3 : 0;/);
   });
 
   test('--trial-rap needs the kept packages; the runner folder and owner can be named', () => {

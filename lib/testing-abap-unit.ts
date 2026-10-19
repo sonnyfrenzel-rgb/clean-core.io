@@ -256,10 +256,10 @@ export interface AbapTestProblem {
  * with wrong preconditions; the engine's case of the same check was green.
  */
 export const ABAP_UNIT_EVIDENCE_LINE =
-  "ABAP Unit evidence: the engine's classes ltc_engine_cases and ltc_golden_master are what the acceptance counts. A test class the testing model writes (ltcl_…, added to the test include at delivery) is a proposal, not evidence: Clean-Core.io checks its calls against the declarations, not its preconditions or expected results.";
+  "ABAP Unit evidence: the engine's classes ltc_engine_cases, ltc_golden_master and ltc_counterparts are what the acceptance counts. A test class the testing model writes (ltcl_…, added to the test include at delivery) is a proposal, not evidence: Clean-Core.io checks its calls against the declarations, not its preconditions or expected results.";
 
 /** The engine's test classes as STATUS names them. */
-export const ENGINE_CLASS_WORDS = 'ltc_engine_cases, ltc_golden_master';
+export const ENGINE_CLASS_WORDS = 'ltc_engine_cases, ltc_golden_master, ltc_counterparts';
 
 /** "ABAP Unit, the testing model's class ltcl_test — a proposal, not evidence" (owner decision 18.10.2026). */
 export function modelClassWords(classes: readonly string[]): string {
@@ -907,7 +907,7 @@ export function placeModelTestClasses(files: ReadonlyArray<{ path: string; conte
   const placed = withAccessDouble(testCode, accessSeamOf(files)).code;
   return {
     path: include.path,
-    content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model - a proposal, not evidence: Clean-Core.io checked its calls against the declarations, not its preconditions or expected results. The acceptance counts ltc_engine_cases and ltc_golden_master.\n${placed.replace(/\s*$/, '')}\n`,
+    content: `${include.content.replace(/\s*$/, '')}\n\n"! Written by the testing model - a proposal, not evidence: Clean-Core.io checked its calls against the declarations, not its preconditions or expected results. The acceptance counts ltc_engine_cases, ltc_golden_master and ltc_counterparts.\n${placed.replace(/\s*$/, '')}\n`,
   };
 }
 

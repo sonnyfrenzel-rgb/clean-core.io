@@ -1,6 +1,7 @@
 'use client';
 
 import { CC_SKELETON_DELAY_MS, useCcDelayedFlag } from '@/components/cc/delay';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The loading gate, for every reader (UX-155, UX-159). It was a status with an
@@ -15,7 +16,7 @@ export default function WorkspaceLoading() {
     <div data-workspace-gate="loading" role="status" className="py-16">
       {/* One node throughout: only its class changes, so the status is not announced twice. */}
       <p data-workspace-gate-text={shown ? 'shown' : 'pending'} className={shown ? 'm-0 cc-text-cell text-cc-ink-muted' : 'sr-only'}>
-        Loading the workspace…
+        {wt('shell.loading')}
       </p>
     </div>
   );

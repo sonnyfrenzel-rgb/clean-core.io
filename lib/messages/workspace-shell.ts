@@ -9,6 +9,7 @@
 export const WORKSPACE_SHELL_MESSAGES = {
   // The shell bar (app/(app)/layout.tsx) — the path and the search slot, §2.1.
   'shell.path': 'Path',
+  'shell.loading': 'Loading the workspace…',
   'shell.searchProject': 'Search this project (Ctrl K)',
 
   // The header of the object page — components/workspace/WorkspaceShell.tsx.

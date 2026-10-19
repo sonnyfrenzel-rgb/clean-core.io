@@ -302,6 +302,18 @@ export function trialRapPackage(pkgDir: string, program: string, runNo: number, 
     rec.reason = `activation failed: ${lastPass.failure}`;
     return rec;
   }
+  // `adt.mjs activate` exits 0 when SAP refuses the activation: it prints `activation: FAILED`, the errors and what
+  // stayed inactive. ABAP Unit would then run on the objects active before (QA review of 62eae6a082bb).
+  if (lastPass.success === false || lastPass.errors.length > 0 || lastPass.stillInactive.length > 0) {
+    rec.state = 'failed';
+    const what = [
+      lastPass.success === false ? 'SAP refused it' : null,
+      lastPass.errors.length ? `${lastPass.errors.length} error(s), first: ${lastPass.errors[0]}` : null,
+      lastPass.stillInactive.length ? `still inactive: ${lastPass.stillInactive.slice(0, 5).join(', ')}` : null,
+    ].filter(Boolean);
+    rec.reason = `activation failed: ${what.join('; ')}`;
+    return rec;
+  }
   const testClasses = files.filter((f) => /\.clas\.testclasses\.abap$/i.test(f)).map((f) => f.split('.')[0]).sort();
   const all: UnitMethod[] = [];
   for (const cls of testClasses) {

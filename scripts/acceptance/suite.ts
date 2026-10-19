@@ -1278,7 +1278,17 @@ export async function main(argv: string[]): Promise<number> {
   }
   const t = report.totals;
   console.log(`${t.gatePassed}/${t.rows} rows pass the gate · ${t.functionsWritten}/${t.functionsTotal} functions written · scenarios ${t.scenariosRan ?? 0} ran, ${t.scenariosMatched} passed, ${t.scenariosFailed ?? 0} failed of ${t.scenariosTotal} · ${t.calls} calls · ${fmtUsd(t.usd)}${meter.capReached ? ' · CAP REACHED' : ''}`);
-  return meter.capReached ? 3 : 0;
+  return suiteExitCode(meter.capReached, report.trial);
+}
+
+/**
+ * The suite's exit status: 3 when the cost cap stopped it, 4 when a package failed on the SAP trial (the status of
+ * `--trial-from`), 0 otherwise. The report is written before either (QA review of 62eae6a082bb).
+ */
+export function suiteExitCode(capReached: boolean, trial: readonly TrialRecord[] | undefined): number {
+  if (capReached) return 3;
+  if (trial?.some((r) => r.state === 'failed')) return 4;
+  return 0;
 }
 
 /* ------------------------------------------------------------- the trial stage */
@@ -1331,7 +1341,7 @@ async function trialOnly(args: Args): Promise<number> {
     'trial-report.md': [`# Acceptance suite — trial stage, ${commit.slice(0, 8)}`, '', `${startedAt.toISOString()} · packages from ${packages.length} folder(s)`, '', ...trialMarkdown(trial)].join('\n'),
   });
   console.log(`report: ${path.relative(ROOT, path.join(runDir, 'trial-report.md'))}`);
-  return trial.every((r) => r.state !== 'failed') ? 0 : 4;
+  return suiteExitCode(false, trial);
 }
 
 if (require.main === module) {
