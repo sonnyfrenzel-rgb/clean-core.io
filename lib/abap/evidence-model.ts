@@ -254,30 +254,34 @@ const NAME = String.raw`[A-Za-z_][\w/]*(?:-[\w/]+)*`;
  * `CALL FUNCTION <name>` calls in this source, upper-cased — the name itself,
  * the last component of `a-b`, and one step back through a plain copy
  * (`lv_fm = c_fm.` or `MOVE c_fm TO lv_fm.` before `CALL FUNCTION lv_fm`).
+ * The copy counts only where it stands before a call of its target: a copy
+ * after the last call reaches no call (QA 7d96250ccacc).
  */
 function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<string> {
-  const names = new Set<string>();
-  const add = (name: string) => {
+  // Each name with the position of its latest use — a call, or a copy into a name used later.
+  const lastUse = new Map<string, number>();
+  const add = (name: string, at: number) => {
     const upper = name.toUpperCase();
-    names.add(upper);
     const component = upper.split('-').pop();
-    if (component) names.add(component);
+    for (const key of component ? [upper, component] : [upper]) {
+      lastUse.set(key, Math.max(lastUse.get(key) ?? -1, at));
+    }
   };
   const masked = statements.map((st) => maskLiterals(st.text.trim()));
   const call = new RegExp(`^CALL\\s+FUNCTION\\s+(${NAME})`, 'i');
-  for (const text of masked) {
+  masked.forEach((text, i) => {
     const m = call.exec(text);
-    if (m) add(m[1]);
-  }
+    if (m) add(m[1], i);
+  });
   const assign = new RegExp(`^(?:DATA\\(\\s*)?(${NAME})\\s*\\)?\\s*=\\s*(${NAME})\\s*$`, 'i');
   const move = new RegExp(`^MOVE\\s+(${NAME})\\s+TO\\s+(${NAME})\\s*$`, 'i');
-  for (const text of masked) {
+  masked.forEach((text, i) => {
     const a = assign.exec(text);
     const m = a ? null : move.exec(text);
     const [target, source] = a ? [a[1], a[2]] : m ? [m[2], m[1]] : [null, null];
-    if (target && source && names.has(target.toUpperCase())) add(source);
-  }
-  return names;
+    if (target && source && (lastUse.get(target.toUpperCase()) ?? -1) > i) add(source, i);
+  });
+  return new Set(lastUse.keys());
 }
 
 /** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */

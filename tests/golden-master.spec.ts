@@ -5,7 +5,7 @@ import path from 'path';
 import { ORIGINAL_DEMO_FORMAT, goldenMasterForScaffold, goldenMasterSentence, originalDemoCases, readGoldenMaster } from '../lib/transformation/golden-master';
 import { NOT_RUN_NO_CONTRACT, notRunWithoutContract } from '../lib/engine-call-contract';
 import { deriveEngineCases, engineCasePromptSection } from '../lib/testing-engine-cases';
-import { abapDeclarations, abapTestEvidence, abapTestEvidenceSentences, abapUnitCountsSentence, checkAbapTestClass, countAbapUnitTests, placeModelTestClasses } from '../lib/testing-abap-unit';
+import { abapDeclarations, abapTestEvidence, abapTestEvidenceSentences, abapTestSentencesOfProject, abapUnitCountsSentence, checkAbapTestClass, countAbapUnitTests, placeModelTestClasses } from '../lib/testing-abap-unit';
 import { buildRapScaffold } from '../lib/transformation';
 import { abaplintPackageCheck } from '../lib/transformation/abaplint-check';
 import { planOf } from './helpers/transformation-scaffold';
@@ -191,7 +191,7 @@ test('the not-run reason of an engine case is said for the route: no Node.js cal
 test('the ABAP Unit evidence is shown on the ABAP route, where it is read — not only inside the mocks card that route never shows (QA 4a0b5bc64faf)', () => {
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
   // The evidence is read only for an ABAP Cloud project...
-  expect(page).toMatch(/abapTestEvidenceOfProject\(/);
+  expect(page).toMatch(/abapTestSentencesOfProject\(project\)/);
   // ...so a block that renders it must be gated on that route, not on its absence.
   const block = page.match(/\{isAbapCloud && evidence\.abapUnit && evidence\.abapUnit\.length > 0 \? \(\s*<p data-test-evidence-abap-unit=""[^>]*>\s*\{evidence\.abapUnit\.join\(' '\)\}/);
   expect(block, 'the testing page renders the ABAP Unit evidence on the ABAP route').not.toBeNull();
@@ -320,9 +320,15 @@ test('3.0.18 item 13: with a result from the reader\'s SAP system on record, "pa
   const stale = { ...confirmed, subject: { ...confirmed.subject, codeDigest: 'other' } };
   const before = testFactsOf({ ...base, outsideTestResult: stale } as unknown as Parameters<typeof testFactsOf>[0], []).detail;
   expect(before.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))).toContain('passed in SAP: not known here');
-  // The Testing page passes the same record.
+  // The Testing page shows what `abapTestSentencesOfProject` returns for the project (QA 619a7bf2da46): the
+  // function itself is run here, with the current result and the stale one, and the page renders its output.
+  const shown = abapTestSentencesOfProject({ ...base, outsideTestResult: confirmed } as unknown as Parameters<typeof abapTestSentencesOfProject>[0])!;
+  expect(shown.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))).toContain('passed in SAP: 70 of 77 ABAP Unit test methods');
+  const shownStale = abapTestSentencesOfProject({ ...base, outsideTestResult: stale } as unknown as Parameters<typeof abapTestSentencesOfProject>[0])!;
+  expect(shownStale.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))).toContain('passed in SAP: not known here');
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
-  expect(page).toMatch(/abapTestEvidenceSentences\(e, outsideNow\.state === 'current' \? outsideNow\.summary : null\)/);
+  expect(page).toContain('const abapUnitEvidence = useMemo(() => abapTestSentencesOfProject(project), [project]);');
+  expect(page).toMatch(/abapUnit: abapUnitEvidence,/);
 });
 
 test('a test method that only skips, or never calls the code under test, is not counted as a test', () => {

@@ -90,7 +90,7 @@ import { ruleEntries } from '@/lib/rules-editor';
 import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
-import { abapTestEvidenceOfProject, abapTestEvidenceSentences } from '@/lib/testing-abap-unit';
+import { abapTestSentencesOfProject } from '@/lib/testing-abap-unit';
 import { callContractPresence, notRunWithoutContract } from '@/lib/engine-call-contract';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
@@ -324,12 +324,9 @@ export default function TestingSandboxPage() {
   const generatedCodeText = typeof project?.generatedCode === 'string' ? project.generatedCode : null;
   const sharedSelection = useMemo(() => invariantPlan(generatedCodeText), [generatedCodeText]);
   // 3.0.13 (6): read once per stored package and suite, not on every render.
-  const abapUnitEvidence = useMemo(() => {
-    const e = abapTestEvidenceOfProject({ extensibilityRoute: project?.extensibilityRoute, generatedCode: generatedCodeText, testSuite: project?.testSuite });
-    // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one.
-    const outsideNow = outsideReading(project);
-    return e ? abapTestEvidenceSentences(e, outsideNow.state === 'current' ? outsideNow.summary : null) : null;
-  }, [project, generatedCodeText]);
+  // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one —
+  // the same sentences STATUS.md carries (`testFactsOf`).
+  const abapUnitEvidence = useMemo(() => abapTestSentencesOfProject(project), [project]);
   /** 3.0.12 — does the generated code export the call contract the engine cases run against? Read, never run. */
   const callContract = useMemo(() => callContractPresence(sandboxFilesFromStoredCode(generatedCodeText ?? '')), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);

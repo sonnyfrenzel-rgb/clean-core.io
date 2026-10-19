@@ -29,6 +29,7 @@ import { objectSites, sitesByElement, type ObjectSite } from '@/lib/process-over
 import { selectionInputs, summaryOf, type HandbookObject } from '@/lib/process-handbook';
 import { stripModelMarkdown } from '@/lib/model-text';
 import { sapCheckedNarrative } from '@/lib/sap-reference-check';
+import { screenSensitiveText } from '@/lib/sensitive-text';
 import { FR_TOPICS_COVERED_BY_NFR } from '@/lib/requirements-export';
 import {
   PROCESS_DOCUMENT_FORMAT,
@@ -1498,7 +1499,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       if (anchored.length && !contradicts) {
         purposeProposal = {
           // 3.0.18 item 13 (QM-08, FI-F12): the model's SAP identifiers pass the check before the document shows them.
-          text: sapCheckedNarrative(anchored.map((s) => s.text.trim()).join(' ')),
+          // QA af33f2acba86.
+          text: sapCheckedNarrative(screenSensitiveText(anchored.map((s) => s.text.trim()).join(' ')).text),
           anchors: distinctAnchors(anchored.flatMap((s) => s.anchors.map((a) => anchor(a.lineStart, a.lineEnd)))),
           origin: 'narrative',
         };

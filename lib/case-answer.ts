@@ -391,6 +391,9 @@ const LINE_ANCHOR = /\bL(\d+)(?:\s*[-–]\s*L?(\d+))?\b/gi;
 const DECLINE =
   /\b(evidence|facts?|information)\b[^.]*\b(does not|doesn't|do not|don't|cannot|can't|no)\b[^.]*\b(answer|say|show|state|contain|cover|mention|tell|indicate|information)/i;
 
+/** Where one clause of a sentence ends and the next begins: `;`, `:`, `, and`, and the contrasting conjunctions. */
+const CLAUSE_BREAK = /\s*(?:[;:]|,\s*and\b|,?\s*\b(?:but|however|yet|whereas|although|though|while)\b)\s*/i;
+
 /**
  * Upper-case words of this length or more that are prose, not a name out of
  * the code — the reader's and the prompt's own vocabulary.
@@ -468,7 +471,7 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
     return { fact: f, range };
   });
 
-  const sentences: CaseSentence[] = caseSentences(text).map((sentence) => {
+  const read = (sentence: string, mayDecline: boolean): CaseSentence => {
     const cited = new Set<string>();
     const citedFacts = new Set<CaseFact>();
     const invented: string[] = [];
@@ -488,7 +491,14 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
 
     if (invented.length > 0) return { text: sentence, verdict: 'invented-anchor', cited: [...cited], invented, missing: [] };
     // "The evidence does not answer this" claims nothing about the code, with or without an anchor beside it.
-    if (DECLINE.test(sentence)) return { text: sentence, verdict: 'declined', cited: [...cited], invented, missing: [] };
+    // It shields only itself: a clause beside it is read as a claim of its own (QA fe1d9c093536).
+    if (mayDecline && DECLINE.test(sentence)) {
+      const claims = sentence.split(CLAUSE_BREAK).filter((c) => /\w/.test(c) && !DECLINE.test(c));
+      if (claims.length === 0) return { text: sentence, verdict: 'declined', cited: [...cited], invented, missing: [] };
+      const failed = claims.map((c) => read(c, false)).find((r) => r.verdict !== 'anchored');
+      if (failed) return { text: sentence, verdict: failed.verdict, cited: failed.cited, invented, missing: failed.missing };
+      return { text: sentence, verdict: 'anchored', cited: [...cited], invented, missing: [] };
+    }
     if (cited.size === 0) return { text: sentence, verdict: 'unanchored', cited: [], invented, missing: [] };
 
     // The overlap check: what the sentence names must stand in what it cites.
@@ -503,7 +513,8 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
       .replace(/(\d),(\d{3})/g, '$1$2');
     const missing = sentenceClaims(sentence).filter((claim) => !containsClaim(support, claim));
     return { text: sentence, verdict: missing.length > 0 ? 'unsupported' : 'anchored', cited: [...cited], invented, missing };
-  });
+  };
+  const sentences: CaseSentence[] = caseSentences(text).map((sentence) => read(sentence, true));
 
   const dropped = sentences.filter((s) => s.verdict === 'unanchored' || s.verdict === 'unsupported').length;
   if (sentences.length === 0) return { outcome: 'refused', reason: 'empty', anchors: [], sentences, dropped };

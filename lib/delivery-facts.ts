@@ -15,7 +15,7 @@
 
 import { storedCdsCompile, storedGenerationRecord } from './transformation/generation-record';
 import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
-import { abapTestEvidenceOfProject, abapTestEvidenceSentences } from './testing-abap-unit';
+import { abapTestSentencesOfProject } from './testing-abap-unit';
 import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
 import { formatTextDate } from './format';
 import { sha256Hex } from './artefact-digest';
@@ -351,10 +351,10 @@ export function testFactsOf(project: HandoverProject, phases: readonly RailStep[
   const facts = testFactsWithEngineCases(project, phases);
   // 3.0.13 (6): on the ABAP route, the test methods that are tests — calling the code under test, not skipping —
   // counted apart from those that are not, and the original's demo cases carried over (lib/testing-abap-unit.ts).
-  const abap = abapTestEvidenceOfProject(project);
-  // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one.
-  const outside = outsideReading(project as Parameters<typeof outsideReading>[0]);
-  return abap ? { ...facts, detail: [...facts.detail, ...abapTestEvidenceSentences(abap, outside.state === 'current' ? outside.summary : null)] } : facts;
+  // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one —
+  // the same sentences the Testing page shows (`abapTestSentencesOfProject`).
+  const abap = abapTestSentencesOfProject(project as Parameters<typeof abapTestSentencesOfProject>[0]);
+  return abap ? { ...facts, detail: [...facts.detail, ...abap] } : facts;
 }
 
 function testFactsWithEngineCases(project: HandoverProject, phases: readonly RailStep[]): TestFacts {

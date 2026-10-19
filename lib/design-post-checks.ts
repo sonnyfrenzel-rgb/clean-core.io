@@ -253,8 +253,12 @@ export const CUSTOM_ENTITY_AUTH_NOTE =
   'A custom entity is not protected by a CDS access control (DCL): its rows come from the query provider class, not from a view an access control could restrict. '
   + 'The query provider checks the authorization (AUTHORITY-CHECK) before it returns rows.';
 
-/** A security row or a text that proposes CDS access control: DCL, `define role`, `pfcg_auth`, "access control". */
-const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\b(?:CDS\s+)?access\s+controls?\b|\.dcls\b|\basdcls\b/i;
+/**
+ * A security row or a text that proposes CDS access control: DCL, `define role`, `pfcg_auth`, "CDS access control".
+ * "Access control" alone is no such proposal — a query provider's AUTHORITY-CHECK is access control too, and is
+ * exactly what a custom entity needs (QA 5d8e6e355870).
+ */
+const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\bCDS\s+access\s+controls?\b|\.dcls\b|\basdcls\b/i;
 
 /** The program a source declares (`REPORT`/`PROGRAM`), as the engine reads it; `null` when it declares none. */
 export function programOfSource(code: string | null | undefined): string | null {

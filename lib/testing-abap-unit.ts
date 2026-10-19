@@ -31,6 +31,7 @@
 
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 import { sandboxFilesFromStoredCode } from './test-sandbox/files';
+import { outsideReading } from './sap-test-results';
 import { goldenMasterComparedWords, goldenMasterStates, notCarriedWords, type GoldenMasterSapResult } from './transformation/golden-master';
 
 export const ABAP_NAME_MAX = 30;
@@ -855,6 +856,19 @@ export function abapTestEvidenceOfProject(project: { extensibilityRoute?: unknow
   if (!project || !String(project.extensibilityRoute ?? '').includes('ABAP Cloud') || typeof project.generatedCode !== 'string') return null;
   const suite = (project.testSuite as { code?: unknown } | undefined)?.code;
   return abapTestEvidence(sandboxFilesFromStoredCode(project.generatedCode), typeof suite === 'string' ? suite : null);
+}
+
+/**
+ * The sentences of a project on the ABAP route — the Testing page and STATUS.md read the same ones: "passed in SAP"
+ * is the SAP result on record for this package when there is a current one (3.0.18 item 13; QA 619a7bf2da46).
+ */
+export function abapTestSentencesOfProject(
+  project: (Parameters<typeof outsideReading>[0] & { generatedCode?: unknown; testSuite?: unknown }) | null | undefined,
+): string[] | null {
+  const e = abapTestEvidenceOfProject(project);
+  if (!e) return null;
+  const outside = outsideReading(project);
+  return abapTestEvidenceSentences(e, outside.state === 'current' ? outside.summary : null);
 }
 
 /** The evidence as the testing stage and STATUS.md say it. */

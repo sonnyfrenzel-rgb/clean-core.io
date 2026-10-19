@@ -87,6 +87,18 @@ async function buildArchive(
   return out;
 }
 
+/**
+ * A manifest whose entries were edited, made consistent again: `manifestHash` over the entries in the order the
+ * verifier reads them (PowerShell's `Sort-Object -Property path`, a culture comparison — `localeCompare` here) and a
+ * fresh signature. A refusal of such an archive comes from the check of the entries, not from a broken signature.
+ */
+function resign(manifest: { files: Array<{ path: string; sha256: string }>; manifestHash: string; signature: string; filesCount: number }, key: string): void {
+  const sorted = [...manifest.files].sort((x, y) => x.path.localeCompare(y.path, 'en'));
+  manifest.manifestHash = sha256(sorted.map((e) => `${e.path}:${e.sha256};`).join(''));
+  manifest.signature = crypto.createHmac('sha256', key).update(manifest.manifestHash).digest('hex');
+  manifest.filesCount = manifest.files.length;
+}
+
 test.describe('the offline export verifier, executed', () => {
   const KEY = 'spec-fixture-signing-key-0123456789';
   let shell: string | null = null;
@@ -153,15 +165,30 @@ test.describe('the offline export verifier, executed', () => {
     expect(r.out).toContain('src/extra.ts');
     expect(r.out).not.toContain('SUCCESS');
 
-    // A manifest that names one file twice.
+    // The control for `resign`: the extra file listed and the manifest signed again is a verified archive — so a
+    // re-signed manifest below is refused by the check of its entries alone (843d8d65d0bc).
+    const control = await JSZip.loadAsync(fs.readFileSync(extra));
+    const listed = JSON.parse(await control.file('manifest.json')!.async('string'));
+    listed.files = [...listed.files, { path: 'src/extra.ts', sha256: sha256(Buffer.from('export const extra = 1;\n', 'utf8')) }];
+    resign(listed, KEY);
+    control.file('manifest.json', JSON.stringify(listed, null, 2));
+    const controlZip = path.join(dir, 'extra-listed.zip');
+    fs.writeFileSync(controlZip, await control.generateAsync({ type: 'nodebuffer' }));
+    const c = run(controlZip, true);
+    expect(c.code, c.out).toBe(0);
+    expect(c.out).toContain('SUCCESS');
+
+    // A manifest that names one file twice — signed again, so only the check of the entries can refuse it.
     const twice = await JSZip.loadAsync(fs.readFileSync(zip));
     const manifest = JSON.parse(await twice.file('manifest.json')!.async('string'));
     manifest.files = [...manifest.files, manifest.files[0]];
+    resign(manifest, KEY);
     twice.file('manifest.json', JSON.stringify(manifest, null, 2));
     const twiceZip = path.join(dir, 'twice-edited.zip');
     fs.writeFileSync(twiceZip, await twice.generateAsync({ type: 'nodebuffer' }));
     const t = run(twiceZip, true);
     expect(t.code, t.out).toBe(1);
+    expect(t.out).toContain('Manifest lists a file twice: a.txt');
     expect(t.out).not.toContain('SUCCESS');
   });
 
@@ -178,12 +205,15 @@ test.describe('the offline export verifier, executed', () => {
       const zip = await buildArchive(dir, `path-${name}`, { signed: true, key: KEY });
       const buf = await JSZip.loadAsync(fs.readFileSync(zip));
       const manifest = JSON.parse(await buf.file('manifest.json')!.async('string'));
-      manifest.files = [...manifest.files, { path: p, sha256: '0'.repeat(64) }];
+      // The file's real hash and a fresh signature: only the path check can refuse it (843d8d65d0bc).
+      manifest.files = [...manifest.files, { path: p, sha256: outsideHash }];
+      resign(manifest, KEY);
       buf.file('manifest.json', JSON.stringify(manifest, null, 2));
       const edited = path.join(dir, `path-${name}-edited.zip`);
       fs.writeFileSync(edited, await buf.generateAsync({ type: 'nodebuffer' }));
       const r = run(edited, true);
       expect(r.code, `${name}:\n${r.out}`).toBe(1);
+      expect(r.out, name).toContain('Manifest path is not a file of this archive');
       expect(r.out, name).not.toContain(outsideHash);
       expect(r.out, name).not.toContain('SUCCESS');
     }

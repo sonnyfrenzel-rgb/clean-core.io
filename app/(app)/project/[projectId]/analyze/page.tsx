@@ -679,8 +679,10 @@ export default function AnalyzePage() {
     const exportFileName = analysisExportFileName(project.name);
     save(blob, exportFileName);
     // Said once the file is handed to the browser: which file, and that it was
-    // only downloaded — nothing was sent to Confluence (UX-161).
-    setExportToast(`Downloaded ${exportFileName}. It is on your device only; nothing was sent to Confluence.`);
+    // only downloaded — nothing was sent to Confluence (UX-161). The browser
+    // gives no signal that the file was saved, so the toast says what is known:
+    // it was asked to save it (QA 22911ff00bda).
+    setExportToast(`Your browser was asked to save ${exportFileName}. The file goes to your device only; nothing was sent to Confluence.`);
     
     // The export is no longer written back into the project document.
     //
