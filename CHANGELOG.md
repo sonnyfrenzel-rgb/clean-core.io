@@ -16,8 +16,24 @@ output that moved is gated to engine 3.0.18: runs signed by an earlier engine re
 The acceptance suite now drives the SAP BTP trial itself (`--trial-rap`: push to the trial repository, abapGit
 pull, activation, ABAP Unit through ADT, no hand work). Its first run, on the packages kept from the 3.0.17
 acceptance: SD 18 objects activated, 0 errors, ABAP Unit 25 green / 0 red / 54 skipped; PM 18, 0, 6 / 0 / 46; QM
-30, 0, 30 / 0 / 48 — the 3.0.17 figures, now without hand work. The run with the packages this release generates
-follows below.
+30, 0, 30 / 0 / 48 — the 3.0.17 figures, now without hand work.
+
+The packages this release generates, on 19 October 2026 (acceptance suite on 62eae6a0, one generation per case,
+$2.10 for both runs; the RAP packages through `--trial-rap`, the CAP packages with `cf push` and only the trial
+manifest added; no hand edit in any package):
+
+| Case | Route | Generation | On SAP | Tests |
+|---|---|---|---|---|
+| SD return credit reconciliation, run 1 | RAP | 31 of 32: U10P2 refused by the fill checks (a split part used the parent routine's locals) | 40 objects activated, 0 errors | ABAP Unit 25 green, **32 red**, 22 skipped — every red one a golden-master case that reached the stub U10P2, said as such |
+| SD return credit reconciliation, run 2 | RAP | 32 of 32 | 41 objects activated, 0 errors | ABAP Unit 25 green, 0 red, 54 skipped |
+| PM shutdown slot plan | RAP | 21 of 21 | 32 objects activated, 0 errors | ABAP Unit 6 green, 0 red, 46 skipped |
+| QM inspection evidence | RAP | 17 of 17 | 32 objects activated, 0 errors | ABAP Unit 30 green, 0 red, 48 skipped |
+| Freight rate check (starter example) | CAP | 11 of 11 | `cf push` builds and starts | no credentials 401; a user without the scope 403 ("lacking required roles: V_LIKP_VST_03"); `alice` 200: 3 delivery rows (121.50 expected for the one with a rate; NO_QUOTE without the carrier gateway, NO_RATE for the two without a rate card entry); missing obligatory input 400; malformed body 400 |
+| 1,000-line order audit (starter example) | CAP | 39 of 39 | `cf push` builds and starts | 401 / 403 / 200 as above (scope V_VBAK_VKO_03); `P_ALV = X`: the four orders and the run summary as rows; `P_ALV` blank: the run summary only; malformed body 400 |
+
+The split-part refusal of run 1 is the limit 3.0.17 named for the FI holdout: a model answer that uses the parent
+routine's locals is refused, the function stays a stub with its reason, and every case that reaches it is red —
+never passed. The model-written test classes are proposals (C(7)) and are not in these figures.
 
 ### What moved, measured
 
