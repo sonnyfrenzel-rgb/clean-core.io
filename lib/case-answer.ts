@@ -392,8 +392,13 @@ const LINE_ANCHOR = /\bL(\d+)(?:\s*[-–]\s*L?(\d+))?\b/gi;
 const DECLINE =
   /\b(evidence|facts?|information)\b[^.]*\b(does not|doesn't|do not|don't|cannot|can't|no)\b[^.]*\b(answer|say|show|state|contain|cover|mention|tell|indicate|information)/i;
 
-/** Where one clause of a sentence ends and the next begins: `;`, `:`, `, and`, and the contrasting conjunctions. */
-const CLAUSE_BREAK = /\s*(?:[;:]|,\s*and\b|,?\s*\b(?:but|however|yet|whereas|although|though|while)\b)\s*/i;
+/**
+ * Where one clause of a sentence ends and the next begins: `;`, `:`, `, and`, a plain `and` that opens a clause with a
+ * subject of its own (`… and it deletes …`, QA review of 62eae6a082bb), and the contrasting conjunctions. A plain
+ * `and` between two verbs or objects (`whether it reads and writes the table`) stays inside the refusal.
+ */
+const CLAUSE_BREAK =
+  /\s*(?:[;:]|,\s*and\b|\s\band\s+(?=(?:it|its|this|that|these|those|they|there|he|she|the|a|an|every|all)\s)|,?\s*\b(?:but|however|yet|whereas|although|though|while)\b)\s*/i;
 
 /**
  * Upper-case words of this length or more that are prose, not a name out of

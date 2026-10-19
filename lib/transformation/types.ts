@@ -202,6 +202,8 @@ export const PLAN_VERSION = 2;
  * the interface; the logic class keeps each name as an alias (`TYPES tt_csv TYPE zif_x_access=>tt_csv`), so the
  * interface needs nothing of the class that holds a reference to it — no activation cycle (`access-types.ts`); the
  * shipped abaplint.json runs `cyclic_oo`.
+ *    Also in 19 (QA review of 62eae6a082bb): RAP — TRACE.md's ABAP Unit line names every class the acceptance counts,
+ * ltc_counterparts with ltc_engine_cases and ltc_golden_master (`ABAP_UNIT_EVIDENCE_LINE`).
  * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 19;

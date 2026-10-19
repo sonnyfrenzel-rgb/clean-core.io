@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 import { skipWithoutReference } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
+import { build } from 'esbuild';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { ORIGINAL_DEMO_FORMAT, goldenMasterForScaffold, goldenMasterSentence, originalDemoCases, readGoldenMaster } from '../lib/transformation/golden-master';
 import { NOT_RUN_NO_CONTRACT, notRunWithoutContract } from '../lib/engine-call-contract';
 import { deriveEngineCases, engineCasePromptSection } from '../lib/testing-engine-cases';
@@ -20,6 +23,24 @@ import { OUTSIDE_RESULT_VERSION, outsideSubjectOf } from '../lib/sap-test-result
  * the declarations of the class it tests. Server-free: hand-written fixtures,
  * no browser, no model.
  */
+
+/** The Testing page's ABAP Unit block, bundled the way testing-evidence-rendered.spec.ts loads its components. */
+async function loadAbapUnitEvidence(): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
+  const root = path.resolve(__dirname, '..');
+  const out = path.join(root, 'tmp', 'golden-master-rendered', String(process.pid), 'AbapUnitEvidence.cjs');
+  await build({
+    entryPoints: [path.join(root, 'components', 'testing', 'AbapUnitEvidence.tsx')],
+    outfile: out,
+    bundle: true,
+    format: 'cjs',
+    platform: 'node',
+    jsx: 'automatic',
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react'],
+    alias: { '@': root },
+    logLevel: 'silent',
+  });
+  return require(out).default;
+}
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'golden-master', 'three-cases.abap');
 const three = () => fs.readFileSync(FIXTURE, 'utf8');
@@ -192,9 +213,11 @@ test('the ABAP Unit evidence is shown on the ABAP route, where it is read — no
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
   // The evidence is read only for an ABAP Cloud project...
   expect(page).toMatch(/abapTestSentencesOfProject\(project\)/);
-  // ...so a block that renders it must be gated on that route, not on its absence.
-  const block = page.match(/\{isAbapCloud && evidence\.abapUnit && evidence\.abapUnit\.length > 0 \? \(\s*<p data-test-evidence-abap-unit=""[^>]*>\s*\{evidence\.abapUnit\.join\(' '\)\}/);
-  expect(block, 'the testing page renders the ABAP Unit evidence on the ABAP route').not.toBeNull();
+  // ...so the block that renders it is gated on that route, not on its absence: the run step renders the component,
+  // which reads the route itself (components/testing/AbapUnitEvidence.tsx, rendered in a test below).
+  expect(page).toContain('<AbapUnitEvidence project={project} />');
+  const component = fs.readFileSync(path.join(__dirname, '..', 'components', 'testing', 'AbapUnitEvidence.tsx'), 'utf8');
+  expect(component).toContain('isAbapUnitRoute(project) ? abapTestSentencesOfProject(project) : null');
 });
 
 test('a program without demo cases has no golden master; an integer CASE that touches no fixture table is not one', () => {
@@ -289,7 +312,7 @@ test('STATUS on the ABAP route says which test methods are tests and how many de
   const abap = detail.find((d) => d.startsWith("ABAP Unit, the engine's classes"))!;
   // 3.0.14: the three demo cases run with their rows but compare nothing, so they skip and are not counted as tests;
   // the engine cases that ask the original's checks are.
-  const m = /^ABAP Unit, the engine's classes \(ltc_engine_cases, ltc_golden_master — what the acceptance counts\): (\d+) of (\d+) ABAP Unit test methods call the code under test; (\d+) skip/.exec(abap);
+  const m = /^ABAP Unit, the engine's classes \(ltc_engine_cases, ltc_golden_master, ltc_counterparts — what the acceptance counts\): (\d+) of (\d+) ABAP Unit test methods call the code under test; (\d+) skip/.exec(abap);
   expect(m, abap).not.toBeNull();
   expect(Number(m![3])).toBeGreaterThanOrEqual(3);
   expect(abap).not.toContain('without its case data');
@@ -298,7 +321,8 @@ test('STATUS on the ABAP route says which test methods are tests and how many de
   expect(testFactsOf({ ...project, extensibilityRoute: 'Side-by-Side (BTP)' } as unknown as Parameters<typeof testFactsOf>[0], []).detail.some((d) => d.startsWith('ABAP Unit'))).toBe(false);
 });
 
-test('3.0.18 item 13: with a result from the reader\'s SAP system on record, "passed in SAP" is its own number in STATUS', () => {
+test('3.0.18 item 13: with a result from the reader\'s SAP system on record, "passed in SAP" is its own number in STATUS', async () => {
+  test.setTimeout(120 * 1000);
   const { facts, plan } = planOf(three());
   const scaffold = buildRapScaffold(plan, facts);
   const base = {
@@ -326,9 +350,18 @@ test('3.0.18 item 13: with a result from the reader\'s SAP system on record, "pa
   expect(shown.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))).toContain('passed in SAP: 70 of 77 ABAP Unit test methods');
   const shownStale = abapTestSentencesOfProject({ ...base, outsideTestResult: stale } as unknown as Parameters<typeof abapTestSentencesOfProject>[0])!;
   expect(shownStale.find((d) => d.startsWith('Demo cases of the original as ABAP Unit'))).toContain('passed in SAP: not known here');
+  // QA review of 62eae6a082bb: rendered, not read from the source - the Testing page's block shows each state.
+  const Evidence = await loadAbapUnitEvidence();
+  const html = (p: Record<string, unknown>) => renderToStaticMarkup(React.createElement(Evidence, { project: p }));
+  const current = html({ ...base, outsideTestResult: confirmed });
+  expect(current).toContain('data-test-evidence-abap-unit');
+  expect(current).toContain('passed in SAP: 70 of 77 ABAP Unit test methods');
+  expect(current).not.toContain('not known here');
+  expect(html({ ...base, outsideTestResult: stale })).toContain('passed in SAP: not known here');
+  // Off the ABAP route the block is not there at all.
+  expect(html({ ...base, extensibilityRoute: 'Side-by-Side (BTP)', outsideTestResult: confirmed })).toBe('');
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
-  expect(page).toContain('const abapUnitEvidence = useMemo(() => abapTestSentencesOfProject(project), [project]);');
-  expect(page).toMatch(/abapUnit: abapUnitEvidence,/);
+  expect(page).toContain('<AbapUnitEvidence project={project} />');
 });
 
 test('a test method that only skips, or never calls the code under test, is not counted as a test', () => {

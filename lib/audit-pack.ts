@@ -811,6 +811,11 @@ function targetProfileSection(project: Project): Record<string, unknown> {
  */
 export function generateInputManifestFile(project: Project): string {
   const m = project.inputManifest;
+  // The pack route compares the source only when the run carries its digest
+  // (`runData.inputFingerprint?.sha256`, app/api/audit-pack/create/route.ts);
+  // the signed note must not claim a comparison that did not happen.
+  const runDigest = (project as { inputFingerprint?: { sha256?: unknown } }).inputFingerprint?.sha256;
+  const sourceCompared = typeof runDigest === 'string' && runDigest.length > 0;
   const body = m
     ? {
         recorded: true,
@@ -829,8 +834,14 @@ export function generateInputManifestFile(project: Project): string {
           'When this pack was made, only the source was compared with the signed run, and only where ' +
           '01-input-fingerprint.json carries its digest. The other inputs (the deployment target, the SAP ' +
           'catalog, the rule set and the target profile) were not checked.',
-        checkedWhenPacked: [INPUT_IDS.source],
-        notCheckedWhenPacked: [INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, PROFILE_INPUT_ID],
+        checkedWhenPacked: sourceCompared ? [INPUT_IDS.source] : [],
+        notCheckedWhenPacked: [
+          ...(sourceCompared ? [] : [INPUT_IDS.source]),
+          INPUT_IDS.deployment,
+          INPUT_IDS.catalog,
+          INPUT_IDS.ruleset,
+          PROFILE_INPUT_ID,
+        ],
       };
   return JSON.stringify(
     {

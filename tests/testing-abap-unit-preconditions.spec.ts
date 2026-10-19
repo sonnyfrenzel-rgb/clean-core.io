@@ -109,7 +109,7 @@ test('a model test that calls the run without its input, or asserts only when it
   expect(e.counts.guardedOnlyNames).toEqual(['ltcl_model.tc_45_guarded']);
   const sentences = abapTestEvidenceSentences(e);
   // The package has no engine include here: only the testing model's class, counted apart as a proposal.
-  expect(sentences[0]).toBe("ABAP Unit, the engine's classes (ltc_engine_cases, ltc_golden_master — what the acceptance counts): No ABAP Unit test method.");
+  expect(sentences[0]).toBe("ABAP Unit, the engine's classes (ltc_engine_cases, ltc_golden_master, ltc_counterparts — what the acceptance counts): No ABAP Unit test method.");
   expect(sentences[sentences.length - 1]).toBe(
     "ABAP Unit, the testing model's class ltcl_model — a proposal, not evidence: 4 of 6 ABAP Unit test methods call the code under test; 1 calls the run without handing in its input (is_input) and 1 asserts only when the row it reads is found — not counted as tests. A green or red method there says nothing about the logic until a reviewer confirms its preconditions and expected result.",
   );

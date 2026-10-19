@@ -29,11 +29,17 @@ function specFiles(dir: string): string[] {
 /** A test, hook or fixture callback that destructures `page` or `context`. */
 const USES_BROWSER_FIXTURE = /async\s*\(\s*\{[^}]*\b(page|context)\b[^}]*\}/;
 
-/** `test` imported from Playwright directly — under its own name or an alias. */
+/**
+ * `test` imported from Playwright directly — under its own name or an alias, through the namespace
+ * (`import * as pw` → `pw.test`) or as the default export, which is Playwright's `test` (QA review of 62eae6a082bb).
+ */
 function importsPlaywrightTest(source: string): boolean {
-  return [...source.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]@playwright\/test['"]/g)].some((m) =>
+  const named = [...source.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]@playwright\/test['"]/g)].some((m) =>
     m[1].split(',').some((spec) => /^(?!type\s)\s*test\b/.test(spec.trim())),
   );
+  // `import * as pw from …`, `import pw from …`, `import pw, { expect } from …` — never `import type …`.
+  const whole = /import\s+(?!type\s)(?:\*\s+as\s+\w+|\w+\s*(?:,\s*(?:\{[^}]*\}|\*\s+as\s+\w+))?)\s+from\s*['"]@playwright\/test['"]/.test(source);
+  return named || whole;
 }
 
 test.describe('every spec that opens a page closes it at teardown', () => {
@@ -62,6 +68,13 @@ test.describe('every spec that opens a page closes it at teardown', () => {
     expect(importsPlaywrightTest('import {\n  test,\n  expect,\n} from "@playwright/test";')).toBe(true);
     expect(importsPlaywrightTest("import { expect, type Page } from '@playwright/test';")).toBe(false);
     expect(importsPlaywrightTest("import { test, expect } from './helpers/test';")).toBe(false);
+    // QA review of 62eae6a082bb: the namespace and the default export reach Playwright's `test` too.
+    expect(importsPlaywrightTest("import * as pw from '@playwright/test';")).toBe(true);
+    expect(importsPlaywrightTest("import pw from '@playwright/test';")).toBe(true);
+    expect(importsPlaywrightTest("import pw, { expect } from '@playwright/test';")).toBe(true);
+    expect(importsPlaywrightTest("import type * as pw from '@playwright/test';")).toBe(false);
+    expect(importsPlaywrightTest("import * as helpers from './helpers/test';")).toBe(false);
+    expect(USES_BROWSER_FIXTURE.test("pw.test('a', async ({ page }) => {")).toBe(true);
     expect(USES_BROWSER_FIXTURE.test("test('a', async ({ page }) => {")).toBe(true);
     expect(USES_BROWSER_FIXTURE.test("test.beforeEach(async ({\n  request,\n  context,\n}) => {")).toBe(true);
     expect(USES_BROWSER_FIXTURE.test("test('a', async ({ request }) => {")).toBe(false);

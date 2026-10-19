@@ -213,6 +213,17 @@ test.describe('the signature and the pack', () => {
     expect(doc.notCheckedWhenPacked).toEqual([INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, 'profile:assessment']);
   });
 
+  test('a run without a source digest: the pack does not claim the source was compared (QA review of 62eae6a082bb)', () => {
+    // The pack route compares the source only when the run carries its digest.
+    const { inputFingerprint: _dropped, ...noDigest } = run;
+    void _dropped;
+    const { signed } = buildAuditPackContents({ projectId: 'proj-1', runId: 'run-1', run: noDigest, attested: {} });
+    const doc = JSON.parse(signed[INPUT_MANIFEST_FILE]);
+    expect(doc.recorded).toBe(false);
+    expect(doc.checkedWhenPacked).toEqual([]);
+    expect(doc.notCheckedWhenPacked).toEqual([INPUT_IDS.source, INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, 'profile:assessment']);
+  });
+
   test('the canonical manifest form is untouched — packs sealed before 0.5 still hash the same', () => {
     const files = [
       { path: '01-input-fingerprint.json', sha256: '1'.repeat(64) },

@@ -174,8 +174,9 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
 
   // 2. The EBAN write row: its count and its dots agree.
   const writeRow = page.locator('[data-program-map-row="standard-table-write"]');
-  await expect(writeRow).toContainText('1 finding');
-  await expect(writeRow).not.toContainText('places in the code');
+  // The whole count, not a substring "11 findings" would also hold (QA review of 62eae6a082bb): one finding at one
+  // place, so no "places in the code" (programMapRowCount, lib/findings-view.ts).
+  await expect(writeRow.locator('[data-program-map-count]')).toHaveText('1 finding');
   await expect(page.locator(`[data-program-map-dot="${EBAN_WRITE_LINE}"]`)).toHaveCount(1);
 
   // 3. Column numbers read 1..n left to right.
