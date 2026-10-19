@@ -216,7 +216,9 @@ function itemFor(
   // A call no finding names is anchored on its first call.
   const first = rows.reduce<number | null>((min, r) => (min === null || r.lineStart < min ? r.lineStart : min), null)
     ?? call?.lines[0] ?? null;
-  const asCall = rows.length === 0 && call !== undefined;
+  // A classic-api finding (engine 3.0.18) is the call itself, said as a
+  // finding: it leaves the object a call, as it was before the engine named it.
+  const asCall = call !== undefined && rows.every((r) => r.kind === 'classic-api');
 
   let why: string;
   let provenance: ProvenanceValue = 'imported';

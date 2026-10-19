@@ -47,6 +47,7 @@
  */
 
 import { splitSentences } from './abap/narrative-anchors';
+import { BTP } from './sap-naming';
 import type { DecisionLine } from './first-look';
 import { searchWorkspace, type SearchResult, type SearchResultKind } from './workspace-search';
 
@@ -396,11 +397,13 @@ const DECLINE =
  * the code — the reader's and the prompt's own vocabulary.
  */
 const PROSE_ACRONYMS = new Set([
-  'ABAP', 'SAP', 'API', 'APIS', 'BAPI', 'BAPIS', 'RFC', 'ALV', 'CDS', 'RAP', 'CAP', 'BTP', 'ERP', 'CSV', 'PDF',
+  'ABAP', 'SAP', 'API', 'APIS', 'BAPI', 'BAPIS', 'RFC', 'ALV', 'CDS', 'RAP', 'CAP', 'ERP', 'CSV', 'PDF',
   'XML', 'JSON', 'HTTP', 'HTTPS', 'URL', 'SQL', 'DDIC', 'IDOC', 'BADI', 'BADIS', 'OData', 'ODATA', 'ATC', 'FORM',
   'PERFORM', 'SELECT', 'UPDATE', 'INSERT', 'MODIFY', 'DELETE', 'LOOP', 'CALL', 'FUNCTION', 'METHOD', 'CLASS',
   'DATA', 'TYPE', 'MESSAGE', 'REPORT', 'ENDIF', 'ELSE', 'CASE', 'WHEN', 'TABLE', 'TABLES', 'SINGLE', 'WHERE',
   'START', 'OF', 'SELECTION', 'AND', 'NOT', 'THE', 'ID', 'IDS', 'BR',
+  // Every word of the platform's name as lib/sap-naming.ts spells it.
+  ...BTP.split(' '),
 ]);
 
 function lineRange(start: string, end: string | undefined): [number, number] {

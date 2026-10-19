@@ -28,6 +28,10 @@ const gapsOf = (code: string) => buildAbapEvidence(code, 'zcc_cat.abap').coverag
 const LETTER = /\b(?:level|grade)\s*[A-D]\b|\b[A-D]\s*\(level\)/i;
 
 test('a classicAPI function module is answered by the catalog, not left not determined', () => {
+  // Engine 3.0.17: the answer is the coverage line alone, no finding.
+  const before = buildAbapEvidence(program('BAPI_SALESORDER_CREATEFROMDAT2'), 'zcc_cat.abap', undefined, undefined, 'v3.0.17');
+  expect(before.findings, 'a run of an earlier engine keeps what it signed').toEqual([]);
+
   const evidence = buildAbapEvidence(program('BAPI_SALESORDER_CREATEFROMDAT2'), 'zcc_cat.abap');
   expect(evidence.coverage.unassessed.map((u) => u.gap)).not.toContain('local-function-call');
   expect(evidence.coverage.complete).toBe(true);
@@ -36,9 +40,14 @@ test('a classicAPI function module is answered by the catalog, not left not dete
   expect(answered.answer, 'the provenance is said').toMatch(/not a check of what this call does at runtime/);
   expect(answered.answer).not.toMatch(LETTER);
   expect(Object.keys(answered)).not.toContain('grade');
-  // classic ABAP may call it: no finding
-  expect(evidence.findings).toEqual([]);
-  // and no "not assessed" deduction for it
+  // From engine 3.0.18 (03f0ffe6, E6): classic ABAP may call it, ABAP Cloud may
+  // not — one classic-api finding, which cites SAP's state and never the letter.
+  expect(evidence.findings.map((f) => f.kind)).toEqual(['classic-api']);
+  const [finding] = evidence.findings;
+  for (const text of [finding.title, finding.technicalDetail, finding.cleanCoreImpact, finding.recommendation]) {
+    expect(text, 'the level stays out of the signed findings').not.toMatch(LETTER);
+  }
+  // and it costs no score points, nor a "not assessed" deduction
   expect(routeExtensibility(evidence, 'private', APP_VERSION).cleanCoreScore).toBe(100);
 });
 

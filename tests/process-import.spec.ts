@@ -81,6 +81,26 @@ test.describe('BPMN 2.0 import', () => {
     expect(result.xml).toContain('<bpmn:definitions');
   });
 
+  test('the shipped example comes back whole too: two start events of one name are told apart by where they lead', async () => {
+    // Since 15dcfd60 the shipped 1,000-line example reaches its screen's PBO and
+    // PAI modules, and each is drawn on the top level as "Start" before its own
+    // "Done". Nothing enters a start event, so the tie-breaker by the element it
+    // is entered from cannot separate them; the element it leads to does. Without
+    // that, both were reported as "added outside Clean-Core.io" and lost their
+    // line anchors (tests/process-editor-pro.spec.ts, CI of d9a07f20).
+    const shipped = path.resolve(__dirname, '..', 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const source = fs.readFileSync(shipped, 'utf8').replace(/\r\n/g, '\n');
+    const base = buildReadingExports(source, { processName: 'Order fulfilment audit', sourceFileName: 'Z.abap' }).bpmn.xml;
+    const topLevelStarts = parseBpmn(base).elements.filter((e) => e.tag === 'startEvent' && e.name === 'Start' && e.plane === null);
+    expect(topLevelStarts.length, 'the premise: two start events of one name on one level').toBeGreaterThanOrEqual(2);
+    const result = await importBpmn(asSignavio(base), { xml: base, revision: 1 });
+    expect(result.ok, result.ok ? '' : result.message).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary.outside).toBe(0);
+    expect(result.summary.matchedByName).toBe(result.summary.flowNodes);
+    expect(result.summary.diff.identical, result.summary.diff.summary).toBe(true);
+  });
+
   test('a line anchor the file claims for itself is not believed', async () => {
     const base = ist();
     const forged = base

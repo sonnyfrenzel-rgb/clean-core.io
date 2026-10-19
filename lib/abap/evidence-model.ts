@@ -1288,8 +1288,8 @@ export function buildAbapEvidence(
     // A local call of a function module SAP's files say is no API for customer
     // code (`noAPI`, or `notToBeReleased`) — roadmap 3.0.6. The call used to
     // be "not assessed" while the catalog already said what it was. A
-    // `classicAPI` module is answered in the coverage report and raises no
-    // finding: classic ABAP may call it. The finding cites SAP's state, never
+    // `classicAPI` module is answered in the coverage report and, before engine
+    // 3.0.18, raises no finding: classic ABAP may call it. The finding cites SAP's state, never
     // the A–D letter, because findings go into the signed run.
     {
       const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
@@ -1341,7 +1341,9 @@ export function buildAbapEvidence(
             lineStart: stmt.line,
             snippet: text,
             technicalDetail: answer.answer,
-            cleanCoreImpact: 'Classic ABAP in SAP Cloud ERP Private may call a classic API (clean core level B, SAP Note 3578329). ABAP Cloud code may not: it calls only APIs SAP releases for ABAP Cloud, so on the ABAP Cloud route this call has no counterpart as written.',
+            // No A–D letter here: the finding goes into the signed run, and the
+            // level stays out of it (tests/catalog-answers-calls.spec.ts).
+            cleanCoreImpact: 'Classic ABAP in SAP Cloud ERP Private may call a classic API (SAP Note 3578329 accepts a documented classic API for classic ABAP). ABAP Cloud code may not: it calls only APIs SAP releases for ABAP Cloud, so on the ABAP Cloud route this call has no counterpart as written.',
             recommendation: 'On the ABAP Cloud route, replace the call with the released API of the same business object (a released RAP business object interface, called through EML, or a released class), or keep it in classic ABAP behind a wrapper the ABAP Cloud code calls. Check the SAP catalog page of the module for a named successor.',
             targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
             source: 'catalog-match',

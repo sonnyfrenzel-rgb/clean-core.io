@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-10-13",
+  "written": "2026-10-19",
   "entries": [
     {
       "case": "CC-001",
@@ -624,22 +624,22 @@
     {
       "case": "CC-005",
       "class": "level",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
         {
           "name": "artefaktlevel",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 2 Objekt(e)) B"
     },
     {
       "case": "CC-005",
@@ -1940,7 +1940,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-013-B01↔source.abap:B6-status 0.89. Darunter: CC-013-B03↔source.abap:B17-leave 0.31, CC-013-B02↔source.abap:B12-branch 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-013-B01↔source.abap:B6-status 0.89. Darunter: CC-013-B03↔source.abap:B17-leave 0.31, CC-013-B02↔source.abap:B12-branch 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-014",
@@ -3728,7 +3728,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 5 von 5 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-025-B01↔source.abap:B10-branch 0.36, CC-025-B03↔source.abap:B14-chain14 0.35, CC-025-B05↔source.abap:B19-branch19 0.35, CC-025-B02↔source.abap:B9-branch9 0.14 … (+1). Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
+      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 5 von 5 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-025-B03↔source.abap:B14-chain14 0.39, CC-025-B01↔source.abap:B10-branch 0.36, CC-025-B05↔source.abap:B19-branch19 0.35, CC-025-B02↔source.abap:B9-branch9 0.14 … (+1). Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-026",
@@ -4066,7 +4066,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 2 Objekt(e)) C. Die Engine urteilt strenger, und der Fall stützt sein Level nicht auf einen katalogisierten Nachfolger. Der Korpus vergibt ein Level je Artefakt unter einem Regelvertrag, die Engine eine Katalognote je Objekt; ein Artefaktlevel gibt es in lib/abap/ nicht."
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 3 Objekt(e)) C. Die Engine urteilt strenger, und der Fall stützt sein Level nicht auf einen katalogisierten Nachfolger. Der Korpus vergibt ein Level je Artefakt unter einem Regelvertrag, die Engine eine Katalognote je Objekt; ein Artefaktlevel gibt es in lib/abap/ nicht."
     },
     {
       "case": "CC-028",
@@ -6112,7 +6112,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Not Unknown, Not a singleton."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.60. Darunter: CC-041-B01↔source.abap:B22-branch 0.29. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 3 von 5 mit Kern, 0 davon verletzt: —."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.60. Darunter: CC-041-B01↔source.abap:B19-chain19 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 3 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-042",
@@ -6435,22 +6435,22 @@
     {
       "case": "CC-044",
       "class": "level",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
         {
           "name": "artefaktlevel",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) B"
     },
     {
       "case": "CC-044",

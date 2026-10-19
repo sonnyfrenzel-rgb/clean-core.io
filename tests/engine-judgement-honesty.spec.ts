@@ -505,10 +505,12 @@ test.describe('an incomplete reading never raises the score', () => {
   });
 
   test('the penalty is still paid where the score was good', () => {
-    // The point of the adjustment stands: an unread file does not come out at 100.
-    const quiet = evidence(
-      ['REPORT zcc_quiet.', 'OPEN DATASET lv_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.'].join('\n'),
-    );
+    // The point of the adjustment stands: an unread object does not come out at 100.
+    // Until engine 3.0.18 the unread statement here was OPEN DATASET; since
+    // 03f0ffe6 (E7) that is a dataset-io finding and no coverage gap, so the
+    // gap is a call of a customer function module, which no catalog answers.
+    const quiet = evidence(['REPORT zcc_quiet.', "CALL FUNCTION 'Z_LOCAL_HELPER' EXPORTING x = 1."].join('\n'));
+    expect(quiet.findings, 'nothing found, only not read').toEqual([]);
     expect(quiet.coverage.complete).toBe(false);
     expect(routeExtensibility(quiet, 'private', APP_VERSION).cleanCoreScore).toBeLessThan(100);
   });
