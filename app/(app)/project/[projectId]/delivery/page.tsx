@@ -96,6 +96,9 @@ import { abaplintConfigJson } from '@/lib/transformation/abaplint-config';
 import { abapGitRepoSettingsXml, singleCallRapClassFiles } from '@/lib/transformation/abapgit-files';
 import { placeModelTestClasses } from '@/lib/testing-abap-unit';
 import { deliverableClassXml } from '@/lib/transformation/abapgit-check';
+import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
+import { isKeyUserDecision, keyUserModeOf, keyUserStepsOf, KEY_USER_STEPS_PATH } from '@/lib/key-user-route';
+import { keyUserStepsMarkdown } from '@/lib/key-user-steps';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -114,14 +117,14 @@ const RULES_UNREAD: Partial<Record<StatesReadRefusal, string>> = {
  * (`GET /api/projects/{id}/evidence`), for the deduction table in
  * docs/decision.md. A failed read is said in the file, never filled in.
  */
-async function readScoreEvidence(projectId: string): Promise<{ evidence: ScoreEvidence | null; unread: string | null }> {
+async function readScoreEvidence(projectId: string): Promise<{ evidence: (ScoreEvidence & Pick<AbapEvidenceReport, 'keyUser'>) | null; unread: string | null }> {
   try {
     const token = await getAuth().currentUser?.getIdToken();
     if (!token) return { evidence: null, unread: 'the findings could not be read (not signed in)' };
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/evidence`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const body = (await res.json().catch(() => null)) as { evidence?: ScoreEvidence; error?: unknown } | null;
+    const body = (await res.json().catch(() => null)) as { evidence?: ScoreEvidence & Pick<AbapEvidenceReport, 'keyUser'>; error?: unknown } | null;
     if (!res.ok || !body?.evidence || !Array.isArray(body.evidence.findings)) {
       return { evidence: null, unread: typeof body?.error === 'string' && body.error ? body.error : 'the findings could not be read' };
     }
@@ -523,9 +526,32 @@ export default function DeliveryPage() {
         referenceSection,
         documentationFromEngine: isEngineDocumentation(project.documentation),
       });
+      // Roadmap 3.0.19: the engine's key-user step list, from the same evidence read, as docs/key-user-steps.md.
+      const keyUserList = keyUserStepsOf(evidenceRead.evidence, project);
+      const keyUserMode = keyUserModeOf(project, keyUserList);
+      const keyUser = keyUserList && keyUserMode !== 'none'
+        ? {
+            whole: keyUserMode === 'whole',
+            markdown: keyUserStepsMarkdown(keyUserList, project.name),
+            steps: keyUserList.effort.steps,
+            checks: keyUserList.effort.checks,
+            codeParts: keyUserList.codeParts.length,
+          }
+        : isKeyUserDecision(project)
+          ? {
+              whole: true,
+              markdown: `# Key-user step list — ${project.name}
+
+Not in this package: ${evidenceRead.unread ?? 'the signed run holds no key-user reading'}. Download the package again once the engine's evidence can be read.
+`,
+              steps: 0,
+              checks: 0,
+              codeParts: 0,
+            }
+          : null;
       const finished = finishDeliveryPackage({
         entries: bundle.entries,
-        facts,
+        facts: { ...facts, keyUser },
         layout: isModular ? 'package' : 'flat',
         decimalFields: packedDecimalFields(typeof project.legacyCode === 'string' ? project.legacyCode : ''),
       });
@@ -769,7 +795,14 @@ export default function DeliveryPage() {
                 <ol className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
                   {chain.map((l, i) => (
                     <ChainLinkBox key={l.key} link={l} n={i + 1} projectId={projectId as string}>
-                      {l.key === 'transformation' ? (
+                      {l.key === 'transformation' && isKeyUserDecision(project) ? (
+                        // Roadmap 3.0.19: a key-user decision hands over the step list, not code.
+                        <IntegrityLine
+                          icon={<FileText size={18} aria-hidden="true" data-integrity-icon="key-user-steps" className="text-cc-ink-muted mt-0.5 shrink-0" />}
+                          title={<span data-key-user-handover="">Key-user step list</span>}
+                          detail={`No code: in the delivery bundle as ${KEY_USER_STEPS_PATH}, with its acceptance checks`}
+                        />
+                      ) : l.key === 'transformation' ? (
                         <IntegrityLine
                           icon={
                             // Roadmap 0.2 (UX-027): existence is not verification.
@@ -931,8 +964,11 @@ export default function DeliveryPage() {
               <DeliveryArtefactCard
                 icon={<Package size={18} aria-hidden="true" />}
                 title="Delivery bundle"
-                chip={hasGeneratedCode ? <CcProvenanceChip value="proposed" /> : <CcProvenanceChip value="not-determined" />}
-                detail="The generated code, the test suite and the documentation as one ZIP, with STATUS.md and a manifest that say what is decided, tested and only proposed. A review version, built in your browser and not signed."
+                chip={hasGeneratedCode || isKeyUserDecision(project) ? <CcProvenanceChip value="proposed" /> : <CcProvenanceChip value="not-determined" />}
+                detail={isKeyUserDecision(project)
+                  // Roadmap 3.0.19: no code on a key-user route — the step list is what the bundle carries.
+                  ? `The key-user step list (${KEY_USER_STEPS_PATH}) with its acceptance checks and the documentation as one ZIP, with STATUS.md and a manifest. No code: the decision is key-user extensibility. A review version, built in your browser and not signed.`
+                  : 'The generated code, the test suite and the documentation as one ZIP, with STATUS.md and a manifest that say what is decided, tested and only proposed. A review version, built in your browser and not signed.'}
                 action={
                   <CcButton
                     variant="ghost"

@@ -54,6 +54,10 @@ import StageFrame from '@/components/StageFrame';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis, testsPreviousBasis } from '@/lib/workflow-steps';
+// Roadmap 3.0.19: a key-user decision writes no test code; the step list's acceptance checks are its tests.
+import KeyUserSteps from '@/components/keyuser/KeyUserSteps';
+import { useKeyUserSteps } from '@/hooks/useKeyUserSteps';
+import { isKeyUserDecision } from '@/lib/key-user-route';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
@@ -279,6 +283,9 @@ export default function TestingSandboxPage() {
   const originEvidence = useProjectEvidence(projectId as string, !!originSha, `${project?.activeRunId ?? ''}#${originSha ?? ''}`);
   const originFindings = useMemo(() => findingsForOrigin(originEvidence, originSha), [originEvidence, originSha]);
   const originEngine = useScenarioOriginEngine(project, originFindings);
+  /** Roadmap 3.0.19: the key-user steps as acceptance checks (`whole`: the decision is key user, no suite at all). */
+  const keyUserSteps = useKeyUserSteps(projectId as string, project);
+  const keyUserWhole = isKeyUserDecision(project);
   /**
    * Roadmap 3.0.17 (AI Act Art. 50(2)): the statement the suite download carries as its header comment and the
    * Excel export as its description — null when no model wrote what they hold (`lib/ai-authorship.ts`).
@@ -814,7 +821,7 @@ export default function TestingSandboxPage() {
    */
   const generatePrerequisites = generationPrerequisites(project, 'testing');
   const generateStale = generationBlockers(project, 'testing').length > 0;
-  const generateBlocked = generatePrerequisites.length > 0 || generateStale;
+  const generateBlocked = keyUserWhole || generatePrerequisites.length > 0 || generateStale;
 
   const handleGenerate = async () => {
     // Defensive: the button is disabled in both cases, and says why beside it.
@@ -1312,6 +1319,31 @@ export default function TestingSandboxPage() {
     </StageFrame>
   );
 
+  // Roadmap 3.0.19: a key-user decision — no test code is written; a key user
+  // runs the step list's acceptance checks in the system.
+  if (keyUserWhole) return (
+    <StageFrame stage="testing" className="min-h-screen">
+      <StageHeader stage="testing" tools={{ steps: phases, current: 'testing' }} projectName={project?.name}>
+        <span data-testing-lead="" data-key-user-lead="">
+          The decision is key-user extensibility: no test code is written. The steps of the key-user step list become acceptance checks a key user runs in the system once they are configured.
+        </span>
+      </StageHeader>
+      {keyUserSteps.state === 'ready' && keyUserSteps.list ? (
+        <KeyUserSteps list={keyUserSteps.list} mode="whole" view="checks" />
+      ) : keyUserSteps.state === 'loading' ? (
+        <p className="cc-text-body text-cc-ink-muted" data-key-user-loading="">Reading the key-user step list…</p>
+      ) : (
+        <div className="mb-6" data-key-user-unread="">
+          <CcMessageStrip state="warning">
+            {keyUserSteps.state === 'failed'
+              ? `The key-user step list could not be read: ${keyUserSteps.reason}`
+              : 'The signed run holds no key-user reading, so there are no acceptance checks to show.'}
+          </CcMessageStrip>
+        </div>
+      )}
+    </StageFrame>
+  );
+
   return (
     <StageFrame stage="testing" className="min-h-screen">
       <StaleNotice
@@ -1341,6 +1373,11 @@ export default function TestingSandboxPage() {
       </StageHeader>
 
       <TestingMetaLine parts={metaParts} />
+
+      {/* Roadmap 3.0.19: a program that splits — the key-user parts as acceptance checks; the suite covers the code parts. */}
+      {keyUserSteps.state === 'ready' && keyUserSteps.list && keyUserSteps.mode === 'split' ? (
+        <KeyUserSteps list={keyUserSteps.list} mode="split" view="checks" />
+      ) : null}
 
       {/* Where testing stands — only once there is something to stand on. On
           an empty project the four tiles said None, None, a count and Locked

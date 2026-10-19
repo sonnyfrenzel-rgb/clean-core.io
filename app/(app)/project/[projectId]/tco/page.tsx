@@ -11,6 +11,9 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { workflowSteps, staleness } from '@/lib/workflow-steps';
+// Roadmap 3.0.19: a key-user route is priced as configuration, not as a build.
+import KeyUserEffort from '@/components/keyuser/KeyUserEffort';
+import { useKeyUserSteps } from '@/hooks/useKeyUserSteps';
 import { ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import OptionComparison, {
@@ -193,6 +196,8 @@ export default function TcoCalculatorPage() {
   );
   const comparison = useMemo(() => costComparison(assumptions), [assumptions]);
   const proposal = useMemo(() => proposeEffort(loc), [loc]);
+  /** Roadmap 3.0.19: the key-user step list's counts, where the run's engine reads key user (else no request). */
+  const keyUserSteps = useKeyUserSteps(projectId as string, project);
   const patch = (p: Partial<CostAssumptions>) => setStated((a) => ({ ...a, ...p }));
   // Which option cards show their fields — closed until the reader asks.
   const [editingOptions, setEditingOptions] = useState<ReadonlySet<string>>(() => new Set());
@@ -803,6 +808,15 @@ export default function TcoCalculatorPage() {
             ) : undefined
           }
         >
+          {keyUserSteps.state === 'ready' && keyUserSteps.list && keyUserSteps.mode !== 'none' ? (
+            <KeyUserEffort
+              list={keyUserSteps.list}
+              mode={keyUserSteps.mode}
+              currency={currency}
+              keyUserRate={userRate}
+              rebuild={assumptions.options.find((o) => o.kind === 'rebuild')}
+            />
+          ) : null}
           <OptionComparison
             assumptions={assumptions}
             comparison={comparison}

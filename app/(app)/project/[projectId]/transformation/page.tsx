@@ -66,6 +66,9 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
+// Roadmap 3.0.19: a key-user decision generates no code; the stage shows the engine's step list instead.
+import KeyUserSteps from '@/components/keyuser/KeyUserSteps';
+import { isKeyUserDecision, keyUserModeOf, keyUserStepsOf } from '@/lib/key-user-route';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
@@ -364,6 +367,16 @@ export default function TransformationPage() {
   const evidencePending = Boolean(project?.legacyCode) && projectEvidence.state === 'loading';
   /** The read failed: the findings-derived page is not drawn, and the strip says why. */
   const evidenceFailed = project?.legacyCode && projectEvidence.state === 'failed' ? projectEvidence.reason : null;
+  /**
+   * Roadmap 3.0.19. `keyUserWhole`: the decision is key user — no scaffold, no
+   * model fill, no lease; read off the decision alone, so nothing can start
+   * before the evidence is in. The step list is the engine's, from the same
+   * evidence read (`lib/key-user-route.ts`); a run of an older engine has none
+   * and the stage is the one it always was.
+   */
+  const keyUserWhole = isKeyUserDecision(project);
+  const keyUserList = useMemo(() => keyUserStepsOf(evidence, project), [evidence, project]);
+  const keyUserMode = keyUserModeOf(project, keyUserList);
 
   /**
    * The rules' states, for the tips (roadmap 3.0.12) — the hook the Business
@@ -1719,7 +1732,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * resolves it, and the button waits until the list is empty.
    */
   const prerequisites = generationPrerequisites(project, 'transformation');
-  const canGenerate = project !== null && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  const canGenerate = project !== null && !keyUserWhole && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
   /** The plan before the click is read whenever a generation could start and none runs (see the effect that reads it below). */
   const planWanted = canGenerate && !loading;
   /** The pre-flight check (owner, 13.10.2026): a plan that cannot succeed does not start. */
@@ -1953,6 +1966,40 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       <div className="mt-6">
         <CcSkeleton shape="text" label="the engine's findings" count={6} />
       </div>
+    </StageFrame>
+  );
+
+  // Roadmap 3.0.19: a key-user decision — the tool stays in its place and shows
+  // the step list the engine built; nothing is generated, leased or filled.
+  if (keyUserWhole) return (
+    <StageFrame stage="transformation">
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+        <span data-track-lead="" data-key-user-lead="">
+          The decision is key-user extensibility: no code is generated. A key user configures the program in the system from the step list the engine built from the signed run.
+        </span>
+      </StageHeader>
+      {project && !isOwner ? (
+        <div className="mb-6">
+          <OwnerOnlyNote />
+        </div>
+      ) : null}
+      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={blockers} />
+      {evidenceFailed ? (
+        <div className="mb-6" data-transformation-evidence-failed="">
+          <CcMessageStrip state="error" announce>
+            The evidence for this code could not be read, so the key-user step list is not shown. Reload the page to try again.
+            {evidenceFailed !== EVIDENCE_UNREAD ? ` ${evidenceFailed}` : null}
+          </CcMessageStrip>
+        </div>
+      ) : keyUserList ? (
+        <KeyUserSteps list={keyUserList} mode="whole" view="steps" />
+      ) : (
+        <div className="mb-6" data-key-user-unread="">
+          <CcMessageStrip state="warning">
+            The signed run holds no key-user reading, so there is no step list to show. Change the decision in Design to a route this stage builds.
+          </CcMessageStrip>
+        </div>
+      )}
     </StageFrame>
   );
 
@@ -2387,6 +2434,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       {files.length > 0 && !unsavedDraft && typeof project?.generatedCode === 'string' && project.generatedCode ? (
         <BuiltOnCard record={storedRecord} generatedAt={storedBinding?.generatedAt ?? null} currentSlots={currentSlots} />
       ) : null}
+
+      {/* Roadmap 3.0.19: a program that splits — the key-user parts as steps, code for the rest only. */}
+      {keyUserList && keyUserMode === 'split' ? <KeyUserSteps list={keyUserList} mode="split" view="steps" /> : null}
 
       {evidenceFailed ? (
         <div className="mb-6 flex flex-col gap-6" data-transformation-evidence-failed="">

@@ -72,6 +72,7 @@ import { inputReadsIn } from './transformation/input-lists';
 import { TARGET_EDITION_NAMES } from './sap-naming';
 import { AI_MARKING_BASIS, aiMarkingField, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
 import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
+import { KEY_USER_STEPS_PATH } from './key-user-route';
 
 /* ------------------------------------------------------------------ types */
 
@@ -155,6 +156,7 @@ export type FileKind =
   | 'rule-register'
   | 'rule-register-csv'
   | 'cost-revision'
+  | 'key-user-steps'
   | 'service-source'
   | 'source'
   | 'cds-schema'
@@ -371,6 +373,14 @@ export interface DeliveryFacts {
    * "provider and model not recorded".
    */
   ai?: AiAuthorshipFacts;
+  /**
+   * Roadmap 3.0.19: the engine's key-user step list (`lib/key-user-steps.ts`),
+   * carried as `docs/key-user-steps.md`. `whole`: the decision is key user and
+   * no code is generated; otherwise the program splits and the code covers
+   * the code parts only. Absent or null: no step list (an engine before 3.0.19,
+   * or no key-user part) and the package is the one it always was.
+   */
+  keyUser?: { whole: boolean; markdown: string; steps: number; checks: number; codeParts: number } | null;
 }
 
 /* ------------------------------------------------------------ the collector */
@@ -939,6 +949,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (p === RULE_REGISTER_PATH) return { kind: 'rule-register', status: 'implemented', note: null };
   if (p === RULE_REGISTER_CSV_PATH) return { kind: 'rule-register-csv', status: 'implemented', note: null };
   if (p === COST_REVISION_PATH) return { kind: 'cost-revision', status: 'implemented', note: "The reader's own Economics figures, copied read-only — not a quote and not signed." };
+  if (p === KEY_USER_STEPS_PATH) return { kind: 'key-user-steps', status: 'proposed', note: 'Read by the engine from the signed source, without a model — configured in the system by a key user; each step holds only once its limits are checked.' };
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
@@ -1209,6 +1220,9 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^docs\/rule-register\.md$/, () => 'Every business rule: current meaning, proposal, decision, evidence and revision.'],
   [/^docs\/rule-register\.csv$/, () => 'The same rule register as CSV (UTF-8, every field quoted) for a spreadsheet.'],
   [/^docs\/cost-revision\.md$/, () => 'The cost revision the decision was priced on — its number, date and figures, read-only.'],
+  [/^docs\/key-user-steps\.md$/, (_r, f) => (f.keyUser?.whole
+    ? 'The key-user step list: what a key user configures in the system instead of code — app, object and context, entries, the ABAP lines each step replaces, its limits and acceptance checks.'
+    : 'The key-user step list for the parts a key user configures in the system; the code in this package covers the other parts only.')],
   [/^package\.json$/, () => 'Node.js dependencies and scripts — the scripts are set by Clean-Core.io to match the files here.'],
   [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : `TypeScript settings for \`npm run ${typeof r.packageJson?.scripts?.typecheck === 'string' && typeof r.packageJson.scripts.build !== 'string' ? 'typecheck' : 'build'}\` (type-check only).`)],
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
@@ -1362,7 +1376,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
 
 /** STATUS, README, manifest, decision first; then the rest. */
 function order(path: string): number {
-  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
+  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', KEY_USER_STEPS_PATH, COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
   const i = first.indexOf(path);
   return i === -1 ? first.length : i;
 }
@@ -1547,6 +1561,11 @@ export function knownLimits(reading: PackageReading, facts: DeliveryFacts, capab
     out.push(implementationStatement(reading, facts));
     out.push(dataMode(reading).sentence);
   }
+  if (facts.keyUser?.whole) {
+    out.push(`No code: the decision is key-user extensibility. \`${KEY_USER_STEPS_PATH}\` is the engine's step list — each candidate holds only once its limits are checked in the target system, and nothing here shows that SAP offers the BAdI, business context or view for your edition and release.`);
+  } else if (facts.keyUser) {
+    out.push(`The program splits: ${plural(facts.keyUser.steps, 'part')} a key user configures (\`${KEY_USER_STEPS_PATH}\`), ${plural(facts.keyUser.codeParts, 'part')} that stay${facts.keyUser.codeParts === 1 ? 's' : ''} code — the code here is generated for those only.`);
+  }
   if (reading.kind !== 'documents-only') {
     out.push('The code was generated by a language model from the analysis. Nothing here shows that it behaves as the ABAP program does — no old/new comparison is on record.');
   }
@@ -1565,7 +1584,16 @@ export function knownLimits(reading: PackageReading, facts: DeliveryFacts, capab
 export function nextSteps(reading: PackageReading, facts: DeliveryFacts, capabilities: readonly Capability[]): string[] {
   const out: string[] = [];
   const t = facts.tests;
-  if (t.status === 'failed' || t.status === 'incomplete') {
+  // Roadmap 3.0.19: the key-user steps come first — they are what the decision builds.
+  const ku = facts.keyUser;
+  if (ku) {
+    out.push(
+      `Configure the ${plural(ku.steps, 'key-user step')} of \`${KEY_USER_STEPS_PATH}\` in the target system, in their order, after checking each step's limits there; then have a key user run its ${plural(ku.checks, 'acceptance check')}.${ku.whole ? ' No code is part of this route.' : ''}`,
+    );
+  }
+  if (ku?.whole && t.scenarios === 0) {
+    // No test code on a key-user route: the acceptance checks above are its tests.
+  } else if (t.status === 'failed' || t.status === 'incomplete') {
     out.push('Repair the test project and produce a run that gives a result (Testing tool) — the cause on record is under "Tests" above.');
   } else if (t.status === 'not-run') {
     out.push(t.scenarios > 0 ? 'Run the test suite (Testing tool) and keep its receipt with the package.' : 'Generate test scenarios and a suite (Testing tool), then run it.');
@@ -2146,7 +2174,7 @@ export function finishDeliveryPackage(input: {
   decimalFields?: readonly string[];
 }): FinishedPackage {
   let facts = input.facts;
-  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
+  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', KEY_USER_STEPS_PATH, COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout, engineLed: facts.generation?.path === 'engine-led' });
@@ -2173,7 +2201,12 @@ export function finishDeliveryPackage(input: {
       { path: ABAP_CHECK_JSON_PATH, content: activationJson(activation), origin: 'engine' as const },
     ];
   }
-  const reading = readPackage(entries, facts.route);
+  const read = readPackage(entries, facts.route);
+  // Roadmap 3.0.19: a key-user decision delivers documents only — the ABAP route
+  // it was read on is not a package of ABAP objects when none is in it.
+  const reading: PackageReading = facts.keyUser?.whole && !entries.some((e) => /\.abap$/i.test(e.path) || (CODE_EXT.test(e.path) && !e.path.startsWith('docs/')))
+    ? { ...read, kind: 'documents-only' }
+    : read;
   const capabilities = packageCapabilities(reading, facts);
 
   const decision: BundleEntry = { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' };
@@ -2183,10 +2216,13 @@ export function finishDeliveryPackage(input: {
     : [];
   const register: BundleEntry = { path: RULE_REGISTER_PATH, content: buildRuleRegister(facts), origin: 'engine' };
   const registerCsv: BundleEntry = { path: RULE_REGISTER_CSV_PATH, content: ruleRegisterCsv(facts.rules), origin: 'engine' };
+  // Roadmap 3.0.19: the key-user step list travels as a document of its own, beside the decision it follows.
+  const keyUserSteps: BundleEntry[] = facts.keyUser ? [{ path: KEY_USER_STEPS_PATH, content: facts.keyUser.markdown, origin: 'engine' }] : [];
   // README names STATUS.md, manifest.json and itself, so it is written over the final list.
   const finalPaths: BundleEntry[] = [
     ...entries,
     decision,
+    ...keyUserSteps,
     ...costRevision,
     register,
     registerCsv,
@@ -2200,17 +2236,17 @@ export function finishDeliveryPackage(input: {
     const c = classifyFile(e, reading, facts);
     return { path: e.path, kind: c.kind, status: c.status, origin: originOf(e, facts), sha256: sha256Hex(e.content), bytes: bytesOf(e.content), note: c.note };
   };
-  const beforeStatus = [...entries, decision, ...costRevision, register, registerCsv, readme].map(describeFile);
+  const beforeStatus = [...entries, decision, ...keyUserSteps, ...costRevision, register, registerCsv, readme].map(describeFile);
   // The code checks read the package as it ships — the model's code with the normalised package.json.
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
   const engineCounterparts = [...new Set(entries.filter((e) => /^src\/.+_access\.clas\.abap$/i.test(e.path)).flatMap((e) => engineCounterpartsIn(e.content)))];
   const inputReads = entries.filter((e) => e.path === 'srv/lib/input-contract.ts').flatMap((e) => inputReadsIn(e.content));
   const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts, inputReads, authoritySeam: entries.some((e) => e.path === 'srv/lib/authority.ts') }), origin: 'engine' };
-  const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
+  const listed = [...entries, decision, ...keyUserSteps, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
   const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes, aiGeneration: ai.field }), origin: 'engine' };
 
-  const files = [status, readme, manifest, decision, ...costRevision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
+  const files = [status, readme, manifest, decision, ...keyUserSteps, ...costRevision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
   return { files, reading, capabilities, manifest: listed, lints };
 }

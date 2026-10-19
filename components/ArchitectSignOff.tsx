@@ -73,6 +73,16 @@ const architectureOptions: ArchitectureOption[] = [
     notFor: 'Active, business-critical processes still in daily production use.',
     motto: 'Reduce custom footprint where standard covers the need.',
   },
+  // Roadmap 3.0.19: offered only where the signed run's engine read key-user
+  // candidates (`keyUserOffered`); named in the locked record wherever it is on record.
+  {
+    value: 'keyuser',
+    label: 'Key-User Extensibility (configured, no code)',
+    focus: 'Configured in the system with SAP’s key-user apps — Custom Fields, Custom Logic, Custom CDS Views, Custom Analytical Queries, Adapt UI, Custom Business Objects. No code is generated.',
+    bestFor: 'Small changes the engine read as key-user candidates: added fields, checks and derivations without writes, reading lists on released views, screen changes, small own tables of settings or master data.',
+    notFor: 'Logic that writes, calls out, commits or holds more than the tool allows — and any candidate whose key-user BAdI, business context or view is not released for your edition and release.',
+    motto: 'Configure what the standard lets you configure; build only what it does not.',
+  },
 ];
 
 /** The words a reader sees for an architecture code — the same as the sign-off's own choices. */
@@ -113,6 +123,11 @@ interface ArchitectSignOffProps {
   onLock: (architecture: TargetArchitecture, justification: string) => Promise<void>;
   /** Called when the user unlocks the decision */
   onUnlock: () => Promise<void>;
+  /**
+   * Roadmap 3.0.19: the signed run's engine read key-user candidates, so key
+   * user is a route the decision can choose. Absent or false: not offered.
+   */
+  keyUserOffered?: boolean;
 }
 
 /**
@@ -182,6 +197,7 @@ export default function ArchitectSignOff({
   canUnlock,
   onLock,
   onUnlock,
+  keyUserOffered = false,
 }: ArchitectSignOffProps) {
   const [confirmed, setConfirmed] = useState(true);
   const [selectedArchitecture, setSelectedArchitecture] = useState<TargetArchitecture>(
@@ -390,7 +406,9 @@ export default function ArchitectSignOff({
               label="Target Architecture"
               value={selectedArchitecture}
               onChange={setSelectedArchitecture}
-              options={architectureOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+              options={architectureOptions
+                .filter((opt) => opt.value !== 'keyuser' || keyUserOffered)
+                .map((opt) => ({ value: opt.value, label: opt.label }))}
             />
 
             {selectedOption && <OptionFacts option={selectedOption} />}
