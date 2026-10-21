@@ -1613,6 +1613,20 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-882 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-883 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-884 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-885 | medium | P2 | 3.0.19 · security | scheduled |
+| SEC-2026-886 | medium | P2 | 3.0.19 · security | scheduled |
+| SEC-2026-887 | medium | P2 | 3.0.19 · security | scheduled |
+| SEC-2026-888 | medium | P2 | next rules deploy (owner's go) | scheduled |
+| SEC-2026-889 | low | P3 | next rules deploy (owner's go) | scheduled |
+| SEC-2026-890 | low | P3 | next rules deploy (owner's go) | scheduled |
+| SEC-2026-891 | low | P3 | 3.0.19 · security | scheduled |
+| SEC-2026-892 | low | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-893 | low | P3 | 3.0.19 · security | scheduled |
+| SEC-2026-894 | info | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-895 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-896 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+
+**Audit of v3.0.18 (`3f90d50`), 21.10.2026: 0 critical, 0 high, 4 medium, 5 low, 3 info — 125 candidates verified.** SEC-2026-885 to -887, -891 and -893 go to 3.0.19; the three findings in the Firestore rules (SEC-2026-888 to -890) go with the next rules deploy, which needs the owner's go; SEC-2026-892 and -894 to 3.0.20; SEC-2026-895 and -896 join the comment-hygiene decision. The reasons are in the sealed register.
 
 **Audit of v3.0.17 (`c41f149`), 18.10.2026: 0 critical, 0 high, 3 medium, 2 low, 9 info — 129 candidates, delta of 152 files.** SEC-2026-871 to -876 go to 3.0.18 item 1; SEC-2026-877 to -884 are statements in code comments with no runtime effect and wait for the owner's decision on comment hygiene. The report's hardening list asks for the dependency advisories to be checked against the installed tree (3.0.18 item 1). The reasons are in the sealed register.
 
