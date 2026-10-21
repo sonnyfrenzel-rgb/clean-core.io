@@ -125,6 +125,13 @@ test('after the source moved, an answer for the old one is refused', async ({ re
   await adminMergeDoc('projects', PROJECT_ID, { legacyCode: SOURCE });
 });
 
+test('the first insights are a scope of their own (owner report 21.10.2026); an unknown scope is refused', async ({ request }) => {
+  const read = await request.get(`${path_}?scope=firstlook`, { headers: headers() });
+  expect(read.status(), await read.text()).toBe(200);
+  expect(((await read.json()) as { record: PlainWordingRecord | null }).record).toBeNull();
+  expect((await request.get(`${path_}?scope=overview`, { headers: headers() })).status()).toBe(400);
+});
+
 test('a stranger neither reads nor writes', async ({ request }) => {
   expect((await request.get(`${path_}?scope=rules`, { headers: headers(otherToken) })).status()).toBe(404);
   const text = answer('x', 'y');

@@ -67,6 +67,9 @@ const EXPLAINED = explainBusinessRules(SOURCE, READING.ruleSet, buildProcessFact
 const ITEMS: Record<PlainScope, PlainItem[]> = {
   walk: plainItemsOf(walkPlainSentences(GUIDE)),
   rules: plainItemsOf(rulePlainSentences(EXPLAINED)),
+  // The first insights (3.0.20, owner report 21.10.2026) have no recorded model answer;
+  // tests/first-look-plain.spec.ts reads them through the same guard.
+  firstlook: [],
 };
 const RECORDED = JSON.parse(read('tests/fixtures/plain-wording.gemini-3.8-flash.json')) as {
   recorded: Array<{ scope: PlainScope; items: number; answer: string; usage: { promptTokenCount: number; candidatesTokenCount: number } }>;

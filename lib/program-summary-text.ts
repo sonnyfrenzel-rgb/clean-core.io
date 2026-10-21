@@ -142,6 +142,14 @@ export interface ProgramSummaryFacts {
   demo?: { flag: string; line: number; switches: number } | null;
   /** Roadmap 3.0.13 (CR-A2): rules and bounds the header comment states — candidates, not code facts. Absent when it states none. */
   headerRules?: { rules: number; bounds: number; range: string; lineStart: number; lineEnd: number } | null;
+  /**
+   * Roadmap 3.0.20 (owner report 21.10.2026): what the program is for as its own
+   * names say it (`lib/abap/program-domain.ts`) — null when they do not support
+   * one. Absent in facts read by an earlier engine.
+   */
+  domain?: { text: string; lines: number[] } | null;
+  /** Roadmap 3.0.20: the functions it gets its data through, each with the business object it is about. Absent before. */
+  dataCalls?: Array<{ name: string; word: string; line: number }>;
 }
 
 export type SummaryBasis = 'reconstructed' | 'not-determined' | 'confirmed';
@@ -153,6 +161,8 @@ export interface SummaryLine {
   /** Line ranges the sentence stands on. */
   anchors: Array<{ lineStart: number; lineEnd: number }>;
   basis: SummaryBasis;
+  /** Roadmap 3.0.20: the purpose as the program's names say it — a `purpose` line before the one on what it reads and changes. */
+  aim?: true;
 }
 
 export interface ProgramSummary {
@@ -402,6 +412,17 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
       basis: 'reconstructed',
     };
   }
+  // Roadmap 3.0.20: a program that names no table gets its data by calling — said with the calls.
+  const calls = f.dataCalls ?? [];
+  if (!what && calls.length) {
+    const words = [...new Set(calls.map((c) => c.word))];
+    return {
+      key: 'purpose',
+      text: `A ${readOnly}${noun} that gets its data through SAP function calls on ${joinAnd(words.slice(0, 3))} (${calls.slice(0, 4).map((c) => c.name).join(', ')})${selected}${shown}.`,
+      anchors: anchorsOf(calls.slice(0, 4).map((c) => c.line)),
+      basis: 'reconstructed',
+    };
+  }
   const text = what
     ? `A ${readOnly}${noun} on ${what}${selected}${shown}.`
     : f.inputs.length || f.outputs.list
@@ -599,7 +620,14 @@ export const LEVEL_RECONSTRUCTED = 'Reconstructed from the code — not confirme
 
 /** The summary, slot by slot. */
 export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOptions = {}): ProgramSummary {
-  const lines: SummaryLine[] = [purposeLine(f)];
+  const purpose = purposeLine(f);
+  // Roadmap 3.0.20: where the purpose line can only say what kind of program it is ("A read-only
+  // report that reads no table by name …"), the purpose the program's names support stands before it.
+  const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
+  const aim: SummaryLine[] = f.domain && namesNoObject && /^A /.test(purpose.text)
+    ? [{ key: 'purpose', text: f.domain.text, anchors: anchorsOf(f.domain.lines), basis: 'reconstructed', aim: true }]
+    : [];
+  const lines: SummaryLine[] = [...aim, purpose];
   const list = bestFixedList(f.fixedLists);
   if (list) {
     const sentence = fixedListSentence(list);
@@ -640,7 +668,8 @@ export function businessInShort(summary: ProgramSummary, options: { codes?: bool
   const purpose = pick('purpose');
   const changes = pick('changes');
   // A purpose that already says what it changes ("Posts goods movements in SAP") needs no second sentence on it.
-  const changesSaid = !!summary.lines[0]?.text && !/^A /.test(summary.lines[0].text) && changes[0]?.basis !== 'not-determined';
+  const main = summary.lines.find((l) => !l.aim);
+  const changesSaid = !!main?.text && !/^A /.test(main.text) && changes[0]?.basis !== 'not-determined';
   const lines = [...purpose, ...(changesSaid ? [] : changes), ...pick('result'), ...pick('trigger')];
   return options.codes === false ? lines.map((l) => ({ ...l, text: withoutCodes(l.text) })) : lines;
 }

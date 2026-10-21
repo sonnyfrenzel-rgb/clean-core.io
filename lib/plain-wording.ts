@@ -46,13 +46,51 @@ import type { RuleSetExplanation } from './abap/business-rule-set-explain';
  * Pure: the browser and the route both read this file.
  */
 
-/** The two places sentences are reworded. */
-export type PlainScope = 'walk' | 'rules';
+/**
+ * The places sentences are reworded: the walk-through, the rule cards, and —
+ * since the owner report of 21.10.2026 — the first insights of the Business
+ * view (`firstlook`: "In short", the steps, what it decides and changes).
+ */
+export type PlainScope = 'walk' | 'rules' | 'firstlook';
 
-export const PLAIN_SCOPES: readonly PlainScope[] = Object.freeze(['walk', 'rules'] as PlainScope[]);
+export const PLAIN_SCOPES: readonly PlainScope[] = Object.freeze(['walk', 'rules', 'firstlook'] as PlainScope[]);
 
 export function isPlainScope(value: unknown): value is PlainScope {
-  return value === 'walk' || value === 'rules';
+  return value === 'walk' || value === 'rules' || value === 'firstlook';
+}
+
+const SCOPE_READERS: Record<PlainScope, string> = {
+  walk: ' walking through the process step by step',
+  rules: ' deciding about its business rules',
+  firstlook: ' reading a first overview of what the program does',
+};
+
+/** An anchor as the panels write it — `L42`, `L60-75` — as a range; null for none. */
+export function plainRangeOf(anchor: string | null | undefined): PlainRange | null {
+  const m = anchor ? /^L(\d+)(?:-(\d+))?$/.exec(anchor.trim()) : null;
+  if (!m) return null;
+  const lineStart = Number(m[1]);
+  return { lineStart, lineEnd: m[2] ? Number(m[2]) : lineStart };
+}
+
+/**
+ * Every sentence of the first insights that carries its lines, in reading
+ * order: "In short", the steps, the test data switch, what it decides and
+ * what it changes. Checks are labels without lines of their own and stay the
+ * engine's.
+ */
+export function firstLookPlainSentences(input: {
+  inShort: ReadonlyArray<{ text: string; anchors: ReadonlyArray<PlainRange> }> | null;
+  steps: ReadonlyArray<{ text: string; anchor: string | null }>;
+  decides: ReadonlyArray<{ text: string; anchor: string | null }>;
+  changes: ReadonlyArray<{ text: string; anchor: string | null }>;
+}): Array<{ text: string; anchor: PlainRange | null }> {
+  return [
+    ...(input.inShort ?? []).map((l) => ({ text: l.text, anchor: l.anchors[0] ?? null })),
+    ...input.steps.map((s) => ({ text: s.text, anchor: plainRangeOf(s.anchor) })),
+    ...input.decides.map((d) => ({ text: d.text, anchor: plainRangeOf(d.anchor) })),
+    ...input.changes.map((c) => ({ text: c.text, anchor: plainRangeOf(c.anchor) })),
+  ];
 }
 
 /**
@@ -176,7 +214,7 @@ export function sourceShaOfDigest(digest: string): string | null {
 export function plainWordingPrompt(scope: PlainScope, items: readonly PlainItem[]): string {
   const data = items.map((item, i) => ({ id: `S${i + 1}`, text: item.text, anchor: anchorWord(item.anchor) }));
   return [
-    `You reword sentences that a deterministic engine wrote about a custom SAP ABAP program, for business readers${scope === 'walk' ? ' walking through the process step by step' : ' deciding about its business rules'}.`,
+    `You reword sentences that a deterministic engine wrote about a custom SAP ABAP program, for business readers${SCOPE_READERS[scope]}.`,
     'For every item, write the same statement in plain, simple business English that a person from purchasing, sales or finance understands without knowing ABAP.',
     'Rules, in order of importance:',
     '1. Reword only. Keep every fact of "text" and add none: no reason, no consequence, no advice, no SAP knowledge that is not in "text".',
