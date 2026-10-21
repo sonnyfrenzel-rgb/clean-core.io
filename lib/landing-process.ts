@@ -10,6 +10,7 @@ import { notDetermined } from '@/lib/workspace-model';
 import { tokenizeAbapLine, type CodeToken } from '@/lib/process-map';
 import { heroRulePhrase, pickHeroRules } from '@/lib/landing-hero';
 import { countSourceLines } from '@/lib/source-lines';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The process pictures of the public landing page — roadmap 3.0.6.
@@ -334,7 +335,7 @@ export function landingHero(fileName: string, program: string): LandingHero {
   const code: LandingCodeLine[] = [];
   for (let n = first; n <= last; n += 1) code.push({ number: n, tokens: tokenizeAbapLine(lines[n - 1] ?? '') });
 
-  const ruleSet = deriveBusinessRules(source);
+  const ruleSet = deriveBusinessRules(source, APP_VERSION);
   const ctx = plainContext(source);
   // The three rules with the most business impact (`pickHeroRules`), each at
   // the first place the map draws it.

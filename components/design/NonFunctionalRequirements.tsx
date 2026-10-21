@@ -66,6 +66,8 @@ export interface NonFunctionalRequirementsProps {
   proposals?: NFRData | null;
   /** Clean core levels, for the functional half of the combined specification. */
   levels?: readonly ObjectLevelInput[] | null;
+  /** The engine of the run that signed `source` (`engineVersionOfProject`; the demo's own) — the functional half is read for it (3.0.20). */
+  engineVersion: string | null;
 }
 
 const PRIORITY_WORD: Record<RequirementPriority, string> = { must: 'Must', should: 'Should', could: 'Could' };
@@ -114,7 +116,7 @@ function tileLines(c: NfrCategorySummary): [string, string] {
   ];
 }
 
-export default function NonFunctionalRequirements({ projectName, fileName, source, missingReason, proposals, levels }: NonFunctionalRequirementsProps) {
+export default function NonFunctionalRequirements({ projectName, fileName, source, missingReason, proposals, levels, engineVersion }: NonFunctionalRequirementsProps) {
   const [set, setSet] = useState<NfrSet | null>(null);
   const [state, setState] = useState<'idle' | 'deriving' | 'ready' | 'failed'>('idle');
   const [tab, setTab] = useState<'list' | 'questions'>('list');
@@ -232,7 +234,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
   const specification = async (kind: 'copy' | 'md' | 'docx') => {
     if (!set || !source) return;
     const [ex, fr] = await Promise.all([import('@/lib/requirements-export'), import('@/lib/functional-requirements')]);
-    const functional = fr.buildRequirementSet({ source, levels: levels ?? null });
+    const functional = fr.buildRequirementSet({ source, levels: levels ?? null, engineVersion });
     const m = { ...meta(), wording: null };
     if (kind === 'copy') {
       await writeClipboard(ex.specificationMarkdown(functional, set, m), ex.specificationHtml(functional, set, m), `Copied the specification: ${functional.requirements.length} functional and ${set.requirements.length} non-functional requirements.`);

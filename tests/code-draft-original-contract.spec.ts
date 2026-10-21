@@ -196,7 +196,8 @@ test.describe('the page puts the facts into the Node.js code-draft prompt', () =
     // The generation screen (3.0.12) reads the contract once, for the prompt
     // and for the facts it shows in the stage log.
     expect(page).toContain('const original = readOriginalContract(legacyCode);');
-    expect(page).toContain('codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode)))');
+    // …for the engine of the project's signed run (QA review of 303a51180454).
+    expect(page).toContain('codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode, args.engineVersion)))');
     expect(page).toContain("import('@/lib/abap/original-contract')");
     expect(page).toContain('originalFacts = codeDraftFactsSection(null);');
   });

@@ -87,6 +87,7 @@ import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
 import { ENGINE_CASES_FILE, engineCasesFile } from '@/lib/testing-engine-cases';
 import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { packedDecimalFields } from '@/lib/generated-code-lints';
 import { developerGuidelinesMarkdown, type GuidelineFinding } from '@/lib/developer-guidelines';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
@@ -461,7 +462,7 @@ export default function DeliveryPage() {
         ? (() => {
             const provenance = engineCaseProvenance(
               project.testCases as unknown as Array<Record<string, unknown>>,
-              deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null),
+              deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null, engineVersionOfProject(project)),
             );
             return engineCasesFile(provenance.verified, provenance.unverified);
           })()
@@ -512,10 +513,10 @@ export default function DeliveryPage() {
       }));
       const ruleTests = ruleTestInputOf(project as HandoverProject);
       const rules = statesRead.ok
-        ? ruleFactsOf(statesRead.view, undefined, ruleTests, typeof project.legacyCode === 'string' ? project.legacyCode : null)
+        ? ruleFactsOf(statesRead.view, undefined, ruleTests, typeof project.legacyCode === 'string' ? project.legacyCode : null, engineVersionOfProject(project))
         : statesRead.code === 'no-baseline'
-          ? ruleFactsFromSource(typeof project.legacyCode === 'string' ? project.legacyCode : '', ruleTests)
-          : ruleFactsOf(null, RULES_UNREAD[statesRead.code] ?? 'the confirmed process states could not be read.');
+          ? ruleFactsFromSource(typeof project.legacyCode === 'string' ? project.legacyCode : '', ruleTests, engineVersionOfProject(project))
+          : ruleFactsOf(null, RULES_UNREAD[statesRead.code] ?? 'the confirmed process states could not be read.', undefined, null, engineVersionOfProject(project));
       const facts = deliveryFactsOf(project as HandoverProject, {
         phases,
         rules,

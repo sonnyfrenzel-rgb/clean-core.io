@@ -13,16 +13,21 @@ import type { ProcessHandbook } from '@/lib/process-handbook';
  * effect, like `useProcessRules` does, so a reader who never opens the stage
  * never downloads them. No model is called and nothing is stored.
  *
- * Held by source digest and model: a handbook built for another source is
- * never shown as this one's, it is simply not there yet.
+ * Held by source digest, engine and model: a handbook built for another source
+ * is never shown as this one's, it is simply not there yet. `engineVersion` is
+ * the engine of the run that signed `source` (`engineVersionOfProject`); the
+ * demo switches the rules leave out are read for it (3.0.20).
  */
 export interface ProcessHandbookState {
   handbook: ProcessHandbook | null;
   status: 'idle' | 'loading' | 'ready' | 'failed';
 }
 
-export function useProcessHandbook(source: string | null, model: ProcessMapModel | null): ProcessHandbookState {
-  const key = useMemo(() => (source && model ? `${sha256Hex(source)}|${model.xml.length}|${model.elements.length}` : ''), [source, model]);
+export function useProcessHandbook(source: string | null, model: ProcessMapModel | null, engineVersion: string | null): ProcessHandbookState {
+  const key = useMemo(
+    () => (source && model ? `${sha256Hex(source)}|${engineVersion ?? ''}|${model.xml.length}|${model.elements.length}` : ''),
+    [source, model, engineVersion],
+  );
   const [held, setHeld] = useState<{ key: string; value: ProcessHandbookState }>({
     key: '',
     value: { handbook: null, status: 'idle' },
@@ -54,7 +59,7 @@ export function useProcessHandbook(source: string | null, model: ProcessMapModel
       );
       let rules = null;
       try {
-        rules = rulesModule.deriveBusinessRules(source);
+        rules = rulesModule.deriveBusinessRules(source, engineVersion);
       } catch {
         // A source the rule reader cannot get through still has chapters; the
         // rules tab then says there are none it could read.
@@ -62,7 +67,7 @@ export function useProcessHandbook(source: string | null, model: ProcessMapModel
       }
       let doc = null;
       try {
-        doc = docModule.buildProcessDocumentation({ source, map: model });
+        doc = docModule.buildProcessDocumentation({ source, map: model, engineVersion });
       } catch {
         doc = null;
       }
@@ -78,7 +83,7 @@ export function useProcessHandbook(source: string | null, model: ProcessMapModel
     return () => {
       cancelled = true;
     };
-  }, [source, model, key]);
+  }, [source, model, key, engineVersion]);
 
   if (!key) return { handbook: null, status: 'idle' };
   return held.key === key ? held.value : { handbook: null, status: 'loading' };

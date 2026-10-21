@@ -14,6 +14,7 @@ import { successorInProgram } from '@/lib/abap/catalog-service';
 import { complianceReviewHints, examinedTablesFromDependencies } from '@/lib/compliance-review-hints';
 import { buildStandardFitView } from '@/lib/standard-fit-view';
 import { readSource } from '@/lib/first-look';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { plainWordingFor } from '@/lib/business-card';
 
 /**
@@ -102,7 +103,8 @@ export async function GET(
       );
     }
 
-    const reading = readSource(source);
+    // The rules with the demo switches the project's engine reads (3.0.20).
+    const reading = readSource(source, engineVersionOfProject(data));
     const ruleSet = reading.ruleSet;
     const ctx = plainContext(source);
     const wording = plainWordingFor(source, reading.skeleton);

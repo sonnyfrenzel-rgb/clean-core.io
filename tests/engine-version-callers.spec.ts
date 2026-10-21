@@ -33,10 +33,36 @@ const POSITIONAL: Readonly<Record<string, number>> = {
   recommendArchitecture: 5,
   // 3.0.18: the contextual successor it names is gated (QA review of 73b8cad63d3e, 966feb41218f).
   extractDataCoupling: 2,
+  // 3.0.20: the demo switches they read take shapes 4 and 5 from that engine on (QA review of 303a51180454).
+  readDemoSwitches: 2,
+  deriveBusinessRules: 2,
+  deriveBusinessRulesFrom: 4,
+  // The readings over them that default it for the specs, as the derivation does.
+  deriveCounterCheckScenarios: 2,
+  deriveStandardCoverage: 3,
+  deriveUserChange: 3,
+  readRules: 3,
+  readSource: 2,
+  explainBusinessRules: 4,
+  processStory: 4,
+  processSummaryOf: 4,
+  tourClosingOf: 2,
+  ruleRegisterFromView: 5,
+  ruleRegisterFromSource: 3,
+  ruleFactsOf: 5,
+  ruleFactsFromSource: 3,
+  ruleTallyOf: 3,
+  buildOriginEngine: 3,
+  readEngineFacts: 2,
+  deriveEngineCasesOf: 2,
+  travellingFact: 2,
 };
 
 /** Object argument: the first argument must be an object literal naming `engineVersion`. */
-const NAMED = new Set(['architectureCanvasModel', 'buildArchitectureContract', 'engineDesignContext']);
+const NAMED = new Set(['architectureCanvasModel', 'buildArchitectureContract', 'engineDesignContext', 'buildProcessDocument', 'buildRequirementSet', 'buildProcessDocumentation']);
+
+/** Readers argument: the second argument must be an object literal naming `engineVersion` (3.0.20). */
+const NAMED_SECOND = new Set(['programSummaryFactsOf', 'planUnits']);
 
 /**
  * Where a checked function takes its version: the argument at `index`, itself (`prop: false`) or as the property
@@ -51,6 +77,7 @@ interface Rule {
 const BASE_RULES: ReadonlyMap<string, Rule> = new Map<string, Rule>([
   ...Object.entries(POSITIONAL).map(([name, n]): [string, Rule] => [name, { index: n - 1, prop: false, min: n }]),
   ...[...NAMED].map((name): [string, Rule] => [name, { index: 0, prop: true }]),
+  ...[...NAMED_SECOND].map((name): [string, Rule] => [name, { index: 1, prop: true }]),
 ]);
 
 function sourceFiles(dir: string): string[] {
@@ -94,6 +121,8 @@ const NEW_RUN = new Set([
   'lib/demo-design.ts#buildDemoDesign', // the demo project, made by this engine
   'lib/demo-list-row.ts#computeDemoListRow',
   'lib/demo-project.ts#buildDemoProject',
+  'lib/demo-project.ts#demoProcess',
+  'lib/demo-release.ts#figuresOf', // the demo's figures, measured on what this engine builds
   'lib/demo-workspace.ts#buildDemoWorkspace',
   'components/demo/DemoDesign.tsx#DemoDesign',
   'scripts/diagnose-design-pipeline.ts#main', // a diagnostic over this engine
@@ -103,6 +132,16 @@ const NEW_RUN = new Set([
   'lib/own-code-import.ts#countSource', // an upload being staged, before any run
   // 3.0.19: the acceptance suite's key-user decision over a source no run has signed, read by this engine.
   'scripts/acceptance/suite.ts#runOne',
+  // 3.0.20 (`deriveBusinessRules`, `readSource`): readings of a source no run has signed, by this engine.
+  'scripts/transformation/reach.ts#runChecks', // the reach diagnostic over a corpus source
+  'lib/landing-process.ts#landingHero', // the landing page's shipped example
+  'components/demo/DemoWalkThrough.tsx#DemoWalkThrough', // the demo's tour
+  'components/demo/DemoRequirements.tsx#DemoRequirements', // the demo's requirements
+  'scripts/transformation/measure.ts#documentation', // the measure diagnostic over a corpus source
+  'scripts/transformation/measure.ts#main',
+  'app/(app)/admin/new-project/page.tsx#stageFact', // a shipped example, read by this engine
+  'scripts/record-plain-wording.ts#exampleSentences', // fixtures recorded over a shipped example
+  'scripts/record-case-answers.ts#main',
 ]);
 
 function calleeName(expr: ts.Expression): string | null {

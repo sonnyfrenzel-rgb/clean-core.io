@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildNodeScaffold, buildRapScaffold, estimateFillPrompt, planUnits, readEngineFacts, withTrace } from '../../lib/transformation';
 import type { UnitPlan } from '../../lib/transformation';
+import { APP_VERSION } from '../../lib/version';
 
 const pct = (xs: number[], p: number) => {
   if (!xs.length) return 0;
@@ -39,7 +40,7 @@ async function documentation(source: string, name: string): Promise<Record<strin
   const t0 = Date.now();
   const bpmn = buildBpmnExportFromSource(source, { processName: name, sourceFileName: name });
   const map = buildProcessMapModel({ bpmn, named: applyNaming(namingContextOf(source), null), fileName: name });
-  const doc = buildProcessDocumentation({ source, map });
+  const doc = buildProcessDocumentation({ source, map, engineVersion: APP_VERSION });
   const listed = doc.steps.filter(isListedStep);
   const top = listed.filter((s) => s.level === null);
   const spans = top.filter((s) => s.anchor).map((s) => s.anchor!.lineEnd - s.anchor!.lineStart + 1);
@@ -99,8 +100,8 @@ async function main() {
   for (const file of files) {
     const source = fs.readFileSync(file, 'utf8');
     const t0 = Date.now();
-    const facts = readEngineFacts(source);
-    const plan = planUnits(source, {}, facts);
+    const facts = readEngineFacts(source, APP_VERSION);
+    const plan = planUnits(source, { engineVersion: APP_VERSION }, facts);
     const m = measure(file, plan, facts, Date.now() - t0);
     const { scaffolds, ...row } = m;
     const extra = docs ? { documentation: await documentation(facts.source, path.basename(file)) } : {};

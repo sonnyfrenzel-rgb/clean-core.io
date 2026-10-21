@@ -481,7 +481,7 @@ test.describe('verify mode of /api/run-tests', () => {
 
   test('the cases come from the project\'s source on the server, and nothing is written', () => {
     // QA round 3: planned from the signed source through the provenance brand, as a recorded run is.
-    expect(fn).toContain('deriveEngineCasesOf(signedSource)');
+    expect(fn).toContain('deriveEngineCasesOf(signedSource, engineVersionOfProject(projectData))');
     expect(fn).toContain('engineCaseProvenance(');
     expect(fn).toContain('planEngineRun(verified, files, null)');
     expect(fn).toContain('engineVerdicts(engineStdout');

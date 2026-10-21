@@ -31,7 +31,7 @@ import { openingDecisions, type OpeningDecisions } from '@/lib/first-look-plain'
 import { firstLookPlainSentences, plainModelEnabled } from '@/lib/plain-wording';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { APP_VERSION } from '@/lib/version';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import {
   BUILD_UP_BUDGET,
   BUILD_UP_MAP_WAIT,
@@ -259,20 +259,29 @@ interface Result {
   decides: OpeningDecisions | null;
 }
 
-/** "What it decides" from the rule explanations, from engine 3.0.20 (`lib/first-look-plain.ts`); null before. */
-function decidesOf(source: string, process: ProcessReading, rules: BusinessRuleSet): OpeningDecisions | null {
-  if (!engineReads3020Apply(APP_VERSION)) return null;
+/**
+ * "What it decides" from the rule explanations, from engine 3.0.20 (`lib/first-look-plain.ts`); null before.
+ * `engineVersion`: the engine of the project's signed run.
+ */
+function decidesOf(source: string, process: ProcessReading, rules: BusinessRuleSet, engineVersion: string | null): OpeningDecisions | null {
+  if (!engineReads3020Apply(engineVersion)) return null;
   try {
-    return openingDecisions(explainBusinessRules(source, rules, process.facts, APP_VERSION));
+    return openingDecisions(explainBusinessRules(source, rules, process.facts, engineVersion));
   } catch {
     return null;
   }
 }
 
 /** "In short" for the Business opening: the shared summary without table codes, and a checked model purpose where one is stored. */
-function inShortOf(source: string, process: ProcessReading, rules: BusinessRuleSet, narrative: string | undefined): Result['inShort'] {
+function inShortOf(
+  source: string,
+  process: ProcessReading,
+  rules: BusinessRuleSet,
+  narrative: string | undefined,
+  engineVersion: string | null,
+): Result['inShort'] {
   try {
-    const facts = programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules });
+    const facts = programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules, engineVersion });
     const summary = programSummary(facts);
     return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(narrative, facts), authorClaim: authorClaimOf(facts) };
   } catch {
@@ -382,6 +391,8 @@ export default function FirstLook({
   questions?: OpenQuestionsModel | null;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  // Every reading below is the one the engine of the project's signed run makes (3.0.20).
+  const engineVersion = engineVersionOfProject(project);
   const hasSource = source.trim().length > 0;
   const sourceName =
     project?.auditMetadata?.inputFingerprint?.fileName || project?.name || projectId;
@@ -483,8 +494,8 @@ export default function FirstLook({
   /* ---- stage 4's work ---- */
   useEffect(() => {
     if (!hasSource || !process) return;
-    return afterPaint(() => guarded(() => setRules(readRules(source, process))));
-  }, [source, hasSource, process, guarded]);
+    return afterPaint(() => guarded(() => setRules(readRules(source, process, engineVersion))));
+  }, [source, hasSource, process, guarded, engineVersion]);
 
   /**
    * "The model does not hold up the build-up" (mockup s0, DESIGN.md §5.2): the stored naming
@@ -550,16 +561,17 @@ export default function FirstLook({
           process.skeleton,
           source,
           new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
+          engineVersion,
         ),
         changes: processChanges(process.skeleton, source),
-        inShort: inShortOf(source, process, rules, project?.analysis),
-        decides: decidesOf(source, process, rules),
+        inShort: inShortOf(source, process, rules, project?.analysis, engineVersion),
+        decides: decidesOf(source, process, rules, engineVersion),
       };
       return { result, failed: false };
     } catch {
       return { result: null, failed: true };
     }
-  }, [hasSource, source, process, named, rules, access, project]);
+  }, [hasSource, source, process, named, rules, access, project, engineVersion]);
   const result = built.result;
   const failed = stageFailed || built.failed;
 
@@ -663,7 +675,7 @@ export default function FirstLook({
   const availability = useModelAvailability();
   const plainSentences = useMemo(
     () =>
-      result && engineReads3020Apply(APP_VERSION)
+      result && engineReads3020Apply(engineVersion)
         ? firstLookPlainSentences({
             inShort: result.inShort?.lines ?? null,
             steps: result.story.steps,
@@ -671,7 +683,7 @@ export default function FirstLook({
             changes: result.changes.changes,
           })
         : null,
-    [result],
+    [result, engineVersion],
   );
   const plain = usePlainWording({
     projectId: namingFrom === 'none' ? null : projectId,
@@ -895,7 +907,7 @@ export default function FirstLook({
                   // the way into Design, where the questions for the business are asked. The demo keeps
                   // its own rules card (`onReviewRules`).
                   onDecideRules={onReviewRules}
-                  rulesLine={onReviewRules || !rules ? undefined : <RuleBasketLine projectId={projectId} source={source} ruleSet={rules} />}
+                  rulesLine={onReviewRules || !rules ? undefined : <RuleBasketLine projectId={projectId} source={source} ruleSet={rules} engineVersion={engineVersion} />}
                   details={
                     <EndState
                       projectId={projectId}

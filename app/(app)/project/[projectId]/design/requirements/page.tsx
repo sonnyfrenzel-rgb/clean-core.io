@@ -25,6 +25,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import FunctionalRequirements from '@/components/design/FunctionalRequirements';
 import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
 import RequirementsWorkspace from '@/components/requirements/RequirementsWorkspace';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import type { Project } from '@/lib/types';
 import type { NFRData } from '@/lib/non-functional-requirements';
 import type { RuleStateInput } from '@/lib/requirements-spec';
@@ -141,6 +142,7 @@ export default function RequirementsPage() {
           source={signedSource?.source ?? null}
           missingReason={signedSource ? null : missingReason}
           levels={levels}
+          engineVersion={engineVersionOfProject(project)}
           ruleStates={ruleStates}
           proposals={proposals}
           route={route}
@@ -154,6 +156,7 @@ export default function RequirementsPage() {
                 source={signedSource?.source ?? null}
                 missingReason={signedSource ? null : missingReason}
                 levels={levels}
+                engineVersion={engineVersionOfProject(project)}
                 wording={{
                   enabled: designAvailable,
                   reason: designAvailable
@@ -171,6 +174,7 @@ export default function RequirementsPage() {
                 missingReason={signedSource ? null : missingReason}
                 proposals={proposals}
                 levels={levels}
+                engineVersion={engineVersionOfProject(project)}
               />
             </>
           }

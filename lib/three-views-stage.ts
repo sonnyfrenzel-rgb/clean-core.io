@@ -39,6 +39,7 @@ import { anchorLabel, readSource, type SourceReading } from './first-look';
 import type { SkeletonNode } from './abap/process-skeleton';
 import type { ProvenanceValue } from './provenance';
 import { VIEW_QUESTIONS, WORKSPACE_VIEWS, type WorkspaceView } from './workspace-model';
+import { APP_VERSION } from './version';
 
 /** One line of one panel. `provenance` is the nine-value list, never free text. */
 export interface StageLine {
@@ -242,9 +243,9 @@ export const STAGE_EXAMPLE_FILE = 'Z_MM_PO_APPROVAL.abap';
 /** §6.1.1's Business column: *Keep · Change · Drop*. Offered, never recorded. */
 export const BUSINESS_OPTIONS = Object.freeze(['Keep', 'Change', 'Drop'] as const);
 
-/** The whole of it, for a caller holding only the source. */
-export function travellingFact(source: string): TravellingFact | null {
-  return travellingFactFrom(source, readSource(source));
+/** The whole of it, for a caller holding only the source; `engineVersion`, the engine it is read for. */
+export function travellingFact(source: string, engineVersion: string | null = APP_VERSION): TravellingFact | null {
+  return travellingFactFrom(source, readSource(source, engineVersion));
 }
 
 /* ------------------------------------------------------------- the timings */

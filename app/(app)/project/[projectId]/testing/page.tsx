@@ -324,7 +324,7 @@ export default function TestingSandboxPage() {
    * new" and the suite's rule coverage are read against.
    */
   const originSource = useMemo(() => signedForOrigin(project).signed?.source ?? null, [project]);
-  const materialRuleRead = useMaterialRules(originSource);
+  const materialRuleRead = useMaterialRules(originSource, engineVersionOfProject(project));
   const { outcome: ruleStatesOutcome } = useProcessStates(projectId as string, !!originSource);
   const ruleStates = useMemo(() => {
     const entries = ruleEntries(ruleStatesOutcome && ruleStatesOutcome.ok ? ruleStatesOutcome.view : null);

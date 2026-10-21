@@ -97,7 +97,7 @@ test.describe('e04537f4bb66, 0297134b3b87 — only recomputed cases reach the ex
   test('the route plans the engine pass from the provenance, the delivery exports from it', () => {
     const route = read('app/api/run-tests/route.ts');
     expect(route).toMatch(/planEngineRun\(\s*engineCaseProvenance\(/);
-    expect(route).toContain('deriveEngineCasesOf(signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null)');
+    expect(route).toContain('deriveEngineCasesOf(signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null, engineVersionOfProject(projectData))');
     expect(read('app/(app)/project/[projectId]/delivery/page.tsx')).toContain('engineCasesFile(provenance.verified, provenance.unverified)');
   });
 

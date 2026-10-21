@@ -59,6 +59,8 @@ import type { RulePropertyValue } from './rule-property';
 import { notDetermined, type NotDetermined } from './workspace-model';
 import type { Project } from './types';
 import { countSourceLines } from '@/lib/source-lines';
+import { APP_VERSION } from './version';
+import { engineVersionOfProject } from './run-engine-version';
 
 /* ------------------------------------------------------- the second visit */
 
@@ -260,9 +262,12 @@ export function readProcess(source: string): ProcessReading {
   return { facts, context, skeleton: context.skeleton };
 }
 
-/** Stage 4's own work: the business rules that stand in the program. */
-export function readRules(source: string, process: ProcessReading): BusinessRuleSet {
-  return deriveBusinessRulesFrom(source, process.facts, process.skeleton);
+/**
+ * Stage 4's own work: the business rules that stand in the program. `engineVersion`: the engine the demo switches
+ * are read for (3.0.20) — the project's (`engineVersionOfProject`), or this one for a source no run has signed.
+ */
+export function readRules(source: string, process: ProcessReading, engineVersion: string | null = APP_VERSION): BusinessRuleSet {
+  return deriveBusinessRulesFrom(source, process.facts, process.skeleton, engineVersion);
 }
 
 export interface SourceReading {
@@ -272,13 +277,13 @@ export interface SourceReading {
   tables: ReadonlySet<string>;
 }
 
-/** All of it, for a caller that has no reason to stage the work. */
-export function readSource(source: string): SourceReading {
+/** All of it, for a caller that has no reason to stage the work. `engineVersion` as for `readRules`. */
+export function readSource(source: string, engineVersion: string | null = APP_VERSION): SourceReading {
   const process = readProcess(source);
   return {
     skeleton: process.skeleton,
     context: process.context,
-    ruleSet: readRules(source, process),
+    ruleSet: readRules(source, process, engineVersion),
     tables: readTables(source),
   };
 }
@@ -549,7 +554,7 @@ export function buildFirstLook(
 
   // One reading of the source for all four stages. Reading it twice is how two
   // line numbers for the same `IF` get onto one screen (`process-facts.ts`).
-  const { skeleton, ruleSet, context, tables } = reading ?? readSource(source);
+  const { skeleton, ruleSet, context, tables } = reading ?? readSource(source, engineVersionOfProject(project));
   const named = applyNaming(context, record, absence);
 
   const rules = revealedRules(ruleSet);

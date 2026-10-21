@@ -13,6 +13,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { kindWord, parseBpmn } from '@/lib/process-map';
 import { deriveBusinessRules, rulesForElement } from '@/lib/abap/business-rule-set';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { anchorWords, ruleAnchor } from '@/lib/rule-anchor';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
@@ -290,13 +291,16 @@ interface Subjects {
  * `cc:trace/@node`, and `rulesForElement` is asked, once per element, which
  * rules name that node. Nothing else is called affected — not the rest of the
  * sub-process, not what comes after it, not the model.
+ *
+ * `engineVersion` is the engine of the project's signed run: the demo switches
+ * the rules leave out are read for it (3.0.20).
  */
-function readSubjects(xml: string, source: string): Subjects {
+function readSubjects(xml: string, source: string, engineVersion: string | null): Subjects {
   const parsed = parseBpmn(xml);
   const subjects: StateSubject[] = [];
   const elementIds: string[] = [];
 
-  const set = deriveBusinessRules(source);
+  const set = deriveBusinessRules(source, engineVersion);
   const linkOf = new Map<string, string[]>();
   for (const rule of set.rules) linkOf.set(rule.id, []);
 
@@ -420,7 +424,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
     };
   }
 
-  return { ok: true, subjects: readSubjects(record.xml, source), stored: await latestStates(db, gate.projectId) };
+  return { ok: true, subjects: readSubjects(record.xml, source, engineVersionOfProject(gate.project)), stored: await latestStates(db, gate.projectId) };
 }
 
 function viewOf(subjects: Subjects, stored: StoredStates): ProcessStateView {

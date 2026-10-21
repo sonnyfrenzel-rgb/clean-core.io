@@ -234,7 +234,7 @@ test.describe('0297134b3b87 — a client-written case with origin engine is not 
   test('the delivery page builds the file from the provenance, not from the stored list', () => {
     const page = read('app/(app)/project/[projectId]/delivery/page.tsx');
     expect(page).toContain('engineCaseProvenance(');
-    expect(page).toContain('deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null)');
+    expect(page).toContain('deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null, engineVersionOfProject(project))');
     // QA e04537f4bb66: no cast any more — engineCasesFile takes only VerifiedEngineCase, which the provenance alone produces.
     expect(page).toContain('engineCasesFile(provenance.verified, provenance.unverified)');
     expect(page).not.toContain('engineCasesFile(project.testCases');

@@ -339,7 +339,7 @@ export function deriveBusinessRulesFrom(
   /** The engine the demo switches are read for (`readDemoSwitches`, 3.0.20 shapes 4 and 5). */
   engineVersion: string | null = APP_VERSION,
 ): BusinessRuleSet {
-  return new RuleSetBuilder(source, facts, skeleton, engineVersion).build();
+  return new RuleSetBuilder(source, facts, skeleton, readDemoSwitches(source, engineVersion)).build();
 }
 
 /**
@@ -574,7 +574,8 @@ class RuleSetBuilder {
     private source: string,
     private facts: ProcessFacts,
     private skeleton: ProcessSkeleton,
-    private engineVersion: string | null = APP_VERSION,
+    /** The demo switches of `source`, read for the engine of the derivation. */
+    private demo: DemoSwitches | null,
   ) {
     this.lines = source.split(/\r?\n/);
     const report = readBusinessRulesFrom(facts.statements, facts.structure, facts.control);
@@ -615,7 +616,7 @@ class RuleSetBuilder {
     // checks on the demo parameters are test data, not rules a business keeps
     // or drops. Counted apart, numbered first like the table values above, so
     // every other rule keeps the number a confirmation is stored against.
-    const demo = readDemoSwitches(this.source, this.engineVersion);
+    const demo = this.demo;
     const demoRules = demo ? numberedRules.filter((rule) => isDemoRule(rule, demo)) : [];
     const rules = demoRules.length ? numberedRules.filter((rule) => !demoRules.includes(rule)) : numberedRules;
     // The rules the header comment states (CR-A2) — candidates, never code facts.

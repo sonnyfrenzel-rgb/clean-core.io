@@ -162,8 +162,16 @@ interface CheckOnField {
 
 /* ---------------------------------------------------------------- reader */
 
-/** Fill `base` of every field — see the file comment. Returns the obligatory fields that got none. */
-export function assignBaseValues(fields: ContractField[], facts: EngineFacts, notCarried: readonly NotCarried[]): string[] {
+/**
+ * Fill `base` of every field — see the file comment. Returns the obligatory fields that got none. `engineVersion`:
+ * the engine `facts` were read for (`PlanInput.engineVersion`; `undefined`, the current one).
+ */
+export function assignBaseValues(
+  fields: ContractField[],
+  facts: EngineFacts,
+  notCarried: readonly NotCarried[],
+  engineVersion: string | null | undefined,
+): string[] {
   const { statements, blocks, graph, contract } = facts;
   const constants = new Map<string, string>();
   for (const st of statements) {
@@ -246,7 +254,7 @@ export function assignBaseValues(fields: ContractField[], facts: EngineFacts, no
   const fixed = new Map<string, string[]>();
   let lists: ReturnType<typeof programSummaryFactsOf>['fixedLists'] = [];
   try {
-    lists = programSummaryFactsOf(facts.source, { calls: graph, ruleSet: facts.ruleSet }).fixedLists;
+    lists = programSummaryFactsOf(facts.source, { calls: graph, ruleSet: facts.ruleSet, engineVersion }).fixedLists;
   } catch {
     lists = [];
   }

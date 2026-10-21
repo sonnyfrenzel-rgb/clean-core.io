@@ -57,6 +57,7 @@ import { routeDrivers, routeExtensibility } from '@/lib/abap/extensibility-route
 import { signedRecommendationOf, signedRouteReport } from '@/lib/signed-route-report';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import type { SourceFile } from '@/lib/abap/findings-detector';
@@ -100,10 +101,13 @@ import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary } from '@/lib/program-summary-text';
 import { authorClaimOf, purposeProposalOf } from '@/lib/program-summary-check';
 
-/** The engine's facts about what the program is for, or null when they cannot be read — the prompt then goes without them. */
-function programFactsOrNull(code: string) {
+/**
+ * The engine's facts about what the program is for, or null when they cannot be read — the prompt then goes without
+ * them. `engineVersion`: the engine of the run being made.
+ */
+function programFactsOrNull(code: string, engineVersion: string | null) {
   try {
-    return programSummaryFactsOf(code);
+    return programSummaryFactsOf(code, { engineVersion });
   } catch {
     return null;
   }
@@ -438,7 +442,7 @@ export default function AnalyzePage() {
       setLoadingMessage(`Evidence scan complete — ${findingCount} ${findingCount === 1 ? 'finding' : 'findings'}.`);
 
       // Owner 12.10.2026: the model phrases the purpose from what the engine read (roadmap 3.0.11, "In short").
-  const programFacts = programFactsOrNull(codeToAnalyze);
+  const programFacts = programFactsOrNull(codeToAnalyze, APP_VERSION);
   const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze, programFacts });
 
       // 3. The narrative, if this account has a model for this stage.
@@ -808,16 +812,17 @@ export default function AnalyzePage() {
   // What the program is for, in short — the same summary the Business view
   // opens with, before the score (owner, 12.10.2026: the business texts about
   // what a Z program does must get clearly better, Analyze included).
+  const summaryEngine = engineVersionOfProject(project);
   const inShort = useMemo(() => {
     if (!legacyCode) return null;
     try {
-      const facts = programSummaryFactsOf(legacyCode);
+      const facts = programSummaryFactsOf(legacyCode, { engineVersion: summaryEngine });
       const summary = programSummary(facts);
       return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(project?.analysis, facts), authorClaim: authorClaimOf(facts) };
     } catch {
       return null;
     }
-  }, [legacyCode, project?.analysis]);
+  }, [legacyCode, project?.analysis, summaryEngine]);
   const programInShort = inShort ? (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3">
       <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal} authorClaim={inShort.authorClaim} headingLevel={2} id="analyze-in-short-title" />

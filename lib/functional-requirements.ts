@@ -189,6 +189,11 @@ export interface ObjectLevelInput {
 export interface RequirementInput {
   source: string;
   levels?: readonly ObjectLevelInput[] | null;
+  /**
+   * The engine the rules are read for (3.0.20 demo switches): the project's (`engineVersionOfProject`), or this one
+   * for a source no run has signed. Left out, the current engine.
+   */
+  engineVersion?: string | null;
 }
 
 /* ------------------------------------------------------------------ text */
@@ -1026,7 +1031,7 @@ export function buildRequirementSet(input: RequirementInput): RequirementSet {
   const lines = sourceLines(source);
   const facts = buildProcessFacts(source);
   const skeleton = buildProcessSkeletonFrom(facts);
-  const ruleSet = deriveBusinessRulesFrom(source, facts, skeleton);
+  const ruleSet = deriveBusinessRulesFrom(source, facts, skeleton, input.engineVersion);
   const plain = plainContext(source);
   const labels = plainLabels(skeleton, source);
 

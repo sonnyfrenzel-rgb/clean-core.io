@@ -124,6 +124,7 @@ import { getAuth } from '@/lib/firebase';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { readProcessStatesOutcome, type StatesReadOutcome } from '@/lib/process-states-client';
 import type { RuleRegister } from '@/lib/rule-register';
+import { engineStampOf, engineVersionOfProject } from '@/lib/run-engine-version';
 import { rulesReadRefusal, tfFilesResult, tfFillsNote, tfLiteralsResult, tfSingleCallNote } from '@/lib/workspace-messages';
 
 /**
@@ -199,18 +200,18 @@ const CROSS_MARK = String.fromCodePoint(0x274c);
  * idle, and capped by the register's own byte limit. The module is imported on
  * demand, so a page that never reads the rules does not download the reader.
  */
-async function ruleRegisterOf(outcome: StatesReadOutcome, source: string): Promise<RuleRegister> {
+async function ruleRegisterOf(outcome: StatesReadOutcome, source: string, engineVersion: string | null): Promise<RuleRegister> {
   const reg = await import('@/lib/rule-register');
-  if (outcome.ok) return reg.ruleRegisterFromView(outcome.view);
+  if (outcome.ok) return reg.ruleRegisterFromView(outcome.view, undefined, undefined, null, engineVersion);
   if (outcome.code === 'no-baseline') {
     await new Promise<void>((resolve) => {
       const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
       if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(() => resolve(), { timeout: 1500 });
       else setTimeout(resolve, 0);
     });
-    return reg.ruleRegisterFromSource(source);
+    return reg.ruleRegisterFromSource(source, undefined, engineVersion);
   }
-  return reg.ruleRegisterFromView(null, rulesReadRefusal(outcome.code));
+  return reg.ruleRegisterFromView(null, rulesReadRefusal(outcome.code), undefined, null, engineVersion);
 }
 
 /** The address the page is on, read in the browser only (as `StageHeader` reads it). */
@@ -439,6 +440,8 @@ export default function TransformationPage() {
     };
   }, [readsRules, refreshTips]);
   const legacySource = project?.legacyCode ?? '';
+  /** The engine of the project's signed run — the summary is read for it (3.0.20). */
+  const legacyEngine = engineVersionOfProject(project);
   /**
    * What the program is for, before the run — the same reading Analyze opens
    * with ("In short"), done once the browser is idle and only for a source the
@@ -458,7 +461,7 @@ export default function TransformationPage() {
           import('@/lib/program-summary-facts'),
           import('@/lib/program-summary-text'),
         ]);
-        const lines = programSummary(programSummaryFactsOf(legacySource)).lines.filter((l) => l.key === 'purpose').map((l) => l.text);
+        const lines = programSummary(programSummaryFactsOf(legacySource, { engineVersion: legacyEngine })).lines.filter((l) => l.key === 'purpose').map((l) => l.text);
         if (live) setPurpose({ state: 'ready', text: lines.length ? lines.join(' ') : null });
       } catch {
         if (live) setPurpose({ state: 'unread', reason: 'The summary reader could not walk the source.' });
@@ -471,11 +474,11 @@ export default function TransformationPage() {
       if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(handle);
       else window.clearTimeout(handle);
     };
-  }, [readsRules, legacySource]);
+  }, [readsRules, legacySource, legacyEngine]);
   useEffect(() => {
     if (!statesFresh || !statesOutcome) return;
     let live = true;
-    void ruleRegisterOf(statesOutcome, legacySource)
+    void ruleRegisterOf(statesOutcome, legacySource, legacyEngine)
       .then((register) => {
         if (live) setRuleRegister(register);
       })
@@ -485,7 +488,7 @@ export default function TransformationPage() {
     return () => {
       live = false;
     };
-  }, [statesFresh, statesOutcome, legacySource]);
+  }, [statesFresh, statesOutcome, legacySource, legacyEngine]);
 
   const toggleSignOff = (findingId: string) => {
     setSignedOffIds(prev => {
@@ -919,6 +922,8 @@ export default function TransformationPage() {
     platformKnowledge: string;
     isAbapCloud: boolean;
     fallbackReason: string | null;
+    /** The engine of the run that signed `legacyCode` — the demo switches its rules leave out are read for it (3.0.20). */
+    engineVersion: string | null;
     signal: AbortSignal;
     store: (files: ProjectFile[], tests: GeneratedTestSuite, record: unknown) => Promise<void>;
     basis: () => unknown[];
@@ -939,7 +944,7 @@ export default function TransformationPage() {
         import('@/lib/abap/original-contract'),
       ]);
       const original = readOriginalContract(legacyCode);
-      originalFacts = codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode)));
+      originalFacts = codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode, args.engineVersion)));
       setStageLog((log) => withFacts(log, 'facts', originalFactsLines(original)));
     } catch (factsErr) {
       console.error('The original\'s checks and declarations could not be read for the code draft:', factsErr);
@@ -1278,7 +1283,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     // whenever it comes; the generation does not wait for it.
     const source = projectRef.current?.legacyCode ?? '';
     void readProcessStatesOutcome(projectId as string)
-      .then((outcome) => ruleRegisterOf(outcome, source))
+      .then((outcome) => ruleRegisterOf(outcome, source, engineVersionOfProject(projectRef.current)))
       .then((register) => {
         setChainRules({ state: 'ready', register });
         setRuleRegister(register);
@@ -1436,6 +1441,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           against: againstDecisionOf((projectRef.current as { decision?: unknown } | null)?.decision),
           // Scaffold 20: a program that splits — no unit for the lines a key user configures.
           keyUser: keyUserRangesRef.current,
+          // The source is read for the engine of the project's signed run (3.0.20).
+          project: engineStampOf(projectRef.current),
         },
         controller.signal,
       );
@@ -1627,7 +1634,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
       // ── The fallback: today's single call, with a visible note (§16.2) ──
       setGenPath('single-call');
-      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, signal: controller.signal, store, basis: () => basisAtStart, startedAt });
+      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, engineVersion: engineVersionOfProject(projectRef.current), signal: controller.signal, store, basis: () => basisAtStart, startedAt });
     } catch (err) {
       failed = true;
       if (controller.signal.aborted || (err as { name?: string } | null)?.name === 'AbortError') {
@@ -1891,6 +1898,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               decisions: generation.inputs.context.decisions ?? [],
               contextText: generation.inputs.context.text,
               keyUser: keyUserRangesRef.current,
+              project: engineStampOf(projectRef.current),
             },
             controller.signal,
           ),

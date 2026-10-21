@@ -39,3 +39,30 @@ export function engineVersionOfProject(project: object | null | undefined): stri
     (card !== undefined && card !== null);
   return hasRun ? null : APP_VERSION;
 }
+
+/**
+ * What `engineVersionOfProject` reads of a project, copied off it: plain data a
+ * reader in the reading worker can be handed (3.0.20), so the worker names the
+ * engine with the same function instead of trusting a bare string.
+ */
+export interface ProjectEngineStamp {
+  activeRunId?: string;
+  analyzerVersion?: string;
+  auditMetadata?: { modelCard: { engineVersion?: string } | null };
+}
+
+export function engineStampOf(project: object | null | undefined): ProjectEngineStamp | null {
+  const p = (project ?? null) as {
+    activeRunId?: unknown;
+    analyzerVersion?: unknown;
+    auditMetadata?: { modelCard?: { engineVersion?: unknown } | null } | null;
+  } | null;
+  if (!p) return null;
+  const card = p.auditMetadata && typeof p.auditMetadata === 'object' ? p.auditMetadata.modelCard : undefined;
+  const cardVersion = card && typeof card === 'object' && typeof card.engineVersion === 'string' ? card.engineVersion : undefined;
+  return {
+    ...(typeof p.activeRunId === 'string' ? { activeRunId: p.activeRunId } : {}),
+    ...(typeof p.analyzerVersion === 'string' ? { analyzerVersion: p.analyzerVersion } : {}),
+    ...(card === undefined ? {} : { auditMetadata: { modelCard: card === null ? null : cardVersion === undefined ? {} : { engineVersion: cardVersion } } }),
+  };
+}

@@ -35,6 +35,7 @@ import {
 import { readSpecRecord, SPEC_COLLECTION, SPEC_DOC, SPEC_NFR_CATEGORY_LABEL, type SpecRecord } from '@/lib/requirements-spec';
 import { richPlain } from '@/lib/rich-text';
 import { standardFitAssessed } from '@/lib/standard-fit-gate';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The server's half of the PLATFORM KNOWLEDGE block (owner, 12.10.2026;
@@ -344,20 +345,22 @@ export interface AssembleArgs {
  */
 export function assembleTransformationContext(args: AssembleArgs): { context: TransformationContext; stamp: TransformationContextStamp } {
   const { source } = args;
+  // The rules and the summary are read for the engine of the project's signed run (3.0.20).
+  const engineVersion = engineVersionOfProject(args.project);
   let set: BusinessRuleSet | null = null;
   let reason: string | null = null;
   if (new TextEncoder().encode(source).length > MAX_RULE_READ_BYTES) {
     reason = 'the source is too large for the rule reader';
   } else {
     try {
-      set = deriveBusinessRules(source);
+      set = deriveBusinessRules(source, engineVersion);
     } catch {
       reason = 'the rule reader could not walk the source';
     }
   }
   let summary: ContextSummary | null = null;
   try {
-    summary = contextSummaryOf(programSummaryFactsOf(source, set ? { ruleSet: set } : {}));
+    summary = contextSummaryOf(programSummaryFactsOf(source, { ...(set ? { ruleSet: set } : {}), engineVersion }));
   } catch {
     summary = null;
   }

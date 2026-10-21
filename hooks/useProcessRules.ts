@@ -37,10 +37,12 @@ const EMPTY: ProcessRules = { byNode: new Map(), total: 0, ready: false };
  * @param nodeIds the skeleton nodes of the drawn process. **Memoised by the
  *   caller** — it is an effect input, and a fresh array on every render would
  *   read the whole program again on every keystroke.
+ * @param engineVersion the engine of the run that signed `source`
+ *   (`engineVersionOfProject`) — the demo switches are read for it (3.0.20).
  */
-export function useProcessRules(source: string | null, nodeIds: readonly string[]): ProcessRules {
+export function useProcessRules(source: string | null, nodeIds: readonly string[], engineVersion: string | null): ProcessRules {
   const [held, setHeld] = useState<{ key: string; value: ProcessRules }>({ key: '', value: EMPTY });
-  const key = useMemo(() => (source ? sha256Hex(source) : ''), [source]);
+  const key = useMemo(() => (source ? `${engineVersion ?? ''}:${sha256Hex(source)}` : ''), [source, engineVersion]);
 
   useEffect(() => {
     if (!source || !key) return;
@@ -49,7 +51,7 @@ export function useProcessRules(source: string | null, nodeIds: readonly string[
     const build = async () => {
       const rules = await import('@/lib/abap/business-rule-set');
       if (cancelled) return;
-      const set = rules.deriveBusinessRules(source);
+      const set = rules.deriveBusinessRules(source, engineVersion);
       const byNode = new Map<string, string[]>();
       for (const nodeId of nodeIds) {
         if (byNode.has(nodeId)) continue;
@@ -69,7 +71,7 @@ export function useProcessRules(source: string | null, nodeIds: readonly string[
     return () => {
       cancelled = true;
     };
-  }, [source, key, nodeIds]);
+  }, [source, key, nodeIds, engineVersion]);
 
   return held.key === key ? held.value : EMPTY;
 }

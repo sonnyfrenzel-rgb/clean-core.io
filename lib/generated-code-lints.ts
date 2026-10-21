@@ -188,7 +188,7 @@ function readHandlers(src: string, mask: Uint8Array): Array<[number, number]> {
   return out;
 }
 
-function readSource(path: string, src: string): Source {
+function readCodeFile(path: string, src: string): Source {
   const mask = codeMask(src);
   return { path, src, mask, blocks: readBlocks(src, mask), handlers: readHandlers(src, mask) };
 }
@@ -808,7 +808,7 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
   const strings = new Set<string>();
   for (const f of files) {
     if (!CODE_FILE.test(f.path)) continue;
-    const s = readSource(f.path, f.content);
+    const s = readCodeFile(f.path, f.content);
     // An import, a require, or a triple-slash types reference (`/// <reference types="@cap-js/cds-types" />`).
     for (const m of f.content.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|^\/\/\/\s*<reference\s+types\s*=\s*)(['"`])([^'"`\n]+)\1/gm)) {
       // Only an import in code counts — the keyword itself is code, or the triple-slash directive opens
@@ -924,7 +924,7 @@ export function generatedCodeLints(
   options: GeneratedCodeLintOptions = {},
 ): GeneratedCodeLintFinding[] {
   const files = typeof code === 'string' ? sandboxFilesFromStoredCode(code) : code ? [...code] : [];
-  const sources = files.filter((f) => CODE_FILE.test(f.path) && !TEST_FILE.test(f.path) && !f.path.startsWith('docs/')).map((f) => readSource(f.path, f.content));
+  const sources = files.filter((f) => CODE_FILE.test(f.path) && !TEST_FILE.test(f.path) && !f.path.startsWith('docs/')).map((f) => readCodeFile(f.path, f.content));
   const isDecimal = decimalTest(options.decimalFields);
   const out: GeneratedCodeLintFinding[] = [];
   for (const s of sources) {

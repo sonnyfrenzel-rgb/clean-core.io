@@ -60,6 +60,7 @@ import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { runTrust, scrollToWhenThere } from '@/lib/it-sections';
 import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
 import { useSourceReading } from '@/hooks/useSourceReading';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleTallyOf } from '@/lib/management-rule-tally';
 import { managementInShort, programSummary } from '@/lib/program-summary-text';
@@ -387,6 +388,7 @@ export default function WorkspaceShell({
   const ownReading = useSourceReading(
     typeof project?.legacyCode === 'string' ? project.legacyCode : '',
     view !== 'business' && firstLookReading === null,
+    engineVersionOfProject(project),
   );
   const reading = firstLookReading ?? ownReading;
   /**
@@ -420,7 +422,7 @@ export default function WorkspaceShell({
     // count what is stored, as they did while the reader was being loaded; a
     // failure reads as no summary, as a throw did before.
     void import('@/lib/bpmn/reading-exports-client')
-      .then((m) => m.processSummaryOffThread(signed.source, signed.fileName, project?.name || ''))
+      .then((m) => m.processSummaryOffThread(signed.source, signed.fileName, project?.name || '', project))
       .catch((): ProcessSummary | null => null)
       .then((summary) => {
         if (cancelled) return;
@@ -429,7 +431,7 @@ export default function WorkspaceShell({
     return () => {
       cancelled = true;
     };
-  }, [signed, project?.name]);
+  }, [signed, project]);
   const mapSummary = signed && processSummary?.source === signed.source ? processSummary.summary : null;
 
   // The layers count the process, the rules and the capabilities of that
@@ -648,14 +650,15 @@ export default function WorkspaceShell({
   // decision has to know from the code, and how many of its rules are still
   // open in the rule register — the counts the delivery package says — then
   // the map's counts.
+  const tallyEngine = engineVersionOfProject(project);
   const processLine = useMemo(() => {
     const facts = mapSummary?.summaryFacts ?? null;
-    const tally = facts ? ruleTallyOf(ruleStates, facts.rules) : null;
+    const tally = facts ? ruleTallyOf(ruleStates, facts.rules, tallyEngine) : null;
     const management = facts
       ? managementInShort(programSummary(facts), facts, { level: false, rules: tally })
       : mapSummary?.management ?? null;
     return [management, processCount].filter(Boolean).join(' — ') || null;
-  }, [mapSummary, ruleStates, processCount]);
+  }, [mapSummary, ruleStates, processCount, tallyEngine]);
   const businessStep = useMemo(() => {
     if (view !== 'business') return null;
     // A reading that failed decides as "no rules known": the phase step, never

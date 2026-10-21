@@ -21,6 +21,7 @@ import {
 } from '../evidence-level';
 import type { ObjectStatusValue } from '../object-status';
 import type { ProvenanceValue } from '../provenance';
+import { APP_VERSION } from '../version';
 
 /**
  * What changes for the people who use the step — roadmap 7.6, mockup screen `s3`.
@@ -374,9 +375,10 @@ const EMPTY_COUNTS = (): UserChangeReport['counts'] => ({
  *
  * Pass a catalogue to get pointers; without one every record still says what
  * carries the step today, and says that no catalogue was consulted rather than
- * that SAP has nothing.
+ * that SAP has nothing. `engineVersion`: the engine the rules' demo switches
+ * are read for (3.0.20).
  */
-export function deriveUserChange(source: string, options: UserChangeOptions = {}): UserChangeReport {
+export function deriveUserChange(source: string, options: UserChangeOptions = {}, engineVersion: string | null = APP_VERSION): UserChangeReport {
   if (typeof source !== 'string' || !source.trim()) {
     return {
       program: null,
@@ -386,7 +388,7 @@ export function deriveUserChange(source: string, options: UserChangeOptions = {}
       catalogConsulted: Boolean(options.catalog),
     };
   }
-  return userChangeFrom(source, deriveBusinessRules(source), options);
+  return userChangeFrom(source, deriveBusinessRules(source, engineVersion), options);
 }
 
 /**

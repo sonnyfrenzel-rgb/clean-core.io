@@ -88,6 +88,8 @@ export interface RuleDecisionFlowProps {
   projectId: string;
   source: string;
   reading: SourceReading;
+  /** The engine `reading` was made for (`engineVersionOfProject`) — the explanation is read for it too (3.0.20). */
+  engineVersion: string | null;
   /** The rules as the editor words them — titles and the code. */
   rules: readonly EditorRule[];
   outcome: StatesReadOutcome | null;
@@ -390,6 +392,7 @@ export default function RuleDecisionFlow({
   projectId,
   source,
   reading,
+  engineVersion,
   rules,
   outcome,
   view,
@@ -400,11 +403,11 @@ export default function RuleDecisionFlow({
 }: RuleDecisionFlowProps) {
   const explanation = useMemo(() => {
     try {
-      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source));
+      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion);
     } catch {
       return null;
     }
-  }, [source, reading]);
+  }, [source, reading, engineVersion]);
   const entries = useMemo(() => ruleEntries(view), [view]);
   const flow = useMemo(() => (explanation ? ruleFlow(explanation, entries) : null), [explanation, entries]);
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());

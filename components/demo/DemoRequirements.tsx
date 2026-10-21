@@ -5,6 +5,7 @@ import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirem
 import RequirementsWorkspace from '@/components/requirements/RequirementsWorkspace';
 import type { DemoProject } from '@/lib/demo-project';
 import type { DemoDesignData } from '@/lib/demo-design';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The requirements workspace of the demo's Design stage (ADR-078) — the same
@@ -26,14 +27,15 @@ export default function DemoRequirements({ demo, data }: { demo: DemoProject; da
         source={data?.source ?? null}
         missingReason={missing}
         levels={data?.findings ?? null}
+        engineVersion={APP_VERSION}
         ruleStates={null}
         proposals={null}
         route={null}
         accountEmail={null}
         engineReading={
           <>
-            <FunctionalRequirements projectId={null} projectName={name} fileName={demo.sourceFile} source={data?.source ?? null} missingReason={missing} levels={data?.findings ?? null} />
-            <NonFunctionalRequirements projectId={null} projectName={name} fileName={demo.sourceFile} source={data?.source ?? null} missingReason={missing} levels={data?.findings ?? null} />
+            <FunctionalRequirements projectId={null} projectName={name} fileName={demo.sourceFile} source={data?.source ?? null} missingReason={missing} levels={data?.findings ?? null} engineVersion={APP_VERSION} />
+            <NonFunctionalRequirements projectId={null} projectName={name} fileName={demo.sourceFile} source={data?.source ?? null} missingReason={missing} levels={data?.findings ?? null} engineVersion={APP_VERSION} />
           </>
         }
       />

@@ -39,6 +39,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
 import type { Project } from '@/lib/types';
 import { questionsAnsweredOf, questionsLater, wt, type WorkspaceMessageKey } from '@/lib/workspace-messages';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The questions for the business — the Design tool, before Transformation
@@ -424,6 +425,8 @@ export default function RuleQuestions({
   plainWording?: PlainWordingRecord | null;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  // The rules and their explanation are read for the engine of the project's signed run (3.0.20).
+  const engineVersion = engineVersionOfProject(project);
   const owner = useIsOwner(project);
   const [read, setRead] = useState<SourceReading | null>(given ?? null);
   useEffect(() => {
@@ -432,7 +435,7 @@ export default function RuleQuestions({
     void import('@/lib/first-look').then((m) => {
       if (cancelled) return;
       try {
-        setRead(m.readSource(source));
+        setRead(m.readSource(source, engineVersion));
       } catch {
         setRead(null);
       }
@@ -440,7 +443,7 @@ export default function RuleQuestions({
     return () => {
       cancelled = true;
     };
-  }, [given, source]);
+  }, [given, source, engineVersion]);
   const reading = given ?? read;
   const { outcome, reload } = useProcessStates(projectId, source.trim().length > 0);
   const view = outcome?.ok ? outcome.view : null;
@@ -448,11 +451,11 @@ export default function RuleQuestions({
   const explanation = useMemo(() => {
     if (!reading || !source) return null;
     try {
-      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source));
+      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion);
     } catch {
       return null;
     }
-  }, [reading, source]);
+  }, [reading, source, engineVersion]);
   const rules = useMemo(() => (reading ? editorRules(reading.ruleSet, plainWordingFor(source, reading.skeleton)) : []), [reading, source]);
   const availability = useModelAvailability();
   const sentences = useMemo(() => (explanation ? rulePlainSentences(explanation) : null), [explanation]);

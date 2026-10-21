@@ -1,6 +1,7 @@
 import { buildPhoneReadingXml, buildReadingExports, type BpmnExport } from './export';
 import { processSummaryOf, type ProcessSummary } from '../process-summary';
 import type { ReadingOptions } from './reading-key';
+import { engineVersionOfProject, type ProjectEngineStamp } from '../run-engine-version';
 
 /**
  * The work the reading worker does, as plain functions — so the worker file is
@@ -15,7 +16,8 @@ import type { ReadingOptions } from './reading-key';
  */
 export type ReadingJob =
   | { kind: 'reading'; source: string; options: ReadingOptions }
-  | { kind: 'summary'; source: string; fileName: string; processName?: string }
+  // `project`: the engine stamp of the project whose source it is (`engineStampOf`); none, the current engine.
+  | { kind: 'summary'; source: string; fileName: string; processName?: string; project?: ProjectEngineStamp | null }
   | { kind: 'phone'; source: string; options: ReadingOptions; view: PhoneView };
 
 /** The phone's narrower layout of a reading map (`buildPhoneReadingXml`) — as long as the map's own. */
@@ -34,7 +36,7 @@ export type ReadingResult = { bpmn: BpmnExport; technical: BpmnExport };
 export function runReadingJob(job: ReadingJob): ReadingResult | ProcessSummary | string | null {
   if (job.kind === 'reading') return buildReadingExports(job.source, job.options);
   if (job.kind === 'phone') return buildPhoneReadingXml(job.source, job.options, job.view);
-  if (job.kind === 'summary') return processSummaryOf(job.source, job.fileName, job.processName);
+  if (job.kind === 'summary') return processSummaryOf(job.source, job.fileName, job.processName, engineVersionOfProject(job.project));
   throw new Error(`Unknown reading job: ${(job as { kind?: unknown }).kind}`);
 }
 

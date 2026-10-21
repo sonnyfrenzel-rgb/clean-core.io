@@ -3,6 +3,7 @@ import { buildProcessMapModel, processCounts } from './process-map';
 import { applyNaming, namingContextOf } from './process-naming';
 import { programSummaryFactsOf } from './program-summary-facts';
 import { managementInShort, programSummary, type ProgramSummaryFacts } from './program-summary-text';
+import { APP_VERSION } from './version';
 
 /**
  * What the process map of a source holds, in four numbers — for every place
@@ -46,9 +47,15 @@ export interface ProcessSummary {
  * `processName` is the map's pool name: pass the one the process map uses (the
  * project's name) and the reading is the map's own cached one, not a second
  * layout of the same source (owner, 12.10.2026: a 2,000-line program took
- * 20 s per reading). It changes no count.
+ * 20 s per reading). It changes no count. `engineVersion`: the engine the
+ * summary is read for (3.0.20) — the project's run's.
  */
-export function processSummaryOf(source: string, fileName = 'source.abap', processName = fileName): ProcessSummary | null {
+export function processSummaryOf(
+  source: string,
+  fileName = 'source.abap',
+  processName = fileName,
+  engineVersion: string | null = APP_VERSION,
+): ProcessSummary | null {
   if (!source.trim()) return null;
   const { bpmn, technical } = buildReadingExports(source, { processName: processName || fileName, sourceFileName: fileName });
   const named = applyNaming(namingContextOf(source), null);
@@ -58,7 +65,7 @@ export function processSummaryOf(source: string, fileName = 'source.abap', proce
   let management: string | null = null;
   let summaryFacts: ProgramSummaryFacts | null = null;
   try {
-    summaryFacts = programSummaryFactsOf(source);
+    summaryFacts = programSummaryFactsOf(source, { engineVersion });
     management = managementInShort(programSummary(summaryFacts), summaryFacts, { level: false });
   } catch {
     management = null;

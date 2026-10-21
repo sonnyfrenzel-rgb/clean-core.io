@@ -85,6 +85,8 @@ export interface RequirementsWorkspaceProps {
   source: string | null;
   missingReason: string | null;
   levels: readonly ObjectLevelInput[] | null;
+  /** The engine of the run that signed `source` (`engineVersionOfProject`; the demo's own) — the rules are read for it (3.0.20). */
+  engineVersion: string | null;
   /** The business rules answered in the process review, when the server had them. */
   ruleStates: readonly RuleStateInput[] | null;
   proposals: NFRData | null;
@@ -115,11 +117,11 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function readEngine(source: string, levels: RequirementsWorkspaceProps['levels']) {
+async function readEngine(source: string, levels: RequirementsWorkspaceProps['levels'], engineVersion: string | null) {
   const [fr, nfr] = await Promise.all([import('@/lib/functional-requirements'), import('@/lib/non-functional-requirements')]);
   // Let the reading state paint before the engine takes the thread.
   await new Promise((resolve) => setTimeout(resolve, 0));
-  return { fr: fr.buildRequirementSet({ source, levels }), nfr: nfr.buildNfrSet({ source }) };
+  return { fr: fr.buildRequirementSet({ source, levels, engineVersion }), nfr: nfr.buildNfrSet({ source }) };
 }
 
 function SaveLine({ save, mode, onRetry }: { save: SpecSaveState; mode: WorkspaceMode; onRetry: () => void }) {
@@ -240,7 +242,7 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
     if (mode !== 'demo' || !source || spec) return;
     let cancelled = false;
     (async () => {
-      const { fr, nfr } = await readEngine(source, levels);
+      const { fr, nfr } = await readEngine(source, levels, props.engineVersion);
       if (cancelled) return;
       setSpec(buildSpecDraft({ projectName, fr, nfr, ruleStates, proposals, route }));
       setLoad('ready');
@@ -248,7 +250,7 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
     return () => {
       cancelled = true;
     };
-  }, [mode, source, levels, spec, projectName, ruleStates, proposals, route]);
+  }, [mode, source, levels, props.engineVersion, spec, projectName, ruleStates, proposals, route]);
 
   /* ---------------- written for an earlier source? ---------------- */
   const stale = Boolean(meta.derivedFrom && sourceSha && meta.derivedFrom !== sourceSha);
@@ -256,13 +258,13 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
     if (!stale || !source || fresh) return;
     let cancelled = false;
     (async () => {
-      const { fr, nfr } = await readEngine(source, levels);
+      const { fr, nfr } = await readEngine(source, levels, props.engineVersion);
       if (!cancelled) setFresh(buildSpecDraft({ projectName, fr, nfr, ruleStates, proposals, route }));
     })().catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [stale, source, fresh, levels, projectName, ruleStates, proposals, route]);
+  }, [stale, source, fresh, levels, props.engineVersion, projectName, ruleStates, proposals, route]);
   const drift = stale && spec && fresh ? specDrift(spec, fresh) : null;
 
   /* ---------------- the model's wording, where one was asked for ---------------- */
@@ -319,7 +321,7 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
     setStarting(true);
     setStartError(null);
     try {
-      const { fr, nfr } = await readEngine(source, levels);
+      const { fr, nfr } = await readEngine(source, levels, props.engineVersion);
       const draft = buildSpecDraft({ projectName, fr, nfr, ruleStates, proposals, route });
       specRef.current = draft;
       setSpec(draft);

@@ -14,6 +14,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { readSource, decisionLines, type DecisionLine } from '@/lib/first-look';
 import { buildWorkspaceSearchIndex, type SearchResult } from '@/lib/workspace-search';
 import {
@@ -97,7 +98,7 @@ async function loadCaseContext(projectId: string): Promise<CaseContext> {
     if (!project) return empty('This project could not be read, so there is no evidence to answer from.');
 
     const legacyCode = typeof project.legacyCode === 'string' ? project.legacyCode : '';
-    const reading = legacyCode.trim() ? readSource(legacyCode) : null;
+    const reading = legacyCode.trim() ? readSource(legacyCode, engineVersionOfProject(project)) : null;
     return {
       projectId,
       legacyCode,

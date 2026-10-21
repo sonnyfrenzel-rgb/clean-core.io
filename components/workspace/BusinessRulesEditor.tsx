@@ -51,6 +51,7 @@ import RulesDoneLine from './RulesDoneLine';
 import RuleDecisionFlow from './RuleDecisionFlow';
 import DecisionTables from '@/components/documentation/DecisionTables';
 import { decisionTableViews } from '@/lib/decision-tables';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import {
   wt,
   rulesAnsweredOf,
@@ -651,6 +652,7 @@ export default function BusinessRulesEditor({
             projectId={projectId}
             source={source}
             reading={reading}
+            engineVersion={engineVersionOfProject(project)}
             rules={rules}
             outcome={outcome}
             view={view}

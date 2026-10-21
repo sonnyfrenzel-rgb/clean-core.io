@@ -18,6 +18,7 @@ import { buildWorkspaceSearchIndex } from '../lib/workspace-search';
 import { answerCase, type CaseFact } from '../lib/case-answer';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { PRODUCT_GEMINI_MODEL } from '../lib/constants';
+import { APP_VERSION } from '../lib/version';
 import type { Project } from '../lib/types';
 
 const ROOT = path.resolve(__dirname, '..');
@@ -109,7 +110,7 @@ async function main() {
   const recorded: Recorded[] = [];
   let calls = 0;
   for (const c of cases) {
-    const reading = readSource(c.source);
+    const reading = readSource(c.source, APP_VERSION);
     const project: Project = { name: c.example, legacyCode: c.source } as Project;
     const index = buildWorkspaceSearchIndex({ projectId: 'record', project, reading });
     const decisions = decisionLines(reading.skeleton);
