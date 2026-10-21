@@ -811,6 +811,11 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
     const s = readSource(f.path, f.content);
     // An import, a require, or a triple-slash types reference (`/// <reference types="@cap-js/cds-types" />`).
     for (const m of f.content.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|^\/\/\/\s*<reference\s+types\s*=\s*)(['"`])([^'"`\n]+)\1/gm)) {
+      // SEC-2026-894: only an import in code counts — the keyword itself is code, or the triple-slash directive opens
+      // a line outside a block comment; the same words in a comment or a string import nothing.
+      const at = m.index ?? 0;
+      const directive = f.content.startsWith('///', at);
+      if (directive ? at > 0 && !s.mask[at - 1] : !s.mask[at]) continue;
       const spec = m[2];
       if (spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:')) continue;
       const parts = spec.split('/');
