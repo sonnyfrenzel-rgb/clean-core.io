@@ -29,6 +29,9 @@ import { activationClosureRefusal, typeCheckClosureRefusal } from './transformat
 import { PREVIOUS_PACKAGE, testedPackageMoved } from './test-suite-basis';
 import { isKeyUserDecision, KEY_USER_STEPS_PATH } from './key-user-route';
 import { keyUserAcceptanceLine, keyUserAcceptanceReading } from './key-user-acceptance';
+import { decisionOnRecord } from './standard-fit-gate';
+import { confirmedFitDesign } from './fit-to-standard-store';
+import { fitDesignSummary } from './fit-to-standard-design';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -72,8 +75,15 @@ export type PhaseKey =
  *             under analysis (E01-F01-US02), or with no signed analysis on
  *             record at all (a project from before the trust chain). Never
  *             done, whatever it contains.
+ * - `not-applicable` the phase has nothing to do on the path the decision on
+ *             record chose (roadmap 3.0.20): Transformation and Testing while a
+ *             confirmed "Move to SAP standard" decision is on record for the
+ *             current run. Never done, never green, never the next step, not
+ *             counted in `doneCount` or `total` — and it falls back to the
+ *             phase's normal reading the moment the decision is withdrawn,
+ *             superseded or the run changes.
  */
-export type PhaseState = 'empty' | 'partial' | 'done' | 'stale';
+export type PhaseState = 'empty' | 'partial' | 'done' | 'stale' | 'not-applicable';
 
 export interface RailStep {
   /** 1-based position in the canonical order. */
@@ -159,6 +169,7 @@ export type PhaseTone = 'proven' | 'unproven' | 'stale' | 'none';
 
 export function phaseTone(step: Pick<RailStep, 'state' | 'proven'> & { mock?: boolean }): PhaseTone {
   if (step.state === 'stale') return 'stale';
+  if (step.state === 'not-applicable') return 'none';
   if (step.proven && !step.mock) return 'proven';
   return step.state === 'empty' ? 'none' : 'unproven';
 }
@@ -245,7 +256,7 @@ export function toolOnRecord(step: { key: PhaseKey; state: PhaseState }): boolea
  * included.
  */
 export function nextPhaseKey(steps: ReadonlyArray<{ key: PhaseKey; state: PhaseState }>): PhaseKey | null {
-  const open = steps.find((s) => s.state !== 'done' && s.key !== 'tco');
+  const open = steps.find((s) => s.state !== 'done' && s.state !== 'not-applicable' && s.key !== 'tco');
   if (open) return open.key;
   return null;
 }
@@ -902,7 +913,24 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // whenever it is opened — done, never proven: a candidate holds only once
   // its limits are checked in the target system.
   const keyUser = hasRun && isKeyUserDecision(project);
-  const transformation = keyUser
+  // Roadmap 3.0.20 (concept §5.1): a confirmed "Move to SAP standard" decision
+  // on the current run builds and tests nothing. One truth with the rebuild
+  // warning: `decisionOnRecord`. Withdrawn, superseded or a new run, and the
+  // phases read as before at once.
+  const decided = hasRun && !runUnreadable && !keyUser ? decisionOnRecord(project) : null;
+  const standardPath = decided !== null && decided.confirmed && decided.option === 'standard';
+  const notApplicable = `The decision on record (${decided?.id ? `${decided.id} revision ${decided.revision}` : 'Move to SAP standard'}) moves the program to SAP standard — nothing is built or tested.`;
+  const fitConfirmed = standardPath && project ? confirmedFitDesign(project) : null;
+  // Design on this path is the confirmed fit-to-standard design (§5.2), not the
+  // architecture sign-off: a self-declaration after the workshop, never proven.
+  const designOnPath = fitConfirmed
+    ? phase('design', {
+        state: 'done',
+        badge: 'Fit-to-standard design confirmed',
+        detail: `Fit-to-standard design confirmed by ${fitConfirmed.confirmedBy ?? 'the account'} — ${fitDesignSummary(fitConfirmed.counts)}. A self-declaration after the workshop, not a proof that the standard covers it.`,
+      })
+    : design;
+  const transformationBase = keyUser
     ? phase('transformation', {
         state: 'done',
         badge: 'Key-user steps',
@@ -921,6 +949,13 @@ export function workflowSteps(project: Project | null): RailStep[] {
           detail: 'Target code generated — not compiled or tested.',
         })
     : phase('transformation', { state: 'empty', badge: 'Not started', detail: 'No code generated yet.' });
+  // Code generated before the decision stays readable, marked as against it;
+  // it does not become not applicable while an artefact contradicts the decision.
+  const transformation = !standardPath
+    ? transformationBase
+    : hasGenerated
+      ? { ...transformationBase, badge: 'Against the decision on record', detail: `${notApplicable} This code was generated anyway; it stays readable and is not shipped in the package.` }
+      : phase('transformation', { state: 'not-applicable', badge: 'Not applicable', detail: notApplicable });
 
   // Roadmap 3.0.5 — two forms can be on record. The engine's document is read
   // out of the code with every statement anchored; it is still done and not
@@ -973,7 +1008,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // system (`lib/key-user-acceptance.ts`, server-written) — a self-declaration.
   const keyUserChecks = keyUser ? keyUserAcceptanceReading(project) : { state: 'none' as const };
   const keyUserChecksDone = keyUserChecks.state === 'current' && keyUserChecks.complete;
-  if (keyUser && tests.total === 0 && keyUserChecksDone) {
+  if (standardPath && tests.total === 0) {
+    // Roadmap 3.0.20: nothing is built, so nothing is tested — not "closed",
+    // which is ADR-094's statement about a suite that failed.
+    testing = phase('testing', { state: 'not-applicable', badge: 'Not applicable', detail: notApplicable });
+  } else if (keyUser && tests.total === 0 && keyUserChecksDone) {
     // Roadmap 3.0.19: every acceptance check of the step list is recorded as run
     // in the account's own system. Done, never proven: nothing ran here.
     testing = phase('testing', {
@@ -1154,9 +1193,16 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // The figures were stored against a score the signed run no longer has.
   const econScoreMoved = Boolean(econ && econProgress && econ.basis.score !== score);
 
+  if (standardPath && tests.total > 0) {
+    testing = { ...testing, badge: 'Against the decision on record', detail: `${notApplicable} A suite was generated anyway: ${testing.detail}` };
+  }
   const gaps = keyUser
     ? // Roadmap 3.0.19: the step list replaces the code, and its checks are a key user's to run in the system.
       ([!keyUserChecksDone && 'key-user checks not recorded as run', !hasDocs && 'no documentation'].filter(Boolean) as string[])
+    : standardPath
+    ? // Roadmap 3.0.20 (§5.5): a package without code — the confirmed decision (on this path by construction),
+      // a confirmed fit-to-standard design on the current run, and the documentation.
+      ([!fitConfirmed && 'no confirmed fit-to-standard design', !hasDocs && 'no documentation'].filter(Boolean) as string[])
     : ([
         !hasGenerated && 'no generated code',
         tests.total === 0 ? 'no test suite' : testing.state !== 'done' ? (tests.failed > 0 ? 'failing tests' : 'tests not run') : null,
@@ -1174,7 +1220,20 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // is on record" (QA full review of a19945ef01dc). The material can be complete
   // and the run still not have happened; those are two statements and they now
   // read as two.
-  const delivery = keyUser && gaps.length === 0 && tests.total === 0
+  const openGaps = fitConfirmed ? fitConfirmed.conditions.filter((c) => c.basis === 'derived').length : 0;
+  const delivery = standardPath && gaps.length === 0
+    ? phase('delivery', {
+        state: 'done',
+        badge: openGaps > 0 ? 'Ready · decision, nothing built · open gaps' : 'Ready · decision, nothing built',
+        detail: `The confirmed decision to move to SAP standard, the confirmed fit-to-standard design (${fitDesignSummary(fitConfirmed!.counts)}) and the documentation are on record — nothing is built or tested.${openGaps > 0 ? ` ${openGaps} open gap${openGaps === 1 ? ' stands as a condition' : 's stand as conditions'} of the decision.` : ''} A self-declaration, never proven.`,
+      })
+    : standardPath
+    ? phase('delivery', {
+        state: hasDocs || fitConfirmed ? 'partial' : 'empty',
+        badge: hasDocs || fitConfirmed ? 'Review only' : 'Not started',
+        detail: `Moving to SAP standard: ${gaps.join(', ')}.`,
+      })
+    : keyUser && gaps.length === 0 && tests.total === 0
     ? phase('delivery', {
         state: 'done',
         badge: 'Ready · key-user steps',
@@ -1277,12 +1336,14 @@ export function workflowSteps(project: Project | null): RailStep[] {
             'Inputs changed',
           )
         : analyze,
-    hasDesign && s.design
+    fitConfirmed
+      ? designOnPath
+      : hasDesign && s.design
       ? stale(design, `Designed for ${prevBasis} — regenerate it against the current analysis.`)
       : hasDesign && s.signOff
         ? { ...design, state: 'partial', done: false, proven: false, verifiedOutside: null, badge: 'Re-confirm', detail: `The sign-off was given for ${prevBasis} — confirm the target architecture again.` }
         : design,
-    keyUser
+    keyUser || transformation.state === 'not-applicable'
       ? transformation
       : hasGenerated && s.code
       ? stale(transformation, `Generated from ${prevBasis} — regenerate it once the design is current.`)
@@ -1310,7 +1371,10 @@ export function workflowSteps(project: Project | null): RailStep[] {
             'Out of date',
           )
         : economics,
-    blockers.length === 1 && s.testsPackage && tests.total > 0
+    // On the standard path the package ships no code, so a stale code or suite blocks nothing.
+    standardPath
+      ? delivery
+      : blockers.length === 1 && s.testsPackage && tests.total > 0
       ? stale(delivery, `Handover blocked — the test suite was written for ${PREVIOUS_PACKAGE}. Regenerate it in Testing.`, 'Blocked')
       : blockers.length > 0 && blockers.every(isContextBlocker)
         ? stale(delivery, `Handover blocked — ${blockers.join(', ')}. Regenerate the code in Transformation, then the suite.`, 'Blocked')
@@ -1330,9 +1394,12 @@ export function workflowSteps(project: Project | null): RailStep[] {
  */
 export function workflowSummary(steps: RailStep[]) {
   const doneCount = steps.filter((s) => s.done).length;
+  // Roadmap 3.0.20: a phase that is not applicable on the path decided is not
+  // counted — "5 of 5 applicable", never "5 of 7" and never a fake "7 of 7".
+  const applicable = steps.filter((s) => s.state !== 'not-applicable');
   const next =
-    steps.find((s) => !s.done && s.key !== 'tco') ?? steps.find((s) => s.key === 'delivery') ?? steps[steps.length - 1];
-  return { doneCount, total: steps.length, next };
+    applicable.find((s) => !s.done && s.key !== 'tco') ?? steps.find((s) => s.key === 'delivery') ?? steps[steps.length - 1];
+  return { doneCount, total: applicable.length, notApplicable: steps.length - applicable.length, next };
 }
 
 /**
