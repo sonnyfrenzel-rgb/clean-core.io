@@ -1,14 +1,13 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
 import path from 'path';
-import { build } from 'esbuild';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
-import { buildWalkGuide, walkStops } from '../lib/process-walk-guide';
-import { plainSentenceProblem, takeFirstAsk, type WordedSentence } from '../lib/plain-wording';
+import { buildWalkGuide } from '../lib/process-walk-guide';
+import { buildProcessTour } from '../lib/process-tour';
+import { plainSentenceProblem, takeFirstAsk } from '../lib/plain-wording';
 import { applyStateChoices, checkStateChoices, isStateEntry, ruleAnswersMade } from '../lib/process-states';
 import { choiceOf, decisionKindOf, ruleChanges } from '../lib/rule-decision-flow';
 import { readExample } from './helpers/starter-example-files';
@@ -19,39 +18,25 @@ import { readExample } from './helpers/starter-example-files';
  */
 
 const ROOT = path.resolve(__dirname, '..');
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-test('0ba57e364e4f — a reworded technical step keeps its engine sentence one fold down', async () => {
-  const out = path.join(ROOT, 'tmp', 'qa-delta-45ab7b5', String(process.pid), 'ProcessWalkThrough.cjs');
-  await build({
-    entryPoints: [path.join(ROOT, 'components', 'workspace', 'ProcessWalkThrough.tsx')],
-    outfile: out, bundle: true, format: 'cjs', platform: 'node', jsx: 'automatic',
-    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
-    alias: { '@': ROOT }, logLevel: 'silent',
-  });
-  const Walk = require(out).default as (p: Record<string, unknown>) => React.ReactElement;
+test('0ba57e364e4f — technical steps are no longer said one by one: the tour names them in one engine sentence, never reworded', () => {
   const file = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
   const source = readExample(file).replace(/\r\n/g, '\n');
   const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file });
   const model = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null), fileName: file });
   const guide = buildWalkGuide(source, model, walkOrder(model, null));
-  const stops = walkStops(guide);
-  const at = stops.findIndex((s) => s.kind === 'technical');
-  expect(at).toBeGreaterThan(-1);
-  const say = (text: string): WordedSentence => ({ text: `Plainly: ${text}`, engine: text, worded: true });
-  const html = renderToStaticMarkup(
-    React.createElement(Walk, {
-      projectId: 'p1', guide, stops, at, answers: {}, subjectOf: () => null, owner: true, answering: null,
-      onAnswer: () => {}, onAnswerMany: () => {}, onGo: () => {}, onClose: () => {}, onOpenLines: () => {},
-      source, fileName: file, say,
-    }),
-  );
-  expect(html).toContain('data-workspace-walk-technical=""');
-  expect(html).toContain('data-worded-engine=""');
-  const firstTechnical = guide.byId[guide.technical[0].stepIds[0]];
-  const engineList = html.slice(html.indexOf('data-worded-engine=""'));
-  expect(engineList).toContain(firstTechnical.happens.text.replace(/'/g, '&#x27;').replace(/"/g, '&quot;').replace(/“|”/g, (m) => m));
+  const tour = buildProcessTour(guide, model, null);
+  expect(guide.technical.length).toBeGreaterThan(0);
+  for (const station of tour.stations) expect(guide.byId[station.id].technical).toBeNull();
+  const technicalTexts = new Set(guide.technical.flatMap((g) => g.stepIds).map((id) => guide.byId[id].happens.text));
+  for (const station of tour.stations) {
+    expect(technicalTexts.has(station.happens.text)).toBe(false);
+    if (station.aside) expect(station.aside).toMatch(/^In this part the program also /);
+  }
+  // The card shows the aside as written: it is not one of the sentences sent for rewording.
+  expect(read('components/workspace/ProcessTour.tsx')).toMatch(/\{station\.aside\}/);
 });
-
 test('f516bcfb96b5 — the one call is per project, scope and digest, and every digest seen is remembered', () => {
   const asked = new Set<string>();
   expect(takeFirstAsk(asked, 'A', 'walk', 'd1')).toBe(true);

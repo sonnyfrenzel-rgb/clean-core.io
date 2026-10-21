@@ -477,7 +477,7 @@ test.describe('the Business view on screen', () => {
     expect(namingAsks).toHaveLength(0);
   });
 
-  test('a step answered from the Business view raises Confirmed; the walk resumes at the first open step; no Proven', async ({ page }) => {
+  test('a step answered beside the map raises Confirmed; the guided tour asks nothing; no Proven', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
@@ -487,19 +487,32 @@ test.describe('the Business view on screen', () => {
     const confirmed = page.locator('[data-legend-count="confirmed"]');
     await expect(confirmed).toHaveText('0');
 
-    await page.locator('[data-workspace-walk-start]').click();
-    const walk = page.locator('[data-workspace-walk]');
-    await expect(walk).toHaveAttribute('data-walk-step', '1');
-    await walk.getByRole('radio', { name: /^Keep/ }).first().click();
-    await walk.locator('[data-state-confirm]').click();
+    // The tour (owner decision 21.10.2026): over the page, map and card on one screen, nothing to answer.
+    await page.locator('[data-tour-entry-open]').click();
+    const tour = page.locator('[data-process-tour]');
+    await expect(tour).toHaveAttribute('data-tour-at', '1', { timeout: 60_000 });
+    await expect(tour.locator('[data-tour-card]')).toBeInViewport();
+    await expect(tour.getByRole('radio')).toHaveCount(0);
+    await page.keyboard.press('ArrowRight');
+    await expect(tour).toHaveAttribute('data-tour-at', '2');
+    await tour.locator('[data-tour-close]').click();
+    await expect(tour).toHaveCount(0);
+
+    // A step's need is answered in the source column beside the map.
+    await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
+    // The first anchored element that is a step (an event has no need to answer).
+    const anchors = page.locator('[data-workspace-steps-by-line] [data-cc-anchor]');
+    const need = page.locator('[data-workspace-step-need]');
+    for (let i = 0; i < 10 && !(await need.isVisible()); i += 1) {
+      await anchors.nth(i).click();
+      if (!(await need.isVisible())) await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
+    }
+    await need.getByRole('radio', { name: /^Keep/ }).first().click();
+    await need.locator('[data-state-confirm]').click();
     await expect(confirmed).toHaveText('1', { timeout: 30_000 });
     // The answer carries the account and the server's time.
-    await expect(walk.locator('[data-state-account]')).toBeVisible();
-    await expect(walk.locator('[data-state-time]')).not.toBeEmpty();
-    await walk.locator('[data-workspace-walk-close]').click();
-    await expect(page.locator('[data-workspace-walk-start]')).toHaveText(/Continue/);
-    await page.locator('[data-workspace-walk-start]').click();
-    await expect(walk).toHaveAttribute('data-walk-step', '2');
+    await expect(need.locator('[data-state-account]')).toBeVisible();
+    await expect(need.locator('[data-state-time]')).not.toBeEmpty();
   });
 
   test('on a phone: the next step comes first, and nothing scrolls sideways', async ({ browser }) => {

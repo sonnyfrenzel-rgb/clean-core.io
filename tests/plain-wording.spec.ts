@@ -9,7 +9,9 @@ import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
-import { buildWalkGuide, walkStops, type WalkGuide } from '../lib/process-walk-guide';
+import { buildWalkGuide, type WalkGuide } from '../lib/process-walk-guide';
+import { buildProcessTour } from '../lib/process-tour';
+import { withoutCodes } from '../lib/program-summary-text';
 import { readSource } from '../lib/first-look';
 import { buildProcessFacts } from '../lib/abap/process-facts';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
@@ -246,7 +248,7 @@ test.describe('the call: the business sentences switch, the existing proxy, a re
 
 /* ------------------------------------------------------------- rendered */
 
-async function load(rel: string): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
+async function load(rel: string, name = 'default'): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
   const out = path.join(ROOT, 'tmp', 'plain-wording', String(process.pid), `${path.basename(rel, '.tsx')}.cjs`);
   await build({
     entryPoints: [path.join(ROOT, rel)],
@@ -255,47 +257,43 @@ async function load(rel: string): Promise<(props: Record<string, unknown>) => Re
     format: 'cjs',
     platform: 'node',
     jsx: 'automatic',
-    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*', 'bpmn-js/lib/*'],
+    loader: { '.css': 'empty' },
     alias: { '@': ROOT },
     logLevel: 'silent',
   });
-  return require(out).default;
+  return require(out)[name];
 }
 
 const textOf = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
 
 test.describe('on screen (server-free render)', () => {
-  test('a walk step shows the plain wording with its anchor and the chip, the engine sentence one fold down', async () => {
-    const Walk = await load('components/workspace/ProcessWalkThrough.tsx');
+  test('a tour station shows the plain wording with the chip, the engine sentence one fold down', async () => {
+    const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
     const record = recordOf('walk');
     const say = plainLookup(record, 'walk', record.digest);
-    const stops = walkStops(GUIDE);
-    const at = stops.findIndex((s) => s.kind === 'step' && !!record.wording[plainKeyOf(GUIDE.byId[s.id].happens.text, GUIDE.byId[s.id].happens.anchor!)]);
+    const tour = buildProcessTour(GUIDE, MODEL, null);
+    const at = tour.stations.findIndex((s) => !!record.wording[plainKeyOf(s.happens.text, s.happens.anchor!)]);
     expect(at).toBeGreaterThan(-1);
-    const step = GUIDE.byId[(stops[at] as { id: string }).id];
-    const props = {
-      projectId: 'p1', guide: GUIDE, stops, at, answers: {}, subjectOf: () => null, owner: true, answering: null,
-      onAnswer: () => {}, onAnswerMany: () => {}, onGo: () => {}, onClose: () => {}, onOpenLines: () => {},
-      source: SOURCE, fileName: FILE,
-    };
-    const worded = renderToStaticMarkup(React.createElement(Walk, { ...props, say }));
+    const station = tour.stations[at];
+    const props = { tour, model: MODEL, onClose: () => {}, initialStation: at };
+    const worded = renderToStaticMarkup(React.createElement(Layer, { ...props, say }));
     const text = textOf(worded);
-    const plain = record.wording[plainKeyOf(step.happens.text, step.happens.anchor!)];
-    expect(text).toContain(plain);
-    expect(worded).toContain('data-walk-worded="yes"');
+    const plain = record.wording[plainKeyOf(station.happens.text, station.happens.anchor!)];
+    expect(text).toContain(withoutCodes(plain));
+    expect(worded).toContain('data-tour-worded="yes"');
     expect(text).toContain('Model proposal');
     expect(text).toContain('worded');
     // The engine's sentence is still there — folded, "As read from the code".
     expect(worded).toContain('data-worded-engine=""');
     expect(text).toContain('As read from the code');
-    expect(text.indexOf(step.happens.text)).toBeGreaterThan(text.indexOf('As read from the code'));
+    expect(text.indexOf(station.happens.text)).toBeGreaterThan(text.indexOf('As read from the code'));
     // Without a record — model off, nothing stored, refused — the engine sentences alone, no chip, no fold.
-    const engine = renderToStaticMarkup(React.createElement(Walk, props));
-    expect(engine).not.toContain('data-walk-worded="yes"');
+    const engine = renderToStaticMarkup(React.createElement(Layer, props));
+    expect(engine).not.toContain('data-tour-worded="yes"');
     expect(engine).not.toContain('data-worded-engine=""');
-    expect(textOf(engine)).toContain(step.happens.text);
+    expect(textOf(engine)).toContain(withoutCodes(station.happens.text));
   });
-
   test('a rule card shows the plain wording, the chip and the fold; without a record the engine sentences', async () => {
     const Flow = await load('components/workspace/RuleDecisionFlow.tsx');
     const rules = editorRules(READING.ruleSet, plainWordingFor(SOURCE, READING.skeleton));

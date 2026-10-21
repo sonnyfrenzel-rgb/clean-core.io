@@ -18,9 +18,11 @@
  *     their business names;
  *   - **what changes if it goes**.
  *
- * Technical steps a business reader need not answer — logging, file
+ * Technical steps a business reader need not see one by one — logging, file
  * handling, technical checks, run options and demo switches, set-up and loops —
- * are set apart with the reason, so the walk can ask them once.
+ * are set apart with the reason. Since owner decision 21.10.2026 the guided
+ * tour on the map (`lib/process-tour.ts`) reads this guide: it picks its
+ * stations from the business steps by their `role` and asks nothing.
  *
  * **Engine-written, deterministic, no model.** Every sentence comes from the
  * source and the process map of it; the wording helpers are the plain-language
@@ -28,7 +30,7 @@
  * statement of the step (`attachTo`) is carried beside it for the fold, as the
  * engine's detailed reading. Nothing here is stored and nothing is signed: it is
  * presentation, built in the browser from the source the active run signed, as
- * the map is. The answers stay where they are (the process-states route).
+ * the map is.
  *
  * Pure: no React, no DOM, no network, no clock. Lives outside `lib/abap` on
  * purpose — it changes no engine output and no signed run.
@@ -107,7 +109,17 @@ export interface WalkGuideStep {
   anchor: WalkRange | null;
   /** True when "what happens" is a sentence read from the step's own statements, not the general fallback. */
   plain: boolean;
+  /** What the step is for the business — what the guided tour picks its stations by (`lib/process-tour.ts`). */
+  role: WalkRole;
 }
+
+/**
+ * What a step is for the business, read from the same facts as its sentences:
+ * it changes data, asks another system, protects the process, holds cases back,
+ * decides which way they go, tells someone, shows the result, reads data, groups
+ * a phase, or something else.
+ */
+export type WalkRole = 'change' | 'remote' | 'permission' | 'control' | 'rule' | 'mail' | 'output' | 'read' | 'phase' | 'other';
 
 export interface WalkPhase {
   id: string;
@@ -646,6 +658,7 @@ function decisionStep(r: Reading, element: ProcessMapElement): Omit<WalkGuideSte
     data,
     ifGone: { text: ifGone, anchor: own },
     plain,
+    role: authority ? 'permission' : stops ? 'control' : 'rule',
     stopsOnly,
   };
 }
@@ -747,6 +760,22 @@ function activityStep(r: Reading, element: ProcessMapElement, model: ProcessMapM
             : reads.length
               ? `The steps that need ${list(reads, 2)} would have nothing to work on, unless they get it another way.`
               : 'This step and what it does would no longer happen.';
+  // The same order of facts as "why it matters" above.
+  const role: WalkRole = writes.length || facts.transaction
+    ? 'change'
+    : facts.remote
+      ? 'remote'
+      : element.tag === 'sendTask' || facts.mail
+        ? 'mail'
+        : element.tag === 'userTask' || facts.output
+          ? 'output'
+          : inner.length
+            ? 'phase'
+            : reads.length
+              ? 'read'
+              : facts.checks || element.tag === 'businessRuleTask'
+                ? 'rule'
+                : 'other';
   return {
     happens: { text: sentence(happens), anchor },
     matters: { text: matters, anchor },
@@ -754,6 +783,7 @@ function activityStep(r: Reading, element: ProcessMapElement, model: ProcessMapM
     data,
     ifGone: { text: ifGone, anchor },
     plain,
+    role,
   };
 }
 
@@ -806,7 +836,7 @@ export function buildWalkGuide(source: string, model: ProcessMapModel, order: re
       if (isDecisionTag(element.tag)) {
         const d = decisionStep(r, element);
         stopsOnly = d.stopsOnly;
-        composed = { happens: d.happens, matters: d.matters, decides: d.decides, data: d.data, ifGone: d.ifGone, plain: d.plain };
+        composed = { happens: d.happens, matters: d.matters, decides: d.decides, data: d.data, ifGone: d.ifGone, plain: d.plain, role: d.role };
       } else {
         composed = activityStep(r, element, model, facts);
       }
@@ -819,6 +849,7 @@ export function buildWalkGuide(source: string, model: ProcessMapModel, order: re
         data: null,
         ifGone: { text: 'This step and what it does would no longer happen.', anchor },
         plain: false,
+        role: 'other',
       };
     }
     const group = technicalOf(r, element, facts, stopsOnly);
@@ -871,98 +902,6 @@ export function buildWalkGuide(source: string, model: ProcessMapModel, order: re
       stepIds: technical.get(g) ?? [],
     })),
   };
-}
-
-/**
- * The guide without the steps no answer can be stored for — when the
- * process-states route says which elements are subjects (as `walkOrder` does
- * with its `subjects`). Phases left without a step go.
- */
-export function restrictGuide(guide: WalkGuide, subjects: ReadonlySet<string> | null): WalkGuide {
-  if (!subjects) return guide;
-  const keep = (id: string) => subjects.has(id);
-  return {
-    byId: guide.byId,
-    phases: guide.phases.map((p) => ({ ...p, stepIds: p.stepIds.filter(keep) })).filter((p) => p.stepIds.length > 0),
-    business: guide.business.filter(keep),
-    technical: guide.technical.map((t) => ({ ...t, stepIds: t.stepIds.filter(keep) })).filter((t) => t.stepIds.length > 0),
-  };
-}
-
-/* ------------------------------------------------------------------- stops */
-
-/** The key the walk's one answer for all technical steps is shown under while it is sent. Never stored: each step is. */
-export const WALK_TECHNICAL_SUBJECT = 'technical-steps';
-
-/** One stop of the walk: a business step, the technical steps together, or the summary. */
-export type WalkStop =
-  | { kind: 'step'; id: string }
-  | { kind: 'technical'; ids: string[] }
-  | { kind: 'summary' };
-
-/** The stops in order: business steps by phase, then the technical group once, then the summary. */
-export function walkStops(guide: WalkGuide): WalkStop[] {
-  const stops: WalkStop[] = guide.business.map((id) => ({ kind: 'step' as const, id }));
-  const technical = guide.technical.flatMap((t) => t.stepIds);
-  if (technical.length) stops.push({ kind: 'technical', ids: technical });
-  stops.push({ kind: 'summary' });
-  return stops;
-}
-
-type Answer = { state: 'keep' | 'change' | 'drop' | 'clarify'; note: string | null };
-
-/** Where to open the walk: the first stop with an open answer, else the summary. */
-export function resumeStop(stops: readonly WalkStop[], answers: Readonly<Record<string, Answer | undefined>>): number {
-  const done = (id: string) => {
-    const a = answers[id];
-    return !!a && a.state !== 'clarify';
-  };
-  const at = stops.findIndex((stop) =>
-    stop.kind === 'step' ? !done(stop.id) : stop.kind === 'technical' ? stop.ids.some((id) => !done(id)) : false,
-  );
-  return at < 0 ? stops.length - 1 : at;
-}
-
-export interface WalkSummaryItem {
-  id: string;
-  title: string;
-  phase: string;
-  note: string | null;
-  anchor: WalkRange | null;
-}
-
-export interface WalkSummary {
-  /** Kept: what the business still needs. */
-  keep: WalkSummaryItem[];
-  /** Still needed, but changed. */
-  change: WalkSummaryItem[];
-  drop: WalkSummaryItem[];
-  clarify: WalkSummaryItem[];
-  /** Not answered yet. */
-  open: WalkSummaryItem[];
-  /** Technical steps and how they were answered, counted. */
-  technical: { total: number; answered: number };
-}
-
-/** What the business still needs, as the answers on record say it — the end of the walk. */
-export function walkSummary(guide: WalkGuide, answers: Readonly<Record<string, Answer | undefined>>): WalkSummary {
-  const phaseLabel = new Map(guide.phases.map((p) => [p.id, p.label]));
-  const out: WalkSummary = { keep: [], change: [], drop: [], clarify: [], open: [], technical: { total: 0, answered: 0 } };
-  for (const id of guide.business) {
-    const step = guide.byId[id];
-    const answer = answers[id];
-    const item: WalkSummaryItem = { id, title: step.title, phase: phaseLabel.get(step.phase) ?? '', note: answer?.note ?? null, anchor: step.anchor };
-    if (!answer) out.open.push(item);
-    else out[answer.state].push(item);
-  }
-  for (const group of guide.technical) {
-    for (const id of group.stepIds) {
-      out.technical.total += 1;
-      const answer = answers[id];
-      if (answer && answer.state !== 'clarify') out.technical.answered += 1;
-    }
-  }
-  return out;
 }
 
 /** The share of walk steps with a plain sentence read from their own statements — what the 3.0.20 report measures. */

@@ -22,9 +22,8 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import NextStepCard from './NextStepCard';
 import UsageRecords from './UsageRecords';
 import BusinessNextStep from './BusinessNextStep';
-import ProcessWalkEntry from './ProcessWalkEntry';
-import { elementEntries } from '@/lib/process-walk';
-import { isConfirmedState } from '@/lib/rules-editor';
+import ProcessTourEntry from './ProcessTourEntry';
+import { requestProcessWalk } from '@/lib/process-walk-request';
 import TargetReferenceLine from './TargetReferenceLine';
 import FitToStandardOffer from '@/components/fit/FitToStandardOffer';
 import WorkspaceHub from './WorkspaceHub';
@@ -643,12 +642,6 @@ export default function WorkspaceShell({
   const owner = useIsOwner(project);
   const hasSource = typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0;
   const { outcome: ruleStates } = useProcessStates(projectId, (view === 'business' || view === 'management') && hasSource);
-  /** Steps of the process with a Keep, Change or Drop on record — the walk-through entry says it. */
-  const answeredSteps = useMemo(
-    () =>
-      Object.values(elementEntries(ruleStates?.ok ? ruleStates.view : null)).filter((e) => isConfirmedState(e.state)).length,
-    [ruleStates],
-  );
   // Management's Need row (owner 12.10.2026): what the program is for, what the
   // decision has to know from the code, and how many of its rules are still
   // open in the rule register — the counts the delivery package says — then
@@ -968,7 +961,7 @@ export default function WorkspaceShell({
     // first, as the owner decided.
     walk:
       view === 'business' && signed !== null && !buildUp ? (
-        <ProcessWalkEntry projectId={projectId} answered={answeredSteps} />
+        <ProcessTourEntry projectId={projectId} />
       ) : null,
     // Business only: the business rules, once, in their own card under the map
     // (owner, 03.10.2026). The rule actions of the page — "Your next step" and
@@ -1057,6 +1050,7 @@ export default function WorkspaceShell({
           onReading={onReading}
           onReadingFailed={onReadingFailed}
           onOpenMap={view === 'business' ? openMap : undefined}
+          onWalk={view === 'business' && signed !== null ? () => requestProcessWalk(projectId) : undefined}
           map={mapState}
           narrative={startNarrative}
           fullMapBelow={view === 'business' && signed !== null}
@@ -1066,7 +1060,7 @@ export default function WorkspaceShell({
         />
         {/* The first visit's place of the walk entry and the fit-to-standard offer: under the story (see `walk`). */}
         {view === 'business' && signed !== null && buildUp ? (
-          <ProcessWalkEntry projectId={projectId} answered={answeredSteps} />
+          <ProcessTourEntry projectId={projectId} />
         ) : null}
         {view !== 'it' && buildUp ? (
           <div className="mt-4">

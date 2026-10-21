@@ -66,7 +66,6 @@ import {
   DEMO_INVITATION,
   DEMO_OBJECT_NAME,
   DEMO_RESET_LABEL,
-  DEMO_SOURCE_FILE,
   DEMO_STORAGE_KEY,
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
@@ -743,18 +742,13 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           {layerBar}
           {layerSection}
 
-          {/* The walk-through first, as in an own project — read only in the
-              demo: the answers are shown and disabled, nothing is saved
-              (3.0.20, owner decision 7). */}
-          <div data-demo-walk="" className="mt-5">
+          {/* The guided tour on the map, as in an own project (owner decision
+              21.10.2026); it asks nothing, so the demo shows it as it is. */}
+          <div data-demo-walk="">
             <DemoWalkThrough
               model={processMap}
               source={source}
-              fileName={DEMO_SOURCE_FILE}
-              onShowStep={(id, p) => {
-                setPlane(p);
-                setSelected(id);
-              }}
+              designHref={stageHref({ base: '/demo', path: 'design', view, from: WORKSPACE_RETURN.tools, layer: hashLayer })}
             />
           </div>
 
