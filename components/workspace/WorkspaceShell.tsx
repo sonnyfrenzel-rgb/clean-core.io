@@ -28,10 +28,12 @@ import { isConfirmedState } from '@/lib/rules-editor';
 import TargetReferenceLine from './TargetReferenceLine';
 import FitToStandardOffer from '@/components/fit/FitToStandardOffer';
 import WorkspaceHub from './WorkspaceHub';
-import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
+import { useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
+import ItRuleRegister from './ItRuleRegister';
+import RuleBasketLine from './RuleBasketLine';
 import DecisionCard from './DecisionCard';
 import SteeringOnePager from './SteeringOnePager';
 import ManagementElsewhere from './ManagementElsewhere';
@@ -61,7 +63,6 @@ import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { runTrust, scrollToWhenThere } from '@/lib/it-sections';
 import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
 import { useSourceReading } from '@/hooks/useSourceReading';
-import { rulesStatus } from '@/lib/rules-editor';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleTallyOf } from '@/lib/management-rule-tally';
 import { managementInShort, programSummary } from '@/lib/program-summary-text';
@@ -142,6 +143,9 @@ const BUSINESS_ORDER: readonly ContentBlock[] = [
   // work area, and on a 1440 × 900 screen it starts in the first screen after
   // the build-up instead of under the fold.
   'process',
+  // The rules as one sentence where their card stood (owner decision
+  // 21.10.2026): how many questions for the business, how many technical
+  // rules stay as coded, and the way into Design — no decision here.
   'rules',
   'statusTools',
   'layerBar',
@@ -667,8 +671,9 @@ export default function WorkspaceShell({
     // a card left waiting (owner, 12.10.2026).
     const ready = !hasSource || !project?.activeRunId || readingFailed || (reading !== null && ruleStates !== null);
     if (!ready) return null;
-    const status = reading ? rulesStatus(ruleStates, reading.ruleSet.rules.map((r) => r.id)) : null;
-    return businessNextStep({ point: nextStep, rules: status, owner });
+    // Owner decision 21.10.2026: the opening asks for no rule decision — the
+    // questions for the business wait in Design, which the phase step leads to.
+    return businessNextStep({ point: nextStep, rules: null, owner });
   }, [view, hasSource, project?.activeRunId, reading, readingFailed, ruleStates, nextStep, owner]);
 
   // A tip that points at nothing is a claim: "Select the decision" exists only
@@ -975,10 +980,14 @@ export default function WorkspaceShell({
     // the first look outside Business — lead here by this block's id. Not while
     // the start run is still being signed: forty rules to decide on under a
     // map that is still loading confuse the reader (owner, 15.10.2026).
+    // Owner decision 21.10.2026 (the new set-up of the business rules): no
+    // rule decision in the opening. One sentence — how many questions the
+    // business has and how many technical rules stay as coded — and the way
+    // into Design, where the questions are asked. The full register is in IT.
     rules:
       view === 'business' && reading !== null && reading.ruleSet.rules.length > 0 && startRun?.phase !== 'running' ? (
-        <div id={BUSINESS_RULES_ID} data-workspace-rules-block="" className="mt-5 scroll-mt-20">
-          <BusinessRulesEditor project={project} projectId={projectId} reading={reading} />
+        <div data-workspace-rules-block="" className="mt-4 scroll-mt-20">
+          <RuleBasketLine projectId={projectId} source={typeof project?.legacyCode === 'string' ? project.legacyCode : ''} reading={reading} />
         </div>
       ) : null,
     // Business only: the folded status and the tools sit under "Next step"
@@ -1306,6 +1315,8 @@ export default function WorkspaceShell({
             elsewhere={itElsewhere}
             // Standard fit is IT's own section since ADR-096 (owner, 12.10.2026).
             standardLayer={allLayers.find((l) => l.key === 'standard') ?? null}
+            // The full rule register since the new set-up of the business rules (owner decision 21.10.2026).
+            rules={<ItRuleRegister project={project} projectId={projectId} reading={reading} />}
             coach={(slot) => (
               <div className="cc-no-print">
                 <CoachMarkNote mark={currentMark} slot={slot} onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />

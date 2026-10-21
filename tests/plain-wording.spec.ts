@@ -151,10 +151,14 @@ test.describe('the recorded answers on the 1,000-line example', () => {
   for (const scope of ['walk', 'rules'] as const) {
     test(`${scope}: nine in ten sentences hold the guard, and each kept rewording keeps its anchor`, () => {
       const r = RECORDED.recorded.find((x) => x.scope === scope)!;
-      expect(r.items).toBe(ITEMS[scope].length);
+      // The questions for the business (owner decision 21.10.2026) were added after the
+      // recording; they come last, so every recorded id still names its sentence, and the
+      // next call rewords them too (`scripts/record-plain-wording.ts` records them again).
+      const asked = scope === 'rules' ? EXPLAINED.questions.length : 0;
+      expect(r.items).toBe(ITEMS[scope].length - asked);
       const record = recordOf(scope);
       const kept = Object.keys(record.wording).length;
-      expect(kept / ITEMS[scope].length).toBeGreaterThanOrEqual(0.9);
+      expect(kept / r.items).toBeGreaterThanOrEqual(0.9);
       const say = plainLookup(record, scope, record.digest);
       for (const item of ITEMS[scope]) {
         const shown = say(item.text, item.anchor);

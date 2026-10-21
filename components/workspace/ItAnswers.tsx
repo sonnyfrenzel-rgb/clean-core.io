@@ -122,6 +122,7 @@ export default function ItAnswers({
   trust,
   elsewhere = null,
   standardLayer = null,
+  rules = null,
 }: {
   projectId: string;
   /**
@@ -171,6 +172,13 @@ export default function ItAnswers({
    * leaves the Business view). `null` draws no section.
    */
   standardLayer?: WorkspaceLayer | null;
+  /**
+   * The full rule register (owner decision 21.10.2026, the new set-up of the
+   * business rules): it left the Business view's opening, which says one
+   * sentence and leads into Design. Full width under the two columns, before
+   * Standard fit. `null` draws nothing.
+   */
+  rules?: React.ReactNode;
 }) {
   /**
    * The answer together with the project it answers for. A client navigation
@@ -718,6 +726,9 @@ export default function ItAnswers({
           />
         </div>
       ) : null}
+
+      {/* The rule register (owner decision 21.10.2026): every rule by basket, explained, with its lines and code. */}
+      {showContent && rules ? <div data-it-register="" className="mt-4">{rules}</div> : null}
 
       {/* Standard fit (ADR-096, owner 12.10.2026): full width under the two
           columns — its table carries a side column of its own, which beside

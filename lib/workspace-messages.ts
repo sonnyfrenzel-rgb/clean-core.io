@@ -39,6 +39,7 @@ import { NAVIGATION_MESSAGES } from './messages/navigation';
 import { WORKSPACE_DECISION_MESSAGES } from './messages/workspace-decision';
 import { WORKSPACE_INPUT_MESSAGES } from './messages/workspace-input';
 import { TRANSFORMATION_MESSAGES } from './messages/transformation';
+import { RULE_QUESTION_MESSAGES } from './messages/rule-questions';
 
 /** The parts, by surface — read by the guard to prove that no two share a key. */
 export const WORKSPACE_MESSAGE_PARTS = {
@@ -58,6 +59,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   decision: WORKSPACE_DECISION_MESSAGES,
   input: WORKSPACE_INPUT_MESSAGES,
   transformation: TRANSFORMATION_MESSAGES,
+  ruleQuestions: RULE_QUESTION_MESSAGES,
 } as const;
 
 export const WORKSPACE_MESSAGES = {
@@ -77,6 +79,7 @@ export const WORKSPACE_MESSAGES = {
   ...WORKSPACE_DECISION_MESSAGES,
   ...WORKSPACE_INPUT_MESSAGES,
   ...TRANSFORMATION_MESSAGES,
+  ...RULE_QUESTION_MESSAGES,
 } as const;
 
 export type WorkspaceMessageKey = keyof typeof WORKSPACE_MESSAGES;
@@ -105,3 +108,4 @@ export * from './messages/workspace-it';
 export * from './messages/workspace-decision';
 export * from './messages/workspace-input';
 export * from './messages/transformation';
+export * from './messages/rule-questions';

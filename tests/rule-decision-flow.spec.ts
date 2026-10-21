@@ -6,7 +6,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readSource } from '../lib/first-look';
 import { buildProcessFacts } from '../lib/abap/process-facts';
-import { explainBusinessRules, explanationSentences, type RuleSetExplanation } from '../lib/abap/business-rule-set-explain';
+import { basketTopics, explainBusinessRules, explanationSentences, type RuleSetExplanation } from '../lib/abap/business-rule-set-explain';
 import {
   RULE_DECISION_KINDS,
   choiceOf,
@@ -457,7 +457,7 @@ test.describe('the rule register carries the decisions by topic (3.0.20)', () =>
     expect(register.topics?.flatMap((t) => t.rows.map((r) => r.id)).sort()).toEqual(register.rows.map((r) => r.id).sort());
     const md = ruleRegisterMarkdown(register).join('\n');
     expect(md).toContain('## Rules by business topic — explained, with proposal and decision');
-    expect(md).toContain('### Technical settings');
+    expect(md).toContain('### Technical rules — stay as coded');
     expect(md).toContain('Proposal: Change the value — The code does not say in which currency 250.00 is meant.');
     expect(md).toContain('Decision: None on record — open.');
     // The table and its columns are what they were.
@@ -517,7 +517,8 @@ test.describe('the rules card, rendered (3.0.20)', () => {
     const html = await renderFlow(FI, true);
     const { ex } = explain(FI);
     expect(html).toContain('data-rule-flow=""');
-    for (const t of ex.topics) expect(html).toContain(`data-rule-topic="${t.topic}"`);
+    // By basket (owner decision 21.10.2026): the business topics, the technical rules, the undetermined.
+    for (const t of basketTopics(ex)) expect(html).toContain(`data-rule-topic="${t.topic}"`);
     expect(html).toContain('0 of 8 decided');
     // The topic of the next open rule is open; its rules are explained.
     expect(html).toContain('data-rule-said="protects"');

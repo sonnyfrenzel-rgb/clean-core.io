@@ -123,10 +123,17 @@ export function walkPlainSentences(guide: WalkGuide): Array<{ text: string; anch
   });
 }
 
-/** Every sentence a rule card says, in reading order, each with the first of its anchors. */
+/**
+ * Every sentence a rule card says, in reading order, each with the first of its
+ * anchors — and then the questions for the business (owner decision
+ * 21.10.2026, the new set-up: the Design tool asks them, the register in IT
+ * explains every rule), so the one call per project and source rewords both.
+ * The questions come last, so the sentences of a rule card keep their places.
+ */
 export function rulePlainSentences(explanation: RuleSetExplanation): Array<{ text: string; anchor: PlainRange | null }> {
   const byId = new Map(explanation.rules.map((r) => [r.id, r]));
-  return explanation.order.flatMap((id) => {
+  const questions = (explanation.questions ?? []).map((q) => ({ text: q.statement.text, anchor: q.statement.anchors[0] ?? null }));
+  return [...explanation.order.flatMap((id) => {
     const e = byId.get(id);
     if (!e) return [];
     const said = [
@@ -138,7 +145,7 @@ export function rulePlainSentences(explanation: RuleSetExplanation): Array<{ tex
       e.where,
     ];
     return said.map((x) => ({ text: x.text, anchor: x.anchors[0] ?? null }));
-  });
+  }), ...questions];
 }
 
 const normalise = (source: string) => source.replace(/^﻿/, '').replace(/\r\n?/g, '\n');

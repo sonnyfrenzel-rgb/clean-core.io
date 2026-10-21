@@ -24,6 +24,7 @@
  */
 import { VALUE_SOURCE_LABELS, sameAnswer, type ProcessStateView, type StateChoiceInput, type StateEntry, type ValueSourceKind } from './process-states';
 import {
+  basketTopics,
   RULE_PROPOSAL_LABELS,
   type ImpactLevel,
   type RuleExplanation,
@@ -183,7 +184,8 @@ export interface RuleFlow {
 
 export function ruleFlow(explanation: RuleSetExplanation, entries: Readonly<Record<string, StateEntry>>): RuleFlow {
   const byId = new Map(explanation.rules.map((r) => [r.id, r]));
-  const topics: FlowTopic[] = explanation.topics.map((t) => {
+  // By basket (owner decision 21.10.2026): the business topics, then the technical rules, then the undetermined.
+  const topics: FlowTopic[] = basketTopics(explanation).map((t) => {
     const rules = t.ruleIds.map((id): FlowRule => {
       const e = byId.get(id);
       const decision = decisionKindOf(entries[id]);
@@ -197,7 +199,8 @@ export function ruleFlow(explanation: RuleSetExplanation, entries: Readonly<Reco
       rules,
       decided: rules.filter((r) => isDecided(r.decision)).length,
       total: rules.length,
-      apart: t.topic === 'technical',
+      // The technical rules and the undetermined are set apart (owner decision 21.10.2026, the rule baskets).
+      apart: t.topic === 'technical' || t.topic === 'undetermined',
     };
   });
   const all = topics.flatMap((t) => t.rules);
@@ -207,7 +210,7 @@ export function ruleFlow(explanation: RuleSetExplanation, entries: Readonly<Reco
     decided: all.filter((r) => isDecided(r.decision)).length,
     total: all.length,
     next: (business.find((r) => !isDecided(r.decision)) ?? all.find((r) => !isDecided(r.decision)))?.id ?? null,
-    openTechnical: topics.filter((t) => t.apart).flatMap((t) => t.rules).filter((r) => !isDecided(r.decision)).map((r) => r.id),
+    openTechnical: topics.filter((t) => t.topic === 'technical').flatMap((t) => t.rules).filter((r) => !isDecided(r.decision)).map((r) => r.id),
   };
 }
 

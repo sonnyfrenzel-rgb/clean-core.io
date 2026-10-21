@@ -68,6 +68,7 @@ import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidenc
 // Roadmap 3.0.19: key user as the fourth option, read from the engine's evidence.
 import { useKeyUserSteps } from '@/hooks/useKeyUserSteps';
 import FitToStandardPanel from '@/components/fit/FitToStandardPanel';
+import RuleQuestions from '@/components/design/RuleQuestions';
 import type { KeyUserReading } from '@/lib/abap/key-user-candidates';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, TARGET_EDITION_NAMES, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
@@ -1296,6 +1297,12 @@ A design merely older than the analysis is
       >
         Where this code should run after the change, and the design that gets it there.
       </StageHeader>
+
+      {/* Owner decision 21.10.2026 — the new set-up of the business rules: the
+          questions a business sets, a few at a time, before Transformation. */}
+      <div className="mb-12">
+        <RuleQuestions project={project} projectId={projectId as string} />
+      </div>
 
       <div className="mb-12">
         <DesignCanvasStage

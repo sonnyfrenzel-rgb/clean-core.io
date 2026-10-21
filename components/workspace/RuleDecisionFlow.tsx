@@ -43,13 +43,14 @@ import { ruleEntries, type EditorRule } from '@/lib/rules-editor';
 import RuleWorkshop from './RuleWorkshop';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { usePlainWording } from '@/hooks/usePlainWording';
+import { technicalKeepChoices } from '@/lib/rule-questions';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
 import { readRuleHistory, type RuleHistoryOutcome } from '@/lib/process-states-client';
 import {
   wt,
   rulesDecidedOf,
-  rulesKeepTechnical,
+  technicalStayAsCoded,
   rulesReadRefusal,
   rulesRecordDecision,
   rulesTakeOver,
@@ -208,8 +209,8 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord, s
           </span>
           <span className="flex flex-wrap items-center gap-2">
             <code className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{rule.id}</code>
-            <CcTag>{e.technical ? wt('rules.technicalNote') : wt(IMPACT_WORD[e.impact.level])}</CcTag>
-            {e.impact.reasons.length && !e.technical ? (
+            <CcTag>{e.basket.kind === 'undetermined' ? wt('questions.undeterminedTag') : e.technical || e.basket.kind === 'technical' ? wt('rules.technicalNote') : wt(IMPACT_WORD[e.impact.level])}</CcTag>
+            {e.impact.reasons.length && !e.technical && e.basket.kind === 'business' ? (
               <span className="text-[12px] font-medium text-cc-ink-muted">{rulesWhyEarly(e.impact.reasons)}</span>
             ) : null}
           </span>
@@ -235,7 +236,7 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord, s
         )}
       </div>
 
-      {e.technical ? <Said sentence={e.technical} mark="technical" say={say} /> : null}
+      {e.technical ? <Said sentence={e.technical} mark="technical" say={say} /> : e.basket.kind !== 'business' ? <Said sentence={e.basket.reason} mark="basket" say={say} /> : null}
       <Part label={wt('rules.protects')}>
         <Said sentence={e.protects} mark="protects" say={say} />
       </Part>
@@ -566,7 +567,8 @@ export default function RuleDecisionFlow({
         <div className="flex min-w-0 flex-col gap-3">
           {flow.topics.map((topic) => (
             <section key={topic.topic} data-rule-topic={topic.topic} data-decided={topic.decided} data-total={topic.total} className="flex min-w-0 flex-col gap-2 border-t border-cc-line pt-3">
-              {topic.apart ? (
+              {/* Only the technical rules are "not business decisions"; an undetermined rule may be one — nobody knows yet. */}
+              {topic.apart && topic.topic === 'technical' ? (
                 <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('rules.apart')}</p>
               ) : null}
               <CcDisclosure
@@ -587,11 +589,12 @@ export default function RuleDecisionFlow({
                       variant="secondary"
                       icon={<Check size={16} aria-hidden={true} />}
                       busy={flow.openTechnical.some((id) => busy.has(id))}
-                      onClick={() => void record(flow.openTechnical.map((id) => choiceOf(id, 'keep', '')))}
+                      onClick={() => void record(technicalKeepChoices(explanation, entries))}
                       data-rule-keep-technical=""
                     >
-                      {rulesKeepTechnical(flow.openTechnical.length)}
+                      {technicalStayAsCoded(flow.openTechnical.length)}
                     </CcButton>
+                    <p className="m-0 mt-1 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('questions.technicalNote')}</p>
                   </div>
                 ) : null}
                 <ol data-rules-list="" className="m-0 flex list-none flex-col gap-3 p-0">

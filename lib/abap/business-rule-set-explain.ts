@@ -5,6 +5,7 @@ import type { BusinessRule, BusinessRuleSet, RuleParameter } from './business-ru
 import { enclosingBranches, type EnclosingBranch } from './enclosing-branches';
 import { conditionToPhrase, humaniseField, humaniseRoutine, plainContext, ruleConditionText, type PlainContext } from './plain-language';
 import { ruleStandardHint } from '../rule-standard-hints';
+import { readDemoSwitches } from './demo-switches';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -61,9 +62,10 @@ export type RuleTopic =
   | 'status'
   | 'accounting'
   | 'other'
-  | 'technical';
+  | 'technical'
+  | 'undetermined';
 
-/** The business topics in the order a reader meets them when impact ties; technical settings last. */
+/** The business topics in the order a reader meets them when impact ties; technical settings and the undetermined last. */
 export const RULE_TOPICS: readonly RuleTopic[] = Object.freeze([
   'credit',
   'amounts',
@@ -77,6 +79,7 @@ export const RULE_TOPICS: readonly RuleTopic[] = Object.freeze([
   'status',
   'other',
   'technical',
+  'undetermined',
 ] as RuleTopic[]);
 
 export const RULE_TOPIC_LABELS: Readonly<Record<RuleTopic, string>> = Object.freeze({
@@ -91,7 +94,8 @@ export const RULE_TOPIC_LABELS: Readonly<Record<RuleTopic, string>> = Object.fre
   status: 'Statuses, roles and approvals',
   accounting: 'Accounts and cost objects',
   other: 'Other rules',
-  technical: 'Technical settings',
+  technical: 'Technical rules — stay as coded',
+  undetermined: 'Not determined',
 });
 
 /** What a topic is about, one line under its heading. */
@@ -108,8 +112,57 @@ export const RULE_TOPIC_LEADS: Readonly<Record<RuleTopic, string>> = Object.free
   accounting: 'Which account assignment, cost centre or order a case is booked to, and what that changes.',
   other: 'Rules that fit none of the topics above.',
   technical:
-    'Settings for the program itself — limits on rows, log levels, decimals. Not business decisions; they can be answered once, together.',
+    'Plausibility checks, technical limits, test data and run options of the program itself. Not business decisions: they stay as coded and are confirmed once, together.',
+  undetermined: 'Rules whose business meaning the code does not show. Each says why; someone who knows the program decides what they are.',
 });
+
+/**
+ * The three baskets every rule is sorted into (owner decision 21.10.2026, the
+ * new set-up of the business rules: "in a very early stage it overwhelms the
+ * user"):
+ *
+ *   - `business` — a limit or a case distinction a business really sets
+ *     (tolerances, amounts, document and order types, organisational units,
+ *     deadlines): asked as a question in Design;
+ *   - `technical` — self-evident, stays as coded: plausibility checks,
+ *     technical limits and sentinels, test data, run options, markers the
+ *     program sets and reads itself;
+ *   - `undetermined` — the code does not show what it means for the business,
+ *     with one sentence why.
+ *
+ * Deterministic, read off the same facts the topic and the impact are read
+ * from; a basket decides nothing — it only says who is asked.
+ */
+export type RuleBasket = 'business' | 'technical' | 'undetermined';
+
+export const RULE_BASKETS: readonly RuleBasket[] = Object.freeze(['business', 'technical', 'undetermined'] as RuleBasket[]);
+
+export const RULE_BASKET_LABELS: Readonly<Record<RuleBasket, string>> = Object.freeze({
+  business: 'Questions for the business',
+  technical: 'Technical rules — stay as coded',
+  undetermined: 'Not determined',
+});
+
+/**
+ * One question for the business: the rules of one business subject (one
+ * field the code tests — the order types of one `CASE`, the limits on one
+ * amount), said in plain words with the values from the code.
+ */
+export interface RuleQuestion {
+  /** `Q-BR-004` — after the weightiest rule it asks about. */
+  id: string;
+  /** The rules it asks about, weightiest first. Never empty. */
+  ruleIds: string[];
+  topic: RuleTopic;
+  /** The highest impact score of its rules — the order questions are asked in. */
+  weight: number;
+  /** A limit on a number, several limits on the same number, or listed values. */
+  shape: 'limit' | 'limits' | 'values';
+  /** What the code does, in business words, with the real values. Anchored like every sentence here. */
+  statement: ExplainedSentence;
+  /** The question itself — the same few words for every question of a shape. */
+  ask: string;
+}
 
 /** The five answers the engine may propose. Clarify is the reader's, never a proposal. */
 export type RuleProposalKind = 'keep' | 'change-value' | 'drop' | 'configure' | 'standard';
@@ -153,6 +206,8 @@ export interface RuleExplanation {
   /** The outer conditions alone, outermost first — for a reader that lists them. */
   parents: ExplainedSentence[];
   proposal: { kind: RuleProposalKind; reason: ExplainedSentence };
+  /** Who is asked about it: the business, nobody (it stays as coded), or it is not determined — with the reason. */
+  basket: { kind: RuleBasket; reason: ExplainedSentence };
 }
 
 export interface RuleSetExplanation {
@@ -161,6 +216,10 @@ export interface RuleSetExplanation {
   order: string[];
   /** The topics that hold rules, in reading order, each with its rules in order. */
   topics: Array<{ topic: RuleTopic; label: string; lead: string; ruleIds: string[]; impact: number }>;
+  /** The rule ids of each basket, in reading order. */
+  baskets: Record<RuleBasket, string[]>;
+  /** The questions for the business, weightiest first — every business rule in exactly one. */
+  questions: RuleQuestion[];
 }
 
 /** What the explanation reads besides the rule set: the statements, their nesting and the branches. */
@@ -918,6 +977,242 @@ function proposalOf(rc: RuleContext, technical: boolean, hasInclude: boolean): R
   return say('keep', `It decides a business case by ${subject} as the code has it. Keep it, unless the business now decides this differently.`);
 }
 
+/* ---------------------------------------------------------------- baskets */
+
+const TEST_DATA = /^(?:TEST|DUMMY|DEMO|XXX)/i;
+
+/** A value the program writes into a field itself: `'X'`, `abap_true`, `space`. */
+const WRITTEN_VALUE = /^(['`])([\s\S]*)\1$|^(abap_true|abap_false|space)$/i;
+
+/**
+ * The values the program assigns to each field from a literal, by field stem,
+ * with the first line — `<fs_order>-action = 'SET_DELIVERY_BLOCK'` makes
+ * `action` a marker the program sets and reads itself. Conditions are not assignments.
+ */
+function writtenValues(statements: readonly AbapStatement[], demoRoutines: ReadonlySet<string>): Map<string, Map<string, number>> {
+  const out = new Map<string, Map<string, number>>();
+  let routine: string | null = null;
+  for (const s of statements) {
+    const keyword = s.keyword.toUpperCase();
+    if (keyword === 'FORM' || keyword === 'METHOD') routine = (/^(?:FORM|METHOD)\s+([\w/~]+)/i.exec(s.text)?.[1] ?? '').toUpperCase();
+    if (keyword === 'ENDFORM' || keyword === 'ENDMETHOD') routine = null;
+    // The program's own demo data is not a marker it sets: a demo routine fills fields with test values.
+    if (routine && demoRoutines.has(routine)) continue;
+    if (/^(?:IF|ELSEIF|WHEN|CHECK|WHILE|CASE|DATA|CONSTANTS|TYPES|PARAMETERS|PARAMETER|SELECT-OPTIONS|STATICS|CLASS-DATA|FIELD-SYMBOLS)$/i.test(s.keyword)) continue;
+    const m = /^([\w<>~-]+)\s*=\s*(\S+)$/.exec(s.text.trim().replace(/\.$/, ''));
+    if (!m) continue;
+    const v = WRITTEN_VALUE.exec(m[2]);
+    if (!v) continue;
+    const stem = fieldStem(m[1]);
+    if (!stem) continue;
+    const value = (v[2] ?? v[3] ?? '').toUpperCase();
+    const held = out.get(stem) ?? new Map<string, number>();
+    if (!held.has(value)) held.set(value, s.lineStart);
+    out.set(stem, held);
+  }
+  return out;
+}
+
+interface BasketFacts {
+  written: Map<string, Map<string, number>>;
+  ctx: PlainContext;
+  hasInclude: boolean;
+}
+
+/** A selection parameter that is a checkbox or a flag — an option chosen when the program is started. */
+function isRunOption(subject: string | null | undefined, ctx: PlainContext): boolean {
+  const name = (subject ?? '').toLowerCase().replace(/[<>]/g, '');
+  const selection = ctx.selections.get(name);
+  return !!selection && !selection.selectOption && (selection.checkbox || ctx.flags.has(name));
+}
+
+function basketOf(rc: RuleContext, technical: ExplainedSentence | null, topic: RuleTopic, bf: BasketFacts): RuleExplanation['basket'] {
+  const anchors = [rc.anchor];
+  const say = (kind: RuleBasket, text: string, at: SourceRange[] = anchors): RuleExplanation['basket'] => ({ kind, reason: { text, anchors: at } });
+  if (technical) return say('technical', technical.text, technical.anchors);
+  if (rc.declarationOnly) {
+    const decl = rc.rule.parameters[0];
+    return say(
+      'undetermined',
+      `No condition in this program reads ${rc.subject}, so what it is for is not determined from the code${bf.hasInclude ? ' — an include that is not part of this upload might read it' : ''}.`,
+      decl ? [range(decl.lineStart, decl.lineEnd)] : anchors,
+    );
+  }
+  if (rc.unreached) return say('undetermined', 'No entry point of the program reaches the step it stands in, so whether it still matters is not determined from the code.');
+  const tests = rc.tests;
+  const values = tests.flatMap(valuesOf);
+  const testValues = values.filter((v) => TEST_DATA.test(v));
+  if (testValues.length > 0 && tests.every((p) => valuesOf(p).length === 0 || valuesOf(p).some((v) => TEST_DATA.test(v)))) {
+    return say('technical', `It picks out test documents (${[...new Set(testValues)].join(', ')}) — test data, not a business decision.`);
+  }
+  if (tests.length > 0 && tests.every((p) => isRunOption(p.subject, bf.ctx))) {
+    return say('technical', `It follows an option chosen when the program is started (${humaniseField(tests[0].subject ?? '', bf.ctx) || 'a run option'}), not a business value.`);
+  }
+  // A marker the program writes and reads back itself: every tested value is one it assigns. Only
+  // for a status, an action, a class it works out — never for an organisational unit, a document
+  // type, a partner, a material, an amount or a date: a program that copies a plant into a field
+  // has not made the plant its own marker.
+  const markerTopic = topic === 'status' || topic === 'credit' || topic === 'other';
+  const marker = markerTopic && tests.length > 0 && tests.every((p) => {
+    const held = bf.written.get(fieldStem(p.subject));
+    const vs = valuesOf(p).map((v) => v.toUpperCase());
+    return !!held && vs.length > 0 && vs.every((v) => held.has(v));
+  });
+  if (marker) {
+    const p = tests[0];
+    const v = valuesOf(p)[0] ?? '';
+    const line = bf.written.get(fieldStem(p.subject))?.get(v.toUpperCase()) ?? p.lineStart;
+    return say(
+      'technical',
+      `The program sets the ${rc.subject} to ${valueWords(v)} itself (line ${line}) and reads it back here — a marker of its own, not a value the business sets.`,
+      [rc.anchor, range(line)],
+    );
+  }
+  if (tests.length > 0 && values.length === 0) {
+    return say('technical', 'It checks that a value is there before the program goes on — a plausibility check, not a business rule.');
+  }
+  if (topic === 'other') {
+    return say('undetermined', `The code does not show which business subject the ${rc.subject} belongs to, so whether the business sets it is not determined.`);
+  }
+  return say('business', `${ucFirst(rc.subject)}: a value the business sets (${RULE_TOPIC_LABELS[topic].toLowerCase()}), so the business is asked.`);
+}
+
+/* -------------------------------------------------------------- questions */
+
+interface QuestionInput {
+  rc: RuleContext;
+  t: FirstTest | null;
+  holds: string[];
+  otherwise: string[];
+  explanation: RuleExplanation;
+}
+
+const LIMIT_OPS = new Set(['>', '>=', '<', '<=']);
+const isLimit = (t: FirstTest | null): boolean => !!t && !t.mixed && LIMIT_OPS.has(t.op) && t.values.length === 1 && isNumeric(t.values[0]);
+
+/** "starts with Z9", "ends with -X", "contains DUMMY". */
+function patternVerb(value: string): string {
+  const v = value.replace(/^\*|\*$/g, '');
+  if (value.startsWith('*') && value.endsWith('*')) return `contains ${v}`;
+  if (value.endsWith('*')) return `starts with ${v}`;
+  if (value.startsWith('*')) return `ends with ${v}`;
+  return `matches ${value}`;
+}
+
+/** What the program does with a case where the rule holds, said for a business reader; null when nothing it does is worth saying. */
+function outcomeWords(q: QuestionInput): string {
+  // What a business reader cannot use is left out: a further test, a read, a list line, a figure worked out.
+  const shown = q.holds
+    .filter((e) => !/^leaves the decision|^reads data from the database|^prints a line|^works out/.test(e))
+    // A flag set to 'X' is a mark on the case, not a value: "marks the case as “hold”", never "sets the hold to X".
+    .map((e) => e.replace(/^sets the (.+) to X$/, 'marks the case as “$1”'))
+    .slice(0, 2);
+  const holdsEnd = endingOf(q.holds);
+  const otherwiseEnd = endingOf(q.otherwise);
+  // "goes on to “A” and “B”", not "goes on to “A” and goes on to “B”".
+  if (shown.length === 2 && shown.every((e) => e.startsWith('goes on to '))) return `the program goes on to ${shown[0].slice(11)} and ${shown[1].slice(11)}`;
+  if (shown.length) return `the program ${joinWords(shown)}`;
+  if (holdsEnd === 'stop') return 'the program stops here';
+  if (holdsEnd === 'skip') return 'the program skips the entry';
+  if (otherwiseEnd === 'stop') return 'the program goes on; otherwise it stops here';
+  if (otherwiseEnd === 'skip') return 'the program takes the entry further; otherwise it skips it';
+  return 'the program handles the case in its own way';
+}
+
+/** "is above 500,000", "is ZOR, ZEXP or RE", "is not EUR", "starts with Z9". */
+function conditionWords(t: FirstTest): string {
+  const either = (list: readonly string[]) => joinWords(list.map(valueWords)).replace(/ and ([^,]+)$/, ' or $1');
+  if (isLimit(t)) return `is ${OPERATOR_WORDS[t.op]} ${numberWords(t.values[0])}`;
+  if (t.op === '<>') return `is not ${either(t.values)}`;
+  if (t.op === 'CP') return t.values.map(patternVerb).join(' or ');
+  if (t.op === 'NP') return `does not ${t.values.map((v) => patternVerb(v).replace(/^(\w+?)s /, '$1 ')).join(' or ')}`;
+  return `is ${either(t.values)}`;
+}
+
+const CURRENCY_STEM = /^(?:waers|waerk|currency|curr|hwaer|rwcur)$/;
+
+/**
+ * A limit on an amount in one currency — `waers = 'EUR' AND wrbtr > c_approval`
+ * — as one test: "the document amount is above 250.00 EUR". Null for any
+ * other condition, also one with a third part.
+ */
+function amountInCurrency(rc: RuleContext, ctx: PlainContext): { limit: RuleParameter; currency: string; subject: string } | null {
+  if (rc.tests.length !== 2) return null;
+  const limit = rc.tests.find((p) => LIMIT_OPS.has(operatorOf(p)) && valuesOf(p).length === 1 && isNumeric(valuesOf(p)[0]));
+  const currency = rc.tests.find((p) => p !== limit && operatorOf(p) === '=' && CURRENCY_STEM.test(fieldStem(p.subject)) && valuesOf(p).length === 1);
+  if (!limit || !currency || !/\sAND\s/i.test(conditionFor(rc.rule, limit))) return null;
+  if (conditionFor(rc.rule, limit).split(/\s+(?:AND|OR)\s+/i).length !== 2) return null;
+  return { limit, currency: valuesOf(currency)[0], subject: subjectWords(limit, ctx) };
+}
+
+function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
+  const first = group[0];
+  const ids = group.map((g) => g.explanation.id);
+  const anchors = group.map((g) => g.rc.anchor);
+  const weight = Math.max(...group.map((g) => g.explanation.impact.score));
+  const base = { id: `Q-${ids[0]}`, ruleIds: ids, topic: first.explanation.topic, weight };
+  const subject = first.t?.subject ?? first.rc.subject;
+  const tests = group.map((g) => g.t);
+  if (group.length > 1 && tests.every(isLimit)) {
+    const limits = [...new Set(tests.map((t) => `${OPERATOR_WORDS[t!.op]} ${numberWords(t!.values[0])}`))];
+    return {
+      ...base,
+      shape: 'limits',
+      statement: { text: `The program works with ${limits.length === 1 ? 'one limit' : `${limits.length} limits`} on the ${subject}: ${joinWords(limits)}.`, anchors },
+      ask: 'Are these limits still right?',
+    };
+  }
+  if (group.length > 1 && tests.every((t) => t && !t.mixed && (t.op === '=' || t.op === 'IN') && t.values.length > 0)) {
+    const values = [...new Set(tests.flatMap((t) => t!.values))];
+    return {
+      ...base,
+      shape: 'values',
+      statement: { text: `The program handles the ${subject} ${joinWords(values.map(valueWords))} each in its own way.`, anchors },
+      ask: 'Are these still the right values?',
+    };
+  }
+  // One rule — or several on one subject that do not read as one list: the weightiest speaks for them.
+  const more = group.length > 1 ? ` The same subject is tested at ${group.length - 1} more ${group.length === 2 ? 'place' : 'places'}.` : '';
+  const money = amountInCurrency(first.rc, ctx);
+  if (money) {
+    const v = valuesOf(money.limit)[0];
+    return {
+      ...base,
+      topic: 'amounts',
+      shape: 'limit',
+      statement: { text: `When the ${money.subject} is ${OPERATOR_WORDS[operatorOf(money.limit)]} ${numberWords(v)} ${money.currency}, ${outcomeWords(first)}.${more}`, anchors },
+      ask: 'Is the limit still right?',
+    };
+  }
+  const t = first.t;
+  const caveat = t && isLimit(t) && t.p.caveat ? ' The code does not say in which currency or unit.' : '';
+  const when = t && !t.mixed
+    ? `When the ${subject} ${conditionWords(t)}`
+    : `When ${phraseOf(t ? conditionFor(first.rc.rule, t.p) : first.rc.rule.label, ctx, first.rc.anchor.lineStart)}`;
+  return {
+    ...base,
+    shape: isLimit(t) ? 'limit' : 'values',
+    statement: { text: `${when}, ${outcomeWords(first)}.${caveat}${more}`, anchors },
+    ask: isLimit(t) ? 'Is the limit still right?' : 'Is that still right?',
+  };
+}
+
+/** The business rules as questions: one per subject (topic and the field first tested), weightiest first. */
+function questionsOf(inputs: readonly QuestionInput[], ctx: PlainContext): RuleQuestion[] {
+  const numberOf = (id: string) => Number(id.replace(/\D/g, '')) || 0;
+  const groups = new Map<string, QuestionInput[]>();
+  for (const q of inputs) {
+    // An amount in one currency is asked about the amount: the currency only says what it is counted in.
+    const money = amountInCurrency(q.rc, ctx);
+    const stem = fieldStem(money ? money.limit.subject : q.t?.p.subject ?? q.rc.first?.subject);
+    const key = `${money ? 'amounts' : q.explanation.topic}|${stem || q.explanation.id}`;
+    groups.set(key, [...(groups.get(key) ?? []), q]);
+  }
+  return [...groups.values()]
+    .map((g) => questionOf([...g].sort((a, b) => b.explanation.impact.score - a.explanation.impact.score || numberOf(a.explanation.id) - numberOf(b.explanation.id)), ctx))
+    .sort((a, b) => b.weight - a.weight || RULE_TOPICS.indexOf(a.topic) - RULE_TOPICS.indexOf(b.topic) || numberOf(a.ruleIds[0]) - numberOf(b.ruleIds[0]));
+}
+
 /**
  * The explanation of every rule of a set. `facts` are the statements, the
  * nesting and the branches the rule set was derived from (`buildProcessFacts`).
@@ -937,15 +1232,23 @@ export function explainBusinessRules(source: string, set: BusinessRuleSet, facts
     }
   }
   const demoIds = new Set((set.demoCases?.rules ?? []).map((d) => d.id));
+  const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source)?.routines ?? [] : []).map((r) => r.toUpperCase()));
+  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines), ctx, hasInclude };
+  const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
     const rc = contextOf(rule, facts, ctx);
     const technical = technicalOf(rc, demoIds.has(rule.id));
     const sides = sidesOf(rc, facts, ctx);
     const { where, parents } = whereOf(rc, facts, ctx);
-    return {
+    const businessTopic = topicFromStems(rc.stems, rule);
+    const basket = basketOf(rc, technical, businessTopic, basketFacts);
+    // The topic stays what it was — the reading order, and the sentences' places in it, do not move;
+    // `basketTopics` groups by basket for the register and the flow.
+    const topic: RuleTopic = technical ? 'technical' : businessTopic;
+    const explanation: RuleExplanation = {
       id: rule.id,
       headline: headlineOf(rc, technical !== null, ctx, (sides?.holdsEffects ?? []).some((x) => STOPS.test(x))),
-      topic: technical ? 'technical' : topicFromStems(rc.stems, rule),
+      topic,
       technical,
       impact: impactOf(rc, technical !== null, sides),
       protects: protectsOf(rc, sides?.holdsEffects ?? [], sides?.otherwiseEffects ?? [], ctx),
@@ -954,7 +1257,12 @@ export function explainBusinessRules(source: string, set: BusinessRuleSet, facts
       where,
       parents,
       proposal: proposalOf(rc, technical !== null, hasInclude),
+      basket,
     };
+    if (basket.kind === 'business') {
+      asked.push({ rc, t: firstTestOf(rc, ctx), holds: sides?.holdsEffects ?? [], otherwise: sides?.otherwiseEffects ?? [], explanation });
+    }
+    return explanation;
   });
 
   const byId = new Map(rules.map((r) => [r.id, r]));
@@ -974,7 +1282,32 @@ export function explainBusinessRules(source: string, set: BusinessRuleSet, facts
     ...topics.filter((t) => t.topic !== 'technical').sort((a, b) => b.impact - a.impact || RULE_TOPICS.indexOf(a.topic) - RULE_TOPICS.indexOf(b.topic)),
     ...topics.filter((t) => t.topic === 'technical'),
   ];
-  return { rules, order: ordered.flatMap((t) => t.ruleIds), topics: ordered };
+  const order = ordered.flatMap((t) => t.ruleIds);
+  const baskets: Record<RuleBasket, string[]> = { business: [], technical: [], undetermined: [] };
+  for (const id of order) baskets[byId.get(id)!.basket.kind].push(id);
+  return { rules, order, topics: ordered, baskets, questions: questionsOf(asked, ctx) };
+}
+
+/**
+ * The topics grouped by basket (owner decision 21.10.2026) — what the rule
+ * register and its flow show: the business rules by their topics, in reading
+ * order; then every technical rule under *Technical rules — stay as coded*;
+ * then every undetermined rule under *Not determined*. Each rule once, in the
+ * reading order within its group.
+ */
+export function basketTopics(explanation: Pick<RuleSetExplanation, 'rules' | 'topics' | 'order'>): RuleSetExplanation['topics'] {
+  const byId = new Map(explanation.rules.map((r) => [r.id, r]));
+  const basketOfId = (id: string) => byId.get(id)?.basket.kind ?? 'business';
+  const business = explanation.topics
+    .filter((t) => t.topic !== 'technical')
+    .map((t) => ({ ...t, ruleIds: t.ruleIds.filter((id) => basketOfId(id) === 'business') }))
+    .filter((t) => t.ruleIds.length > 0);
+  const apart = (topic: 'technical' | 'undetermined') => {
+    const ids = explanation.order.filter((id) => basketOfId(id) === topic);
+    const impact = ids.reduce((max, id) => Math.max(max, byId.get(id)?.impact.score ?? 0), 0);
+    return ids.length ? [{ topic, label: RULE_TOPIC_LABELS[topic], lead: RULE_TOPIC_LEADS[topic], ruleIds: ids, impact }] : [];
+  };
+  return [...business, ...apart('technical'), ...apart('undetermined')];
 }
 
 /** Every sentence of an explanation, for a reader (or a check) that walks them all. */
@@ -986,5 +1319,6 @@ export function explanationSentences(e: RuleExplanation): ExplainedSentence[] {
     e.where,
     e.proposal.reason,
     ...(e.technical ? [e.technical] : []),
+    e.basket.reason,
   ];
 }

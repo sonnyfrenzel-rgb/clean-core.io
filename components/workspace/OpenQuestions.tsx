@@ -23,7 +23,7 @@ import { readStoredAnswer } from '@/lib/open-questions';
 import type { RecordGap } from '@/lib/legacy-project';
 import type { WorkspaceView } from '@/lib/workspace-model';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
-import { BUSINESS_RULES_ID } from './BusinessRulesEditor';
+import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { oqAnswerBy, oqAnswerQuote, oqCount, oqLinesTitle, oqOwner, wt } from '@/lib/workspace-messages';
 
 /** What this page wrote since the project was read; `null` for an answer it removed. */
@@ -167,7 +167,8 @@ function actionHref(action: OpenQuestionAction, projectId: string, view: Workspa
       // before one it is part of the analysis on Analyze.
       return hasRun ? `/project/${encodeURIComponent(projectId)}?view=it` : stageHref({ base, path: 'analyze', view, from: WORKSPACE_RETURN.tools });
     case 'confirm-rules':
-      return `/project/${encodeURIComponent(projectId)}?view=business#${BUSINESS_RULES_ID}`;
+      // Owner decision 21.10.2026: the business answers the rules as questions in Design.
+      return `${stageHref({ base, path: 'design', view, from: WORKSPACE_RETURN.tools })}#${RULE_QUESTIONS_ID}`;
     default:
       return null;
   }

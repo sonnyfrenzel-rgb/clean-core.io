@@ -19,7 +19,7 @@
 import { deriveBusinessRulesFrom, type BusinessRuleSet } from './abap/business-rule-set';
 import { buildProcessFacts, type ProcessFacts } from './abap/process-facts';
 import { buildProcessSkeletonFrom } from './abap/process-skeleton';
-import { explainBusinessRules, RULE_PROPOSAL_LABELS, type RuleProposalKind, type RuleTopic } from './abap/business-rule-set-explain';
+import { basketTopics, explainBusinessRules, RULE_PROPOSAL_LABELS, type RuleProposalKind, type RuleTopic } from './abap/business-rule-set-explain';
 import { RULE_DECISION_LABELS, decisionKindOf } from './rule-decision-flow';
 import { HEADER_RULE_LABEL, type HeaderRuleCandidate } from './abap/header-rules';
 import { ruleAnchor } from './rule-anchor';
@@ -181,6 +181,8 @@ export interface RuleRegisterTopic {
     proposal: { kind: RuleProposalKind; reason: string };
     /** The decision on record in the Business view's words, with who and when — or null when open. */
     decision: string | null;
+    /** Why a technical or undetermined rule stands where it does (owner decision 21.10.2026); null for a business rule. */
+    basket: string | null;
   }>;
 }
 
@@ -194,7 +196,8 @@ function topicsOf(
 ): RuleRegisterTopic[] {
   const explained = explainBusinessRules(source, set, facts);
   const byId = new Map(explained.rules.map((r) => [r.id, r]));
-  return explained.topics
+  // By basket (owner decision 21.10.2026): the business topics, then the technical rules, then the undetermined.
+  return basketTopics(explained)
     .map((t) => ({
       topic: t.topic,
       label: t.label,
@@ -215,6 +218,7 @@ function topicsOf(
             where: e.where.text,
             proposal: { kind: e.proposal.kind, reason: e.proposal.reason.text },
             decision: kind ? `${RULE_DECISION_LABELS[kind]}${who}${entry?.note ? `: ${entry.note}` : ''}` : null,
+            basket: e.basket.kind === 'business' ? null : e.basket.reason.text,
           };
         }),
     }))
@@ -557,11 +561,14 @@ function topicsMarkdown(topics: readonly RuleRegisterTopic[]): string[] {
     '## Rules by business topic — explained, with proposal and decision',
     '',
     "Written by the engine from the code, without a model; the lines each rule stands at are in the table above. A proposal is the engine's and decides nothing; a decision is the self-declaration of the account named with it.",
+    '',
+    `Grouped by basket: ${basketCountWords(topics)}. The business rules are asked as questions in Design; the technical rules stay as coded and are confirmed once, together — never counted as confirmed by the business; a rule that is not determined says why.`,
   ];
   for (const t of topics) {
     lines.push('', `### ${t.label}`, '');
     for (const r of t.rows) {
       lines.push(`- **${r.id}${r.headline ? ` — ${cell(r.headline)}` : ''}.** ${cell(r.protects)}`);
+      if (r.basket) lines.push(`  - Why here: ${cell(r.basket)}`);
       if (r.example) lines.push(`  - Example: ${cell(r.example)}`);
       if (r.holds) lines.push(`  - ${cell(r.holds)}`);
       if (r.otherwise) lines.push(`  - ${cell(r.otherwise)}`);
@@ -571,6 +578,15 @@ function topicsMarkdown(topics: readonly RuleRegisterTopic[]): string[] {
     }
   }
   return lines;
+}
+
+/** "12 rules for the business · 6 technical rules (stay as coded) · 2 not determined" — counted from the topics. */
+function basketCountWords(topics: readonly RuleRegisterTopic[]): string {
+  const count = (pick: (t: RuleRegisterTopic) => boolean) => topics.filter(pick).reduce((n, t) => n + t.rows.length, 0);
+  const business = count((t) => t.topic !== 'technical' && t.topic !== 'undetermined');
+  const technical = count((t) => t.topic === 'technical');
+  const undetermined = count((t) => t.topic === 'undetermined');
+  return `${business} ${business === 1 ? 'rule' : 'rules'} for the business · ${technical} technical ${technical === 1 ? 'rule' : 'rules'} (stay as coded) · ${undetermined} not determined`;
 }
 
 /**
