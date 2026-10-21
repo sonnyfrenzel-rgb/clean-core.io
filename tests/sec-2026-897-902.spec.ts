@@ -15,7 +15,8 @@ import path from 'path';
 import JSZip from 'jszip';
 import type { Project } from '../lib/types';
 import { sha256Hex } from '../lib/artefact-digest';
-import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { buildAbapEvidence, redactCredentials } from '../lib/abap/evidence-model';
+import { ENGINE_READS_3020_FROM, engineReads3020Apply } from '../lib/abap/engine-reads-3020-gate';
 import { buildKeyUserSteps, type KeyUserStepList } from '../lib/key-user-steps';
 import {
   KEY_USER_ACCEPTANCE_VERSION,
@@ -38,6 +39,41 @@ function powershell(): string | null {
 }
 
 const sha256 = (b: Buffer | string) => crypto.createHash('sha256').update(b).digest('hex');
+
+test.describe('SEC-2026-897', () => {
+  const SECRET = 'Geheim4711x';
+  const source = [
+    'REPORT z_sec_897.',
+    'DATA lv_kennwort TYPE string.',
+    'DATA lv_url TYPE string.',
+    'START-OF-SELECTION.',
+    `  zcl_sec_897=>connect( iv_url = 'HTTPS://host.example/api' iv_kennwort = '${SECRET}' ).`,
+    `  CONSTANTS gc_access_key TYPE c LENGTH 20 VALUE '${SECRET}'.`,
+    `  DATA(lv_passwort) = '${SECRET}'.`,
+    '  WRITE / lv_url.',
+  ].join('\n');
+  const quoted = (engine: string) =>
+    buildAbapEvidence(source, 'z_sec_897.abap', 'private', undefined, engine).findings.flatMap((f) => [f.snippet, f.title, f.technicalDetail, f.objectName ?? '']);
+
+  test('the gate opens at 3.0.20 and not before', () => {
+    expect(ENGINE_READS_3020_FROM).toBe('3.0.20');
+    expect(engineReads3020Apply('v3.0.20')).toBe(true);
+    expect(engineReads3020Apply('v3.0.19')).toBe(false);
+    expect(engineReads3020Apply(null)).toBe(false);
+  });
+
+  test('SEC-2026-897', () => {
+    const now = quoted('v3.0.20');
+    expect(now.some((t) => t.includes('iv_kennwort')), 'the finding is there').toBe(true);
+    expect(now.filter((t) => t.includes(SECRET))).toEqual([]);
+    for (const line of ["gv_access_key = 'x1'", "gc_passwort TYPE string VALUE 'x1'", "DATA(lv_password) = 'x1'", "lv_auth_key = 'x1'"]) {
+      expect(redactCredentials(line, 'v3.0.20'), line).not.toContain("'x1'");
+    }
+    // A run signed by 3.0.19 rebuilds unchanged.
+    expect(quoted('v3.0.19').some((t) => t.includes(SECRET))).toBe(true);
+    expect(redactCredentials("lv_matnr = 'MAT-001'", 'v3.0.20')).toBe("lv_matnr = 'MAT-001'");
+  });
+});
 
 test.describe('SEC-2026-899', () => {
   const EXAMPLE = 'Z_SD_DELIVERY_PRIORITY.abap';

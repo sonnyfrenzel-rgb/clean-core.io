@@ -14,6 +14,7 @@ import { guidelineChecksApply } from './guideline-checks-gate';
 import { precisionFixesApply } from './precision-fixes-gate';
 import { engineReadsApply } from './engine-reads-gate';
 import { engineReads3019Apply } from './engine-reads-3019-gate';
+import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
@@ -377,10 +378,13 @@ const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {
  */
 export function redactCredentials(snippet: string | undefined, engineVersion: string | null = APP_VERSION): string {
   if (!snippet) return snippet ?? '';
-  // From 3.0.19 (`ENGINE_READS_3019_FROM`, SEC-2026-886); a run of an earlier engine keeps what it signed.
-  const assigned = engineReads3019Apply(engineVersion)
-    ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
-    : /\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi;
+  // From 3.0.19 (`ENGINE_READS_3019_FROM`, SEC-2026-886) and from 3.0.20 (`ENGINE_READS_3020_FROM`,
+  // SEC-2026-897); a run of an earlier engine keeps what it signed.
+  const assigned = engineReads3020Apply(engineVersion)
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
+    : engineReads3019Apply(engineVersion)
+      ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
+      : /\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi;
   return snippet
     // A private key block, whole — or from its header to the end of the text
     // when the source splits it over several literals.
