@@ -127,8 +127,9 @@ export default function KeyUserChecksRecord({ projectId, list, canRecord, readin
           </dl>
         </div>
       ) : reading.state === 'earlier' ? (
-        <CcMessageStrip state="warning" headline="Checks are on record for an earlier run">
-          They were recorded <CcDateText value={reading.summary.recordedAt} format="datetime" /> for another run or source, so they no longer count. Run the checks of this step list and record them again.
+        <CcMessageStrip state="warning" headline={reading.because === 'list' ? 'Checks are on record for an earlier step list' : 'Checks are on record for an earlier run'}>
+          They were recorded <CcDateText value={reading.summary.recordedAt} format="datetime" />{' '}
+          {reading.because === 'list' ? 'for checks that read differently from the ones below' : 'for another run or source'}, so they no longer count. Run the checks of this step list and record them again.
         </CcMessageStrip>
       ) : (
         <p className="m-0 cc-text-cell text-cc-ink-muted" data-key-user-checks-none="">

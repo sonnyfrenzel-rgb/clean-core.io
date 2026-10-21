@@ -21,9 +21,8 @@
  *
  * **When it is current.** The record binds the active run, the source it was
  * given for and the step list's checks (`listDigest`). A record for another
- * run or another source counts for nothing; within the same run the step list
- * is rebuilt deterministically from the same source, so the run and the
- * source decide it.
+ * run, another source or another step list counts for nothing: a reader that
+ * holds the list compares its digest (`keyUserAcceptanceReading`).
  *
  * Pure: no React, no Firestore.
  */
@@ -105,18 +104,33 @@ export function isKeyUserAcceptanceSummary(value: unknown): value is KeyUserAcce
 
 export type KeyUserAcceptanceReading =
   | { state: 'none' }
-  /** On record for another run or another source. */
-  | { state: 'earlier'; summary: KeyUserAcceptanceSummary }
+  /** On record for another run or another source (`because: 'run'`), or for another step list (`because: 'list'`). */
+  | { state: 'earlier'; summary: KeyUserAcceptanceSummary; because: 'run' | 'list' }
   /** `complete`: every check of the list is recorded as run. */
   | { state: 'current'; summary: KeyUserAcceptanceSummary; complete: boolean };
 
-/** The record as it stands for this project — read off the project document alone. */
-export function keyUserAcceptanceReading(project: ProjectLike): KeyUserAcceptanceReading {
+/**
+ * The record as it stands for this project. With `list` — the step list as it
+ * is built now — the record counts only for the checks it was given for
+ * (`listDigest`), and `complete` is read against that list (SEC-2026-899).
+ * Without one it is read off the project document alone; every screen that
+ * holds the list passes it.
+ */
+export function keyUserAcceptanceReading(
+  project: ProjectLike,
+  list?: Pick<KeyUserStepList, 'steps'> | null,
+): KeyUserAcceptanceReading {
   const stored = project?.keyUserAcceptance;
   if (!isKeyUserAcceptanceSummary(stored)) return { state: 'none' };
   const runId = typeof project?.activeRunId === 'string' ? project.activeRunId : null;
   if (!runId || stored.subject.runId !== runId || stored.subject.sourceSha256 !== signedSourceShaOf(project)) {
-    return { state: 'earlier', summary: stored };
+    return { state: 'earlier', summary: stored, because: 'run' };
+  }
+  if (list) {
+    if (keyUserListDigest(list) !== stored.listDigest) return { state: 'earlier', summary: stored, because: 'list' };
+    const ids = keyUserCheckIds(list);
+    const recorded = new Set(stored.checkIds);
+    return { state: 'current', summary: stored, complete: ids.length > 0 && ids.every((id) => recorded.has(id)) };
   }
   return { state: 'current', summary: stored, complete: stored.total > 0 && stored.checkIds.length >= stored.total };
 }

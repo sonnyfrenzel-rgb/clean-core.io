@@ -13,6 +13,19 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import JSZip from 'jszip';
+import type { Project } from '../lib/types';
+import { sha256Hex } from '../lib/artefact-digest';
+import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { buildKeyUserSteps, type KeyUserStepList } from '../lib/key-user-steps';
+import {
+  KEY_USER_ACCEPTANCE_VERSION,
+  keyUserAcceptanceReading,
+  keyUserCheckIds,
+  keyUserListDigest,
+  type KeyUserAcceptanceSummary,
+} from '../lib/key-user-acceptance';
+import { workflowSteps } from '../lib/workflow-steps';
+import { readExample } from './helpers/starter-example-files';
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -25,6 +38,70 @@ function powershell(): string | null {
 }
 
 const sha256 = (b: Buffer | string) => crypto.createHash('sha256').update(b).digest('hex');
+
+test.describe('SEC-2026-899', () => {
+  const EXAMPLE = 'Z_SD_DELIVERY_PRIORITY.abap';
+  const SOURCE = readExample(EXAMPLE).replace(/\r\n/g, '\n');
+  const list = buildKeyUserSteps(buildAbapEvidence(SOURCE, EXAMPLE, 'private', undefined, 'v3.0.19').keyUser)!;
+  const ids = keyUserCheckIds(list);
+  const summary: KeyUserAcceptanceSummary = {
+    v: KEY_USER_ACCEPTANCE_VERSION,
+    kind: 'confirmed',
+    subject: { runId: 'run-899', sourceSha256: sha256Hex(SOURCE) },
+    listDigest: keyUserListDigest(list),
+    total: ids.length,
+    checkIds: ids,
+    recordedAt: '2026-10-21T08:00:00.000Z',
+    recordedBy: 'owner@example.com',
+    system: 'S4D / 100',
+    ranOn: '2026-10-21',
+    note: null,
+  };
+  const project = {
+    id: 'p-899',
+    userId: 'owner-uid',
+    legacyCode: SOURCE,
+    activeRunId: 'run-899',
+    extensibilityRoute: 'In-App (ABAP Cloud)',
+    originalRecommendation: 'keyuser',
+    cleanCoreScore: 93,
+    s4Deployment: 'private',
+    analyzerVersion: 'v3.0.19',
+    solutionDesign: '# Design',
+    documentation: '# Process',
+    targetArchitecture: 'keyuser',
+    approvedByArchitect: true,
+    architectJustifiedOverride: '',
+    keyUserAcceptance: summary,
+    auditMetadata: {
+      inputFingerprint: { sha256: sha256Hex(SOURCE), fileName: EXAMPLE, lineCount: SOURCE.split('\n').length, uploadedAt: '2026-10-21T07:00:00.000Z', objectType: 'Report' },
+      modelCard: { provider: null, model: null, modelParticipation: 'none', engineVersion: 'v3.0.19', byokUsed: false },
+    },
+  } as unknown as Project;
+  /** The same run and source, one check reading differently. */
+  const moved: KeyUserStepList = {
+    ...list,
+    steps: list.steps.map((s, i) => (i === 0 ? { ...s, checks: s.checks.map((c, j) => (j === 0 ? { ...c, then: `${c.then} (changed)` } : c)) } : s)),
+  };
+  const testing = (keyUserList?: KeyUserStepList) => workflowSteps(project, { keyUserList }).find((s) => s.key === 'testing')!;
+
+  test('SEC-2026-899', () => {
+    expect(ids.length).toBeGreaterThan(0);
+    expect(keyUserAcceptanceReading(project, list)).toMatchObject({ state: 'current', complete: true });
+    expect(testing(list)).toMatchObject({ state: 'done', badge: 'Key-user checks confirmed' });
+    // Records written before keep their reading where no list is at hand.
+    expect(keyUserAcceptanceReading(project)).toMatchObject({ state: 'current', complete: true });
+
+    expect(keyUserAcceptanceReading(project, moved)).toMatchObject({ state: 'earlier', because: 'list' });
+    expect(testing(moved).state).toBe('partial');
+
+    const more: KeyUserStepList = {
+      ...list,
+      steps: [...list.steps, { ...list.steps[0], checks: list.steps[0].checks.map((c) => ({ ...c, id: `${c.id}x` })) }],
+    };
+    expect(keyUserAcceptanceReading(project, more).state).toBe('earlier');
+  });
+});
 
 test.describe('SEC-2026-898', () => {
   let shell: string | null = null;

@@ -874,7 +874,7 @@ ${DESIGN_ANSWER_REMINDER}`;
       }
     : { kind: 'not-started' };
 
-  const phases = workflowSteps(project);
+  const phases = workflowSteps(project, { keyUserList: keyUserSteps.state === 'ready' ? keyUserSteps.list : null });
   // E01-F01-US02: a design or a sign-off left over from a previous source.
   const stale = staleness(project);
   const designStale = Boolean(design) && stale.design;

@@ -448,7 +448,7 @@ export default function TcoCalculatorPage() {
     window.print();
   };
 
-  const phases = workflowSteps(project);
+  const phases = workflowSteps(project, { keyUserList: keyUserSteps.state === 'ready' ? keyUserSteps.list : null });
 
   // The maintenance-baseline proposal for Keep and Do nothing (owner,
   // 03.10.2026): the lines, raised for a Clean Core Score of the signed run —

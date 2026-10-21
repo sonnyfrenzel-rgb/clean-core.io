@@ -32,6 +32,7 @@ import { keyUserAcceptanceLine, keyUserAcceptanceReading } from './key-user-acce
 import { decisionOnRecord } from './standard-fit-gate';
 import { confirmedFitDesign } from './fit-to-standard-store';
 import { fitDesignSummary } from './fit-to-standard-design';
+import type { KeyUserStepList } from './key-user-steps';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -799,7 +800,11 @@ export const DOCUMENTATION_PACKAGE_FILES: readonly string[] = [
   'docs/process-blueprint.md',
 ];
 
-export function workflowSteps(project: Project | null): RailStep[] {
+/**
+ * `keyUserList`: the key-user step list as it is built now, where the caller holds it — the recorded checks then
+ * count only for that list (`keyUserAcceptanceReading`, SEC-2026-899).
+ */
+export function workflowSteps(project: Project | null, context: { keyUserList?: Pick<KeyUserStepList, 'steps'> | null } = {}): RailStep[] {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
 
   const hasCode = has(project?.legacyCode);
@@ -1006,7 +1011,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   let testing: RailStep;
   // Owner decision 19.10.2026: the account records the checks it ran in its
   // system (`lib/key-user-acceptance.ts`, server-written) — a self-declaration.
-  const keyUserChecks = keyUser ? keyUserAcceptanceReading(project) : { state: 'none' as const };
+  const keyUserChecks = keyUser ? keyUserAcceptanceReading(project, context.keyUserList) : { state: 'none' as const };
   const keyUserChecksDone = keyUserChecks.state === 'current' && keyUserChecks.complete;
   if (standardPath && tests.total === 0) {
     // Roadmap 3.0.20: nothing is built, so nothing is tested — not "closed",

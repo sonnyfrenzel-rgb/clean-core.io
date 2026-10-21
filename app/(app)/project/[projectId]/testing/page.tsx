@@ -1187,7 +1187,8 @@ export default function TestingSandboxPage() {
     if (card?.engineVersion) metaParts.push({ label: 'engine', value: card.engineVersion });
   }
 
-  const phases = workflowSteps(project);
+  // SEC-2026-899: the recorded key-user checks count for the step list as it is built now.
+  const phases = workflowSteps(project, { keyUserList: keyUserSteps.state === 'ready' ? keyUserSteps.list : null });
   /** The last run, from the receipt on the project or this session — never assumed. */
   const run = lastRun(project, testResults);
   /** ADR-094 — testing closed by the owner without a passing run. */
@@ -1337,7 +1338,7 @@ export default function TestingSandboxPage() {
               projectId={projectId as string}
               list={keyUserSteps.list}
               canRecord={isOwner}
-              reading={keyUserAcceptanceReading(project)}
+              reading={keyUserAcceptanceReading(project, keyUserSteps.list)}
               onRecorded={(summary) => setProject((prev) => (prev ? { ...prev, keyUserAcceptance: summary } : prev))}
             />
           ) : null}
