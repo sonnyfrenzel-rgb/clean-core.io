@@ -432,6 +432,16 @@ test.describe('the revision', () => {
     expect(unverified.map((u) => u.reason)).toEqual(['differs']);
     expect(invalidatingInputs(unverified), 'a changed rate invalidates what was priced with it').toHaveLength(1);
   });
+
+  test('SEC-2026-900', () => {
+    const a = complete();
+    const input = costAssumptionsManifestInput(a);
+    expect(input.sha256).toBe(costAssumptionsFingerprint(a));
+    expect(input.sha256).toMatch(/^[0-9a-f]{64}$/);
+    // The revision a reader compares is unchanged, so records that name one stay comparable.
+    expect(input.revision).toBe(costAssumptionsRevision(a));
+    expect(input.revision).toContain(costAssumptionsFingerprint(a).slice(0, 12));
+  });
 });
 
 /* ── the one source-level assertion ── */

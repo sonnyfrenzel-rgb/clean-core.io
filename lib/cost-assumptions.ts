@@ -58,7 +58,7 @@
  */
 
 import { sha256Hex } from './artefact-digest';
-import { referenceDigest, type ManifestInput } from './input-manifest';
+import type { ManifestInput } from './input-manifest';
 import { formatLines, formatMoney, roundDays } from './format';
 
 /** Format of the assumption record. Bumped only when the canonical form changes. */
@@ -653,13 +653,14 @@ export function costAssumptionsManifestInput(a: CostAssumptions): ManifestInput 
       `Cost assumptions that do not carry an amount must not become a signed input: ${coverage.sentence}`,
     );
   }
-  const revision = costAssumptionsRevision(a);
+  // SEC-2026-900. `binding: 'value'` means `sha256` is the digest of the value itself
+  // (`lib/input-manifest.ts`), so it is the whole fingerprint — the revision stays the name a reader compares.
   return {
     id: COST_ASSUMPTIONS_INPUT_ID,
     dataClass: 'source-artefact',
-    revision,
+    revision: costAssumptionsRevision(a),
     binding: 'value',
-    sha256: referenceDigest(COST_ASSUMPTIONS_INPUT_ID, revision),
+    sha256: costAssumptionsFingerprint(a),
   };
 }
 
