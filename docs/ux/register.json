@@ -2477,6 +2477,31 @@
       "status": "zurückgestellt",
       "reason": "Same as UX-180: token clean-up of one-off widths is not release-relevant; after 3.0 with the design-system sweep. The 360px side column (delivery/page.tsx:728, DemoDelivery.tsx:143) is the mockup's fixed rail width and is shared by both delivery views.",
       "updatedAt": "2026-10-03T03:55:30.794Z"
+    },
+    {
+      "id": "UX-187",
+      "fingerprint": "f5785e09cb80",
+      "title": "Die Anleitung verspricht sieben Klicks, beschreibt aber mehrschrittige Aufgaben",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "18a3d8e3c0780e2364650a06bc6d6b9e22f10fb8",
+      "createdAt": "2026-10-21T19:01:11.662Z",
+      "status": "behoben",
+      "step": "3.0.20",
+      "updatedAt": "2026-10-21T19:01:12.034Z",
+      "fixedIn": "b08decd0"
+    },
+    {
+      "id": "UX-188",
+      "fingerprint": "273e01d77380",
+      "title": "Gespeicherte persönliche ABAP-Beispiele sind nicht mehr erreichbar",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "18a3d8e3c0780e2364650a06bc6d6b9e22f10fb8",
+      "createdAt": "2026-10-21T19:01:12.395Z",
+      "status": "eingeplant",
+      "step": "after 3.0.20 (owner decides: move into projects or export)",
+      "updatedAt": "2026-10-21T19:01:12.395Z"
     }
   ]
 }

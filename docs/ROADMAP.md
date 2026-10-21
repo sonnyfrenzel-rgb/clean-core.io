@@ -1942,6 +1942,8 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-174 | medium | New one-off tokens for sizes and spacing without a system | after 3.0.18 | scheduled |
 | UX-182 | medium | Line count of the demo program differs between list and starter card (669 vs 668) | 3.0 | fixed |
 | UX-184 | medium | Back link to the workspace labelled differently on settings | sofort | fixed |
+| UX-187 | medium | First-run guide promises seven clicks for seven multi-action steps | 3.0.20 | fixed |
+| UX-188 | medium | Files saved in the personal example library before the dashboard rebuild have no way back (move into projects or export: owner decides) | after 3.0.20 | scheduled |
 | UX-008 | low | Slideshow controls without names, arrow keys hijacked | 3.0.4 | fixed |
 | UX-011 | low | Confusing finding terms and language mix | 3.0.18 | fixed |
 | UX-013 | low | Preview contradicts editability, start misleading | 3.0.18 | fixed |
