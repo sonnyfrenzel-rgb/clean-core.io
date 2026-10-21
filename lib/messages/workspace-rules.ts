@@ -171,6 +171,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.example': 'Example from the code',
   'rules.sides': 'Either side of the limit',
   'rules.where': 'Where it applies',
+  'rules.sidesAndWhere': 'Either side of the limit and where it applies',
   'rules.proposal': 'Proposal',
   'rules.proposed': 'Proposed',
   'rules.otherAnswer': 'Your answer',
@@ -199,6 +200,13 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.workshopNoOpen': 'No point is open: every rule has a decision.',
   'rules.workshopNoDeviation': 'Every decision so far follows the engine’s proposal.',
   'rules.workshopEarlier': 'An answer of this session may replace an earlier one; the earlier revision keeps what it was.',
+  'rules.workshopChanges': 'Earlier answer → new answer',
+  'rules.workshopChangesLead': 'Every rule whose answer was changed, read from the earlier revisions: what it was, what it is now, who changed it and when.',
+  'rules.workshopNoChange': 'No answer has been changed yet — every rule on record still has its first answer.',
+  'rules.workshopChangesReading': 'Reading the earlier answers…',
+  'rules.workshopChangesUnread': 'The earlier answers could not be read just now. The answers on record are shown above.',
+  'rules.workshopFirstAnswer': 'No answer',
+  'rules.workshopChangesLimited': 'Only the most recent revisions are read; older changes are not listed.',
 } as const;
 
 /** "12 of 30 decided". */

@@ -95,6 +95,9 @@ export const GATED_ROUTES: GatedRoute[] = [
   // on the statement-proposal route: both verbs read the project's code.
   { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/requirement-wording` },
   { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/requirement-wording`, body: { digest: 'x', text: '{}', receipt: null } },
+  // 3.0.20 (owner decision 2) — the engine's sentences reworded in plain words, built on requirement-wording.
+  { file: 'app/api/projects/[projectId]/plain-wording/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/plain-wording?scope=walk` },
+  { file: 'app/api/projects/[projectId]/plain-wording/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/plain-wording`, body: { scope: 'walk', digest: 'x', items: [], text: '{}', receipt: null } },
   // ADR-075 — test results from the reader's own SAP system. GET hands out the
   // record of a run; POST records one, and with it whether the handover can go.
   { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/test-results` },

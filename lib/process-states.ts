@@ -87,6 +87,20 @@ export const MAX_APPLIES_TO = 50;
  */
 export const PROCESS_STATES_BODY_LIMITS = { maxBytes: 3 * 1024 * 1024, timeoutMs: 20_000 };
 
+/**
+ * A rule's answer beyond the four states — roadmap 3.0.20, owner decision
+ * 21.10.2026 (5): *Move to SAP standard* is an answer of its own. It rides on
+ * Keep, because the need stays — only how it is met moves to the standard —
+ * so every count, every derivation mark and every reader of the four states
+ * reads it as the Keep it is. Written by the server from the request, never
+ * by a client into Firestore. Rules only; absent on every other entry.
+ */
+export type RuleAnswer = 'standard';
+
+export function isRuleAnswer(value: unknown): value is RuleAnswer {
+  return value === 'standard';
+}
+
 export interface ValueSource {
   kind: ValueSourceKind;
   /** What the account wrote beside it — the table, the regulation — or null. */
@@ -124,6 +138,8 @@ export interface StateEntry {
   valueSource?: ValueSource | null;
   /** Other rules, by id, the same answer applies to. Rules only; absent or empty when none. */
   appliesTo?: string[];
+  /** "Move to SAP standard" — a Keep of a rule whose need SAP standard is to meet. Absent otherwise. */
+  answer?: RuleAnswer;
 }
 
 export interface ProcessStates {
@@ -216,6 +232,7 @@ export function isStateEntry(value: unknown): value is StateEntry {
       || (isValueSourceKind(e.valueSource.kind)
         && (e.valueSource.note === null || typeof e.valueSource.note === 'string')))
     && (e.appliesTo === undefined || (Array.isArray(e.appliesTo) && e.appliesTo.every((x) => typeof x === 'string')))
+    && (e.answer === undefined || e.answer === null || (isRuleAnswer(e.answer) && e.kind === 'rule' && e.state === 'keep'))
   );
 }
 
@@ -422,6 +439,8 @@ export interface StateChoiceInput {
   valueSource?: ValueSource | null;
   /** Other rules the same answer applies to. Rules only. */
   appliesTo?: string[];
+  /** "Move to SAP standard": a Keep of a rule only. */
+  answer?: RuleAnswer | null;
 }
 
 export type ChoiceRefusal =
@@ -544,13 +563,25 @@ export function checkStateChoices(
       }
       appliesTo = [...new Set(list as string[])].sort();
     }
+    // "Move to SAP standard" — the need stays (Keep), and the standard is to meet it. A rule's Keep only.
+    let answer: RuleAnswer | null = null;
+    if (choice.answer !== undefined && choice.answer !== null) {
+      if (!isRuleAnswer(choice.answer) || choice.kind !== 'rule' || choice.state !== 'keep') {
+        return {
+          ok: false,
+          code: 'bad-request',
+          error: `"Move to SAP standard" is an answer to a rule's Keep only; the one for ${choice.subject} is not.`,
+        };
+      }
+      answer = choice.answer;
+    }
     seen.add(choice.subject);
     choices.push({
       subject: choice.subject,
       kind: choice.kind,
       state: choice.state,
       note: note === '' ? null : note,
-      ...(choice.kind === 'rule' ? { valueSource, appliesTo } : {}),
+      ...(choice.kind === 'rule' ? { valueSource, appliesTo, ...(answer ? { answer } : {}) } : {}),
     });
   }
   return { ok: true, choices };
@@ -583,10 +614,60 @@ export function applyStateChoices(
       account: made.account,
       confirmedAt: made.confirmedAt,
       revision: made.revision,
-      ...(choice.kind === 'rule' ? { valueSource: choice.valueSource ?? null, appliesTo: choice.appliesTo ?? [] } : {}),
+      ...(choice.kind === 'rule'
+        ? {
+          valueSource: choice.valueSource ?? null,
+          appliesTo: choice.appliesTo ?? [],
+          // Written only when given, so every other entry keeps the fields it always had.
+          ...(choice.answer === 'standard' && choice.state === 'keep' ? { answer: 'standard' as const } : {}),
+        }
+        : {}),
     });
   }
   return [...next.values()].sort((a, b) => (a.subject < b.subject ? -1 : a.subject > b.subject ? 1 : 0));
+}
+
+/* ------------------------------------------------------------------ *
+ * 3.0.20 (4) — the earlier answers of the rules, for the workshop view.
+ * ------------------------------------------------------------------ */
+
+/** The most need revisions one read of the earlier answers goes back. */
+export const MAX_HISTORY_REVISIONS = 50;
+
+/** One stored need revision, as far as the history reads it. */
+export interface StoredRevisionEntries {
+  revision: number;
+  entries: readonly unknown[];
+}
+
+/**
+ * Every rule answer as it was made, oldest first: from each revision the rule
+ * entries that revision made (`entry.revision === revision`). A snapshot keeps
+ * an untouched answer under the revision that made it, so each answer is read
+ * once, from the revision it was given in, and an answer that later changed is
+ * still there in the revision before the change.
+ */
+export function ruleAnswersMade(revisions: readonly StoredRevisionEntries[]): StateEntry[] {
+  const out: StateEntry[] = [];
+  const seen = new Set<string>();
+  for (const r of [...revisions].sort((a, b) => a.revision - b.revision)) {
+    for (const raw of r.entries) {
+      if (!isStateEntry(raw) || raw.kind !== 'rule' || raw.revision !== r.revision) continue;
+      const key = `${raw.subject}@${raw.revision}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(raw);
+    }
+  }
+  return out;
+}
+
+/** What `GET …/process-states?history=rules` adds to the view. */
+export interface RuleHistory {
+  /** Every rule answer as it was made, oldest first (`ruleAnswersMade`). */
+  entries: StateEntry[];
+  /** True when there are more revisions than were read — older changes are not listed. */
+  limited: boolean;
 }
 
 /** "12 kept, 3 to change, 1 dropped, 2 to clarify, 55 undecided." Counted, never rounded into a claim. */
@@ -598,7 +679,7 @@ export function statesSentence(states: ProcessStates): string {
     + ` ${c.undecided} of ${total} not yet confirmed.`;
 }
 
-/** True when a choice says the same as the entry on record — state, note, value source, "also applies to". */
+/** True when a choice says the same as the entry on record — state, note, value source, "also applies to", the answer. */
 export function sameAnswer(entry: StateEntry | undefined, choice: StateChoiceInput): boolean {
   if (!entry) return false;
   const src = (v: ValueSource | null | undefined) => (v ? `${v.kind}|${v.note ?? ''}` : '');
@@ -606,5 +687,6 @@ export function sameAnswer(entry: StateEntry | undefined, choice: StateChoiceInp
   return entry.state === choice.state
     && (entry.note ?? null) === (choice.note ?? null)
     && src(entry.valueSource) === src(choice.valueSource)
-    && list(entry.appliesTo) === list(choice.appliesTo);
+    && list(entry.appliesTo) === list(choice.appliesTo)
+    && (entry.answer ?? null) === (choice.answer ?? null);
 }

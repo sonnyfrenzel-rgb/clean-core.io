@@ -25,6 +25,10 @@ import type { FitGateClass, FitGateFinding, FitGateObject, FitToStandardGate } f
  *      standard call) — or `gap-key-user` where a 3.0.19 key-user candidate
  *      replaces exactly those lines;
  *   4. a rule the account marked as customizing makes its element `configuration`;
+ *   4a. a rule the account answered *Move to SAP standard* (owner decision
+ *      21.10.2026 (5)) keeps its element a gap, and says so: the business
+ *      wants the standard to meet it, and the standard object is still to be
+ *      named — never `covered` on the account's word alone;
  *   5. a successor SAP's catalog names for an object the element uses makes it
  *      `covered` as a **candidate**: E1, check word `catalog`, "to verify";
  *   6. everything else business-comparable is `gap-open` — the honest default,
@@ -194,6 +198,8 @@ export interface FitDesignInput {
   successors: ReadonlyMap<string, string> | Readonly<Record<string, string>>;
   keyUser?: readonly FitKeyUserPart[];
   customizing?: ReadonlyArray<{ ruleId: string; lineStart: number; lineEnd?: number }>;
+  /** Rules the account answered "Move to SAP standard", with their first line (`process-states.ts`, `answer: 'standard'`). */
+  standardRules?: ReadonlyArray<{ ruleId: string; lineStart: number; lineEnd?: number }>;
   /** Plain names of elements, by id (`plainLabels(...).nodes`). */
   plainLabels?: ReadonlyMap<string, string>;
 }
@@ -339,6 +345,16 @@ export function buildFitToStandardDesign(input: FitDesignInput): FitToStandardDe
           why: `SAP's catalog names ${successor} as the successor of ${usedObject}, used at ${lines(anchor)} — a candidate, to verify.`,
         };
       }
+    }
+
+    // 4a — a rule the account answered "Move to SAP standard": the need stays, the standard object is not named yet.
+    const wanted = (input.standardRules ?? []).find((c) => inStep(c.lineStart));
+    if (wanted) {
+      return {
+        ...base,
+        disposition: 'gap-open',
+        why: `You answered ${wanted.ruleId} "Move to SAP standard", at ${lines({ lineStart: wanted.lineStart, lineEnd: wanted.lineEnd ?? wanted.lineStart })}: SAP standard is to meet this need — name the standard object that does, then decide.`,
+      };
     }
 
     // 6 — the honest default.

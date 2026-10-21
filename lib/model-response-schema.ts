@@ -195,12 +195,28 @@ export const FIT_PROPOSAL_SCHEMA = {
   required: ['proposals'],
 } as const;
 
+/** Roadmap 3.0.20 (owner decision 2): the answer shape of a plain wording — one reworded sentence per id, its anchor echoed (`lib/plain-wording.ts`). */
+export const PLAIN_WORDING_SCHEMA = {
+  type: 'object',
+  properties: {
+    sentences: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' }, text: { type: 'string' }, anchor: { type: 'string' } },
+        required: ['id', 'text', 'anchor'],
+      },
+    },
+  },
+  required: ['sentences'],
+} as const;
+
 /**
  * An answer shape within a stage. The fill calls belong to the
  * `transformation` stage — its switch and its receipt — but answer in a shape
  * of their own; the request names it beside the stage.
  */
-export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business', 'design-fit-proposal'] as const;
+export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business', 'design-fit-proposal', 'plain-wording'] as const;
 export type ResponseShape = (typeof RESPONSE_SHAPES)[number];
 
 export function isResponseShape(value: unknown): value is ResponseShape {
@@ -216,12 +232,16 @@ export const RESPONSE_SHAPE_STAGE: Record<ResponseShape, ModelStage> = {
   'documentation-business': 'documentation',
   // Roadmap 3.0.20 (F5): a model's standard candidates for the open steps of a fit-to-standard design.
   'design-fit-proposal': 'design',
+  // Roadmap 3.0.20 (owner decision 2): the engine's sentences reworded in plain business words —
+  // a business sentence by another route, under its switch and its receipt.
+  'plain-wording': 'statements',
 };
 
 /** The schema for a stage's JSON answer, or `undefined` where the stage has none. */
 export function responseSchemaForStage(stage: ModelStage | undefined, shape?: ResponseShape): object | undefined {
   if (shape === 'transformation-fill' && stage === 'transformation') return TRANSFORMATION_FILL_SCHEMA;
   if (shape === 'design-fit-proposal' && stage === 'design') return FIT_PROPOSAL_SCHEMA;
+  if (shape === 'plain-wording' && stage === 'statements') return PLAIN_WORDING_SCHEMA;
   if (stage === 'transformation') return TRANSFORMATION_RESPONSE_SCHEMA;
   if (stage === 'testing') return TESTING_RESPONSE_SCHEMA;
   return undefined;

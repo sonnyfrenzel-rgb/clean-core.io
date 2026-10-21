@@ -215,6 +215,27 @@ const CASES: RouteCase[] = [
     readerAdmitted: false,
   },
   {
+    key: 'app/api/projects/[projectId]/plain-wording/route.ts#GET',
+    what: "the model's plain wording of the walk-through and the rule explanations (3.0.20)",
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/plain-wording?scope=walk`,
+    refusal: 404,
+    // Nothing is stored for the fixture: the owner reads `{ record: null }`.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
+    key: 'app/api/projects/[projectId]/plain-wording/route.ts#POST',
+    what: 'storing the plain wording a model proposed (3.0.20)',
+    method: 'POST',
+    path: (p) => `/api/projects/${p}/plain-wording`,
+    body: {},
+    refusal: 404,
+    // No scope, digest or answer: the owner is let through the gate and refused for the body.
+    owner: [400],
+    readerAdmitted: false,
+  },
+  {
     key: 'app/api/projects/[projectId]/test-results/route.ts#GET',
     what: 'the test results recorded from your own SAP system',
     method: 'GET',
@@ -849,6 +870,8 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/statement-proposal/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/requirement-wording/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/requirement-wording/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/plain-wording/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/plain-wording/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/test-results/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/test-results/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/key-user-checks/route.ts#POST → 404 vs 404',

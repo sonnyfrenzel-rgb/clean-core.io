@@ -49,7 +49,8 @@ export function FitOfferCard({
           </>
         ) : null}
       </div>
-      <div className="flex items-center gap-3">
+      {/* Wraps: the chip and the link side by side were wider than a 390 px phone (CI of 18a3d8e3). */}
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
         <CcProvenanceChip value={confirmed ? 'confirmed' : 'reconstructed'} />
         <CcLinkButton href={href} variant="secondary" data-fit-offer-link="">
           {confirmed ? 'Open the design' : 'Have a fit-to-standard design made'}

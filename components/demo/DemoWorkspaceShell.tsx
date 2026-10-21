@@ -24,6 +24,7 @@ import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from 
 import { plainWordingFor } from '@/lib/business-card';
 import { ELEMENT_STATES, type ElementState } from '@/lib/process-states';
 import DemoRulesCard from '@/components/demo/DemoRulesCard';
+import DemoWalkThrough from '@/components/demo/DemoWalkThrough';
 import BusinessNextStep from '@/components/workspace/BusinessNextStep';
 import { nextOpenPointOf } from '@/lib/next-step';
 import WorkspaceLayerSection from '@/components/workspace/LayerSection';
@@ -65,6 +66,7 @@ import {
   DEMO_INVITATION,
   DEMO_OBJECT_NAME,
   DEMO_RESET_LABEL,
+  DEMO_SOURCE_FILE,
   DEMO_STORAGE_KEY,
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
@@ -740,6 +742,21 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           {layerBar}
           {layerSection}
+
+          {/* The walk-through first, as in an own project — read only in the
+              demo: the answers are shown and disabled, nothing is saved
+              (3.0.20, owner decision 7). */}
+          <div data-demo-walk="" className="mt-5">
+            <DemoWalkThrough
+              model={processMap}
+              source={source}
+              fileName={DEMO_SOURCE_FILE}
+              onShowStep={(id, p) => {
+                setPlane(p);
+                setSelected(id);
+              }}
+            />
+          </div>
 
           {/* The map is the process of the Business view itself, not a
               section of its bar (ADR-080). */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowDown, Check, CircleHelp, Cog, PenLine, Repeat2, Trash2, Building2 } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -41,6 +41,11 @@ import { ensureProcessBaseline } from '@/lib/process-revisions-client';
 import { publishProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries, type EditorRule } from '@/lib/rules-editor';
 import RuleWorkshop from './RuleWorkshop';
+import { AsReadFromCode, WordedChip } from './WordedText';
+import { usePlainWording } from '@/hooks/usePlainWording';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
+import { readRuleHistory, type RuleHistoryOutcome } from '@/lib/process-states-client';
 import {
   wt,
   rulesDecidedOf,
@@ -71,6 +76,14 @@ import {
  * `POST /api/projects/{id}/process-states`, Admin SDK only, with the four
  * states and the value source it already accepts (`lib/rule-decision-flow.ts`).
  * The code stays one fold down on every rule.
+ *
+ * 3.0.20, owner decisions of 21.10.2026: the card is simple on top — what the
+ * rule protects, the example, the proposal and the answers — and complete one
+ * fold down: either side of the limit and where it applies, then the code (3).
+ * Every sentence is shown in plain business words when a model's rewording of
+ * it held the guard, the engine's sentence one fold down (2). The workshop
+ * view reads the earlier revisions and shows per rule the earlier answer, the
+ * new one, who and when (4).
  */
 
 export interface RuleDecisionFlowProps {
@@ -85,6 +98,10 @@ export interface RuleDecisionFlowProps {
   reload: () => Promise<void> | void;
   /** Shown instead when the explanation cannot be written — the plain list of rules. */
   fallback?: React.ReactNode;
+  /** A stored plain wording handed in without a fetch (a rendered test). */
+  plainWording?: PlainWordingRecord | null;
+  /** The earlier answers handed in without a fetch (a rendered test). */
+  history?: RuleHistoryOutcome | null;
 }
 
 const DECISION_ICON: Record<RuleDecisionKind, React.ReactNode> = {
@@ -102,17 +119,21 @@ const IMPACT_WORD: Record<ImpactLevel, 'rules.impactHigh' | 'rules.impactMedium'
   low: 'rules.impactLow',
 };
 
-/** One sentence and the first of its lines. */
-function Said({ sentence, mark }: { sentence: ExplainedSentence; mark: string }) {
+type Say = (text: string, anchor: { lineStart: number; lineEnd: number } | null) => WordedSentence;
+
+/** One sentence — in plain words when a rewording held — and the first of its lines. */
+function Said({ sentence, mark, say }: { sentence: ExplainedSentence; mark: string; say: Say }) {
   const first = sentence.anchors[0];
+  const said = say(sentence.text, first ?? null);
   return (
-    <p data-rule-said={mark} className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
-      {sentence.text}{' '}
+    <p data-rule-said={mark} data-rule-worded={said.worded ? 'yes' : 'no'} className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
+      {said.text}{' '}
       {first ? (
         <CcAnchor tone="unlinked" label={`${wt('rules.sourceLine')} ${anchorLabel(first.lineStart, first.lineEnd)}`}>
           {anchorLabel(first.lineStart, first.lineEnd)}
         </CcAnchor>
       ) : null}
+      <WordedChip said={said} />
     </p>
   );
 }
@@ -134,10 +155,11 @@ interface CardProps {
   busy: boolean;
   error: string | null;
   onRecord: (choices: StateChoiceInput[]) => void;
+  say: Say;
 }
 
 /** One rule: explained, proposed, answered. */
-function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord }: CardProps) {
+function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord, say }: CardProps) {
   const decided = decisionKindOf(entry);
   const [chosen, setChosen] = useState<RuleDecisionKind | null>(null);
   const [note, setNote] = useState('');
@@ -213,26 +235,15 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord }:
         )}
       </div>
 
-      {e.technical ? <Said sentence={e.technical} mark="technical" /> : null}
+      {e.technical ? <Said sentence={e.technical} mark="technical" say={say} /> : null}
       <Part label={wt('rules.protects')}>
-        <Said sentence={e.protects} mark="protects" />
+        <Said sentence={e.protects} mark="protects" say={say} />
       </Part>
       {e.example ? (
         <Part label={wt('rules.example')}>
-          <Said sentence={e.example} mark="example" />
+          <Said sentence={e.example} mark="example" say={say} />
         </Part>
       ) : null}
-      {e.sides ? (
-        <Part label={wt('rules.sides')}>
-          <div className="grid min-w-0 grid-cols-1 gap-1 md:grid-cols-2 md:gap-4">
-            <Said sentence={e.sides.holds} mark="holds" />
-            <Said sentence={e.sides.otherwise} mark="otherwise" />
-          </div>
-        </Part>
-      ) : null}
-      <Part label={wt('rules.where')}>
-        <Said sentence={e.where} mark="where" />
-      </Part>
 
       <div data-rule-proposal-box="" className="flex min-w-0 flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
         <span className="flex flex-wrap items-center gap-2">
@@ -240,7 +251,7 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord }:
           <CcProvenanceChip value="reconstructed" />
           <span className="text-[13px] font-bold text-cc-ink">{proposalLabel}</span>
         </span>
-        <Said sentence={e.proposal.reason} mark="proposal" />
+        <Said sentence={e.proposal.reason} mark="proposal" say={say} />
         {owner ? (
           <div className="flex flex-col gap-2">
             {decided !== e.proposal.kind ? (
@@ -336,6 +347,35 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord }:
         ) : null}
       </div>
 
+      {/* Complete underneath: either side of the limit and where it applies, one fold down. */}
+      <div data-rule-more="">
+        <CcDisclosure title={wt('rules.sidesAndWhere')}>
+          <div className="flex min-w-0 flex-col gap-2">
+            {e.sides ? (
+              <Part label={wt('rules.sides')}>
+                <div className="grid min-w-0 grid-cols-1 gap-1 md:grid-cols-2 md:gap-4">
+                  <Said sentence={e.sides.holds} mark="holds" say={say} />
+                  <Said sentence={e.sides.otherwise} mark="otherwise" say={say} />
+                </div>
+              </Part>
+            ) : null}
+            <Part label={wt('rules.where')}>
+              <Said sentence={e.where} mark="where" say={say} />
+            </Part>
+          </div>
+        </CcDisclosure>
+      </div>
+      <AsReadFromCode
+        said={[
+          ...(e.technical ? [e.technical] : []),
+          e.protects,
+          ...(e.example ? [e.example] : []),
+          e.proposal.reason,
+          ...(e.sides ? [e.sides.holds, e.sides.otherwise] : []),
+          e.where,
+        ].map((x) => say(x.text, x.anchors[0] ?? null))}
+      />
+
       <CcDisclosure title={wt('rules.theCode')}>
         <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <code className="min-w-0 font-cc-mono text-[12px] font-medium break-all text-cc-ink-muted">{rule.code}</code>
@@ -350,7 +390,19 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord }:
   );
 }
 
-export default function RuleDecisionFlow({ projectId, source, reading, rules, outcome, view, owner, reload, fallback = null }: RuleDecisionFlowProps) {
+export default function RuleDecisionFlow({
+  projectId,
+  source,
+  reading,
+  rules,
+  outcome,
+  view,
+  owner,
+  reload,
+  fallback = null,
+  plainWording,
+  history: givenHistory,
+}: RuleDecisionFlowProps) {
   const explanation = useMemo(() => {
     try {
       return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source));
@@ -365,6 +417,34 @@ export default function RuleDecisionFlow({ projectId, source, reading, rules, ou
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [recorded, setRecorded] = useState(false);
   const [openTopics, setOpenTopics] = useState<ReadonlySet<string> | null>(null);
+  const availability = useModelAvailability();
+  const ruleSentences = useMemo(() => (explanation ? rulePlainSentences(explanation) : null), [explanation]);
+  const wording = usePlainWording({
+    projectId,
+    scope: 'rules',
+    source,
+    sentences: ruleSentences,
+    owner,
+    active: explanation !== null,
+    modelEnabled: plainModelEnabled(availability),
+    initial: plainWording ?? null,
+  });
+  const say: Say = wording.say;
+  // The earlier answers, read when the workshop view opens — and again after an answer moved the revision on.
+  const [fetchedHistory, setFetchedHistory] = useState<{ revision: number; outcome: RuleHistoryOutcome } | null>(null);
+  const revisionNow = view?.revision ?? 0;
+  useEffect(() => {
+    if (mode !== 'workshop' || givenHistory !== undefined || !projectId) return;
+    if (fetchedHistory && fetchedHistory.revision === revisionNow) return;
+    let cancelled = false;
+    void readRuleHistory(projectId).then((outcome) => {
+      if (!cancelled) setFetchedHistory({ revision: revisionNow, outcome });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, givenHistory, projectId, revisionNow, fetchedHistory]);
+  const history: RuleHistoryOutcome | null = givenHistory !== undefined ? givenHistory : fetchedHistory?.outcome ?? null;
 
   const byId = useMemo(() => new Map(rules.map((r) => [r.id, r])), [rules]);
   const explained = useMemo(() => new Map((explanation?.rules ?? []).map((r) => [r.id, r])), [explanation]);
@@ -476,7 +556,12 @@ export default function RuleDecisionFlow({ projectId, source, reading, rules, ou
       ) : null}
 
       {mode === 'workshop' ? (
-        <RuleWorkshop explanation={explanation} entries={entries} titleOf={(id) => explained.get(id)?.headline ?? byId.get(id)?.title ?? id} />
+        <RuleWorkshop
+          explanation={explanation}
+          entries={entries}
+          history={history}
+          titleOf={(id) => explained.get(id)?.headline ?? byId.get(id)?.title ?? id}
+        />
       ) : (
         <div className="flex min-w-0 flex-col gap-3">
           {flow.topics.map((topic) => (
@@ -524,6 +609,7 @@ export default function RuleDecisionFlow({ projectId, source, reading, rules, ou
                         busy={busy.has(r.id)}
                         error={errors[r.id] ?? null}
                         onRecord={(choices) => void record(choices)}
+                        say={say}
                       />
                     );
                   })}

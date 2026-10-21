@@ -56,6 +56,13 @@ export const WORKSPACE_WALK_MESSAGES = {
   'walk.summaryNone': 'None.',
   'walk.summaryFirstOpen': 'Go to the first open step',
   'walk.technicalTag': 'Technical',
+  // Plain wording of the engine's sentences (3.0.20, owner decision 2)
+  'walk.worded': 'worded',
+  'walk.asRead': 'As read from the code',
+  'walk.asReadLead': 'The engine’s own sentences, read from the code. The plain wording above says the same; a model proposed it, and the engine kept only what these sentences hold.',
+  // The public demo (3.0.20, owner decision 7)
+  'walk.demoNote': 'Demo: nothing is saved. In your own project the answer is recorded here, with your name.',
+  'walk.demoAnswersLabel': 'The answers, shown but not available in the demo',
 } as const;
 
 /** "Step 4 of 31". */
