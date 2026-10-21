@@ -16,7 +16,6 @@ import { deriveBusinessRules, rulesForElement } from '@/lib/abap/business-rule-s
 import { anchorWords, ruleAnchor } from '@/lib/rule-anchor';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
-  MAX_HISTORY_REVISIONS,
   MAX_STATE_ENTRIES,
   PROCESS_STATES_BODY_LIMITS,
   PROCESS_STATE_COLLECTION,
@@ -25,9 +24,7 @@ import {
   sameAnswer,
   checkStateChoices,
   isStateEntry,
-  ruleAnswersMade,
   type ProcessStateView,
-  type RuleHistory,
   type RuleLink,
   type StateEntry,
   type StateSubject,
@@ -41,11 +38,6 @@ import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
  *
  *   GET  → `{ view }`: the subjects that exist, the confirmations made, and
  *          which elements each rule was drawn into.
- *   GET  `?history=rules` → `{ view, history }`: the same, and every rule
- *          answer as it was made, read from the earlier revisions (3.0.20,
- *          owner decision 4 — the workshop's earlier answer → new answer).
- *          Read only, the read's gates and budget; at most
- *          `MAX_HISTORY_REVISIONS` revisions back.
  *   POST { baseRevision, choices } → `{ view, created }`: a new Bedarfsrevision.
  *
  * **Why the states are their own subcollection and not another process
@@ -278,23 +270,6 @@ async function latestStates(db: AdminDb, projectId: string): Promise<StoredState
   };
 }
 
-/** Every rule answer as it was made, from the newest `MAX_HISTORY_REVISIONS` revisions. */
-async function ruleHistory(db: AdminDb, projectId: string): Promise<RuleHistory> {
-  const snap = await statesOf(db, projectId).orderBy('revision', 'desc').limit(MAX_HISTORY_REVISIONS + 1).get();
-  const docs: Array<{ data: () => unknown }> = snap.docs.slice(0, MAX_HISTORY_REVISIONS);
-  const revisions = docs
-    .map((d) => (d.data() || {}) as Record<string, unknown>)
-    .filter((data: Record<string, unknown>) => data.formatVersion === PROCESS_STATE_FORMAT_VERSION && typeof data.revision === 'number')
-    .map((data: Record<string, unknown>) => ({
-      revision: data.revision as number,
-      entries: (Array.isArray(data.entries) ? (data.entries as unknown[]) : []).map((e: unknown) => {
-        const entry = e as Record<string, unknown>;
-        return { ...entry, confirmedAt: isoOf(entry.confirmedAt) };
-      }),
-    }));
-  return { entries: ruleAnswersMade(revisions), limited: snap.docs.length > MAX_HISTORY_REVISIONS };
-}
-
 /* ------------------------------------------------------------------ *
  * The subjects: the elements of the as-is process and the rules of its source.
  * ------------------------------------------------------------------ */
@@ -480,11 +455,7 @@ export async function GET(
     const opened = await open(db, gate);
     if (!opened.ok) return opened.response;
 
-    const view = viewOf(opened.subjects, opened.stored);
-    if (req.nextUrl.searchParams.get('history') === 'rules') {
-      return NextResponse.json({ view, history: await ruleHistory(db, gate.projectId) });
-    }
-    return NextResponse.json({ view });
+    return NextResponse.json({ view: viewOf(opened.subjects, opened.stored) });
   } catch (err: unknown) {
     logger.error('process-states read failed', { route: 'api/projects/process-states', error: errMessage(err) });
     return NextResponse.json({ error: 'Could not read what has been confirmed for this process.' }, { status: 500 });

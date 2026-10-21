@@ -191,7 +191,6 @@ const ALLOWED: Record<PhaseState, string[]> = {
   partial: ['partial', 'mock-only', 'failed'],
   done: ['done', 'draft', 'failed'],
   stale: ['partial'],
-  'not-applicable': ['not-started'],
 };
 
 /** "Regenerate it in stage 3 first." → transformation. */

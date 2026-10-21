@@ -640,11 +640,9 @@ export function decisionOverviewCard(decision: Loaded<DecisionRead>): DecisionOv
         ? `Confirmed by the signed-in account — ${SELF_DECLARATION}`
         : 'A draft derived from the run, the contract, the need and the costs. Nothing is decided until it is confirmed.',
     coverage: coverage(
-      d.bindings.length - d.bindings.filter((b) => b.revision === null).length,
-      d.bindings.length,
-      d.bindings.length > 5
-        ? 'bindings a confirmation would carry (need, option, cost, contract, run, fit-to-standard design)'
-        : 'bindings a confirmation would carry (need, option, cost, contract, run)',
+      5 - d.bindings.filter((b) => b.revision === null).length,
+      5,
+      'bindings a confirmation would carry (need, option, cost, contract, run)',
       [{ count: d.bindings.filter((b) => b.revision === null).length, why: 'not determined' }],
     ).sentence,
     identity,

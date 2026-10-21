@@ -9,8 +9,8 @@ import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
 import { buildWalkGuide, walkStops } from '../lib/process-walk-guide';
 import { plainSentenceProblem, takeFirstAsk, type WordedSentence } from '../lib/plain-wording';
-import { applyStateChoices, checkStateChoices, isStateEntry, ruleAnswersMade } from '../lib/process-states';
-import { choiceOf, decisionKindOf, ruleChanges } from '../lib/rule-decision-flow';
+import { applyStateChoices, checkStateChoices, isStateEntry } from '../lib/process-states';
+import { choiceOf, decisionKindOf } from '../lib/rule-decision-flow';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -71,7 +71,7 @@ test('66e67ae1298e — a rewording that keeps the "only" and drops the "not" is 
   expect(plainSentenceProblem(engine, 'Approved suppliers are released, and rejected suppliers are not paid.')).toBe('negation-lost');
 });
 
-test('e42558a925d7 — "Move to SAP standard" with a value source is refused, so fit to standard cannot read it as configuration', () => {
+test('e42558a925d7 — "Move to SAP standard" with a value source is refused, so it cannot be read as configuration', () => {
   const subjects = { elements: [], rules: ['BR-001'] };
   const conflicting = { subject: 'BR-001', kind: 'rule' as const, state: 'keep' as const, note: null, answer: 'standard' as const, valueSource: { kind: 'customizing' as const, note: null } };
   const checked = checkStateChoices([conflicting], subjects);
@@ -82,20 +82,4 @@ test('e42558a925d7 — "Move to SAP standard" with a value source is refused, so
   const [entry] = applyStateChoices([], [choiceOf('BR-001', 'standard', '')], { account: { uid: 'u', name: 'A' }, confirmedAt: '2026-10-21T10:00:00.000Z', revision: 2 });
   expect(isStateEntry({ ...entry, valueSource: { kind: 'customizing', note: null } })).toBe(false);
   expect(decisionKindOf(entry)).toBe('standard');
-});
-
-test('3f382dd0e93d — a moved value source or "also applies to" under the same answer is a change, with what moved', () => {
-  const account = { uid: 'u', name: 'Controller A' };
-  const r2 = applyStateChoices([], [choiceOf('BR-001', 'change-value', 'New limit 500.00 EUR', 'business-requirement')], { account, confirmedAt: '2026-10-14T09:00:00.000Z', revision: 2 });
-  const r3 = applyStateChoices(r2, [choiceOf('BR-001', 'change-value', 'New limit 500.00 EUR', 'legal-regulatory')], { account, confirmedAt: '2026-10-21T09:00:00.000Z', revision: 3 });
-  const r4 = applyStateChoices(r3, [{ ...choiceOf('BR-001', 'change-value', 'New limit 500.00 EUR', 'legal-regulatory'), appliesTo: ['BR-002'] }], { account, confirmedAt: '2026-10-22T09:00:00.000Z', revision: 4 });
-  const made = ruleAnswersMade([{ revision: 2, entries: r2 }, { revision: 3, entries: r3 }, { revision: 4, entries: r4 }]);
-  const changes = ruleChanges({ order: ['BR-001', 'BR-002'] }, made);
-  expect(changes.map((c) => c.details)).toEqual([
-    ['Also applies to: none → BR-002'],
-    ['Value source: Business requirement → Legal or regulatory'],
-  ]);
-  // The same answer again in every part is no change.
-  const r5 = applyStateChoices(r4, [], { account, confirmedAt: '2026-10-23T09:00:00.000Z', revision: 5 });
-  expect(ruleChanges({ order: ['BR-001'] }, ruleAnswersMade([{ revision: 4, entries: r4 }, { revision: 5, entries: r5 }]))).toEqual([]);
 });

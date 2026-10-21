@@ -40,8 +40,6 @@ import {
   type CostOption,
 } from '@/lib/cost-assumptions';
 import { type ChecklistRow } from '@/lib/economics-checklist';
-// Roadmap 3.0.20: the confirmed fit-to-standard design names its gaps on the standard option's card.
-import { confirmedFitDesign } from '@/lib/fit-to-standard-store';
 import {
   ECONOMICS_START_INPUTS,
   economicsProgress,
@@ -841,7 +839,6 @@ export default function TcoCalculatorPage() {
             onGoToField={goToField}
             loc={loc}
             sourceLoc={sourceLoc}
-            fitGaps={project ? confirmedFitDesign(project)?.counts ?? null : null}
             saveStatus={
               isOwner
                 ? (id) => <SaveStatus status={sectionStatus(`option:${id}`)} onRetry={retry} scope={`option:${id}`} />

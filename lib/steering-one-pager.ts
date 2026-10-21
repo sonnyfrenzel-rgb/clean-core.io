@@ -21,7 +21,6 @@ import type { ChartSegment } from './management-overview';
 import { recommendedArchitecture } from './project-commands';
 import { formatTextDate } from './format';
 import type { DecisionCostCheck, OutdatedReason } from './decision-cost';
-import { confirmedFitDesign } from './fit-to-standard-store';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
@@ -381,7 +380,6 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     engineRoute: recommendedArchitecture(src.project ?? {}),
     usage: src.project?.usageReport ?? null,
     economics: src.project?._economics ?? null,
-    fitDesign: src.project ? confirmedFitDesign(src.project) : null,
   });
   const nameOf = (account: string): string => src.accountNames?.[account.trim().toLowerCase()]?.trim() || account;
   const decidedBy =

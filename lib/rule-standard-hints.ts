@@ -3,11 +3,11 @@ import { CURATED_SCOPE_ITEM_LIST } from './sap-curated-lists';
 
 /**
  * Where a business rule may be met by SAP standard — roadmap 3.0.20, owner
- * decision 21.10.2026 (6): the hint comes from the scope items fit to standard
- * already uses, not from a list of functions written into the rule engine.
+ * decision 21.10.2026 (6): the hint comes from the curated scope items, not
+ * from a list of functions written into the rule engine.
  *
- * The scope items are the two lists the fit-to-standard proposals are checked
- * against (`lib/sap-reference-check.ts`): SAP's scope items with the public SAP
+ * The scope items are the two lists model output is checked against
+ * (`lib/sap-reference-check.ts`): SAP's scope items with the public SAP
  * page that states each (`lib/sap-scope-items.ts`) and the owner's hand-curated
  * list (`lib/sap-curated-lists.ts`). This file adds no scope item and no title.
  * What it adds is which field a rule tests that one of those scope items is

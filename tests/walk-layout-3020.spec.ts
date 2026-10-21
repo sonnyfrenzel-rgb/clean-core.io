@@ -12,7 +12,7 @@ import { buildWalkGuide, walkStops } from '../lib/process-walk-guide';
 import { readExample } from './helpers/starter-example-files';
 
 /**
- * CI of 18a3d8e3: with the walk-through and the fit-to-standard offer in the
+ * CI of 18a3d8e3: with the walk-through in the
  * Business view, (1) a 390 px phone scrolled sideways by 37 px
  * (`tests/workspace-start.spec.ts:180`, `tests/first-look-pacing.spec.ts:315`)
  * and (2) a new project's process story left the first screen of a
@@ -40,14 +40,6 @@ async function load(rel: string, name = 'default'): Promise<(props: Record<strin
   return require(out)[name];
 }
 
-test('the fit-to-standard offer lets its chip and its link wrap — side by side they were wider than a phone', async () => {
-  const Offer = await load('components/fit/FitToStandardOffer.tsx', 'FitOfferCard');
-  const gate = { outcome: 'offered', primary: 'A', classes: ['A'], reason: '' };
-  const html = renderToStaticMarkup(React.createElement(Offer, { gate, href: '/x', confirmed: null }));
-  const row = /<div class="([^"]*)"><span data-provenance=/.exec(html)?.[1] ?? '';
-  expect(row.split(' ')).toEqual(expect.arrayContaining(['flex-wrap', 'min-w-0']));
-});
-
 test('a phase chip of the walk wraps its name instead of widening the page', async () => {
   const Walk = await load('components/workspace/ProcessWalkThrough.tsx');
   const file = 'Z_MM_PO_APPROVAL.abap';
@@ -70,17 +62,15 @@ test('a phase chip of the walk wraps its name instead of widening the page', asy
   }
 });
 
-test('on a new project\'s first visit the walk entry and the offer follow the first look; on every later visit the walk comes first', () => {
+test('on a new project\'s first visit the walk entry follows the first look; on every later visit the walk comes first', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
   // The order stays the owner's: next step, walk, first look.
   const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\];/)![1];
   expect([...block.matchAll(/^\s*'([a-zA-Z]+)',/gm)].map((m) => m[1]).slice(0, 3)).toEqual(['nextStep', 'walk', 'firstLook']);
   // The `walk` slot is empty during the build-up …
   expect(shell).toMatch(/walk:\s*view === 'business' && signed !== null && !buildUp \?/);
-  // … and the first look's block carries the entry and the offer under it then.
+  // … and the first look's block carries the entry under it then.
   const firstLook = shell.slice(shell.indexOf('firstLook: ('), shell.indexOf('ask: answer ?'));
   expect(firstLook.indexOf('<FirstLook')).toBeLessThan(firstLook.indexOf('<ProcessWalkEntry'));
   expect(firstLook).toMatch(/signed !== null && buildUp \?/);
-  expect(firstLook.indexOf('<FirstLook')).toBeLessThan(firstLook.indexOf('<FitToStandardOffer'));
-  expect(shell).toContain("view !== 'it' && !buildUp ? <FitToStandardOffer");
 });

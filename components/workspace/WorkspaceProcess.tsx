@@ -47,7 +47,6 @@ import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
 import { bizLinesLabel, bizShowingLines, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 import type { DraftHolder } from '@/lib/process-map-draft';
-import FitMapMode from '@/components/fit/FitMapMode';
 
 /**
  * Client only and on demand, as on the Documentation stage: the map pulls
@@ -753,7 +752,6 @@ export default function WorkspaceProcess({
       <div data-coach-target="decision">
         <CcCard>
           {model ? (
-            <FitMapMode projectId={projectId} project={project} source={signed.source} fileName={signed.fileName} processName={project?.name || ''}>
             <ProcessMap
               key={isS ? 'steps' : 'map'}
               model={shownModel ?? model}
@@ -777,7 +775,6 @@ export default function WorkspaceProcess({
               draftHolder={draftHolder}
               canEdit={owner}
             />
-            </FitMapMode>
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">
               {map.reason}
