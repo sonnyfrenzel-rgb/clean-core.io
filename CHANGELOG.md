@@ -45,6 +45,19 @@ Engine-version gated (3.0.19): projects analysed by an earlier engine see no cha
   182 have no key-user part; 169 of 604 parts are key-user candidates. The process benchmark itself is unchanged.
 - Scaffold version 20.
 
+### Acceptance (21 October 2026, acceptance suite on 4a2100ca, $0.77)
+
+| Case | Route | Generation | On SAP |
+|---|---|---|---|
+| Delivery priority (the key-user starter example) | key user | no code by decision — 0 model calls | — (the step list and its acceptance checks are the package) |
+| PM shutdown slot plan | RAP | 21 of 21 | 28 objects activated, 0 errors; ABAP Unit 6 green, 0 red, 46 skipped |
+| SD return credit reconciliation | RAP | 31 of 32: U10P2 refused by the fill checks | 39 objects activated, 0 errors; ABAP Unit 25 green, **32 red** (every red case reached the stub U10P2), 22 skipped |
+| Freight rate check, 1,000-line order audit | CAP | 11 of 11, 39 of 39 | generated and gated; the Cloud Foundry run of 3.0.18 stands (scopes and rows unchanged) |
+
+The SD split part U10P2 was refused in two of the last three runs (the model uses the parent routine's locals
+without `cs_local`). It is no longer occasional: the engine has to hand the part what it needs — scheduled for
+3.0.20.
+
 ### Fixed
 
 - **A visitor nobody signed in for is shown no account.** The public pages under the product shell (About,
