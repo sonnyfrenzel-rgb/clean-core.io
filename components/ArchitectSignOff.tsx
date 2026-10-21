@@ -80,7 +80,7 @@ const architectureOptions: ArchitectureOption[] = [
     label: 'Key-User Extensibility (configured, no code)',
     focus: 'Configured in the system with SAP’s key-user apps — Custom Fields, Custom Logic, Custom CDS Views, Custom Analytical Queries, Adapt UI, Custom Business Objects. No code is generated.',
     bestFor: 'Small changes the engine read as key-user candidates: added fields, checks and derivations without writes, reading lists on released views, screen changes, small own tables of settings or master data.',
-    notFor: 'Logic that writes, calls out, commits or holds more than the tool allows — and any candidate whose key-user BAdI, business context or view is not released for your edition and release.',
+    notFor: 'Logic that writes, calls out, commits or holds more than the tool allows — any candidate whose key-user BAdI, business context or view is not released for your edition and release — and a company whose clean core programme restricts key-user changes, although SAP releases the path.',
     motto: 'Configure what the standard lets you configure; build only what it does not.',
   },
 ];

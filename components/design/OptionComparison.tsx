@@ -11,7 +11,8 @@ import {
   readOptionComparison,
 } from '@/lib/design-option-comparison';
 import { cn } from '@/lib/utils';
-import type { KeyUserStepList } from '@/lib/key-user-steps';
+import { KEY_USER_COMPANY_POLICY, type KeyUserStepList } from '@/lib/key-user-steps';
+import CcMessageStrip from '@/components/cc/MessageStrip';
 
 /**
  * The SAP standard, an in-app RAP extension and a side-by-side CAP application,
@@ -150,6 +151,11 @@ function KeyUserLimits({ list }: { list: KeyUserStepList }) {
         </ul>
       ) : null}
       <p className="m-0 text-[13px] text-cc-ink-muted">{list.note}</p>
+      <div data-option-key-user-policy="">
+        <CcMessageStrip state="warning" headline="Your company may draw its own line.">
+          {KEY_USER_COMPANY_POLICY}
+        </CcMessageStrip>
+      </div>
     </div>
   );
 }

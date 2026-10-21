@@ -253,9 +253,20 @@ const lineList = (xs: readonly number[]) => (xs.length ? `line${xs.length > 1 ? 
 const anchorText = (a: KeyUserAnchor) => (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`);
 
 /** The step list as the document the delivery package carries (Markdown). */
+/**
+ * Key user is SAP-released and Level A, and still a company may restrict or exclude it in its own clean core
+ * programme (owner 21.10.2026). Said wherever the route is offered: the design comparison, the sign-off choice and
+ * the package's step list. The reasons named are the ones SAP's own material makes visible — the logic apps carry an
+ * in-app ABAP editor, key-user and developer extensibility objects cannot use each other by default, and a field
+ * that has been transported cannot simply be deleted — plus the governance question that follows from them.
+ */
+export const KEY_USER_COMPANY_POLICY =
+  'Key-user extensibility is a path SAP releases, and Level A — but your company may restrict it or rule it out in its own clean core programme. Common reasons: logic maintained by business key users sits outside the development toolchain (code review, ATC, automated tests, the developer transport pipeline); the logic apps still contain an ABAP editor; key-user and developer extensibility objects cannot use each other by default, so moving a key-user extension to developer extensibility later means rebuilding it; and a field that has been transported cannot simply be deleted. Check your company’s extensibility policy and who owns key-user changes before you choose this route.';
+
 export function keyUserStepsMarkdown(list: KeyUserStepList, subject: string): string {
   const out: string[] = [`# Key-user step list — ${subject}`, '', list.sentence, '', `> ${list.note}`, ''];
   if (list.levelByConstruction) out.push(`Clean core level ${list.levelByConstruction} by construction: key-user extensions use released extension points only.`, '');
+  out.push(`> **Your company's policy:** ${KEY_USER_COMPANY_POLICY}`, '');
   for (const s of list.steps) {
     out.push(`## ${s.id} · ${s.app} — ${s.title}`, '');
     out.push(`- Replaces or relies on: ${s.anchors.map((a) => `${anchorText(a)} (${a.what})`).join('; ')}`);

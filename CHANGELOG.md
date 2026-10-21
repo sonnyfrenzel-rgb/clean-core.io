@@ -5,9 +5,47 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v3.0.18] — 2026-10-19
+## [v3.0.19] — 2026-10-21
 
-### Hotfix (21 October 2026)
+### Added — key-user extensibility (roadmap 3.0.19, owner decisions 18 and 19 October 2026)
+
+A small change that SAP's key-user tools cover is no longer sent through a developer build it does not need.
+Engine-version gated (3.0.19): projects analysed by an earlier engine see no change.
+
+- **The engine names key-user candidates from the code, each with its limit:** a custom field (`ZZ`/`YY`
+  components of an SAP table), custom logic (an exit or BAdI that only checks or derives — no write, no external
+  call, no commit, no function call, at most 20 statements), a custom CDS view or analytical query (a reading list
+  on tables with a released view in SAP's synced catalog), Adapt UI (screen-only exits), and a custom business
+  configuration or business object (a small own table that is only read). The statement limits (20, and 40 for the
+  rest) are Clean-Core.io's own rule, not SAP's, and the text says so. Where the repository cannot say whether a
+  key-user BAdI or view is released for key-user use, the candidate says "not determined" with the check to make.
+- **Key user is a fourth option** in the design comparison (standard · key user · RAP · CAP) and a route the
+  decision can choose. Where the whole program is key user the recommendation is key user, and choosing RAP or CAP
+  is the departure that needs a reason; where it splits, the code part keeps RAP or CAP. The score is unchanged —
+  it scores the code as it stands — and "Level A by construction as key-user extensibility" stands beside it.
+- **When the decision is key user, no code is generated:** Transformation shows the engine-built step list (which
+  app, which object and context, which fields and rules, each step anchored to the ABAP lines it replaces, how to
+  test it) — no scaffold, no model call, no lease. A split program generates code only for its code parts: a
+  routine wholly inside the key-user lines gets no unit and no model call, and TRACE.md names it. Testing turns the
+  steps into acceptance checks a key user runs in the system and records them as a self-declaration of the
+  signed-in account; Delivery waits for them. Economics prices key-user days as an option of its own, at the
+  account's own rate, with no proposed amounts. The package carries `docs/key-user-steps.md`; `docs/decision.md`
+  weighs key user beside the other routes.
+- **Your company may draw its own line** (owner 21.10.2026). Key user is a path SAP releases, and Level A — and a
+  company may still restrict or rule it out in its own clean core programme: logic maintained by business key users
+  sits outside the development toolchain (code review, ATC, automated tests, the developer transport pipeline), the
+  logic apps still contain an ABAP editor, key-user and developer extensibility objects cannot use each other by
+  default, and a transported field cannot simply be deleted. The design comparison, the sign-off choice and the
+  package's step list say so and ask the reader to check the company's extensibility policy.
+  `tests/key-user-company-policy.spec.ts`.
+- **A starter example of its own:** `Z_SD_DELIVERY_PRIORITY` (132 lines) — a custom field, a derivation BAdI, a
+  settings table and a priority report, all key user, Level A by construction; in the gallery's "Next" (Material
+  Stock Calc moves to "More").
+- **Measured on the 300 benchmark programs:** 15 are key user as a whole, 103 split into key-user and code parts,
+  182 have no key-user part; 169 of 604 parts are key-user candidates. The process benchmark itself is unchanged.
+- Scaffold version 20.
+
+### Fixed
 
 - **A visitor nobody signed in for is shown no account.** The public pages under the product shell (About,
   Knowledge) showed the account menu with an empty name, "Settings & Profile" and "Sign Out", which read as being
@@ -15,11 +53,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tests/shell-signed-out.spec.ts`.
 - **While the first insights are written, the workspace does not ask to run the analysis.** The "Continue with"
   card offered "Run the analysis" with a button while the start run was still with the server; it now says the
-  analysis is running and that there is nothing to press, as "Your next step" already did.
-  `tests/workspace-hub-running.spec.ts`.
+  analysis is running and that there is nothing to press. `tests/workspace-hub-running.spec.ts`.
 - **While Design writes the solution design, the requirements workspace waits.** "Open the requirements workspace"
   was a live link during the run, and a click left the page and cut the run off; the button is now disabled with
   its reason under it until the design is written. `tests/requirements-entry-wait.spec.ts`.
+- **Analyze: a replacement file unstages the earlier source when its read starts, and a failed read is refused**
+  (QA full review of v3.0.18).
+- **Security:** the v3.0.18 audit — SEC-2026-886, -891, -893 fixed; SEC-2026-885 and -887 refuted; SEC-2026-888
+  to -890 wait for the next Firestore rules deploy. Details stay in the sealed register.
+
+## [v3.0.18] — 2026-10-19
 
 A quality release with no new feature (owner decision 18.10.2026). Every change below is a fix of something that
 was wrong, a check that now proves what it claims, or a starter example that now runs cleanly end to end. Engine
