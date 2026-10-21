@@ -156,7 +156,7 @@ export default function FirstRunPage() {
             Your first run
           </h1>
           <p className="text-lg text-cc-ink-muted leading-relaxed font-medium">
-            Seven clicks from signing in to a downloadable package. You do not need an SAP connection,
+            Seven steps from signing in to a downloadable package. You do not need an SAP connection,
             you do not need credentials, and you do not need any code of your own — there are examples
             waiting on the dashboard.
           </p>
