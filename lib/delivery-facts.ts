@@ -33,7 +33,7 @@ import { decisionWeighing } from './decision-weighing';
 import { circularReason } from './design-option-comparison';
 import { decisionCardView } from './decision-card';
 import { decisionHeadline } from './decision-manager';
-import { costRevisionWords, type DecisionCostBasis, type NoCheapestCode } from './decision-cost';
+import { costBasisOf, costRevisionWords, sameCostRevision, type DecisionCostBasis, type NoCheapestCode } from './decision-cost';
 import { optionOfArchitecture } from './decision-options';
 import { sapNamesForDisplay } from './sap-naming';
 import { recommendedArchitecture } from './project-commands';
@@ -124,7 +124,7 @@ export function costRevisionFactsOf(
   if (!basis) return null;
   const noFigures = basis.revision === null;
   const economics = (project as { _economics?: EconomicsRecord | null })._economics;
-  const held = economics && !noFigures && economics.revision === basis.revision ? economics : null;
+  const held = economics && !noFigures && sameCostRevision(costBasisOf(economics), basis) ? economics : null;
   const figuresNote = noFigures
     ? 'No cost figures were stored when the decision was confirmed, so there are none to copy.'
     : held

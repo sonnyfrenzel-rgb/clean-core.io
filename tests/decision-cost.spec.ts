@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { costAssumptionsRevision, costComparison } from '../lib/cost-assumptions';
+import { costAssumptionsFingerprint, costAssumptionsRevision, costComparison } from '../lib/cost-assumptions';
+import { costRevisionFactsOf } from '../lib/delivery-facts';
+import type { HandoverProject } from '../lib/handover';
 import { nextRevisionMarks, readEconomicsRecord } from '../lib/economics-record';
 import { KEEP_CHEAPEST, OVERLAP, REBUILD_CHEAPEST, assumptions, rebuild, record } from './helpers/decision-cost-fixtures';
 import {
@@ -10,6 +12,7 @@ import {
   outdatedReasons,
   outdatedReasonsOfAnswer,
   readCostBasis,
+  sameCostRevision,
 } from '../lib/decision-cost';
 
 /**
@@ -34,19 +37,20 @@ test.describe('ADR-092 — what a confirmation records', () => {
     expect(basis).toEqual({
       format: 1,
       revision: costAssumptionsRevision(REBUILD_CHEAPEST),
+      fingerprint: costAssumptionsFingerprint(REBUILD_CHEAPEST),
       sequence: 3,
       at: '2026-10-10T09:00:00.000Z',
       cheapest: { optionId: 'rebuild', label: 'Rebuild', kind: 'rebuild' },
       noCheapest: null,
     });
     // No amount is recorded — the basis names options, never money (ADR-022).
-    expect(Object.keys(basis).sort()).toEqual(['at', 'cheapest', 'format', 'noCheapest', 'revision', 'sequence']);
+    expect(Object.keys(basis).sort()).toEqual(['at', 'cheapest', 'fingerprint', 'format', 'noCheapest', 'revision', 'sequence']);
     expect(Object.keys(basis.cheapest ?? {}).sort()).toEqual(['kind', 'label', 'optionId']);
   });
 
   test('no cheapest option is recorded with its reason; no figures as "no-figures"', () => {
     expect(costBasisOf(record(OVERLAP, 1))).toMatchObject({ cheapest: null, noCheapest: 'ranges-overlap' });
-    expect(costBasisOf(null)).toEqual({ format: 1, revision: null, sequence: null, at: null, cheapest: null, noCheapest: 'no-figures' });
+    expect(costBasisOf(null)).toEqual({ format: 1, revision: null, fingerprint: null, sequence: null, at: null, cheapest: null, noCheapest: 'no-figures' });
   });
 
   test('read back only when it is the shape it was written in', () => {
@@ -58,6 +62,42 @@ test.describe('ADR-092 — what a confirmation records', () => {
     // A cheapest option and a reason for none at once is not a record this server wrote.
     expect(readCostBasis({ ...basis, noCheapest: 'ranges-overlap' })).toBeNull();
     expect(readCostBasis({ ...basis, cheapest: null, noCheapest: 'made-up' })).toBeNull();
+  });
+});
+
+test.describe('owner 21.10.2026 — the same revision is the same full fingerprint, not the same twelve characters', () => {
+  // Two different sets of figures whose revision keys agree (the key carries twelve hex characters of the
+  // fingerprint): the full fingerprint tells them apart.
+  const KEY = costAssumptionsRevision(REBUILD_CHEAPEST);
+  const then = costBasisOf({ ...record(REBUILD_CHEAPEST, 1), revision: KEY });
+  const now = costBasisOf({ ...record(KEEP_CHEAPEST, 2), revision: KEY });
+
+  test('a key that agrees with other figures behind it is no longer "same"', () => {
+    expect(then.revision).toBe(now.revision);
+    expect(then.fingerprint).toMatch(/^[0-9a-f]{64}$/);
+    expect(then.fingerprint).not.toBe(now.fingerprint);
+    expect(sameCostRevision(then, now)).toBe(false);
+    expect(decisionCostCheck(then, now).state).toBe('outdated');
+    expect(decisionCostCheck(then, costBasisOf(record(REBUILD_CHEAPEST, 1))).state).toBe('same');
+  });
+
+  test('a basis recorded before 3.0.20 has no fingerprint, is still read, and is compared by its key', () => {
+    const { fingerprint: _drop, ...old } = then;
+    void _drop;
+    const read = readCostBasis(JSON.parse(JSON.stringify(old)))!;
+    expect(read).not.toBeNull();
+    expect(read.fingerprint).toBeNull();
+    expect(decisionCostCheck(read, now).state).toBe('same');
+    // A fingerprint that is not 64 hex characters is not one.
+    expect(readCostBasis({ ...then, fingerprint: 'abc' })!.fingerprint).toBeNull();
+    expect(readCostBasis(JSON.parse(JSON.stringify(then)))).toEqual(then);
+  });
+
+  test('the delivery package copies the figures only when the full fingerprint matches', () => {
+    const held = (economics: ReturnType<typeof record>) =>
+      costRevisionFactsOf({ _economics: economics } as unknown as HandoverProject, then, 'DEC-1')!.figures;
+    expect(held(record(REBUILD_CHEAPEST, 1))).not.toBeNull();
+    expect(held({ ...record(KEEP_CHEAPEST, 1), revision: KEY })).toBeNull();
   });
 });
 
