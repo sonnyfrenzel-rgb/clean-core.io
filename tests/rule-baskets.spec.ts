@@ -6,6 +6,8 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readSource } from '../lib/first-look';
 import { buildProcessFacts } from '../lib/abap/process-facts';
+import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
+import { buildProcessSkeletonFrom } from '../lib/abap/process-skeleton';
 import { basketTopics, explainBusinessRules, type RuleSetExplanation } from '../lib/abap/business-rule-set-explain';
 import { applyStateChoices, checkStateChoices, type StateChoiceInput, type StateEntry } from '../lib/process-states';
 import { choiceOf } from '../lib/rule-decision-flow';
@@ -130,6 +132,21 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     expect(status.basket.kind).toBe('technical');
     expect(ex.rules.find((r) => r.id === ruleId(reading, /c_max_rows/))!.basket.kind).toBe('technical');
     expect(ex.rules.find((r) => r.id === ruleId(reading, /gv_loglevel/))!.basket.kind).toBe('technical');
+  });
+
+  test('the first insights’ receipt and invoice program, read as 3.0.20 reads it: its 31 demo cases apart, 2 questions', () => {
+    const FL = read('tests/fixtures/first-look/zmm-receipt-invoice-check.abap');
+    const facts = buildProcessFacts(FL);
+    const set = deriveBusinessRulesFrom(FL, facts, buildProcessSkeletonFrom(facts), 'v3.0.20');
+    const ex = explainBusinessRules(FL, set, facts, 'v3.0.20');
+    expect(set.demoCases?.rules.length).toBe(31);
+    expect({ rows: ex.rules.length, technical: ex.baskets.technical.length, undetermined: ex.baskets.undetermined.length, questions: ex.questions.length })
+      .toEqual({ rows: 7, technical: 3, undetermined: 2, questions: 2 });
+    // A cap of 1,000,000,000,000 on a scaled value is "no limit" written as a number, whatever the field is called.
+    const scaled = ex.rules.find((r) => set.rules.find((x) => x.id === r.id)?.label.includes('gc_max_scaled'))!;
+    expect(scaled.basket.kind).toBe('technical');
+    expect(scaled.basket.reason.text).toMatch(/no limit/);
+    expect(questionFlow(ex, {}).shown.length).toBeLessThanOrEqual(QUESTION_BATCH);
   });
 
   test('the register lists every rule by basket — business topics, then the technical rules, then the undetermined, each with why', () => {

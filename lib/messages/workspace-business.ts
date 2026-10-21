@@ -69,6 +69,7 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.storyLead': 'What the program does, in the order of the code. Each step with the line it was read from.',
   'biz.storyNamesNote': 'names',
   'biz.storyNone': 'The steps of this program could not be read from the source. The map below shows what could be drawn.',
+  'biz.testDataTitle': 'Test data switch — not part of the business process',
   'biz.decidesTitle': 'What it decides',
   'biz.decidesNone': 'No value is hard-coded as a rule in this program.',
   'biz.changesTitle': 'What it changes',
@@ -152,6 +153,27 @@ export function bizStoryChecks(checks: readonly string[], more: number): string 
 /** Where a step can end the run. */
 export function bizStoryStops(stops: readonly string[]): string {
   return `Can end here: ${stops.join(' · ')}`;
+}
+
+/**
+ * The technical checks of a step, counted and folded — roadmap 3.0.20 (owner
+ * report 21.10.2026: "Checks: Call failed or no day · Code given · … and 23 more").
+ */
+export function bizStoryTechnical(n: number, alone: boolean): string {
+  const what = `${n} technical ${n === 1 ? 'check' : 'checks'} (data found, input filled, run options)`;
+  return alone ? `${what.charAt(0).toUpperCase()}${what.slice(1)} — no business decision.` : `Plus ${what} — no business decision.`;
+}
+
+/** The program's own demo cases, set apart from the steps (3.0.20). */
+export function bizTestData(cases: number): string {
+  return cases > 0
+    ? `When its demo switch is on, the program runs on ${cases} test ${cases === 1 ? 'case' : 'cases'} of its own. This is test data for trying it out.`
+    : 'When its demo switch is on, the program runs on test data of its own, for trying it out.';
+}
+
+/** The technical settings among the rules, counted — "What it decides" lists business rules only (3.0.20). */
+export function bizTechnicalSettings(n: number): string {
+  return `Technical settings, ${n} — caps, decimals and other settings of the program itself; not business decisions.`;
 }
 
 /** "and 7 more". */

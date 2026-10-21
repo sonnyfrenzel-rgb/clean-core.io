@@ -6,6 +6,8 @@ import { enclosingBranches, type EnclosingBranch } from './enclosing-branches';
 import { conditionToPhrase, humaniseField, humaniseRoutine, plainContext, ruleConditionText, type PlainContext } from './plain-language';
 import { ruleStandardHint } from '../rule-standard-hints';
 import { readDemoSwitches } from './demo-switches';
+import { APP_VERSION } from '../version';
+import { engineReads3020Apply } from './engine-reads-3020-gate';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -566,9 +568,11 @@ interface RuleContext {
   place: ArmPlace | null;
   statementIndex: number;
   anchor: SourceRange;
+  /** From engine 3.0.20: a cap of a thousand million or more is technical on any subject. */
+  reads3020: boolean;
 }
 
-function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext): RuleContext {
+function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext, reads3020 = false): RuleContext {
   const tests = testsOf(rule);
   const first = tests[0] ?? rule.parameters[0];
   const stems = [...new Set(rule.parameters.map((p) => fieldStem(p.subject)).filter(Boolean))];
@@ -587,6 +591,7 @@ function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext): 
     place: tests[0] ? armAt(facts.control, tests[0].lineStart) : null,
     statementIndex,
     anchor,
+    reads3020,
   };
 }
 
@@ -603,6 +608,12 @@ function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   // Only a subject named as a setting of the
   // program makes the rule technical; the sentinel then says what its value is.
   const technicalSubject = rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s));
+  // From engine 3.0.20 (owner report 21.10.2026, "Only maximum scaled 1000000000000 is processed" first
+  // in "What it decides"): a cap of a thousand million or more is "no limit" on any subject.
+  if (rc.reads3020 && values.some((v) => /^(?:10{9,}|9{9,})$/.test(v))) {
+    const v = values.find((x) => /^(?:10{9,}|9{9,})$/.test(x)) ?? '';
+    return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
+  }
   if (technicalSubject && values.some(isSentinel)) {
     const v = values.find(isSentinel) ?? '';
     return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
@@ -1026,7 +1037,12 @@ function isRunOption(subject: string | null | undefined, ctx: PlainContext): boo
   return !!selection && !selection.selectOption && (selection.checkbox || ctx.flags.has(name));
 }
 
-function basketOf(rc: RuleContext, technical: ExplainedSentence | null, topic: RuleTopic, bf: BasketFacts): RuleExplanation['basket'] {
+/** A selection-screen parameter or select-option. */
+function isSelectionField(subject: string | null | undefined, ctx: PlainContext): boolean {
+  return ctx.selections.has((subject ?? '').toLowerCase().replace(/[<>]/g, ''));
+}
+
+function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: ExplainedSentence | null, topic: RuleTopic, bf: BasketFacts): RuleExplanation['basket'] {
   const anchors = [rc.anchor];
   const say = (kind: RuleBasket, text: string, at: SourceRange[] = anchors): RuleExplanation['basket'] => ({ kind, reason: { text, anchors: at } });
   if (technical) return say('technical', technical.text, technical.anchors);
@@ -1044,6 +1060,15 @@ function basketOf(rc: RuleContext, technical: ExplainedSentence | null, topic: R
   const testValues = values.filter((v) => TEST_DATA.test(v));
   if (testValues.length > 0 && tests.every((p) => valuesOf(p).length === 0 || valuesOf(p).some((v) => TEST_DATA.test(v)))) {
     return say('technical', `It picks out test documents (${[...new Set(testValues)].join(', ')}) — test data, not a business decision.`);
+  }
+  // "No limit" written as a number on anything but money: a technical cap, whatever the field is called.
+  if (values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s))) {
+    const v = values.find(isSentinel) ?? '';
+    return say('technical', `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`);
+  }
+  // A check of what was entered on the selection screen, ending the run with a message: a plausibility check of the input.
+  if (tests.length > 0 && tests.every((p) => isSelectionField(p.subject, bf.ctx)) && rc.holdsStop) {
+    return say('technical', `It checks the ${rc.subject} entered when the program is started and stops with a message if it is out of range — a plausibility check of the input, not a business rule.`);
   }
   if (tests.length > 0 && tests.every((p) => isRunOption(p.subject, bf.ctx))) {
     return say('technical', `It follows an option chosen when the program is started (${humaniseField(tests[0].subject ?? '', bf.ctx) || 'a run option'}), not a business value.`);
@@ -1217,7 +1242,14 @@ function questionsOf(inputs: readonly QuestionInput[], ctx: PlainContext): RuleQ
  * The explanation of every rule of a set. `facts` are the statements, the
  * nesting and the branches the rule set was derived from (`buildProcessFacts`).
  */
-export function explainBusinessRules(source: string, set: BusinessRuleSet, facts: ExplainFacts): RuleSetExplanation {
+export function explainBusinessRules(
+  source: string,
+  set: BusinessRuleSet,
+  facts: ExplainFacts,
+  /** The engine the explanation is read for (`ENGINE_READS_3020_FROM`). */
+  engineVersion: string | null = APP_VERSION,
+): RuleSetExplanation {
+  const reads3020 = engineReads3020Apply(engineVersion);
   const ctx = plainContext(source);
   const hasInclude = facts.statements.some((s) => s.keyword.toUpperCase() === 'INCLUDE' && !/^INCLUDE\s+(?:TYPE|STRUCTURE)\b/i.test(s.text));
   // The values the code tests one field against, across rules — for "handled by another rule".
@@ -1232,16 +1264,16 @@ export function explainBusinessRules(source: string, set: BusinessRuleSet, facts
     }
   }
   const demoIds = new Set((set.demoCases?.rules ?? []).map((d) => d.id));
-  const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source)?.routines ?? [] : []).map((r) => r.toUpperCase()));
+  const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source, engineVersion)?.routines ?? [] : []).map((r) => r.toUpperCase()));
   const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines), ctx, hasInclude };
   const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
-    const rc = contextOf(rule, facts, ctx);
+    const rc = contextOf(rule, facts, ctx, reads3020);
     const technical = technicalOf(rc, demoIds.has(rule.id));
     const sides = sidesOf(rc, facts, ctx);
     const { where, parents } = whereOf(rc, facts, ctx);
     const businessTopic = topicFromStems(rc.stems, rule);
-    const basket = basketOf(rc, technical, businessTopic, basketFacts);
+    const basket = basketOf({ ...rc, holdsStop: (sides?.holdsEffects ?? []).some((x) => STOPS.test(x)) }, technical, businessTopic, basketFacts);
     // The topic stays what it was — the reading order, and the sentences' places in it, do not move;
     // `basketTopics` groups by basket for the register and the flow.
     const topic: RuleTopic = technical ? 'technical' : businessTopic;
