@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The content check of the weekly SAP reference sync (SEC-2026-892): run by the push job of
+ * The content check of the weekly SAP reference sync: run by the push job of
  * .github/workflows/sync-sap-references.yml on the data folders the sync job handed over, before
  * anything is copied into the checkout. Plain Node, no imports beyond node:fs, node:path, node:url and node:crypto,
  * so the job that holds the write token still installs nothing.
@@ -159,7 +159,7 @@ export function dataProblems(dir) {
 }
 
 /**
- * The copied files against SAP's own repository (QA review of a20d2cb7bd39, cf02a5de56a3): the hashes in
+ * The copied files against SAP's own repository: the hashes in
  * abap-file-formats.json come from the same artifact as the schemas, so they bind nothing on their own. Every copied
  * schema and the LICENSE are fetched from SAP/abap-file-formats at the commit the metadata names — a commit only SAP
  * can create — and must match byte for byte. `fetchBytes(url)` returns the bytes or null; injected by the tests.

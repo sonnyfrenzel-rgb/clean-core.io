@@ -653,7 +653,7 @@ export function costAssumptionsManifestInput(a: CostAssumptions): ManifestInput 
       `Cost assumptions that do not carry an amount must not become a signed input: ${coverage.sentence}`,
     );
   }
-  // SEC-2026-900. `binding: 'value'` means `sha256` is the digest of the value itself
+  // `binding: 'value'` means `sha256` is the digest of the value itself
   // (`lib/input-manifest.ts`), so it is the whole fingerprint — the revision stays the name a reader compares.
   return {
     id: COST_ASSUMPTIONS_INPUT_ID,
@@ -1063,8 +1063,7 @@ export function costComparison(a: CostAssumptions): CostComparison {
   }
 
   // An option whose figures are accepted but too large to add up has no total;
-  // leaving it out would crown a winner among the rest (QA slice review of
-  // bd016957d13c, 9cef42e971ec).
+  // leaving it out would crown a winner among the rest.
   const unpriced = costs.filter((c) => c.coverage.state !== 'rejected' && c.total === null);
   if (unpriced.length > 0) {
     return shell(

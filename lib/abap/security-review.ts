@@ -213,7 +213,7 @@ function stopsFlow(statement: AbapStatement): boolean {
  */
 function leavesLoopBefore(statements: readonly AbapStatement[], from: number, to: number): boolean {
   let depth = 0;
-  // SELECT loops opened after the CHECK: their ENDSELECT closes them, not the CHECK's loop (QA f2b34a9673f5).
+  // SELECT loops opened after the CHECK: their ENDSELECT closes them, not the CHECK's loop.
   let selects = 0;
   for (let i = from + 1; i < to && i < statements.length; i++) {
     const c = maskLiterals(statements[i].text).trim();
@@ -243,8 +243,7 @@ function leavesLoopBefore(statements: readonly AbapStatement[], from: number, to
 }
 
 /**
- * Does the `COND`/`SWITCH` throw on the arm the failure takes (QA
- * fdaf20ecaa28)? Read only in the forms that show it: `WHEN <failure> THEN
+ * Does the `COND`/`SWITCH` throw on the arm the failure takes? Read only in the forms that show it: `WHEN <failure> THEN
  * THROW`, one `WHEN <success> THEN … ELSE THROW`, or `SWITCH …( sy-subrc
  * WHEN 0 THEN … ELSE THROW`. Anything else is not read as covering the access.
  */
@@ -284,7 +283,7 @@ function failureCannotReach(statements: readonly AbapStatement[], call: number, 
   if (/^(?:CHECK|ASSERT)\b/i.test(code)) {
     if (!(access > at && SUBRC_SUCCESS.test(condition(code.split(' ')[0])))) return false;
     // A CHECK inside a loop only leaves the iteration: an access after the
-    // loop is still reached on failure (QA 804c2856d240). ASSERT ends the run.
+    // loop is still reached on failure. ASSERT ends the run.
     return /^ASSERT\b/i.test(code) || !leavesLoopBefore(statements, at, access);
   }
   if (/\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code)) return access > at && throwsOnFailure(code);
@@ -461,14 +460,14 @@ export function readSecurityReviewTasksFrom(
   // what was validated (QA c38f8043). Order is the order of the source, not of
   // execution.
   //
-  // From 3.0.13 the failure of the call has to be decided on (QA review of
-  // 5a559787, 7e158fe18264). Without EXCEPTIONS a failing module raises an
+  // From 3.0.13 the failure of the call has to be decided on.
+  // Without EXCEPTIONS a failing module raises an
   // exception nobody handles, and the program ends there. With EXCEPTIONS the
   // failure only sets sy-subrc, and the statement right after the call has to
   // decide on it — the rule of `authority-result-not-evaluated` above, through
   // the same `decidesOnSubrc`. What that decision does (stop, skip, warn) is
   // not checked, exactly as for AUTHORITY-CHECK (owner decision 15.10.2026,
-  // QA review of 5665fc944c10). A call whose sy-subrc nobody decides on
+  // A call whose sy-subrc nobody decides on
   // validated nothing.
   const isFileNameCheck = (s: AbapStatement) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text);
   const validationDecided = (index: number): boolean => {
@@ -480,7 +479,7 @@ export function readSecurityReviewTasksFrom(
   // From 3.0.18 (`engineReads`) a decision is not enough: with EXCEPTIONS the
   // call covers an access only when its failure cannot reach it
   // (`failureCannotReach`) — a decision that logs or warns and goes on leaves
-  // the path as unvalidated as no call (QA delta of 73b8cad63d3e).
+  // the path as unvalidated as no call.
   const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationDecided(index)
     ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
     : []);
@@ -716,8 +715,7 @@ function overwrittenCleanBefore(
     if (at.length > target.length || at.some((p, k) => target[k] !== p)) return false;
     const code = codeWithEmbedded(s.text);
     // A write to one component (`ls_filter-description = 'x'`) clears no other
-    // component: it is no overwrite of the whole, and a tainted one still taints
-    // (QA review of 3fd753f5de41, b0133ee3eb34).
+    // component: it is no overwrite of the whole, and a tainted one still taints.
     const written = /^(?:CLEAR\s+)?([^\s=]+)/i.exec(code)?.[1] ?? '';
     const component = /^(?!DATA\()[\w/<>!]+(?:->[\w/]+)*-(?!>)/i.test(written);
     const assigned = new RegExp(String.raw`^(?:DATA\(\s*[\w/]+\s*\)|${OPERAND})\s*=\s*([\s\S]*)$`, 'i').exec(code);

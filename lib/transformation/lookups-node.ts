@@ -54,7 +54,7 @@ export interface LookupCondition {
   /** The key of the `where` values the function takes. */
   key: string;
   /**
-   * How the comparison orders (QA finding cbe1c1d82c46): by value only where the operand's declared type says so —
+   * How the comparison orders: by value only where the operand's declared type says so —
    * `number` for a numeric type or an unquoted number, `date` for a date (`sy-datum`, `TYPE d`) — and otherwise as
    * text, the way ABAP compares two character fields (`'10' < '2'`; a key with leading zeros stays text).
    */
@@ -150,7 +150,7 @@ function compareOf(operand: string, line: number, shapes: AbapShapes | null): Lo
 const WHERE_WORDS = new Set(['and', 'or', 'not', 'is', 'null', 'initial', 'in', 'like', 'between', 'escape']);
 
 /**
- * Every column a WHERE the engine does not write names (QA finding 0c30977361da): the left side of a comparison,
+ * Every column a WHERE the engine does not write names: the left side of a comparison,
  * of IN/LIKE/BETWEEN and of `IS [NOT] INITIAL`/`IS [NOT] NULL`, each with or without NOT — so the row type holds it
  * and the body's predicate on the row type-checks.
  */
@@ -352,7 +352,7 @@ export function lookupEntriesOf(
   statements: readonly AbapStatement[],
 ): LookupEntry[] {
   const constants = constantsOf(statements);
-  // Two reads on one line get two frame names (QA finding 90667d2a91ae): `lookup_L156`, then `lookup_L156_2`.
+  // Two reads on one line get two frame names: `lookup_L156`, then `lookup_L156_2`.
   const onLine = new Map<number, number>();
   return reads
     .filter((r) => r.unitId === u.id)

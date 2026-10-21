@@ -123,8 +123,8 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping, levels = 
             ) : (
               /* The model's address was not api.sap.com over TLS. It used
                  to go on the anchor as it came, so a javascript: or a
-                 foreign link was one click away (security audit of
-                 b88c77b, SEC-2026-236). */
+                 foreign link was one click away.
+                 */
               <span
                 data-api-hub-unlinked
                 className="inline-flex items-center cc-text-meta text-cc-ink-muted whitespace-nowrap"

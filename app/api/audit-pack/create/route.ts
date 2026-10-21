@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing required parameter: projectId.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
     // The attested file's digest says which self-declaration was sealed, not
     // that it is true; it used to be left out, and the omission let anyone
     // holding a pack rewrite the sign-off while every verifier still called the
-    // pack authentic (QA full review of a19945ef01dc).
+    // pack authentic.
     const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
     const enc = new TextEncoder();
     const files = Object.entries(fileContents).map(([path, content]) => ({
@@ -423,7 +423,7 @@ export async function POST(req: NextRequest) {
     // one was never set. Nested + merge is safe here because Firestore merges
     // map fields recursively — sibling auditMetadata keys survive.
     //
-    // Bound to the exported run (codex code-trust-07): written only while that
+    // Bound to the exported run: written only while that
     // run is still the active one, and with its id beside the timestamp. A new
     // run clears the marker (`/api/runs/create`), so "handed over" never
     // describes a run nobody exported.

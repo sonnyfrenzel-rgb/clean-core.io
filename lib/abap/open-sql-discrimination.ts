@@ -9,7 +9,7 @@
  *
  * The evidence engine learned this; `code-assessment.ts` had its own copy of
  * the detectors without it, so the same statements came back as data coupling
- * on the architecture surfaces (QA review of 33471220d6e9, eac6118f1eac).
+ * on the architecture surfaces.
  * One module now, read by both.
  *
  * Approximate by design, and deliberately in the direction of over-reporting:
@@ -32,7 +32,7 @@ import { maskLiterals } from './statement-reader';
 // `transporting_flag` — ordinary column names. No statement reached a wrong
 // answer through it, because each branch decides on its own structure, but a
 // clause test that fires on half an identifier is one refactor away from doing
-// so (QA review of cf0f2244eda4).
+// so.
 const INTERNAL_TABLE_CLAUSE = /\b(?:INTO\s+TABLE\b|LINES\s+OF\b|INITIAL\s+LINE\b|ADJACENT\s+DUPLICATES\b|ASSIGNING\b|REFERENCE\s+INTO\b|TRANSPORTING\b|INDEX\b)/i;
 
 /** Words that are never a table name in these positions. */
@@ -49,7 +49,7 @@ export interface SqlWrite {
  * True when the write can only name a database table, whatever the source
  * declares under the same name. UPDATE has no internal-table form, so a local
  * `DATA mara TYPE mara.` beside `UPDATE mara SET …` must not turn the database
- * write into an internal-table step (QA review of d939fb5b056b, 84d858bc959b).
+ * write into an internal-table step.
  */
 export function writesDatabaseOnly(write: SqlWrite): boolean {
   return write.keyword === 'UPDATE';
@@ -63,13 +63,13 @@ export function writesDatabaseOnly(write: SqlWrite): boolean {
  * The clause test and the shapes below run over the whole statement, so a
  * literal containing one of those words — `DELETE FROM zlog WHERE reason =
  * 'assigning'` — would offer it to the test as if it were syntax. Sixteen
- * adversarial statements were measured before the masking was added (QA review
- * of cf0f2244eda4), and none of them reached a wrong answer, because each
+ * adversarial statements were measured before the masking was added,
+ * and none of them reached a wrong answer, because each
  * branch decides on its own structure and not on the flag alone.
  *
  * A private copy of the rule was written here, and it knew `'…'` and `` `…` ``
- * and not the string template. That is the hole the full review of a19945ef01dc
- * found: `INSERT zlog FROM @( VALUE zlog( message = |INDEX| ) )` handed `INDEX`
+ * and not the string template. That was a hole:
+ * `INSERT zlog FROM @( VALUE zlog( message = |INDEX| ) )` handed `INDEX`
  * to the clause test as syntax, the helper answered "internal table", and a real
  * write to a custom table produced no finding on any surface. So the rule is not
  * restated here any more; `maskLiterals` in `statement-reader.ts` is asked, the
@@ -133,7 +133,7 @@ export function isInternalTableOperation(text: string): boolean {
  * and answers `ENTITIES`; the process skeleton keeps that answer for its write
  * node, but a *table dependency* must not — "a direct write to SAP table
  * ENTITIES" was a Critical finding on a RAP determination (corpus CC-059), and
- * since codex code-engine-05 a direct write to an SAP object is level D, so the
+ * a direct write to an SAP object is level D, so the
  * same misreading would grade the permitted write path as the forbidden one.
  */
 export function isEntityManipulation(text: string): boolean {

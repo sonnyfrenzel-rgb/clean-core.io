@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     // Nested maps, merged — the write lives in `lib/survey/store.ts` so a spec can
     // run it against the emulator and read the document back. It used to be four
     // lines here with dotted keys, which `set()` stores as literal field names
-    // rather than paths, so no reader ever saw an answer (QA b22563b1cd74).
+    // rather than paths, so no reader ever saw an answer.
     await recordAnswer(ref, {
       campaign: identity.campaign,
       uid: identity.uid,

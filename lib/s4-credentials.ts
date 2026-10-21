@@ -112,7 +112,7 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
     btpDestinationJson: cfg.btpDestinationJson || '',
   });
 
-  // Vault and profile metadata in one batch (QA full review of v2.20.0): two
+  // Vault and profile metadata in one batch: two
   // awaited writes could leave credentials `loadS4ConfigForUser` serves while
   // the save reported failure. Now both commit or neither does.
   const batch = db.batch();

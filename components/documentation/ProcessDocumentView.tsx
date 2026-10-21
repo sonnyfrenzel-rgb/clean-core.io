@@ -407,7 +407,7 @@ function FlowStep({ step }: { step: PdStep }) {
  */
 type FlowItem =
   | { kind: 'entry'; entry: PdPathEntry }
-  /** The alternatives of one user choice: one row per arm, the arms stacked (QA a5c979bd9e1c). */
+  /** The alternatives of one user choice: one row per arm, the arms stacked. */
   | { kind: 'choice'; gateId: string; arms: PdStep[][] };
 
 /** The path as the strip draws it: consecutive steps of one user choice become one stack of alternatives. */
@@ -432,7 +432,7 @@ export function flowItems(path: readonly PdPathEntry[]): FlowItem[] {
 }
 
 export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
-  // QA fa0c38e095f9: with no step read, Start → End would draw a completed flow the code does not establish.
+  // With no step read, Start → End would draw a completed flow the code does not establish.
   if (!path.length) return <p data-doc-path-none="" className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.flowNone')}</p>;
   return (
     // `relative`: the track is the containing block of the nodes' `sr-only`
@@ -452,7 +452,7 @@ export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] 
             >
               {item.arms.map((arm) => (
                 <div key={arm[0].id} data-doc-path-arm="" className="flex items-start">
-                  {/* The answer that selects this arm (QA 867a59061693): without it two alternatives are indistinguishable. */}
+                  {/* The answer that selects this arm: without it two alternatives are indistinguishable. */}
                   {arm[0].choice?.when ? (
                     <span data-doc-path-arm-when="" title={arm[0].choice.when} className="mr-1 mt-2 w-28 shrink-0 break-words text-[11px] font-medium text-cc-ink-muted">
                       {arm[0].choice.when}

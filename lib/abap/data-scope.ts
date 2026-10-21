@@ -194,7 +194,7 @@ export function readDataScopeFrom(statements: AbapStatement[]): DataScopeReport 
       chosen.length ? `restricted by the selection screen: ${chosen.join(', ')}` : '',
       fae ? `for the entries of ${fae[1]}` : '',
       keyed.length ? `by ${keyed.join(' and ')}` : '',
-      // QA debd926589b5: an empty driver table drops the whole WHERE — unless the
+      // An empty driver table drops the whole WHERE — unless the
       // source checks it for content, the restriction above is not certain.
       fae && !nonEmptyGuarded(fae[1], statements, statement) ? `every row if ${fae[1]} is empty (the WHERE is then dropped)` : '',
     ].filter(Boolean);

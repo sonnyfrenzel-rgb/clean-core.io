@@ -7,8 +7,8 @@ import { type ProcessFacts } from './process-facts';
  *
  * Until 2.12 the canonical model knew `CALL FUNCTION … IN UPDATE TASK` only as
  * a service task with `inUpdateTask: true`, and `COMMIT WORK`/`ROLLBACK WORK`
- * only as a note (`commit-boundary`). The counter-review showed at CC-026 what
- * that does to a reader: a registration drawn as a task reads as a task that
+ * only as a note (`commit-boundary`). CC-026 shows what that does to a
+ * reader: a registration drawn as a task reads as a task that
  * has been *done*. It has not. Three states, each on the line that proves it:
  *
  * - `registered` — `CALL FUNCTION … IN UPDATE TASK`. The module is recorded for
@@ -141,7 +141,7 @@ function luwKind(statement: AbapStatement): LuwEventKind | null {
   // are themselves registered for the update, which would be a different thing.
   // Called remotely (`DESTINATION`, `STARTING NEW TASK`, `IN BACKGROUND TASK`)
   // they end the LUW of another session, not this program's: the caller's
-  // registrations are still open after them (codex code-engine-03).
+  // registrations are still open after them.
   if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_(?:COMMIT|ROLLBACK)'/i.test(text)) {
     const code = maskLiterals(text);
     if (UPDATE_TASK.test(code) || REMOTE_CALL.test(code)) return null;
@@ -159,8 +159,7 @@ function andWaitOf(statement: AbapStatement, kind: LuwEventKind): boolean | null
   if (/^COMMIT\s+WORK\s+AND\s+WAIT\b/i.test(statement.text)) return true;
   if (/^CALL\s+FUNCTION\b/i.test(statement.text)) {
     // A literal or constant decides; a variable does not, and is reported as
-    // undetermined rather than as "does not wait" (QA slice review of
-    // 81810c8026e0, b99ee9f51490).
+    // undetermined rather than as "does not wait".
     const wait = /\bWAIT\s*=\s*('[^']*'|[^\s.]+)/i.exec(statement.text);
     if (!wait) return false;
     const value = wait[1].toLowerCase();
@@ -533,15 +532,14 @@ class LuwReader {
    * `sy-subrc` is one global field, overwritten by nearly every statement that
    * does something. The window of two accepted a mention in either of the next
    * two statements, so `COMMIT WORK AND WAIT. CALL FUNCTION 'X'. IF sy-subrc …`
-   * counted as reading the commit's result when it reads the call's (QA full
-   * review of v2.20.0, 8c3d47dbf614). A statement in between is looked past
+   * counted as reading the commit's result when it reads the call's.
+   * A statement in between is looked past
    * only when it cannot set the field: a declaration or a CLEAR.
    */
   private subrcReadAfter(index: number): boolean {
     const { statements } = this.facts;
     for (let i = index + 1; i <= index + 2 && i < statements.length; i++) {
-      // Clearing the field discards the commit's code; it does not read it
-      // (QA slice review of ad155b478e36, e631e5c76d7c).
+      // Clearing the field discards the commit's code; it does not read it.
       if (/^(?:CLEAR|FREE)\b[^.]*\bsy-subrc\b/i.test(statements[i].text)) return false;
       if (/\bsy-subrc\b/i.test(statements[i].text)) return true;
       if (!SUBRC_NEUTRAL.test(statements[i].text)) return false;

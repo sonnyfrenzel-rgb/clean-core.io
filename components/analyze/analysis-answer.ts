@@ -159,8 +159,7 @@ export interface DataEffect {
   /**
    * Tables changed through the screens of a transaction (batch input), distinct,
    * in the order first found. No direct write, but a change all the same: left
-   * out, a program whose only change is a batch input read "no write" (QA
-   * review, 12ebed426ba6).
+   * out, a program whose only change is a batch input read "no write".
    */
   batchInput: string[];
 }
@@ -192,8 +191,8 @@ export const EFFECT_NAMES_SHOWN = 4;
  * The data-effect sentence as parts, deterministic: "The engine found writes
  * to 1 SAP standard table (EBAN) and 2 custom tables (ZMM_PO_APPR,
  * ZMM_PO_ATTACH)." Found, not "it writes to": like the no-write case, the
- * sentence is what the engine found, never an inventory of the whole program
- * (QA review, 39f0f506ed92). Changes through batch input follow as their own
+ * sentence is what the engine found, never an inventory of the whole program.
+ * Changes through batch input follow as their own
  * clause.
  */
 export function dataEffectParts(effect: DataEffect): EffectPart[] {

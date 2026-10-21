@@ -280,7 +280,7 @@ export function buildLevelOverlay(
     // The rollup leaves Unknown out of the letter, as SAP's does. The mark
     // must not leave it out of the count: an ungraded object folded into
     // "+N" reads as one more graded object, and "not determined" is never
-    // rounded away (QA full review of 81810c8, bfbbcc22a9f2). When nothing
+    // rounded away. When nothing
     // was determined the letter itself says Unknown and the count stays "+N".
     const undetermined = worst === 'Unknown' ? 0 : letters.filter((g) => g === 'Unknown').length;
     const rest = letters.length - 1 - undetermined;

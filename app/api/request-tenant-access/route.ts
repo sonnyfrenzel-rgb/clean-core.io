@@ -14,8 +14,8 @@ import { buildTenantPendingEmail, TENANT_PENDING_SUBJECT } from '@/lib/tenant-em
 /**
  * What a tenant request may carry. The body is a name and a few sentences of
  * motivation; 32 KiB is ample for both and is read under a deadline, so an
- * oversized body is refused before it is parsed, escaped and mailed (QA full
- * review of fc787674705f, 71dbd0fbe274). The fields are cut to the lengths the
+ * oversized body is refused before it is parsed, escaped and mailed.
+ * The fields are cut to the lengths the
  * testing page already stores.
  */
 const TENANT_REQUEST_BODY_LIMITS = { maxBytes: 32 * 1024, timeoutMs: 10_000 };
@@ -38,8 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Per account, not per account and address: with the client IP in the key,
     // every network the same account used opened a fresh window of three
-    // administrator and applicant mails (QA full review of fc787674705f,
-    // 13e2cad2f979).
+    // administrator and applicant mails.
     try {
       await assertRateLimit(`request-tenant:${decodedToken.uid}`, 3, 60 * 60 * 1000);
     } catch (rateErr: any) {
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
     // mail. The gate above is a read; an erasure that completes after it used
     // to be noticed only by the update at the end — after the nonce had been
     // written for a uid that no longer exists and the administrator had been
-    // mailed the applicant's details (QA review of a7e0ae36c896).
+    // mailed the applicant's details.
     // `updateExistingProfile` fails on a missing profile with the gate's own
     // 404, so an erased account now stops here, with nothing written or sent.
     const { db, FieldValue } = await getAdminDb();
@@ -121,7 +120,7 @@ export async function POST(request: NextRequest) {
     // in lib/firebase-admin.ts). The browser used to create it after this
     // route had answered: a failed client write left the mailed links pointing
     // at nothing, and the rules allow only a create, so a second request after
-    // a revoke was refused on the existing document (QA 04ad2108af07). Written
+    // a revoke was refused on the existing document. Written
     // here, with the Admin SDK, before the nonce and the mail, and only while
     // the profile still exists — the same transaction-guarded write the
     // registration record uses, so an erasure in between is not undone.
@@ -282,7 +281,7 @@ export async function POST(request: NextRequest) {
       // an administrator actually holds the request. It was sent regardless, so a
       // rejected administrator mail left the applicant told their request was
       // under review while the route answered 502 and nobody had the approval
-      // link (QA full review of fc787674705f, c4bdccb8bd79).
+      // link.
       if (adminNotified) {
         try {
           console.log('[Email] Sending the tenant request confirmation to the applicant...');
@@ -358,7 +357,7 @@ export async function POST(request: NextRequest) {
     //
     // An update, not a merge-set: a merge onto a missing document creates it,
     // and an erasure that deleted `users/{uid}` in the meantime used to be
-    // undone here (QA full review of fc787674705f, 2eb73a29b0fd).
+    // undone here.
     // `updateExistingProfile` fails on a missing profile with the gate's own
     // 404, so the erased account stays erased and the caller is refused.
     await updateExistingProfile(uid, {

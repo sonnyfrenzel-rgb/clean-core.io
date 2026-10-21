@@ -161,7 +161,7 @@ function mayDisplay(s: AbapStatement): boolean {
  * does? Deliberately wide — a call, a routine, an itab write all count — so the
  * persistence rule only fires where the anchors plainly read and decide.
  * `SELECT` is not on the list: it reads, and a read beside a decision is
- * exactly the case the rule is for (QA review of 8f9ea35a000e, 61f4478991ab).
+ * exactly the case the rule is for.
  */
 function mayWrite(s: AbapStatement): boolean {
   return [
@@ -211,8 +211,7 @@ const CREATED = /\b(angelegt|anlegen|anlage|neu\s+erfasst|erstellt|created|creat
 /**
  * SAP standard transactions that display a business object — a fixed list,
  * never a pattern. A customer code that happens to end in 03 (`ZVA03`) may do
- * whatever its author wrote, so an unknown code is never judged (QA review of
- * 8f9ea35a000e, 6fa011d784f8).
+ * whatever its author wrote, so an unknown code is never judged.
  */
 export const STANDARD_DISPLAY_TRANSACTIONS: ReadonlySet<string> = new Set([
   'VA03', 'VA13', 'VA23', 'VA33', 'VA43', 'VL03N', 'VL33N', 'VF03', 'VK13', 'VBO3', 'VD03', 'XD03', 'FD03',
@@ -236,8 +235,7 @@ function messageRules(text: string, region: AbapStatement[]): StatementContradic
   if (named.length === 0 && numbers.length && messages.some((s) => messageNumberOf(s) !== null)) return null; // names another message
   // Named or not: when anything else at the anchors could put the message — or
   // the field `INTO` filled — in front of the user, "displayed" may be true
-  // (QA review of 8f9ea35a000e, a4cdb3b68967: `MESSAGE … INTO gv_text`, then
-  // `WRITE gv_text`).
+  // (`MESSAGE … INTO gv_text`, then `WRITE gv_text`).
   if (region.some((s) => s.keyword !== 'MESSAGE' && mayDisplay(s))) return null;
   const targets = named.length ? named : messages;
   if (targets.every(isMessageInto)) {

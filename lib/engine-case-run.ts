@@ -40,7 +40,7 @@ export type EnginePlanOutcome =
 /**
  * What the engine pass of this run is, from the engine cases recomputed from
  * the signed source (`engineCaseProvenance(...).verified` — never the stored,
- * client-written list: QA e04537f4bb66, 0297134b3b87), the generated files and
+ * client-written list), the generated files and
  * the selection.
  */
 export function planEngineRun(
@@ -65,7 +65,7 @@ export function planEngineRun(
 }
 
 /**
- * The engine pass's verdicts, judged here from its output (3.0.12, QA e1478690996c).
+ * The engine pass's verdicts, judged here from its output.
  *
  * The engine suite runs in the same process as the generated code, so nothing
  * in that process's output can be a verdict: the code could print a passing

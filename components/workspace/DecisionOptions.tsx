@@ -142,8 +142,7 @@ export default function DecisionOptions({
 }: {
   /**
    * Why `choice` is null although the project has a signed run: the decision
-   * is still being read, or the read failed. Not "no signed run" (QA review of
-   * 1c402c400e05).
+   * is still being read, or the read failed. Not "no signed run".
    */
   pending?: 'reading' | 'unreadable' | null;
   view: DecisionOptionsView;
@@ -162,7 +161,7 @@ export default function DecisionOptions({
     setAsking(null);
     setMissing(false);
     // A reason belongs to the option it was written for; a cancelled one is
-    // never sent with another choice (QA review of 2f5a8b9fc249).
+    // never sent with another choice.
     setReason('');
   }, []);
 
@@ -175,8 +174,7 @@ export default function DecisionOptions({
     }
     const option = asking;
     // The reason travels with this one attempt only: refused, lost or stopped by
-    // the Stand check, it is never offered again for another option (QA review
-    // of 643b3af83e3a).
+    // the Stand check, it is never offered again for another option.
     setReason('');
     setAsking(null);
     setMissing(false);
@@ -184,7 +182,7 @@ export default function DecisionOptions({
     setBusy(true);
     try {
       // Inside the try: a Stand check that rejects is a refusal the reader sees,
-      // not an unhandled rejection (QA review of 1c402c400e05).
+      // not an unhandled rejection.
       if (choice.beforeWrite && !(await choice.beforeWrite())) return;
       await runProjectCommand(choice.projectId, {
         command: 'approve-architecture',

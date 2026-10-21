@@ -77,7 +77,7 @@ export const TERMS_VERSION = '2026-10-03';
  */
 export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // v2.2.0, the version 3.0 ships with: section 4.1 separates the deterministic
-  // results from the model-generated output (QA 6b83ef361e80).
+  // results from the model-generated output.
   '2026-10-03',
   // v2.1.0 (2026-09-18) and v2.0.0 (2026-07-07) are no longer in force from 3.0
   // on — Sonny, 30.09.2026: "no mails, no census — consent to the new version
@@ -89,7 +89,7 @@ export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // oversight of it: § 10.3 of Terms v2.0.0/v2.1.0 lets an account that declines
   // carry on under the Terms it accepted, and ending that takes 30 days' notice
   // in text form, which this decision deliberately does without. Terms v2.0.0 was
-  // kept in force on 18.09.2026 for exactly that reason (QA 66a392dc1b6b); the
+  // kept in force on 18.09.2026 for exactly that reason; the
   // entries are removed here on purpose. To go back to "ask, do not shut out",
   // put '2026-09-18' and '2026-07-07' back and nothing else changes.
 ];

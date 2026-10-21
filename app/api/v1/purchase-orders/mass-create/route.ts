@@ -5,8 +5,8 @@ export async function POST(request: Request) {
   try {
     // F-20: demo/mock route — NOT a real SAP integration. Never served by a
     // production build: the ENABLE_MOCK_PO_ROUTE flag used to switch it on
-    // there too, which contradicted this comment (QA full review of
-    // fc787674705f, ba03296d851e). Outside production every answer is labelled
+    // there too, which contradicted this comment.
+    // Outside production every answer is labelled
     // as a simulation, not as completed work.
     if (process.env.NODE_ENV === 'production') {
       return NextResponse.json({ error: 'Not found.' }, { status: 404 });

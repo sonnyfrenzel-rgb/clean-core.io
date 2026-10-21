@@ -795,7 +795,7 @@ function sapIdMarkCore(check: SapIdCheck): string {
  * The occurrences that carry a mark: the first of every identifier, and every
  * later one the model gave a wrong name — "F0380 (Process Collections
  * Worklist) … F0380 (Credit Management)" marks both, so the second wrong name
- * does not read as covered by the first one's "verified" (QA 53b44083e460). A
+ * does not read as covered by the first one's "verified". A
  * plain repeat, or the same wrong name again, stays unmarked.
  */
 export function occurrencesToMark(checks: readonly SapIdCheck[]): SapIdCheck[] {
@@ -885,7 +885,7 @@ export interface SapIdCitation {
 /**
  * The attributed sources behind one check — its own and that of a differing
  * title — for an inline mark: CC BY 4.0 asks for the source wherever the fact
- * stands, not only in a list further down (QA bdf1b45234a6).
+ * stands, not only in a list further down.
  */
 export function sapIdCitations(c: SapIdCheck): SapIdCitation[] {
   const out: SapIdCitation[] = [];
@@ -998,7 +998,7 @@ export function catalogNoteForMapping(legacy: string | null | undefined, ...mode
   const entry = SAP_API_CATALOG[legacy.trim().toUpperCase()];
   if (!entry) return null;
   const named = modelApis.filter(Boolean).map((s) => String(s).toUpperCase());
-  // The successor as a whole identifier: NOT_API_X does not name API_X (QA c9c5b3463951).
+  // The successor as a whole identifier: NOT_API_X does not name API_X.
   const view = entry.view.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const whole = new RegExp(`(?:^|[^A-Z0-9_])${view}(?![A-Z0-9_])`);
   if (named.some((n) => whole.test(n))) return null;

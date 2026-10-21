@@ -10,10 +10,10 @@
  * names `I_SALESDOCUMENT`, the curated mapping names `API_SALES_ORDER_SRV`.
  *
  * Every surface that shows a successor next to its source reads this module,
- * so a curated pairing is never labelled as SAP's — external audit PRV-01.
+ * so a curated pairing is never labelled as SAP's.
  * The curated label carries the release the catalog was compiled for, so a
- * 2024 mapping does not read as current (3.0.18; QA review of 73b8cad63d3e,
- * bb6acd2be22d). That release has not changed since the catalog was written,
+ * 2024 mapping does not read as current.
+ * That release has not changed since the catalog was written,
  * so the label is true of every run that shows it; the review date is not, and
  * stays out.
  * Pure: imports only the catalog stamp (itself free of imports), safe for

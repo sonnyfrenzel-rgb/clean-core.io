@@ -10,8 +10,8 @@
  *
  * Nearly every value in it was written either by the account holder (the
  * project name) or by the model out of the customer's own ABAP — a comment in
- * the uploaded source is enough to steer it into returning markup
- * (SEC-2026-014). Nothing of either kind reaches the template unescaped; the
+ * the uploaded source is enough to steer it into returning markup.
+ * Nothing of either kind reaches the template unescaped; the
  * markup around it is ours. The same `esc` as the design and documentation
  * exports, from the one escaper in `lib/export-safety.ts`.
  *
@@ -147,7 +147,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
      * had been assessed and none of it was read off the customer's code, yet the
      * document said the code "was evaluated step-by-step" and that the comparison
      * was "mapped specifically to this project's requirements". This file is
-     * exported to Confluence and kept as the record of a decision (QA 0613631545b2).
+     * exported to Confluence and kept as the record of a decision.
      *
      * The screen had the same fallback one layer down, in
      * `components/analyze/ExtensibilityDecisionMatrix.tsx`; both are gone, because

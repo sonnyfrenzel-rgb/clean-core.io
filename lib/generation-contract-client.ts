@@ -176,8 +176,7 @@ export async function storeGeneration(
     );
   }
   // A success whose answer did not arrive whole says nothing about the write:
-  // it is the lost-answer case, not a refusal (QA slice review of
-  // c053fc5909c1, d63333ca74b2).
+  // it is the lost-answer case, not a refusal.
   if (res.ok && !body?.fields) {
     throw new CommandAnswerLostError('The answer to this generation arrived incomplete, so it is not known whether it was stored.');
   }

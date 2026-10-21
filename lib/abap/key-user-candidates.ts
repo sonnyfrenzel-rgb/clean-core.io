@@ -232,7 +232,7 @@ export interface KeyUserReading {
    * One sentence for the route report, naming the counts and the scope. It
    * names no clean-core level: the router's rationale quotes it, and the run
    * signs that rationale (`recommendationJustification`), while a level is
-   * never signed material (CLAUDE.md; QA review of 317d5f7a9c53, de1b549b12ba).
+   * never signed material (CLAUDE.md).
    * The level is `levelByConstruction`, shown beside it and never signed.
    */
   sentence: string;

@@ -453,8 +453,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       }
     }
 
-    // One transaction for the fit revision, the need revision it derives and the summary
-    // (QA review of 4ea0324a13cb, 222b1b571ee8): the latest revisions are read again inside
+    // One transaction for the fit revision, the need revision it derives and the summary:
+    // the latest revisions are read again inside
     // it, so a session that wrote either first makes this one write nothing at all.
     const summary = { ...summaryOf(record, needRevision), droppedObjects };
     const statesRef = projectRef.collection(PROCESS_STATE_COLLECTION);

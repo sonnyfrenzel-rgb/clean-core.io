@@ -380,7 +380,7 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
   // Execution — a test run.
   //
   // A stored `Simulated` no longer earns the *mock only* status or the
-  // *Demonstrated · mock* chip (roadmap 3.0.9, QA full review aad42f51c028).
+  // *Demonstrated · mock* chip (roadmap 3.0.9).
   // Only the browser ever wrote that string — nothing writes it today — and
   // `testCases[].status` is in the client allowlist of `firestore.rules`, so on
   // its own it named a mock execution that no server saw. Such a case reads as
@@ -397,7 +397,7 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
   // A recorded run is a sandbox run against mocks — `TestRunReceipt.environment`
   // names it, and today it is always `mock`. The Testing and Handover views say
   // *Demonstrated · mock* about it (lib/handover.ts); this facet said *Proven*,
-  // the chip for something checked against the real thing (Codex code-runner-02).
+  // the chip for something checked against the real thing.
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
   const recordedMockRun = receipt !== null && receipt.environment === 'mock' && receipt.verdicts.length > 0;
   // ADR-075 — on the ABAP Cloud route the run happens in the reader's own SAP

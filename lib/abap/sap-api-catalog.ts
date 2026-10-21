@@ -22,8 +22,7 @@
  * review date). The module listing only marks a hit "(curated)" and links to
  * its object page. Not stamped: the data-coupling recommendation of
  * `code-assessment.ts` — its own map, or a contextual successor below — which
- * goes into the signed run labelled a candidate to check (QA review of
- * 73b8cad63d3e, bb6acd2be22d).
+ * goes into the signed run labelled a candidate to check.
  */
 
 // The release and review date live in a module of their own, so a client
@@ -63,8 +62,8 @@ export const SAP_API_CATALOG: Record<string, SapApiEntry> = {
   // customer purchase order reference. It was mapped to
   // I_SalesOrderItemPartner, which is the partner assignment: a different
   // entity with different fields, so a transformation built on it cannot
-  // preserve what the legacy code read (QA review of 33471220d6e9,
-  // 778c72a5cde2). No mapping until a released, field-compatible successor
+  // preserve what the legacy code read.
+  // No mapping until a released, field-compatible successor
   // is verified against SAP's own documentation \u2014 "no released equivalent
   // found" is a true answer, and a wrong one can be carried into signed
   // evidence as a recommendation.
@@ -185,7 +184,7 @@ export interface ContextualSuccessor {
 
 // RESB is not among them: a reservation is just as much a maintenance order's
 // component or a manual reservation, so AUFK beside RESB alone establishes no
-// production order (QA review of 03501b79fb3d, e6a7787ff3d0).
+// production order.
 const PRODUCTION_ORDER_TABLES = ['AFKO', 'AFPO', 'AFVC', 'AFRU'] as const;
 
 export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze([

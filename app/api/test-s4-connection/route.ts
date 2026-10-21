@@ -79,7 +79,7 @@ async function fetchOAuth2Token(
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
       // Neither the caller nor the log gets the body: the caller the status,
-      // the log the status and a shape word (SEC-2026-525; QA review of 46a7d64baad3).
+      // the log the status and a shape word.
       logger.warn('oauth token exchange rejected', {
         route: 'api/test-s4-connection',
         status: response.status,
@@ -207,8 +207,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Per account, before any URL check, OAuth exchange or tenant request; the
-    // same budget as the metadata routes (QA full review of fc787674705f,
-    // 0e90b2d74f76).
+    // same budget as the metadata routes.
     try {
       await assertRateLimit(`test-s4-connection:${decodedToken.uid}`, 30, 60 * 60 * 1000);
     } catch (rateErr: unknown) {
@@ -218,7 +217,7 @@ export async function POST(req: NextRequest) {
       throw rateErr;
     }
 
-    // Bounded like the OData read route beside it (SEC-b6716f0-19): a connection
+    // Bounded like the OData read route beside it: a connection
     // form with a destination JSON is a few kilobytes, so the shared 64 KiB
     // ceiling of a token answer is ample (one pair of limits,
     // tests/bounded-body.spec.ts).
@@ -396,8 +395,7 @@ export async function POST(req: NextRequest) {
     // --- Basic Authentication ---
     // A declared scheme without its credential is refused, not tested without
     // one: an endpoint that answers anonymous requests was otherwise reported
-    // as "Connection successful via Basic Auth" with no credential sent (QA
-    // full review of fc787674705f, 4f96ba27311b).
+    // as "Connection successful via Basic Auth" with no credential sent.
     else if (authType === 'basic') {
       if (!username || !password) {
         return NextResponse.json(

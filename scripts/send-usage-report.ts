@@ -12,7 +12,7 @@
  *
  * It loads no package — not `firebase-admin`, not `tsx`. The Friday job holds
  * `id-token: write`, and every package it ran could mint a token of its own
- * from that permission (QA review, fa0aaea6cc47). So Firestore is read over
+ * from that permission. So Firestore is read over
  * REST (`scripts/lib/firestore-rest.ts`) with an access token the job hands in,
  * and the script runs on Node's own type stripping.
  *

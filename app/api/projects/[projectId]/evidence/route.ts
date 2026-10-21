@@ -99,7 +99,7 @@ async function loadProject(
   allowed: (data: unknown, uid: string) => boolean,
 ): Promise<{ data: Record<string, unknown> } | { refusal: NextResponse }> {
   if (!projectId) return { refusal: NextResponse.json({ error: 'No project named.' }, { status: 400 }) };
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) return { refusal: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   // A suspended account reads nothing here, as in Firestore (accountActive()).
   const inactive = await refuseInactiveAccount(uid);

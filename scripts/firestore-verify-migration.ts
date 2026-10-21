@@ -11,8 +11,7 @@
  * analysis, the generated code, the documentation or the audit metadata while
  * keeping its id, owner and name compared equal, and this script then printed
  * that every project survived intact and exited zero — which is exactly the
- * sentence a cutover is decided on (QA review of 33471220d6e9, finding
- * 5a660ef009dc). `scripts/firestore-inventory.ts` now emits `docHash`, a
+ * sentence a cutover is decided on. `scripts/firestore-inventory.ts` now emits `docHash`, a
  * canonical type-tagged hash of the complete document, and that is what is
  * compared. Signed runs carry, in addition, the verdict of recomputing their own
  * hash from their own content: two identical copies of a corrupted run are still

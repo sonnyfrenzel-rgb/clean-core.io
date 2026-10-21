@@ -184,8 +184,8 @@ const SYSTEM_STRUCTURES = new Set(['SY', 'SYST', 'SCREEN', 'TEXT']);
  *
  * registered VBAK as a local data object, and the real `UPDATE vbak` below it
  * left `Sink.table` without a word — no Critical finding, no data coupling, a
- * Clean Core score computed as if the statement were not there (full review of
- * a19945ef01dc, f4383c553eaa). A literal does the same: `WRITE 'DATA kna1'.`
+ * Clean Core score computed as if the statement were not there.
+ * A literal does the same: `WRITE 'DATA kna1'.`
  * would have suppressed KNA1. `maskNonCode` removes both before the first
  * pattern is asked.
  */
@@ -225,8 +225,7 @@ export function collectLocalDataObjects(source: string): Set<string> {
   // scan used to read the whole source: `CALL FUNCTION 'Z_F' EXPORTING kna1 =
   // lv_x.` registered KNA1 as a local data object, and the real `UPDATE kna1`
   // below it then produced no finding at all — the suppression path that has
-  // erased a Critical finding twice before (full review of b88c77b4b5d1,
-  // 5547aaa0fdbc).
+  // erased a Critical finding twice before.
   const params = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|USING|VALUE\(|REFERENCE\()\s*([\w\/]+)/gi;
   const signature = /(?:^|\.)\s*(?:CLASS-)?(?:METHODS|FORM|FUNCTION|MODULE)\b([^.]*)/gi;
   for (const decl of code.matchAll(signature)) {
@@ -399,8 +398,8 @@ interface Context {
  * `depth < 4` bounds how deep an expansion goes and says nothing about how wide
  * it gets. A body of thirty calls to a macro of thirty calls is four levels of
  * nothing suspicious and 810 000 statements to read, and the source that does
- * it fits on a screen — an upload that keeps a server busy on one analysis
- * (security audit of b88c77b4b5d1, SEC-2026-228). The budget is a ceiling on
+ * it fits on a screen — an upload that keeps a server busy on one analysis.
+ * The budget is a ceiling on
  * the whole source rather than on one call, because a hundred small fans cost
  * what one large one does.
  *
@@ -581,8 +580,7 @@ class Sink {
      * suppression below does not apply to it. It did: `DATA mara TYPE string.`
      * above a real `SELECT * FROM mara` deleted the MARA read from the signed
      * analysis, and so did a `CALL FUNCTION … EXPORTING mara = …` further up,
-     * because `collectLocalDataObjects` reads actual parameters too (full review
-     * of b88c77b4b5d1, 5f6655b0c2e0 / b885d8006422 / d0cd376a8141).
+     * because `collectLocalDataObjects` reads actual parameters too.
      */
     bareSqlSource = false,
   ): void {
@@ -634,7 +632,7 @@ class Sink {
  * FROM matcher used to run over the statement as written, so `SELECT 'FROM
  * KNA1' AS note FROM vbak INTO TABLE @DATA(rows).` took its first match from
  * inside the literal: the signed analysis recorded a table called `KNA1'` and
- * never reached VBAK at all (full review of b88c77b4b5d1, ff270c376162). The
+ * never reached VBAK at all. The
  * *contents* of the area are still read from the original text, because
  * `FROM ('KNA1')` names its table in a literal on purpose (R07).
  */
@@ -645,8 +643,7 @@ function readSelect(text: string, at: Anchor, sink: Sink): void {
   const areaStart = fromMatch.index + fromMatch[1].length;
   const areaEnd = areaStart + fromMatch[2].length;
   // The JOINs are found on the code as well, and the parts cut from the text
-  // at the same offsets: `ON … = 'A JOIN KNA1 B'` is a literal, not a join
-  // (QA full review of 81810c8, ff8dcda705e4).
+  // at the same offsets: `ON … = 'A JOIN KNA1 B'` is a literal, not a join.
   const join = /\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/gi;
   const parts: string[] = [];
   let cut = areaStart;
@@ -690,8 +687,8 @@ function readDynamicWrite(text: string, code: string, at: Anchor, sink: Sink): v
  * The literal rule of the host language stops at the template's bars; inside
  * them the text is SQL, and SQL has literals of its own. Without this,
  * `SELECT 'FROM KNA1' AS note FROM VBAK` recorded KNA1 — a table the statement
- * does not touch — in the signed dependency list (full review of b88c77b4b5d1,
- * 85107975930e / 758eb4151eb0). Double-quoted identifiers stay, because a
+ * does not touch — in the signed dependency list.
+ * Double-quoted identifiers stay, because a
  * quoted `"KNA1"` is the table.
  */
 function maskSqlLiterals(sql: string): string {
@@ -808,7 +805,7 @@ function readAdbc(text: string, code: string, at: Anchor, sink: Sink, ctx: Conte
  *
  * reported MARA without KNA1 and VBAK without VBRK: tables the statement really
  * reads, absent from the signed dependency list and from every finding drawn on
- * it (QA full review, 67ac19222d96). Under-reporting is the one direction this
+ * it. Under-reporting is the one direction this
  * engine may not take — `open-sql-discrimination.ts` :15-17 errs towards
  * over-reporting on purpose — and a subquery is no exotic form.
  *
@@ -830,8 +827,7 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
   // Not every ABAP SQL read is a statement that begins with SELECT. A common
   // table expression begins with WITH and a cursor with OPEN CURSOR, and both
   // were passed over in silence: the tables they read were absent from the
-  // dependency list and from every finding drawn on it (full review of
-  // b88c77b4b5d1, c220db0d6f55 / 684fc78b1f35 / 6eecc0b3ec97).
+  // dependency list and from every finding drawn on it.
   //
   // And not every ABAP SQL read of a statement is its *first* SELECT: a
   // subquery in the WHERE clause (`EXISTS`, `IN`, a comparison) and the second
@@ -843,7 +839,7 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
 
   // EML is a write through the business object and DELETE DATASET removes a
   // file: neither touches a table, so neither is a dependency on one called
-  // ENTITIES or DATASET (codex code-engine-05).
+  // ENTITIES or DATASET.
   const write = isEntityManipulation(text) || isDatasetDeletion(text) ? null : databaseWriteIn(text.trim());
   // UPDATE has no internal-table form: its target is a table even when a local
   // data object shares the name, so the local-name suppression does not apply.

@@ -1027,7 +1027,7 @@ export function readSpecSummary(value: unknown): SpecSummary | null {
 /**
  * Whether a stored specification is out of date. Without a signed source to
  * compare against (the source changed after the run, or no run is active) it
- * cannot be shown current, so it is not (QA 72a895528ffa).
+ * cannot be shown current, so it is not.
  */
 export function specIsStale(summary: SpecSummary | null, signedSha256: string | null): boolean {
   if (!summary) return false;

@@ -13,8 +13,7 @@ type State = 'reading' | 'idle' | 'working' | 'done' | 'error';
  * browser never sends to the server. A mail sent before that carries it in the
  * query (`?t=…`); those links must keep working, so the query is read too — and
  * in both cases the token is taken out of the address bar and the history entry
- * at once, so it is not left in the browser history, a bookmark or a copied URL
- * (QA finding 8e25777f1339).
+ * at once, so it is not left in the browser history, a bookmark or a copied URL.
  */
 function takeTokenFromAddress(): string {
   const { hash, search, pathname } = window.location;

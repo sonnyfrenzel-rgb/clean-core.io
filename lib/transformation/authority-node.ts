@@ -116,7 +116,7 @@ const inUnit = (u: Unit, line: number) => u.abap.some((r) => line >= r.lineStart
 export function authorityEntriesOf(u: Unit, plan: Pick<UnitPlan, 'fields' | 'units'>, checks: readonly AuthorityCheck[], statements: readonly AbapStatement[]): AuthorityEntry[] {
   if (plan.units.some((p) => p.part?.parent === u.id)) return [];
   const constants = constantsOf(statements);
-  // Two checks on one line get two names (QA finding 90667d2a91ae): `authority_L90`, then `authority_L90_2`.
+  // Two checks on one line get two names: `authority_L90`, then `authority_L90_2`.
   const onLine = new Map<number, number>();
   return checks
     .filter((c) => inUnit(u, c.lineStart))

@@ -173,7 +173,7 @@ async function openProject(
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -191,7 +191,7 @@ async function openProject(
   // Reading is by membership, writing is the owner's: an invited reader may
   // open what the owner shared and never change or start anything. Until
   // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
-  // opened the project and hid its process (Gegenreview c5085bb, CR-13).
+  // opened the project and hid its process (CR-13).
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     // Not the route's 'Unauthorized.' any more: a stranger who was told 403
     // here and 404 above could read off the status code alone whether a
@@ -509,7 +509,7 @@ export async function GET(
     if (asked !== null) {
       const n = Number(asked);
       // The query string names a document here, so its id passes the same
-      // check as a path or body id (QA review of 46a7d64baad3): a whole number
+      // check as a path or body id: a whole number
       // alone let `?revision=1e21` through as the document id "1e+21".
       const revisionId = String(n);
       if (!Number.isSafeInteger(n) || n < 1 || !isFirestoreId(revisionId)) {
@@ -552,8 +552,7 @@ export async function POST(
     const { db } = await getAdminDb();
 
     // A model that is refused is refused before anything is written: checked
-    // after the baseline, a rejected save still created revision 1 (carried QA
-    // finding 32bc71504339).
+    // after the baseline, a rejected save still created revision 1.
     const checked = body && body.xml !== undefined ? await checkRevisionXml(body.xml) : null;
     if (checked && !checked.ok) {
       return NextResponse.json(

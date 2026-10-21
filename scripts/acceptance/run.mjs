@@ -160,7 +160,7 @@ export async function runHarness(opts) {
   const scan = staticScan(opts.pkg);
 
   const probes = [];
-  /** Links in the package the copy left out (QA 7011113eda41): named, so the report never reads as the whole package. */
+  /** Links in the package the copy left out: named, so the report never reads as the whole package. */
   const skippedSymlinks = [];
   const types = Object.keys(PROBE_PATTERNS);
   if (!adapter) {

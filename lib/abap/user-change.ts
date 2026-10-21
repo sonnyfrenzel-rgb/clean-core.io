@@ -540,8 +540,8 @@ function carriersOf(
     const screen = CALL_SCREEN.exec(statement.text);
     if (screen) {
       // A screen number is digits. `CALL SCREEN lv_dynnr` names the variable
-      // that will hold it, and was reported as "screen LV_DYNNR" (QA full
-      // review of v2.20.0, 3001cbbf16e1) — the carrier is then not named here,
+      // that will hold it, and was reported as "screen LV_DYNNR"
+      // — the carrier is then not named here,
       // like a computed transaction code.
       const number = /^\d+$/.test(screen[1]) ? screen[1] : null;
       out.push({

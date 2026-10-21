@@ -39,7 +39,7 @@ async function authHeader(): Promise<Record<string, string>> {
  * The history of a project, oldest first. Empty when there is none; **throws**
  * when it cannot be read. An expired session or a 500 used to come back as
  * `[]`, and the history then said "no revisions yet" about a project that had
- * them (carried QA finding bea464e656f4) — `RevisionCompare` names a failed read
+ * them — `RevisionCompare` names a failed read
  * when this throws.
  */
 export async function fetchProcessRevisions(projectId: string): Promise<ProcessRevisionSummary[]> {

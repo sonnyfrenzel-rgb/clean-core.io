@@ -68,8 +68,8 @@ export interface RouteCardProps {
   children?: React.ReactNode;
   /**
    * The target and the rationale are a model's words (the stored analysis), not
-   * the router's: every SAP identifier in them is listed with its check (QA
-   * bead0ed34426). The router's own report names none and passes nothing.
+   * the router's: every SAP identifier in them is listed with its check. The
+   * router's own report names none and passes nothing.
    */
   modelWords?: boolean;
 }
@@ -109,7 +109,7 @@ export default function RouteCard({
         ? <CcProvenanceChip value="confirmed" note="your choice" />
         : route
           ? <CcProvenanceChip value="reconstructed" note="fixed rules" />
-          // No route on record is not a reconstructed one (QA b1add7227503).
+          // No route on record is not a reconstructed one.
           : <CcProvenanceChip value="not-determined" />}
     >
       <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
@@ -130,8 +130,8 @@ export default function RouteCard({
           )}
           {route ? (
             <p data-route-target="" className="m-0 mt-1 cc-text-meta text-cc-ink-muted">
-              {/* After a switch, the recommended route's artefact is not the target
-                  (QA full review of fc787674705f, 08fd882e60b3). */}
+              {/* After a switch, the recommended route's artefact is not the target.
+*/}
               Target: {(!overridden && targetArtifact) || (btp
                 ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">{`${BTP} Node.js App (CAP)`}</GlossaryTerm>
                 : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
@@ -143,8 +143,7 @@ export default function RouteCard({
       {overridden ? (
         // The confidence and the reasoning belong to the route that was
         // recommended. Printed beside a route the user switched to, they read
-        // as support for the opposite decision (QA review of 33471220d6e9,
-        // 210bafeb4c8b).
+        // as support for the opposite decision.
         <>
           <p className="m-0 mt-2 cc-text-meta font-semibold text-cc-ink">Chosen by you</p>
           <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
@@ -259,7 +258,7 @@ export default function RouteCard({
       </p>
 
       {/* The artefact and the rationale as shown, when they are the model's
-          words: an SAP identifier in them carries its check (QA bead0ed34426). */}
+          words: an SAP identifier in them carries its check. */}
       {modelWords ? (
         <SapIdentifierChecks
           texts={[route && !overridden ? targetArtifact : null, rationale]}

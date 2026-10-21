@@ -21,7 +21,7 @@ import type { CloudificationArtifact } from './cloudification-repo';
 const ROUTABLE = /^[A-Z0-9_]+$/;
 
 // The slugs live in a module without the catalog, so a client component can
-// link an object without importing this file (external audit PERF-01).
+// link an object without importing this file.
 export { objectToSlug, slugToObject } from './catalog-slug';
 
 /** Union of mapped objects and honest no-path objects, sorted, routable only. */

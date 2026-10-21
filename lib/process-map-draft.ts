@@ -5,7 +5,7 @@
  * The source alone is not enough: Duplicate (My workspace) makes a second
  * project with byte-identical source, and a map kept alive across the two
  * would otherwise open the first project's drawing in the second — and Save
- * would write it there (QA review of 072f79996d01, 2a9ed7cf905b).
+ * would write it there.
  */
 export interface HeldDraft {
   projectId: string | null;
@@ -16,7 +16,7 @@ export interface HeldDraft {
 /**
  * Where a screen keeps the draft when the map itself may be unmounted — the
  * workspace drops the map on a view switch and remounts it across the phone
- * breakpoint, and an unsaved drawing must outlive both (Codex code-ui-03).
+ * breakpoint, and an unsaved drawing must outlive both.
  */
 export interface DraftHolder {
   get(): HeldDraft | null;

@@ -487,8 +487,7 @@ async function __ccSharedSelectionInvariant(h, app, spec) {
 
 /**
  * The words of the case, from the roles the plan actually holds: a plan of a
- * list and an export compares no totals, and its case must not say it does
- * (QA review of 35b97d90c6e1).
+ * list and an export compares no totals, and its case must not say it does.
  */
 function invariantWords(plan: Extract<InvariantPlan, { applicable: true }>) {
   const has = (role: EndpointRole) => plan.endpoints.some((e) => e.role === role);

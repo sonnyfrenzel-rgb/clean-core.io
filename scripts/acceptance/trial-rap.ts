@@ -303,7 +303,7 @@ export function trialRapPackage(pkgDir: string, program: string, runNo: number, 
     return rec;
   }
   // `adt.mjs activate` exits 0 when SAP refuses the activation: it prints `activation: FAILED`, the errors and what
-  // stayed inactive. ABAP Unit would then run on the objects active before (QA review of 62eae6a082bb).
+  // stayed inactive. ABAP Unit would then run on the objects active before.
   if (lastPass.success === false || lastPass.errors.length > 0 || lastPass.stillInactive.length > 0) {
     rec.state = 'failed';
     const what = [

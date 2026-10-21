@@ -75,7 +75,7 @@ function stepLines(step: SopStep, layer: Json): string {
 /**
  * What the file says when the stored layer cannot be read. The model's raw
  * text is never printed in its place: it carries no basis per sentence, and as
- * the file's whole body it would read as the SOP (QA review of 11e3bc7d90e8).
+ * the file's whole body it would read as the SOP.
  */
 export const UNREADABLE_SOP_MARKDOWN = [
   '# Business SOP',
@@ -154,7 +154,7 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
   if (controls.length) {
     const name = new Map(steps.map((s) => [s.stepId, nameOf(s, layer)]));
     out.push(`## Controls an earlier proposal named — ${SOP_BASIS['not-in-program'].label}`, '');
-    // QA review of 11e3bc7d90e8: the rows are model proposals only — the sentence
+    // The rows are model proposals only — the sentence
     // that introduces them must not read as if they came from the code.
     out.push('These rows are historical: a language model proposed them before 3.0.7, and nothing in them was read from or checked against the code.', '');
     out.push('Separately, the controls the code actually has are listed in the process documentation.', '');

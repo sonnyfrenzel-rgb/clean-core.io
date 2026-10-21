@@ -174,7 +174,7 @@ export function useStartRun({
         await onSignedRef.current();
         // The project now carries its run, so `startable` holds the next click
         // back; the module guard would only make a later start, in the same
-        // page view, do nothing without a word (QA c52492a3ee43).
+        // page view, do nothing without a word.
         started.delete(projectId);
         setPhase('signed');
       } catch (err) {

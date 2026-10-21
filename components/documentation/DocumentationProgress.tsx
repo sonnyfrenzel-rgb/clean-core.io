@@ -29,7 +29,7 @@ export type DocStageTimes = Partial<Record<DocStageKey, { startedAt: number | nu
  * The stage times after a change of states, stamped at `at`. A stage that
  * becomes active again after it ended — *Try again* after a stop, or a second
  * run — starts a new attempt: its time is not the stopped attempt's plus the
- * pause (QA b6694384a2f3).
+ * pause.
  */
 export function nextDocStageTimes(prev: DocStageTimes, stages: readonly DocStageView[], at: number): DocStageTimes {
   const next: DocStageTimes = { ...prev };

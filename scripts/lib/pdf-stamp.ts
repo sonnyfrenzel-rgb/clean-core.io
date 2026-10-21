@@ -6,7 +6,7 @@
  * Line 1 is the fingerprint of the sources the PDF is rendered from; that half
  * says "the PDF was built after the last content change". It said nothing about
  * the PDF itself, though: replacing the committed PDF with an older one left the
- * stamp, and every check, green (codex review code-public-05). Line 2 binds the
+ * stamp, and every check, green. Line 2 binds the
  * stamp to the artefact — `pdf <sha256 of the file>`, written by the generator
  * in the same step as the PDF — so a PDF that is not the one rendered fails.
  */

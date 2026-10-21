@@ -104,8 +104,8 @@ export function minimalEnv(extra) {
 /**
  * Copy a package into a fresh temp directory: no symlinks (a junction is one
  * too), no `.git`. Each skipped link is pushed to `skipped`, relative to the
- * package, so the report can say the copy is not the whole package
- * (QA 7011113eda41). `bundleModules` checks real paths as a second wall.
+ * package, so the report can say the copy is not the whole package.
+ * `bundleModules` checks real paths as a second wall.
  */
 export function copyToTemp(pkgDir, skipped = []) {
   const tmp = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'cc-acc-')));
@@ -155,9 +155,9 @@ export function sesFile() {
  *
  * Every file esbuild reads must lie inside `root` by its real path — a symlink
  * or junction that leads out is refused, whatever path led to it
- * (QA 7011113eda41) — and outside `reserved` (paths relative to `root` the
+ * — and outside `reserved` (paths relative to `root` the
  * package may not import: the engine cases with their expectations,
- * QA 592fd4f81e78). Resolves to `{ bundle, names } | { failure }`.
+ * Resolves to `{ bundle, names } | { failure }`.
  */
 export async function bundleModules(rootDir, modules, { reserved = [] } = {}) {
   const root = fs.realpathSync.native(rootDir);
@@ -255,7 +255,7 @@ export async function bundleModules(rootDir, modules, { reserved = [] } = {}) {
  *
  * The package runs inside the executor's process but in a locked-down SES
  * compartment, from which neither the pipe nor stdout, stderr or the collector
- * can be reached (QA 1021a63b7b6c). The channel is still held to one answer per
+ * can be reached. The channel is still held to one answer per
  * open request, as a second wall: a line that is not JSON, carries another id,
  * arrives while nothing is asked, or overruns the size limit poisons the run,
  * and `close()` reports it so the caller discards every result of this

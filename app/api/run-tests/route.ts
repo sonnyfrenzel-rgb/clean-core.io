@@ -86,7 +86,7 @@ const MAX_CONCURRENT_RUNS = 4;             // per-instance cap on simultaneous h
 
 // Per-instance counter of in-flight runs. Bounds how many executions one app
 // instance drives at once, so a single approved user cannot exhaust it by
-// firing many runs in parallel (Audit F-01 sub-finding).
+// firing many runs in parallel.
 let activeRuns = 0;
 
 // What a run request may be, read before anything is parsed. The body names a
@@ -94,14 +94,13 @@ let activeRuns = 0;
 // the project's code and suite, which are ignored (see below) but have to fit.
 // Four times the runner's own input ceiling leaves room for both copies and
 // their JSON escaping, and replaces "whatever the platform accepts" as the
-// bound on what an approved caller can make this route buffer (QA full review
-// of fc787674705f, 1988ea0fc1b6).
+// bound on what an approved caller can make this route buffer.
 const RUN_REQUEST_BODY_LIMITS = { maxBytes: 4 * MAX_RUN_INPUT_BYTES, timeoutMs: 30_000 };
 
 /**
  * A gate check that failed with anything but its own refusal (`QuotaError`):
  * logged without the error's text and answered with a fixed sentence. Only a
- * refusal's message is the caller's to read (SEC-2026-846, as SEC-2026-831).
+ * refusal's message is the caller's to read.
  */
 function gateCheckFailed(err: unknown, step: string, extra: Record<string, unknown> = {}) {
   logger.error('run-tests: a gate check could not run', { route: 'api/run-tests', step, error: err instanceof Error ? err.name : 'unknown' });
@@ -229,7 +228,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   const draftId = isFirestoreId(rawDraftId) ? rawDraftId : '';
   if (rawDraftId !== undefined && rawDraftId !== null && !draftId) {
     return NextResponse.json(
@@ -254,7 +253,7 @@ export async function POST(req: Request) {
   }
 
   // ── Input validation ────────────────────────────────────────────────────
-  // Refused, not repaired: a stripped id would name a different project (SEC-2026-514).
+  // Refused, not repaired: a stripped id would name a different project.
   if (!isFirestoreId(projectId)) {
     return NextResponse.json(
       { output: '', error: 'Invalid project ID.', exitCode: 1 },
@@ -276,13 +275,13 @@ export async function POST(req: Request) {
 
   // Ownership: the runner may only execute against a project the caller owns.
   // (`projectId` was previously only sanitised for the temp-dir name, so any approved
-  // account could run against an arbitrary id — Audit F-01 sub-finding.)
+  // account could run against an arbitrary id.)
   //
   // The snapshot is kept, because it is also the source of what gets executed.
   // The route used to take `code` and `tests` from the request body and report
   // the outcome as the project's test result, so a caller could post a trivial
   // passing suite, or the project's own suite against different code, and have
-  // the answer attributed to the project (QA full review of a19945ef01dc). What
+  // the answer attributed to the project. What
   // runs is now what the project stores. The body's copies are ignored: the
   // client sends `project.generatedCode` and `project.testSuite`, which is the
   // same thing on every honest call and a different thing on the dishonest one.
@@ -462,7 +461,7 @@ export async function POST(req: Request) {
   // 3.0.12 (owner, 12.10.2026) — the engine cases run through the call contract
   // in the same executor as the suite, never in this service. Planned from the
   // stored cases the engine reproduces from the signed source — recomputed, never
-  // the client-written entries (QA e04537f4bb66, 0297134b3b87) — and the
+  // the client-written entries — and the
   // generated files; a draft run plans it too, against the draft's code.
   const enginePlanOutcome = planEngineRun(
     engineCaseProvenance(
@@ -652,10 +651,10 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
     // the phase contract read `project.testCases[].status`, which the owner may
     // write and which nothing in the product ever wrote: a row of `Passed`
     // strings unlocked Testing and Delivery, in green, with no execution behind
-    // them (QA full review of a19945ef01dc, E07-F02).
+    // them (roadmap E07-F02).
     //
     // The verdicts go down beside it, in the same write, because the receipt
-    // alone left the honest path leading nowhere (QA 6c38e0c7c620). The testing
+    // alone left the honest path leading nowhere. The testing
     // page had never stored the verdicts it displayed, so after E07-F02 a real
     // server run could no longer make Testing or Delivery green either: the
     // contract wants a verdict *and* a receipt, and nothing produced the first
@@ -711,7 +710,7 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
     // while nothing else can reach this line. A live run can reach it once the
     // lock is lifted, and a receipt that then says "mock" about a run against a
     // real tenant is worse than no receipt — it is a signed sentence that is
-    // false (security audit of b88c77b, SEC-b88c77b-18). So the assumption is
+    // false. So the assumption is
     // checked where it is used rather than trusted from a hundred lines above:
     // a live run returns what it saw, and no receipt is written for it — the
     // receipt format describes sandbox runs, and naming a tenant run in it is a
@@ -780,8 +779,8 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       if (!recorded) {
         // A draft run nobody recorded cannot be adopted, and its verdicts are
         // about code the project does not hold. Returned as a 200 with the
-        // runner's exit code, a page painted them green anyway (QA review of
-        // 4b4586aff273). The output stays as diagnostic text; the result is a
+        // runner's exit code, a page painted them green anyway.
+        // The output stays as diagnostic text; the result is a
         // refusal, not a pass.
         return NextResponse.json(
           {
@@ -813,7 +812,7 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       });
     }
     // Written only onto the project this run read, as it stood when it was
-    // read (QA full review of fc787674705f, ee7b72f51837). Between that read
+    // read. Between that read
     // and this line the suite ran — seconds to minutes — and a merge-set here
     // wrote `executedCases`, built from the old snapshot, over cases the owner
     // had regenerated meanwhile, or re-created a project deleted meanwhile as a
@@ -853,8 +852,8 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
         projectId: sanitizedProjectId,
         error: errMessage(receiptErr),
       });
-      // And refused, not answered as a result (QA review of 1e520bfaf727,
-      // a418de0cd071). The success answer below used to go out anyway with the
+      // And refused, not answered as a result.
+      // The success answer below used to go out anyway with the
       // runner's verdicts and `receipt: null`, so a page could still show a
       // passing run that nothing on the project records — the same outcome the
       // draft branch above refuses for an unrecorded draft run.

@@ -24,8 +24,7 @@ function initialize(v: unknown, key: string, dateFields: string[], numericFields
   const isDate = dateFields.map((f) => f.toUpperCase()).includes(key.toUpperCase());
   if (v === null || v === undefined) {
     // A target outer join returns null where ABAP holds the initial value of
-    // the field's type: 0 for a number, not '' (QA full review of v2.20.0,
-    // 97b03a5d60dd).
+    // the field's type: 0 for a number, not ''.
     if (numericFields.has(key.toUpperCase())) return 0;
     return isDate ? '00000000' : '';
   }
@@ -95,8 +94,7 @@ export function diffResultSets(
     let mismatches = 0;
     // Counted per side at every position that differs, not only from the
     // length difference: [{id:1}] against [{id:2}] is one row on each side that
-    // the other lacks, and reported zero and zero (QA full review of v2.20.0,
-    // 042abeab9b3f).
+    // the other lacks, and reported zero and zero.
     let onlyA = 0;
     let onlyB = 0;
     const len = Math.max(abapRows.length, targetRows.length);

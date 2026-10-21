@@ -2,8 +2,7 @@ import { deriveBusinessRules } from './abap/business-rule-set';
 import { deriveEngineCases, engineCaseOf, type EngineCaseDerivation, type EngineTestCase } from './testing-engine-cases';
 
 /**
- * Which stored engine cases the engine can still show it wrote (QA review of
- * 2e6596ddbbc8, 0297134b3b87 and 3ea38fd51acf).
+ * Which stored engine cases the engine can still show it wrote.
  *
  * `testCases` is client-writable (`firestore.rules`, the project update
  * allowlist), so `origin: 'engine'` on a stored case is a marker anybody with
@@ -19,7 +18,7 @@ import { deriveEngineCases, engineCaseOf, type EngineCaseDerivation, type Engine
  * reproduced, and the test phase not stale. Otherwise the reason is said.
  *
  * `VerifiedEngineCase` is the only input `engineCasesFile` and `planEngineRun`
- * take (QA e04537f4bb66, 0297134b3b87): a type no other module can produce
+ * take: a type no other module can produce
  * without a cast, because its brand is a symbol declared here and never
  * exported. `tests/qa-56bd195-harness.spec.ts` holds every other file to
  * having no such cast.
@@ -35,11 +34,11 @@ export interface EngineCaseProvenance {
   verified: VerifiedEngineCase[];
   /**
    * Ids stored as engine cases that the derivation from the signed source does
-   * not reproduce — and ids stored more than once (QA 663172392dc6): one
+   * not reproduce — and ids stored more than once: one
    * derivation yields each id once, so a second copy is not its output.
    */
   unverified: string[];
-  /** How many stored engine entries are not verified — every copy of a duplicated id counted (QA 796fe8bcbadd). */
+  /** How many stored engine entries are not verified — every copy of a duplicated id counted. */
   unverifiedEntries: number;
   /** Ids stored more than once, with how often: `[id, copies]`, in stored order. */
   duplicates: Array<[string, number]>;

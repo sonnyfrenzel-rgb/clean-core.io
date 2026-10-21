@@ -26,7 +26,7 @@ export function startsSelectStatement(line: string): boolean {
  * The offset matters as much as the answer: `IF sy-subrc = 0. SELECT * FROM
  * mara INTO TABLE @lt.` does open a query, and buffering the whole line put
  * `IF sy-subrc = 0.` at the head of the statement that was handed on as SQL
- * metadata (QA review of 5e598828093c, 09ebbf100061).
+ * metadata.
  *
  * Literals are masked rather than removed, character for character, so the
  * offset in the masked line is the offset in the real one.
@@ -46,8 +46,8 @@ export function selectStatementStart(line: string): number {
  * a terminator: a period between two digits is a decimal point.
  * `… INNER JOIN b ON b~amount > 1.50 INNER JOIN c ON …` was cut at that point,
  * and `detectComplexJoinFindings` then counted two tables in a three-table
- * query — no partial-support finding, no architect's sign-off (full review of
- * a19945ef01dc, a3b0bfd48551). `statement-reader.ts` states the rule and the
+ * query — no partial-support finding, no architect's sign-off.
+ * `statement-reader.ts` states the rule and the
  * argument for it; this is the same rule, one parser over.
  */
 function terminatorIn(bare: string): number {
@@ -87,8 +87,7 @@ export function extractSelects(content: string): { text: string; line: number }[
     // terminator used to be dropped. `SELECT … INTO TABLE @a. SELECT … JOIN …
     // JOIN … INTO TABLE @b.` on one line handed on the first query and lost the
     // three-table one, so `detectComplexJoinFindings` saw no partial support and
-    // asked for no sign-off (full review of b88c77b4b5d1, 1947c1826a39 /
-    // 0fde0a8e6713).
+    // asked for no sign-off.
     let cursor = from;
     while (cursor < to) {
       const lineCode = code[i].slice(cursor, to);
@@ -97,8 +96,8 @@ export function extractSelects(content: string): { text: string; line: number }[
       // `WRITE 'SELECT data FROM cache.'.` is not a query. The old condition was
       // "the line contains SELECT", so a literal mentioning the word opened a
       // statement, the parser buffered everything up to the next period, and the
-      // transformation prompt received a sentence as deterministic SQL metadata
-      // (QA review of 33471220d6e9, 14d4000c4586). SELECT has to be a statement
+      // transformation prompt received a sentence as deterministic SQL metadata.
+      // SELECT has to be a statement
       // keyword: outside any literal, and at the start of a statement.
       let openedAt = -1;
       if (!inSel) {
@@ -149,7 +148,7 @@ function parseFields(seg: string): { star: boolean; fields: SelectField[] } {
  * ON … JOIN vbep AS s ON …` is valid and means INNER three times. The parser
  * required one, so it returned no joins at all and `tableCount` reported one
  * table — a three-table query with neither the partial-support finding nor the
- * architect's sign-off it carries (full review of a19945ef01dc, ed2b52cc2d3f).
+ * architect's sign-off it carries.
  *
  * Matched rather than split: a lookahead with an optional prefix matches both
  * at `INNER` and at the `JOIN` behind it, which cuts one join into two pieces
@@ -165,7 +164,7 @@ function joinStarts(fromClause: string): { at: number; after: number; type?: str
 }
 
 function parseJoins(fromClause: string): { from: SqlTableRef; joins: JoinClause[] } {
-  // Literal text is not SQL: a quoted JOIN is no join (carried QA finding 8a7790223de2).
+  // Literal text is not SQL: a quoted JOIN is no join.
   // maskLiterals keeps offsets, so the slices below still read the original clause.
   const starts = joinStarts(maskLiterals(fromClause));
   const firstJoin = starts.length ? starts[0].at : -1;

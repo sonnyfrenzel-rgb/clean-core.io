@@ -158,7 +158,7 @@ async function openProject(
     // The read is not the cheap half. It rebuilds the business rules out of the
     // project's source on every call (`deriveBusinessRules`, quadratic in its
     // length), and the limit above sat only in the mutating branch — so the
-    // expensive path was the unlimited one (security audit of b88c77b). A
+    // expensive path was the unlimited one. A
     // budget of its own, and a wider one, because opening the page is an
     // ordinary thing to do; the account gate stays out of the read, where CR-13
     // put it, because a reader may be invited rather than active.
@@ -184,7 +184,7 @@ async function openProject(
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -202,7 +202,7 @@ async function openProject(
   // Reading is by membership, writing is the owner's: an invited reader may
   // open what the owner shared and never change or start anything. Until
   // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
-  // opened the project and hid its process (Gegenreview c5085bb, CR-13).
+  // opened the project and hid its process (CR-13).
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     // Not the route's 'Unauthorized.' any more: a stranger who was told 403
     // here and 404 above could read off the status code alone whether a
@@ -391,7 +391,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
   // Answered rather than computed. `readSubjects` below calls
   // `deriveBusinessRules`, which is quadratic in the source — 2.5 s at 380 KB,
   // 10.4 s at 780 KB, 67 s at 1.58 MB, measured — and `firestore.rules` lets a
-  // project carry a megabyte of it (security audit of b88c77b).
+  // project carry a megabyte of it.
   if (Buffer.byteLength(source, 'utf8') > MAX_ANALYSED_SOURCE_BYTES) {
     return {
       ok: false,

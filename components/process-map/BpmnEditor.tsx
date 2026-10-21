@@ -392,8 +392,7 @@ export interface BpmnEditorProps {
    * Whether the BPMN, SVG and PNG downloads are offered. Default `true`. The
    * demo passes `false`: it promises that no export comes out of it
    * (`DEMO_UNSIGNED_NOTICE`, ADR-052), and an omitted control is the only
-   * honest way to keep that — editing stays, the downloads do not exist
-   * (Codex review code-demo-02).
+   * honest way to keep that — editing stays, the downloads do not exist.
    */
   exportable?: boolean;
   /** The name of the top level in the level path; the file name without it. */

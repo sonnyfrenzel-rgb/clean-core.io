@@ -55,7 +55,7 @@ const STATE: Record<SapIdStatus, { state: Exclude<SemanticState, 'success'>; hol
 export function SapIdMark({ check }: { check: SapIdCheck }) {
   const s = STATE[check.status];
   // CC BY 4.0: an attributed fact carries its document and commit in the mark itself,
-  // visible where the fact stands, with the full attribution as the title (QA bdf1b45234a6).
+  // visible where the fact stands, with the full attribution as the title.
   const citations = sapIdCitations(check);
   const ownCited = !!check.attribution;
   return (

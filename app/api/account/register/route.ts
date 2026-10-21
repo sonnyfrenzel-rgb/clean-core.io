@@ -127,8 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only while the profile exists, in one transaction with reading it: an
-    // erasure that completed in the meantime leaves no record behind (QA full
-    // review of a12774cd2b7f).
+    // erasure that completed in the meantime leaves no record behind.
     await mergeWhileProfileExists(
       uid,
       db.collection('registration_requests').doc(uid),
@@ -178,14 +177,14 @@ export async function POST(request: NextRequest) {
         // Not for the mirror — the kind keeps it off the person's row — but
         // for erasure: its subject names the account and its recipient is the
         // operator, so without the uid no erasure query matched its delivery
-        // record (codex code-mail-02).
+        // record.
         uid,
       });
     } else {
       console.log('\n======================================================');
       console.log('📬   [ACCOUNT ACTIVATED — MAILS SUPPRESSED, NO RESEND KEY]   📬');
       // No name, no address: this branch also runs on a deployment that lacks
-      // the key, and its log is not a place for personal data (QA 73f480886489).
+      // the key, and its log is not a place for personal data.
       console.log(`Account: ${uid}`);
       console.log(`Welcome subject: ${WELCOME_EMAIL_SUBJECT}`);
       console.log('======================================================\n');
@@ -245,7 +244,7 @@ async function sendMail(
     const body = await res.json().catch(() => ({} as any));
     const messageId: string | undefined = body?.id;
     // Label and message id only: the recipient is personal data and the id is
-    // the join key to the delivery record (QA 73f480886489).
+    // the join key to the delivery record.
     console.log(`[Email] Sent ${msg.label}. id=${messageId ?? 'unknown'}`);
     if (messageId) {
       // Best-effort: the mail is already away, and a failure to record it must

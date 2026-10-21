@@ -4,8 +4,8 @@
  *
  * `--permission` fences the file system, child processes, workers and addons.
  * Node says itself that it is not a boundary against malicious code, and names
- * `node:sqlite` as a way to the file system it does not fence; the counter-review
- * of c5085bb reproduced exactly that (CR-09). So a denied built-in is refused
+ * `node:sqlite` as a way to the file system it does not fence, and that path
+ * is reproducible (CR-09). So a denied built-in is refused
  * three times, whichever way it is asked for: by the bundler for a static
  * `import`, by the CommonJS loader for `require()` (including `createRequire`),
  * and by the ESM resolve hook for a dynamic `import()` with a computed name.

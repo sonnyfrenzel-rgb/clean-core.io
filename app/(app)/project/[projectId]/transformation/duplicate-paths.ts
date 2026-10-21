@@ -4,8 +4,8 @@
  * The model's file list was filtered for usable entries but never for repeats:
  * two files at `srv/service.ts` with different contents were both stored, the
  * file tree keyed its buttons by path, and choosing that path showed whichever
- * came first — the conflict was stored and hidden (QA full review of fc78767,
- * 6d411bca538c). A package with two answers for one file is not a package, so
+ * came first — the conflict was stored and hidden.
+ * A package with two answers for one file is not a package, so
  * the stage reports it like any other incomplete answer and stores nothing.
  *
  * Compared after trimming, with `\` read as `/`, a leading `./` dropped and
@@ -14,9 +14,8 @@
  *
  * Every `.` and empty segment goes, and a `..` takes back the segment before
  * it: `src/../shared.ts` and `a/./b.ts` are `shared.ts` and `a/b.ts` on disk,
- * and only a leading `./` used to be dropped (QA slice review of ad155b478e36,
- * 6dc1260fefb2). A `..` with nothing before it stays, so a path that leaves the
- * package is never folded into one inside it.
+ * and only a leading `./` used to be dropped. A `..` with nothing before it
+ * stays, so a path that leaves the package is never folded into one inside it.
  */
 export const normalisedPackagePath = (path: string): string => {
   const out: string[] = [];

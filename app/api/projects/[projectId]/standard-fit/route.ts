@@ -40,7 +40,7 @@ const MAX_ANALYSED_SOURCE_BYTES = 256 * 1024;
 /**
  * The catalogue the product ships, asked the one question 7.2 needs — in the
  * context of the tables this program reads, so AUFK beside AFKO is answered as
- * a production order (`successorInProgram`; QA review of 73b8cad63d3e, 579d04bb65ff).
+ * a production order (`successorInProgram`).
  */
 function catalogFor(tablesInProgram: ReadonlySet<string>): CatalogLookup {
   return { successorFor: (object) => successorInProgram(object, tablesInProgram) };

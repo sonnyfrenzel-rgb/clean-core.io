@@ -252,7 +252,7 @@ export function objectUseFromAccess(accessType?: string | null): ObjectUse | nul
  *
  * A name that is only a possible target of a dynamic statement (R26: a DEFAULT
  * or an assignment the source shows, not the resolved target) is not known to
- * be written. Grading it "written directly → D" (codex code-engine-05) would
+ * be written. Grading it "written directly → D" would
  * turn a candidate into a finding, so a possible-only write is graded by the
  * object's name — the answer it had before that rule. Reads stay as they were.
  */
@@ -420,8 +420,7 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
   // before the classification state — so an unmapped release state removes the
   // basis for every branch below it, the residual C included. That branch reads
   // "listed nowhere", which is untrue of an object whose file does say
-  // something; C would be a level asserted from a sentence nobody read
-  // (QA review of b88c77b, 469c688b0b0f / 17bfad473975).
+  // something; C would be a level asserted from a sentence nobody read.
   if (release) return { grade: 'Unknown', provenance: 'heuristic', ...views };
   if (classification === 'classicapi') return { grade: 'B', provenance: 'catalog', state: 'classicAPI', ...views };
   if (classification === 'noapi') return { grade: 'D', provenance: 'catalog', state: 'noAPI', ...views };
@@ -459,7 +458,7 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
  *      whole dependency" — the premise of the B — does not hold, and the answer
  *      stays Unknown.
  *
- *   3. Any SAP object written directly (codex code-engine-05, ADR-062): D,
+ *   3. Any SAP object written directly (ADR-062): D,
  *      with the object's own grade in `objectGrade` — residual C, released A,
  *      classicAPI B alike. A `write` is a direct database statement and only
  *      that (`readTableDependencies`: INSERT / UPDATE / MODIFY / DELETE, FROM
@@ -484,7 +483,7 @@ export function gradeFromSapStatesForUse(s: SapObjectStates, use: ObjectUse | nu
   if (release === 'nottobereleased' && !classification && (use === 'read' || use === 'reference')) {
     return { ...object, grade: 'C', use, objectGrade: object.grade };
   }
-  // Row 3 (codex code-engine-05): an SAP object written directly is D, whatever
+  // Row 3: an SAP object written directly is D, whatever
   // the object is on its own. The object's grade answers "may this object be
   // used"; a direct INSERT / UPDATE / MODIFY / DELETE answers "the application
   // that owns these rows was bypassed", and no release state permits that — a
@@ -551,7 +550,7 @@ export function expectedAtcMessage(
   if (g.use) return ATC_NOT_DETERMINED;
   // Released and listed as noAPI at once: the two files contradict each other,
   // and no public source says which one the check follows there — not
-  // determined, rather than "no finding" (QA delta of 73b8cad63d3e). Released
+  // determined, rather than "no finding". Released
   // and unlisted, or released and classic API, is "no finding": the release
   // file answers released first (`docs/design/abcd-vs-atc.md` §3, rows 1–2).
   if (g.cloudView === 'usable' && g.classicView === 'not-recommended') return ATC_NOT_DETERMINED;

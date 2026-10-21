@@ -142,7 +142,7 @@ export const PLAN_VERSION = 2;
  * `st.local.db<Table>`, and `srv/lib/lookups.ts` with one engine-written function per read (first row or null with
  * sy-subrc 0/4; the matching rows with sy-subrc and sy-dbcnt), the frame holding `const lookup_L156 = () => …` where
  * every WHERE value is readable (`lookups-node.ts`) — the model searched lists that do not exist or declined the unit.
- * A body that omits the frame's authority check or ignores its answer is refused (QA finding ef6865e7ade4).
+ * A body that omits the frame's authority check or ignores its answer is refused.
  * Also 15 (3.0.17 criterion 3, the same runs: FORM RATE_DEVIATION's `CHECK cs_result-status IS INITIAL`): both tracks
  * and the engine cases — a CHECK outside a loop inside a FORM, METHOD, FUNCTION or MODULE leaves that routine and the
  * run goes on (`stop_…`, the step returns), never a refusal of the input; in a loop it skips the pass (`skip_…`), and
@@ -182,7 +182,7 @@ export const PLAN_VERSION = 2;
  * component the program reads from it, not only those of the step (`lookups-node.ts`): the purchase-requisition
  * example's row held 10 of the EBAN fields the program reads, and a request sending MATNR was refused.
  * Nothing signed changes (§12.3).
- * 18 (3.0.18, SEC-c41f149-01): Node — `srv/lib/authority.ts` (`authority-node.ts`). Nothing signed changes.
+ * 18: Node — `srv/lib/authority.ts` (`authority-node.ts`). Nothing signed changes.
  * 19 (3.0.18 item 14 and the package halves of item 13, 18.10.2026): Node — the original's ALV display
  * (`REUSE_ALV_GRID_DISPLAY` / `REUSE_ALV_LIST_DISPLAY` with TABLES t_outtab, `cl_salv_table=>factory` with CHANGING
  * t_table) becomes the run's rows: the frame of the step runs the body in a function of its own and copies the
@@ -202,7 +202,7 @@ export const PLAN_VERSION = 2;
  * the interface; the logic class keeps each name as an alias (`TYPES tt_csv TYPE zif_x_access=>tt_csv`), so the
  * interface needs nothing of the class that holds a reference to it — no activation cycle (`access-types.ts`); the
  * shipped abaplint.json runs `cyclic_oo`.
- *    Also in 19 (QA review of 62eae6a082bb): RAP — TRACE.md's ABAP Unit line names every class the acceptance counts,
+ * Also in 19: RAP — TRACE.md's ABAP Unit line names every class the acceptance counts,
  * ltc_counterparts with ltc_engine_cases and ltc_golden_master (`ABAP_UNIT_EVIDENCE_LINE`).
  * Nothing signed changes (§12.3).
  * 20 (3.0.19, owner decision 19.10.2026: a split program builds its code parts only): both tracks — where the engine
@@ -218,7 +218,7 @@ export const PLAN_VERSION = 2;
  * any more. Node: the parent starts `local` with each local's initial value, and the part declares each from `local`
  * before its body and writes it back after it, in a `finally`. A body that declares a handed local again, or names
  * `cs_local`, is refused (markers.ts). A local the original declares with STATICS keeps its value from one call to the
- * next (QA review of a20d2cb7bd39, 94e86fe4c2b1, `staticLocalsOf`): RAP holds it in `STATICS ls_static`, started once;
+ * next (`staticLocalsOf`): RAP holds it in `STATICS ls_static`, started once;
  * Node in the run's own `local` (`STATICS_OF_RUN`, keyed by the run state). Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 21;
@@ -350,7 +350,7 @@ export interface PlanGuard {
   /**
    * `raw` — reads only the request (inputs, constants, input records): checked before any calculation.
    * `derived` — reads a value computed before it: the body must call the guard at the original's position
-   * (rule 15, QA finding 4e9d1315469d; see guard-basis.ts).
+   * (rule 15; see guard-basis.ts).
    */
   basis: 'raw' | 'derived';
   /** Why derived, or null. */
@@ -605,7 +605,7 @@ export interface BodyGuardContext {
   /**
    * Node, since scaffold version 15: the original's AUTHORITY-CHECKs in the region's lines. A body that does not call
    * each one's `fn` (or, without one, `authority_check` with its object), or calls it and ignores the answer, is
-   * refused (QA finding ef6865e7ade4): the check is the original's, never optional.
+   * refused: the check is the original's, never optional.
    */
   authority?: readonly AuthorityEntry[];
   /**
@@ -786,7 +786,7 @@ export interface Scaffold {
    */
   partLocals?: Record<string, string[]>;
   /**
-   * Node only (QA finding 95f6ea84e8af): for each check whose predicate stays a fill region, the ABAP type of each
+   * Node only: for each check whose predicate stays a fill region, the ABAP type of each
    * value it reads, in words — the fill request names them, so the model writes that type's initial value.
    */
   predicateTypes?: Record<string, string[]>;
@@ -834,20 +834,20 @@ export interface AuthorityEntry {
   call: string;
   unread?: string[];
   /**
-   * Set where the frame runs the whole sequence (QA finding 8394df76b027): the check stands at the top level of its
+   * Set where the frame runs the whole sequence: the check stands at the top level of its
    * routine, only declarations and engine-run checks before it, and the very next statement is the derived check on
    * its sy-subrc (`IF sy-subrc <> 0. MESSAGE … TYPE 'E'.` / RETURN …). The frame calls `fn` and hands its answer to
    * `helper` (guard `guard`) at the step's entry; the body writes nothing for it.
    */
   wired?: { guard: string; helper: string };
   /**
-   * How the original handles the check's sy-subrc, where it can be read (QA finding 9bdd914427a5): `loop` — its next
+   * How the original handles the check's sy-subrc, where it can be read: `loop` — its next
    * statement is the derived check and it skips the pass or leaves the loop (CONTINUE, CHECK or EXIT inside a loop),
    * so a body's continue or break is as strong; absent — it refuses or returns, or it cannot be read, and only return
    * or throw end the body's path.
    */
   ends?: 'loop';
-  /** With `ends: 'loop'`: how many LOOP, DO, WHILE or SELECT loops of its routine enclose the check (QA a63075170a5e). */
+  /** With `ends: 'loop'`: how many LOOP, DO, WHILE or SELECT loops of its routine enclose the check. */
   loopDepth?: number;
 }
 

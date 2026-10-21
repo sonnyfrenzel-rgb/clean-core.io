@@ -45,8 +45,7 @@ export const NOT_DETERMINED_LABEL = 'Not determined';
 
 /**
  * How a commit's waiting reads. `andWait` is null when the code decides it at
- * run time (`WAIT = lv_wait`); that is not "does not wait" (QA slice review of
- * 81810c8026e0, b99ee9f51490).
+ * run time (`WAIT = lv_wait`); that is not "does not wait".
  */
 export function commitWaitWords(andWait: boolean | null): string {
   if (andWait === null) return `, waiting: ${NOT_DETERMINED_LABEL.toLowerCase()}`;

@@ -157,10 +157,10 @@ export default function TcoCalculatorPage() {
   useFollowHash();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  // A read that failed is not a project without a score (QA ffddf6b4fee6).
+  // A read that failed is not a project without a score.
   const [loadError, setLoadError] = useState(false);
-  // The line count of the uploaded source, so the slider's range can hold it
-  // (QA 246b1ea24dbc): a 420-line upload used to be drawn at 1,000.
+  // The line count of the uploaded source, so the slider's range can hold it:
+  // a 420-line upload used to be drawn at 1,000.
   const [sourceLoc, setSourceLoc] = useState<number | null>(null);
   // Whether the signed-in account owns the project — an invited reader sees
   // the stored figures read-only. Until the stored figures are in the fields,
@@ -483,8 +483,7 @@ export default function TcoCalculatorPage() {
   );
 
   // The savings forecast needs a baseline nothing any input could fix: a signed
-  // score below the assumed target, for the source under review (QA
-  // b23daef11548). Without one the forecast declines, and the stage still
+  // score below the assumed target, for the source under review. Without one the forecast declines, and the stage still
   // compares options — their figures are the reader's own, not derived from a
   // score (roadmap 7.4).
   const forecastPossible = progress.forecastPossible;
@@ -1179,7 +1178,7 @@ export default function TcoCalculatorPage() {
           <p className="font-bold">Clean-Core.io — model estimate, not a business case</p>
           {/* The inputs the estimate was priced with, so the printed page can be
               read on its own (Sonny, 30.09.2026). A cadence nobody set is the
-              assumed start value and says so (carried QA finding 5666ef8155a0). */}
+              assumed start value and says so. */}
           <p data-tco-print-inputs="">
             Inputs: {formatNumber(loc)} LoC · developer day rate {formatAmount(devRate, currency)} · key-user day rate{' '}
             {formatAmount(userRate, currency)} · modernisation investment {formatAmount(oneTimeCost, currency)} ·{' '}

@@ -345,7 +345,7 @@ export interface DataCouplingEntry {
   accessType: 'Read' | 'Write' | 'Read/Write' | 'Reference';
   isCustom: boolean;
   /**
-   * Ownership has three answers, not two (2.16, QA full review 45a8a7cf4a0c).
+   * Ownership has three answers, not two.
    * `isCustom` is a customer Z/Y name; `isStandard` is an SAP standard name; a
    * reserved-namespace name (`/ACME/T_ORDER`) is **neither** — it can belong to
    * SAP, to a partner or to the customer, and the name alone does not say

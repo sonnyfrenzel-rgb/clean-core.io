@@ -95,8 +95,7 @@ export async function parseUsage(file: File, options: UsageImportOptions | Usage
     // The warnings are stored with the report, so a heading is copied into
     // them only when it is a known SAP column name. Anything else — a pivoted
     // export with one column per user (JSMITH, jane.doe@example.com) — may be
-    // personal data however it got there, so it is counted, never copied (QA
-    // full review of v2.20.0, d371bd76e13b; v3.0.6, 5b36ba237426).
+    // personal data however it got there, so it is counted, never copied.
     const listed = unmapped.filter((h) => KNOWN_SAP_COLUMNS.has(h.toUpperCase().trim()));
     const others = unmapped.length - listed.length;
     const parts = [
@@ -110,7 +109,7 @@ export async function parseUsage(file: File, options: UsageImportOptions | Usage
 
   // Two headings that both mean the call count (or the last use) cannot both be
   // read, and taking the first synonym silently decided which number the
-  // prioritisation rests on (QA full review of v2.20.0, b19f783e7d19).
+  // prioritisation rests on.
   for (const [field, label] of [['callCount', 'the call count'], ['lastUsed', 'the last use']] as const) {
     const candidates = candidateColumns(headers, field);
     if (candidates.length > 1) {
@@ -382,7 +381,7 @@ function normalizeObjectName(name: string): string {
  *
  * Two shapes reached "a measured zero" without a measurement behind them, and a
  * measured zero over a long enough window is what marks an object dormant and
- * proposes it for retirement (full review of a19945ef01dc):
+ * proposes it for retirement:
  *
  *   - **a cell holding only spaces** (766ae59f10e4, 5dce9bd7ff9e). The absence
  *     check ran before the trimming, `"   " !== ''`, and `Number('')` is 0.
@@ -409,7 +408,7 @@ function parseCallCount(raw: unknown): number | undefined {
   }
   // Repeated grouping with one separator: "1.234.567" or "1,234,567". The two
   // rules around this one each took a single separator, so these came out NaN
-  // and a real count became unknown (QA full review of v2.20.0, 155aeedb1cff).
+  // and a real count became unknown.
   else if (/^-?\d{1,3}([.,])\d{3}(?:\1\d{3})+$/.test(str)) {
     str = str.replace(/[.,]/g, '');
   }
@@ -425,7 +424,7 @@ function parseCallCount(raw: unknown): number | undefined {
 
   const num = Number(str);
   // Not `isNaN`: `Infinity` and an overflow such as `1e309` are numbers too,
-  // and are no count (QA full review of v2.20.0, a48a8ba01b64).
+  // and are no count.
   if (!Number.isFinite(num)) return undefined;
   // Handed back unrounded when it is negative, so the caller's `< 0` guard sees
   // the sign and quarantines the row with the value the export actually held.
@@ -543,8 +542,7 @@ function detectPeriod(records: UsageRecord[]): { observedSpanDays?: number; obse
 
   if (dates.length === 0) return {};
   // One date is still the last execution seen, which the join's dormancy rule
-  // falls back to; it is no span, so none is reported (QA full review of
-  // v2.20.0, 8a780126c364).
+  // falls back to; it is no span, so none is reported.
   if (dates.length === 1) return { observedFrom: dates[0], observedTo: dates[0] };
 
   const from = dates[0];

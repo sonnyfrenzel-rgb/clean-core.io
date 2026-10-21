@@ -9,7 +9,7 @@
  * whether to preview or save; the document is built here.
  *
  * Everything the model wrote is text, and this document can be opened as HTML
- * in the application's own origin (QA review of 33471220d6e9, 024ec609bc86). A
+ * in the application's own origin. A
  * comment in the uploaded ABAP is enough to steer the model into returning
  * markup, so no model value reaches the template unescaped
  * (`tests/export-escaping-guard.spec.ts` reads this file for that).
@@ -151,7 +151,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
   if (isJson && data) {
     // The same routing rule the page's prompt uses: anything not on BTP is an
     // on-stack ABAP Cloud / RAP design, and its export must not call itself a
-    // side-by-side Node.js blueprint (QA 7250545cb4ae).
+    // side-by-side Node.js blueprint.
     const onStack = !isSideBySideRoute(currentProject.extensibilityRoute || SIDE_BY_SIDE_ROUTE);
     const structureRows = data.nodeAppBlueprint?.projectStructure?.map(item => {
       if (!item) return '';

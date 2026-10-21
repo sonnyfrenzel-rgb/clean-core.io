@@ -15,7 +15,7 @@ import { MANAGEMENT_LAYER_ELSEWHERE } from './management-sections';
  * still shows.
  *
  * Read from the address as it is, never from a layer held in state: that may
- * still be the last view's (QA 6ec03d013196).
+ * still be the last view's.
  */
 export type LayerRedirect = { kind: 'view'; view: WorkspaceView; hash: string } | { kind: 'economics' };
 

@@ -6,8 +6,7 @@
  * in one sentence. Setting the region once per stage inside a loop let React
  * batch the updates into the last one: two stages finishing in the same render
  * (or already done on mount) announced only the second, and the `announced` set
- * then kept the first from ever being said (QA full review of v2.20.0,
- * 861649f16b0f).
+ * then kept the first from ever being said.
  *
  * `announced` is mutated: the ids named here are added, so a re-render — or a
  * counter ticking — cannot name them again. Returns `null` when nothing new

@@ -67,7 +67,7 @@ const ACTION_OF_GAP: Record<CoverageGap, OpenQuestionAction | 'limit'> = {
   'file-io': 'add-atc',
   // Not questions: no input settles them, they bound what this reading covers.
   // Code generated at runtime has no call target to name — the program it
-  // writes does not exist until it runs (QA review of dd8e99691c8d).
+  // writes does not exist until it runs.
   'classic-list-output': 'limit',
   macro: 'limit',
   'generated-code': 'limit',
@@ -458,8 +458,7 @@ export function openQuestionBases(
   const out: Partial<Record<OpenQuestionAction, string>> = {};
   // The project's evidence (a declared target, imported usage) decides which
   // groups are still open; its stored answers do not, so an answered group can
-  // be answered again. A group its evidence resolved takes no answer (QA review
-  // of 1b75c99cacb3, d83c3d91312b).
+  // be answered again. A group its evidence resolved takes no answer.
   const facts = project ? { ...project, openQuestions: undefined } : null;
   for (const g of openQuestions({ open, project: facts, rules }).groups) {
     if (g.end === 'resolved') continue;
@@ -473,7 +472,7 @@ export function openQuestionsLine(q: OpenQuestions): string {
   const reading = 'Reading SAP’s catalog for the function-module calls…';
   // While SAP's catalog is being asked, only the group it may still close is
   // held back: its count is about to fall. Every other open question — the
-  // target, the rules — is said as it stands (QA review of dd8e99691c8d).
+  // target, the rules — is said as it stands.
   const counted = q.catalogPending ? q.groups.filter((g) => g.end === 'open' && !g.catalogPending) : null;
   const open = counted ? counted.reduce((n, g) => n + g.count, 0) : q.open;
   const blocking = counted ? counted.filter((g) => g.blocksDecision).reduce((n, g) => n + g.count, 0) : q.blocking;

@@ -7,8 +7,8 @@
  * carried a hand-written copy of it: every behavioural assertion ran the copy,
  * and the page itself was only grepped for a few identifiers. The copy drifted
  * the first time the page changed — the Year-1 ROI was corrected in the page and
- * the spec still computed the old ratio (QA review of 33471220d6e9,
- * f3428b0782a9). Roadmap 0.17: tests that check what they claim.
+ * the spec still computed the old ratio.
+ * Roadmap 0.17: tests that check what they claim.
  *
  * Every refusal in here is deliberate. The model declines rather than
  * manufacturing a figure, and `null` is its way of saying "not for these
@@ -91,7 +91,7 @@ export function tcoForecast(inputs: TcoInputs): TcoForecast | null {
 
   // The domain, not only the arithmetic: a negative investment produced a
   // payback of minus twenty-one months and a score of minus one hundred a
-  // factor nobody meant (Gegenreview c5085bb, CR-16). None of these is an
+  // factor nobody meant (CR-16). None of these is an
   // input; the page says which figure is missing, not a number built on it.
   if (devRate < 0 || userRate < 0 || oneTimeCost < 0 || loc < 0 || upgradeFreq < 0 || fpFreq < 0) return null;
   if (scoreBefore < 0 || scoreBefore > 100) return null;
@@ -102,7 +102,7 @@ export function tcoForecast(inputs: TcoInputs): TcoForecast | null {
   // is tightly coupled and needs substantial adaptation per upgrade.
   // Days stay fractional in the model; the page rounds what it shows. Rounding
   // every term to whole days turned the modern side of a small project into
-  // zero and its "overhead reduction" into 100 % (Gegenreview c5085bb, CR-16).
+  // zero and its "overhead reduction" into 100 % (CR-16).
   const legacyDevDaysTotal = (loc / 1000) * 2.5 * upgradeFreq + (loc / 1000) * 0.8 * fpFreq;
   const legacyTestDaysTotal = (loc / 1000) * 1.8 * upgradeFreq + (loc / 1000) * 0.6 * fpFreq;
   const legacyAnnualTotal = legacyDevDaysTotal * devRate + legacyTestDaysTotal * userRate;

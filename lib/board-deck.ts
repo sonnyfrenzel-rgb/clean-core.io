@@ -73,7 +73,7 @@ export function buildBoardDeck(input: {
    *
    * And no "approved" anywhere. The deck's own wording granted a go-live —
    * conditional or unconditional — from a static roll-up alone, with the
-   * architect's sign-off never read (QA 4a4321a45f3c). A roll-up says what
+   * architect's sign-off never read. A roll-up says what
    * the code is; whether it may go live is the architect's, and the deck
    * reports that sign-off as what it is: recorded, self-attested, or absent.
    */
@@ -141,13 +141,13 @@ export function buildBoardDeck(input: {
   //
   // "Resolved Objects" used to be the object count minus the number of partial
   // and not-supported *findings* — two findings on one object erased another,
-  // fully supported object from the figure (QA a71be0146d3c). A finding does
+  // fully supported object from the figure. A finding does
   // not name its object, so no object count can be derived from findings; the
   // deck reports what it has: findings by level.
 
   // With no findings there is no capability to state either: the title, the
   // bullets and the "zero manual rewrites" note all read as a clean bill, and
-  // slide 1 has just said there is no verdict (QA 30215a402132).
+  // slide 1 has just said there is no verdict.
   const nothingEstablished = findings.length === 0;
   const fullyByConstruct = Object.entries(
     findings
@@ -160,8 +160,8 @@ export function buildBoardDeck(input: {
     subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'Constructs the support matrix maps automatically',
     metrics: [
       // With nothing established, a coverage figure on a slide titled "Not
-      // Determined" reads as coverage of these findings, which it is not (QA
-      // 1f94420f3234). The Clean Core Score is the signed run's own measure,
+      // Determined" reads as coverage of these findings, which it is not. The
+      // Clean Core Score is the signed run's own measure,
       // taken by the evidence engine over the whole source — it stays, labelled
       // as what it is, and never as a statement about these findings.
       { label: 'Coverage Estimate', value: nothingEstablished ? 'not determined' : measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: nothingEstablished ? 'no findings — nothing to map' : 'Fully mapped constructs' },

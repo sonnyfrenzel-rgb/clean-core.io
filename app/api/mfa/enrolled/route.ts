@@ -18,7 +18,7 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
  * calls it again whenever Firebase Auth shows a factor the profile does not
  * know about — the case where this write failed the first time and the
  * account was left with a factor Firebase asks for at sign-in and a flag the
- * server gates do not yet require (QA review of d93cb53e2631, 9cba6508b10b).
+ * server gates do not yet require.
  * Firebase Auth is the authority on whether the factor exists; recording that
  * fact is safe from any valid session of the account.
  */
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const { db, FieldValue } = await getAdminDb();
     // `update`, not a merge-set: an account erased while this request was in
-    // flight must not get its profile back (QA full review of a12774cd2b7f).
+    // flight must not get its profile back.
     await updateExistingProfile(uid, {
       mfaEnabled: true,
       mfaFactor: 'totp',

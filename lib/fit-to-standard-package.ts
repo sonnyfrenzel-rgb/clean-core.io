@@ -71,7 +71,7 @@ const nameOf = (e: FitEntry) => e.plainLabel ?? e.label;
 const CHECK = { verified: 'checked against SAP data', catalog: "from SAP's catalog — to verify", unverified: 'not checked — to verify', mismatch: 'does not match SAP data' } as const;
 const refText = (e: FitEntry) => (e.standardRef ? `${e.standardRef.id}${e.standardRef.title ? ` (${e.standardRef.title})` : ''} — ${CHECK[e.standardRef.check]}` : '—');
 const md = (t: string) => t.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
-/** One CSV cell (QA review of 4ea0324a13cb, 00b7e0bfeb89). */
+/** One CSV cell. */
 export function csvCell(t: string): string {
   const safe = /^[\s\u0000-\u001f]*[=+\-@\t\r]/.test(t) ? `'${t}` : t;
   return /[",\r\n;']/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
@@ -125,7 +125,7 @@ function designDoc(input: FitPackageInput): string {
 }
 
 function gapRows(input: FitPackageInput): FitEntry[] {
-  // A step the engine cannot read is listed too: nobody has resolved it (QA review of 4ea0324a13cb, 357cd43a6983).
+  // A step the engine cannot read is listed too: nobody has resolved it.
   return input.revision.entries.filter((e) => e.comparability === 'business-comparable' || e.disposition === 'unknown');
 }
 

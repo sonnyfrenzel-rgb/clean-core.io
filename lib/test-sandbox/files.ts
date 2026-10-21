@@ -77,7 +77,7 @@ export const SANDBOX_PATTERN_ID = /^[A-Za-z0-9_.-]{1,100}$/;
 /**
  * The selected case ids as the runner's name filter — the ids themselves, not
  * a cleaned-up spelling of them. Removing characters turned `TC-001` into
- * `TC001`, which names no test (Codex code-runner-04); the core escapes and
+ * `TC001`, which names no test; the core escapes and
  * anchors each id (`testNamePattern` in `./core.ts`).
  *
  * `null` when a selected id holds a character outside `SANDBOX_PATTERN_ID`:

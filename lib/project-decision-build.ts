@@ -139,7 +139,7 @@ function noContractBinding(kind: OptionKind, optionId: string, signOff: SignOffB
   }
   // A key-user sign-off may carry no reason where it follows the engine's
   // recommendation (above); the sentence says "with its reason" only where one
-  // was recorded (QA review of 317d5f7a9c53, 2dc0e9055239).
+  // was recorded.
   return bound(
     'contract',
     key,

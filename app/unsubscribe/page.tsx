@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 /**
  * The token is not read here. A mail links to `/unsubscribe#t=…`, and the
  * fragment never reaches the server, so the Cloud Run request log never sees
- * it (QA finding 8e25777f1339). `UnsubscribeClient` reads it in the browser —
+ * it. `UnsubscribeClient` reads it in the browser —
  * and, for a mail sent before 30.09.2026, the old `?t=…` as well, which it then
  * strips from the address bar and the history.
  */

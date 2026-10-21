@@ -9,7 +9,7 @@
  *
  * The check refuses rather than repairs: an id that does not have this form is
  * not an id of ours, and a stripped variant of it would name a different
- * document (SEC-2026-514).
+ * document.
  *
  * `tests/firestore-id-guard.spec.ts` holds every route under `app/api` to it.
  */

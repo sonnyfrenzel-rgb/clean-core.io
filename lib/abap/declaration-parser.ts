@@ -30,8 +30,8 @@ interface Statement { text: string; line: number; }
  * the period inside the template and the tail became a statement, so
  * `table-dependencies.ts` reported a VBAK read that exists only in display text,
  * and `METHODS m IMPORTING iv TYPE p DEFAULT 1.5.` became a default of 1 and a
- * statement called `5` (full review of b88c77b4b5d1, 0c6a98cff70a / 9c05f6c741fc
- * / 06b051206fa6 / 0583dde3eca9). `readStatements` has stated both rules for a
+ * statement called `5`.
+ * `readStatements` has stated both rules for a
  * while; this reader now states neither, it asks.
  */
 export function tokenize(source: string): Statement[] {

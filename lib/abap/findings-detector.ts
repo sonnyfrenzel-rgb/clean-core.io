@@ -90,8 +90,7 @@ function detectStructural(model: ClassModel): SupportFinding[] {
   if (hasInheritance) {
     const blocked = model.missing.some((m) => m.impact === 'blocks-resolution');
     // A missing interface does not block the chain, but a hierarchy with a
-    // referenced type nobody supplied is not "fully resolved" either (QA full
-    // review of v2.20.0, a250f878343a).
+    // referenced type nobody supplied is not "fully resolved" either.
     const incomplete = !blocked && model.missing.length > 0;
     findings.push(baseFinding('deep-inheritance', {
       level: blocked || incomplete ? 'partial' : 'fully',
@@ -123,8 +122,8 @@ export function detectFindings(model: ClassModel, sources: SourceFile[]): Suppor
     // This detector used to carry its own half of the rule: it knew `'…'` and
     // `` `…` `` and not the string template, so `DATA(message) = |CALL SCREEN
     // 100|.` produced a Dynpro finding — level "not supported", sign-off
-    // required — on a program that calls no screen (full review of a19945ef01dc,
-    // 19bdc218308b). The same text could fabricate a dynamic-call, kernel-call
+    // required — on a program that calls no screen.
+    // The same text could fabricate a dynamic-call, kernel-call
     // or RTTI finding. `maskNonCode` keeps the literal's delimiters, which the
     // dynamic-call pattern below needs: `CALL FUNCTION 'name'` is a resolvable
     // call and `CALL FUNCTION lv_name` is not, and the quote is the difference.
@@ -135,7 +134,7 @@ export function detectFindings(model: ClassModel, sources: SourceFile[]): Suppor
 
       // A statement may break its line anywhere — `CALL FUNCTION` on one line
       // and `lv_name` on the next is one dynamic call, and neither line alone
-      // matched (QA full review of v2.20.0, 2f79b8aedde5). Each pattern is asked
+      // matched. Each pattern is asked
       // about this line joined to the next one that holds code; a match counts
       // for this line only when it starts here, so a construct written wholly
       // on the next line is still reported there, once.

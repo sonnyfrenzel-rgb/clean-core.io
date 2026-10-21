@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     // The hard-suspend check the POST below also makes. It was missing here, so
     // a suspended account still learned whether a key is available and which of
     // the five stages are switched on — and `answerFor` decrypts that account's
-    // own BYOK key to find out (security audit of b88c77b). Not
+    // own BYOK key to find out. Not
     // `requireCurrentTerms`: § 10.3 lets somebody carry on under the Terms they
     // accepted, and the write is where that is decided.
     await assertAccountActive(decodedToken.uid);
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     // `null` is valid JSON and has no properties: read through `?.`, so it is the
-    // 400 below and not a TypeError answered as 500 (carried QA finding 649f8b778f8e).
+    // 400 below and not a TypeError answered as 500.
     const requested = (body as { stages?: unknown } | null)?.stages;
     if (!requested || typeof requested !== 'object' || Array.isArray(requested)) {
       return NextResponse.json(
@@ -169,8 +169,7 @@ export async function POST(req: NextRequest) {
 
     const { db, FieldValue } = await getAdminDb();
     // `update` with one field path per stage: the same merge as before into
-    // `modelStages`, but an account erased in the meantime is not recreated
-    // (QA full review of a12774cd2b7f).
+    // `modelStages`, but an account erased in the meantime is not recreated.
     const fields: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
     for (const [stage, on] of Object.entries(update)) fields[`modelStages.${stage}`] = on;
     await updateExistingProfile(uid, fields, { db });

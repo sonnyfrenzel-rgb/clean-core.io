@@ -156,7 +156,7 @@ function countFailures(failed: { kind: string; status: string }[]): DeliveryMetr
  * What the report reads, and all of it. The Admin SDK's `Firestore` satisfies
  * it, and so does the dependency-free REST client the Friday job uses
  * (`scripts/lib/firestore-rest.ts`): that job holds an OIDC permission and runs
- * no third-party package beside it (QA review, fa0aaea6cc47).
+ * no third-party package beside it.
  */
 export interface UsageReportSource {
   collection(name: string): { get(): Promise<{ docs: { id: string; data(): DocumentData }[] }> };
@@ -239,7 +239,7 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     runs: runs.filter((r) => inWindow(r.at, from, to)).length,
     projects: projects.filter((p) => inWindow(p.at, from, to)).length,
     // What each run was charged when it ran — not what the account's current
-    // tier or key would charge it now (codex code-mail-03).
+    // tier or key would charge it now.
     units: runs.filter((r) => inWindow(r.at, from, to) && r.metering === 'charged').length,
     unitsUndetermined: runs.filter((r) => inWindow(r.at, from, to) && r.metering === null).length,
   });

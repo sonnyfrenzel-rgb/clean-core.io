@@ -10,7 +10,7 @@ type EvidenceProject = Parameters<typeof abapTestSentencesOfProject>[0] & { exte
  * The ABAP Unit evidence of the Testing tool's run step (3.0.13 (6)): on the ABAP route only, the sentences
  * `abapTestSentencesOfProject` reads for the project — "passed in SAP" from the SAP result on record when it is
  * current for this package (3.0.18 item 13). A component of its own so the rendered sentence is tested, not only
- * the page source (QA review of 62eae6a082bb).
+ * the page source.
  */
 export default function AbapUnitEvidence({ project }: { project: EvidenceProject | null | undefined }) {
   const sentences = useMemo(() => (isAbapUnitRoute(project) ? abapTestSentencesOfProject(project) : null), [project]);

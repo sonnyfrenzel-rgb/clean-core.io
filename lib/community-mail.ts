@@ -2,7 +2,7 @@ import { isTestAccount } from './test-accounts';
 
 /**
  * Community mail — survey invitations and community updates — goes only to an
- * account that opted in (owner decision of 30.09.2026, QA finding bef96e7f054f).
+ * account that opted in (owner decision of 30.09.2026).
  *
  * The privacy policy used to say there is no newsletter and no marketing mail
  * while surveys were being sent to every account. The decision was consent, not
@@ -82,7 +82,7 @@ export function communityMailBlock(
  *
  * - `oneClick` goes into the RFC 8058 `List-Unsubscribe` header. Mail providers
  *   POST to it with no body, so the token has to be in the query. That is the
- *   accepted residual risk of QA finding 8e25777f1339: the URL can reach a
+ *   accepted residual risk: the URL can reach a
  *   request log, and the token in it can only unsubscribe.
  * - `page` is the visible link in the body. The token sits in the fragment,
  *   which a browser never sends to the server, so a click leaves no token in

@@ -69,8 +69,8 @@ function splitCsvLine(line: string, delimiter: string): string[] {
  * The records of a CSV text: line breaks end a record only outside quotes.
  *
  * Splitting on every physical line first cut a quoted description with a line
- * break in it into two malformed rows (QA full review of v2.20.0,
- * 82ca0fe444ab). A doubled quote inside a quoted field toggles twice and so
+ * break in it into two malformed rows.
+ * A doubled quote inside a quoted field toggles twice and so
  * leaves the state as it was.
  */
 function splitCsvRecords(text: string): string[] {
@@ -157,8 +157,8 @@ export async function parseXlsxRows(file: File): Promise<Record<string, string>[
  * `.xlsx` by extension, in any case; everything else is read as delimited text.
  *
  * `EXPORT.XLSX` went to the CSV reader, and a legacy `.xls` — a binary format
- * the XLSX loader cannot open — went to the XLSX reader
- * (QA full review of v2.20.0, 88143a36e400). A file named `.xls` is sorted by its first bytes in
+ * the XLSX loader cannot open — went to the XLSX reader.
+ * A file named `.xls` is sorted by its first bytes in
  * `parseTabularRows`, and the binary workbook refused with a sentence saying
  * what to do instead.
  */

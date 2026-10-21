@@ -34,8 +34,7 @@ async function main() {
   // `send-survey-digest.ts`): the repository is public, so every line printed
   // here is readable by anyone. This script was missed by the 23.09.2026 sweep
   // because it was assumed to print nothing. It printed the recipient *and the
-  // whole alert body*, which names the failed jobs of a security run — the QA
-  // delta review of 4b40254 caught it.
+  // whole alert body*, which names the failed jobs of a security run.
   const local = !process.env.CI && !process.env.GITHUB_ACTIONS;
   if (local) {
     console.log(`to      : ${RECIPIENT}`);

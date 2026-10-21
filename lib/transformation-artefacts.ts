@@ -8,8 +8,8 @@
  * re-implemented the matcher locally and then checked that the page's source
  * still contained the same ternary. That passes a copy and reads a string: change
  * `baseName` to return the whole path and the copy's own cases still go green
- * while the shipped gate quietly stops working (QA review of 9e408888bfec,
- * finding 3c05340dc39b). Moved here so the spec can exercise the real thing.
+ * while the shipped gate quietly stops working. Moved here so the spec can
+ * exercise the real thing.
  *
  * No imports, and none belong here: the page is a client component, and a
  * module it pulls in travels into the browser bundle with it.
@@ -28,8 +28,8 @@ export interface ProjectFile {
  * for that exact file, not for something ending in it. Matching both with
  * `endsWith` let `xpackage.json` satisfy the manifest requirement and
  * `my-dockerfile` the container one: a package reported complete that would not
- * build (QA review of 7fea4f4, acceptance "a generated package must include the
- * required artifacts for its selected track": not met).
+ * build, although a generated package must include the required artifacts for
+ * its selected track.
  */
 export type Requirement =
   | { label: string; match: 'extension'; suffix: string }
@@ -42,7 +42,7 @@ export type Requirement =
  * 23.09.2026: the file abapGit reads is `.abapgit.xml`, with a leading dot, and
  * the prompt asked for `abapgit.xml` — so every package carried a configuration
  * abapGit ignores, with `START_CLASS` wired to a demo class from someone else's
- * project (QA full review of 3131afa, 827cf6758637). The delivery step writes the
+ * project. The delivery step writes the
  * real one deterministically from the project now, so the model must not invent
  * one; a generated configuration would put a guessed value where a measured one
  * belongs.
@@ -124,7 +124,7 @@ export const baseName = (path: string): string => path.split(/[\\/]/).pop() ?? p
  * subdirectory still counts — the generator chooses the layout — while a file
  * merely *ending* in `package.json` does not. The name is compared as written:
  * npm reads `package.json` and a build reads `Dockerfile`, and neither finds
- * `PACKAGE.JSON` (QA slice review of 953575fcc9bf, 9b562d2e4e97). Extensions
+ * `PACKAGE.JSON`. Extensions
  * stay case-insensitive.
  */
 export const satisfies = (required: Requirement, path: string): boolean => {
@@ -155,8 +155,7 @@ const hasText = (v: unknown): v is string => typeof v === 'string' && v.trim().l
  *
  * The page used to write `parsed.tests || { config: '', spec: '' }` and mark
  * the project transformed: an answer without tests, or with `tests: "none"`,
- * became a finished stage with no test suite (QA full review of 81810c8,
- * 183ed4edf700).
+ * became a finished stage with no test suite.
  */
 export const usableTestSuite = (tests: unknown, isAbapCloud: boolean): GeneratedTestSuite | null => {
   if (!tests || typeof tests !== 'object' || Array.isArray(tests)) return null;
@@ -170,7 +169,7 @@ export const usableTestSuite = (tests: unknown, isAbapCloud: boolean): Generated
  * After a lost answer the page rereads the project. The store counts as done
  * only when all of it is there — code, suite and status — never the code
  * alone: an earlier run can have left the same code with another suite
- * (roadmap 3.0.11, QA review of 35f67702209b, 546d27f6f092).
+ * (roadmap 3.0.11).
  */
 export const holdsStoredPackage = (
   reread: { generatedCode?: unknown; testSuite?: unknown; status?: unknown } | null | undefined,

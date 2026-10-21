@@ -505,7 +505,7 @@ function confirmedAnswer(steps: readonly RailStep[]): ManagementAnswer {
       key: `proven-${s.key}`,
       label: s.label,
       detail: s.detail,
-      // A sandbox run against mocks is a record, not a proof (codex code-trust-04).
+      // A sandbox run against mocks is a record, not a proof.
       provenance: (s.mock ? 'demonstrated-mock' : 'proven') as ProvenanceValue,
     })),
     ...selfDeclared.map((s) => ({
@@ -695,7 +695,7 @@ function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnsw
   const value = trend.score;
   // Why a run's score is absent. "Records no score" is true only when the run
   // was read; an unreadable run list, or an active run that is not in it, says
-  // nothing about the run (QA slice review of bd016957d13c, d97847196408).
+  // nothing about the run.
   const runUnread =
     trend.state === 'unreadable'
       ? 'the runs of this project could not be read'

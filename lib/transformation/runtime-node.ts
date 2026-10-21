@@ -199,7 +199,7 @@ export function percentOf(amount: Decimal, ratePercent: Decimal, places: number)
 }
 `;
 
-/** srv/lib/csv.ts — RFC 4180 with the formula guard (rule 20; security finding SEC-2026-803). */
+/** srv/lib/csv.ts — RFC 4180 with the formula guard (rule 20). */
 export const CSV_TS = String.raw`/**
  * CSV as RFC 4180 writes it: a field holding the delimiter, a quote or a line
  * break is quoted and inner quotes are doubled; records end with CRLF.

@@ -134,8 +134,8 @@ export const PUBLIC_CLOUD_FIT_BUCKET_LABELS: Record<PublicCloudFitBucket, string
  */
 export const PUBLIC_CLOUD_FIT_BUCKET_MEANINGS: Record<PublicCloudFitBucket, string> = Object.freeze({
   retire: 'The object goes away. Nothing has to be built for it.',
-  // Each sentence holds for every rule that assigns its bucket (carried QA
-  // finding 2b07dd27e44c): an object SAP's repository does not list at all is
+  // Each sentence holds for every rule that assigns its bucket: an object
+  // SAP's repository does not list at all is
   // here too, and Rebuild also takes the project's own code, modifications and
   // direct writes, where SAP names nothing.
   'no-catalogued-path':
@@ -451,15 +451,14 @@ export function assignPublicCloudFit(
   // And before the level and platform gates below: neither is read by this
   // rule. "Every modification is Rebuild" holds for an object whose level
   // nobody could determine and in a project with no target platform yet, and
-  // the gates used to answer "not assigned" for exactly those
-  // (QA full review of v2.20.0, ceb59bbace90).
+  // the gates used to answer "not assigned" for exactly those.
   //
   // The rule table above says a modification and an own write access to an SAP
   // table are Rebuild, full stop: "that is the project's work, never
   // SAP's". This stood after `isKeepEligible`, so a level-A object the project had
   // modified came back as Keep — "nothing to do" for code that carries a
-  // modification, the one sentence this module may never say (QA full review,
-  // f9695d22d124). Being permitted for the platform says what SAP allows; it
+  // modification, the one sentence this module may never say.
+  // Being permitted for the platform says what SAP allows; it
   // says nothing about what the project has since done to the object. Retire
   // stays rule 1 above: a confirmed Drop or a measured zero settles the object
   // whether or not it was modified on the way out.
@@ -677,7 +676,7 @@ export function publicCloudFitHeadline(summary: PublicCloudFitSummary): string {
     return `${n} object${n === 1 ? ' has' : 's have'} no catalogued path — that has to be answered before ${a} ${platformLabel} decision.`;
   }
   // An unassigned object was never asked the path question, so "no object is
-  // waiting" cannot speak for it (QA full review of v2.20.0, 50eec718700f).
+  // waiting" cannot speak for it.
   const open = summary.counts.notAssigned;
   if (open > 0) {
     return `No assigned object is waiting on a catalogued path for ${a} ${platformLabel} decision; `

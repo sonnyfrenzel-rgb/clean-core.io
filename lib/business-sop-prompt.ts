@@ -175,7 +175,7 @@ export interface SopStepInfo {
 const inside = (a: DocAnchor, ranges: readonly DocAnchor[]) => ranges.some((r) => r.lineStart <= a.lineStart && a.lineEnd <= r.lineEnd);
 
 /**
- * The engine's sentences of one step (QA review of 35b97d90c6e1): the 17.7
+ * The engine's sentences of one step: the 17.7
  * sentence standing at the element (and, for a business step, at every
  * element inside it), every engine sentence whose lines all lie in the step's
  * lines, and the step's plain name. Deterministic — read from the stored
@@ -265,7 +265,7 @@ const ENGINE_ROW_FIELDS = ['stepName', 'stepLines', 'stepSentences', 'stepRef', 
  */
 /**
  * The business steps a stored layer has no SOP row or no RACI row for, in the
- * order of the steps (QA 25e9fd59af86). `enrichBusinessLayer` keeps only rows
+ * order of the steps. `enrichBusinessLayer` keeps only rows
  * of known steps; an answer that skipped one would otherwise be stored with
  * the step silently missing from the SOP, the RACI and every file.
  */
@@ -283,7 +283,7 @@ export function missingBusinessSteps(layer: Record<string, unknown>, steps: read
  * The text the documentation stores for a business layer: every string of the
  * model's layer screened for secrets and personal data (roadmap 3.0.18 item 9
  * (3), `lib/sensitive-text.ts`), so the screen and every export of it carry the
- * masked text. One pure function, so the stored payload itself is tested (QA dc672594bd0b).
+ * masked text. One pure function, so the stored payload itself is tested.
  */
 export function businessLayerStoredText(layer: Record<string, unknown>): string {
   return JSON.stringify(screenSensitiveValue(layer).value);
@@ -318,16 +318,16 @@ export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: read
     const id = row && typeof row === 'object' ? (row as Record<string, unknown>).stepId : undefined;
     return typeof id === 'string' ? id : '';
   };
-  // Only a row of a business step is kept, in the order of the business steps (SEC-2026-842),
+  // Only a row of a business step is kept, in the order of the business steps,
   // and one row per step: the first, as the readers (`sopSteps`) and the join of parts
-  // (`mergeBusinessLayerParts`) take it, so a second row never travels in the stored layer (QA 0ebc16d6bf43).
+  // (`mergeBusinessLayerParts`) take it, so a second row never travels in the stored layer.
   const ordered = (value: unknown) => rows(value)
     .filter((row, i, all) => byId.has(idOf(row)) && all.findIndex((other) => idOf(other) === idOf(row)) === i)
     .map((row, i) => ({ row, i }))
     .sort((a, b) => (position.get(idOf(a.row)) ?? steps.length + a.i) - (position.get(idOf(b.row)) ?? steps.length + b.i))
     .map(({ row }) => withStep(row));
   // A `facts` the model wrote is dropped: a later reader takes the field as the engine's
-  // capability evidence (QA review of 35b97d90c6e1). Only the engine's facts travel with the layer.
+  // capability evidence. Only the engine's facts travel with the layer.
   const { facts: _modelFacts, level: _modelLevel, ...answer } = parsed;
   void _modelFacts;
   void _modelLevel;

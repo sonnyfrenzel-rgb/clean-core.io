@@ -443,7 +443,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       while (next < bundles.length && !halted(gate.has(bundles[next]))) {
         const b = bundles[next++];
         // A prompt the route would refuse is never sent: no call is spent on it,
-        // and asking again would build the same prompt (QA finding 804d0920fff4).
+        // and asking again would build the same prompt.
         if (b.prompt.length > maxPromptChars) {
           onAnswer(b, {
             // 3.0.13 (B7): its ABAP is never sent cut, so a function too large for one call is not written, and says so.

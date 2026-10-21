@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
 
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
     // A suspended account reads nothing here, as in Firestore (accountActive()).

@@ -37,8 +37,7 @@ export default function GuideShareBar() {
   async function handleCopy() {
     // "Link copied" was shown whatever happened: the fallback selected a field
     // and removed it again without ever copying, so in an embedded browser the
-    // reader pasted whatever was in the clipboard before
-    // (QA review of 33471220d6e9, 823a09338d58).
+    // reader pasted whatever was in the clipboard before.
     let ok = false;
     try {
       await navigator.clipboard.writeText(GUIDE_URL);
@@ -62,8 +61,7 @@ export default function GuideShareBar() {
     }
     // Each outcome clears the other: a failed second click used to leave
     // "Link copied" standing from the first, and a success after a failure
-    // fell back to "Copy it by hand" when its timer expired
-    // (QA review of 146ac2e1a724, aa9317005839).
+    // fell back to "Copy it by hand" when its timer expired.
     if (copyTimer.current) clearTimeout(copyTimer.current);
     if (!ok) {
       setCopied(false);

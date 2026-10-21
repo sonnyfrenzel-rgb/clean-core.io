@@ -17,8 +17,8 @@
  * document. The manifest used to carry a name and an owner, and
  * `firestore-verify-migration.ts` then announced that every project "survived
  * intact" after comparing those two fields — a target that had lost `legacyCode`,
- * the analysis, the generated output or the audit metadata compared equal (QA
- * review of 33471220d6e9, finding 5a660ef009dc). Signed runs additionally carry
+ * the analysis, the generated output or the audit metadata compared equal.
+ * Signed runs additionally carry
  * the verdict of recomputing their own hash, because copying `runHash` across
  * proves the field was copied and nothing about the content behind it.
  *

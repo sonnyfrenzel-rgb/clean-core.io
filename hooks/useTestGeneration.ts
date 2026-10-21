@@ -56,7 +56,7 @@ export const useTestGeneration = (
   };
   // The saved suite, until this session generates a new one. Seeding useState from `project` read it once, on the
   // first render, while the project was still loading: a saved suite never appeared after a reload, and the page
-  // offered to generate it again (QA review of a0c108513165).
+  // offered to generate it again.
   //
   // The stored half also runs through the shape check, and for the same reason
   // the documentation stage does it: the gate below stops a bad suite being
@@ -396,7 +396,7 @@ ${generatedText}
       });
       if (!stored.ok) throw new Error(stored.error);
       // Only once the server has stored it: a suite it refused (a stale package
-      // digest, say) is not shown as the generated suite (QA 04b13ecce33f).
+      // digest, say) is not shown as the generated suite.
       setGenerated(generatedTestCases);
 
       const testSuiteBasis = (stored.fields[TEST_SUITE_BASIS_FIELD] ?? null) as Project['testSuiteBasis'];

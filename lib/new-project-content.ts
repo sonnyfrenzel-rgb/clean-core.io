@@ -127,7 +127,7 @@ export function cleanCoreLadder(): CleanCoreLevelEntry[] {
  * objects are not in that data and are graded from the code (`own-object`,
  * `heuristic` in `lib/abap/abcd-classification.ts`), labelled as such where
  * they appear. Calling every level "our reading of SAP's published data" told
- * the reader a code-derived grade came from SAP (QA finding e93bd3965211).
+ * the reader a code-derived grade came from SAP.
  */
 export const CLEAN_CORE_LEVEL_CAVEAT =
   "Levels follow SAP's clean core level concept. The level shown for an SAP object is our reading of SAP's published data; your own objects, which SAP has not classified, are graded from your code and labelled as such. Either way it is an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit.";

@@ -60,7 +60,7 @@ export function processOverviewSvg(path: readonly PdPathEntry[], title: string):
       const r = 16;
       parts.push(`<line x1="${n(CX)}" y1="${n(prevBottom)}" x2="${n(CX)}" y2="${n(y - r - 2)}" stroke="${C.fieldBorder}" stroke-width="1.5" marker-end="url(#pd-arrow)"/>`);
       if (entry.decisionTable) {
-        // A business rule task is a task, not a gateway: a box, as on the stage's flow strip (QA ef1db277d2d3).
+        // A business rule task is a task, not a gateway: a box, as on the stage's flow strip.
         parts.push(`<rect data-pd-rule-task="" x="${n(CX - r)}" y="${n(y - r)}" width="${n(2 * r)}" height="${n(2 * r)}" rx="4" fill="${C.surface}" stroke="${C.ink}" stroke-width="1.5"/>`);
       } else {
         parts.push(`<polygon points="${n(CX)},${n(y - r)} ${n(CX + r)},${n(y)} ${n(CX)},${n(y + r)} ${n(CX - r)},${n(y)}" fill="${C.surface}" stroke="${C.ink}" stroke-width="1.5"/>`);

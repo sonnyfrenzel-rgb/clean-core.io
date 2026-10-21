@@ -13,14 +13,14 @@
  *
  *   - **A keyword inside a text literal is not a keyword.** `selectStatementStart`
  *     in `select-parser.ts` masks literals character for character before looking
- *     for `SELECT`, because `WRITE 'SELECT data FROM cache.'.` is prose (QA review
- *     of 33471220d6e9, 14d4000c4586). Here the literals are walked once, at the
+ * for `SELECT`, because `WRITE 'SELECT data FROM cache.'.` is prose.
+ * Here the literals are walked once, at the
  *     front: a `.` inside `'…'` or `` `…` `` does not end a statement, a `"`
  *     inside one does not open a comment, and a `PERFORM` inside one is never
  *     seen by anything downstream.
  *   - **The offset matters as much as the answer.** Buffering from the start of
- *     the line put `IF sy-subrc = 0.` at the head of the next statement (QA review
- *     of 5e598828093c). Statements are cut at the period, so two on one line are
+ * the line put `IF sy-subrc = 0.` at the head of the next statement.
+ * Statements are cut at the period, so two on one line are
  *     two statements, each with that line as its whole range.
  *
  * Chained statements are expanded rather than reported as unhandled. ABAP's `:`
@@ -161,8 +161,8 @@ export function createLiteralScanner(): LiteralScanner {
   // literal, a template's text, or an expression embedded in a template. An
   // embedded expression is ABAP again, so it can hold literals and templates of
   // its own — a `}` in `'}'` there is text, not the end of the expression, and
-  // the bars of a nested template are not the outer template's (carried QA
-  // finding 2bf6a3e76857). Counting braces alone could not tell those apart.
+  // the bars of a nested template are not the outer template's. Counting
+  // braces alone could not tell those apart.
   const stack: Array<'quote' | 'tick' | 'template' | 'expr'> = [];
   let escaped = false;
   const scan = ((ch: string): boolean => {
@@ -170,8 +170,8 @@ export function createLiteralScanner(): LiteralScanner {
     // `\\`. Without that rule the escaped bar closed the template, the period
     // behind it ended a statement that is not in the source, and the real
     // closing bar opened another one: `DATA(t) = |Use \| here. Done|.` was read
-    // as two statements and swallowed the one below it (full review of
-    // b88c77b4b5d1, 567fac1cd057 / 9cea07ac57f5). Whitespace does not consume
+    // as two statements and swallowed the one below it.
+    // Whitespace does not consume
     // the escape, because `maskLiterals` asks about a space to read the state
     // without advancing it, and no escape sequence is a blank.
     if (escaped) {
@@ -223,7 +223,7 @@ function blank(text: string): string {
  * This is the pre-stage every construct detector runs first, and the rule it
  * applies is `createLiteralScanner`'s rather than a fifth private copy of it.
  * Four detectors carried their own half of it and each was missing the string
- * template (`full review of a19945ef01dc`):
+ * template:
  *
  *     DATA(message) = |CALL SCREEN 100|.      a Dynpro finding requiring an
  *                                             architect's sign-off, on a program
@@ -365,7 +365,7 @@ function trimRange(chars: string[], from: number, to: number): [number, number] 
 /**
  * The statement's text with runs of whitespace in the *code* folded to one
  * space. Whitespace inside a literal is the literal's value — `'A  B'` is not
- * `'A B'` — and is kept as written (codex code-engine-02). The range always
+ * `'A B'` — and is kept as written. The range always
  * starts in code: at a statement's start, after a chain colon or after a
  * top-level comma.
  */
@@ -441,7 +441,7 @@ function push(
   const [a, b] = range;
   const body = sliceText(scanned.chars, a, b);
   // Head and part are each folded already; joining them must not fold a
-  // literal's whitespace a second time (codex code-engine-02).
+  // literal's whitespace a second time.
   const text = chainHead ? `${chainHead.text} ${body}` : body;
   if (!text) return;
   out.push({
@@ -556,7 +556,7 @@ export function readStatements(source: string): AbapStatement[] {
     let p = from;
     // A string template `|…|` is a literal too, and the one most likely to
     // carry a period: `|Total: { x } EUR.|` ended the statement at the full
-    // stop inside the sentence (QA review of ca2464aba930). The rule is
+    // stop inside the sentence. The rule is
     // `createLiteralScanner`'s, so the three readers above this line answer it
     // the same way rather than each keeping their own half of it.
     let outside = createLiteralScanner();

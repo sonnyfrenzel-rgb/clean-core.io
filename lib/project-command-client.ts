@@ -40,8 +40,7 @@ export async function runProjectCommand(
   const json = (await res.json().catch(() => null)) as { error?: string; fields?: Record<string, unknown> } | null;
   // A 5xx is not a refusal: the server — or a gateway in front of it — may have
   // failed after the transaction committed. Only a 4xx says "nothing was
-  // written"; anything from 500 up is an unknown outcome, like a lost answer
-  // (QA review of 4c9d12276f58).
+  // written"; anything from 500 up is an unknown outcome, like a lost answer.
   if (res.status >= 500) {
     throw new CommandAnswerLostError(
       `The server did not finish answering (${res.status}), so it is not known whether the command was applied.`,

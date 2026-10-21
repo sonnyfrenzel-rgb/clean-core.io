@@ -105,8 +105,8 @@ const HOME_LABELS: Readonly<Record<string, string>> = {
  * Since roadmap 3.0.1 (ADR-061) every account has the workspace, so where the
  * link leads no longer depends on who is reading. It used to: until the profile
  * was read every account looked like one without a workspace, and the header
- * held an invisible place rather than send a workspace reader to the dashboard
- * (QA review of 472315d93455, f8d5367e0a00). There is nothing left to wait for.
+ * held an invisible place rather than send a workspace reader to the dashboard.
+ * There is nothing left to wait for.
  */
 export function stageBackLink({
   projectId,

@@ -24,8 +24,8 @@ export async function GET(req: Request) {
     // The two gates every one of its siblings carries and this one did not: a
     // valid ID token was the whole of it, so a token obtained before the second
     // factor answered here, and so did a suspended account — about the key the
-    // server still holds and still spends on that account's behalf (security
-    // audit of b88c77b). Enrolment is not demanded, only the factor when the
+    // server still holds and still spends on that account's behalf.
+    // Enrolment is not demanded, only the factor when the
     // account has one: this is the read the settings screen makes *before*
     // anything is saved, and `byokRequiresEnrolment` belongs on the routes that
     // save, test and delete.
@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   } catch (err: unknown) {
     // A refusal says why — those messages are ours. Anything else is an Admin
     // SDK failure speaking about `user_secrets`, and the caller gets the fixed
-    // sentence while the reason goes to the log (security audit of b88c77b).
+    // sentence while the reason goes to the log.
     if (err instanceof QuotaError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }

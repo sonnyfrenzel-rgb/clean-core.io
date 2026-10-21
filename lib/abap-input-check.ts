@@ -4,8 +4,7 @@
  * The analyze stage asked that question and answered it with "is the box not
  * empty?" — the keyword list was there, but an `|| code.trim().length > 0`
  * behind it meant a pasted e-mail passed, went to the model, cost a run of the
- * quota and was signed into the trust chain as legacy code (QA review of
- * 33471220d6e9, 2d714ac42b63).
+ * quota and was signed into the trust chain as legacy code.
  *
  * This is a gate, not a parser: it says "there is at least one ABAP top-level
  * construct in here", so a snippet, an include or a single form routine passes

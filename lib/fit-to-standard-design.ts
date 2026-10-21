@@ -397,7 +397,7 @@ export function fitDesignLists(design: Pick<FitToStandardDesign, 'entries'>): {
   return {
     givenUp: business.filter((e) => e.disposition === 'given-up'),
     standardDoes: business.filter((e) => e.disposition === 'covered' || e.disposition === 'configuration'),
-    // A step the engine cannot read is a gap nobody resolved, not a technical step (QA review of 4ea0324a13cb, 357cd43a6983).
+    // A step the engine cannot read is a gap nobody resolved, not a technical step.
     gaps: business.filter((e) => e.disposition === 'gap-key-user' || e.disposition === 'gap-organisational' || e.disposition === 'gap-open' || e.disposition === 'unknown'),
   };
 }

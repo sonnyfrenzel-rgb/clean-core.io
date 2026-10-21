@@ -37,8 +37,8 @@ import { readBlocks, containerAt, type Container } from './block-structure';
  * `PERFORM post`).
  *
  * Of those, a row stays out of a call only when the source says it went to
- * another call's table (QA review of 46ad87a933b4: `APPEND ls TO it_a` for ME22
- * and `APPEND ls TO it_b` for VA02 gave both calls both fields). A row's table
+ * another call's table (`APPEND ls TO it_a` for ME22 and `APPEND ls TO it_b`
+ * for VA02 used to give both calls both fields). A row's table
  * is read where it is written plainly — the next `APPEND <wa> TO <table>` /
  * `INSERT <wa> INTO TABLE <table>` of its work area within a few statements,
  * the `APPEND INITIAL LINE … ASSIGNING <fs>` before a field-symbol row, the
@@ -102,7 +102,7 @@ export interface BatchInputCall {
   /**
    * A row of this call names its field, or its function code, by a value
    * computed at run time — so `fields`/`okCodes` are not all it fills or
-   * presses, and an Enter among them proves nothing (QA review of d939fb5b056b).
+   * presses, and an Enter among them proves nothing.
    * Absent when every row was read.
    */
   unreadRows?: true;
@@ -313,8 +313,8 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     const newRow = new RegExp(`^${wa.replace(/[^\w]/g, (c) => `\\${c}`)}-(?:FNAM|PROGRAM)\\s*=`, 'i');
     // The tables seen are all the row's tables only when the scan reached the
     // row's end — a boundary, the next row, or the end of the source. A window
-    // that runs out first may hide a later append of the same row elsewhere
-    // (QA ce470c191f7d), so the destination is then unknown.
+    // that runs out first may hide a later append of the same row elsewhere,
+    // so the destination is then unknown.
     let closed = false;
     for (let j = at + 1; j < at + 1 + ROW_WINDOW; j++) {
       if (j >= statements.length) { closed = true; break; }

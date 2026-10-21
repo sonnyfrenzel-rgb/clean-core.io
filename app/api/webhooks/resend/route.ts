@@ -30,8 +30,8 @@ import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 /**
  * A Resend event is a few kilobytes of JSON. The body is read before the
  * signature can be checked, and the route is unauthenticated, so it is read
- * under a bound and a deadline rather than buffered whole (QA full review of
- * fc787674705f, 81ed8ba6a1db). Decoded exactly as `req.text()` decodes, so the
+ * under a bound and a deadline rather than buffered whole.
+ * Decoded exactly as `req.text()` decodes, so the
  * signature covers the same string.
  */
 const WEBHOOK_BODY_LIMITS = { maxBytes: 256 * 1024, timeoutMs: 10_000 };
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     // A failed write is not acknowledged. It fell into the catch below and was
     // answered 200, so an event that met a Firestore hiccup was never
-    // delivered again (QA full review of fc787674705f, 445e3934cbdd).
+    // delivered again.
     try {
       await recordEmailEvent(
         {
@@ -125,8 +125,7 @@ export async function POST(req: NextRequest) {
     // Anything that means the reader did not get it is worth a log line of its
     // own, because that is the case somebody has to act on. The message id is
     // the handle; the address and the provider's diagnostic stay in
-    // `email_events`, which is server-only, and out of the application log
-    // (QA full review of fc787674705f, a488f527bff9).
+    // `email_events`, which is server-only, and out of the application log.
     if (type === 'email.bounced' || type === 'email.complained') {
       logger.error('email did not reach the recipient', {
         route: 'api/webhooks/resend',

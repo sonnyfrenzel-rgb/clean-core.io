@@ -5,7 +5,7 @@
  * them. Its text is not ours: an OAuth error page can echo the client id or the
  * submitted form, an SAP error page can carry user names, host names and
  * session ids. Quoting it into the server log moved that text from the caller's
- * screen into Cloud Logging (QA review of 46a7d64baad3), which is a smaller
+ * screen into Cloud Logging, which is a smaller
  * audience, not a safe one. The log gets this word instead: enough to tell an
  * OAuth refusal from an HTML login page from an empty answer, and nothing the
  * upstream wrote itself.

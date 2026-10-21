@@ -231,7 +231,7 @@ export function hardCodedLiteralFindings(code: string | readonly SandboxFile[] |
         sentence:
           `${f.path}:${line} compares against the hard-coded value '${literal}'` +
           (isDemo ? ', a document number of the code\'s own demo data' : '') +
-          // Evidence-limited (QA review of 11e3bc7d90e8): the lint reads the
+          // Evidence-limited: the lint reads the
           // generated code only, never the original, so it says what it found
           // and what to check — not what the original does.
           ' in business logic. Check whether it should be looked up per item.',

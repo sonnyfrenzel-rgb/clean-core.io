@@ -50,7 +50,7 @@ import { isTargetChange, projectTarget } from '@/lib/target-change';
  * 1.58 MB. `firestore.rules` caps a stored `legacyCode` at 1 MB, which is about
  * 17 s of CPU per request — and this route does not read from Firestore at all
  * when the body carries its own `legacyCode`, so even that cap was not in the
- * way (security audit of b88c77b). 256 KiB is roughly a second at the far end,
+ * way. 256 KiB is roughly a second at the far end,
  * and seven times the largest ABAP anybody has put through the product (the
  * 37 KB starter example). Refused before the quota is reserved, like the
  * `looksLikeAbap` gate below, so an input we will not read costs nothing.
@@ -65,7 +65,7 @@ import { isTargetChange, projectTarget } from '@/lib/target-change';
 const MAX_ANALYSED_SOURCE_BYTES = 256 * 1024;
 
 /**
- * The most one request body may carry, read or not — external audit SEC-01.
+ * The most one request body may carry, read or not.
  *
  * `MAX_ANALYSED_SOURCE_BYTES` bounds the source, but only after `req.json()`
  * had read and parsed the whole body, of any size, into memory. The body is
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
   let chargedUid: string | null = null;
   let chargedHash: string | null = null;
   let reservation: RunQuotaResult | null = null;
-  // What the quota decided for this run, recorded on it (codex code-mail-03).
+  // What the quota decided for this run, recorded on it.
   let metering: RunQuotaResult['reason'] | undefined;
 
   // 0. Body size, by its declaration. Nothing has been read, verified or
@@ -152,8 +152,8 @@ export async function POST(req: NextRequest) {
     // Per account. Nothing in this file bounded how often a run could be asked
     // for: the community quota is not a bound, because re-analysing the same
     // fingerprint is free by design, so one account could repeat the same
-    // expensive analysis of a large source without limit (security audit of
-    // b88c77b). 30/h is far above what a person analysing ABAP produces.
+    // expensive analysis of a large source without limit.
+    // 30/h is far above what a person analysing ABAP produces.
     try {
       await assertRateLimit(`runs-create:${decodedToken.uid}`, 30, 60 * 60 * 1000);
     } catch (rateErr: any) {
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameter: projectId.' }, { status: 400 });
     }
     // The project id is checked before it forms any document path
-    // (SEC-2026-514, lib/firestore-id.ts).
+    // (lib/firestore-id.ts).
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
@@ -235,8 +235,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Project does not contain ABAP source code to analyze.' }, { status: 400 });
     }
     // A source is text. Anything else used to reach `Buffer.byteLength` below,
-    // which throws on a non-string, and came back as a 500 (QA review of
-    // e7372791c70d).
+    // which throws on a non-string, and came back as a 500.
     if (typeof legacyCode !== 'string') {
       return NextResponse.json({ error: 'The ABAP source must be text.', code: 'not-abap' }, { status: 400 });
     }
@@ -429,8 +428,8 @@ export async function POST(req: NextRequest) {
     // must not own — are therefore performed here instead, where the run is
     // signed. The page still normalises its *own* copy for the screen.
     // Text or nothing: a number or a boolean here used to reach `.trim()` below
-    // after the evidence was built and the unit reserved, and end in a 500
-    // (SEC-b6716f0-15). An object is read below and stringified there.
+    // after the evidence was built and the unit reserved, and end in a 500.
+    // An object is read below and stringified there.
     let finalAnalysisText: string = typeof analysis === 'string' ? analysis : '';
     let gapsList: ModelGap[] = [];
     try {
@@ -563,8 +562,8 @@ export async function POST(req: NextRequest) {
     // `/api/model-stages`. Putting a client-supplied reason in the signed run
     // would sign a sentence the client chose.
     const narrativeAsSubmitted = typeof analysis === 'string' ? analysis : '';
-    // No `stage` asked for, deliberately (QA review of 8f9ea35a000e, follow-up
-    // of 33a42c475f1a). The naming and statements stores require their stage
+    // No `stage` asked for, deliberately. The naming and statements stores
+    // require their stage
     // because a receipt there *is* the permission to store under a switch. Here
     // the receipt decides nothing about whether the run is created — only
     // whether its narrative may name a provider and a model — and the narrative
@@ -601,7 +600,7 @@ export async function POST(req: NextRequest) {
     // the account answers a different question, and the model card prints this
     // as though it answered the first one. Without an
     // observed call no key served anything, so the signed answer is `false`,
-    // whatever the account has set up (carried QA finding 379d85de4e1f).
+    // whatever the account has set up.
     const byokUsed = attested ? attested.byok : false;
 
     // v1.20 §6 — Server-authoritative narrative separation.
@@ -721,7 +720,7 @@ export async function POST(req: NextRequest) {
       assessmentSubject: profileRecord.assessmentSubject,
       // What this run cost the account, as the quota decided it at the time:
       // the weekly report counts units from this rather than from the account's
-      // current tier and key (codex code-mail-03).
+      // current tier and key.
       metering,
     };
 
@@ -742,8 +741,8 @@ export async function POST(req: NextRequest) {
 
     // The run document has a 1 MiB cap of its own, and nothing measured it: a
     // narrative or a worklist large enough to cross it failed the commit below
-    // and the reader got a generic 500 after the quota unit had been spent (QA
-    // finding fe125dab988e). Measured here, after signing and before anything
+    // and the reader got a generic 500 after the quota unit had been spent.
+    // Measured here, after signing and before anything
     // is written, against the same budget the project write is held to. Only
     // the finished document is read — what was hashed and signed is unchanged.
     const runSize = checkProjectWrite(null, analysisRun as unknown as Record<string, unknown>, newRunDoc.path, 'merge');
@@ -846,7 +845,7 @@ export async function POST(req: NextRequest) {
         // The same rule for the declared target. Two runs over the same source
         // under different profiles used to commit in finishing order, so the
         // slower, older request put its profile back over the one the newer run
-        // had just made current (QA review of e7372791c70d).
+        // had just made current.
         const profileAt = (d: Record<string, unknown> | undefined) =>
           JSON.stringify([d?.s4Deployment ?? null, d?.assessmentTarget ?? null]);
         if (profileAt(freshData) !== profileAt(projectData)) {
@@ -910,7 +909,7 @@ export async function POST(req: NextRequest) {
         // become the active one without its source-change record being written
         // alongside — a run switched in without the record would make every
         // artefact of the old source read as current again.
-        // Codex architecture-02: the source, the worklist and the mirrored
+        // The source, the worklist and the mirrored
         // manifest join every artefact already on the project in one document,
         // which Firestore caps at 1 MiB. The project write below passes through
         // this check against the transaction's own snapshot, the field-path
@@ -978,7 +977,7 @@ export async function POST(req: NextRequest) {
               // tell a profile change from a re-analysis of the same subject.
               assessmentSubject: profileRecord.assessmentSubject,
               // An audit pack exported for the previous run is not one for this
-              // run (codex code-trust-07): the marker goes with the run it named.
+              // run: the marker goes with the run it named.
               auditPackExportedAt: FieldValue.delete(),
               auditPackExportedRunId: FieldValue.delete(),
             },
@@ -1062,8 +1061,7 @@ export async function POST(req: NextRequest) {
       // the unit and the fingerprint, a free starter example releases the
       // example's first run. Refunding without it took the charged branch for a
       // starter example — it decremented a unit that was never taken and left
-      // the example marked as used, so the reader lost the free run for good
-      // (QA review of 6a24b632ff44).
+      // the example marked as used, so the reader lost the free run for good.
       if (chargedUid && chargedHash) {
         await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
         chargedUid = null;
@@ -1136,7 +1134,7 @@ export async function POST(req: NextRequest) {
     logger.error('runs/create failed', { route: 'api/runs/create', error: errMessage(error) });
     // The log line above is where the reason belongs. Forwarding it handed the
     // caller Admin SDK text about our own collections, signing-key handling and
-    // the evidence engine's internals (security audit of b88c77b); every
+    // the evidence engine's internals; every
     // refusal a caller is meant to act on is returned by name further up.
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

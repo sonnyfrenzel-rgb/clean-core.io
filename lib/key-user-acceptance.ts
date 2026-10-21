@@ -124,7 +124,7 @@ export type KeyUserAcceptanceReading =
 /**
  * The record as it stands for this project. With `list` — the step list as it
  * is built now — the record counts only for the checks it was given for
- * (`listDigest`), and `complete` is read against that list (SEC-2026-899).
+ * (`listDigest`), and `complete` is read against that list.
  * Without one it is read off the project document alone; every screen that
  * holds the list passes it.
  */

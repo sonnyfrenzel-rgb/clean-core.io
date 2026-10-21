@@ -92,7 +92,7 @@ export default async function CatalogModulePage({
   const areas = getModuleAreas();
 
   const rows = objects.map((name) => {
-    // Who names the successor travels with it: SAP's file, or our curated layer (codex code-public-03).
+    // Who names the successor travels with it: SAP's file, or our curated layer.
     const primary = primarySuccessor(name);
     return {
       name,

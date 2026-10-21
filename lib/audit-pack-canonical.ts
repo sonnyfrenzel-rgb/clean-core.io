@@ -18,8 +18,8 @@
  *
  *   attested=<path>,<path>;
  *
- * Format, version 3 — the same string, with two sections that close what the
- * QA full review of a19945ef01dc found:
+ * Format, version 3 — the same string, with two sections that close the gaps
+ * described below:
  *
  *   attested=<path>:<sha256>,<path>:<sha256>;
  *   issued=<version>:<generatedAt>;

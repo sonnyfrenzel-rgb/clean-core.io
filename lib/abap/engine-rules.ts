@@ -11,7 +11,7 @@ import { maskLiterals, type AbapStatement } from './statement-reader';
  * a question or a rework item the reader needs, not a clean core violation.
  *
  * `EngineRuleOptions.engineReads` — from engine 3.0.18 (`ENGINE_READS_FROM`,
- * QA delta of 73b8cad63d3e): `IS [NOT] INITIAL` on the server's date or time
+ * `IS [NOT] INITIAL` on the server's date or time
  * and a decision on a plain copy of it count; a hook is delegated only when it
  * holds nothing but the calls that hand its work on; a `CO_` class is a proxy
  * only where a `TRY` that catches a proxy fault uses it.
@@ -96,7 +96,7 @@ export function readSystemTimeUses(
       if (rewritten) copied.delete((rewritten[1] || rewritten[2]).toUpperCase());
       // So is one filled by a statement that is no assignment: an Open SQL or
       // READ target (`INTO @lv_date`, `INTO (@a, @lv_date)`), a parameter the
-      // call writes back, `GET TIME FIELD` (QA 38a0b0c63bac).
+      // call writes back, `GET TIME FIELD`.
       for (const name of [...copied.keys()]) {
         const n = name.replace(/[/]/g, '\\/');
         const end = String.raw`(?![\w/-])`;

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   if (!uid || typeof uid !== 'string') {
     return NextResponse.json({ error: 'Missing required field: uid.' }, { status: 400 });
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(uid)) {
     return NextResponse.json({ error: 'Invalid uid.' }, { status: 400 });
   }
@@ -62,8 +62,7 @@ export async function POST(req: Request) {
   } catch (e: any) {
     // `setAdminClaim` touches Firebase Auth and the profile mirror; its errors
     // name the target uid, the claim payload and the token revocation. The
-    // caller gets the outcome, the log gets the reason (security audit of
-    // b88c77b).
+    // caller gets the outcome, the log gets the reason.
     logger.error('set-admin-claim failed', { route: 'api/admin/set-admin-claim', error: errMessage(e) });
     return NextResponse.json(
       { error: 'Failed to set admin claim.' },

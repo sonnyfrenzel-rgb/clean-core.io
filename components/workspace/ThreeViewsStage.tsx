@@ -61,8 +61,8 @@ export default function ThreeViewsStage({
   const [view, setView] = useState<WorkspaceView>('business');
   const [auto, setAuto] = useState(true);
   // The pointer and the focus hold the stage separately: one leaving must not
-  // restart the timer while the other is still inside (QA full review of
-  // v2.20.0 — a single flag let the pointer leaving end a keyboard hold).
+  // restart the timer while the other is still inside (a single flag let the
+  // pointer leaving end a keyboard hold).
   const [pointerIn, setPointerIn] = useState(false);
   const [focusIn, setFocusIn] = useState(false);
   const held = pointerIn || focusIn;

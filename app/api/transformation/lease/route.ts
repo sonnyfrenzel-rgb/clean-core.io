@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body.', code: 'bad-request' }, { status: 400 });
     }
     const { projectId, generationToken, plannedCalls, runId } = body;
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.', code: 'bad-request' }, { status: 400 });
     }
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
     // The one unit of the account's hourly model limit this generation costs
     // — the same bucket and ceiling as a call to /api/gemini without a lease,
     // the administrators' own bucket for an account with the admin claim
-    // (`lib/model-hourly-limit.ts`, SEC-2026-827).
+    // (`lib/model-hourly-limit.ts`).
     try {
       const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);
       await assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS);

@@ -146,8 +146,8 @@ const IN_PROCESS_KINDS: ReadonlySet<string> = new Set(['enhancement', 'hook-impl
  * GUI/local file dependencies" — whenever a side-by-side route was chosen, so a
  * program whose only finding was an RFC call was told that BDC screens, native
  * SQL and direct standard-table writes had to be replaced and that its route
- * came from custom persistence. None of it was in its evidence (QA review of
- * b88c77b, 134330d50e4e / 3e102c51d7dc / 708c2f956b51 / 725c5d80afc6). A signed
+ * came from custom persistence. None of it was in its evidence.
+ * A signed
  * route report that names constructs the source does not contain is not
  * project-specific evidence, whatever else it gets right — so every sentence
  * that names a construct now names one that was found, through this map.
@@ -269,7 +269,7 @@ export type GuiFileDirection = 'upload' | 'download' | 'dialog' | 'unknown';
  *
  * Before 3.0.18 `FILE_OPEN_DIALOG` counted as an upload and `FILE_SAVE_DIALOG`
  * as a download. A dialog only lets the user choose a path; it transfers no
- * file (QA review of 73b8cad63d3e, 85a961a86168). With `dialogsChoosePaths`
+ * file. With `dialogsChoosePaths`
  * (`READ_CLAIMS_FROM`) a statement that calls a dialog and no transfer is a
  * `dialog`; a run of an earlier engine keeps the reading it signed.
  */
@@ -363,8 +363,8 @@ export const PUBLIC_TARGET_ASSUMPTION =
  * The same assumption from 3.0.18 (`READ_CLAIMS_FROM`). The words above read
  * as a statement about the analysed code — "custom code uses released APIs
  * only (clean core level A)" — and stood next to the unreleased-API and
- * standard-table-write findings that contradict it (QA review of 73b8cad63d3e,
- * c2e130b255d1). This one states the target's rule and says that selecting the
+ * standard-table-write findings that contradict it.
+ * This one states the target's rule and says that selecting the
  * target does not establish it for the code. Runs of an earlier engine keep
  * the words above.
  */
@@ -435,8 +435,7 @@ export type RouteDriverFinding = {
  */
 export function routeDrivers(
   // What it reads and nothing more, so a caller holding only findings — the
-  // architecture canvas — passes them without a cast (carried QA finding
-  // 596831bd53a3).
+  // architecture canvas — passes them without a cast.
   evidence: { findings: ReadonlyArray<RouteDriverFinding> },
   deploymentModel: 'public' | 'private',
   engineVersion: string | null,
@@ -489,7 +488,7 @@ export function guiFileSentence(files: readonly GuiFileFinding[], precise = fals
   const dialogs = by('dialog');
   if (downloads.length && precise) {
     // From 3.0.13 (`PRECISION_FIXES_FROM`): the finding shows that a file is
-    // downloaded, not what it holds — a PDF is no list (QA f1400cdf0783).
+    // downloaded, not what it holds — a PDF is no list.
     parts.push(`The frontend file download (${named(downloads)}) writes a file to the user's PC; what the file holds is not read here. In ABAP Cloud a download is served on-stack — a table by a Fiori list report's spreadsheet export, any other file by a RAP large object field (S/4HANA 2022 on) — so the download forces no side-by-side split.`);
   } else if (downloads.length) {
     parts.push(`The frontend file download (${named(downloads)}) writes a list to the user's PC: in ABAP Cloud a Fiori list report exports it to a spreadsheet on-stack, so the download forces no side-by-side split.`);
@@ -552,8 +551,8 @@ export function onStackSentences(
     const parallel = forms.includes('DESTINATION IN GROUP');
     // Before 3.0.18 the sentence ended "In ABAP Cloud the called function is
     // reached through a released API": where a call goes shows nothing about
-    // whether what it calls is released (QA review of 73b8cad63d3e,
-    // 809758fb0146). Runs of an earlier engine keep those words.
+    // whether what it calls is released.
+    // Runs of an earlier engine keep those words.
     if (releaseNotShown) {
       parts.push(`The function module call(s) read as RFC that stay in this system (${localRfc.length}×, ${how}from line ${firstLineOf(localRfc)}) integrate no other system, so they force no side-by-side split. Whether the called function is released for ABAP Cloud is not established here: on an ABAP Cloud target the call has to reach a released API, and is replaced by one where the function is not released${parallel ? '; parallel processing runs through the released class CL_ABAP_PARALLEL' : ''}.`);
     } else {
@@ -602,7 +601,7 @@ export function routeExtensibility(
    * because no detector claims those statements — and "no findings" then became
    * a Clean Core Score of 100, "Highly feasible. Trivial extension" and "No
    * legacy patterns detected". The code had not been found clean; it had not
-   * been read (QA review of 33471220d6e9, 45737310a1d7). Incomplete coverage is
+   * been read. Incomplete coverage is
    * unknown, and unknown is not clean.
    */
   const coverage = evidence.coverage;
@@ -647,7 +646,7 @@ export function routeExtensibility(
   // worst legacy code retains some reusable structure.
   // In Private Edition from 3.0.9 a write to the program's own Z/Y tables costs
   // nothing — the rationale below calls it no clean core violation, and the
-  // score now agrees (owner decision 11.10.2026, QA 3a31270a65a0).
+  // score now agrees (owner decision 11.10.2026).
   const scoreRule = scoreRuleFor(deploymentModel, engineVersion);
   score = scoreFromFindings(findings, scoreRule);
 
@@ -715,7 +714,7 @@ export function routeExtensibility(
 
   // A direct write to SAP's rows is not a side-by-side trigger in Private
   // Edition, and it is not compatible with ABAP Cloud either: it stays on-stack
-  // only once it is replaced (QA full review of v2.20.0, e08f739fe79e).
+  // only once it is replaced.
   // From 3.0.12 the same holds in Public Edition (`ON_STACK_CONSTRUCTS_FROM`):
   // a side-by-side service cannot write SAP's rows either, so the write is a
   // finding to replace, not a reason to leave the stack.
@@ -729,11 +728,11 @@ export function routeExtensibility(
   // From 3.0.13 (`PRECISION_FIXES_FROM`) such a write is named whichever
   // finding chose the route. Before, an outbound RFC, a modification or a
   // custom-table write took the rationale and the In-App track, and the write
-  // that has to be replaced in any case went unsaid there (QA review of
-  // 5a559787, 3fe882da065d). A run of an earlier engine keeps its words.
+  // that has to be replaced in any case went unsaid there.
+  // A run of an earlier engine keeps its words.
   const standardWritesAlwaysNamed = precisionFixesApply(engineVersion) && standardWrites.length > 0;
   // routeBtp, not needsBtp: a route a stated requirement sets off the stack (from 3.0.17) does not replace these
-  // writes on-stack either (QA review of 081f6457d09e). Before 3.0.17 the two are the same.
+  // writes on-stack either. Before 3.0.17 the two are the same.
   const standardWritesTooSentence = routeBtp
     ? ` ${standardWrites.length} direct write(s) to SAP standard tables have to be replaced by ${standardWriteRemedy} as well.`
     : '';
@@ -742,11 +741,11 @@ export function routeExtensibility(
   // ABAP Cloud either: classic enhancements, dynpros, classic ALV, SUBMIT,
   // update tasks, legacy mail and unreleased APIs. They stay on-stack only
   // once replaced, so they may not leave the In-App track rated "Highly
-  // Compatible" with "standard reads" as its reason (QA full review
-  // b0bad443beaa). Reads and writes to the customer's own tables are not
+  // Compatible" with "standard reads" as its reason.
+  // Reads and writes to the customer's own tables are not
   // among them: ABAP Cloud reads and writes its own tables.
   //
-  // An explicit COMMIT WORK is among them (QA high 00b028c43e63): a program
+  // An explicit COMMIT WORK is among them: a program
   // whose only construct was a COMMIT WORK came out "High compatibility" with
   // "standard reads" as the reason, and the rationale called it addressed
   // on-stack without saying how. In ABAP Cloud the RAP runtime owns the
@@ -767,8 +766,8 @@ export function routeExtensibility(
     // So are the classic constructs the engine reports from 3.0.12 on —
     // parallel processing through asynchronous RFC, BOPF, a SEGW service and a
     // DDIC-based CDS view: each finding says ABAP Cloud does not offer it, so
-    // none may leave the In-App track "Highly Compatible" (QA review of
-    // 03501b79fb3d, 62bd4e9b8079 / 6946241ed28c). Runs of an earlier engine
+    // none may leave the In-App track "Highly Compatible".
+    // Runs of an earlier engine
     // have no such findings; the gate keeps their rule word for word anyway.
     ...(legacyRule ? [] : ['parallel-processing', 'bopf', 'gateway-classic-service', 'ddic-cds-view']),
     // From 3.0.13: an enhancement point in the customer's own code is no level
@@ -862,7 +861,7 @@ export function routeExtensibility(
     // table is one of the objects it can hold (SAP Learning, "Using Developer
     // In-App Extensibility in SAP S/4HANA Cloud Public Edition"). The route
     // below is a recommendation with a precondition, not a technical
-    // impossibility, and it says so (external counter-review, CR-03).
+    // impossibility, and it says so (CR-03).
     rationale = `Detected ${customWrites.length} write(s) to custom database persistence. This recommendation routes it to a decoupled Side-by-Side service (CAP). It is not the only option: S/4HANA Cloud Public Edition can hold custom tables on-stack through developer extensibility (ABAP Cloud), where that is set up and the data belongs on the stack — a decision to take on the requirement, not one this analysis can settle from the code.`;
   } else if (legacyRule && standardWrites.length > 0 && deploymentModel === 'public') {
     // The rule of runs made before 3.0.12, kept word for word
@@ -885,8 +884,8 @@ export function routeExtensibility(
     // program whose only finding was an `EXEC SQL` block was routed
     // Side-by-Side and told in the same report that only standard-table reads
     // and low-criticality patterns had been found and that on-stack RAP was the
-    // path (QA review of b88c77b, 789e072a0f28 / 6b8949b2e013 / 9fca7145d0bf /
-    // 8b1862e32291). Two contradictory recommendations in one signed report is
+    // path.
+    // Two contradictory recommendations in one signed report is
     // worse than either of them alone.
     rationale = `Detected ${nativeSql.length} native SQL statement(s) (EXEC SQL or ADBC). Native SQL bypasses the database abstraction and does not run in ABAP Cloud at all; the access has to be rewritten in ABAP SQL against released objects, or moved to a decoupled service.`;
   } else if (legacyRule && bdcCalls.length > 0) {
@@ -911,8 +910,7 @@ export function routeExtensibility(
     // Not "wrappable". A wrapper ("Tier 2" in the words of runs before 3.0.12) encapsulates an unreleased SAP object
     // so that ABAP Cloud code may reach it; it does not make a direct write to
     // SAP's rows a supported operation, and presenting it as the remedy invited
-    // the reader to keep the write and hide it (QA review of b88c77b,
-    // dbbc1bf8f01d / 7d9778a8a847 / 32ca5741aeb1 / fbc8bdcaa983).
+    // the reader to keep the write and hide it.
     rationale = legacyRule
       ? `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`
       : `Direct writes to standard SAP tables are present. In SAP Cloud ERP Private the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
@@ -931,8 +929,7 @@ export function routeExtensibility(
   // An explicit COMMIT WORK has the same remedy whichever finding chose the
   // branch above. It used to be appended in the generic findings branch only,
   // so a program with a BDC call, an RFC or a modification next to its COMMIT
-  // WORK never learned that the commit has to go (QA review of dd8e996,
-  // a0ae65b2b30d).
+  // WORK never learned that the commit has to go.
   rationale = `${rationale}${commitSentence}`;
   if (standardWritesAlwaysNamed && !rationaleNamesStandardWrites) {
     rationale = routeBtp
@@ -1024,8 +1021,7 @@ export function routeExtensibility(
        * but the absence of writes — a sentence that was false for every program
        * that writes no table and reads none either, and an answer to a question
        * about the *business requirement* derived from a technical count
-       * (QA review of b88c77b, 134330d50e4e / 725c5d80afc6; external
-       * counter-review CR-04). Whether SAP standard already covers the
+       * (CR-04). Whether SAP standard already covers the
        * capability is what the standard-coverage analysis asks, with evidence
        * levels and a counter-check; this router has no input that could answer
        * it. So it reports what it did measure and leaves the question open
@@ -1049,8 +1045,8 @@ export function routeExtensibility(
           : `Not indicated. The code contains ${presentCategories}, which Key User tools do not cover as it stands. Whether the requirement could be re-expressed with them is not assessed by the engine.`,
       // Neutral in every case. A finding count says whether a blocker was seen,
       // not whether the logic fits the low-code tools: no findings is not
-      // "trivially feasible", and one finding of any kind is not "infeasible"
-      // (QA full review of v2.20.0, 1d5ab9d90793). The impact below is what the
+      // "trivially feasible", and one finding of any kind is not "infeasible".
+      // The impact below is what the
       // track offers, not a property of the analysed code (c658f64f147e).
       resultState: keyUser?.recommended ? 'Key-User Preferred' : 'Neutral',
       cleanCoreImpact: keyUser?.recommended
@@ -1102,8 +1098,8 @@ export function routeExtensibility(
    * says the requirement belongs off-stack — so a source whose only finding was
    * a modification marker came out as In-App, "Highly Compatible", "Excellent
    * fit", target RAP Business Object, in the same report whose rationale said no
-   * cloud target is reachable until the modification is reset via SPAU
-   * (QA review of b88c77b, 4148377496a6 / 85fe8d3e915a / a160b494e1f3). The
+   * cloud target is reachable until the modification is reset via SPAU.
+   * The
    * route stays: it is where the requirement goes once the modification is
    * gone. What cannot stay is a positive feasibility rating for code that today
    * lives inside SAP's own program — so both tracks report the blocker, and the
@@ -1139,10 +1135,9 @@ export function routeExtensibility(
 
   const sideBySideBTP: ComparativeTrack = {
     // A stated side-by-side target next to direct writes to SAP standard tables is not highly compatible: a service on
-    // BTP cannot write SAP's tables either, and each write is replaced first (QA review of 081f6457d09e).
+    // BTP cannot write SAP's tables either, and each write is replaced first.
     // From 3.0.18 (`READ_CLAIMS_FROM`) the same holds whatever chose the route: the track was "Highly Compatible", and
-    // with no driver "feasible … for simple read-only reports", next to a write to SAP's tables (QA review of
-    // 73b8cad63d3e, e77bc4837a04).
+    // with no driver "feasible … for simple read-only reports", next to a write to SAP's tables.
     technicalFeasibility: modificationBlocks
       ? 'Incompatible'
       : (followStatedSide || readClaims) && standardWrites.length > 0 ? 'Partially Compatible' : 'Highly Compatible',
@@ -1150,7 +1145,7 @@ export function routeExtensibility(
       ? 'Not reachable as it stands either. Code that was inserted into an SAP program cannot be moved off the stack before it is removed from it.'
       : needsBtp
       // What chose the route, not a claim that CAP persistence is needed or an
-      // isolation design exists (QA full review of v2.20.0, 2b515958f925).
+      // isolation design exists.
       ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.${readClaims && standardWrites.length > 0 ? ` First, the ${standardWrites.length} direct write(s) to SAP standard tables are replaced by ${standardWriteRemedy}: a side-by-side service cannot write SAP's tables either.` : ''}`
       : readClaims && !followStatedSide && standardWrites.length > 0
       ? `Not the recommended route: no construct in the code points off the ABAP Cloud stack. Moving off the stack does not fix the ${standardWrites.length} direct write(s) to SAP standard tables either: a side-by-side service cannot write SAP's tables, so each is replaced by ${standardWriteRemedy} on either track.`
@@ -1237,7 +1232,7 @@ export function routeExtensibility(
   if (bdcCalls.length > 0) {
     // From 3.0.13 (`PRECISION_FIXES_FROM`) the assumption is about this
     // program, not about SAP: the rationale names the released API that
-    // replaces BDC, so "no replacement" contradicted it (QA 5aeec6927182).
+    // replaces BDC, so "no replacement" contradicted it.
     assumptions.push(precisionFixesApply(engineVersion)
       ? 'The BDC screen automations of this program are not yet replaced; what replaces them is said in the rationale.'
       : 'BDC screen automations have no equivalent Fiori/API-based replacement yet.');
@@ -1277,15 +1272,13 @@ export function routeExtensibility(
     // The score describes what was read. A construct no detector claims cannot
     // count towards a clean result, so an incomplete reading costs the score
     // rather than flattering it: five points per unassessed kind, capped at 30,
-    // which is enough that "100 %" never comes out of a file nobody assessed
-    // (QA review of 33471220d6e9, 45737310a1d7).
+    // which is enough that "100 %" never comes out of a file nobody assessed.
     //
     // The floor is the global one. Written as `Math.max(50, …)` the penalty had
     // a floor of its own, and a floor above the scores it was applied to: a
     // heavily legacy program deducted to 25 with two unassessed kinds was
     // published at 50, twice the score, for knowing less about it. A penalty
-    // that raises the number is not a penalty (QA review of b88c77b,
-    // b2b85826caf3 / f65525eb6d7c).
+    // that raises the number is not a penalty.
     cleanCoreScore: coverageIncomplete
       ? scoreWithUnassessed(score, coverage?.gaps.length || 0)
       : score,
@@ -1310,7 +1303,7 @@ function keyUserEvaluation(keyUser: KeyUserRouteBasis, unassessed: string | null
   }
   if (keyUser.scope === 'partial') return `Indicated in part. ${keyUser.sentence}${reasons ? ` ${reasons}${more}` : ''}`;
   // What no detector read is neither a candidate nor a part that stays code
-  // (roadmap 0.18, QA review of 33471220d6e9): the reading of the parts that
+  // (roadmap 0.18): the reading of the parts that
   // were read stands, and the rest is named as not assessed. A partial reading's
   // sentence says so itself (`key-user-candidates.ts`); a reading with no
   // candidate did not.

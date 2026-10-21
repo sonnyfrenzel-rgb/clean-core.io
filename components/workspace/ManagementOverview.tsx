@@ -211,7 +211,7 @@ export default function ManagementOverview({
   /**
    * Counts the decision commands the Decision card completed. The card writes
    * through its own route; without this the overview kept the decision it read
-   * on mount until a remount (QA review of 4b4586aff273).
+   * on mount until a remount.
    */
   decisionRevision?: number;
   /**
@@ -242,8 +242,8 @@ export default function ManagementOverview({
 
   const [findings, setFindings] = useState<Loaded<ItFindingsSource>>({ state: 'loading' });
   // Held with the revision it was read for: after a command the previous
-  // answer is not shown while the new one is read (carried QA finding
-  // 89203dfdb3df) — a withdrawn decision read on as confirmed until it landed.
+  // answer is not shown while the new one is read
+  // — a withdrawn decision read on as confirmed until it landed.
   const [decisionHeld, setDecisionHeld] = useState<{ rev: number; value: Loaded<DecisionRead> }>({
     rev: -1,
     value: { state: 'loading' },

@@ -215,8 +215,8 @@ export interface ProcessMapProps {
   draftHolder?: DraftHolder;
   /**
    * Whether the editor offers its BPMN, SVG and PNG downloads. Default `true`;
-   * the demo passes `false`, because nothing is exported from it (Codex review
-   * code-demo-02). Handed to `BpmnEditor` unread.
+   * the demo passes `false`, because nothing is exported from it. Handed to
+   * `BpmnEditor` unread.
    */
   exportable?: boolean;
   /**

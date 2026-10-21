@@ -2,7 +2,7 @@ import { engineVersionAtLeast } from '../score-rule';
 
 /**
  * The engine version from which the engine says only what it read (roadmap
- * 3.0.18 item 4, QA delta of 73b8cad63d3e):
+ * 3.0.18 item 4):
  *
  *   - a constant gate stops a routine only where it is reached on every path
  *     through it: a gate inside another block (an `IF`, a loop, a `TRY`) locks
@@ -22,8 +22,7 @@ import { engineVersionAtLeast } from '../score-rule';
  *   - a constant names a function module only where a dynamic `CALL FUNCTION`
  *     uses it; `PRD`, `CLNT` and `SYS` at the front of a literal are a system
  *     name only where no letter follows; credit words are read in the code and
- *     the called module's name, not in other literals (`evidence-model.ts`, QA
- *     full review of c41f14953c1d);
+ *     the called module's name, not in other literals (`evidence-model.ts`);
  *   - the security review: a file-name validation with `EXCEPTIONS` covers a
  *     path only when its failure cannot reach the access, `INSERT REPORT` with a
  *     literal name is a generated program, and a clean overwrite of the very

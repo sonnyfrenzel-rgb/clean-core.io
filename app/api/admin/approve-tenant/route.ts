@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     if (!uid || !token || !action) {
       return NextResponse.json({ error: 'Missing required parameters: uid, token, action.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(uid)) {
       return NextResponse.json({ error: 'Invalid uid.' }, { status: 400 });
     }
@@ -43,8 +43,7 @@ export async function POST(req: NextRequest) {
     // The reason goes to the log, not to the caller. The failures that land
     // here are token comparisons and Admin SDK writes, and their messages name
     // the target account, the collection and sometimes the token itself — the
-    // four refusals above are the ones an administrator is meant to read
-    // (security audit of b88c77b).
+    // four refusals above are the ones an administrator is meant to read.
     //
     // With one exception, and it was found by taking the redaction too far:
     // `lib/approval-token.ts` marks its own refusals with the prefix `Invalid
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
     // And the status has to say the same thing as the body, which it did not:
     // the refusal read "Invalid verification token." over a 500, so a client
     // that treats 5xx as transient retries the very token this comment argues
-    // it must not retry (QA review of 9e408888bfec, 63d1d473cc3d). A refused
+    // it must not retry. A refused
     // token is now 400, joining the two payload refusals above: the caller got
     // through `verifyAdminRequest` and `assertAdminStepUp`, so their identity
     // is not in doubt and 401 would send them to re-authenticate for nothing —
@@ -67,8 +66,8 @@ export async function POST(req: NextRequest) {
     //
     // The log gets the error's class and code, not its text. The text is what
     // can carry the token: a body that fails `req.json()` comes back as a
-    // SyntaxError quoting the start of that body, token included (QA review of
-    // e7372791c70d). A refusal the token module made is named as one.
+    // SyntaxError quoting the start of that body, token included.
+    // A refusal the token module made is named as one.
     const message = errMessage(error);
     const deliberate = message.startsWith('Invalid verification token');
     logger.error('approve-tenant failed', {

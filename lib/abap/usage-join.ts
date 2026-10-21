@@ -92,8 +92,7 @@ export function joinUsageWithEvidence(
   // Compute percentile thresholds for bucketing — over the per-object totals
   // the buckets are then read against, not over the raw rows: ten rows of 1 for
   // one object are one object with 10, and counting them as ten objects of 1
-  // pulled the thresholds down until B=2 and C=3 read as heavy
-  // (QA full review of v2.20.0, 92c5ed62ee59).
+  // pulled the thresholds down until B=2 and C=3 read as heavy.
   const callCounts = [...usageMap.values()]
     .map(r => r.callCount)
     .filter((c): c is number => c !== null && c > 0)
@@ -293,8 +292,7 @@ export const QUADRANT_META: Record<Quadrant, { label: string; description: strin
   'danger': {
     label: 'Danger Zone',
     // Only what the quadrant establishes: `needs-architect` lands here too, and
-    // moderate or low usage lands in Low Priority whatever the path (QA full
-    // review of v2.20.0, 54e57c348f61).
+    // moderate or low usage lands in Low Priority whatever the path.
     description: 'High usage, and either no released API path or an open architect decision — plan and resource first.',
   },
   'prioritize': {

@@ -52,7 +52,7 @@ import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, t
  * the project's target profile — the signed run's own inputs (owner decision
  * 30.09.2026). Computing them here with the default catalog let a Private
  * Edition project sort objects its run never found; and neither the engine nor
- * a catalog is downloaded for this card (external audit PERF-01). Until the
+ * a catalog is downloaded for this card. Until the
  * answer is here the card shows its loading state; if it cannot be read, its
  * error state — never the "no source" card for a project that has one. The
  * demo has no project on the server and hands its precomputed findings in as

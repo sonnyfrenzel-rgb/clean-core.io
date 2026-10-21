@@ -289,7 +289,7 @@ function standardSignal(fitDesign: FitToStandardSummary | null | undefined): Pic
     };
   }
   // A step the engine cannot read (an opaque call, a dynamic target) is resolved by nobody: it keeps
-  // the answer open (QA review of 4ea0324a13cb, 357cd43a6983).
+  // the answer open.
   if (fitDesign.counts.unknown > 0) {
     return {
       signal: 'not-determined',

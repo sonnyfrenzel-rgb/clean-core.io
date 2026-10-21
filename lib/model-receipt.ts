@@ -135,7 +135,7 @@ export interface ModelReceiptClaims {
   iat: number;
   /**
    * The model stage the call was made under (`lib/model-stages.ts`), when the
-   * caller named one. Roadmap 17.10, QA review of 8f9ea35a000e (33a42c475f1a):
+   * caller named one. Roadmap 17.10:
    * a store that belongs to one stage must be able to refuse a receipt minted
    * under another, or a switched-off stage is reachable with a receipt from a
    * stage that is on. Absent — not `null` — when no stage was named, so every

@@ -1625,8 +1625,7 @@ export function nextSteps(reading: PackageReading, facts: DeliveryFacts, capabil
     out.push('Work through `docs/workshop-questions.md` in the fit-to-standard workshop, resolve or accept every gap of `docs/gap-list.md`, then switch the program off as `docs/decommissioning.md` says.');
   }
   if (facts.standard) {
-    // Nothing is built on the standard path, so no suite ships with it — whatever was generated stays out
-    // (QA review of 4ea0324a13cb, 6821d5b0f7a4).
+    // Nothing is built on the standard path, so no suite ships with it — whatever was generated stays out.
     if (t.scenarios > 0) out.push('A test suite generated before the decision is not part of this package: nothing is built on the standard path, so nothing here is to be run.');
   } else if (ku?.whole && t.scenarios === 0) {
     // No test code on a key-user route or the standard path: nothing is built, so nothing is tested here.

@@ -43,8 +43,7 @@ async function networkProbe(url: string, mode: 'mock' | 'live'): Promise<{ ok: b
       signal: controller.signal,
     });
     // The deadline covers the body too: cleared before `res.json()`, a runner
-    // that sent its headers and then stalled held the request open for good
-    // (QA slice review of 97c740cc5e71, 0d9a23f48357).
+    // that sent its headers and then stalled held the request open for good.
     let body: unknown;
     try {
       if (!res.ok) return { ok: false, held: false, reason: `HTTP ${res.status}`, detail: `HTTP ${res.status}` };
@@ -99,7 +98,7 @@ export async function POST(req: NextRequest) {
     const mockOrigin = new URL(cfg.runnerUrl).origin;
     const liveOrigin = cfg.runnerLiveUrl ? new URL(cfg.runnerLiveUrl).origin : null;
     const mockNetwork = await networkProbe(mockOrigin, 'mock');
-    // One service asked twice is not two runners tested (codex code-runner-06).
+    // One service asked twice is not two runners tested.
     const liveNetwork =
       liveOrigin === null
         ? null

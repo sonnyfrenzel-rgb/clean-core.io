@@ -4,7 +4,7 @@ import { isMutationProbeReport, type MutationProbeReport } from './testing-mutat
 /**
  * The server's own record that a test suite ran — and over which artefacts.
  *
- * Why this exists (QA full review of a19945ef01dc, roadmap E07-F02): Testing and
+ * Why this exists (roadmap E07-F02): Testing and
  * Delivery were painted green from `project.testCases[].status`. That field is
  * in the client update allowlist of `firestore.rules`, so a stored `Passed` can
  * equally have come from a direct browser write or from a model that invented a
@@ -205,8 +205,8 @@ export function testRunSubject(source: {
  *
  * `/api/run-tests` reads the project, runs the suite for seconds to minutes,
  * and then records verdicts built from that read. It asks this inside its
- * write transaction, against the project as it is at commit (QA full review of
- * fc787674705f, ee7b72f51837): the active run, the code, the suite and the case
+ * write transaction, against the project as it is at commit:
+ * the active run, the code, the suite and the case
  * list — verdicts excluded, as in `casesDigest`, so a concurrent run of the same
  * suite does not count as a change. The suite's `spec`, which the runner falls
  * back to when `code` is empty, is compared too, because the subject does not
@@ -329,7 +329,7 @@ export function coveringTestRunReceipt(project: {
  * in a `/api/run-tests` answer (`engine: { ran: true, viaContract }`). Never
  * inferred from a test title: a model-written suite can carry the call-contract
  * marker in a test name, and the server alone knows which verdicts came from
- * the engine pass (QA review of 2e6596ddbbc8, 0019c1b57d65).
+ * the engine pass.
  */
 export function engineViaContractOf(engine: unknown): string[] {
   if (!engine || typeof engine !== 'object' || Array.isArray(engine)) return [];
@@ -362,7 +362,7 @@ export function viaContractOfRun(
  * load once reported ten verified tests.
  *
  * Each id counts once: two cases under one id share a single verdict, and
- * counting it twice let one pass stand for two (QA review of a88149856dcc).
+ * counting it twice let one pass stand for two.
  */
 export function executedPasses(receipt: TestRunReceipt | null, ids: string[]): number {
   if (!receipt) return 0;

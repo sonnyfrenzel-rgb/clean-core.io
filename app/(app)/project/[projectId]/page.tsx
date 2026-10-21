@@ -148,8 +148,7 @@ export default function ProjectWorkspacePage() {
 
   // Marked as seen once the workspace is ready and the build-up is on screen —
   // not when it was merely asked for: a load that fails, or a tab closed before
-  // the project arrived, used to cost the reader their first look (carried QA
-  // finding bd900406a5fb).
+  // the project arrived, used to cost the reader their first look.
   useEffect(() => {
     if (state === 'ready' && buildUp === true && projectId) markFirstLookSeen(projectId);
   }, [state, buildUp, projectId]);
@@ -190,7 +189,7 @@ export default function ProjectWorkspacePage() {
         // The rules answer `permission-denied` for a project that does not
         // exist and for one that is not the reader's alike, and both are a
         // 404. Anything else — the network, an unavailable backend — is a
-        // read that failed, not a project that is missing (QA baa8990fb123).
+        // read that failed, not a project that is missing.
         if (cancelled) return;
         const code = (err as { code?: unknown } | null)?.code;
         setState(code === 'permission-denied' ? 'missing' : 'failed');

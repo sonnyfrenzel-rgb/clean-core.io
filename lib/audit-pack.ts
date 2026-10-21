@@ -127,7 +127,7 @@ const ARCH_LABELS: Record<string, string> = {
  * image. Most of these values are typed by the project owner (the name, the
  * approver, the override reason in `07-user-attested.md`), and a reviewer's
  * Markdown viewer must show them as text rather than render `<img src=…>` or
- * `![](https://…)` from them (QA full review of v2.20.0). The backslash itself
+ * `![](https://…)` from them. The backslash itself
  * is escaped first, so a value cannot cancel an escape.
  */
 function mdCell(value: unknown): string {
@@ -183,7 +183,7 @@ function modelIdOf(mc: ModelCard | undefined): string {
  *
  * `byokUsed` is false both when the shared key was used and when no key was
  * used at all, so the line read as "we spent the platform key on this" for a
- * run that spent nothing (QA review of cf0f2244eda4). Whose key it was is only
+ * run that spent nothing. Whose key it was is only
  * a question once there was a call.
  */
 function byokLineOf(mc: ModelCard | undefined): string {
@@ -201,7 +201,7 @@ function byokLineOf(mc: ModelCard | undefined): string {
  *
  * It said "model-generated" for every run, including one no model took part in
  * and one whose narrative arrived without a receipt — the class this file
- * exists to get right (QA full review of v2.20.0). The hash reference stands
+ * exists to get right. The hash reference stands
  * where there is a narrative: `aiNarrativeMeta.responseHash` is inside the
  * run's signed payload; only the text (`analysis`) is outside it.
  */
@@ -222,8 +222,7 @@ function narrativeProvenanceRowOf(mc: ModelCard | undefined): string {
  *
  * Read from the signed run first, then from the model card that mirrors it.
  * A run that recorded neither says so: the old fallback printed `2024.FPS02`,
- * a revision nothing had established, into a signed file
- * (QA full review of v2.20.0).
+ * a revision nothing had established, into a signed file.
  */
 function catalogVersionOf(project: Project): string {
   const fromRun = (project as { sapApiCatalogVersion?: unknown }).sapApiCatalogVersion;
@@ -238,7 +237,7 @@ function catalogVersionOf(project: Project): string {
  * request body, the model call happened in a separate request to `/api/gemini`
  * with nothing tying the two together, so the model identifier above named the
  * model the account was configured with and not one the server watched produce
- * this text (QA review of cf0f2244eda4). Stating that beside the claim was
+ * this text. Stating that beside the claim was
  * better than not stating it, and it was still a claim nobody had checked.
  *
  * `/api/gemini` now issues a receipt over the account, the digest of the text it
@@ -268,7 +267,7 @@ function narrativeOriginOf(mc: ModelCard | undefined): string {
  * extensibility route are computed by the deterministic engine in
  * `lib/abap/`, before any model is involved, and a signed run recomputes both
  * server-side. A model card that credits a model for the engine's work is the
- * kind of sentence this pack exists to prevent (QA review of cf0f2244eda4).
+ * kind of sentence this pack exists to prevent.
  */
 function usageContextOf(mc: ModelCard | undefined): string {
   if (mc?.modelParticipation === 'none') {
@@ -306,7 +305,7 @@ function usageContextOf(mc: ModelCard | undefined): string {
   if (mc?.modelParticipation !== 'narrative-attested') {
     // A run from before model participation was recorded: the model card's
     // "Narrative origin" says Not recorded, and this paragraph must not credit
-    // a model the record does not name (QA review of a88149856dcc).
+    // a model the record does not name.
     return [
       'The deterministic engine produced the evidence report, the Clean Core score and',
       'the extensibility route; these are recomputed on the server and covered by the',
@@ -828,7 +827,7 @@ export function generateInputManifestFile(project: Project): string {
       }
     : {
         recorded: false,
-        // SEC-2026-873 (owner decision 18.10.2026).
+        // A run signed before the input manifest existed (owner decision 18.10.2026).
         note:
           'This run was signed before the input manifest existed. ' +
           'Its inputs can only be read from the individual fields of the run: the source fingerprint ' +

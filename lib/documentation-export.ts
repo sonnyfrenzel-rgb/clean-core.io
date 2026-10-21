@@ -80,8 +80,8 @@ import {
 type ModelJson = any;
 
 /**
- * What a stale export says about itself (owner decision 30.09.2026, QA
- * c8ae21453b3b). A documentation the workflow contract (`lib/workflow-steps.ts`)
+ * What a stale export says about itself (owner decision 30.09.2026). A
+ * documentation the workflow contract (`lib/workflow-steps.ts`)
  * calls `stale` stays exportable — it is not blocked — but the file does not
  * pass itself off as current: it opens with this note, and the page's export
  * button carries the same warning ("Stale — regenerate first") beside it, so

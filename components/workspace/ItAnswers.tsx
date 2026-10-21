@@ -251,8 +251,8 @@ export default function ItAnswers({
   const demo = findings !== undefined;
 
   const state = project === null && findings === undefined ? undefined : itState({ source, hasSource, signed });
-  // A project with no source has no contract and draws no rail: nothing to read
-  // (QA cf4f8da6af44). While the source loads it is read ahead, so the rail's
+  // A project with no source has no contract and draws no rail: nothing to read.
+  // While the source loads it is read ahead, so the rail's
   // card is there when the content is.
   const contract = useContract(projectId, !demo && state !== 'no-source');
   const opening = useMemo(

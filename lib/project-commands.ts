@@ -262,8 +262,7 @@ export const ATC_FIELD_MAX_CHARS = 4000;
 /**
  * One row, reduced to the keys the model declares.
  *
- * The top level was closed from the start; the rows were not, and a QA review of
- * a81b30dc12a9 said so. The browser parses, then posts what it parsed — so
+ * The top level was closed from the start; the rows were not. The browser parses, then posts what it parsed — so
  * without this, a crafted request stores finding objects of any shape, and the
  * closed `AtcFinding` type is a promise only the browser keeps. Unknown keys are
  * dropped rather than refused: a newer export carrying an extra column should
@@ -298,8 +297,8 @@ function normaliseAtcRow(
 /**
  * The ATC import, reduced to the fields the model declares — the same
  * shallow contract `normaliseUsageReport` keeps: a closed top-level key set,
- * a closed source vocabulary and a ceiling on size, and since the QA review of
- * a81b30dc12a9 a closed key set per row as well. Which rows are worth keeping,
+ * a closed source vocabulary and a ceiling on size, and a closed key set per
+ * row as well. Which rows are worth keeping,
  * and what the personal-data hint says about them, stays the browser's parser's
  * job (`lib/abap/atc-parser.ts`, `lib/abap/atc-privacy.ts`); the shape of what
  * gets stored is the part the browser cannot be trusted with regardless of what
@@ -452,8 +451,8 @@ export interface ProjectCommandState {
    * `lib/decision-facts.ts`, its `answer.draft`). `confirm-decision` confirms
    * the stored record only when it is that decision: the record came in through
    * `record-decision-draft` from a browser, and its bindings, conditions and
-   * reversibility are only checked there for shape (QA review of
-   * 4b4586aff273). `undefined` or `null` refuses, as `activeRunEvidence` does.
+   * reversibility are only checked there for shape.
+   * `undefined` or `null` refuses, as `activeRunEvidence` does.
    */
   derivedDecisionFingerprint?: string | null;
   /**
@@ -501,8 +500,8 @@ export interface ProjectCommandState {
    * transaction. An answer is stored only against the basis the server derives
    * for its action: a basis the browser made up, or one of a group the project
    * does not have now, would otherwise wait in the document and start to apply
-   * the day a source with exactly those questions arrives (QA review of
-   * dd8e99691c8d). `undefined`/`null` refuses an answer, as `activeRunEvidence`
+   * the day a source with exactly those questions arrives.
+   * `undefined`/`null` refuses an answer, as `activeRunEvidence`
    * refuses a sign-off; a reopen needs no basis.
    */
   openQuestionBases?: Partial<Record<OpenQuestionAction, string>> | null;
@@ -823,7 +822,7 @@ export function validateProjectCommand(
     if (!draft.ok) return refuse(400, 'malformed-decision', draft.error);
     // A draft does not carry its own confirmation or withdrawal: those entries
     // are written by the commands below, and one that arrives over the wire is
-    // a claim the browser chose (carried QA finding 5724ea86c33b).
+    // a claim the browser chose.
     if (draft.decision.timeline.some((e) => SERVER_LIFECYCLE_KINDS.includes(e.kind))) {
       return refuse(
         400,

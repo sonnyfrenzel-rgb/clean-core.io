@@ -207,9 +207,8 @@ function replacementProvenance(entry: { confidence?: string } | undefined): {
  * the literal is read; but only a literal in one of those two places. Anywhere
  * else — a log message, a value assigned to a text field — it is a word.
  *
- * `dynamic` — from engine 3.0.18 (`ENGINE_READS_FROM`; QA full review of
- * c41f14953c1d, 1dcf075d8530): the names a dynamic `CALL FUNCTION <name>` of
- * this source calls (`dynamicCallNames`). A constant counts only when it is one
+ * `dynamic` — from engine 3.0.18 (`ENGINE_READS_FROM`): the names a dynamic
+ * `CALL FUNCTION <name>` of this source calls (`dynamicCallNames`). A constant counts only when it is one
  * of them; a constant no call uses names no call. `null` is the reading of the
  * engines before: every constant whose value matches counts.
  */
@@ -267,7 +266,7 @@ const NAME = String.raw`[A-Za-z_][\w/]*(?:-[\w/]+)*`;
  * the last component of `a-b`, and one step back through a plain copy
  * (`lv_fm = c_fm.` or `MOVE c_fm TO lv_fm.` before `CALL FUNCTION lv_fm`).
  * The copy counts only where it stands before a call of its target: a copy
- * after the last call reaches no call (QA 7d96250ccacc).
+ * after the last call reaches no call.
  */
 function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<string> {
   // Each name with the position of its latest use — a call, or a copy into a name used later.
@@ -378,8 +377,8 @@ const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {
  */
 export function redactCredentials(snippet: string | undefined, engineVersion: string | null = APP_VERSION): string {
   if (!snippet) return snippet ?? '';
-  // From 3.0.19 (`ENGINE_READS_3019_FROM`, SEC-2026-886) and from 3.0.20 (`ENGINE_READS_3020_FROM`,
-  // SEC-2026-897); a run of an earlier engine keeps what it signed.
+  // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
+  // earlier engine keeps what it signed.
   const assigned = engineReads3020Apply(engineVersion)
     ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
@@ -413,13 +412,13 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // Case-sensitive on purpose: the case change is the signal.
     .replace(/\b([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?=[\w\-.~+/]*?(?:\d|[a-z][A-Z]))[\w\-.~+/]{6,}=*/g, '$1$2…<redacted>')
     // In an explicit authorization context the composition is no signal: a
-    // token of letters only (`'Bearer abcdefghijklmnop'`) is still a token
-    // (QA c65a238c3cd2). The context is the scheme word opening a literal, or
+    // token of letters only (`'Bearer abcdefghijklmnop'`) is still a token.
+    // The context is the scheme word opening a literal, or
     // following `Authorization:`. Prose about the scheme ("Bearer
     // authentication") is left alone by the words it is written in.
     // After `Authorization:` the header is named outright, so a value of any
     // length is the credential — the eight-character floor below exists only
-    // for a bare scheme word opening a literal (`'Basic mode'`) (QA f72a50faa489).
+    // for a bare scheme word opening a literal (`'Basic mode'`).
     .replace(/(\bAuthorization\s*:\s*)([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?!(?:authentication|authorization|auth|token|tokens|scheme|header|credentials?)\b)(?!…<redacted>)[\w\-.~+/]+=*/gi,
       (_m, lead, scheme, gap) => `${lead}${scheme}${gap}…<redacted>`)
     .replace(/((?:['`|]|\bAuthorization\s*:)\s*)([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?!(?:authentication|authorization|auth|token|tokens|scheme|header|credentials?)\b)(?!…<redacted>)[\w\-.~+/]{8,}=*/gi,
@@ -427,7 +426,7 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // A password or token assigned to a literal in ABAP — of any length: a short
     // secret is still a secret. The name may carry a prefix (`lv_password`,
     // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
-    // matched inside one (QA slice review of 953575fcc9bf, 21933f60c24d).
+    // matched inside one.
     .replace(assigned, (_m, word, mid) => `${word}${mid}'…<redacted>'`);
 }
 
@@ -553,7 +552,7 @@ export function buildAbapEvidence(
     const base = STANDARD_TABLE_MAP[table];
     if (!base) return undefined;
     // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): a run of an earlier engine keeps
-    // the plain catalog successor it signed (QA review of 03501b79fb3d).
+    // the plain catalog successor it signed.
     // From 3.0.13 (`PRECISION_FIXES_FROM`) RESB beside AUFK alone is a reservation.
     const inContext = guideline ? successorInContext(table, tablesHere, { precisionFixes: fixes }) : null;
     return inContext ? { view: inContext.entry.view, type: inContext.entry.type, confidence: 'curated' } : base;
@@ -564,7 +563,7 @@ export function buildAbapEvidence(
   // is a database table SAP lists; the dialog structures of the transaction
   // (`RM06E`, `RV45A`) are not. Keyed by the line the call starts on, in
   // statement order: two calls written on one line each take their own, not
-  // the last one's transaction and fields (QA review, 9a6689897a0f).
+  // the last one's transaction and fields.
   const batchAt = new Map<number, BatchInputCall[]>();
   for (const call of readBatchInput(code)) batchAt.set(call.line, [...(batchAt.get(call.line) ?? []), call]);
   const takeBatch = (line: number, via: BatchInputCall['via']): BatchInputCall | undefined => {
@@ -603,9 +602,8 @@ export function buildAbapEvidence(
       // twenty-five places that set one. The credential detector redacts its own
       // snippet, and that was not enough: when a key and a hardcoded path share
       // one statement, the *environmental* detector below reports the same
-      // statement as `snippet: text` and prints the key after all (QA review of
-      // 9d7721972a67 — and the test that was supposed to hold this used two
-      // statements, so it never saw the case). One gate means a detector added
+      // statement as `snippet: text` and prints the key after all (a test that
+      // used two statements never saw the case). One gate means a detector added
       // next year is covered without anyone remembering this paragraph.
       snippet: redactCredentials(finding.snippet, engine),
       // The snippet is not the only field that quotes the source: a title names
@@ -634,8 +632,7 @@ export function buildAbapEvidence(
    */
   // `queued`: the rows go into a batch-input session (`BDC_INSERT`) that SM35
   // runs later; this program does not run the transaction, so the finding says
-  // the session queues the change rather than that it is made (QA review of
-  // d939fb5b056b, 11d2bd848df5).
+  // the session queues the change rather than that it is made.
   const addBatchInputWrite = (write: BatchInputWrite, tcode: string, line: number, text: string, queued = false) => {
     const entry = successorOf(write.table);
     // Anchored where the table is named — the statement that fills the first
@@ -695,8 +692,7 @@ export function buildAbapEvidence(
     // says a customer may modify SAP's rows directly. Applied to writes as well,
     // this line deleted the Critical finding for a direct mutation of an SAP
     // table — the most severe access the engine reports — on the strength of a
-    // permission for a different operation (QA review of b88c77b, ac5a65eb53ff /
-    // 79705bbe66be).
+    // permission for a different operation.
     if (!isWrite && sapStates.releaseState === 'released') return;
 
     // A reserved-namespace table SAP does not list is of unknown provenance —
@@ -829,8 +825,8 @@ export function buildAbapEvidence(
      * `tokenize` drops comments and keeps literals, so until now
      * `DATA message TYPE string VALUE 'CALL TRANSACTION VA01'.` produced a High
      * BDC finding and `DATA(m) = |EXEC SQL …|` a Critical native-SQL one, on
-     * programs that call no transaction and execute no native SQL (QA review of
-     * b88c77b, 18e7f9c0a67e / 42f234fcae8d / 8dcf89e31a32 / 9b1698637a1d). The
+     * programs that call no transaction and execute no native SQL.
+     * The
      * rule is the one `statement-reader.ts` already states: a literal is text,
      * not code.
      *
@@ -1054,8 +1050,7 @@ export function buildAbapEvidence(
     //
     // All of that from 3.0.12 (`GUIDELINE_CHECKS_FROM`): the WS_ forms, the
     // direction and the on-stack remedy. A run of an earlier engine keeps the
-    // finding it signed — GUI_ modules only, one sentence for both directions
-    // (QA review of 03501b79fb3d, 5d3dbc1afb60 / 11a08254990d).
+    // finding it signed — GUI_ modules only, one sentence for both directions.
     if (!guideline) {
       const legacyGuiModule = calledModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)');
       if (legacyGuiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
@@ -1243,8 +1238,7 @@ export function buildAbapEvidence(
     // for the prefix of a Google API key. A statement holding a hardcoded Google
     // key and a hardcoded path therefore produced *no* finding at all: the one
     // literal that is unambiguously a secret was the one that silenced the
-    // detector (security audit of b88c77b, SEC-b88c77b-148's neighbour
-    // SEC-b88c77b-36, verified at the line on 21.09.2026). A key in ABAP source
+    // detector. A key in ABAP source
     // is worse than a hostname in ABAP source, so it gets its own finding and
     // the higher severity, and the hardcoded-value detector below no longer
     // looks away.
@@ -1270,8 +1264,7 @@ export function buildAbapEvidence(
     // Hardcoded environmental values — the one detector whose subject *is* the
     // content of a literal, so it reads `text` on purpose.
     //
-    // From 3.0.18 (`ENGINE_READS_FROM`; QA full review of c41f14953c1d,
-    // ae38972224d6): `PRD`, `CLNT` and `SYS` are a system or client name only
+    // From 3.0.18 (`ENGINE_READS_FROM`): `PRD`, `CLNT` and `SYS` are a system or client name only
     // where no letter follows (`'PRD'`, `'PRD100'`, `'SYS_A'`) or `CLNT` does
     // (`'PRDCLNT100'`) — `'Systemfehler'` and `'PRDHA'` are words.
     if (reads
@@ -1406,8 +1399,7 @@ export function buildAbapEvidence(
     }
 
     // Credit Management custom logic — the module name is a literal, so `text`.
-    // From 3.0.18 (`ENGINE_READS_FROM`; QA full review of c41f14953c1d,
-    // 9e7373e53138): only that literal — the called module's name — and the
+    // From 3.0.18 (`ENGINE_READS_FROM`): only that literal — the called module's name — and the
     // code around it; the words of any other literal (`iv_text = 'credit risk
     // ok'`) are text, not credit logic.
     const CREDIT_WORDS = /Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i;

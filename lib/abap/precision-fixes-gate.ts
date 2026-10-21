@@ -1,8 +1,7 @@
 import { engineVersionAtLeast } from '../score-rule';
 
 /**
- * The engine version from which the corrections of the QA review of 5a559787
- * (roadmap 3.0.13) run:
+ * The engine version from which the corrections of roadmap 3.0.13 run:
  *
  *   - `DESTINATION 'NONE'` is read as the whole literal: `'NONE''X'` (the
  *     destination NONE'X) is another destination, and the backtick literal
@@ -26,7 +25,7 @@ import { engineVersionAtLeast } from '../score-rule';
  *     when the very next statement decides on the copy (`decidesOnSubrcAt`),
  *     and a tainted name the source overwrites unconditionally with a value
  *     from no input before a dynamic clause or a path no longer reaches it
- *     (`overwrittenCleanBefore`, `security-review.ts`; QA leftovers of hotfix 2);
+ *     (`overwrittenCleanBefore`, `security-review.ts`; hotfix 2);
  *   - RESB beside AUFK alone is a reservation, and AFRU counts as a
  *     production-order table for RESB too (`successorInContext`,
  *     `sap-api-catalog.ts`);

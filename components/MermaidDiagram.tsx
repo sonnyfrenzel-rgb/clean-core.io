@@ -45,7 +45,7 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
   useEffect(() => {
     if (typeof window === 'undefined' || !ref.current || !chart || !chart.trim()) return;
     // A render that finishes after the chart changed (or the component went)
-    // must not overwrite the newer diagram (QA full review of v2.20.0).
+    // must not overwrite the newer diagram.
     let current = true;
 
     const renderChart = async () => {

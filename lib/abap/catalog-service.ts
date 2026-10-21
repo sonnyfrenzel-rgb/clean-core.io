@@ -107,8 +107,7 @@ function buildMerged(): { map: Record<string, MergedApiEntry>; noPath: Set<strin
 
   // Layer 2b: the classification file, which this loop used to skip entirely.
   //
-  // Finding 20fe6d7b4308 (QA full review of b88c77b, confirmed): `buildMerged`
-  // read CR.entries only, so the 8,397 objects that exist ONLY in
+  // `buildMerged` used to read CR.entries only, so the 8,397 objects that exist ONLY in
   // cloudification-repo.classifications-sap.json never reached `noPath`. 367 of
   // them carry `state: noAPI` — SAP's statement that the object is not intended
   // for customer use — without a successor and without a concept note, and for
@@ -119,7 +118,7 @@ function buildMerged(): { map: Record<string, MergedApiEntry>; noPath: Set<strin
   // estimated (tests/catalog-no-path-classification.spec.ts re-counts them).
   //
   // Scope, deliberately narrow:
-  //   noAPI, no successor  → no path. This is the finding.
+  //   noAPI, no successor  → no path. This is the case above.
   //   noAPI, with successor→ SAP names the replacement, so a path exists; the
   //                          object is still level D and the catalog page names
   //                          the successor (getObjectDimensions), but "no path"
@@ -173,7 +172,7 @@ export function resolveApi(objectName: string): MergedApiEntry | undefined {
  * applies: the curated layer still wins, the classification file is
  * release-agnostic. `/api/abcd-classify` used to answer this from the default
  * file while grading from the snapshot, so one response mixed two catalogs
- * under one snapshot reference (QA review of e7372791c70d).
+ * under one snapshot reference.
  */
 export function hasNoReleasedApiPath(objectName: string, snapshot?: string): boolean {
   const key = (objectName || '').toUpperCase();
@@ -202,7 +201,7 @@ export interface PrimarySuccessor {
  * mapping (`SAP_API_CATALOG`) may still name a target — KONV → I_PricingElement,
  * where SAP's file carries only a state. That target is Clean-Core.io's field
  * knowledge, not SAP's statement, and a page that printed it "per the SAP
- * Cloudification Repository" put our words in SAP's mouth (codex code-public-03).
+ * Cloudification Repository" put our words in SAP's mouth.
  * The type follows the name it describes: a curated entry's type belongs to the
  * curated view, not to SAP's successor.
  */
@@ -220,7 +219,7 @@ export function primarySuccessor(objectName: string): PrimarySuccessor | undefin
  * order, not an internal order (`successorInContext`). `resolveApi` alone knows
  * no program, so a caller that has one — the Standard fit layer — asks this
  * instead; the evidence engine and the data coupling apply the same rules
- * themselves (QA review of 73b8cad63d3e, 579d04bb65ff). Null when neither names one.
+ * themselves. Null when neither names one.
  */
 export function successorInProgram(objectName: string, tablesInProgram: Iterable<string>): string | null {
   return successorInContext(objectName, tablesInProgram)?.entry.view ?? resolveApi(objectName)?.view ?? null;
@@ -594,7 +593,7 @@ const DATA_OBJECT_TYPES = new Set(['TABL', 'VIEW', 'DDLS']);
  * than the stricter one alone; everywhere else there is one answer and this
  * returns nothing.
  *
- * Since codex code-engine-05 every SAP object written directly is D, so the
+ * Since every SAP object written directly is D, the
  * write answer alone no longer tells the page anything about *this* object:
  * it is the general row on `/method/levels`. Printed here it would sit on
  * thousands of released objects that cannot be written at all — a CDS view

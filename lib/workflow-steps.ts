@@ -114,7 +114,7 @@ export interface RailStep {
    * on a real system. The record is still the server's, so the gates that ask
    * "did an execution happen" read `proven`; what the reader is shown is
    * *Demonstrated · mock* (DESIGN.md §4, `lib/provenance.ts`) in the warning
-   * tone, never green and never *Proven* (codex code-trust-04). False whenever
+   * tone, never green and never *Proven*. False whenever
    * `proven` is.
    */
   mock: boolean;
@@ -328,7 +328,7 @@ export interface TestEvidence {
   /**
    * How many cases an attributable execution reports as passed — counted from
    * the server-written receipt of `/api/run-tests`, never from the project's own
-   * `status` strings (QA full review of a19945ef01dc, E07-F02).
+   * `status` strings (E07-F02).
    *
    * `passed` above is what the *screen* shows, and `firestore.rules` lets the
    * owner write it. This is what the phase contract is allowed to call proven.
@@ -339,8 +339,7 @@ export interface TestEvidence {
   /**
    * The same, for failures: how many cases the covering receipt reports as
    * failed. `failed` above counts `status` strings the owner can write, so a
-   * `Failures` badge on it alone reported an execution nobody recorded (QA full
-   * review of v2.20.0).
+   * `Failures` badge on it alone reported an execution nobody recorded.
    */
   attestedFailures: number;
 }
@@ -350,8 +349,8 @@ export interface TestEvidence {
  * `Connectivity` is a tenant that answered, and `Not run`, `Skipped`, `Todo`,
  * `Pending`, `Error`, `Simulated` or absent are the honest absence of a result.
  *
- * `Simulated` is not a category of its own any more (roadmap 3.0.9, QA full
- * review aad42f51c028). Only the browser ever wrote it — a run the Testing hook
+ * `Simulated` is not a category of its own any more (roadmap 3.0.9). Only the
+ * browser ever wrote it — a run the Testing hook
  * made up for an ABAP Unit suite until 02.10.2026, with no request to any
  * server — and nothing writes it today; `testCases[].status` is in the client
  * allowlist of `firestore.rules`. Counting it apart told the reader that a
@@ -596,7 +595,7 @@ const present = (project: Project | null) => {
  * downloads on a non-empty list; `/api/audit-pack/create` enforces its own part
  * server-side.
  *
- * 3.0.18 (QA full review of c41f14953c1d, 1c3210b0f3ee): code generated before
+ * 3.0.18: code generated before
  * the PLATFORM KNOWLEDGE block moved (`Staleness.context`) blocks too, and so
  * does a suite written for that code — the rail already marks both stale. Their
  * entries say what moved (`CONTEXT_BLOCKERS`), never "a previous source".
@@ -611,7 +610,7 @@ export function handoverBlockers(project: Project | null): string[] {
   }
   // Roadmap 3.0.19: a key-user decision hands over no code, so a package left
   // from an earlier decision blocks nothing, and neither does a suite written
-  // for it (QA review of 317d5f7a9c53, 910781999cc2).
+  // for it.
   const keyUser = isKeyUserDecision(project);
   const contextOnly = !keyUser && s.context && !s.code && p.code;
   if (s.design && p.design) out.push('the solution design');
@@ -762,7 +761,7 @@ export function generationPrerequisites(
 /**
  * Whether `generatedCode` holds code. A non-empty string was enough, so a
  * serialised package with no files — `'[]'` — marked Transformation generated
- * and let Delivery count code that was not there (QA full review of v2.20.0).
+ * and let Delivery count code that was not there.
  * A package counts once it has one file with a path and content; a string that
  * is not a JSON array is the flat source of a project from before packages,
  * and counts as it always did.
@@ -802,7 +801,7 @@ export const DOCUMENTATION_PACKAGE_FILES: readonly string[] = [
 
 /**
  * `keyUserList`: the key-user step list as it is built now, where the caller holds it — the recorded checks then
- * count only for that list (`keyUserAcceptanceReading`, SEC-2026-899).
+ * count only for that list (`keyUserAcceptanceReading`).
  */
 export function workflowSteps(project: Project | null, context: { keyUserList?: Pick<KeyUserStepList, 'steps'> | null } = {}): RailStep[] {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
@@ -979,8 +978,8 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
   // Generated is not tested. The acceptance for E01-F01-US01 names exactly this
   // case: generated, never-executed tests must read as a draft in every view.
   //
-  // "On record" is meant literally, and since the QA full review of a19945ef01dc
-  // it is meant about a record a client cannot write. `testCases[].status` is in
+  // "On record" is meant literally: it is meant about a record a client cannot
+  // write. `testCases[].status` is in
   // the client allowlist of `firestore.rules`, so a stored `Passed` can equally
   // have come from a browser or from a model that invented the key, and it used
   // to be enough to paint Testing green and unlock Delivery. The verdict that
@@ -1083,8 +1082,8 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
   } else if (failure.state === 'current' && (executed === 0 || tests.passed === tests.total)) {
     // The run was tried and gave no result (owner report 11.10.2026): said as
     // such, with its cause and how often — never "no test run on record". A
-    // current failed run outranks verdicts the case list only carries as labels
-    // (QA review of 11e3bc7d90e8): "all marked as passed" must not hide it, nor
+    // current failed run outranks verdicts the case list only carries as labels:
+    // "all marked as passed" must not hide it, nor
     // read as done and refuse the closure the failure is the basis for.
     const marked = tests.passed > 0 ? ` ${tests.passed} marked as passed with no test run on record.` : '';
     testing = phase('testing', {
@@ -1187,7 +1186,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
         state: 'partial',
         badge: 'Model estimate',
         // The run is the baseline, not an estimate: no cost figures are stored
-        // for this project, so nothing has been priced (QA full review of v2.20.0).
+        // for this project, so nothing has been priced.
         detail: 'The signed run is the baseline. An estimate needs your cost figures and uses assumed effort coefficients, not observed costs.',
       })
     : phase('tco', {
@@ -1222,7 +1221,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
   // `gaps`, `gaps` read `testing.state`, and `testing.state` was `done` on
   // client-written verdicts — so a row of `Passed` strings a browser put on the
   // project produced "Ready", in green, under the sentence "a passing test run
-  // is on record" (QA full review of a19945ef01dc). The material can be complete
+  // is on record". The material can be complete
   // and the run still not have happened; those are two statements and they now
   // read as two.
   const openGaps = fitConfirmed ? fitConfirmed.conditions.filter((c) => c.basis === 'derived').length : 0;

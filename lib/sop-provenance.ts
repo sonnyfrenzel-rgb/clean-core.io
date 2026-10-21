@@ -26,7 +26,7 @@ import {
  *     lines, or the step's plain name — compared after folding case, spaces,
  *     quotes and the closing stop), and nothing in it asserts a capability the
  *     source shows to be absent. Its lines are the engine sentence's lines.
- *     A cited line alone is not enough (QA review of 35b97d90c6e1): a line of
+ * A cited line alone is not enough: a line of
  *     the step shows *that* something happens there, not that the model's
  *     sentence says it right — "the worklist shows each open item" at a
  *     `SELECT` line is the model's wording;

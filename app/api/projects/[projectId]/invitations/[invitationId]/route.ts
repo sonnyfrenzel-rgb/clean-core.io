@@ -59,7 +59,7 @@ export async function DELETE(
 
     const { projectId, invitationId } = await params;
     // The gate checks the project id too; checked here as well so the route
-    // file alone shows both ids are well-formed before any path (SEC-2026-514).
+    // file alone shows both ids are well-formed before any path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }

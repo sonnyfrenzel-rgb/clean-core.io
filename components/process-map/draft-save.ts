@@ -1,6 +1,6 @@
 /**
  * The order of a save in the BPMN editor, kept apart from the component so a
- * spec can run it (QA full review of 81810c8, 68c8263e20f6).
+ * spec can run it.
  *
  * The editor marked itself dirty synchronously on every change but updated its
  * copy of the XML only when an asynchronous `saveXML` resolved, in whatever

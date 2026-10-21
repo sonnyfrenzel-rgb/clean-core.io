@@ -105,7 +105,7 @@ export const BUILD_UP_MAP_WAIT_WITH_MODEL =
  * (reduced motion, or a page that asked for none). The build-up's clock does
  * not run then, so its budget can never end the wait; without a wait of its
  * own, a naming read that never settles kept the first look on "reading" for
- * good (QA review of dd8e99691c8d).
+ * good.
  */
 export const NAMING_WAIT_MS = 2500;
 

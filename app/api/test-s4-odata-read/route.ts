@@ -94,7 +94,7 @@ async function fetchOAuth2Token(
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
       // Neither the caller nor the log gets the body: the caller the status,
-      // the log the status and a shape word (SEC-2026-525; QA review of 46a7d64baad3).
+      // the log the status and a shape word.
       logger.warn('oauth token exchange rejected', {
         route: 'api/test-s4-odata-read',
         status: response.status,
@@ -142,7 +142,7 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
     // add its header only when every credential was present (and OAuth only
     // when a token came back), then read on without one — a public entity set
     // was then reported as a successful read under a scheme that was never
-    // used (QA full review of fc787674705f, d64ccabb0bbb).
+    // used.
     const auth = (parsed.Authentication || parsed.authentication || '').toLowerCase();
     if (auth === 'basicauthentication' || auth === 'basic') {
       const user = parsed.User || parsed.user || parsed.Username || parsed.username;
@@ -160,8 +160,7 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
       if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
       headers['Authorization'] = `Bearer ${requireAccessToken(await fetchOAuth2Token(tokenUrl, clientId, clientSecret))}`;
     } else if (auth && auth !== 'noauthentication') {
-      // Any other declared scheme is refused, not read anonymously (QA slice
-      // review of ad155b478e36, 4688e78a3516).
+      // Any other declared scheme is refused, not read anonymously.
       throw new Error('Destination authentication type is not supported. Use BasicAuthentication, OAuth2ClientCredentials or NoAuthentication.');
     }
   } else if (body.authType === 'oauth2') {
@@ -202,8 +201,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: 'failed', message: e.message || 'Access denied.' }, { status: 403 });
     }
 
-    // Per account, before any OAuth exchange or tenant read (QA full review of
-    // fc787674705f, 097d4859c855). A live check reads up to five entity sets,
+    // Per account, before any OAuth exchange or tenant read.
+    // A live check reads up to five entity sets,
     // so the budget is twice the metadata routes'.
     try {
       await assertRateLimit(`test-s4-odata-read:${decodedToken.uid}`, 60, 60 * 60 * 1000);
@@ -215,7 +214,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Bounded like the routes beside it: the unbounded JSON read buffered any size of body
-    // before a field was looked at (SEC-b6716f0-19). A connection form with a
+    // before a field was looked at. A connection form with a
     // destination JSON is a few kilobytes, so the shared 64 KiB ceiling of a token
     // answer is ample (one pair of limits, tests/bounded-body.spec.ts).
     const raw = await readBoundedBody(req, TOKEN_BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
@@ -315,8 +314,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       // Only the status is reported; the body is cancelled rather than left
-      // streaming after the timer was cleared (QA full review of fc787674705f,
-      // 3c5bdb95ddbd).
+      // streaming after the timer was cleared.
       await response.body?.cancel().catch(() => {});
       return NextResponse.json({
         status: 'failed',

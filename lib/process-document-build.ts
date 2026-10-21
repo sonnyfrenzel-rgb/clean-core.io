@@ -919,7 +919,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const effectKind = (phrase: string): string => {
     if (/\bworkflow\b/i.test(phrase)) return 'Starts a workflow';
     if (/\bas a list\b/i.test(phrase)) return 'Shows a list';
-    // One word boundary for all three, at their start (QA 2f5e13717db7): "files" and "uploaded" count, "profile" does not.
+    // One word boundary for all three, at their start: "files" and "uploaded" count, "profile" does not.
     if (/\b(?:upload|download|file)/i.test(phrase)) return 'Reads or writes a file';
     if (/\bthrough transaction\b/i.test(phrase)) return 'Creates a document (batch input)';
     if (/\bBAPI_|\bcreate the\b/i.test(phrase)) return 'Creates a document';
@@ -1499,7 +1499,6 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       if (anchored.length && !contradicts) {
         purposeProposal = {
           // 3.0.18 item 13 (QM-08, FI-F12): the model's SAP identifiers pass the check before the document shows them.
-          // QA af33f2acba86.
           text: sapCheckedNarrative(screenSensitiveText(anchored.map((s) => s.text.trim()).join(' ')).text),
           anchors: distinctAnchors(anchored.flatMap((s) => s.anchors.map((a) => anchor(a.lineStart, a.lineEnd)))),
           origin: 'narrative',

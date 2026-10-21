@@ -374,14 +374,13 @@ function testFactsWithEngineCases(project: HandoverProject, phases: readonly Rai
   if (list.length === 0) return facts;
   const origins = countEngineCases(list);
   if (origins.engine === 0) return { ...facts, detail: [...facts.detail, `Scenarios: ${engineCaseCountsSentence(origins)}.`] };
-  // QA review of 2e6596ddbbc8 (0297134b3b87, 3ea38fd51acf): `testCases` is
-  // client-written, so a case counts as derived by Clean-Core.io only when the
+  // `testCases` is client-written, so a case counts as derived by Clean-Core.io only when the
   // engine reproduces it from the signed source; and the cases past the caps
   // are counted from that same derivation, only while it is the one the stored
   // cases came from and the test phase is not stale — otherwise the reason is said.
   const testsStale = phases.find((p) => p.key === 'testing')?.state === 'stale';
   const provenance = engineCaseProvenance(list, deriveEngineCasesOf(signedSourceOf(project)?.source ?? null), testsStale);
-  // Each verified id counts once; every other stored engine entry — a duplicate copy included (QA 663172392dc6) — counts as not derived.
+  // Each verified id counts once; every other stored engine entry — a duplicate copy included — counts as not derived.
   const verifiedIds = new Set(provenance.verified.map((c) => c.id));
   const counted = countEngineCases(list.filter((tc) => !engineCaseOf(tc) || verifiedIds.has(String(tc.id ?? ''))));
   const notDerived = provenance.unverifiedEntries;
@@ -390,7 +389,7 @@ function testFactsWithEngineCases(project: HandoverProject, phases: readonly Rai
     `Scenarios: ${engineCaseCountsSentence({ ...counted, model: counted.model + notDerived })}.`,
   ];
   // The sentence counts stored entries, the same number the line above moves to the model side,
-  // and says of a duplicated id that it is one (QA 796fe8bcbadd).
+  // and says of a duplicated id that it is one.
   if (notDerived > 0) {
     const copiesOf = new Map(provenance.duplicates);
     const named = provenance.unverified.map((id) => (copiesOf.has(id) ? `${id} (stored ${copiesOf.get(id)} times; one derivation yields each id once)` : id));

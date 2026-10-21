@@ -486,7 +486,7 @@ export default function DocumentationPage() {
         stepInfos,
         sopInputs.current.facts ?? readCapabilityFacts(engineDoc.facts),
       );
-      // An answer that skipped a business step is not stored with the step silently missing (QA 25e9fd59af86).
+      // An answer that skipped a business step is not stored with the step silently missing.
       const missing = missingBusinessSteps(enriched, stepInfos);
       if (missing.length) {
         throw new Error(`The answer left out ${missing.length === 1 ? 'the step' : `${missing.length} steps`} ${missing.map((s) => `“${s.name}”`).join(', ')}, so nothing was saved. Generate again.`);
@@ -643,7 +643,7 @@ export default function DocumentationPage() {
   );
   const [raciRecord, setRaciRecord] = useState<RaciEditRecord | null>(null);
   // An export started before the read has landed waits for it rather than
-  // filing the model's proposal over a saved edit (QA 66e772bd346f).
+  // filing the model's proposal over a saved edit.
   const raciRecordRef = useRef<RaciEditRecord | null>(null);
   const raciReadRef = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => {
@@ -802,15 +802,14 @@ export default function DocumentationPage() {
 
       // Both generations rewrite the same `generatedCode` field. Reading it
       // back first was not enough — two tabs can both read before either
-      // writes, and the later write still drops the earlier file (QA reviews of
-      // 33471220d6e9 and 146ac2e1a724: 4db1e81408f4, ade8ec0b8903). The read
+      // writes, and the later write still drops the earlier file. The read
       // and the write are one transaction — on the server since roadmap
       // 3.0.14, item 9 (`lib/project-artefact-writes.ts`); disabling the
       // buttons is a courtesy on top, not the mechanism. The document was
       // built from the source of the run this page loaded: a second tab can
-      // re-analyse in between, and then it is not written as the current one
-      // (QA review of 4b4586aff273). The business layer written from the
-      // document this replaces goes with it (QA full review 96b39ec78c97), and
+      // re-analyse in between, and then it is not written as the current one.
+      // The business layer written from the
+      // document this replaces goes with it, and
       // what an earlier build put into the package comes out.
       const answer = await storeArtefact(idStr, {
         action: 'documentation',
@@ -1004,8 +1003,7 @@ export default function DocumentationPage() {
   const [revisionsKey, setRevisionsKey] = useState(0);
   /**
    * Why the opening baseline was refused, in words. Dropped, the history below
-   * read "no revisions yet" for a project whose run could not be verified
-   * (carried QA finding 5ab84bc9a713).
+   * read "no revisions yet" for a project whose run could not be verified.
    */
   const [baselineRefusal, setBaselineRefusal] = useState('');
 
@@ -1041,7 +1039,7 @@ export default function DocumentationPage() {
       }
       // Forward only: a Save pressed before this answer landed has already
       // moved the base past revision 1, and setting it back would get the next
-      // save refused as `revision-moved` (carried QA finding 85a623a08fcf).
+      // save refused as `revision-moved`.
       baseRevision.current = newerBase(baseRevision.current, outcome.record.revision);
       setRevisionsKey((token) => token + 1);
     });
@@ -1140,7 +1138,7 @@ export default function DocumentationPage() {
    */
   const phases = workflowSteps(project);
   /**
-   * Owner decision 30.09.2026 (QA c8ae21453b3b): a stale documentation stays
+   * Owner decision 30.09.2026: a stale documentation stays
    * exportable, but neither the menu nor the file hides that it is stale.
    * The state is the workflow contract's (`lib/workflow-steps.ts`), the same
    * one the stepper and the stale notice above read.
@@ -1370,7 +1368,7 @@ export default function DocumentationPage() {
     </StageFrame>
   );
 
-  // The progress card stays with its end state and its *Try again* (a reload) — QA 302cd4adf10e.
+  // The progress card stays with its end state and its *Try again* (a reload).
   if (loadError) return (
     <StageFrame stage="documentation">
       <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />

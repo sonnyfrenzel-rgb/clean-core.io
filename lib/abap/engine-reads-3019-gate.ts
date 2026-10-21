@@ -3,7 +3,7 @@ import { engineVersionAtLeast } from '../score-rule';
 /**
  * The engine version from which the corrections of the 3.0.19 cycle apply:
  *
- *   - SEC-2026-886 (`redactCredentials`, `evidence-model.ts`).
+ *   - `PWD` names a credential too (`redactCredentials`, `evidence-model.ts`).
  *
  * Each changes what a run signs, so a run made by an older engine keeps the
  * evidence it was signed with: whatever rebuilds a signed run passes that run's

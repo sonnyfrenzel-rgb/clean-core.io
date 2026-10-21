@@ -120,8 +120,7 @@ export async function GET(
     }
     // The same account gate as `POST`, and like it before the invitation is
     // read: a suspended or erased account with a still-valid token is told
-    // what `POST` tells it and learns nothing about any invitation (QA review
-    // of a7e0ae36c896).
+    // what `POST` tells it and learns nothing about any invitation.
     try {
       await assertAccountActive(decodedToken.uid, { isAdminClaim: decodedToken.admin === true });
     } catch (gateErr: unknown) {
@@ -135,7 +134,7 @@ export async function GET(
 
     const { projectId, invitationId } = await params;
     if (!projectId || !invitationId) return closed();
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId) || !isFirestoreId(invitationId)) return closed();
 
     const { db } = await getAdminDb();
@@ -199,7 +198,7 @@ export async function POST(
     if (!projectId || !invitationId) {
       return NextResponse.json({ error: 'Missing invitation.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId) || !isFirestoreId(invitationId)) {
       return NextResponse.json({ error: 'Invalid invitation.' }, { status: 400 });
     }

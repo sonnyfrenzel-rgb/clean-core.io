@@ -4,7 +4,7 @@
  *
  * SAP BTP keeps its name. The SAP Business AI Platform is the portfolio SAP
  * built around it — SAP BTP, AI Foundation, SAP Business Data Cloud and SAP
- * HANA Cloud — not a new name for it (external audit finding CNT-03). Visible
+ * HANA Cloud — not a new name for it. Visible
  * copy therefore says "SAP BTP, part of the SAP Business AI Platform" at the
  * platform's first mention on a page or in a document and "SAP BTP" after
  * that. This module is the one place that spells those forms, the SAP service

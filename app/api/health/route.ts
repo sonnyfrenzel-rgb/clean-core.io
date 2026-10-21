@@ -24,8 +24,8 @@ export const runtime = 'nodejs';
  * `assertRateLimit`.
  *
  * `?deep=1` takes no token and cost one Firestore read *per call*, so anybody
- * could drive reads on this project for as long as they cared to (security
- * audit of b88c77b). The house limiter would not have closed that: it runs a
+ * could drive reads on this project for as long as they cared to.
+ * The house limiter would not have closed that: it runs a
  * Firestore transaction of its own, so a refused call would cost the same read
  * it was refusing. What bounds it is a cooldown in the instance — the ping runs
  * at most once every ten seconds and every call in between is answered from the
@@ -44,9 +44,8 @@ let lastDeepProbe: { at: number; ok: boolean } = { at: 0, ok: true };
  * written *after* the read returns, so a hundred requests arriving in the same
  * moment all read a stale timestamp, all take the else branch, and all issue
  * their own Firestore read — the cooldown bounded a serial flood and left the
- * concurrent one untouched, which is the flood that matters (QA review of
- * 7fea4f4, acceptance "the deep probe's cooldown should bound unauthenticated
- * Firestore reads": not met).
+ * concurrent one untouched, which is the flood that matters: the deep probe's
+ * cooldown is meant to bound unauthenticated Firestore reads.
  *
  * So the first caller starts the read and everyone arriving while it is open
  * awaits the same promise. One read per cooldown window, under any concurrency.
@@ -56,8 +55,8 @@ let lastDeepProbe: { at: number; ok: boolean } = { at: 0, ok: true };
  * The mechanism lives in `lib/single-flight.ts` rather than in three lines here,
  * and the reason is the test: a guard that reads those three lines out of this
  * file cannot fail for the reason it exists — a regression that keeps the
- * characters and still performs two reads passes it (QA review of 9e408888bfec,
- * 78b84b92aa49). The helper can be driven with a deferred call from a spec;
+ * characters and still performs two reads passes it.
+ * The helper can be driven with a deferred call from a spec;
  * this handler cannot.
  */
 const deepProbe = singleFlight<boolean>();

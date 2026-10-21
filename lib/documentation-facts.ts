@@ -81,12 +81,12 @@ export function capabilityFactsOf(
     + tables.unresolved.length;
   // A change whose table is named at run time: its possible targets are left
   // out of `writes` (never the target, R26), so it is recorded here and keeps
-  // "no posting" from being said (QA review of 11e3bc7d90e8).
+  // "no posting" from being said.
   const dynamicWrites = tables.unresolved
     .filter((u) => u.access === 'write')
     .map((u) => ({ name: u.expression.toUpperCase(), line: u.line }));
   // A call whose target is named at run time could be a posting BAPI: recorded
-  // so "no posting" is not said (QA review of 35b97d90c6e1).
+  // so "no posting" is not said.
   const operand = (text: string, re: RegExp, fallback: string) => (re.exec(text)?.[1] ?? fallback).replace(/\.$/, '').toUpperCase();
   // A read whose table is named at run time could be any table — a ledger
   // table too — so it is recorded and keeps "no ledger table is read" from

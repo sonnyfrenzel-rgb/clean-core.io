@@ -82,8 +82,8 @@ export async function runEngineCases(opts) {
     try {
       // The executor collects the contract's answers in the sandbox; the verdicts are given here,
       // by the same runtime's judge, against the cases this process read itself.
-      // The cases — inputs and expectations — are never part of what the contract can import
-      // (QA 592fd4f81e78): the package's own copy (test/engine-cases.json, or the --cases file when it
+      // The cases — inputs and expectations — are never part of what the contract can import:
+      // the package's own copy (test/engine-cases.json, or the --cases file when it
       // lies inside the package) is removed from the run copy and reserved in the bundler.
       const inPackage = path.relative(pkg, casesFile);
       const reserved = ['test/engine-cases.json'];

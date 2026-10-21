@@ -101,7 +101,7 @@ export function collectNamedImports(sources: string[]): string[] {
 
 /**
  * The `{ … }` bodies `/import[^{};]*\{([^}]*)\}/g` would capture, found in one
- * pass: both pointers below only move forward (codex code-runner-03).
+ * pass: both pointers below only move forward.
  */
 function namedImportBodies(src: string): string[] {
   const bodies: string[] = [];
@@ -193,7 +193,7 @@ export function createSandboxResolvePlugin(opts: {
    * Paths inside `testDir` the bundled code may not import — a directory
    * covers everything below it. The engine pass refuses its own files here
    * (`__cc_engine/`: the runtime and the cases with their expectations), so a
-   * contract cannot read what it is judged against (QA 592fd4f81e78).
+   * contract cannot read what it is judged against.
    */
   reserved?: string[];
 }) {
@@ -277,7 +277,7 @@ export function createSandboxResolvePlugin(opts: {
 /**
  * `--no-experimental-sqlite` exists from the Node that has `node:sqlite` (22.5).
  * The module reaches the file system past the permission model's fence — Node
- * documents it, the counter-review of c5085bb reproduced it (CR-09) — and this
+ * documents it, and it is reproducible (CR-09) — and this
  * switch removes the module altogether. Measured on 22.22 under
  * `--experimental-permission`: every form of the import — static, dynamic,
  * computed, `require` — answers ERR_UNKNOWN_BUILTIN_MODULE, while the resolve
@@ -342,7 +342,7 @@ async function loadEsbuild(): Promise<Esbuild | null> {
  * `app.listen` becomes a function that binds nothing. The replacement is plain
  * JavaScript because `.js` files go through it too and esbuild loads them as
  * JavaScript — a TypeScript annotation here broke every `.js` app that started
- * a server (Codex code-runner-05). `\b` keeps `myapp.listen` intact.
+ * a server. `\b` keeps `myapp.listen` intact.
  */
 export function neutralize(content: string): string {
   return content.replace(/\bapp\.listen\b/g, '((..._args) => ({ close: () => {} }))');
@@ -352,8 +352,8 @@ export function neutralize(content: string): string {
  * The child's name filter for the selected case ids: each id taken literally,
  * anchored at the start of a test's name and ending where `parseTapOutput`
  * ends an id (whitespace, `:` or `#`, or the end). Unanchored and stripped of
- * punctuation, `TC_01` also ran `TC_010` and `TC-001` ran nothing (Codex
- * code-runner-04). Node matches the pattern against each test's own name, so
+ * punctuation, `TC_01` also ran `TC_010` and `TC-001` ran nothing. Node
+ * matches the pattern against each test's own name, so
  * the anchor holds inside a `describe` as well.
  */
 export function testNamePattern(ids: string[]): string {
@@ -377,7 +377,7 @@ export interface SandboxRunInput {
    * 3.0.12 — run this as the engine pass (`engineRunInputs`): the contract
    * module is bundled on its own, `suiteCode` is the driver that locks the
    * child down and evaluates that bundle in a SES compartment, and no
-   * `node:test` runner is involved (QA 342adaac5625).
+   * `node:test` runner is involved.
    */
   engine?: { contractModule: string };
   /**
@@ -453,7 +453,7 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     // named in the result (CR-14). See createSandboxResolvePlugin above.
     const stubbedPackages = new Set<string>();
     // The engine pass's own files — the runtime, the cases with their expectations, the driver — are
-    // never part of the contract's bundle (QA 592fd4f81e78).
+    // never part of the contract's bundle.
     // The same for the probe pass's own files: the probes with their expectations, the runtime, the driver.
     const reserved = enginePass
       ? [path.join(testDir, path.dirname(ENGINE_CASES_PATH)), testEntry]
@@ -613,7 +613,7 @@ function scrubRunDir(text: string, testDir: string): string {
 
 /**
  * `text.replace(/[^\s'"`:]*cc-tests-[A-Za-z0-9]+/g, '<sandbox>')`, in one pass:
- * every index below only moves forward (codex code-runner-03).
+ * every index below only moves forward.
  */
 export function scrubRunDirNames(text: string): string {
   const MARK = 'cc-tests-';

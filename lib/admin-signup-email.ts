@@ -25,7 +25,7 @@ import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
  * exists precisely because the two are not the same thing. The mail can still be
  * delayed, quarantined or bounced afterwards, and only the webhook can say which;
  * so the sentence points at the account's row in the admin console, where that
- * verdict lands (QA review of 33471220d6e9, finding 6500f93e60fd).
+ * verdict lands.
  */
 
 export interface AdminSignupEmailInput {
@@ -48,7 +48,7 @@ export interface AdminSignupEmailInput {
 /**
  * The `kind` its delivery record carries in `email_events`. Account erasure
  * finds the records written before they carried the account's uid by this kind
- * and the subject below (codex code-mail-02).
+ * and the subject below.
  */
 export const ADMIN_SIGNUP_MAIL_KIND = 'admin signup notification';
 

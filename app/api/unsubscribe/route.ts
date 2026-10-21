@@ -42,7 +42,7 @@ export const dynamic = 'force-dynamic';
  *
  * Since 30.09.2026 community mail needs an opt-in on the profile
  * (`lib/community-mail.ts`), and an unsubscribe is a withdrawal of that consent
- * (owner decision, QA finding bef96e7f054f). Both writes go in one batch: an
+ * (owner decision). Both writes go in one batch: an
  * opt-out that stored the suppression but left the flag on would show the
  * account a switch that says "on" after it asked to stop, and the reverse would
  * leave the address unsuppressed. The token names an address, not an account,
@@ -96,7 +96,7 @@ function tokenInBody(body: unknown): string {
 /**
  * What `{ t }` can take. A token is a few hundred bytes; the route is open to
  * anyone, and `req.json()` buffered and parsed whatever it was sent before the
- * token was looked at (QA review of a7e0ae36c896). A body over the bound is
+ * token was looked at. A body over the bound is
  * not read further and counts as no body, so the query still decides.
  */
 const BODY_LIMITS = { maxBytes: 8 * 1024, timeoutMs: 5_000 };
@@ -134,8 +134,7 @@ export async function POST(req: NextRequest) {
     // A verified opt-out that could not be stored is a different case, and it used
     // to answer 200 as well: Firestore was briefly unavailable, nothing was
     // suppressed, the provider saw success and never retried, and the person went
-    // on receiving community mail after asking not to (QA review of 33471220d6e9,
-    // finding 0a0ff08e1793). 503 is the one answer that gets the opt-out another
+    // on receiving community mail after asking not to. 503 is the one answer that gets the opt-out another
     // attempt; RFC 8058 providers retry it, and a transient 503 does not carry the
     // reputational weight of answering the unsubscribe itself as broken.
     logger.error('unsubscribe not stored', { route: 'api/unsubscribe', error: errMessage(error) });
@@ -151,7 +150,7 @@ export async function POST(req: NextRequest) {
  * in the query. That request is in the log already and nothing can take it
  * back; the redirect no longer adds a second line with the token in it. It
  * hands the token on in the fragment, which the browser keeps to itself and
- * `/unsubscribe` reads client-side (QA finding 8e25777f1339).
+ * `/unsubscribe` reads client-side.
  */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('t') || '';

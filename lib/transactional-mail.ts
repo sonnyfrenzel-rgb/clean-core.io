@@ -15,8 +15,8 @@ export { htmlToText };
  * twenty lines — the Resend call, the `reply_to`, the plain-text part, the
  * message-id bookkeeping, the console fallback and the 503 that stops a missing
  * key from being reported as a delivery. Three of those copies drifted apart far
- * enough that a QA review had to find the same finding three times (`14edf99a390c`,
- * see `lib/mail-delivery-mode.ts`). The two mails added for invitations share
+ * enough that the same defect turned up in all three (see
+ * `lib/mail-delivery-mode.ts`). The two mails added for invitations share
  * this one instead.
  *
  * What it does **not** do is decide what a failure means. An invitation whose
@@ -50,7 +50,7 @@ const DEFAULT_FROM = USER_MAIL_FROM;
  * What a log may say about a rejected send: the HTTP status and the provider's
  * error category (`validation_error`, `rate_limit_exceeded`, …), never the
  * body. Resend's messages can quote the address they refused, and the
- * recipient is personal data (QA 785474c693d6, after 73f480886489).
+ * recipient is personal data.
  */
 export async function resendFailureSummary(res: Response): Promise<string> {
   const failure = (await res.json().catch(() => ({}))) as { name?: unknown };
@@ -109,7 +109,7 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
   const body = (await res.json().catch(() => ({}))) as { id?: string };
   const messageId = typeof body.id === 'string' ? body.id : null;
   // Label and message id only: the recipient is personal data and the id is
-  // the join key to the delivery record (QA 73f480886489).
+  // the join key to the delivery record.
   console.log(`[Email] Sent ${msg.label}. id=${messageId ?? 'unknown'}`);
   if (messageId) {
     // Best effort: the message is already away, and failing to write the join

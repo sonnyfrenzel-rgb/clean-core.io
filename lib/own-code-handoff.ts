@@ -11,7 +11,7 @@
  *
  * Kept in module memory and nowhere else, on purpose:
  *   - not in the URL, because a query parameter that grants something can be
- *     sent to anybody (QA full review of a12774cd2b7f, the example exemption);
+ *     sent to anybody (as the example exemption once was);
  *   - not in browser storage, which the Privacy Policy lists key by key;
  *   - not on the project, which `firestore.rules` keeps to six fields at create.
  * A client-side navigation keeps the module alive; a reload or a new tab does

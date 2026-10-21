@@ -3,7 +3,7 @@ import { singleFlight } from '@/lib/single-flight';
 /**
  * Which revision of the process the workspace is showing — roadmap 6.9, CR-15.
  *
- * The Gegenreview c5085bb found the workspace silent about its own Stand: the
+ * The workspace used to be silent about its own Stand: the
  * shell rendered a project, somebody else confirmed a state or saved a model
  * from another tab, and nothing on the open screen said so. The reader kept
  * acting on a screen that had stopped being true, and only learned it when a
@@ -26,7 +26,7 @@ import { singleFlight } from '@/lib/single-flight';
  * read per switch, per tab, for as long as the screen is open.
  *
  * So it is bounded exactly the way `/api/health?deep=1` bounds its own probe
- * (`lib/single-flight.ts`, security audit of b88c77b): **one read per window,
+ * (`lib/single-flight.ts`): **one read per window,
  * under any concurrency**. Callers inside the window are answered from the last
  * verdict without a request; callers arriving while a read is open await that
  * same read. The cost ceiling is therefore `1000 / COOLDOWN` reads per second
@@ -157,7 +157,7 @@ export function createStandProbe(
 
 /**
  * The probe, and the one thing a screen tells it: a revision this screen wrote
- * itself (QA review of 247b20c16e38). Without it the reader's own save would
+ * itself. Without it the reader's own save would
  * come back from the next check as "written somewhere else" and stop their
  * second save behind a notice about somebody who does not exist.
  */

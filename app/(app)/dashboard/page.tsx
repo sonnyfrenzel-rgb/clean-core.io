@@ -234,7 +234,7 @@ export default function Dashboard() {
     if (!projectName || isCreating || !profile) return;
 
     // The server's rule, not a third of it: an enterprise account and an
-    // account with its own Gemini key are never charged (QA 9b1af76b65c9).
+    // account with its own Gemini key are never charged.
     if (quotaExhausted(profile)) {
       setQuotaBlocked(true);
       return;
@@ -274,8 +274,7 @@ export default function Dashboard() {
       });
       // 404 is what a repeated delete hears once the first one went through and
       // its answer was lost: the project is gone, which is what was asked for.
-      // The list is a live query, so a project that is still there stays on it
-      // (carried QA finding ac74ebf5a627).
+      // The list is a live query, so a project that is still there stays on it.
       if (!res.ok && res.status !== 404) {
         const { error } = await res.json().catch(() => ({ error: 'Delete failed.' }));
         throw new Error(error || 'Delete failed.');
@@ -900,7 +899,7 @@ function ProjectDeliverables({
 
   // A deliverable built for a source that is no longer the one under analysis
   // says so here too, not only on the phase strip — in the list, in the viewer
-  // title and in the downloaded file's name (QA 5c6129878c65).
+  // title and in the downloaded file's name.
   const stale = staleness(project);
   const STALE_BY_ID: Record<string, boolean> = {
     analysis: stale.sourceChanged,

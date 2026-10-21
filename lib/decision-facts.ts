@@ -30,8 +30,7 @@ import { ECONOMICS_COLLECTION, ECONOMICS_DOC, readEconomicsRecord, type Economic
  * `normaliseProjectDecision()` can only check its shape and its fingerprint —
  * the bindings, conditions and reversibility in it are whatever the sender
  * wrote. A confirmation is only a confirmation of *this product's* decision
- * when the record equals what the server derives here (QA review of
- * 4b4586aff273).
+ * when the record equals what the server derives here.
  */
 
 /** The bound `/api/projects/{id}/findings` and `/contract` set, for the same reason. */
@@ -193,7 +192,7 @@ export type ProjectDecisionDerivation =
  * run, the newest need revision and the baseline are read in the same
  * transaction as the project — a need revision written after these reads and
  * before the confirmation commits then aborts the confirmation instead of
- * leaving it bound to the revision before (QA review of 8adfa0e6db63).
+ * leaving it bound to the revision before.
  */
 export async function deriveProjectDecision(
   db: AdminDb,

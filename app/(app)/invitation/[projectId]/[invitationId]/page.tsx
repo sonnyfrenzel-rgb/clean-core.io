@@ -43,13 +43,11 @@ export default function InvitationPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // Bound to the account it was accepted with, like the preview below: after a
-  // sign-out or an account switch the project name is no longer shown (QA
-  // f7c64ceb4e3f).
+  // sign-out or an account switch the project name is no longer shown.
   const [acceptedState, setAccepted] = useState<{ readFor: string; projectName: string } | null>(null);
   // The preview remembers whom it was read for: it is shown only to that
   // account, for that invitation. It used to stay on screen after a sign-out
-  // or a switch to another account (QA slice review of 81810c8026e0,
-  // 9e437b2930c4).
+  // or a switch to another account.
   const [preview, setPreview] = useState<{ readFor: string; invitedBy: string; expiresAt: string } | null>(null);
   const previewKey = user ? `${user.uid}|${projectId}|${invitationId}` : null;
   const shownPreview = preview && preview.readFor === previewKey ? preview : null;

@@ -1,6 +1,6 @@
 /**
  * Which rule of the Clean Core Score a run is scored by (owner decision
- * 11.10.2026, QA full review of v3.0.7, 3a31270a65a0).
+ * 11.10.2026).
  *
  * In Private Edition a write to the program's own Z/Y tables is on-stack
  * developer extensibility — the route's own rationale says it is no clean core

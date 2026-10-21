@@ -8,8 +8,7 @@ import { getAdminDb, QuotaError } from '@/lib/firebase-admin';
 // It had a third branch — the string literal `'rate-limit-dev-pepper'` — and a
 // literal in the source is not a pepper: anyone reading this public repository
 // could recompute every document ID and turn the collection back into
-// `gemini:<uid>:<ip>`, which is the one thing F-10 was for (security audit of
-// b88c77b, SEC-b88c77b-132, read at the line on 22.09.2026). It is gone. A
+// `gemini:<uid>:<ip>`, which is the one thing F-10 was for. It is gone. A
 // deployment that sets neither variable now fails loudly on the first limited
 // request instead of pseudonymising with a public value, which is the same
 // no-fallback rule `lib/audit-signing-key.ts` already follows.

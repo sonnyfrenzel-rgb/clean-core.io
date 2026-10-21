@@ -152,8 +152,7 @@ export function storedSuiteSource(testSuite: unknown): string {
  * The suite is bound by the source the runner executes — `code`, or `spec`
  * when there is no `code` — not by the receipt's `code`-only digest: a parent
  * holding a spec-only suite otherwise names no suite at all, and a newer spec
- * written after the draft was cut would be overwritten on adoption (codex
- * code-trust-06). For a suite with `code` the two digests are the same, so
+ * written after the draft was cut would be overwritten on adoption. For a suite with `code` the two digests are the same, so
  * drafts already on record keep their parent; a draft cut from a spec-only
  * suite before this change named none and is refused as moved.
  */

@@ -1037,7 +1037,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     }
     if (parentsOfParts.includes(u)) {
       const parts = plan.units.filter((p) => p.part?.parent === u.id).sort((a, b) => a.part!.index - b.part!.index);
-      // STATICS of the original keep their value from one call to the next (QA review of a20d2cb7bd39, 94e86fe4c2b1):
+      // STATICS of the original keep their value from one call to the next:
       // they live in a STATICS structure of the same type, started once; the others in ls_local, started every call.
       const statics = staticLocalsOf(facts.statements, u);
       const handedAll = new Set(parts.flatMap((p) => handedOf.get(p.id) ?? []));

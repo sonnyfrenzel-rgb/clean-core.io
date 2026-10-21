@@ -108,8 +108,7 @@ const NAMED_ENTITY: Record<string, string> = { quot: '"', apos: "'", lt: '<', gt
  * the export.
  *
  * One pass, the way an XML parser reads it: each reference is decoded exactly
- * once, so `&#38;amp;` is the text `&amp;` and not `&` (QA review of
- * 072f79996d01, cc53c3550d3f).
+ * once, so `&#38;amp;` is the text `&amp;` and not `&`.
  */
 function unescape(value: string): string {
   return value.replace(/&(quot|apos|lt|gt|amp|#x[0-9a-fA-F]{1,6}|#[0-9]{1,7});/g, (_, ref: string) => {
@@ -288,7 +287,7 @@ export function parseBpmn(xml: string): ParsedBpmn {
     // The expression the flow actually carries. The editor writes a changed
     // condition here and nowhere else, and an imported file may change it while
     // keeping ids, names and the restored trace — so it is read on its own and
-    // not taken from the trace (codex code-engine-01).
+    // not taken from the trace.
     if (name === 'bpmn:conditionExpression') {
       const host = stack[stack.length - 1];
       const flow = host?.id ? flowById.get(host.id) : undefined;

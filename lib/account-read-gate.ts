@@ -10,7 +10,7 @@ import { getAdminDb } from '@/lib/firebase-admin';
  * which the rules do not see. Since roadmap 3.0.12 the rules refuse a
  * suspended, deleted or disabled account at once, with the token it still
  * holds; a route that checked only membership kept answering that account
- * for up to an hour (QA full review of a12774cd2b7f).
+ * for up to an hour.
  *
  * Deliberately the rule and not `assertAccountActive`: a missing profile, a
  * pending account or an old Terms acceptance does not refuse a *read* in the

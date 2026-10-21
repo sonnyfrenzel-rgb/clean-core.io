@@ -45,8 +45,8 @@ export async function generateStaticParams() {
 function facts(name: string) {
   const entry = resolveApi(name);
   const noPath = hasNoReleasedApiPath(name);
-  // The successor and who names it: SAP's release file, or our curated layer
-  // (codex code-public-03). Every sentence below that names SAP as the source
+  // The successor and who names it: SAP's release file, or our curated layer.
+  // Every sentence below that names SAP as the source
   // reads `curated` first.
   const primary = primarySuccessor(name);
   const successor = primary?.name;
@@ -442,7 +442,7 @@ export default async function CatalogObjectPage({
               <p className="text-xs text-cc-ink-muted mt-3">Repository state: {entry.releaseState}</p>
             )}
             <p className="text-xs text-cc-ink-muted mt-1" data-successor-source={curated ? 'curated' : 'sap'}>
-              {/* The curated layer's release and review date beside its hit (QA review of 73b8cad63d3e, bb6acd2be22d). */}
+              {/* The curated layer's release and review date beside its hit. */}
               Source: {curated ? `Clean-Core.io curated (field-level), compiled for ${SAP_API_CATALOG_VERSION}, reviewed ${SAP_API_CATALOG_REVIEWED}; not SAP's Cloudification Repository` : 'SAP official (Cloudification Repository)'}
             </p>
             {entry?.conceptNote && (

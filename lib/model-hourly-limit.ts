@@ -1,5 +1,5 @@
 /**
- * The hourly model-call limit of an account (SEC-2026-827, roadmap 3.0.13).
+ * The hourly model-call limit of an account (roadmap 3.0.13).
  *
  * Every account has one, administrators included. A normal account may make
  * `MODEL_CALLS_PER_HOUR` model calls an hour through `/api/gemini` — the

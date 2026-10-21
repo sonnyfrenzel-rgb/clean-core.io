@@ -156,7 +156,7 @@ export interface NetworkVerdict {
  */
 export function evaluateNetworkProbe(body: unknown, expectedMode: 'mock' | 'live'): NetworkVerdict {
   // The answer names the service that gave it (`mode` in runner/server.ts); an
-  // answer from the other runner says nothing about this one (codex code-runner-06).
+  // answer from the other runner says nothing about this one.
   const mode = body && typeof body === 'object' ? (body as { mode?: unknown }).mode : undefined;
   if (mode !== expectedMode) {
     return { held: false, reason: `Asked the ${expectedMode} runner, and the answer came from ${typeof mode === 'string' ? `a ${mode.slice(0, 20)} runner` : 'a runner that did not name its mode'}.` };

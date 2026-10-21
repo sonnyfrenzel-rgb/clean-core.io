@@ -91,7 +91,7 @@ export function useFollowHash(): void {
       // Where the target stood in the document, and where the page was scrolled
       // to, right after the last bring-into-view. A page that has moved while
       // the target has not was scrolled by the reader — by the scrollbar too,
-      // which sends no wheel, touch or key (QA d29f4fcf9481) — and ends it.
+      // which sends no wheel, touch or key — and ends it.
       let lastDocTop = 0;
       let lastScrollY = 0;
       // The page moves by itself too, and that is not the reader (roadmap, "a
@@ -123,7 +123,7 @@ export function useFollowHash(): void {
           // The page moved by more, or less, than the target did: only the reader
           // does that. Growth above moves both by the same amount (scroll
           // anchoring) or only the target; a drag while the target is still
-          // moving moves both by different amounts (QA 2c33889165f6) — unless the
+          // moving moves both by different amounts — unless the
           // difference is no more than the place and the page changed in height,
           // which is the browser's own move (see above).
           const scrolled = window.scrollY - lastScrollY;

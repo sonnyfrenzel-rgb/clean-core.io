@@ -1,6 +1,6 @@
 /**
  * How large a Firestore document is, and whether a write would push a project
- * past the 1 MiB cap — Codex finding architecture-02.
+ * past the 1 MiB cap.
  *
  * Every artefact a project carries has a bound of its own (`firestore.rules`
  * lets a string field reach 1,000,000 characters, the contract route stores a
