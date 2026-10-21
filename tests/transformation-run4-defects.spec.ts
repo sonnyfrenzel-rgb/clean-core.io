@@ -47,18 +47,20 @@ test.describe('1 — a customer table the original writes and types data by', ()
   const u06 = p.plan.units.find((u) => u.routine === 'LOG_APPROVAL')!;
 
   test('the class declares its row under the table name, from the fields the original uses', () => {
-    const appr = logic.slice(logic.indexOf('TYPES BEGIN OF zmm_po_appr.'), logic.indexOf('TYPES END OF zmm_po_appr.'));
+    // 3.0.18 item 13: the types the access interface takes are declared in it; the logic class aliases them.
+    expect(logic).toMatch(/TYPES zmm_po_appr TYPE zif_\w+_access=>zmm_po_appr\./);
+    const appr = intf.slice(intf.indexOf('TYPES BEGIN OF zmm_po_appr.'), intf.indexOf('TYPES END OF zmm_po_appr.'));
     for (const f of ['mandt TYPE c LENGTH 3', 'approver TYPE xubname', 'erdat TYPE d', 'erzet TYPE t']) expect(appr).toContain(`TYPES ${f}.`);
     for (const f of ['banfn', 'bnfpo', 'amount', 'message']) expect(appr).toMatch(new RegExp(`TYPES ${f} TYPE `));
     // INSERT zmm_po_attach FROM @( VALUE #( mandt = … objkey = … length = … erdat = … ) ): the fields of the VALUE.
-    const attach = logic.slice(logic.indexOf('TYPES BEGIN OF zmm_po_attach.'), logic.indexOf('TYPES END OF zmm_po_attach.'));
+    const attach = intf.slice(intf.indexOf('TYPES BEGIN OF zmm_po_attach.'), intf.indexOf('TYPES END OF zmm_po_attach.'));
     for (const f of ['mandt', 'objkey', 'length', 'erdat']) expect(attach).toMatch(new RegExp(`TYPES ${f} TYPE `));
     expect(attach).toContain('TYPES length TYPE i.');
   });
 
   test('the access layer writes it: write_zmm_po_appr( is_row | it_rows ), the row typed by the class', () => {
     expect(intf).toMatch(/"! Writes ZMM_PO_APPR \(a customer table of the original system, not in this package\) where the original does, L353/);
-    expect(intf).toMatch(/METHODS write_zmm_po_appr\n\s+IMPORTING\n\s+is_row TYPE zcl_\w+_logic=>zmm_po_appr OPTIONAL\n\s+it_rows TYPE STANDARD TABLE OPTIONAL/);
+    expect(intf).toMatch(/METHODS write_zmm_po_appr\n\s+IMPORTING\n\s+is_row TYPE zif_\w+_access=>zmm_po_appr OPTIONAL\n\s+it_rows TYPE STANDARD TABLE OPTIONAL/);
     expect(intf).toContain('METHODS write_zmm_po_attach');
     // The CAP shell keeps writing customer tables as entities of its own: no write method there.
     expect(accessPointsOf(readEngineFacts(poDemo())).points.some((x) => x.customer && x.kind === 'write')).toBe(false);
@@ -123,7 +125,8 @@ FORM write_log.
 ENDFORM.
 `;
     const q = prep(source, 'rap');
-    const cls = q.scaffold.files.find((f) => f.path.endsWith('_logic.clas.abap'))!.content;
+    // 3.0.18 item 13: the types the access interface takes are declared in it; the logic class aliases them.
+    const cls = q.scaffold.files.find((f) => f.path.endsWith('_access.intf.abap'))!.content;
     const struct = cls.slice(cls.indexOf('TYPES BEGIN OF zsd_credit_log.'), cls.indexOf('TYPES END OF zsd_credit_log.'));
     expect(struct).toContain('TYPES kunnr TYPE c LENGTH 10.');
     expect(struct).toContain('TYPES cnt TYPE i.');

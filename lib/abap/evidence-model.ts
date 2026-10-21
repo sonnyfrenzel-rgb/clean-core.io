@@ -264,30 +264,34 @@ const NAME = String.raw`[A-Za-z_][\w/]*(?:-[\w/]+)*`;
  * `CALL FUNCTION <name>` calls in this source, upper-cased — the name itself,
  * the last component of `a-b`, and one step back through a plain copy
  * (`lv_fm = c_fm.` or `MOVE c_fm TO lv_fm.` before `CALL FUNCTION lv_fm`).
+ * The copy counts only where it stands before a call of its target: a copy
+ * after the last call reaches no call (QA 7d96250ccacc).
  */
 function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<string> {
-  const names = new Set<string>();
-  const add = (name: string) => {
+  // Each name with the position of its latest use — a call, or a copy into a name used later.
+  const lastUse = new Map<string, number>();
+  const add = (name: string, at: number) => {
     const upper = name.toUpperCase();
-    names.add(upper);
     const component = upper.split('-').pop();
-    if (component) names.add(component);
+    for (const key of component ? [upper, component] : [upper]) {
+      lastUse.set(key, Math.max(lastUse.get(key) ?? -1, at));
+    }
   };
   const masked = statements.map((st) => maskLiterals(st.text.trim()));
   const call = new RegExp(`^CALL\\s+FUNCTION\\s+(${NAME})`, 'i');
-  for (const text of masked) {
+  masked.forEach((text, i) => {
     const m = call.exec(text);
-    if (m) add(m[1]);
-  }
+    if (m) add(m[1], i);
+  });
   const assign = new RegExp(`^(?:DATA\\(\\s*)?(${NAME})\\s*\\)?\\s*=\\s*(${NAME})\\s*$`, 'i');
   const move = new RegExp(`^MOVE\\s+(${NAME})\\s+TO\\s+(${NAME})\\s*$`, 'i');
-  for (const text of masked) {
+  masked.forEach((text, i) => {
     const a = assign.exec(text);
     const m = a ? null : move.exec(text);
     const [target, source] = a ? [a[1], a[2]] : m ? [m[2], m[1]] : [null, null];
-    if (target && source && names.has(target.toUpperCase())) add(source);
-  }
-  return names;
+    if (target && source && (lastUse.get(target.toUpperCase()) ?? -1) > i) add(source, i);
+  });
+  return new Set(lastUse.keys());
 }
 
 /** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */
@@ -1298,8 +1302,8 @@ export function buildAbapEvidence(
     // A local call of a function module SAP's files say is no API for customer
     // code (`noAPI`, or `notToBeReleased`) — roadmap 3.0.6. The call used to
     // be "not assessed" while the catalog already said what it was. A
-    // `classicAPI` module is answered in the coverage report and raises no
-    // finding: classic ABAP may call it. The finding cites SAP's state, never
+    // `classicAPI` module is answered in the coverage report and, before engine
+    // 3.0.18, raises no finding: classic ABAP may call it. The finding cites SAP's state, never
     // the A–D letter, because findings go into the signed run.
     {
       const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
@@ -1351,7 +1355,9 @@ export function buildAbapEvidence(
             lineStart: stmt.line,
             snippet: text,
             technicalDetail: answer.answer,
-            cleanCoreImpact: 'Classic ABAP in SAP Cloud ERP Private may call a classic API (clean core level B, SAP Note 3578329). ABAP Cloud code may not: it calls only APIs SAP releases for ABAP Cloud, so on the ABAP Cloud route this call has no counterpart as written.',
+            // No A–D letter here: the finding goes into the signed run, and the
+            // level stays out of it (tests/catalog-answers-calls.spec.ts).
+            cleanCoreImpact: 'Classic ABAP in SAP Cloud ERP Private may call a classic API (SAP Note 3578329 accepts a documented classic API for classic ABAP). ABAP Cloud code may not: it calls only APIs SAP releases for ABAP Cloud, so on the ABAP Cloud route this call has no counterpart as written.',
             recommendation: 'On the ABAP Cloud route, replace the call with the released API of the same business object (a released RAP business object interface, called through EML, or a released class), or keep it in classic ABAP behind a wrapper the ABAP Cloud code calls. Check the SAP catalog page of the module for a named successor.',
             targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
             source: 'catalog-match',

@@ -72,6 +72,8 @@ test.describe('the design describes the RAP package that is delivered (3.0.18 it
       securityHardening: [
         { category: 'Authorization', requirement: 'Restrict rows by a CDS access control (DCL) with pfcg_auth', packageOrConfig: 'define role' },
         { category: 'Authorization', requirement: 'Check the company code', packageOrConfig: 'AUTHORITY-CHECK OBJECT F_BKPF_BUK' },
+        // Generic access control in the query provider is what a custom entity needs: kept (QA 5d8e6e355870).
+        { category: 'Access control', requirement: 'Enforce access control in the query provider', packageOrConfig: 'AUTHORITY-CHECK OBJECT F_BKPF_BUK ID ACTVT' },
       ],
       roadmap: [],
     };
@@ -82,7 +84,7 @@ test.describe('the design describes the RAP package that is delivered (3.0.18 it
     expect(post.beyond.sort()).toEqual(['src/zi_invoice_r.bdef.asbdef', 'src/zi_invoice_r.dcls.asdcls', 'src/zinvoice_rec.tabl.xml']);
     for (const b of post.beyond) expect(b).not.toMatch(new RegExp(`${n.query}|${n.entity}|${n.logic}`));
     expect(post.dclRefused).toEqual(['Restrict rows by a CDS access control (DCL) with pfcg_auth']);
-    expect(post.design.securityHardening.map((r) => r.packageOrConfig)).toEqual(['AUTHORITY-CHECK OBJECT F_BKPF_BUK']);
+    expect(post.design.securityHardening.map((r) => r.packageOrConfig)).toEqual(['AUTHORITY-CHECK OBJECT F_BKPF_BUK', 'AUTHORITY-CHECK OBJECT F_BKPF_BUK ID ACTVT']);
 
     const md = formatDesignToMarkdown(JSON.stringify(design), { code: source });
     expect(md).toContain(CUSTOM_ENTITY_AUTH_NOTE);

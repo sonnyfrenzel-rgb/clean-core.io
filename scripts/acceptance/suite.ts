@@ -16,7 +16,12 @@
  * --sources dir (sources not in the repository; default the owner's Desktop) · --out dir
  * (default .acceptance/runs, gitignored) · --env-file f (keys; default .env.local) · --seal (write the
  * report sealed and remove the plaintext) · --keep-packages (keep the unpacked Node packages under
- * <run>/packages, e.g. to push one to a Cloud Foundry trial; not with --seal) · --list.
+ * <run>/packages, e.g. to push one to a Cloud Foundry trial; not with --seal) · --list ·
+ * --trial-rap (with --keep-packages: every kept RAP package pushed to its trial repository, pulled, activated and run
+ * in ABAP Unit on the SAP trial through the ADT runner — `trial-rap.ts`; its numbers in the report) · --trial-from
+ * a,b (the trial stage alone, on the packages of earlier runs: a run folder or a package folder each) ·
+ * --trial-runner dir (default CCIO_ADT_RUNNER or ~/ccio-trial/adt-runner) · --trial-owner name (the GitHub owner of
+ * the trial repositories).
  *
  * WHICH PIPELINE, AND WHY THIS PATH. The suite runs the very modules the
  * Transformation page runs, in the page's order and with the page's arguments:
@@ -89,6 +94,7 @@ import { modelDeadline, MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE } from '../..
 import { isTransientModelError } from '../../lib/model-retry';
 import type { GenerationEvent, GenerationStatus } from '../../lib/transformation/types';
 import { demoCaseVerdicts, scenarioCases, type DemoCaseRuns, type PackageDemo, type ScenarioVerdict } from './scenario-cases';
+import { adtRunner, keptPackageOf, keptRapPackages, trialMarkdown, trialRapPackage, trialTotals, type TrialRecord, type TrialRunner } from './trial-rap';
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const HERE = __dirname;
@@ -248,6 +254,8 @@ export interface SuiteReport {
   previous: string | null;
   runs: RunRecord[];
   limits: string[];
+  /** The SAP trial stage (`--trial-rap`, 3.0.18 item 13); absent when it did not run. */
+  trial?: TrialRecord[];
 }
 
 /* ------------------------------------------------------------- arguments */
@@ -267,6 +275,10 @@ interface Args {
   seal: boolean;
   keepPackages: boolean;
   list: boolean;
+  trialRap: boolean;
+  trialFrom: string[] | null;
+  trialRunner: string;
+  trialOwner: string;
 }
 
 export function parseArgs(argv: string[], env: Record<string, string | undefined> = process.env): Args {
@@ -285,6 +297,10 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
     seal: false,
     keepPackages: false,
     list: false,
+    trialRap: false,
+    trialFrom: null,
+    trialRunner: env.CCIO_ADT_RUNNER || path.join(env.USERPROFILE ?? env.HOME ?? '.', 'ccio-trial', 'adt-runner'),
+    trialOwner: env.CCIO_TRIAL_OWNER || 'sonnyfrenzel-rgb',
   };
   const num = (v: string | undefined, name: string) => {
     const n = Number(v);
@@ -314,8 +330,13 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
     else if (k === '--seal') a.seal = true;
     else if (k === '--keep-packages') a.keepPackages = true;
     else if (k === '--list') a.list = true;
+    else if (k === '--trial-rap') a.trialRap = true;
+    else if (k === '--trial-from') a.trialFrom = v().split(',').map((s) => path.resolve(s.trim())).filter(Boolean);
+    else if (k === '--trial-runner') a.trialRunner = path.resolve(v());
+    else if (k === '--trial-owner') a.trialOwner = v();
     else throw new Error(`unknown argument ${k}`);
   }
+  if (a.trialRap && !a.keepPackages) throw new Error('--trial-rap imports the kept RAP packages: it needs --keep-packages');
   if (a.runs === 0) a.runs = a.mode === 'real' ? 3 : 1;
   if (a.priceIn === null && env.ACCEPTANCE_PRICE_IN) a.priceIn = num(env.ACCEPTANCE_PRICE_IN, 'ACCEPTANCE_PRICE_IN');
   if (a.priceOut === null && env.ACCEPTANCE_PRICE_OUT) a.priceOut = num(env.ACCEPTANCE_PRICE_OUT, 'ACCEPTANCE_PRICE_OUT');
@@ -1102,6 +1123,7 @@ export function toMarkdown(r: SuiteReport): string {
   L.push('');
   for (const l of r.limits) L.push(`- ${l}`);
   L.push('');
+  if (r.trial) L.push(...trialMarkdown(r.trial));
   return L.join('\n');
 }
 
@@ -1156,6 +1178,7 @@ export async function main(argv: string[]): Promise<number> {
     for (const p of selected) console.log(`${p.id.padEnd(28)} ${p.tracks.join('+').padEnd(9)} ${p.holdout ? 'holdout ' : ''}${p.source.repo ?? `${p.source.file}${p.source.entry ? `!${p.source.entry}` : ''}`}`);
     return 0;
   }
+  if (args.trialFrom) return trialOnly(args);
   const env = { ...loadEnvFile(path.join(ROOT, '.env.local')), ...(args.envFile ? loadEnvFile(args.envFile) : {}), ...process.env } as Record<string, string | undefined>;
   const key = env.ACCEPTANCE_SEAL_KEY || env.QA_REVIEW_KEY || null;
   const apiKey = env.GEMINI_API_KEY || null;
@@ -1229,6 +1252,12 @@ export async function main(argv: string[]): Promise<number> {
     limits: LIMITS,
   };
 
+  if (args.trialRap) {
+    const label = `acceptance package (${commit.slice(0, 8)}, suite run ${startedAt.toISOString().slice(0, 10)})`;
+    report.trial = runTrialStage(keptRapPackages(workDir), trialRunnerOf(args, path.join(runDir, 'trial-push')), label);
+    const tt = trialTotals(report.trial);
+    console.log(`trial: ${tt.ran}/${tt.packages} package(s) ran · ${tt.activated} activated, ${tt.activationErrors} activation error(s) · engine ABAP Unit ${tt.engine.green} green, ${tt.engine.red} red, ${tt.engine.skipped} skipped · model proposal ${tt.model.red} red`);
+  }
   // The unpacked packages were only the harness's input, unless asked to keep them.
   if (!args.keepPackages) fs.rmSync(workDir, { recursive: true, force: true });
   const { writeReportFiles } = (await import(pathToFileURL(path.join(HERE, 'lib', 'write-report.mjs')).href)) as { writeReportFiles: (dir: string, files: Record<string, string>) => string[] };
@@ -1249,7 +1278,70 @@ export async function main(argv: string[]): Promise<number> {
   }
   const t = report.totals;
   console.log(`${t.gatePassed}/${t.rows} rows pass the gate · ${t.functionsWritten}/${t.functionsTotal} functions written · scenarios ${t.scenariosRan ?? 0} ran, ${t.scenariosMatched} passed, ${t.scenariosFailed ?? 0} failed of ${t.scenariosTotal} · ${t.calls} calls · ${fmtUsd(t.usd)}${meter.capReached ? ' · CAP REACHED' : ''}`);
-  return meter.capReached ? 3 : 0;
+  return suiteExitCode(meter.capReached, report.trial);
+}
+
+/**
+ * The suite's exit status: 3 when the cost cap stopped it, 4 when a package failed on the SAP trial (the status of
+ * `--trial-from`), 0 otherwise. The report is written before either (QA review of 62eae6a082bb).
+ */
+export function suiteExitCode(capReached: boolean, trial: readonly TrialRecord[] | undefined): number {
+  if (capReached) return 3;
+  if (trial?.some((r) => r.state === 'failed')) return 4;
+  return 0;
+}
+
+/* ------------------------------------------------------------- the trial stage */
+
+/** The ADT runner of `--trial-runner`, pushing from work folders under `workRoot`. */
+export function trialRunnerOf(args: Pick<Args, 'trialRunner' | 'trialOwner'>, workRoot: string): TrialRunner {
+  if (!fs.existsSync(path.join(args.trialRunner, 'adt.mjs'))) throw new Error(`no ADT runner at ${args.trialRunner} (--trial-runner or CCIO_ADT_RUNNER)`);
+  return adtRunner({ runnerDir: args.trialRunner, owner: args.trialOwner, workRoot, email: git('config', 'user.email') || null });
+}
+
+/** Each package on the trial, one after the other (they share the trial user's inactive-object list). */
+export function runTrialStage(packages: ReadonlyArray<{ dir: string; program: string; run: number }>, runner: TrialRunner, label: string): TrialRecord[] {
+  const out: TrialRecord[] = [];
+  for (const p of packages) {
+    const r = trialRapPackage(p.dir, p.program, p.run, runner, { label });
+    out.push(r);
+    console.log(`  trial ${p.program}#${p.run}: ${r.state}${r.activation ? ` · ${r.activation.activated} activated, ${r.activation.errors} error(s)` : ''} · engine ${r.engineUnit.green}/${r.engineUnit.red}/${r.engineUnit.skipped} · model ${r.modelUnit.green}/${r.modelUnit.red}/${r.modelUnit.skipped}${r.reason ? ` — ${r.reason}` : ''}`);
+  }
+  return out;
+}
+
+/** The packages `--trial-from` names: a run folder (its packages/), a packages folder, or one package folder. */
+export function trialPackagesFrom(paths: readonly string[]): Array<{ dir: string; program: string; run: number }> {
+  const out: Array<{ dir: string; program: string; run: number }> = [];
+  for (const p of paths) {
+    if (fs.existsSync(path.join(p, '.abapgit.xml'))) {
+      const named = keptPackageOf(path.basename(p));
+      if (!named) throw new Error(`${p}: a package folder is named <program>-rap-<run>`);
+      out.push({ dir: p, ...named });
+    } else if (fs.existsSync(path.join(p, 'packages'))) out.push(...keptRapPackages(path.join(p, 'packages')));
+    else out.push(...keptRapPackages(p));
+  }
+  return out;
+}
+
+/** `--trial-from`: the trial stage alone, its report in a run folder of its own. */
+async function trialOnly(args: Args): Promise<number> {
+  const packages = trialPackagesFrom(args.trialFrom ?? []);
+  if (packages.length === 0) throw new Error('--trial-from names no kept RAP package (<program>-rap-<run>)');
+  const startedAt = new Date();
+  const commit = git('rev-parse', 'HEAD') || 'unknown';
+  const runDir = path.join(args.out, `${startedAt.toISOString().replace(/[:.]/g, '-')}-${commit.slice(0, 8)}-trial`);
+  fs.mkdirSync(runDir, { recursive: true });
+  console.log(`acceptance suite · trial stage · ${packages.length} package(s) · ${commit.slice(0, 8)}`);
+  const trial = runTrialStage(packages, trialRunnerOf(args, path.join(runDir, 'trial-push')), `acceptance package (trial stage, ${startedAt.toISOString().slice(0, 10)})`);
+  const { writeReportFiles } = (await import(pathToFileURL(path.join(HERE, 'lib', 'write-report.mjs')).href)) as { writeReportFiles: (dir: string, files: Record<string, string>) => string[] };
+  const record = { format: 'clean-core.acceptance-trial/1', commit, startedAt: startedAt.toISOString(), from: packages.map((p) => p.dir), totals: trialTotals(trial), trial };
+  writeReportFiles(runDir, {
+    'trial-report.json': `${JSON.stringify(record, null, 2)}\n`,
+    'trial-report.md': [`# Acceptance suite — trial stage, ${commit.slice(0, 8)}`, '', `${startedAt.toISOString()} · packages from ${packages.length} folder(s)`, '', ...trialMarkdown(trial)].join('\n'),
+  });
+  console.log(`report: ${path.relative(ROOT, path.join(runDir, 'trial-report.md'))}`);
+  return suiteExitCode(false, trial);
 }
 
 if (require.main === module) {

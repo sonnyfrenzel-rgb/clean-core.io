@@ -3,6 +3,7 @@
 import React from 'react';
 import { ArrowRight, ClipboardList } from 'lucide-react';
 import CcLinkButton from '@/components/cc/LinkButton';
+import CcButton from '@/components/cc/Button';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import type { SpecSummary } from '@/lib/requirements-spec';
@@ -28,6 +29,7 @@ export default function RequirementsEntryCard({
   reader = false,
   demo = false,
   blocked = null,
+  waitFor = null,
 }: {
   href: string;
   state: SpecCardState;
@@ -35,6 +37,11 @@ export default function RequirementsEntryCard({
   demo?: boolean;
   /** Why the workspace has nothing to read yet (no signed run, a changed source). */
   blocked?: string | null;
+  /**
+   * Why the workspace waits a moment (owner report 21.10.2026): while the design is being written on this page,
+   * leaving for the requirements workspace would end that run, so the button is disabled and says why.
+   */
+  waitFor?: string | null;
 }) {
   const s = state.kind === 'not-started' ? null : state.summary;
   const total = s ? s.functional + s.nonFunctional : 0;
@@ -78,9 +85,18 @@ export default function RequirementsEntryCard({
           {blocked && state.kind === 'not-started' ? (
             <p className="m-0 max-w-xs text-[12px] font-semibold text-cc-ink-muted min-[900px]:text-right">{blocked}</p>
           ) : null}
-          <CcLinkButton href={href} variant="primary" density="cozy" icon={<ArrowRight size={16} aria-hidden={true} />} data-spec-open="">
-            {reader || demo || state.kind === 'not-started' ? 'Open the requirements workspace' : 'Continue in the requirements workspace'}
-          </CcLinkButton>
+          {waitFor ? (
+            <>
+              <CcButton variant="primary" density="cozy" icon={<ArrowRight size={16} aria-hidden={true} />} disabled aria-describedby="spec-open-wait" data-spec-open="" data-spec-open-wait="">
+                {reader || demo || state.kind === 'not-started' ? 'Open the requirements workspace' : 'Continue in the requirements workspace'}
+              </CcButton>
+              <p id="spec-open-wait" className="m-0 max-w-xs text-[12px] font-semibold text-cc-ink-muted min-[900px]:text-right">{waitFor}</p>
+            </>
+          ) : (
+            <CcLinkButton href={href} variant="primary" density="cozy" icon={<ArrowRight size={16} aria-hidden={true} />} data-spec-open="">
+              {reader || demo || state.kind === 'not-started' ? 'Open the requirements workspace' : 'Continue in the requirements workspace'}
+            </CcLinkButton>
+          )}
           {reader ? <span className="text-[12px] font-semibold text-cc-ink-muted">Read-only for invited readers.</span> : null}
           {demo ? <span className="text-[12px] font-semibold text-cc-ink-muted">Demo: read-only, nothing is saved.</span> : null}
         </div>

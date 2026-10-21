@@ -47,6 +47,7 @@
  */
 
 import { splitSentences } from './abap/narrative-anchors';
+import { BTP } from './sap-naming';
 import type { DecisionLine } from './first-look';
 import { searchWorkspace, type SearchResult, type SearchResultKind } from './workspace-search';
 
@@ -392,15 +393,25 @@ const DECLINE =
   /\b(evidence|facts?|information)\b[^.]*\b(does not|doesn't|do not|don't|cannot|can't|no)\b[^.]*\b(answer|say|show|state|contain|cover|mention|tell|indicate|information)/i;
 
 /**
+ * Where one clause of a sentence ends and the next begins: `;`, `:`, `, and`, a plain `and` that opens a clause with a
+ * subject of its own (`… and it deletes …`, QA review of 62eae6a082bb), and the contrasting conjunctions. A plain
+ * `and` between two verbs or objects (`whether it reads and writes the table`) stays inside the refusal.
+ */
+const CLAUSE_BREAK =
+  /\s*(?:[;:]|,\s*and\b|\s\band\s+(?=(?:it|its|this|that|these|those|they|there|he|she|the|a|an|every|all)\s)|,?\s*\b(?:but|however|yet|whereas|although|though|while)\b)\s*/i;
+
+/**
  * Upper-case words of this length or more that are prose, not a name out of
  * the code — the reader's and the prompt's own vocabulary.
  */
 const PROSE_ACRONYMS = new Set([
-  'ABAP', 'SAP', 'API', 'APIS', 'BAPI', 'BAPIS', 'RFC', 'ALV', 'CDS', 'RAP', 'CAP', 'BTP', 'ERP', 'CSV', 'PDF',
+  'ABAP', 'SAP', 'API', 'APIS', 'BAPI', 'BAPIS', 'RFC', 'ALV', 'CDS', 'RAP', 'CAP', 'ERP', 'CSV', 'PDF',
   'XML', 'JSON', 'HTTP', 'HTTPS', 'URL', 'SQL', 'DDIC', 'IDOC', 'BADI', 'BADIS', 'OData', 'ODATA', 'ATC', 'FORM',
   'PERFORM', 'SELECT', 'UPDATE', 'INSERT', 'MODIFY', 'DELETE', 'LOOP', 'CALL', 'FUNCTION', 'METHOD', 'CLASS',
   'DATA', 'TYPE', 'MESSAGE', 'REPORT', 'ENDIF', 'ELSE', 'CASE', 'WHEN', 'TABLE', 'TABLES', 'SINGLE', 'WHERE',
   'START', 'OF', 'SELECTION', 'AND', 'NOT', 'THE', 'ID', 'IDS', 'BR',
+  // Every word of the platform's name as lib/sap-naming.ts spells it.
+  ...BTP.split(' '),
 ]);
 
 function lineRange(start: string, end: string | undefined): [number, number] {
@@ -468,7 +479,7 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
     return { fact: f, range };
   });
 
-  const sentences: CaseSentence[] = caseSentences(text).map((sentence) => {
+  const read = (sentence: string, mayDecline: boolean): CaseSentence => {
     const cited = new Set<string>();
     const citedFacts = new Set<CaseFact>();
     const invented: string[] = [];
@@ -488,7 +499,14 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
 
     if (invented.length > 0) return { text: sentence, verdict: 'invented-anchor', cited: [...cited], invented, missing: [] };
     // "The evidence does not answer this" claims nothing about the code, with or without an anchor beside it.
-    if (DECLINE.test(sentence)) return { text: sentence, verdict: 'declined', cited: [...cited], invented, missing: [] };
+    // It shields only itself: a clause beside it is read as a claim of its own (QA fe1d9c093536).
+    if (mayDecline && DECLINE.test(sentence)) {
+      const claims = sentence.split(CLAUSE_BREAK).filter((c) => /\w/.test(c) && !DECLINE.test(c));
+      if (claims.length === 0) return { text: sentence, verdict: 'declined', cited: [...cited], invented, missing: [] };
+      const failed = claims.map((c) => read(c, false)).find((r) => r.verdict !== 'anchored');
+      if (failed) return { text: sentence, verdict: failed.verdict, cited: failed.cited, invented, missing: failed.missing };
+      return { text: sentence, verdict: 'anchored', cited: [...cited], invented, missing: [] };
+    }
     if (cited.size === 0) return { text: sentence, verdict: 'unanchored', cited: [], invented, missing: [] };
 
     // The overlap check: what the sentence names must stand in what it cites.
@@ -503,7 +521,8 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
       .replace(/(\d),(\d{3})/g, '$1$2');
     const missing = sentenceClaims(sentence).filter((claim) => !containsClaim(support, claim));
     return { text: sentence, verdict: missing.length > 0 ? 'unsupported' : 'anchored', cited: [...cited], invented, missing };
-  });
+  };
+  const sentences: CaseSentence[] = caseSentences(text).map((sentence) => read(sentence, true));
 
   const dropped = sentences.filter((s) => s.verdict === 'unanchored' || s.verdict === 'unsupported').length;
   if (sentences.length === 0) return { outcome: 'refused', reason: 'empty', anchors: [], sentences, dropped };

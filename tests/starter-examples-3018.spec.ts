@@ -104,15 +104,21 @@ test.describe('no shipped starter example carries code nothing reaches', () => {
 test.describe('what the engine says about the shipped examples since 3.0.18 (private edition)', () => {
   // Measured 18.10.2026 on the corrected sources. Before (3.0.17): 1,000-line example 45 findings (26 rows), score 45,
   // 17 rules; PO demo 33 findings (27 rows), score 37, 12 rules. The other examples did not move.
+  // Those figures were taken while APP_VERSION was still v3.0.17, so the 3.0.18 engine gates were off. Since the
+  // version bump (4d0f9cef) they are on, and 03f0ffe6 adds exactly these findings and nothing else (checked against
+  // engine v3.0.17 on the same sources, 19.10.2026): E7 dataset-io in Z_INVOICE_EXTRACTOR (L58, L64, L82; score 87
+  // -> 83), E6 classic-api for BAPI_SALESORDER_CREATEFROMDAT2 (Z_SALES_ORDER_CREATOR L71), SAP_WAPI_CREATE_EVENT
+  // and BAPI_PO_CREATE1 (PO demo L421, L475), GUID_CREATE and DATE_COMPUTE_DAY (1,000-line example L219, L935). A
+  // classic API costs no score points, so only the invoice score moves.
   const EXPECTED: Record<string, { findings: number; rows: number; score: number; route: string; rules: number }> = {
     'Z_MATERIAL_STOCK_CALC.txt': { findings: 3, rows: 3, score: 91, route: 'In-App (ABAP Cloud)', rules: 3 },
-    'Z_INVOICE_EXTRACTOR.txt': { findings: 3, rows: 3, score: 87, route: 'In-App (ABAP Cloud)', rules: 0 },
-    'Z_SALES_ORDER_CREATOR.txt': { findings: 0, rows: 0, score: 90, route: 'In-App (ABAP Cloud)', rules: 0 },
+    'Z_INVOICE_EXTRACTOR.txt': { findings: 6, rows: 5, score: 83, route: 'In-App (ABAP Cloud)', rules: 0 },
+    'Z_SALES_ORDER_CREATOR.txt': { findings: 1, rows: 1, score: 90, route: 'In-App (ABAP Cloud)', rules: 0 },
     // 3.0.19, the key-user example; what the key-user engine reads of it is pinned in tests/key-user-3019.spec.ts.
     'Z_SD_DELIVERY_PRIORITY.abap': { findings: 3, rows: 3, score: 93, route: 'In-App (ABAP Cloud)', rules: 1 },
-    'Z_MM_PO_APPROVAL.abap': { findings: 24, rows: 21, score: 40, route: 'In-App (ABAP Cloud)', rules: 12 },
+    'Z_MM_PO_APPROVAL.abap': { findings: 26, rows: 23, score: 40, route: 'In-App (ABAP Cloud)', rules: 12 },
     'Z_SD_FREIGHT_RATE_CHECK.abap': { findings: 10, rows: 10, score: 82, route: 'Side-by-Side (SAP BTP)', rules: 14 },
-    [LEGACY]: { findings: 38, rows: 30, score: 40, route: 'Side-by-Side (SAP BTP)', rules: 30 },
+    [LEGACY]: { findings: 40, rows: 32, score: 40, route: 'Side-by-Side (SAP BTP)', rules: 30 },
   };
 
   test('one row per shipped example', () => {

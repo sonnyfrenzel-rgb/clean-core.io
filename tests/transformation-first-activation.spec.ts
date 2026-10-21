@@ -80,10 +80,12 @@ test('the scaffold version is 11 or later (12: tests/transformation-engine-cases
 test.describe('A — a type ABAP Cloud does not release is a built-in type', () => {
   const p = prep(SOURCE);
   const logic = fileOf(p, '_logic.clas.abap');
+  // 3.0.18 item 13: the types the access interface takes (the run's selection) are declared in it.
+  const types = `${logic}\n${p.scaffold.files.find((f) => f.path.endsWith('_access.intf.abap'))?.content ?? ''}`;
 
   test('rlgrap-filename and the other SAP components: built-in types, each with a comment naming the original', () => {
     expect(logic).not.toMatch(/TYPE\s+(?:RANGE OF\s+)?(?:rlgrap|vbak|vbap|bseg|kna1)-/i);
-    expect(logic).toContain('    TYPES p_file TYPE c LENGTH 128.');
+    expect(types).toMatch(/\n {2,4}TYPES p_file TYPE c LENGTH 128\./);
     expect(logic).toContain('    DATA p_file TYPE c LENGTH 128.');
     expect(logic).toContain('" p_file: the original types it by rlgrap-filename, which ABAP Cloud does not release - a built-in type instead.');
     expect(logic).toContain('    DATA p_vbeln TYPE c LENGTH 10.');
@@ -92,7 +94,7 @@ test.describe('A — a type ABAP Cloud does not release is a built-in type', () 
     // A range of an SAP component: RANGE OF takes no `c LENGTH n`, so a range of string.
     expect(logic).toContain('    DATA s_auart TYPE RANGE OF string.');
     // A structure component of the program's own type.
-    expect(logic).toMatch(/" name: the original types it by kna1-name1, which ABAP Cloud does not release - a built-in type instead\.\n\s+TYPES name TYPE c LENGTH 35\./);
+    expect(types).toMatch(/" name: the original types it by kna1-name1, which ABAP Cloud does not release - a built-in type instead\.\n\s+TYPES name TYPE c LENGTH 35\./);
     // Data elements by plain name stay: they activated in the trial.
     expect(logic).toContain('TYPES vbeln TYPE vbeln_va.');
     expect(logic).toContain('    DATA p_vkorg TYPE vkorg.');
@@ -187,7 +189,9 @@ test.describe('B — data typed by an SAP table: a row type of the class, and a 
     const po = prep(poDemo());
     const regions = Object.values(po.scaffold.rap!.regions);
     for (const r of regions) for (const t of Object.keys(r.sapTypes ?? {})) expect(t).not.toMatch(/^z/);
-    expect(fileOf(po, '_logic.clas.abap')).toContain('TYPES BEGIN OF zmm_po_appr.');
+    // 3.0.18 item 13: the types the access interface takes are declared in it; the logic class aliases them.
+    expect(fileOf(po, '_access.intf.abap')).toContain('TYPES BEGIN OF zmm_po_appr.');
+    expect(fileOf(po, '_logic.clas.abap')).toMatch(/TYPES zmm_po_appr TYPE zif_\w+_access=>zmm_po_appr\./);
   });
 });
 

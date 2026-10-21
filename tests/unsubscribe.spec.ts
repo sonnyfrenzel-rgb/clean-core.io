@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { createUnsubscribeToken } from '../lib/unsubscribe-token';
 import { adminDocExists } from './helpers/admin-seed';
 import { createHash } from 'crypto';

@@ -71,13 +71,15 @@ test.describe('the typed contract of the logic class', () => {
 
   test('globals and selection inputs are attributes under their original names; the run takes and returns them', () => {
     for (const name of ['gt_claims', 'gt_rows', 'gv_status', 'p_demo', 'p_eff', 'p_doc', 's_show']) expect(logic).toMatch(new RegExp(`\\n    DATA ${name} `));
-    expect(logic).toContain('    TYPES p_eff TYPE ty_stamp.');
-    expect(logic).toContain('    TYPES s_show TYPE RANGE OF ty_cid.');
+    // 3.0.18 item 13: the types the access interface takes are declared in it; the logic class aliases them.
+    const types = `${logic}\n${file(scaffold.files, 'access.intf.abap')}`;
+    expect(types).toMatch(/\n {2,4}TYPES p_eff TYPE ty_stamp\./);
+    expect(types).toMatch(/\n {2,4}TYPES s_show TYPE RANGE OF ty_cid\./);
     expect(logic).toContain('    p_eff = is_selection-p_eff.');
     expect(logic).toContain('    rs_result-gt_rows = gt_rows.');
     // The demo data is not carried: what BUILD_DEMO fills is the run's input, put in place by load_input( ).
     expect(plan.notCarried.map((n) => n.routine)).toContain('BUILD_DEMO');
-    expect(logic).toContain('    TYPES gt_claims TYPE tt_claim.');
+    expect(types).toMatch(/\n {2,4}TYPES gt_claims TYPE tt_claim\./);
     expect(logic).toContain('    gt_claims = ms_input-gt_claims.');
     expect(logic).toContain('    CONSTANTS gc_live_probe TYPE ty_flag VALUE space.');
   });

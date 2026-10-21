@@ -2,6 +2,7 @@ import { capabilityPresence, isAbsent, readCapabilityFacts, type CapabilityFacts
 import { docStepName, processDocumentationToMarkdown, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
 import type { SopSentence } from '@/lib/sop-provenance';
 import { BUSINESS_STEP_LEVEL, businessStepsOf, type BusinessStep } from '@/lib/business-steps';
+import { screenSensitiveValue } from '@/lib/sensitive-text';
 
 /**
  * The prompt of the business SOP and RACI, and what is stored with its answer
@@ -276,6 +277,16 @@ export function missingBusinessSteps(layer: Record<string, unknown>, steps: read
   const sop = ids(layer.sop_details);
   const raci = ids(layer.raci_matrix);
   return steps.filter((s) => !sop.has(s.id) || !raci.has(s.id));
+}
+
+/**
+ * The text the documentation stores for a business layer: every string of the
+ * model's layer screened for secrets and personal data (roadmap 3.0.18 item 9
+ * (3), `lib/sensitive-text.ts`), so the screen and every export of it carry the
+ * masked text. One pure function, so the stored payload itself is tested (QA dc672594bd0b).
+ */
+export function businessLayerStoredText(layer: Record<string, unknown>): string {
+  return JSON.stringify(screenSensitiveValue(layer).value);
 }
 
 export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: readonly SopStepInfo[], facts: CapabilityFacts | null): Record<string, unknown> {

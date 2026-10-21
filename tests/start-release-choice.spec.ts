@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { verifyRunIntegrity } from '../lib/run-signature';
 import fs from 'fs';
 import path from 'path';

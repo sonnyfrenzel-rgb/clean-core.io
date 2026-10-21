@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { wrapEmailDocument } from '../lib/email-layout';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '../lib/welcome-email';
 import { buildAdminSignupEmail } from '../lib/admin-signup-email';

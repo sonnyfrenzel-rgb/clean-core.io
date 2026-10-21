@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
@@ -270,11 +270,16 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // Accept Terms & Conditions checkbox
     await page.locator('input[type="checkbox"]').check();
-    await expect(startAnalysisBtn).toBeEnabled();
+    // Since e6829efd (UX-013/134/165) the button also stays closed until a
+    // target operating model is chosen, and says so under itself.
+    await expect(startAnalysisBtn).toBeDisabled();
+    await expect(page.locator('#analyze-start-blocked-reason')).toContainText('Select a target operating model');
     console.log('Terms accepted checkbox verified.');
 
     // Click Operating Model (SAP Cloud ERP Private)
     await page.getByText('SAP Cloud ERP Private', { exact: true }).first().click();
+    await expect(startAnalysisBtn).toBeEnabled();
+    await expect(page.locator('#analyze-start-blocked-reason')).toHaveCount(0);
 
     // Click Start Analysis to trigger prompt model confirmation
     await startAnalysisBtn.click();

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { adminSetDoc } from './helpers/admin-seed';
@@ -204,7 +204,9 @@ test.describe('the figure is computed from the evidence', () => {
     const code = read('public/starter-examples/Z_SALES_ORDER_CREATOR.txt')
       + "\nFORM own_call.\n  CALL FUNCTION 'Z_OWN_MODULE'.\nENDFORM.\n";
     const findings = findingsOf(code, 'Z_SALES_ORDER_CREATOR.txt', 'public');
-    expect(findings.rows).toEqual([]);
+    // Since engine 3.0.18 (03f0ffe6, E6) the create BAPI is also a classic-api
+    // finding; the other two calls and the customer module raise none.
+    expect(findings.rows.map((r) => [r.kind, r.objectName])).toEqual([['classic-api', 'BAPI_SALESORDER_CREATEFROMDAT2']]);
     const calls = sapCallsOf(findings);
     expect(calls.sort()).toEqual(['BAPI_SALESORDER_CREATEFROMDAT2', 'BAPI_TRANSACTION_COMMIT', 'BAPI_TRANSACTION_ROLLBACK']);
     const deps = {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 
@@ -145,17 +145,61 @@ test('UX-136, UX-158: Invite on a dashboard row carries its name', () => {
 test('UX-155, UX-159: the workspace loading gate is visible, not only spoken', () => {
   const src = code('app/(app)/project/[projectId]/page.tsx');
   expect(src.match(/<WorkspaceLoading \/>/g) ?? []).toHaveLength(2);
-  const gate = src.slice(src.indexOf('function WorkspaceLoading'));
+  expect(src).toContain("import WorkspaceLoading from '@/components/workspace/WorkspaceLoading';");
+  const gate = code('components/workspace/WorkspaceLoading.tsx');
   expect(gate).toContain('role="status"');
   expect(gate).toContain('useCcDelayedFlag(true, CC_SKELETON_DELAY_MS)');
   expect(gate).toContain("className={shown ? 'm-0 cc-text-cell text-cc-ink-muted' : 'sr-only'}");
   expect(src).not.toMatch(/role="status" className="py-16">\s*<span className="sr-only">/);
 });
 
+test('UX-155, UX-159: rendered, the loading sentence is hidden before 300 ms and on screen after (QA e458f400bce3)', async ({ page }) => {
+  // The component itself, bundled and rendered in the browser — no server. The only style it needs is `sr-only`,
+  // given as Tailwind defines it.
+  const esbuild = await import('esbuild');
+  const built = await esbuild.build({
+    stdin: {
+      contents: [
+        "import { createElement } from 'react';",
+        "import { createRoot } from 'react-dom/client';",
+        "import WorkspaceLoading from '@/components/workspace/WorkspaceLoading';",
+        "createRoot(document.getElementById('root')).render(createElement(WorkspaceLoading));",
+      ].join('\n'),
+      resolveDir: ROOT,
+      loader: 'tsx',
+    },
+    bundle: true,
+    write: false,
+    format: 'iife',
+    jsx: 'automatic',
+    alias: { '@': ROOT },
+    define: { 'process.env.NODE_ENV': '"production"' },
+    logLevel: 'silent',
+  });
+  await page.clock.install();
+  await page.setContent(
+    '<style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}</style><div id="root"></div>',
+  );
+  await page.addScriptTag({ content: built.outputFiles[0].text });
+  const sentence = page.locator('[data-workspace-gate="loading"][role="status"] p');
+  await expect(sentence).toHaveText('Loading the workspace…');
+  await expect(sentence).toHaveAttribute('data-workspace-gate-text', 'pending');
+  expect((await sentence.boundingBox())!.width).toBeLessThanOrEqual(1);
+  await page.clock.runFor(250);
+  await expect(sentence).toHaveAttribute('data-workspace-gate-text', 'pending');
+  await page.clock.runFor(100);
+  await expect(sentence).toHaveAttribute('data-workspace-gate-text', 'shown');
+  await expect(sentence).not.toHaveClass(/sr-only/);
+  expect((await sentence.boundingBox())!.width).toBeGreaterThan(50);
+  await expect(page.locator('[role="status"] p')).toHaveCount(1);
+});
+
 test('UX-161: the Confluence export confirms the download', () => {
   const page = code(ANALYZE);
   const fn = page.slice(page.indexOf('const exportToConfluence'), page.indexOf('const staleExports'));
-  expect(fn).toMatch(/save\(blob, exportFileName\);\s*setExportToast\(`Downloaded \$\{exportFileName\}\. It is on your device only; nothing was sent to Confluence\.`\);/);
+  expect(fn).toMatch(/save\(blob, exportFileName\);[\s\S]*?setExportToast\(`Your browser was asked to save \$\{exportFileName\}\. The file goes to your device only; nothing was sent to Confluence\.`\);/);
+  // saveAs reports no completion, so the toast claims no finished download (QA 22911ff00bda).
+  expect(fn).not.toMatch(/setExportToast\(`Downloaded/);
   expect(page).toContain('<CcToast open={exportToast !== null} onDismiss={closeExportToast}>');
 });
 

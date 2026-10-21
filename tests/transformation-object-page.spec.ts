@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { buildDemoProject } from '../lib/demo-project';
 import type { EvidenceFinding } from '../lib/abap/evidence-model';
 import { findingRows } from '../lib/findings-view';

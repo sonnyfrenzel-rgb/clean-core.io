@@ -88,13 +88,14 @@ import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { wt } from '@/lib/workspace-messages';
 import { targetEditionOf } from '@/lib/target-edition';
 import TestEvidenceCard from '@/components/testing/TestEvidenceCard';
+import AbapUnitEvidence from '@/components/testing/AbapUnitEvidence';
 import { useMaterialRules } from '@/hooks/useMaterialRules';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries } from '@/lib/rules-editor';
 import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
-import { abapTestEvidenceOfProject, abapTestEvidenceSentences } from '@/lib/testing-abap-unit';
+import { abapTestSentencesOfProject } from '@/lib/testing-abap-unit';
 import { callContractPresence, notRunWithoutContract } from '@/lib/engine-call-contract';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
@@ -331,12 +332,9 @@ export default function TestingSandboxPage() {
   const generatedCodeText = typeof project?.generatedCode === 'string' ? project.generatedCode : null;
   const sharedSelection = useMemo(() => invariantPlan(generatedCodeText), [generatedCodeText]);
   // 3.0.13 (6): read once per stored package and suite, not on every render.
-  const abapUnitEvidence = useMemo(() => {
-    const e = abapTestEvidenceOfProject({ extensibilityRoute: project?.extensibilityRoute, generatedCode: generatedCodeText, testSuite: project?.testSuite });
-    // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one.
-    const outsideNow = outsideReading(project);
-    return e ? abapTestEvidenceSentences(e, outsideNow.state === 'current' ? outsideNow.summary : null) : null;
-  }, [project, generatedCodeText]);
+  // 3.0.18 item 13: "passed in SAP" is the SAP result on record for this package, when there is a current one —
+  // the same sentences STATUS.md carries (`testFactsOf`).
+  const abapUnitEvidence = useMemo(() => abapTestSentencesOfProject(project), [project]);
   /** 3.0.12 — does the generated code export the call contract the engine cases run against? Read, never run. */
   const callContract = useMemo(() => callContractPresence(sandboxFilesFromStoredCode(generatedCodeText ?? '')), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);
@@ -1674,11 +1672,7 @@ export default function TestingSandboxPage() {
 
             {/* 3.0.13 (6) — the ABAP Unit evidence belongs to the ABAP route;
                 the mocks card below is shown only off it (QA 4a0b5bc64faf). */}
-            {isAbapCloud && evidence.abapUnit && evidence.abapUnit.length > 0 ? (
-              <p data-test-evidence-abap-unit="" className="m-0 mt-3 cc-text-cell text-cc-ink">
-                {evidence.abapUnit.join(' ')}
-              </p>
-            ) : null}
+            <AbapUnitEvidence project={project} />
 
             {/* The reason itself is in the notice at the top of the page. */}
             {!isAbapCloud && testRunBlocked(project) && testCases.length > 0 && (

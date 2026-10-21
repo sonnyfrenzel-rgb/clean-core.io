@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { FROM_LANDING, USP_SHORT, USP_LONG, WHITEPAPER_SECTIONS } from '../lib/whitepaper';

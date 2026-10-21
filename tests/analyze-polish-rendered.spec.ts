@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -38,6 +38,11 @@ const NARRATIVE_ID = `anpol-narrative-${STAMP}`;
 const ROOT = path.resolve(__dirname, '..');
 // What `loadStarterExample` hands on: the served text, without a byte-order mark.
 const SOURCE = fs.readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/^﻿/, '');
+/**
+ * The EBAN write in FORM hold_for_buyer. L246 until 3.0.17; since 15dcfd60 (the starter examples without dead
+ * code) it stands at L240, and the second EBAN write (L455, in a routine nothing called) is gone with its routine.
+ */
+const EBAN_WRITE_LINE = SOURCE.split(/\r?\n/).findIndex((l) => l.includes("UPDATE eban SET statu = 'H'")) + 1;
 const SHOTS = process.env.ANPOL_SHOTS || '';
 const TAG = process.env.ANPOL_TAG || 'after';
 
@@ -118,7 +123,8 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   await shot(page, 'head', '[data-analysis-answer]');
   await page.locator('[data-program-map]').scrollIntoViewIfNeeded();
   await shot(page, 'map', '[data-program-map]');
-  await page.locator('[data-program-map-dot="246"]').click();
+  expect(EBAN_WRITE_LINE, 'the example moved again: re-derive the EBAN write line').toBe(240);
+  await page.locator(`[data-program-map-dot="${EBAN_WRITE_LINE}"]`).click();
   await expect(page.locator('[data-analyze-source-panel]')).toBeVisible();
   await shot(page, 'source', '[data-analyze-source-panel]');
   const panelText = await page.locator('[data-analyze-source-panel]').innerText();
@@ -154,10 +160,11 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
     signedLabel: 'Clean Core Score of the signed run',
     minDeductions: 3,
   });
-  // The EBAN writes are the largest single deduction, at both lines (the mockup's measured case).
+  // The EBAN write is the largest single deduction, at its line (the mockup's measured case had two writes; the
+  // second stood in a routine nothing called and left with it in 15dcfd60).
   const eban = page.locator('[data-analysis-answer] li[data-score-deduction="standard-table-write"]');
   await expect(eban).toContainText('EBAN');
-  await expect(eban.locator('[data-cc-anchor]:visible')).toHaveText(['L246', 'L455']);
+  await expect(eban.locator('[data-cc-anchor]:visible')).toHaveText([`L${EBAN_WRITE_LINE}`]);
   await expect(page.locator('[data-analysis-answer] [data-score-largest]')).toHaveAttribute('data-score-largest', 'standard-table-write');
   await expect(page.locator('[data-analysis-answer] [data-score-run]')).toContainText(project.activeRunId!.slice(0, 8));
   // The provenance stands in the score hero, beside the figure it describes (ADR-093, 11.10.2026).
@@ -167,9 +174,10 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
 
   // 2. The EBAN write row: its count and its dots agree.
   const writeRow = page.locator('[data-program-map-row="standard-table-write"]');
-  await expect(writeRow).toContainText('1 finding · 2 places in the code');
-  await expect(page.locator('[data-program-map-dot="246"]')).toHaveCount(1);
-  await expect(page.locator('[data-program-map-dot="455"]')).toHaveCount(1);
+  // The whole count, not a substring "11 findings" would also hold (QA review of 62eae6a082bb): one finding at one
+  // place, so no "places in the code" (programMapRowCount, lib/findings-view.ts).
+  await expect(writeRow.locator('[data-program-map-count]')).toHaveText('1 finding');
+  await expect(page.locator(`[data-program-map-dot="${EBAN_WRITE_LINE}"]`)).toHaveCount(1);
 
   // 3. Column numbers read 1..n left to right.
   const heads = page.locator('[data-program-map-column]');

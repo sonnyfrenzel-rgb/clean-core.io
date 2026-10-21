@@ -17,6 +17,9 @@ import { engineCounterpartsIn } from './released-counterparts';
 import { AUTHORITY_DEMO_ENV, AUTHORITY_FILE, openAuthorityIn } from './authority-node';
 import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
 import { inputReadsIn } from './input-lists';
+import { displaysIn } from './display-node';
+import { capAuthorizationIn, capAuthorizationWords } from './cap-shell';
+import { rapNoInputIn, rapNoInputWords, rapSaveIn } from './rap-save';
 import { INITIAL_ASSUMPTION, initialAssumptionsIn } from './initial-node';
 import { ABAP_UNIT_EVIDENCE_LINE, goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
@@ -69,6 +72,12 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const openAuthority = scaffold.files.filter((f) => f.path === AUTHORITY_FILE).flatMap((f) => openAuthorityIn(f.content));
   const lookupLists = scaffold.files.filter((f) => f.path === LOOKUPS_FILE).flatMap((f) => lookupListsIn(f.content));
   const inputReads = scaffold.files.filter((f) => f.path === 'srv/lib/input-contract.ts').flatMap((f) => inputReadsIn(f.content));
+  const xsSecurity = scaffold.files.find((f) => f.path === 'xs-security.json');
+  const capAuthorization = xsSecurity ? capAuthorizationIn(xsSecurity.content, scaffold.files.find((f) => f.path === 'srv/service.cds')?.content ?? '') : null;
+  const bdef = scaffold.files.find((f) => f.path.endsWith('.bdef.asbdef'));
+  const rapSave = bdef ? rapSaveIn(bdef.content) : null;
+  const noInput = rapNoInputIn(scaffold.files);
+  const displays = scaffold.files.filter((f) => f.path.startsWith('srv/') && f.path.endsWith('.ts')).flatMap((f) => displaysIn(f.content));
   const initialAssumptions = scaffold.files.filter((f) => f.path === 'srv/lib/guards.ts').flatMap((f) => initialAssumptionsIn(f.content));
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
@@ -150,6 +159,10 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     ...(engineCounterparts.length ? { engineCounterparts } : {}),
     ...(openAuthority.length ? { openAuthority } : {}),
     ...(inputReads.length ? { inputReads } : {}),
+    ...(displays.length ? { displays } : {}),
+    ...(capAuthorization ? { capAuthorization } : {}),
+    ...(rapSave ? { rapSave } : {}),
+    ...(noInput.length ? { noInput } : {}),
     ...(lookupLists.length ? { lookupLists } : {}),
     ...(initialAssumptions.length ? { initialAssumptions } : {}),
   };
@@ -212,10 +225,16 @@ export function traceMarkdown(trace: Trace): string {
       `- Open decision — authorization: the original checks ${trace.openAuthority.join('; ')}. ${AUTHORITY_FILE} denies every check (fail closed) until you map it to your target's authorization; ${AUTHORITY_DEMO_ENV}=grant grants them in a demo or trial only — never in the production profile (NODE_ENV=production, or CDS_ENV naming production), where it is ignored — and each run it grants says so in its issues. The engine cases, the failure-pattern probes and npm test run with ${AUTHORITY_DEMO_ENV}=grant set for the test only — they test what follows the authorization, not the authorization itself; one engine case runs without the grant and expects the refusal.`,
     );
   }
+  if (trace.capAuthorization) lines.push(`- ${capAuthorizationWords(trace.capAuthorization)}`);
+  if (trace.rapSave) lines.push(`- Implementation type of the business object: ${trace.rapSave}.`);
+  if (trace.noInput?.length) lines.push(`- ${rapNoInputWords(trace.noInput)}`);
   if (trace.inputReads?.length) {
     lines.push(
       `- Input lists a SELECT of the original fills — the request's rows stand for what it reads: ${trace.inputReads.join('; ')} The handed-in rows are not filtered by the SELECT's WHERE (its selection, date or row limit): they are taken as its result, so a request hands in only the rows the selection would read.`,
     );
+  }
+  if (trace.displays?.length) {
+    lines.push(`- The run's rows — what the original displays: ${trace.displays.join('; ')}. On a server there is no list screen: the frame copies the displayed table into the run's rows where the original displays it, and a run whose routine leaves before the display (its check does not hold) answers no rows, as the original shows none.`);
   }
   if (trace.lookupLists?.length) {
     lines.push(

@@ -1,8 +1,11 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
+import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
+import { sha256Hex } from '../lib/artefact-digest';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 3.0.12 (owner 12.10.2026; design §14–§15, mockup
@@ -62,6 +65,10 @@ async function seed(prefix: string): Promise<SeededProject> {
     createdAt: new Date(),
     status: 'designed',
     legacyCode: SOURCE,
+    // The deployment target the run's manifest records: without it on the project the browser cannot show the
+    // input still matches, the stage says "The signed run's inputs cannot all be shown to still match" as a
+    // blocker and the tips never appear (CI run 39203588718).
+    s4Deployment: 'private',
     cleanCoreScore: 58,
     activeRunId: account.runId,
     solutionDesign: DESIGN,
@@ -76,6 +83,21 @@ async function seed(prefix: string): Promise<SeededProject> {
     status: 'completed',
     cleanCoreScore: 58,
     analysis: '',
+    // A run as the product signs it: with its input manifest. Without one the
+    // contract read refuses ("The run recorded no input manifest …"), and since
+    // 5487c408 that refusal is said before the click and keeps Generate off —
+    // the cause of the disabled button in the CI of d9a07f20.
+    inputManifest: buildInputManifest(
+      analysisRunInputs({
+        sourceSha256: sha256Hex(SOURCE),
+        deploymentTarget: 'private',
+        catalogVersion: '2026.FPS01',
+        rulesetVersion: 'rules-v1.0',
+        engineVersion: APP_VERSION,
+        model: null,
+      }),
+      null,
+    ),
   });
   return account;
 }

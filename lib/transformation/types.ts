@@ -183,8 +183,30 @@ export const PLAN_VERSION = 2;
  * example's row held 10 of the EBAN fields the program reads, and a request sending MATNR was refused.
  * Nothing signed changes (§12.3).
  * 18 (3.0.18, SEC-c41f149-01): Node — `srv/lib/authority.ts` (`authority-node.ts`). Nothing signed changes.
+ * 19 (3.0.18 item 14 and the package halves of item 13, 18.10.2026): Node — the original's ALV display
+ * (`REUSE_ALV_GRID_DISPLAY` / `REUSE_ALV_LIST_DISPLAY` with TABLES t_outtab, `cl_salv_table=>factory` with CHANGING
+ * t_table) becomes the run's rows: the frame of the step runs the body in a function of its own and copies the
+ * displayed global table into `st.rows` after it, only when the routine reaches the display — a raw check in the body
+ * that leaves before it is evaluated by the frame (`display-node.ts`; the 1,000-line example answered `rows: []`).
+ * CAP — xs-security.json declares a scope per authorization object and activity of the original's AUTHORITY-CHECKs that
+ * every run passes (owner decision 18.10.2026; a check on some paths only stays srv/lib/authority.ts's and TRACE.md lists
+ * it as checked in the code, not a service scope) in the role template Runner, srv/service.cds carries `@requires` (an authenticated user where the original checks
+ * none), and the development profile's mock user alice holds the scopes (`cap-shell.ts`). RAP — the business object
+ * is `managed with unmanaged save` where the original writes through a BAPI, a standard business object or into a
+ * standard table, `managed with additional save` where it writes its own table plus a change document or an update
+ * function module, with a saver class (`rap-save.ts`) that is not wired yet, and STATUS.md, TRACE.md and the manifest say so; a query, job or action that hands the logic none of the input
+ * tables it takes says so (`@cc-no-input`, QM-03/FI-F09); a reason or message component of the visible result whose
+ * type CDS cannot name reaches the custom entity as text (QM-05). TRACE.md and STATUS.md state each.
+ *    Also in 19 (item 13, the PM trial of 18.10.2026): RAP — the types the access interface's methods take (a table
+ * type handed to a function module, the run's selection, a customer table's row) and what they read are declared in
+ * the interface; the logic class keeps each name as an alias (`TYPES tt_csv TYPE zif_x_access=>tt_csv`), so the
+ * interface needs nothing of the class that holds a reference to it — no activation cycle (`access-types.ts`); the
+ * shipped abaplint.json runs `cyclic_oo`.
+ *    Also in 19 (QA review of 62eae6a082bb): RAP — TRACE.md's ABAP Unit line names every class the acceptance counts,
+ * ltc_counterparts with ltc_engine_cases and ltc_golden_master (`ABAP_UNIT_EVIDENCE_LINE`).
+ * Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 18;
+export const SCAFFOLD_VERSION = 19;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -853,6 +875,14 @@ export interface Trace {
   lookupLists?: string[];
   /** 3.0.17: the checks whose IS INITIAL reads a type the engine has not read (`G-0199 (L196, lv_profl)`, `initial-node.ts`). Absent when none. */
   initialAssumptions?: string[];
+  /** 3.0.18 (scaffold 18): each display of the original (ALV) and whether the frame makes it the run's rows (`display-node.ts`). Absent when none. */
+  displays?: string[];
+  /** 3.0.18 (scaffold 18): the CAP package's authorization — the scopes of xs-security.json and its role template (`cap-shell.ts`). Absent on the RAP route. */
+  capAuthorization?: { scopes: string[]; roleTemplate: string | null; codeChecks?: string[] };
+  /** 3.0.18 (scaffold 18): the RAP business object's implementation type and the reason the engine read (`rap-save.ts`). Absent on the Node route and for a custom entity. */
+  rapSave?: string;
+  /** 3.0.18 (QM-03, FI-F09): the logic's input tables no caller in the package hands in (`rapNoInputIn`). Absent when none. */
+  noInput?: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** See `GenerationStatus`. */

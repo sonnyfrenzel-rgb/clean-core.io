@@ -206,6 +206,22 @@ test.describe('the signature and the pack', () => {
     expect(doc.recorded).toBe(false);
     expect(doc.note).toContain('signed before the input manifest existed');
     expect(doc.inputs).toBeUndefined();
+    // SEC-2026-873 (owner decision 18.10.2026): the signed note says what was checked when the pack was made.
+    expect(doc.note).toContain('only the source was compared with the signed run');
+    expect(doc.note).toContain('were not checked');
+    expect(doc.checkedWhenPacked).toEqual([INPUT_IDS.source]);
+    expect(doc.notCheckedWhenPacked).toEqual([INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, 'profile:assessment']);
+  });
+
+  test('a run without a source digest: the pack does not claim the source was compared (QA review of 62eae6a082bb)', () => {
+    // The pack route compares the source only when the run carries its digest.
+    const { inputFingerprint: _dropped, ...noDigest } = run;
+    void _dropped;
+    const { signed } = buildAuditPackContents({ projectId: 'proj-1', runId: 'run-1', run: noDigest, attested: {} });
+    const doc = JSON.parse(signed[INPUT_MANIFEST_FILE]);
+    expect(doc.recorded).toBe(false);
+    expect(doc.checkedWhenPacked).toEqual([]);
+    expect(doc.notCheckedWhenPacked).toEqual([INPUT_IDS.source, INPUT_IDS.deployment, INPUT_IDS.catalog, INPUT_IDS.ruleset, 'profile:assessment']);
   });
 
   test('the canonical manifest form is untouched — packs sealed before 0.5 still hash the same', () => {

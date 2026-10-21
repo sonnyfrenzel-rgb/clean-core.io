@@ -18,7 +18,9 @@
  *     return strings — the signature every ABAP release has had;
  *   - `cl_abap_behavior_handler`: the abstract base of every RAP handler
  *     class, with the two protected methods a handler calls to build a
- *     message (`new_message`, `new_message_with_text`).
+ *     message (`new_message`, `new_message_with_text`);
+ *   - `cl_abap_behavior_saver`: the base of a saver class (unmanaged or
+ *     additional save), with its save-phase methods.
  *
  * Nothing else. Every other SAP object the code names (job interfaces,
  * `if_oo_adt_classrun`, `cl_abap_unit_assert` …) is not declared here; the
@@ -109,6 +111,30 @@ const behaviorHandler = [
   '',
 ].join('\n');
 
+/**
+ * `cl_abap_behavior_saver` (scaffold version 18): the base of the saver class a business object with an unmanaged or
+ * an additional save carries (`rap-save.ts`). Its methods take no parameter here: the real ones are typed by the
+ * behavior definition, and the saver the scaffold writes only redefines `save_modified`.
+ */
+const behaviorSaver = [
+  HEAD,
+  'CLASS cl_abap_behavior_saver DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.',
+  '  PROTECTED SECTION.',
+  '    METHODS finalize.',
+  '    METHODS check_before_save.',
+  '    METHODS adjust_numbers.',
+  '    METHODS save.',
+  '    METHODS save_modified.',
+  '    METHODS cleanup.',
+  '    METHODS cleanup_finalize.',
+  'ENDCLASS.',
+  '',
+  'CLASS cl_abap_behavior_saver IMPLEMENTATION.',
+  ...['finalize', 'check_before_save', 'adjust_numbers', 'save', 'save_modified', 'cleanup', 'cleanup_finalize'].flatMap((m) => [`  METHOD ${m}.`, '  ENDMETHOD.']),
+  'ENDCLASS.',
+  '',
+].join('\n');
+
 /** The stub files, by file name (abapGit naming, so abaplint reads each as a class). */
 export const SAP_STUB_FILES: ReadonlyArray<{ name: string; object: string; content: string }> = [
   { name: 'if_message.intf.abap', object: 'IF_MESSAGE', content: ifMessage },
@@ -117,6 +143,7 @@ export const SAP_STUB_FILES: ReadonlyArray<{ name: string; object: string; conte
   { name: 'cx_dynamic_check.clas.abap', object: 'CX_DYNAMIC_CHECK', content: cxChild('cx_dynamic_check') },
   { name: 'cx_no_check.clas.abap', object: 'CX_NO_CHECK', content: cxChild('cx_no_check') },
   { name: 'cl_abap_behavior_handler.clas.abap', object: 'CL_ABAP_BEHAVIOR_HANDLER', content: behaviorHandler },
+  { name: 'cl_abap_behavior_saver.clas.abap', object: 'CL_ABAP_BEHAVIOR_SAVER', content: behaviorSaver },
 ];
 
 /** The stub files as package files (`checks/sap-stubs/…`). */

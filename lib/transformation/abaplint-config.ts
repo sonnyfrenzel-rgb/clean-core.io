@@ -70,6 +70,12 @@ export const ABAPLINT_RULES = {
   aff_and_xml: true,
   /** abapGit writes its XML files with a UTF-8 byte order mark. */
   xml_bom: true,
+  /**
+   * A global class and interface that each need the other's definition (3.0.18 item 13, the PM trial of
+   * 18.10.2026): the access interface typed its parameters by the logic class, which holds a reference to it.
+   * The types the interface takes live in the interface now (`access-types.ts`); this keeps it so.
+   */
+  cyclic_oo: true,
 } as const;
 
 /**

@@ -34,7 +34,7 @@ const declarationOf = (logic: string, method: string) => {
   return at < 0 ? '' : logic.slice(at, logic.indexOf('.', at) + 1);
 };
 
-test('scaffold version 17', () => {
+test('scaffold version 17 or later', () => {
   expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(17);
 });
 

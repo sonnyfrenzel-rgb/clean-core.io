@@ -13,19 +13,23 @@ import { APP_VERSION } from '../lib/version';
  * (QA review of 33471220d6e9, 45737310a1d7). Roadmap 0.18.
  */
 
-/** Dataset I/O: real ABAP, and nothing in the finding detectors looks at it. */
+/**
+ * A macro: real ABAP, and nothing in the finding detectors looks inside it.
+ *
+ * Until engine 3.0.18 this was dataset I/O. Since 03f0ffe6 (E7, behind
+ * ENGINE_READS_FROM) OPEN/READ/TRANSFER/DELETE DATASET is a `dataset-io`
+ * finding and no longer a coverage gap, so it stopped being an unassessed
+ * construct; a macro body still is (`coverage.ts`, gap `macro`).
+ */
 const UNASSESSED = [
-  'REPORT z_file_transfer.',
-  'DATA: lv_line TYPE string.',
+  'REPORT z_macro_use.',
+  'DATA: lv_total TYPE i.',
+  'DEFINE add_to_total.',
+  '  lv_total = lv_total + &1.',
+  'END-OF-DEFINITION.',
   'START-OF-SELECTION.',
-  "  OPEN DATASET '/tmp/in.dat' FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
-  '  DO.',
-  '    READ DATASET lv_file INTO lv_line.',
-  '    IF sy-subrc <> 0.',
-  '      EXIT.',
-  '    ENDIF.',
-  '  ENDDO.',
-  '  CLOSE DATASET lv_file.',
+  '  add_to_total 5.',
+  '  add_to_total 7.',
 ].join('\n');
 
 /** Ordinary, fully assessed code with a real finding in it. */
@@ -57,7 +61,7 @@ const routeFor = (code: string) => routeExtensibility(buildAbapEvidence(code, 's
 
 test('an unassessed construct is reported as unassessed', () => {
   const evidence = buildAbapEvidence(UNASSESSED, 'unassessed.abap');
-  expect(evidence.findings.length, 'no detector claims dataset I/O').toBe(0);
+  expect(evidence.findings.length, 'no detector claims a macro body').toBe(0);
   expect(evidence.coverage.complete, 'and the coverage report says so').toBe(false);
   expect(evidence.coverage.gaps.length).toBeGreaterThan(0);
 });

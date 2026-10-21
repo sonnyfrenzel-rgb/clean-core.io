@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -40,10 +40,17 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 const SALES_ORDER = EXAMPLE_SNIPPETS.find((s) => s.id === 'static-sales-order')!.code;
 const BAPIS = ['BAPI_SALESORDER_CREATEFROMDAT2', 'BAPI_TRANSACTION_ROLLBACK', 'BAPI_TRANSACTION_COMMIT'] as const;
+/**
+ * A run signed before engine 3.0.18 — the situation this spec was written for,
+ * and the one the rendered half below seeds (a run with no engine version). From
+ * 3.0.18 (03f0ffe6, E6) the create BAPI is a classic-api finding, so the program
+ * is no longer "clean"; that is held in the test after the next.
+ */
+const BEFORE_3018 = 'v3.0.17';
 
 test.describe('what the code uses, derived on the server', () => {
   test('the three BAPI calls are uses with their lines and levels, though no detector raised a finding', () => {
-    const built = findingsOf(SALES_ORDER, 'Z_SALES_ORDER_CREATOR.abap', 'private', 'pce-latest');
+    const built = findingsOf(SALES_ORDER, 'Z_SALES_ORDER_CREATOR.abap', 'private', 'pce-latest', BEFORE_3018);
     expect(built.rows).toHaveLength(0);
     const uses = built.uses ?? [];
     for (const name of BAPIS) {
@@ -63,6 +70,17 @@ test.describe('what the code uses, derived on the server', () => {
     // No table is read or written directly — and the summary says exactly that.
     expect(uses.filter((u) => u.kind === 'table')).toHaveLength(0);
     expect(usesSummary(uses)!.sentence).toContain('reads and writes no database table directly');
+  });
+
+  test('from engine 3.0.18 the create BAPI is a classic-api finding at level B, and the view says findings', () => {
+    const built = findingsOf(SALES_ORDER, 'Z_SALES_ORDER_CREATOR.abap', 'private', 'pce-latest');
+    expect(built.rows.map((r) => [r.kind, r.objectName, r.level])).toEqual([
+      ['classic-api', 'BAPI_SALESORDER_CREATEFROMDAT2', 'B'],
+    ]);
+    expect(itState({ source: built, hasSource: true, signed: true })).toBe('findings');
+    const use = (built.uses ?? []).find((u) => u.object === 'BAPI_SALESORDER_CREATEFROMDAT2')!;
+    expect(use.findingIds, 'the use stands on that finding').toEqual([built.rows[0].id]);
+    expect(use.level).toBe('B');
   });
 
   test('the uses figure adds up: its parts count the rows a finding named and no reader reached (QA 0435d9724549)', () => {
@@ -103,7 +121,7 @@ test.describe('what the code uses, derived on the server', () => {
   });
 
   test('one state per situation, and "no findings" never stands alone beside SAP calls', () => {
-    const built = findingsOf(SALES_ORDER, 'Z_SALES_ORDER_CREATOR.abap', 'private', 'pce-latest');
+    const built = findingsOf(SALES_ORDER, 'Z_SALES_ORDER_CREATOR.abap', 'private', 'pce-latest', BEFORE_3018);
     expect(itState({ source: built, hasSource: false, signed: false })).toBe('no-source');
     expect(itState({ source: undefined, hasSource: true, signed: true })).toBeUndefined();
     expect(itState({ source: null, hasSource: true, signed: true })).toBe('unread');

@@ -12,7 +12,6 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
-import { screenSensitiveValue } from '@/lib/sensitive-text';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import type { Project } from '@/lib/types';
 import {
@@ -20,7 +19,7 @@ import {
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { buildEngineConfluenceHtml, confluenceFileName } from '@/lib/documentation-export';
-import { businessSopPrompt, enrichBusinessLayer, missingBusinessSteps, sopStepInfos } from '@/lib/business-sop-prompt';
+import { businessLayerStoredText, businessSopPrompt, enrichBusinessLayer, missingBusinessSteps, sopStepInfos } from '@/lib/business-sop-prompt';
 import { businessStepsOf } from '@/lib/business-steps';
 import { DOCUMENTATION_PROPOSALS_ID, documentationProposalsAnchor } from '@/lib/page-anchors';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
@@ -494,7 +493,7 @@ export default function DocumentationPage() {
       }
       // Roadmap 3.0.18 item 9 (3): secrets and personal data in the model's layer are masked before it is stored, so
       // the screen and every export of it carry the masked text (`lib/sensitive-text.ts`).
-      const storedText = JSON.stringify(screenSensitiveValue(enriched).value);
+      const storedText = businessLayerStoredText(enriched);
 
       // One transaction, for the same reason as above (ade8ec0b8903), on the
       // server since roadmap 3.0.14, item 9: the layer is kept in documents of

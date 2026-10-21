@@ -16,8 +16,10 @@ import {
   type CaseFact,
 } from '../lib/case-answer';
 import { cleanModelText, inspectModelText } from '../lib/model-text';
+import { businessLayerStoredText } from '../lib/business-sop-prompt';
 import {
   findSensitive,
+  maskFor,
   screenSensitiveText,
   screenSensitiveValue,
   secretInBody,
@@ -342,7 +344,21 @@ test.describe('where model text is accepted', () => {
   });
 
   test('the documentation stores the business layer screened', () => {
+    // The payload itself (QA dc672594bd0b): what the function returns is what is stored, and it is masked.
+    const layer = {
+      sop_details: [{ stepId: 's1', instruction: 'Mail the list to anna.schmidt@example.com and pay to DE89 3704 0044 0532 0130 00.' }],
+      raci_matrix: [{ stepId: 's1', responsible: 'Clerk' }],
+    };
+    const stored = businessLayerStoredText(layer);
+    expect(stored).not.toContain('anna.schmidt@example.com');
+    expect(stored).not.toContain('DE89 3704 0044 0532 0130 00');
+    const parsed = JSON.parse(stored) as typeof layer;
+    expect(parsed.sop_details[0].instruction).toContain(maskFor('email'));
+    expect(parsed.sop_details[0].instruction).toContain(maskFor('iban'));
+    expect(parsed.raci_matrix).toEqual(layer.raci_matrix);
+    // And the page stores exactly that text, nothing else.
     const src = read('app/(app)/project/[projectId]/documentation/page.tsx');
-    expect(src).toContain('JSON.stringify(screenSensitiveValue(enriched).value)');
+    expect(src).toContain('const storedText = businessLayerStoredText(enriched);');
+    expect(src).toMatch(/action: 'business-layer',\s*businessDocumentation: storedText,/);
   });
 });

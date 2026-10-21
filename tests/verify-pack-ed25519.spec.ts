@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import JSZip from 'jszip';
 import { createHash, generateKeyPairSync, sign, type KeyObject } from 'crypto';
 import { verifyAuditPack, ed25519Label, SIGNING_KEY_DOCUMENT_PATH } from '../lib/audit-pack-verify';

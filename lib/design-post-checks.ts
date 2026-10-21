@@ -253,8 +253,12 @@ export const CUSTOM_ENTITY_AUTH_NOTE =
   'A custom entity is not protected by a CDS access control (DCL): its rows come from the query provider class, not from a view an access control could restrict. '
   + 'The query provider checks the authorization (AUTHORITY-CHECK) before it returns rows.';
 
-/** A security row or a text that proposes CDS access control: DCL, `define role`, `pfcg_auth`, "access control". */
-const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\b(?:CDS\s+)?access\s+controls?\b|\.dcls\b|\basdcls\b/i;
+/**
+ * A security row or a text that proposes CDS access control: DCL, `define role`, `pfcg_auth`, "CDS access control".
+ * "Access control" alone is no such proposal — a query provider's AUTHORITY-CHECK is access control too, and is
+ * exactly what a custom entity needs (QA 5d8e6e355870).
+ */
+const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\bCDS\s+access\s+controls?\b|\.dcls\b|\basdcls\b/i;
 
 /** The program a source declares (`REPORT`/`PROGRAM`), as the engine reads it; `null` when it declares none. */
 export function programOfSource(code: string | null | undefined): string | null {
@@ -459,6 +463,127 @@ export function readsAtTwoCutoffs(code: string | null | undefined): boolean {
   return effective && known;
 }
 
+/* ------------------------------------------------ the pre-posting check point */
+
+/**
+ * FI review of 18.10.2026, FI-F01 (roadmap 3.0.18 item 13): where the original posts an accounting document, the
+ * design names one binding pre-posting check point as an architecture decision, with the channels that reach it —
+ * the Fiori app, the API, the job, another caller. A check that sits in one channel (the UI's validation, the job's
+ * selection) is skipped by the others; the check belongs where every channel passes, immediately before the posting
+ * call. Read by the engine from the source: the posting calls, and whether the original checks the document before
+ * it in the same routine. Deterministic; the decision text is the product's, not the model's.
+ */
+export const POSTING_FUNCTION = /^(?:BAPI_ACC_[A-Z0-9_]*_POST|POSTING_INTERFACE_(?:DOCUMENT|CLEARING)|AC_DOCUMENT_POST|BAPI_INCOMINGINVOICE_CREATE1?)$/;
+/** The check a posting BAPI offers (BAPI_ACC_DOCUMENT_CHECK for BAPI_ACC_DOCUMENT_POST, …). */
+export const POSTING_CHECK_FUNCTION = /^BAPI_ACC_[A-Z0-9_]*_CHECK$/;
+
+export interface PostingCall {
+  fm: string;
+  line: number;
+  /** The FORM or METHOD it is in, upper case; null at the event level. */
+  routine: string | null;
+  /** The original's check of the document before this call in the same routine, or null when there is none. */
+  checkedBy: { fm: string; line: number } | null;
+}
+
+export interface PrePostingCheck {
+  postings: PostingCall[];
+  /** Check calls of the original outside the posting's routine: read, but not known to run on every path to it. */
+  otherChecks: Array<{ fm: string; line: number }>;
+  /** Where the check point is, in the target's own names. */
+  checkPoint: string;
+  channels: Array<{ channel: string; reaches: string }>;
+}
+
+/** The posting calls of a source and the original's own checks before them; null when it posts nothing. */
+export function postingCallsOf(code: string | null | undefined): { postings: PostingCall[]; otherChecks: Array<{ fm: string; line: number }> } | null {
+  if (typeof code !== 'string' || !code.trim()) return null;
+  let statements;
+  try {
+    statements = readStatements(code.replace(/\r\n?/g, '\n'));
+  } catch {
+    return null;
+  }
+  const calls: Array<{ fm: string; line: number; routine: string | null }> = [];
+  let routine: string | null = null;
+  for (const s of statements) {
+    const head = /^(FORM|METHOD)\s+([\w/~=>-]+)/i.exec(s.text);
+    if (head) routine = head[2].toUpperCase();
+    else if (/^END(?:FORM|METHOD)\b/i.test(s.text)) routine = null;
+    const fm = /^CALL\s+FUNCTION\s+'([\w/]+)'/i.exec(s.text)?.[1]?.toUpperCase();
+    if (fm && (POSTING_FUNCTION.test(fm) || POSTING_CHECK_FUNCTION.test(fm))) calls.push({ fm, line: s.lineStart, routine });
+  }
+  const posts = calls.filter((c) => POSTING_FUNCTION.test(c.fm));
+  if (posts.length === 0) return null;
+  const checks = calls.filter((c) => POSTING_CHECK_FUNCTION.test(c.fm));
+  const postings = posts.map((p) => {
+    const before = checks.filter((c) => c.routine === p.routine && c.line < p.line).at(-1);
+    return { ...p, checkedBy: before ? { fm: before.fm, line: before.line } : null };
+  });
+  const used = new Set(postings.flatMap((p) => (p.checkedBy ? [p.checkedBy.line] : [])));
+  return { postings, otherChecks: checks.filter((c) => !used.has(c.line)).map((c) => ({ fm: c.fm, line: c.line })) };
+}
+
+/**
+ * The binding pre-posting check point of a design, with its channel matrix: the channels the target delivers
+ * (read from the source the way the scaffold reads it), each reaching the posting only through the check point.
+ * Null when the original posts no accounting document.
+ */
+export function prePostingCheckOf(code: string | null | undefined, route: DesignRoute): PrePostingCheck | null {
+  const read = postingCallsOf(code);
+  if (!read) return null;
+  const text = (code ?? '').replace(/\r\n?/g, '\n');
+  let job = false;
+  let service = true;
+  let logic = 'the logic class';
+  let access = 'the access layer';
+  try {
+    const statements = readStatements(text);
+    const graph = readCallGraphFrom(statements, readBlocks(statements));
+    const delivery = abapDeliveryOf({ statements, graph, contract: readOriginalContract(text) });
+    job = delivery.kind !== 'ui-service';
+    service = delivery.kind !== 'application-job';
+    const n = rapDesignNames(programNameOf(statements));
+    logic = n.logic;
+    access = n.accessInterface;
+  } catch {
+    /* the channels below stay the defaults */
+  }
+  const fms = [...new Set(read.postings.map((p) => p.fm))].join(', ');
+  const checkPoint =
+    route === 'rap'
+      ? `${logic}, immediately before it calls ${access} to post (${fms}) — inside the logic every channel runs, never in one channel's UI or selection`
+      : `the service's process logic, immediately before the call that posts (${fms}) — inside the logic every channel runs, never in one channel's UI or request handler`;
+  const through = route === 'rap' ? `${logic}->run( )` : 'the process action';
+  const channels = [
+    ...(service ? [{ channel: route === 'rap' ? 'Fiori app and OData API (the service binding)' : 'Fiori app and OData API (the CAP service)', reaches: `${through}, then the check point` }] : []),
+    ...(job ? [{ channel: route === 'rap' ? 'Application Job (unattended run)' : 'Scheduled job (unattended run)', reaches: `${through}, then the check point` }] : []),
+    { channel: route === 'rap' ? 'Another ABAP caller of the logic' : 'Another service calling the action', reaches: `${through}, then the check point` },
+  ];
+  return { ...read, checkPoint, channels };
+}
+
+/** The architecture decision as the exports state it: one sentence, the original's own check named or missing. */
+export function prePostingDecisionWords(p: PrePostingCheck): string[] {
+  const posts = p.postings.map((x) =>
+    `${x.fm} at L${x.line}${x.routine ? ` (${x.routine})` : ''}: ${x.checkedBy ? `the original checks the document first with ${x.checkedBy.fm} at L${x.checkedBy.line}` : 'the original posts without a check call before it in the same routine'}`,
+  );
+  return [
+    `Architecture decision — a binding pre-posting check point: every posting runs the document check at ${p.checkPoint}. No channel posts past it, and a channel's own validation does not replace it.`,
+    `Postings in the original: ${posts.join('; ')}.${p.otherChecks.length ? ` Checks elsewhere in the original (not known to run on every path to a posting): ${p.otherChecks.map((c) => `${c.fm} at L${c.line}`).join(', ')}.` : ''}`,
+  ];
+}
+
+/** The prompt's rule (FI-F01): name the check point as an architecture decision; empty when the source posts nothing. */
+export function prePostingPromptRule(code: string | null | undefined, route: DesignRoute): string {
+  const p = prePostingCheckOf(code, route);
+  if (!p) return '';
+  return (
+    `PRE-POSTING CHECK: the original posts an accounting document (${[...new Set(p.postings.map((x) => x.fm))].join(', ')}). Name one binding pre-posting check point as an architecture decision: the check runs at ${p.checkPoint}, and every channel `
+    + `(${p.channels.map((c) => c.channel).join('; ')}) reaches the posting only through it. Never place the check in one channel only.`
+  );
+}
+
 /* ------------------------------------------------------- SAP identifiers */
 
 /** A mark kept in full: a wrong or unverified name, or one whose licence asks for its source where it stands. */
@@ -505,6 +630,8 @@ export interface DesignPostCheck<T> {
   delivered: RapDelivered | null;
   /** Security rows proposing CDS access control for a custom entity, taken out of the design (3.0.18 item 13, QM-07). */
   dclRefused: string[];
+  /** The binding pre-posting check point and its channels (3.0.18 item 13, FI-F01), or null when the original posts nothing. */
+  prePosting: PrePostingCheck | null;
 }
 
 /** The checks of this module on one parsed design, in the order they apply. */
@@ -514,7 +641,7 @@ export function postCheckDesign<T>(design: T, code?: string | null, packageFiles
   const twoCutoffs = readsAtTwoCutoffs(code);
   const mvcc = refuseMvccClaimsIn(design);
   if (route !== 'rap') {
-    return { design: mvcc.design, route, program, renamed: [], beyond: [], remnants: [], mvccRefused: mvcc.refused, twoCutoffs, delivered: null, dclRefused: [] };
+    return { design: mvcc.design, route, program, renamed: [], beyond: [], remnants: [], mvccRefused: mvcc.refused, twoCutoffs, delivered: null, dclRefused: [], prePosting: prePostingCheckOf(code, route) };
   }
   const remnants = rapTemplateRemnants(mvcc.design);
   // 3.0.18 item 13: the package's own file list when there is one, else what the scaffold writes for this source.
@@ -523,7 +650,7 @@ export function postCheckDesign<T>(design: T, code?: string | null, packageFiles
   // Without a source the scaffold's names cannot be derived: the model's stay, and the export says so.
   const aligned = program ? alignRapDesignNames(mvcc.design, program, delivered) : { design: mvcc.design, renamed: [], beyond: [] };
   const refusal = delivered?.variant === 'custom-entity' ? refuseCustomEntityDcl(aligned.design) : { design: aligned.design, refused: [] };
-  return { design: refusal.design, route, program, renamed: aligned.renamed, beyond: aligned.beyond, remnants, mvccRefused: mvcc.refused, twoCutoffs, delivered, dclRefused: refusal.refused };
+  return { design: refusal.design, route, program, renamed: aligned.renamed, beyond: aligned.beyond, remnants, mvccRefused: mvcc.refused, twoCutoffs, delivered, dclRefused: refusal.refused, prePosting: prePostingCheckOf(code, route) };
 }
 
 /**
