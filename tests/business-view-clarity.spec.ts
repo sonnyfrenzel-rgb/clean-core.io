@@ -556,12 +556,9 @@ test.describe('the Business view on screen', () => {
     await expect(tour).toHaveCount(0);
 
     // A step's need is answered in the source column beside the map, into the
-    // need revision. The column offers the answer once that revision exists
-    // (the server builds revision 1 from the signed run; the rules' answers
-    // and Design's questions build it the same way).
-    const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-    expect((await fetch(`${BASE}/api/projects/${ids.open}/process-revisions`, { method: 'POST', headers: h, body: '{}' })).ok).toBe(true);
-    await open(page, ids.open);
+    // need revision — also on a project nothing has reconstructed yet: the PO
+    // project has only been toured, so the first answer builds revision 1.
+    await open(page, ids.po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-legend-entry="proven"]')).toHaveCount(0);
     const confirmed = page.locator('[data-legend-count="confirmed"]');

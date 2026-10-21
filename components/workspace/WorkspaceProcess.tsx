@@ -26,7 +26,8 @@ import ProcessTour from './ProcessTour';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { plainModelEnabled, walkPlainSentences } from '@/lib/plain-wording';
 import { isConfirmedState } from '@/lib/rules-editor';
-import type { ElementState } from '@/lib/process-states';
+import type { ElementState, StateSubject } from '@/lib/process-states';
+import { anchorWords } from '@/lib/rule-anchor';
 import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
@@ -307,6 +308,27 @@ export default function WorkspaceProcess({
     return out;
   }, [model]);
   const selectedElement = selected ? byId.get(selected) ?? null : null;
+  /**
+   * The step answered beside the map. Listed by the need view once the process
+   * is reconstructed; before that (`no-baseline`, a fresh project) it is read
+   * off the drawn element, so the first answer can be given here and
+   * `answerStep` reconstructs the process before it records it.
+   */
+  const stepSubject = useMemo((): StateSubject | null => {
+    if (!selectedElement) return null;
+    const listed = stateView?.subjects.find((s) => s.subject === selectedElement.id);
+    if (listed) return listed;
+    if (stateOutcome && !stateOutcome.ok && stateOutcome.code === 'no-baseline') {
+      return {
+        subject: selectedElement.id,
+        kind: 'element',
+        label: selectedElement.label,
+        detail: selectedElement.kind,
+        anchor: anchorWords(selectedElement.anchor?.lineStart ?? null, selectedElement.anchor?.lineEnd ?? null),
+      };
+    }
+    return null;
+  }, [selectedElement, stateView, stateOutcome]);
 
   /**
    * Opened where the process is (ADR-072). Many programs read as one start
@@ -557,12 +579,12 @@ export default function WorkspaceProcess({
                     </span>
                   ) : null}
                 </div>
-                {owner && selectedElement && stateView?.subjects.some((s) => s.subject === selectedElement.id) ? (
+                {owner && selectedElement && stepSubject ? (
                   <div data-workspace-step-need="" className="flex flex-col gap-2 border-b border-cc-line pb-3">
                     <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('biz.stepNeedTitle')}</p>
                     <StateChoice
                       key={selectedElement.id}
-                      subject={stateView.subjects.find((s) => s.subject === selectedElement.id)!}
+                      subject={stepSubject}
                       entry={answers[selectedElement.id] ?? null}
                       busy={answering?.subject === selectedElement.id && answering.error === null}
                       error={answering?.subject === selectedElement.id ? answering.error : null}
