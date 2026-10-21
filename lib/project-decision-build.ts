@@ -144,7 +144,7 @@ function noContractBinding(kind: OptionKind, optionId: string, signOff: SignOffB
     'contract',
     key,
     'confirmed',
-    `No architecture contract is required: this option generates nothing. The decision rests on the analysis run and on the sign-off ${signOff!.by ? `by ${signOff!.by} ` : ''}at ${at}${signOff!.reason ? ', with its reason' : ', which records no reason: it follows the recommendation of the engine'}.`,
+    `No architecture contract is required: this option generates nothing. The decision rests on the analysis run and on the sign-off ${signOff!.by ? `by ${signOff!.by} ` : ''}at ${at}${signOff!.reason ? ', with its reason' : ', which records no reason'}.`,
   );
 }
 

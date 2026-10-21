@@ -732,7 +732,7 @@ function readingSentence(scope: KeyUserScope, parts: KeyUserReading['parts'], ca
       : `No part of the program is a key-user candidate: of ${parts.total} part(s), ${rest}.`;
   }
   if (scope === 'whole-program') {
-    return `Every part of the program is a key-user candidate (${parts.keyUser}: ${listWords(tools)}), each with its limit: built with key-user tools, the extension uses released extension points only.`;
+    return `Every part of the program is a key-user candidate (${parts.keyUser}: ${listWords(tools)}), each with its limit: built with key-user tools, the extension uses SAP's key-user extension points, and each candidate holds only where its limit — its release for the target edition included — is met.`;
   }
   if (!rest) {
     return `${parts.keyUser} of ${parts.total} part(s) are key-user candidates (${listWords(tools)}), each with its limit; part of the program was not assessed by the engine, so the program is not called key user as a whole.`;

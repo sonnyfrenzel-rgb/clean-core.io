@@ -1054,9 +1054,9 @@ export function routeExtensibility(
       // track offers, not a property of the analysed code (c658f64f147e).
       resultState: keyUser?.recommended ? 'Key-User Preferred' : 'Neutral',
       cleanCoreImpact: keyUser?.recommended
-        ? 'Clean core level A by construction: a key-user extension uses released extension points only. The score measures the code as it stands, not the key-user extension that replaces it.'
+        ? 'Upgrade-stable by construction where every candidate is released for key-user use in the target edition: a key-user extension uses SAP’s key-user extension points. The score measures the code as it stands, not the key-user extension that replaces it.'
         : keyUser && keyUser.scope === 'partial'
-        ? 'The key-user parts are clean core level A by construction; the code part reaches the level of the route it is built on.'
+        ? 'The key-user parts are upgrade-stable by construction where each candidate is released for key-user use; the code part reaches the level of the route it is built on.'
         : 'Target property of Key User extensions: they use released extension points only. Not established for the analysed code.'
     },
     {

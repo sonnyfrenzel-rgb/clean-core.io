@@ -328,12 +328,15 @@ test.describe('the starter example of its own: Z_SD_DELIVERY_PRIORITY', () => {
     expect(route.rationale).toMatch(/^Key-user extensibility covers the whole program: Every part of the program is a key-user candidate \(4: /);
     // The rationale is signed (`recommendationJustification`) and a level never is: it stands beside, as `levelByConstruction`
     // (QA review of 317d5f7a9c53, de1b549b12ba).
-    expect(route.rationale).toContain('the extension uses released extension points only');
+    // Nor does it claim a release the engine did not establish (QA review of 7fe620f4c919, 8e1e0bd17113).
+    expect(route.rationale).toContain("the extension uses SAP's key-user extension points, and each candidate holds only where its limit");
+    expect(route.rationale).not.toContain('released extension points only');
     expect(route.rationale).not.toMatch(/\blevel [A-D]\b/i);
     const cp = route.checkpoints.find((c) => c.checkpointName === 'Key User Extensibility')!;
     expect(cp.resultState).toBe('Key-User Preferred');
     expect(cp.evaluation).toMatch(/^Indicated for the whole program\./);
-    expect(cp.cleanCoreImpact).toMatch(/^Clean core level A by construction/);
+    expect(cp.cleanCoreImpact).toMatch(/^Upgrade-stable by construction where every candidate is released for key-user use/);
+    expect(cp.cleanCoreImpact).not.toMatch(/level [A-D]/i);
     // The public edition reads the same parts.
     const pub = buildAbapEvidence(source, EXAMPLE, 'public', undefined, NEW).keyUser!;
     expect(pub.candidates.map((c) => c.tool)).toEqual(must(source, EXAMPLE).candidates.map((c) => c.tool));

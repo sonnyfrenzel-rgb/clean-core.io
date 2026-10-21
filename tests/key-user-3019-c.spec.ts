@@ -172,7 +172,8 @@ test.describe('1. key user is the recommendation where the whole program is key 
     const without = contractNote('');
     expect(without.provenance).toBe('confirmed');
     expect(without.note).not.toContain('with its reason');
-    expect(without.note).toContain('which records no reason: it follows the recommendation of the engine');
+    // The builder cannot see the recommendation, so it claims none (QA review of 7fe620f4c919, 974db24613b4).
+    expect(without.note).toMatch(/, which records no reason.$/);
     expect(contractNote('Configured by the sales team.').note).toMatch(/, with its reason\.$/);
   });
 });
@@ -310,6 +311,9 @@ test.describe('4. a split program builds units for its code parts only (scaffold
   test('a 3.0.19 run generates only on a ready evidence read — a failed read holds it and says why', () => {
     const p = project({ targetArchitecture: 'rap' }, SPLIT);
     expect(keyUserEvidenceBlock(p, { state: 'ready' })).toBeNull();
+    // A ready read without a key-user reading holds it too (QA review of 7fe620f4c919, e6be8bc2a9fd).
+    expect(keyUserEvidenceBlock(p, { state: 'ready', value: { evidence: {} } })).toMatch(/carry no key-user reading/);
+    expect(keyUserEvidenceBlock(p, { state: 'ready', value: { evidence: { keyUser: { scope: 'partial' } } } })).toBeNull();
     expect(keyUserEvidenceBlock(p, { state: 'loading' })).toMatch(/Reading the engine/);
     const failed = keyUserEvidenceBlock(p, { state: 'failed', reason: 'the server answered 503' });
     expect(failed).toContain('the server answered 503');

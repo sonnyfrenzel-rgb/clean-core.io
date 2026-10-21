@@ -111,9 +111,21 @@ export function keyUserPlanRanges(
  */
 export function keyUserEvidenceBlock(
   project: ProjectLike,
-  evidence: { state: 'loading' } | { state: 'failed'; reason: string } | { state: 'ready' },
+  evidence:
+    | { state: 'loading' }
+    | { state: 'failed'; reason: string }
+    | { state: 'ready'; value?: { evidence?: { keyUser?: unknown } | null } | null },
 ): string | null {
-  if (!keyUserGateOpen(project) || evidence.state === 'ready') return null;
+  if (!keyUserGateOpen(project)) return null;
+  if (evidence.state === 'ready') {
+    // A ready read that carries no key-user reading gives the planner no ranges either: the whole source would be
+    // planned, the configured lines included (QA review of 7fe620f4c919, e6be8bc2a9fd). The value is optional only
+    // for callers that hand over the state alone; a read that names its report must carry the reading.
+    if (evidence.value === undefined) return null;
+    return evidence.value?.evidence?.keyUser
+      ? null
+      : "The engine's findings for this source carry no key-user reading, so the lines a key user configures cannot be left out of the code. Run the analysis again.";
+  }
   if (evidence.state === 'loading') return "Reading the engine's findings for this source…";
   return `The engine's findings could not be read (${evidence.reason}), so the lines a key user configures cannot be left out of the code. Reload the page to read them again.`;
 }

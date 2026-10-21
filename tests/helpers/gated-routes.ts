@@ -99,6 +99,8 @@ export const GATED_ROUTES: GatedRoute[] = [
   // record of a run; POST records one, and with it whether the handover can go.
   { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/test-results` },
   { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/test-results`, body: { action: 'confirm', passed: 1, failed: 0, system: 'S4D / 100', ranOn: '2026-10-01' } },
+  // 3.0.19 — the key user's acceptance checks, recorded as a self-declaration of the account (owner 19.10.2026).
+  { file: 'app/api/projects/[projectId]/key-user-checks/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/key-user-checks`, body: {} },
   // 03.10.2026 — the Economics figures, built on the requirement-wording route:
   // GET hands out the owner's figures, POST stores them. A token from before
   // the second factor reaches neither.

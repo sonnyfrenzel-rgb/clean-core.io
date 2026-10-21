@@ -262,6 +262,17 @@ const CASES: RouteCase[] = [
     readerAdmitted: false,
   },
   {
+    key: 'app/api/projects/[projectId]/key-user-checks/route.ts#POST',
+    what: "recording the key user's acceptance checks as run in your own system (3.0.19)",
+    method: 'POST',
+    path: (p) => `/api/projects/${p}/key-user-checks`,
+    body: {},
+    refusal: 404,
+    // The seeded project's decision is not key user: the owner reaches the route and is told so.
+    owner: [400, 409],
+    readerAdmitted: false,
+  },
+  {
     key: 'app/api/projects/[projectId]/raci/route.ts#GET',
     what: "the owner's RACI on the Documentation stage",
     method: 'GET',
@@ -819,6 +830,7 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/requirement-wording/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/test-results/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/test-results/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/key-user-checks/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/cost-assumptions/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/cost-assumptions/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/artefacts/route.ts#GET → 404 vs 404',
