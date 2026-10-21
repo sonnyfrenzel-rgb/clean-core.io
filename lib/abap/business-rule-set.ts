@@ -4,6 +4,7 @@ import type { Branch } from './control-flow';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readDecisionTable } from './decision-table';
 import { isDemoSubject, readDemoSwitches, type DemoSwitches } from './demo-switches';
+import { APP_VERSION } from '../version';
 import { readHeaderRules, type HeaderRuleCandidate } from './header-rules';
 import {
   buildProcessSkeletonFrom,
@@ -321,9 +322,9 @@ export interface BusinessRuleSet {
 /* --------------------------------------------------------------- entry points */
 
 /** Derive the business rules of one ABAP source. No model, no network. */
-export function deriveBusinessRules(source: string): BusinessRuleSet {
+export function deriveBusinessRules(source: string, engineVersion: string | null = APP_VERSION): BusinessRuleSet {
   const facts = buildProcessFacts(source);
-  return deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts));
+  return deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts), engineVersion);
 }
 
 /**
@@ -335,8 +336,10 @@ export function deriveBusinessRulesFrom(
   source: string,
   facts: ProcessFacts,
   skeleton: ProcessSkeleton,
+  /** The engine the demo switches are read for (`readDemoSwitches`, 3.0.20 shapes 4 and 5). */
+  engineVersion: string | null = APP_VERSION,
 ): BusinessRuleSet {
-  return new RuleSetBuilder(source, facts, skeleton).build();
+  return new RuleSetBuilder(source, facts, skeleton, engineVersion).build();
 }
 
 /**
@@ -571,6 +574,7 @@ class RuleSetBuilder {
     private source: string,
     private facts: ProcessFacts,
     private skeleton: ProcessSkeleton,
+    private engineVersion: string | null = APP_VERSION,
   ) {
     this.lines = source.split(/\r?\n/);
     const report = readBusinessRulesFrom(facts.statements, facts.structure, facts.control);
@@ -611,7 +615,7 @@ class RuleSetBuilder {
     // checks on the demo parameters are test data, not rules a business keeps
     // or drops. Counted apart, numbered first like the table values above, so
     // every other rule keeps the number a confirmation is stored against.
-    const demo = readDemoSwitches(this.source);
+    const demo = readDemoSwitches(this.source, this.engineVersion);
     const demoRules = demo ? numberedRules.filter((rule) => isDemoRule(rule, demo)) : [];
     const rules = demoRules.length ? numberedRules.filter((rule) => !demoRules.includes(rule)) : numberedRules;
     // The rules the header comment states (CR-A2) — candidates, never code facts.

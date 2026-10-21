@@ -1,5 +1,5 @@
 import { getAuth } from '@/lib/firebase';
-import { isStateEntry, type ProcessStateView, type StateChoiceInput, type StateEntry } from '@/lib/process-states';
+import type { ProcessStateView, StateChoiceInput } from '@/lib/process-states';
 
 /**
  * The browser half of roadmap 3.5 — the two calls a confirmation screen makes.
@@ -39,23 +39,6 @@ function isView(value: unknown): value is ProcessStateView {
     && Array.isArray(v.entries)
     && Array.isArray(v.links)
   );
-}
-
-/** The earlier answers of the rules (3.0.20 (4)), or why they could not be read. */
-export type RuleHistoryOutcome = { ok: true; entries: StateEntry[]; limited: boolean } | { ok: false };
-
-/** Every rule answer as it was made — `GET …/process-states?history=rules`. Never throws. */
-export async function readRuleHistory(projectId: string): Promise<RuleHistoryOutcome> {
-  try {
-    const res = await fetch(`${processStatesPath(projectId)}?history=rules`, { headers: await authHeader() });
-    if (!res.ok) return { ok: false };
-    const body = (await res.json()) as { history?: { entries?: unknown; limited?: unknown } };
-    const entries = Array.isArray(body.history?.entries) ? body.history.entries.filter(isStateEntry) : null;
-    if (!entries) return { ok: false };
-    return { ok: true, entries, limited: body.history?.limited === true };
-  } catch {
-    return { ok: false };
-  }
 }
 
 /** What has been confirmed for this process, or null when it cannot be read. */

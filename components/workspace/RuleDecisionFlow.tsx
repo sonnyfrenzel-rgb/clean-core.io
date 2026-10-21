@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ArrowDown, Check, CircleHelp, Cog, PenLine, Repeat2, Trash2, Building2 } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -10,7 +10,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcDateText from '@/components/cc/DateText';
 import CcTextarea from '@/components/cc/Textarea';
 import CcSelect from '@/components/cc/Select';
-import CcSegmentedControl, { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
+import { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
 import { CcTag } from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
 import { anchorLabel, type SourceReading } from '@/lib/first-look';
@@ -40,12 +40,10 @@ import { confirmOutcomeSentence, confirmProcessStates, readProcessStatesOutcome,
 import { ensureProcessBaseline } from '@/lib/process-revisions-client';
 import { publishProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries, type EditorRule } from '@/lib/rules-editor';
-import RuleWorkshop from './RuleWorkshop';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
-import { readRuleHistory, type RuleHistoryOutcome } from '@/lib/process-states-client';
 import {
   wt,
   rulesDecidedOf,
@@ -70,7 +68,8 @@ import {
  * proposal, or one of the other answers is recorded on its own click
  * (ADR-083 (c): rule answers are given per rule and saved at once); an answer
  * that needs words opens its field first. Technical settings are set apart and
- * answered together. A *Workshop* view beside it shows what a meeting needs.
+ * answered together. (A workshop view beside it was built in 3.0.20 and
+ * removed again by owner decision 21.10.2026.)
  *
  * What is stored is unchanged: one need revision per answer through
  * `POST /api/projects/{id}/process-states`, Admin SDK only, with the four
@@ -81,9 +80,7 @@ import {
  * rule protects, the example, the proposal and the answers — and complete one
  * fold down: either side of the limit and where it applies, then the code (3).
  * Every sentence is shown in plain business words when a model's rewording of
- * it held the guard, the engine's sentence one fold down (2). The workshop
- * view reads the earlier revisions and shows per rule the earlier answer, the
- * new one, who and when (4).
+ * it held the guard, the engine's sentence one fold down (2).
  */
 
 export interface RuleDecisionFlowProps {
@@ -100,8 +97,6 @@ export interface RuleDecisionFlowProps {
   fallback?: React.ReactNode;
   /** A stored plain wording handed in without a fetch (a rendered test). */
   plainWording?: PlainWordingRecord | null;
-  /** The earlier answers handed in without a fetch (a rendered test). */
-  history?: RuleHistoryOutcome | null;
 }
 
 const DECISION_ICON: Record<RuleDecisionKind, React.ReactNode> = {
@@ -401,7 +396,6 @@ export default function RuleDecisionFlow({
   reload,
   fallback = null,
   plainWording,
-  history: givenHistory,
 }: RuleDecisionFlowProps) {
   const explanation = useMemo(() => {
     try {
@@ -412,7 +406,6 @@ export default function RuleDecisionFlow({
   }, [source, reading]);
   const entries = useMemo(() => ruleEntries(view), [view]);
   const flow = useMemo(() => (explanation ? ruleFlow(explanation, entries) : null), [explanation, entries]);
-  const [mode, setMode] = useState<'decide' | 'workshop'>('decide');
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [recorded, setRecorded] = useState(false);
@@ -430,21 +423,6 @@ export default function RuleDecisionFlow({
     initial: plainWording ?? null,
   });
   const say: Say = wording.say;
-  // The earlier answers, read when the workshop view opens — and again after an answer moved the revision on.
-  const [fetchedHistory, setFetchedHistory] = useState<{ revision: number; outcome: RuleHistoryOutcome } | null>(null);
-  const revisionNow = view?.revision ?? 0;
-  useEffect(() => {
-    if (mode !== 'workshop' || givenHistory !== undefined || !projectId) return;
-    if (fetchedHistory && fetchedHistory.revision === revisionNow) return;
-    let cancelled = false;
-    void readRuleHistory(projectId).then((outcome) => {
-      if (!cancelled) setFetchedHistory({ revision: revisionNow, outcome });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, givenHistory, projectId, revisionNow, fetchedHistory]);
-  const history: RuleHistoryOutcome | null = givenHistory !== undefined ? givenHistory : fetchedHistory?.outcome ?? null;
 
   const byId = useMemo(() => new Map(rules.map((r) => [r.id, r])), [rules]);
   const explained = useMemo(() => new Map((explanation?.rules ?? []).map((r) => [r.id, r])), [explanation]);
@@ -519,15 +497,6 @@ export default function RuleDecisionFlow({
       </p>
       {!owner ? <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('rules.ownerOnly')}</p> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <CcSegmentedControl<'decide' | 'workshop'>
-          label={wt('rules.viewLabel')}
-          segments={[
-            { value: 'decide', label: wt('rules.viewDecide') },
-            { value: 'workshop', label: wt('rules.viewWorkshop') },
-          ]}
-          value={mode}
-          onChange={setMode}
-        />
         <span className="flex min-w-[160px] flex-1 items-center gap-2">
           <span
             role="progressbar"
@@ -543,7 +512,7 @@ export default function RuleDecisionFlow({
             {rulesDecidedOf(flow.decided, flow.total)}
           </span>
         </span>
-        {mode === 'decide' && flow.next ? (
+        {flow.next ? (
           <CcButton variant="ghost" icon={<ArrowDown size={16} aria-hidden={true} />} onClick={goNext} data-rule-flow-next="">
             {wt('rules.nextOpen')}
           </CcButton>
@@ -555,71 +524,62 @@ export default function RuleDecisionFlow({
         </CcMessageStrip>
       ) : null}
 
-      {mode === 'workshop' ? (
-        <RuleWorkshop
-          explanation={explanation}
-          entries={entries}
-          history={history}
-          titleOf={(id) => explained.get(id)?.headline ?? byId.get(id)?.title ?? id}
-        />
-      ) : (
-        <div className="flex min-w-0 flex-col gap-3">
-          {flow.topics.map((topic) => (
-            <section key={topic.topic} data-rule-topic={topic.topic} data-decided={topic.decided} data-total={topic.total} className="flex min-w-0 flex-col gap-2 border-t border-cc-line pt-3">
-              {topic.apart ? (
-                <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('rules.apart')}</p>
+      <div className="flex min-w-0 flex-col gap-3">
+        {flow.topics.map((topic) => (
+          <section key={topic.topic} data-rule-topic={topic.topic} data-decided={topic.decided} data-total={topic.total} className="flex min-w-0 flex-col gap-2 border-t border-cc-line pt-3">
+            {topic.apart ? (
+              <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('rules.apart')}</p>
+            ) : null}
+            <CcDisclosure
+              title={topic.label}
+              count={topic.total}
+              level={3}
+              summary={
+                <>
+                  {rulesDecidedOf(topic.decided, topic.total)} · {topic.decided === topic.total ? wt('rules.topicDone') : topic.lead}
+                </>
+              }
+              open={isOpen(topic.topic)}
+              onOpenChange={(next) => toggle(topic.topic, next)}
+            >
+              {topic.apart && owner && flow.openTechnical.length > 0 ? (
+                <div className="mb-2">
+                  <CcButton
+                    variant="secondary"
+                    icon={<Check size={16} aria-hidden={true} />}
+                    busy={flow.openTechnical.some((id) => busy.has(id))}
+                    onClick={() => void record(flow.openTechnical.map((id) => choiceOf(id, 'keep', '')))}
+                    data-rule-keep-technical=""
+                  >
+                    {rulesKeepTechnical(flow.openTechnical.length)}
+                  </CcButton>
+                </div>
               ) : null}
-              <CcDisclosure
-                title={topic.label}
-                count={topic.total}
-                level={3}
-                summary={
-                  <>
-                    {rulesDecidedOf(topic.decided, topic.total)} · {topic.decided === topic.total ? wt('rules.topicDone') : topic.lead}
-                  </>
-                }
-                open={isOpen(topic.topic)}
-                onOpenChange={(next) => toggle(topic.topic, next)}
-              >
-                {topic.apart && owner && flow.openTechnical.length > 0 ? (
-                  <div className="mb-2">
-                    <CcButton
-                      variant="secondary"
-                      icon={<Check size={16} aria-hidden={true} />}
-                      busy={flow.openTechnical.some((id) => busy.has(id))}
-                      onClick={() => void record(flow.openTechnical.map((id) => choiceOf(id, 'keep', '')))}
-                      data-rule-keep-technical=""
-                    >
-                      {rulesKeepTechnical(flow.openTechnical.length)}
-                    </CcButton>
-                  </div>
-                ) : null}
-                <ol data-rules-list="" className="m-0 flex list-none flex-col gap-3 p-0">
-                  {topic.rules.map((r) => {
-                    const rule = byId.get(r.id);
-                    const e = explained.get(r.id);
-                    if (!rule || !e) return null;
-                    return (
-                      <RuleCard
-                        key={r.id}
-                        rule={rule}
-                        explanation={e}
-                        entry={entries[r.id]}
-                        owner={owner}
-                        busy={busy.has(r.id)}
-                        error={errors[r.id] ?? null}
-                        onRecord={(choices) => void record(choices)}
-                        say={say}
-                      />
-                    );
-                  })}
-                </ol>
-              </CcDisclosure>
-            </section>
-          ))}
-        </div>
-      )}
-      {mode === 'decide' && recorded && flow.next ? (
+              <ol data-rules-list="" className="m-0 flex list-none flex-col gap-3 p-0">
+                {topic.rules.map((r) => {
+                  const rule = byId.get(r.id);
+                  const e = explained.get(r.id);
+                  if (!rule || !e) return null;
+                  return (
+                    <RuleCard
+                      key={r.id}
+                      rule={rule}
+                      explanation={e}
+                      entry={entries[r.id]}
+                      owner={owner}
+                      busy={busy.has(r.id)}
+                      error={errors[r.id] ?? null}
+                      onRecord={(choices) => void record(choices)}
+                      say={say}
+                    />
+                  );
+                })}
+              </ol>
+            </CcDisclosure>
+          </section>
+        ))}
+      </div>
+      {recorded && flow.next ? (
         <span>
           <CcButton variant="ghost" icon={<PenLine size={16} aria-hidden={true} />} onClick={goNext}>
             {wt('rules.goNext')}

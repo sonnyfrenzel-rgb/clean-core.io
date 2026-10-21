@@ -5,6 +5,8 @@ import type { BusinessRule, BusinessRuleSet, RuleParameter } from './business-ru
 import { enclosingBranches, type EnclosingBranch } from './enclosing-branches';
 import { conditionToPhrase, humaniseField, humaniseRoutine, plainContext, ruleConditionText, type PlainContext } from './plain-language';
 import { ruleStandardHint } from '../rule-standard-hints';
+import { APP_VERSION } from '../version';
+import { engineReads3020Apply } from './engine-reads-3020-gate';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -507,9 +509,11 @@ interface RuleContext {
   place: ArmPlace | null;
   statementIndex: number;
   anchor: SourceRange;
+  /** From engine 3.0.20: a cap of a thousand million or more is technical on any subject. */
+  reads3020: boolean;
 }
 
-function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext): RuleContext {
+function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext, reads3020 = false): RuleContext {
   const tests = testsOf(rule);
   const first = tests[0] ?? rule.parameters[0];
   const stems = [...new Set(rule.parameters.map((p) => fieldStem(p.subject)).filter(Boolean))];
@@ -528,6 +532,7 @@ function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext): 
     place: tests[0] ? armAt(facts.control, tests[0].lineStart) : null,
     statementIndex,
     anchor,
+    reads3020,
   };
 }
 
@@ -544,6 +549,12 @@ function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   // Only a subject named as a setting of the
   // program makes the rule technical; the sentinel then says what its value is.
   const technicalSubject = rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s));
+  // From engine 3.0.20 (owner report 21.10.2026, "Only maximum scaled 1000000000000 is processed" first
+  // in "What it decides"): a cap of a thousand million or more is "no limit" on any subject.
+  if (rc.reads3020 && values.some((v) => /^(?:10{9,}|9{9,})$/.test(v))) {
+    const v = values.find((x) => /^(?:10{9,}|9{9,})$/.test(x)) ?? '';
+    return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
+  }
   if (technicalSubject && values.some(isSentinel)) {
     const v = values.find(isSentinel) ?? '';
     return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
@@ -922,7 +933,14 @@ function proposalOf(rc: RuleContext, technical: boolean, hasInclude: boolean): R
  * The explanation of every rule of a set. `facts` are the statements, the
  * nesting and the branches the rule set was derived from (`buildProcessFacts`).
  */
-export function explainBusinessRules(source: string, set: BusinessRuleSet, facts: ExplainFacts): RuleSetExplanation {
+export function explainBusinessRules(
+  source: string,
+  set: BusinessRuleSet,
+  facts: ExplainFacts,
+  /** The engine the explanation is read for (`ENGINE_READS_3020_FROM`). */
+  engineVersion: string | null = APP_VERSION,
+): RuleSetExplanation {
+  const reads3020 = engineReads3020Apply(engineVersion);
   const ctx = plainContext(source);
   const hasInclude = facts.statements.some((s) => s.keyword.toUpperCase() === 'INCLUDE' && !/^INCLUDE\s+(?:TYPE|STRUCTURE)\b/i.test(s.text));
   // The values the code tests one field against, across rules — for "handled by another rule".
@@ -938,7 +956,7 @@ export function explainBusinessRules(source: string, set: BusinessRuleSet, facts
   }
   const demoIds = new Set((set.demoCases?.rules ?? []).map((d) => d.id));
   const rules: RuleExplanation[] = set.rules.map((rule) => {
-    const rc = contextOf(rule, facts, ctx);
+    const rc = contextOf(rule, facts, ctx, reads3020);
     const technical = technicalOf(rc, demoIds.has(rule.id));
     const sides = sidesOf(rc, facts, ctx);
     const { where, parents } = whereOf(rc, facts, ctx);

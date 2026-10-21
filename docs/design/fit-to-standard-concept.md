@@ -1,3 +1,5 @@
+Removed from 3.0.20 by owner decision 21.10.2026 — waits for machine-readable scope items, capabilities and best-practice processes.
+
 # Concept — Fit to standard (roadmap 3.0.20)
 
 **Owner decisions of 18.10.2026 on this concept** (they win wherever the text below leaves a choice):

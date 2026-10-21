@@ -24,6 +24,13 @@ import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary, type SummaryLine } from '@/lib/program-summary-text';
 import { authorClaimOf, purposeProposalOf, type AuthorClaim } from '@/lib/program-summary-check';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
+import { explainBusinessRules } from '@/lib/abap/business-rule-set-explain';
+import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
+import { openingDecisions, type OpeningDecisions } from '@/lib/first-look-plain';
+import { firstLookPlainSentences, plainModelEnabled } from '@/lib/plain-wording';
+import { usePlainWording } from '@/hooks/usePlainWording';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { APP_VERSION } from '@/lib/version';
 import {
   BUILD_UP_BUDGET,
   BUILD_UP_MAP_WAIT,
@@ -247,6 +254,18 @@ interface Result {
   changes: { changes: StoryChange[]; more: number };
   /** What the program is for, in short (owner, 12.10.2026) — null when it could not be read. */
   inShort: { lines: SummaryLine[]; level: SummaryLine; proposal: string | null; authorClaim: AuthorClaim | null } | null;
+  /** From engine 3.0.20: "What it decides" from the rule explanations — business rules first, technical ones counted. */
+  decides: OpeningDecisions | null;
+}
+
+/** "What it decides" from the rule explanations, from engine 3.0.20 (`lib/first-look-plain.ts`); null before. */
+function decidesOf(source: string, process: ProcessReading, rules: BusinessRuleSet): OpeningDecisions | null {
+  if (!engineReads3020Apply(APP_VERSION)) return null;
+  try {
+    return openingDecisions(explainBusinessRules(source, rules, process.facts, APP_VERSION));
+  } catch {
+    return null;
+  }
 }
 
 /** "In short" for the Business opening: the shared summary without table codes, and a checked model purpose where one is stored. */
@@ -533,6 +552,7 @@ export default function FirstLook({
         ),
         changes: processChanges(process.skeleton, source),
         inShort: inShortOf(source, process, rules, project?.analysis),
+        decides: decidesOf(source, process, rules),
       };
       return { result, failed: false };
     } catch {
@@ -633,6 +653,34 @@ export default function FirstLook({
   }, [playing, onSettled]);
 
   const owner = useIsOwner(project);
+  /**
+   * The first insights in plain business words (3.0.20, owner report
+   * 21.10.2026): the engine's sentences, reworded once per project and source
+   * through the output guards of `lib/plain-wording.ts`. Not for the demo,
+   * which calls no model.
+   */
+  const availability = useModelAvailability();
+  const plainSentences = useMemo(
+    () =>
+      result && engineReads3020Apply(APP_VERSION)
+        ? firstLookPlainSentences({
+            inShort: result.inShort?.lines ?? null,
+            steps: result.story.steps,
+            decides: result.decides?.rules ?? [],
+            changes: result.changes.changes,
+          })
+        : null,
+    [result],
+  );
+  const plain = usePlainWording({
+    projectId: namingFrom === 'none' ? null : projectId,
+    scope: 'firstlook',
+    source: hasSource ? source : null,
+    sentences: plainSentences,
+    owner,
+    active: plainSentences !== null && namingFrom !== 'none',
+    modelEnabled: plainModelEnabled(availability),
+  });
   const [sourceOpen, setSourceOpen] = useState(false);
 
   /** The lines the card points to — the rules and the decisions — for "Show source". */
@@ -838,8 +886,10 @@ export default function FirstLook({
                   programName={result.processName.name}
                   nameReason={result.processName.reason ?? null}
                   story={result.story}
-                  rules={openingRules(result.card)}
-                  rulesMore={Math.max(0, result.card.rules.length - openingRules(result.card).length)}
+                  rules={result.decides ? result.decides.rules : openingRules(result.card)}
+                  rulesMore={result.decides ? result.decides.more : Math.max(0, result.card.rules.length - openingRules(result.card).length)}
+                  technicalRules={result.decides?.technical ?? 0}
+                  say={plain.state === 'worded' ? plain.say : undefined}
                   changes={result.changes.changes}
                   changesMore={result.changes.more}
                   changesNone={result.card.summary.kind === 'none' ? result.card.summary.sentence : wt('biz.changesNoData')}

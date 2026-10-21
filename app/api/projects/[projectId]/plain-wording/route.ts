@@ -36,7 +36,7 @@ import {
  * The engine's sentences reworded in plain business language — roadmap 3.0.20,
  * owner decision 21.10.2026 (2).
  *
- *   GET  `?scope=walk|rules` → `{ record }`, the stored rewording or `null`.
+ *   GET  `?scope=walk|rules|firstlook` → `{ record }`, the stored rewording or `null`.
  *   POST `{ scope, digest, items, text, receipt }` → `{ record }`.
  *
  * Built like `requirement-wording` next door: the model is not called here.
@@ -153,8 +153,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     const gate = await openProject(req, params, false);
     if (!gate.ok) return gate.response;
     const scope = req.nextUrl.searchParams.get('scope');
-    if (!isPlainScope(scope)) return bad('Expected ?scope=walk or ?scope=rules.', 'bad-request', 400);
-    if (!isFirestoreId(scope)) return bad('Expected ?scope=walk or ?scope=rules.', 'bad-request', 400);
+    if (!isPlainScope(scope)) return bad('Expected ?scope=walk, ?scope=rules or ?scope=firstlook.', 'bad-request', 400);
+    if (!isFirestoreId(scope)) return bad('Expected ?scope=walk, ?scope=rules or ?scope=firstlook.', 'bad-request', 400);
     const { db } = await getAdminDb();
     const snap = await db.collection('projects').doc(gate.projectId).collection(COLLECTION).doc(scope).get();
     if (!snap.exists) return NextResponse.json({ record: null });

@@ -32,6 +32,18 @@
 import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
 import { plainLabels } from './abap/plain-language';
 import { anchorLabel } from './first-look';
+import { readDemoSwitches } from './abap/demo-switches';
+import { engineReads3020Apply } from './abap/engine-reads-3020-gate';
+import { APP_VERSION } from './version';
+import {
+  chainWordsAt,
+  firstLookReadingOf,
+  listChangeAt,
+  stopReading,
+  technicalCheckAt,
+  testDataStepAt,
+  type FirstLookReading,
+} from './first-look-plain';
 
 export interface StoryStep {
   /** The step in plain words — "Check authority". Sentence case. */
@@ -46,12 +58,23 @@ export interface StoryStep {
   anchor: string | null;
   /** The skeleton node the step starts at. */
   nodeId: string;
+  /**
+   * From engine 3.0.20: the technical checks and stops of the step — counted,
+   * never listed (`lib/first-look-plain.ts`). Absent before.
+   */
+  technical?: number;
 }
 
 export interface ProcessStory {
   steps: StoryStep[];
   /** True when a model's business name was used for at least one step. */
   proposedNames: boolean;
+  /**
+   * From engine 3.0.20: the step that runs the program's own demo cases, set
+   * apart — it is test data, not a step of the business process. Absent before
+   * and null when the program has none.
+   */
+  testData?: { anchor: string | null; flag: string; cases: number } | null;
 }
 
 export const STORY_MIN = 4;
@@ -87,8 +110,29 @@ export function processStory(
   source: string,
   /** Business names a model proposed, by node id — used where present. */
   businessNames?: ReadonlyMap<string, string> | null,
+  /** The engine the story is read for; from 3.0.20 technical checks are counted and demo cases set apart. */
+  engineVersion: string | null = APP_VERSION,
 ): ProcessStory {
   const labels = plainLabels(skeleton, source);
+  const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
+    ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion))
+    : null;
+  let testData: ProcessStory['testData'] = null;
+  /** A decision point the reader need not decide on (3.0.20). */
+  const technicalCheck = (node: SkeletonNode): boolean => !!reading && !!node.anchor && technicalCheckAt(reading, node.anchor.lineStart);
+  /** A decision point in plain words; from 3.0.20 a chain the wording calls "Which case applies" names its business arms. */
+  const checkName = (node: SkeletonNode): string => {
+    const label = bare(nameOf(node));
+    if (!reading || !node.anchor || !/^which case applies$/i.test(label)) return label;
+    return chainWordsAt(reading, node.anchor.lineStart) ?? label;
+  };
+  /** A stop in plain words, or null when it is technical and only counted (3.0.20). */
+  const stopOf = (node: SkeletonNode, label: string): string | null => {
+    const bareLabel = label.replace(STOP_PREFIX, '');
+    if (!reading || !node.anchor) return bareLabel;
+    const read = stopReading(reading, node.anchor.lineStart, bareLabel);
+    return read.technical ? null : read.text;
+  };
   let proposed = false;
   const nameOf = (node: SkeletonNode): string => {
     const business = businessNames?.get(node.id)?.trim();
@@ -104,48 +148,77 @@ export function processStory(
   for (const list of byRegion.values()) list.sort(order);
 
   /** The checks and stops of a region and the regions under it, a few levels down. */
-  const inside = (region: string | null | undefined, depth: number, seen: Set<string>): { checks: string[]; stops: string[] } => {
-    if (!region || depth > 3 || seen.has(region)) return { checks: [], stops: [] };
+  const inside = (region: string | null | undefined, depth: number, seen: Set<string>): { checks: string[]; stops: string[]; technical: number } => {
+    if (!region || depth > 3 || seen.has(region)) return { checks: [], stops: [], technical: 0 };
     seen.add(region);
     const checks: string[] = [];
     const stops: string[] = [];
+    let technical = 0;
     for (const node of byRegion.get(region) ?? []) {
-      if (node.kind === 'gateway') checks.push(bare(nameOf(node)));
-      else if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
+      if (node.kind === 'gateway') {
+        if (technicalCheck(node)) technical += 1;
+        else checks.push(checkName(node));
+      } else if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const label = nameOf(node);
-        if (STOP_PREFIX.test(label)) stops.push(label.replace(STOP_PREFIX, ''));
+        if (STOP_PREFIX.test(label)) {
+          const stop = stopOf(node, label);
+          if (stop === null) technical += 1;
+          else stops.push(stop);
+        }
       }
       if (node.expandsTo) {
         const deeper = inside(node.expandsTo, depth + 1, seen);
         checks.push(...deeper.checks);
         stops.push(...deeper.stops);
+        technical += deeper.technical;
       }
     }
-    return { checks: unique(checks), stops: unique(stops) };
+    return { checks: unique(checks), stops: unique(stops), technical };
   };
 
   const itemsOf = (region: string, within: string | null): Item[] => {
     const out: Item[] = [];
     // Decision points before the first step of a level wait for it.
     let pending: string[] = [];
+    let pendingTechnical = 0;
     for (const node of byRegion.get(region) ?? []) {
       const previous = out[out.length - 1];
       if (node.kind === 'gateway') {
         // A decision point between two steps belongs to the step before it:
         // "… — checks: not rejected".
-        if (previous) previous.checks = unique([...previous.checks, bare(nameOf(node))]);
-        else pending.push(bare(nameOf(node)));
+        if (technicalCheck(node)) {
+          if (previous) previous.technical = (previous.technical ?? 0) + 1;
+          else pendingTechnical += 1;
+        } else if (previous) previous.checks = unique([...previous.checks, checkName(node)]);
+        else pending.push(checkName(node));
         continue;
       }
       if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const label = nameOf(node);
-        if (previous && STOP_PREFIX.test(label)) previous.stops = unique([...previous.stops, label.replace(STOP_PREFIX, '')]);
+        if (previous && STOP_PREFIX.test(label)) {
+          const stop = stopOf(node, label);
+          if (stop === null) previous.technical = (previous.technical ?? 0) + 1;
+          else previous.stops = unique([...previous.stops, stop]);
+        }
         continue;
       }
       if (NOT_A_STEP.has(node.kind)) continue;
+      // 3.0.20: the program's own demo cases are test data, said apart — not a step.
+      if (reading && node.anchor && testDataStepAt(reading, node.anchor.lineStart)) {
+        if (!testData && reading.demo) {
+          testData = {
+            anchor: anchorLabel(node.anchor.lineStart, node.anchor.lineEnd),
+            flag: reading.demo.flag.name,
+            cases: reading.demo.cases.reduce((n, c) => n + c.arms, 0),
+          };
+        }
+        pending = [];
+        pendingTechnical = 0;
+        continue;
+      }
       const text = sentence(nameOf(node));
       const loop = node.kind === 'loop' || String(node.detail?.multiInstance ?? '') === 'true';
-      const deeper = loop ? { checks: [], stops: [] } : inside(node.expandsTo, 1, new Set());
+      const deeper = loop ? { checks: [], stops: [], technical: 0 } : inside(node.expandsTo, 1, new Set());
       out.push({
         text,
         within,
@@ -155,8 +228,10 @@ export function processStory(
         nodeId: node.id,
         expands: node.expandsTo ?? (loop ? loopRegion(node) : null),
         loop,
+        ...(reading ? { technical: pendingTechnical + deeper.technical } : {}),
       });
       pending = [];
+      pendingTechnical = 0;
     }
     return out;
   };
@@ -182,7 +257,7 @@ export function processStory(
 
   // Open levels while the story is too short to say anything: the program's
   // process often sits one routine, or one loop, down.
-  for (let guard = 0; guard < 6 && items.length < STORY_MIN; guard += 1) {
+  for (let guard = 0; guard < 6 && items.length + (testData ? 1 : 0) < STORY_MIN; guard += 1) {
     const at = items.findIndex((item) => item.expands && (byRegion.get(item.expands) ?? []).some((n) => !NOT_A_STEP.has(n.kind)));
     if (at < 0) break;
     const item = items[at];
@@ -200,6 +275,7 @@ export function processStory(
     if (last && last.text === item.text && last.within === item.within) {
       last.checks = unique([...last.checks, ...item.checks]);
       last.stops = unique([...last.stops, ...item.stops]);
+      if (item.technical !== undefined) last.technical = (last.technical ?? 0) + item.technical;
     } else merged.push({ ...item, checks: [...item.checks], stops: [...item.stops] });
   }
 
@@ -209,7 +285,7 @@ export function processStory(
     let weight = Number.MAX_SAFE_INTEGER;
     for (let i = 0; i + 1 < merged.length; i += 1) {
       if (merged[i].within !== merged[i + 1].within) continue;
-      const w = merged[i].checks.length + merged[i].stops.length + merged[i + 1].checks.length + merged[i + 1].stops.length;
+      const w = merged[i].checks.length + merged[i].stops.length + (merged[i].technical ?? 0) + merged[i + 1].checks.length + merged[i + 1].stops.length + (merged[i + 1].technical ?? 0);
       if (w < weight) {
         weight = w;
         best = i;
@@ -222,12 +298,16 @@ export function processStory(
       text: `${a.text}, then ${lower(b.text)}`,
       checks: unique([...a.checks, ...b.checks]),
       stops: unique([...a.stops, ...b.stops]),
+      ...(a.technical !== undefined || b.technical !== undefined ? { technical: (a.technical ?? 0) + (b.technical ?? 0) } : {}),
     });
   }
 
   return {
-    steps: merged.map(({ text, within, checks, stops, anchor, nodeId }) => ({ text, within, checks, stops, anchor, nodeId })),
+    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical }) => ({
+      text, within, checks, stops, anchor, nodeId, ...(technical !== undefined ? { technical } : {}),
+    })),
     proposedNames: proposed,
+    ...(reading ? { testData } : {}),
   };
 }
 
@@ -253,14 +333,23 @@ const WEIGHT = (text: string): number =>
         ? 2
         : 3;
 
-export function processChanges(skeleton: ProcessSkeleton, source: string, max = 5): { changes: StoryChange[]; more: number } {
+export function processChanges(
+  skeleton: ProcessSkeleton,
+  source: string,
+  max = 5,
+  /** From engine 3.0.20 a change to the result list says what each line is marked with (`listChangeAt`). */
+  engineVersion: string | null = APP_VERSION,
+): { changes: StoryChange[]; more: number } {
   const labels = plainLabels(skeleton, source);
+  const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null) : null;
   const seen = new Set<string>();
   const all: StoryChange[] = [];
   for (const node of [...skeleton.nodes].sort(order)) {
     if (!['write', 'service-task', 'send-task', 'transaction', 'task'].includes(node.kind)) continue;
-    const text = sentence((labels.nodes.get(node.id) || '').trim() || node.label);
-    if (!CHANGING.test(text) || seen.has(text.toLowerCase())) continue;
+    const label = sentence((labels.nodes.get(node.id) || '').trim() || node.label);
+    const listChange = reading && node.anchor && /\bin the list$/i.test(label) ? listChangeAt(reading, node.anchor.lineStart) : null;
+    const text = listChange ?? label;
+    if ((!listChange && !CHANGING.test(text)) || seen.has(text.toLowerCase())) continue;
     seen.add(text.toLowerCase());
     all.push({ text, anchor: node.anchor ? anchorLabel(node.anchor.lineStart, node.anchor.lineEnd) : null });
   }

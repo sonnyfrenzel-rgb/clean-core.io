@@ -8,6 +8,8 @@ import CcButton from '@/components/cc/Button';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import ProgramInShort from './ProgramInShort';
+import { AsReadFromCode, WordedChip } from './WordedText';
+import { plainRangeOf, type PlainRange, type WordedSentence } from '@/lib/plain-wording';
 import type { SummaryLine } from '@/lib/program-summary-text';
 import type { AuthorClaim } from '@/lib/program-summary-check';
 import type { ProcessStory, StoryChange } from '@/lib/process-story';
@@ -15,7 +17,10 @@ import {
   bizMoreItems,
   bizStoryChecks,
   bizStoryStops,
+  bizStoryTechnical,
   bizStoryWithin,
+  bizTechnicalSettings,
+  bizTestData,
   wt,
 } from '@/lib/workspace-messages';
 
@@ -60,7 +65,21 @@ export default function BusinessOpening({
   onDecideRules,
   details,
   inShort = null,
+  technicalRules = 0,
+  say,
 }: {
+  /**
+   * Roadmap 3.0.20: the plain wording of the engine's sentences (`usePlainWording`,
+   * scope `firstlook`), when a rewording is on record. A reworded sentence stands
+   * in place; the engine's own sentences stay one fold down, under the chip
+   * *Model proposal · worded*.
+   */
+  say?: (text: string, anchor: PlainRange | null) => WordedSentence;
+  /**
+   * Roadmap 3.0.20: the technical settings among the rules — counted under
+   * "What it decides", which lists business rules only.
+   */
+  technicalRules?: number;
   /** The title: a proposed business name, or the program's name, or the sentence that there is none. */
   name: string;
   /** The title is a model's proposal — chip *Model proposal · name*, program name under it. */
@@ -87,6 +106,17 @@ export default function BusinessOpening({
    */
   inShort?: { lines: readonly SummaryLine[]; level: SummaryLine; proposal?: string | null; authorClaim?: AuthorClaim | null } | null;
 }) {
+  const said: WordedSentence[] = [];
+  const word = (text: string, anchor: PlainRange | null): string => {
+    if (!say) return text;
+    const s = say(text, anchor);
+    if (s.worded) said.push(s);
+    return s.text;
+  };
+  const shortLines = inShort ? inShort.lines.map((l) => ({ ...l, text: word(l.text, l.anchors[0] ?? null) })) : null;
+  const stepTexts = story.steps.map((s) => word(s.text, plainRangeOf(s.anchor)));
+  const ruleTexts = rules.map((r) => word(r.text, plainRangeOf(r.anchor)));
+  const changeTexts = changes.map((c) => word(c.text, plainRangeOf(c.anchor)));
   return (
     <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
@@ -105,12 +135,13 @@ export default function BusinessOpening({
         {nameReason ? <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{nameReason}</p> : null}
         {inShort ? (
           <div className="mt-2">
-            <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal ?? null} authorClaim={inShort.authorClaim ?? null} />
+            <ProgramInShort lines={shortLines ?? inShort.lines} level={inShort.level} proposal={inShort.proposal ?? null} authorClaim={inShort.authorClaim ?? null} />
           </div>
         ) : null}
         <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
           {wt('biz.storyLead')}
           {story.proposedNames ? <CcProvenanceChip value="proposed" note={wt('biz.storyNamesNote')} /> : null}
+          {said.length > 0 ? <WordedChip said={said[0]} /> : null}
         </p>
       </div>
 
@@ -134,7 +165,7 @@ export default function BusinessOpening({
                   <p className="m-0 flex flex-wrap items-center gap-2 text-[15px] leading-snug font-semibold text-cc-ink">
                     <span className="min-w-0 break-words">
                       {step.within ? `${bizStoryWithin(step.within)} ` : null}
-                      {step.text}
+                      {stepTexts[i]}
                     </span>
                     {step.anchor ? (
                       <CcAnchor label={`${wt('firstLook.sourceLine')} ${step.anchor}`}>{step.anchor}</CcAnchor>
@@ -143,6 +174,11 @@ export default function BusinessOpening({
                   {checks.length > 0 ? (
                     <p data-process-story-checks="" className="m-0 text-[12px] leading-snug font-medium break-words text-cc-ink-muted">
                       {bizStoryChecks(checks, step.checks.length - checks.length)}
+                    </p>
+                  ) : null}
+                  {step.technical ? (
+                    <p data-process-story-technical={step.technical} className="m-0 text-[12px] leading-snug font-medium break-words text-cc-ink-muted">
+                      {bizStoryTechnical(step.technical, checks.length === 0)}
                     </p>
                   ) : null}
                   {step.stops.length > 0 ? (
@@ -160,6 +196,20 @@ export default function BusinessOpening({
           {wt('biz.storyNone')}
         </p>
       )}
+      {story.testData ? (
+        <div
+          data-process-story-test-data=""
+          className="-mt-3 flex flex-col gap-1 rounded-cc-row border border-dashed border-cc-line px-3 py-2"
+        >
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+            <span className="min-w-0 break-words">{wt('biz.testDataTitle')}</span>
+            {story.testData.anchor ? (
+              <CcAnchor label={`${wt('firstLook.sourceLine')} ${story.testData.anchor}`}>{story.testData.anchor}</CcAnchor>
+            ) : null}
+          </p>
+          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{bizTestData(story.testData.cases)}</p>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <section
@@ -174,9 +224,9 @@ export default function BusinessOpening({
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{wt('biz.decidesNone')}</p>
           ) : (
             <ul className="m-0 flex list-none flex-col gap-1 p-0">
-              {rules.map((rule) => (
+              {rules.map((rule, k) => (
                 <li key={rule.id} data-story-rule={rule.id} className="flex flex-wrap items-center gap-2 text-[13px] leading-snug font-semibold text-cc-ink">
-                  <span className="min-w-0 break-words">{rule.text}</span>
+                  <span className="min-w-0 break-words">{ruleTexts[k]}</span>
                   {rule.anchor ? (
                     <CcAnchor label={`${wt('firstLook.sourceLine')} ${rule.anchor}`}>{rule.anchor}</CcAnchor>
                   ) : null}
@@ -186,6 +236,11 @@ export default function BusinessOpening({
           )}
           {rulesMore > 0 ? (
             <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{bizMoreItems(rulesMore)}</p>
+          ) : null}
+          {technicalRules > 0 ? (
+            <p data-story-technical-rules={technicalRules} className="m-0 text-[12px] font-medium text-cc-ink-muted">
+              {bizTechnicalSettings(technicalRules)}
+            </p>
           ) : null}
           {onDecideRules && rules.length + rulesMore > 0 ? (
             <span className="cc-no-print">
@@ -208,9 +263,9 @@ export default function BusinessOpening({
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{changesNone}</p>
           ) : (
             <ul className="m-0 flex list-none flex-col gap-1 p-0">
-              {changes.map((change) => (
+              {changes.map((change, k) => (
                 <li key={change.text} className="flex flex-wrap items-center gap-2 text-[13px] leading-snug font-semibold text-cc-ink">
-                  <span className="min-w-0 break-words">{change.text}</span>
+                  <span className="min-w-0 break-words">{changeTexts[k]}</span>
                   {change.anchor ? (
                     <CcAnchor label={`${wt('firstLook.sourceLine')} ${change.anchor}`}>{change.anchor}</CcAnchor>
                   ) : null}
@@ -230,6 +285,8 @@ export default function BusinessOpening({
           <OpenQuestionsLine questions={questions} className="min-w-0 text-cc-ink-muted" />
         </div>
       ) : null}
+
+      <AsReadFromCode said={said} />
 
       <div className="border-t border-cc-line pt-2">
         <CcDisclosure title={wt('biz.howRead')} level={3}>

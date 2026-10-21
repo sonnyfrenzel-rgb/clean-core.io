@@ -159,14 +159,11 @@ export const WORKSPACE_RULES_MESSAGES = {
   'firstLook.stripNotDetermined': 'not determined',
   'firstLook.stepsLabel': 'The first steps of the process',
   'firstLook.factsTitle': 'What the figures mean',
-  // RuleDecisionFlow / RuleWorkshop — roadmap 3.0.20 (business rules as a guided decision)
+  // RuleDecisionFlow — roadmap 3.0.20 (business rules as a guided decision)
   'rules.flowLead':
     'The rules by business topic, the weightiest first. Each says what it protects, an example with values from the code and what happens on either side; the engine proposes an answer, and taking it over is one click. Every answer is yours and carries your name.',
   'rules.flowLeadReader':
     'The rules by business topic, the weightiest first. Each says what it protects, an example with values from the code, what happens on either side, and the answer the engine proposes.',
-  'rules.viewLabel': 'How to show the rules',
-  'rules.viewDecide': 'Decide',
-  'rules.viewWorkshop': 'Workshop',
   'rules.protects': 'What it protects',
   'rules.example': 'Example from the code',
   'rules.sides': 'Either side of the limit',
@@ -190,23 +187,6 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.topicDone': 'Every rule of this topic has a decision.',
   'rules.allDecided': 'Every rule has a decision.',
   'rules.technicalNote': 'Not a business decision',
-  'rules.workshopLead':
-    'For a meeting about the rules: what is still open, what was decided differently from the proposal, what the latest session recorded and who decided what. Read from the record of answers; nothing here changes it.',
-  'rules.workshopOpen': 'Open points',
-  'rules.workshopDeviations': 'Decided differently from the proposal',
-  'rules.workshopLatest': 'Latest session',
-  'rules.workshopWho': 'Who decided what',
-  'rules.workshopNothing': 'Nothing is on record yet — the first answers start the first session.',
-  'rules.workshopNoOpen': 'No point is open: every rule has a decision.',
-  'rules.workshopNoDeviation': 'Every decision so far follows the engine’s proposal.',
-  'rules.workshopEarlier': 'An answer of this session may replace an earlier one; the earlier revision keeps what it was.',
-  'rules.workshopChanges': 'Earlier answer → new answer',
-  'rules.workshopChangesLead': 'Every rule whose answer was changed, read from the earlier revisions: what it was, what it is now, who changed it and when.',
-  'rules.workshopNoChange': 'No answer has been changed yet — every rule on record still has its first answer.',
-  'rules.workshopChangesReading': 'Reading the earlier answers…',
-  'rules.workshopChangesUnread': 'The earlier answers could not be read just now. The answers on record are shown above.',
-  'rules.workshopFirstAnswer': 'No answer',
-  'rules.workshopChangesLimited': 'Only the most recent revisions are read; older changes are not listed.',
 } as const;
 
 /** "12 of 30 decided". */

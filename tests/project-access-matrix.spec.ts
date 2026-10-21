@@ -427,27 +427,6 @@ const CASES: RouteCase[] = [
     readerAdmitted: true,
   },
   {
-    key: 'app/api/projects/[projectId]/fit-to-standard/route.ts#GET',
-    what: 'the fit-to-standard gate and design, derived from the customer\'s source (3.0.20)',
-    method: 'GET',
-    path: (p) => `/api/projects/${p}/fit-to-standard`,
-    refusal: 404,
-    // The fixture stages source and has no signed run: the gate reads "not determined"; owner and reader read the same.
-    owner: [200],
-    readerAdmitted: true,
-  },
-  {
-    key: 'app/api/projects/[projectId]/fit-to-standard/route.ts#POST',
-    what: 'making or confirming a fit-to-standard design (3.0.20)',
-    method: 'POST',
-    path: (p) => `/api/projects/${p}/fit-to-standard`,
-    // No action: the owner is let through the gate and refused for the body.
-    body: {},
-    refusal: 404,
-    owner: [400],
-    readerAdmitted: false,
-  },
-  {
     key: 'app/api/projects/[projectId]/contract/route.ts#GET',
     what: 'the architecture contract the generation follows',
     method: 'GET',
@@ -891,8 +870,6 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/evidence/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/evidence/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/standard-fit/route.ts#GET → 404 vs 404',
-      'app/api/projects/[projectId]/fit-to-standard/route.ts#GET → 404 vs 404',
-      'app/api/projects/[projectId]/fit-to-standard/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/contract/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/contract/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/repair-drafts/route.ts#POST → 404 vs 404',

@@ -45,7 +45,6 @@ import {
 } from '@/lib/management-overview';
 import type { Project } from '@/lib/types';
 import { outdatedReasonsOfAnswer } from '@/lib/decision-cost';
-import { confirmedFitDesign } from '@/lib/fit-to-standard-store';
 import { IT_TARGET_PROFILE_ID } from '@/components/workspace/ItRail';
 
 /**
@@ -372,8 +371,6 @@ export default function ManagementOverview({
       engineRoute: read?.engineRoute ?? null,
       usage: project?.usageReport ?? null,
       economics: project?._economics ?? null,
-      // Roadmap 3.0.20: the standard option reads the confirmed fit-to-standard design.
-      fitDesign: project ? confirmedFitDesign(project) : null,
     });
   }, [decision, subject, hasRun, fitFigure, project]);
   const optionHref = (place: OptionPlace): string => {

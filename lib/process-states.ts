@@ -574,7 +574,7 @@ export function checkStateChoices(
         };
       }
       // One canonical shape: the standard meets the need, so no value source beside it — a
-      // customizing source would read as "Move to configuration" in fit to standard.
+      // customizing source would read as "Move to configuration".
       if (valueSource !== null) {
         return {
           ok: false,
@@ -634,49 +634,6 @@ export function applyStateChoices(
     });
   }
   return [...next.values()].sort((a, b) => (a.subject < b.subject ? -1 : a.subject > b.subject ? 1 : 0));
-}
-
-/* ------------------------------------------------------------------ *
- * 3.0.20 (4) — the earlier answers of the rules, for the workshop view.
- * ------------------------------------------------------------------ */
-
-/** The most need revisions one read of the earlier answers goes back. */
-export const MAX_HISTORY_REVISIONS = 50;
-
-/** One stored need revision, as far as the history reads it. */
-export interface StoredRevisionEntries {
-  revision: number;
-  entries: readonly unknown[];
-}
-
-/**
- * Every rule answer as it was made, oldest first: from each revision the rule
- * entries that revision made (`entry.revision === revision`). A snapshot keeps
- * an untouched answer under the revision that made it, so each answer is read
- * once, from the revision it was given in, and an answer that later changed is
- * still there in the revision before the change.
- */
-export function ruleAnswersMade(revisions: readonly StoredRevisionEntries[]): StateEntry[] {
-  const out: StateEntry[] = [];
-  const seen = new Set<string>();
-  for (const r of [...revisions].sort((a, b) => a.revision - b.revision)) {
-    for (const raw of r.entries) {
-      if (!isStateEntry(raw) || raw.kind !== 'rule' || raw.revision !== r.revision) continue;
-      const key = `${raw.subject}@${raw.revision}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(raw);
-    }
-  }
-  return out;
-}
-
-/** What `GET …/process-states?history=rules` adds to the view. */
-export interface RuleHistory {
-  /** Every rule answer as it was made, oldest first (`ruleAnswersMade`). */
-  entries: StateEntry[];
-  /** True when there are more revisions than were read — older changes are not listed. */
-  limited: boolean;
 }
 
 /** "12 kept, 3 to change, 1 dropped, 2 to clarify, 55 undecided." Counted, never rounded into a claim. */
