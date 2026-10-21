@@ -1626,6 +1626,17 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-894 | info | P3 | 3.0.20 · security | fixed |
 | SEC-2026-895 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-896 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-897 | medium | P2 | 3.0.20 · security | scheduled |
+| SEC-2026-898 | medium | P2 | 3.0.20 · security | scheduled |
+| SEC-2026-899 | medium | P2 | 3.0.20 · security | scheduled |
+| SEC-2026-900 | medium | P2 | 3.0.20 · security | scheduled |
+| SEC-2026-901 | low | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-902 | low | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-903 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-904 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-905 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+
+**Audit of v3.0.19 (`cdde58e`), 21.10.2026: 0 critical, 0 high, 4 medium, 2 low, 3 info.** SEC-2026-897 to -902 go to 3.0.20; SEC-2026-903 to -905 join the comment-hygiene decision. No QA full review was needed (the change was under the thresholds). The reasons are in the sealed register.
 
 **Audit of v3.0.18 (`3f90d50`), 21.10.2026: 0 critical, 0 high, 4 medium, 5 low, 3 info — 125 candidates verified.** SEC-2026-885 to -887, -891 and -893 go to 3.0.19; the three findings in the Firestore rules (SEC-2026-888 to -890) go with the next rules deploy, which needs the owner's go; SEC-2026-892 and -894 to 3.0.20; SEC-2026-895 and -896 join the comment-hygiene decision. The reasons are in the sealed register.
 
