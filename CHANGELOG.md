@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   card offered "Run the analysis" with a button while the start run was still with the server; it now says the
   analysis is running and that there is nothing to press, as "Your next step" already did.
   `tests/workspace-hub-running.spec.ts`.
+- **While Design writes the solution design, the requirements workspace waits.** "Open the requirements workspace"
+  was a live link during the run, and a click left the page and cut the run off; the button is now disabled with
+  its reason under it until the design is written. `tests/requirements-entry-wait.spec.ts`.
 
 A quality release with no new feature (owner decision 18.10.2026). Every change below is a fix of something that
 was wrong, a check that now proves what it claims, or a starter example that now runs cleanly end to end. Engine

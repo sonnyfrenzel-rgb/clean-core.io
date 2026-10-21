@@ -1366,6 +1366,7 @@ ${DESIGN_ANSWER_REMINDER}`;
           state={specCardState}
           reader={Boolean(project) && !isOwner}
           blocked={signedSource ? null : requirementsMissing}
+          waitFor={generatingSince !== null ? 'The solution design is being written. The requirements workspace opens once it is done, so the run is not cut off.' : null}
         />
       </div>
 
