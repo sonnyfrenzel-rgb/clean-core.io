@@ -1,4 +1,5 @@
 import { test, expect, type Page } from './helpers/test';
+import { AUTOMATIC_WORDING_REFUSAL, isAutomaticWordingCall } from './helpers/automatic-model-calls';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -775,6 +776,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
 
     let geminiCalled = false;
     await page.route('**/api/gemini', async (route) => {
+      if (isAutomaticWordingCall(route.request())) return route.fulfill(AUTOMATIC_WORDING_REFUSAL);
       geminiCalled = true;
       await route.fulfill({ status: 500, body: 'a glossary answer must never reach this route' });
     });
@@ -865,6 +867,7 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
 
     let geminiCalled = false;
     await page.route('**/api/gemini', async (route) => {
+      if (isAutomaticWordingCall(route.request())) return route.fulfill(AUTOMATIC_WORDING_REFUSAL);
       geminiCalled = true;
       await route.fulfill({ status: 500, body: 'a glossary popover must never reach this route' });
     });

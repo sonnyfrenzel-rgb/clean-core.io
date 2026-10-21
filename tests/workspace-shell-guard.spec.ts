@@ -1,4 +1,5 @@
 import { test, expect, type Page } from './helpers/test';
+import { AUTOMATIC_WORDING_REFUSAL, isAutomaticWordingCall } from './helpers/automatic-model-calls';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -791,6 +792,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     // signed run would show up here regardless of what the UI claims to do.
     const modelOrRunCalls: string[] = [];
     await page.route('**/api/gemini', (route) => {
+      if (isAutomaticWordingCall(route.request())) return route.fulfill(AUTOMATIC_WORDING_REFUSAL);
       modelOrRunCalls.push(route.request().url());
       return route.continue();
     });

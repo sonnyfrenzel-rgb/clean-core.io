@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Browser } from './helpers/test';
+import { AUTOMATIC_WORDING_REFUSAL, isAutomaticWordingCall } from './helpers/automatic-model-calls';
 import fs from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
@@ -45,6 +46,7 @@ async function adminSetDoc(collection: string, id: string, data: Record<string, 
 async function noModel(page: Page): Promise<string[]> {
   const calls: string[] = [];
   await page.route('**/api/gemini**', (route) => {
+    if (isAutomaticWordingCall(route.request())) return route.fulfill(AUTOMATIC_WORDING_REFUSAL);
     calls.push(route.request().url());
     return route.fulfill({ status: 500, body: '{"error":"no model in this spec"}' });
   });

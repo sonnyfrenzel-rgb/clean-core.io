@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Route } from './helpers/test';
+import { AUTOMATIC_WORDING_REFUSAL, isAutomaticWordingCall } from './helpers/automatic-model-calls';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -120,6 +121,7 @@ async function openDesign(page: Page, width: number, height: number) {
   const seeded = await seedDesigned('design-layout');
   const calls: string[] = [];
   await page.route('**/api/gemini', async (route: Route) => {
+    if (isAutomaticWordingCall(route.request())) return route.fulfill(AUTOMATIC_WORDING_REFUSAL);
     calls.push(route.request().url());
     await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'no model in this spec' }) });
   });
