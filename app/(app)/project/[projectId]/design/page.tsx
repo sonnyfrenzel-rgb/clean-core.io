@@ -1372,7 +1372,7 @@ ${DESIGN_ANSWER_REMINDER}`;
 
       {/* Roadmap 3.0.20: the Design tool's "Fit to standard" mode — what living with the standard gives up. */}
       <div className="mb-12">
-        <FitToStandardPanel projectId={projectId as string} project={project} isOwner={isOwner} />
+        <FitToStandardPanel projectId={projectId as string} project={project} isOwner={isOwner} modelAvailable={designAvailable} />
       </div>
 
       {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}

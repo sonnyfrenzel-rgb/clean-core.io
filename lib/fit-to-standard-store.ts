@@ -49,8 +49,20 @@ export interface FitAccount {
 export interface FitToStandardRevision {
   formatVersion: typeof FIT_REVISION_FORMAT_VERSION;
   revision: number;
-  /** `engine`: the engine's derivation; `confirmation`: the account confirmed it, possibly with changes. */
-  kind: 'engine' | 'confirmation';
+  /**
+   * `engine`: the engine's derivation; `proposal`: the engine's design with a
+   * model's checked standard candidates (F5); `confirmation`: the account
+   * confirmed it, possibly with changes.
+   */
+  kind: 'engine' | 'proposal' | 'confirmation';
+  /** Set on a `proposal`: who proposed, from the proxy's receipt, and what the check kept and dropped. */
+  modelProposal?: {
+    provider: string;
+    modelId: string;
+    byok: boolean;
+    kept: number;
+    dropped: Array<{ elementId: string; id: string; sapTitle: string | null; reason: string }>;
+  } | null;
   /** What it stands on — a new run or another source makes it stale. */
   runId: string | null;
   sourceSha256: string;

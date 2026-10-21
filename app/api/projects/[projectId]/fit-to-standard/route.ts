@@ -44,6 +44,10 @@ import {
 import { countEntries, fitDesignSummary } from '@/lib/fit-to-standard-design';
 import { buildFitPackage, fitConditionLines } from '@/lib/fit-to-standard-package';
 import { buildKeyUserSteps } from '@/lib/key-user-steps';
+import { applyFitProposals } from '@/lib/fit-to-standard-proposal';
+import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
+import { verifyModelReceipt } from '@/lib/model-receipt';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 
 /**
  * Fit to standard — roadmap 3.0.20, steps F1–F3
@@ -289,15 +293,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    let body: { action?: unknown; againstGate?: unknown; baseRevision?: unknown; choices?: unknown } | null = null;
+    let body: { action?: unknown; againstGate?: unknown; baseRevision?: unknown; choices?: unknown; text?: unknown; receipt?: unknown } | null = null;
     try {
       body = await readBoundedJson(new Response(req.body, { headers: req.headers }), BODY_LIMITS);
     } catch (bodyErr) {
       if (bodyErr instanceof ResponseLimitError) return bad('The request is too large.', 'too-large', 413);
       body = null;
     }
-    if (!body || (body.action !== 'make' && body.action !== 'confirm')) {
-      return bad("Expected { action: 'make', againstGate? } or { action: 'confirm', baseRevision, choices? }.", 'bad-request');
+    if (!body || (body.action !== 'make' && body.action !== 'confirm' && body.action !== 'propose')) {
+      return bad("Expected { action: 'make', againstGate? }, { action: 'propose', baseRevision, text, receipt } or { action: 'confirm', baseRevision, choices? }.", 'bad-request');
     }
 
     const { db } = await getAdminDb();
@@ -345,6 +349,51 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
         againstGate: design.againstGate,
         entries: design.entries,
         counts: design.counts,
+        createdBy: account,
+        createdAt: now,
+      };
+    } else if (body.action === 'propose') {
+      // F5: a model's standard candidates for the open steps — only with the proxy's receipt of the
+      // call (stage `design`, shared key within its limits or BYOK), every identifier checked.
+      if (!stored || !current(stored, facts)) {
+        return bad('There is no fit-to-standard design on the current run to add proposals to. Make it first.', 'no-current-design', 409);
+      }
+      if (!Number.isInteger(body.baseRevision) || body.baseRevision !== stored.revision) {
+        return NextResponse.json(
+          { error: `This design was read at revision ${String(body.baseRevision)}, and revision ${stored.revision} is the latest. Reload it first.`, code: 'revision-moved', latest: stored.revision },
+          { status: 409 },
+        );
+      }
+      if (typeof body.text !== 'string' || body.text.length > 64 * 1024) return bad('Expected the model answer as text.', 'bad-request');
+      const key = getAuditSigningKey();
+      if (!key) {
+        console.error(MISSING_SIGNING_KEY_LOG);
+        return bad('The origin of the proposal cannot be checked on this deployment.', 'no-signing-key', 503);
+      }
+      const verdict = verifyModelReceipt(body.receipt, { uid: gate.uid, text: body.text, key, stage: 'design' });
+      if (!verdict.ok) {
+        return NextResponse.json(
+          { error: 'This answer carries no valid receipt from the model call, so it is not stored as a model proposal.', code: 'receipt-refused', refusal: verdict.refusal },
+          { status: 422 },
+        );
+      }
+      // The synced SAP name lists, so the check reads them as the screens do.
+      await loadSapNameLists();
+      const outcome = applyFitProposals(stored.entries, body.text);
+      if (outcome.unreadable) return bad('The model answer could not be read as the proposal schema; nothing was applied.', 'unreadable', 422);
+      record = {
+        ...stored,
+        revision: nextRevision,
+        kind: 'proposal',
+        entries: outcome.entries,
+        counts: countEntries(outcome.entries),
+        modelProposal: {
+          provider: verdict.receipt.provider,
+          modelId: verdict.receipt.modelId,
+          byok: verdict.receipt.byok,
+          kept: outcome.kept,
+          dropped: outcome.dropped,
+        },
         createdBy: account,
         createdAt: now,
       };

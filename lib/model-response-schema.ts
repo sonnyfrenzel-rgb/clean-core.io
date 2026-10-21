@@ -174,12 +174,33 @@ export const TRANSFORMATION_FILL_SCHEMA = {
   required: ['units'],
 } as const;
 
+/** Roadmap 3.0.20 (F5): the answer shape of a fit-to-standard proposal — an identifier and SAP's title per open step (`lib/fit-to-standard-proposal.ts`). */
+export const FIT_PROPOSAL_SCHEMA = {
+  type: 'object',
+  properties: {
+    proposals: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          elementId: { type: 'string' },
+          kind: { type: 'string', enum: ['fiori-app', 'scope-item', 'api', 'cds-view'] },
+          id: { type: 'string' },
+          title: { type: 'string' },
+        },
+        required: ['elementId', 'kind', 'id', 'title'],
+      },
+    },
+  },
+  required: ['proposals'],
+} as const;
+
 /**
  * An answer shape within a stage. The fill calls belong to the
  * `transformation` stage — its switch and its receipt — but answer in a shape
  * of their own; the request names it beside the stage.
  */
-export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business'] as const;
+export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business', 'design-fit-proposal'] as const;
 export type ResponseShape = (typeof RESPONSE_SHAPES)[number];
 
 export function isResponseShape(value: unknown): value is ResponseShape {
@@ -193,11 +214,14 @@ export const RESPONSE_SHAPE_STAGE: Record<ResponseShape, ModelStage> = {
   // schema (its answer is a JSON block in text), named so the route can give it
   // a thinking level of its own (`lib/model-thinking.ts`).
   'documentation-business': 'documentation',
+  // Roadmap 3.0.20 (F5): a model's standard candidates for the open steps of a fit-to-standard design.
+  'design-fit-proposal': 'design',
 };
 
 /** The schema for a stage's JSON answer, or `undefined` where the stage has none. */
 export function responseSchemaForStage(stage: ModelStage | undefined, shape?: ResponseShape): object | undefined {
   if (shape === 'transformation-fill' && stage === 'transformation') return TRANSFORMATION_FILL_SCHEMA;
+  if (shape === 'design-fit-proposal' && stage === 'design') return FIT_PROPOSAL_SCHEMA;
   if (stage === 'transformation') return TRANSFORMATION_RESPONSE_SCHEMA;
   if (stage === 'testing') return TESTING_RESPONSE_SCHEMA;
   return undefined;

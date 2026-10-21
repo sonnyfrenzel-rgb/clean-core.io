@@ -16,7 +16,7 @@ import {
   type FitToStandardDesign,
 } from '@/lib/fit-to-standard-design';
 import { FIT_GATE_CLASS_LABELS, FIT_GATE_CLASS_MEANING, FIT_GATE_HONESTY, fitGateReasonLine, type FitToStandardGate } from '@/lib/fit-to-standard-gate';
-import type { FitChoice } from '@/lib/fit-to-standard-store';
+import type { FitChoice, FitToStandardRevision } from '@/lib/fit-to-standard-store';
 
 /**
  * The fit-to-standard design on the Design tool — roadmap 3.0.20, F4
@@ -168,16 +168,18 @@ function List({ id, title, lead, rows, draft, editable, onChange }: {
 
 export interface FitToStandardViewProps {
   gate: FitToStandardGate;
-  design: Pick<FitToStandardDesign, 'entries' | 'counts' | 'againstGate' | 'edition'> | null;
-  stored: { revision: number; kind: 'engine' | 'confirmation'; stale: boolean; createdAt: string; createdBy: string } | null;
+  design: (Pick<FitToStandardDesign, 'entries' | 'counts' | 'againstGate' | 'edition'> & { modelProposal?: FitToStandardRevision['modelProposal'] }) | null;
+  stored: { revision: number; kind: FitToStandardRevision['kind']; stale: boolean; createdAt: string; createdBy: string } | null;
   isOwner: boolean;
   busy?: boolean;
   error?: string | null;
   onMake?: (againstGate: boolean) => void;
   onConfirm?: (baseRevision: number, choices: FitChoice[]) => void;
+  /** F5 — offered only where the Design stage's model is available; absent, the design stays the engine's. */
+  onPropose?: (baseRevision: number) => void;
 }
 
-export default function FitToStandardView({ gate, design, stored, isOwner, busy = false, error = null, onMake, onConfirm }: FitToStandardViewProps) {
+export default function FitToStandardView({ gate, design, stored, isOwner, busy = false, error = null, onMake, onConfirm, onPropose }: FitToStandardViewProps) {
   const [draft, setDraft] = useState<Draft>({});
   const lists = useMemo(() => (design ? fitDesignLists(design) : null), [design]);
   const technical = design ? design.entries.filter((e) => e.disposition === 'goes-with-program' || e.disposition === 'unknown') : [];
@@ -228,6 +230,22 @@ export default function FitToStandardView({ gate, design, stored, isOwner, busy 
         </p>
       ) : null}
       {error ? <CcMessageStrip state="error">{error}</CcMessageStrip> : null}
+      {design?.modelProposal ? (
+        <div data-fit-model-proposal="" className="flex flex-col gap-1 rounded-cc-row border border-cc-line px-3 py-2">
+          <p className="m-0 text-[13px] text-cc-ink">
+            <span className="font-semibold">Model proposal</span> ({design.modelProposal.modelId}{design.modelProposal.byok ? ', your own key' : ''}): {design.modelProposal.kept} standard candidate{design.modelProposal.kept === 1 ? '' : 's'} kept after the check against SAP data; {design.modelProposal.dropped.length} left out.
+          </p>
+          {design.modelProposal.dropped.length > 0 ? (
+            <ul className="m-0 list-disc pl-5 text-[12px] text-cc-ink-muted">
+              {design.modelProposal.dropped.map((d) => (
+                <li key={`${d.elementId}-${d.id}`} data-fit-dropped={d.id}>
+                  <span className="font-mono">{d.id}</span>: {d.reason}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
 
       {design && lists ? (
         <>
@@ -261,6 +279,11 @@ export default function FitToStandardView({ gate, design, stored, isOwner, busy 
           ) : null}
           {gate.outcome === 'not-offered' && !storedCurrent ? (
             <CcButton variant="ghost" busy={busy} data-fit-make-against="" onClick={() => onMake?.(true)}>Make one anyway — not recommended</CcButton>
+          ) : null}
+          {storedCurrent && onPropose && (design?.counts.gapOpen ?? 0) > 0 ? (
+            <CcButton variant="ghost" busy={busy} data-fit-propose="" onClick={() => onPropose(storedCurrent.revision)}>
+              Ask the model for standard candidates
+            </CcButton>
           ) : null}
           {storedCurrent ? (
             <CcButton

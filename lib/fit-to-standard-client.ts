@@ -16,7 +16,7 @@ export interface FitToStandardRead {
   gate: FitToStandardGate;
   /** The stored revision on the current run, or the engine's preview; `null` when the gate does not offer. */
   design: (FitToStandardDesign | (FitToStandardRevision & { counts: FitToStandardDesign['counts'] })) | null;
-  stored: { revision: number; kind: 'engine' | 'confirmation'; stale: boolean; createdAt: string; createdBy: string } | null;
+  stored: { revision: number; kind: FitToStandardRevision['kind']; stale: boolean; createdAt: string; createdBy: string } | null;
 }
 
 export type FitReadOutcome =
@@ -75,7 +75,10 @@ export async function fetchFitPackage(
 
 export async function postFitToStandard(
   projectId: string,
-  body: { action: 'make'; againstGate?: boolean } | { action: 'confirm'; baseRevision: number; choices: FitChoice[] },
+  body:
+    | { action: 'make'; againstGate?: boolean }
+    | { action: 'confirm'; baseRevision: number; choices: FitChoice[] }
+    | { action: 'propose'; baseRevision: number; text: string; receipt: unknown },
 ): Promise<FitWriteOutcome> {
   try {
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/fit-to-standard`, {
