@@ -69,7 +69,7 @@ import { deriveEngineCases, type EngineCaseDerivation } from '../testing-engine-
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { goldenMasterForScaffold, type GoldenMasterExpected } from './golden-master';
 import { abapEngineCaseMethods } from './abap-engine-cases';
-import { partLocalsOf, rangeWords, type EngineFacts } from './unit-plan';
+import { partLocalsOf, rangeWords, staticLocalsOf, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
@@ -1037,17 +1037,32 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     }
     if (parentsOfParts.includes(u)) {
       const parts = plan.units.filter((p) => p.part?.parent === u.id).sort((a, b) => a.part!.index - b.part!.index);
-      if (parts.some((p) => handedOf.has(p.id))) {
-        impls.push("    \" The routine's locals, shared by its parts: each part gets those its lines read or write (3.0.20).", `    DATA ls_local TYPE ty_${name.slice(0, 18)}_local.`);
-        // A local the original starts with a value (`DATA lv_code TYPE c LENGTH 2 VALUE 'A1'`): a component of a
-        // structure type takes no VALUE, so the frame gives it its start value before the first part runs.
-        for (const [n, value] of startValuesOf(facts.statements, u, localComponentsOf.get(parts[0].id) ?? [])) impls.push(`    ls_local-${n} = ${value}.`);
+      // STATICS of the original keep their value from one call to the next (QA review of a20d2cb7bd39, 94e86fe4c2b1):
+      // they live in a STATICS structure of the same type, started once; the others in ls_local, started every call.
+      const statics = staticLocalsOf(facts.statements, u);
+      const handedAll = new Set(parts.flatMap((p) => handedOf.get(p.id) ?? []));
+      const holder = (n: string) => (statics.has(n) ? 'ls_static' : 'ls_local');
+      const typeOfLocal = `ty_${name.slice(0, 18)}_local`;
+      if ([...handedAll].some((n) => !statics.has(n))) {
+        impls.push("    \" The routine's locals, shared by its parts: each part gets those its lines read or write (3.0.20).", `    DATA ls_local TYPE ${typeOfLocal}.`);
+      }
+      if ([...handedAll].some((n) => statics.has(n))) {
+        impls.push("    \" The routine's STATICS: they keep their value from one call to the next, as in the original.", `    STATICS ls_static TYPE ${typeOfLocal}.`);
+      }
+      // A local the original starts with a value (`DATA lv_code TYPE c LENGTH 2 VALUE 'A1'`): a component of a
+      // structure type takes no VALUE, so the frame gives it its start value before the first part runs — a STATICS
+      // one on the first call only.
+      const starts = startValuesOf(facts.statements, u, localComponentsOf.get(parts[0].id) ?? []).filter(([n]) => handedAll.has(n));
+      for (const [n, value] of starts.filter(([n]) => !statics.has(n))) impls.push(`    ls_local-${n} = ${value}.`);
+      const staticStarts = starts.filter(([n]) => statics.has(n));
+      if (staticStarts.length > 0) {
+        impls.push('    STATICS lv_static_started TYPE abap_bool.', '    IF lv_static_started = abap_false.', ...staticStarts.map(([n, value]) => `      ls_static-${n} = ${value}.`), '      lv_static_started = abap_true.', '    ENDIF.');
       }
       for (const part of parts) {
         const pp = paramsOf.get(part.id) ?? [];
         const handed = new Set(handedOf.get(part.id) ?? []);
         const exp = pp.filter((p) => p.direction === 'importing').map((p) => `${p.name} = ${p.name}`);
-        const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${handed.has(p.name) ? `ls_local-${p.name}` : p.name}`);
+        const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${handed.has(p.name) ? `${holder(p.name)}-${p.name}` : p.name}`);
         impls.push(`    ${methodOf.get(part.id)}(${exp.length ? ` EXPORTING ${exp.join(' ')}` : ''}${chg.length ? ` CHANGING ${chg.join(' ')}` : ''} ).`);
       }
     } else if (u.kind === 'orchestrator' && u.abap.length === 0) {

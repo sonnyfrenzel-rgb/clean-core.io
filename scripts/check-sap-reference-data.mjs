@@ -5,7 +5,10 @@
  * anything is copied into the checkout. Plain Node, no imports beyond node:fs, node:path, node:url and node:crypto,
  * so the job that holds the write token still installs nothing.
  *
- *   node scripts/check-sap-reference-data.mjs <dir>
+ *   node scripts/check-sap-reference-data.mjs <dir> [--upstream]
+ *
+ * `--upstream` (the push job uses it) also fetches every copied schema and the LICENSE from SAP's repository at the
+ * synced commit and compares the bytes (`upstreamProblems`): the artifact's own hashes are no anchor.
  *
  * `<dir>` holds lib/generated/sap-references/ and lib/generated/aff-schemas/. Each
  * sap-references/<key>.json must be the metadata the sync writes (`SapReferenceData` in
@@ -155,14 +158,51 @@ export function dataProblems(dir) {
   return out;
 }
 
+/**
+ * The copied files against SAP's own repository (QA review of a20d2cb7bd39, cf02a5de56a3): the hashes in
+ * abap-file-formats.json come from the same artifact as the schemas, so they bind nothing on their own. Every copied
+ * schema and the LICENSE are fetched from SAP/abap-file-formats at the commit the metadata names — a commit only SAP
+ * can create — and must match byte for byte. `fetchBytes(url)` returns the bytes or null; injected by the tests.
+ */
+export async function upstreamProblems(dir, fetchBytes = defaultFetch) {
+  const out = [];
+  const aff = path.join(dir, 'lib', 'generated', 'aff-schemas');
+  let formats;
+  try {
+    formats = JSON.parse(readFileSync(path.join(dir, 'lib', 'generated', 'sap-references', 'abap-file-formats.json'), 'utf8'));
+  } catch {
+    return ['abap-file-formats.json: not readable'];
+  }
+  if (referenceProblems('abap-file-formats', JSON.stringify(formats)).length > 0) return ['abap-file-formats.json: not what the sync writes'];
+  const base = `https://raw.githubusercontent.com/${SOURCES['abap-file-formats'].repo}/${formats.commit}/`;
+  const pairs = (formats.copied ?? []).map((c) => [c.path, path.join(aff, path.posix.basename(c.path))]);
+  if (formats.licence.file) pairs.push([formats.licence.file, path.join(aff, 'LICENSE')]);
+  for (const [upstream, local] of pairs) {
+    if (!existsSync(local)) {
+      out.push(`${path.basename(local)}: missing`);
+      continue;
+    }
+    const theirs = await fetchBytes(base + upstream);
+    if (!theirs) out.push(`${upstream}: not found at ${formats.commit} in ${SOURCES['abap-file-formats'].repo}`);
+    else if (sha256(theirs) !== sha256(readFileSync(local))) out.push(`aff-schemas/${path.basename(local)}: not the bytes of ${upstream} at ${formats.commit}`);
+  }
+  return out;
+}
+
+async function defaultFetch(url) {
+  const res = await fetch(url, { redirect: 'error' });
+  return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
+}
+
 const invoked = !!process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invoked) {
   const dir = process.argv[2];
   if (!dir) {
-    console.error('usage: node scripts/check-sap-reference-data.mjs <dir>');
+    console.error('usage: node scripts/check-sap-reference-data.mjs <dir> [--upstream]');
     process.exit(2);
   }
   const problems = dataProblems(path.resolve(dir));
+  if (problems.length === 0 && process.argv.includes('--upstream')) problems.push(...(await upstreamProblems(path.resolve(dir))));
   if (problems.length > 0) {
     for (const p of problems.slice(0, 50)) console.error(`::error::${p}`);
     process.exit(1);

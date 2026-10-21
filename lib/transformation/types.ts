@@ -217,7 +217,9 @@ export const PLAN_VERSION = 2;
  * parent's structure (`TYPE ty_<parent>_local-lv_code`); the parent passes `ls_local-lv_code`; there is no `cs_local`
  * any more. Node: the parent starts `local` with each local's initial value, and the part declares each from `local`
  * before its body and writes it back after it, in a `finally`. A body that declares a handed local again, or names
- * `cs_local`, is refused (markers.ts). Nothing signed changes (§12.3).
+ * `cs_local`, is refused (markers.ts). A local the original declares with STATICS keeps its value from one call to the
+ * next (QA review of a20d2cb7bd39, 94e86fe4c2b1, `staticLocalsOf`): RAP holds it in `STATICS ls_static`, started once;
+ * Node in the run's own `local` (`STATICS_OF_RUN`, keyed by the run state). Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 21;
 

@@ -156,8 +156,9 @@ jobs:
           done
           # SEC-2026-892: the content too, before anything is copied — the metadata field by field, every
           # schema hashed against what the metadata records, the MIT text. The checker comes from this
-          # job's own checkout and needs no install.
-          node scripts/check-sap-reference-data.mjs "$src"
+          # job's own checkout and needs no install. --upstream: each copied schema and the LICENSE must
+          # also be the bytes of SAP/abap-file-formats at the commit the metadata names.
+          node scripts/check-sap-reference-data.mjs "$src" --upstream
           rm -rf lib/generated/sap-references lib/generated/aff-schemas
           cp -R "$src/lib/generated/sap-references" lib/generated/sap-references
           cp -R "$src/lib/generated/aff-schemas" lib/generated/aff-schemas
