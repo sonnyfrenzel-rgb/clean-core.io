@@ -1,9 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { build } from 'esbuild';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
@@ -12,14 +9,9 @@ import {
   ABAP_TOKEN,
   buildWalkGuide,
   plainShare,
-  restrictGuide,
-  resumeStop,
-  walkStops,
-  walkSummary,
   type WalkGuide,
   type WalkLine,
 } from '../lib/process-walk-guide';
-import type { StateEntry } from '../lib/process-states';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -112,7 +104,7 @@ test.describe('every step of the walk is said in plain words, anchored to its li
   });
 });
 
-test.describe('phases, technical steps and the summary', () => {
+test.describe('phases and technical steps', () => {
   test('business steps are grouped by phase, each phase in one piece', () => {
     const phaseOfStep = BIG_GUIDE.business.map((id) => BIG_GUIDE.byId[id].phase);
     const seen = new Set<string>();
@@ -143,196 +135,26 @@ test.describe('phases, technical steps and the summary', () => {
     expect(Object.values(PO_GUIDE.byId).find((s) => s.title === 'Not authorized?')!.technical).toBeNull();
   });
 
-  test('the stops: business steps, the technical steps once, then the summary', () => {
-    const stops = walkStops(BIG_GUIDE);
-    expect(stops.filter((s) => s.kind === 'technical')).toHaveLength(1);
-    expect(stops[stops.length - 1]).toEqual({ kind: 'summary' });
-    expect(stops.filter((s) => s.kind === 'step').map((s) => (s.kind === 'step' ? s.id : ''))).toEqual(BIG_GUIDE.business);
-    const technical = stops.find((s) => s.kind === 'technical');
-    expect(technical && technical.kind === 'technical' ? technical.ids.length : 0).toBe(
-      BIG_GUIDE.technical.reduce((n, g) => n + g.stepIds.length, 0),
-    );
-  });
-
-  const entry = (subject: string, state: StateEntry['state'], note: string | null = null): StateEntry => ({
-    subject, kind: 'element', state, note, account: { uid: 'u', name: 'U' }, confirmedAt: '2026-10-21T08:00:00.000Z', revision: 2,
-  });
-
-  test('the walk resumes at the first open stop; a Clarify stays open; all answered opens the summary', () => {
-    const stops = walkStops(PO_GUIDE);
-    const [first, second] = PO_GUIDE.business;
-    expect(resumeStop(stops, {})).toBe(0);
-    expect(resumeStop(stops, { [first]: entry(first, 'keep') })).toBe(1);
-    expect(resumeStop(stops, { [first]: entry(first, 'clarify') })).toBe(0);
-    const all = Object.fromEntries(Object.keys(PO_GUIDE.byId).map((id) => [id, entry(id, 'keep')]));
-    expect(resumeStop(stops, all)).toBe(stops.length - 1);
-    expect(second).toBeTruthy();
-  });
-
-  test('the summary says what the business still needs, from the answers on record', () => {
-    const [a, b, c, d] = PO_GUIDE.business;
-    const summary = walkSummary(PO_GUIDE, {
-      [a]: entry(a, 'keep'),
-      [b]: entry(b, 'change', 'Use the SAP standard release strategy'),
-      [c]: entry(c, 'drop', 'Nobody uses it'),
-      [d]: entry(d, 'clarify', 'Ask purchasing'),
-    });
-    expect(summary.keep.map((i) => i.id)).toEqual([a]);
-    expect(summary.change[0]).toMatchObject({ id: b, note: 'Use the SAP standard release strategy' });
-    expect(summary.drop.map((i) => i.id)).toEqual([c]);
-    expect(summary.clarify.map((i) => i.id)).toEqual([d]);
-    expect(summary.open).toHaveLength(PO_GUIDE.business.length - 4);
-    expect(summary.technical.total).toBe(PO_GUIDE.technical.reduce((n, g) => n + g.stepIds.length, 0));
-  });
-
-  test('only elements the route can store an answer for are walked', () => {
-    const subjects = new Set(PO_GUIDE.business.slice(0, 3));
-    const narrowed = restrictGuide(PO_GUIDE, subjects);
-    expect(narrowed.business).toEqual(PO_GUIDE.business.slice(0, 3));
-    expect(narrowed.technical).toEqual([]);
-    expect(restrictGuide(PO_GUIDE, null)).toBe(PO_GUIDE);
-  });
-
   test('deterministic: the same source says the same thing', () => {
     expect(JSON.stringify(guideOf(PO))).toBe(JSON.stringify(PO_GUIDE));
   });
 });
 
-/* ------------------------------------------------------------- rendered */
-
-async function load(file: string): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
-  const out = path.join(ROOT, 'tmp', 'process-walk-guide', String(process.pid), `${path.basename(file, '.tsx')}.cjs`);
-  await build({
-    entryPoints: [path.join(ROOT, 'components', 'workspace', file)],
-    outfile: out,
-    bundle: true,
-    format: 'cjs',
-    platform: 'node',
-    jsx: 'automatic',
-    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
-    alias: { '@': ROOT },
-    logLevel: 'silent',
-  });
-  return require(out).default;
-}
-
-const textOf = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
-
-test.describe('the walk-through on screen (server-free render)', () => {
-  test('a step is said before it is asked, the code one fold down, and no "Step n of n: label" heading', async () => {
-    const Walk = await load('ProcessWalkThrough.tsx');
-    const stops = walkStops(PO_GUIDE);
-    const at = stops.findIndex((s) => s.kind === 'step' && PO_GUIDE.byId[s.id].title === 'Currency not EUR?');
-    const id = (stops[at] as { id: string }).id;
-    const html = renderToStaticMarkup(
-      React.createElement(Walk, {
-        projectId: 'p1',
-        guide: PO_GUIDE,
-        stops,
-        at,
-        answers: {},
-        subjectOf: (sid: string) => ({ subject: sid, kind: 'element', label: 'x', detail: 'Decision', anchor: null }),
-        owner: true,
-        answering: null,
-        onAnswer: () => {},
-        onAnswerMany: () => {},
-        onGo: () => {},
-        onClose: () => {},
-        onOpenLines: () => {},
-        source: PO.source,
-        fileName: 'Z_MM_PO_APPROVAL.abap',
-      }),
-    );
-    const text = textOf(html);
-    expect(html).toContain(`data-walk-step="${at + 1}"`);
-    expect(html).toContain(`data-workspace-walk-step-id="${id}"`);
-    const said = text.indexOf('What happens here');
-    const asked = text.indexOf('Does the business still need this step?');
-    expect(said).toBeGreaterThan(-1);
-    expect(asked).toBeGreaterThan(said);
-    for (const part of ['Why it matters', 'What decides it', 'What data it touches', 'If it goes']) {
-      const at2 = text.indexOf(part);
-      expect(at2, part).toBeGreaterThan(said);
-      expect(at2, part).toBeLessThan(asked);
-    }
-    expect(text).toContain('If yes, it goes on to “Convert to EUR”.');
-    // The code is folded, with its lines on the closed fold.
-    expect(html).toContain('data-workspace-walk-code=""');
-    expect(text).toContain('The code behind this step');
-    expect(text).toContain('Line 69');
-    // The phase is said, and the old heading is gone.
-    expect(text).toMatch(/Phase \d+ of \d+: Read requisition/);
-    expect(text).not.toMatch(/Step \d+ of \d+: /);
-    // The answer control is there for the owner, after the explanation.
-    expect(html).toContain('data-state-confirm=');
-  });
-
-  test('closed, the walk-through says what it is, its shape and its progress', async () => {
-    const Walk = await load('ProcessWalkThrough.tsx');
-    const html = renderToStaticMarkup(
-      React.createElement(Walk, {
-        projectId: 'p1', guide: BIG_GUIDE, stops: walkStops(BIG_GUIDE), at: null, answers: {}, subjectOf: () => null,
-        owner: true, answering: null, onAnswer: () => {}, onAnswerMany: () => {}, onGo: () => {}, onClose: () => {},
-        onOpenLines: () => {}, source: BIG.source, fileName: 'Z.abap',
-      }),
-    );
-    const text = textOf(html);
-    expect(html).toContain('id="process-walk"');
-    expect(html).toContain('data-workspace-walk-start=""');
-    expect(text).toContain('Walk through the process in plain words');
-    expect(text).toMatch(/\d+ business steps in \d+ phases · \d+ technical steps answered once/);
-    expect(html).toContain('data-workspace-walk-phase="technical"');
-  });
-
-  test('the technical stop asks once for the whole group; the summary lists the open steps', async () => {
-    const Walk = await load('ProcessWalkThrough.tsx');
-    const stops = walkStops(BIG_GUIDE);
-    const base = {
-      projectId: 'p1', guide: BIG_GUIDE, stops, answers: {}, owner: true, answering: null,
-      subjectOf: (sid: string) => ({ subject: sid, kind: 'element', label: sid, detail: '', anchor: null }),
-      onAnswer: () => {}, onAnswerMany: () => {}, onGo: () => {}, onClose: () => {}, onOpenLines: () => {},
-      source: BIG.source, fileName: 'Z.abap',
-    };
-    const technical = renderToStaticMarkup(React.createElement(Walk, { ...base, at: stops.findIndex((s) => s.kind === 'technical') }));
-    expect(technical.match(/data-state-confirm=/g)).toHaveLength(1);
-    expect(textOf(technical)).toContain('Logging and statistics (');
-    const summary = renderToStaticMarkup(React.createElement(Walk, { ...base, at: stops.length - 1 }));
-    expect(textOf(summary)).toContain('What the business still needs');
-    expect(summary).toContain(`data-workspace-walk-summary-part="open" data-count="${BIG_GUIDE.business.length}"`);
-  });
-
-  test('the entry at the top of the Business view opens the walk', async () => {
-    const Entry = await load('ProcessWalkEntry.tsx');
-    const html = renderToStaticMarkup(React.createElement(Entry, { projectId: 'p1', answered: 3 }));
-    expect(html).toContain('data-workspace-walk-entry-open=""');
-    expect(textOf(html)).toContain('3 steps answered so far.');
-  });
-});
-
-test.describe('where it stands and what it writes', () => {
-  test('the entry comes right after "Next step", before the first look; the walk stands above the map', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\];/)![1];
-    const order = [...block.matchAll(/^\s*'([a-zA-Z]+)',/gm)].map((m) => m[1]);
-    expect(order.slice(0, 3)).toEqual(['nextStep', 'walk', 'firstLook']);
-    const process = read('components/workspace/WorkspaceProcess.tsx');
-    expect(process.indexOf('<ProcessWalkThrough')).toBeGreaterThan(-1);
-    expect(process.search(/<ProcessMap\s/)).toBeGreaterThan(-1);
-    expect(process.indexOf('<ProcessWalkThrough')).toBeLessThan(process.search(/<ProcessMap\s/));
-    expect(process).not.toContain('function WalkStep(');
-  });
-
-  test('answers go through the process-states route as before — no new client-written field', () => {
-    const process = read('components/workspace/WorkspaceProcess.tsx');
-    expect(process).toContain('confirmProcessStates(');
-    for (const rel of ['components/workspace/ProcessWalkThrough.tsx', 'components/workspace/ProcessWalkEntry.tsx', 'lib/process-walk-guide.ts', 'lib/process-walk-request.ts']) {
-      const src = read(rel);
-      expect(src, rel).not.toMatch(/firebase|setDoc|updateDoc|addDoc|fetch\(/);
-    }
-  });
-
-  test('the guide is engine-only: no model, no network', () => {
+test.describe('what it writes', () => {
+  test('the guide is engine-only: no model, no network, no answer', () => {
     const src = read('lib/process-walk-guide.ts');
     expect(src).not.toMatch(/gemini|openai|anthropic|\/api\//i);
+    expect(src).not.toMatch(/firebase|setDoc|updateDoc|addDoc|fetch\(/);
+  });
+
+  test('every step says what it is for the business — what the tour picks its stations by', () => {
+    const roles = (title: string) => step(BIG_GUIDE, title).role;
+    expect(roles('Process actions')).toBe('change');
+    expect(roles('Credit exposure read')).toBe('remote');
+    expect(roles('Sales organization given?')).toBe('control');
+    expect(roles('Send summary mail')).toBe('mail');
+    expect(roles('Display result list')).toBe('output');
+    expect(step(PO_GUIDE, 'Not authorized?').role).toBe('permission');
+    expect(step(PO_GUIDE, 'Read purchase requisition').role).toBe('read');
   });
 });

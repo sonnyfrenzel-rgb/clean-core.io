@@ -8,7 +8,8 @@ import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
-import { buildWalkGuide, walkStops } from '../lib/process-walk-guide';
+import { buildWalkGuide } from '../lib/process-walk-guide';
+import { buildProcessTour } from '../lib/process-tour';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -33,36 +34,32 @@ async function load(rel: string, name = 'default'): Promise<(props: Record<strin
     format: 'cjs',
     platform: 'node',
     jsx: 'automatic',
-    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*', 'bpmn-js/lib/*'],
+    loader: { '.css': 'empty' },
     alias: { '@': ROOT },
     logLevel: 'silent',
   });
   return require(out)[name];
 }
 
-test('a phase chip of the walk wraps its name instead of widening the page', async () => {
-  const Walk = await load('components/workspace/ProcessWalkThrough.tsx');
+test('a chapter chip of the tour wraps its name instead of widening the page', async () => {
+  const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
   const file = 'Z_MM_PO_APPROVAL.abap';
   const source = readExample(file).replace(/\r\n/g, '\n');
   const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file });
   const model = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null), fileName: file });
-  const guide = buildWalkGuide(source, model, walkOrder(model, null));
-  const html = renderToStaticMarkup(
-    React.createElement(Walk, {
-      projectId: 'p1', guide, stops: walkStops(guide), at: null, answers: {}, subjectOf: () => null, owner: true, answering: null,
-      onAnswer: () => {}, onAnswerMany: () => {}, onGo: () => {}, onClose: () => {}, onOpenLines: () => {}, source, fileName: file,
-    }),
-  );
-  const chips = [...html.matchAll(/<li class="([^"]*)"><button[^>]*data-workspace-walk-phase="[^"]*"[^>]*>([\s\S]*?)<\/button>/g)];
-  expect(chips.length).toBeGreaterThan(0);
+  const tour = buildProcessTour(buildWalkGuide(source, model, walkOrder(model, null)), model, null);
+  const html = renderToStaticMarkup(React.createElement(Layer, { tour, model, onClose: () => {} }));
+  const chips = [...html.matchAll(/<li class="([^"]*)"><button[^>]*data-tour-chapter="\d+"[^>]*>([\s\S]*?)<\/button>/g)];
+  expect(chips.length).toBe(tour.chapters.length);
   for (const [, li, inner] of chips) {
     expect(li.split(' ')).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full']));
-    // The button keeps `whitespace-nowrap`; the name inside it may wrap.
+    // The button keeps its one style; the name inside it may wrap.
     expect(inner).toMatch(/<span class="[^"]*\bwhitespace-normal\b[^"]*">/);
   }
 });
 
-test('on a new project\'s first visit the walk entry follows the first look; on every later visit the walk comes first', () => {
+test('on a new project\'s first visit the tour entry follows the first look; on every later visit the tour entry comes first', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
   // The order stays the owner's: next step, walk, first look.
   const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\];/)![1];
@@ -71,6 +68,6 @@ test('on a new project\'s first visit the walk entry follows the first look; on 
   expect(shell).toMatch(/walk:\s*view === 'business' && signed !== null && !buildUp \?/);
   // … and the first look's block carries the entry under it then.
   const firstLook = shell.slice(shell.indexOf('firstLook: ('), shell.indexOf('ask: answer ?'));
-  expect(firstLook.indexOf('<FirstLook')).toBeLessThan(firstLook.indexOf('<ProcessWalkEntry'));
+  expect(firstLook.indexOf('<FirstLook')).toBeLessThan(firstLook.indexOf('<ProcessTourEntry'));
   expect(firstLook).toMatch(/signed !== null && buildUp \?/);
 });

@@ -3,7 +3,7 @@
 import OpenQuestionsLine from './OpenQuestionsLine';
 import type { OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Check, ChevronDown, ChevronRight, CircleDashed, FileCode } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, ChevronRight, CircleDashed, FileCode, Footprints } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
@@ -288,6 +288,7 @@ export default function FirstLook({
   namingFrom = 'project',
   proposedName = null,
   onOpenMap,
+  onWalk,
   map = 'unsigned',
   narrative = null,
   fullMapBelow = false,
@@ -337,6 +338,8 @@ export default function FirstLook({
    * picture in this card is the main line only; this is the way to the rest.
    */
   onOpenMap?: () => void;
+  /** Opens the guided tour on the process map, where the screen has one (Business; owner decision 21.10.2026). */
+  onWalk?: () => void;
   /**
    * Where the full map stands (ADR-072): drawn from a signed run, being signed
    * by the start run, refused, or not signed. The build-up's last moment says
@@ -929,7 +932,7 @@ export default function FirstLook({
                     where the full map stands under this card (owner 10.10.2026,
                     reversing 03.10.2026): it is the one picture of the process
                     a reader sees without scrolling. */}
-                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} sticky={!sourceOpen} />
+                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} onWalk={onWalk} sticky={!sourceOpen} />
                 {sourceOpen ? (
                   <div data-first-look-source="" className="min-w-0">
                     <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
@@ -990,10 +993,12 @@ export default function FirstLook({
 export function FirstLookProcess({
   drawing,
   onOpenMap,
+  onWalk,
   sticky = false,
 }: {
   drawing: ReturnType<typeof firstLookExcerpt>;
   onOpenMap?: () => void;
+  onWalk?: () => void;
   /** Beside the step list on a wide screen, the card stays in view while the list scrolls. */
   sticky?: boolean;
 }) {
@@ -1062,11 +1067,18 @@ export function FirstLookProcess({
           {wt(more === 'below' ? 'firstLook.processMoreBelow' : 'firstLook.processMoreRight')}
         </p>
       ) : null}
-      {onOpenMap ? (
-        <div className="cc-no-print">
-          <CcButton variant="ghost" onClick={onOpenMap} data-first-look-open-map="">
-            {wt('firstLook.openMap')}
-          </CcButton>
+      {onOpenMap || onWalk ? (
+        <div className="cc-no-print flex flex-wrap items-center gap-2">
+          {onWalk ? (
+            <CcButton variant="secondary" icon={<Footprints size={16} aria-hidden={true} />} onClick={onWalk} data-first-look-walk="">
+              {wt('walk.entryOpen')}
+            </CcButton>
+          ) : null}
+          {onOpenMap ? (
+            <CcButton variant="ghost" onClick={onOpenMap} data-first-look-open-map="">
+              {wt('firstLook.openMap')}
+            </CcButton>
+          ) : null}
         </div>
       ) : null}
     </figure>

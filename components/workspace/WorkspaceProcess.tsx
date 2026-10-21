@@ -19,13 +19,14 @@ import StateChoice from '@/components/process-states/StateChoice';
 import { publishProcessStates, useProcessStates } from '@/hooks/useProcessStates';
 import { confirmOutcomeSentence, confirmProcessStates } from '@/lib/process-states-client';
 import { elementEntries, walkOrder } from '@/lib/process-walk';
-import { restrictGuide, resumeStop, walkStops, WALK_TECHNICAL_SUBJECT, type WalkGuide } from '@/lib/process-walk-guide';
-import { OPEN_WALK_EVENT, PROCESS_WALK_ID, takeProcessWalkRequest } from '@/lib/process-walk-request';
-import ProcessWalkThrough from './ProcessWalkThrough';
+import type { WalkGuide } from '@/lib/process-walk-guide';
+import type { ProcessTour as Tour } from '@/lib/process-tour';
+import { OPEN_WALK_EVENT, takeProcessWalkRequest } from '@/lib/process-walk-request';
+import ProcessTour from './ProcessTour';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { plainModelEnabled, walkPlainSentences } from '@/lib/plain-wording';
 import { isConfirmedState } from '@/lib/rules-editor';
-import { MAX_STATE_CHOICES, type ElementState } from '@/lib/process-states';
+import type { ElementState } from '@/lib/process-states';
 import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
@@ -168,27 +169,22 @@ export default function WorkspaceProcess({
   const { outcome: stateOutcome, reload: reloadStates } = useProcessStates(projectId, !!signed);
   const stateView = stateOutcome?.ok ? stateOutcome.view : null;
   const answers = useMemo(() => elementEntries(stateView), [stateView]);
-  const subjects = useMemo(
-    () => (stateView ? new Set(stateView.subjects.filter((s) => s.kind === 'element').map((s) => s.subject)) : null),
-    [stateView],
-  );
   /**
-   * The guided walk-through (roadmap "3.0.20 — with it", part 1): every step of
-   * the map's walk said in plain words, read from the signed source in this
-   * browser, as the map is. Read once per model, after the map is drawn, and
-   * narrowed to the elements an answer can be stored for once the route says
-   * which those are — a narrowing, not a second reading.
+   * The guided tour on the map (owner decision 21.10.2026): the business steps
+   * of the map's walk, said in plain words and placed on the map, read from the
+   * signed source in this browser, as the map is. Read once per model, after
+   * the map is drawn.
    */
-  const [fullGuide, setFullGuide] = useState<{ model: ProcessMapModel; guide: WalkGuide } | null>(null);
+  const [read, setRead] = useState<{ model: ProcessMapModel; guide: WalkGuide; tour: Tour } | null>(null);
   useEffect(() => {
     const current = map.model;
     if (!current || !signed) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      void import('@/lib/process-walk-guide').then((m) => {
+      void Promise.all([import('@/lib/process-walk-guide'), import('@/lib/process-tour')]).then(([g, t]) => {
         if (cancelled) return;
-        const guide = m.buildWalkGuide(signed.source, current, walkOrder(current, null));
-        setFullGuide({ model: current, guide });
+        const guide = g.buildWalkGuide(signed.source, current, walkOrder(current, null));
+        setRead({ model: current, guide, tour: t.buildProcessTour(guide, current, t.tourClosingOf(signed.source)) });
       });
     }, 0);
     return () => {
@@ -196,39 +192,33 @@ export default function WorkspaceProcess({
       window.clearTimeout(timer);
     };
   }, [map.model, signed]);
-  const guide = useMemo(
-    () => (fullGuide && fullGuide.model === map.model ? restrictGuide(fullGuide.guide, subjects) : null),
-    [fullGuide, map.model, subjects],
-  );
-  const stops = useMemo(() => (guide ? walkStops(guide) : []), [guide]);
-  const [walk, setWalk] = useState<number | null>(null);
+  const tour = read && read.model === map.model ? read.tour : null;
+  const [tourOpen, setTourOpen] = useState(false);
   /**
-   * The walk's sentences in plain business words (3.0.20, owner decision 2):
-   * read — and, for the owner with a model, asked for once — when the walk
-   * opens on a step. The engine's sentences stand until then, and whenever a
-   * rewording does not hold.
+   * The tour's sentences in plain business words (3.0.20, owner decision 2):
+   * read — and, for the owner with a model, asked for once — when the tour
+   * opens. The engine's sentences stand until then, and whenever a rewording
+   * does not hold.
    */
-  const walkSentences = useMemo(() => (fullGuide ? walkPlainSentences(fullGuide.guide) : null), [fullGuide]);
+  const walkSentences = useMemo(() => (read ? walkPlainSentences(read.guide) : null), [read]);
   const wording = usePlainWording({
     projectId: projectId || null,
     scope: 'walk',
     source: signed?.source ?? null,
     sentences: walkSentences,
     owner,
-    active: walk !== null,
+    active: tourOpen,
     modelEnabled: plainModelEnabled(availability),
   });
   const [answering, setAnswering] = useState<{ subject: string; error: string | null } | null>(null);
   /**
-   * Answers into the same need revision as the rules — never the signed run.
-   * One element, or the same answer for several in one confirmation: the
-   * technical steps of the walk, answered once (`busyKey` names the control
-   * that asked). Through the same route either way.
+   * The need of a step, answered in the source column beside the map — into
+   * the same need revision as the rules, never the signed run. The tour asks
+   * nothing; this is the one place in the Business view a step is answered.
    */
-  const answerSteps = useCallback(
-    async (busyKey: string, ids: readonly string[], state: ElementState, note: string | null) => {
-      if (!projectId || ids.length === 0) return;
-      const subject = busyKey;
+  const answerStep = useCallback(
+    async (subject: string, state: ElementState, note: string | null) => {
+      if (!projectId) return;
       setAnswering({ subject, error: null });
       let revision = stateView?.revision ?? null;
       if (revision === null) {
@@ -243,29 +233,16 @@ export default function WorkspaceProcess({
         await reloadStates();
         revision = 0;
       }
-      // In slices the route accepts; each confirmation moves the revision on.
-      for (let from = 0; from < ids.length; from += MAX_STATE_CHOICES) {
-        const slice = ids.slice(from, from + MAX_STATE_CHOICES);
-        const result = await confirmProcessStates(
-          projectId,
-          revision,
-          slice.map((id) => ({ subject: id, kind: 'element' as const, state, note })),
-        );
-        if (!result.ok) {
-          setAnswering({ subject, error: confirmOutcomeSentence(result) });
-          if (result.code === 'revision-moved') void reloadStates();
-          return;
-        }
-        publishProcessStates(projectId, result.view);
-        revision = result.view.revision;
+      const result = await confirmProcessStates(projectId, revision, [{ subject, kind: 'element' as const, state, note }]);
+      if (!result.ok) {
+        setAnswering({ subject, error: confirmOutcomeSentence(result) });
+        if (result.code === 'revision-moved') void reloadStates();
+        return;
       }
+      publishProcessStates(projectId, result.view);
       setAnswering(null);
     },
     [projectId, stateView, reloadStates],
-  );
-  const answerStep = useCallback(
-    (subject: string, state: ElementState, note: string | null) => answerSteps(subject, [subject], state, note),
-    [answerSteps],
   );
   /**
    * The map's legend, as the Business view counts it: *Confirmed* is the steps
@@ -292,47 +269,22 @@ export default function WorkspaceProcess({
         ),
     };
   }, [model, answers]);
-  /** A stop of the walk on screen; a step is selected on the map beside it, so the two never disagree. */
-  const walkRef = useRef<HTMLDivElement>(null);
-  const goToStep = useCallback(
-    (index: number) => {
-      const stop = stops[index];
-      if (!stop) return;
-      setWalk(index);
-      if (stop.kind === 'step') {
-        const element = model?.elements.find((e) => e.id === stop.id);
-        if (element) {
-          setPlane(element.plane);
-          setSelected(element.id);
-          setLooseRange(null);
-        }
-      }
-      const node = walkRef.current;
-      if (node && node.getBoundingClientRect().top < 0) node.scrollIntoView({ block: 'start' });
-    },
-    [stops, model],
-  );
   /**
-   * "Open the walk-through" from the entry at the top of the Business view
-   * (`ProcessWalkEntry`): held until the walk is read, then opened where the
-   * reader left off — the first open step, or the summary — and brought into view.
+   * "Walk through the process" from the top of the Business view or the First
+   * insights (`ProcessTourEntry`): the tour opens at its first step, over the
+   * page — while it is still being read it says so. Only on that click; it
+   * never opens by itself.
    */
-  const walkAsked = useRef(false);
-  const openAsked = useCallback(() => {
-    if (!walkAsked.current || stops.length === 0) return;
-    walkAsked.current = false;
-    goToStep(owner ? resumeStop(stops, answers) : 0);
-    document.getElementById(PROCESS_WALK_ID)?.scrollIntoView({ block: 'start' });
-  }, [stops, goToStep, owner, answers]);
   useEffect(() => {
     const hear = () => {
-      if (takeProcessWalkRequest(projectId)) walkAsked.current = true;
-      openAsked();
+      if (takeProcessWalkRequest(projectId)) setTourOpen(true);
     };
     hear();
     window.addEventListener(OPEN_WALK_EVENT, hear);
     return () => window.removeEventListener(OPEN_WALK_EVENT, hear);
-  }, [projectId, openAsked]);
+  }, [projectId]);
+  const closeTour = useCallback(() => setTourOpen(false), []);
+  const designHref = stageHref({ base: `/project/${projectId}`, path: 'design', view, from: WORKSPACE_RETURN.tools });
   /**
    * Business names, asked for automatically (owner decision 21.10.2026 — there
    * is no button): once the map is drawn without a naming for this source, the
@@ -605,7 +557,7 @@ export default function WorkspaceProcess({
                     </span>
                   ) : null}
                 </div>
-                {owner && selectedElement && walk === null && stateView?.subjects.some((s) => s.subject === selectedElement.id) ? (
+                {owner && selectedElement && stateView?.subjects.some((s) => s.subject === selectedElement.id) ? (
                   <div data-workspace-step-need="" className="flex flex-col gap-2 border-b border-cc-line pb-3">
                     <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('biz.stepNeedTitle')}</p>
                     <StateChoice
@@ -723,30 +675,10 @@ export default function WorkspaceProcess({
           {wt('biz.needAndProcess')}
         </h2>
       </div>
-      {/* The walk-through first (roadmap "3.0.20 — with it", part 1): the
-          leading way into the process for a business reader, said in plain
-          words before it asks; the map below selects the step on screen. */}
-      {model ? (
-        <div ref={walkRef}>
-          <ProcessWalkThrough
-            projectId={projectId}
-            guide={guide}
-            stops={stops}
-            at={walk}
-            answers={answers}
-            subjectOf={(id) => stateView?.subjects.find((s) => s.subject === id) ?? null}
-            owner={owner}
-            answering={answering}
-            onAnswer={answerStep}
-            onAnswerMany={(ids, state, note) => answerSteps(WALK_TECHNICAL_SUBJECT, ids, state, note)}
-            onGo={goToStep}
-            onClose={() => setWalk(null)}
-            onOpenLines={openRange}
-            source={signed.source}
-            fileName={signed.fileName}
-            say={wording.say}
-          />
-        </div>
+      {/* The guided tour, over the page while it is open (owner decision
+          21.10.2026): the map and the narration on one screen. */}
+      {tourOpen && model ? (
+        <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} />
       ) : null}
       {coach}
       <div data-coach-target="decision">

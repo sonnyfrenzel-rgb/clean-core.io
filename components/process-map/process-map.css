@@ -332,3 +332,56 @@
     max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   background: var(--cc-page);
 }
+
+/*
+ * The guided tour (`TourCanvas`): the station's element is marked in ink and a
+ * thicker line, with a light fill, and everything else steps back to the
+ * colours the path highlight uses above — never transparency. Ink, not green:
+ * a station is where the reader is, not a proof.
+ *
+ * `!important` because bpmn-js writes stroke and fill into each shape's inline
+ * `style`, which a class rule cannot otherwise beat (measured in the tour's
+ * browser spec: the computed stroke stayed the renderer's ink).
+ */
+.cc-tour-canvas .cc-dim .djs-visual > :not(text) {
+  stroke: var(--cc-line) !important;
+}
+
+.cc-tour-canvas .cc-dim .djs-visual text {
+  fill: var(--cc-ink-muted) !important;
+}
+
+.cc-tour-canvas .cc-tour-here .djs-visual > :first-child {
+  stroke: var(--cc-ink) !important;
+  stroke-width: 3px !important;
+  fill: var(--cc-information-bg) !important;
+}
+
+.cc-tour-canvas .cc-tour-here .djs-visual text {
+  fill: var(--cc-ink) !important;
+  font-weight: 600;
+}
+
+/* The tour's map is a picture: no pointer cursor over shapes it does not open,
+   and no drill-down arrow — the tour opens the level of each station itself. */
+.cc-tour-canvas .djs-element {
+  cursor: default;
+}
+
+.cc-tour-canvas .bjs-drilldown {
+  display: none;
+}
+/*
+ * The guided tour's layer (`ProcessTour`): the whole window, as the map's own
+ * full screen above, so map and card are one screen. Modal through the
+ * product's one modal hook (`useCcModal`) — the page behind is inert, Escape
+ * closes, the focus goes back — and portalled like a dialog.
+ */
+.cc-tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--cc-z-overlay);
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: var(--cc-surface);
+}
