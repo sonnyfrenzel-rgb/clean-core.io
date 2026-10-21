@@ -7,7 +7,7 @@
  * Why a script of its own: that rule executes a third-party package only when
  * the platform itself refuses a socket under the permission model, which Node
  * does from v25. On an older local Node the suite starts THIS file under a
- * Node 25 binary (`npx --package=node@25`), so the sandbox's child — spawned
+ * Node 25 binary (`npx --package=node@<HARNESS_NODE_VERSION>`, suite.ts), so the sandbox's child — spawned
  * with `process.execPath` — is a Node 25 process too, and the same rule now
  * says "execute". On Node >= 25 the suite imports it in process.
  *

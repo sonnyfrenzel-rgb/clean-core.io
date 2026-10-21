@@ -14,6 +14,7 @@ import {
   loadSource,
   main,
   harnessNode,
+  HARNESS_NODE_VERSION,
   localVerifyRoute,
   nodeGate,
   gateFindingsRecord,
@@ -141,6 +142,26 @@ test.describe('acceptance suite', () => {
     const self = harnessNode({ ACCEPTANCE_HARNESS_NODE: 'self' });
     if (Number(process.versions.node.split('.')[0]) >= 25) expect(self).toEqual({ binary: null, version: process.version, reason: null });
     else expect(self).toMatchObject({ binary: null, version: process.version, reason: expect.stringMatching(/ACCEPTANCE_HARNESS_NODE=self/) });
+  });
+
+  test('SEC-2026-902', () => {
+    expect(HARNESS_NODE_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    const calls: string[] = [];
+    // npx hands back this process's own binary, so the path exists; the version it then reports is what is judged.
+    const fake = (reported: string) => (command: string, args: string[] | null) => {
+      calls.push([command, ...(args ?? [])].join(' '));
+      if (args && args[0] === '-p') return { status: 0, stdout: `${reported}\n`, stderr: '' };
+      return { status: 0, stdout: `${process.execPath}\n`, stderr: '' };
+    };
+    const ok = harnessNode({}, fake(`v${HARNESS_NODE_VERSION}`), 'v22.0.0');
+    expect(ok).toEqual({ binary: process.execPath, version: `v${HARNESS_NODE_VERSION}`, reason: null });
+    expect(calls[0]).toContain(`--package=node@${HARNESS_NODE_VERSION} `);
+    const other = harnessNode({}, fake('v25.99.0'), 'v22.0.0');
+    expect(other.binary).toBeNull();
+    expect(other.reason).toContain('v25.99.0');
+    // A binary the caller names is the caller's choice.
+    const named = harnessNode({ ACCEPTANCE_HARNESS_NODE: process.execPath }, fake('v25.99.0'), 'v22.0.0');
+    expect(named.binary).toBe(process.execPath);
   });
 
   test("the loop asks the route's own checks: abapCheck for an ABAP candidate, typeCheckCandidate for a Node one", async () => {

@@ -609,45 +609,76 @@ export interface HarnessNode {
 
 let harnessNodeCache: HarnessNode | null = null;
 
+/** The one Node version the harness step fetches through npx (SEC-2026-902). */
+export const HARNESS_NODE_VERSION = '25.9.0';
+
+/** How `harnessNode` starts a process: `args === null` runs `command` through a shell. */
+export type HarnessSpawn = (
+  command: string,
+  args: string[] | null,
+  opts: { timeout: number; shell?: boolean },
+) => { status: number | null; stdout: string; stderr: string; error?: Error };
+
+const defaultHarnessSpawn: HarnessSpawn = (command, args, opts) => {
+  const base = { encoding: 'utf8' as const, timeout: opts.timeout, windowsHide: true };
+  const r = args === null ? spawnSync(command, { ...base, shell: opts.shell === true }) : spawnSync(command, args, base);
+  return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', error: r.error };
+};
+
 const nodeMajor = (v: string) => Number(v.replace(/^v/, '').split('.')[0]);
 
 /**
  * The Node the harness step runs under. The execution rule (`lib/sandbox.mjs`, `decideExecution`) runs a generated
  * package only when the platform refuses a socket under the permission model — Node >= 25. On an older local Node the
- * step runs in a Node 25 child: `ACCEPTANCE_HARNESS_NODE` (a binary), else `npx --yes --package=node@25` (cached by
- * npm after the first fetch); `ACCEPTANCE_HARNESS_NODE=self` keeps it in this process. Only the harness step runs
- * there; the generation and the gates stay in this process.
+ * step runs in a Node 25 child: `ACCEPTANCE_HARNESS_NODE` (a binary), else `npx --yes --package=node@` +
+ * `HARNESS_NODE_VERSION` (cached by npm after the first fetch); `ACCEPTANCE_HARNESS_NODE=self` keeps it in this
+ * process. Only the harness step runs there; the generation and the gates stay in this process.
+ *
+ * SEC-2026-902: the npx path names one exact version, and the binary it returns must report exactly that version.
+ * `spawn` and `current` exist for the spec; a call that passes its own `spawn` neither reads nor fills the cache.
  */
-export function harnessNode(env: Record<string, string | undefined> = process.env): HarnessNode {
-  if (nodeMajor(process.version) >= 25) return { binary: null, version: process.version, reason: null };
-  if (env.ACCEPTANCE_HARNESS_NODE === 'self') return { binary: null, version: process.version, reason: 'ACCEPTANCE_HARNESS_NODE=self keeps the harness step on this Node' };
-  if (harnessNodeCache) return harnessNodeCache;
+export function harnessNode(
+  env: Record<string, string | undefined> = process.env,
+  spawn: HarnessSpawn = defaultHarnessSpawn,
+  current: string = process.version,
+): HarnessNode {
+  if (nodeMajor(current) >= 25) return { binary: null, version: current, reason: null };
+  if (env.ACCEPTANCE_HARNESS_NODE === 'self') return { binary: null, version: current, reason: 'ACCEPTANCE_HARNESS_NODE=self keeps the harness step on this Node' };
+  const injected = spawn !== defaultHarnessSpawn;
+  if (harnessNodeCache && !injected) return harnessNodeCache;
   const versionOf = (bin: string) => {
-    const r = spawnSync(bin, ['-p', 'process.version'], { encoding: 'utf8', timeout: 30_000, windowsHide: true });
+    const r = spawn(bin, ['-p', 'process.version'], { timeout: 30_000 });
     return r.status === 0 ? r.stdout.trim() : null;
   };
   let binary: string | null = null;
   let why = '';
+  const pinned = `node@${HARNESS_NODE_VERSION}`;
   if (env.ACCEPTANCE_HARNESS_NODE) {
     binary = env.ACCEPTANCE_HARNESS_NODE;
     why = 'ACCEPTANCE_HARNESS_NODE';
   } else {
-    // A fixed command, nothing interpolated; on Windows npx is npx.cmd, which only a shell starts.
-    const opts = { encoding: 'utf8' as const, timeout: 300_000, windowsHide: true };
+    // A fixed command, nothing from outside interpolated; on Windows npx is npx.cmd, which only a shell starts.
     const r =
       process.platform === 'win32'
-        ? spawnSync('npx --yes --package=node@25 -- node -p process.execPath', { ...opts, shell: true })
-        : spawnSync('npx', ['--yes', '--package=node@25', '--', 'node', '-p', 'process.execPath'], opts);
-    const last = (r.stdout ?? '').trim().split(/\r?\n/).pop() ?? '';
+        ? spawn(`npx --yes --package=${pinned} -- node -p process.execPath`, null, { timeout: 300_000, shell: true })
+        : spawn('npx', ['--yes', `--package=${pinned}`, '--', 'node', '-p', 'process.execPath'], { timeout: 300_000 });
+    const last = r.stdout.trim().split(/\r?\n/).pop() ?? '';
     if (r.status === 0 && last && fs.existsSync(last)) binary = last;
-    else why = `npx --package=node@25 failed (${r.error?.message ?? `exit ${r.status}`}: ${(r.stderr ?? '').trim().split(/\r?\n/).pop()?.slice(0, 160) ?? ''})`;
+    else why = `npx --package=${pinned} failed (${r.error?.message ?? `exit ${r.status}`}: ${r.stderr.trim().split(/\r?\n/).pop()?.slice(0, 160) ?? ''})`;
   }
   const version = binary ? versionOf(binary) : null;
-  harnessNodeCache =
-    binary && version && nodeMajor(version) >= 25
+  // A binary named in ACCEPTANCE_HARNESS_NODE is the caller's own choice; one npx fetched must be the pinned version.
+  const exact = !!env.ACCEPTANCE_HARNESS_NODE || version === `v${HARNESS_NODE_VERSION}`;
+  const node: HarnessNode =
+    binary && version && nodeMajor(version) >= 25 && exact
       ? { binary, version, reason: null }
-      : { binary: null, version: process.version, reason: `no Node >= 25 for the harness step: ${binary ? `${why} gave ${version ?? 'nothing runnable'}` : why}` };
-  return harnessNodeCache;
+      : {
+          binary: null,
+          version: current,
+          reason: `no Node >= 25 for the harness step: ${binary ? `${why || `npx --package=${pinned}`} gave ${version ?? 'nothing runnable'}` : why}`,
+        };
+  if (!injected) harnessNodeCache = node;
+  return node;
 }
 
 /** Only what the harness step needs to start and find a temp directory. Nothing from the caller's secrets. */
