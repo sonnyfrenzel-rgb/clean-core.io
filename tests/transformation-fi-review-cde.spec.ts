@@ -43,23 +43,23 @@ function longRoutine(): string {
   return lines.join('\n');
 }
 
-test('C: a part of a split routine names only the components of its cs_local — another is refused with the valid names', () => {
+test('C: a part of a split routine uses the parent locals it is handed under their names — an invented name is refused with the valid ones', () => {
   const p = prep(longRoutine());
   const parts = p.plan.units.filter((u) => u.part);
   expect(parts.length, 'the routine is split into parts').toBeGreaterThan(1);
   const ctx = guardContextOf(p, parts[1].id);
   expect(ctx.abap?.localComponents).toEqual(['ls_c', 'ls_p']);
+  // Since scaffold version 21 (3.0.20) the frame hands them over as CHANGING parameters under their own names.
+  expect(ctx.abap?.handedLocals).toEqual(['ls_c', 'ls_p']);
   const invented = bodyGuards("cs_local-ls_company-currency = 'EUR'.\nIF cs_local-ls_policy-high_limit > 0.\n  gv_total = 1.\nENDIF.", ctx);
-  const refusal = invented.find((r) => r.message.startsWith('names components of cs_local it does not have'));
+  const refusal = invented.find((r) => r.message.startsWith('names cs_local, which this method does not have'));
   expect(refusal, JSON.stringify(invented)).toBeDefined();
   expect(refusal!.message).toContain('cs_local-ls_company, cs_local-ls_policy');
-  expect(refusal!.message).toContain('under their original names: ls_c, ls_p');
-  const bare = bodyGuards("ls_c-currency = 'EUR'.", ctx).find((r) => r.message.startsWith("uses the parent routine's locals without cs_local"));
-  expect(bare?.message).toContain('ls_c');
-  const right = bodyGuards("cs_local-ls_c-currency = 'EUR'.\ncs_local-ls_p-high_limit = 1.", ctx);
-  expect(right.filter((r) => /cs_local/.test(r.message))).toEqual([]);
-  // A body that declares its own local of that name is not the parent's.
-  expect(bodyGuards("DATA ls_c TYPE string.\nls_c = 'x'.", ctx).filter((r) => /cs_local/.test(r.message))).toEqual([]);
+  expect(refusal!.message).toContain('under their own names: ls_c, ls_p');
+  const right = bodyGuards("ls_c-currency = 'EUR'.\nls_p-high_limit = 1.", ctx);
+  expect(right.filter((r) => /parent routine|cs_local/.test(r.message))).toEqual([]);
+  // A body that declares a handed local again would shadow the parent's: refused.
+  expect(bodyGuards("DATA ls_c TYPE string.\nls_c = 'x'.", ctx).some((r) => r.message.startsWith("declares the parent routine's locals again: ls_c"))).toBe(true);
 });
 
 test('D: the main path loads the run\'s input once, where the original runs its demo data; no other body calls load_input', () => {

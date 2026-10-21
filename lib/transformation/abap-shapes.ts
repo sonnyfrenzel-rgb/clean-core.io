@@ -103,6 +103,12 @@ export interface AbapShapes {
    * predicate where the original's condition and this type decide it).
    */
   scalarOf(name: string, line: number): AbapScalar | null;
+  /**
+   * The data objects a FORM or METHOD declares — its parameters, DATA, STATICS, FIELD-SYMBOLS and inline
+   * declarations — typed and with their start value, for the procedure whose own statement is at `line`; empty for
+   * any other line (3.0.20: the parent of a split routine starts its parts' shared `local` with them).
+   */
+  localsOf(line: number): ShapeField[];
 }
 
 /**
@@ -350,8 +356,8 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     return { type: t.type, length: t.length, decimals: t.decimals, dictionary: !BUILTIN_SCALARS.has(t.type) };
   };
 
-  const fieldOf = (d: Decl): ShapeField => {
-    const r = resolve(d.rest);
+  const fieldOf = (d: Decl, scope?: Map<string, Decl>): ShapeField => {
+    const r = resolve(d.rest, 0, scope);
     // `VALUE 'X'`, `VALUE 100`, `VALUE abap_true`: the start value the original gives a scalar.
     const scalarTs = r.ts === 'string' || r.ts === 'number';
     const value = scalarTs ? /\bVALUE\s+('(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)(?:\s|$)/i.exec(d.rest) : null;
@@ -375,11 +381,11 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     if (seen.has(s.name)) continue;
     seen.add(s.name);
     const keys = new Set<string>();
-    const fields = s.components.map(fieldOf).filter((f) => (keys.has(f.key) ? false : (keys.add(f.key), true)));
+    const fields = s.components.map((d) => fieldOf(d)).filter((f) => (keys.has(f.key) ? false : (keys.add(f.key), true)));
     structures.push({ name: s.name, tsName: tsNames.get(s.name)!, line: s.line, lineEnd: s.lineEnd, fields });
   }
   const globalKeys = new Set<string>();
-  const globals = globalDecls.map(fieldOf).filter((g) => (globalKeys.has(g.key) ? false : (globalKeys.add(g.key), true)));
+  const globals = globalDecls.map((d) => fieldOf(d)).filter((g) => (globalKeys.has(g.key) ? false : (globalKeys.add(g.key), true)));
 
   const byTsName = new Map(structures.map((s) => [s.tsName, s]));
   const typeOf = (name: string, line: number): string | null => {
@@ -423,7 +429,11 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     }
     return field?.scalar ?? null;
   };
-  return { structures, globals, typeOf, scalarOf: scalarAt };
+  const localsOf = (line: number): ShapeField[] => {
+    const scope = localDecls.get(line);
+    return scope ? [...scope.values()].map((d) => fieldOf(d, scope)) : [];
+  };
+  return { structures, globals, typeOf, scalarOf: scalarAt, localsOf };
 }
 
 /**
