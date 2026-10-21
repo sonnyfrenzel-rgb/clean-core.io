@@ -98,7 +98,7 @@ test('the prompt names only the open steps and forbids guessing; the schema is t
 });
 
 test('route source: a proposal is stored only with the proxy\'s receipt of a Design-stage call, checked with the synced lists', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   const src: string = require('fs').readFileSync(path.join(__dirname, '..', 'app', 'api', 'projects', '[projectId]', 'fit-to-standard', 'route.ts'), 'utf8');
   expect(src).toContain("verifyModelReceipt(body.receipt, { uid: gate.uid, text: body.text, key, stage: 'design' })");
   expect(src).toContain('await loadSapNameLists();');
@@ -114,7 +114,7 @@ test('with the model off the design is offered without the proposal button', asy
     external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
     alias: { '@': root }, logLevel: 'silent',
   });
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   const View = require(out).default;
   const gate = { outcome: 'offered', classes: ['A'], primary: 'A', strength: 'strong', edition: 'public', editionAssumed: false, signals: [], sentence: '', editionNote: null };
   const design = { entries: ENTRIES, counts: { elements: 8, givenUp: 1, covered: 0, configuration: 0, gapKeyUser: 0, gapOrganisational: 0, gapOpen: 6, goesWithProgram: 1, unknown: 0 }, againstGate: null, edition: 'public' };

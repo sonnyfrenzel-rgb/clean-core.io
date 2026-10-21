@@ -40,7 +40,7 @@ async function load(file: string, name = 'default'): Promise<Component> {
     alias: { '@': root },
     logLevel: 'silent',
   });
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   return require(out)[name];
 }
 
