@@ -154,6 +154,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     if (!gate.ok) return gate.response;
     const scope = req.nextUrl.searchParams.get('scope');
     if (!isPlainScope(scope)) return bad('Expected ?scope=walk or ?scope=rules.', 'bad-request', 400);
+    if (!isFirestoreId(scope)) return bad('Expected ?scope=walk or ?scope=rules.', 'bad-request', 400);
     const { db } = await getAdminDb();
     const snap = await db.collection('projects').doc(gate.projectId).collection(COLLECTION).doc(scope).get();
     if (!snap.exists) return NextResponse.json({ record: null });
@@ -191,6 +192,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return bad('Expected { scope, digest, items, text, receipt }: the answer from /api/gemini as it came back.', 'bad-request', 400);
     }
     const scope: PlainScope = body.scope;
+    if (!isFirestoreId(scope)) return bad('Expected { scope, digest, items, text, receipt }: the answer from /api/gemini as it came back.', 'bad-request', 400);
     if (body.text.length > MAX_PLAIN_ANSWER) return bad('The answer is too large to read.', 'too-large', 413);
     if (typeof gate.legacyCode !== 'string' || gate.legacyCode.trim() === '') {
       return bad('This project has no source, so there is nothing to reword.', 'no-source', 409);

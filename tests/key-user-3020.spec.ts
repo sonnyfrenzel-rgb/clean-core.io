@@ -114,7 +114,7 @@ test.describe('1. a key-user decision ships no code generated against an earlier
 
 async function component(rel: string, name: string): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
   const root = path.resolve(__dirname, '..');
-  const out = path.join(root, 'tmp', 'key-user-3020', String(process.pid), `${name}.cjs`);
+  const out = path.join(root, 'tmp', 'key-user-3020', String(process.pid), `${path.basename(rel, path.extname(rel))}-${name}.cjs`);
   await build({
     entryPoints: [path.join(root, rel)],
     outfile: out,
