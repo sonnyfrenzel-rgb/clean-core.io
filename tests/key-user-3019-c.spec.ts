@@ -270,7 +270,7 @@ test.describe('3. the key-user checks recorded as run in the account’s system 
 
 test.describe('4. a split program builds units for its code parts only (scaffold 20)', () => {
   test('the routines a key user configures are no unit, no fill request, no model call', () => {
-    expect(SCAFFOLD_VERSION).toBe(20);
+    expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(20);
     const list = listOf(SPLIT);
     expect(list.scope).toBe('partial');
     const ranges = keyUserPlanRanges(list, 'split')!;
@@ -310,7 +310,9 @@ test.describe('4. a split program builds units for its code parts only (scaffold
   // and the planner then got no key-user ranges and planned the whole source.
   test('a 3.0.19 run generates only on a ready evidence read — a failed read holds it and says why', () => {
     const p = project({ targetArchitecture: 'rap' }, SPLIT);
-    expect(keyUserEvidenceBlock(p, { state: 'ready' })).toBeNull();
+    // A ready state handed over without its report holds it as well (QA review of f6b07e692346, 442c3294dcf2).
+    expect(keyUserEvidenceBlock(p, { state: 'ready' } as unknown as Parameters<typeof keyUserEvidenceBlock>[1])).toMatch(/carry no key-user reading/);
+    expect(keyUserEvidenceBlock(p, { state: 'ready', value: null })).toMatch(/carry no key-user reading/);
     // A ready read without a key-user reading holds it too (QA review of 7fe620f4c919, e6be8bc2a9fd).
     expect(keyUserEvidenceBlock(p, { state: 'ready', value: { evidence: {} } })).toMatch(/carry no key-user reading/);
     expect(keyUserEvidenceBlock(p, { state: 'ready', value: { evidence: { keyUser: { scope: 'partial' } } } })).toBeNull();

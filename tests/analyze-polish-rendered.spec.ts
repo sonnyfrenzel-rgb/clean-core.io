@@ -177,6 +177,8 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   // The whole count, not a substring "11 findings" would also hold (QA review of 62eae6a082bb): one finding at one
   // place, so no "places in the code" (programMapRowCount, lib/findings-view.ts).
   await expect(writeRow.locator('[data-program-map-count]')).toHaveText('1 finding');
+  // And nowhere else in the row either (QA review of dd189e7328b2, 96793b3a2001).
+  await expect(writeRow).not.toContainText('places in the code');
   await expect(page.locator(`[data-program-map-dot="${EBAN_WRITE_LINE}"]`)).toHaveCount(1);
 
   // 3. Column numbers read 1..n left to right.
