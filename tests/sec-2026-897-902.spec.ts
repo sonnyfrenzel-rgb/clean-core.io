@@ -178,6 +178,7 @@ test.describe('SEC-2026-898', () => {
 
   test('SEC-2026-898 (1)', () => {
     test.skip(!shell, 'No PowerShell on this machine — the export cannot run here.');
+    test.skip(process.platform !== 'win32', 'scripts/export-source.ps1 is run on Windows; (2) holds on every platform.');
     const control = exportOf('control', { 'firebase-config.json': firebaseConfig, 'a.txt': 'hello\n' });
     expect(control.code, control.out).toBe(0);
     expect(control.zip).toBe(true);
