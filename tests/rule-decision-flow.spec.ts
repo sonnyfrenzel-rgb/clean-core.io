@@ -99,6 +99,45 @@ test.describe('the rules explained (3.0.20)', () => {
     expect(check.protects.text).toBe('Only cases with a document currency other than EUR go further; for EUR the program stops here.');
   });
 
+  test('a loop that skips an entry is said as a skip, never as a stop of the process (QA review of b89b39fbc913)', () => {
+    const source = `REPORT zskip.
+DATA: gt_items TYPE STANDARD TABLE OF i, gv_amount TYPE p LENGTH 10 DECIMALS 2.
+START-OF-SELECTION.
+  LOOP AT gt_items INTO DATA(ls_item).
+    IF gv_amount > 100.
+      CONTINUE.
+    ENDIF.
+    WRITE / gv_amount.
+  ENDLOOP.
+`;
+    const { ex } = explain(source);
+    expect(ex.rules).toHaveLength(1);
+    const e = ex.rules[0];
+    expect(e.sides?.holds.text).toBe('Where it holds: the program skips this entry and takes the next.');
+    expect(e.protects.text).toBe('It leaves out entries where amount above 100: the program skips them and goes on with the next entry.');
+    expect(e.protects.text).not.toMatch(/stops/);
+    expect(e.impact.reasons).not.toContain('stops the process');
+    expect(e.impact.reasons).toContain('skips entries');
+  });
+
+  test('a large number on a business field stays a business rule — only a subject named as a program setting makes it technical (QA review of b89b39fbc913)', () => {
+    const source = `REPORT zcap.
+DATA: gv_amount TYPE p LENGTH 16 DECIMALS 0, gv_status TYPE c LENGTH 1.
+START-OF-SELECTION.
+  IF gv_amount > 999999.
+    gv_status = 'A'.
+  ENDIF.
+`;
+    const { ex } = explain(source);
+    expect(ex.rules).toHaveLength(1);
+    expect(ex.rules[0].technical).toBeNull();
+    expect(ex.rules[0].topic).toBe('amounts');
+    expect(ex.rules[0].example?.text).toContain('999,999');
+    // The cap on a field named as a setting stays set apart, with the sentinel said.
+    const fi = explain(FI);
+    expect(ruleOf(fi.ex, /c_max_raw/i, fi.reading).technical?.text).toContain('“no limit” written as a number');
+  });
+
   test('a rule under an outer branch says the condition it lives under, with its line (QM-06 shape)', () => {
     const { ex, reading } = explain(QM);
     const score = ruleOf(ex, /c_crit_score/i, reading);

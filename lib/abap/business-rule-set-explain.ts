@@ -433,13 +433,26 @@ function effectsOf(statements: readonly AbapStatement[], facts: ExplainFacts, ct
   const all = out.map((e) => (e === '' ? further : e));
   if (all.length <= 3) return all;
   // Three at most — and the one that ends the flow is never the one left out: it is what the reader most needs.
-  const ending = all.filter((e) => STOPS.test(e));
-  const rest = all.filter((e) => !STOPS.test(e)).slice(0, Math.max(0, 3 - ending.length));
+  const ending = all.filter((e) => ENDS.test(e));
+  const rest = all.filter((e) => !ENDS.test(e)).slice(0, Math.max(0, 3 - ending.length));
   return [...rest, ...ending].slice(0, 3);
 }
 
-/** An effect that ends the flow for the case. */
-const STOPS = /^stops|^ends the program|^skips/;
+/**
+ * An effect that ends the flow for the case — the step or the program stops.
+ * A loop that skips one entry and takes the next does not stop anything
+ * (QA review of b89b39fbc913): it is `SKIPS`, said as a skip, never as a stop.
+ */
+const STOPS = /^stops|^ends the program/;
+const SKIPS = /^skips/;
+const ENDS = /^stops|^ends the program|^skips/;
+
+/** How a side ends for the case: it stops, it skips the entry, or it goes on. */
+function endingOf(effects: readonly string[]): 'stop' | 'skip' | null {
+  if (effects.some((e) => STOPS.test(e))) return 'stop';
+  if (effects.some((e) => SKIPS.test(e))) return 'skip';
+  return null;
+}
 
 /* --------------------------------------------------------------- wording */
 
@@ -539,11 +552,15 @@ function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   if (rc.stems.some((s) => /^sy-|^(?:subrc|tabix|index|dbcnt)$/.test(s))) {
     return { text: 'It reads a system field of the program run, not a business value.', anchors: [where] };
   }
-  if (values.some(isSentinel)) {
+  // A number alone proves nothing: 999999 can be a business limit on an amount
+  // (QA review of b89b39fbc913). Only a subject named as a setting of the
+  // program makes the rule technical; the sentinel then says what its value is.
+  const technicalSubject = rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s));
+  if (technicalSubject && values.some(isSentinel)) {
     const v = values.find(isSentinel) ?? '';
     return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
   }
-  if (rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s))) {
+  if (technicalSubject) {
     return { text: `${ucFirst(rc.subject)} is a setting of the program itself — how it counts, rounds or logs — not a business decision.`, anchors: [where] };
   }
   if (routines.length > 0 && routines.every((r) => TECHNICAL_ROUTINE.test(r))) {
@@ -593,25 +610,32 @@ function protectsOf(rc: RuleContext, sidesHolds: string[], sidesOtherwise: strin
     };
   }
   const t = firstTestOf(rc, ctx);
-  const stops = (effects: readonly string[]) => effects.some((e) => STOPS.test(e));
   const condition = t ? phraseOf(conditionFor(rule, t.p), ctx, t.p.lineStart) : 'its condition holds';
   // Which side ends the flow decides the sentence: an IF whose branch returns
   // keeps the cases where it holds out, a CHECK lets only those cases through.
-  if (stops(sidesHolds) || (rc.control && !stops(sidesOtherwise) && sidesHolds.length + sidesOtherwise.length === 0)) {
+  // A loop skip is said as a skip: the loop goes on with the next entry.
+  const holdsEnd = endingOf(sidesHolds) ?? (rc.control && sidesHolds.length + sidesOtherwise.length === 0 ? 'stop' : null);
+  const otherwiseEnd = endingOf(sidesOtherwise);
+  const what = (end: 'stop' | 'skip') => (end === 'stop' ? 'the program stops here' : 'the program skips the entry and takes the next');
+  if (holdsEnd) {
     if (t && !t.mixed && t.op === '<>' && t.values.length > 0) {
       const listed = joinWords(t.values.map(valueWords)).replace(/ and ([^,]+)$/, ' or $1');
-      return { text: `Only cases with ${t.subject} ${listed} go further; for every other ${t.subject} the program stops here.`, anchors };
+      return { text: `Only cases with ${t.subject} ${listed} go further; for every other ${t.subject} ${what(holdsEnd)}.`, anchors };
     }
-    return { text: `It keeps cases where ${condition} from going further: for them the program stops here.`, anchors };
+    return holdsEnd === 'stop'
+      ? { text: `It keeps cases where ${condition} from going further: for them the program stops here.`, anchors }
+      : { text: `It leaves out entries where ${condition}: the program skips them and goes on with the next entry.`, anchors };
   }
-  if (stops(sidesOtherwise)) {
+  if (otherwiseEnd) {
     if (t && !t.mixed && (t.op === '<>' || t.op === '=') && t.values.length > 0) {
       const listed = joinWords(t.values.map(valueWords)).replace(/ and ([^,]+)$/, ' or $1');
       return t.op === '<>'
-        ? { text: `Only cases with a ${t.subject} other than ${listed} go further; for ${listed} the program stops here.`, anchors }
-        : { text: `Only cases with ${t.subject} ${listed} go further; for every other ${t.subject} the program stops here.`, anchors };
+        ? { text: `Only cases with a ${t.subject} other than ${listed} go further; for ${listed} ${what(otherwiseEnd)}.`, anchors }
+        : { text: `Only cases with ${t.subject} ${listed} go further; for every other ${t.subject} ${what(otherwiseEnd)}.`, anchors };
     }
-    return { text: `It lets a case through only where ${condition}; every other case stops here.`, anchors };
+    return otherwiseEnd === 'stop'
+      ? { text: `It lets a case through only where ${condition}; every other case stops here.`, anchors }
+      : { text: `It takes an entry further only where ${condition}; the program skips every other entry and goes on with the next.`, anchors };
   }
   if (!t || t.mixed) {
     return { text: `It gives cases where ${condition} their own handling.`, anchors };
@@ -832,10 +856,14 @@ function impactOf(rc: RuleContext, technical: boolean, sides: ReturnType<typeof 
   if (rc.declarationOnly) return { score: 0, level: 'low', reasons: ['nothing reads it'] };
   if (rc.unreached) return { score: 0, level: 'low', reasons: ['no entry point reaches it'] };
   let score = 1;
-  const stops = [...(sides?.holdsEffects ?? []), ...(sides?.otherwiseEffects ?? [])].some((e) => STOPS.test(e));
-  if (rc.control || stops) {
+  const ending = endingOf([...(sides?.holdsEffects ?? []), ...(sides?.otherwiseEffects ?? [])]);
+  if (ending === 'stop' || (rc.control && ending === null)) {
     score += 3;
     reasons.push('stops the process');
+  } else if (ending === 'skip') {
+    // A skipped entry leaves the rest of the run going: weightier than a branch, never a stop.
+    score += 2;
+    reasons.push('skips entries');
   }
   const steps = rc.rule.processElements.filter((e) => e.relation === 'branch').length;
   if (steps > 0) {
