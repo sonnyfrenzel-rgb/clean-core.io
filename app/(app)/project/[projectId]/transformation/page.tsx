@@ -68,7 +68,7 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 // Roadmap 3.0.19: a key-user decision generates no code; the stage shows the engine's step list instead.
 import KeyUserSteps from '@/components/keyuser/KeyUserSteps';
-import { isKeyUserDecision, keyUserGateOpen, keyUserModeOf, keyUserPlanRanges, keyUserStepsOf } from '@/lib/key-user-route';
+import { isKeyUserDecision, keyUserEvidenceBlock, keyUserModeOf, keyUserPlanRanges, keyUserStepsOf } from '@/lib/key-user-route';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
@@ -1745,8 +1745,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * resolves it, and the button waits until the list is empty.
    */
   const prerequisites = generationPrerequisites(project, 'transformation');
-  // Scaffold 20: a run whose engine reads key user waits for the evidence, so a split program never builds its key-user parts.
-  const canGenerate = project !== null && !keyUserWhole && !(keyUserGateOpen(project) && evidencePending) && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  // Scaffold 20: a run whose engine reads key user waits for a ready evidence read — not only while it loads, also when it failed (a78673fa61ff) — so a split program never builds its key-user parts.
+  const keyUserEvidenceWait = project?.legacyCode ? keyUserEvidenceBlock(project, projectEvidence) : null;
+  const canGenerate = project !== null && !keyUserWhole && keyUserEvidenceWait === null && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
   /** The plan before the click is read whenever a generation could start and none runs (see the effect that reads it below). */
   const planWanted = canGenerate && !loading;
   /** The pre-flight check (owner, 13.10.2026): a plan that cannot succeed does not start. */
@@ -1762,7 +1763,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   /** Once a package exists the button replaces it, and says so. */
   const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
   /** The first reason the code cannot be generated now, for the empty package card. */
-  const whyNotGenerated = prerequisites[0]?.reason ?? (blockers.length > 0 ? blockers.join(' ') : modelOff);
+  const whyNotGenerated = prerequisites[0]?.reason ?? keyUserEvidenceWait ?? (blockers.length > 0 ? blockers.join(' ') : modelOff);
   // Owner, 16.10.2026: what moved is said as it is — a decision confirmed after
   // the generation is not "a previous source" (`codeStaleWords`).
   const codeWords = phases.find((p) => p.key === 'transformation')?.state === 'stale' ? codeStaleWords(project) : null;

@@ -228,7 +228,13 @@ export interface KeyUserReading {
   parts: { total: number; keyUser: number; code: number; notDetermined: number };
   /** `A` only for `whole-program`: a key-user extension uses released extension points only. */
   levelByConstruction: 'A' | null;
-  /** One sentence for the route report, naming the counts and the scope. */
+  /**
+   * One sentence for the route report, naming the counts and the scope. It
+   * names no clean-core level: the router's rationale quotes it, and the run
+   * signs that rationale (`recommendationJustification`), while a level is
+   * never signed material (CLAUDE.md; QA review of 317d5f7a9c53, de1b549b12ba).
+   * The level is `levelByConstruction`, shown beside it and never signed.
+   */
   sentence: string;
 }
 
@@ -726,7 +732,7 @@ function readingSentence(scope: KeyUserScope, parts: KeyUserReading['parts'], ca
       : `No part of the program is a key-user candidate: of ${parts.total} part(s), ${rest}.`;
   }
   if (scope === 'whole-program') {
-    return `Every part of the program is a key-user candidate (${parts.keyUser}: ${listWords(tools)}), each with its limit: built with key-user tools, the extension is clean core level A by construction, because key-user extensions use released extension points only.`;
+    return `Every part of the program is a key-user candidate (${parts.keyUser}: ${listWords(tools)}), each with its limit: built with key-user tools, the extension uses released extension points only.`;
   }
   if (!rest) {
     return `${parts.keyUser} of ${parts.total} part(s) are key-user candidates (${listWords(tools)}), each with its limit; part of the program was not assessed by the engine, so the program is not called key user as a whole.`;

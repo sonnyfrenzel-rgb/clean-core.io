@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added — key-user extensibility (roadmap 3.0.19, owner decisions 18 and 19 October 2026)
 
 A small change that SAP's key-user tools cover is no longer sent through a developer build it does not need.
-Engine-version gated (3.0.19): projects analysed by an earlier engine see no change.
+Engine-version gated (3.0.19): for projects analysed by an earlier engine the engine's findings, the score, the route, the recommendation and the generated code do not change. One thing does: a new design comparison names key user as its fourth option for every project, and for an earlier engine's run it says that key-user coverage is not determined, because that run has no key-user reading.
 
 - **The engine names key-user candidates from the code, each with its limit:** a custom field (`ZZ`/`YY`
   components of an SAP table), custom logic (an exit or BAdI that only checks or derives — no write, no external

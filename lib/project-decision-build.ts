@@ -137,11 +137,14 @@ function noContractBinding(kind: OptionKind, optionId: string, signOff: SignOffB
   if (why) {
     return bound('contract', `${SIGN_OFF_NOT_CURRENT_PREFIX}${key}`, 'stale', why.charAt(0).toUpperCase() + why.slice(1));
   }
+  // A key-user sign-off may carry no reason where it follows the engine's
+  // recommendation (above); the sentence says "with its reason" only where one
+  // was recorded (QA review of 317d5f7a9c53, 2dc0e9055239).
   return bound(
     'contract',
     key,
     'confirmed',
-    `No architecture contract is required: this option generates nothing. The decision rests on the analysis run and on the sign-off ${signOff!.by ? `by ${signOff!.by} ` : ''}at ${at}, with its reason.`,
+    `No architecture contract is required: this option generates nothing. The decision rests on the analysis run and on the sign-off ${signOff!.by ? `by ${signOff!.by} ` : ''}at ${at}${signOff!.reason ? ', with its reason' : ', which records no reason: it follows the recommendation of the engine'}.`,
   );
 }
 

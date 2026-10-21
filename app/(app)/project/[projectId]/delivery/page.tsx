@@ -534,6 +534,13 @@ export default function DeliveryPage() {
       // Roadmap 3.0.19: the engine's key-user step list, from the same evidence read, as docs/key-user-steps.md.
       const keyUserList = keyUserStepsOf(evidenceRead.evidence, project);
       const keyUserMode = keyUserModeOf(project, keyUserList);
+      // QA review of 317d5f7a9c53 (63537ea20c25): the card says the bundle holds the step list with its
+      // acceptance checks. A key-user decision whose list cannot be built downloads nothing and says why,
+      // rather than a ZIP with a placeholder where the step list was promised.
+      if (isKeyUserDecision(project) && !(keyUserList && keyUserMode !== 'none')) {
+        setBundleError(`The key-user step list could not be built: ${evidenceRead.unread ?? 'the signed run holds no key-user reading'}. Nothing was downloaded. Try again once the engine's evidence can be read.`);
+        return;
+      }
       const keyUser = keyUserList && keyUserMode !== 'none'
         ? {
             whole: keyUserMode === 'whole',
@@ -542,18 +549,7 @@ export default function DeliveryPage() {
             checks: keyUserList.effort.checks,
             codeParts: keyUserList.codeParts.length,
           }
-        : isKeyUserDecision(project)
-          ? {
-              whole: true,
-              markdown: `# Key-user step list — ${project.name}
-
-Not in this package: ${evidenceRead.unread ?? 'the signed run holds no key-user reading'}. Download the package again once the engine's evidence can be read.
-`,
-              steps: 0,
-              checks: 0,
-              codeParts: 0,
-            }
-          : null;
+        : null;
       const finished = finishDeliveryPackage({
         entries: bundle.entries,
         facts: { ...facts, keyUser },

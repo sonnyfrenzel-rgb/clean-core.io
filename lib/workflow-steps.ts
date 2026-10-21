@@ -598,14 +598,15 @@ export function handoverBlockers(project: Project | null): string[] {
     out.push(`the analysis (${inputList(s.unverifiedInputs)} cannot be shown to be what the signed run used)`);
   }
   // Roadmap 3.0.19: a key-user decision hands over no code, so a package left
-  // from an earlier decision blocks nothing.
+  // from an earlier decision blocks nothing, and neither does a suite written
+  // for it (QA review of 317d5f7a9c53, 910781999cc2).
   const keyUser = isKeyUserDecision(project);
   const contextOnly = !keyUser && s.context && !s.code && p.code;
   if (s.design && p.design) out.push('the solution design');
   if (s.signOff) out.push('the architecture sign-off');
   if (!keyUser && s.code && p.code) out.push('the generated code');
   else if (contextOnly) out.push(CONTEXT_BLOCKERS.code);
-  if (s.tests && p.tests) out.push(s.testsPackage ? `the test suite (written for ${PREVIOUS_PACKAGE})` : 'the test suite');
+  if (!keyUser && s.tests && p.tests) out.push(s.testsPackage ? `the test suite (written for ${PREVIOUS_PACKAGE})` : 'the test suite');
   else if (contextOnly && p.tests) out.push(CONTEXT_BLOCKERS.tests);
   if (s.docs && p.docs) out.push('the documentation');
   return out;

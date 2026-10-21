@@ -210,6 +210,20 @@ test.describe('Transformation: a key-user decision generates no code — no scaf
     });
     expect(handoverBlockers(leftover({ targetArchitecture: 'rap' }))).toContain('the generated code');
     expect(handoverBlockers(leftover({}))).not.toContain('the generated code');
+    // QA review of 317d5f7a9c53, 910781999cc2: the suite written for that package blocked the key-user handover
+    // all the same. It blocks under a code decision, so the check is not vacuous.
+    const cases = [{ id: 't1', name: 'Case', category: 'Unit', description: 'd', priority: 'High', status: 'Passed' }];
+    const leftoverSuite = (extra: Record<string, unknown>) => project({
+      generatedCode: code,
+      testCases: cases,
+      auditMetadata: {
+        ...(project().auditMetadata as object),
+        sourceChange: { artefacts: { generatedCode: artefactDigest('generatedCode', code), testCases: artefactDigest('testCases', cases) } },
+      },
+      ...extra,
+    });
+    expect(handoverBlockers(leftoverSuite({ targetArchitecture: 'rap' }))).toContain('the test suite');
+    expect(handoverBlockers(leftoverSuite({})).filter((b) => /test suite/.test(b))).toEqual([]);
   });
 });
 
@@ -393,5 +407,9 @@ test.describe('Design shows the fourth option with its limits; Analyze says Leve
     expect(page).toContain('keyUserLevel: keyUserStepsOf(evidenceReport, project)?.levelByConstruction ?? null,');
     const hero = read('components/analyze/AnalysisAnswer.tsx');
     expect(hero).toContain('data-key-user-level={keyUserLevel}');
+    // QA review of 317d5f7a9c53, 25676e3f536e: the whole example reads as key user while a candidate's release is not
+    // determined, so the level line says it holds once the limits, the release among them, are checked.
+    expect(evidenceOf(WHOLE).keyUser!.candidates.some((c) => c.release.state === 'not-determined')).toBe(true);
+    expect(hero).toContain('It holds once each candidate\'s limits are checked in the target system, its release among them');
   });
 });

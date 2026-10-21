@@ -100,6 +100,24 @@ export function keyUserPlanRanges(
   return ranges.length > 0 ? { ranges } : null;
 }
 
+/**
+ * Why a run whose engine reads key user cannot generate yet, or null when it
+ * can (QA review of 317d5f7a9c53, a78673fa61ff). The planner's key-user ranges
+ * come from the evidence read: while it loads, and when it failed, they are
+ * empty, and a split program would build units for the lines a key user
+ * configures. So such a run waits for a ready read — a failed one says why
+ * instead of falling back to a plan of the whole source. A run of an older
+ * engine has no key-user ranges and is never held here.
+ */
+export function keyUserEvidenceBlock(
+  project: ProjectLike,
+  evidence: { state: 'loading' } | { state: 'failed'; reason: string } | { state: 'ready' },
+): string | null {
+  if (!keyUserGateOpen(project) || evidence.state === 'ready') return null;
+  if (evidence.state === 'loading') return "Reading the engine's findings for this source…";
+  return `The engine's findings could not be read (${evidence.reason}), so the lines a key user configures cannot be left out of the code. Reload the page to read them again.`;
+}
+
 /** The PLATFORM KNOWLEDGE input for a split program, declared in `lib/transformation-context.ts`. */
 export type { KeyUserContextInput };
 

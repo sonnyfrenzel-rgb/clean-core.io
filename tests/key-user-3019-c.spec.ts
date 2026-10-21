@@ -35,7 +35,7 @@ import { signOffRecommendation } from '../lib/design-recommendation';
 import { decisionWeighing } from '../lib/decision-weighing';
 import { evidenceDigest } from '../lib/run-evidence-digest';
 import { buildKeyUserSteps } from '../lib/key-user-steps';
-import { keyUserPlanRanges } from '../lib/key-user-route';
+import { keyUserEvidenceBlock, keyUserPlanRanges } from '../lib/key-user-route';
 import {
   KEY_USER_ACCEPTANCE_VERSION,
   keyUserAcceptanceReading,
@@ -54,6 +54,7 @@ import { costComparison, emptyCostAssumptions, OPTION_KINDS, type CostOption } f
 import { ARCHITECTURE_OPTION } from '../lib/decision-draft';
 import { optionOfCostKind } from '../lib/decision-options';
 import { optionGeneratesNothing } from '../lib/project-decision';
+import { buildProjectDecision } from '../lib/project-decision-build';
 import { deliveryFactsOf, ruleFactsOf, scoreFactsOf } from '../lib/delivery-facts';
 import { createDeliveryBundle, finishDeliveryPackage } from '../lib/delivery-package';
 import { keyUserPlanOf } from '../scripts/acceptance/suite';
@@ -155,6 +156,24 @@ test.describe('1. key user is the recommendation where the whole program is key 
     expect(optionOfCostKind('keyuser')).toBe('rebuild');
     expect(optionGeneratesNothing('keyuser')).toBe(true);
     expect(optionGeneratesNothing('rebuild')).toBe(false);
+  });
+
+  // QA review of 317d5f7a9c53, 2dc0e9055239: a key-user sign-off may carry no reason, and the binding said
+  // "with its reason" all the same.
+  test('the binding of a reasonless key-user sign-off says it records no reason; one with a reason says so', () => {
+    const contractNote = (reason: string) => buildProjectDecision({
+      summary: 'Configure it with key-user tools.',
+      runId: 'run-ku-0002', evidenceDigest: 'digest', contract: null, assumptions: null, comparison: null,
+      chosenOptionId: 'keyuser', chosenOptionKind: 'keyuser',
+      need: { revision: null, confirmedDrops: 0, undecided: null }, handedOver: false,
+      signOff: { by: 'owner@example.invalid', at: '2026-10-21T08:00:00.000Z', reason, notCurrent: null },
+      timeline: { draftedAt: '2026-10-21T09:00:00.000Z' },
+    }).bindings.find((b) => b.key === 'contract')!;
+    const without = contractNote('');
+    expect(without.provenance).toBe('confirmed');
+    expect(without.note).not.toContain('with its reason');
+    expect(without.note).toContain('which records no reason: it follows the recommendation of the engine');
+    expect(contractNote('Configured by the sales team.').note).toMatch(/, with its reason\.$/);
   });
 });
 
@@ -281,7 +300,22 @@ test.describe('4. a split program builds units for its code parts only (scaffold
     expect(read('lib/transformation/trace.ts')).toContain('Not generated — configured by a key user from docs/key-user-steps.md');
     const page = read('app/(app)/project/[projectId]/transformation/page.tsx');
     expect(page.match(/keyUser: keyUserRangesRef\.current/g)).toHaveLength(2);
-    expect(page).toContain('!(keyUserGateOpen(project) && evidencePending)');
+    expect(page).toContain('const keyUserEvidenceWait = project?.legacyCode ? keyUserEvidenceBlock(project, projectEvidence) : null;');
+    expect(page).toContain('keyUserEvidenceWait === null && isOwner');
+    expect(page).toContain('prerequisites[0]?.reason ?? keyUserEvidenceWait ??');
+  });
+
+  // QA review of 317d5f7a9c53, a78673fa61ff: a failed evidence read used to clear the wait,
+  // and the planner then got no key-user ranges and planned the whole source.
+  test('a 3.0.19 run generates only on a ready evidence read — a failed read holds it and says why', () => {
+    const p = project({ targetArchitecture: 'rap' }, SPLIT);
+    expect(keyUserEvidenceBlock(p, { state: 'ready' })).toBeNull();
+    expect(keyUserEvidenceBlock(p, { state: 'loading' })).toMatch(/Reading the engine/);
+    const failed = keyUserEvidenceBlock(p, { state: 'failed', reason: 'the server answered 503' });
+    expect(failed).toContain('the server answered 503');
+    expect(failed).toContain('cannot be left out of the code');
+    // An older engine has no key-user ranges: nothing is held, as before.
+    expect(keyUserEvidenceBlock(project({ targetArchitecture: 'rap' }, SPLIT, OLD), { state: 'failed', reason: 'x' })).toBeNull();
   });
 });
 
@@ -355,6 +389,17 @@ test.describe('6. docs/decision.md: a key-user row in the weighing, for 3.0.19 r
     const page = read('app/(app)/project/[projectId]/delivery/page.tsx');
     expect(page).toContain('...(keyUserGateOpen(project)');
     expect(page).toContain('{ keyUser: evidenceRead.evidence?.keyUser ?? null }');
+  });
+
+  // QA review of 317d5f7a9c53, 63537ea20c25: the card promises the step list with its checks; an unbuildable list
+  // used to ship a placeholder `key-user-steps.md` instead. Now nothing is downloaded and the strip says why.
+  test('a key-user decision without a buildable step list downloads nothing and says why', () => {
+    const page = read('app/(app)/project/[projectId]/delivery/page.tsx');
+    const guard = page.indexOf("if (isKeyUserDecision(project) && !(keyUserList && keyUserMode !== 'none')) {");
+    expect(guard).toBeGreaterThan(-1);
+    expect(page.slice(guard, guard + 400)).toMatch(/setBundleError\(`The key-user step list could not be built: [\s\S]*Nothing was downloaded[\s\S]*return;/);
+    expect(guard).toBeLessThan(page.indexOf('const zip = new JSZip();'));
+    expect(page).not.toContain('Not in this package:');
   });
 });
 

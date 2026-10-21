@@ -15,6 +15,8 @@
  * Server-free.
  */
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { KEY_USER_FROM, keyUserApplies } from '../lib/abap/key-user-gate';
@@ -324,7 +326,10 @@ test.describe('the starter example of its own: Z_SD_DELIVERY_PRIORITY', () => {
     expect(route.targetArtifact).toBe('Key-user extensions (configured in the system, no code)');
     expect(route.keyUser).toMatchObject({ scope: 'whole-program', recommended: true, levelByConstruction: 'A' });
     expect(route.rationale).toMatch(/^Key-user extensibility covers the whole program: Every part of the program is a key-user candidate \(4: /);
-    expect(route.rationale).toContain('clean core level A by construction');
+    // The rationale is signed (`recommendationJustification`) and a level never is: it stands beside, as `levelByConstruction`
+    // (QA review of 317d5f7a9c53, de1b549b12ba).
+    expect(route.rationale).toContain('the extension uses released extension points only');
+    expect(route.rationale).not.toMatch(/\blevel [A-D]\b/i);
     const cp = route.checkpoints.find((c) => c.checkpointName === 'Key User Extensibility')!;
     expect(cp.resultState).toBe('Key-User Preferred');
     expect(cp.evaluation).toMatch(/^Indicated for the whole program\./);
@@ -390,6 +395,11 @@ test.describe('key user as a decision and as the fourth option of the design com
     expect(OPTION_COMPARISON_SCHEMA).toContain("'standard' | 'keyuser' | 'rap' | 'cap'");
     const base = { recommended: 'in-app-rap' as const, drivers: [], findings: [], requirements: null, deployment: 'private' as const };
     expect(engineOptionFacts(base).options.keyuser[0]).toContain('not determined');
+    // QA review of 317d5f7a9c53, 1e2ede7f692b: that holds for an earlier engine's run too, so the release text
+    // names the comparison as the one thing such a project sees change, instead of "no change" at all.
+    const changelog = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
+    expect(changelog).not.toContain('Engine-version gated (3.0.19): projects analysed by an earlier engine see no change.');
+    expect(changelog).toContain('a new design comparison names key user as its fourth option for every project');
     const route = routeExtensibility(buildAbapEvidence(readExample(EXAMPLE), EXAMPLE, 'private', undefined, NEW), 'private', NEW);
     const facts = engineOptionFacts({ ...base, keyUser: route.keyUser }).options.keyuser;
     expect(facts[0]).toBe(route.keyUser!.sentence);

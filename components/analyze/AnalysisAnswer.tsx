@@ -150,7 +150,7 @@ export default function AnalysisAnswer({
           )}
           {keyUserLevel ? (
             <p className="m-0 mt-2 cc-text-cell text-cc-ink" data-key-user-level={keyUserLevel}>
-              Level {keyUserLevel} by construction as key-user extensibility: the engine read the whole program as key user, and a key-user extension uses released extension points only. The score measures the code as it stands.
+              Level {keyUserLevel} by construction as key-user extensibility: the engine read the whole program as key user, and a key-user extension uses released extension points only. It holds once each candidate's limits are checked in the target system, its release among them, which the engine does not settle for every candidate. The score measures the code as it stands.
             </p>
           ) : null}
         </div>
