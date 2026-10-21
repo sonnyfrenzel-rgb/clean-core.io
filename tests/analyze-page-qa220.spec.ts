@@ -44,8 +44,8 @@ test.describe('Analyze page - QA full review of v2.20.0', () => {
     expect(reject).toContain("setLegacyCode('')");
     expect(reject).toContain('setUploadedFileName(PASTED_SOURCE_NAME)');
     const handleFile = bodyOf(text, 'const handleFile = (file: File) => {');
-    // Type, size, payload scan, not-ABAP: four refusals, all through rejectFile.
-    expect(handleFile.match(/rejectFile\(/g)?.length).toBe(4);
+    // Type, size, unreadable file (3f90d50e8e2f), payload scan, not-ABAP: five refusals, all through rejectFile.
+    expect(handleFile.match(/rejectFile\(/g)?.length).toBe(5);
     expect(handleFile, 'no refusal sets an error and leaves the old source staged').not.toMatch(/\bsetError\((?!'')/);
   });
 

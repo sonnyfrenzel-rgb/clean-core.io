@@ -319,7 +319,17 @@ export default function AnalyzePage() {
         return;
     }
 
+    // The replacement is being read: what was staged before it is no longer the
+    // user's choice, so it leaves now and not only when the read succeeds —
+    // otherwise Start Analysis, enabled by the old source, signs the file the
+    // user just replaced (QA full review of 3f90d50e8e2f, 16cebd26aec5).
+    setLegacyCode('');
+    setUploadedFileName(PASTED_SOURCE_NAME);
     const reader = new FileReader();
+    reader.onerror = () => {
+      if (selection !== fileSelectionRef.current) return;
+      rejectFile('That file could not be read. Choose it again, or paste the source instead.');
+    };
     reader.onload = (event) => {
       // A later selection has been made since this read started: it wins.
       if (selection !== fileSelectionRef.current) return;
