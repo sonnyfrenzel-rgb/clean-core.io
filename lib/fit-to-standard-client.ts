@@ -57,6 +57,22 @@ export function fetchFitToStandard(projectId: string, runKey: string): Promise<F
   return promise;
 }
 
+/** The files of the package without code (F7), for the confirmed design on the current run. */
+export async function fetchFitPackage(
+  projectId: string,
+): Promise<{ ok: true; value: { files: Array<{ path: string; content: string }>; conditions: string[]; summary: string } } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/fit-to-standard?files=1`, { headers: await headers() });
+    const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (res.ok && Array.isArray(body.files) && Array.isArray(body.conditions) && typeof body.summary === 'string') {
+      return { ok: true, value: body as unknown as { files: Array<{ path: string; content: string }>; conditions: string[]; summary: string } };
+    }
+    return { ok: false, error: typeof body.error === 'string' ? body.error : 'The fit-to-standard files could not be read.' };
+  } catch {
+    return { ok: false, error: 'The server could not be reached.' };
+  }
+}
+
 export async function postFitToStandard(
   projectId: string,
   body: { action: 'make'; againstGate?: boolean } | { action: 'confirm'; baseRevision: number; choices: FitChoice[] },

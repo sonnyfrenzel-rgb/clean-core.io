@@ -146,7 +146,7 @@ test('route source: immutable revisions, server time and account, 409 on a run t
   const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'projects', '[projectId]', 'fit-to-standard', 'route.ts'), 'utf8');
   expect(src).toContain('revisions.doc(String(nextRevision)).create(record)');
   expect(src).not.toMatch(/\.set\(record/);
-  expect(src).toContain("'run-not-current',\n        409");
+  expect(src).toMatch(/'run-not-current',\s+409/);
   expect(src).toContain("'no-current-design', 409");
   expect(src).toContain('const now = new Date().toISOString();');
   expect(src).toContain('createdBy: account');

@@ -41,15 +41,20 @@ import {
   type FitAccount,
   type FitToStandardRevision,
 } from '@/lib/fit-to-standard-store';
-import { countEntries } from '@/lib/fit-to-standard-design';
+import { countEntries, fitDesignSummary } from '@/lib/fit-to-standard-design';
+import { buildFitPackage, fitConditionLines } from '@/lib/fit-to-standard-package';
+import { buildKeyUserSteps } from '@/lib/key-user-steps';
 
 /**
  * Fit to standard — roadmap 3.0.20, steps F1–F3
  * (`docs/design/fit-to-standard-concept.md`; owner decisions 18.10.2026).
  *
- *   GET  → `{ gate, design, stored, summary }`: the gate's reading of the
- *          signed run, the engine's design where the gate offers, and the
- *          stored revision when one stands on the current run.
+ *   GET  → `{ gate, design, stored }`: the gate's reading of the signed run,
+ *          the engine's design where the gate offers, and the stored revision
+ *          when one stands on the current run.
+ *   GET `?files=1` → `{ files, conditions, summary }`: the files of the package
+ *          without code (`lib/fit-to-standard-package.ts`) for the confirmed
+ *          design on the current run; 409 without one.
  *   POST `{ action: 'make', againstGate? }` → revision n+1 of kind `engine`:
  *          the engine's design, stored. `againstGate: true` asks for it although
  *          the gate does not offer (owner decision 3); the design then carries,
@@ -253,6 +258,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     if (!opened.ok) return opened.response;
     const stored = await latestRevision(db, gate.projectId);
     const fresh = current(stored, opened.facts);
+    // F7: the files of the package without code, for the confirmed design on the current run.
+    if (req.nextUrl.searchParams.get('files') === '1') {
+      if (!stored || !fresh || stored.kind !== 'confirmation') {
+        return bad('There is no confirmed fit-to-standard design on the current run, so there is no package without code.', 'no-confirmed-design', 409);
+      }
+      const files = buildFitPackage({
+        projectName: typeof gate.project.name === 'string' && gate.project.name ? gate.project.name : 'Project',
+        sourceFileName: projectEvidenceFileName(gate.project),
+        source: opened.source,
+        skeleton: opened.reading.skeleton,
+        revision: stored,
+        keyUserSteps: buildKeyUserSteps(opened.reading.evidence.keyUser),
+      });
+      return NextResponse.json({ files, conditions: fitConditionLines(stored), summary: fitDesignSummary(stored.counts) });
+    }
     return NextResponse.json({
       gate: opened.reading.gate,
       design: fresh ? { ...stored, counts: countEntries(stored!.entries) } : designFromReading(opened.reading, false),

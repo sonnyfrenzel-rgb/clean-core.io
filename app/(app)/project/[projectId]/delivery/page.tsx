@@ -99,6 +99,8 @@ import { deliverableClassXml } from '@/lib/transformation/abapgit-check';
 import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
 import { isKeyUserDecision, keyUserGateOpen, keyUserModeOf, keyUserStepsOf, KEY_USER_STEPS_PATH } from '@/lib/key-user-route';
 import { keyUserStepsMarkdown } from '@/lib/key-user-steps';
+import { decisionOnRecord } from '@/lib/standard-fit-gate';
+import { fetchFitPackage } from '@/lib/fit-to-standard-client';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -550,6 +552,17 @@ export default function DeliveryPage() {
             codeParts: keyUserList.codeParts.length,
           }
         : null;
+      // Roadmap 3.0.20: a confirmed "Move to SAP standard" ships a package without code — the
+      // fit-to-standard files from the server, and no generated code even where some exists.
+      const decided = decisionOnRecord(project);
+      if (decided.confirmed && decided.option === 'standard') {
+        const standard = await fetchFitPackage(projectId as string);
+        if (!standard.ok) {
+          setBundleError(`The package without code could not be built: ${standard.error} Nothing was downloaded.`);
+          return;
+        }
+        facts.standard = standard.value;
+      }
       const finished = finishDeliveryPackage({
         entries: bundle.entries,
         facts: { ...facts, keyUser },
