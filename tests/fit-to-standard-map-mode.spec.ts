@@ -153,6 +153,19 @@ test('the switch: absent without a design; "As is" draws the map as it was; "Fit
   expect(fit.slice(fit.indexOf('data-fit-map-list'))).not.toMatch(STATE_COLOURS);
 });
 
+test('the drawn map is read again for another source body of the same length, or a changed design (QA review of eb5d980cdfd6, b64a7dfce6a0)', async () => {
+  const fitMapKey = (await load('components/fit/FitMapMode.tsx', 'fitMapKey')) as unknown as (s: string, f: string, p: string, e: readonly FitEntry[]) => string;
+  const design = designOf('Z_MATERIAL_STOCK_CALC.txt');
+  const source = readExample('Z_MATERIAL_STOCK_CALC.txt');
+  const sameLength = source.replace(/a/, 'b');
+  expect(sameLength.length).toBe(source.length);
+  const key = fitMapKey(source, 'Z.txt', 'P', design.entries);
+  expect(fitMapKey(source, 'Z.txt', 'P', design.entries)).toBe(key);
+  expect(fitMapKey(sameLength, 'Z.txt', 'P', design.entries)).not.toBe(key);
+  const moved = design.entries.map((e, i) => (i === 0 ? { ...e, why: `${e.why} (revised)` } : e));
+  expect(fitMapKey(source, 'Z.txt', 'P', moved)).not.toBe(key);
+});
+
 test('WorkspaceProcess only wraps its map in the mode switch — nothing else of it changed for this', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'components', 'workspace', 'WorkspaceProcess.tsx'), 'utf8');
   // The import (twice on its line), the opening tag, the closing tag.

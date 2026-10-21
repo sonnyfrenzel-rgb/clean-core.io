@@ -23,6 +23,26 @@ const MODE_SEGMENTS = [
   { value: 'fit' as const, label: 'Fit to standard' },
 ];
 
+/** FNV-1a over the text — a change marker for the drawn map, not a digest anything is bound to. */
+function marker(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${text.length.toString(36)}.${h.toString(36)}`;
+}
+
+/**
+ * The key the drawn fit map is held under: the whole source and the whole
+ * design, not their lengths — another body of the same length, or the same
+ * steps with another reason or anchor, draws the map again (QA review of
+ * eb5d980cdfd6, b64a7dfce6a0).
+ */
+export function fitMapKey(source: string, fileName: string, processName: string, entries: readonly FitEntry[]): string {
+  return `${fileName}:${marker(processName)}:${marker(source)}:${marker(JSON.stringify(entries))}`;
+}
+
 const lines = (a: FitEntry['anchor']) => (a ? (a.lineEnd > a.lineStart ? `L${a.lineStart}–L${a.lineEnd}` : `L${a.lineStart}`) : 'Unanchored');
 
 /** The given-up steps with their reasons, and the gaps — under the map, in the business reader's words. */
@@ -138,7 +158,7 @@ export default function FitMapMode({
   const [mode, setMode] = useState<FitMapModeValue>('as-is');
   const [map, setMap] = useState<{ key: string; map: FitMap } | null>(null);
   const entries = useMemo(() => design?.entries ?? [], [design]);
-  const key = `${fileName}:${source.length}:${entries.map((e) => `${e.elementId}=${e.disposition}`).join(',')}`;
+  const key = useMemo(() => fitMapKey(source, fileName, processName, entries), [source, fileName, processName, entries]);
 
   useEffect(() => {
     if (mode !== 'fit' || entries.length === 0 || map?.key === key) return;
