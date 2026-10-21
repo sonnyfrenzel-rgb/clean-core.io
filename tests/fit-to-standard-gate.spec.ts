@@ -18,6 +18,10 @@
  *   - Z_ORDER_INTEGRITY_CHECK: expected B; the skeleton has no
  *     business-comparable element, so there is nothing to compare.
  *
+ * The owner accepted all four as the gate answers them (21.10.2026): no
+ * change to the gate. `fit-to-standard-gate-accepted.spec.ts` holds that each
+ * says why, and that a design against the gate works with its warning.
+ *
  * Server-free.
  */
 import { test, expect } from '@playwright/test';
