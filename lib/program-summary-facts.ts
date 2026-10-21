@@ -10,6 +10,9 @@ import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { maskLiterals, readStatements, type AbapStatement } from '@/lib/abap/statement-reader';
 import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@/lib/abap/constant-gates';
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
+import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
+import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
+import { APP_VERSION } from '@/lib/version';
 import { headerRuleRange } from '@/lib/abap/header-rules';
 import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
 import {
@@ -389,6 +392,12 @@ export interface ProgramSummaryReaders {
   calls?: CallGraphReport;
   tables?: TableDependencyReport;
   ruleSet?: Pick<BusinessRuleSet, 'rules' | 'program' | 'demoCases' | 'headerRules'> | null;
+  /**
+   * The engine the facts are read for; omitted, the current one (`APP_VERSION`).
+   * From 3.0.20 (`ENGINE_READS_3020_FROM`) they carry the purpose the program's
+   * names support (`domain`) and the functions it reads its data through (`dataCalls`).
+   */
+  engineVersion?: string | null;
 }
 
 /**
@@ -405,11 +414,32 @@ function markLockedInputs(inputs: SummaryInput[], statements: readonly AbapState
 }
 
 /** The demo flag and the switches the rule set counted apart; nothing without a demo flag. */
-function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | null): Pick<ProgramSummaryFacts, 'demo'> {
+function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | null, engineVersion: string | null): Pick<ProgramSummaryFacts, 'demo'> {
   const switches = ruleSet?.demoCases?.rules.length ?? 0;
   if (!ruleSet?.demoCases) return {};
-  const demo = readDemoSwitches(text);
+  const demo = readDemoSwitches(text, engineVersion);
   return { demo: { flag: ruleSet.demoCases.flag, line: demo?.flag.line ?? 0, switches } };
+}
+
+/**
+ * Roadmap 3.0.20 (owner report 21.10.2026): what the program's names say it is
+ * for (`readProgramDomain`), and the functions it gets its data through — a
+ * program that names no table reads by calling (`BAPI_PO_GETDETAIL1`), and
+ * "reads no table by name" told a business reader nothing.
+ */
+function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[]): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
+  const domain = readProgramDomain(text);
+  const seen = new Set(actions.map((a) => a.name));
+  const dataCalls: NonNullable<ProgramSummaryFacts['dataCalls']> = [];
+  for (const f of calls.functionModules) {
+    const name = f.name?.toUpperCase();
+    if (!name || seen.has(name)) continue;
+    const word = domainObjectOf(name);
+    if (!word) continue;
+    seen.add(name);
+    dataCalls.push({ name, word, line: f.lineStart });
+  }
+  return { domain: domain ? { text: domain.text, lines: domain.lines } : null, dataCalls };
 }
 
 /** The header's rule candidates, counted; nothing when the header states none. */
@@ -433,10 +463,12 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const calls = readers.calls ?? readCallGraph(text);
   const tables = readers.tables ?? readTableDependencies(text);
   const skeleton = readers.skeleton ?? buildProcessSkeleton(text);
+  const engineVersion = readers.engineVersion === undefined ? APP_VERSION : readers.engineVersion;
+  const reads3020 = engineReads3020Apply(engineVersion);
   let ruleSet: Pick<BusinessRuleSet, 'rules' | 'program' | 'demoCases' | 'headerRules'> | null = readers.ruleSet ?? null;
   if (!readers.ruleSet) {
     try {
-      ruleSet = deriveBusinessRules(text);
+      ruleSet = deriveBusinessRules(text, engineVersion);
     } catch {
       ruleSet = null;
     }
@@ -576,7 +608,9 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
           },
         }
       : {}),
-    ...demoFacts(text, ruleSet),
+    ...demoFacts(text, ruleSet, engineVersion),
+    // Roadmap 3.0.20 — present only from that engine, so earlier facts stay what they were.
+    ...(reads3020 ? purposeFacts(text, calls, actions) : {}),
     ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };
