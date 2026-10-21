@@ -26,7 +26,6 @@ import ProcessWalkEntry from './ProcessWalkEntry';
 import { elementEntries } from '@/lib/process-walk';
 import { isConfirmedState } from '@/lib/rules-editor';
 import TargetReferenceLine from './TargetReferenceLine';
-import FitToStandardOffer from '@/components/fit/FitToStandardOffer';
 import WorkspaceHub from './WorkspaceHub';
 import { useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
@@ -958,10 +957,6 @@ export default function WorkspaceShell({
         {/* Business: the target and its SAP reference pattern, one line
             (roadmap 3.0.9, ADR-089). Management says it beside the decision. */}
         {view === 'business' ? <TargetReferenceLine project={project} /> : null}
-        {/* Roadmap 3.0.20: the fit-to-standard offer, where the gate offers it —
-            Business and Management only; IT names the gate's reason in #standard. */}
-        {/* Not on a new project's first visit: the build-up and its story keep the first screen (ADR-072); it follows them there. */}
-        {view !== 'it' && !buildUp ? <FitToStandardOffer project={project} projectId={projectId} /> : null}
       </div>
     ),
     // Business only, and only where there is a map to walk: the entry to the
@@ -1073,14 +1068,9 @@ export default function WorkspaceShell({
           onSettled={onFirstLookSettled}
           questions={questions}
         />
-        {/* The first visit's place of the walk entry and the fit-to-standard offer: under the story (see `walk`). */}
+        {/* The first visit's place of the walk entry: under the story (see `walk`). */}
         {view === 'business' && signed !== null && buildUp ? (
           <ProcessWalkEntry projectId={projectId} answered={answeredSteps} />
-        ) : null}
-        {view !== 'it' && buildUp ? (
-          <div className="mt-4">
-            <FitToStandardOffer project={project} projectId={projectId} />
-          </div>
         ) : null}
       </div>
     ),

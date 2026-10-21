@@ -36,9 +36,6 @@ export const ENGLISH_HYPHENATED = new Set([
   'ready-to-deploy', 'never-been-run', 'at-a-glance', 'up-to-the-minute', 'back-and-forth',
   'run-of-the-mill', 'in-the-loop', 'end-of-life', 'out-of-scope', 'line-of-business', 'end-of-support',
   'one-time-only', 'one-off', 'cross-check', 'counter-check', 'not-determined',
-  // The product's term for the design that lives with the standard (owner decision 18.10.2026:
-  // "fit-to-standard design"), written as ordinary prose on Design and Management.
-  'fit-to-standard',
   // Proper names of published artefacts, named as the source of a figure: SAP's
   // release-state repository is called this, and the product says whose list it reads.
   'abap-atc-cr-cv-s4hc',

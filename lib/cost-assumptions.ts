@@ -121,44 +121,6 @@ export const COMPARISON_KIND: OptionKind = 'do-nothing';
 export const EFFORT_SOURCES = ['stated', 'proposal-confirmed', 'proposal-unconfirmed'] as const;
 export type EffortSource = (typeof EFFORT_SOURCES)[number];
 
-/**
- * The work on the standard route, by kind — roadmap 3.0.20, F8 (owner decision
- * 21.10.2026; concept §5.6). Each is the reader's own days, priced with one of
- * the reader's own day rates; Clean-Core.io proposes no days and no amount for
- * any of them (ADR-035). The fit-to-standard design says how many key-user and
- * organisational gaps there are; how much work they are is the reader's word.
- *
- * Optional, and only on the option *Move to SAP standard*: an option without
- * them is priced as before, and its canonical form — so its fingerprint and
- * revision — is the one it always had. Appended, never inserted.
- */
-export const STANDARD_WORK_KINDS = [
-  'workshop',
-  'configuration',
-  'key-user-gap',
-  'process-change',
-  'organisational-change',
-  'training',
-  'decommissioning',
-  'key-user-upkeep',
-] as const;
-export type StandardWorkKind = (typeof STANDARD_WORK_KINDS)[number];
-
-/** What each kind is, which day rate prices it, and whether it falls once or per release. */
-export const STANDARD_WORK: Readonly<Record<StandardWorkKind, { label: string; rate: 'dev' | 'test'; when: 'one-off' | 'per-release'; help: string }>> = Object.freeze({
-  workshop: { label: 'Fit-to-standard workshop', rate: 'test', when: 'one-off', help: 'The days the business and key users spend in the fit-to-standard workshop.' },
-  configuration: { label: 'Standard configuration', rate: 'test', when: 'one-off', help: 'The days to configure SAP standard for what the design marks as configuration.' },
-  'key-user-gap': { label: 'Key-user gaps', rate: 'test', when: 'one-off', help: 'The days to build the key-user extensions the design keeps as key-user gaps.' },
-  'process-change': { label: 'Process change', rate: 'test', when: 'one-off', help: 'The days to change the process where the standard runs it differently.' },
-  'organisational-change': { label: 'Organisational change', rate: 'test', when: 'one-off', help: 'The days for the organisational changes the design names — roles, approvals, hand-offs.' },
-  training: { label: 'Training', rate: 'test', when: 'one-off', help: 'The days to train the users on the standard process.' },
-  decommissioning: { label: 'Decommissioning', rate: 'dev', when: 'one-off', help: 'The developer days to switch the program off once the standard runs.' },
-  'key-user-upkeep': { label: 'Key-user extension upkeep', rate: 'test', when: 'per-release', help: 'The days per release to check and keep the key-user extensions working.' },
-});
-
-/** Days per kind, the reader's own. An absent kind is not entered — never zero days. */
-export type StandardWork = Partial<Record<StandardWorkKind, number>>;
-
 export interface CostOption {
   /** Stable id within one comparison. */
   id: string;
@@ -187,13 +149,6 @@ export interface CostOption {
    * and there is no unconfirmed state for the revision to carry.
    */
   baselineSource?: 'stated' | 'proposal-confirmed';
-  /**
-   * Roadmap 3.0.20: the work on the standard route, by kind (`STANDARD_WORK`) —
-   * only on `standard`. Added to the option's one-off effort (both ends of the
-   * range) and to its effort per release. In the canonical form only when one
-   * is entered, so an option without it keeps its fingerprint.
-   */
-  standardWork?: StandardWork;
 }
 
 export interface ReleaseCadence {
@@ -365,19 +320,6 @@ const range = (r: EffortRange | null | undefined): string =>
 const stated = (s: Stated<{ releasesDeferred: number }> | null | undefined): string =>
   !s ? 'none' : s.state === 'stated' ? `d${n(s.value.releasesDeferred)}` : 'not-determined';
 
-/** The entered standard-route kinds, in the order of `STANDARD_WORK_KINDS`. */
-export function standardWorkEntries(o: Pick<CostOption, 'standardWork'>): Array<[StandardWorkKind, number]> {
-  const w = o.standardWork;
-  if (!w) return [];
-  return STANDARD_WORK_KINDS.filter((k) => w[k] !== undefined && w[k] !== null).map((k) => [k, w[k] as number]);
-}
-
-/** `sw=workshop/4;training/2` — appended to an option's segment only when one is entered. */
-const standardWorkSegment = (o: CostOption): string[] => {
-  const entries = standardWorkEntries(o);
-  return entries.length === 0 ? [] : [`sw=${entries.map(([k, d]) => `${k}/${n(d)}`).join(';')}`];
-};
-
 /**
  * Canonical form: one segment per fact, fixed order, options sorted by id, no
  * whitespace. Field order is irrelevant, option order is irrelevant, every
@@ -397,7 +339,6 @@ export function canonicalCostAssumptions(a: CostAssumptions): string {
         effort(o.maintenanceBaselinePerYear),
         stated(o.upgradeDelay),
         o.effortSource,
-        ...standardWorkSegment(o),
       ].join(':'),
     )
     .sort()
@@ -457,8 +398,6 @@ export const COST_GAP_CODES = [
   'option-keyuser-proposal',
   /** Roadmap 3.0.19: a key-user option with developer days — configuration builds no code. */
   'option-keyuser-dev-days',
-  /** Roadmap 3.0.20: work on the standard route on an option that is not *Move to SAP standard*. */
-  'option-standard-work-unexpected',
 ] as const;
 export type CostGapCode = (typeof COST_GAP_CODES)[number];
 
@@ -524,8 +463,6 @@ const SENTENCES: Record<CostGapCode, (subject: string | null) => string> = {
     `${s} is key-user extensibility, and Clean-Core.io proposes no days for key-user work. State the key-user days yourself.`,
   'option-keyuser-dev-days': (s) =>
     `${s} is key-user extensibility — configured in the system, no code — and carries developer days. State its effort as key-user days; they are priced with your test/key-user day rate.`,
-  'option-standard-work-unexpected': (s) =>
-    `${s} carries work on the standard route — workshop, configuration, gaps — and it is not "Move to SAP standard". That work belongs to the standard option only.`,
 };
 
 function gap(code: CostGapCode, severity: CostGapSeverity, subject: string | null): CostGap {
@@ -558,13 +495,6 @@ function optionGaps(o: CostOption): CostGap[] {
     if (o.effortSource !== 'stated') gaps.push(gap('option-keyuser-proposal', 'rejects', name));
     const dev = [o.oneOff?.low.devDays, o.oneOff?.high.devDays, o.perRelease?.devDays];
     if (dev.some((d) => typeof d === 'number' && d > 0)) gaps.push(gap('option-keyuser-dev-days', 'rejects', name));
-  }
-
-  // Roadmap 3.0.20: the standard route's work, the reader's days per kind.
-  const work = standardWorkEntries(o);
-  if (work.length > 0 && o.kind !== 'standard') gaps.push(gap('option-standard-work-unexpected', 'rejects', name));
-  for (const [k, d] of work) {
-    if (badAmount(d)) gaps.push(gap('amount-invalid', 'rejects', `The ${STANDARD_WORK[k].label.toLowerCase()} days of ${name}`));
   }
 
   if (!o.oneOff) {
@@ -791,19 +721,11 @@ export function optionCost(a: CostAssumptions, option: CostOption): OptionCost {
   const perRelease = option.perRelease as EffortDays;
 
   const releases = perYear * years;
-  // Roadmap 3.0.20: the standard route's work, each kind at its day rate — once, or per release.
-  let workOnce = 0;
-  let workPerRelease = 0;
-  for (const [k, d] of standardWorkEntries(option)) {
-    const amount = d * (STANDARD_WORK[k].rate === 'dev' ? devRate : testRate);
-    if (STANDARD_WORK[k].when === 'per-release') workPerRelease += amount;
-    else workOnce += amount;
-  }
   const oneOff: AmountRange = {
-    low: price(oneOffRange.low, devRate, testRate) + workOnce,
-    high: price(oneOffRange.high, devRate, testRate) + workOnce,
+    low: price(oneOffRange.low, devRate, testRate),
+    high: price(oneOffRange.high, devRate, testRate),
   };
-  const runningTotal = (price(perRelease, devRate, testRate) + workPerRelease) * releases;
+  const runningTotal = price(perRelease, devRate, testRate) * releases;
   const baselineTotal = option.maintenanceBaselinePerYear
     ? price(option.maintenanceBaselinePerYear, devRate, testRate) * years
     : 0;

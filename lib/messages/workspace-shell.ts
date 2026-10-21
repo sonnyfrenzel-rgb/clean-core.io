@@ -71,9 +71,6 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'tools.mark.doneHint': 'Done for this project',
   'tools.mark.startedHint': 'Started — something of this tool is on record, and its work is not done',
   'tools.mark.staleHint': 'Out of date — inputs changed since',
-  // Roadmap 3.0.20: a dash, not a check — the decision on record builds nothing here.
-  'tools.mark.notApplicable': 'not applicable',
-  'tools.mark.notApplicableHint': 'Not applicable — the decision on record moves the program to SAP standard; nothing is built or tested',
   // The legend beside "Tools" and at the top of the phone menu.
   'tools.legend.label': 'What the marks mean:',
   'tools.legend.done': 'done',

@@ -13,14 +13,11 @@ import {
   decisionKindOf,
   decisionProblem,
   explanationCoverage,
-  ruleChanges,
   ruleFlow,
   startingNote,
-  workshopView,
 } from '../lib/rule-decision-flow';
-import { applyStateChoices, checkStateChoices, isStateEntry, ruleAnswersMade, sameAnswer, type ProcessStateView, type StateEntry } from '../lib/process-states';
+import { applyStateChoices, checkStateChoices, isStateEntry, sameAnswer, type ProcessStateView, type StateEntry } from '../lib/process-states';
 import { RULE_STANDARD_HINT_ROWS, curatedHintRows, curatedScopeItem, ruleStandardHint } from '../lib/rule-standard-hints';
-import { buildFitToStandardDesign } from '../lib/fit-to-standard-design';
 import { ruleRegisterFromSource, ruleRegisterFromView, ruleRegisterMarkdown } from '../lib/rule-register';
 import { editorRules } from '../lib/rules-editor';
 import { plainWordingFor } from '../lib/business-card';
@@ -281,22 +278,6 @@ test.describe('the decision in one click, on the record that exists (3.0.20)', (
     expect(after.next).not.toBe(first);
   });
 
-  test('the workshop view: open points with the question, decisions off the proposal, the latest session and who decided', () => {
-    const { ex } = explain(FI);
-    const [a, b, c] = ex.order;
-    const older = applyStateChoices([], [choiceOf(a, ex.rules.find((r) => r.id === a)!.proposal.kind, ex.rules.find((r) => r.id === a)!.proposal.kind === 'drop' ? 'x' : (ex.rules.find((r) => r.id === a)!.proposal.kind === 'change-value' ? 'New value' : ''))], { account: ACCOUNT, confirmedAt: '2026-10-14T09:00:00.000Z', revision: 2 });
-    const newer = applyStateChoices(older, [choiceOf(b, 'drop', 'Not needed since 2025.'), choiceOf(c, 'clarify', 'Finance: who sets this?')], { account: { uid: 'u2', name: 'Buyer B' }, confirmedAt: '2026-10-21T15:00:00.000Z', revision: 3 });
-    const entries = Object.fromEntries(newer.map((e) => [e.subject, e]));
-    const w = workshopView(ex, entries);
-    expect(w.sessions.map((s) => s.day)).toEqual(['2026-10-21', '2026-10-14']);
-    expect(w.latest?.decisions.map((d) => d.id).sort()).toEqual([b, c].sort());
-    expect(w.previousDay).toBe('2026-10-14');
-    expect(w.open.find((o) => o.id === c)).toMatchObject({ question: 'Finance: who sets this?', askedBy: 'Buyer B' });
-    expect(w.open.some((o) => o.id === a)).toBe(false);
-    expect(w.byAccount.map((x) => x.name)).toEqual(['Buyer B', 'Controller A']);
-    const proposalB = ex.rules.find((r) => r.id === b)!.proposal.kind;
-    expect(w.deviations.some((d) => d.id === b)).toBe(proposalB !== 'drop');
-  });
 });
 
 /* ------------------------------------------------- 3.0.20 owner decisions 5 and 6 */
@@ -336,7 +317,7 @@ test.describe('"Move to SAP standard" is an answer of its own (owner decision 21
     expect(isStateEntry({ ...kept, state: 'drop', answer: 'standard' })).toBe(false);
   });
 
-  test('the register and the package read it, and so does fit to standard', () => {
+  test('the register and the package read it', () => {
     const { ex } = explain(FI);
     const id = ex.order[0];
     const entries = made([choiceOf(id, 'standard', '')]);
@@ -346,14 +327,10 @@ test.describe('"Move to SAP standard" is an answer of its own (owner decision 21
     expect(register.topics?.flatMap((t) => t.rows).find((r) => r.id === id)?.decision).toBe('Move to SAP standard — by Controller A on 21 Oct 2026');
     // The package's docs/rule-register.md is written from these rows (lib/delivery-package.ts).
     expect(ruleRegisterMarkdown(register).join('\n')).toContain('Decision: Move to SAP standard — by Controller A on 21 Oct 2026');
-    // Fit to standard: the route reads the answer, the design keeps the step a gap and says so.
-    const route = fs.readFileSync(path.join(ROOT, 'app/api/projects/[projectId]/fit-to-standard/route.ts'), 'utf8');
-    expect(route).toContain("decisionKindOf(e) === 'standard'");
-    expect(route).toContain('standardRules: states.standard');
   });
 });
 
-test.describe('the SAP-standard hints come from the curated scope items fit to standard uses (owner decision 21.10.2026 (6))', () => {
+test.describe('the SAP-standard hints come from the curated scope items (owner decision 21.10.2026 (6))', () => {
   test('every hint row names a curated scope item; its title is the list\'s', () => {
     for (const row of RULE_STANDARD_HINT_ROWS) expect(curatedScopeItem(row.scopeItem), row.scopeItem).not.toBeNull();
     expect(ruleStandardHint(['frgkz'])).toMatchObject({ id: '18J', title: 'Requisitioning' });
@@ -372,80 +349,6 @@ test.describe('the SAP-standard hints come from the curated scope items fit to s
   });
 });
 
-test.describe('fit to standard reads the answer (owner decision 21.10.2026 (5))', () => {
-  test('a step with a rule answered "Move to SAP standard" stays a gap, and says why', () => {
-    const anchor = { lineStart: 10, lineEnd: 12 };
-    const input = {
-      gate: { outcome: 'offered', classes: [], reason: '' } as never,
-      requestedAgainstGate: false,
-      edition: 'public' as const,
-      elements: [{ id: 'E1', kind: 'task', label: 'Check credit', anchor, comparability: 'business-comparable', mayCarryCandidate: false, routine: null }] as never,
-      findings: [],
-      objects: [],
-      successors: {},
-    };
-    const without = buildFitToStandardDesign(input)!;
-    expect(without.entries[0].why).not.toMatch(/Move to SAP standard/);
-    const withAnswer = buildFitToStandardDesign({ ...input, standardRules: [{ ruleId: 'BR-004', lineStart: 11 }] })!;
-    expect(withAnswer.entries[0].disposition).toBe('gap-open');
-    expect(withAnswer.entries[0].why).toBe('You answered BR-004 "Move to SAP standard", at L11: SAP standard is to meet this need — name the standard object that does, then decide.');
-  });
-});
-
-/* ------------------------------------------------ 3.0.20 owner decision 4 */
-
-test.describe('the workshop: earlier answer → new answer, who and when (owner decision 21.10.2026 (4))', () => {
-  const { ex } = explain(FI);
-  const [a, b] = ex.order;
-  const r2 = applyStateChoices([], [choiceOf(a, 'keep', ''), choiceOf(b, 'configure', '')], { account: ACCOUNT, confirmedAt: '2026-10-14T09:00:00.000Z', revision: 2 });
-  const r3 = applyStateChoices(r2, [choiceOf(a, 'drop', 'Not needed since 2025.')], { account: { uid: 'u2', name: 'Buyer B' }, confirmedAt: '2026-10-21T15:00:00.000Z', revision: 3 });
-  const r4 = applyStateChoices(r3, [choiceOf(a, 'standard', '')], { account: ACCOUNT, confirmedAt: '2026-10-22T08:00:00.000Z', revision: 4 });
-  const stored = [{ revision: 2, entries: r2 }, { revision: 3, entries: r3 }, { revision: 4, entries: r4 }];
-
-  test('each answer is read once, from the revision that made it', () => {
-    const answers = ruleAnswersMade(stored);
-    // Oldest revision first; within a revision, as the snapshot holds them (by subject).
-    expect(answers.map((e) => e.revision)).toEqual([2, 2, 3, 4]);
-    expect(answers.map((e) => `${e.subject}@${e.revision}`).sort()).toEqual([`${a}@2`, `${b}@2`, `${a}@3`, `${a}@4`].sort());
-  });
-
-  test('per rule, the earlier answer and the new one, with who and when, newest first; a first answer is no change', () => {
-    const changes = ruleChanges(ex, ruleAnswersMade(stored));
-    expect(changes.map((c) => [c.id, c.from, c.to, c.by, c.at])).toEqual([
-      [a, 'drop', 'standard', 'Controller A', '2026-10-22T08:00:00.000Z'],
-      [a, 'keep', 'drop', 'Buyer B', '2026-10-21T15:00:00.000Z'],
-    ]);
-    expect(changes[1].note).toBe('Not needed since 2025.');
-    expect(changes.some((c) => c.id === b)).toBe(false);
-  });
-
-  test('read only, on the existing route: GET …/process-states?history=rules, bounded', () => {
-    const route = fs.readFileSync(path.join(ROOT, 'app/api/projects/[projectId]/process-states/route.ts'), 'utf8');
-    expect(route).toContain("req.nextUrl.searchParams.get('history') === 'rules'");
-    expect(route).toContain('.limit(MAX_HISTORY_REVISIONS + 1)');
-    expect(route).toContain('ruleAnswersMade(revisions)');
-    // In the GET handler, never in the POST.
-    const get = route.slice(route.indexOf('export async function GET'), route.indexOf('export async function POST'));
-    expect(get).toContain('ruleHistory(db, gate.projectId)');
-  });
-
-  test('rendered: the workshop shows the earlier answer → the new one', async () => {
-    const Workshop = await loadComponent('RuleWorkshop');
-    const entries = Object.fromEntries(r4.map((e) => [e.subject, e]));
-    const html = renderToStaticMarkup(
-      React.createElement(Workshop, { explanation: ex, entries, titleOf: (id: string) => id, history: { ok: true, entries: ruleAnswersMade(stored), limited: false } }),
-    );
-    expect(html).toContain('data-workshop-part="changes"');
-    expect(html).toContain(`data-workshop-change="${a}"`);
-    expect(html).toContain('data-workshop-change-from="drop"');
-    expect(html).toContain('data-workshop-change-to="standard"');
-    expect(html).toContain('Buyer B');
-    const reading = renderToStaticMarkup(React.createElement(Workshop, { explanation: ex, entries, titleOf: (id: string) => id, history: null }));
-    expect(reading).toContain('Reading the earlier answers');
-    const unread = renderToStaticMarkup(React.createElement(Workshop, { explanation: ex, entries, titleOf: (id: string) => id, history: { ok: false } }));
-    expect(unread).toContain('could not be read');
-  });
-});
 
 /* -------------------------------------------------------------- register */
 
@@ -548,6 +451,13 @@ test.describe('the rules card, rendered (3.0.20)', () => {
     expect(more.indexOf('data-cc-disclosure="closed"')).toBeGreaterThan(-1);
     expect(more.indexOf('data-cc-disclosure="closed"')).toBeLessThan(more.indexOf('data-rule-said="where"'));
     if (ex.rules.find((r) => r.id === first)?.sides) expect(at('data-rule-said="holds"')).toBeGreaterThan(at('data-rule-more'));
+  });
+
+  test('the rules are decided in one view: no Decide | Workshop switch (owner decision 21.10.2026: the workshop view is removed)', async () => {
+    const html = await renderFlow(FI, true);
+    expect(html).not.toContain('data-rules-workshop');
+    expect(html).not.toMatch(/>Workshop</);
+    expect(html).not.toContain('How to show the rules');
   });
 
   test('a reader who is not the owner reads the same explanations and is offered no answer', async () => {

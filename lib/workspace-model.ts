@@ -273,9 +273,6 @@ export function statusOfPhase(step: RailStep): ObjectStatusValue {
       return 'partial';
     case 'done':
       return step.proven ? 'done' : 'draft';
-    case 'not-applicable':
-      // Nothing is to be done on the path decided: not started, and never done (roadmap 3.0.20).
-      return 'not-started';
   }
 }
 
@@ -971,12 +968,10 @@ export function workspaceTools(
  * and the bar's legend says the same.
  */
 export function toolMark(tool: { key: PhaseKey; state: PhaseState }): {
-  kind: 'check' | 'half' | 'dot' | 'dash' | 'none';
-  meaning: 'done' | 'started' | 'stale' | 'not-applicable' | 'none';
-  words: 'tools.mark.done' | 'tools.mark.started' | 'tools.mark.stale' | 'tools.mark.notApplicable' | null;
+  kind: 'check' | 'half' | 'dot' | 'none';
+  meaning: 'done' | 'started' | 'stale' | 'none';
+  words: 'tools.mark.done' | 'tools.mark.started' | 'tools.mark.stale' | null;
 } {
-  // Roadmap 3.0.20: its own mark — a dash, never a check.
-  if (tool.state === 'not-applicable') return { kind: 'dash', meaning: 'not-applicable', words: 'tools.mark.notApplicable' };
   if (tool.state === 'stale') return { kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' };
   if (tool.state === 'done') return { kind: 'check', meaning: 'done', words: 'tools.mark.done' };
   if (toolOnRecord(tool)) return { kind: 'half', meaning: 'started', words: 'tools.mark.started' };

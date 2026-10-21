@@ -17,7 +17,6 @@ import {
 import { deriveDecisionDraft, type DecisionDraftAnswer, type DecisionDraftFacts } from '@/lib/decision-draft';
 import type { InputManifest } from '@/lib/input-manifest';
 import { ECONOMICS_COLLECTION, ECONOMICS_DOC, readEconomicsRecord, type EconomicsRecord } from '@/lib/economics-record';
-import { confirmedFitDesign } from '@/lib/fit-to-standard-store';
 
 /**
  * The decision of one project as the server derives it from the project's own
@@ -247,8 +246,6 @@ export async function deriveProjectDecision(
     handedOver: isoOf(auditMetadata.auditPackExportedAt) !== null,
     stored: data.decision,
     economics,
-    // Roadmap 3.0.20, F9: the server-written summary, current only on this run and source.
-    fitDesign: confirmedFitDesign(data),
     now,
   });
   return { ok: true, answer, runId: run ? activeRunId : null, evidenceDigest: digest };

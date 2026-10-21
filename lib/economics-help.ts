@@ -263,7 +263,6 @@ const OWN_BLOCKERS: Partial<Record<CostGap['code'], string>> = {
   'option-baseline-unexpected': 'no maintenance baseline (this option carries none)',
   'option-effort-unconfirmed': 'your confirmation of the proposed effort',
   'upgrade-delay-unstated': 'the upgrade deferral',
-  'option-standard-work-unexpected': 'no work on the standard route (only "Move to SAP standard" carries it)',
 };
 
 /**

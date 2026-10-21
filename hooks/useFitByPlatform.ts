@@ -10,7 +10,6 @@ import type { ItFindingsSource } from '@/lib/it-findings';
 import type { FitByPlatform, Loaded } from '@/lib/management-overview';
 import { sapCallsOf } from '@/lib/standard-fit';
 import type { Project } from '@/lib/types';
-import { confirmedFitDesign } from '@/lib/fit-to-standard-store';
 
 /**
  * The same findings resolved into the four buckets for both editions — what
@@ -57,10 +56,7 @@ export function useFitByPlatform(
         lookup.grades[gradeKey(name, use)] ?? { grade: 'Unknown' as const, provenance: 'heuristic' as const },
       hasNoPath: (name: string) => lookup.noPath[name] ?? false,
     };
-    // Roadmap 3.0.20: the objects only given-up steps of the confirmed fit-to-standard
-    // design use are confirmed drops — rule 1 of the buckets puts them in Retire.
-    const dropDecisions = confirmedFitDesign(project)?.droppedObjects ?? {};
-    const base = { findings: fitFindings, calls, usageReport: project.usageReport ?? null, catalogBasis: null, dropDecisions };
+    const base = { findings: fitFindings, calls, usageReport: project.usageReport ?? null, catalogBasis: null };
     return {
       state: 'ready',
       value: {

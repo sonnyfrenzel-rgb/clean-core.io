@@ -73,8 +73,6 @@ import { formatDays } from './format';
 import { measuredCount } from './usage-count';
 import type { TargetArchitectureCode } from './project-commands';
 import { REFERENCE_OF_TARGET, referencePatternLine, type SapRaId } from './sap-reference-architectures';
-import type { FitToStandardSummary } from './fit-to-standard-store';
-import { fitDesignSummary } from './fit-to-standard-design';
 
 /** The one reference line of a chosen target (ADR-089). */
 function referenceOf(code: TargetArchitectureCode): { text: string; ras: SapRaId[] } {
@@ -166,8 +164,6 @@ export interface DecisionOptionsSource {
   engineRoute: string | null;
   usage: UsageReport | null;
   economics: EconomicsRecord | null;
-  /** Roadmap 3.0.20: the confirmed fit-to-standard design on the current run (`confirmedFitDesign`), or none. */
-  fitDesign?: FitToStandardSummary | null;
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -262,56 +258,13 @@ function rebuildSignal(
   };
 }
 
-/**
- * Roadmap 3.0.20 (concept §5.3): the code still cannot answer the business
- * question — the account can, in a confirmed fit-to-standard design on the
- * current run. *For* only when no step is an open gap and no standard candidate
- * is left unconfirmed (provenance *Confirmed*: the account's answer, never
- * *Proven*); *against* when open gaps remain; otherwise not determined.
- */
-function standardSignal(fitDesign: FitToStandardSummary | null | undefined): Pick<OptionCard, 'signal' | 'reason' | 'provenance' | 'place'> {
-  if (!fitDesign) {
-    return {
-      signal: 'not-determined',
-      reason:
-        'Whether SAP standard does what this program does is a business question the code cannot answer. Have a fit-to-standard design made in Design and confirm it after the workshop.',
-      provenance: 'not-determined',
-      place: 'design',
-    };
-  }
-  const summary = `${fitDesignSummary(fitDesign.counts)}`;
-  if (fitDesign.counts.gapOpen > 0) {
-    return {
-      signal: 'against',
-      reason: `The confirmed fit-to-standard design leaves ${plural(fitDesign.counts.gapOpen, 'step', 'steps')} with nothing covering ${fitDesign.counts.gapOpen === 1 ? 'it' : 'them'} (${summary}). Each is a condition of the decision.`,
-      provenance: 'confirmed',
-      place: 'design',
-    };
-  }
-  // A step the engine cannot read (an opaque call, a dynamic target) is resolved by nobody: it keeps
-  // the answer open.
-  if (fitDesign.counts.unknown > 0) {
-    return {
-      signal: 'not-determined',
-      reason: `The fit-to-standard design is confirmed, but ${plural(fitDesign.counts.unknown, 'step calls something the engine cannot read', 'steps call something the engine cannot read')}, so it is not known what living with the standard gives up there (${summary}).`,
-      provenance: 'confirmed',
-      place: 'design',
-    };
-  }
-  const unconfirmed = fitDesign.unconfirmedCandidates ?? 0;
-  if (unconfirmed > 0) {
-    return {
-      signal: 'not-determined',
-      reason: `The fit-to-standard design is confirmed, but ${plural(unconfirmed, 'standard candidate is', 'standard candidates are')} not confirmed yet (${summary}).`,
-      provenance: 'confirmed',
-      place: 'design',
-    };
-  }
+function standardSignal(): Pick<OptionCard, 'signal' | 'reason' | 'provenance' | 'place'> {
   return {
-    signal: 'for',
-    reason: `Your confirmed fit-to-standard design resolves every business step (${summary}) — your answer after the workshop, not something the code shows.`,
-    provenance: 'confirmed',
-    place: 'design',
+    signal: 'not-determined',
+    reason:
+      'Whether SAP standard does what this program does is a business question the code cannot answer. Check it against the standard in the Business view.',
+    provenance: 'not-determined',
+    place: 'business',
   };
 }
 
@@ -455,7 +408,7 @@ export function decisionOptionsView(src: DecisionOptionsSource): DecisionOptions
   const signals: Record<DecisionOption, Pick<OptionCard, 'signal' | 'reason' | 'provenance' | 'place'>> = {
     keep: keepSignal(src.fit),
     rebuild: rebuildSignal(src.fit, src.decision, src.engineRoute),
-    standard: standardSignal(src.fitDesign),
+    standard: standardSignal(),
     retire: retireSignal(src.subject, src.usage),
   };
   if (!src.hasRun) {

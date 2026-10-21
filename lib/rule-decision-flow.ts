@@ -14,15 +14,12 @@
  *     `standard` (owner decision 21.10.2026 (5), written by the route through
  *     the Admin SDK — before it, a Keep whose note started with the words,
  *     which is still read as standard), *Change the value* a Change with the
- *     new value and its source, *Drop* a Drop with its reason;
- *   - the **workshop view** — open points, who decided what, and what changed
- *     in the latest session, read off the entries of the latest revision (each
- *     carries its account, its server time and the revision that set it).
+ *     new value and its source, *Drop* a Drop with its reason.
  *
  * A proposal decides nothing. An answer is the self-declaration of the
  * signed-in account, never part of the signed run.
  */
-import { VALUE_SOURCE_LABELS, sameAnswer, type ProcessStateView, type StateChoiceInput, type StateEntry, type ValueSourceKind } from './process-states';
+import type { ProcessStateView, StateChoiceInput, StateEntry, ValueSourceKind } from './process-states';
 import {
   basketTopics,
   RULE_PROPOSAL_LABELS,
@@ -212,161 +209,6 @@ export function ruleFlow(explanation: RuleSetExplanation, entries: Readonly<Reco
     next: (business.find((r) => !isDecided(r.decision)) ?? all.find((r) => !isDecided(r.decision)))?.id ?? null,
     openTechnical: topics.filter((t) => t.topic === 'technical').flatMap((t) => t.rules).filter((r) => !isDecided(r.decision)).map((r) => r.id),
   };
-}
-
-/* -------------------------------------------------------------- workshop */
-
-export interface WorkshopDecision {
-  id: string;
-  kind: RuleDecisionKind;
-  by: string;
-  at: string;
-  note: string | null;
-}
-
-export interface WorkshopView {
-  /** Rules without a decision, weightiest first; a question carries what was asked and by whom. */
-  open: Array<{ id: string; impact: ImpactLevel; question: string | null; askedBy: string | null }>;
-  /** Per account, its decisions, latest first; accounts by their latest answer. */
-  byAccount: Array<{ uid: string; name: string; decisions: WorkshopDecision[] }>;
-  /** The days answers were recorded on (server time, `YYYY-MM-DD`), newest first, with how many. */
-  sessions: Array<{ day: string; count: number }>;
-  /** What the latest session recorded; null when nothing is on record. */
-  latest: { day: string; decisions: WorkshopDecision[] } | null;
-  /** The session before the latest, or null when the latest is the first. */
-  previousDay: string | null;
-  /** Decisions that differ from the engine's proposal — the points worth discussing. */
-  deviations: Array<WorkshopDecision & { proposal: RuleProposalKind }>;
-}
-
-const dayOf = (iso: string): string => iso.slice(0, 10);
-const newestFirst = (a: { at: string }, b: { at: string }) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
-
-/**
- * The workshop view of the rules. Read off the latest revision: every entry
- * there carries who answered, when and in which revision, so the sessions and
- * "what changed in the latest one" need no second read. What an answer
- * replaced is in the earlier revisions; `ruleChanges` reads it from those
- * (3.0.20 (4)), and the workshop shows the two side by side.
- */
-export function workshopView(explanation: RuleSetExplanation, entries: Readonly<Record<string, StateEntry>>): WorkshopView {
-  const byId = new Map(explanation.rules.map((r) => [r.id, r]));
-  const decisions: WorkshopDecision[] = [];
-  for (const id of explanation.order) {
-    const entry = entries[id];
-    const kind = decisionKindOf(entry);
-    if (!entry || !kind) continue;
-    decisions.push({ id, kind, by: entry.account.name, at: entry.confirmedAt, note: shownNote(entry.note) });
-  }
-  const open = explanation.order
-    .filter((id) => !isDecided(decisionKindOf(entries[id])))
-    .map((id) => {
-      const entry = entries[id];
-      const asked = entry?.state === 'clarify';
-      return { id, impact: byId.get(id)?.impact.level ?? 'low', question: asked ? entry.note ?? null : null, askedBy: asked ? entry.account.name : null };
-    });
-  const accounts = new Map<string, { uid: string; name: string; decisions: WorkshopDecision[] }>();
-  for (const id of explanation.order) {
-    const entry = entries[id];
-    const d = decisions.find((x) => x.id === id);
-    if (!entry || !d) continue;
-    const held = accounts.get(entry.account.uid) ?? { uid: entry.account.uid, name: entry.account.name, decisions: [] };
-    held.decisions.push(d);
-    accounts.set(entry.account.uid, held);
-  }
-  const byAccount = [...accounts.values()]
-    .map((a) => ({ ...a, decisions: [...a.decisions].sort(newestFirst) }))
-    .sort((a, b) => newestFirst(a.decisions[0], b.decisions[0]));
-  const counts = new Map<string, number>();
-  for (const d of decisions) counts.set(dayOf(d.at), (counts.get(dayOf(d.at)) ?? 0) + 1);
-  const sessions = [...counts.entries()].map(([day, count]) => ({ day, count })).sort((a, b) => (a.day < b.day ? 1 : -1));
-  const latestDay = sessions[0]?.day ?? null;
-  return {
-    open,
-    byAccount,
-    sessions,
-    latest: latestDay ? { day: latestDay, decisions: decisions.filter((d) => dayOf(d.at) === latestDay).sort(newestFirst) } : null,
-    previousDay: sessions[1]?.day ?? null,
-    deviations: decisions
-      .filter((d) => d.kind !== 'clarify' && d.kind !== byId.get(d.id)?.proposal.kind)
-      .map((d) => ({ ...d, proposal: byId.get(d.id)?.proposal.kind ?? 'keep' })),
-  };
-}
-
-/* ------------------------------------------------------- old → new (3.0.20 (4)) */
-
-export interface RuleChange {
-  id: string;
-  /** The answer before, and its note. */
-  from: RuleDecisionKind;
-  fromNote: string | null;
-  /** The answer that replaced it, with who gave it and when. */
-  to: RuleDecisionKind;
-  note: string | null;
-  by: string;
-  at: string;
-  revision: number;
-  /** What else moved with the answer: the value source, "also applies to" — in words; empty when nothing did. */
-  details: string[];
-}
-
-const sourceWords = (v: StateEntry['valueSource']) => (v ? `${VALUE_SOURCE_LABELS[v.kind]}${v.note ? ` (${v.note})` : ''}` : 'none');
-const listWords = (v: string[] | undefined) => [...(v ?? [])].sort().join(', ') || 'none';
-
-/** The parts of an answer besides its word and note that differ between two entries, in words. */
-function answerDetails(before: StateEntry, after: StateEntry): string[] {
-  const out: string[] = [];
-  if (sourceWords(before.valueSource) !== sourceWords(after.valueSource)) {
-    out.push(`Value source: ${sourceWords(before.valueSource)} → ${sourceWords(after.valueSource)}`);
-  }
-  if (listWords(before.appliesTo) !== listWords(after.appliesTo)) {
-    out.push(`Also applies to: ${listWords(before.appliesTo)} → ${listWords(after.appliesTo)}`);
-  }
-  return out;
-}
-
-/**
- * Per rule, every answer that replaced an earlier one — earlier answer → new
- * answer, who and when — newest first. Read from the answers as they were made
- * (`ruleAnswersMade`); a first answer replaced nothing and is not a change, and
- * an answer given again the same in every part (`sameAnswer`: state, note,
- * value source, "also applies to", the answer) is none either. A moved value
- * source or "also applies to" under the same word is a change, said in
- * `details`.
- */
-export function ruleChanges(explanation: Pick<RuleSetExplanation, 'order'>, made: readonly StateEntry[]): RuleChange[] {
-  const known = new Set(explanation.order);
-  const bySubject = new Map<string, StateEntry[]>();
-  for (const e of made) {
-    if (e.kind !== 'rule' || !known.has(e.subject)) continue;
-    bySubject.set(e.subject, [...(bySubject.get(e.subject) ?? []), e]);
-  }
-  const out: RuleChange[] = [];
-  for (const [id, list] of bySubject) {
-    const ordered = [...list].sort((a, b) => a.revision - b.revision);
-    for (let i = 1; i < ordered.length; i += 1) {
-      const before = ordered[i - 1];
-      const after = ordered[i];
-      const from = decisionKindOf(before);
-      const to = decisionKindOf(after);
-      if (!from || !to) continue;
-      if (sameAnswer(before, after)) continue;
-      const details = answerDetails(before, after);
-      if (from === to && shownNote(before.note) === shownNote(after.note) && details.length === 0) continue;
-      out.push({
-        id,
-        from,
-        fromNote: shownNote(before.note),
-        to,
-        note: shownNote(after.note),
-        by: after.account.name,
-        at: after.confirmedAt,
-        revision: after.revision,
-        details,
-      });
-    }
-  }
-  return out.sort((a, b) => b.revision - a.revision || (a.id < b.id ? -1 : 1));
 }
 
 /* ------------------------------------------------------------- measuring */
