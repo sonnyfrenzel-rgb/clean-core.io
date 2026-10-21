@@ -373,15 +373,20 @@ function testDataStatement(
 const ROW_BUILDING = /^(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS|CLEAR|REFRESH|FREE|APPEND)$/i;
 
 function routineKeepsInMemory(statements: readonly AbapStatement[], structure: ReturnType<typeof readBlocks>, name: string): boolean {
-  const form = structure.containers.find((c) => c.kind === 'form' && norm(c.name) === name);
-  if (!form) return false;
-  return statements.every((st) => {
-    if (st.lineStart <= form.lineStart || st.lineStart >= form.lineEnd) return true;
+  if (!structure.containers.some((c) => c.kind === 'form' && norm(c.name) === name)) return false;
+  // The routine's own statements, FORM to ENDFORM — by statement, not by line: a routine written on one line has them too.
+  const open = statements.findIndex((st) => /^FORM$/i.test(st.keyword) && norm(/^FORM\s+([\w/]+)/i.exec(st.text)?.[1] ?? '') === name);
+  if (open < 0) return false;
+  const close = statements.findIndex((st, i) => i > open && /^ENDFORM$/i.test(st.keyword));
+  if (close < 0) return false;
+  return statements.slice(open + 1, close).every((st) => {
     const keyword = st.keyword.toUpperCase();
     const text = st.text.replace(/\.\s*$/, '').trim();
     if (keyword === 'APPEND' || keyword === 'INSERT') return internalRowOf(text, keyword) !== null;
     if (ROW_BUILDING.test(keyword)) return true;
-    return /^[\w/<>~-]+\s*=\s*[^=]/.test(text);
+    const assign = /^[\w/<>~-]+\s*=\s*([^=][\s\S]*)$/.exec(text);
+    // A value, not a call: a method or function on the right can do anything.
+    return !!assign && !/->|=>|[\w/]\(/.test(assign[1]);
   });
 }
 

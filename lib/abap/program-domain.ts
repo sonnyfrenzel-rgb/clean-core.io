@@ -135,7 +135,8 @@ export function readProgramDomain(source: string): ProgramDomain | null {
     // Used means it takes part in the check: a condition reads it, a WHERE filters by it, or a
     // calculation takes it in. Shown in a list or a message, it decides nothing.
     const used = statements.some((st) => {
-      const text = maskLiterals(st.text);
+      // A check that it was entered (`IS INITIAL`) asks for the value; it does not apply it.
+      const text = maskLiterals(st.text).replace(new RegExp(`${word.source}\\s+IS\\s+(?:NOT\\s+)?(?:INITIAL|BOUND|ASSIGNED)\\b`, 'gi'), ' ');
       if (!word.test(text)) return false;
       if (/^(?:IF|ELSEIF|CHECK|WHILE|WHEN)$/i.test(st.keyword)) return true;
       if (/\bWHERE\b[\s\S]*$/i.test(text) && word.test(/\bWHERE\b([\s\S]*)$/i.exec(text)?.[1] ?? '')) return true;

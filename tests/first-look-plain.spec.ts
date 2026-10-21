@@ -226,6 +226,11 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  INSERT zrow FROM ls_row.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n  COMMIT WORK.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(withForm("  CALL FUNCTION 'Z_CREATE_ORDER' EXPORTING iv_id = iv_id.\n"), AFTER)).toBeNull();
+    // A method on the right of an assignment can do anything: not a value.
+    expect(readDemoSwitches(withForm("  ls_row-id = zcl_orders=>create( iv_id ).\n  APPEND ls_row TO lt_rows.\n"), AFTER)).toBeNull();
+    // Written on one line, the routine's statements are still read.
+    const oneLine = `${switchOf((n) => `      PERFORM add_row USING '${n}' 'Case ${n}' 'A'.`)}FORM add_row USING iv_id TYPE c iv_name TYPE c iv_kind TYPE c. INSERT zrow FROM ls_row. ENDFORM.\n`;
+    expect(readDemoSwitches(oneLine, AFTER)).toBeNull();
     // Decides and reports in memory: logic, not a row of data.
     expect(readDemoSwitches(withForm("  READ TABLE lt_rows INTO ls_row WITH KEY id = iv_id.\n  IF sy-subrc <> 0.\n    MESSAGE 'missing' TYPE 'I'.\n  ENDIF.\n"), AFTER)).toBeNull();
     // A routine this upload does not contain is not known to keep anything in memory.
@@ -258,6 +263,9 @@ test.describe('the purpose from the program\'s names (lib/abap/program-domain.ts
     expect(readProgramDomain(declared)?.text ?? '').not.toMatch(/tolerance/);
     const used = `${declared}IF gv_invoice > p_tol.\n  WRITE / gv_invoice.\nENDIF.\n`;
     expect(readProgramDomain(used)?.text ?? '').toMatch(/, within a tolerance\.$/);
+    // Asked for as a required entry only: it is never applied.
+    const required = `${declared}IF p_tol IS INITIAL.\n  MESSAGE 'Enter a tolerance' TYPE 'E'.\nENDIF.\n`;
+    expect(readProgramDomain(required)?.text ?? '').not.toMatch(/tolerance/);
     // Shown in the list or a message only: it decides nothing.
     const shown = `${declared}WRITE: / 'Tolerance', p_tol.\nMESSAGE s001(zmm) WITH p_tol.\n`;
     expect(readProgramDomain(shown)?.text ?? '').not.toMatch(/tolerance/);
