@@ -226,6 +226,8 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  INSERT zrow FROM ls_row.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n  COMMIT WORK.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(withForm("  CALL FUNCTION 'Z_CREATE_ORDER' EXPORTING iv_id = iv_id.\n"), AFTER)).toBeNull();
+    // Decides and reports in memory: logic, not a row of data.
+    expect(readDemoSwitches(withForm("  READ TABLE lt_rows INTO ls_row WITH KEY id = iv_id.\n  IF sy-subrc <> 0.\n    MESSAGE 'missing' TYPE 'I'.\n  ENDIF.\n"), AFTER)).toBeNull();
     // A routine this upload does not contain is not known to keep anything in memory.
     expect(readDemoSwitches(switchOf((n) => `      PERFORM add_row IN PROGRAM zother USING '${n}' 'Case ${n}' 'A'.`), AFTER)).toBeNull();
   });

@@ -364,12 +364,13 @@ function testDataStatement(
 }
 
 /**
- * What a routine may do and still only build test data: no write, no commit,
- * no call or submit, no read of the database, no routine of its own — an
- * `INSERT` only into an internal table. A routine this program does not
- * contain (`PERFORM … IN PROGRAM`, an include not uploaded) is not known to.
+ * What a routine may do and still only build test data: declare, assign, clear,
+ * and put rows into an internal table — nothing else. No condition, loop or
+ * message (that is logic, not a row of data), no read, no write, no call. A
+ * routine this program does not contain (`PERFORM … IN PROGRAM`, an include
+ * not uploaded) is not known to.
  */
-const LEAVES_MEMORY = /^(?:UPDATE|MODIFY|DELETE|COMMIT|ROLLBACK|CALL|SUBMIT|PERFORM|SELECT|OPEN|TRANSFER|EXEC|RAISE|LEAVE|EXPORT|IMPORT|SET)$/i;
+const ROW_BUILDING = /^(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS|CLEAR|REFRESH|FREE|APPEND)$/i;
 
 function routineKeepsInMemory(statements: readonly AbapStatement[], structure: ReturnType<typeof readBlocks>, name: string): boolean {
   const form = structure.containers.find((c) => c.kind === 'form' && norm(c.name) === name);
@@ -377,8 +378,10 @@ function routineKeepsInMemory(statements: readonly AbapStatement[], structure: R
   return statements.every((st) => {
     if (st.lineStart <= form.lineStart || st.lineStart >= form.lineEnd) return true;
     const keyword = st.keyword.toUpperCase();
-    if (keyword === 'INSERT') return internalRowOf(st.text.replace(/\.\s*$/, '').trim(), keyword) !== null;
-    return !LEAVES_MEMORY.test(keyword);
+    const text = st.text.replace(/\.\s*$/, '').trim();
+    if (keyword === 'APPEND' || keyword === 'INSERT') return internalRowOf(text, keyword) !== null;
+    if (ROW_BUILDING.test(keyword)) return true;
+    return /^[\w/<>~-]+\s*=\s*[^=]/.test(text);
   });
 }
 

@@ -1001,20 +1001,39 @@ const WRITTEN_VALUE = /^(['`])([\s\S]*)\1$|^(abap_true|abap_false|space)$/i;
  * `action` a marker the program sets and reads itself. Conditions are not assignments.
  */
 /**
- * The field a marker is written to and read from, as a key: a component by its
- * name (`ls_doc-status` and `<fs_doc>-status` are one field of one row
- * type), a variable by its whole name. A variable and a component that only
- * end alike (`lv_status`, `ls_document-status`) are not one field.
+ * The field a marker is written to and read from, as a key. A variable by its
+ * whole name; a component by its name and the declared type of what it is a
+ * component of — `cs_customer-risk_class` written in a routine that changes
+ * the customer and `gs_customer-risk_class` read later are one field of one
+ * row type (`ty_customer`). Where that type is not declared, the owner's
+ * own name. A variable and a component that only end alike (`lv_status`,
+ * `ls_document-status`), or one component of two row types
+ * (`ls_billing-status`, `ls_order-status`), are not one field.
  */
-function markerKey(name: string | null | undefined): string {
+function markerKey(name: string | null | undefined, types: ReadonlyMap<string, string>): string {
   if (!name) return '';
-  const clean = name.toLowerCase().replace(/[<>[\]]/g, '');
-  const parts = clean.split(/->|=>|-|~/).filter(Boolean);
-  if (parts.length === 0) return '';
-  return parts.length > 1 ? `c:${parts[parts.length - 1]}` : `v:${parts[0]}`;
+  const clean = name.toLowerCase().replace(/\s+/g, '');
+  const at = clean.search(/->|=>|-|~/);
+  if (at < 0) return `v:${clean}`;
+  const owner = clean.slice(0, at);
+  const component = clean.split(/->|=>|-|~/).filter(Boolean).pop() ?? '';
+  return `c:${types.get(owner) ?? owner}:${component}`;
 }
 
-function writtenValues(statements: readonly AbapStatement[], demoRoutines: ReadonlySet<string>): Map<string, Map<string, number>> {
+/** The declared type of every name a statement declares with `TYPE`: data, field symbols, routine parameters. */
+function declaredTypes(statements: readonly AbapStatement[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const s of statements) {
+    if (!/^(?:DATA|STATICS|CLASS-DATA|FIELD-SYMBOLS|FORM|METHODS|CLASS-METHODS)$/i.test(s.keyword)) continue;
+    for (const m of s.text.matchAll(/(<?[\w/]+>?)\s+TYPE\s+(?!(?:STANDARD|SORTED|HASHED|RANGE|TABLE|LINE)\b)(?:REF\s+TO\s+)?([\w/]+)/gi)) {
+      const name = m[1].toLowerCase();
+      if (!out.has(name)) out.set(name, m[2].toLowerCase());
+    }
+  }
+  return out;
+}
+
+function writtenValues(statements: readonly AbapStatement[], demoRoutines: ReadonlySet<string>, types: ReadonlyMap<string, string>): Map<string, Map<string, number>> {
   const out = new Map<string, Map<string, number>>();
   let routine: string | null = null;
   for (const s of statements) {
@@ -1028,7 +1047,7 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
     if (!m) continue;
     const v = WRITTEN_VALUE.exec(m[2]);
     if (!v) continue;
-    const stem = markerKey(m[1]);
+    const stem = markerKey(m[1], types);
     if (!stem) continue;
     const value = (v[2] ?? v[3] ?? '').toUpperCase();
     const held = out.get(stem) ?? new Map<string, number>();
@@ -1040,6 +1059,8 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
 
 interface BasketFacts {
   written: Map<string, Map<string, number>>;
+  /** `declaredTypes` of the source: what makes two components one field. */
+  types: ReadonlyMap<string, string>;
   ctx: PlainContext;
   hasInclude: boolean;
 }
@@ -1072,7 +1093,8 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   const tests = rc.tests;
   const values = tests.flatMap(valuesOf);
   const testValues = values.filter((v) => TEST_DATA.test(v));
-  if (testValues.length > 0 && tests.every((p) => valuesOf(p).length === 0 || valuesOf(p).some((v) => TEST_DATA.test(v)))) {
+  // Test data only when every value it picks out is: `IN ('TEST-1', 'LIVE')` still picks out a live one.
+  if (testValues.length > 0 && tests.every((p) => valuesOf(p).length === 0 || valuesOf(p).every((v) => TEST_DATA.test(v)))) {
     return say('technical', `It picks out test documents (${[...new Set(testValues)].join(', ')}) — test data, not a business decision.`);
   }
   // "No limit" written as a number on anything but money: a technical cap, whatever the field is called.
@@ -1093,14 +1115,14 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   // has not made the plant its own marker.
   const markerTopic = topic === 'status' || topic === 'credit' || topic === 'other';
   const marker = markerTopic && tests.length > 0 && tests.every((p) => {
-    const held = bf.written.get(markerKey(p.subject));
+    const held = bf.written.get(markerKey(p.subject, bf.types));
     const vs = valuesOf(p).map((v) => v.toUpperCase());
     return !!held && vs.length > 0 && vs.every((v) => held.has(v));
   });
   if (marker) {
     const p = tests[0];
     const v = valuesOf(p)[0] ?? '';
-    const line = bf.written.get(markerKey(p.subject))?.get(v.toUpperCase()) ?? p.lineStart;
+    const line = bf.written.get(markerKey(p.subject, bf.types))?.get(v.toUpperCase()) ?? p.lineStart;
     return say(
       'technical',
       `The program sets the ${rc.subject} to ${valueWords(v)} itself (line ${line}) and reads it back here — a marker of its own, not a value the business sets.`,
@@ -1279,7 +1301,8 @@ export function explainBusinessRules(
   }
   const demoIds = new Set((set.demoCases?.rules ?? []).map((d) => d.id));
   const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source, engineVersion)?.routines ?? [] : []).map((r) => r.toUpperCase()));
-  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines), ctx, hasInclude };
+  const types = declaredTypes(facts.statements);
+  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines, types), types, ctx, hasInclude };
   const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
     const rc = contextOf(rule, facts, ctx, reads3020);

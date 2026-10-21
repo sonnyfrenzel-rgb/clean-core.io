@@ -128,16 +128,20 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
       'REPORT zsd_release_check.',
       'DATA: lv_status TYPE c LENGTH 1,',
       '      ls_document TYPE vbak,',
-      '      ls_job TYPE vbak.',
+      '      ls_job TYPE vbrk.',
       'START-OF-SELECTION.',
       '  SELECT SINGLE * FROM vbak INTO ls_document.',
       "  lv_status = 'A'.",
       "  ls_job-status = 'B'.",
+      "  ls_document-status = 'C'.",
       "  IF ls_document-status = 'A'.",
       "    WRITE / 'released'.",
       '  ENDIF.',
       "  IF ls_document-status = 'B'.",
       "    WRITE / 'held'.",
+      '  ENDIF.',
+      "  IF ls_document-status = 'C'.",
+      "    WRITE / 'checked'.",
       '  ENDIF.',
       '',
     ].join('\n');
@@ -145,8 +149,30 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     const kindOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
     // A variable of the same final name is not the document's field: no marker.
     expect(kindOf(/status = 'A'/).reason.text).not.toMatch(/marker of its own/);
-    // The same component of another row of that type is: the program sets it itself.
-    expect(kindOf(/status = 'B'/).reason.text).toMatch(/marker of its own/);
+    // Nor is the same component of a structure of another type.
+    expect(kindOf(/status = 'B'/).reason.text).not.toMatch(/marker of its own/);
+    // The field the program sets itself and reads back is.
+    expect(kindOf(/status = 'C'/).reason.text).toMatch(/marker of its own/);
+  });
+
+  test('a rule that picks out test documents and a live one is not test data', () => {
+    const source = [
+      'REPORT zsd_order_check.',
+      'DATA ls_order TYPE vbak.',
+      'START-OF-SELECTION.',
+      '  SELECT SINGLE * FROM vbak INTO ls_order.',
+      "  IF ls_order-bstnk CP 'TEST*'.",
+      "    WRITE / 'test'.",
+      '  ENDIF.',
+      "  IF ls_order-bstnk IN ('TEST-1', 'LIVE').",
+      "    WRITE / 'mixed'.",
+      '  ENDIF.',
+      '',
+    ].join('\n');
+    const { ex, reading } = explain(source);
+    const reasonOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket.reason.text;
+    expect(reasonOf(/CP 'TEST\*'/)).toContain('test data');
+    expect(reasonOf(/'LIVE'/)).not.toContain('test data');
   });
 
   test('the program’s own demo data is no marker: a company code the demo routine fills stays a question', () => {
