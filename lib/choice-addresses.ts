@@ -133,10 +133,9 @@ export const CHOICES: Readonly<Record<StaticChoiceKey, ChoiceAddress>> = Object.
   // C2, C3 — the decision in Management.
   'management.options': c(VIEW('management'), 'decision-options', 'nav.choice.managementOptions', VIEW_PLACE('management')),
   'management.confirm': c(VIEW('management'), 'decision-card', 'nav.choice.managementConfirm', VIEW_PLACE('management')),
-  // C4 — an owner arriving opens editing at the first unanswered rule.
-  'business.rules': c(VIEW('business'), 'business-rules', 'nav.choice.businessRules', VIEW_PLACE('business'), {
-    reveal: 'first-unanswered-rule',
-  }),
+  // C4 — the rules are answered as the questions for the business in Design
+  // (owner decision 21.10.2026: the Business view's opening asks for no rule decision).
+  'business.rules': c(TOOL('design'), 'rule-questions', 'nav.choice.businessRules', PHASE_LABEL('design')),
   // C5 — scroll only; the shell's own map follower owns `#process-map`.
   'business.walk': c(VIEW('business'), 'process-map', 'nav.choice.businessWalk', VIEW_PLACE('business')),
   // C6 — the open questions of each view; Management's live in its Evidence fold.

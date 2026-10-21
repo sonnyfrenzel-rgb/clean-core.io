@@ -51,7 +51,7 @@ export const NAVIGATION_MESSAGES = {
   'nav.choice.designTargetSignoff': 'Sign off the target architecture',
   'nav.choice.managementOptions': 'Choose an option',
   'nav.choice.managementConfirm': 'Confirm the decision',
-  'nav.choice.businessRules': 'Decide on the rules',
+  'nav.choice.businessRules': 'Answer the questions on the rules',
   'nav.choice.businessWalk': 'Walk through the process',
   'nav.choice.openQuestions': 'Answer the open questions',
   'nav.choice.itTarget': 'Choose the target',

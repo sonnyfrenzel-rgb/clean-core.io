@@ -139,7 +139,7 @@ test.describe('the chain', () => {
     ]);
     expect(by('business-rules').when).toBe('need revision 3');
     expect(by('business-rules').warn?.text).toBe('2 rules have no decision yet.');
-    expect(by('business-rules').warn?.fix.href).toBe('/project/p1?view=business&origin=transformation.tips#business-rules');
+    expect(by('business-rules').warn?.fix.href).toBe('/project/p1/design?view=business&origin=transformation.tips#rule-questions');
     // Design: the route with its reason, a proposal until confirmed; the warning leads to the sign-off.
     expect(by('design').facts[0]).toMatchObject({ text: 'Target: Side-by-side (CAP) — reason: It uploads files and runs outside the posting LUW.', provenance: 'proposed' });
     expect(by('design').warn?.fix.href).toBe('/project/p1/design?view=business&origin=transformation.tips#architect-sign-off');
@@ -233,7 +233,7 @@ test.describe('the tips', () => {
     expect(rules.title).toBe('Decide the 2 open rules');
     expect(rules.impact).toMatch(/keep, change or drop/);
     expect(rules.inCode).toMatch(/dropped rule is left out/);
-    expect(rules.link.href).toBe('/project/p1?view=business&origin=transformation.tips#business-rules');
+    expect(rules.link.href).toBe('/project/p1/design?view=business&origin=transformation.tips#rule-questions');
     expect(reqs.title).toBe('Accept the 2 proposed requirements');
     expect(reqs.link.href).toBe('/project/p1/design/requirements?view=business&origin=transformation.tips#spec-s3');
     expect(nfr.title).toBe('Accept the proposed non-functional requirement');

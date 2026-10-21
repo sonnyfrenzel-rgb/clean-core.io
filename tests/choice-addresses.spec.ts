@@ -47,7 +47,8 @@ test.describe('every choice has one address', () => {
     'design.target-signoff': `${BASE}/design?view=it&origin=it.next-step#architect-sign-off`,
     'management.options': `${BASE}?view=management&origin=it.next-step#decision-options`,
     'management.confirm': `${BASE}?view=management&origin=it.next-step#decision-card`,
-    'business.rules': `${BASE}?view=business&origin=it.next-step#business-rules`,
+    // Owner decision 21.10.2026: the rules are answered as questions for the business in Design.
+    'business.rules': `${BASE}/design?view=it&origin=it.next-step#rule-questions`,
     'business.walk': `${BASE}?view=business&origin=it.next-step#process-map`,
     'business.open-questions': `${BASE}?view=business&origin=it.next-step#not-determined`,
     'it.open-questions': `${BASE}?view=it&origin=it.next-step#not-determined`,

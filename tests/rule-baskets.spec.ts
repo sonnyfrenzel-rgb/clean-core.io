@@ -362,6 +362,24 @@ test.describe('the questions in Design, rendered', () => {
   });
 });
 
+test.describe('the register in IT, rendered', () => {
+  test('grouped by basket; the technical rules have one click “Technical rules stay as coded”; an undetermined rule says why', async () => {
+    const mod = await load('components/workspace/RuleDecisionFlow.tsx');
+    const { ex, reading } = explain(BIG);
+    const rules = editorRules(reading.ruleSet, plainWordingFor(BIG, reading.skeleton));
+    const view = { formatVersion: 1, revision: 1, baselineRevision: 1, subjects: ex.rules.map((r) => ({ subject: r.id, kind: 'rule', label: r.id, detail: '', anchor: null })), entries: [], links: [] };
+    const html = renderToStaticMarkup(React.createElement(mod.default, { projectId: 'p1', source: BIG, reading, rules, outcome: { ok: true, view }, view, owner: true, reload: () => {} }));
+    expect(html).toContain('data-rule-topic="technical"');
+    expect(html).toContain('data-rule-topic="undetermined"');
+    expect(html).toContain('data-rule-keep-technical=""');
+    expect(html).toContain('Technical rules stay as coded (6)');
+    expect(html).toContain('not counted as confirmed by the business');
+    expect(html).toContain('data-rule-said="basket"');
+    // "Not business decisions" is said over the technical rules only — an undetermined rule may be one.
+    expect((html.match(/Set apart — not business decisions/g) ?? []).length).toBe(1);
+  });
+});
+
 test.describe('the places (source guards)', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
   test('the Business view’s rules block is the one sentence, not the rule editor; its next step leads with no rule', () => {

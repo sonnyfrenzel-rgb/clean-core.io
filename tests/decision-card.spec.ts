@@ -878,7 +878,7 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     const both = need('undecided:25;rules:12;decisions:13');
     expect(both.line).toBe('12 rules and 13 decision points still need a business answer.');
     // The rules first: one batch, minutes — then the walk through the map.
-    expect(both.place).toEqual({ kind: 'view', view: 'business', hash: 'business-rules', action: 'Decide on 12 rules' });
+    expect(both.place).toEqual({ kind: 'stage', path: 'design', hash: 'rule-questions', action: 'Answer the questions on 12 open rules' });
     const onlyDecisions = need('undecided:1;rules:0;decisions:1');
     expect(onlyDecisions.line).toBe('1 decision point still needs a business answer.');
     expect(onlyDecisions.place).toMatchObject({ hash: 'process-map', action: 'Walk through the process' });
@@ -901,7 +901,7 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     const need = m.foundations[0];
     expect(need.points.some((p) => p.source === 'need-open')).toBe(false);
     expect(need.pillar.line).toBe('Not confirmed yet: 12 rules and 13 decision points have no business answer.');
-    expect(need.pillar.place).toEqual({ kind: 'view', view: 'business', hash: 'business-rules', action: 'Decide on 12 rules' });
+    expect(need.pillar.place).toEqual({ kind: 'stage', path: 'design', hash: 'rule-questions', action: 'Answer the questions on 12 open rules' });
     // Every other condition stands exactly once, under the row it belongs to.
     const placed = [...m.foundations.flatMap((f) => [...f.points, ...f.limits]), ...m.other].map((p) => p.id).sort();
     expect(placed).toEqual(m.points.filter((p) => p.source !== 'need-open').map((p) => p.id).sort());

@@ -60,6 +60,8 @@ export const DECISION_PLACE_IDS = Object.freeze({
   itFindings: 'it-findings',
   itOpenQuestions: 'not-determined',
   businessRules: 'business-rules',
+  /** The questions for the business in Design (owner decision 21.10.2026, `lib/rule-questions.ts`). */
+  ruleQuestions: 'rule-questions',
   businessMap: 'process-map',
   /** IT's *Standard fit* section — a Business layer until ADR-096 (owner, 12.10.2026). */
   itStandardFit: 'standard',
@@ -235,14 +237,18 @@ function needOpenWords(open: { rules: number; decisions: number }): string {
 const one = (open: ReturnType<typeof needOpenOf>): boolean =>
   !!open && open !== 'legacy' && open.rules + open.decisions === 1;
 
-/** Where the need is answered: the rules first — one batch — then the walk through the map. */
+/**
+ * Where the need is answered: the rules first — as the questions for the
+ * business in Design (owner decision 21.10.2026: the Business view's opening
+ * asks for no rule decision) — then the walk through the map.
+ */
 function needPlace(open: ReturnType<typeof needOpenOf>): DecisionPlace {
   if (open && open !== 'legacy' && open.rules > 0) {
     return {
-      kind: 'view',
-      view: 'business',
-      hash: DECISION_PLACE_IDS.businessRules,
-      action: `Decide on ${plural(open.rules, 'rule', 'rules')}`,
+      kind: 'stage',
+      path: 'design',
+      hash: DECISION_PLACE_IDS.ruleQuestions,
+      action: `Answer the questions on ${plural(open.rules, 'open rule', 'open rules')}`,
     };
   }
   return { kind: 'view', view: 'business', hash: DECISION_PLACE_IDS.businessMap, action: 'Walk through the process' };
