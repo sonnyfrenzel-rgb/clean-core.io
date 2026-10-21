@@ -19,6 +19,7 @@ import { BUSINESS_RULES_ID, requestRuleEditing, useIsOwner, useSignedInUid } fro
 import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import RulesDoneLine from './RulesDoneLine';
 import BusinessOpening, { type OpeningRule } from './BusinessOpening';
+import RuleBasketLine from './RuleBasketLine';
 import { processChanges, processStory, type ProcessStory, type StoryChange } from '@/lib/process-story';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary, type SummaryLine } from '@/lib/program-summary-text';
@@ -708,11 +709,6 @@ export default function FirstLook({
     [rulesOverride, states, rules],
   );
   const uid = useSignedInUid();
-  /** "Decide on rules" from the opening: the rules card of this page, in its answering mode. */
-  const decideRules = useCallback(() => {
-    document.getElementById(BUSINESS_RULES_ID)?.scrollIntoView({ block: 'start' });
-    requestRuleEditing(projectId);
-  }, [projectId]);
 
   const reached = stages.filter(Boolean).length + (finalStage ? 1 : 0);
 
@@ -892,7 +888,11 @@ export default function FirstLook({
                   changesNone={result.card.summary.kind === 'none' ? result.card.summary.sentence : wt('biz.changesNoData')}
                   questions={questions}
                   inShort={result.inShort}
-                  onDecideRules={owner && !onReviewRules ? decideRules : onReviewRules}
+                  // Owner decision 21.10.2026: no rule decision in the first insights — one sentence and
+                  // the way into Design, where the questions for the business are asked. The demo keeps
+                  // its own rules card (`onReviewRules`).
+                  onDecideRules={onReviewRules}
+                  rulesLine={onReviewRules || !rules ? undefined : <RuleBasketLine projectId={projectId} source={source} ruleSet={rules} />}
                   details={
                     <EndState
                       projectId={projectId}

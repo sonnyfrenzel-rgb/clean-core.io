@@ -137,10 +137,11 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
     // The order since 03.10.2026 (owner: "show more prominently what I as a
-    // user should do here"): Next step → answer → map → rules → layer → folded
-    // Not determined.
+    // user should do here"): Next step → answer → map → layer → folded
+    // Not determined. No rules card since the owner decision of 21.10.2026:
+    // the first insights say the rules in one sentence and lead into Design.
     const tops = await page.evaluate(() =>
-      ['[data-next-step]', '[data-first-look]', '[data-workspace-process]', '[data-workspace-rules-block]', '[data-workspace-layer-section]', '#not-determined'].map(
+      ['[data-next-step]', '[data-first-look]', '[data-workspace-process]', '[data-workspace-layer-section]', '#not-determined'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;

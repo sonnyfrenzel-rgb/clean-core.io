@@ -66,8 +66,15 @@ export default function BusinessOpening({
   details,
   inShort = null,
   technicalRules = 0,
+  rulesLine,
   say,
 }: {
+  /**
+   * The rules in one sentence — how many questions the business has, how many
+   * technical rules stay as coded — with the way into Design (owner decision
+   * 21.10.2026: no rule decision in the first insights).
+   */
+  rulesLine?: React.ReactNode;
   /**
    * Roadmap 3.0.20: the plain wording of the engine's sentences (`usePlainWording`,
    * scope `firstlook`), when a rewording is on record. A reworded sentence stands
@@ -242,6 +249,7 @@ export default function BusinessOpening({
               {bizTechnicalSettings(technicalRules)}
             </p>
           ) : null}
+          {rulesLine ?? null}
           {onDecideRules && rules.length + rulesMore > 0 ? (
             <span className="cc-no-print">
               <CcButton variant="ghost" onClick={onDecideRules} data-story-decide-rules="">

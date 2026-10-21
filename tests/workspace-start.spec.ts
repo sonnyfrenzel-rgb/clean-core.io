@@ -173,7 +173,7 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await expect(line).toContainText(`${steps} step`, { timeout: 30000 });
     await expect(line).toContainText(`${decisions} decision point`);
     await expect(need).not.toContainText('Nothing on record');
-    await expect(need.locator('[data-decision-pillar-action]')).toHaveAttribute('href', /\?view=business#(process-map|business-rules)$/);
+    await expect(need.locator('[data-decision-pillar-action]')).toHaveAttribute('href', /\?view=business#process-map$|\/design\?[^#]*#rule-questions$/);
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
   });
 

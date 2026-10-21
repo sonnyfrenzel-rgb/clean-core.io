@@ -399,10 +399,14 @@ test.describe('the register in IT, rendered', () => {
 
 test.describe('the places (source guards)', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
-  test('the Business view’s rules block is the one sentence, not the rule editor; its next step leads with no rule', () => {
-    const block = shell.slice(shell.indexOf('    rules:\n'), shell.indexOf('    statusTools:'));
-    expect(block).toContain('<RuleBasketLine');
-    expect(block).not.toContain('<BusinessRulesEditor');
+  test('no rule card in the Business view; the first insights say the one sentence and offer no rule decision; the next step leads with no rule', () => {
+    const block = shell.slice(shell.indexOf('    rules:'), shell.indexOf('    statusTools:'));
+    expect(block).toContain('rules: null');
+    expect(shell).not.toContain('<BusinessRulesEditor');
+    const firstLook = read('components/workspace/FirstLook.tsx');
+    expect(firstLook).toContain('onDecideRules={onReviewRules}');
+    expect(firstLook).toMatch(/rulesLine=\{onReviewRules \|\| !rules \? undefined : <RuleBasketLine/);
+    expect(firstLook).not.toMatch(/const decideRules\b/);
     expect(shell).toContain('businessNextStep({ point: nextStep, rules: null, owner })');
     const order = shell.slice(shell.indexOf('const BUSINESS_ORDER'), shell.indexOf('];', shell.indexOf('const BUSINESS_ORDER')));
     // Where the rules card stood: under the map, which stays right under the answer (ADR-072).

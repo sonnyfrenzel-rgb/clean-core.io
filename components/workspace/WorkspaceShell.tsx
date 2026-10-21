@@ -32,7 +32,6 @@ import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
 import ItRuleRegister from './ItRuleRegister';
-import RuleBasketLine from './RuleBasketLine';
 import DecisionCard from './DecisionCard';
 import SteeringOnePager from './SteeringOnePager';
 import ManagementElsewhere from './ManagementElsewhere';
@@ -976,15 +975,12 @@ export default function WorkspaceShell({
     // the start run is still being signed: forty rules to decide on under a
     // map that is still loading confuse the reader (owner, 15.10.2026).
     // Owner decision 21.10.2026 (the new set-up of the business rules): no
-    // rule decision in the opening. One sentence — how many questions the
-    // business has and how many technical rules stay as coded — and the way
-    // into Design, where the questions are asked. The full register is in IT.
-    rules:
-      view === 'business' && reading !== null && reading.ruleSet.rules.length > 0 && startRun?.phase !== 'running' ? (
-        <div data-workspace-rules-block="" className="mt-4 scroll-mt-20">
-          <RuleBasketLine projectId={projectId} source={typeof project?.legacyCode === 'string' ? project.legacyCode : ''} reading={reading} />
-        </div>
-      ) : null,
+    // rule card and no rule decision in the Business view. The first insights
+    // say the rules in one sentence — how many questions the business has, how
+    // many technical rules stay as coded — with the way into Design, where the
+    // questions are asked (`RuleBasketLine` in `BusinessOpening`). The full
+    // register is in IT. The slot stays in the order, empty.
+    rules: null,
     // Business only: the folded status and the tools sit under "Next step"
     // there, as in mockup s1; IT and Management keep them in the header.
     //

@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
 import CcLinkButton from '@/components/cc/LinkButton';
-import type { SourceReading } from '@/lib/first-look';
+import type { BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import { buildProcessFacts } from '@/lib/abap/process-facts';
 import { explainBusinessRules } from '@/lib/abap/business-rule-set-explain';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
@@ -45,16 +45,16 @@ export function RuleBasketLineView({ questions, technical, undetermined, designH
   );
 }
 
-export default function RuleBasketLine({ projectId, source, reading }: { projectId: string; source: string; reading: SourceReading | null }) {
+export default function RuleBasketLine({ projectId, source, ruleSet }: { projectId: string; source: string; ruleSet: BusinessRuleSet | null }) {
   const counts = useMemo(() => {
-    if (!reading || !source.trim() || reading.ruleSet.rules.length === 0) return null;
+    if (!ruleSet || !source.trim() || ruleSet.rules.length === 0) return null;
     try {
-      const ex = explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source));
+      const ex = explainBusinessRules(source, ruleSet, buildProcessFacts(source));
       return { questions: ex.questions.length, technical: ex.baskets.technical.length, undetermined: ex.baskets.undetermined.length };
     } catch {
       return null;
     }
-  }, [reading, source]);
+  }, [ruleSet, source]);
   if (!counts) return null;
   return <RuleBasketLineView {...counts} designHref={`/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}`} />;
 }
