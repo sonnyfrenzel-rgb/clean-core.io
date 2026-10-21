@@ -1626,12 +1626,12 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-894 | info | P3 | 3.0.20 · security | fixed |
 | SEC-2026-895 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-896 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
-| SEC-2026-897 | medium | P2 | 3.0.20 · security | scheduled |
-| SEC-2026-898 | medium | P2 | 3.0.20 · security | scheduled |
-| SEC-2026-899 | medium | P2 | 3.0.20 · security | scheduled |
-| SEC-2026-900 | medium | P2 | 3.0.20 · security | scheduled |
-| SEC-2026-901 | low | P3 | 3.0.20 · security | scheduled |
-| SEC-2026-902 | low | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-897 | medium | P2 | 3.0.20 · security | fixed |
+| SEC-2026-898 | medium | P2 | 3.0.20 · security | fixed |
+| SEC-2026-899 | medium | P2 | 3.0.20 · security | fixed |
+| SEC-2026-900 | medium | P2 | 3.0.20 · security | fixed |
+| SEC-2026-901 | low | P3 | 3.0.20 · security | fixed |
+| SEC-2026-902 | low | P3 | 3.0.20 · security | fixed |
 | SEC-2026-903 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-904 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-905 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
