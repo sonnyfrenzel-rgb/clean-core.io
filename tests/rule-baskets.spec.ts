@@ -123,6 +123,32 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     expect(basket(/lv_amount GT 500000/).kind).toBe('business');
   });
 
+  test('a marker is the field the program writes, not another one whose name ends alike', () => {
+    const source = [
+      'REPORT zsd_release_check.',
+      'DATA: lv_status TYPE c LENGTH 1,',
+      '      ls_document TYPE vbak,',
+      '      ls_job TYPE vbak.',
+      'START-OF-SELECTION.',
+      '  SELECT SINGLE * FROM vbak INTO ls_document.',
+      "  lv_status = 'A'.",
+      "  ls_job-status = 'B'.",
+      "  IF ls_document-status = 'A'.",
+      "    WRITE / 'released'.",
+      '  ENDIF.',
+      "  IF ls_document-status = 'B'.",
+      "    WRITE / 'held'.",
+      '  ENDIF.',
+      '',
+    ].join('\n');
+    const { ex, reading } = explain(source);
+    const kindOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
+    // A variable of the same final name is not the document's field: no marker.
+    expect(kindOf(/status = 'A'/).reason.text).not.toMatch(/marker of its own/);
+    // The same component of another row of that type is: the program sets it itself.
+    expect(kindOf(/status = 'B'/).reason.text).toMatch(/marker of its own/);
+  });
+
   test('the program’s own demo data is no marker: a company code the demo routine fills stays a question', () => {
     const { ex, reading } = explain(GR);
     expect(reading.ruleSet.demoCases?.rules.length).toBe(4);

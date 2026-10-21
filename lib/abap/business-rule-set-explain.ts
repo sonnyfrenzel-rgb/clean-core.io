@@ -1000,6 +1000,20 @@ const WRITTEN_VALUE = /^(['`])([\s\S]*)\1$|^(abap_true|abap_false|space)$/i;
  * with the first line — `<fs_order>-action = 'SET_DELIVERY_BLOCK'` makes
  * `action` a marker the program sets and reads itself. Conditions are not assignments.
  */
+/**
+ * The field a marker is written to and read from, as a key: a component by its
+ * name (`ls_doc-status` and `<fs_doc>-status` are one field of one row
+ * type), a variable by its whole name. A variable and a component that only
+ * end alike (`lv_status`, `ls_document-status`) are not one field.
+ */
+function markerKey(name: string | null | undefined): string {
+  if (!name) return '';
+  const clean = name.toLowerCase().replace(/[<>[\]]/g, '');
+  const parts = clean.split(/->|=>|-|~/).filter(Boolean);
+  if (parts.length === 0) return '';
+  return parts.length > 1 ? `c:${parts[parts.length - 1]}` : `v:${parts[0]}`;
+}
+
 function writtenValues(statements: readonly AbapStatement[], demoRoutines: ReadonlySet<string>): Map<string, Map<string, number>> {
   const out = new Map<string, Map<string, number>>();
   let routine: string | null = null;
@@ -1014,7 +1028,7 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
     if (!m) continue;
     const v = WRITTEN_VALUE.exec(m[2]);
     if (!v) continue;
-    const stem = fieldStem(m[1]);
+    const stem = markerKey(m[1]);
     if (!stem) continue;
     const value = (v[2] ?? v[3] ?? '').toUpperCase();
     const held = out.get(stem) ?? new Map<string, number>();
@@ -1079,14 +1093,14 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   // has not made the plant its own marker.
   const markerTopic = topic === 'status' || topic === 'credit' || topic === 'other';
   const marker = markerTopic && tests.length > 0 && tests.every((p) => {
-    const held = bf.written.get(fieldStem(p.subject));
+    const held = bf.written.get(markerKey(p.subject));
     const vs = valuesOf(p).map((v) => v.toUpperCase());
     return !!held && vs.length > 0 && vs.every((v) => held.has(v));
   });
   if (marker) {
     const p = tests[0];
     const v = valuesOf(p)[0] ?? '';
-    const line = bf.written.get(fieldStem(p.subject))?.get(v.toUpperCase()) ?? p.lineStart;
+    const line = bf.written.get(markerKey(p.subject))?.get(v.toUpperCase()) ?? p.lineStart;
     return say(
       'technical',
       `The program sets the ${rc.subject} to ${valueWords(v)} itself (line ${line}) and reads it back here — a marker of its own, not a value the business sets.`,

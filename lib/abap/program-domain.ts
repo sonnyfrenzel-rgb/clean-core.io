@@ -132,7 +132,16 @@ export function readProgramDomain(source: string): ProgramDomain | null {
   let tolerance: number | null = null;
   for (const [name, line] of toleranceDeclared) {
     const word = new RegExp(`(?<![\\w/-])${name.replace(/[/]/g, '\\/')}(?![\\w/])`, 'i');
-    const used = statements.some((st) => !/^(?:PARAMETERS?|CONSTANTS|SELECT-OPTIONS|DATA|TYPES)$/i.test(st.keyword) && word.test(maskLiterals(st.text)));
+    // Used means it takes part in the check: a condition reads it, a WHERE filters by it, or a
+    // calculation takes it in. Shown in a list or a message, it decides nothing.
+    const used = statements.some((st) => {
+      const text = maskLiterals(st.text);
+      if (!word.test(text)) return false;
+      if (/^(?:IF|ELSEIF|CHECK|WHILE|WHEN)$/i.test(st.keyword)) return true;
+      if (/\bWHERE\b[\s\S]*$/i.test(text) && word.test(/\bWHERE\b([\s\S]*)$/i.exec(text)?.[1] ?? '')) return true;
+      const calc = /^[\w/<>~-]+\s*=\s*([\s\S]+)$/.exec(text.trim());
+      return !!calc && word.test(calc[1]);
+    });
     if (used && (tolerance === null || line < tolerance)) tolerance = line;
   }
   // A supplier invoice in the code makes the name's "invoice" one.

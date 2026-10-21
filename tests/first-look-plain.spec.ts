@@ -256,6 +256,12 @@ test.describe('the purpose from the program\'s names (lib/abap/program-domain.ts
     expect(readProgramDomain(declared)?.text ?? '').not.toMatch(/tolerance/);
     const used = `${declared}IF gv_invoice > p_tol.\n  WRITE / gv_invoice.\nENDIF.\n`;
     expect(readProgramDomain(used)?.text ?? '').toMatch(/, within a tolerance\.$/);
+    // Shown in the list or a message only: it decides nothing.
+    const shown = `${declared}WRITE: / 'Tolerance', p_tol.\nMESSAGE s001(zmm) WITH p_tol.\n`;
+    expect(readProgramDomain(shown)?.text ?? '').not.toMatch(/tolerance/);
+    // Taken into a calculation that the check then reads.
+    const calculated = `${declared}DATA gv_limit TYPE p DECIMALS 2.\ngv_limit = gv_invoice * p_tol / 100.\n`;
+    expect(readProgramDomain(calculated)?.text ?? '').toMatch(/, within a tolerance\.$/);
   });
 
   test('no verb in the program\'s name: not determined, never guessed', () => {
