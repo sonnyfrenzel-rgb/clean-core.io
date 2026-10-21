@@ -59,7 +59,7 @@ import {
   type Traceability,
 } from '@/lib/first-look';
 import { notDetermined, type NotDetermined } from '@/lib/workspace-model';
-import { applyNaming, type ProcessNamingRecord } from '@/lib/process-naming';
+import { applyNaming, PROCESS_NAMING_STORED_EVENT, type ProcessNamingRecord } from '@/lib/process-naming';
 import { fetchProcessNaming } from '@/lib/process-naming-client';
 import type { BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import type { TableDependency } from '@/lib/abap/table-dependencies';
@@ -426,6 +426,20 @@ export default function FirstLook({
     return afterPaint(() => guarded(() => setProcess(readProcess(source))));
   }, [source, hasSource, tables, guarded]);
 
+  /**
+   * Read again when the page's automatic naming stored one for this project
+   * (owner decision 21.10.2026, `hooks/useAutoProcessNaming.ts`): the names
+   * change once, where the plain ones stood.
+   */
+  const [namingStored, setNamingStored] = useState(0);
+  useEffect(() => {
+    const hear = (event: Event) => {
+      if ((event as CustomEvent<unknown>).detail === projectId) setNamingStored((n) => n + 1);
+    };
+    window.addEventListener(PROCESS_NAMING_STORED_EVENT, hear);
+    return () => window.removeEventListener(PROCESS_NAMING_STORED_EVENT, hear);
+  }, [projectId]);
+
   /* ---- stage 3's work: the stored naming of roadmap 2.4, or none ---- */
   useEffect(() => {
     if (!hasSource) return;
@@ -441,7 +455,7 @@ export default function FirstLook({
     return () => {
       cancelled = true;
     };
-  }, [projectId, hasSource, namingFrom]);
+  }, [projectId, hasSource, namingFrom, namingStored]);
 
   /* ---- stage 4's work ---- */
   useEffect(() => {

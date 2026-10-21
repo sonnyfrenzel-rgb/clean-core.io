@@ -79,13 +79,6 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.nextRulesLabel': 'Decide on the business rules',
   'biz.nextRulesNote': 'No model call · not counted · your answers are a self-declaration',
 
-  // Business names on the map — components/workspace/WorkspaceProcess.tsx.
-  'biz.suggestNames': 'Suggest business names',
-  'biz.suggestingNames': 'Asking the model for names…',
-  'biz.suggestNamesNote':
-    'Optional. The plain names on the map are read from the code without a model and are complete. A model can propose business names; they are marked as a model proposal and every line anchor stays.',
-  'biz.namesProposed': 'Business names from the model are shown on the map, marked as a model proposal.',
-
   // Answering the steps — components/workspace/WorkspaceProcess.tsx (owner, 03.10.2026).
   'biz.stepNeedTitle': 'Does the business still need this step?',
 } as const;
@@ -144,11 +137,6 @@ export function bizNextRulesAction(open: number): string {
 /** What follows the rules — the next phase from the one phase contract. */
 export function bizNextThen(label: string, action: string): string {
   return `After that: ${label} — ${action}.`;
-}
-
-/** Why the names could not be asked for, said instead of a button that does nothing. */
-export function bizNamesFailed(reason: string): string {
-  return `No business names were stored. ${reason} The plain names stay.`;
 }
 
 /** "For each trip:" — the loop a step of the story runs in. */

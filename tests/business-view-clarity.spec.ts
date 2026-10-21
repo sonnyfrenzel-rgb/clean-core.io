@@ -415,11 +415,22 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
   });
 
-  test('business names: no "Not generated" notice, the action only with a model, a stored name is a model proposal', async ({ page }) => {
+  test('business names: no "Not generated" notice, no button, asked automatically only with a model, a stored name is a model proposal', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
-    // No model: no action, and no apology for it.
+    // Every naming ask of the page, answered as a refusal: the plain names must stand without an error.
+    const namingAsks: string[] = [];
+    await page.route('**/api/gemini', async (route) => {
+      const body = route.request().postData() || '';
+      if (body.includes('"stage":"naming"')) {
+        namingAsks.push(body);
+        await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Refused for the test.' }) });
+        return;
+      }
+      await route.continue();
+    });
+    // No model: no ask, no button, and no apology for it.
     await page.route('**/api/model-stages', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: false, keySource: null }) }),
     );
@@ -427,15 +438,21 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-process-map]')).not.toContainText('Not generated');
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
+    expect(namingAsks).toHaveLength(0);
     await page.unroute('**/api/model-stages');
 
-    // A model is available: the one optional action, with its cost said.
+    // A model is available: the owner's page asks once by itself; refused, the plain names stand, no error.
     await page.route('**/api/model-stages', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: true, keySource: 'community' }) }),
     );
     await open(page, ids.po);
-    await expect(page.locator('[data-workspace-suggest-names]')).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-workspace-suggest-names] [data-cc-run-cost-model]')).toHaveText('Calls the model');
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    await expect.poll(() => namingAsks.length, { timeout: 60_000 }).toBe(1);
+    await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-names-note]')).toHaveCount(0);
+    await expect(page.locator('[data-process-map]')).not.toContainText('Not generated');
+    expect(namingAsks).toHaveLength(1);
+    namingAsks.length = 0;
 
     // A stored naming (the fixture of a model answer, as the route stores it):
     // the opening names the step by it and marks it as a model proposal.
@@ -455,6 +472,9 @@ test.describe('the Business view on screen', () => {
     await expect(step).toContainText('Check the buyer may approve', { timeout: 60_000 });
     await expect(page.locator('[data-first-look-business] [data-provenance="proposed"]').first()).toBeVisible();
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
+    // Named for this source already: nothing is asked again.
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    expect(namingAsks).toHaveLength(0);
   });
 
   test('a step answered from the Business view raises Confirmed; the walk resumes at the first open step; no Proven', async ({ page }) => {

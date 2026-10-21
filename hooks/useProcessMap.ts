@@ -15,7 +15,8 @@ import type { ProcessMapModel, ProcessMapRecord } from '@/lib/process-map';
  * the run signed** and from nothing else; the business names are fetched and
  * *applied* to that reading, so a naming made for an earlier source is shown as
  * not applied rather than drawn. No model is called from here — this view shows
- * what is already there, and asking for names is roadmap 2.4's own action.
+ * what is already there; the Business view asks for names automatically
+ * (`hooks/useAutoProcessNaming.ts`, owner decision 21.10.2026).
  *
  * The quote is measured by the server (`POST /api/projects/{id}/process-map`)
  * and only when the stored one is missing or belongs to other bytes. A number
@@ -108,8 +109,8 @@ export function useProcessMap(
   options?: {
     measure?: boolean;
     /**
-     * Bumped to read the stored naming again — after the reader asked a model
-     * for business names on this page (owner, 03.10.2026).
+     * Bumped to read the stored naming again — after the automatic naming of
+     * this page stored one (owner decision 21.10.2026).
      */
     reload?: number;
   },

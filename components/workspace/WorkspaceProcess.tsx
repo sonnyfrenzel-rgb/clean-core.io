@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { FileCode2, Tags } from 'lucide-react';
+import { FileCode2 } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -26,8 +26,7 @@ import { usePlainWording } from '@/hooks/usePlainWording';
 import { plainModelEnabled, walkPlainSentences } from '@/lib/plain-wording';
 import { isConfirmedState } from '@/lib/rules-editor';
 import { MAX_STATE_CHOICES, type ElementState } from '@/lib/process-states';
-import { namingContextOf } from '@/lib/process-naming';
-import { requestProcessNaming } from '@/lib/process-naming-client';
+import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -45,7 +44,7 @@ import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
-import { bizLinesLabel, bizNamesFailed, bizShowingLines, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, bizShowingLines, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 import type { DraftHolder } from '@/lib/process-map-draft';
 import FitMapMode from '@/components/fit/FitMapMode';
@@ -335,40 +334,22 @@ export default function WorkspaceProcess({
     window.addEventListener(OPEN_WALK_EVENT, hear);
     return () => window.removeEventListener(OPEN_WALK_EVENT, hear);
   }, [projectId, openAsked]);
-  const [naming, setNaming] = useState<{ busy: boolean; note: { state: 'success' | 'error'; text: string } | null }>({
-    busy: false,
-    note: null,
-  });
   /**
-   * The one optional model action of the map: offered to the owner, only when
-   * a model can be called for this stage right now — a key, and the naming
-   * stage switched on — and only while the map has no business names. Never a
-   * silent no-op: a refusal says why, beside the button.
+   * Business names, asked for automatically (owner decision 21.10.2026 — there
+   * is no button): once the map is drawn without a naming for this source, the
+   * owner's browser asks once, only when a model can be called for the naming
+   * right now. A stored naming is read into the map; a refusal leaves the plain
+   * names, with nothing said about it.
    */
-  const namesOffered =
-    owner &&
-    !!signed &&
-    availability.known &&
-    availability.keyAvailable &&
-    availability.stages.naming !== false &&
-    !!model &&
-    model.naming.state !== 'named';
-  const suggestNames = useCallback(async () => {
-    if (!signed || !projectId) return;
-    setNaming({ busy: true, note: null });
-    const outcome = await requestProcessNaming(projectId, namingContextOf(signed.source), {
-      known: availability.known,
-      keyAvailable: availability.keyAvailable,
-      stages: availability.stages,
-    });
-    if (outcome.ok) {
-      setNaming({ busy: false, note: { state: 'success', text: wt('biz.namesProposed') } });
-      setNamingRead((n) => n + 1);
-    } else {
-      setNaming({ busy: false, note: { state: 'error', text: bizNamesFailed(outcome.message) } });
-    }
-  }, [signed, projectId, availability.known, availability.keyAvailable, availability.stages]);
-  const namesCost = describeRunCost({ profile, metered: false, callsModel: true });
+  const bumpNaming = useCallback(() => setNamingRead((n) => n + 1), []);
+  useAutoProcessNaming({
+    projectId: projectId || null,
+    source: signed?.source ?? null,
+    owner: !!owner,
+    availability,
+    state: map.model?.naming.state ?? null,
+    onStored: bumpNaming,
+  });
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
     for (const element of model?.elements ?? []) out.set(element.id, element);
@@ -742,29 +723,7 @@ export default function WorkspaceProcess({
         >
           {wt('biz.needAndProcess')}
         </h2>
-        {namesOffered ? (
-          <div data-workspace-suggest-names="" className="cc-no-print flex flex-wrap items-center gap-2">
-            <CcButton
-              variant="ghost"
-              icon={<Tags size={16} aria-hidden={true} />}
-              busy={naming.busy}
-              onClick={() => void suggestNames()}
-              data-workspace-suggest-names-button=""
-            >
-              {naming.busy ? wt('biz.suggestingNames') : wt('biz.suggestNames')}
-            </CcButton>
-            <CcRunCost cost={namesCost} />
-          </div>
-        ) : null}
       </div>
-      {namesOffered && !naming.note ? (
-        <p className="m-0 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('biz.suggestNamesNote')}</p>
-      ) : null}
-      {naming.note ? (
-        <CcMessageStrip state={naming.note.state} announce={true}>
-          <span data-workspace-names-note={naming.note.state}>{naming.note.text}</span>
-        </CcMessageStrip>
-      ) : null}
       {/* The walk-through first (roadmap "3.0.20 — with it", part 1): the
           leading way into the process for a business reader, said in plain
           words before it asks; the map below selects the step on screen. */}

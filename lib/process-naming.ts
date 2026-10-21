@@ -848,3 +848,41 @@ export async function runNamingRequest(
     return { ok: false, absence: 'failed', message: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Asking automatically — owner decision 21.10.2026.
+ *
+ * There is no "Suggest business names" button any more. The business names are
+ * asked for the way the plain wording is (`lib/plain-wording.ts`): once per
+ * project and source, only from the owner's browser, only once the model
+ * availability is known, a key is there and the naming stage is on. What the
+ * route stores is what every reader sees; without a model, or with a refused
+ * answer, the engine's plain names stand and nothing is said about it.
+ * ------------------------------------------------------------------ */
+
+/** Sent on `window` once a naming was stored, with the project id as `detail`, so every reader of it on the page reads it again. */
+export const PROCESS_NAMING_STORED_EVENT = 'cc:process-naming-stored';
+
+/** The availability switch for the naming: the answer is in, a key is there, the naming stage is not off. */
+export function namingModelEnabled(availability: NamingAvailability | null | undefined): boolean {
+  return !!availability && availability.known && availability.keyAvailable && availability.stages[NAMING_STAGE] !== false;
+}
+
+/**
+ * Whether to ask for names at all: the owner, a model the account can call for
+ * the naming, a drawn map (`state` known) and no naming for exactly this
+ * reading of the source. A stored naming that names nothing is still a naming
+ * for this source: it is not asked for again.
+ */
+export function shouldAskNaming(input: { owner: boolean; modelEnabled: boolean; state: NamingState | null | undefined }): boolean {
+  if (!input.owner || !input.modelEnabled || !input.state) return false;
+  return input.state !== 'named';
+}
+
+/** Once per project and source digest in this browser, whatever the answer: a refusal is not retried on every render. */
+export function takeFirstNamingAsk(asked: Set<string>, projectId: string, sourceDigest: string): boolean {
+  const key = `${projectId}\u0000${sourceDigest}`;
+  if (asked.has(key)) return false;
+  asked.add(key);
+  return true;
+}
