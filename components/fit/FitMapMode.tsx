@@ -30,7 +30,7 @@ export function FitMapLists({ entries }: { entries: readonly FitEntry[] }) {
   const givenUp = entries.filter((e) => e.disposition === 'given-up');
   const gaps = entries.filter((e) => e.disposition === 'gap-open' || e.disposition === 'gap-key-user' || e.disposition === 'gap-organisational' || e.disposition === 'unknown');
   const row = (e: FitEntry) => (
-    <li key={e.elementId} data-fit-map-row={e.elementId} className="flex flex-col gap-0.5">
+    <li key={e.elementId} data-fit-map-row={e.elementId} className="flex flex-col gap-1">
       <span className="flex flex-wrap items-center gap-2">
         <FitDispositionMark disposition={e.disposition} />
         <span className="text-[13px] font-semibold text-cc-ink">{e.plainLabel ?? e.label}</span>

@@ -52,7 +52,7 @@ export function FitDispositionMark({ disposition }: { disposition: FitDispositio
   return (
     <span
       data-fit-disposition={disposition}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-[4px] border border-cc-line bg-cc-surface px-1.5 py-0.5 text-[12px] leading-none font-semibold text-cc-ink"
+      className="inline-flex shrink-0 items-center gap-1 rounded-[4px] border border-cc-line bg-cc-surface px-2 py-0.5 text-[12px] leading-none font-semibold text-cc-ink"
     >
       <span aria-hidden={true} className={`inline-block h-2.5 w-2.5 rounded-[2px] ${SWATCH[disposition]}`} />
       <span aria-hidden={true}>{d.mark}</span>
@@ -87,7 +87,7 @@ function Row({
 }) {
   const shown = draft?.disposition ?? entry.disposition;
   return (
-    <li data-fit-entry={entry.elementId} className="flex flex-col gap-1.5 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2">
+    <li data-fit-entry={entry.elementId} className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <FitDispositionMark disposition={shown} />
         <span className="min-w-0 flex-1 text-[14px] leading-snug font-semibold text-cc-ink">{entry.plainLabel ?? entry.label}</span>

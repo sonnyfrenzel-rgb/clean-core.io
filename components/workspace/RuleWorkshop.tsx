@@ -38,7 +38,7 @@ export default function RuleWorkshop({
   const view = useMemo(() => workshopView(explanation, entries), [explanation, entries]);
 
   const line = (d: WorkshopDecision, extra?: React.ReactNode) => (
-    <li key={`${d.id}-${d.at}`} data-workshop-decision={d.id} className="flex min-w-0 flex-col gap-0.5 border-t border-cc-line py-2">
+    <li key={`${d.id}-${d.at}`} data-workshop-decision={d.id} className="flex min-w-0 flex-col gap-1 border-t border-cc-line py-2">
       <span className="flex flex-wrap items-center gap-2">
         <code className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{d.id}</code>
         <span className="text-[13px] font-semibold text-cc-ink">{titleOf(d.id)}</span>
@@ -66,7 +66,7 @@ export default function RuleWorkshop({
         ) : (
           <ul className="m-0 flex list-none flex-col p-0">
             {view.open.map((o) => (
-              <li key={o.id} data-workshop-open={o.id} className="flex min-w-0 flex-col gap-0.5 border-t border-cc-line py-2">
+              <li key={o.id} data-workshop-open={o.id} className="flex min-w-0 flex-col gap-1 border-t border-cc-line py-2">
                 <span className="flex flex-wrap items-center gap-2">
                   <code className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{o.id}</code>
                   <span className="text-[13px] font-semibold text-cc-ink">{titleOf(o.id)}</span>
