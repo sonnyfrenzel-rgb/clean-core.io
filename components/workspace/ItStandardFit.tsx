@@ -7,6 +7,7 @@ import type { WorkspaceLayer } from '@/lib/workspace-model';
 import type { Project } from '@/lib/types';
 import { layerSectionShowing } from '@/lib/workspace-messages';
 import StandardFitTable from './StandardFitTable';
+import FitGateReason from '@/components/fit/FitGateReason';
 
 /**
  * *Standard fit* as one of the IT view's own sections (owner, 12.10.2026,
@@ -34,9 +35,28 @@ export default function ItStandardFit({
   live: boolean;
 }) {
   const empty = layer.rows.length === 0;
+  // Roadmap 3.0.20 (owner decision 2): the fit-to-standard gate's reason stands here, in IT only.
+  const gate = live && projectId !== '' ? <FitGateReason project={project} projectId={projectId} /> : null;
   if (!empty && live && projectId !== '') {
-    return <StandardFitTable project={project} projectId={projectId} />;
+    return (
+      <div className="flex min-w-0 flex-col gap-3">
+        {gate}
+        <StandardFitTable project={project} projectId={projectId} />
+      </div>
+    );
   }
+  if (gate) {
+    return (
+      <div className="flex min-w-0 flex-col gap-3">
+        {gate}
+        {cardOf(layer, empty)}
+      </div>
+    );
+  }
+  return cardOf(layer, empty);
+}
+
+function cardOf(layer: WorkspaceLayer, empty: boolean) {
   return (
     <CcCard
       title={layer.label}

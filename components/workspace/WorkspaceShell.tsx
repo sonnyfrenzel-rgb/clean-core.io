@@ -23,6 +23,7 @@ import NextStepCard from './NextStepCard';
 import UsageRecords from './UsageRecords';
 import BusinessNextStep from './BusinessNextStep';
 import TargetReferenceLine from './TargetReferenceLine';
+import FitToStandardOffer from '@/components/fit/FitToStandardOffer';
 import WorkspaceHub from './WorkspaceHub';
 import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
@@ -937,6 +938,9 @@ export default function WorkspaceShell({
         {/* Business: the target and its SAP reference pattern, one line
             (roadmap 3.0.9, ADR-089). Management says it beside the decision. */}
         {view === 'business' ? <TargetReferenceLine project={project} /> : null}
+        {/* Roadmap 3.0.20: the fit-to-standard offer, where the gate offers it —
+            Business and Management only; IT names the gate's reason in #standard. */}
+        {view !== 'it' ? <FitToStandardOffer project={project} projectId={projectId} /> : null}
       </div>
     ),
     // Business only: the business rules, once, in their own card under the map
