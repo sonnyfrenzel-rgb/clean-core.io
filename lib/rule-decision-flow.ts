@@ -22,7 +22,7 @@
  * A proposal decides nothing. An answer is the self-declaration of the
  * signed-in account, never part of the signed run.
  */
-import type { ProcessStateView, StateChoiceInput, StateEntry, ValueSourceKind } from './process-states';
+import { VALUE_SOURCE_LABELS, sameAnswer, type ProcessStateView, type StateChoiceInput, type StateEntry, type ValueSourceKind } from './process-states';
 import {
   RULE_PROPOSAL_LABELS,
   type ImpactLevel,
@@ -303,13 +303,33 @@ export interface RuleChange {
   by: string;
   at: string;
   revision: number;
+  /** What else moved with the answer: the value source, "also applies to" — in words; empty when nothing did. */
+  details: string[];
+}
+
+const sourceWords = (v: StateEntry['valueSource']) => (v ? `${VALUE_SOURCE_LABELS[v.kind]}${v.note ? ` (${v.note})` : ''}` : 'none');
+const listWords = (v: string[] | undefined) => [...(v ?? [])].sort().join(', ') || 'none';
+
+/** The parts of an answer besides its word and note that differ between two entries, in words. */
+function answerDetails(before: StateEntry, after: StateEntry): string[] {
+  const out: string[] = [];
+  if (sourceWords(before.valueSource) !== sourceWords(after.valueSource)) {
+    out.push(`Value source: ${sourceWords(before.valueSource)} → ${sourceWords(after.valueSource)}`);
+  }
+  if (listWords(before.appliesTo) !== listWords(after.appliesTo)) {
+    out.push(`Also applies to: ${listWords(before.appliesTo)} → ${listWords(after.appliesTo)}`);
+  }
+  return out;
 }
 
 /**
  * Per rule, every answer that replaced an earlier one — earlier answer → new
  * answer, who and when — newest first. Read from the answers as they were made
  * (`ruleAnswersMade`); a first answer replaced nothing and is not a change, and
- * an answer given again with the same words is none either.
+ * an answer given again the same in every part (`sameAnswer`: state, note,
+ * value source, "also applies to", the answer) is none either. A moved value
+ * source or "also applies to" under the same word is a change, said in
+ * `details` (QA review of 45ab7b5f6a4c).
  */
 export function ruleChanges(explanation: Pick<RuleSetExplanation, 'order'>, made: readonly StateEntry[]): RuleChange[] {
   const known = new Set(explanation.order);
@@ -327,7 +347,9 @@ export function ruleChanges(explanation: Pick<RuleSetExplanation, 'order'>, made
       const from = decisionKindOf(before);
       const to = decisionKindOf(after);
       if (!from || !to) continue;
-      if (from === to && shownNote(before.note) === shownNote(after.note)) continue;
+      if (sameAnswer(before, after)) continue;
+      const details = answerDetails(before, after);
+      if (from === to && shownNote(before.note) === shownNote(after.note) && details.length === 0) continue;
       out.push({
         id,
         from,
@@ -337,6 +359,7 @@ export function ruleChanges(explanation: Pick<RuleSetExplanation, 'order'>, made
         by: after.account.name,
         at: after.confirmedAt,
         revision: after.revision,
+        details,
       });
     }
   }

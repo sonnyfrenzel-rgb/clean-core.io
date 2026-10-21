@@ -131,6 +131,11 @@ export default function RuleWorkshop({
                   <span>{c.by}</span>
                   <CcDateText value={c.at} format="text" />
                 </span>
+                {c.details.map((d) => (
+                  <span key={d} data-workshop-change-detail="" className="text-[12px] leading-snug font-medium text-cc-ink">
+                    {d}
+                  </span>
+                ))}
                 {c.fromNote || c.note ? (
                   <span className="text-[12px] leading-snug font-medium text-cc-ink">
                     {c.fromNote ? <span className="text-cc-ink-muted line-through decoration-cc-ink-muted">{c.fromNote}</span> : null}

@@ -5,6 +5,7 @@ import {
   plainItemsOf,
   plainLookup,
   shouldAskPlainWording,
+  takeFirstAsk,
   type PlainRange,
   type PlainScope,
   type PlainWordingRecord,
@@ -40,7 +41,8 @@ export function usePlainWording(input: {
   const { projectId, scope, source, sentences, owner, active, modelEnabled, initial = null } = input;
   const [record, setRecord] = useState<PlainWordingRecord | null>(initial);
   const [asking, setAsking] = useState(false);
-  const asked = useRef<string | null>(null);
+  // Every project and digest asked for in this browser session (QA review of 45ab7b5f6a4c): one per project, never again for the same one.
+  const asked = useRef<Set<string>>(new Set<string>());
 
   const items = useMemo(() => (sentences ? plainItemsOf(sentences) : []), [sentences]);
   const digest = useMemo(() => (source && items.length ? plainDigestOf(scope, source, items) : ''), [scope, source, items]);
@@ -54,9 +56,8 @@ export function usePlainWording(input: {
       if (cancelled) return;
       setRecord(stored);
       if (!shouldAskPlainWording({ owner, modelEnabled, items: items.length, record: stored, digest })) return;
-      // Once per digest in this browser, whatever the answer: a refusal is not retried on every render.
-      if (asked.current === digest) return;
-      asked.current = digest;
+      // Once per project, scope and digest in this browser, whatever the answer: a refusal is not retried on every render.
+      if (!takeFirstAsk(asked.current, projectId, scope, digest)) return;
       setAsking(true);
       const fresh = await client.requestPlainWording(projectId, scope, digest, items);
       if (cancelled) return;
