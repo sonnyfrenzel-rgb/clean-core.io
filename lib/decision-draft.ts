@@ -51,7 +51,9 @@ import {
   type DecisionCostCheck,
   type OutdatedReason,
 } from './decision-cost';
-import { buildProjectDecision, type NeedOpenParts, type SignOffBasis } from './project-decision-build';
+import { buildProjectDecision, type NeedOpenParts, type SignOffBasis, type StandardDesignBasis } from './project-decision-build';
+import { fitDesignDigest, type FitToStandardSummary } from './fit-to-standard-store';
+import { fitDesignSummary } from './fit-to-standard-design';
 import { FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT } from './sap-naming';
 import {
   normaliseProjectDecision,
@@ -103,8 +105,29 @@ export interface DecisionDraftFacts {
    * check is made and nothing is said about costs.
    */
   economics?: EconomicsRecord | null;
+  /**
+   * Roadmap 3.0.20, F9: the confirmed fit-to-standard design on the current run
+   * (`confirmedFitDesign(project)`), or `null`/absent. Bound only by a decision
+   * for "Move to SAP standard" — that one is written in format 2.
+   */
+  fitDesign?: FitToStandardSummary | null;
   /** Server clock, ISO 8601. */
   now: string;
+}
+
+/** The summary of a confirmed design as a format-2 decision binds it. */
+export function standardDesignBasisOf(summary: FitToStandardSummary | null | undefined): StandardDesignBasis | null {
+  if (!summary || !summary.confirmed) return null;
+  return {
+    revision: summary.revision,
+    runId: summary.runId,
+    digest: fitDesignDigest(summary),
+    againstGate: summary.againstGate,
+    summaryLine: fitDesignSummary(summary.counts),
+    confirmedBy: summary.confirmedBy,
+    confirmedAt: summary.confirmedAt,
+    conditions: summary.conditions.map((c) => ({ elementId: c.elementId, basis: c.basis, disposition: c.disposition, text: c.text })),
+  };
 }
 
 /** A stored decision as the card reads it: the normalised record plus the server's status and confirmation. */
@@ -185,6 +208,7 @@ function draftAt(facts: DecisionDraftFacts, revision: number, draftedAt: string)
     need: facts.need,
     handedOver: facts.handedOver,
     signOff: facts.signOff,
+    standardDesign: standardDesignBasisOf(facts.fitDesign),
     timeline: {
       runSignedAt: facts.runSignedAt,
       draftedAt,

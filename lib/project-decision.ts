@@ -73,8 +73,27 @@ import { referenceDigest, type ManifestInput } from './input-manifest';
 import { PROVENANCE, type ProvenanceValue } from './provenance';
 import type { OptionKind } from './cost-assumptions';
 
-/** Format of the decision record. Bumped only when the canonical form changes. */
+/**
+ * Format 1 of the decision record: five bindings. Every decision whose option is
+ * not "Move to SAP standard" is still written in it, so a decision on record
+ * keeps its bytes, its fingerprint and its revision the day format 2 arrived.
+ */
 export const DECISION_VERSION = 1;
+
+/**
+ * Format 2 (roadmap 3.0.20, step F9; owner decision 21.10.2026): a sixth
+ * binding, `standard-design` — the confirmed fit-to-standard design the
+ * decision stands on — and the design's gaps as conditions inside the record
+ * (`fit-gap`, derived: an open gap cannot be attested away). Written for the
+ * option "Move to SAP standard" and for nothing else; format 1 has nothing it
+ * could carry them in. A reader accepts both (`DECISION_VERSIONS`); a format-1
+ * record is read, hashed and fingerprinted exactly as before.
+ */
+export const DECISION_VERSION_2 = 2;
+
+/** The formats a reader accepts. */
+export const DECISION_VERSIONS = [DECISION_VERSION, DECISION_VERSION_2] as const;
+export type DecisionVersion = (typeof DECISION_VERSIONS)[number];
 
 /**
  * The one sentence this whole step is about, and it is not written here.
@@ -90,9 +109,17 @@ export const SELF_DECLARATION = PROVENANCE.confirmed.meaning;
 
 /* ---------------------------------------------------------------- bindings */
 
-/** What a decision binds, in the order the card reads them (mockup: "Binds"). */
+/** What a format-1 decision binds, in the order the card reads them (mockup: "Binds"). */
 export const DECISION_BINDINGS = ['need', 'option', 'cost', 'contract', 'run'] as const;
-export type DecisionBindingKey = (typeof DECISION_BINDINGS)[number];
+
+/** What a format-2 decision binds: the five, then the fit-to-standard design. Appended, never inserted. */
+export const DECISION_BINDINGS_V2 = [...DECISION_BINDINGS, 'standard-design'] as const;
+export type DecisionBindingKey = (typeof DECISION_BINDINGS_V2)[number];
+
+/** The bindings of a record of this format, in canonical order. */
+export function decisionBindingsOf(version: number): readonly DecisionBindingKey[] {
+  return version === DECISION_VERSION_2 ? DECISION_BINDINGS_V2 : DECISION_BINDINGS;
+}
 
 export const DECISION_BINDING_LABELS: Readonly<Record<DecisionBindingKey, string>> = Object.freeze({
   need: 'Need revision',
@@ -100,7 +127,18 @@ export const DECISION_BINDING_LABELS: Readonly<Record<DecisionBindingKey, string
   cost: 'Cost revision',
   contract: 'Architecture contract',
   run: 'Analysis run',
+  'standard-design': 'Fit-to-standard design',
 });
+
+/**
+ * The `standard-design` binding's revision: `fit/r<revision>@<run>+<digest>`,
+ * with `against-gate:` in front when the design was made although the gate did
+ * not offer it (owner decision 3 of 18.10.2026 — it never counts as a
+ * recommendation, so the decision is carried as qualified). For an option that
+ * is not "Move to SAP standard" no format-2 record is written at all.
+ */
+export const STANDARD_DESIGN_PREFIX = 'fit/r';
+export const AGAINST_GATE_PREFIX = 'against-gate:';
 
 export interface DecisionBinding {
   key: DecisionBindingKey;
@@ -133,12 +171,16 @@ export interface DecisionBinding {
 /**
  * Where a condition came from — and therefore who may move its status.
  *
- * The first four are derived from evidence and the account cannot set them;
- * `account` is the reader's own condition and only the account sets it. The
- * distinction is not cosmetic: a product whose blockers can be clicked away is
- * a product whose blockers mean nothing.
+ * `contract-limit`, `cost-gap` and `need-open` are derived from evidence and
+ * the account cannot set them; `account` is the reader's own condition and only
+ * the account sets it. `fit-gap` (format 2 only) is a gap of the confirmed
+ * fit-to-standard design — an open gap, a step the engine cannot read, a
+ * key-user extension or an organisational change still to make — derived from
+ * the design, so it cannot be attested away (owner decision 7 of 18.10.2026).
+ * The distinction is not cosmetic: a product whose blockers can be clicked away
+ * is a product whose blockers mean nothing. Appended, never inserted.
  */
-export const CONDITION_SOURCES = ['contract-limit', 'cost-gap', 'need-open', 'account'] as const;
+export const CONDITION_SOURCES = ['contract-limit', 'cost-gap', 'need-open', 'account', 'fit-gap'] as const;
 export type ConditionSource = (typeof CONDITION_SOURCES)[number];
 
 export const CONDITION_STATUSES = ['open', 'met', 'waived', 'not-determined'] as const;
@@ -317,7 +359,7 @@ export interface DecisionConfirmation {
 }
 
 export interface ProjectDecision {
-  decisionVersion: typeof DECISION_VERSION;
+  decisionVersion: DecisionVersion;
   /** `DEC-1`, `DEC-2` … the decision's name inside the project. */
   decisionId: string;
   /** The mockup's "revision 3". A change is a new revision, never an edit. */
@@ -329,7 +371,7 @@ export interface ProjectDecision {
   boundRunId: string;
   /** `evidenceDigest()` of that run, as the reader saw it. */
   boundEvidenceDigest: string;
-  /** In `DECISION_BINDINGS` order. All five, always. */
+  /** In `decisionBindingsOf(decisionVersion)` order. All five (format 1) or six (format 2), always. */
   bindings: DecisionBinding[];
   /** Sorted by id. May be empty — and an empty list is a statement, not a gap. */
   conditions: DecisionCondition[];
@@ -373,6 +415,10 @@ export const DECISION_GAP_CODES = [
   'condition-open',
   /** Reversibility could not be determined. */
   'reversibility-not-determined',
+  /** Format 2: "Move to SAP standard" with no confirmed fit-to-standard design on the current run. */
+  'standard-design-not-bound',
+  /** Format 2: the bound fit-to-standard design was made against the gate. */
+  'standard-design-against-gate',
 ] as const;
 export type DecisionGapCode = (typeof DECISION_GAP_CODES)[number];
 
@@ -426,6 +472,10 @@ const GAP_SENTENCES: Record<DecisionGapCode, (subject: string | null) => string>
     s ? `An open condition is carried with the decision rather than resolved by it: ${s}` : 'A condition is open and is carried with the decision rather than resolved by it.',
   'reversibility-not-determined': (s) =>
     `Whether this decision can be reversed is not determined: ${s ?? 'the reason is recorded with the answer.'}`,
+  'standard-design-not-bound': () =>
+    'No confirmed fit-to-standard design stands behind this decision, so what living with SAP standard gives up is not on record. It may still be confirmed, and it is carried as qualified.',
+  'standard-design-against-gate': () =>
+    'The fit-to-standard design this decision binds was made on request against the gate: the engine does not recommend this path for this program, and the design never counts as a recommendation.',
 };
 
 /** `wording` is what the sentence says when the subject is a key a reader should not be shown (a condition's id). */
@@ -573,6 +623,14 @@ export function decisionCoverage(decision: ProjectDecision | null | undefined): 
     gaps.push(gap('reversibility-not-determined', 'qualifies', decision.reversibility.reason));
   }
 
+  // Format 2 only: a format-1 record carries no such binding and gains no gap.
+  const design = bindingOf(decision, 'standard-design');
+  if (design && design.revision === null) {
+    gaps.push(gap('standard-design-not-bound', 'qualifies', null));
+  } else if (design?.revision?.startsWith(AGAINST_GATE_PREFIX)) {
+    gaps.push(gap('standard-design-against-gate', 'qualifies', design.revision));
+  }
+
   gaps.sort((a, b) => a.code.localeCompare(b.code) || (a.subject || '').localeCompare(b.subject || ''));
   const state: DecisionState = gaps.some((g) => g.severity === 'blocks')
     ? 'blocked'
@@ -631,7 +689,8 @@ export function canonicalProjectDecision(decision: ProjectDecision): string {
       sha256Hex(decision.reversibility.reason),
     ),
   ];
-  for (const key of DECISION_BINDINGS) {
+  // Format 1 iterates its five keys exactly as it always did, so its bytes do not move.
+  for (const key of decisionBindingsOf(decision.decisionVersion)) {
     const binding = decision.bindings.find((b) => b.key === key);
     if (!binding) {
       lines.push(line('bind', key, 'absent'));
@@ -690,7 +749,7 @@ function legacyCanonicalProjectDecision(decision: ProjectDecision): string {
       decision.reversibility.boundary ?? '',
     )};why=${sha256Hex(decision.reversibility.reason)}`,
   ];
-  for (const key of DECISION_BINDINGS) {
+  for (const key of decisionBindingsOf(decision.decisionVersion)) {
     const binding = decision.bindings.find((b) => b.key === key);
     if (!binding) {
       lines.push(`bind=${key};absent`);
@@ -833,10 +892,10 @@ function isIsoInstant(value: string): boolean {
   return new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
 }
 
-function readBinding(value: unknown): DecisionBinding | null {
+function readBinding(value: unknown, version: DecisionVersion): DecisionBinding | null {
   if (!isPlainObject(value)) return null;
   const key = value.key;
-  if (typeof key !== 'string' || !(DECISION_BINDINGS as readonly string[]).includes(key)) return null;
+  if (typeof key !== 'string' || !(decisionBindingsOf(version) as readonly string[]).includes(key)) return null;
   const revision = typeof value.revision === 'string' ? str(value.revision) : null;
   const reason = typeof value.notDeterminedReason === 'string' ? str(value.notDeterminedReason) : null;
   // The invariant the type states, enforced rather than assumed: exactly one of
@@ -855,7 +914,7 @@ function readBinding(value: unknown): DecisionBinding | null {
   };
 }
 
-function readCondition(value: unknown): DecisionCondition | null {
+function readCondition(value: unknown, version: DecisionVersion): DecisionCondition | null {
   if (!isPlainObject(value)) return null;
   const id = str(value.id, 300);
   const text = str(value.text);
@@ -864,6 +923,8 @@ function readCondition(value: unknown): DecisionCondition | null {
   const basis = value.statusBasis;
   if (!id || !text) return null;
   if (typeof source !== 'string' || !(CONDITION_SOURCES as readonly string[]).includes(source)) return null;
+  // A gap of a fit-to-standard design exists only in format 2; a format-1 record carrying one was not written here.
+  if (source === 'fit-gap' && version !== DECISION_VERSION_2) return null;
   if (typeof status !== 'string' || !(CONDITION_STATUSES as readonly string[]).includes(status)) return null;
   if (basis !== 'derived' && basis !== 'attested') return null;
   const provenance = value.provenance;
@@ -944,9 +1005,10 @@ export function normaliseProjectDecision(
   value: unknown,
 ): { ok: true; decision: ProjectDecision } | { ok: false; error: string } {
   if (!isPlainObject(value)) return { ok: false, error: 'decision must be an object.' };
-  if (value.decisionVersion !== DECISION_VERSION) {
-    return { ok: false, error: `decision.decisionVersion must be ${DECISION_VERSION}.` };
+  if (!(DECISION_VERSIONS as readonly unknown[]).includes(value.decisionVersion)) {
+    return { ok: false, error: `decision.decisionVersion must be ${DECISION_VERSIONS.join(' or ')}.` };
   }
+  const version = value.decisionVersion as DecisionVersion;
   const decisionId = str(value.decisionId, 100);
   if (!decisionId) return { ok: false, error: 'decision.decisionId is missing.' };
   const revision = value.revision;
@@ -961,9 +1023,9 @@ export function normaliseProjectDecision(
 
   if (!Array.isArray(value.bindings)) return { ok: false, error: 'decision.bindings must be a list.' };
   const bindings: DecisionBinding[] = [];
-  for (const key of DECISION_BINDINGS) {
+  for (const key of decisionBindingsOf(version)) {
     const raw = (value.bindings as unknown[]).find((b) => isPlainObject(b) && b.key === key);
-    const binding = readBinding(raw);
+    const binding = readBinding(raw, version);
     if (!binding) return { ok: false, error: `decision.bindings is missing a readable "${key}" binding.` };
     bindings.push(binding);
   }
@@ -974,7 +1036,7 @@ export function normaliseProjectDecision(
   }
   const conditions: DecisionCondition[] = [];
   for (const row of value.conditions) {
-    const condition = readCondition(row);
+    const condition = readCondition(row, version);
     if (!condition) return { ok: false, error: 'decision.conditions holds a row this server cannot read.' };
     conditions.push(condition);
   }
@@ -1002,7 +1064,7 @@ export function normaliseProjectDecision(
   }
 
   const decision: ProjectDecision = {
-    decisionVersion: DECISION_VERSION,
+    decisionVersion: version,
     decisionId,
     revision,
     status: 'draft',

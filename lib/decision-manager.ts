@@ -65,6 +65,8 @@ export const DECISION_PLACE_IDS = Object.freeze({
   itStandardFit: 'standard',
   /** The options compared in Economics (`app/(app)/project/[projectId]/tco/page.tsx`). */
   economicsCompare: 'economics-compare',
+  /** The fit-to-standard design on the Design stage (`FIT_SECTION_ID`, `components/fit/FitToStandardView.tsx`). */
+  fitToStandard: 'fit-to-standard',
 });
 
 export type PillarKey = 'need' | 'option' | 'cost' | 'contract';
@@ -451,6 +453,15 @@ export function decisionPoint(c: DecisionCondition): DecisionPoint {
       place: needPlace(open),
     };
   }
+  if (c.source === 'fit-gap') {
+    // Roadmap 3.0.20, F9: a gap of the confirmed fit-to-standard design, derived — it
+    // stays open with the decision and is resolved in the design, never attested here.
+    return {
+      ...base,
+      line: withoutSourcePaths(firstSentence(c.text)),
+      place: { kind: 'stage', path: 'design', hash: DECISION_PLACE_IDS.fitToStandard, action: 'Open the fit-to-standard design' },
+    };
+  }
   if (c.source === 'cost-gap') {
     return { ...base, line: `Costs: ${withoutSourcePaths(firstSentence(c.text))}`, place: { kind: 'stage', path: 'tco' } };
   }
@@ -612,6 +623,8 @@ const PILLAR_OF_SOURCE: Readonly<Record<ConditionSource, PillarKey | null>> = {
   'cost-gap': 'cost',
   'contract-limit': 'contract',
   account: null,
+  // Its own place after the four rows: the design, not one of the foundations.
+  'fit-gap': null,
 };
 
 /**

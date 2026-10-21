@@ -10,8 +10,11 @@
  */
 
 import {
+  AGAINST_GATE_PREFIX,
   DECISION_BINDINGS,
   SELF_DECLARATION,
+  STANDARD_DESIGN_PREFIX,
+  decisionBindingsOf,
   decisionCoverage,
   noContractBasis,
   type ConditionStatus,
@@ -27,6 +30,11 @@ import { sapNamesForDisplay } from './sap-naming';
 
 /** The four bindings the "Binds" line names, in the mockup's order. The run has its own line. */
 export const CARD_BINDINGS: readonly DecisionBindingKey[] = DECISION_BINDINGS.filter((k) => k !== 'run');
+
+/** The bindings the card names for a record of this format: format 2 adds the fit-to-standard design. */
+export function cardBindingsOf(decision: Pick<ProjectDecision, 'decisionVersion'>): readonly DecisionBindingKey[] {
+  return decisionBindingsOf(decision.decisionVersion).filter((k) => k !== 'run');
+}
 
 export interface CardBinding {
   key: DecisionBindingKey;
@@ -48,6 +56,7 @@ const SHORT_LABEL: Readonly<Record<DecisionBindingKey, string>> = Object.freeze(
   cost: 'cost revision',
   contract: 'contract',
   run: 'analysis run',
+  'standard-design': 'fit-to-standard design',
 });
 
 export const CONDITION_STATUS_LABEL: Readonly<Record<ConditionStatus, string>> = Object.freeze({
@@ -149,6 +158,13 @@ export function bindingShown(key: DecisionBindingKey, revision: string): string 
     ];
     return `${parts.join(', ')}${unconfirmed ? ' — not all assumptions confirmed' : ''}`;
   }
+  if (key === 'standard-design') {
+    const against = revision.startsWith(AGAINST_GATE_PREFIX);
+    const rest = against ? revision.slice(AGAINST_GATE_PREFIX.length) : revision;
+    const m = rest.startsWith(STANDARD_DESIGN_PREFIX) ? /^(\d+)@/.exec(rest.slice(STANDARD_DESIGN_PREFIX.length)) : null;
+    if (!m) return revision;
+    return `revision ${m[1]}, confirmed by you${against ? ' — made against the gate, never a recommendation' : ''}`;
+  }
   // The option binding carries the stored label bytes (`lib/decision-draft.ts`).
   return sapNamesForDisplay(revision);
 }
@@ -184,7 +200,7 @@ export function conditionsSummary(conditions: readonly DecisionCondition[]): str
 
 export function decisionCardView(decision: ProjectDecision): DecisionCardView {
   const coverage = decisionCoverage(decision);
-  const bindings = CARD_BINDINGS.map((key) => binding(decision, key));
+  const bindings = cardBindingsOf(decision).map((key) => binding(decision, key));
   const run = binding(decision, 'run');
 
   const r = decision.reversibility;

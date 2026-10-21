@@ -11,6 +11,7 @@ import {
 import type { FitGateClass } from './fit-to-standard-gate';
 import type { ElementState } from './process-states';
 import type { ObjectDropDecision } from './abap/public-cloud-fit';
+import { sha256Hex } from './artefact-digest';
 
 /**
  * Stored fit-to-standard designs — roadmap 3.0.20, step F3
@@ -316,6 +317,31 @@ export function isFitToStandardSummary(value: unknown): value is FitToStandardSu
     && (s.edition === 'public' || s.edition === 'private')
     && Array.isArray(s.conditions)
     && !!s.counts && typeof s.counts === 'object';
+}
+
+/**
+ * SHA-256 over what a format-2 decision binds of the design (roadmap 3.0.20,
+ * F9): its revision, the run and source it stands on, the edition, whether it
+ * was made against the gate, its counts and every condition. Computed from the
+ * server-written summary, so the decision route and the confirmation derive
+ * the same value. No grade, no view: neither is in the summary.
+ */
+export function fitDesignDigest(summary: FitToStandardSummary): string {
+  const c = summary.counts;
+  return sha256Hex(
+    JSON.stringify([
+      'fit-design/1',
+      summary.revision,
+      summary.runId,
+      summary.sourceSha256,
+      summary.edition,
+      summary.againstGate,
+      [c.elements, c.givenUp, c.covered, c.configuration, c.gapKeyUser, c.gapOrganisational, c.gapOpen, c.goesWithProgram, c.unknown],
+      summary.conditions.map((x) => [x.elementId, x.basis, x.disposition, x.text, x.anchor ? [x.anchor.lineStart, x.anchor.lineEnd] : null]),
+      summary.confirmedBy,
+      summary.confirmedAt,
+    ]),
+  );
 }
 
 /** Does the summary stand on this project's current run and source? Anything else is stale. */

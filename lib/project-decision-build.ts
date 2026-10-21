@@ -36,8 +36,11 @@ import {
 } from './cost-assumptions';
 import { sha256Hex } from './artefact-digest';
 import {
+  AGAINST_GATE_PREFIX,
   DECISION_BINDING_LABELS,
   DECISION_VERSION,
+  DECISION_VERSION_2,
+  STANDARD_DESIGN_PREFIX,
   NO_CONTRACT_PREFIX,
   SELF_DECLARATION,
   SIGN_OFF_NOT_CURRENT_PREFIX,
@@ -200,6 +203,74 @@ export interface BuildDecisionArgs {
   signOff?: SignOffBasis | null;
   attestations?: readonly ConditionAttestation[];
   timeline: DecisionTimelineFacts;
+  /**
+   * Roadmap 3.0.20, F9: the confirmed fit-to-standard design on the current run
+   * (`confirmedFitDesign`), or `null`/absent when there is none. Read only when
+   * the chosen option is "Move to SAP standard": that decision is written in
+   * format 2 and binds it (or says it binds none); every other decision stays
+   * format 1 and never looks at it.
+   */
+  standardDesign?: StandardDesignBasis | null;
+}
+
+/** What a format-2 decision binds of a confirmed fit-to-standard design — the summary the server wrote. */
+export interface StandardDesignBasis {
+  revision: number;
+  runId: string | null;
+  /** `fitDesignDigest(summary)`. */
+  digest: string;
+  againstGate: boolean;
+  /** "3 given up, 2 gaps (1 key user, 0 organisational, 1 open)". */
+  summaryLine: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  conditions: ReadonlyArray<{
+    elementId: string;
+    basis: 'derived' | 'stated';
+    disposition: string;
+    text: string;
+  }>;
+}
+
+/**
+ * The `standard-design` binding of a format-2 decision: the design by revision,
+ * run and digest — or *not determined*, which `decisionCoverage()` carries as
+ * qualified. Never a level, never a view: the summary carries neither.
+ */
+function standardDesignBinding(design: StandardDesignBasis | null | undefined): DecisionBinding {
+  if (!design) {
+    return notDetermined(
+      'standard-design',
+      'No confirmed fit-to-standard design stands on the current analysis run. "Move to SAP standard" is decided without one and says so: what living with the standard gives up is not on record.',
+    );
+  }
+  const revision = `${design.againstGate ? AGAINST_GATE_PREFIX : ''}${STANDARD_DESIGN_PREFIX}${design.revision}@${design.runId ?? 'no-run'}+${design.digest.slice(0, 12)}`;
+  const who = design.confirmedBy ? ` by ${design.confirmedBy}` : '';
+  const when = design.confirmedAt ? ` on ${design.confirmedAt.slice(0, 10)}` : '';
+  return bound(
+    'standard-design',
+    revision,
+    'confirmed',
+    `${design.summaryLine}. Confirmed${who}${when} — a self-declaration after the fit-to-standard workshop, not a proof that SAP standard covers a step.${
+      design.againstGate ? ' Made on request against the gate: the engine does not recommend this path, and the design never counts as a recommendation.' : ''
+    }`,
+  );
+}
+
+/** A gap of the bound design as a condition of the decision — derived, open, never attestable (owner decision 7). */
+function conditionFromFitGap(design: StandardDesignBasis, c: StandardDesignBasis['conditions'][number]): DecisionCondition {
+  return {
+    id: `fit:${c.elementId}`,
+    text: c.text,
+    source: 'fit-gap',
+    status: 'open',
+    statusBasis: 'derived',
+    evidence: `${STANDARD_DESIGN_PREFIX}${design.revision}:${c.disposition}:${c.elementId}`,
+    // Where the sentence comes from: an open or unreadable step is the engine's
+    // reading; a key-user or organisational gap is what the account stated in the design.
+    provenance: c.basis === 'derived' ? 'reconstructed' : 'confirmed',
+    attestation: null,
+  };
 }
 
 /** What the need condition counts (ADR-085): rules and decision points without a business answer. */
@@ -344,6 +415,12 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
       : notDetermined('run', 'This decision names no signed analysis run, so it binds no evidence.'),
   );
 
+  // Format 2 (roadmap 3.0.20, F9): only "Move to SAP standard" binds a
+  // fit-to-standard design. Every other option stays format 1, byte for byte.
+  const formatTwo = chosenKind === 'standard';
+  const design = formatTwo ? (args.standardDesign ?? null) : null;
+  if (formatTwo) bindings.push(standardDesignBinding(design));
+
   /* ---- conditions: derived first, then what the account said about its own ---- */
 
   const conditions: DecisionCondition[] = [];
@@ -379,6 +456,10 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
       provenance: 'reconstructed',
       attestation: null,
     });
+  }
+  // Format 2: every gap of the bound design travels as a condition of the decision.
+  if (design) {
+    for (const c of design.conditions) conditions.push(conditionFromFitGap(design, c));
   }
 
   // The account's own conditions. A derived condition is never overwritten by
@@ -431,7 +512,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
   timeline.sort((a, b) => a.at.localeCompare(b.at) || (order.get(a.kind) ?? 0) - (order.get(b.kind) ?? 0));
 
   const decision: ProjectDecision = {
-    decisionVersion: DECISION_VERSION,
+    decisionVersion: formatTwo ? DECISION_VERSION_2 : DECISION_VERSION,
     decisionId: args.decisionId ?? 'DEC-1',
     revision: args.revision ?? 1,
     status: 'draft',
