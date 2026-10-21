@@ -182,7 +182,7 @@ export interface FitToStandardViewProps {
 export default function FitToStandardView({ gate, design, stored, isOwner, busy = false, error = null, onMake, onConfirm, onPropose }: FitToStandardViewProps) {
   const [draft, setDraft] = useState<Draft>({});
   const lists = useMemo(() => (design ? fitDesignLists(design) : null), [design]);
-  const technical = design ? design.entries.filter((e) => e.disposition === 'goes-with-program' || e.disposition === 'unknown') : [];
+  const technical = design ? design.entries.filter((e) => e.disposition === 'goes-with-program') : [];
   const storedCurrent = stored && !stored.stale ? stored : null;
   const confirmed = storedCurrent?.kind === 'confirmation';
   const editable = isOwner && !!storedCurrent && !busy;

@@ -70,7 +70,12 @@ const nameOf = (e: FitEntry) => e.plainLabel ?? e.label;
 const CHECK = { verified: 'checked against SAP data', catalog: "from SAP's catalog — to verify", unverified: 'not checked — to verify', mismatch: 'does not match SAP data' } as const;
 const refText = (e: FitEntry) => (e.standardRef ? `${e.standardRef.id}${e.standardRef.title ? ` (${e.standardRef.title})` : ''} — ${CHECK[e.standardRef.check]}` : '—');
 const md = (t: string) => t.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
-const csv = (t: string) => (/[",\r\n;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t);
+/** One CSV cell (QA review of 4ea0324a13cb, 00b7e0bfeb89). */
+export function csvCell(t: string): string {
+  const safe = /^[\s\u0000-\u001f]*[=+\-@\t\r]/.test(t) ? `'${t}` : t;
+  return /[",\r\n;']/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+const csv = csvCell;
 const provenanceWords = { reconstructed: 'Reconstructed from the code', 'model-proposal': 'Model proposal', confirmed: 'Confirmed by the account' } as const;
 
 function table(rows: FitEntry[]): string[] {
@@ -119,7 +124,8 @@ function designDoc(input: FitPackageInput): string {
 }
 
 function gapRows(input: FitPackageInput): FitEntry[] {
-  return input.revision.entries.filter((e) => e.comparability === 'business-comparable');
+  // A step the engine cannot read is listed too: nobody has resolved it (QA review of 4ea0324a13cb, 357cd43a6983).
+  return input.revision.entries.filter((e) => e.comparability === 'business-comparable' || e.disposition === 'unknown');
 }
 
 function gapListMd(input: FitPackageInput): string {
@@ -175,7 +181,7 @@ function organisationalDoc(input: FitPackageInput): string {
 }
 
 function workshopDoc(input: FitPackageInput): string {
-  const open = input.revision.entries.filter((e) => e.disposition === 'gap-open' || (e.disposition === 'covered' && e.provenance !== 'confirmed'));
+  const open = input.revision.entries.filter((e) => e.disposition === 'gap-open' || e.disposition === 'unknown' || (e.disposition === 'covered' && e.provenance !== 'confirmed'));
   const out = [...head('Workshop questions', input)];
   if (open.length === 0) {
     out.push('No open step: every business step of this design has an answer.', '');
@@ -185,7 +191,9 @@ function workshopDoc(input: FitPackageInput): string {
   for (const e of open) {
     n += 1;
     out.push(
-      e.disposition === 'gap-open'
+      e.disposition === 'unknown'
+        ? `${n}. **${md(nameOf(e))}** (${lines(e.anchor)}) — This step calls something the engine cannot read. What does it do, and is it still needed?`
+        : e.disposition === 'gap-open'
         ? `${n}. **${md(nameOf(e))}** (${lines(e.anchor)}) — Does SAP standard do this step in your process, is it still needed, or does a key-user extension or a change in the process take it over?`
         : `${n}. **${md(nameOf(e))}** (${lines(e.anchor)}) — Does ${e.standardRef?.id ?? 'the named standard object'} really do this step in your process? (${CHECK[e.standardRef?.check ?? 'unverified']})`,
     );

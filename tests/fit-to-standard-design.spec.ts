@@ -145,7 +145,8 @@ test.describe('fit-to-standard design rules', () => {
     const lists = fitDesignLists(d);
     expect(lists.givenUp.map((e) => e.elementId)).toEqual(['hook']);
     expect(lists.standardDoes.map((e) => e.elementId)).toEqual(['step', 'cfg']);
-    expect(lists.gaps.map((e) => e.elementId)).toEqual(['open']);
+    // A step the engine cannot read is a gap nobody resolved (QA review of 4ea0324a13cb, 357cd43a6983).
+    expect(lists.gaps.map((e) => e.elementId)).toEqual(['open', 'opaque']);
   });
 
   test('a key-user candidate on the deviation\'s lines makes it a key-user gap', () => {

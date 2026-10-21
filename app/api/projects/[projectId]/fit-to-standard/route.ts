@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Transaction } from 'firebase-admin/firestore';
 import { logger, errMessage } from '@/lib/logger';
 import {
   verifyRequestAuth,
@@ -328,6 +329,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     let record: FitToStandardRevision;
     let needRevision: number | null = null;
     let droppedObjects = {};
+    let stateRecord: (Record<string, unknown> & { revision: number }) | null = null;
     if (body.action === 'make') {
       const against = body.againstGate === true;
       if (reading.gate.outcome === 'not-determined') {
@@ -436,40 +438,49 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
           const revision = opened.states.revision + 1;
           const stateEntries = applyStateChoices(opened.states.entries, choices, { account, confirmedAt: now, revision });
           if (stateEntries.length <= MAX_STATE_ENTRIES) {
-            try {
-              await projectRef.collection(PROCESS_STATE_COLLECTION).doc(String(revision)).create({
-                formatVersion: PROCESS_STATE_FORMAT_VERSION,
-                revision,
-                account,
-                savedAt: now,
-                baselineRevision: 1,
-                entries: stateEntries,
-                origin: { kind: 'fit-to-standard', revision: nextRevision },
-              });
-              needRevision = revision;
-            } catch (err: unknown) {
-              if (!isAlreadyExists(err)) throw err;
-              return NextResponse.json(
-                { error: 'The need was confirmed by another session at the same time. Reload and confirm again.', code: 'revision-moved' },
-                { status: 409 },
-              );
-            }
+            stateRecord = {
+              formatVersion: PROCESS_STATE_FORMAT_VERSION,
+              revision,
+              account,
+              savedAt: now,
+              baselineRevision: 1,
+              entries: stateEntries,
+              origin: { kind: 'fit-to-standard', revision: nextRevision },
+            };
+            needRevision = revision;
           }
         }
       }
     }
 
-    try {
-      await revisions.doc(String(nextRevision)).create(record);
-    } catch (err: unknown) {
-      if (!isAlreadyExists(err)) throw err;
+    // One transaction for the fit revision, the need revision it derives and the summary
+    // (QA review of 4ea0324a13cb, 222b1b571ee8): the latest revisions are read again inside
+    // it, so a session that wrote either first makes this one write nothing at all.
+    const summary = { ...summaryOf(record, needRevision), droppedObjects };
+    const statesRef = projectRef.collection(PROCESS_STATE_COLLECTION);
+    const moved = await db.runTransaction(async (tx: Transaction) => {
+      const latestFit = await tx.get(revisions.orderBy('revision', 'desc').limit(1));
+      const fitNow = latestFit.empty ? 0 : Number((latestFit.docs[0].data() as { revision?: unknown }).revision ?? 0);
+      if (fitNow !== (stored?.revision ?? 0)) return true;
+      if (stateRecord) {
+        const latestState = await tx.get(statesRef.orderBy('revision', 'desc').limit(1));
+        const stateNow = latestState.empty ? 0 : Number((latestState.docs[0].data() as { revision?: unknown }).revision ?? 0);
+        if (stateNow !== opened.states.revision) return true;
+        tx.create(statesRef.doc(String(stateRecord.revision)), stateRecord);
+      }
+      tx.create(revisions.doc(String(nextRevision)), record);
+      tx.update(projectRef, { fitToStandard: summary });
+      return false;
+    }).catch((err: unknown) => {
+      if (isAlreadyExists(err)) return true;
+      throw err;
+    });
+    if (moved) {
       return NextResponse.json(
-        { error: `Revision ${nextRevision} was written by another session. Reload before trying again.`, code: 'revision-moved' },
+        { error: 'The design or the confirmed need was written by another session at the same time. Nothing was stored; reload and try again.', code: 'revision-moved' },
         { status: 409 },
       );
     }
-    const summary = { ...summaryOf(record, needRevision), droppedObjects };
-    await projectRef.update({ fitToStandard: summary });
     logger.info('fit-to-standard revision written', {
       route: 'api/projects/fit-to-standard',
       kind: record.kind,

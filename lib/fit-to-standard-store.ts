@@ -182,7 +182,8 @@ export interface FitCondition {
   elementId: string;
   /** `derived`: an open gap the engine reads — it cannot be attested away; `stated`: a gap the account resolved by key user or an organisational change. */
   basis: 'derived' | 'stated';
-  disposition: 'gap-open' | 'gap-key-user' | 'gap-organisational';
+  /** `unknown`: a step the engine cannot read — derived, like an open gap (QA review of 4ea0324a13cb, 357cd43a6983). */
+  disposition: 'gap-open' | 'gap-key-user' | 'gap-organisational' | 'unknown';
   text: string;
   anchor: FitEntry['anchor'];
 }
@@ -190,16 +191,18 @@ export interface FitCondition {
 export function fitConditions(entries: readonly FitEntry[]): FitCondition[] {
   return entries
     .filter((e): e is FitEntry & { disposition: FitCondition['disposition'] } =>
-      e.disposition === 'gap-open' || e.disposition === 'gap-key-user' || e.disposition === 'gap-organisational')
+      e.disposition === 'gap-open' || e.disposition === 'gap-key-user' || e.disposition === 'gap-organisational' || e.disposition === 'unknown')
     .map((e) => {
       const name = e.plainLabel ?? e.label;
       const where = e.anchor ? ` (L${e.anchor.lineStart}${e.anchor.lineEnd > e.anchor.lineStart ? `–L${e.anchor.lineEnd}` : ''})` : '';
-      const text = e.disposition === 'gap-open'
+      const text = e.disposition === 'unknown'
+        ? `Not readable: "${name}"${where} calls something the engine cannot read — upload the called program, or settle it in the workshop.`
+        : e.disposition === 'gap-open'
         ? `Open gap: "${name}"${where} — nothing covering it has been named.`
         : e.disposition === 'gap-key-user'
           ? `Key-user extension for "${name}"${where}${e.standardRef?.title ? ` (${e.standardRef.title})` : ''}.`
           : `Organisational change for "${name}"${where}${e.note ? `: ${e.note}` : ''}.`;
-      return { elementId: e.elementId, basis: e.disposition === 'gap-open' ? 'derived' : 'stated', disposition: e.disposition, text, anchor: e.anchor };
+      return { elementId: e.elementId, basis: e.disposition === 'gap-open' || e.disposition === 'unknown' ? 'derived' : 'stated', disposition: e.disposition, text, anchor: e.anchor };
     });
 }
 
@@ -322,6 +325,34 @@ export function fitSummaryCurrent(
 ): boolean {
   if (!summary || !current.runId || !current.sourceSha256) return false;
   return summary.runId === current.runId && summary.sourceSha256 === current.sourceSha256;
+}
+
+/** FNV-1a over the text — a cheap change marker for a browser key, not a digest anything is bound to. */
+function changeMarker(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${text.length.toString(36)}.${h.toString(36)}`;
+}
+
+/**
+ * The key a browser reads the fit-to-standard route under: the project, its
+ * run, the stored revision, the staged source and a reload tick. The source is
+ * in it so that an edit of the source on the same run is read again — the
+ * gate then answers "not determined" instead of the reading of the old source
+ * (QA review of 4ea0324a13cb, 9cdfd5bb083e).
+ */
+export function fitReadKey(
+  projectId: string | null | undefined,
+  project: { legacyCode?: unknown; activeRunId?: unknown; fitToStandard?: unknown } | null | undefined,
+  tick: number,
+): string {
+  const runId = typeof project?.activeRunId === 'string' ? project.activeRunId : '';
+  const revision = (project?.fitToStandard as { revision?: unknown } | undefined)?.revision;
+  const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  return `${projectId ?? ''}::${runId}:${String(revision ?? 0)}:${changeMarker(source)}:${tick}`;
 }
 
 /** The confirmed design on the current run, or null — the one reading phases, Management and Delivery use. */

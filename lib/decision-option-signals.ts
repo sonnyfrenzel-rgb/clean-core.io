@@ -288,6 +288,16 @@ function standardSignal(fitDesign: FitToStandardSummary | null | undefined): Pic
       place: 'design',
     };
   }
+  // A step the engine cannot read (an opaque call, a dynamic target) is resolved by nobody: it keeps
+  // the answer open (QA review of 4ea0324a13cb, 357cd43a6983).
+  if (fitDesign.counts.unknown > 0) {
+    return {
+      signal: 'not-determined',
+      reason: `The fit-to-standard design is confirmed, but ${plural(fitDesign.counts.unknown, 'step calls something the engine cannot read', 'steps call something the engine cannot read')}, so it is not known what living with the standard gives up there (${summary}).`,
+      provenance: 'confirmed',
+      place: 'design',
+    };
+  }
   const unconfirmed = fitDesign.unconfirmedCandidates ?? 0;
   if (unconfirmed > 0) {
     return {

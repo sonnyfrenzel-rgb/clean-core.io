@@ -144,7 +144,7 @@ test('the summary is current only on its own run and source; an engine revision 
 
 test('route source: immutable revisions, server time and account, 409 on a run that is not current, owner-only writes', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'projects', '[projectId]', 'fit-to-standard', 'route.ts'), 'utf8');
-  expect(src).toContain('revisions.doc(String(nextRevision)).create(record)');
+  expect(src).toContain('tx.create(revisions.doc(String(nextRevision)), record)');
   expect(src).not.toMatch(/\.set\(record/);
   expect(src).toMatch(/'run-not-current',\s+409/);
   expect(src).toContain("'no-current-design', 409");
