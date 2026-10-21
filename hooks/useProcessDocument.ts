@@ -34,12 +34,14 @@ export function useProcessDocument(
   model: ProcessMapModel | null,
   narrative: string | null,
   proposals: readonly ProcessDocumentProposal[] | null,
+  /** The engine the active run was made with: a demo switch is read as that engine reads it. */
+  engineVersion: string | null = null,
 ): ProcessDocumentState {
   const key = useMemo(() => {
     if (!source || !model) return '';
-    const extra = sha256Hex(`${narrative ?? ''}|${JSON.stringify(proposals ?? [])}`);
+    const extra = sha256Hex(`${narrative ?? ''}|${JSON.stringify(proposals ?? [])}|${engineVersion ?? ''}`);
     return `${sha256Hex(source)}|${model.xml.length}|${model.elements.length}|${model.naming.named}|${extra}`;
-  }, [source, model, narrative, proposals]);
+  }, [source, model, narrative, proposals, engineVersion]);
   const [held, setHeld] = useState<{ key: string; value: ProcessDocumentState }>({
     key: '',
     value: { document: null, status: 'idle' },
@@ -51,7 +53,7 @@ export function useProcessDocument(
     import('@/lib/process-document-build')
       .then((builder) => {
         if (cancelled) return;
-        const document = builder.buildProcessDocument({ source, map: model, narrative, proposals });
+        const document = builder.buildProcessDocument({ source, map: model, narrative, proposals, engineVersion });
         setHeld({ key, value: { document, status: 'ready' } });
       })
       .catch((err) => {
@@ -61,7 +63,7 @@ export function useProcessDocument(
     return () => {
       cancelled = true;
     };
-  }, [source, model, narrative, proposals, key]);
+  }, [source, model, narrative, proposals, engineVersion, key]);
 
   if (!key) return { document: null, status: 'idle' };
   return held.key === key ? held.value : { document: null, status: 'loading' };

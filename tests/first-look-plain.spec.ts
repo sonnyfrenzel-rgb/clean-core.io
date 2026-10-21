@@ -193,6 +193,36 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     const source = `REPORT zdispatch.\nPARAMETERS p_mode TYPE i.\nSTART-OF-SELECTION.\n  PERFORM run.\nFORM run.\n  CASE p_mode.\n${arms}\n  ENDCASE.\nENDFORM.\n${forms}\n`;
     expect(readDemoSwitches(source, AFTER)).toBeNull();
   });
+
+  // A switch whose arms put rows into tables, written five times over.
+  const switchOf = (arm: (n: number) => string) => {
+    const arms = [1, 2, 3, 4, 5].map((n) => `    WHEN ${n}.\n${arm(n)}`).join('\n');
+    return `REPORT zcases.\nPARAMETERS p_case TYPE i.\nDATA: lt_rows TYPE TABLE OF zrow, ls_row TYPE zrow, ls_in TYPE zrow.\nSTART-OF-SELECTION.\n  SELECT SINGLE * FROM zrow INTO ls_in.\n  PERFORM apply_case.\nFORM apply_case.\n  CASE p_case.\n${arms}\n  ENDCASE.\nENDFORM.\n`;
+  };
+
+  test('rows of literals are test data: a VALUE of literals, or a work area the same arm fills from literals', () => {
+    const literalValue = switchOf((n) => `      APPEND VALUE #( id = ${n} name = 'Case ${n}' ) TO lt_rows.`);
+    expect(readDemoSwitches(literalValue, AFTER)?.flag.name).toBe('P_CASE');
+    const filledArea = switchOf((n) => `      CLEAR ls_row.\n      ls_row-id = ${n}.\n      ls_row-name = 'Case ${n}'.\n      APPEND ls_row TO lt_rows.`);
+    expect(readDemoSwitches(filledArea, AFTER)?.flag.name).toBe('P_CASE');
+  });
+
+  test('a row the program read, or a write to the database, is not test data however the arms are shaped', () => {
+    // Appends what the program selected: business data, not a test case.
+    expect(readDemoSwitches(switchOf(() => `      APPEND ls_in TO lt_rows.`), AFTER)).toBeNull();
+    // A database write in every arm.
+    expect(readDemoSwitches(switchOf((n) => `      ls_row-id = ${n}.\n      INSERT zrow FROM ls_row.`), AFTER)).toBeNull();
+    expect(readDemoSwitches(switchOf((n) => `      ls_row-id = ${n}.\n      INSERT INTO zrow VALUES ls_row.`), AFTER)).toBeNull();
+    // A VALUE that carries a field of what was read.
+    expect(readDemoSwitches(switchOf((n) => `      APPEND VALUE #( id = ${n} name = ls_in-name ) TO lt_rows.`), AFTER)).toBeNull();
+  });
+
+  test('the process documentation reads the demo switch as the run\'s engine reads it', () => {
+    const build = fs.readFileSync(path.join(process.cwd(), 'lib/process-document-build.ts'), 'utf8');
+    expect(build).toMatch(/readDemoSwitches\(source, input\.engineVersion\)/);
+    const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/project/[projectId]/documentation/page.tsx'), 'utf8');
+    expect(page).toMatch(/useProcessDocument\([\s\S]{0,400}?engineVersionOfProject\(project\),\s*\)/);
+  });
 });
 
 test.describe('the purpose from the program\'s names (lib/abap/program-domain.ts)', () => {
@@ -206,6 +236,13 @@ test.describe('the purpose from the program\'s names (lib/abap/program-domain.ts
     expect(readProgramDomain(readExample('Z_SD_FREIGHT_RATE_CHECK.abap'))?.text).toBe('Checks freight costs, deliveries and materials, within a tolerance.');
     const sd = 'REPORT zsd_invoice_check.\nDATA gv_invoice TYPE vbeln.\nSELECT SINGLE vbeln FROM vbrk INTO gv_invoice WHERE vbeln = gv_invoice.\nSELECT SINGLE vbeln FROM vbak INTO gv_invoice.\nSELECT SINGLE vbeln FROM vbak INTO gv_invoice.\n';
     expect(readProgramDomain(sd)?.text).toBe('Checks invoices against sales orders.');
+  });
+
+  test('a tolerance is said only when the program uses the tolerance it declares', () => {
+    const declared = 'REPORT zmm_invoice_check.\nPARAMETERS p_tol TYPE p DECIMALS 2 DEFAULT 5.\nDATA gv_invoice TYPE belnr_d.\nSELECT SINGLE belnr FROM rbkp INTO gv_invoice.\n';
+    expect(readProgramDomain(declared)?.text ?? '').not.toMatch(/tolerance/);
+    const used = `${declared}IF gv_invoice > p_tol.\n  WRITE / gv_invoice.\nENDIF.\n`;
+    expect(readProgramDomain(used)?.text ?? '').toMatch(/, within a tolerance\.$/);
   });
 
   test('no verb in the program\'s name: not determined, never guessed', () => {

@@ -290,8 +290,43 @@ function openingGuardOf(
 /** A value test data is written with: a literal, a number, a truth value, today's date. */
 const LITERAL = /^(?:'(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space|sy-datum|sy-uzeit)$/i;
 
-/** A statement that only fills test data; `fills` when it puts a row into a table or hands literals to a routine. */
-function testDataStatement(s: AbapStatement): { ok: boolean; fills: boolean } {
+/**
+ * The row an `APPEND` or `INSERT` puts into an internal table, or null when it
+ * writes anything else — a database table (`INSERT ztab FROM ls`, `INSERT INTO
+ * ztab VALUES ls`) or the lines of another table.
+ */
+function internalRowOf(text: string, keyword: string): string | null {
+  if (keyword === 'APPEND') {
+    const m = /^APPEND\s+([\s\S]+?)\s+TO\s+[\w/<>-]+/i.exec(text);
+    return m && !/^LINES\s+OF\b/i.test(m[1]) ? m[1].trim() : null;
+  }
+  if (/^INSERT\s+INTO\b/i.test(text)) return null;
+  const m = /^INSERT\s+([\s\S]+?)\s+INTO\s+(?:TABLE\s+[\w/<>-]+|[\w/<>-]+\s+INDEX\b)/i.exec(text);
+  return m && !/^LINES\s+OF\b/i.test(m[1]) ? m[1].trim() : null;
+}
+
+/** The variable an assignment or a `CLEAR` sets, without its component (`ls_row-matnr` → `LS_ROW`). */
+function rootOf(name: string): string {
+  return norm(name.split('-')[0]);
+}
+
+/** A row of literals: `VALUE #( a = 'x' b = 1 )` whose every value is a literal, or an empty line. */
+function literalRow(row: string): boolean {
+  if (/^INITIAL\s+LINE$/i.test(row)) return true;
+  const value = /^VALUE\s+[\w#/]*\s*\(([\s\S]*)\)$/i.exec(row);
+  if (!value) return false;
+  const values = [...value[1].matchAll(/=\s*('(?:[^']|'')*'|`[^`]*`|[^\s()]+)/g)].map((m) => m[1]);
+  return values.every((v) => LITERAL.test(v));
+}
+
+/**
+ * A statement that only fills test data; `fills` when it puts a row into a table or hands literals to a routine.
+ *
+ * `filled` is what the same `WHEN` arm has set from literals so far: a row is
+ * test data only when it is literal or one of those. Without it (the set-up
+ * around the switch) any row into an internal table passes; a database write never does.
+ */
+function testDataStatement(s: AbapStatement, filled: Set<string> | null = null): { ok: boolean; fills: boolean } {
   const text = s.text.replace(/\.\s*$/, '').trim();
   const keyword = s.keyword.toUpperCase();
   if (keyword === 'PERFORM') {
@@ -301,10 +336,23 @@ function testDataStatement(s: AbapStatement): { ok: boolean; fills: boolean } {
     // A row of data handed over: three literals at least — `PERFORM run USING 'A'` is a dispatch, not test data.
     return { ok: literals.every((v) => LITERAL.test(v)), fills: literals.length >= 3 };
   }
-  if (keyword === 'APPEND' || keyword === 'INSERT') return { ok: true, fills: true };
-  if (keyword === 'CLEAR' || keyword === 'REFRESH' || keyword === 'FREE') return { ok: true, fills: false };
-  const assign = /^[\w/<>-]+\s*=\s*([\s\S]+)$/.exec(text);
-  if (assign) return { ok: LITERAL.test(assign[1].trim()) || /^VALUE\s+#\(/i.test(assign[1].trim()), fills: false };
+  if (keyword === 'APPEND' || keyword === 'INSERT') {
+    const row = internalRowOf(text, keyword);
+    if (row === null) return { ok: false, fills: false };
+    const ok = filled === null || literalRow(row) || filled.has(rootOf(row));
+    return { ok, fills: ok };
+  }
+  if (keyword === 'CLEAR' || keyword === 'REFRESH' || keyword === 'FREE') {
+    for (const name of text.replace(/^\S+\s*/, '').split(/[\s,:]+/)) if (name) filled?.add(rootOf(name));
+    return { ok: true, fills: false };
+  }
+  const assign = /^([\w/<>-]+)\s*=\s*([\s\S]+)$/.exec(text);
+  if (assign) {
+    const value = assign[2].trim();
+    const ok = LITERAL.test(value) || (/^VALUE\s+#\(/i.test(value) && (filled === null || literalRow(value)));
+    if (ok) filled?.add(rootOf(assign[1]));
+    return { ok, fills: false };
+  }
   return { ok: false, fills: false };
 }
 
@@ -330,7 +378,8 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     const allTestData = branch.arms.every((arm, k) => {
       const to = branch.arms[k + 1]?.headerIndex ?? branch.closeIndex;
       const body = statements.slice(arm.headerIndex + 1, to);
-      const read = body.map(testDataStatement);
+      const filled = new Set<string>();
+      const read = body.map((s) => testDataStatement(s, filled));
       if (read.some((r) => r.fills)) filling += arm.kind === 'when' ? 1 : 0;
       return read.every((r) => r.ok);
     });

@@ -109,7 +109,8 @@ export function readProgramDomain(source: string): ProgramDomain | null {
 
   // Every name and message word on every line, comments left out.
   const found = new Map<string, number[]>();
-  let tolerance: number | null = null;
+  // A tolerance is said only when the program uses what it declares for it, not for the declaration alone.
+  const toleranceDeclared = new Map<string, number>();
   for (const s of statements) {
     const words = [
       ...(maskLiterals(s.text).match(/[A-Za-z_][\w/-]*/g) ?? []),
@@ -122,7 +123,17 @@ export function readProgramDomain(source: string): ProgramDomain | null {
       if (!lines.includes(s.lineStart)) lines.push(s.lineStart);
       found.set(object.word, lines);
     }
-    if (tolerance === null && /^(?:PARAMETERS?|CONSTANTS|SELECT-OPTIONS)$/i.test(s.keyword) && [...tokens].some((t) => TOLERANCE.has(t))) tolerance = s.lineStart;
+    if (/^(?:PARAMETERS?|CONSTANTS|SELECT-OPTIONS)$/i.test(s.keyword)) {
+      for (const word of maskLiterals(s.text).match(/[A-Za-z_][\w/]*/g) ?? []) {
+        if (tokensOf(word).some((t) => TOLERANCE.has(t)) && !toleranceDeclared.has(word.toUpperCase())) toleranceDeclared.set(word.toUpperCase(), s.lineStart);
+      }
+    }
+  }
+  let tolerance: number | null = null;
+  for (const [name, line] of toleranceDeclared) {
+    const word = new RegExp(`(?<![\\w/-])${name.replace(/[/]/g, '\\/')}(?![\\w/])`, 'i');
+    const used = statements.some((st) => !/^(?:PARAMETERS?|CONSTANTS|SELECT-OPTIONS|DATA|TYPES)$/i.test(st.keyword) && word.test(maskLiterals(st.text)));
+    if (used && (tolerance === null || line < tolerance)) tolerance = line;
   }
   // A supplier invoice in the code makes the name's "invoice" one.
   const supplier = (found.get('supplier invoices')?.length ?? 0) > 0;

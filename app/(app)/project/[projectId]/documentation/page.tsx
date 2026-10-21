@@ -702,6 +702,7 @@ export default function DocumentationPage() {
     processMap.model,
     typeof project?.analysis === 'string' && project.analysis.trim() ? project.analysis : null,
     proposalInputs,
+    engineVersionOfProject(project),
   );
 
   /**

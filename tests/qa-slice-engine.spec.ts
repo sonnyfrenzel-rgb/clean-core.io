@@ -29,6 +29,8 @@ test('21933f60c24d — a secret assigned to a prefixed name is redacted', () => 
   expect(redactCredentials("lv_password = 'hunter2'.")).toBe("lv_password = '…<redacted>'.");
   // A name that only contains the word in the middle is not a secret field.
   expect(redactCredentials("lv_token_count = '12'.")).toBe("lv_token_count = '12'.");
+  // A compound credential name still is one: the keyword closes the name.
+  expect(redactCredentials("lv_token_secret = 'abc123'.")).toBe("lv_token_secret = '…<redacted>'.");
 });
 
 test('b99ee9f51490 — a variable WAIT is undetermined, a literal decides', () => {

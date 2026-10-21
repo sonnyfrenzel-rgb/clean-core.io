@@ -129,7 +129,7 @@ export async function DELETE(req: NextRequest) {
     // suspended account is the case where that matters most: it must not be the
     // one state in which the key cannot be withdrawn. Every route that *spends*
     // the key does check (POST above, /test, /status), which is where the gate
-    // belongs; the missing gate here is intended, not the same defect.
+    // belongs.
     await deleteOwnModelKey(decodedToken.uid);
 
     // 3. Security Audit Logging

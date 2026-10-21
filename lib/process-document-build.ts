@@ -92,6 +92,8 @@ export interface ProcessDocumentInput {
   narrative?: string | null;
   /** The stored statement proposals (roadmap 17.10) for this source; contradicting ones are dropped. */
   proposals?: ReadonlyArray<{ text: string; anchors: ReadonlyArray<{ lineStart: number; lineEnd: number }>; contradicts?: boolean }> | null;
+  /** The engine the active run was made with (`engineVersionOfProject`); left out, the current engine. */
+  engineVersion?: string | null;
 }
 
 /* ------------------------------------------------------------------ helpers */
@@ -1081,7 +1083,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const ruleIdsShown = new Set<string>();
   // Roadmap 3.0.13 (SD review CR-A3): the values a demo-case switch sets are
   // test data, not values fixed for the business — the arms are counted apart.
-  const demoCaseRanges = readDemoSwitches(source)?.cases ?? [];
+  const demoCaseRanges = readDemoSwitches(source, input.engineVersion)?.cases ?? [];
   const inDemoCase = (anchors: ReadonlyArray<{ lineStart: number }>) =>
     demoCaseRanges.length > 0 && anchors.length > 0
     && anchors.every((a) => demoCaseRanges.some((c) => a.lineStart >= c.lineStart && a.lineStart <= c.lineEnd));
