@@ -955,13 +955,19 @@ export default function WorkspaceShell({
         {view === 'business' ? <TargetReferenceLine project={project} /> : null}
         {/* Roadmap 3.0.20: the fit-to-standard offer, where the gate offers it —
             Business and Management only; IT names the gate's reason in #standard. */}
-        {view !== 'it' ? <FitToStandardOffer project={project} projectId={projectId} /> : null}
+        {/* Not on a new project's first visit: the build-up and its story keep the first screen (ADR-072); it follows them there. */}
+        {view !== 'it' && !buildUp ? <FitToStandardOffer project={project} projectId={projectId} /> : null}
       </div>
     ),
     // Business only, and only where there is a map to walk: the entry to the
     // walk-through, with how many steps the account's answers already cover.
+    // On the first visit of a new project (ADR-072) the build-up and the
+    // process story it lands on keep the first screen, and the entry stands
+    // right under them instead (CI of 18a3d8e3: above them it pushed the story
+    // under the fold of a 1440 × 1000 screen); on every later visit it comes
+    // first, as the owner decided.
     walk:
-      view === 'business' && signed !== null ? (
+      view === 'business' && signed !== null && !buildUp ? (
         <ProcessWalkEntry projectId={projectId} answered={answeredSteps} />
       ) : null,
     // Business only: the business rules, once, in their own card under the map
@@ -1058,6 +1064,15 @@ export default function WorkspaceShell({
           onSettled={onFirstLookSettled}
           questions={questions}
         />
+        {/* The first visit's place of the walk entry and the fit-to-standard offer: under the story (see `walk`). */}
+        {view === 'business' && signed !== null && buildUp ? (
+          <ProcessWalkEntry projectId={projectId} answered={answeredSteps} />
+        ) : null}
+        {view !== 'it' && buildUp ? (
+          <div className="mt-4">
+            <FitToStandardOffer project={project} projectId={projectId} />
+          </div>
+        ) : null}
       </div>
     ),
     // The first ten seconds after it (§5.3): one question already answered,
