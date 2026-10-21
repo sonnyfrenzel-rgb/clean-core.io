@@ -1229,6 +1229,23 @@ export function partLocalsOf(statements: readonly Pick<AbapStatement, 'text' | '
   return names.filter((n) => new RegExp(`(?<![\\w\\-~>/])${n.replace(/[.*+?^${}()|[\]\\/<>]/g, '\\$&')}(?![\\w/])`, 'i').test(code));
 }
 
+/**
+ * The locals a routine declares with STATICS (QA review of a20d2cb7bd39, 94e86fe4c2b1), lower case: they keep their
+ * value from one call of the routine to the next, so the parent of a split routine keeps them across its calls
+ * instead of starting them afresh with the others.
+ */
+export function staticLocalsOf(statements: readonly Pick<AbapStatement, 'text' | 'lineStart' | 'keyword'>[], unit: Pick<Unit, 'abap'>): Set<string> {
+  const range = unit.abap[0];
+  const out = new Set<string>();
+  if (!range) return out;
+  for (const s of statements) {
+    if (s.keyword !== 'STATICS' || s.lineStart < range.lineStart || s.lineStart > range.lineEnd) continue;
+    const m = /^STATICS\s*:?\s*(?:BEGIN\s+OF\s+)?([\w/]+)/i.exec(s.text);
+    if (m && !/^END$/i.test(m[1])) out.add(m[1].toLowerCase());
+  }
+  return out;
+}
+
 /** Lx or Lx–Ly. */
 const lineSpan = (r: { lineStart: number; lineEnd: number }) => (r.lineStart === r.lineEnd ? `L${r.lineStart}` : `L${r.lineStart}–L${r.lineEnd}`);
 

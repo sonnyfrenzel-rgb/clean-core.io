@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -13,7 +14,7 @@ import { SAP_REFERENCE_SOURCES } from '../scripts/sync-sap-references';
 
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'scripts', 'check-sap-reference-data.mjs');
-type Checker = { SOURCES: Record<string, { repo: string; branch: string; licenceUrl: string }>; dataProblems: (dir: string) => string[] };
+type Checker = { SOURCES: Record<string, { repo: string; branch: string; licenceUrl: string }>; dataProblems: (dir: string) => string[]; upstreamProblems: (dir: string, fetchBytes: (url: string) => Promise<Buffer | null>) => Promise<string[]> };
 const checker = () => import(pathToFileURL(SCRIPT).href) as Promise<Checker>;
 
 /** A copy of the committed data folders under a fresh temp directory. */
@@ -72,10 +73,47 @@ test('content the sync does not write is refused, each with its reason', async (
   }
 });
 
+test('a schema changed together with its recorded hash passes the artifact check but not the upstream one (QA review of a20d2cb7bd39, cf02a5de56a3)', async () => {
+  const { dataProblems, upstreamProblems } = await checker();
+  const formats = JSON.parse(fs.readFileSync(refFile(ROOT, 'abap-file-formats'), 'utf8')) as { commit: string; copied: Array<{ path: string }> };
+  const aff = (d: string, n: string) => path.join(d, 'lib', 'generated', 'aff-schemas', n);
+  // "SAP's repository": the committed bytes, served only for SAP/abap-file-formats at the synced commit.
+  const asked: string[] = [];
+  const sap = async (url: string) => {
+    asked.push(url);
+    const prefix = `https://raw.githubusercontent.com/SAP/abap-file-formats/${formats.commit}/`;
+    if (!url.startsWith(prefix)) return null;
+    const p = url.slice(prefix.length);
+    const local = p === 'LICENSE' ? aff(ROOT, 'LICENSE') : aff(ROOT, path.posix.basename(p));
+    return fs.existsSync(local) ? fs.readFileSync(local) : null;
+  };
+  expect(await upstreamProblems(ROOT, sap)).toEqual([]);
+  expect(asked).toHaveLength(formats.copied.length + 1);
+
+  const dir = copyOfData();
+  try {
+    const altered = Buffer.from(JSON.stringify({ $schema: 'https://json-schema.org/draft/2020-12/schema', title: 'altered' }));
+    fs.writeFileSync(aff(dir, 'clas-v1.json'), altered);
+    const upstream = formats.copied.find((c) => c.path.endsWith('/clas-v1.json'))!.path;
+    editJson(refFile(dir, 'abap-file-formats'), (x) => {
+      const f = (x.files as Array<{ path: string; sha256: string; size: number }>).find((e) => e.path === upstream)!;
+      f.sha256 = createHash('sha256').update(altered).digest('hex');
+      f.size = altered.length;
+    });
+    expect(dataProblems(dir), 'consistent with itself').toEqual([]);
+    expect(await upstreamProblems(dir, sap)).toEqual([`aff-schemas/clas-v1.json: not the bytes of ${upstream} at ${formats.commit}`]);
+    // A commit SAP's repository does not have: nothing is found there.
+    editJson(refFile(dir, 'abap-file-formats'), (x) => { x.commit = '0'.repeat(40); });
+    expect((await upstreamProblems(dir, sap)).every((p) => p.includes('not found at 0000000000000000000000000000000000000000'))).toBe(true);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('the push job runs the check on the artifact before it copies anything into its checkout', () => {
   const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-sap-references.yml'), 'utf8').replace(/\r\n/g, '\n');
   const push = wf.slice(wf.indexOf('\n  push:'));
-  const check = push.indexOf('node scripts/check-sap-reference-data.mjs "$src"');
+  const check = push.indexOf('node scripts/check-sap-reference-data.mjs "$src" --upstream');
   expect(check).toBeGreaterThan(-1);
   expect(check).toBeLessThan(push.indexOf('rm -rf lib/generated/sap-references lib/generated/aff-schemas'));
   expect(check).toBeLessThan(push.indexOf('cp -R "$src/lib/generated/sap-references"'));

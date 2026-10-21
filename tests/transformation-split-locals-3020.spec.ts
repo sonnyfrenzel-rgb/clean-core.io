@@ -4,7 +4,7 @@ import { guardContextOf, prepareEngineLed, type EngineLedPrepared } from '../lib
 import { bodyGuards, spliceBodies } from '../lib/transformation/markers';
 import { abapCheck } from '../lib/transformation/abap-check';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
-import { typecheck, writePackage } from './helpers/transformation-scaffold';
+import { fileUrl, runInPackage, typecheck, writePackage } from './helpers/transformation-scaffold';
 
 /**
  * Roadmap 3.0.20 — quality, "a split part gets what it needs from its parent" (the SD acceptance of 21.10.2026: part
@@ -37,8 +37,16 @@ function splitSource(): string {
   return lines.join('\n');
 }
 
-function prep(track: 'rap' | 'node'): EngineLedPrepared {
-  const p = prepareEngineLed({ source: splitSource(), track, program: 'Z_TEST', decisions: [], contextText: '' });
+/** The same routine with a STATICS local the first and the last part read, performed twice. */
+function staticsSource(): string {
+  return splitSource()
+    .replace('  PERFORM evaluate.', '  PERFORM evaluate.\n  PERFORM evaluate.')
+    .replace('        lv_count TYPE i.', "        lv_count TYPE i.\n  STATICS lv_seen TYPE i VALUE 5.\n  lv_seen = lv_seen + 1.")
+    .replace('ENDFORM.', '  gv_total = gv_total + lv_seen.\nENDFORM.');
+}
+
+function prep(track: 'rap' | 'node', source = splitSource()): EngineLedPrepared {
+  const p = prepareEngineLed({ source, track, program: 'Z_TEST', decisions: [], contextText: '' });
   if (!p.ok) throw new Error(p.reason);
   return p;
 }
@@ -93,6 +101,9 @@ test('RAP: cs_local, a handed local declared again, or a parent local the lines 
   expect(via.some((m) => m.startsWith('names cs_local, which this method does not have: cs_local-ls_c') && m.includes('ls_c, lv_count'))).toBe(true);
   const again = bodyGuards('DATA lv_count TYPE i.\nlv_count = 1.', ctx).map((r) => r.message);
   expect(again.some((m) => m.startsWith("declares the parent routine's locals again: lv_count"))).toBe(true);
+  // A chained declaration is read name by name (QA review of a20d2cb7bd39, 35f35b1ebc66): readStatements splits the chain.
+  const chained = bodyGuards('DATA: lv_extra TYPE i, lv_count TYPE i.\nlv_count = lv_extra.', ctx).map((r) => r.message);
+  expect(chained.some((m) => m.startsWith("declares the parent routine's locals again: lv_count"))).toBe(true);
   const untouched = bodyGuards("lv_code = 'B2'.", ctx).map((r) => r.message);
   expect(untouched.some((m) => m.startsWith("uses the parent routine's locals these lines do not read or write: lv_code"))).toBe(true);
 });
@@ -129,6 +140,61 @@ test('Node: bodies that use the handed locals bare, as the original names them, 
     const tc = typecheck(dir);
     const ours = tc.output.split('\n').filter((l) => /evaluate/.test(l));
     expect(ours, tc.output.slice(0, 2000)).toEqual([]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// QA review of a20d2cb7bd39, 94e86fe4c2b1: a STATICS local keeps its value from one call of the routine to the next.
+test('RAP: a STATICS local lives in a STATICS structure, started once; the class still activates', () => {
+  const p = prep('rap', staticsSource());
+  const parts = partsOf(p);
+  const logic = p.scaffold.files.find((f) => /_logic\.clas\.abap$/.test(f.path))!.content;
+  expect(logic).toMatch(/STATICS ls_static TYPE ty_\w+_local\./);
+  expect(logic).toMatch(/STATICS lv_static_started TYPE abap_bool\.\n\s+IF lv_static_started = abap_false\.\n\s+ls_static-lv_seen = 5\.\n\s+lv_static_started = abap_true\.\n\s+ENDIF\./);
+  expect(logic).not.toMatch(/ls_local-lv_seen/);
+  expect(logic).toMatch(/evaluate_part1\( CHANGING [^)]*lv_seen = ls_static-lv_seen/);
+  expect(logic).toMatch(/ls_local-lv_code = 'A1'\./);
+  const bodies = [
+    { regionId: parts[0].id, body: 'lv_seen = lv_seen + 1.\nlv_count = lv_count + 1.' },
+    { regionId: parts[parts.length - 1].id, body: 'gv_total = gv_total + lv_seen.' },
+  ];
+  const spliced = spliceBodies(p.scaffold, bodies, () => null);
+  expect(spliced.ok, spliced.reason ?? '').toBe(true);
+  const r = abapCheck(spliced.files);
+  if (!r.ran) throw new Error(r.reason);
+  expect(r.activation.activatable, JSON.stringify(r.activation.findings.filter((f) => f.kind !== 'lint').slice(0, 5))).toBe(true);
+});
+
+test('Node: a STATICS local is kept per run across calls of the routine; the others start afresh', () => {
+  const p = prep('node', staticsSource());
+  const parts = partsOf(p);
+  const parentUnit = p.plan.units.find((u) => u.id === parts[0].part!.parent)!;
+  const parent = p.scaffold.files.find((f) => f.path === parentUnit.file)!.content;
+  expect(parent).toContain('const STATICS_OF_RUN = new WeakMap<RunState, Record<string, unknown>>();');
+  expect(parent).toContain('if (!kept) STATICS_OF_RUN.set(st, (kept = { lvSeen: 5 }));');
+  const assign = parent.split('\n').find((l) => l.includes('const local: Record<string, unknown> = Object.assign(kept, {'));
+  expect(assign).toContain('lvCode: "A1"');
+  expect(assign).not.toContain('lvSeen');
+  const bodies = [
+    { regionId: parts[0].id, body: 'lvSeen = lvSeen + 1;\nlvCount = lvCount + 1;\nreturn;' },
+    ...parts.slice(1, -1).map((u) => ({ regionId: u.id, body: 'return;' })),
+    { regionId: parts[parts.length - 1].id, body: 'st.local.gvTotal = st.local.gvTotal + lvSeen * 100 + lvCount;\nreturn;' },
+  ];
+  const spliced = spliceBodies(p.scaffold, bodies, () => null);
+  expect(spliced.ok, spliced.reason ?? '').toBe(true);
+  const dir = writePackage(spliced.files, 'cc-split-statics-');
+  try {
+    const tc = typecheck(dir);
+    expect(tc.output.split('\n').filter((l) => /evaluate/.test(l)), tc.output.slice(0, 2000)).toEqual([]);
+    // Two calls in one run: lv_seen goes 6, 7 (kept); lv_count is 1 each time (started afresh). Another run starts at 5 again.
+    const got = runInPackage<number[]>(
+      dir,
+      `const m = await import(${JSON.stringify(fileUrl(dir, parentUnit.file))});
+       const run = () => { const st = { local: { gvTotal: 0 } }; m.${parentUnit.fn}({}, st); m.${parentUnit.fn}({}, st); return st.local.gvTotal; };
+       console.log(JSON.stringify([run(), run()]));`,
+    );
+    expect(got).toEqual([601 + 701, 601 + 701]);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
