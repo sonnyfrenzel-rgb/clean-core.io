@@ -14,8 +14,8 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { APP_VERSION } from '../lib/version';
 
-const route = (code: string, deployment: 'public' | 'private' = 'private') =>
-  routeExtensibility(buildAbapEvidence(code, 'zcc_qa220.abap', deployment), deployment, APP_VERSION);
+const route = (code: string, deployment: 'public' | 'private' = 'private', engine: string = APP_VERSION) =>
+  routeExtensibility(buildAbapEvidence(code, 'zcc_qa220.abap', deployment, undefined, engine), deployment, engine);
 
 const checkpoint = (report: ReturnType<typeof route>, name: string) =>
   report.checkpoints.find((c) => c.checkpointName.includes(name))!;
@@ -24,12 +24,33 @@ const READ_ONLY = 'REPORT zcc_read.\nSELECT * FROM vbak INTO TABLE @DATA(lt).';
 const STANDARD_WRITE = 'REPORT zcc_write.\nUPDATE vbak SET netwr = 0 WHERE vbeln = lv_vbeln.';
 const RFC = "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'ERP_PRD'.";
 
+// Engines before 3.0.19 had no key-user reading: the checkpoint saw a finding
+// count and nothing else, so all it could honestly say was what it had not
+// assessed. Runs of those engines rebuild with exactly that sentence.
 test('1d5ab9d90793 — the Key User checkpoint does not grade feasibility from a count', () => {
   for (const code of [READ_ONLY, STANDARD_WRITE, RFC]) {
-    const keyUser = checkpoint(route(code), 'Key User');
+    const keyUser = checkpoint(route(code, 'private', '3.0.18'), 'Key User');
     expect(keyUser.evaluation, code).not.toMatch(/Highly feasible|Trivial extension|^Infeasible/);
     expect(keyUser.evaluation, 'and it says what it did not assess').toMatch(/not assessed/i);
     expect(keyUser.resultState, 'a count is not a preference').toBe('Neutral');
+  }
+});
+
+// From 3.0.19 (KEY_USER_FROM) the checkpoint reads the program part by part
+// (`key-user-candidates.ts`) instead of a count, so "not assessed" is no longer
+// the honest sentence for a fully read program: each part that stays code is
+// named with its reason. The guarantee of 1d5ab9d90793 holds unchanged — no
+// grade from a count, and a program that is not key user is no preference.
+test('1d5ab9d90793 — from 3.0.19 the Key User checkpoint gives each part its reason, not a grade', () => {
+  for (const code of [READ_ONLY, STANDARD_WRITE, RFC]) {
+    const report = route(code);
+    const keyUser = checkpoint(report, 'Key User');
+    expect(report.keyUser, `${code}: the reading is carried`).toBeTruthy();
+    expect(keyUser.evaluation, code).not.toMatch(/Highly feasible|Trivial extension|^Infeasible/);
+    expect(keyUser.evaluation, `${code}: no part is a candidate`).toMatch(/^Not indicated\./);
+    expect(keyUser.evaluation, `${code}: and each part that stays code says why`).toMatch(/KU-R\d+: \S/);
+    expect(report.keyUser!.rejected.length, code).toBeGreaterThan(0);
+    expect(keyUser.resultState, 'a reading that is not key user is no preference').toBe('Neutral');
   }
 });
 

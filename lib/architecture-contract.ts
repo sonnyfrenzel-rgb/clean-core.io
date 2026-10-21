@@ -703,11 +703,22 @@ export function buildArchitectureContract(args: {
   // The router's artifact belongs to the recommended route. Under a deviation it
   // would describe the route that was *not* chosen, so the chosen route's own
   // artifact is named instead, and the router is not cited for it.
+  //
+  // From engine 3.0.19 (`KEY_USER_FROM`) the router's artifact is the key-user
+  // extensions where the whole program reads as key user, while its route —
+  // and so this contract's — stays the code route that takes a part should a
+  // candidate not hold (`ExtensibilityRouteReport.keyUser`). Naming that
+  // artifact after the RAP runtime sentence put two routes into one field, the
+  // failure of QA review 4b4586aff273 again. The field names the code route's
+  // artifact and says what the router recommends ahead of it.
   const followsRouter = chosen === recommended;
+  const keyUserAhead = followsRouter && route.keyUser?.recommended === true;
   fields.push({
     key: 'runtime',
     label: CONTRACT_FIELD_LABELS.runtime,
-    statement: `${RUNTIME_SENTENCES[chosen]} Target artifact: ${
+    statement: keyUserAhead
+      ? `${RUNTIME_SENTENCES[chosen]} Target artifact: ${TARGET_ARTIFACTS[chosen]}, for any part built in code. Recommended ahead of it: ${route.targetArtifact}, which covers the whole program; this runtime holds where a key-user candidate does not.`
+      : `${RUNTIME_SENTENCES[chosen]} Target artifact: ${
       followsRouter ? route.targetArtifact : TARGET_ARTIFACTS[chosen]
     }.`,
     notDeterminedReason: null,

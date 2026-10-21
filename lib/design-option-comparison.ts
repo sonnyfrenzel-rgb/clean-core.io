@@ -243,7 +243,7 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
     keyuser.push('The engine\u2019s key-user reading is not part of these facts (a run of an engine before 3.0.19, or not read here): whether key-user tools cover a part is not determined.');
   } else {
     keyuser.push(ku.sentence);
-    for (const c of ku.candidates.slice(0, 8)) keyuser.push(`${c.id} ${c.app}: ${c.part} (from line ${c.firstLine}) — a candidate with its limit, checked in the target system, never a promise.`);
+    for (const c of ku.candidates.slice(0, 8)) keyuser.push(`${c.id} ${c.app}: ${c.part} (${c.anchor}) — a candidate with its limit, checked in the target system, never a promise.`);
     for (const r of ku.rejected.slice(0, 6)) keyuser.push(`${r.id} not key user (${r.verdict === 'code' ? 'stays code' : 'not determined'}): ${r.reason}`);
     keyuser.push(ku.levelByConstruction === 'A'
       ? 'Clean core level A by construction where the whole program is key user: key-user extensions use released extension points only.'

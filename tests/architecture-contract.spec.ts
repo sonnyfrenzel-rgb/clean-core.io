@@ -397,9 +397,28 @@ test.describe('8.3 — a deviation is recorded and applied', () => {
     expect(field(toCap, 'runtime').statement).not.toContain('RAP Business Object');
 
     // Without a deviation the router's own artifact is what is named and cited.
-    const plain = contractFor(SOURCE_ON_STACK, 'public');
+    // Pinned on engine 3.0.18: from 3.0.19 this fixture — one count and its
+    // list output — reads as key user as a whole, and the router's artifact is
+    // the key-user extensions (next test).
+    const plain = contractFor(SOURCE_ON_STACK, 'public', undefined, '3.0.18');
     expect(field(plain, 'runtime').statement).toContain('Target artifact: RAP Business Object.');
     expect(field(plain, 'runtime').citations).toEqual([{ kind: 'router', ref: 'targetArtifact' }]);
+  });
+
+  // From engine 3.0.19 (KEY_USER_FROM) the router names the key-user extensions
+  // as its artifact where the whole program is key user, while the route stays
+  // the code route. The runtime field named that artifact after the RAP runtime
+  // sentence: two routes in one field, the 4b4586aff273 failure again.
+  test('from 3.0.19 a whole key-user program keeps one route per runtime field', () => {
+    const plain = contractFor(SOURCE_ON_STACK, 'public');
+    const route = routeExtensibility(buildAbapEvidence(SOURCE_ON_STACK, 'Z_TEST.abap', 'public', undefined, APP_VERSION), 'public', APP_VERSION);
+    expect(route.keyUser?.recommended, 'the fixture reads as key user as a whole').toBe(true);
+    const runtime = field(plain, 'runtime');
+    expect(runtime.statement).toContain('RAP behaviour and service definitions');
+    expect(runtime.statement).toContain('Target artifact: RAP Business Object, for any part built in code.');
+    expect(runtime.statement).not.toMatch(/Target artifact: Key-user/);
+    expect(runtime.statement, 'and the recommendation ahead of it is named, not dropped').toContain(`Recommended ahead of it: ${route.targetArtifact}`);
+    expect(runtime.citations).toEqual([{ kind: 'router', ref: 'targetArtifact' }]);
   });
 
   test('the headline does not call a route rejected that its alternative leaves open', () => {

@@ -67,9 +67,37 @@ export interface KeyUserRouteBasis {
   parts: KeyUserReading['parts'];
   /** `A` only where the whole program is key user: a key-user extension uses released extension points only. */
   levelByConstruction: 'A' | null;
-  candidates: Array<{ id: string; tool: KeyUserTool; app: string; part: string; firstLine: number }>;
+  /** `anchor` is the part's first line in the route report's own form, `from line N` (`routeAnchors`). */
+  candidates: Array<{ id: string; tool: KeyUserTool; app: string; part: string; anchor: string }>;
   rejected: Array<{ id: string; wouldBe: KeyUserTool; part: string; verdict: 'code' | 'not-determined'; reason: string; codes: KeyUserBlockerCode[] }>;
   sentence: string;
+}
+
+/**
+ * The line references of a key-user sentence in the form the rest of the route
+ * report uses: `from line N`, the first line only, with a count where there
+ * were several.
+ *
+ * The route report names a place by the first line of what it summarises —
+ * every other sentence of the router says `from line N` — and the reading
+ * itself (`AbapEvidenceReport.keyUser`, the step list) keeps every line. A
+ * report that also said `at line N`, `(line N, M)` and carried a bare number
+ * held the same anchors in three forms, and the formatting property of
+ * `tests/abap-metamorphic.spec.ts` reads anchors in that one form: a re-wrapped
+ * or commented program has to come back with the same route at moved anchors.
+ * A range keeps its first line only, because the number of lines a statement
+ * spans is formatting, not content.
+ */
+export function routeAnchors(text: string): string {
+  return text
+    .replace(/\((?:at )?lines? (\d+)((?:(?:, | and )\d+)*)(?:\s*[–-]\s*\d+)?\)/g, (_m, first: string, rest: string) => {
+      const more = rest ? rest.match(/\d+/g)!.length : 0;
+      return more ? `(from line ${first}, ${more + 1}× in all)` : `(from line ${first})`;
+    })
+    .replace(/(?<!from )\b(?:at )?lines? (\d+)((?:(?:, | and )\d+)*)(?:\s*[–-]\s*\d+)?/g, (_m, first: string, rest: string) => {
+      const more = rest ? rest.match(/\d+/g)!.length : 0;
+      return more ? `from line ${first} (${more + 1}× in all)` : `from line ${first}`;
+    });
 }
 
 /** The route report's view of a key-user reading. */
@@ -80,9 +108,9 @@ export function keyUserRouteBasis(reading: KeyUserReading): KeyUserRouteBasis {
     recommended: reading.scope === 'whole-program',
     parts: reading.parts,
     levelByConstruction: reading.levelByConstruction,
-    candidates: reading.candidates.map((c) => ({ id: c.id, tool: c.tool, app: c.app, part: c.part.name, firstLine: firstLine(c.anchors) })),
-    rejected: reading.rejected.map((r) => ({ id: r.id, wouldBe: r.wouldBe, part: r.part.name, verdict: r.verdict, reason: r.reason, codes: [...new Set(r.blockers.map((b) => b.code))] })),
-    sentence: reading.sentence,
+    candidates: reading.candidates.map((c) => ({ id: c.id, tool: c.tool, app: c.app, part: c.part.name, anchor: `from line ${firstLine(c.anchors)}` })),
+    rejected: reading.rejected.map((r) => ({ id: r.id, wouldBe: r.wouldBe, part: r.part.name, verdict: r.verdict, reason: routeAnchors(r.reason), codes: [...new Set(r.blockers.map((b) => b.code))] })),
+    sentence: routeAnchors(reading.sentence),
   };
 }
 
@@ -1013,7 +1041,7 @@ export function routeExtensibility(
       // From 3.0.19 (`KEY_USER_FROM`): what the engine read of the key-user
       // candidates, part by part, instead of a sentence that holds for every program.
       evaluation: keyUser
-        ? keyUserEvaluation(keyUser)
+        ? keyUserEvaluation(keyUser, coverageIncomplete ? unassessedSummary || 'part of the code' : null)
         : findings.length === 0 && coverageIncomplete
         ? `Not established. No pattern was found, but ${unassessedSummary || 'part of the code'} was not assessed by any detector \u2014 feasibility cannot be judged from what was not read.`
         : findings.length === 0
@@ -1274,12 +1302,20 @@ export function routeExtensibility(
 }
 
 /** The key-user checkpoint's evaluation from 3.0.19: the reading, then what keeps each other part in code. */
-function keyUserEvaluation(keyUser: KeyUserRouteBasis): string {
+function keyUserEvaluation(keyUser: KeyUserRouteBasis, unassessed: string | null): string {
   const reasons = keyUser.rejected.slice(0, 4).map((r) => `${r.id}: ${r.reason}`).join(' ');
   const more = keyUser.rejected.length > 4 ? ` … ${keyUser.rejected.length - 4} more.` : '';
   if (keyUser.recommended) {
     return `Indicated for the whole program. ${keyUser.sentence} Each candidate holds only once its limit is checked in the target system.`;
   }
   if (keyUser.scope === 'partial') return `Indicated in part. ${keyUser.sentence}${reasons ? ` ${reasons}${more}` : ''}`;
-  return `Not indicated. ${keyUser.sentence}${reasons ? ` ${reasons}${more}` : ''}`;
+  // What no detector read is neither a candidate nor a part that stays code
+  // (roadmap 0.18, QA review of 33471220d6e9): the reading of the parts that
+  // were read stands, and the rest is named as not assessed. A partial reading's
+  // sentence says so itself (`key-user-candidates.ts`); a reading with no
+  // candidate did not.
+  const unread = unassessed
+    ? ` Not established for what was not read: ${unassessed} was not assessed by any detector, and feasibility cannot be judged from what was not read.`
+    : '';
+  return `Not indicated. ${keyUser.sentence}${reasons ? ` ${reasons}${more}` : ''}${unread}`;
 }
