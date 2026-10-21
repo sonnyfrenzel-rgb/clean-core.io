@@ -27,10 +27,75 @@ if (-not (Test-Path $manifestPath)) {
 
 $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
 
-Write-Output "Manifest metadata:"
-Write-Output " - Timestamp: $($manifest.exportTimestamp)"
-Write-Output " - Version: $($manifest.platformVersion)"
-Write-Output " - Files count: $($manifest.filesCount)"
+function Stop-Verification([string]$message) {
+    Write-Error "Verification failed: $message"
+    Remove-Item -Recurse -Force $tempDir
+    exit 1
+}
+
+# SEC-2026-891. Manifest format 2: `boundMetadata` is the exact text the digest
+# starts with (scripts/export-source.ps1), each value written as <length>:<value>.
+$boundKeys = @('exportTimestamp', 'platformVersion', 'gitCommit', 'gitBranch', 'filesCount')
+$bound = $null
+if ($null -ne $manifest.manifestFormat) {
+    if ([string]$manifest.manifestFormat -ne '2' -or -not ($manifest.boundMetadata -is [string])) {
+        Stop-Verification "the manifest format is not one this verifier knows."
+    }
+    $text = [string]$manifest.boundMetadata
+    $prefix = 'cc-export-manifest/2'
+    if (-not $text.StartsWith($prefix)) { Stop-Verification "the bound metadata is malformed." }
+    $bound = [ordered]@{}
+    $at = $prefix.Length
+    foreach ($key in $boundKeys) {
+        $lead = ";$key="
+        if ($text.Length -lt $at + $lead.Length -or $text.Substring($at, $lead.Length) -ne $lead) { Stop-Verification "the bound metadata is malformed." }
+        $at += $lead.Length
+        $colon = $text.IndexOf(':', $at)
+        if ($colon -lt 0) { Stop-Verification "the bound metadata is malformed." }
+        $lenText = $text.Substring($at, $colon - $at)
+        if ($lenText -notmatch '^\d{1,6}$') { Stop-Verification "the bound metadata is malformed." }
+        $len = [int]$lenText
+        $at = $colon + 1
+        if ($text.Length -lt $at + $len) { Stop-Verification "the bound metadata is malformed." }
+        $bound[$key] = $text.Substring($at, $len)
+        $at += $len
+    }
+    if ($at -ne $text.Length) { Stop-Verification "the bound metadata is malformed." }
+    foreach ($key in $boundKeys) {
+        $plain = $manifest.$key
+        $same = $false
+        if ($plain -is [datetime]) {
+            # PowerShell 7 reads an ISO timestamp as a date; compare the instant.
+            $parsed = [DateTimeOffset]::MinValue
+            if ([DateTimeOffset]::TryParse($bound[$key], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$parsed)) {
+                $same = $parsed.UtcDateTime -eq $plain.ToUniversalTime()
+            }
+        } elseif ($null -ne $plain) {
+            $same = [string]$plain -ceq $bound[$key]
+        } else {
+            $same = $bound[$key] -eq ''
+        }
+        if (-not $same) { Stop-Verification "the manifest field $key differs from the metadata its digest binds." }
+    }
+}
+
+$listedCount = @($manifest.files).Count
+if ([string]$manifest.filesCount -ne [string]$listedCount) {
+    Stop-Verification "filesCount says $($manifest.filesCount), the manifest lists $listedCount files."
+}
+
+if ($bound) {
+    Write-Output "Manifest metadata (manifest format 2):"
+    Write-Output " - Timestamp: $($bound['exportTimestamp'])"
+    Write-Output " - Version: $($bound['platformVersion'])"
+    Write-Output " - Commit: $($bound['gitCommit'])"
+    Write-Output " - Files count: $($bound['filesCount'])"
+} else {
+    Write-Output "Manifest metadata (manifest format 1):"
+    Write-Output " - Timestamp: $($manifest.exportTimestamp)"
+    Write-Output " - Version: $($manifest.platformVersion)"
+    Write-Output " - Files count: $($manifest.filesCount)"
+}
 Write-Output " - Signed: $($manifest.signed)"
 
 # 1. Verify individual file hashes
@@ -96,6 +161,7 @@ if (-not $allPassed) {
 Write-Output "[OK] All file hashes match manifest records successfully."
 
 # 2. Verify manifest hash
+if ($bound) { $canonicalManifest = [string]$manifest.boundMetadata + "|" + $canonicalManifest }
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $manifestHashBytes = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($canonicalManifest))
 $localManifestHash = [System.BitConverter]::ToString($manifestHashBytes).Replace("-", "").ToLower()
@@ -149,4 +215,6 @@ if ($manifest.signed) {
 
 # Clean up
 Remove-Item -Recurse -Force $tempDir
-Write-Output "Verification complete: SUCCESS -- contents, manifest and signature all agree."
+$agree = "contents, manifest metadata and signature all agree."
+if (-not $bound) { $agree = "contents, manifest and signature all agree (manifest format 1)." }
+Write-Output "Verification complete: SUCCESS -- $agree"

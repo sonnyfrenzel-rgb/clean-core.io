@@ -156,6 +156,19 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
     c.located++;
     if (!equal) c.differ++;
   };
+  /** Every expected value below `value`, counted and not located. */
+  const absent = (value: unknown): void => {
+    if (isPlainObject(value)) {
+      for (const v of Object.values(value)) absent(v);
+      return;
+    }
+    if (Array.isArray(value)) {
+      leaf(false, false);
+      for (const v of value) absent(v);
+      return;
+    }
+    leaf(false, false);
+  };
   const visit = (key: string, value: unknown, within: ReadonlyArray<Record<string, unknown>>) => {
     if (Array.isArray(value) && value.length > 0 && value.every(isPlainObject)) {
       const rows = rowsFor(value, out);
@@ -208,8 +221,12 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
     }
     if (isPlainObject(value)) {
       const hit = locate(key, within);
-      const inner = hit.found && isPlainObject(hit.value) ? [hit.value] : within;
-      for (const [k, v] of Object.entries(value)) visit(k, v, inner);
+      // SEC-2026-893.
+      if (!hit.found || !isPlainObject(hit.value)) {
+        absent(value);
+        return;
+      }
+      for (const [k, v] of Object.entries(value)) visit(k, v, [hit.value]);
       return;
     }
     const hit = locate(key, within);

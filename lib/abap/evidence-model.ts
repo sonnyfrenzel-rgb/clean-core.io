@@ -13,6 +13,7 @@ import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
 import { precisionFixesApply } from './precision-fixes-gate';
 import { engineReadsApply } from './engine-reads-gate';
+import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { gateOfLine, readConstantGates } from './constant-gates';
 import { readCallGraph } from './call-graph';
@@ -364,8 +365,12 @@ const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {
  * unambiguous, and the list is meant to grow rather than to be complete — the
  * detector that reports the key is the safety net, this is the muzzle.
  */
-export function redactCredentials(snippet: string | undefined): string {
+export function redactCredentials(snippet: string | undefined, engineVersion: string | null = APP_VERSION): string {
   if (!snippet) return snippet ?? '';
+  // From 3.0.19 (`ENGINE_READS_3019_FROM`, SEC-2026-886); a run of an earlier engine keeps what it signed.
+  const assigned = engineReads3019Apply(engineVersion)
+    ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
+    : /\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi;
   return snippet
     // A private key block, whole — or from its header to the end of the text
     // when the source splits it over several literals.
@@ -409,8 +414,7 @@ export function redactCredentials(snippet: string | undefined): string {
     // secret is still a secret. The name may carry a prefix (`lv_password`,
     // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
     // matched inside one (QA slice review of 953575fcc9bf, 21933f60c24d).
-    .replace(/\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
-      (_m, word, mid) => `${word}${mid}'…<redacted>'`);
+    .replace(assigned, (_m, word, mid) => `${word}${mid}'…<redacted>'`);
 }
 
 /** `the purchase order schedule line (EKET)`, or `EKET` where the glossary has no word for it. */
@@ -480,6 +484,8 @@ export function buildAbapEvidence(
   // From 3.0.18 (`ENGINE_READS_FROM`): the engine says only what it read; a run
   // of an earlier engine keeps what it signed.
   const reads = engineReadsApply(engineVersion === undefined ? APP_VERSION : engineVersion);
+  // The engine every quoted text of a finding is redacted for (`redactCredentials`).
+  const engine = engineVersion === undefined ? APP_VERSION : engineVersion;
   // From 3.0.13: the statements read once for the engine rules, and the program
   // units they stand in — the program an enhancement point is declared in
   // decides whether it is the customer's own.
@@ -587,13 +593,13 @@ export function buildAbapEvidence(
       // 9d7721972a67 — and the test that was supposed to hold this used two
       // statements, so it never saw the case). One gate means a detector added
       // next year is covered without anyone remembering this paragraph.
-      snippet: redactCredentials(finding.snippet),
+      snippet: redactCredentials(finding.snippet, engine),
       // The snippet is not the only field that quotes the source: a title names
       // the transaction or function a literal called, and the object name can
       // be the file name. Same gate, same reason.
-      title: redactCredentials(finding.title),
-      ...(finding.objectName !== undefined ? { objectName: redactCredentials(finding.objectName) } : {}),
-      technicalDetail: redactCredentials(finding.technicalDetail),
+      title: redactCredentials(finding.title, engine),
+      ...(finding.objectName !== undefined ? { objectName: redactCredentials(finding.objectName, engine) } : {}),
+      technicalDetail: redactCredentials(finding.technicalDetail, engine),
       id: `CC-${String(idCounter++).padStart(3, '0')}`,
       // Default source: 'static-parser' for all scanner findings. Upgraded to
       // 'catalog-match' only when the replacement came out of SAP's release
