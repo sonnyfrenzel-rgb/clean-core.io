@@ -48,6 +48,7 @@ import {
 import { publishProcessStates, useProcessStates } from '@/hooks/useProcessStates';
 import type { Project } from '@/lib/types';
 import RulesDoneLine from './RulesDoneLine';
+import RuleDecisionFlow from './RuleDecisionFlow';
 import DecisionTables from '@/components/documentation/DecisionTables';
 import { decisionTableViews } from '@/lib/decision-tables';
 import {
@@ -645,20 +646,36 @@ export default function BusinessRulesEditor({
             {status ? rulesConfirmedOf(status.confirmed, status.total) : rulesReadRefusal(unavailable)}{' '}
             {wt('rules.meaning')}
           </p>
-          {openRules.length > 0 && answered.length > 0 ? (
-            <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-              {wt('rules.openFirst')} ({openRules.length})
-            </p>
-          ) : null}
-          <ul data-rules-list="" className="m-0 flex list-none flex-col p-0">
-            {openRules.map((rule) => row(rule, true))}
-          </ul>
-          {openRules.length > 0 && answered.length > 0 ? (
-            <p className="m-0 mt-3 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-              {wt('rules.answeredGroup')} ({answered.length})
-            </p>
-          ) : null}
-          <ul className="m-0 flex list-none flex-col p-0">{answered.map((rule) => row(rule, false))}</ul>
+          {/* Roadmap 3.0.20: the rules as a guided decision — by topic, by impact, explained, one click.
+              The flat list stays as what is shown should the explanation not be written. */}
+          <RuleDecisionFlow
+            projectId={projectId}
+            source={source}
+            reading={reading}
+            rules={rules}
+            outcome={outcome}
+            view={view}
+            owner={owner}
+            reload={reload}
+            fallback={
+              <>
+              {openRules.length > 0 && answered.length > 0 ? (
+                <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+                  {wt('rules.openFirst')} ({openRules.length})
+                </p>
+              ) : null}
+              <ul data-rules-list="" className="m-0 flex list-none flex-col p-0">
+                {openRules.map((rule) => row(rule, true))}
+              </ul>
+              {openRules.length > 0 && answered.length > 0 ? (
+                <p className="m-0 mt-3 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+                  {wt('rules.answeredGroup')} ({answered.length})
+                </p>
+              ) : null}
+              <ul className="m-0 flex list-none flex-col p-0">{answered.map((rule) => row(rule, false))}</ul>
+              </>
+            }
+          />
           {decisionTables.length ? (
             <div className="mt-4 border-t border-cc-line pt-3">
               <DecisionTables tables={decisionTables} tone="unlinked" />

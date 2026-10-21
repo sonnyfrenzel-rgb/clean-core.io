@@ -159,7 +159,97 @@ export const WORKSPACE_RULES_MESSAGES = {
   'firstLook.stripNotDetermined': 'not determined',
   'firstLook.stepsLabel': 'The first steps of the process',
   'firstLook.factsTitle': 'What the figures mean',
+  // RuleDecisionFlow / RuleWorkshop — roadmap 3.0.20 (business rules as a guided decision)
+  'rules.flowLead':
+    'The rules by business topic, the weightiest first. Each says what it protects, an example with values from the code and what happens on either side; the engine proposes an answer, and taking it over is one click. Every answer is yours and carries your name.',
+  'rules.flowLeadReader':
+    'The rules by business topic, the weightiest first. Each says what it protects, an example with values from the code, what happens on either side, and the answer the engine proposes.',
+  'rules.viewLabel': 'How to show the rules',
+  'rules.viewDecide': 'Decide',
+  'rules.viewWorkshop': 'Workshop',
+  'rules.protects': 'What it protects',
+  'rules.example': 'Example from the code',
+  'rules.sides': 'Either side of the limit',
+  'rules.where': 'Where it applies',
+  'rules.proposal': 'Proposal',
+  'rules.proposed': 'Proposed',
+  'rules.otherAnswer': 'Your answer',
+  'rules.noteOptional': 'Note (optional)',
+  'rules.newValue': 'The new value, in plain words',
+  'rules.newValueHelp': 'What the rule should say instead — it becomes the need of the next revision.',
+  'rules.theCode': 'The code',
+  'rules.nextOpen': 'Next open rule',
+  'rules.ownerOnly': 'Only the owner can decide or change this.',
+  'rules.apart': 'Set apart — not business decisions',
+  'rules.recorded': 'Recorded.',
+  'rules.goNext': 'Go to the next open rule',
+  'rules.impactHigh': 'High impact',
+  'rules.impactMedium': 'Medium impact',
+  'rules.impactLow': 'Low impact',
+  'rules.topicDone': 'Every rule of this topic has a decision.',
+  'rules.allDecided': 'Every rule has a decision.',
+  'rules.technicalNote': 'Not a business decision',
+  'rules.workshopLead':
+    'For a meeting about the rules: what is still open, what was decided differently from the proposal, what the latest session recorded and who decided what. Read from the record of answers; nothing here changes it.',
+  'rules.workshopOpen': 'Open points',
+  'rules.workshopDeviations': 'Decided differently from the proposal',
+  'rules.workshopLatest': 'Latest session',
+  'rules.workshopWho': 'Who decided what',
+  'rules.workshopNothing': 'Nothing is on record yet — the first answers start the first session.',
+  'rules.workshopNoOpen': 'No point is open: every rule has a decision.',
+  'rules.workshopNoDeviation': 'Every decision so far follows the engine’s proposal.',
+  'rules.workshopEarlier': 'An answer of this session may replace an earlier one; the earlier revision keeps what it was.',
 } as const;
+
+/** "12 of 30 decided". */
+export function rulesDecidedOf(decided: number, total: number): string {
+  return `${decided} of ${total} decided`;
+}
+
+/** "Take over: Move to configuration". */
+export function rulesTakeOver(label: string): string {
+  return `Take over: ${label}`;
+}
+
+/** "Record: Drop". */
+export function rulesRecordDecision(label: string): string {
+  return `Record: ${label}`;
+}
+
+/** "Keep all 2 technical settings". */
+export function rulesKeepTechnical(n: number): string {
+  return n === 1 ? 'Keep the technical setting' : `Keep all ${n} technical settings`;
+}
+
+/** "Why early: stops the process, decides 2 steps". */
+export function rulesWhyEarly(reasons: readonly string[]): string {
+  return reasons.length ? `Why it comes early: ${reasons.join(', ')}` : '';
+}
+
+/** "Asked by Controller A". */
+export function rulesAskedBy(name: string): string {
+  return `Asked by ${name}`;
+}
+
+/** "The engine proposed: Keep". */
+export function rulesProposalWas(label: string): string {
+  return `The engine proposed: ${label}`;
+}
+
+/** "3 answers" — the size of a session. */
+export function rulesSessionAnswers(n: number): string {
+  return n === 1 ? '1 answer' : `${n} answers`;
+}
+
+/** "Since the session before" — the line under the latest session when there was one. */
+export function rulesSincePrevious(hasPrevious: boolean): string {
+  return hasPrevious ? 'Answered or changed since the session before, on' : 'The first session on record.';
+}
+
+/** "4 decisions". */
+export function rulesDecisionCount(n: number): string {
+  return n === 1 ? '1 decision' : `${n} decisions`;
+}
 
 const DECISION_LABEL: Record<ElementState, string> = {
   keep: 'Keep',

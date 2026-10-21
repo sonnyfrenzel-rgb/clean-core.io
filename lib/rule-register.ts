@@ -16,7 +16,11 @@
  * takes the same rows from `ruleRegisterFromView` / `ruleRegisterFromSource`.
  */
 
-import { deriveBusinessRules, type BusinessRuleSet } from './abap/business-rule-set';
+import { deriveBusinessRulesFrom, type BusinessRuleSet } from './abap/business-rule-set';
+import { buildProcessFacts, type ProcessFacts } from './abap/process-facts';
+import { buildProcessSkeletonFrom } from './abap/process-skeleton';
+import { explainBusinessRules, RULE_PROPOSAL_LABELS, type RuleProposalKind, type RuleTopic } from './abap/business-rule-set-explain';
+import { RULE_DECISION_LABELS, decisionKindOf } from './rule-decision-flow';
 import { HEADER_RULE_LABEL, type HeaderRuleCandidate } from './abap/header-rules';
 import { ruleAnchor } from './rule-anchor';
 import { csvCell } from './csv-formula';
@@ -139,6 +143,12 @@ export type RuleRegister =
       rows: RuleRow[];
       counts: { keep: number; change: number; drop: number; clarify: number; undecided: number };
       apart?: RuleRegisterApart;
+      /**
+       * Roadmap 3.0.20: the rules by business topic, each explained in plain
+       * words with the engine's proposal and the decision on record. Present
+       * when the source was at hand to explain them.
+       */
+      topics?: RuleRegisterTopic[];
     }
   | { state: 'not-detected'; reason: string; apart?: RuleRegisterApart }
   | { state: 'not-read'; reason: string };
@@ -155,6 +165,62 @@ export interface RuleRegisterApart {
   headerRules: HeaderRuleCandidate[];
 }
 
+/** One business topic of the register, its rules in the order a reader decides them (3.0.20). */
+export interface RuleRegisterTopic {
+  topic: RuleTopic;
+  label: string;
+  rows: Array<{
+    id: string;
+    /** A name in words for a rule on a constant, or null — then the id and the code name it. */
+    headline: string | null;
+    protects: string;
+    example: string | null;
+    holds: string | null;
+    otherwise: string | null;
+    where: string;
+    proposal: { kind: RuleProposalKind; reason: string };
+    /** The decision on record in the Business view's words, with who and when — or null when open. */
+    decision: string | null;
+  }>;
+}
+
+/** The rules by topic, explained, with the decision each entry on record carries. */
+function topicsOf(
+  source: string,
+  set: BusinessRuleSet,
+  facts: ProcessFacts,
+  bySubject: Readonly<Record<string, StateEntry>>,
+  skip: ReadonlySet<string> = new Set(),
+): RuleRegisterTopic[] {
+  const explained = explainBusinessRules(source, set, facts);
+  const byId = new Map(explained.rules.map((r) => [r.id, r]));
+  return explained.topics
+    .map((t) => ({
+      topic: t.topic,
+      label: t.label,
+      rows: t.ruleIds
+        .filter((id) => !skip.has(id))
+        .map((id) => {
+          const e = byId.get(id)!;
+          const entry = bySubject[id];
+          const kind = decisionKindOf(entry);
+          const who = entry ? ` — by ${entry.account.name} on ${day(entry.confirmedAt)}` : '';
+          return {
+            id,
+            headline: e.headline,
+            protects: e.protects.text,
+            example: e.example?.text ?? null,
+            holds: e.sides?.holds.text ?? null,
+            otherwise: e.sides?.otherwise.text ?? null,
+            where: e.where.text,
+            proposal: { kind: e.proposal.kind, reason: e.proposal.reason.text },
+            decision: kind ? `${RULE_DECISION_LABELS[kind]}${who}${entry?.note ? `: ${entry.note}` : ''}` : null,
+          };
+        }),
+    }))
+    .filter((t) => t.rows.length > 0);
+}
+
 function apartOf(set: Pick<BusinessRuleSet, 'demoCases' | 'headerRules'>): RuleRegisterApart | null {
   const demo = set.demoCases?.rules ?? [];
   const header = set.headerRules ?? [];
@@ -168,11 +234,27 @@ function apartOf(set: Pick<BusinessRuleSet, 'demoCases' | 'headerRules'>): RuleR
 
 const lineWords = (from: number, to: number) => (to > from ? `lines ${from} to ${to}` : `line ${from}`);
 
-/** The rule set of a source the register may read, or null (too large, unreadable). */
-function ruleSetOf(source: string | null | undefined): BusinessRuleSet | null {
+/** The rule set of a source the register may read, with the facts it was read from, or null (too large, unreadable). */
+function ruleSetOf(source: string | null | undefined): { set: BusinessRuleSet; facts: ProcessFacts } | null {
   if (!source || !source.trim() || new TextEncoder().encode(source).length > MAX_RULE_READ_BYTES) return null;
   try {
-    return deriveBusinessRules(source);
+    return readRuleSet(source);
+  } catch {
+    return null;
+  }
+}
+
+/** `deriveBusinessRules`, keeping the facts: the same rules, the same numbers. */
+function readRuleSet(source: string): { set: BusinessRuleSet; facts: ProcessFacts } {
+  const facts = buildProcessFacts(source);
+  return { set: deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts)), facts };
+}
+
+/** The topics, or none when the explanation cannot be written — the register never fails over its prose. */
+function safeTopics(...args: Parameters<typeof topicsOf>): RuleRegisterTopic[] | null {
+  try {
+    const topics = topicsOf(...args);
+    return topics.length ? topics : null;
   } catch {
     return null;
   }
@@ -298,7 +380,8 @@ export function ruleRegisterFromView(
   source?: string | null,
 ): RuleRegister {
   if (!view) return { state: 'not-read', reason };
-  const set = source ? ruleSetOf(source) : null;
+  const read0 = source ? ruleSetOf(source) : null;
+  const set = read0?.set ?? null;
   const apart = set ? apartOf(set) : null;
   // A stored record may still name a rule the engine now counts as a demo switch.
   const demoIds = new Set((apart?.demoCases ?? []).map((d) => d.id));
@@ -306,7 +389,19 @@ export function ruleRegisterFromView(
   const { rules } = subjectIdsOf(subjects);
   if (rules.length === 0) return { state: 'not-detected', reason: NO_RULES, ...(apart ? { apart } : {}) };
   const read = readProcessStates(view.entries.filter((e) => !demoIds.has(e.subject)), { elements: [], rules });
-  return { state: 'read', basis: 'confirmations', rows: rowsOf(subjects, read.bySubject, tests), counts: read.counts, ...(apart ? { apart } : {}) };
+  // Only rules the record knows: a source that moved under the record explains nothing it would decide.
+  const known = new Set(rules);
+  const topics = read0 && source
+    ? safeTopics(source, read0.set, read0.facts, read.bySubject, new Set(read0.set.rules.map((r) => r.id).filter((id) => !known.has(id))))
+    : null;
+  return {
+    state: 'read',
+    basis: 'confirmations',
+    rows: rowsOf(subjects, read.bySubject, tests),
+    counts: read.counts,
+    ...(apart ? { apart } : {}),
+    ...(topics ? { topics } : {}),
+  };
 }
 
 /** The process-states route's limit: `deriveBusinessRules` is quadratic in the source, and this may run in the browser. */
@@ -325,9 +420,10 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
   if (new TextEncoder().encode(source).length > MAX_RULE_READ_BYTES) {
     return { state: 'not-read', reason: 'the source is too large for the rule reader.' };
   }
-  let set: ReturnType<typeof deriveBusinessRules>;
+  let set: BusinessRuleSet;
+  let facts: ProcessFacts;
   try {
-    set = deriveBusinessRules(source);
+    ({ set, facts } = readRuleSet(source));
   } catch {
     return { state: 'not-read', reason: 'the rule reader could not walk the source.' };
   }
@@ -340,12 +436,14 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
     detail: rule.text,
     anchor: ruleAnchor(rule),
   }));
+  const topics = safeTopics(source, set, facts, {});
   return {
     state: 'read',
     basis: 'source',
     rows: rowsOf(subjects, {}, tests),
     counts: { keep: 0, change: 0, drop: 0, clarify: 0, undecided: subjects.length },
     ...(apart ? { apart } : {}),
+    ...(topics ? { topics } : {}),
   };
 }
 
@@ -441,7 +539,37 @@ export function ruleRegisterMarkdown(register: RuleRegister): string[] {
       `| ${row.id} \`${row.label.replace(/`/g, "'")}\` | ${RULE_STATE_WORDS[row.state]} | ${cell(row.meaning)} | ${cell(w.proposal)} | ${cell(w.decision)} | ${cell(w.implementation)} | ${cell(w.test)} | ${cell(w.evidence)} | ${w.revision} |`,
     );
   }
+  if (register.topics) lines.push(...topicsMarkdown(register.topics));
   if (register.apart) lines.push(...apartMarkdown(register.apart));
+  return lines;
+}
+
+/**
+ * Roadmap 3.0.20: the same rules by business topic, in plain words — what
+ * each protects, an example with values from the code, what happens on either
+ * side, where it applies, the engine's proposal and the decision on record.
+ * The table above stays the record; this is the reading of it a workshop
+ * works from.
+ */
+function topicsMarkdown(topics: readonly RuleRegisterTopic[]): string[] {
+  const lines: string[] = [
+    '',
+    '## Rules by business topic — explained, with proposal and decision',
+    '',
+    "Written by the engine from the code, without a model; the lines each rule stands at are in the table above. A proposal is the engine's and decides nothing; a decision is the self-declaration of the account named with it.",
+  ];
+  for (const t of topics) {
+    lines.push('', `### ${t.label}`, '');
+    for (const r of t.rows) {
+      lines.push(`- **${r.id}${r.headline ? ` — ${cell(r.headline)}` : ''}.** ${cell(r.protects)}`);
+      if (r.example) lines.push(`  - Example: ${cell(r.example)}`);
+      if (r.holds) lines.push(`  - ${cell(r.holds)}`);
+      if (r.otherwise) lines.push(`  - ${cell(r.otherwise)}`);
+      lines.push(`  - Where: ${cell(r.where)}`);
+      lines.push(`  - Proposal: ${RULE_PROPOSAL_LABELS[r.proposal.kind]} — ${cell(r.proposal.reason)}`);
+      lines.push(`  - Decision: ${r.decision ? cell(r.decision) : 'None on record — open.'}`);
+    }
+  }
   return lines;
 }
 
