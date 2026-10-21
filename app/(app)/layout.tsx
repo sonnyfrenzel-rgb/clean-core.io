@@ -117,11 +117,21 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  /**
+   * Whether anyone is signed in: undefined until Firebase has answered. A
+   * visitor nobody signed in for (the public pages under this shell — About,
+   * Knowledge …) gets a "Sign in" link, not an account menu with an empty name,
+   * "Settings & Profile" and "Sign Out", which read as a pseudo account (owner
+   * report 21.10.2026).
+   */
+  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+
   // A project name announced for one account is not shown to the next one.
   useEffect(() => {
     let uid: string | null | undefined;
     return onAuthStateChanged(getAuth(), (user) => {
       const next = user?.uid ?? null;
+      setSignedIn(next !== null);
       if (uid !== undefined && next !== uid) forgetShellProject();
       uid = next;
     });
@@ -327,6 +337,15 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 the assistant and this menu (Sonny, 01.10.2026). */}
             <ShellHelpMenu assistantLabel={assistantLabel} inProject={inProject} />
 
+            {signedIn === false ? (
+              <Link
+                href="/"
+                data-shell-sign-in=""
+                className={cn(SHELL_TRIGGER, 'px-3 text-[13px] font-semibold text-cc-ink no-underline')}
+              >
+                Sign in
+              </Link>
+            ) : (
             <div ref={accountMenuRootRef} className="relative">
               <button
                 ref={accountButtonRef}
@@ -408,6 +427,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       </header>

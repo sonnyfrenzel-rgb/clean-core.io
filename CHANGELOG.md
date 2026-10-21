@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v3.0.18] — 2026-10-19
 
+### Hotfix (21 October 2026)
+
+- **A visitor nobody signed in for is shown no account.** The public pages under the product shell (About,
+  Knowledge) showed the account menu with an empty name, "Settings & Profile" and "Sign Out", which read as being
+  signed in to a pseudo account; no session existed. Signed out, the shell now offers "Sign in".
+  `tests/shell-signed-out.spec.ts`.
+- **While the first insights are written, the workspace does not ask to run the analysis.** The "Continue with"
+  card offered "Run the analysis" with a button while the start run was still with the server; it now says the
+  analysis is running and that there is nothing to press, as "Your next step" already did.
+  `tests/workspace-hub-running.spec.ts`.
+
 A quality release with no new feature (owner decision 18.10.2026). Every change below is a fix of something that
 was wrong, a check that now proves what it claims, or a starter example that now runs cleanly end to end. Engine
 output that moved is gated to engine 3.0.18: runs signed by an earlier engine rebuild unchanged.

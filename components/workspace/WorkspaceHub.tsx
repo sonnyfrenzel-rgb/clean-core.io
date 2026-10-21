@@ -154,9 +154,22 @@ export default function WorkspaceHub({
           ) : (
             <>
               <p className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">{step.point.action}</p>
-              <p className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
-                {phaseAt >= 0 ? `${hubNextPosition(phaseAt + 1, tools.length, step.point.label)} — ` : null}
-                {PHASE_PURPOSE[step.point.key]}
+              {/* While the start run is with the server Analyze is running, not
+                  open: the reader only waits, so the card says that and offers
+                  no button (owner report 21.10.2026; the same rule as NextStepCard). */}
+              <p
+                data-workspace-hub-next-state={step.point.running ? 'running' : 'open'}
+                role={step.point.running ? 'status' : undefined}
+                className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted"
+              >
+                {step.point.running ? (
+                  wt('nextStep.running')
+                ) : (
+                  <>
+                    {phaseAt >= 0 ? `${hubNextPosition(phaseAt + 1, tools.length, step.point.label)} — ` : null}
+                    {PHASE_PURPOSE[step.point.key]}
+                  </>
+                )}
               </p>
             </>
           )}
@@ -168,7 +181,7 @@ export default function WorkspaceHub({
               <ArrowRight size={16} aria-hidden={true} />
             </CcButton>
           </span>
-        ) : step?.kind === 'phase' ? (
+        ) : step?.kind === 'phase' && !step.point.running ? (
           <span className="cc-no-print" data-workspace-hub-next-action="">
             <CcLinkButton
               variant="secondary"
