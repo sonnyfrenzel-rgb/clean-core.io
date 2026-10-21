@@ -38,7 +38,7 @@ process.stdin.on('end', () => {
       const sha = tipOf('dev');
       emit(
         `QA agent: a push to dev (${sha.slice(0, 12)}) starts the sealed QA review and smoke check. ` +
-          `Invoke the qa-review-loop skill and run \`node scripts/qa/await.mjs ${sha} --timeout=60\` with run_in_background. ` +
+          `Invoke the qa-review-loop skill and run \`node scripts/qa/await.mjs ${sha} --timeout=115\` with run_in_background. ` +
           'Verify every finding before changing code; ask Sonny before any push to main.',
       );
     } else if (PUSH_TO('main').test(command)) {

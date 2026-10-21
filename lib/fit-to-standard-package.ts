@@ -1,3 +1,4 @@
+import { CLOUD_ERP_PRIVATE, PUBLIC_EDITION } from './sap-naming';
 import type { ProcessSkeleton, SkeletonEdge, SkeletonNode } from './abap/process-skeleton';
 import { buildBpmnExport } from './bpmn/export';
 import {
@@ -91,7 +92,7 @@ function head(title: string, input: FitPackageInput): string[] {
   return [
     `# ${title} — ${input.projectName}`,
     '',
-    `Fit-to-standard design revision ${r.revision}, ${r.kind === 'confirmation' ? `confirmed by ${r.createdBy.name} on ${r.createdAt.slice(0, 10)} — a self-declaration` : 'the engine\'s derivation, not confirmed'}. Target: ${r.edition === 'public' ? 'SAP S/4HANA Cloud Public Edition' : 'SAP S/4HANA Cloud Private Edition'}. Written by Clean-Core.io from the records of the project, without a model. Not signed.`,
+    `Fit-to-standard design revision ${r.revision}, ${r.kind === 'confirmation' ? `confirmed by ${r.createdBy.name} on ${r.createdAt.slice(0, 10)} — a self-declaration` : 'the engine\'s derivation, not confirmed'}. Target: ${r.edition === 'public' ? PUBLIC_EDITION : CLOUD_ERP_PRIVATE}. Written by Clean-Core.io from the records of the project, without a model. Not signed.`,
     '',
     `> ${FIT_DESIGN_HEADER}`,
     '',

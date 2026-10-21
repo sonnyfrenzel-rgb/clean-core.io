@@ -24,7 +24,7 @@ he revokes it. You act only inside the guardrails below — nothing else, nothin
 Start in the background, then keep working on something that does not touch the same files:
 
 ```bash
-node scripts/qa/await.mjs <pushed-sha> --timeout=60     # run_in_background: true
+node scripts/qa/await.mjs <pushed-sha> --timeout=115    # run_in_background: true
 ```
 
 Exit codes: `0` go · `3` findings or smoke not OK · `2` no result (failed, superseded, timed out, revoked, or the

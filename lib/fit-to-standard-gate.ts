@@ -399,7 +399,7 @@ export function fitToStandardGate(input: FitToStandardGateInput): FitToStandardG
     signals,
     sentence: `Worth examining against SAP standard: ${FIT_GATE_CLASS_LABELS[primary].toLowerCase()}. ${FIT_GATE_CLASS_MEANING[primary]}`,
     editionNote: edition === 'private'
-      ? 'On Private Edition keeping the program stays a real alternative — compare it with what living with the standard gives up.'
+      ? 'On SAP Cloud ERP Private keeping the program stays a real alternative — compare it with what living with the standard gives up.'
       : null,
   };
 }
