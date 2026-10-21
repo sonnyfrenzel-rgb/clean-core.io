@@ -1621,9 +1621,9 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-889 | low | P3 | next rules deploy (owner's go) | scheduled |
 | SEC-2026-890 | low | P3 | next rules deploy (owner's go) | scheduled |
 | SEC-2026-891 | low | P3 | 3.0.19 · security | fixed |
-| SEC-2026-892 | low | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-892 | low | P3 | 3.0.20 · security | fixed |
 | SEC-2026-893 | low | P3 | 3.0.19 · security | fixed |
-| SEC-2026-894 | info | P3 | 3.0.20 · security | scheduled |
+| SEC-2026-894 | info | P3 | 3.0.20 · security | fixed |
 | SEC-2026-895 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-896 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 
