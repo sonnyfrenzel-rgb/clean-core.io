@@ -217,6 +217,19 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(readDemoSwitches(switchOf((n) => `      APPEND VALUE #( id = ${n} name = ls_in-name ) TO lt_rows.`), AFTER)).toBeNull();
   });
 
+  test('literals handed to a routine are test data only when the routine keeps them in memory', () => {
+    const withForm = (body: string) =>
+      `${switchOf((n) => `      PERFORM add_row USING '${n}' 'Case ${n}' 'A'.`)}FORM add_row USING iv_id TYPE c iv_name TYPE c iv_kind TYPE c.\n${body}ENDFORM.\n`;
+    // Builds a row and appends it: test data.
+    expect(readDemoSwitches(withForm('  CLEAR ls_row.\n  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n'), AFTER)?.flag.name).toBe('P_CASE');
+    // Creates a record, commits, or calls out: a business branch, however literal its arguments.
+    expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  INSERT zrow FROM ls_row.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n  COMMIT WORK.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(withForm("  CALL FUNCTION 'Z_CREATE_ORDER' EXPORTING iv_id = iv_id.\n"), AFTER)).toBeNull();
+    // A routine this upload does not contain is not known to keep anything in memory.
+    expect(readDemoSwitches(switchOf((n) => `      PERFORM add_row IN PROGRAM zother USING '${n}' 'Case ${n}' 'A'.`), AFTER)).toBeNull();
+  });
+
   test('the process documentation reads the demo switch as the run\'s engine reads it', () => {
     const build = fs.readFileSync(path.join(process.cwd(), 'lib/process-document-build.ts'), 'utf8');
     expect(build).toMatch(/readDemoSwitches\(source, input\.engineVersion\)/);

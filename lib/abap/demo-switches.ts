@@ -326,10 +326,17 @@ function literalRow(row: string): boolean {
  * test data only when it is literal or one of those. Without it (the set-up
  * around the switch) any row into an internal table passes; a database write never does.
  */
-function testDataStatement(s: AbapStatement, filled: Set<string> | null = null): { ok: boolean; fills: boolean } {
+function testDataStatement(
+  s: AbapStatement,
+  filled: Set<string> | null = null,
+  inMemory: ((routine: string) => boolean) | null = null,
+): { ok: boolean; fills: boolean } {
   const text = s.text.replace(/\.\s*$/, '').trim();
   const keyword = s.keyword.toUpperCase();
   if (keyword === 'PERFORM') {
+    // Literals handed to a routine are test data only when the routine keeps them in memory.
+    const target = /^PERFORM\s+([\w/]+)/i.exec(text)?.[1] ?? '';
+    if (inMemory && !inMemory(norm(target))) return { ok: false, fills: false };
     const args = /\b(?:USING|CHANGING)\b([\s\S]*)$/i.exec(text)?.[1] ?? '';
     const values = args.match(/'(?:[^']|'')*'|`[^`]*`|\S+/g) ?? [];
     const literals = values.filter((v) => !/^(?:USING|CHANGING)$/i.test(v));
@@ -356,10 +363,34 @@ function testDataStatement(s: AbapStatement, filled: Set<string> | null = null):
   return { ok: false, fills: false };
 }
 
+/**
+ * What a routine may do and still only build test data: no write, no commit,
+ * no call or submit, no read of the database, no routine of its own — an
+ * `INSERT` only into an internal table. A routine this program does not
+ * contain (`PERFORM … IN PROGRAM`, an include not uploaded) is not known to.
+ */
+const LEAVES_MEMORY = /^(?:UPDATE|MODIFY|DELETE|COMMIT|ROLLBACK|CALL|SUBMIT|PERFORM|SELECT|OPEN|TRANSFER|EXEC|RAISE|LEAVE|EXPORT|IMPORT|SET)$/i;
+
+function routineKeepsInMemory(statements: readonly AbapStatement[], structure: ReturnType<typeof readBlocks>, name: string): boolean {
+  const form = structure.containers.find((c) => c.kind === 'form' && norm(c.name) === name);
+  if (!form) return false;
+  return statements.every((st) => {
+    if (st.lineStart <= form.lineStart || st.lineStart >= form.lineEnd) return true;
+    const keyword = st.keyword.toUpperCase();
+    if (keyword === 'INSERT') return internalRowOf(st.text.replace(/\.\s*$/, '').trim(), keyword) !== null;
+    return !LEAVES_MEMORY.test(keyword);
+  });
+}
+
 /** Shape 5: a test data switch without a demo flag (see `readDemoSwitches`). */
 function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<string, number>): DemoSwitches | null {
   if (parameters.size === 0) return null;
   const structure = readBlocks(statements);
+  const keeps = new Map<string, boolean>();
+  const inMemory = (routine: string): boolean => {
+    if (!keeps.has(routine)) keeps.set(routine, routineKeepsInMemory(statements, structure, routine));
+    return keeps.get(routine)!;
+  };
   const { branches } = readControlFlowFrom(statements, structure);
   const fromParameter = new Map<string, string>();
   for (const s of statements) {
@@ -379,7 +410,7 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
       const to = branch.arms[k + 1]?.headerIndex ?? branch.closeIndex;
       const body = statements.slice(arm.headerIndex + 1, to);
       const filled = new Set<string>();
-      const read = body.map((s) => testDataStatement(s, filled));
+      const read = body.map((s) => testDataStatement(s, filled, inMemory));
       if (read.some((r) => r.fills)) filling += arm.kind === 'when' ? 1 : 0;
       return read.every((r) => r.ok);
     });
@@ -396,7 +427,7 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
       const keyword = s.keyword.toUpperCase();
       if (/^(?:FORM|ENDFORM|ENDIF|ELSE|MESSAGE|RETURN|EXIT)$/.test(keyword) || DECLARATION.test(keyword)) return true;
       if (keyword === 'IF' || keyword === 'ELSEIF' || keyword === 'CHECK') return onSelector.test(s.text);
-      return testDataStatement(s).ok;
+      return testDataStatement(s, null, inMemory).ok;
     });
     return {
       flag: { name: parameter, line: parameters.get(parameter)! },
