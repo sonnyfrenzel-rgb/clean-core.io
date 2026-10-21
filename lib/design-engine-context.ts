@@ -1,7 +1,7 @@
 import { anchorList, type RequirementSet } from '@/lib/functional-requirements';
 import type { ArchitectureContract } from '@/lib/architecture-contract';
 import type { ItFindingRow } from '@/lib/it-findings';
-import { routeDrivers } from '@/lib/abap/extensibility-router';
+import { routeDrivers, type KeyUserRouteBasis } from '@/lib/abap/extensibility-router';
 import { engineOptionFacts } from '@/lib/design-option-comparison';
 
 /**
@@ -41,9 +41,15 @@ export interface EngineDesignInput {
    */
   deployment?: 'public' | 'private' | null;
   engineVersion?: string | null;
+  /**
+   * The route report's key-user reading (`ExtensibilityRouteReport.keyUser`,
+   * engine 3.0.19 on) for the key-user option's facts. Absent: the facts say
+   * it was not read here.
+   */
+  keyUser?: KeyUserRouteBasis | null;
 }
 
-export function engineDesignContext({ requirements, contract, findings, deployment = null, engineVersion = null }: EngineDesignInput): string {
+export function engineDesignContext({ requirements, contract, findings, deployment = null, engineVersion = null, keyUser = null }: EngineDesignInput): string {
   const context: Record<string, unknown> = {
     note: 'Read from the ABAP source of the signed run by the deterministic engine. Line numbers refer to that source. Do not contradict it; do not invent what it lists as not determined.',
   };
@@ -64,6 +70,7 @@ export function engineDesignContext({ requirements, contract, findings, deployme
     findings,
     requirements: requirements ? { total: requirements.counts.total, open: requirements.counts.open } : null,
     deployment,
+    keyUser,
   });
   if (requirements) {
     context.program = requirements.program;

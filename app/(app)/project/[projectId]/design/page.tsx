@@ -65,6 +65,9 @@ import DesignCanvasStage, { type DesignDocSection } from '@/components/design/De
 import ConceptSuccessors from '@/components/ConceptSuccessors';
 import { conceptSuccessorsOf } from '@/lib/concept-successors';
 import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
+// Roadmap 3.0.19: key user as the fourth option, read from the engine's evidence.
+import { useKeyUserSteps } from '@/hooks/useKeyUserSteps';
+import type { KeyUserReading } from '@/lib/abap/key-user-candidates';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, TARGET_EDITION_NAMES, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { DESIGN_GENERATION_CEILING_MS } from '@/lib/model-stages';
@@ -153,12 +156,13 @@ function modelFailureText(err: unknown): string {
  */
 async function designContextFor(
   narrative: string | null,
-  { source, evidence }: { source: string | null; evidence: DesignEvidence | null },
+  { source, evidence, keyUser = null }: { source: string | null; evidence: DesignEvidence | null; keyUser?: KeyUserReading | null },
   target: { deployment: 'public' | 'private' | null; engineVersion: string | null },
 ): Promise<string> {
-  const [{ buildRequirementSet }, { engineDesignContext }] = await Promise.all([
+  const [{ buildRequirementSet }, { engineDesignContext }, { keyUserRouteBasis }] = await Promise.all([
     import('@/lib/functional-requirements'),
     import('@/lib/design-engine-context'),
+    import('@/lib/abap/extensibility-router'),
   ]);
   const ready = evidence && evidence.state === 'ready' ? evidence : null;
   let requirements: ReturnType<typeof buildRequirementSet> | null = null;
@@ -173,6 +177,8 @@ async function designContextFor(
     findings: ready?.findings ?? [],
     deployment: target.deployment,
     engineVersion: target.engineVersion,
+    // Roadmap 3.0.19: the key-user option's facts; null for an engine before it (the facts then say so).
+    keyUser: keyUser ? keyUserRouteBasis(keyUser) : null,
   });
   const narrativePart = narrative
     ? `Analysis Context (the run's model narrative, further context only):
@@ -252,7 +258,7 @@ export default function DesignPage() {
   }, [project]);
 
   /** The signed source and the server's evidence, for the design prompt — kept current below. */
-  const engineEvidenceRef = useRef<{ source: string | null; evidence: DesignEvidence | null }>({ source: null, evidence: null });
+  const engineEvidenceRef = useRef<{ source: string | null; evidence: DesignEvidence | null; keyUser: KeyUserReading | null }>({ source: null, evidence: null, keyUser: null });
 
   /**
    * The design on record now, read again — what a page adopts when another
@@ -576,6 +582,10 @@ ${DESIGN_ANSWER_REMINDER}`;
   // move the contract's chosen route.
   const [evidenceVersion, setEvidenceVersion] = useState(0);
   const designEvidence = useDesignEvidence(projectId as string, Boolean(project), evidenceVersion);
+  /** Roadmap 3.0.19: the engine's key-user reading — no request for a run of an older engine. */
+  const keyUserSteps = useKeyUserSteps(projectId as string, project);
+  const keyUserList = keyUserSteps.state === 'ready' ? keyUserSteps.list : null;
+  const keyUserReading = keyUserSteps.state === 'ready' ? keyUserSteps.reading : null;
 
   // The generation the stage starts on opening (ADR-070, amended 03.10.2026),
   // held until `/api/model-stages` has answered: with the stage off or no key,
@@ -838,8 +848,8 @@ ${DESIGN_ANSWER_REMINDER}`;
   }, [project]);
   // Kept for the prompt, which is built inside a callback created before these exist.
   useEffect(() => {
-    engineEvidenceRef.current = { source: signedSource?.source ?? null, evidence: designEvidence };
-  }, [signedSource, designEvidence]);
+    engineEvidenceRef.current = { source: signedSource?.source ?? null, evidence: designEvidence, keyUser: keyUserReading };
+  }, [signedSource, designEvidence, keyUserReading]);
   /** What the design needs on record: a source and a signed run. The narrative is not among them. */
   const designPrerequisites = generationPrerequisites(project, 'design');
 
@@ -1023,6 +1033,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         findings={findings}
         nfrTopics={nfrTopics}
         banner={<LegacyRunBanner capabilities={caps} projectId={projectId as string} />}
+        keyUser={keyUserList}
       />
     );
   })() : null;
@@ -1129,7 +1140,8 @@ ${DESIGN_ANSWER_REMINDER}`;
   // it derives on the server, so the dialog and the card no longer tell two
   // stories. The stored value stands in only where no contract was read.
   const contractForSignOff = designEvidence.state === 'ready' ? designEvidence.contract : null;
-  const signOffBasis = signOffRecommendation(contractForSignOff ? contractForSignOff.route : null, storedRoute);
+  // Roadmap 3.0.19: where the engine reads the whole program as key user, key user is the recommendation.
+  const signOffBasis = signOffRecommendation(contractForSignOff ? contractForSignOff.route : null, storedRoute, keyUserList?.scope === 'whole-program');
   const recommendation = signOffBasis.code;
   // The run's rationale and confidence describe the run's recommendation; they
   // are shown only when that is the one named here.
@@ -1138,7 +1150,9 @@ ${DESIGN_ANSWER_REMINDER}`;
     runSaysTheSame && project?.recommendationJustification
       ? sapNamesForDisplay(project.recommendationJustification)
       : signOffBasis.basis === 'contract'
-        ? `The architecture contract, derived from the code on the server, recommends the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path for this project.`
+        ? recommendation === 'keyuser'
+          ? 'The engine reads the whole program as key-user extensibility: every part is a key-user candidate, configured in the system with no code. Choosing RAP or CAP departs from this and needs a reason; RAP or CAP stays the route for any part whose candidate does not hold.'
+          : `The architecture contract, derived from the code on the server, recommends the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path for this project.`
         : project?.recommendationJustification
           ? sapNamesForDisplay(project.recommendationJustification)
           : `Based on the code analysis, the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`;
@@ -1190,6 +1204,8 @@ ${DESIGN_ANSWER_REMINDER}`;
       // the timestamp off its own clock, neither of which this page
       // is entitled to invent.
       onLock={lockArchitecture}
+      // Roadmap 3.0.19: key user is a route the decision can choose where the engine read a key-user part.
+      keyUserOffered={!!keyUserList && keyUserList.steps.length > 0}
       onUnlock={async () => {
         const stored = await runProjectCommand(projectId as string, { command: 'revoke-architecture' });
         setProject((prev: Project | null) => prev ? {

@@ -1,6 +1,7 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
+import { keyUserContextOf } from '@/lib/key-user-route';
 import { gradeSapObject } from '@/lib/abap/catalog-service';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
@@ -326,7 +327,7 @@ export interface AssembleArgs {
   source: string;
   project: Record<string, unknown>;
   answers: RuleAnswers;
-  evidence: Pick<AbapEvidenceReport, 'findings'>;
+  evidence: Pick<AbapEvidenceReport, 'findings' | 'keyUser'>;
   contract: ArchitectureContract;
   isAbapCloud: boolean;
   /** The project's catalog snapshot key, for the level lookup. */
@@ -378,6 +379,8 @@ export function assembleTransformationContext(args: AssembleArgs): { context: Tr
     // No run records a data mode today (`lib/delivery-package.ts`, dataMode).
     dataMode: null,
     originalFactsBelow: !args.isAbapCloud,
+    // Roadmap 3.0.19: a split program's key-user parts are configured, not generated (null for every other program).
+    keyUser: keyUserContextOf(args.evidence, args.project),
   });
   return {
     context,

@@ -210,7 +210,8 @@ test.describe('the design compares standard, RAP and CAP before ruling the stand
     for (const key of ['targetRelease', 'fitGap', 'effort', 'runningCost', 'dataContract', 'decisionReason', 'requirementOthersMiss']) {
       expect(OPTION_COMPARISON_SCHEMA).toContain(`${key}:`);
     }
-    expect(OPTION_COMPARISON_SCHEMA).toContain("'standard' | 'rap' | 'cap'");
+    // 3.0.19: key-user extensibility is the second option (tests/key-user-3019.spec.ts).
+    expect(OPTION_COMPARISON_SCHEMA).toContain("'standard' | 'keyuser' | 'rap' | 'cap'");
     expect(OPTION_COMPARISON_SCHEMA).toContain('NEVER an amount of money');
     expect(OPTION_COMPARISON_PROMPT_RULE).toContain('A frontend file upload or download alone never justifies side-by-side');
     expect(OPTION_COMPARISON_PROMPT_RULE).toContain('Plan and actual are never both read from ACDOCA');
@@ -267,7 +268,8 @@ test.describe('the design compares standard, RAP and CAP before ruling the stand
 
   test('the Design document and its export render the comparison', () => {
     const doc = fs.readFileSync(path.join(ROOT, 'components/design/DesignDocument.tsx'), 'utf8');
-    expect(doc).toContain('<OptionComparison design={design} />');
+    // 3.0.19: with the engine's key-user step list for the fourth option's limits.
+    expect(doc).toContain('<OptionComparison design={design} keyUser={keyUser} />');
     const exp = fs.readFileSync(path.join(ROOT, 'lib/design-export.ts'), 'utf8');
     expect(exp).toContain('readOptionComparison(data)');
   });

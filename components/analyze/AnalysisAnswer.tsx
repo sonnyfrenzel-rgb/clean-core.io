@@ -65,6 +65,7 @@ export default function AnalysisAnswer({
   onOpenLine,
   signedLabel = 'Clean Core Score of the signed run',
   notice,
+  keyUserLevel = null,
 }: {
   /** The signed score, or null when the run computed none. */
   score: number | null;
@@ -94,6 +95,13 @@ export default function AnalysisAnswer({
   signedLabel?: string;
   /** A notice about the run — the stale strip — at the top of the hero. */
   notice?: React.ReactNode;
+  /**
+   * Roadmap 3.0.19: `A` where the engine read the whole program as key user —
+   * a key-user extension is clean core level A by construction, which the
+   * score says beside the figure. Null for every other program and for an
+   * engine before 3.0.19.
+   */
+  keyUserLevel?: 'A' | null;
 }) {
   const rule = scoreRuleFor(edition ?? 'private', engineVersion);
   const model = useMemo(
@@ -140,6 +148,11 @@ export default function AnalysisAnswer({
               <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">This run computed no score.</p>
             </div>
           )}
+          {keyUserLevel ? (
+            <p className="m-0 mt-2 cc-text-cell text-cc-ink" data-key-user-level={keyUserLevel}>
+              Level {keyUserLevel} by construction as key-user extensibility: the engine read the whole program as key user, and a key-user extension uses released extension points only. The score measures the code as it stands.
+            </p>
+          ) : null}
         </div>
         <div className="min-w-0 px-4 pb-4 sm:px-6 sm:pb-5 lg:pt-5">
           <ScoreDeductions

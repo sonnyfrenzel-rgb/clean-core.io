@@ -75,6 +75,14 @@
       "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only; side-by-side (CAP) by the engine"] }
     },
     {
+      "id": "sd-delivery-priority",
+      "title": "SD delivery priority (Z_SD_DELIVERY_PRIORITY, the key-user starter example)",
+      "source": { "repo": "public/starter-examples/Z_SD_DELIVERY_PRIORITY.abap", "file": null, "entry": null, "sha256": "7824f046f7882ecb504f3ff1ab426881dd5d2b516508c5609b54bf302af1e830", "lines": 133 },
+      "tracks": ["rap"],
+      "holdout": false,
+      "scenarios": { "sealed": null, "provenance": ["no external review; in-app (RAP) by the engine's code route. From engine 3.0.19 the engine reads the whole program as key user, and the run is recorded as no code by decision (roadmap 3.0.19, owner decision 19.10.2026)"] }
+    },
+    {
       "id": "order-fulfillment-audit-1000",
       "title": "Order fulfillment audit (ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC, the 1,000-line starter example)",
       "source": { "repo": "public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap", "file": null, "entry": null, "sha256": "b8a02c4d2cf8e8af6319f1bcd93d8d9fd2fd05a4fcb0856aca46dffe557fe6d6", "lines": 1001 },

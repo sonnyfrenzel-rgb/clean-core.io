@@ -28,6 +28,7 @@ import {
   type HandoverProject,
 } from './handover';
 import { ARCHITECTURE_OPTION } from './decision-draft';
+import type { DecisionWeighingSource } from './decision-weighing';
 import { decisionWeighing } from './decision-weighing';
 import { circularReason } from './design-option-comparison';
 import { decisionCardView } from './decision-card';
@@ -176,7 +177,14 @@ const optionIdOf = (revision: string | null): string | null => {
   return at > 0 ? revision.slice(0, at) : revision;
 };
 
-export function decisionFactsOf(project: HandoverProject): DecisionFacts {
+/**
+ * `keyUser` (roadmap 3.0.19, owner decision 19.10.2026): the engine's key-user
+ * reading of the signed run, for the weighing's key-user row in
+ * `docs/decision.md`. Passed only for a run whose engine reads key user
+ * (`keyUserGateOpen`); absent, the weighing has no key-user row — a run of an
+ * earlier engine reads as it did.
+ */
+export function decisionFactsOf(project: HandoverProject, keyUser?: DecisionWeighingSource['keyUser']): DecisionFacts {
   const stored = storedDecisionOf(project);
   const recCode = recommendedArchitecture(project);
   const recommendation = recCode
@@ -204,6 +212,7 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
       engineReasoning: str(project.recommendationJustification),
       usage: (project.usageReport as Parameters<typeof decisionWeighing>[0]['usage']) ?? null,
       design: project.solutionDesign ?? null,
+      ...(keyUser !== undefined ? { keyUser } : {}),
     });
 
   if (stored) {
@@ -543,6 +552,8 @@ export function deliveryFactsOf(
     appVersion: string;
     referenceSection: string;
     documentationFromEngine: boolean;
+    /** Roadmap 3.0.19: the key-user reading for the weighing — only for a run whose engine reads key user. */
+    keyUser?: DecisionWeighingSource['keyUser'];
   },
 ): DeliveryFacts {
   const fp =
@@ -570,7 +581,7 @@ export function deliveryFactsOf(
       auditPackExportedAt: isoString(project.auditMetadata?.auditPackExportedAt),
       model: analysisModelFactsOf(project),
     },
-    decision: decisionFactsOf(project),
+    decision: decisionFactsOf(project, opts.keyUser),
     rules: opts.rules,
     tests: testFactsOf(project, opts.phases),
     score: opts.score,

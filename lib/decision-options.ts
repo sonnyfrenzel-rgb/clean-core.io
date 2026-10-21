@@ -50,13 +50,14 @@ export const DIRECT_CHOICE_CODE: Readonly<Record<Exclude<DecisionOption, 'rebuil
 /** The option a stored architecture code stands for, or `null` for an unknown code. */
 export function optionOfArchitecture(code: string | null | undefined): DecisionOption | null {
   if (code === 'keep' || code === 'standard' || code === 'retire') return code;
-  if (code === 'rap' || code === 'cap' || code === 'integration' || code === 'event') return 'rebuild';
+  if (code === 'rap' || code === 'cap' || code === 'integration' || code === 'event' || code === 'keyuser') return 'rebuild';
   return null;
 }
 
 /** The option an Economics cost option stands for — `do-nothing` is Keep. */
 export function optionOfCostKind(kind: OptionKind): DecisionOption {
-  return kind === 'do-nothing' ? 'keep' : kind;
+  // Roadmap 3.0.19: the key-user cost option prices a Rebuild with key-user tools.
+  return kind === 'do-nothing' ? 'keep' : kind === 'keyuser' ? 'rebuild' : kind;
 }
 
 /** The program decision as one question about one program. */

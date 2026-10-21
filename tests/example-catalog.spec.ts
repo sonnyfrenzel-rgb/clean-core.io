@@ -34,6 +34,17 @@ test('one start, three next, the rest behind More — and nothing lost', () => {
   for (const n of NEXT_EXAMPLES) expect(STARTER_EXAMPLES.some((e) => e.file === n.file), n.file).toBe(true);
 });
 
+test('3.0.19: the key-user example stands in "Next", Z_MATERIAL_STOCK_CALC under "More" (owner decision 19.10.2026)', () => {
+  const tiers = exampleTiers();
+  expect(tiers.next.map((n) => n.example.file)).toEqual([
+    'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
+    'Z_SD_FREIGHT_RATE_CHECK.abap',
+    'Z_SD_DELIVERY_PRIORITY.abap',
+  ]);
+  expect(tiers.more.map((e) => e.file)).toContain('Z_MATERIAL_STOCK_CALC.txt');
+  expect(tiers.more.map((e) => e.file)).not.toContain('Z_SD_DELIVERY_PRIORITY.abap');
+});
+
 test('each snippet is described by its own code, and no two read the same', () => {
   const generic = [
     'Classic reporting logic, output grids, and list formatting.',

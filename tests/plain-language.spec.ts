@@ -350,8 +350,9 @@ test.describe('plain-language wording — the owner\'s examples', () => {
 test.describe('plain-language wording — every starter example', () => {
   const files = corpusFiles().filter((f) => /\.(abap|txt)$/i.test(f)).sort();
 
-  test('there are nine fixtures', () => {
-    expect(files).toHaveLength(9);
+  // Ten since 3.0.19, with the key-user example Z_SD_DELIVERY_PRIORITY.
+  test('there are ten fixtures', () => {
+    expect(files).toHaveLength(10);
   });
 
   for (const file of files) {

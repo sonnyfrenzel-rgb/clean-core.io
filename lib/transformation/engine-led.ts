@@ -28,7 +28,7 @@ import { buildRapScaffold } from './scaffold-rap';
 import type { AgainstDecision } from './decision-header';
 import { checkSapReferences, sapIdStateWord } from '../sap-reference-check';
 import { sliceFor } from './abap-slice';
-import { fillGuardsOf, planUnits, readEngineFacts } from './unit-plan';
+import { fillGuardsOf, planUnits, readEngineFacts, type PlanInput } from './unit-plan';
 import { camelName } from './naming';
 import { parameterShapes, regionSignature, typeDeclarations, typesText, type TypeDeclaration } from './type-shapes';
 import { traceJson, traceMarkdown, withTrace } from './trace';
@@ -87,6 +87,11 @@ export interface EngineLedRequest {
   contextText: string;
   /** The live decision on record this rebuild contradicts (`againstDecisionOf`); every main file then says so first (B6). */
   against?: AgainstDecision | null;
+  /**
+   * Scaffold 20 (roadmap 3.0.19): a program that splits — the lines a key user configures (`PlanInput.keyUser`).
+   * The routines inside them get no function and no fill request, so no model call.
+   */
+  keyUser?: PlanInput['keyUser'];
 }
 
 /** What the screen shows when the scaffold is written (§15.2 "Engine scaffold"). */
@@ -146,7 +151,7 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
   const t0 = now();
   try {
     const facts = readEngineFacts(req.source);
-    const plan = planUnits(req.source, { decisions: req.decisions, program: req.program }, facts);
+    const plan = planUnits(req.source, { decisions: req.decisions, program: req.program, keyUser: req.keyUser ?? null }, facts);
     const cases = deriveEngineCases(facts.source, facts.ruleSet.rules);
     const against = req.against ?? null;
     const scaffold = req.track === 'node' ? buildNodeScaffold(plan, facts, { cases, against }) : buildRapScaffold(plan, facts, { cases, against });

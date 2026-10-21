@@ -196,6 +196,18 @@ export function generationDirection(
  * and named instead.
  */
 export function offTrackRefusal(decided: string): GenerationRefusal {
+  // Roadmap 3.0.19: a key-user decision generates no code by design — no
+  // scaffold, no model fill, no lease. The stage shows the engine's key-user
+  // step list instead (`lib/key-user-steps.ts`).
+  if (decided === 'keyuser') {
+    return {
+      ok: false,
+      code: 'decision-off-track',
+      sentence: 'This project is signed off for key-user extensibility: it is configured in the system with SAP\u2019s key-user apps, from the key-user step list the engine built from the signed run. No code is generated for it.',
+      remedy:
+        'Follow the key-user step list. Where a candidate does not hold once its limit is checked, change the decision to a route this stage generates (ABAP Cloud/RAP or CAP) for that part.',
+    };
+  }
   return {
     ok: false,
     code: 'decision-off-track',

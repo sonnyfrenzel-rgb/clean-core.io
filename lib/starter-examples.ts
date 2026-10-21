@@ -57,6 +57,17 @@ export const STARTER_EXAMPLES: StarterExample[] = [
     size: 'small',
   },
   {
+    // Roadmap 3.0.19 (owner decision 18.10.2026): the example of its own for key-user extensibility.
+    file: 'Z_SD_DELIVERY_PRIORITY.abap',
+    name: 'Z_SD_DELIVERY_PRIORITY',
+    summary:
+      'Delivery priority of sales orders: two customer fields on the order header, a BAdI that derives and checks the priority class from a settings table, and a list of open orders per class.',
+    demonstrates:
+      'A change SAP’s key-user tools cover as a whole — custom fields, custom logic, a configuration object and an analytical query, each with its limit — so no code is built.',
+    lines: 132,
+    size: 'small',
+  },
+  {
     file: 'Z_MM_PO_APPROVAL.abap',
     name: 'Z_MM_PO_APPROVAL',
     summary:

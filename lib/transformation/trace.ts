@@ -203,6 +203,9 @@ export function traceMarkdown(trace: Trace): string {
   const fixtures = trace.notCarried.filter((n) => n.reason === 'fixture');
   const unreachable = trace.notCarried.filter((n) => n.reason === 'unreachable');
   if (unreachable.length) lines.push(`- Not carried over — never reached in the original: ${unreachable.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}.`);
+  // Scaffold 20 (3.0.19): a program that splits — these routines are configured by a key user, not generated.
+  const keyUser = trace.notCarried.filter((n) => n.reason === 'key-user');
+  if (keyUser.length) lines.push(`- Not generated — configured by a key user from docs/key-user-steps.md: ${keyUser.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}. No function was written and no model was asked for them.`);
   const fixtureWords = fixtures.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ');
   const gm = trace.goldenMaster;
   if (gm && gm.cases > 0 && gm.carrier === 'node-test') {

@@ -83,7 +83,9 @@ test('6f3dc15e6f7b · no generation starts without the click, and the click resp
   // Since v3.0.1 one condition holds every reason, and each is said on the page
   // (tests/transformation-prerequisites.spec.ts).
   // Since 10.10.2026 (ADR-083) an invited reader is one of those reasons, said by the shared sentence.
-  expect(src).toMatch(/const canGenerate = project !== null && isOwner && prerequisites\.length === 0 && blockers\.length === 0 && modelOff === null;/);
+  // 3.0.19: a key-user decision generates nothing (`keyUserWhole`).
+  // 3.0.19 (scaffold 20): a run whose engine reads key user also waits for the evidence, so a split program never builds its key-user parts.
+  expect(src).toMatch(/const canGenerate = project !== null && !keyUserWhole && !\(keyUserGateOpen\(project\) && evidencePending\) && isOwner && prerequisites\.length === 0 && blockers\.length === 0 && modelOff === null;/);
   // Since 13.10.2026 the pre-flight check is part of it: a plan that cannot succeed does not start.
   expect(src).toMatch(/const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;/);
   expect(src).toMatch(/disabled=\{!canStart\}/);

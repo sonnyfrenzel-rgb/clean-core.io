@@ -303,6 +303,8 @@ function routeLabel(project: Project | null): string | null {
   const arch = project?.approvedByArchitect === true ? project?.targetArchitecture : (project?.originalRecommendation ?? project?.targetArchitecture);
   if (arch === 'cap') return 'Side-by-side (CAP)';
   if (arch === 'rap') return 'In-app (RAP)';
+  // Roadmap 3.0.19: a run that recommends key user, or a key-user decision — configured, no code.
+  if (arch === 'keyuser') return 'Key user (configured, no code)';
   const route = str(project?.extensibilityRoute);
   if (!route) return null;
   return /side|btp|cap/i.test(route) ? 'Side-by-side (CAP)' : 'In-app (RAP)';

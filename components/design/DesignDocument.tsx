@@ -14,6 +14,7 @@ import OptionComparison from '@/components/design/OptionComparison';
 import SectionBoundary from '@/components/SectionBoundary';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import type { DesignData } from '@/lib/types';
+import type { KeyUserStepList } from '@/lib/key-user-steps';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { BTP, sapNamesForDisplay } from '@/lib/sap-naming';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,8 @@ export interface DesignDocumentProps {
   nfrTopics: number;
   /** Shown above the overview — the banner of a run made before the current evidence model. */
   banner?: React.ReactNode;
+  /** Roadmap 3.0.19: the engine's key-user step list, for the fourth option's limits; null before 3.0.19. */
+  keyUser?: KeyUserStepList | null;
 }
 
 type Service = DesignData['cloudServices'][number];
@@ -194,7 +197,7 @@ const GROUPS: { key: DesignGroupKey; title: string; line: string; icon: typeof B
   { key: 'when', title: 'When', line: 'The phases of the change, in order.', icon: CalendarRange },
 ];
 
-export default function DesignDocument({ design, routeReason, levels, findings, nfrTopics, banner }: DesignDocumentProps) {
+export default function DesignDocument({ design, routeReason, levels, findings, nfrTopics, banner, keyUser = null }: DesignDocumentProps) {
   const [open, setOpen] = useState<ReadonlySet<DesignGroupKey>>(() => new Set<DesignGroupKey>(['build']));
   const toggle = (key: DesignGroupKey, to?: boolean) =>
     setOpen((prev) => {
@@ -344,7 +347,7 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
       </section>
 
       {/* 1b. The options, compared before the standard is ruled out (roadmap 3.0.12, F14) */}
-      <OptionComparison design={design} />
+      <OptionComparison design={design} keyUser={keyUser} />
 
       {/* 2. The section nav */}
       <nav

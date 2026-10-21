@@ -27,6 +27,8 @@ import { isAbapUnitRoute } from './test-runnability';
 import { storedActivation, storedContextDigest, storedTypeCheck } from './transformation/generation-record';
 import { activationClosureRefusal, typeCheckClosureRefusal } from './transformation/check-words';
 import { PREVIOUS_PACKAGE, testedPackageMoved } from './test-suite-basis';
+import { isKeyUserDecision, KEY_USER_STEPS_PATH } from './key-user-route';
+import { keyUserAcceptanceLine, keyUserAcceptanceReading } from './key-user-acceptance';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -595,10 +597,13 @@ export function handoverBlockers(project: Project | null): string[] {
   else if (s.unverifiedInputs.length > 0) {
     out.push(`the analysis (${inputList(s.unverifiedInputs)} cannot be shown to be what the signed run used)`);
   }
-  const contextOnly = s.context && !s.code && p.code;
+  // Roadmap 3.0.19: a key-user decision hands over no code, so a package left
+  // from an earlier decision blocks nothing.
+  const keyUser = isKeyUserDecision(project);
+  const contextOnly = !keyUser && s.context && !s.code && p.code;
   if (s.design && p.design) out.push('the solution design');
   if (s.signOff) out.push('the architecture sign-off');
-  if (s.code && p.code) out.push('the generated code');
+  if (!keyUser && s.code && p.code) out.push('the generated code');
   else if (contextOnly) out.push(CONTEXT_BLOCKERS.code);
   if (s.tests && p.tests) out.push(s.testsPackage ? `the test suite (written for ${PREVIOUS_PACKAGE})` : 'the test suite');
   else if (contextOnly && p.tests) out.push(CONTEXT_BLOCKERS.tests);
@@ -891,7 +896,18 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const engineRecord = (project as { generationBinding?: { path?: unknown; engine?: { status?: unknown; notWritten?: unknown; units?: unknown } | null } } | null)?.generationBinding;
   const notWrittenCount = engineRecord?.path === 'engine-led' && Array.isArray(engineRecord.engine?.notWritten) ? engineRecord.engine.notWritten.length : 0;
   const partialGeneration = engineRecord?.path === 'engine-led' && engineRecord.engine?.status === 'partial' && notWrittenCount > 0;
-  const transformation = hasGenerated
+  // Roadmap 3.0.19: a key-user decision generates no code. Transformation's
+  // output is the engine's key-user step list, rebuilt from the signed source
+  // whenever it is opened — done, never proven: a candidate holds only once
+  // its limits are checked in the target system.
+  const keyUser = hasRun && isKeyUserDecision(project);
+  const transformation = keyUser
+    ? phase('transformation', {
+        state: 'done',
+        badge: 'Key-user steps',
+        detail: 'No code is generated: the decision is key-user extensibility. The engine built the key-user step list from the signed run — configured in the system by a key user, not built here.',
+      })
+    : hasGenerated
     ? partialGeneration
       ? phase('transformation', {
           state: 'partial',
@@ -952,7 +968,31 @@ export function workflowSteps(project: Project | null): RailStep[] {
       detail: `${closureSentence(c)} Not verified — a self-declaration, not a test result.`,
     });
   let testing: RailStep;
-  if (tests.total === 0) {
+  // Owner decision 19.10.2026: the account records the checks it ran in its
+  // system (`lib/key-user-acceptance.ts`, server-written) — a self-declaration.
+  const keyUserChecks = keyUser ? keyUserAcceptanceReading(project) : { state: 'none' as const };
+  const keyUserChecksDone = keyUserChecks.state === 'current' && keyUserChecks.complete;
+  if (keyUser && tests.total === 0 && keyUserChecksDone) {
+    // Roadmap 3.0.19: every acceptance check of the step list is recorded as run
+    // in the account's own system. Done, never proven: nothing ran here.
+    testing = phase('testing', {
+      state: 'done',
+      badge: 'Key-user checks confirmed',
+      detail: `${keyUserAcceptanceLine(keyUserChecks.summary)} — confirmed by ${keyUserChecks.summary.recordedBy} (${keyUserChecks.summary.system}, ${keyUserChecks.summary.ranOn}), a self-declaration, not a run here.`,
+    });
+  } else if (keyUser && tests.total === 0) {
+    // Roadmap 3.0.19: no test code for a key-user decision — the step list's
+    // acceptance checks, run by a key user in the system. Nothing here runs
+    // them; until every one is recorded as run, the phase does not read done.
+    testing = phase('testing', {
+      state: 'partial',
+      badge: 'Key-user checks',
+      detail:
+        keyUserChecks.state === 'current'
+          ? `No test code: a key user runs the acceptance checks of the key-user step list in the system. ${keyUserAcceptanceLine(keyUserChecks.summary)}; record the rest once they are run.`
+          : 'No test code: a key user runs the acceptance checks of the key-user step list in the system. Nothing here runs them; record them in Testing once they are run.',
+    });
+  } else if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });
   } else if (closure.state === 'current' && !(outside.state === 'current' && outside.verifies) && !(tests.passed === tests.total && tests.attestedPasses === tests.total)) {
     // Closed by the owner without a passing run: done, never proven. A passing
@@ -1113,11 +1153,14 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // The figures were stored against a score the signed run no longer has.
   const econScoreMoved = Boolean(econ && econProgress && econ.basis.score !== score);
 
-  const gaps = [
-    !hasGenerated && 'no generated code',
-    tests.total === 0 ? 'no test suite' : testing.state !== 'done' ? (tests.failed > 0 ? 'failing tests' : 'tests not run') : null,
-    !hasDocs && 'no documentation',
-  ].filter(Boolean) as string[];
+  const gaps = keyUser
+    ? // Roadmap 3.0.19: the step list replaces the code, and its checks are a key user's to run in the system.
+      ([!keyUserChecksDone && 'key-user checks not recorded as run', !hasDocs && 'no documentation'].filter(Boolean) as string[])
+    : ([
+        !hasGenerated && 'no generated code',
+        tests.total === 0 ? 'no test suite' : testing.state !== 'done' ? (tests.failed > 0 ? 'failing tests' : 'tests not run') : null,
+        !hasDocs && 'no documentation',
+      ].filter(Boolean) as string[]);
 
   // The one place where generated work earns green, and only because something
   // checked it: `gaps` is empty exactly when every generated case carries an
@@ -1130,7 +1173,13 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // is on record" (QA full review of a19945ef01dc). The material can be complete
   // and the run still not have happened; those are two statements and they now
   // read as two.
-  const delivery = gaps.length === 0
+  const delivery = keyUser && gaps.length === 0 && tests.total === 0
+    ? phase('delivery', {
+        state: 'done',
+        badge: 'Ready · key-user steps',
+        detail: `The key-user step list (\`${KEY_USER_STEPS_PATH}\` in the package), the documentation and your confirmation that every acceptance check ran in your system are on record — a self-declaration, configured and checked by a key user in the system, not here. Whether to configure remains an architect’s decision.`,
+      })
+    : gaps.length === 0
     ? phase('delivery', {
         state: 'done',
         proven: testing.proven,
@@ -1158,7 +1207,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
           ? 'Code, documentation and your confirmation that the ABAP Unit class passed in your SAP system are on record — a self-declaration, not a run here. Whether to deploy remains an architect’s decision.'
           : 'Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage 5 before handing this over.',
       })
-    : !hasGenerated && tests.total === 0 && !hasDocs
+    : !keyUser && !hasGenerated && tests.total === 0 && !hasDocs
       ? phase('delivery', {
           state: 'empty',
           badge: 'Not started',
@@ -1232,7 +1281,9 @@ export function workflowSteps(project: Project | null): RailStep[] {
       : hasDesign && s.signOff
         ? { ...design, state: 'partial', done: false, proven: false, verifiedOutside: null, badge: 'Re-confirm', detail: `The sign-off was given for ${prevBasis} — confirm the target architecture again.` }
         : design,
-    hasGenerated && s.code
+    keyUser
+      ? transformation
+      : hasGenerated && s.code
       ? stale(transformation, `Generated from ${prevBasis} — regenerate it once the design is current.`)
       : hasGenerated && s.context
         ? stale(

@@ -34,6 +34,16 @@
  * covers it.
  */
 
+/**
+ * Roadmap 3.0.19: the key-user parts of a split program, as the block names
+ * them (`keyUserContextOf` in `lib/key-user-route.ts` builds it). Declared
+ * here: this module imports nothing.
+ */
+export interface KeyUserContextInput {
+  steps: Array<{ id: string; app: string; title: string; lines: string }>;
+  codeParts: Array<{ id: string; part: string; lines: string }>;
+}
+
 /** The block's character budget (owner, 12.10.2026; roadmap 3.0.12). See the measurement in the commit. */
 export const TRANSFORMATION_CONTEXT_BUDGET = 8_000;
 
@@ -43,6 +53,8 @@ const MAX_MEANING = 160;
 const MAX_PROPOSAL = 400;
 /** Longest NFR text per topic. */
 const MAX_NFR = 220;
+/** Key-user steps and code parts named per line of a split program (3.0.19); the rest are counted. */
+const MAX_KEY_USER_LINES = 12;
 
 export type ContextTrack = 'node' | 'rap';
 
@@ -159,6 +171,13 @@ export interface TransformationContextInput {
   dataMode: string | null;
   /** Whether the prompt carries the FACTS OF THE ORIGINAL section after this block. */
   originalFactsBelow: boolean;
+  /**
+   * Roadmap 3.0.19: a program whose parts split — some configured by a key
+   * user, some code (`lib/key-user-route.ts`, `keyUserContextOf`). Absent or
+   * null: nothing is said, so a block of a program without a split (or of an
+   * engine before 3.0.19) is the one it always was.
+   */
+  keyUser?: KeyUserContextInput | null;
 }
 
 /** One requirement with status `accepted` in the stored specification. */
@@ -384,6 +403,20 @@ function routeSection(input: TransformationContextInput): Draft {
     head.push(`   Standard fit: NOT ASSESSED — ${oneLine(decision.standardFit.sentence, MAX_PROPOSAL)} Do not write that SAP standard was ruled out or does not cover this; say in STATUS that the rebuild was generated before the standard was weighed.`);
   } else if (decision.standardFit) {
     items.push(`   Standard fit: ${oneLine(decision.standardFit.sentence, MAX_PROPOSAL)}`);
+  }
+  // Roadmap 3.0.19: the key-user parts of a split program are configured, not generated — a head line, never cut.
+  const ku = input.keyUser;
+  if (ku && ku.steps.length > 0) {
+    const shown = ku.steps.slice(0, MAX_KEY_USER_LINES);
+    const more = ku.steps.length - shown.length;
+    head.push(
+      `   KEY-USER PARTS — NOT GENERATED (the engine's key-user reading; a key user configures them in the system from the key-user step list): ${shown.map((s) => `${s.id} ${s.app} — ${oneLine(s.title, 120)} (${s.lines})`).join('; ')}${more > 0 ? `; and ${plural(more, 'more step')}` : ''}. Write no code for the lines these steps replace; where the original's behaviour would sit, one comment "${c} KEY USER: <step id> (<app>) — configured, not generated".`,
+    );
+    head.push(
+      ku.codeParts.length > 0
+        ? `   Build only the parts that stay code: ${ku.codeParts.slice(0, MAX_KEY_USER_LINES).map((p) => `${p.id} ${oneLine(p.part, 80)} (${p.lines || 'no line'})`).join('; ')}${ku.codeParts.length > MAX_KEY_USER_LINES ? `; and ${plural(ku.codeParts.length - MAX_KEY_USER_LINES, 'more part')}` : ''}.`
+        : '   Build only what no key-user step covers.',
+    );
   }
   if (decision.signedOff) items.push(`   Architecture signed off as: ${decision.signedOff}.`);
   if (decision.reference) items.push(`   ${decision.reference}`);

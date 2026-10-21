@@ -37,16 +37,30 @@
  */
 
 import { containsAmount } from './money-honesty';
+import type { KeyUserRouteBasis } from './abap/extensibility-router';
 
-/** The three options the design compares, in the order a reader weighs them: the standard first. */
-export const COMPARED_OPTIONS = ['standard', 'rap', 'cap'] as const;
+/**
+ * The options the design compares, in the order a reader weighs them: the
+ * standard first, then key user (roadmap 3.0.19: configured with SAP's
+ * key-user tools, no code), then the two builds.
+ */
+export const COMPARED_OPTIONS = ['standard', 'keyuser', 'rap', 'cap'] as const;
 export type ComparedOption = (typeof COMPARED_OPTIONS)[number];
 
 export const COMPARED_OPTION_LABELS: Readonly<Record<ComparedOption, string>> = Object.freeze({
   standard: 'SAP standard',
+  keyuser: 'Key-user extensibility',
   rap: 'In-app RAP extension',
   cap: 'Side-by-side CAP application',
 });
+
+/**
+ * The options every stored comparison names. A comparison stored before
+ * 3.0.19 compared three options; key user is reported apart
+ * (`keyUserNotCompared`), never as a gap of a comparison made when it was not
+ * an option.
+ */
+const REQUIRED_OPTIONS: readonly ComparedOption[] = ['standard', 'rap', 'cap'];
 
 /** The five things every option is compared on (CO review F14). */
 export const COMPARISON_ASPECTS = ['targetRelease', 'fitGap', 'effort', 'runningCost', 'dataContract'] as const;
@@ -150,6 +164,11 @@ export interface OptionFactsInput {
   requirements: { total: number; open: number } | null;
   /** Public or Private Edition, or null when not bound. */
   deployment: 'public' | 'private' | null;
+  /**
+   * The router's key-user reading (`ExtensibilityRouteReport.keyUser`, from
+   * engine 3.0.19). Absent or null: the facts say it was not read here.
+   */
+  keyUser?: Pick<KeyUserRouteBasis, 'scope' | 'parts' | 'candidates' | 'rejected' | 'sentence' | 'levelByConstruction'> | null;
 }
 
 export interface OptionFacts {
@@ -218,11 +237,24 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
       : 'Deployment not bound: SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private decides what an in-app extension may call.');
   cap.push('Running cost: its own runtime, database and operations beside S/4HANA — qualitative here; amounts only from approved cost assumptions in Economics.');
 
+  const keyuser: string[] = [];
+  const ku = input.keyUser;
+  if (!ku) {
+    keyuser.push('The engine\u2019s key-user reading is not part of these facts (a run of an engine before 3.0.19, or not read here): whether key-user tools cover a part is not determined.');
+  } else {
+    keyuser.push(ku.sentence);
+    for (const c of ku.candidates.slice(0, 8)) keyuser.push(`${c.id} ${c.app}: ${c.part} (from line ${c.firstLine}) — a candidate with its limit, checked in the target system, never a promise.`);
+    for (const r of ku.rejected.slice(0, 6)) keyuser.push(`${r.id} not key user (${r.verdict === 'code' ? 'stays code' : 'not determined'}): ${r.reason}`);
+    keyuser.push(ku.levelByConstruction === 'A'
+      ? 'Clean core level A by construction where the whole program is key user: key-user extensions use released extension points only.'
+      : 'Effort is configuration, not a build, for the key-user parts; the code parts are built on the route.');
+  }
+
   return {
     note: 'Engine facts for the option comparison, read from the signed run without a model. Compare on them; where they are silent, say "not determined".',
     targetRelease: 'Not recorded on the project — only the deployment is. Name the S/4HANA release each option assumes; RAP large object fields need S/4HANA 2022 or later.',
     program,
-    options: { standard, rap, cap },
+    options: { standard, keyuser, rap, cap },
     dataContract: dataContractRows(objects),
   };
 }
@@ -232,20 +264,21 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
 /** The schema key and the rule the design prompt adds after `OPTION_COMPARISON_RULE`. */
 export const OPTION_COMPARISON_SCHEMA = `  optionComparison: {
     options: Array<{
-      option: 'standard' | 'rap' | 'cap'; // one entry each, in this order: the SAP standard first
+      option: 'standard' | 'keyuser' | 'rap' | 'cap'; // one entry each, in this order: the SAP standard first, then key-user extensibility (configured, no code)
       targetRelease: string; // the S/4HANA release the option assumes, or "not determined" with what decides it
       fitGap: string; // what the option covers of what the program does, and the gap — from the engine facts (OPTION FACTS), naming SAP's standard process and app where one exists
       effort: string; // qualitative: what has to be built or configured; no person-days unless the facts give them
       runningCost: string; // qualitative only (runtime, operations, licences to check) — NEVER an amount of money
       dataContract: string; // where each figure comes from on the target, per the DATA CONTRACT rows: actuals, plan, statistical key figures, currency
     }>;
-    recommended: 'standard' | 'rap' | 'cap'; // must agree with the design you write below
-    decisionReason: string; // why this option over the other two — names the requirement the others miss; never "because the target/route is X"
+    recommended: 'standard' | 'keyuser' | 'rap' | 'cap'; // must agree with the design you write below
+    decisionReason: string; // why this option over the others — names the requirement the others miss; never "because the target/route is X"
     requirementOthersMiss: string; // that requirement, in one sentence, as a requirement of the business or the operation
   };`;
 
 export const OPTION_COMPARISON_PROMPT_RULE =
-  'Compare the SAP standard, an in-app RAP extension and a side-by-side CAP application in optionComparison, in that order, before you design. '
+  'Compare the SAP standard, key-user extensibility, an in-app RAP extension and a side-by-side CAP application in optionComparison, in that order, before you design. '
+  + 'Key-user extensibility is grounded only in the engine\u2019s key-user candidates and their limits; never name a key-user BAdI, business context or view the facts do not name. '
   + 'Ground each option in the OPTION FACTS of the engine evidence; where they are silent, write "not determined" and what would decide it. '
   + 'A frontend file upload or download alone never justifies side-by-side. Plan and actual are never both read from ACDOCA. '
   + 'Running cost is qualitative — no amounts. The decisionReason must name the requirement the other options miss; '
@@ -253,12 +286,12 @@ export const OPTION_COMPARISON_PROMPT_RULE =
 
 /* -------------------------------------------------------- the circular check */
 
-const OPTION_WORDS = /\b(?:sap|s\/4hana|s4hana|btp|cap|rap|abap|cloud|side-by-side|side|by|in-app|in|app|on-stack|stack|standard|extension|application|option|route|target|architecture|platform|track|chosen|recommended|selected|approach|model|solution|design|the|a|an|is|are|was|be|because|since|as|so|this|that|it|of|for|to|and|or|with|we|our|best|better|right|fit|fits|suited|suitable|preferred|recommend|choose|use|uses|using|modern|clean|core)\b/gi;
+const OPTION_WORDS = /\b(?:sap|s\/4hana|s4hana|btp|cap|rap|abap|cloud|side-by-side|side|by|in-app|in|app|on-stack|stack|standard|extension|application|option|route|target|architecture|platform|track|chosen|recommended|selected|approach|model|solution|design|the|a|an|is|are|was|be|because|since|as|so|this|that|it|of|for|to|and|or|with|we|our|best|better|right|fit|fits|suited|suitable|preferred|recommend|choose|use|uses|using|modern|clean|core|key-user|keyuser|extensibility)\b/gi;
 
 /** "because the target architecture is CAP", "since the route is side-by-side", "as RAP is the chosen target". */
 const CIRCULAR_PATTERNS: readonly RegExp[] = [
-  /\b(?:because|since|as|given that)\b[^.;]{0,40}\b(?:target|chosen|recommended|selected|decided)\b[^.;]{0,30}\b(?:architecture|route|option|platform|track|target)?\b[^.;]{0,10}\b(?:is|was|=)\s+(?:the\s+)?(?:an?\s+)?(?:sap\s+)?(?:cap|rap|btp|side-by-side|in-app|standard)\b/i,
-  /\b(?:because|since|as)\b[^.;]{0,20}\b(?:cap|rap|btp|side-by-side|in-app)\b[^.;]{0,20}\b(?:is|was)\s+(?:the\s+)?(?:target|chosen|recommended|selected)\b/i,
+  /\b(?:because|since|as|given that)\b[^.;]{0,40}\b(?:target|chosen|recommended|selected|decided)\b[^.;]{0,30}\b(?:architecture|route|option|platform|track|target)?\b[^.;]{0,10}\b(?:is|was|=)\s+(?:the\s+)?(?:an?\s+)?(?:sap\s+)?(?:cap|rap|btp|side-by-side|in-app|standard|key[- ]?user)\b/i,
+  /\b(?:because|since|as)\b[^.;]{0,20}\b(?:cap|rap|btp|side-by-side|in-app|key[- ]?user)\b[^.;]{0,20}\b(?:is|was)\s+(?:the\s+)?(?:target|chosen|recommended|selected)\b/i,
   /\b(?:the\s+)?(?:target|route|architecture)\s+(?:is|was)\s+(?:cap|rap|btp|side-by-side|in-app)\s*,?\s*(?:so|therefore|hence)\b/i,
   // "as the signed-off target architecture says", "because the confirmed design says RAP" (SD review 3.0.12 A04):
   // the sign-off or the design given as the reason for itself. The decision record's summary read this way and
@@ -321,6 +354,8 @@ export type OptionComparisonView =
       refused: string | null;
       /** Options the model left out — said, never filled in. */
       missing: ComparedOption[];
+      /** Key user was not compared — a comparison stored before 3.0.19, or one the model wrote without it. Said, never filled in. */
+      keyUserNotCompared: boolean;
     };
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -351,7 +386,7 @@ export function readOptionComparison(design: unknown): OptionComparisonView {
       dataContract: text(entry.dataContract) || 'Not determined.',
     });
   }
-  if (byOption.size === 0) return { state: 'malformed', why: 'The comparison names none of the three options.' };
+  if (byOption.size === 0) return { state: 'malformed', why: 'The comparison names none of the options.' };
   if (!isOption(raw.recommended)) return { state: 'malformed', why: 'The comparison recommends no option.' };
   const reasonText = text(raw.decisionReason);
   const requirement = text(raw.requirementOthersMiss);
@@ -362,7 +397,8 @@ export function readOptionComparison(design: unknown): OptionComparisonView {
     recommended: raw.recommended,
     reason: refused ? null : { text: reasonText, requirement },
     refused,
-    missing: COMPARED_OPTIONS.filter((o) => !byOption.has(o)),
+    missing: REQUIRED_OPTIONS.filter((o) => !byOption.has(o)),
+    keyUserNotCompared: !byOption.has('keyuser'),
   };
 }
 

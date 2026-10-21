@@ -69,6 +69,7 @@ import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
+import { keyUserStepsOf } from '@/lib/key-user-route';
 import TargetScopeMapping from '@/components/analyze/TargetScopeMapping';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
@@ -112,6 +113,7 @@ import { countFindings, groupEvidenceFindings, shortRoute } from '@/components/a
 import RouteCard from '@/components/analyze/RouteCard';
 import StaleNotice from '@/components/StaleNotice';
 import { BTP, SIDE_BY_SIDE_ROUTE, sapNamesForDisplay } from '@/lib/sap-naming';
+import { recommendationOfRoute } from '@/lib/project-commands';
 import { profileCoverage } from '@/lib/assessment-profile';
 import { recordedProfileOf } from '@/lib/assessment-target';
 import { formatTextDate } from '@/lib/format';
@@ -583,7 +585,7 @@ export default function AnalyzePage() {
             codeInventory: inventory,
             dataCoupling: coupling,
             evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
-            originalRecommendation: recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
+            originalRecommendation: recommendationOfRoute(computedRouteReport),
             recommendationConfidence: computedRouteReport.confidenceScore,
             recommendationJustification: computedRouteReport.rationale,
             uploadedFileName,
@@ -626,7 +628,7 @@ export default function AnalyzePage() {
                 dataCoupling: coupling,
                 complexityScore,
                 criticalityScore,
-                originalRecommendation: recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
+                originalRecommendation: recommendationOfRoute(computedRouteReport),
                 recommendationConfidence: computedRouteReport.confidenceScore,
                 recommendationJustification: computedRouteReport.rationale,
                 evidenceReport,
@@ -1105,6 +1107,8 @@ export default function AnalyzePage() {
       rerunHref: pid ? `/project/${pid}?view=it` : null,
       onOpenLine: legacyCode && sourceLines > 0 ? openSourceLine : undefined,
       notice: staleNotice,
+      // Roadmap 3.0.19: "Level A by construction" beside the score, where the engine read the whole program as key user.
+      keyUserLevel: keyUserStepsOf(evidenceReport, project)?.levelByConstruction ?? null,
     };
   };
 

@@ -12,7 +12,7 @@ interface Checkpoint {
   checkpointName: string;
   question: string;
   evaluation: string;
-  resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Neutral';
+  resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Key-User Preferred' | 'Neutral';
   cleanCoreImpact: string;
 }
 

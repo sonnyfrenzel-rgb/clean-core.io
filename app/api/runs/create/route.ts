@@ -3,6 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
+import { recommendationOfRoute } from '@/lib/project-commands';
 import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
@@ -705,7 +706,9 @@ export async function POST(req: NextRequest) {
       dataCoupling,
       codeInventory,
       worklist: signedWorklist as import('@/lib/types').WorklistItem[],
-      originalRecommendation: extensibilityReport.recommendedRoute,
+      // Roadmap 3.0.19 (owner decision 19.10.2026): `keyuser` where the engine reads
+      // the whole program as key user; otherwise the code route, as before.
+      originalRecommendation: recommendationOfRoute(extensibilityReport) === 'keyuser' ? 'keyuser' : extensibilityReport.recommendedRoute,
       recommendationConfidence: extensibilityReport.confidenceScore,
       recommendationJustification: extensibilityReport.rationale,
       // Roadmap 7.10 - `assessmentProfile`, `profileCoverage`, `assessmentSubject`.

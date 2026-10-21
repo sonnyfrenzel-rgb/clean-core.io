@@ -79,6 +79,10 @@ import { createRunnerVerifier, abapScaffoldCheck, nodeScaffoldCheck, markerSpans
 import { packageFormatsHook } from '../../lib/transformation/abapgit-check';
 import { affSchemaSource } from '../../lib/transformation/aff-schemas';
 import { preflight } from '../../lib/transformation/preflight';
+import { buildAbapEvidence } from '../../lib/abap/evidence-model';
+import { buildKeyUserSteps } from '../../lib/key-user-steps';
+import { keyUserPlanRanges } from '../../lib/key-user-route';
+import { APP_VERSION } from '../../lib/version';
 import { checkSummaryOf, typeCheckRecordOf, isAbapPackage, ABAP_CASES_NOT_RUN, ABAP_PROBES_NOT_RUN, type AbapActivation } from '../../lib/transformation/check-words';
 import { sandboxFilesFromStoredCode } from '../../lib/test-sandbox/files';
 import { abapCheck } from '../../lib/transformation/abap-check';
@@ -133,7 +137,8 @@ export interface ScenarioFile {
 export interface GateResult {
   kind: 'abap-activation' | 'node-type-check';
   tool: string;
-  state: 'passed' | 'failed' | 'not-run';
+  /** `not-applicable` (roadmap 3.0.19): no code by decision — the engine reads the whole program as key user. */
+  state: 'passed' | 'failed' | 'not-run' | 'not-applicable';
   parserErrors: number | null;
   syntaxErrors: number | null;
   typeErrors: number | null;
@@ -156,7 +161,11 @@ export interface RunRecord {
   track: Track;
   run: number;
   /** The package's own status (GenerationStatus: complete, partial, not-activatable, not-runnable, not-verified) or why there is none. */
-  status: GenerationStatus | 'blocked' | 'fallback' | 'failed' | 'cap-reached';
+  /**
+   * `no-code-by-decision` (roadmap 3.0.19, owner decision 19.10.2026): the engine reads the whole program as key
+   * user, so the decision the engine leads to builds no code — recorded as such, never as a failure.
+   */
+  status: GenerationStatus | 'blocked' | 'fallback' | 'failed' | 'cap-reached' | 'no-code-by-decision';
   reason: string | null;
   durationMs: number;
   prepareMs: number;
@@ -367,6 +376,23 @@ export function median(xs: number[]): number {
 }
 
 const sha256 = (b: Buffer | string) => crypto.createHash('sha256').update(b).digest('hex');
+
+/**
+ * The key-user reading the suite's decision follows (roadmap 3.0.19): `whole` — the engine reads the whole program
+ * as key user and the decision builds no code; `split` — the code parts only are planned (the key-user steps' lines
+ * go to the planner, `keyUserPlanRanges`); `none` — as before. The engine is named by the caller (`runOne` passes
+ * this checkout's `APP_VERSION`): before the key-user gate (`KEY_USER_FROM`) every program reads `none`.
+ */
+export function keyUserPlanOf(
+  source: string,
+  engineVersion: string,
+): { mode: 'whole' | 'split' | 'none'; ranges: ReturnType<typeof keyUserPlanRanges>; steps: number; checks: number } {
+  const list = buildKeyUserSteps(buildAbapEvidence(source, 'main.abap', 'private', undefined, engineVersion).keyUser);
+  if (!list || list.steps.length === 0) return { mode: 'none', ranges: null, steps: 0, checks: 0 };
+  if (list.scope === 'whole-program') return { mode: 'whole', ranges: null, steps: list.effort.steps, checks: list.effort.checks };
+  const ranges = keyUserPlanRanges(list, 'split');
+  return { mode: ranges ? 'split' : 'none', ranges, steps: list.effort.steps, checks: list.effort.checks };
+}
 
 export function loadPrograms(): ProgramEntry[] {
   return (JSON.parse(fs.readFileSync(path.join(HERE, 'programs.json'), 'utf8')) as { programs: ProgramEntry[] }).programs;
@@ -866,9 +892,21 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
     return finish();
   }
 
+  // 0. Roadmap 3.0.19 (owner decision 19.10.2026): the decision follows the engine. Where it reads the whole program
+  // as key user, the route builds no code — recorded as "no code by decision", not run and not failed; where the
+  // reading splits, the code parts only are planned (scaffold 20), as the page plans them under a RAP/CAP decision.
+  const keyUser = keyUserPlanOf(source, APP_VERSION);
+  if (keyUser.mode === 'whole') {
+    rec.status = 'no-code-by-decision';
+    rec.reason = `no code by decision: the engine reads the whole program as key-user extensibility (${keyUser.steps} step${keyUser.steps === 1 ? '' : 's'}, ${keyUser.checks} acceptance check${keyUser.checks === 1 ? '' : 's'} in the key-user step list) — configured in the system, nothing to generate or gate`;
+    rec.gate = { ...rec.gate, state: 'not-applicable', reason: 'no code by decision (key-user extensibility)' };
+    rec.probes = { ...rec.probes, reason: 'no code by decision' };
+    return finish();
+  }
+
   // 1. Plan and scaffold — as the page's worker does.
   const contextText = '';
-  const prep = prepareEngineLed({ source, track, program: p.id.toUpperCase(), decisions: [], contextText });
+  const prep = prepareEngineLed({ source, track, program: p.id.toUpperCase(), decisions: [], contextText, keyUser: keyUser.ranges });
   rec.prepareMs = Date.now() - t0;
   if (!prep.ok) {
     rec.status = 'fallback';

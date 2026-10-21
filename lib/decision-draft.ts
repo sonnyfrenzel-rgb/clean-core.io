@@ -73,6 +73,9 @@ export const ARCHITECTURE_OPTION: Readonly<Record<string, { label: string; kind:
   // never renamed — the labels above are fingerprinted bytes of stored decisions.
   keep: { label: 'Keep', kind: 'keep' },
   standard: { label: 'Move to SAP standard', kind: 'standard' },
+  // Roadmap 3.0.19: rebuilt with SAP's key-user tools, configured in the system, no code generated.
+  // Its own cost kind since the owner decision of 19.10.2026 (`OPTION_KINDS`), beside an unchanged Rebuild.
+  keyuser: { label: 'Key-user extensibility (configured, no code)', kind: 'keyuser' },
 });
 
 export interface DecisionDraftFacts {
