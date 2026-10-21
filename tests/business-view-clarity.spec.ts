@@ -29,7 +29,12 @@ import { examplePath } from './helpers/starter-example-files';
  *     contract decide one "Next step" at the top (`lib/business-next-step.ts`);
  *   - **a business-first opening** — the process as numbered plain steps, what
  *     it decides and changes, the figures and the code one fold down;
- *   - **deciding on the rules**, named as what it is, with four visible answers;
+ *   - **deciding on the rules**, named as what it is, with four visible answers —
+ *     since the owner decision of 21.10.2026 no longer in the Business view:
+ *     its first insights count the questions for the business and lead into
+ *     Design (`#rule-questions`), the full register and its answering screen
+ *     are in the IT view (`#business-rules`), and the walk-through became the
+ *     guided tour on the map, which asks nothing;
  *   - **a section bar that reads as navigation**, without the sections Business
  *     does not need;
  *   - **"Ask this case" in plain words**, the code one fold down;
@@ -279,59 +284,108 @@ test.describe('the Business view on screen', () => {
     await confirmAllRules(ids.confirmed);
   });
 
-  test('every rule confirmed: no confirm action anywhere, the done state says who and when, one primary', async ({ page }) => {
+  /** The IT view at the rule register — where the full register and its answering screen live since 21.10.2026. */
+  async function openRegister(page: Page, id: string) {
+    await page.goto(`/project/${id}?view=it#business-rules`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('#business-rules[data-it-rules] [data-rules-editor="view"]')).toBeVisible({ timeout: 90_000 });
+  }
+
+  /** No rule card and no rule decision in the Business view (owner decision 21.10.2026). */
+  async function noRuleDecisionInBusiness(page: Page) {
+    await expect(page.locator('[data-workspace-rules-block]')).toHaveCount(0);
+    await expect(page.locator('[data-rules-editor]')).toHaveCount(0);
+    await expect(page.locator('[data-rules-edit]')).toHaveCount(0);
+    await expect(page.locator('[data-story-decide-rules]')).toHaveCount(0);
+    await expect(page.locator('[data-first-look-confirm-rules]')).toHaveCount(0);
+    await expect(page.locator('[data-next-step-key="rules"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Confirm the rule|Decide on/ })).toHaveCount(0);
+  }
+
+  test('every rule confirmed: no rule action in Business, one primary; the register in IT says who and when', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await open(page, ids.confirmed);
 
-    await expect(page.locator('[data-workspace-rules-block] [data-rules-done]')).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator('[data-workspace-rules-block] [data-rules-done-by]')).toContainText('by you');
-    await expect(page.locator('[data-workspace-rules-block] [data-rules-done-by] [data-cc-date]')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Confirm the rule/ })).toHaveCount(0);
-    await expect(page.locator('[data-first-look-confirm-rules]')).toHaveCount(0);
-    await expect(page.locator('[data-next-step-key="rules"]')).toHaveCount(0);
-    await expect(page.locator('[data-rules-edit]')).toHaveText(/Review rules/);
+    // The Business view says the rules in one sentence, with the way into Design.
+    const line = page.locator('[data-first-look-business] [data-rule-basket-line]');
+    await expect(line).toHaveAttribute('data-questions', '1', { timeout: 60_000 });
+    await expect(line).toContainText('1 question for the business');
+    await noRuleDecisionInBusiness(page);
     await expect(page.locator('[data-workspace-shell] [data-cc-button="primary"]:visible')).toHaveCount(1);
+    // The figures one fold down agree with the answers on record.
+    const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
+    await expect(fact).toHaveAttribute('data-confirmed', '1', { timeout: 60_000 });
+    await expect(fact).toHaveAttribute('data-total', '1');
+
+    // The done state — who and when, never a confirm button — stands in the rule register of the IT view.
+    await openRegister(page, ids.confirmed);
+    const register = page.locator('[data-it-rules]');
+    await expect(register.locator('[data-rules-done]')).toBeVisible({ timeout: 60_000 });
+    await expect(register.locator('[data-rules-done-by]')).toContainText('by you');
+    await expect(register.locator('[data-rules-done-by] [data-cc-date]')).toBeVisible();
+    await expect(register.locator('[data-rules-edit]')).toHaveText(/Review rules/);
+    await expect(page.getByRole('button', { name: /Confirm the rule/ })).toHaveCount(0);
+
+    // Design reads the same answers: the one question is answered.
+    await page.goto(`/project/${ids.confirmed}/design#rule-questions`, { waitUntil: 'domcontentloaded' });
+    const questions = page.locator('#rule-questions[data-rule-questions]');
+    await expect(questions).toHaveAttribute('data-total', '1', { timeout: 90_000 });
+    await expect(questions).toHaveAttribute('data-answered', '1', { timeout: 60_000 });
+    await expect(questions.locator('[data-questions-all-answered]')).toBeVisible();
   });
 
-  test('a rule without an answer: the one primary is to decide on it, with the count', async ({ page }) => {
+  test('a rule without an answer: the opening counts its question and leads into Design, where it is answered', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await open(page, ids.open);
 
-    const step = page.locator('[data-next-step-key="rules"]');
-    await expect(step).toHaveAttribute('data-open', '1', { timeout: 60_000 });
-    const action = page.locator('[data-next-step-rules]');
-    await expect(action).toHaveText(/Decide on 1 rule/);
+    // One sentence and one quiet way into Design — never a decision in the first insights.
+    const line = page.locator('[data-first-look-business] [data-rule-basket-line]');
+    await expect(line).toHaveAttribute('data-questions', '1', { timeout: 60_000 });
+    await expect(line).toContainText('1 question for the business');
+    const toDesign = line.locator('[data-rule-basket-design]');
+    await expect(toDesign).toHaveText(/Answer them in Design/);
+    await expect(toDesign).toHaveAttribute('href', `/project/${encodeURIComponent(ids.open)}/design#rule-questions`);
+    await noRuleDecisionInBusiness(page);
+    // The one primary is the phase step, not a rule action.
+    await expect(page.locator('[data-next-step-rules]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-shell] [data-cc-button="primary"]:visible')).toHaveCount(1);
 
-    // The figures are one fold down, and agree with the rules card and the section bar.
+    // The figures are one fold down, and agree with what is on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
     await expect(fact).toBeHidden();
     await expect(fact).toHaveAttribute('data-total', '1');
-    await expect(page.locator('[data-workspace-rules-block] [data-rule]')).toHaveCount(1);
-    // Need & process is not a section of Business (ADR-080): the map and the
-    // rules card above are the process, and nothing summarises it a second time.
+    await expect(fact).toHaveAttribute('data-confirmed', '0');
+    // Need & process is not a section of Business (ADR-080): the map is the
+    // process, and nothing summarises it a second time.
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-layer-process]')).toHaveCount(0);
 
-    // The action opens the rules in their answering mode.
-    await action.click();
-    await expect(page.locator('[data-rules-editor="edit"]')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole('heading', { name: 'Decide on the business rules' })).toBeVisible();
+    // The way in lands on the question flow in Design: one open question, four answers.
+    await toDesign.click();
+    await expect(page).toHaveURL(new RegExp(`/project/${ids.open}/design#rule-questions$`), { timeout: 60_000 });
+    const questions = page.locator('#rule-questions[data-rule-questions]');
+    await expect(questions).toHaveAttribute('data-total', '1', { timeout: 90_000 });
+    await expect(questions).toHaveAttribute('data-answered', '0');
+    const question = questions.locator('[data-question]');
+    await expect(question).toHaveCount(1);
+    for (const answer of ['yes', 'change', 'drop', 'unsure']) {
+      await expect(question.locator(`[data-question-pick="${answer}"]`)).toBeVisible();
+    }
   });
 
-  test('deciding on the rules: four named answers, the count moves, Change needs its text', async ({ page }) => {
+  test('deciding on the rules in the IT register: four named answers, the count moves, Change needs its text', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1280, height: 900 });
     await signInThroughForm(page, account);
-    await open(page, ids.po);
-    const entry = page.locator('[data-rules-edit]');
+    await openRegister(page, ids.po);
+    const entry = page.locator('[data-it-rules] [data-rules-edit]');
     await expect(entry).toHaveText(/Decide on rules/, { timeout: 60_000 });
     await entry.click();
-    const editor = page.locator('[data-rules-editor="edit"]');
+    const editor = page.locator('[data-it-rules] [data-rules-editor="edit"]');
     await expect(editor).toBeVisible({ timeout: 30_000 });
 
     const first = editor.locator('[data-rule-edit]').first();
@@ -477,35 +531,50 @@ test.describe('the Business view on screen', () => {
     expect(namingAsks).toHaveLength(0);
   });
 
-  test('a step answered beside the map raises Confirmed; the guided tour asks nothing; no Proven', async ({ page }) => {
+  test('the guided tour asks nothing and moves per key; a step answered beside the map raises Confirmed; no Proven', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
-    await open(page, ids.open);
-    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-legend-entry="proven"]')).toHaveCount(0);
-    const confirmed = page.locator('[data-legend-count="confirmed"]');
-    await expect(confirmed).toHaveText('0');
 
-    // The tour (owner decision 21.10.2026): over the page, map and card on one screen, nothing to answer.
+    // The tour (owner decision 21.10.2026): over the page, map and card on one
+    // screen, nothing to answer. On Z_MM_PO_APPROVAL, whose tour has seven
+    // stations — Z_EMPLOYEE_EXPENSE_VAL's has one, so a second station would
+    // be the end card there.
+    await open(page, ids.po);
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     await page.locator('[data-tour-entry-open]').click();
     const tour = page.locator('[data-process-tour]');
     await expect(tour).toHaveAttribute('data-tour-at', '1', { timeout: 60_000 });
     await expect(tour.locator('[data-tour-card]')).toBeInViewport();
     await expect(tour.getByRole('radio')).toHaveCount(0);
+    await expect(tour.locator('[data-state-confirm]')).toHaveCount(0);
     await page.keyboard.press('ArrowRight');
     await expect(tour).toHaveAttribute('data-tour-at', '2');
+    await page.keyboard.press('ArrowLeft');
+    await expect(tour).toHaveAttribute('data-tour-at', '1');
     await tour.locator('[data-tour-close]').click();
     await expect(tour).toHaveCount(0);
 
-    // A step's need is answered in the source column beside the map.
+    // A step's need is answered in the source column beside the map, into the
+    // need revision. The column offers the answer once that revision exists
+    // (the server builds revision 1 from the signed run; the rules' answers
+    // and Design's questions build it the same way).
+    const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    expect((await fetch(`${BASE}/api/projects/${ids.open}/process-revisions`, { method: 'POST', headers: h, body: '{}' })).ok).toBe(true);
+    await open(page, ids.open);
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-legend-entry="proven"]')).toHaveCount(0);
+    const confirmed = page.locator('[data-legend-count="confirmed"]');
+    await expect(confirmed).toHaveText('0');
     await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
     // The first anchored element that is a step (an event has no need to answer).
     const anchors = page.locator('[data-workspace-steps-by-line] [data-cc-anchor]');
+    await expect(anchors.first()).toBeVisible({ timeout: 30_000 });
     const need = page.locator('[data-workspace-step-need]');
+    const shown = () => need.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true, () => false);
     for (let i = 0; i < 10 && !(await need.isVisible()); i += 1) {
       await anchors.nth(i).click();
-      if (!(await need.isVisible())) await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
+      if (!(await shown())) await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
     }
     await need.getByRole('radio', { name: /^Keep/ }).first().click();
     await need.locator('[data-state-confirm]').click();
@@ -541,10 +610,12 @@ test.describe('the Business view on screen', () => {
     });
     expect(edges.canvas, 'the map canvas runs past the right edge of its card').toBeLessThanOrEqual(edges.card + 0.5);
     expect(edges.card, 'the map card runs past the screen').toBeLessThanOrEqual(edges.screen + 0.5);
-    await page.locator('[data-rules-edit]').click();
-    await expect(page.locator('[data-rules-editor="edit"]')).toBeVisible({ timeout: 30_000 });
-    const overflowEditing = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflowEditing, 'the answering screen scrolls sideways on a phone').toBeLessThanOrEqual(1);
+    // The rules are answered in Design now (owner decision 21.10.2026): the
+    // opening's way in leads there, and the question flow fits a phone too.
+    await page.locator('[data-rule-basket-design]').click();
+    await expect(page.locator('#rule-questions[data-rule-questions] [data-question]').first()).toBeVisible({ timeout: 90_000 });
+    const overflowAnswering = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflowAnswering, 'the questions for the business scroll sideways on a phone').toBeLessThanOrEqual(1);
     await context.close();
   });
 
