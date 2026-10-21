@@ -36,6 +36,8 @@ import {
   COST_ASSUMPTIONS_VERSION,
   EFFORT_SOURCES,
   OPTION_KINDS,
+  STANDARD_WORK_KINDS,
+  type StandardWork,
   costAssumptionsRevision,
   optionCost,
   type CostAssumptions,
@@ -202,6 +204,7 @@ const FIELD_WORDS: ReadonlyArray<[RegExp, string]> = [
   [/^options\[\d+\]\.oneOff/, 'a one-off effort'],
   [/^options\[\d+\]\.perRelease/, 'an effort per release'],
   [/^options\[\d+\]\.maintenanceBaselinePerYear/, 'a maintenance baseline'],
+  [/^options\[\d+\]\.standardWork/, 'the days of a step on the standard route'],
 ];
 
 export function fieldWords(field: string): string {
@@ -292,7 +295,7 @@ function option(v: unknown, i: number): CostOption {
     v,
     field,
     ['id', 'kind', 'label', 'oneOff', 'perRelease', 'maintenanceBaselinePerYear', 'upgradeDelay', 'effortSource'],
-    ['baselineSource'],
+    ['baselineSource', 'standardWork'],
   );
   if (typeof o.id !== 'string' || !OPTION_ID.test(o.id)) throw new Refusal(`${field}.id`, `${field}.id is not an option id.`);
   if (!(OPTION_KINDS as readonly unknown[]).includes(o.kind)) throw new Refusal(`${field}.kind`, `${field}.kind is not an option kind.`);
@@ -314,6 +317,17 @@ function option(v: unknown, i: number): CostOption {
       throw new Refusal(`${field}.baselineSource`, `${field}.baselineSource is not a baseline source.`);
     }
     out.baselineSource = o.baselineSource;
+  }
+  // Roadmap 3.0.20: the standard route's work — known kinds only, each a figure of days.
+  // An empty set is no field at all, so the stored option is the one stored before.
+  if ('standardWork' in o && o.standardWork !== undefined && o.standardWork !== null) {
+    const work = only(o.standardWork, `${field}.standardWork`, [], STANDARD_WORK_KINDS);
+    const kept: StandardWork = {};
+    for (const k of STANDARD_WORK_KINDS) {
+      if (work[k] === undefined || work[k] === null) continue;
+      kept[k] = figure(work[k], `${field}.standardWork.${k}`, ECONOMICS_LIMITS.maxDays) as number;
+    }
+    if (Object.keys(kept).length > 0) out.standardWork = kept;
   }
   return out;
 }

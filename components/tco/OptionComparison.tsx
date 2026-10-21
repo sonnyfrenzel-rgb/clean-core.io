@@ -34,7 +34,12 @@ import {
   COMPARISON_KIND,
   BASELINE_KINDS,
   COST_ASSUMPTIONS_VERSION,
+  STANDARD_WORK,
+  STANDARD_WORK_KINDS,
   emptyCostAssumptions,
+  standardWorkEntries,
+  type StandardWork,
+  type StandardWorkKind,
   formatAmount,
   formatAmountRange,
   type CostAssumptions,
@@ -214,6 +219,7 @@ function NumField({
   hint,
   kind = 'days',
   suffix,
+  optional = false,
 }: {
   id: string;
   label: string;
@@ -222,10 +228,13 @@ function NumField({
   hint?: string;
   kind?: FigureKind;
   suffix?: string;
+  /** Roadmap 3.0.20: the standard route's work is optional — no asterisk, and an empty field is no gap. */
+  optional?: boolean;
 }) {
   const input = useFigureInput(value, kind, onChange);
+  const message = figureMessage(input, value);
   return (
-    <CcField label={label} required help={hint} {...figureMessage(input, value)}>
+    <CcField label={label} required={!optional} help={hint} {...(optional && value === null ? {} : message)}>
       {({ id: controlId, describedBy, ariaRequired, invalid, className }) => (
         <div className="flex items-center gap-2">
           <input
@@ -526,6 +535,41 @@ export function deferralWords(delay: CostOption['upgradeDelay']): string | null 
   return `${formatNumber(n, { maximumFractionDigits: 1 }) ?? String(n)} release${n === 1 ? '' : 's'} deferred`;
 }
 
+/** "key-user days" or "developer days" — the day rate a kind of standard-route work is priced with. */
+const workRateWords = (k: StandardWorkKind) => (STANDARD_WORK[k].rate === 'dev' ? 'developer days' : 'key-user days');
+
+/** The entered standard-route work in words: "Fit-to-standard workshop: 4 key-user days once". */
+export function standardWorkWords(option: Pick<CostOption, 'standardWork'>): string[] {
+  return standardWorkEntries(option).map(
+    ([k, d]) => `${STANDARD_WORK[k].label}: ${days(d)} ${workRateWords(k)} ${STANDARD_WORK[k].when === 'per-release' ? 'per release' : 'once'}`,
+  );
+}
+
+/** One kind changed: an empty field removes the kind — not entered, never zero days. */
+function withStandardWork(option: CostOption, k: StandardWorkKind, v: number | null): StandardWork | undefined {
+  const next: StandardWork = { ...(option.standardWork ?? {}) };
+  if (v === null) delete next[k];
+  else next[k] = v;
+  return Object.keys(next).length > 0 ? next : undefined;
+}
+
+/**
+ * The fit-to-standard design's gaps, as the Economics card names them (roadmap
+ * 3.0.20): how many there are of each kind — never how many days they are.
+ */
+export interface FitGapCounts {
+  gapKeyUser: number;
+  gapOrganisational: number;
+  gapOpen: number;
+  configuration: number;
+  givenUp: number;
+}
+
+export function fitGapGuidance(counts: FitGapCounts): string {
+  const n = (v: number, one: string, many: string) => `${v} ${v === 1 ? one : many}`;
+  return `Your confirmed fit-to-standard design: ${n(counts.gapKeyUser, 'key-user gap', 'key-user gaps')}, ${n(counts.gapOrganisational, 'organisational change', 'organisational changes')}, ${n(counts.gapOpen, 'open gap', 'open gaps')}, ${n(counts.configuration, 'step', 'steps')} as configuration, ${counts.givenUp} given up. Enter the days you expect for each kind of work — Clean-Core.io proposes none.`;
+}
+
 /** What each open group is, why the option needs it, and the field that takes it. */
 const GROUP_HELP: Record<OptionGroup['key'], { what: string; action: string; field: (id: string) => string }> = {
   baseline: {
@@ -638,7 +682,10 @@ export default function OptionComparison({
   loc,
   sourceLoc,
   saveStatus,
+  fitGaps = null,
 }: {
+  /** Roadmap 3.0.20: the counts of the confirmed fit-to-standard design on the current run, or `null`. */
+  fitGaps?: FitGapCounts | null;
   assumptions: CostAssumptions;
   comparison: CostComparison;
   proposal: EffortProposal | null;
@@ -770,6 +817,25 @@ export default function OptionComparison({
                       extra={baselineUpliftText(baselineProposal)}
                       data={`baseline-${option.id}`}
                     />
+                  ) : null}
+
+                  {option.kind === 'standard' ? (
+                    <CardValue label="Work on the standard route" data={{ 'data-cost-standard-work': option.id }}>
+                      {standardWorkWords(option).length > 0 ? (
+                        <span className="flex flex-col">
+                          {standardWorkWords(option).map((w) => (
+                            <span key={w}>{w}</span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="text-cc-ink-muted">Not entered — optional, your own days per kind of work.</span>
+                      )}
+                      {fitGaps ? (
+                        <span data-cost-fit-gaps={option.id} className="mt-1 block cc-text-meta text-cc-ink-muted">
+                          {fitGapGuidance(fitGaps)}
+                        </span>
+                      ) : null}
+                    </CardValue>
                   ) : null}
 
                   {isComparison ? (
@@ -956,6 +1022,27 @@ export default function OptionComparison({
                           patchOption(option.id, { maintenanceBaselinePerYear: v, baselineSource: 'stated' })
                         }
                       />
+                    ) : null}
+
+                    {option.kind === 'standard' ? (
+                      <EffortGroup
+                        legend="Work on the standard route (optional)"
+                        help="Your own days for each kind of work the fit-to-standard design names, priced with your own day rate: key-user days with the test/key-user rate, developer days with the development rate. Added to the one-off effort, or per release. Clean-Core.io proposes no days here."
+                      >
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-cost-standard-work-fields={option.id}>
+                          {STANDARD_WORK_KINDS.map((k) => (
+                            <NumField
+                              key={k}
+                              id={`${option.id}-sw-${k}`}
+                              label={`${STANDARD_WORK[k].label} · ${workRateWords(k)}${STANDARD_WORK[k].when === 'per-release' ? ' per release' : ''}`}
+                              hint={STANDARD_WORK[k].help}
+                              optional
+                              value={fin(option.standardWork?.[k])}
+                              onChange={(v) => typed(option.id, { standardWork: withStandardWork(option, k, v) })}
+                            />
+                          ))}
+                        </div>
+                      </EffortGroup>
                     ) : null}
 
                     {isComparison ? (
