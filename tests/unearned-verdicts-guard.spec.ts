@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { scanCodeContent } from '../lib/staged-code-scan';
@@ -78,8 +79,17 @@ test.describe('the payload banner reports a scan that happened', () => {
     expect(scanCodeContent('REPORT z_ok. WRITE / 1.')).toBeNull();
     expect(scanCodeContent('const x = eval("1");')).toMatch(/Security Block/);
     expect(scanCodeContent('db_password = hunter2')).toMatch(/Security Block/);
-    // Assembled at run time (SEC-2026-898).
-    expect(scanCodeContent(['-----BEGIN RSA', 'PRIVATE KEY-----'].join(' '))).toMatch(/Security Block/);
+    // The same input as before, assembled at run time so the source itself holds no
+    // key header (SEC-2026-898). Its SHA-256 pins it to the RSA PEM header the
+    // assertion always used, byte for byte.
+    const rsaHeader = ['-----BEGIN RSA', 'PRIVATE KEY-----'].join(' ');
+    expect(crypto.createHash('sha256').update(rsaHeader).digest('hex')).toBe('8bcac7908eb950419537b91e19adc83ce2c9cbfdacf4f81157fdadfec11f7017');
+    expect(scanCodeContent(rsaHeader)).toMatch(/Security Block/);
+    // And the header inside ABAP, and the other key types.
+    expect(scanCodeContent(`DATA(lv_key) = '${rsaHeader}'.`)).toMatch(/Security Block/);
+    for (const kind of ['', 'EC ', 'OPENSSH ']) {
+      expect(scanCodeContent(`-----BEGIN ${kind}PRIVATE${' '}KEY-----`), kind || 'plain').toMatch(/Security Block/);
+    }
   });
 });
 
