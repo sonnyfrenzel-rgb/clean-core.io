@@ -267,7 +267,23 @@ try {
         }
     }
 
-    $canonical = ""
+    # SEC-2026-891. Manifest format 2: `boundMetadata` is the exact text the
+    # digest starts with; each value is written as <length>:<value>.
+    # scripts/verify-export.ps1 reads it back.
+    $exportTimestamp = (Get-Date -Format "o")
+    $bound = [ordered]@{
+        exportTimestamp = [string]$exportTimestamp
+        platformVersion = [string]$platformVersion
+        gitCommit       = [string]$commit
+        gitBranch       = [string]$branch
+        filesCount      = [string]$manifestFiles.Count
+    }
+    $boundMetadata = "cc-export-manifest/2"
+    foreach ($key in $bound.Keys) {
+        $boundMetadata += ";" + $key + "=" + $bound[$key].Length + ":" + $bound[$key]
+    }
+
+    $canonical = $boundMetadata + "|"
     foreach ($file in ($manifestFiles | Sort-Object -Property path)) {
         $canonical += $file.path + ":" + $file.sha256 + ";"
     }
@@ -292,7 +308,9 @@ try {
     })
 
     [PSCustomObject]@{
-        exportTimestamp = (Get-Date -Format "o")
+        manifestFormat  = 2
+        boundMetadata   = $boundMetadata
+        exportTimestamp = $exportTimestamp
         platformVersion = $platformVersion
         source          = $sourceDesc
         gitCommit       = $commit

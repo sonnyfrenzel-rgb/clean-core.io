@@ -73,7 +73,8 @@ The manifest contains:
 - `platformVersion`: Current package version of the platform (e.g. `v1.16.0`).
 - `exclusionRules`: List of exclusion patterns applied.
 - `filesCount`: Total number of exported files.
-- `manifestHash`: SHA-256 hash of the canonical file mapping.
+- `manifestFormat` / `boundMetadata` (format 2, SEC-2026-891): the timestamp, version, commit, branch and file count as one length-prefixed text that opens the canonical manifest.
+- `manifestHash`: SHA-256 hash of the canonical manifest (`boundMetadata|` followed by the file mapping in format 2, the file mapping alone before).
 - `signed`: Boolean flag indicating if the manifest is signed.
 - `signature`: HMAC-SHA256 signature generated over the canonical manifest using the `AUDIT_SIGNING_KEY` environment variable.
 - `files`: Array of file entries, each containing `path`, `size`, and `sha256` digest.
