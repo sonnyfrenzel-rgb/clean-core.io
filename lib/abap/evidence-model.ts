@@ -380,7 +380,7 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
   // earlier engine keeps what it signed.
   const assigned = engineReads3020Apply(engineVersion)
-    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)(?:S|_(?:KEY|VALUE|VAL|STRING|STR|TEXT|TXT|HASH|B64|BASE64|ENC|PLAIN|RAW|OLD|NEW|DEV|PROD|PRD|TEST|[0-9]+))*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
       ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
       : /\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi;
