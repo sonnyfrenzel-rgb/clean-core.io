@@ -29,7 +29,7 @@ import path from 'path';
 // and 3.0.1's `requirement-wording` on `statement-proposal`; the Economics
 // figures' `cost-assumptions` (03.10.2026) on `requirement-wording`; `test-results` (ADR-075) on the same gate;
 // the requirements specification's `requirements-spec` (ADR-078, 04.10.2026) on `cost-assumptions`.
-const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'requirement-wording', 'cost-assumptions', 'test-results', 'requirements-spec', 'process-revisions', 'process-states', 'key-user-checks'] as const;
+const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'requirement-wording', 'cost-assumptions', 'test-results', 'requirements-spec', 'process-revisions', 'process-states', 'key-user-checks', 'fit-to-standard'] as const;
 const routeSource = (name: string) =>
   fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'projects', '[projectId]', name, 'route.ts'), 'utf8');
 

@@ -132,6 +132,13 @@ export interface Project {
    */
   keyUserAcceptance?: import('./key-user-acceptance').KeyUserAcceptanceSummary;
   /**
+   * Roadmap 3.0.20 — the latest fit-to-standard design revision, summarised:
+   * whether the account confirmed it, on which run and source, its counts and
+   * its conditions. Written only by `/api/projects/{id}/fit-to-standard` with
+   * the Admin SDK; not in the client allowlist (`lib/fit-to-standard-store.ts`).
+   */
+  fitToStandard?: import('./fit-to-standard-store').FitToStandardSummary;
+  /**
    * ADR-094 — the last run that gave no result (did not compile, no runner,
    * no usable answer). Written only by `/api/run-tests` with the Admin SDK;
    * not in the client allowlist (`lib/testing-closure.ts`).
