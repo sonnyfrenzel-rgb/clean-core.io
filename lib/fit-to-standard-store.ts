@@ -85,6 +85,8 @@ export interface FitToStandardSummary {
   needRevision: number | null;
   /** Objects only given-up steps use, as confirmed drops for the Retire bucket. Absent before a confirmation. */
   droppedObjects?: Record<string, ObjectDropDecision>;
+  /** Standard candidates (`covered`) the account did not confirm itself — still E1. Absent on a summary written before. */
+  unconfirmedCandidates?: number;
 }
 
 export interface FitChoice {
@@ -284,6 +286,7 @@ export function summaryOf(rev: FitToStandardRevision, needRevision: number | nul
     confirmedBy: confirmed ? rev.createdBy.name : null,
     confirmedAt: confirmed ? rev.createdAt : null,
     needRevision,
+    unconfirmedCandidates: rev.entries.filter((e) => e.disposition === 'covered' && e.provenance !== 'confirmed').length,
   };
 }
 
