@@ -31,6 +31,7 @@ import { PROCESS_EDITOR_MESSAGES } from './messages/process-editor';
 import { DEMO_WORKSPACE_MESSAGES } from './messages/demo';
 import { OWN_CODE_MESSAGES } from './messages/own-code';
 import { WORKSPACE_BUSINESS_MESSAGES } from './messages/workspace-business';
+import { WORKSPACE_WALK_MESSAGES } from './messages/workspace-walk';
 import { WORKSPACE_RULES_MESSAGES } from './messages/workspace-rules';
 import { DOCUMENTATION_MESSAGES } from './messages/documentation';
 import { WORKSPACE_IT_MESSAGES } from './messages/workspace-it';
@@ -49,6 +50,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   demo: DEMO_WORKSPACE_MESSAGES,
   ownCode: OWN_CODE_MESSAGES,
   business: WORKSPACE_BUSINESS_MESSAGES,
+  walk: WORKSPACE_WALK_MESSAGES,
   rules: WORKSPACE_RULES_MESSAGES,
   documentation: DOCUMENTATION_MESSAGES,
   it: WORKSPACE_IT_MESSAGES,
@@ -67,6 +69,7 @@ export const WORKSPACE_MESSAGES = {
   ...DEMO_WORKSPACE_MESSAGES,
   ...OWN_CODE_MESSAGES,
   ...WORKSPACE_BUSINESS_MESSAGES,
+  ...WORKSPACE_WALK_MESSAGES,
   ...WORKSPACE_RULES_MESSAGES,
   ...DOCUMENTATION_MESSAGES,
   ...WORKSPACE_IT_MESSAGES,
@@ -95,6 +98,7 @@ export * from './messages/process-editor';
 export * from './messages/demo';
 export * from './messages/own-code';
 export * from './messages/workspace-business';
+export * from './messages/workspace-walk';
 export * from './messages/workspace-rules';
 export * from './messages/documentation';
 export * from './messages/workspace-it';

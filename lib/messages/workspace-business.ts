@@ -87,14 +87,6 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.namesProposed': 'Business names from the model are shown on the map, marked as a model proposal.',
 
   // Answering the steps — components/workspace/WorkspaceProcess.tsx (owner, 03.10.2026).
-  'biz.walkLead': 'Read from the code. Walk through the steps to say what the business still needs.',
-  'biz.walkStart': 'Walk through the process',
-  'biz.walkContinue': 'Continue the walk-through',
-  'biz.walkQuestion': 'Does the business still need this step? Your answer is a self-declaration; the signed run stays as it is.',
-  'biz.walkBack': 'Back',
-  'biz.walkNext': 'Next',
-  'biz.walkClose': 'Close',
-  'biz.walkPreparing': 'This step cannot be answered yet: the reconstructed process is read again first. Answer any step on the map to start.',
   'biz.stepNeedTitle': 'Does the business still need this step?',
 } as const;
 
@@ -179,13 +171,3 @@ export function bizMoreItems(n: number): string {
   return `and ${n} more`;
 }
 
-
-/** "3 of 14 steps answered". */
-export function bizWalkAnswered(answered: number, total: number): string {
-  return `${answered} of ${total} ${total === 1 ? 'step' : 'steps'} answered.`;
-}
-
-/** "Step 3 of 14: Check price". */
-export function bizWalkStep(index: number, total: number, label: string): string {
-  return `Step ${index} of ${total}: ${label}`;
-}

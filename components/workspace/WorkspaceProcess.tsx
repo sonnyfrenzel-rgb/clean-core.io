@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { ChevronLeft, ChevronRight, Footprints, FileCode2, Tags, X } from 'lucide-react';
+import { FileCode2, Tags } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -18,9 +18,12 @@ import { useIsOwner } from './BusinessRulesEditor';
 import StateChoice from '@/components/process-states/StateChoice';
 import { publishProcessStates, useProcessStates } from '@/hooks/useProcessStates';
 import { confirmOutcomeSentence, confirmProcessStates } from '@/lib/process-states-client';
-import { elementEntries, walkOrder, walkProgress } from '@/lib/process-walk';
+import { elementEntries, walkOrder } from '@/lib/process-walk';
+import { restrictGuide, resumeStop, walkStops, WALK_TECHNICAL_SUBJECT, type WalkGuide } from '@/lib/process-walk-guide';
+import { OPEN_WALK_EVENT, PROCESS_WALK_ID, takeProcessWalkRequest } from '@/lib/process-walk-request';
+import ProcessWalkThrough from './ProcessWalkThrough';
 import { isConfirmedState } from '@/lib/rules-editor';
-import type { ElementState } from '@/lib/process-states';
+import { MAX_STATE_CHOICES, type ElementState } from '@/lib/process-states';
 import { namingContextOf } from '@/lib/process-naming';
 import { requestProcessNaming } from '@/lib/process-naming-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -40,7 +43,7 @@ import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
-import { bizLinesLabel, bizNamesFailed, bizShowingLines, bizWalkAnswered, bizWalkStep, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, bizNamesFailed, bizShowingLines, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 import type { DraftHolder } from '@/lib/process-map-draft';
 
@@ -168,14 +171,47 @@ export default function WorkspaceProcess({
     () => (stateView ? new Set(stateView.subjects.filter((s) => s.kind === 'element').map((s) => s.subject)) : null),
     [stateView],
   );
-  const order = useMemo(() => (map.model ? walkOrder(map.model, subjects) : []), [map.model, subjects]);
-  const progress = useMemo(() => walkProgress(order, answers), [order, answers]);
+  /**
+   * The guided walk-through (roadmap "3.0.20 — with it", part 1): every step of
+   * the map's walk said in plain words, read from the signed source in this
+   * browser, as the map is. Read once per model, after the map is drawn, and
+   * narrowed to the elements an answer can be stored for once the route says
+   * which those are — a narrowing, not a second reading.
+   */
+  const [fullGuide, setFullGuide] = useState<{ model: ProcessMapModel; guide: WalkGuide } | null>(null);
+  useEffect(() => {
+    const current = map.model;
+    if (!current || !signed) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void import('@/lib/process-walk-guide').then((m) => {
+        if (cancelled) return;
+        const guide = m.buildWalkGuide(signed.source, current, walkOrder(current, null));
+        setFullGuide({ model: current, guide });
+      });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [map.model, signed]);
+  const guide = useMemo(
+    () => (fullGuide && fullGuide.model === map.model ? restrictGuide(fullGuide.guide, subjects) : null),
+    [fullGuide, map.model, subjects],
+  );
+  const stops = useMemo(() => (guide ? walkStops(guide) : []), [guide]);
   const [walk, setWalk] = useState<number | null>(null);
   const [answering, setAnswering] = useState<{ subject: string; error: string | null } | null>(null);
-  /** One answer for one element, into the same need revision as the rules — never the signed run. */
-  const answerStep = useCallback(
-    async (subject: string, state: ElementState, note: string | null) => {
-      if (!projectId) return;
+  /**
+   * Answers into the same need revision as the rules — never the signed run.
+   * One element, or the same answer for several in one confirmation: the
+   * technical steps of the walk, answered once (`busyKey` names the control
+   * that asked). Through the same route either way.
+   */
+  const answerSteps = useCallback(
+    async (busyKey: string, ids: readonly string[], state: ElementState, note: string | null) => {
+      if (!projectId || ids.length === 0) return;
+      const subject = busyKey;
       setAnswering({ subject, error: null });
       let revision = stateView?.revision ?? null;
       if (revision === null) {
@@ -190,16 +226,29 @@ export default function WorkspaceProcess({
         await reloadStates();
         revision = 0;
       }
-      const result = await confirmProcessStates(projectId, revision, [{ subject, kind: 'element', state, note }]);
-      if (result.ok) {
+      // In slices the route accepts; each confirmation moves the revision on.
+      for (let from = 0; from < ids.length; from += MAX_STATE_CHOICES) {
+        const slice = ids.slice(from, from + MAX_STATE_CHOICES);
+        const result = await confirmProcessStates(
+          projectId,
+          revision,
+          slice.map((id) => ({ subject: id, kind: 'element' as const, state, note })),
+        );
+        if (!result.ok) {
+          setAnswering({ subject, error: confirmOutcomeSentence(result) });
+          if (result.code === 'revision-moved') void reloadStates();
+          return;
+        }
         publishProcessStates(projectId, result.view);
-        setAnswering(null);
-      } else {
-        setAnswering({ subject, error: confirmOutcomeSentence(result) });
-        if (result.code === 'revision-moved') void reloadStates();
+        revision = result.view.revision;
       }
+      setAnswering(null);
     },
     [projectId, stateView, reloadStates],
+  );
+  const answerStep = useCallback(
+    (subject: string, state: ElementState, note: string | null) => answerSteps(subject, [subject], state, note),
+    [answerSteps],
   );
   /**
    * The map's legend, as the Business view counts it: *Confirmed* is the steps
@@ -226,18 +275,47 @@ export default function WorkspaceProcess({
         ),
     };
   }, [model, answers]);
+  /** A stop of the walk on screen; a step is selected on the map beside it, so the two never disagree. */
+  const walkRef = useRef<HTMLDivElement>(null);
   const goToStep = useCallback(
     (index: number) => {
-      const id = order[index];
-      const element = id ? model?.elements.find((e) => e.id === id) : undefined;
-      if (!element) return;
+      const stop = stops[index];
+      if (!stop) return;
       setWalk(index);
-      setPlane(element.plane);
-      setSelected(element.id);
-      setLooseRange(null);
+      if (stop.kind === 'step') {
+        const element = model?.elements.find((e) => e.id === stop.id);
+        if (element) {
+          setPlane(element.plane);
+          setSelected(element.id);
+          setLooseRange(null);
+        }
+      }
+      const node = walkRef.current;
+      if (node && node.getBoundingClientRect().top < 0) node.scrollIntoView({ block: 'start' });
     },
-    [order, model],
+    [stops, model],
   );
+  /**
+   * "Open the walk-through" from the entry at the top of the Business view
+   * (`ProcessWalkEntry`): held until the walk is read, then opened where the
+   * reader left off — the first open step, or the summary — and brought into view.
+   */
+  const walkAsked = useRef(false);
+  const openAsked = useCallback(() => {
+    if (!walkAsked.current || stops.length === 0) return;
+    walkAsked.current = false;
+    goToStep(owner ? resumeStop(stops, answers) : 0);
+    document.getElementById(PROCESS_WALK_ID)?.scrollIntoView({ block: 'start' });
+  }, [stops, goToStep, owner, answers]);
+  useEffect(() => {
+    const hear = () => {
+      if (takeProcessWalkRequest(projectId)) walkAsked.current = true;
+      openAsked();
+    };
+    hear();
+    window.addEventListener(OPEN_WALK_EVENT, hear);
+    return () => window.removeEventListener(OPEN_WALK_EVENT, hear);
+  }, [projectId, openAsked]);
   const [naming, setNaming] = useState<{ busy: boolean; note: { state: 'success' | 'error'; text: string } | null }>({
     busy: false,
     note: null,
@@ -668,48 +746,31 @@ export default function WorkspaceProcess({
           <span data-workspace-names-note={naming.note.state}>{naming.note.text}</span>
         </CcMessageStrip>
       ) : null}
-      {coach}
-      {model && order.length > 0 ? (
-        <div
-          data-workspace-walk-bar=""
-          data-answered={progress.answered}
-          data-total={progress.total}
-          className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
-        >
-          <p className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-medium text-cc-ink">
-            {wt('biz.walkLead')}{' '}
-            <span data-workspace-walk-progress="" className="font-semibold">
-              {bizWalkAnswered(progress.answered, progress.total)}
-            </span>
-          </p>
-          {owner && walk === null ? (
-            <span className="cc-no-print">
-              <CcButton
-                icon={<Footprints size={16} aria-hidden={true} />}
-                onClick={() => goToStep(progress.resumeAt)}
-                data-workspace-walk-start=""
-              >
-                {progress.answered > 0 ? wt('biz.walkContinue') : wt('biz.walkStart')}
-              </CcButton>
-            </span>
-          ) : null}
+      {/* The walk-through first (roadmap "3.0.20 — with it", part 1): the
+          leading way into the process for a business reader, said in plain
+          words before it asks; the map below selects the step on screen. */}
+      {model ? (
+        <div ref={walkRef}>
+          <ProcessWalkThrough
+            projectId={projectId}
+            guide={guide}
+            stops={stops}
+            at={walk}
+            answers={answers}
+            subjectOf={(id) => stateView?.subjects.find((s) => s.subject === id) ?? null}
+            owner={owner}
+            answering={answering}
+            onAnswer={answerStep}
+            onAnswerMany={(ids, state, note) => answerSteps(WALK_TECHNICAL_SUBJECT, ids, state, note)}
+            onGo={goToStep}
+            onClose={() => setWalk(null)}
+            onOpenLines={openRange}
+            source={signed.source}
+            fileName={signed.fileName}
+          />
         </div>
       ) : null}
-      {owner && walk !== null && order[walk] && stateView !== undefined ? (
-        <WalkStep
-          index={walk}
-          total={order.length}
-          label={model?.elements.find((e) => e.id === order[walk])?.label ?? order[walk]}
-          subject={stateView?.subjects.find((s) => s.subject === order[walk]) ?? null}
-          entry={answers[order[walk]] ?? null}
-          busy={answering?.subject === order[walk] && answering.error === null}
-          error={answering?.subject === order[walk] ? answering.error : null}
-          onAnswer={(state, note) => answerStep(order[walk], state, note)}
-          onBack={walk > 0 ? () => goToStep(walk - 1) : undefined}
-          onNext={walk + 1 < order.length ? () => goToStep(walk + 1) : undefined}
-          onClose={() => setWalk(null)}
-        />
-      ) : null}
+      {coach}
       <div data-coach-target="decision">
         <CcCard>
           {model ? (
@@ -750,72 +811,6 @@ export default function WorkspaceProcess({
       </div>
       {model ? column : null}
     </div>
-  );
-}
-
-/**
- * One step of the walk-through: where the reader is, the question, the answer
- * with its note, and the way on. The map beside it selects the same step, so
- * the reader sees what they are answering about.
- */
-function WalkStep({
-  index,
-  total,
-  label,
-  subject,
-  entry,
-  busy,
-  error,
-  onAnswer,
-  onBack,
-  onNext,
-  onClose,
-}: {
-  index: number;
-  total: number;
-  label: string;
-  subject: import('@/lib/process-states').StateSubject | null;
-  entry: import('@/lib/process-states').StateEntry | null;
-  busy: boolean;
-  error: string | null;
-  onAnswer: (state: ElementState, note: string | null) => void | Promise<void>;
-  onBack?: () => void;
-  onNext?: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <section
-      data-workspace-walk=""
-      data-walk-step={index + 1}
-      aria-labelledby="workspace-walk-title"
-      className="flex flex-col gap-3 rounded-cc-card border border-l-4 border-cc-line border-l-cc-ink bg-cc-surface p-4 shadow-cc"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 id="workspace-walk-title" className="m-0 text-[15px] leading-snug font-bold break-words text-cc-ink">
-            {bizWalkStep(index + 1, total, label)}
-          </h3>
-          <p className="m-0 mt-1 text-[13px] font-medium text-cc-ink-muted">{wt('biz.walkQuestion')}</p>
-        </div>
-        <CcButton variant="ghost" icon={<X size={16} aria-hidden={true} />} onClick={onClose} data-workspace-walk-close="">
-          {wt('biz.walkClose')}
-        </CcButton>
-      </div>
-      {subject ? (
-        <StateChoice key={subject.subject} subject={subject} entry={entry} busy={busy} error={error} onConfirm={onAnswer} />
-      ) : (
-        <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('biz.walkPreparing')}</p>
-      )}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <CcButton icon={<ChevronLeft size={16} aria-hidden={true} />} onClick={onBack} disabled={!onBack} data-workspace-walk-back="">
-          {wt('biz.walkBack')}
-        </CcButton>
-        <CcButton onClick={onNext} disabled={!onNext} data-workspace-walk-next="">
-          {wt('biz.walkNext')}
-          <ChevronRight size={16} aria-hidden={true} />
-        </CcButton>
-      </div>
-    </section>
   );
 }
 
