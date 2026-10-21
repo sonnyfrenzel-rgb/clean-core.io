@@ -20,6 +20,7 @@
  */
 
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
+import { screenProgramText } from '@/lib/sensitive-text';
 
 /** The enhancement object types the engine grades level D (BAdIs and the classic exit handler are not). */
 const LEVEL_D_ENHANCEMENTS = new Set(['Enhancement Implementation', 'Enhancement Point', 'Enhancement Section']);
@@ -79,7 +80,8 @@ export function levelDRegister(findings: readonly EvidenceFinding[]): LevelDEntr
         objectName: f.objectName ?? null,
         objectType: f.objectType ?? null,
         line: f.lineStart,
-        snippet: f.snippet,
+        // The register is documentation and is exported: the program's personal data and secrets are masked.
+        snippet: screenProgramText(f.snippet),
         questions: QUESTIONS[kind],
       };
     })

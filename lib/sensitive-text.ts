@@ -15,6 +15,13 @@
  *   - **the business layer of the documentation** — masked where the model's
  *     answer is accepted, before it is stored, so every export of it carries the
  *     masked text (`screenSensitiveValue`);
+ *   - **the engine's documentation and the exports that quote the program** —
+ *     the program's own literals (an e-mail constant, a phone number in a
+ *     message, an IBAN) are masked in the process documentation as it is built
+ *     and as it is read back, in the level D register and in the Analyze
+ *     export's code excerpts (`screenProgramText`, `screenProgramDocument`;
+ *     owner decision 21.10.2026). The source itself, and the code excerpt at a
+ *     line anchor in the app, stay as they are;
  *   - **fill bodies** of a generated package — a body that carries a secret is
  *     refused like any other body the checks on fills refuse (`secretInBody`),
  *     so it is never spliced and its reason, not its value, is what the package
@@ -181,6 +188,19 @@ export function screenSensitiveValue<T>(value: T): { value: T; findings: Sensiti
     return v;
   };
   return { value: walk(value) as T, findings };
+}
+
+/**
+ * Text the engine quotes from the original program, as documentation or an export carries it: every finding masked,
+ * personal data and secrets alike. The program's own e-mail constant is personal data whoever wrote it.
+ */
+export function screenProgramText(text: string): string {
+  return screenSensitiveText(text).text;
+}
+
+/** An engine document with every string screened (`screenProgramText`), its shape and keys kept. */
+export function screenProgramDocument<T>(document: T): T {
+  return screenSensitiveValue(document).value;
 }
 
 /** "one e-mail address and two passwords" — counts by kind, in a fixed order. */

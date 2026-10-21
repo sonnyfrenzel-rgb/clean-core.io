@@ -29,7 +29,7 @@ import { objectSites, sitesByElement, type ObjectSite } from '@/lib/process-over
 import { selectionInputs, summaryOf, type HandbookObject } from '@/lib/process-handbook';
 import { stripModelMarkdown } from '@/lib/model-text';
 import { sapCheckedNarrative } from '@/lib/sap-reference-check';
-import { screenSensitiveText } from '@/lib/sensitive-text';
+import { screenProgramDocument, screenSensitiveText } from '@/lib/sensitive-text';
 import { FR_TOPICS_COVERED_BY_NFR } from '@/lib/requirements-export';
 import {
   PROCESS_DOCUMENT_FORMAT,
@@ -1523,7 +1523,9 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const endingGates = path.filter((e) => e.kind === 'gate' && e.outcomes.some((o) => o.ends)).length;
   const overviewSentence = `${steps.length} step${steps.length === 1 ? '' : 's'} on the main path${endingGates ? `; ${endingGates} decision point${endingGates === 1 ? '' : 's'} between them can end the run` : ''}.`;
 
-  return {
+  // Personal data and secrets the program itself carries (a constant, a message) are masked in every string of the
+  // document, so the screen and every export of it carry the masked text (`lib/sensitive-text.ts`).
+  return screenProgramDocument<ProcessDocument>({
     format: PROCESS_DOCUMENT_FORMAT,
     formatVersion: PROCESS_DOCUMENT_FORMAT_VERSION,
     program,
@@ -1548,7 +1550,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     appendix,
     // Owner 11.10.2026: what the program can do — the business page says from it what it does not.
     facts: capabilityFactsOf(source, skeleton, { calls, tables }),
-  };
+  });
 }
 
 /** Business weight of an effect, for the purpose sentence: documents and workflows before table rows and lists. */

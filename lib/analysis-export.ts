@@ -24,6 +24,8 @@
 import type { Project, AnalysisData } from '@/lib/types';
 import type { ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
 import { escapeHtml } from '@/lib/export-safety';
+// The program's personal data and secrets in a code excerpt are masked in the export (the app shows the line as written).
+import { screenProgramText } from '@/lib/sensitive-text';
 import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
@@ -428,7 +430,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                 return `<tr>
                   <td class="strong">${esc(f.title)}${lines.length > 1 ? ` (${lines.length}×)` : ''}<br/><small>${esc(f.kind)}</small></td>
                   <td class="mono">${esc(lines.join(', '))}</td>
-                  <td><code>${esc(snippets[0] || '—')}</code></td>
+                  <td><code>${esc(screenProgramText(snippets[0] || '—'))}</code></td>
                   <td><span class="${sevClass}">${esc(f.severity)}</span></td>
                   <td><span class="${srcClass}">${srcLabel}</span></td>
                   <td>${f.sapReplacement ? `${esc(f.sapReplacement.objectName)}<br/><span class="${confClass}">${esc(successorSourceNote(f.sapReplacement.confidence))}</span>` : '—'}</td>

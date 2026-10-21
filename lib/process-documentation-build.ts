@@ -19,6 +19,7 @@ import { stripModelMarkdown } from '@/lib/model-text';
 import { countSourceLines } from '@/lib/source-lines';
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
+import { screenProgramDocument } from '@/lib/sensitive-text';
 
 /**
  * The builder of the stage-4 document — roadmap 3.0.5, Weg C.
@@ -163,7 +164,9 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     statement: lane.statement,
   }));
 
-  return {
+  // Personal data and secrets the program itself carries are masked in every string before the document is stored
+  // (`lib/sensitive-text.ts`); a document stored before is screened where it is read (`readStoredDocumentation`).
+  return screenProgramDocument<ProcessDocumentation>({
     format: PROCESS_DOCUMENTATION_FORMAT,
     formatVersion: PROCESS_DOCUMENTATION_FORMAT_VERSION,
     processName: map.processName,
@@ -206,5 +209,5 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     facts: capabilityFactsOf(source, skeleton),
     // Owner 12.10.2026: what the program is for, so every rendering opens with one summary.
     summary: programSummaryFactsOf(source, { skeleton }),
-  };
+  });
 }

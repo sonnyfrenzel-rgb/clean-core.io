@@ -1,4 +1,5 @@
 import type { ProvenanceValue } from '@/lib/provenance';
+import { screenProgramDocument } from '@/lib/sensitive-text';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import { authorClaimOf } from '@/lib/program-summary-check';
 import { abapWords, programSummary, readProgramSummaryFacts, type ProgramSummaryFacts } from '@/lib/program-summary-text';
@@ -291,12 +292,21 @@ export function readStoredDocumentation(raw: unknown): StoredDocumentation {
   if (!isObject(parsed) || parsed.format !== PROCESS_DOCUMENTATION_FORMAT) return { kind: 'other', raw };
   const shape = checkProcessDocumentationShape(parsed);
   if (!shape.ok) return { kind: 'engine-invalid', problems: shape.problems };
-  return { kind: 'engine', doc: parsed as unknown as ProcessDocumentation };
+  // A document stored before 3.0.20 was not screened when it was built: the program's personal data and secrets are
+  // masked here, so the screen and every export read the masked text (`lib/sensitive-text.ts`).
+  return { kind: 'engine', doc: screenProgramDocument(parsed as unknown as ProcessDocumentation) };
 }
 
-/** True when the stored value is an engine document. Cheap enough for the phase contract. */
+/** True when the stored value is an engine document. Cheap enough for the phase contract: it does not screen. */
 export function isEngineDocumentation(raw: unknown): boolean {
-  return readStoredDocumentation(raw).kind === 'engine';
+  if (typeof raw !== 'string' || raw.trim() === '') return false;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  return isObject(parsed) && parsed.format === PROCESS_DOCUMENTATION_FORMAT && checkProcessDocumentationShape(parsed).ok;
 }
 
 /* ---------------------------------------------------------- the words */
