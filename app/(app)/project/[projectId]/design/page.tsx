@@ -67,6 +67,7 @@ import { conceptSuccessorsOf } from '@/lib/concept-successors';
 import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
 // Roadmap 3.0.19: key user as the fourth option, read from the engine's evidence.
 import { useKeyUserSteps } from '@/hooks/useKeyUserSteps';
+import FitToStandardPanel from '@/components/fit/FitToStandardPanel';
 import type { KeyUserReading } from '@/lib/abap/key-user-candidates';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, TARGET_EDITION_NAMES, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
@@ -1367,6 +1368,11 @@ ${DESIGN_ANSWER_REMINDER}`;
           }
           view={view}
         />
+      </div>
+
+      {/* Roadmap 3.0.20: the Design tool's "Fit to standard" mode — what living with the standard gives up. */}
+      <div className="mb-12">
+        <FitToStandardPanel projectId={projectId as string} project={project} isOwner={isOwner} modelAvailable={designAvailable} />
       </div>
 
       {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}

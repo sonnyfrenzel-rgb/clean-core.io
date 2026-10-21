@@ -47,6 +47,8 @@ const MARK_CLASS: Record<ReturnType<typeof toolMark>['meaning'], string> = {
   done: 'border-cc-success bg-cc-success-bg text-cc-success',
   started: 'border-cc-information bg-cc-information-bg text-cc-information',
   stale: 'border-cc-warning-mark bg-cc-warning-bg text-cc-warning',
+  // Roadmap 3.0.20: not applicable on the path decided — grey, never a check.
+  'not-applicable': 'border-dashed border-cc-neutral-border bg-cc-surface text-cc-ink-muted',
   none: 'border-cc-neutral-border bg-cc-surface text-cc-ink-muted',
 };
 

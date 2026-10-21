@@ -217,7 +217,8 @@ export interface NextOpenPoint {
  */
 export function selectionSentence(steps: readonly RailStep[], next: RailStep): string {
   const at = steps.findIndex((s) => s.key === next.key);
-  const before = at > 0 ? steps.slice(0, at) : [];
+  // A phase not applicable on the path decided is neither on record nor passed over (roadmap 3.0.20).
+  const before = at > 0 ? steps.slice(0, at).filter((s) => s.state !== 'not-applicable') : [];
   const first = `${next.label} is the first in the workflow order that is not.`;
 
   if (before.length === 0) {

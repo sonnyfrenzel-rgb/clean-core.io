@@ -155,7 +155,8 @@ test.describe('ADR-079 — what the evidence says per option', () => {
   });
 
   test('Move to SAP standard is never read from the code', () => {
-    expect(decisionOptionsView(src()).cards[2]).toMatchObject({ signal: 'not-determined', provenance: 'not-determined', place: 'business' });
+    // 3.0.20: the way to an answer is the fit-to-standard design, made in Design.
+    expect(decisionOptionsView(src()).cards[2]).toMatchObject({ signal: 'not-determined', provenance: 'not-determined', place: 'design' });
   });
 
   test('Retire speaks for only on a measured zero over at least 13 months — never "unused" for "not measured"', () => {

@@ -536,7 +536,7 @@ function confirmedAnswer(steps: readonly RailStep[]): ManagementAnswer {
 }
 
 function missingAnswer(steps: readonly RailStep[]): ManagementAnswer {
-  const openPhases = steps.filter((s) => !s.done);
+  const openPhases = steps.filter((s) => !s.done && s.state !== 'not-applicable');
   const items: AnswerItem[] = openPhases.map((s) => ({
     key: `open-${s.key}`,
     label: s.label,

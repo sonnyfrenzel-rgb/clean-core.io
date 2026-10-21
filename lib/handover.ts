@@ -748,7 +748,7 @@ export function handoverNextStep(
   }
   const phase = (k: PhaseKey) => phases.find((p) => p.key === k)!;
   const order: PhaseKey[] = ['design', 'transformation', 'documentation', 'testing'];
-  const missing = order.map(phase).find((p) => !p.done);
+  const missing = order.map(phase).find((p) => !p.done && p.state !== 'not-applicable');
   if (missing) {
     // What has to happen, in words; the button names where.
     const WHAT: Partial<Record<PhaseKey, string>> = {

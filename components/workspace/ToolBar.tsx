@@ -40,7 +40,17 @@ export interface WorkspaceTool {
  * legend beside "Tools" says the same in text. The shapes differ too — a
  * check, a half circle, a dot — so the three read apart without colour.
  */
-function MarkGlyph({ kind, size = 'bar' }: { kind: 'check' | 'half' | 'dot'; size?: 'bar' | 'legend' }) {
+function MarkGlyph({ kind, size = 'bar' }: { kind: 'check' | 'half' | 'dot' | 'dash'; size?: 'bar' | 'legend' }) {
+  if (kind === 'dash') {
+    // Roadmap 3.0.20: not applicable on the path decided — a grey dash, never a check.
+    return (
+      <span
+        aria-hidden={true}
+        data-workspace-tool-mark={size === 'bar' ? 'dash' : undefined}
+        className="inline-block h-0.5 w-2.5 rounded-full bg-cc-ink-muted"
+      />
+    );
+  }
   if (kind === 'check') {
     return (
       <Check
@@ -121,7 +131,9 @@ function toolGuide(
         ? `${wt('tools.mark.startedHint')}.`
         : mark.meaning === 'stale'
           ? `${wt('tools.mark.staleHint')}.`
-          : null,
+          : mark.meaning === 'not-applicable'
+            ? `${wt('tools.mark.notApplicableHint')}.`
+            : null,
   ].filter((line): line is string => Boolean(line));
 }
 
