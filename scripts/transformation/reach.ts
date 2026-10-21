@@ -34,6 +34,7 @@ import path from 'node:path';
 import { prepareEngineLed, candidateFiles, type EngineLedPrepared } from '../../lib/transformation/engine-led';
 import { engineCaseScope } from '../../lib/transformation/call-contract';
 import { deriveEngineCasesOf, engineCaseProvenance } from '../../lib/engine-case-provenance';
+import { APP_VERSION } from '../../lib/version';
 import { planEngineRun } from '../../lib/engine-case-run';
 import { ENGINE_OUTCOME_MARKER, judgeEngineCase } from '../acceptance/child/engine-cases-core.mjs';
 import { engineRunInputs } from '../../lib/test-sandbox/engine-suite';
@@ -132,7 +133,7 @@ export async function runChecks(prep: EngineLedPrepared, source: string, bodies:
   const files = candidateFiles(prep, bodies);
   const out: ChecksRun = { cases: [], casesNotRun: null, probes: [], probesSkipped: [], probesNotRun: null };
 
-  const derivation = deriveEngineCasesOf(source);
+  const derivation = deriveEngineCasesOf(source, APP_VERSION);
   if (!derivation) out.casesNotRun = 'no derivation';
   else {
     const verified = engineCaseProvenance(derivation.cases as unknown as Array<Record<string, unknown>>, derivation).verified;

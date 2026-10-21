@@ -29,6 +29,7 @@ import type { AgainstDecision } from './decision-header';
 import { checkSapReferences, sapIdStateWord } from '../sap-reference-check';
 import { sliceFor } from './abap-slice';
 import { fillGuardsOf, planUnits, readEngineFacts, type PlanInput } from './unit-plan';
+import { engineVersionOfProject, type ProjectEngineStamp } from '../run-engine-version';
 import { camelName } from './naming';
 import { parameterShapes, regionSignature, typeDeclarations, typesText, type TypeDeclaration } from './type-shapes';
 import { traceJson, traceMarkdown, withTrace } from './trace';
@@ -92,6 +93,11 @@ export interface EngineLedRequest {
    * The routines inside them get no function and no fill request, so no model call.
    */
   keyUser?: PlanInput['keyUser'];
+  /**
+   * The engine stamp of the project whose source it is (`engineStampOf`): the source is read for the engine of its
+   * signed run (3.0.20). None — a corpus script — reads it for the current engine.
+   */
+  project?: ProjectEngineStamp | null;
 }
 
 /** What the screen shows when the scaffold is written (§15.2 "Engine scaffold"). */
@@ -150,8 +156,9 @@ function returnsOf(signature: string): string {
 export function prepareEngineLed(req: EngineLedRequest, now: () => number = () => Date.now()): EngineLedPreparation {
   const t0 = now();
   try {
-    const facts = readEngineFacts(req.source);
-    const plan = planUnits(req.source, { decisions: req.decisions, program: req.program, keyUser: req.keyUser ?? null }, facts);
+    const engineVersion = engineVersionOfProject(req.project);
+    const facts = readEngineFacts(req.source, engineVersion);
+    const plan = planUnits(req.source, { decisions: req.decisions, program: req.program, keyUser: req.keyUser ?? null, engineVersion }, facts);
     const cases = deriveEngineCases(facts.source, facts.ruleSet.rules);
     const against = req.against ?? null;
     const scaffold = req.track === 'node' ? buildNodeScaffold(plan, facts, { cases, against }) : buildRapScaffold(plan, facts, { cases, against });

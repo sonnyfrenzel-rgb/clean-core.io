@@ -127,7 +127,7 @@ export function findingsOf(
   engineVersion?: string | null,
 ): ItFindingsSource {
   const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshot, engineVersion);
-  const rules = deriveBusinessRules(source);
+  const rules = deriveBusinessRules(source, engineVersion);
   const facts = buildProcessFacts(source);
   const containers = facts.structure.containers;
 

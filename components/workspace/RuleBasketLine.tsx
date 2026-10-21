@@ -45,16 +45,27 @@ export function RuleBasketLineView({ questions, technical, undetermined, designH
   );
 }
 
-export default function RuleBasketLine({ projectId, source, ruleSet }: { projectId: string; source: string; ruleSet: BusinessRuleSet | null }) {
+/** `engineVersion`: the engine `ruleSet` was read for — the project's signed run's (3.0.20). */
+export default function RuleBasketLine({
+  projectId,
+  source,
+  ruleSet,
+  engineVersion,
+}: {
+  projectId: string;
+  source: string;
+  ruleSet: BusinessRuleSet | null;
+  engineVersion: string | null;
+}) {
   const counts = useMemo(() => {
     if (!ruleSet || !source.trim() || ruleSet.rules.length === 0) return null;
     try {
-      const ex = explainBusinessRules(source, ruleSet, buildProcessFacts(source));
+      const ex = explainBusinessRules(source, ruleSet, buildProcessFacts(source), engineVersion);
       return { questions: ex.questions.length, technical: ex.baskets.technical.length, undetermined: ex.baskets.undetermined.length };
     } catch {
       return null;
     }
-  }, [ruleSet, source]);
+  }, [ruleSet, source, engineVersion]);
   if (!counts) return null;
   return <RuleBasketLineView {...counts} designHref={`/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}`} />;
 }

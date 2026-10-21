@@ -37,6 +37,7 @@ import { t } from '@/lib/cc-messages';
 import { steeringDecidedBy, steeringMore, wt } from '@/lib/workspace-messages';
 import { STEERING_ANCHOR, STEERING_OPEN_EVENT } from '@/lib/steering-open';
 import { TONE_CLASS } from './ManagementExecutive';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5; redesigned
@@ -122,7 +123,7 @@ export default function SteeringOnePager({
         try {
           // Off this thread (owner, 12.10.2026: the CO project froze the Documentation tool).
           const m = await import('@/lib/bpmn/reading-exports-client');
-          const s = await m.processSummaryOffThread(signed.source, signed.fileName, project?.name || '');
+          const s = await m.processSummaryOffThread(signed.source, signed.fileName, project?.name || '', project);
           if (!s) return null;
           // Owner 12.10.2026: the purpose with the rule register's open count, as the delivery package says it.
           let purpose = s.management;
@@ -133,7 +134,7 @@ export default function SteeringOnePager({
                 import('@/lib/management-rule-tally'),
                 import('@/lib/program-summary-text'),
               ]);
-              const rules = tally.ruleTallyOf(await client.readProcessStatesOutcome(projectId), s.summaryFacts.rules);
+              const rules = tally.ruleTallyOf(await client.readProcessStatesOutcome(projectId), s.summaryFacts.rules, engineVersionOfProject(project));
               purpose = text.managementInShort(text.programSummary(s.summaryFacts), s.summaryFacts, { level: false, rules });
             } catch {
               purpose = s.management;

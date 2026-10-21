@@ -177,6 +177,7 @@ export default function WorkspaceProcess({
    * the map is drawn.
    */
   const [read, setRead] = useState<{ model: ProcessMapModel; guide: WalkGuide; tour: Tour } | null>(null);
+  const tourEngine = engineVersionOfProject(project);
   useEffect(() => {
     const current = map.model;
     if (!current || !signed) return;
@@ -185,14 +186,14 @@ export default function WorkspaceProcess({
       void Promise.all([import('@/lib/process-walk-guide'), import('@/lib/process-tour')]).then(([g, t]) => {
         if (cancelled) return;
         const guide = g.buildWalkGuide(signed.source, current, walkOrder(current, null));
-        setRead({ model: current, guide, tour: t.buildProcessTour(guide, current, t.tourClosingOf(signed.source)) });
+        setRead({ model: current, guide, tour: t.buildProcessTour(guide, current, t.tourClosingOf(signed.source, tourEngine)) });
       });
     }, 0);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [map.model, signed]);
+  }, [map.model, signed, tourEngine]);
   const tour = read && read.model === map.model ? read.tour : null;
   const [tourOpen, setTourOpen] = useState(false);
   /**

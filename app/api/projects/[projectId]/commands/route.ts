@@ -23,6 +23,7 @@ import { notDetermined } from '@/lib/workspace-model';
 import { rulesStatus } from '@/lib/rules-editor';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
   PROCESS_STATE_COLLECTION,
@@ -86,7 +87,7 @@ async function rulesNow(
     formatVersion: PROCESS_STATE_FORMAT_VERSION,
     revision,
     baselineRevision: 1,
-    subjects: deriveBusinessRules(source).rules.map((rule) => ({
+    subjects: deriveBusinessRules(source, engineVersionOfProject(project)).rules.map((rule) => ({
       subject: rule.id,
       kind: 'rule' as const,
       label: rule.label,

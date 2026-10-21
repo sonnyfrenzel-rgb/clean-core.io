@@ -340,7 +340,7 @@ function plainExpressionOf(expression: string, ctx: PlainCtx): string | null {
 export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocument {
   const { source, map } = input;
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
-  const engine = input.engine ?? buildProcessDocumentation({ source, map });
+  const engine = input.engine ?? buildProcessDocumentation({ source, map, engineVersion: input.engineVersion });
   const nav = buildNavigation(map);
   const calls = readCallGraph(source);
   const tables = readTableDependencies(source);
@@ -349,13 +349,13 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const skeleton: ProcessSkeleton = buildProcessSkeleton(source);
   let ruleSet: BusinessRuleSet | null = null;
   try {
-    ruleSet = deriveBusinessRules(source);
+    ruleSet = deriveBusinessRules(source, input.engineVersion);
   } catch {
     ruleSet = null;
   }
   let fr: RequirementSet | null = null;
   try {
-    fr = buildRequirementSet({ source });
+    fr = buildRequirementSet({ source, engineVersion: input.engineVersion });
   } catch {
     fr = null;
   }
@@ -377,7 +377,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   // Management and every documentation rendering say (owner, 12.10.2026).
   const summaryFacts = (() => {
     try {
-      return programSummaryFactsOf(source, { calls, tables, skeleton, ruleSet: ruleSet ?? undefined });
+      return programSummaryFactsOf(source, { calls, tables, skeleton, ruleSet: ruleSet ?? undefined, engineVersion: input.engineVersion });
     } catch {
       return null;
     }

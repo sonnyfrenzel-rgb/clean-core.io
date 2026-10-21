@@ -12,18 +12,22 @@ import { readSource, type SourceReading } from '@/lib/first-look';
  * the first paint and only while `enabled` — so a page that also mounts the
  * first look never pays the parse twice. Tied to the source it read: a new
  * source drops the old reading before it can be shown against the new one.
+ * `engineVersion` is the engine of the project's signed run
+ * (`engineVersionOfProject`): the rules are read with its demo switches
+ * (3.0.20), and a reading for another engine is dropped like one for another
+ * source.
  */
-export function useSourceReading(source: string, enabled: boolean): SourceReading | null {
-  const [read, setRead] = useState<{ source: string; reading: SourceReading } | null>(null);
+export function useSourceReading(source: string, enabled: boolean, engineVersion: string | null): SourceReading | null {
+  const [read, setRead] = useState<{ source: string; engine: string | null; reading: SourceReading } | null>(null);
   const has = source.trim().length > 0;
-  const done = read !== null && read.source === source;
+  const done = read !== null && read.source === source && read.engine === engineVersion;
   useEffect(() => {
     if (!enabled || !has || done) return;
     let cancelled = false;
     const run = () => {
       if (cancelled) return;
       try {
-        setRead({ source, reading: readSource(source) });
+        setRead({ source, engine: engineVersion, reading: readSource(source, engineVersion) });
       } catch {
         // A source the reader cannot walk has no reading; the page says what
         // it says without one, as it did before the first look had answered.
@@ -40,6 +44,6 @@ export function useSourceReading(source: string, enabled: boolean): SourceReadin
     return () => {
       cancelled = true;
     };
-  }, [source, enabled, has, done]);
+  }, [source, enabled, has, done, engineVersion]);
   return done ? read.reading : null;
 }

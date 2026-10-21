@@ -6,6 +6,7 @@ import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { findingObjects, type OriginEngine, type OriginFindingInput } from '@/lib/scenario-origin';
 import type { Project } from '@/lib/types';
 import type { ProjectEvidenceState } from '@/hooks/useProjectEvidence';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The engine a test scenario's origin is checked against — the business rules,
@@ -46,14 +47,18 @@ export function findingsForOrigin(evidence: ProjectEvidenceState, sha256: string
   return evidence.value.evidence.findings.map((f) => ({ id: f.id, title: f.title, lineStart: f.lineStart, lineEnd: f.lineEnd }));
 }
 
-/** Build the engine for a signed source — for the generation, which stores the check beside each scenario. */
+/**
+ * Build the engine for a signed source — for the generation, which stores the check beside each scenario.
+ * `engineVersion`: the engine of the run that signed it (`engineVersionOfProject`).
+ */
 export async function originEngineFor(
   signed: { source: string } | null,
   findings: OriginFindingInput[] | null,
+  engineVersion: string | null,
 ): Promise<OriginEngine | null> {
   if (!signed) return null;
   const { buildOriginEngine } = await import('@/lib/scenario-origin-engine');
-  return buildOriginEngine(signed.source, findings);
+  return buildOriginEngine(signed.source, findings, engineVersion);
 }
 
 export interface ScenarioOriginEngineState {
@@ -73,30 +78,31 @@ export function useScenarioOriginEngine(
 ): ScenarioOriginEngineState {
   const { signed, reason } = useMemo(() => signedForOrigin(project), [project]);
   const sha = signed?.sha256 ?? null;
-  const [built, setBuilt] = useState<{ sha: string; base: OriginEngine | null; failed: boolean } | null>(null);
+  const [built, setBuilt] = useState<{ sha: string; engineVersion: string | null; base: OriginEngine | null; failed: boolean } | null>(null);
 
   const source = signed?.source ?? null;
+  const engineVersion = engineVersionOfProject(project);
   useEffect(() => {
     if (source === null || sha === null) return undefined;
     let cancelled = false;
     // Findings are attached below, so a late evidence answer does not rebuild the rules.
-    originEngineFor({ source }, null).then(
+    originEngineFor({ source }, null, engineVersion).then(
       (engine) => {
-        if (!cancelled) setBuilt({ sha, base: engine, failed: false });
+        if (!cancelled) setBuilt({ sha, engineVersion, base: engine, failed: false });
       },
       (err: unknown) => {
         console.error('The origin check could not read the signed source:', err);
-        if (!cancelled) setBuilt({ sha, base: null, failed: true });
+        if (!cancelled) setBuilt({ sha, engineVersion, base: null, failed: true });
       },
     );
     return () => {
       cancelled = true;
     };
-  }, [source, sha]);
+  }, [source, sha, engineVersion]);
 
   return useMemo(() => {
     if (sha === null) return { engine: null, signedSha256: null, reason };
-    if (!built || built.sha !== sha) return { engine: null, signedSha256: sha, reason: ORIGIN_LOADING };
+    if (!built || built.sha !== sha || built.engineVersion !== engineVersion) return { engine: null, signedSha256: sha, reason: ORIGIN_LOADING };
     if (built.failed || !built.base) return { engine: null, signedSha256: sha, reason: ORIGIN_FAILED };
     return {
       engine: {
@@ -106,5 +112,5 @@ export function useScenarioOriginEngine(
       signedSha256: sha,
       reason: '',
     };
-  }, [sha, built, findings, reason]);
+  }, [sha, built, findings, reason, engineVersion]);
 }

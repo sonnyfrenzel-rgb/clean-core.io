@@ -172,6 +172,7 @@ export interface ProcessMapProps {
   /**
    * The engine the findings overlay is built with — `engineVersionOfProject(project)`,
    * so the map shows the findings the project's run signed (roadmap 3.0.12).
+   * The business rules of the problem line are read for it too (3.0.20).
    * Required for the same reason as `catalogTarget`.
    */
   engineVersion: string | null;
@@ -290,7 +291,7 @@ export default function ProcessMap({
     () => model.elements.map((element) => element.nodeId).filter((id): id is string => !!id),
     [model],
   );
-  const rules = useProcessRules(source, nodeIds);
+  const rules = useProcessRules(source, nodeIds, engineVersion);
 
   const problems = useMemo(() => {
     const out = new Map<string | null, PlaneProblems>();

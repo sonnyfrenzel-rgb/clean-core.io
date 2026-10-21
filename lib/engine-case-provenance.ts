@@ -1,5 +1,6 @@
 import { deriveBusinessRules } from './abap/business-rule-set';
 import { deriveEngineCases, engineCaseOf, type EngineCaseDerivation, type EngineTestCase } from './testing-engine-cases';
+import { APP_VERSION } from './version';
 
 /**
  * Which stored engine cases the engine can still show it wrote.
@@ -60,11 +61,15 @@ function canonical(value: unknown): string {
   return JSON.stringify(value) ?? 'null';
 }
 
-/** The engine cases of a signed source, or null when there is none or it cannot be read. */
-export function deriveEngineCasesOf(signedSource: string | null): EngineCaseDerivation | null {
+/**
+ * The engine cases of a signed source, or null when there is none or it cannot be read. `engineVersion` is the
+ * engine of the run that signed it — the rules are read with that engine's demo switches (3.0.20), as the
+ * generation that stored the cases read them.
+ */
+export function deriveEngineCasesOf(signedSource: string | null, engineVersion: string | null = APP_VERSION): EngineCaseDerivation | null {
   if (!signedSource) return null;
   try {
-    return deriveEngineCases(signedSource, deriveBusinessRules(signedSource).rules);
+    return deriveEngineCases(signedSource, deriveBusinessRules(signedSource, engineVersion).rules);
   } catch {
     return null;
   }

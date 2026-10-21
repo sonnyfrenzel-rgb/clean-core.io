@@ -415,12 +415,12 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
     const nav = buildNavigation(full);
     const calls = readCallGraph(source);
     const sites = sitesByElement(full, nav, objectSites(readTableDependencies(source), calls), calls);
-    const engine = buildProcessDocumentation({ source, map: full });
+    const engine = buildProcessDocumentation({ source, map: full, engineVersion: APP_VERSION });
     const handbook = buildProcessHandbook({
       model: full,
       nav,
       doc: engine,
-      rules: deriveBusinessRules(source),
+      rules: deriveBusinessRules(source, APP_VERSION),
       sites,
       source,
     });
@@ -430,7 +430,7 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
     // opens (ADR-077) — the same builder over the same source, no narrative.
     let document: ProcessDocument | null = null;
     try {
-      const built = buildProcessDocument({ source, map: full, engine });
+      const built = buildProcessDocument({ source, map: full, engine, engineVersion: APP_VERSION });
       // The product's note names the signed run the source came from; a demo has none.
       document = { ...built, note: built.note.replace('from the source the signed run analysed', 'from the example source — a demo is never signed') };
     } catch {

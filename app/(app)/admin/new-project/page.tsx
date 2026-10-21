@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { Metadata } from 'next';
 import NewProject from '@/components/workspace/NewProject';
 import { getLevelRuleVersion } from '@/lib/abap/catalog-service';
+import { APP_VERSION } from '@/lib/version';
 import type { CatalogArtifactFigures } from '@/lib/new-project-content';
 import {
   STAGE_EXAMPLE_FILE,
@@ -54,7 +55,7 @@ export const metadata: Metadata = {
 function stageFact(): TravellingFact | null {
   try {
     const file = path.join(process.cwd(), 'public', 'starter-examples', STAGE_EXAMPLE_FILE);
-    return travellingFact(fs.readFileSync(file, 'utf8'));
+    return travellingFact(fs.readFileSync(file, 'utf8'), APP_VERSION);
   } catch {
     return null;
   }

@@ -232,7 +232,7 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     expect(analyzePage).toMatch(
       /const prompt = buildAnalysisPrompt\(\{ targetDeployment(?:: \w+)?, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze(?:, programFacts)? \}\);/,
     );
-    expect(analyzePage).toContain('const programFacts = programFactsOrNull(codeToAnalyze);');
+    expect(analyzePage).toContain('const programFacts = programFactsOrNull(codeToAnalyze, APP_VERSION);');
     expect(analyzePage.match(/buildAnalysisPrompt\(/g) || [], 'the page builds its prompt in exactly one place').toHaveLength(1);
   });
 

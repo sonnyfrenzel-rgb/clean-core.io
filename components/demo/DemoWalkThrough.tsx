@@ -6,6 +6,7 @@ import ProcessTourEntry from '@/components/workspace/ProcessTourEntry';
 import { walkOrder } from '@/lib/process-walk';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
 import type { ProcessMapModel } from '@/lib/process-map';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The guided tour on the process map in the public demo (owner decisions
@@ -35,7 +36,7 @@ export default function DemoWalkThrough({
     void Promise.all([import('@/lib/process-walk-guide'), import('@/lib/process-tour')]).then(([g, t]) => {
       if (cancelled) return;
       const guide = g.buildWalkGuide(source, model, walkOrder(model, null));
-      setTour(t.buildProcessTour(guide, model, t.tourClosingOf(source)));
+      setTour(t.buildProcessTour(guide, model, t.tourClosingOf(source, APP_VERSION)));
     });
     return () => {
       cancelled = true;

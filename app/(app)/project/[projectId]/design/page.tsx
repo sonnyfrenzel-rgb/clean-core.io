@@ -168,7 +168,7 @@ async function designContextFor(
   const ready = evidence && evidence.state === 'ready' ? evidence : null;
   let requirements: ReturnType<typeof buildRequirementSet> | null = null;
   try {
-    requirements = source ? buildRequirementSet({ source, levels: ready?.findings ?? null }) : null;
+    requirements = source ? buildRequirementSet({ source, levels: ready?.findings ?? null, engineVersion: target.engineVersion }) : null;
   } catch (err) {
     console.warn('[Design] The engine evidence could not be read for the prompt:', err);
   }

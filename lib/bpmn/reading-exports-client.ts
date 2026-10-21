@@ -1,6 +1,7 @@
 import type { ProcessSummary } from '../process-summary';
 import type { PhoneView, ReadingJob, ReadingRequest, ReadingResponse, ReadingResult } from './reading-exports-job';
 import { readingExportsKey, type ReadingOptions } from './reading-key';
+import { engineStampOf, engineVersionOfProject, type ProjectEngineStamp } from '../run-engine-version';
 
 /**
  * The page's side of the reading worker (owner, 12.10.2026: the CO project
@@ -44,7 +45,7 @@ export interface ReadingRunnerDeps {
 
 export interface ReadingRunner {
   reading(source: string, options: ReadingOptions): Promise<ReadingResult>;
-  summary(source: string, fileName: string, processName?: string): Promise<ProcessSummary | null>;
+  summary(source: string, fileName: string, processName?: string, project?: ProjectEngineStamp | null): Promise<ProcessSummary | null>;
   phone(source: string, options: ReadingOptions, view: PhoneView): Promise<string | null>;
   /** Stop the worker and forget every reading (tests; a tab that is closing). */
   dispose(): void;
@@ -224,8 +225,11 @@ export function createReadingRunner(deps: ReadingRunnerDeps): ReadingRunner {
   return {
     reading: (source, options) =>
       request(`reading:${readingExportsKey(source, options)}`, { kind: 'reading', source, options }) as Promise<ReadingResult>,
-    summary: (source, fileName, processName) =>
-      request(`summary:${JSON.stringify([fileName, processName || fileName, source])}`, { kind: 'summary', source, fileName, processName }) as Promise<ProcessSummary | null>,
+    summary: (source, fileName, processName, project) =>
+      request(
+        `summary:${JSON.stringify([fileName, processName || fileName, engineVersionOfProject(project), source])}`,
+        { kind: 'summary', source, fileName, processName, project: project ?? null },
+      ) as Promise<ProcessSummary | null>,
     phone: (source, options, view) =>
       request(
         `phone:${JSON.stringify([view.technical, Math.floor(view.fitWidth), readingExportsKey(source, options), view.readingXml])}`,
@@ -268,9 +272,9 @@ export function readingExportsOffThread(source: string, options: ReadingOptions)
   return runner().reading(source, options);
 }
 
-/** `processSummaryOf`, off the main thread where the browser allows it. */
-export function processSummaryOffThread(source: string, fileName = 'source.abap', processName?: string): Promise<ProcessSummary | null> {
-  return runner().summary(source, fileName, processName);
+/** `processSummaryOf`, off the main thread where the browser allows it, for the engine of `project`'s run. */
+export function processSummaryOffThread(source: string, fileName = 'source.abap', processName?: string, project?: object | null): Promise<ProcessSummary | null> {
+  return runner().summary(source, fileName, processName, engineStampOf(project));
 }
 
 /** `buildPhoneReadingXml`, off the main thread where the browser allows it (owner, 12.10.2026: on a phone the CO map's narrower layout held the page for 15 s). */

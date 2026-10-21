@@ -95,7 +95,7 @@ export function figuresOf(data: DemoWorkspaceData): DemoReleaseFigures {
     cleanCoreScore: demo.analyze.cleanCoreScore,
     recommendedRoute: demo.design.recommendedRoute,
     notDeterminedConstructs: demo.analyze.coverage.unassessed.length,
-    rulesRevealed: revealedRules(readSource(data.source).ruleSet).length,
+    rulesRevealed: revealedRules(readSource(data.source, APP_VERSION).ruleSet).length,
     processSteps: data.processMap.elements.length,
     processLevels: data.processMap.planes.length,
     standardCandidates: demo.transformation.plan.filter((p) => p.successor).length,

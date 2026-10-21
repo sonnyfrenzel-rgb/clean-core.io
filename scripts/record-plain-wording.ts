@@ -22,6 +22,7 @@ import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
 import { buildWalkGuide } from '../lib/process-walk-guide';
 import { PRODUCT_GEMINI_MODEL } from '../lib/constants';
+import { APP_VERSION } from '../lib/version';
 import { plainItemsOf, plainWordingPrompt, rulePlainSentences, walkPlainSentences, type PlainScope } from '../lib/plain-wording';
 
 const ROOT = path.resolve(__dirname, '..');
@@ -35,8 +36,8 @@ export function exampleSentences(scope: PlainScope): Array<{ text: string; ancho
     const model = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null), fileName: FILE });
     return walkPlainSentences(buildWalkGuide(source, model, walkOrder(model, null)));
   }
-  const reading = readSource(source);
-  return rulePlainSentences(explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source)));
+  const reading = readSource(source, APP_VERSION);
+  return rulePlainSentences(explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), APP_VERSION));
 }
 
 async function main() {

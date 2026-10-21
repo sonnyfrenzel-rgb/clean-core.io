@@ -413,8 +413,11 @@ function markLockedInputs(inputs: SummaryInput[], statements: readonly AbapState
   });
 }
 
-/** The demo flag and the switches the rule set counted apart; nothing without a demo flag. */
-function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | null, engineVersion: string | null): Pick<ProgramSummaryFacts, 'demo'> {
+/**
+ * The demo flag and the switches the rule set counted apart; nothing without a demo flag. `engineVersion` is the
+ * readers' own (`undefined`: the current engine).
+ */
+function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | null, engineVersion: string | null | undefined): Pick<ProgramSummaryFacts, 'demo'> {
   const switches = ruleSet?.demoCases?.rules.length ?? 0;
   if (!ruleSet?.demoCases) return {};
   const demo = readDemoSwitches(text, engineVersion);
@@ -468,7 +471,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   let ruleSet: Pick<BusinessRuleSet, 'rules' | 'program' | 'demoCases' | 'headerRules'> | null = readers.ruleSet ?? null;
   if (!readers.ruleSet) {
     try {
-      ruleSet = deriveBusinessRules(text, engineVersion);
+      ruleSet = deriveBusinessRules(text, readers.engineVersion);
     } catch {
       ruleSet = null;
     }
@@ -608,7 +611,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
           },
         }
       : {}),
-    ...demoFacts(text, ruleSet, engineVersion),
+    ...demoFacts(text, ruleSet, readers.engineVersion),
     // Roadmap 3.0.20 — present only from that engine, so earlier facts stay what they were.
     ...(reads3020 ? purposeFacts(text, calls, actions) : {}),
     ...headerRuleFacts(ruleSet),

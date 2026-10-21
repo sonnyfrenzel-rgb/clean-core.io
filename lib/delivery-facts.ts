@@ -17,6 +17,8 @@ import { storedCdsCompile, storedGenerationRecord } from './transformation/gener
 import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
 import { abapTestSentencesOfProject } from './testing-abap-unit';
 import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
+import { engineVersionOfProject } from './run-engine-version';
+import { APP_VERSION } from './version';
 import { formatTextDate } from './format';
 import { sha256Hex } from './artefact-digest';
 import { countSourceLines } from './source-lines';
@@ -328,8 +330,10 @@ export function ruleFactsOf(
   tests?: RuleTestInput,
   /** The project's source, for what the register lists apart — demo-case switches, header candidates (3.0.13). */
   source?: string | null,
+  /** The engine of the project's signed run (`engineVersionOfProject`); its rules are read for it (3.0.20). */
+  engineVersion: string | null = APP_VERSION,
 ): RuleFacts {
-  return ruleRegisterFromView(view, reason, tests, source);
+  return ruleRegisterFromView(view, reason, tests, source, engineVersion);
 }
 
 /**
@@ -344,8 +348,8 @@ export function ruleFactsOf(
  * has answered a rule. So the rules are read from the source and every one is
  * open. A download writes nothing.
  */
-export function ruleFactsFromSource(source: string, tests?: RuleTestInput): RuleFacts {
-  return ruleRegisterFromSource(source, tests);
+export function ruleFactsFromSource(source: string, tests?: RuleTestInput, engineVersion: string | null = APP_VERSION): RuleFacts {
+  return ruleRegisterFromSource(source, tests, engineVersion);
 }
 
 /* ------------------------------------------------------------------ tests */
@@ -379,7 +383,7 @@ function testFactsWithEngineCases(project: HandoverProject, phases: readonly Rai
   // are counted from that same derivation, only while it is the one the stored
   // cases came from and the test phase is not stale — otherwise the reason is said.
   const testsStale = phases.find((p) => p.key === 'testing')?.state === 'stale';
-  const provenance = engineCaseProvenance(list, deriveEngineCasesOf(signedSourceOf(project)?.source ?? null), testsStale);
+  const provenance = engineCaseProvenance(list, deriveEngineCasesOf(signedSourceOf(project)?.source ?? null, engineVersionOfProject(project)), testsStale);
   // Each verified id counts once; every other stored engine entry — a duplicate copy included — counts as not derived.
   const verifiedIds = new Set(provenance.verified.map((c) => c.id));
   const counted = countEngineCases(list.filter((tc) => !engineCaseOf(tc) || verifiedIds.has(String(tc.id ?? ''))));

@@ -56,6 +56,8 @@ export interface ProcessDocumentationInput {
   map: ProcessMapModel;
   /** The skeleton of the same source, when the caller has it; read here otherwise. */
   skeleton?: ProcessSkeleton;
+  /** The engine the active run was made with (`engineVersionOfProject`); left out, the current engine (3.0.20 summary). */
+  engineVersion?: string | null;
 }
 
 /** The five things the old blueprint invented, and why the engine has none of them. */
@@ -208,6 +210,6 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     // Owner 11.10.2026: what the program can do, so the business page can say what it does not.
     facts: capabilityFactsOf(source, skeleton),
     // Owner 12.10.2026: what the program is for, so every rendering opens with one summary.
-    summary: programSummaryFactsOf(source, { skeleton }),
+    summary: programSummaryFactsOf(source, { skeleton, engineVersion: input.engineVersion }),
   });
 }

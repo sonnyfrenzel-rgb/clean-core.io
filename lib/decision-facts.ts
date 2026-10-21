@@ -6,6 +6,7 @@ import type { SignOffBasis } from '@/lib/project-decision-build';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { isDecisionTag, parseBpmn } from '@/lib/process-map';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
   PROCESS_STATE_COLLECTION,
@@ -72,12 +73,16 @@ function manifestOfRun(run: Record<string, unknown> | null): InputManifest | nul
  * be answered and is stored in the same need revision; it is not counted here.
  * Before ADR-085 every element of the map was, and a 40-line program read as
  * "84 process elements have no confirmed state".
+ *
+ * `engineVersion` is the engine of the project's signed run: the rules are
+ * counted with the demo switches that engine reads (3.0.20).
  */
 async function needFactsOf(
   db: AdminDb,
   projectId: string,
   source: string,
   tx: Transaction | undefined,
+  engineVersion: string | null,
 ): Promise<DecisionDraftFacts['need']> {
   const projectRef = db.collection('projects').doc(projectId);
 
@@ -114,7 +119,7 @@ async function needFactsOf(
       const parsed = parseBpmn(record.xml).elements;
       const elements = parsed.map((e) => e.id);
       const decisions = parsed.filter((e) => isDecisionTag(e.tag)).map((e) => e.id);
-      const rules = deriveBusinessRules(source).rules.map((r) => r.id);
+      const rules = deriveBusinessRules(source, engineVersion).rules.map((r) => r.id);
       const states = readProcessStates(entries, { elements, rules });
       // Counted over the subjects that still exist, like the rest of the need.
       drops = states.counts.drop;
@@ -242,7 +247,7 @@ export async function deriveProjectDecision(
         ? data.targetArchitecture
         : null,
     signOff: signOffFactsOf(data, manifest),
-    need: await needFactsOf(db, projectId, source, tx),
+    need: await needFactsOf(db, projectId, source, tx, engineVersionOfProject(data)),
     handedOver: isoOf(auditMetadata.auditPackExportedAt) !== null,
     stored: data.decision,
     economics,

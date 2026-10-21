@@ -31,6 +31,7 @@
 import { sha256Hex } from '../artefact-digest';
 import { abapDeliveryOf } from './abap-delivery';
 import { deriveBusinessRules, type BusinessRule, type BusinessRuleSet } from '../abap/business-rule-set';
+import { APP_VERSION } from '../version';
 import { readCallGraphFrom, type CallGraphReport, type FormDefinition } from '../abap/call-graph';
 import { containerAt, readBlocks, type BlockStructure, type Container } from '../abap/block-structure';
 import { procedureLines, readGuardsFrom, readOriginalContract, type OriginalContract } from '../abap/original-contract';
@@ -82,13 +83,14 @@ export interface EngineFacts {
   material: MaterialRule[];
 }
 
-export function readEngineFacts(source: string): EngineFacts {
+/** `engineVersion`: the engine the rules are read for (3.0.20 demo switches) — the project's run's. */
+export function readEngineFacts(source: string, engineVersion: string | null = APP_VERSION): EngineFacts {
   const text = source.replace(/\r\n?/g, '\n');
   const statements = readStatements(text);
   const blocks = readBlocks(statements);
   const graph = readCallGraphFrom(statements, blocks);
   const contract = readOriginalContract(text);
-  const ruleSet = deriveBusinessRules(text);
+  const ruleSet = deriveBusinessRules(text, engineVersion);
   return { source: text, lines: text.split('\n'), statements, blocks, graph, contract, ruleSet, material: materialRules(ruleSet) };
 }
 
@@ -628,6 +630,8 @@ export interface PlanInput {
    * `key-user` (and so is a FORM reached only from such routines). Absent or empty: the plan of before.
    */
   keyUser?: { ranges: ReadonlyArray<{ lineStart: number; lineEnd: number; step: string }> } | null;
+  /** The engine the source is read for (`readEngineFacts`, the base values' fixed lists); left out, the current one. */
+  engineVersion?: string | null;
 }
 
 interface Routine {
@@ -651,7 +655,7 @@ const EVENT_FOR_SELECTION = /^(AT SELECTION-SCREEN|INITIALIZATION)/i;
 
 /** One unit per reachable routine, the orchestrator, the rules and guards placed — see the file comment. */
 export function planUnits(source: string, input: PlanInput = {}, given?: EngineFacts): UnitPlan {
-  const facts = given ?? readEngineFacts(source);
+  const facts = given ?? readEngineFacts(source, input.engineVersion);
   const { lines, statements, blocks, graph, contract, ruleSet, material } = facts;
   const program = ruleSet.program ?? input.program ?? null;
   const decisions = new Map((input.decisions ?? []).map((d) => [d.id, d]));
@@ -1043,7 +1047,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   // ---- the request and its base values (from the original only; base-values.ts)
   const fields = readContractFields(facts, notCarried);
-  const missingBaseValues = withInitialBase(fields, recordInputOf(facts, notCarried).accumulated, assignBaseValues(fields, facts, notCarried));
+  const missingBaseValues = withInitialBase(fields, recordInputOf(facts, notCarried).accumulated, assignBaseValues(fields, facts, notCarried, input.engineVersion));
 
   // ---- split above the hard budget or the fill prompt's cap (§7.2, 3.0.17), then budgets from the slices
   const plan: UnitPlan = {

@@ -5,6 +5,7 @@ import type { ModelReceipt } from '@/lib/model-receipt';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { storedCoverageEstimate, storedTestSuite } from '@/lib/test-suite-storage';
 import { parseModelJsonObject, retryNotice, unusableAnswerMessage, unusableFromModelError, type UnusableAnswer } from '@/lib/model-json';
 import {
@@ -115,7 +116,7 @@ export const useTestGeneration = (
       let originEngine: OriginEngine | null = null;
       let noEngineReason = noSignedSource;
       try {
-        originEngine = await originEngineFor(signed, originFindings);
+        originEngine = await originEngineFor(signed, originFindings, engineVersionOfProject(project));
       } catch (engineErr) {
         console.error('The origin check could not read the signed source:', engineErr);
         noEngineReason = ORIGIN_FAILED;
@@ -138,7 +139,8 @@ export const useTestGeneration = (
       if (signed) {
         try {
           const { deriveBusinessRules } = await import('@/lib/abap/business-rule-set');
-          const set = deriveBusinessRules(signed.source);
+          // The demo switches are read for the engine that signed the source (3.0.20).
+          const set = deriveBusinessRules(signed.source, engineVersionOfProject(project));
           rulesForTrace = materialRules(set);
           tablesForTrace = materialTables(set);
           try {

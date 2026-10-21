@@ -594,7 +594,7 @@ export default function DocumentationPage() {
    * asks, an invited reader reads.
    */
   /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
-  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model);
+  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model, engineVersionOfProject(project));
   const isPhone = useBreakpointS();
 
   /**
@@ -792,7 +792,7 @@ export default function DocumentationPage() {
 
     try {
       const { buildProcessDocumentation } = await import('@/lib/process-documentation-build');
-      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model });
+      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model, engineVersion: engineVersionOfProject(project) });
       const stored = JSON.stringify(built);
       // The reader of the stored value is the gate: what is written must read
       // back as an engine document, or nothing is written.

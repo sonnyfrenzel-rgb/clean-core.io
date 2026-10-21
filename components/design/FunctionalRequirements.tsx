@@ -55,6 +55,8 @@ export interface FunctionalRequirementsProps {
   missingReason: string | null;
   /** The findings with their clean core levels, when the server has answered. */
   levels: readonly ObjectLevelInput[] | null;
+  /** The engine of the run that signed `source` (`engineVersionOfProject`; the demo's own) — the rules are read for it (3.0.20). */
+  engineVersion: string | null;
   /** The wording proposal: whether a model call can be made, and why not. Absent in the demo. */
   wording?: { enabled: boolean; reason: string | null } | null;
 }
@@ -170,7 +172,7 @@ async function authHeader(): Promise<Record<string, string>> {
   return user ? { Authorization: `Bearer ${await user.getIdToken()}` } : {};
 }
 
-export default function FunctionalRequirements({ projectId, projectName, fileName, source, missingReason, levels, wording }: FunctionalRequirementsProps) {
+export default function FunctionalRequirements({ projectId, projectName, fileName, source, missingReason, levels, engineVersion, wording }: FunctionalRequirementsProps) {
   const flagKey = projectId ? `cc-fr-derived-${projectId}` : null;
   const [set, setSet] = useState<RequirementSet | null>(null);
   const [state, setState] = useState<'idle' | 'deriving' | 'ready' | 'failed'>('idle');
@@ -184,7 +186,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
   const [openRows, setOpenRows] = useState<Set<string>>(() => new Set());
   const [toast, setToast] = useState<string | null>(null);
   /** The inputs the shown set was read from. */
-  const builtFrom = useRef<{ source: string; levels: FunctionalRequirementsProps['levels'] } | null>(null);
+  const builtFrom = useRef<{ source: string; levels: FunctionalRequirementsProps['levels']; engineVersion: string | null } | null>(null);
 
   const derive = useCallback(async () => {
     if (!source) return;
@@ -193,8 +195,8 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
       const lib = await import('@/lib/functional-requirements');
       // Let the "reading" state paint before the engine takes the thread.
       await new Promise((resolve) => setTimeout(resolve, 0));
-      const built = lib.buildRequirementSet({ source, levels });
-      builtFrom.current = { source, levels };
+      const built = lib.buildRequirementSet({ source, levels, engineVersion });
+      builtFrom.current = { source, levels, engineVersion };
       setSet(built);
       setState('ready');
       if (flagKey) writeFlag(flagKey);
@@ -202,7 +204,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
       console.error('[Design] Functional requirements could not be read:', err);
       setState('failed');
     }
-  }, [source, levels, flagKey]);
+  }, [source, levels, engineVersion, flagKey]);
 
   // A reader who asked once gets them again on the next visit — still read
   // from the code, still without a model.
@@ -220,19 +222,19 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
   useEffect(() => {
     if (state !== 'ready' || !levels || !source) return;
     const from = builtFrom.current;
-    if (from && from.source === source && from.levels === levels) return;
+    if (from && from.source === source && from.levels === levels && from.engineVersion === engineVersion) return;
     let cancelled = false;
     (async () => {
       const lib = await import('@/lib/functional-requirements');
       if (cancelled) return;
-      const built = lib.buildRequirementSet({ source, levels });
-      builtFrom.current = { source, levels };
+      const built = lib.buildRequirementSet({ source, levels, engineVersion });
+      builtFrom.current = { source, levels, engineVersion };
       setSet(built);
     })().catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [state, source, levels]);
+  }, [state, source, levels, engineVersion]);
 
   // The stored wording proposal, applied only to the source it was made for.
   useEffect(() => {

@@ -27,6 +27,7 @@ import { csvCell } from './csv-formula';
 import { readProcessStates, subjectIdsOf, type ProcessStateView, type StateEntry, type StateSubject } from './process-states';
 import { ruleTraceOf } from './testing-rule-trace';
 import { formatTextDate } from './format';
+import { APP_VERSION } from './version';
 
 /* ------------------------------------------------------------------ states */
 
@@ -192,9 +193,11 @@ function topicsOf(
   set: BusinessRuleSet,
   facts: ProcessFacts,
   bySubject: Readonly<Record<string, StateEntry>>,
+  /** The engine `set` was derived for — the explanation is read for it too (3.0.20). */
+  engineVersion: string | null,
   skip: ReadonlySet<string> = new Set(),
 ): RuleRegisterTopic[] {
-  const explained = explainBusinessRules(source, set, facts);
+  const explained = explainBusinessRules(source, set, facts, engineVersion);
   const byId = new Map(explained.rules.map((r) => [r.id, r]));
   // By basket (owner decision 21.10.2026): the business topics, then the technical rules, then the undetermined.
   return basketTopics(explained)
@@ -239,25 +242,32 @@ function apartOf(set: Pick<BusinessRuleSet, 'demoCases' | 'headerRules'>): RuleR
 const lineWords = (from: number, to: number) => (to > from ? `lines ${from} to ${to}` : `line ${from}`);
 
 /** The rule set of a source the register may read, with the facts it was read from, or null (too large, unreadable). */
-function ruleSetOf(source: string | null | undefined): { set: BusinessRuleSet; facts: ProcessFacts } | null {
+function ruleSetOf(source: string | null | undefined, engineVersion: string | null): { set: BusinessRuleSet; facts: ProcessFacts } | null {
   if (!source || !source.trim() || new TextEncoder().encode(source).length > MAX_RULE_READ_BYTES) return null;
   try {
-    return readRuleSet(source);
+    return readRuleSet(source, engineVersion);
   } catch {
     return null;
   }
 }
 
 /** `deriveBusinessRules`, keeping the facts: the same rules, the same numbers. */
-function readRuleSet(source: string): { set: BusinessRuleSet; facts: ProcessFacts } {
+function readRuleSet(source: string, engineVersion: string | null): { set: BusinessRuleSet; facts: ProcessFacts } {
   const facts = buildProcessFacts(source);
-  return { set: deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts)), facts };
+  return { set: deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts), engineVersion), facts };
 }
 
 /** The topics, or none when the explanation cannot be written — the register never fails over its prose. */
-function safeTopics(...args: Parameters<typeof topicsOf>): RuleRegisterTopic[] | null {
+function safeTopics(
+  source: string,
+  set: BusinessRuleSet,
+  facts: ProcessFacts,
+  bySubject: Readonly<Record<string, StateEntry>>,
+  engineVersion: string | null,
+  skip?: ReadonlySet<string>,
+): RuleRegisterTopic[] | null {
   try {
-    const topics = topicsOf(...args);
+    const topics = topicsOf(source, set, facts, bySubject, engineVersion, skip);
     return topics.length ? topics : null;
   } catch {
     return null;
@@ -382,9 +392,11 @@ export function ruleRegisterFromView(
   tests: RuleTestInput = NO_TESTS,
   /** The signed source, when the caller holds it — for what the register lists apart (3.0.13). */
   source?: string | null,
+  /** The engine of the run that signed `source` (`engineVersionOfProject`) — its rules are read for it (3.0.20). */
+  engineVersion: string | null = APP_VERSION,
 ): RuleRegister {
   if (!view) return { state: 'not-read', reason };
-  const read0 = source ? ruleSetOf(source) : null;
+  const read0 = source ? ruleSetOf(source, engineVersion) : null;
   const set = read0?.set ?? null;
   const apart = set ? apartOf(set) : null;
   // A stored record may still name a rule the engine now counts as a demo switch.
@@ -396,7 +408,7 @@ export function ruleRegisterFromView(
   // Only rules the record knows: a source that moved under the record explains nothing it would decide.
   const known = new Set(rules);
   const topics = read0 && source
-    ? safeTopics(source, read0.set, read0.facts, read.bySubject, new Set(read0.set.rules.map((r) => r.id).filter((id) => !known.has(id))))
+    ? safeTopics(source, read0.set, read0.facts, read.bySubject, engineVersion, new Set(read0.set.rules.map((r) => r.id).filter((id) => !known.has(id))))
     : null;
   return {
     state: 'read',
@@ -417,9 +429,10 @@ export const MAX_RULE_READ_BYTES = 256 * 1024;
  * time somebody opens the process in the Business view; its absence means
  * nobody has answered a rule, not that the rules are unknown. So they are read
  * from the source the way the route reads them — same derivation, same
- * anchors — and every one is open. Nothing is written.
+ * anchors — and every one is open. Nothing is written. `engineVersion`: the
+ * engine of the project's signed run (3.0.20).
  */
-export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO_TESTS): RuleRegister {
+export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO_TESTS, engineVersion: string | null = APP_VERSION): RuleRegister {
   if (!source.trim()) return { state: 'not-read', reason: 'the project holds no source.' };
   if (new TextEncoder().encode(source).length > MAX_RULE_READ_BYTES) {
     return { state: 'not-read', reason: 'the source is too large for the rule reader.' };
@@ -427,7 +440,7 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
   let set: BusinessRuleSet;
   let facts: ProcessFacts;
   try {
-    ({ set, facts } = readRuleSet(source));
+    ({ set, facts } = readRuleSet(source, engineVersion));
   } catch {
     return { state: 'not-read', reason: 'the rule reader could not walk the source.' };
   }
@@ -440,7 +453,7 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
     detail: rule.text,
     anchor: ruleAnchor(rule),
   }));
-  const topics = safeTopics(source, set, facts, {});
+  const topics = safeTopics(source, set, facts, {}, engineVersion);
   return {
     state: 'read',
     basis: 'source',

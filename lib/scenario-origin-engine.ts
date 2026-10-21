@@ -3,6 +3,7 @@ import { buildProcessFacts } from '@/lib/abap/process-facts';
 import { buildProcessSkeletonFrom } from '@/lib/abap/process-skeleton';
 import { deriveBusinessRulesFrom } from '@/lib/abap/business-rule-set';
 import { findingObjects, type OriginEngine, type OriginEngineObject, type OriginFindingInput } from '@/lib/scenario-origin';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The engine objects a scenario's origin is checked against, built from one
@@ -17,12 +18,19 @@ import { findingObjects, type OriginEngine, type OriginEngineObject, type Origin
  *
  * Imported dynamically by its callers: it pulls the statement reader, the block
  * structure, the control flow and the skeleton with it.
+ *
+ * `engineVersion` is the engine of the run that signed the source: its rules
+ * are read with that engine's demo switches (3.0.20).
  */
 
-export function buildOriginEngine(source: string, findings: readonly OriginFindingInput[] | null): OriginEngine {
+export function buildOriginEngine(
+  source: string,
+  findings: readonly OriginFindingInput[] | null,
+  engineVersion: string | null = APP_VERSION,
+): OriginEngine {
   const facts = buildProcessFacts(source);
   const skeleton = buildProcessSkeletonFrom(facts);
-  const set = deriveBusinessRulesFrom(source, facts, skeleton);
+  const set = deriveBusinessRulesFrom(source, facts, skeleton, engineVersion);
 
   const rules: OriginEngineObject[] = set.rules.map((rule) => {
     const ranges: Array<{ lineStart: number; lineEnd: number }> = [];

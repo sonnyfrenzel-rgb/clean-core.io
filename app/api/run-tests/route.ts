@@ -33,6 +33,7 @@ import { probeRunInputs, probeVerdicts } from '@/lib/test-sandbox/probe-suite';
 import { NOT_RUN_NO_CONTRACT } from '@/lib/engine-call-contract';
 import { MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
 import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { signedSourceOf, type HandoverProject } from '@/lib/handover';
 import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from '@/lib/project-artefact-store';
 
@@ -466,7 +467,7 @@ export async function POST(req: Request) {
   const enginePlanOutcome = planEngineRun(
     engineCaseProvenance(
       (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter((t: unknown): t is Record<string, unknown> => !!t && typeof t === 'object'),
-      deriveEngineCasesOf(signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null),
+      deriveEngineCasesOf(signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null, engineVersionOfProject(projectData)),
     ).verified,
     files,
     Array.isArray(selectedTestIds) ? selectedTestIds.map((id: unknown) => String(id)) : null,
@@ -1121,7 +1122,7 @@ async function verifyCandidateResponse(input: {
   if (!signedSource || !signedSource.trim()) engineNotRun = 'Engine cases not run: the project holds no signed source to derive them from.';
   else if (Buffer.byteLength(signedSource, 'utf8') > MAX_CONTRACT_SOURCE_BYTES) engineNotRun = 'Engine cases not run: the source is larger than the engine derives cases from in one request.';
   else {
-    const derivation = deriveEngineCasesOf(signedSource);
+    const derivation = deriveEngineCasesOf(signedSource, engineVersionOfProject(projectData));
     if (!derivation) {
       logger.error('run-tests: engine cases could not be derived for a verify run', { route: 'api/run-tests', projectId });
       engineNotRun = 'Engine cases not run: they could not be derived from the source.';

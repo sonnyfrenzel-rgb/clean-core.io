@@ -33,6 +33,7 @@
 import type { ProcessMapModel } from './process-map';
 import { programSummaryFactsOf } from './program-summary-facts';
 import { businessInShort, programSummary } from './program-summary-text';
+import { APP_VERSION } from './version';
 import type { WalkGuide, WalkGuideStep, WalkLine, WalkRange, WalkRole, WalkTechnicalGroup } from './process-walk-guide';
 
 /** The most stations of one chapter. */
@@ -259,11 +260,12 @@ export function buildProcessTour(guide: WalkGuide, model: ProcessMapModel, closi
  * The one sentence about the whole program the tour ends with: the purpose
  * line of the engine's program summary, the same the First insights' "In
  * short" leads with, without the table codes. Null when the engine cannot read
- * one.
+ * one. `engineVersion`: the engine the summary is read for (3.0.20) — the
+ * project's run's.
  */
-export function tourClosingOf(source: string): WalkLine | null {
+export function tourClosingOf(source: string, engineVersion: string | null = APP_VERSION): WalkLine | null {
   try {
-    const [purpose] = businessInShort(programSummary(programSummaryFactsOf(source)), { codes: false });
+    const [purpose] = businessInShort(programSummary(programSummaryFactsOf(source, { engineVersion })), { codes: false });
     if (!purpose || purpose.basis === 'not-determined' || !purpose.text.trim()) return null;
     const first = purpose.anchors[0];
     return { text: purpose.text, anchor: first ? { lineStart: first.lineStart, lineEnd: first.lineEnd } : null };

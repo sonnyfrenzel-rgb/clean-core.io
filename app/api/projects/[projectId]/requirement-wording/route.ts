@@ -16,6 +16,7 @@ import { verifyModelReceipt } from '@/lib/model-receipt';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { buildRequirementSet } from '@/lib/functional-requirements';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import {
   MAX_WORDING_ANSWER,
   WORDING_FORMAT_VERSION,
@@ -66,7 +67,8 @@ const DOC = 'current';
 const MAX_SOURCE_BYTES = 400_000;
 
 type Gate =
-  | { ok: true; uid: string; projectId: string; legacyCode: unknown }
+  // `project`: the document, for the engine of its signed run (`engineVersionOfProject`).
+  | { ok: true; uid: string; projectId: string; legacyCode: unknown; project: Record<string, unknown> }
   | { ok: false; response: NextResponse };
 
 async function openProject(req: NextRequest, params: Promise<{ projectId: string }>, mutating: boolean): Promise<Gate> {
@@ -116,7 +118,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
-  return { ok: true, uid: decodedToken.uid, legacyCode: project.legacyCode, projectId };
+  return { ok: true, uid: decodedToken.uid, legacyCode: project.legacyCode, projectId, project };
 }
 
 function isoOf(value: unknown): string {
@@ -201,7 +203,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       );
     }
 
-    const set = buildRequirementSet({ source: gate.legacyCode });
+    const set = buildRequirementSet({ source: gate.legacyCode, engineVersion: engineVersionOfProject(gate.project) });
     const validated = validateWording(set, gate.legacyCode, body.text);
     const record: RequirementWordingRecord = {
       formatVersion: WORDING_FORMAT_VERSION,

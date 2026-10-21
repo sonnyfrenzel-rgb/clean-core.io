@@ -12,6 +12,7 @@ import {
 } from '../evidence-level';
 import type { ObjectStatusValue } from '../object-status';
 import type { ProvenanceValue } from '../provenance';
+import { APP_VERSION } from '../version';
 
 /**
  * Standard coverage per capability — roadmap 7.2, mockup screen `s3`.
@@ -243,11 +244,13 @@ const SUBJECT_NOT_DERIVABLE =
  *
  * Pass a catalogue to get catalogue candidates; without one the table is still
  * correct, and every capability says that no catalogue was consulted rather than
- * that SAP has nothing.
+ * that SAP has nothing. `engineVersion`: the engine the rules' demo switches
+ * are read for (3.0.20).
  */
 export function deriveStandardCoverage(
   source: string,
   options: CoverageOptions = {},
+  engineVersion: string | null = APP_VERSION,
 ): StandardCoverage {
   if (typeof source !== 'string' || !source.trim()) {
     return {
@@ -259,7 +262,7 @@ export function deriveStandardCoverage(
       catalogConsulted: Boolean(options.catalog),
     };
   }
-  return coverageFrom(deriveBusinessRules(source), objectsByRoutine(source), options);
+  return coverageFrom(deriveBusinessRules(source, engineVersion), objectsByRoutine(source), options);
 }
 
 /**

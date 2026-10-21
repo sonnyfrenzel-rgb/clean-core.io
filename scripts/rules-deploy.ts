@@ -48,7 +48,7 @@ const rulesPath = path.join(ROOT, RULES_FILE);
 const recordPath = path.join(ROOT, RULES_DEPLOYMENT_RECORD);
 
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
-const readRules = () => normaliseRulesText(readFileSync(rulesPath, 'utf8'));
+const readRulesText = () => normaliseRulesText(readFileSync(rulesPath, 'utf8'));
 const readRecord = (): RulesDeploymentRecord => JSON.parse(readFileSync(recordPath, 'utf8'));
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -90,7 +90,7 @@ async function productionRules(project: string, database: string): Promise<{ sha
 }
 
 async function verify(): Promise<number> {
-  const rules = readRules();
+  const rules = readRulesText();
   const record = readRecord();
   const working = sha256(rules);
   const recorded = record.deployed.sha256OfLfNormalisedText;
@@ -133,7 +133,7 @@ async function verify(): Promise<number> {
 }
 
 function check(): number {
-  const rules = readRules();
+  const rules = readRulesText();
   const record = readRecord();
   const verdict = checkRulesDeployment(rules, record, sha256);
   if (verdict.ok && !verdict.pending) {
@@ -164,7 +164,7 @@ function check(): number {
 
 /** Fold the working copy into the record as the text that is now live. */
 function recordDeployed(): number {
-  const rules = readRules();
+  const rules = readRulesText();
   const record = readRecord();
   record.deployed = {
     ...record.deployed,
@@ -181,7 +181,7 @@ function recordDeployed(): number {
 
 /** Write down a rules change that has not been deployed yet, and why. */
 function recordPending(reason: string): number {
-  const rules = readRules();
+  const rules = readRulesText();
   const record = readRecord();
   const hash = sha256(rules);
   if (hash === record.deployed.sha256OfLfNormalisedText) {

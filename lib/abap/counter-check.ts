@@ -3,6 +3,7 @@ import { capabilityKeyOf } from './standard-coverage';
 import type { SubjectKind } from './business-rules';
 import type { StandardEvidence } from '../evidence-level';
 import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
+import { APP_VERSION } from '../version';
 
 /**
  * Counter-check scenarios — roadmap 7.3, mockup screen `s3`.
@@ -228,8 +229,11 @@ export interface CounterCheckScenarios {
 
 /* --------------------------------------------------------- entry points */
 
-/** Counter-check scenarios for one ABAP source. No model, no network. */
-export function deriveCounterCheckScenarios(source: string): CounterCheckScenarios {
+/**
+ * Counter-check scenarios for one ABAP source. No model, no network.
+ * `engineVersion`: the engine the rules' demo switches are read for (3.0.20).
+ */
+export function deriveCounterCheckScenarios(source: string, engineVersion: string | null = APP_VERSION): CounterCheckScenarios {
   if (typeof source !== 'string' || !source.trim()) {
     return {
       program: null,
@@ -247,7 +251,7 @@ export function deriveCounterCheckScenarios(source: string): CounterCheckScenari
       noSource: true,
     };
   }
-  return deriveCounterCheckScenariosFrom(deriveBusinessRules(source));
+  return deriveCounterCheckScenariosFrom(deriveBusinessRules(source, engineVersion));
 }
 
 /** The same scenarios for a caller that already derived the rules. */
