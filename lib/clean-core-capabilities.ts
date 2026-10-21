@@ -12,7 +12,7 @@ import { TRUST_CLAIMS } from './trust-claims';
 /**
  * The trust card's training sentence, word for word: Google's training terms
  * depend on the key that makes the request, and the privacy policy promises
- * no training only for the community key (codex code-public-01).
+ * no training only for the community key.
  */
 export const TRAINING_CLAIM = TRUST_CLAIMS.find((c) => c.id === 'training')!.text;
 

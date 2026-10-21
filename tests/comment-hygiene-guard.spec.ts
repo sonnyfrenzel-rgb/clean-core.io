@@ -27,11 +27,6 @@ const ALLOWED: ReadonlyArray<{ path: RegExp; why: string }> = [
   { path: /^scripts\/qa\//, why: 'the QA agent: reviews and their findings are its subject' },
   { path: /^scripts\/security\//, why: 'the security agent: audits and their findings are its subject' },
   { path: /^scripts\/ux\//, why: 'the UX agent: reviews and their findings are its subject' },
-  // Two sources of the committed PDFs (scripts/generate-whitepaper-pdf.ts, scripts/generate-guide-pdf.ts): any
-  // change to them, a comment included, needs the PDFs rendered again against a running server
-  // (tests/whitepaper-guard.spec.ts). Their one citation each goes with the next PDF build; then these two go.
-  { path: /^lib\/clean-core-capabilities\.ts$/, why: 'a source of the committed PDFs; cleaned with the next PDF build' },
-  { path: /^lib\/trust-claims\.ts$/, why: 'a source of the committed PDFs; cleaned with the next PDF build' },
 ];
 
 /** The phrases a comment may not carry. Line breaks inside a comment are read as spaces. */

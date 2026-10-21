@@ -5,6 +5,60 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.20] — 2026-10-22
+
+### Changed — the Business view for business readers (owner decisions 21 October 2026)
+
+The first insights are for understanding only: they explain, they ask for no decision. Engine-version gated
+(3.0.20): a source read by an earlier engine gives the panel it gave before, and no signed reading changes.
+
+- **The first insights say what a program is for.** "In short" opens with a purpose sentence built from the
+  program's own names (verb from the program name, business objects from names, messages, tables and calls); it
+  says "not determined" when there is no verb or object. Demo routines and test-data switches are set apart, and
+  their rules leave the business count. Technical checks are folded. The rules are said in one sentence that leads
+  into Design; no rule card, and no rule decision, in the Business view.
+- **The walk-through is a guided tour on the BPMN map.** The map fills the screen; at every station the tour opens
+  the element's level, moves to the element and marks it, and a small card beside it (under the map on a phone)
+  says in plain business words what happens, why it matters and where it goes next. No question, no answer, no
+  code on the card; "More about it" folds the lines and the engine sentence behind a model wording.
+- **Business rules in three baskets.** Every rule goes into one: questions for the business, technical rules that
+  stay as coded, or not determined (with why). The business rules become one question per subject, weightiest
+  first; Design asks at most five at a time with four answers (yes / it should be … / not needed / someone else
+  decides), and "Accept all proposals" is a self-declaration of the signed-in account. Technical rules are
+  confirmed once, together. The full register is in the IT view, grouped by basket. Older answers ("Move to
+  configuration", "SAP standard") read as yes.
+- **Plain wording and business names come by themselves.** Technical steps are reworded for a business reader
+  without a click (the engine sentence stays one fold down), and the "Suggest business names" button is gone: the
+  names are asked for once per project and source, only on the owner's page and only when a model key exists.
+- **The Business view fits a phone.**
+
+### Removed
+
+- **Fit to standard and the rules workshop view** (owner decisions 21 October 2026). Both were built on dev and
+  taken out before release: fit to standard is not usable while SAP's scope items, capabilities and best-practice
+  processes are not machine-readable, and the workshop view put a business reader off. The decision format and the
+  Economics canonical form are as in v3.0.19. Fit to standard is a later row on the roadmap.
+
+### Fixed
+
+- **A split part gets the locals of its parent routine.** The lines a part reads or writes from the parent's frame
+  are handed over under their own names — RAP as `CHANGING` parameters with start values set by the parent, Node
+  declared locally and written back in a `finally`; a redeclared handed local is refused. `STATICS` of a split
+  routine keep their value from call to call. This removes the refusal of the SD return credit part U10P2
+  scheduled from 3.0.19. Scaffold version 21.
+- **A key-user decision ships no code from an earlier decision,** and the Level line says that Level A by
+  construction holds once each candidate's release is checked in the target system. A key-user check record
+  carries the version of the list that built it.
+- **The program's own personal data is masked** in the process documentation, the level D register's "As written"
+  and the Analyze export's code excerpts (e-mail, phone, IBAN, secrets). The signed evidence and the code excerpt
+  at a line anchor stay as written. Credential-shaped assignments are redacted; a counter such as `lv_token_count`
+  stays readable.
+- **A cost revision is matched by its full fingerprint,** not by the twelve characters of its key; a basis recorded
+  before is still read.
+- **A loop skip is said as a skip,** never as stopping the process.
+- **Security:** SEC-2026-892, -894 and -897 to -902 fixed. SEC-2026-888 to -890 still wait for the next Firestore
+  rules deploy. Details stay in the sealed register.
+
 ## [v3.0.19] — 2026-10-21
 
 ### Added — key-user extensibility (roadmap 3.0.19, owner decisions 18 and 19 October 2026)
