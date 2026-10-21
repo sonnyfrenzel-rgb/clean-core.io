@@ -269,7 +269,7 @@ const CASES: RouteCase[] = [
     body: {},
     refusal: 404,
     // The seeded project's decision is not key user: the owner reaches the route and is told so.
-    owner: [400, 409],
+    owner: [409],
     readerAdmitted: false,
   },
   {
