@@ -36,8 +36,7 @@ function marker(text: string): string {
 /**
  * The key the drawn fit map is held under: the whole source and the whole
  * design, not their lengths — another body of the same length, or the same
- * steps with another reason or anchor, draws the map again (QA review of
- * eb5d980cdfd6, b64a7dfce6a0).
+ * steps with another reason or anchor, draws the map again.
  */
 export function fitMapKey(source: string, fileName: string, processName: string, entries: readonly FitEntry[]): string {
   return `${fileName}:${marker(processName)}:${marker(source)}:${marker(JSON.stringify(entries))}`;

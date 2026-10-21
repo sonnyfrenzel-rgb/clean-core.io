@@ -80,7 +80,7 @@ const ROUTE_SOURCES = {
   // facts alone would have frozen these dates — a catalog sync changes the
   // numbers on the page without touching either the page or the wrapper, and the
   // sitemap would then claim the content was older than it is. That is the exact
-  // defect this table exists to prevent. Caught by the QA review of fdfe4f976742.
+  // defect this table exists to prevent.
   // Since 3.0.8 the page also states what the current release changed, from
   // lib/release-summary.ts — the same words /llms.txt and the landing FAQ use.
   '/facts': ['app/facts/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts', 'lib/release-summary.ts'],

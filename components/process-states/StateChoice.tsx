@@ -115,8 +115,7 @@ export default function StateChoice({ subject, entry, mark = null, onConfirm, bu
         className={`${CC_SEGMENTED_GROUP} self-start`}
         // A radio group is one tab stop, and the arrow keys, Home and End move
         // the choice and the focus inside it. Without them only the first
-        // option could be reached from the keyboard (carried QA finding
-        // 888a8d39b2c1).
+        // option could be reached from the keyboard.
         onKeyDown={(event) => {
           if (busy) return;
           const last = ELEMENT_STATES.length - 1;

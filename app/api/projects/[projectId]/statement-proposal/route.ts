@@ -128,7 +128,7 @@ async function openProject(
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -146,7 +146,7 @@ async function openProject(
   // Reading is by membership, writing is the owner's: an invited reader may
   // open what the owner shared and never change or start anything. Until
   // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
-  // opened the project and hid its process (Gegenreview c5085bb, CR-13).
+  // opened the project and hid its process (CR-13).
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     // Not the route's 'Unauthorized.' any more: a stranger who was told 403
     // here and 404 above could read off the status code alone whether a
@@ -248,8 +248,7 @@ export async function POST(
       key,
       // Only a call made under the statements stage may be stored as its
       // proposal: the stage switch is enforced by `/api/gemini`, and a receipt
-      // from another stage would walk around it (QA review of 8f9ea35a000e,
-      // 33a42c475f1a).
+      // from another stage would walk around it.
       stage: STATEMENT_STAGE,
     });
     if (!verdict.ok) {
@@ -288,8 +287,8 @@ export async function POST(
     //
     // In a transaction that reads the project again. The gate above is a read;
     // a project deleted after it used to receive the proposal anyway, and a
-    // subcollection document outlives its deleted parent (QA review of
-    // e7372791c70d). Owner and source are asked again for the same reason.
+    // subcollection document outlives its deleted parent.
+    // Owner and source are asked again for the same reason.
     const projectRef: DocumentReference = db.collection('projects').doc(gate.projectId);
     const outcome: 'gone' | 'source-moved' | 'written' = await db.runTransaction(async (tx: Transaction) => {
       const fresh = await tx.get(projectRef);

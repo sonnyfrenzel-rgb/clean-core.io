@@ -54,7 +54,7 @@ const sha256Hex = (text: string) => createHash('sha256').update(text, 'utf8').di
 
 /**
  * The driver of the engine pass — the "suite" the core runs in place of a
- * test file (QA 342adaac5625, b1b316b2322a). It
+ * test file. It
  *   1. takes the stdout writer and the host capabilities it needs,
  *   2. loads SES and calls `lockdown()`: every JavaScript intrinsic is frozen,
  *   3. evaluates the contract bundle in a compartment (`createConfinement` in

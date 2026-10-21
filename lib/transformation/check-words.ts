@@ -43,7 +43,7 @@ export const ENGINE_CODE_NOTE =
  * Who ran the checks of a stored record. The page runs the guards, lints,
  * engine cases, probes and file formats while it generates, and sends their
  * outcome with the package; the store route checks the record's shape and its
- * trace, not that the checks ran (QA review of c38f8043, 05d1530a1092). Only
+ * trace, not that the checks ran. Only
  * abaplint is run by the server itself when it stores the package.
  */
 const SERVER_RUN_KINDS = new Set(['abaplint', 'abaplint-syntax', 'abaplint-sap', 'abaplint-unread', 'tsc']);

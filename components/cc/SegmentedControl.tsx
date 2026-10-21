@@ -70,7 +70,7 @@ export default function CcSegmentedControl<T extends string>({
     if (!next) return;
     onChange(next.value);
     // The radio pattern moves the focus with the selection; otherwise it stays
-    // on a segment that just became tabIndex -1 (QA review of a88149856dcc).
+    // on a segment that just became tabIndex -1.
     document.getElementById(`${groupId}-${next.value}`)?.focus();
   };
 

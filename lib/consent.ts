@@ -74,8 +74,7 @@ export async function recordConsent({
   // One batch, so the record and the state enforcement reads commit together
   // or not at all. Two awaited writes could leave an acceptance on record that
   // the profile never saw — enforcement still demanding the old version — and a
-  // retry then appended a second event for one acceptance (QA full review of
-  // v2.20.0).
+  // retry then appended a second event for one acceptance.
   const batch = db.batch();
 
   // 1) append-only consent event (primary, tamper-evident record; userId lets the

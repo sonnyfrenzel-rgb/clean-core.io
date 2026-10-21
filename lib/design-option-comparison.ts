@@ -246,7 +246,7 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
     for (const c of ku.candidates.slice(0, 8)) keyuser.push(`${c.id} ${c.app}: ${c.part} (${c.anchor}) — a candidate with its limit, checked in the target system, never a promise.`);
     for (const r of ku.rejected.slice(0, 6)) keyuser.push(`${r.id} not key user (${r.verdict === 'code' ? 'stays code' : 'not determined'}): ${r.reason}`);
     keyuser.push(ku.levelByConstruction === 'A'
-      ? 'Clean core level A by construction where the whole program is key user: key-user extensions use released extension points only.'
+      ? 'Clean core level A by construction where the whole program is key user: key-user extensions use released extension points only. It holds once each candidate’s release, with its other limits, is checked in the target system — the engine does not settle every candidate’s release.'
       : 'Effort is configuration, not a build, for the key-user parts; the code parts are built on the route.');
   }
 

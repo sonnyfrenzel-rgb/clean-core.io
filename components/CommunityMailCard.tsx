@@ -15,7 +15,7 @@ const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset
 /**
  * The consent to community mail — surveys and community updates.
  *
- * Owner decision of 30.09.2026 (QA finding bef96e7f054f): such mail goes only
+ * Owner decision of 30.09.2026: such mail goes only
  * to an account that switched it on here. Off by default, and nothing at
  * sign-up sets it.
  *

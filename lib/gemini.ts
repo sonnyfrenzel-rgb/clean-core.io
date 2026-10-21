@@ -128,8 +128,8 @@ export async function callGeminiWithReceipt(
       // fields above — but a bearer credential travelling a second time, in a
       // JSON body rather than a header, is one more place it can be logged or
       // echoed, and a body field named `userId` next to a verified token is an
-      // invitation to read the wrong one later (security audit of v2.14.0,
-      // SEC-2026-340: the claim of spoofing is refuted, the second copy is not).
+      // invitation to read the wrong one later. The body field allows no
+      // spoofing; it is a second copy of the credential, and that copy is gone.
     }),
   });
 

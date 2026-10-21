@@ -117,7 +117,7 @@ export async function withStoredArtefacts<T extends Record<string, unknown>>(
  * Every artefact stored outside the project document, for a reader, inside the
  * caller's read-only transaction. Read access is asked of the project document
  * this transaction reads; `null` — answered as "no such project" — when the
- * document is gone or `uid` may no longer read it (SEC-2026-844).
+ * document is gone or `uid` may no longer read it.
  */
 export async function readArtefactsForReader(
   tx: ArtefactReader & { get(ref: DocumentReference): Promise<DocumentSnapshot> },

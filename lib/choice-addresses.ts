@@ -336,7 +336,7 @@ export function originOf(search: string | URLSearchParams | null | undefined): O
  * whitespace as written, and is not `.`/`..` and holds no `/` or `\` once
  * decoded (the caller encodes the id, so `p%201` is fine). Anything else —
  * `//host`, `https://host`, `/project/../x` — gets no href, so every address
- * this module returns stays a path of this origin (QA 89c3f6a94e56).
+ * this module returns stays a path of this origin.
  */
 export function isChoiceBase(base: unknown): base is string {
   if (typeof base !== 'string') return false;

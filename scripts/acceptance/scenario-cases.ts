@@ -58,13 +58,13 @@ export function scenarioCases(scenarios: readonly CaseScenario[] | null, demo: P
   for (const s of scenarios) {
     let n: number | null = null;
     // A scenario that sets the case switch names its case there or names none: an invalid switch value never falls
-    // back on a case-shaped ID (QA 9b82fb010d1e).
+    // back on a case-shaped ID.
     let switchGiven = false;
     if (param && isPlainObject(s.input)) {
       const hit = Object.entries(s.input).find(([k]) => k.toLowerCase() === param);
       switchGiven = hit !== undefined;
       // Only a whole number or its digits: `Number(null)`, `Number(false)` and `Number('')` are 0, and a null input is
-      // not case 0 (QA 958d07e8b2ff).
+      // not case 0.
       const raw = hit?.[1];
       const v = typeof raw === 'number' ? raw : typeof raw === 'string' && /^\s*\d{1,3}\s*$/.test(raw) ? Number(raw) : NaN;
       if (Number.isInteger(v) && v >= 0) n = v;
@@ -88,7 +88,7 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v ===
 /**
  * A value as compared: numbers and decimal text by their exact value, 'X' and '' as true and false, text trimmed.
  * Null stays apart from empty text, and digits without a decimal point keep their leading zeros unless the value is
- * a number: "001" is an identifier, not 1 (QA 6d078b12be38).
+ * a number: "001" is an identifier, not 1.
  */
 export function canon(v: unknown): string {
   if (v === null || v === undefined) return '\u0000null';
@@ -194,11 +194,11 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
       // The run's issues: as many as expected, each expected message among them (case and spacing aside).
       const said = out.issues.map((m) => m.replace(/\s+/g, ' ').trim().toLowerCase());
       leaf(true, said.length === value.length);
-      // Each expected message takes one of the run's: ["A", "A"] is not met by ["A", "B"] (QA d791179ee1b0).
+      // Each expected message takes one of the run's: ["A", "A"] is not met by ["A", "B"].
       const left = [...said];
       for (const m of value) {
         const w = m.replace(/\s+/g, ' ').trim().toLowerCase();
-        // Equal after case and whitespace, never a substring: "not failed" is not "failed" (QA 894abf0faca5).
+        // Equal after case and whitespace, never a substring: "not failed" is not "failed".
         const at = left.indexOf(w);
         if (at >= 0) left.splice(at, 1);
         leaf(true, at >= 0);
@@ -207,7 +207,7 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
     }
     if (Array.isArray(value) && !value.some((x) => isPlainObject(x) || Array.isArray(x))) {
       // An empty list or a list of plain values: the output's list of that name (an empty `rows` is the run's rows),
-      // its length, then element by element (QA 1c24cdfb94f8).
+      // its length, then element by element.
       const hit = locate(key, within);
       const list = hit.found && Array.isArray(hit.value) ? hit.value : value.length === 0 && normKey(key) === 'rows' ? out.rows : null;
       if (!list) {
@@ -221,7 +221,7 @@ export function compareScenario(expected: unknown, out: Ran): ScenarioComparison
     }
     if (isPlainObject(value)) {
       const hit = locate(key, within);
-      // SEC-2026-893.
+      // A nested expectation is met only by a plain object under that key; anything else counts as absent.
       if (!hit.found || !isPlainObject(hit.value)) {
         absent(value);
         return;
@@ -255,7 +255,7 @@ export function demoCaseVerdicts(scenarios: readonly CaseScenario[] | null, case
     if (!runs || !runs.executed || !r) {
       out[s.id] = { ran: false, verdict: `not-run: demo case ${n} — ${(runs?.reason ?? 'the harness did not run it').slice(0, 160)}` };
     } else if (r.state === 'not-run') {
-      // The package's own reason is package output: it never leaves the comparison (QA 32ab392208dd).
+      // The package's own reason is package output: it never leaves the comparison.
       out[s.id] = { ran: false, verdict: `not-run: demo case ${n} — the package reported it not run` };
     } else if (r.state === 'threw') {
       // The package's code threw on the original's own case: the package fails it.

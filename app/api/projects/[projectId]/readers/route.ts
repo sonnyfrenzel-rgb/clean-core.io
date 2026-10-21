@@ -110,13 +110,13 @@ async function openAsOwner(
   // no account check on it. That read is not the lesser half: it hands out the
   // e-mail address of every person who accepted an invitation, which is other
   // people's personal data, and a suspended account kept taking it out, as
-  // often as it liked (security audit of b88c77b). The list of who may read a
+  // often as it liked. The list of who may read a
   // project is not less sensitive than the act of changing it.
   //
   // Each verb has its own budget, though. With one shared key, an hour of
   // looking at the list — across all of an owner's projects — used up the
   // allowance a revocation needs, and the reader kept access until the window
-  // reset (QA review of a7e0ae36c896). Reading must never be what stops an
+  // reset. Reading must never be what stops an
   // owner from ending somebody's access.
   const rateKey = req.method === 'GET' ? 'project-readers-list' : 'project-readers';
   try {
@@ -146,7 +146,7 @@ async function openAsOwner(
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -185,7 +185,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
   } catch (err: unknown) {
     // Whatever threw here came from the Admin SDK and speaks about our own
     // collections and document ids. The caller gets the fixed sentence; the
-    // reason goes to the log (security audit of b88c77b).
+    // reason goes to the log.
     logger.error('project readers read failed', {
       route: 'api/projects/[projectId]/readers',
       error: errMessage(err),
@@ -231,12 +231,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       // erasure, which deletes projects recursively — left behind a projects
       // document holding nothing but a `readers` array. It has no `userId`, so
       // `firestore.rules:204` hides it from the owner who thought it deleted,
-      // while the row sits in the database (QA full review of 3131afa,
-      // 3e32d011b3c6).
+      // while the row sits in the database.
       if (!fresh.exists) throw new Error('project-gone');
       const project = (fresh.data() || {}) as Record<string, unknown>;
-      // The accepted invitations are read inside the transaction as well (QA
-      // cb7ed86b0d3b). Read before it, an invitation accepted in between was
+      // The accepted invitations are read inside the transaction as well. Read
+      // before it, an invitation accepted in between was
       // missed — the reader came off `readers` while their invitation stayed
       // `accepted` — and one revoked in between was written over. As a
       // transactional read, a concurrent change to any of them retries this.

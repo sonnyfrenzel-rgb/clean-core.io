@@ -5,12 +5,10 @@
  * requests for the same link at the same moment are the normal case rather
  * than the edge one. Both used to read no `linkFetchedAt`, both merge-writes
  * went through, and the stored value was the later arrival — while the field's
- * whole meaning is that it is the first (QA review of 33471220d6e9,
- * 8ccb1b1b765b).
+ * whole meaning is that it is the first.
  *
  * A separate module so the claim can be run twice at once against the emulator
  * and the winner counted, which a page component cannot be (roadmap 0.17,
- * QA finding cca300dfb572).
  */
 
 /** The bits of the Admin SDK this needs — untyped, because `getAdminDb` hands back an untyped handle. */

@@ -58,13 +58,13 @@ export interface CapabilityFacts {
   /**
    * Database changes whose table the code names only at run time
    * (`MODIFY (lv_table) …`), by the expression as written. Absent in facts
-   * stored before it was recorded (QA review of 11e3bc7d90e8).
+   * stored before it was recorded.
    */
   dynamicWrites?: FactObject[];
   /**
    * Calls whose target the code names only at run time (`CALL FUNCTION lv_fm`,
    * `PERFORM (lv_form)`), by the expression as written — such a call could post.
-   * Absent in facts stored before it was recorded (QA review of 35b97d90c6e1).
+   * Absent in facts stored before it was recorded.
    */
   dynamicCalls?: Array<FactObject & { destination?: string }>;
   /**
@@ -121,7 +121,7 @@ export const isAbsent = (answer: CapabilityAnswer): boolean => !answer.present &
  * Places that could change data although no table, commit or update task
  * shows it: a database change whose table is named only at run time, and a
  * call whose target is (a dynamic function module could be a posting BAPI —
- * QA review of 35b97d90c6e1). Facts stored before both were recorded say only
+ * Facts stored before both were recorded say only
  * how many places are dynamic, so any such place leaves a change open.
  */
 const openWrites = (facts: CapabilityFacts): number =>
@@ -156,7 +156,7 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
   const readOf = (re: RegExp) => facts.reads.filter((r) => re.test(r.name.toUpperCase()));
   // A table named at run time may be one of these, never surely is: it keeps the
   // capability undetermined and stands as evidence of why, but never makes it
-  // present (QA review of fb74afe8, ca3c7082a47b).
+  // present.
   const mayReadOf = (re: RegExp) => (facts.possibleReads ?? []).filter((r) => re.test(r.name.toUpperCase()));
   const postingCalls = facts.calls.filter((c) =>
     (c.kind === 'bapi' && /(?:CREATE|CHANGE|POST|SAVE|UPDATE|DELETE|CANCEL|REVERSE|CLEAR)/.test(c.name.toUpperCase()))

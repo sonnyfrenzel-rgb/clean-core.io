@@ -114,8 +114,7 @@ export async function DELETE(req: Request) {
   try {
     await deleteS4Credentials(decoded.uid);
   } catch (e) {
-    // The error text stays in the log; the caller gets a fixed sentence
-    // (carried QA finding 96af10679a29).
+    // The error text stays in the log; the caller gets a fixed sentence.
     logger.error('s4-credentials delete failed', { route: 'api/s4-credentials', error: errMessage(e) });
     return NextResponse.json({ error: 'Failed to delete credentials.' }, { status: 500 });
   }

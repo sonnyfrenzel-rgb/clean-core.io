@@ -40,7 +40,7 @@ import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 // The required-artefact table and its matcher live in lib/ so a spec can run the
-// real gate instead of a copy of it (QA review of 9e408888bfec, 3c05340dc39b).
+// real gate instead of a copy of it.
 import { holdsStoredPackage, missingArtefacts, usableTestSuite, type GeneratedTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
 // Roadmap 3.0.12, step E — the engine-led generation. Only types and the
 // light pieces are imported here; the engine, the scaffold and the
@@ -71,7 +71,7 @@ import KeyUserSteps from '@/components/keyuser/KeyUserSteps';
 import { isKeyUserDecision, keyUserEvidenceBlock, keyUserModeOf, keyUserPlanRanges, keyUserStepsOf } from '@/lib/key-user-route';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
-// downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
+// downloaded by this page (owner decision 30.09.2026).
 import { EVIDENCE_UNREAD, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis, codeStaleWords } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
@@ -146,7 +146,7 @@ async function postJson(url: string, body: unknown, signal: AbortSignal): Promis
  * A file the workspace can show and the next stage can read. The model's answer
  * was taken at its word: `result.files || []` accepted an empty list, a list of
  * nulls, or entries with no path, and all of them were written to the project
- * as a finished transformation (QA review of 33471220d6e9, d967e435917c).
+ * as a finished transformation.
  */
 const isUsableFile = (f: unknown): f is ProjectFile =>
   !!f && typeof f === 'object'
@@ -164,8 +164,7 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
  * the only completeness gate there was. An answer holding a single class — no
  * metadata descriptor, no CDS view, no behavior definition, no abapGit
  * configuration — passed it and was written out with `status: 'transformed'`,
- * and the stage went green over a package nobody could import (QA full review
- * of b88c77b, 7976bced4c28).
+ * and the stage went green over a package nobody could import.
  *
  * Matched on the shape of the path, not on the prompt's example names: the
  * suffix is the artefact kind, and a model that names the class after the
@@ -177,8 +176,8 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
  * points. A third, the check mark, used to turn a comment into a "Fully
  * Grounded" dot — as did any comment that happened to say `CDS`, `matched` or
  * `fully`. Nothing compared that line with a catalog or validated it, so the
- * dot was the model grading its own output (QA full review of fc78767,
- * 4cfbf09351f1). A model comment that warns is worth pointing at; one that
+ * dot was the model grading its own output.
+ * A model comment that warns is worth pointing at; one that
  * praises itself is not evidence, so it gets no marker.
  */
 const WARNING_SIGN = String.fromCodePoint(0x26a0, 0xfe0f);
@@ -286,7 +285,7 @@ export default function TransformationPage() {
   const [specRead, setSpecRead] = useState<ChainSpecRead>({ state: 'loading' });
   const [error, setError] = useState('');
   /**
-   * Codex architecture-02 — a generated package the server refused because the
+   * A generated package the server refused because the
    * project document would outgrow Firestore's 1 MiB. Nothing was stored, but
    * the reader paid for the generation: the draft stays on screen, marked as
    * unsaved, with a download, until the next generation or a reload.
@@ -856,7 +855,7 @@ export default function TransformationPage() {
 
   const handleCopy = async () => {
     // The toast used to appear before the clipboard had answered, so a denied
-    // clipboard still said "copied" (QA full review of fc78767, 604c2ded57e3).
+    // clipboard still said "copied".
     // A failure is a Message Strip, not a toast (§2.8).
     try {
       await navigator.clipboard.writeText(transformedCode);
@@ -1074,8 +1073,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     // `srv/service.ts`: a refusal, a quota notice or any stretch of prose
     // then passed the "at least one file" gate below and was stored with
     // `status: 'transformed'`, so the reader got a green stage whose source
-    // code was the sentence in which the model declined the work (QA full
-    // review of b88c77b, 55cf6c0ed62a). It is reported the same way an empty
+    // code was the sentence in which the model declined the work.
+    // It is reported the same way an empty
     // answer is, a few lines down — nothing is saved, the previous artefact
     // stands.
     //
@@ -1129,8 +1128,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
     // The single-blob answer goes through the same gate as the list: it
     // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
-    // the project as a finished transformation (QA review of 146ac2e1a724,
-    // 9712d15149c9).
+    // the project as a finished transformation.
     if (filesArray.length === 0) {
       const single = {
         path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
@@ -1142,8 +1140,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     // Nothing usable came back. This used to be written anyway: an empty
     // file list, an empty test suite and `status: 'transformed'` — on a
     // first run the later stages saw a transformed project with no code, and
-    // on a rerun the empty answer replaced the code that was already there
-    // (QA review of 33471220d6e9, d967e435917c). The previous artefact stays
+    // on a rerun the empty answer replaced the code that was already there.
+    // The previous artefact stays
     // and the stage reports a failed generation.
     if (filesArray.length === 0) {
       recordCheck('files', 'failed');
@@ -1171,7 +1169,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
     // The test suite is part of the package the prompt asked for. It used to
     // default to two empty strings and the project was marked transformed
-    // without one (QA full review of 81810c8, 183ed4edf700).
+    // without one.
     const tests = usableTestSuite(parsed.tests, isAbapCloud);
     if (!tests) {
       recordCheck('tests', 'failed');
@@ -1212,8 +1210,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * runner checks and the single call. Cancel works until the package is sent
    * to the server to be stored: the store is one transaction the browser cannot
    * take back once it is sent, so `store` checks the signal right before it,
-   * then lets go of the controller, and the screen stops offering Cancel
-   * (QA review of 03501b79, 55bc1b0b72d5, bb1c38a8601e, bad3737d8f46).
+   * then lets go of the controller, and the screen stops offering Cancel.
    */
   const abortRef = useRef<AbortController | null>(null);
   /**
@@ -1394,8 +1391,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         setFiles(filesArray);
         // The stepper, the blockers and the verification rail all read `project`
         // (`lib/workflow-steps.ts`); without this they went on describing the
-        // state before the generation until something else reloaded the page
-        // (QA review of 33471220d6e9, ce37b706107d). From what the server
+        // state before the generation until something else reloaded the page.
+        // From what the server
         // stored, not from what this tab hoped it wrote.
         // The binding's context digest is the one the server built from the state it stored against, so the
         // phase reads current without another read (roadmap 3.0.13; `withStoredGeneration`).
@@ -1662,8 +1659,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     // in this callback reads it. Hydration flipped it from undefined to true,
     // the callback got a new identity, the effect below re-ran and started a
     // second generation while the first model call was still in flight — two
-    // charged runs, and whichever answer wrote last became the artefact
-    // (QA review of 33471220d6e9, e078d502e983). The ref is the second half:
+    // charged runs, and whichever answer wrote last became the artefact.
+    // The ref is the second half:
     // a dependency is not the only way to be called twice.
   }, [projectId, enterPhase, runSingleCall]);
 
@@ -1714,7 +1711,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
   /**
    * The first generation used to start from this page's load (behind the model
-   * switch, QA full review of fc78767, 6f3dc15e6f7b). Since roadmap 3.0.12 it
+   * switch). Since roadmap 3.0.12 it
    * waits for "Generate now": the tips are what the reader reads first, and the
    * cost line stands beside the button before the click (§2.8). The model
    * switch still decides whether the button can be pressed (`canGenerate`).
@@ -1965,7 +1962,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
         {/* Before the project has loaded its track is unknown, and the
             default copy named the side-by-side track for an ABAP Cloud
-            project (carried QA finding 7abe866543dd). */}
+            project. */}
         <span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>
       </StageHeader>
       <div className="mt-6">
@@ -2528,8 +2525,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               {/* The score is the signed analysis of the legacy source. It
                   used to be headed "Overall Support Rollup" and read out as
                   "Grounded & Ready" over the generated code, which no
-                  compiler, test or validator has looked at (QA full review of
-                  fc78767, 88b7d2853f85). The words say what was measured. */}
+                  compiler, test or validator has looked at.
+                  The words say what was measured. */}
               <h3 className="cc-text-label text-cc-ink-muted">Signed source-analysis score</h3>
               <p className="cc-text-h2 text-cc-ink mt-1">
                 {currentScore === undefined

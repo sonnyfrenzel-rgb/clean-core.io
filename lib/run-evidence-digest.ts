@@ -7,8 +7,8 @@
  * the request arrived. Two tabs are enough to make that the wrong run: read the
  * design of run A, let the other tab finish an analysis that becomes run B, sign
  * off — and the audit pack carries an architect's approval for evidence that
- * architect never saw. The transaction in the command route (0.7, QA review of
- * a19945ef01dc) already stops the *project* from moving between the decision and
+ * architect never saw. The transaction in the command route
+ * already stops the *project* from moving between the decision and
  * the write; it cannot notice that the run moved before the request was sent.
  *
  * **Where the digest comes from, and why that is the whole point.** Every fact

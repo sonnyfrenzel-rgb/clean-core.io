@@ -320,7 +320,7 @@ export default function DesignPage() {
     // call. The page says a design is built on the run the server signed; a
     // response that lands after another tab activated a new run would otherwise
     // be stored as that run's design, and it would not read as stale either,
-    // because it differs from the design the new run recorded (codex usp-02).
+    // because it differs from the design the new run recorded.
     const writtenFromRun = projectRef.current?.activeRunId ?? null;
     // The design this page showed when it started — none, or one written for a
     // previous basis. Another design on record means somebody else wrote one.
@@ -473,8 +473,8 @@ ${DESIGN_ANSWER_REMINDER}`;
       }
       // Not every non-empty answer is a design: `{}`, a truncated object or
       // sections of the wrong type used to be stored as one, with `status:
-      // 'designed'`, over whatever design was there (QA full review of
-      // fc787674705f, 6a5a3b3546de). Refused here, the stored design stays.
+      // 'designed'`, over whatever design was there.
+      // Refused here, the stored design stays.
       const shape = checkDesignResponse(responseText);
       // The reason names the broken section; it is for the log, the reader
       // needs to know that nothing was stored and what to do.
@@ -487,7 +487,7 @@ ${DESIGN_ANSWER_REMINDER}`;
       // write. They used to be two writes around a second model call, so two
       // tabs regenerating at once could leave one tab's design beside the
       // other tab's NFRs, and a failed NFR call left the previous design's NFRs
-      // beside the new design (QA full review of fc787674705f, 5c1f3bd288f6).
+      // beside the new design.
       // Whichever generation writes last now writes a matching pair; an NFR
       // failure stores the design without NFRs rather than with stale ones.
       let nfrForDesign: Record<string, unknown> | null = null;
@@ -537,8 +537,8 @@ ${DESIGN_ANSWER_REMINDER}`;
           savedElsewhere.data = snap.data() ?? null;
           return;
         }
-        // Codex architecture-02: refused by name before the commit rather than
-        // failing in it, when the design would push the project past 1 MiB.
+        // Refused by name before the commit rather than failing in it, when
+        // the design would push the project past 1 MiB.
         const size = checkProjectWrite(
           snap.data(),
           { solutionDesign: responseText, nonFunctionalRequirements: nfrForDesign ?? deleteField() },
@@ -643,7 +643,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         data = await loadProjectAndHydrate(projectId as string);
       } catch (err) {
         // A read that failed is not an empty stage and not a page that loads
-        // forever (QA 46b8c6352769): it used to reject here with nothing to
+        // forever: it used to reject here with nothing to
         // catch it, and `loading` stayed true.
         console.error('[Design] Project could not be loaded:', err);
         setDesignError('Could not load the project. This is usually a permissions or connectivity issue — reload the page.');
@@ -678,9 +678,9 @@ ${DESIGN_ANSWER_REMINDER}`;
             if (elsewhere) {
               setElsewhereSince(elsewhere.since);
             } else {
-              // Started above once the stage's availability is known (QA
-              // 6c4734f60aa8): a stage that is off, or has no key, gets its
-              // reason on screen instead of a request the proxy will refuse.
+              // Started above once the stage's availability is known: a stage
+              // that is off, or has no key, gets its reason on screen instead
+              // of a request the proxy will refuse.
               // The narrative is further context where the run has one.
               const narrative = data.analysis
                 ? typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis
@@ -897,7 +897,7 @@ ${DESIGN_ANSWER_REMINDER}`;
     if (!isOwner) {
       setDesignError('Only the owner of this project writes its design. Invited readers read it.');
     } else if (stale.sourceChanged) {
-      // The analysis on file describes a previous source (QA f9aea437967e).
+      // The analysis on file describes a previous source.
       setDesignError('The source changed after the signed run. Re-run the analysis in stage 1 first; a design generated now would describe the previous source.');
     } else if (designPrerequisites.length > 0) {
       setDesignError(designPrerequisites.map((p) => p.reason).join(' '));
@@ -1269,9 +1269,9 @@ ${DESIGN_ANSWER_REMINDER}`;
             {design ? (
               <>
                 {/* Regenerate only where it can succeed and would describe the code
-                    under review: not with the stage off or keyless (QA
-                    6c4734f60aa8), and not from an analysis of a previous source
-                    (QA f9aea437967e). A design merely older than the analysis is
+                    under review: not with the stage off or keyless,
+                    and not from an analysis of a previous source.
+A design merely older than the analysis is
                     what Regenerate is for. Exports stay closed on a stale design. */}
                 <CcButton
                   variant="ghost"

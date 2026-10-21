@@ -321,8 +321,7 @@ function selectLoops(statements: readonly AbapStatement[]): Set<number> {
       const aggregateOnly =
         /^SELECT\s+(?:SINGLE\s+)?(?:COUNT|MAX|MIN|SUM|AVG)\s*\(/i.test(text) && !/\bGROUP\s+BY\b/i.test(text);
       // `INTO TABLE … PACKAGE SIZE n` fetches package by package and is a loop
-      // with its own ENDSELECT, as block-structure's selectCanLoop reads it
-      // (QA full review 026f3b950bcc).
+      // with its own ENDSELECT, as block-structure's selectCanLoop reads it.
       const packaged = /\bPACKAGE\s+SIZE\b/i.test(text);
       if ((!table || packaged) && !/\bSINGLE\b/i.test(text) && !aggregateOnly) open.push(statement.index);
     } else if (keyword === 'ENDSELECT') {
@@ -858,7 +857,7 @@ const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
 /**
  * Does any `IF`/`ELSEIF`/`CHECK` of the source test the table for content —
  * `IS NOT INITIAL`, `NOT … IS INITIAL`, `lines( … ) > 0` or `lines( … ) >= 1`
- * (QA finding 66d825effb5c)? A guard written another way — a `DESCRIBE TABLE`
+ *? A guard written another way — a `DESCRIBE TABLE`
  * count tested afterwards, a check in a called routine — is not seen, and the
  * caveat then errs on the side of warning.
  */
@@ -873,7 +872,7 @@ export function nonEmptyGuarded(table: string, statements: readonly AbapStatemen
     .filter(({ s }) => /^(?:IF|ELSEIF|CHECK)$/.test(s.keyword) && guard.test(s.text));
   if (!candidates.length) return false;
   if (!select) return true;
-  // QA 896f03b65018: the check has to guard *this* SELECT — a check in another
+  // The check has to guard *this* SELECT — a check in another
   // branch or routine does not keep the driver table filled here.
   const at = statements.indexOf(select);
   if (at < 0) return false;
@@ -950,8 +949,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   const restriction =
     (filters.length > 0 ? ` with ${enumerate(filters)}` : '') + (entries ? ` for the entries from ${plain(entries[1])}` : '');
   // An empty FOR ALL ENTRIES table drops the whole WHERE: unless the source
-  // shows the table is checked for content, the restriction is not certain
-  // (carried QA finding 657629d1daa0).
+  // shows the table is checked for content, the restriction is not certain.
   if (entries && !nonEmptyGuarded(plain(entries[1]), statements, statement)) {
     notes.push(`If ${plain(entries[1])} is empty, the restriction is dropped and all rows are read.`);
   }
@@ -1064,7 +1062,7 @@ const lead = (text: string, clause = false): Lead => ({ text, clause });
  *
  * A subordinate clause with `nounPhrase`, not „Mit gesetztem gv_flag": the ending
  * of „gesetztem" guesses a grammatical gender that nobody has fixed for an
- * unknown identifier (F12, QA 594357222bd7). `nounPhrase` takes the
+ * unknown identifier (F12). `nounPhrase` takes the
  * gender from the glossary where it lists one, and otherwise „das Feld …" —
  * then the word „Feld" carries the article, not the identifier.
  */
@@ -1143,7 +1141,7 @@ function writesInternally(statement: AbapStatement, tables: ReadonlySet<string>)
     // `xvbap` is the after-image table of an exit; X is not a customer
     // namespace. Y is (Y* and Z* are the customer database tables), so a
     // `y` name is internal only as the before-image paired with its `x`
-    // table, which internalTables records (QA full review d1b665735c9b).
+    // table, which internalTables records.
     return tableTerm(name) === null;
   }
   return false;
@@ -1378,7 +1376,7 @@ function subrcOutcome(statements: readonly AbapStatement[], index: number, varia
  * copy, the variable carries the `sy-subrc` of its setting statement. If it is
  * something else — `lv_rc = 4`, `CLEAR lv_rc`, `… INTO lv_rc`, an
  * `IMPORTING … = lv_rc` —, it holds something else, and „Ohne Berechtigung"
- * would be guessed (QA 23c5c0362148). A copy in an inner block (`IF …
+ * would be guessed. A copy in an inner block (`IF …
  * lv_rc = sy-subrc. ENDIF.`) may never have run and does not count either;
  * the start of the routine ends the search.
  */
@@ -1487,7 +1485,7 @@ function guardSentence(
   const initial = /^IF\s+(\S+)\s+IS\s+INITIAL\s*$/i.exec(head.text);
   // A `DATA(lv_auth_result) = sy-subrc.` is a copy, not a different value —
   // the guard behind it checks the same thing and is read that way too.
-  // Only as long as the copy is still held in the variable (QA 23c5c0362148).
+  // Only as long as the copy is still held in the variable.
   const compared = /^IF\s+(\S+)\s*(<>|=)\s*0\s*$/i.exec(head.text);
   const isSubrc =
     compared !== null &&
@@ -1574,7 +1572,7 @@ function definedInSource(statement: AbapStatement, statements: readonly AbapStat
   const fn = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
   if (fn) return routineHead(statements, 'FUNCTION', fn[1]) !== null;
   // A method only if it is certain that the call means the local
-  // implementation (QA b7e191a72212) — otherwise a foreign
+  // implementation — otherwise a foreign
   // `lo_external->save( )` can commit, and „kein COMMIT WORK" would be wrong.
   const explicit = /^CALL\s+METHOD\s+(?:(\S*?)(->|=>))?([A-Za-z0-9_]+)(?:\s|$|\()/i.exec(text);
   if (explicit) {
@@ -1669,7 +1667,7 @@ function localClasses(statements: readonly AbapStatement[]): LocalClasses {
  * Unlike in the skeleton, the name alone never decides here: an
  * `lo_external->save( )` on an object whose class the excerpt does not
  * name is not the local method `save` that happens to have the same name, and
- * does not get its effect attributed (QA b7e191a72212).
+ * does not get its effect attributed.
  *
  * `owner` is what stands before the last arrow; a chain `lo->mo_sub->m`
  * is read at its last link.
@@ -1832,7 +1830,7 @@ function processingUnit(
  *   several times, and an earlier pass may have written behind the guard;
  *   haben;
  * - the guard is in no loop — otherwise an earlier iteration has
- *   already executed the statement behind it (QA d7a7d3a66683);
+ * already executed the statement behind it;
  * - the guard itself calls nothing, and before it in the unit nothing is
  *   written and nothing is called — a `PERFORM protokoll` before it
  *   can write;

@@ -33,7 +33,7 @@ import CcSelect from '@/components/cc/Select';
 import CcTextarea from '@/components/cc/Textarea';
 import { stateChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { provenance } from '@/lib/provenance';
-// The runner executes against mocks only, so a pass is "Demonstrated · mock", never "Proven" (QA f2dc77c6c912).
+// The runner executes against mocks only, so a pass is "Demonstrated · mock", never "Proven".
 const RUNNER_PASS = provenance('demonstrated-mock').label;
 import type { TestingPieSlice } from '@/components/TestingCharts';
 import nextDynamic from 'next/dynamic';
@@ -212,8 +212,7 @@ export default function TestingSandboxPage() {
    * the stored credentials and nothing else — deliberately, so that asking for
    * stored credentials cannot redirect them to a URL of the caller's choosing.
    * The screen said it was testing whatever stood in the form, which was a
-   * different statement as soon as the form had been edited since it was saved
-   * (QA review of 33471220d6e9, 40e1db9fd37a).
+   * different statement as soon as the form had been edited since it was saved.
    */
   const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string } | null>(null);
   /** "You have not saved this yet" is not a failed connection — see the test handler. */
@@ -357,7 +356,7 @@ export default function TestingSandboxPage() {
   useEffect(() => {
     const fetchProject = async () => {
       // Without the catch, a rejected load left the page on "Loading" for good
-      // and the rejection unhandled (QA review of 33471220d6e9, 03380a33a523).
+      // and the rejection unhandled.
       try {
         const data = await loadProjectAndHydrate(projectId as string);
         if (!enforceActiveRun(data, projectId as string)) return;
@@ -445,8 +444,8 @@ export default function TestingSandboxPage() {
       // The vault has it from here on: the password leaves the form and the save
       // is reported as done. Nothing else is written after it: the environment
       // preference that used to follow (and whose failure once reported a saved
-      // connection as a failed save — QA full review of fc787674705f,
-      // 983d23ce4dad) is gone with the tenant tab it remembered.
+      // connection as a failed save
+      // ) is gone with the tenant tab it remembered.
       setS4Password(''); // Clear from client state
       setEditingConnection(false);
       // A check of the previous connection says nothing about this one.
@@ -486,8 +485,7 @@ export default function TestingSandboxPage() {
     }
     // The password is write-only, so a filled password box is by definition a
     // change that has not been saved; the destination JSON is editable in the
-    // same form and was left out of the comparison entirely
-    // (QA review of 146ac2e1a724, 3909a7680413).
+    // same form and was left out of the comparison entirely.
     const formChanged = savedS4.url !== s4Url
       || savedS4.username !== s4Username
       || savedS4.authType !== s4AuthType
@@ -722,8 +720,8 @@ export default function TestingSandboxPage() {
     setIsRequestingAccess(true);
     setAccessRequestError('');
     try {
-      // The route's answer is read (QA full review of fc787674705f,
-      // b1458e593475). It used to be awaited and ignored: a refused or failed
+      // The route's answer is read.
+      // It used to be awaited and ignored: a refused or failed
       // request left the reader with a button that had done nothing and no word
       // why.
       const token = await getAuth().currentUser?.getIdToken();
@@ -746,7 +744,7 @@ export default function TestingSandboxPage() {
       }
 
       // The request document is written by the route itself, before it mails
-      // the administrator (QA 04ad2108af07). It used to be a client write after
+      // the administrator. It used to be a client write after
       // the route had answered: a failure there left the mailed approve/reject
       // links with no request to act on, and the create-only rule refused it
       // on every request after a revoke.
@@ -834,8 +832,7 @@ export default function TestingSandboxPage() {
       return;
     }
     // Nor while the testing model stage is off or has no key: the proxy refuses
-    // it, and "Regenerate Suite" used to start that request anyway
-    // (QA full review of fc787674705f, 55b40120e11b).
+    // it, and "Regenerate Suite" used to start that request anyway.
     if (!modelAvailability.enabled('testing')) {
       setGenError(
         modelAvailability.keyAvailable
@@ -864,8 +861,7 @@ export default function TestingSandboxPage() {
   const handleRun = async () => {
     // A suite written for a previous source tests nothing about the current one,
     // and neither does one built on stale upstream code — the notice at the top
-    // of the page says which stage to regenerate (QA full review of
-    // fc787674705f, a4439fbfd760).
+    // of the page says which stage to regenerate.
     if (testRunBlocked(project)) return;
     const selected = testCases.filter((_, i) => selectedTestCases.includes(i));
     setShowConsole(true);
@@ -928,8 +924,7 @@ export default function TestingSandboxPage() {
    * 3.0.12 — the cases whose verdict the call contract gave in the isolated
    * runner (no model-written assertion): from the covering receipt for a
    * recorded run, or for this session's run from the server's answer. Never
-   * from a test title: a model-written test can carry the marker (QA review
-   * of 2e6596ddbbc8, 0019c1b57d65).
+   * from a test title: a model-written test can carry the marker.
    */
   const viaContract = viaContractOfRun(lastRun(project, testResults).kind, coveringTestRunReceipt(project), engineViaContract);
   const verdictOf = (tc: { id?: unknown }): string | null => {
@@ -1062,7 +1057,7 @@ export default function TestingSandboxPage() {
   /**
    * Whether the full record could be read. A transient failure used to be
    * logged and never retried, and the scenario rows stayed without their
-   * results for the session (QA 263cde0a6b23). Now the read is retried twice
+   * results for the session. Now the read is retried twice
    * with a growing pause, and a read that still fails says so with a Retry —
    * the rows are never left looking as if there were no result.
    */
@@ -1126,7 +1121,7 @@ export default function TestingSandboxPage() {
   // Keyed by every input of the evidence below — source, file name, target
   // edition and the signed run's engine — so a run of another engine over the
   // same source never shows the last run's findings while the new ones are
-  // computed (QA review of 03501b79, dbe411efd049).
+  // computed.
   const [tickState, setTickState] = useState<{
     code: string;
     file: string;
@@ -1187,7 +1182,7 @@ export default function TestingSandboxPage() {
     if (card?.engineVersion) metaParts.push({ label: 'engine', value: card.engineVersion });
   }
 
-  // SEC-2026-899: the recorded key-user checks count for the step list as it is built now.
+  // The recorded key-user checks count for the step list as it is built now.
   const phases = workflowSteps(project, { keyUserList: keyUserSteps.state === 'ready' ? keyUserSteps.list : null });
   /** The last run, from the receipt on the project or this session — never assumed. */
   const run = lastRun(project, testResults);
@@ -1686,7 +1681,7 @@ export default function TestingSandboxPage() {
             ) : null}
 
             {/* 3.0.13 (6) — the ABAP Unit evidence belongs to the ABAP route;
-                the mocks card below is shown only off it (QA 4a0b5bc64faf). */}
+                the mocks card below is shown only off it. */}
             <AbapUnitEvidence project={project} />
 
             {/* The reason itself is in the notice at the top of the page. */}
@@ -2680,7 +2675,7 @@ export default function TestingSandboxPage() {
 
                       {/* Step 3 + 4 — Always visible. Save comes first: the test
                           runs against the saved connection and refuses an unsaved
-                          form (QA full review of fc787674705f, 229511ee85db). */}
+                          form. */}
                       <div className="flex gap-3 items-start">
                         <span className={STEP}>3</span>
                         <div>
@@ -2901,8 +2896,8 @@ export default function TestingSandboxPage() {
                           <p className="cc-text-meta text-cc-ink-muted">The testing model{"'"}s estimate of how much of the logic the scenarios reach — not a measured coverage.</p>
                           {/* A suite made for a previous source carries its
                               estimate with it; said here, beside the figure,
-                              not only in the notice at the top (carried QA
-                              finding 763f13273cb3). */}
+                              not only in the notice at the top.
+                              */}
                           {workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale' ? (
                             <p className="cc-text-meta text-cc-warning" data-coverage-stale="">
                               Estimated for a previous source — it does not describe the code as it stands.

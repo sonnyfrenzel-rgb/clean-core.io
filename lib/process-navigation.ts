@@ -442,8 +442,7 @@ export function buildOverlays(
   /**
    * Whether `rulesByNode` is an answer. An empty map while the rules are read,
    * or after they could not be, is not "nothing is hard-coded": the overlay is
-   * left out until there is an answer, like any overlay without one (carried
-   * QA finding 6d875b97d4b5).
+   * left out until there is an answer, like any overlay without one.
    */
   rulesState: 'ready' | 'loading' | 'failed' = 'ready',
 ): OverlayDefinition[] {
@@ -511,7 +510,7 @@ export function planeProblems(
   /**
    * Whether `rulesByNode` is an answer. While the rules are read, or when they
    * could not be read, an empty map is not "nothing is hard-coded", and the
-   * line must not say so (QA review of a88149856dcc).
+   * line must not say so.
    */
   rulesState: 'ready' | 'loading' | 'failed' = 'ready',
 ): PlaneProblems {
@@ -586,7 +585,7 @@ export interface RunSwitch {
   checkbox: boolean;
   /**
    * `DEFAULT 'X'` → on, `DEFAULT ' '` → off. Nothing stated → off for a
-   * checkbox, whose initial value is blank (QA review of a88149856dcc), and
+   * checkbox, whose initial value is blank, and
    * null otherwise.
    */
   defaultOn: boolean | null;
@@ -639,8 +638,7 @@ export function readRunSwitches(source: string, model: ProcessMapModel): RunSwit
     // newline of the statement and the two index the same way.
     // The keyword is matched after the line's indentation: a pretty-printed
     // `  PARAMETERS` inside a SELECTION-SCREEN block left the keyword in the
-    // body, read it as the first name and lost that switch (QA review of
-    // a88149856dcc).
+    // body, read it as the first name and lost that switch.
     const body = text.replace(/^\s*(?:PARAMETERS|SELECT-OPTIONS)\b/i, '').replace(/^\s*:/, '').replace(/\.\s*$/, '');
     for (const part of splitTop(body)) {
       const named = /^(\s*)([\w/]+)/.exec(part.text);

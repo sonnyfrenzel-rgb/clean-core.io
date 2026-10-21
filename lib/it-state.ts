@@ -85,7 +85,7 @@ export interface UsesSummary {
   /**
    * Objects a finding names that no call, read or write reached (a class,
    * say). Counted so the three counts and this one add up to the rows of the
-   * table (QA review of 064f7e90, 0435d9724549).
+   * table.
    */
   others: number;
   /** Use rows per level, worst first; only the levels present. */

@@ -256,7 +256,7 @@ export const CUSTOM_ENTITY_AUTH_NOTE =
 /**
  * A security row or a text that proposes CDS access control: DCL, `define role`, `pfcg_auth`, "CDS access control".
  * "Access control" alone is no such proposal — a query provider's AUTHORITY-CHECK is access control too, and is
- * exactly what a custom entity needs (QA 5d8e6e355870).
+ * exactly what a custom entity needs.
  */
 const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\bCDS\s+access\s+controls?\b|\.dcls\b|\basdcls\b/i;
 

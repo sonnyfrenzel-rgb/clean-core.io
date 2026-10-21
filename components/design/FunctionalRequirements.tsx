@@ -216,7 +216,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
   // New levels after the findings route answered: read again so the objects
   // carry them. Keyed on what the shown set was built from rather than on a
   // trimmed dependency list, so the read that just finished is not repeated
-  // and a changed source is read again too (QA review of 55b47b8a, a4150ed00890).
+  // and a changed source is read again too.
   useEffect(() => {
     if (state !== 'ready' || !levels || !source) return;
     const from = builtFrom.current;
@@ -470,7 +470,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
                     {/* Each sentence carries the chip of where it came from: the
                         model's wording its "proposed" chip, the engine's its
-                        "reconstructed" one (QA review of 55b47b8a, e7757800247f). */}
+                        "reconstructed" one. */}
                     <div className="flex min-w-0 flex-wrap items-start gap-2">
                       <p data-fr-statement="" className="m-0 min-w-0 text-[15px] font-semibold leading-snug text-cc-ink [overflow-wrap:anywhere]">
                         {proposed ?? r.statement}

@@ -8,8 +8,7 @@
  * remains is counted against the five free runs. The dashboard had its own copy
  * of a third of that rule — `transformationsUsed >= transformationsLimit` and
  * nothing else — in front of project creation, so the very users the same
- * screen told to add their own key were the ones it stopped (QA review of
- * 33471220d6e9, 9b1af76b65c9).
+ * screen told to add their own key were the ones it stopped.
  *
  * This module is the client's half, deliberately pure and deliberately narrow:
  * it says whether the quota is exhausted for an account, never whether a

@@ -29,7 +29,7 @@
  * claim this product makes about itself. A minimum is a startup condition, not
  * a runtime branch: the key is either strong enough to sign with or the
  * signing and verifying routes answer 500, exactly as they do when it is
- * missing (QA full review of a19945ef01dc, d67ef0b953f0 / 7ce412f6a068).
+ * missing.
  *
  * The floor holds at runtime and **not** in the deploy. It was going to be
  * checked in `.github/workflows/deploy.yml` as well, so a weak secret is refused

@@ -394,8 +394,7 @@ function parseSourceSection(section) {
 /**
  * The name from the heading becomes a file name under `tests/korpus/cases/…`
  * and is written with `path.join`. A name with path parts (`../../package.json`)
- * would write outside the output folder — hence only a plain file name
- * (carried QA finding 537a326d624e).
+ * would write outside the output folder — hence only a plain file name.
  */
 export function assertPlainSourceName(name) {
   if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]*$/.test(name) || name.includes('..')) {

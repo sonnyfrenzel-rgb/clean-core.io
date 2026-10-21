@@ -42,7 +42,7 @@ function trend(current: number, previous: number): { text: string; colour: strin
 /**
  * Runs from before each run recorded what it was charged: whether they spent a
  * unit is not known, so they are named beside the figure instead of being
- * counted into it (codex code-mail-03).
+ * counted into it.
  */
 function undeterminedNote(count: number): string {
   return `Dazu ${count} Analyse${count === 1 ? '' : 'n'} von vor der Erfassung (02.10.2026) — ob sie eine Einheit kosteten, ist nicht bekannt.`;

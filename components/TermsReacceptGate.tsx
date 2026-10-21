@@ -188,7 +188,7 @@ export default function TermsReacceptGate() {
   // regardless of what storage holds.
   const [declinedMark, setDeclinedMark] = useState<string | null>(readDeclined);
   // A decline counts only for the sign-in it was made in: a sign-out and a new
-  // sign-in in the same tab asks again (carried QA finding 3f5a34a117be).
+  // sign-in in the same tab asks again.
   const declined = declinedInThisSignIn(declinedMark, typeof window === 'undefined' ? null : getAuth().currentUser);
 
   const setDeclined = (value: boolean) => {
@@ -230,8 +230,8 @@ export default function TermsReacceptGate() {
   /**
    * Focus goes in and stays in, the page behind is inert, and it does not scroll.
    *
-   * Setting initial focus is the easy half and was all this had at first (QA
-   * review of 38e6f079a0ba). Without the trap, Tab walks out of a dialog that
+   * Setting initial focus is the easy half and was all this had at first.
+   * Without the trap, Tab walks out of a dialog that
    * blocks everything behind it, and a keyboard user ends up operating controls
    * that answer 403 — which is the failure this whole gate exists to prevent,
    * reproduced for the people least able to guess what happened.

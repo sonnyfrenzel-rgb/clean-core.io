@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 
 /**
- * SEC-2026-758, SEC-2026-764: the per-account write ceiling, client half.
+ * The per-account write ceiling, client half.
  *
  * A browser creates two kinds of document for itself, projects and support
  * tickets. firestore.rules allows such a create only in a request that also
@@ -87,8 +87,8 @@ export async function createWithinCeiling(
     // once the rules deploy is recorded in docs/registers/rules-deployment.json.
     // The code is read, not the class: FirebaseError's constructor resets the
     // prototype to its own, so `instanceof FirestoreError` is never true and
-    // the fallback never ran (QA review of b3d276e88aba;
-    // tests/firestore-rules-write-ceiling-transition.spec.ts).
+    // the fallback never ran
+    // (tests/firestore-rules-write-ceiling-transition.spec.ts).
     if ((error as { code?: unknown } | null)?.code === 'permission-denied') {
       await setDoc(ref, data);
       return ref;

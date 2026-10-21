@@ -53,7 +53,7 @@ import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/wo
 import { projectProgress, PROJECT_STAGE_LABEL } from '@/lib/project-progress';
 import ProjectProgressCell from '@/components/ProjectProgress';
 // The run itself (and the evidence engine and SAP catalog it imports) is
-// fetched when Run is pressed, not with the list (external audit PERF-01).
+// fetched when Run is pressed, not with the list.
 import { AnalysisRunCancelled, runScope } from '@/lib/analysis-run-basics';
 import type { AnalysisRunStage } from '@/lib/analysis-run';
 import { sourceFileName } from '@/lib/source-file-name';
@@ -176,7 +176,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
   const [user, setUser] = useState<User | null>(null);
   // Rows carry the account that loaded them: after a sign-out, or a switch to
   // another account, the previous account's projects are not shown while the
-  // new query runs (QA full review of v2.20.0).
+  // new query runs.
   const [loaded, setLoaded] = useState<{ uid: string; rows: ListedProject[] } | null>(null);
   const [sharedLoaded, setSharedLoaded] = useState<{ uid: string; rows: ListedProject[] } | null>(null);
   const projects = useMemo(
@@ -478,7 +478,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
             await updateDoc(copy, { s4Deployment: project.s4Deployment });
           } catch (error) {
             // The copy exists (a browser may not delete a project): say exactly
-            // that, not "could not be duplicated" (QA review of 1c402c400e05).
+            // that, not "could not be duplicated".
             setActionError(wt('myWorkspace.duplicateTargetFailed'));
             console.error('[WorkspaceListReport] target of the copy not saved', error);
           }
@@ -520,8 +520,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       });
       // 404 is what a repeated delete hears once the first one went through and
       // its answer was lost: the project is gone, as asked. The list is a live
-      // query, so a project still there stays on it (carried QA finding
-      // ac74ebf5a627).
+      // query, so a project still there stays on it.
       if (!res.ok && res.status !== 404) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(body?.error || wt('myWorkspace.deleteFailed'));

@@ -42,7 +42,7 @@ const c = {
 };
 
 /**
- * An untrusted value, made safe to print (QA full review of v2.20.0).
+ * An untrusted value, made safe to print.
  *
  * Everything below comes out of an archive someone else handed the reader, and
  * most of it is printed before any check has run. A run id carrying a newline
@@ -359,7 +359,7 @@ function coversDefect(manifest, attested) {
  * `lib/audit-pack-verify.ts`, repeated here because this script needs no build.
  * JSZip resolves `.` and `..` before keying its map, so two central-directory
  * names that differ only by an alias are one entry to it and were two to this
- * check (QA review of fce34641821e).
+ * check.
  */
 function zipKey(name) {
   const rooted = name.startsWith('/');
@@ -390,7 +390,7 @@ function readEndRecord(b, at) {
 /**
  * Why the archive may not be unpacked, judged from its bytes before JSZip
  * builds an entry for each record, or null — the same rule as
- * `archiveEntryLimitDefect` in `lib/audit-pack-verify.ts` (SEC-2026-845): the
+ * `archiveEntryLimitDefect` in `lib/audit-pack-verify.ts`: the
  * last end record, the directory directly in front of it walked record by
  * record, and no ZIP64 container.
  */
@@ -433,10 +433,10 @@ function duplicateEntryNames(buffer) {
   }
   if (eocd < 0) return unchecked('no ZIP end-of-central-directory record was found');
   // Same rules as `lib/audit-pack-verify.ts`: one end record, ending the
-  // archive, with its directory directly in front of it at the stated offset
-  // (QA full review cc210998fb05). A comment holding the signature bytes is not
+  // archive, with its directory directly in front of it at the stated offset.
+  // A comment holding the signature bytes is not
   // counted either: JSZip reads the last signature as the end record wherever it
-  // sits, and the issuer writes no comment (QA d95794576b4a; the behaviour is pinned in
+  // sits, and the issuer writes no comment (the behaviour is pinned in
   // `tests/verify-pack-cli.spec.ts`).
   for (let i = eocd + 1; i <= b.length - 4; i++) {
     if (b.readUInt32LE(i) === 0x06054b50) return unchecked('the archive carries more than one end record near its end');
@@ -462,8 +462,8 @@ function duplicateEntryNames(buffer) {
   const duplicates = new Set();
   // Walked until the records run out, not until the declared count is reached:
   // an archive may declare two entries and write three, and a loop that trusts
-  // the number stops before the duplicate and still reports "counted"
-  // (QA review of b378e515ae25). Same rule as `lib/audit-pack-verify.ts`.
+  // the number stops before the duplicate and still reports "counted".
+  // Same rule as `lib/audit-pack-verify.ts`.
   let walked = 0;
   while (offset + 46 <= b.length && b.readUInt32LE(offset) === 0x02014b50) {
     const nameLength = b.readUInt16LE(offset + 28);
@@ -548,8 +548,8 @@ async function main() {
   }
 
   // The size is asked of the file system before the file is read: reading first
-  // would hold the whole archive in memory just to find out it is too large
-  // (QA slice review of ad155b478e36). The length check after the read stays,
+  // would hold the whole archive in memory just to find out it is too large.
+  // The length check after the read stays,
   // for a file that grew in between.
   const tooLarge = `the archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no genuine pack comes near that`;
   if ((await stat(packPath)).size > PACK_LIMITS.archiveBytes) throw new Error(tooLarge);
@@ -557,7 +557,7 @@ async function main() {
   if (packBytes.length > PACK_LIMITS.archiveBytes) {
     throw new Error(tooLarge);
   }
-  // Counted from the bytes before JSZip builds an entry for each record (SEC-2026-845).
+  // Counted from the bytes before JSZip builds an entry for each record.
   const entryDefect = archiveEntryLimitDefect(packBytes);
   if (entryDefect) throw new Error(entryDefect);
   const zip = await JSZip.loadAsync(packBytes);
@@ -578,8 +578,7 @@ async function main() {
   // Before format 3 the issue date is outside the signed string altogether, and
   // the run fields are signed only as one colon-joined run of text, so a colon
   // moved from one field into its neighbour leaves the signature intact. Those
-  // values are the pack's own claim, and are printed as that (QA full review
-  // of v2.20.0).
+  // values are the pack's own claim, and are printed as that.
   if (!bindsIssuanceMetadata(manifest.version)) {
     console.log(c.dim(`          manifest version ${shown(manifest.version)} does not bind the issue date, and binds run, project,
           engine and catalog only as one colon-joined string: the values above are the pack's claim.`));
@@ -628,7 +627,7 @@ async function main() {
   if (!entryNames.counted) {
     // Not "no duplicates" — "not checked". JSZip loads such an archive, folds
     // any duplicate into one map entry, and leaves every hash agreeing, so a
-    // silent pass here was a way through (QA review of 9d7721972a67).
+    // silent pass here was a way through.
     console.log(`${c.bad('unread')}    ${c.dim(`the archive's entry list could not be read, so duplicate paths were not checked: ${shown(entryNames.why)}`)}`);
     contentsOk = false;
   }
@@ -683,7 +682,7 @@ async function main() {
   // The run suffix belongs only to a pack that carries a run hash. Appending
   // it unconditionally turned every pack issued before the run binding into
   // "FAILED manifest digest" here while the web verifier said OK — two
-  // verifiers, two answers, for the same file (QA review of ca3264f05f39).
+  // verifiers, two answers, for the same file.
   const canonical =
     sorted.map((f) => `${f.path}:${f.sha256}`).join(';') +
     ';' +
@@ -801,7 +800,7 @@ async function main() {
   // the exception instead of one sentence that covers the whole archive: the
   // signed evidence is verified, the self-declaration inside it is not. The
   // same holds for the run fields and issue date printed at the top when the
-  // format does not bind them (SEC-66dd82b-01): the verdict is then not green,
+  // format does not bind them: the verdict is then not green,
   // and it names the fields the signature leaves out.
   const metadataNote = bound
     ? ''

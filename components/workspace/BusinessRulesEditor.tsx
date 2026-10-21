@@ -114,8 +114,7 @@ export const BUSINESS_RULES_ID = 'business-rules';
  * held until an editor picks it up, as well as announced to one that is there.
  */
 // Holds the project the request was made for, so a request left over from one
-// project can never open the editor of another after a navigation (QA
-// 29935b8109f6).
+// project can never open the editor of another after a navigation.
 let pendingEdit: string | null = null;
 export function requestRuleEditing(projectId: string): void {
   pendingEdit = projectId;

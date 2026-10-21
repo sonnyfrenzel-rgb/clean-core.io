@@ -37,7 +37,7 @@ async function sha256(content: string | Uint8Array): Promise<string> {
 }
 
 /**
- * What a pack may cost the machine that checks it (QA full review of v2.20.0).
+ * What a pack may cost the machine that checks it.
  *
  * A pack is an archive someone else hands the reviewer, and a few kilobytes of
  * deflate can expand into gigabytes: without a ceiling the page froze or the
@@ -109,7 +109,7 @@ function readEntryBounded(file: JSZip.JSZipObject, budget: { remaining: number }
  * so `x/../manifest.json` and `manifest.json` are one key to it and two names in
  * the central directory. Comparing the raw names therefore missed exactly the
  * case this check exists for: two entries JSZip collapses into one, of which an
- * ordinary extractor would write the *other* (QA review of fce34641821e). The
+ * ordinary extractor would write the *other*. The
  * names are compared after the same resolution, so an alias counts as the
  * duplicate it is.
  */
@@ -120,7 +120,7 @@ export function zipKey(name: string): string {
   // `/a`, `a//b` to `a/b`, `.` segments vanish, `..` pops and stops at the root
   // (`a/../../b.json` is `b.json`). Dropping the leading slash, as this did
   // first, would have merged two entries JSZip keeps apart and failed a genuine
-  // pack (QA review of 351e169c50a7).
+  // pack.
   const rooted = name.startsWith('/');
   const out: string[] = [];
   for (const part of name.split('/')) {
@@ -152,7 +152,7 @@ export function zipKey(name: string): string {
  * obvious conservative choice and the wrong one: JSZip loads a ZIP64 archive
  * happily, collapses its duplicates into one map entry, and every hash then
  * agrees — so "I could not count" was a way through for exactly the archive
- * this check exists to stop (QA review of 9d7721972a67). The issuer produces a
+ * this check exists to stop. The issuer produces a
  * handful of small files and never a ZIP64 container, so no genuine pack takes
  * this path, and a reader is told which question went unanswered rather than
  * being shown a verdict nobody established.
@@ -180,11 +180,11 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   }
   if (eocd < 0) return unchecked('no ZIP end-of-central-directory record was found');
   // The archive's shape has to be exactly the one the issuer writes; anything
-  // else is not counted (QA full review cc210998fb05). That includes a comment
+  // else is not counted. That includes a comment
   // holding the signature bytes: JSZip takes the last signature in the file
   // wherever it sits (`lastIndexOfSignature`) and reads such a comment as the
   // end record, so the archive is not one JSZip reads as written — and the
-  // issuer writes no comment (QA 2d8e6cde70c7; the behaviour is pinned in
+  // issuer writes no comment (the behaviour is pinned in
   // `tests/audit-pack-archive-completeness.spec.ts`).
   for (let i = eocd + 1; i <= bytes.byteLength - 4; i++) {
     if (view.getUint32(i, true) === EOCD) return unchecked('the archive carries more than one end record near its end');
@@ -219,8 +219,8 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   // Walked until the records run out, not until the declared count is reached.
   // The end record states how many entries there are, and an archive is free to
   // understate it: declare two, write three, and a loop that trusts the number
-  // stops before the third — the duplicate — and still reports "counted"
-  // (QA review of b378e515ae25). The count is treated as a claim to check, like
+  // stops before the third — the duplicate — and still reports "counted".
+  // The count is treated as a claim to check, like
   // every other number in a file somebody else wrote.
   let walked = 0;
   while (offset + 46 <= bytes.byteLength && view.getUint32(offset, true) === CENTRAL) {
@@ -267,7 +267,7 @@ function readEndRecord(view: DataView, at: number) {
  * directory directly in front of it, walked record by record (the count the
  * end record declares is a claim, and JSZip itself walks until the records
  * run out). A ZIP64 container is refused outright; no pack this service
- * issues is one (SEC-2026-843). An archive this cannot place is left to
+ * issues is one. An archive this cannot place is left to
  * JSZip, which refuses it on its own.
  */
 export function archiveEntryLimitDefect(data: unknown, limit: number = PACK_LIMITS.entries): string | null {
@@ -607,7 +607,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     // 1. Load ZIP (converting Blobs to ArrayBuffer for Node.js compatibility in tests)
     let inputData: any = zipBlob;
     // A Blob knows its size before it is read; asking first keeps an oversized
-    // file out of memory (QA slice review of ad155b478e36, 33d5babb43a6).
+    // file out of memory.
     const declaredSize = (zipBlob as { size?: unknown } | null)?.size;
     if (typeof declaredSize === 'number' && declaredSize > PACK_LIMITS.archiveBytes) {
       throw new Error(`The archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no pack this service issues comes near that.`);
@@ -619,7 +619,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     if (typeof inputBytes === 'number' && inputBytes > PACK_LIMITS.archiveBytes) {
       throw new Error(`The archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no pack this service issues comes near that.`);
     }
-    // Counted from the bytes before JSZip builds an entry for each record (SEC-2026-843).
+    // Counted from the bytes before JSZip builds an entry for each record.
     const entryDefect = archiveEntryLimitDefect(inputData);
     if (entryDefect) throw new Error(entryDefect);
     const zip = await JSZip.loadAsync(inputData);
@@ -675,8 +675,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     // `files` is type-checked for the same reason `attested` is, one line above:
     // a manifest is a file an outsider hands us, and `"files": null` in a
     // hand-built archive threw a TypeError out of the verifier instead of
-    // reporting the pack as invalid — a crash where a verdict belongs
-    // (security audit of v2.14.0, SEC-2026-350).
+    // reporting the pack as invalid — a crash where a verdict belongs.
     const listedFiles = Array.isArray(manifest.files) ? manifest.files : [];
     const listed = new Set([...listedFiles.map((f) => f.path), ...attested.map((a) => a.path)]);
     const unlisted = Object.values(zip.files)
@@ -708,7 +707,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     // signature: which self-declaration was sealed is a fact about the archive,
     // and leaving it unbound meant anyone holding a genuine pack could rewrite
     // "sign-off: not given" into a fabricated board approval and still get
-    // "Authenticity & Integrity Verified" (QA full review of a19945ef01dc).
+    // "Authenticity & Integrity Verified".
     // Packs sealed in version 2 have no digest to check; that limit is said out
     // loud rather than passed off as a verified file.
     let attestedUnbound = false;
@@ -808,9 +807,9 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, optio
     // Before format 3 the issue date is outside the signed string, and the run
     // fields are signed only as one colon-joined run of text: a colon moved from
     // one field into its neighbour leaves the signature intact. The page prints
-    // those values, so it says what they are (QA full review of v2.20.0). The
+    // those values, so it says what they are. The
     // format cannot change for packs already issued; the reading of them can.
-    // The same limit decides the verdict (SEC-66dd82b-01): a headline that reads
+    // The same limit decides the verdict: a headline that reads
     // as verified in full over values the signature does not cover is the
     // stronger claim, so such a pack is verified in part, never in full.
     const metadataUnbound = !bindsIssuanceMetadata(manifest.version);

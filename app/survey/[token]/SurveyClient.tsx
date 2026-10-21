@@ -116,7 +116,7 @@ export default function SurveyClient({
    * "saved" — while B is what is highlighted on screen and what the server
    * holds. The read-back at the foot of the page then contradicted the
    * selection, and the two requests could also reach the server in the wrong
-   * order (QA review of 33471220d6e9, finding f7110f3d6619).
+   * order.
    *
    * `queues` serialises the requests for one question, so the server's last
    * write is the reader's last press; `latest` is the sequence number of that

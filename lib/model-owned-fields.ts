@@ -5,8 +5,7 @@ import type { ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
  *
  * The model is asked for the same fields and sometimes answers with its own
  * numbers. Kept beside the signed ones they become a second, unsigned truth
- * that the screen prints as if it were the run's (QA review of 33471220d6e9,
- * e184fc0c59bf; QA full review of 81810c8, d5a87a5db395).
+ * that the screen prints as if it were the run's.
  *
  * `/api/runs/create` does the same to the copy it signs and stores; this is the
  * browser's copy, shown between the run and the next load. Both end with the

@@ -50,7 +50,7 @@ export default function RequirementsPage() {
   const [loading, setLoading] = useState(true);
   /**
    * Who is signed in — from the auth store, so a sign-in change after loading
-   * is followed (QA 9ac48179a33c, d7a17834d658); the server render has none.
+   * is followed; the server render has none.
    */
   const accountEmail = useSyncExternalStore(
     (listener) => getAuth().onAuthStateChanged(() => listener()),

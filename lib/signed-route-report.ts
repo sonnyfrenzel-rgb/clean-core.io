@@ -3,8 +3,8 @@
  * the rule the Analyze page uses to decide whether it may draw the route's
  * drivers, assumptions and the usage × risk matrix from a recomputed report.
  *
- * Pure and free of Firebase so a spec can call it (QA review of e8a1245626f4,
- * d9993476ee4e): it used to live inline in the page and was guarded only by
+ * Pure and free of Firebase so a spec can call it:
+ * it used to live inline in the page and was guarded only by
  * reading the page's source.
  *
  * The report is recomputed from the evidence the server read for the signed
@@ -12,7 +12,7 @@
  * route and the score that run signed — the same "adds up" rule as the score's
  * deductions — and when the evidence is of the source the run signed: a
  * source changed since can arrive at the same route and score with other
- * drivers (QA ae68c0b99961). Otherwise it is `null`, which the page says as
+ * drivers. Otherwise it is `null`, which the page says as
  * "differs" in the route card, and nothing is drawn from it.
  */
 import type { AbapEvidenceReport } from './abap/evidence-model';
@@ -64,8 +64,7 @@ export function signedRouteReport({
   const derived = routeExtensibility(evidenceReport, deployment, signedEngineVersionOf(project));
   const recommended = signedRecommendationOf(project.originalRecommendation) ?? project.extensibilityRoute ?? null;
   // The evidence has to be of the source the run signed: a source changed
-  // since can arrive at the same route and score with other drivers
-  // (QA ae68c0b99961).
+  // since can arrive at the same route and score with other drivers.
   const signedSourceSha = project.auditMetadata?.inputFingerprint?.sha256;
   const sameSource = !signedSourceSha || evidenceSourceSha === signedSourceSha;
   const addsUp = sameSource && derived.recommendedRoute === recommended && derived.cleanCoreScore === signedCleanCoreScore;

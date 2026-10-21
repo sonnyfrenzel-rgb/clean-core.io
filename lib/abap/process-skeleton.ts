@@ -746,8 +746,7 @@ function raisesException(statement: AbapStatement): boolean {
  * Read from the code, not from the statement as written: `SELECT 'FROM KNA1' AS
  * note FROM vbak INTO TABLE @lt.` took its first match from inside the literal,
  * so the reconstructed process showed a read of KNA1 — a table the program does
- * not touch — and none of VBAK (full review of b88c77b4b5d1, b785524eb15e /
- * 799c2176c57b / 9c2f1ba7fbc7).
+ * not touch — and none of VBAK.
  */
 function selectTables(text: string): string[] {
   const code = maskLiterals(text);
@@ -768,7 +767,7 @@ function selectTables(text: string): string[] {
  * `CALL METHOD` announces it, and the reconstructed process simply did not
  * contain it: CC-034's whole effect — the write to KNA1 — was missing from the
  * flow, and the `TRY` around it had no node for its `CATCH` to hang on
- * (counter-review of c5085bbf, CR-07). What the statement proves is that SQL
+ * (CR-07). What the statement proves is that SQL
  * this reader cannot see is executed here; it becomes an opaque call carrying
  * the method and the operand, not a write to a table nobody named.
  */
@@ -788,8 +787,7 @@ function adbcExecution(text: string): { method: string; argument: string } | nul
  * Does this statement read through ABAP SQL although it does not begin with
  * SELECT? A common table expression begins with `WITH`, a cursor with `OPEN
  * CURSOR … FOR SELECT`, and both used to produce no read node at all — the
- * displayed process simply did not show the data access (full review of
- * b88c77b4b5d1, 854c7e288bb7 / aa5214851b78 / 451efc95dcf9).
+ * displayed process simply did not show the data access.
  */
 function isEmbeddedSelect(text: string): boolean {
   const code = maskLiterals(text);
@@ -1152,8 +1150,7 @@ class SkeletonBuilder {
    * keyed `CLASS=>METHOD` (an interface prefix as `CLASS=>ZIF~`; an interface's
    * own methods as `ZIF~METHOD`, which no implementation is looked up by — it
    * writes `zif~method` in a class). Keyed by name alone, a public
-   * `execute` of one class made a private `execute` of another an entry
-   * (carried QA finding 0fdb072d50a8).
+   * `execute` of one class made a private `execute` of another an entry.
    */
   private externallyCallableMethods = new Map<string, string>();
   /** Region keys of the entries built, so `unreached()` does not also list them as not reached. */
@@ -1224,7 +1221,7 @@ class SkeletonBuilder {
   /**
    * Boundary events of a TRY that nothing enters: no node to attach to, and the
    * flow before the TRY already cut off (`LEAVE PROGRAM`, `SUBMIT` …) in a
-   * region that has steps before it. Carried QA findings ba3b2a7987ef / 1b831a4853c2.
+   * region that has steps before it.
    */
   private cutOffBoundaries = new Set<string>();
   /** > 0 while a branch whose arms the reader cannot separate is walked — no registration counts there. */
@@ -1561,8 +1558,8 @@ class SkeletonBuilder {
         // A macro that names itself, or a ring of two, is not ABAP the compiler
         // would take — but this reader is not the compiler, and without a floor
         // the recursion ran until the stack gave out, which made one crafted
-        // DEFINE the end of the whole analysis (security audit of b88c77b,
-        // SEC-2026-227). A macro already being expanded is read once.
+        // DEFINE the end of the whole analysis.
+        // A macro already being expanded is read once.
         if (!expanding.has(statement.keyword)) {
           expanding.add(statement.keyword);
           for (const effect of this.directEffects(macro.block, expanding)) out.add(effect);
@@ -1706,7 +1703,7 @@ class SkeletonBuilder {
    * pointed at one of the two (brief of 27.09.2026, D2).
    *
    * The rule itself lives in `method-resolution.ts`, shared with the business
-   * statements (QA b7e191a72212); the skeleton lets the name decide alone.
+   * statements; the skeleton lets the name decide alone.
    */
   private resolveMethod(
     qualifier: string | null,
@@ -1758,11 +1755,10 @@ class SkeletonBuilder {
       }
     }
     if (!this.handlerEvent.size) return;
-    // QA review of 3fae0f200cec (05f4cc9b4009): a handler the source may
-    // deregister anywhere is not a binding at all — which of the two is in
-    // force at a given `RAISE` is a question of run time, and the conservative
-    // answer is the opaque call. The order of registration and `RAISE` is the
-    // walk's to decide (`registeredInWalk`).
+    // A handler the source may deregister anywhere is not a binding at all —
+    // which of the two is in force at a given `RAISE` is a question of run
+    // time, and the conservative answer is the opaque call. The order of
+    // registration and `RAISE` is the walk's to decide (`registeredInWalk`).
     const registered: string[] = [];
     for (const statement of this.statements) {
       const handlers = this.handlersSetBy(statement);
@@ -2210,8 +2206,8 @@ class SkeletonBuilder {
     // 'TOP_OF_PAGE'.` or `VALUE #( ( name = … form = 'TOP_OF_PAGE' ) )`. A
     // literal in a `FORM` component that names a FORM of this source is that
     // registration — but only in a statement that fills **this** table: one
-    // that assigns the table itself, or a row of it (QA review of 23416af0,
-    // bc85f1d42173: a `FORM = '…'` of any other structure registers nothing).
+    // that assigns the table itself, or a row of it (a `FORM = '…'` of any
+    // other structure registers nothing).
     const rows = alvEventRows(this.statements, events[1].toUpperCase());
     for (const other of this.statements) {
       const target = /^(<?[\w/]+>?)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(other.text)?.[1]?.toUpperCase()
@@ -2860,14 +2856,13 @@ class SkeletonBuilder {
 
     const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
     this.regionLast.set(region.key, entry.lastIndex);
-    // QA review of 4b19e798aa85 (after 9311b96162e2): what `SET HANDLER`
-    // registered holds only within one run. Every entry that is called on its
-    // own — a function module, a method called from outside, a screen module,
-    // a bare FORM, a callback, an event handler — starts with nothing
-    // registered. The event blocks of a report are one run: a block starts
-    // with what the blocks that run **before** it (runtime order, rule 4 —
-    // not the order they are written in) register unconditionally
-    // (`registeredBefore`).
+    // What `SET HANDLER` registered holds only within one run. Every entry
+    // that is called on its own — a function module, a method called from
+    // outside, a screen module, a bare FORM, a callback, an event handler —
+    // starts with nothing registered. The event blocks of a report are one
+    // run: a block starts with what the blocks that run **before** it (runtime
+    // order, rule 4 — not the order they are written in) register
+    // unconditionally (`registeredBefore`).
     this.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
       ? this.registeredBefore(entry)
       : new Set();
@@ -2931,7 +2926,7 @@ class SkeletonBuilder {
     // 6000-link chain fits in 410 kB, well under the 1 MB a `legacyCode` field
     // may hold, and the stack gave out before the walk did: `RangeError:
     // Maximum call stack size exceeded` out of `buildProcessSkeleton`, and with
-    // it every reading derived from it (security audit of b88c77b). The floor
+    // it every reading derived from it. The floor
     // answers the way the macro floor above does: read what can be read, and
     // say what was left unread rather than fail. Real chains are two digits at
     // most; this one is the last link that still gets opened.
@@ -2978,11 +2973,11 @@ class SkeletonBuilder {
       region, container: name, loops: [], loopBreaks: [],
     }, []);
     this.expanding.pop();
-    // QA review of 4b19e798aa85 (9311b96162e2): a routine that can leave
-    // before its end (`CHECK`, `RETURN`, `EXIT`, `STOP`, `LEAVE`, an error end)
-    // may return without its `SET HANDLER` having run — its registrations do
-    // not reach the caller. Its region is also built once and reused, so
-    // what it registers is kept only where no way out precedes it anywhere.
+    // A routine that can leave before its end (`CHECK`, `RETURN`, `EXIT`,
+    // `STOP`, `LEAVE`, an error end) may return without its `SET HANDLER`
+    // having run — its registrations do not reach the caller. Its region is
+    // also built once and reused, so what it registers is kept only where no
+    // way out precedes it anywhere.
     if (this.canLeaveEarly(from, to)) this.registeredInWalk = registered;
     // The walk gives a sub-process no start event — the call site is where it
     // begins, and `addSubProcessStarts` adds one only once it is known that the
@@ -3045,10 +3040,10 @@ class SkeletonBuilder {
       if (block) {
         outputRun = null;
         if (FLOW_BLOCKS.has(block.kind) && block.closeIndex <= to) {
-          // QA review of 4b19e798aa85 (9311b96162e2): a `SET HANDLER` inside
-          // a branch, a loop body or a TRY/CATCH may not run at all, so it
-          // registers only for what follows it inside that block. Past the
-          // block the registrations are what they were before it.
+          // A `SET HANDLER` inside a branch, a loop body or a TRY/CATCH may
+          // not run at all, so it registers only for what follows it inside
+          // that block. Past the block the registrations are what they were
+          // before it.
           const registered = new Set(this.registeredInWalk);
           if (block.kind === 'if' || block.kind === 'case') live = this.walkBranch(block, ctx, live);
           else if (block.kind === 'try') live = this.walkTry(block, ctx, live);
@@ -3250,8 +3245,8 @@ class SkeletonBuilder {
       // 2.1 refused to read this construct (a chained IF, a macro body). The
       // skeleton refuses the gateway too and walks the body as a sequence, so
       // nothing inside it is lost. Its arms cannot be told apart, so nothing
-      // registered inside it counts, not even later in the same body (QA
-      // review of 58f29a1ef618): registrations are kept frozen while it is walked.
+      // registered inside it counts, not even later in the same body:
+      // registrations are kept frozen while it is walked.
       const registered = this.registeredInWalk;
       this.registrationFrozen += 1;
       const walked = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx, incoming);
@@ -3281,10 +3276,10 @@ class SkeletonBuilder {
 
     const exits: Exit[] = [];
     let hasDefault = false;
-    // QA review of 58f29a1ef618 (0d7a5847a0ca): the arms exclude each other.
-    // Each starts from what was registered before the branch; what one arm
-    // registers holds for the rest of that arm only (`walkRange` restores the
-    // state before the block once all arms are walked).
+    // The arms exclude each other. Each starts from what was registered
+    // before the branch; what one arm registers holds for the rest of that arm
+    // only (`walkRange` restores the state before the block once all arms are
+    // walked).
     const registered = new Set(this.registeredInWalk);
     for (let a = 0; a < branch.arms.length; a++) {
       this.registeredInWalk = new Set(registered);
@@ -3518,9 +3513,8 @@ class SkeletonBuilder {
     }
     const protectedTo = (handlers[0] ?? block.closeIndex) - 1;
     const beforeProtected = this.nodes.length;
-    // QA review of 58f29a1ef618 (0d7a5847a0ca): a handler runs when the
-    // protected part broke off somewhere, so it — and each handler after it —
-    // starts from what was registered before the TRY.
+    // A handler runs when the protected part broke off somewhere, so it — and
+    // each handler after it — starts from what was registered before the TRY.
     const registered = new Set(this.registeredInWalk);
     // Nothing enters the TRY although its region already drew steps: what stood
     // before it does not come back. At the start of a region an empty `incoming`
@@ -3546,8 +3540,8 @@ class SkeletonBuilder {
         // a path the program can take. Leaving the boundary unconnected made
         // `noteUnreachableSteps` say the opposite — that nothing leads to the
         // CATCH because what stands before it does not come back — with no
-        // control flow anywhere in the source to show it (counter-review of
-        // c5085bbf, CR-07). The handler hangs on what entered the TRY.
+        // control flow anywhere in the source to show it (CR-07). The handler
+        // hangs on what entered the TRY.
         for (const entry of incoming) {
           this.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
         }
@@ -3563,7 +3557,7 @@ class SkeletonBuilder {
       }
       // A CLEANUP runs while an exception this TRY does not catch passes on to
       // an outer handler. When it is done the exception goes on propagating:
-      // the statement after ENDTRY is never next (codex code-engine-04). Its
+      // the statement after ENDTRY is never next. Its
       // end is an error end on the CLEANUP itself, not the normal flow.
       if (handled.length) {
         const passOn = this.addNode('end-error', 'CLEANUP', anchorOf(header), ctx.region, ctx.container, {
@@ -3724,8 +3718,8 @@ class SkeletonBuilder {
 
     if (/^CALL\s+TRANSACTION\b/i.test(text)) {
       // The line alone does not name the statement: `CALL TRANSACTION 'VA01'.
-      // CALL TRANSACTION 'ME21N'.` on one line labelled both VA01 (QA full
-      // review of v2.20.0, 829689a504c4). The call site carries its text.
+      // CALL TRANSACTION 'ME21N'.` on one line labelled both VA01.
+      // The call site carries its text.
       const call = this.calls.transactions.find(
         (t) => t.lineStart === statement.lineStart && t.text === statement.text,
       );
@@ -3874,7 +3868,7 @@ class SkeletonBuilder {
    * has passed the registration, with the event as its trigger — which the
    * declaration names, so it is determined. A handler of a class this source
    * holds is left to its `RAISE EVENT` — which runs it only once the walk has
-   * passed this registration (`registeredInWalk`, QA review of 3fae0f200cec).
+   * passed this registration (`registeredInWalk`).
    * A handler the source may deregister anywhere is bound nowhere
    * (`readEventHandlers`), so it opens neither.
    */
@@ -4442,8 +4436,7 @@ class SkeletonBuilder {
    * Within the window of two, a statement in between is looked past only when
    * it cannot set `sy-subrc` — a declaration or a CLEAR. Any other statement
    * overwrites it: `CALL FUNCTION 'F1' … EXCEPTIONS …. CALL FUNCTION 'F2'. IF
-   * sy-subrc …` checks F2, and hung a boundary on F1
-   * (QA full review of v2.20.0, 5390fabd4c02).
+   * sy-subrc …` checks F2, and hung a boundary on F1.
    */
   private handlesSubrcAfter(index: number): boolean {
     for (let i = index + 1; i <= index + 2 && i < this.statements.length; i++) {
@@ -4536,7 +4529,7 @@ class SkeletonBuilder {
     // Both lists below used to be read with a `filter` over every node of the
     // source, once per region and once per pass — the work grew with the square
     // of the source, and on a 1.1 MB program it was the larger half of the time
-    // `deriveBusinessRules` took (security audit of b88c77b). Neither `region`
+    // `deriveBusinessRules` took. Neither `region`
     // nor `expandsTo` is written in this method; only `kind`, `collapsed` and
     // `detail` are. So the two groupings are read once, in node order, and a
     // pass then costs what its own nodes cost.
@@ -4617,8 +4610,8 @@ class SkeletonBuilder {
    * A boundary event is not one of them. It is attached to an activity rather
    * than reached by a sequence flow, so "nothing leads to it" is a statement
    * about this reader's graph and not about the program — and it was made about
-   * a `CATCH` whose protected part simply drew no node (counter-review of
-   * c5085bbf, CR-07). Unreachable is claimed where the source shows it.
+   * a `CATCH` whose protected part simply drew no node (CR-07). Unreachable is
+   * claimed where the source shows it.
    */
   private noteUnreachableSteps(): void {
     const reached = new Set(this.edges.map((e) => e.to));
@@ -4626,7 +4619,7 @@ class SkeletonBuilder {
     for (const node of this.nodes) {
       if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
       // A boundary is skipped unless its TRY was entered by nothing after an
-      // abort (carried QA findings ba3b2a7987ef / 1b831a4853c2).
+      // abort.
       if (node.kind === 'error-boundary' && !this.cutOffBoundaries.has(node.id)) continue;
       const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
       this.notes.push({

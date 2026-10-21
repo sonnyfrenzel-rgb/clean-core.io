@@ -596,7 +596,7 @@ export default function ManagementExecutive({
       ) : (
         <span className="text-[12px] font-medium text-cc-ink-muted">{wt('exec.noNextStep')}</span>
       )}
-      {/* The decision's own step, as in the box below (QA e2fc0565e012). */}
+      {/* The decision's own step, as in the box below. */}
       {decisionStep ? (
         <span data-executive-decision-step="" className="basis-full text-[12px] leading-snug font-medium text-cc-ink">
           {wt('exec.forTheDecision')}{' '}

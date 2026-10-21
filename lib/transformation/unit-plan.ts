@@ -1230,7 +1230,7 @@ export function partLocalsOf(statements: readonly Pick<AbapStatement, 'text' | '
 }
 
 /**
- * The locals a routine declares with STATICS (QA review of a20d2cb7bd39, 94e86fe4c2b1), lower case: they keep their
+ * The locals a routine declares with STATICS, lower case: they keep their
  * value from one call of the routine to the next, so the parent of a split routine keeps them across its calls
  * instead of starting them afresh with the others.
  */

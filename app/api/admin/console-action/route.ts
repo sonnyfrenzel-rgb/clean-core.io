@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     if (!uid || !action) {
       return NextResponse.json({ error: 'Missing required parameters: uid, action.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(uid)) {
       return NextResponse.json({ error: 'Invalid uid.' }, { status: 400 });
     }
@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     // Same as its neighbour `approve-tenant`: the five actions above write
     // through the Admin SDK, and a failure there speaks about our own documents
-    // and the target account. That belongs in the log (security audit of
-    // b88c77b); the caller is told the action did not happen.
+    // and the target account. That belongs in the log;
+    // the caller is told the action did not happen.
     logger.error('console-action failed', { route: 'api/admin/console-action', error: errMessage(error) });
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

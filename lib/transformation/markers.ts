@@ -758,8 +758,8 @@ const JS_OP: Record<string, string> = { '>': '>(?!=)', '>=': '>=', '<': '<(?!=)'
 const ABAP_OP: Record<string, string> = { '>': '(?:>(?!=)|\\bGT\\b)', '>=': '(?:>=|\\bGE\\b)', '<': '(?:<(?![=>])|\\bLT\\b)', '<=': '(?:<=|\\bLE\\b)', '=': '(?:=|\\bEQ\\b)', '<>': '(?:<>|\\bNE\\b)' };
 
 /**
- * Derived checks keep the original's position (rule 15, QA finding
- * 4e9d1315469d): the body must call each required guard, and may not write
+ * Derived checks keep the original's position (rule 15): the body must call
+ * each required guard, and may not write
  * the guard's comparison itself instead.
  */
 function requiredGuardRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
@@ -799,7 +799,7 @@ function requiredGuardRefusals(body: string, ctx: BodyGuardContext): BodyRefusal
 }
 
 /**
- * The original's AUTHORITY-CHECKs keep their force (QA findings ef6865e7ade4, fd3392b066b8, 8394df76b027): a body
+ * The original's AUTHORITY-CHECKs keep their force: a body
  * whose region holds a check must call the frame's `authority_L<line>()` — or, where the engine wrote none,
  * `authority_check(` with the check's object — and its answer must reach a path that ends (`used`). A check the
  * frame runs whole with its check on sy-subrc (`wired`, scaffold-node.ts `wireAuthority`) is not the body's. After
@@ -843,10 +843,10 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     return -1;
   };
   /**
-   * How a path may end for the check in question (QA finding 9bdd914427a5): as strongly as the original handles its
+   * How a path may end for the check in question: as strongly as the original handles its
    * sy-subrc. Return or throw always; continue or break only where the original goes on with its loop (`ends: 'loop'`:
    * CONTINUE, a CHECK or an EXIT inside the loop) — a `break` out of a loop whose protected work follows it does not
-   * stop an original that refuses or returns. And only for the loop of the original check (QA finding a63075170a5e):
+   * stop an original that refuses or returns. And only for the loop of the original check:
    * the call stands as deep in the body's loops as the check in the original's (`loopDepth`), and the continue or
    * break stands in the same loops as the call — its target, the nearest loop or the one it names, is the loop
    * directly around the call. A `continue` of an inner loop leaves the work after that loop running.
@@ -886,11 +886,11 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     const here = loopsAround(pos);
     if (around.length === 0 || around.length !== loopEnds.depth) return false;
     if (here.length !== around.length || here.some((l, k) => l.body !== around[k].body)) return false;
-    // An unlabelled break inside a switch leaves only the switch (QA finding 1584a06243c8): the work after it runs.
+    // An unlabelled break inside a switch leaves only the switch: the work after it runs.
     if (!jump[1] && /^break\b/.test(text)) {
       for (let o = openerOf(pos); o > around[around.length - 1].body; o = openerOf(o)) {
         if (code[o] !== '{') continue;
-        // The block's head: `switch (…)` with its selector matched by brackets, however long (QA finding 793964618f76).
+        // The block's head: `switch (…)` with its selector matched by brackets, however long.
         const head = code.slice(0, o).replace(/\s+$/, '');
         if (!head.endsWith(')')) continue;
         const open = openerOf(head.length - 1);
@@ -943,7 +943,7 @@ function authorityRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     return otherwise ? statementExits(then.end + otherwise[0].length).exits : false;
   };
   /**
-   * Can the value at [at, end) change the outcome (QA findings fd3392b066b8, 8394df76b027, 9bdd914427a5)? Only along
+   * Can the value at [at, end) change the outcome? Only along
    * a path that ends: it is tested in the condition of an `if` whose branch (or plain `else`) is not empty and ends
    * with return or throw (continue or break where the original goes on with its loop); it is handed to a check helper (`guard_…`, `stop_…`, `skip_…`, `when_…`, through
    * `checked`) whose own result is used so; it is returned; or it is assigned — whole or in an expression — to a name
@@ -1162,7 +1162,7 @@ export function spliceBodies(
     const given = guardContext(b.regionId);
     // The guards this region must call come from the scaffold, whatever the caller passes (rule 15).
     const abap = given?.abap ?? scaffold.rap?.regions[b.regionId];
-    // The original's authority checks too: the scaffold's, whatever the caller passes (QA finding ef6865e7ade4).
+    // The original's authority checks too: the scaffold's, whatever the caller passes.
     const authority = given?.authority ?? scaffold.authority?.[b.regionId];
     const ctx = given
       ? { ...given, required: [...(given.required ?? []), ...(scaffold.required?.[b.regionId] ?? [])], ...(abap ? { abap } : {}), ...(authority?.length ? { authority } : {}) }

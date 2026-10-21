@@ -51,7 +51,7 @@ export async function GET(
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
@@ -88,7 +88,7 @@ export async function GET(
   } catch (err: unknown) {
     // The route above is careful never to say whether a project exists; an
     // Admin SDK error forwarded verbatim would say it anyway, by naming the
-    // document it failed on (security audit of b88c77b).
+    // document it failed on.
     logger.error('project read failed', { route: 'api/projects/[projectId]', error: errMessage(err) });
     return NextResponse.json({ error: 'Failed to read project.' }, { status: 500 });
   }
@@ -131,7 +131,7 @@ export async function DELETE(
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
@@ -150,7 +150,7 @@ export async function DELETE(
     // anyone's project and every signed run under it from a plain ID token —
     // without the step-up the admin routes require (`assertAdminStepUp`),
     // without the withdrawn-claim mirror check `verifyAdminRequest` does, and
-    // without an audit event (QA full review of a19945ef01dc, 6a3eea208009).
+    // without an audit event.
     //
     // Nothing loses a function. The only caller is the owner's own dashboard
     // (app/(app)/dashboard/page.tsx), and `firestore.rules` took the operator's
@@ -165,7 +165,7 @@ export async function DELETE(
     // alreadyDeleted: true }` *before* anyone asked whose it was, while a
     // stranger's existing project was refused with 403 down here — and the two
     // answers together are an oracle: one DELETE per id tells an outsider which
-    // project ids exist, without deleting anything (security audit of b88c77b).
+    // project ids exist, without deleting anything.
     // The idempotent success was worth less than that. The only caller is the
     // owner's own dashboard, whose list comes from a realtime query, so the
     // second delete of the same project is not a case the product produces.

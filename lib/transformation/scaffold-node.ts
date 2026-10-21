@@ -802,14 +802,14 @@ const ABAP_OPS: Readonly<Record<string, string>> = { '=': '=', EQ: '=', '<>': '<
  * with ABAP's initial value per type: text blank, a number 0, a packed number zero, a date `00000000`, a NUMC all
  * zeros. Null — the model writes it in a fill region — for anything else (AND/OR, NOT, a second variable, a type
  * whose comparison the port cannot reproduce exactly), and for a type the engine has not resolved to a supported
- * scalar (QA finding 95f6ea84e8af): a dictionary type is only known by its fixed domain (`char10`, `numc4`, `datum`,
+ * scalar: a dictionary type is only known by its fixed domain (`char10`, `numc4`, `datum`,
  * `abap_bool` …, `FIXED_DOMAINS`), a generic or unread type not at all — a dictionary date is initial at '00000000',
  * a dictionary amount at 0, and neither is text. That rule holds for comparisons; a single `IS [NOT] INITIAL` is
  * the engine's on every type (3.0.17 criterion 3) through `isInitial` (`initial-node.ts`), an unread type as
  * 'unknown' — null, blank, 0, '00000000', '000000' — with the assumption named in the JSDoc and TRACE.md.
  */
 /**
- * Dictionary types whose domain is fixed and known without the dictionary (QA finding 95f6ea84e8af): the generic
+ * Dictionary types whose domain is fixed and known without the dictionary: the generic
  * CHARnn/NUMCnn elements, ABAP_BOOL and its kin, and the date, time and period elements every system has. Any other
  * dictionary type keeps its predicate a fill region.
  */
@@ -863,8 +863,8 @@ function predicateKindOf(ts: string | null, scalar: AbapScalar | null): Predicat
 }
 
 /**
- * The type a check reads, in words, for the fill request where its predicate stays the model's (QA finding
- * 95f6ea84e8af): `cs_x-amount: TYPE wrbtr (dictionary type: its domain is not in the source)`.
+ * The type a check reads, in words, for the fill request where its predicate stays the model's:
+ * `cs_x-amount: TYPE wrbtr (dictionary type: its domain is not in the source)`.
  */
 export function declaredTypeWords(g: Pick<PlanGuard, 'line' | 'basis' | 'operands' | 'unitId' | 'condition'>, plan: Pick<UnitPlan, 'units'>, shapes: AbapShapes): string[] {
   return nodeGuardOperands(g as PlanGuard, plan, shapes).map((o) => {
@@ -1083,7 +1083,7 @@ function guardsFile(
     // predicate stays the model's — the reach measurement and the repair rounds are built on those regions — except
     // a single IS [NOT] INITIAL, which is the engine's on every type (3.0.17 criterion 3: the model wrote
     // `values.lvProfl !== ''` for a dictionary field, and a material with no profile came out dangerous goods).
-    // The check on sy-subrc the frame runs with its AUTHORITY-CHECK (QA finding 8394df76b027) is engine-written too.
+    // The check on sy-subrc the frame runs with its AUTHORITY-CHECK is engine-written too.
     const written = g.effect === 'check' || wired.has(g.id) || isInitialTest(g.condition) ? enginePredicateOf(g, plan, shapes, constants) : null;
     // An IS INITIAL on a type the engine has not read names its assumption where a developer looks (and TRACE.md).
     const assumed = written?.some((l) => l.includes(INITIAL_ASSUMPTION)) ?? false;
@@ -1212,7 +1212,7 @@ const DECLARING_KEYWORDS = new Set(['DATA', 'TYPES', 'CONSTANTS', 'FIELD-SYMBOLS
 const CONTAINER_BLOCKS = new Set(['form', 'method', 'module', 'class', 'interface', 'define']);
 
 /**
- * The AUTHORITY-CHECKs whose whole sequence the frame runs (QA finding 8394df76b027): the check the engine wrote
+ * The AUTHORITY-CHECKs whose whole sequence the frame runs: the check the engine wrote
  * (`fn`), standing at the top level of the routine with nothing before it but declarations and checks the frame runs
  * already, and directly followed by the derived check on its sy-subrc — an IF whose only statement ends the flow
  * (`IF sy-subrc <> 0. MESSAGE … TYPE 'E'.`, RETURN, EXIT) and whose guard refuses or stops. Every other check stays
@@ -1256,7 +1256,7 @@ export function wireAuthority(u: Unit, plan: Pick<UnitPlan, 'guards'>, facts: Pi
 }
 
 /**
- * How the original handles each check's sy-subrc (QA finding 9bdd914427a5): `ends: 'loop'` where the statement right
+ * How the original handles each check's sy-subrc: `ends: 'loop'` where the statement right
  * after the check is the derived check on sy-subrc and it skips the pass (CONTINUE, a CHECK in the loop) or leaves
  * the loop (EXIT inside a loop). Anything else — a refusal, a RETURN, an EXIT outside a loop, or no derived check
  * there — keeps the strict reading: the body's path must end with return or throw.
@@ -1381,8 +1381,8 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
 function frameOnly(u: Unit, plan: UnitPlan, facts: EngineFacts, auth: readonly AuthorityEntry[] = []): boolean {
   if (u.kind === 'orchestrator' || auth.length === 0 || auth.some((e) => !e.wired)) return false;
   const inUnit = (line: number) => u.abap.some((r) => line >= r.lineStart && line <= r.lineEnd);
-  // Statements of the routine, each once — coverage is by statement, never by line (QA review of 8609f22dee9c: two
-  // statements on one line must not cover each other).
+  // Statements of the routine, each once — coverage is by statement, never by line: two statements on one line must
+  // not cover each other.
   const stmts = facts.statements.filter((x) => inUnit(x.lineStart) && !/^(?:FORM|ENDFORM|METHOD|ENDMETHOD)$/i.test(x.keyword));
   const covered = new Set<(typeof stmts)[number]>();
   const firstAt = (line: number, keyword: RegExp) => stmts.find((x) => x.lineStart === line && keyword.test(x.keyword));
@@ -1392,8 +1392,8 @@ function frameOnly(u: Unit, plan: UnitPlan, facts: EngineFacts, auth: readonly A
     if (!check || !g) return false;
     covered.add(check);
     // The check's block: its IF, the statement that ends it (MESSAGE … TYPE 'E' / RETURN — what the frame's guard does)
-    // and the ENDIF. Anything else in the block is the original's own work and keeps the body the model's (QA review
-    // of 0a1d2036f5ed: a log line or assignment inside the IF must not vanish).
+    // and the ENDIF. Anything else in the block is the original's own work and keeps the body the model's: a log line
+    // or assignment inside the IF must not vanish.
     const at = stmts.findIndex((x) => x.lineStart === g.line && /^IF$/i.test(x.keyword));
     if (at < 0) return false;
     covered.add(stmts[at]);
@@ -1436,7 +1436,7 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
   const display = engineBody ? undefined : displays.find((d) => d.unitId === u.id && !d.notPlaced);
   const doc = unitDoc(u, plan, auth, reads, placements, displays);
   // The frame's functions first, then the checks it runs at the entry in the original's order — an AUTHORITY-CHECK
-  // the frame runs whole calls its function (QA finding 8394df76b027), a SELECT that fills an input list puts its rows.
+  // the frame runs whole calls its function, a SELECT that fills an input list puts its rows.
   const guardLines = [...authorityFrameLines(auth), ...lookupFrameLines(reads), ...guardCallLines(u, plan, shapes, auth, placements)];
   out.push(doc);
   out.push(`${u.signature} {`);
@@ -1521,8 +1521,8 @@ function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan, shapes: AbapSha
   for (const p of parts) for (const f of handedOf[p.id] ?? []) (statics.has(f.name.toLowerCase()) ? kept : start).set(f.key, f.init);
   const literal = (m: Map<string, string>) => `{ ${[...m].map(([k, v]) => `${k}: ${v}`).join(', ')} }`;
   if (kept.size > 0) {
-    // The original's STATICS keep their value from one call to the next within the run (QA review of a20d2cb7bd39,
-    // 94e86fe4c2b1): `local` is the run's own object, started once; the other locals start afresh on every call.
+    // The original's STATICS keep their value from one call to the next within the run:
+    // `local` is the run's own object, started once; the other locals start afresh on every call.
     out.push(`  let kept = STATICS_OF_RUN.get(st);`, `  if (!kept) STATICS_OF_RUN.set(st, (kept = ${literal(kept)}));`);
     out.push(`  const local: Record<string, unknown> = Object.assign(kept, ${literal(start)});`);
   } else out.push(start.size > 0 ? `  const local: Record<string, unknown> = ${literal(start)};` : '  const local: Record<string, unknown> = {};');
@@ -2186,7 +2186,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan, allLists, placements), owner: 'engine' });
   // The original's AUTHORITY-CHECKs (scaffold version 15, `authority-node.ts`): the seam fails closed, and each
   // function whose lines hold a check gets it written in its frame — with its check on sy-subrc where the frame can
-  // run both at the step's entry (QA finding 8394df76b027, `wireAuthority`).
+  // run both at the step's entry (`wireAuthority`).
   const checks = facts.graph.authorityChecks;
   const authority: Record<string, AuthorityEntry[]> = {};
   for (const u of plan.units) {
@@ -2257,7 +2257,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   for (const file of files) file.content = defuseMarkers(file.content);
   // Engine-written and before the digest: the regions are found in the files as they ship (B6).
   files.splice(0, files.length, ...withDraftHeader(files, options.against));
-  // The ABAP types a predicate the model writes reads (QA finding 95f6ea84e8af).
+  // The ABAP types a predicate the model writes reads.
   const regions = findRegions(files);
   const regionIds = new Set(regions.map((r) => r.regionId));
   const predicateTypes: Record<string, string[]> = {};

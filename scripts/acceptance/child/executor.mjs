@@ -11,7 +11,7 @@
  * `{ id, answer }`, the id the request carried. The probes and the engine-case
  * judge run in the harness process, which never imports the package.
  *
- * The package's code does not run as a peer of this file (QA 1021a63b7b6c).
+ * The package's code does not run as a peer of this file.
  * Before any of it exists here, `lockdown()` freezes every JavaScript
  * intrinsic; the package then runs in a SES compartment (`createConfinement`
  * in `./engine-cases-core.mjs`) whose global object holds no `process`, no

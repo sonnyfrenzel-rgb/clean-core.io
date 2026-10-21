@@ -65,8 +65,8 @@ interface Message {
 
 /**
  * Said under the input, in both scopes: the assistant sends only the current
- * question, never the conversation so far (owner decision 30.09.2026, QA
- * 795c0e739916), so a follow-up has to carry its own context.
+ * question, never the conversation so far (owner decision 30.09.2026), so a
+ * follow-up has to carry its own context.
  */
 const INDEPENDENT_QUESTION_NOTE =
   'Each question is answered on its own, without the earlier messages — include the context you need.';
@@ -227,13 +227,12 @@ export default function GlossaryChatbot() {
    */
   // The conversation belongs to the place it was held. The panel lives in the
   // layout and outlives a navigation, so project A's answers stood under
-  // project B's "Evidence of this project" (QA slice review of 953575fcc9bf,
-  // 76118078e97f). A new place starts from the greeting; the reset happens
+  // project B's "Evidence of this project". A new place starts from the greeting; the reset happens
   // while rendering, as React prescribes for state that follows a prop.
   //
   // The draft and the busy state belong to it too: a question half-typed in A
   // stood in B's input, and a request still running for A kept B's assistant
-  // busy until it settled (QA review of 3c411e7b8235, 2b1101d8e13e). Each place
+  // busy until it settled. Each place
   // is a new conversation, and an answer or a failure that arrives for an
   // earlier one is dropped — including one asked in A, answered after the
   // reader went to B and back to A.
@@ -248,8 +247,7 @@ export default function GlossaryChatbot() {
   }
   // A layout effect, not a passive one: it runs before the browser can hand
   // the reader an event, so a question asked right after a navigation is
-  // stamped with the new conversation and never with the one just left
-  // (QA review of 09ae0c6ee268, 5ee5ab25f097).
+  // stamped with the new conversation and never with the one just left.
   const conversationRef = useRef(conversation);
   useLayoutEffect(() => {
     conversationRef.current = conversation;
@@ -274,7 +272,7 @@ export default function GlossaryChatbot() {
    * The project the panel stands in right now. The panel lives in the layout
    * and outlives a navigation, so an answer that was asked for in project A and
    * arrives after the reader moved to project B is dropped rather than shown
-   * under B's heading (QA full review of v2.20.0).
+   * under B's heading.
    */
   const currentProjectRef = useRef<string | null>(projectId);
   useLayoutEffect(() => {
@@ -297,7 +295,7 @@ export default function GlossaryChatbot() {
   //
   // Each opening reads afresh: the panel outlives the project's pages, and a
   // source replaced or re-analysed since the last opening would otherwise be
-  // answered from the old lines (QA full review of v2.20.0).
+  // answered from the old lines.
   useEffect(() => {
     if (!isOpen || !projectId) return;
     caseContextRef.current = null;
@@ -512,7 +510,7 @@ export default function GlossaryChatbot() {
       return;
     }
 
-    // Codex review code-demo-01 — the demo promises no model call on every
+    // The demo promises no model call on every
     // screen, and this panel is on every screen. Past the glossary there is
     // nothing it may answer there without one, so it says that and stops.
     if (inDemo) {
@@ -902,7 +900,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             className="flex shrink-0 items-end gap-2 border-t border-cc-line bg-cc-surface p-3 [@media(max-height:480px)]:p-2 [@media(max-height:480px)]:[&_label]:sr-only"
           >
             <div className="min-w-0 flex-grow">
-              {/* Owner decision 30.09.2026 (QA 795c0e739916): no conversation
+              {/* Owner decision 30.09.2026: no conversation
                   history is sent. Every answer stays anchored to the evidence
                   gathered for its own question (`lib/case-answer.ts`), so the
                   reader is told that before typing a follow-up like "and that

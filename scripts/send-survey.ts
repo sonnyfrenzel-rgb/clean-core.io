@@ -60,9 +60,9 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * `idempotencyKey` is what makes those retries safe. A timeout, a 429 or a 5xx
  * can all reach the caller after Resend has already accepted the message, and
  * the attempt after it would then deliver a second copy — the outbox record
- * only stops the *next run*, not the retry inside this one (QA review of
- * 33471220d6e9, finding 2b0cacd91960). The key is derived from the campaign and
- * the address, so every attempt of every run carries the same one.
+ * only stops the *next run*, not the retry inside this one. The key is derived
+ * from the campaign and the address, so every attempt of every run carries the
+ * same one.
  */
 async function sendWithRetry(
   key: string,
@@ -320,7 +320,7 @@ async function main() {
     if (index > 0) await sleep(PAUSE_MS);
 
     const token = createSurveyToken(SURVEY_CAMPAIGN, r.uid, tokenExpiry);
-    // Two URLs (QA finding 8e25777f1339): the header's one-click target keeps
+    // Two URLs: the header's one-click target keeps
     // the token in the query, because providers POST there with no body; the
     // visible link carries it in the fragment, which never reaches a log.
     const unsubscribe = unsubscribeUrls(BASE_URL, createUnsubscribeToken(r.email));

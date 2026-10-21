@@ -55,7 +55,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   const [preview, setPreview] = useState<AtcReport | null>(null);
   const [imported, setImported] = useState<AtcReport | null>(existingReport || null);
   // The save is the server's: "imported" is shown once it answered yes, and a
-  // refusal keeps the preview, so the reader can retry (carried QA finding 0817087d54b5).
+  // refusal keeps the preview, so the reader can retry.
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,7 +105,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   const choose = (f: File) => {
     setFile(f);
     // The previous file's preview must not stay importable while the new one
-    // is read (QA finding 5e3dfe48fec0).
+    // is read.
     setPreview(null);
     setSaveError(null);
     setHintScan(null);
@@ -134,8 +134,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
 
   const confirmImport = async () => {
     // Not before the parse and the personal-data look have both finished: an
-    // unfinished scan has no hints yet, so `hintPending` would read false
-    // (QA finding bd707017502e).
+    // unfinished scan has no hints yet, so `hintPending` would read false.
     if (!preview || parsing || hintScan === null || hintPending || saving) return;
     readSeq.current++;
     setSaving(true);
@@ -144,7 +143,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
       await onImport(preview);
     } catch (err) {
       // The confirm superseded any read still in flight, so nothing else will
-      // clear the reading state (QA finding e4e8e512167b).
+      // clear the reading state.
       setParsing(false);
       setSaveError(err instanceof Error ? err.message : 'The server did not store the ATC results.');
       return;

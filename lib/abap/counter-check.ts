@@ -119,14 +119,14 @@ export type ScenarioBlockedReason =
    * Some of the values are named fields and at least one is an expression: the
    * record can be partly prepared and partly not, which is not a record anybody
    * can prepare. Counting such a scenario as runnable would hand a tester a
-   * data need with a hole in it (QA review of 5cbc8deaa23c).
+   * data need with a hole in it.
    */
   | 'value-not-named'
   /**
    * The condition compares more than the engine could read out of it. What was
    * read is written down; what was not cannot be turned into a record. That is
    * a job for a reader at the anchored line - roadmap 7.5, a review task rather
-   * than a verdict - and not a scenario to run (QA review of 5cbc8deaa23c).
+   * than a verdict - and not a scenario to run.
    */
   | 'condition-partly-read';
 

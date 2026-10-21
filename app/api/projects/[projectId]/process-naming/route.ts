@@ -147,7 +147,7 @@ async function openProject(
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -165,7 +165,7 @@ async function openProject(
   // Reading is by membership, writing is the owner's: an invited reader may
   // open what the owner shared and never change or start anything. Until
   // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
-  // opened the project and hid its process (Gegenreview c5085bb, CR-13).
+  // opened the project and hid its process (CR-13).
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     // Not the route's 'Unauthorized.' any more: a stranger who was told 403
     // here and 404 above could read off the status code alone whether a
@@ -273,8 +273,7 @@ export async function POST(
       key,
       // Only a call made under the naming stage may be stored as its names: the
       // stage switch is enforced by `/api/gemini`, and a receipt from another
-      // stage would walk around it (QA review of 8f9ea35a000e, follow-up of
-      // 33a42c475f1a).
+      // stage would walk around it.
       stage: NAMING_STAGE,
     });
     if (!verdict.ok) {

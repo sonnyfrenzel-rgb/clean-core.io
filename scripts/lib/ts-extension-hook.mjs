@@ -5,7 +5,7 @@
  * Used by `.github/workflows/usage-report.yml`, which runs the weekly report
  * with `node --experimental-strip-types --import ./scripts/lib/ts-extension-hook.mjs`
  * instead of `tsx`. The job holds `id-token: write`, and every package it loads
- * runs beside that permission (QA review, fa0aaea6cc47) — so it loads none: no
+ * runs beside that permission — so it loads none: no
  * `npm ci`, no `node_modules`, and this hook is the one piece of `tsx` the
  * report needed. Relative specifiers only; a bare package name is left to fail,
  * which is the point.

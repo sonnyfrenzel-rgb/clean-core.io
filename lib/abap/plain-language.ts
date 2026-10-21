@@ -1482,7 +1482,7 @@ function functionName(name: string, dynamic: boolean): string {
  * stands inside its lines, or when one of its other statements comes while the
  * last `NEW-PAGE PRINT ON|OFF` before it, in source order, switched printing
  * on — a `WRITE` in a loop after `NEW-PAGE PRINT ON` prints too, and a lone
- * `NEW-PAGE PRINT OFF` prints nothing (QA review of 11e3bc7d90e8).
+ * `NEW-PAGE PRINT OFF` prints nothing.
  */
 function printsList(node: SkeletonNode, ctx: PlainContext): boolean {
   const from = node.anchor?.lineStart;

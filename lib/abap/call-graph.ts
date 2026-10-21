@@ -15,8 +15,8 @@ import { formCallbacksOf, programNameOf } from './callback-registrations';
  *
  * **Database writes are not detected a second time.** `open-sql-discrimination.ts`
  * already knows that `INSERT ls_item INTO TABLE lt_items` is an internal table
- * and that `MODIFY dbtab FROM TABLE itab` is a real write despite the words
- * (QA review of 33471220d6e9, eac6118f1eac). Two copies of that rule is how the
+ * and that `MODIFY dbtab FROM TABLE itab` is a real write despite the words.
+ * Two copies of that rule is how the
  * first one went wrong; this file calls it.
  *
  * **A name that is not a literal is not resolved by guessing.** `CALL TRANSACTION
@@ -94,7 +94,7 @@ export interface SubmitCall extends CallSite {
   programExpression: string;
   /**
    * `name` is the bare report name ABAP takes literally after `SUBMIT`. Never
-   * `constant`: a bare operand is not a data object here (QA finding 43a0a7a59521).
+   * `constant`: a bare operand is not a data object here.
    */
   resolvedFrom?: 'literal' | 'name';
   dynamic: boolean;
@@ -252,7 +252,7 @@ function readFormParameters(tail: string): FormParameter[] {
     const body = tail.slice(marks[i].from, i + 1 < marks.length ? marks[i + 1].keywordAt : tail.length);
     // `kind`/`table`/`of`: the words of a table or line type — `LIKE LINE OF
     // itab`, `TYPE STANDARD TABLE OF t`, `TYPE RANGE OF f` — which are part of
-    // the type, not parameters (carried QA finding 9dc8f13ac86b). A generic
+    // the type, not parameters. A generic
     // `TYPE ANY TABLE` or `TYPE STANDARD TABLE` ends without `OF`, so the next
     // word there is a parameter again.
     let mode: 'name' | 'type' | 'ref' | 'kind' | 'table' | 'of' = 'name';
@@ -386,7 +386,7 @@ function readSubmit(statement: AbapStatement, site: CallSite): SubmitCall | null
   const { value, literal } = unquote(token);
   // A bare token after SUBMIT is the report name itself — ABAP takes it
   // literally, even where a constant of that name is declared: only `(name)`
-  // reads a data object (carried QA finding a69811431418). Unlike CALL
+  // reads a data object. Unlike CALL
   // TRANSACTION, where the bare form names a constant far more often than a
   // transaction.
   const from: SubmitCall['resolvedFrom'] = literal ? 'literal' : 'name';
@@ -541,8 +541,7 @@ export function readCallGraphFrom(
     // Native SQL is the database's language, not ABAP: an `UPDATE` inside
     // `EXEC SQL … ENDEXEC` is not an Open SQL write, and its table is not read
     // the way `databaseWriteIn` reads one. The second-opinion baseline already
-    // said no call or write is read out of it; now it is true (carried QA
-    // finding 3b7cbdab1e93).
+    // said no call or write is read out of it; now it is true.
     if (statement.nativeSql) continue;
 
     const site = siteOf(statement, containers);
@@ -654,7 +653,7 @@ export function readCallGraphFrom(
     unreachableLines: unreachable.reduce((sum, f) => sum + (f.lineEnd - f.lineStart + 1), 0),
     reachabilityCertain: performs.every((p) => !p.dynamic),
     // A callback registration is no synchronous call: recursion is read from
-    // PERFORM edges alone (QA review of 2f5a8b9fc249).
+    // PERFORM edges alone.
     recursion: findCycles(
       edges.filter((e) => e.fromKind === 'form' && e.from).map((e) => ({ from: e.from as string, to: e.to })),
     ),

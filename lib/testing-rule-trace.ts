@@ -31,7 +31,7 @@
  *     (`keep`/`change`/`drop`/`clarify`, `lib/process-states.ts`). A traced
  *     case that passed is never "unchanged": nothing ties the test's assertion
  *     to `expectedFromOriginal`, and that result is the model's reading of the
- *     original, not a result of running it (QA review of 11e3bc7d90e8).
+ * original, not a result of running it.
  */
 
 import type { BusinessRuleSet } from './abap/business-rule-set';
@@ -306,8 +306,7 @@ export interface RuleCoverage {
  * the check does not refute it; without an engine the stated id counts, and
  * the sentence says the lines were not checked. `rules` is in the order the
  * prompt lists them (`materialRules`); the rules past the first
- * `MAX_PROMPT_RULES` were not given to the model and count as not covered
- * (QA review of 35b97d90c6e1).
+ * `MAX_PROMPT_RULES` were not given to the model and count as not covered.
  */
 export function ruleCoverage(
   rules: ReadonlyArray<{ id: string }>,
@@ -344,7 +343,7 @@ export function ruleCoverage(
  * "21 of 29 business rules of the original have a traced case · the expected results are model-stated from the original, not verified · not covered: BR-004, BR-005, … · 1 trace does not match the source".
  * The expected result is the model's reading of the original — the same
  * standing as the `passed-model-stated` assessment — so the sentence never
- * says it was established from the original (QA review of 35b97d90c6e1).
+ * says it was established from the original.
  */
 export function ruleCoverageSentence(c: RuleCoverage): string {
   if (c.total === 0) return 'The engine found no business rule in the original, so no case can be traced to one.';
@@ -490,7 +489,7 @@ export function assessCase(input: {
     }
     return { value: 'passed-model-stated', sentence: `The case passed. ${notVerified}` };
   }
-  // A rule decision does not explain a failure by itself (QA 6e1e9a6a3c3b): the
+  // A rule decision does not explain a failure by itself: the
   // case may fail for another reason in the same code. Said as open, never as
   // "deliberate".
   if (ruleState === 'change' || ruleState === 'drop') {

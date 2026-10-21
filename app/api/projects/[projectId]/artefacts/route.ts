@@ -56,8 +56,7 @@ type Gate =
 
 /**
  * A gate check that failed with anything but its own refusal (`QuotaError`):
- * logged without the error's text and answered with a fixed sentence
- * (SEC-2026-846, as SEC-2026-831).
+ * logged without the error's text and answered with a fixed sentence.
  */
 function gateCheckFailed(err: unknown, step: string): Gate {
   logger.error('artefacts: a gate check could not run', { route: 'api/projects/artefacts', step, error: err instanceof Error ? err.name : 'unknown' });
@@ -113,7 +112,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }

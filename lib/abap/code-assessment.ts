@@ -181,8 +181,7 @@ export function extractDataCoupling(
    * The successor that depends on context (AUFK beside the production order
    * tables) is 3.0.12's (`GUIDELINE_CHECKS_FROM`) and its RESB rule 3.0.13's
    * (`PRECISION_FIXES_FROM`), the same gates `evidence-model.ts` reads them
-   * by; before, the plain mapping stands (QA review of 73b8cad63d3e,
-   * 966feb41218f).
+   * by; before, the plain mapping stands.
    */
   engineVersion?: string | null,
 ): DataCouplingEntry[] {
@@ -256,8 +255,7 @@ export function extractDataCoupling(
      * 25-entry map: `UPDATE acdoca` — a write straight into the S/4HANA
      * universal journal — came back Medium, one step below the same write to
      * VBAK, and the `isStandard` recommendation branch below it was
-     * unreachable (QA review of b88c77b, 92e75580c745 / 4862a73a2121 /
-     * da845198acc9 / 451f13d1c004).
+     * unreachable.
      *
      * Three answers, not two. A reserved-namespace name (`/ACME/T_ORDER`) can
      * belong to SAP, to a partner or to the customer, and the name alone does
@@ -306,7 +304,7 @@ export function extractDataCoupling(
       // developer extensibility is for, on-stack, in Private Edition / RISE and
       // in Public Edition alike (CR-03/CR-04). This reader does not know the
       // target edition — the router does — so the advice names both paths and
-      // claims neither (codex code-engine-06).
+      // claims neither.
       recommendation = 'Custom persistence: can stay on-stack with developer extensibility (a RAP business object on the customer table) or move Side-by-Side; the target edition and the requirement decide';
       replacementConfidence = 'Needs Validation';
     } else if (isCustom) {
@@ -340,7 +338,7 @@ export function extractDataCoupling(
       // The third answer, carried instead of left to be re-derived. A reader
       // that only has `isCustom` has no way to tell a standard table from a
       // reserved-namespace one, and `recommendArchitecture` read the
-      // difference away (QA full review, 45a8a7cf4a0c).
+      // difference away.
       isStandard,
       riskLevel,
       recommendation,
@@ -507,8 +505,8 @@ function calledFunctionModules(code: string): string[] {
  * below has always meant. It could never see either: the pattern was
  * `/\b(CALL\s+FUNCTION\s+'RFC|IDOC|BAPI_)\b/`, and the closing `\b` sits after
  * `RFC` and after the underscore of `BAPI_`, where the next character of a real
- * module name is a word character and no boundary exists (full review of
- * a19945ef01dc, 359639c30d77). The only alternative that ever matched was the
+ * module name is a word character and no boundary exists.
+ * The only alternative that ever matched was the
  * bare word `IDOC`, and the place a bare `IDOC` actually occurs is a comment.
  *
  * **`BAPI_` is deliberately not repaired into a match.** A local BAPI call is
@@ -545,8 +543,7 @@ export function recommendArchitecture(
   // The architecture is decided from what the program *executes*, so comments
   // and literal contents are blanked first. `IDOC` written in a comment — a
   // developer's note about the interface a report replaced — matched the raw
-  // source and routed the whole analysis to Integration with 80 % confidence
-  // (full review of a19945ef01dc, 359639c30d77).
+  // source and routed the whole analysis to Integration with 80 % confidence.
   const upper = maskNonCode(code).toUpperCase();
 
   // Scoring factors
@@ -559,8 +556,8 @@ export function recommendArchitecture(
   // `!d.isCustom` as "standard" — so `/ACME/T_ORDER`, a name that may belong to
   // SAP, to a partner or to the customer, counted as an SAP standard table.
   // `UPDATE /ACME/T_ORDER` therefore produced no custom-table write, skipped the
-  // CAP branch, and came back as RAP "based on standard table access patterns"
-  // (QA full review, 45a8a7cf4a0c). Only what is explicitly standard counts as
+  // CAP branch, and came back as RAP "based on standard table access patterns".
+  // Only what is explicitly standard counts as
   // standard now; an entry stored before 2.16 has no `isStandard` and keeps the
   // old reading, which is the only answer its data supports.
   const isWrite = (d: DataCouplingEntry) => d.accessType === 'Write' || d.accessType === 'Read/Write';
@@ -581,8 +578,8 @@ export function recommendArchitecture(
   // positive one step: `DATA idoc TYPE string.` still returned an Integration
   // Suite recommendation at 80 % confidence and `DATA publish TYPE abap_bool.`
   // an Event Mesh one at 75 %, from a declaration that calls nothing and raises
-  // nothing (QA review of b88c77b, d27e02241df3 / 9a4739b73b26 / 423e06020a0e /
-  // 24a2ea35802c / 9a05d24b9cf0). The IDoc families the routing has always
+  // nothing.
+  // The IDoc families the routing has always
   // meant are the function modules, which `isRfcOrIdocModule` already names;
   // the word added nothing but the declarations.
   const calledModules = calledFunctionModules(code);
@@ -598,7 +595,7 @@ export function recommendArchitecture(
   // A write to a customer table does not force Side-by-Side: a RAP business
   // object on the customer table stays on-stack (developer extensibility), as
   // the data-coupling recommendation for the same write says. The deployment
-  // route breaks the tie (QA full review b9216259ba46).
+  // route breaks the tie.
   if (customTableWrites > 0) {
     return {
       architecture: existingRouteIsBTP ? 'cap' : 'rap',
@@ -632,9 +629,9 @@ export function recommendArchitecture(
     const fixes = precisionFixesApply(engine);
     // From 3.0.18 (`READ_CLAIMS_FROM`) a `/namespace/` module is not called the
     // customer's or a partner's: a reserved namespace can be SAP's too (/AIF/ is
-    // SAP_BASIS), and the name does not say whose it is (`isNamespacedObject`,
-    // QA review of 73b8cad63d3e, e742385fcfac). It is neither in SAP's
-    // framework sentence nor in the customer one; its owner is said to be open.
+    // SAP_BASIS), and the name does not say whose it is (`isNamespacedObject`).
+    // It is neither in SAP's framework sentence nor in the customer one; its
+    // owner is said to be open.
     const readClaims = readClaimsApply(engine);
     const ownModules = !fixes ? [] : readClaims ? idocModules.filter(isCustomerObject) : idocModules.filter(isCustomerNamespace);
     const reservedModules = readClaims ? idocModules.filter(isNamespacedObject) : [];
@@ -654,7 +651,7 @@ export function recommendArchitecture(
       : `IDoc function modules are called (${sapModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in SAP Cloud ERP Private. `;
     // The framework's advice follows SAP's modules only: a customer module is
     // matched by its name, which does not make it part of the IDoc framework
-    // (QA b495d64b5c10, 3.0.13 — unreleased, so changed in place).
+    // (3.0.13 — unreleased, so changed in place).
     return {
       architecture: 'integration',
       confidence: 80,
@@ -692,8 +689,8 @@ export function recommendArchitecture(
   //   - **Nothing asked what the code writes.** `UPDATE vbak` on its own, well
   //     under thirty lines, came back as "Small, low-criticality code with no
   //     custom business logic. Candidate for retirement" — a destructive write
-  //     to an SAP standard table, proposed for deletion (full review of
-  //     a19945ef01dc, 052d2fe8f51c). A custom-table write already returns above;
+  // to an SAP standard table, proposed for deletion.
+  // A custom-table write already returns above;
   //     a standard one fell through to here.
   if (
     loc < 30 &&

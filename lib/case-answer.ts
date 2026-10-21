@@ -394,7 +394,7 @@ const DECLINE =
 
 /**
  * Where one clause of a sentence ends and the next begins: `;`, `:`, `, and`, a plain `and` that opens a clause with a
- * subject of its own (`… and it deletes …`, QA review of 62eae6a082bb), and the contrasting conjunctions. A plain
+ * subject of its own (`… and it deletes …`), and the contrasting conjunctions. A plain
  * `and` between two verbs or objects (`whether it reads and writes the table`) stays inside the refusal.
  */
 const CLAUSE_BREAK =
@@ -499,7 +499,7 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
 
     if (invented.length > 0) return { text: sentence, verdict: 'invented-anchor', cited: [...cited], invented, missing: [] };
     // "The evidence does not answer this" claims nothing about the code, with or without an anchor beside it.
-    // It shields only itself: a clause beside it is read as a claim of its own (QA fe1d9c093536).
+    // It shields only itself: a clause beside it is read as a claim of its own.
     if (mayDecline && DECLINE.test(sentence)) {
       const claims = sentence.split(CLAUSE_BREAK).filter((c) => /\w/.test(c) && !DECLINE.test(c));
       if (claims.length === 0) return { text: sentence, verdict: 'declined', cited: [...cited], invented, missing: [] };

@@ -250,8 +250,8 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
                     level: <RowStatus status={row.status}>{row.col4}</RowStatus>,
                     // `row.url` is model-supplied. It goes on an anchor only as
                     // an http(s) URL - React renders a `javascript:` href with
-                    // nothing more than a development warning (security audit
-                    // of b88c77b, SEC-2026-152). Anything else is shown as no
+                    // nothing more than a development warning.
+                    // Anything else is shown as no
                     // link rather than a link that runs.
                     spec: safeHttpHref(row.url) ? (
                       <a

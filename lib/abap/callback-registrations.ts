@@ -102,16 +102,15 @@ export function alvEventRows(statements: readonly AbapStatement[], table: string
  * literal equal to its own name, `sy-repid`/`sy-cprog`, or a variable this
  * source fills from one of them (`gv_repid = sy-repid`, `MOVE sy-repid TO
  * gv_repid`, `DATA gv_repid ... VALUE sy-repid`). Any other variable could hold
- * another program's name, so it registers nothing this source can follow (QA
- * review of 1c402c400e05).
+ * another program's name, so it registers nothing this source can follow.
  *
  * `site` is the registering statement. The value at the call is the last one
  * the variable was given **before** it: a later `gv_repid = 'ZOTHER'` does not
- * change what the ALV was handed (QA review of dd8e996, 5780f532cebf). Only
+ * change what the ALV was handed. Only
  * when no write stands before the site — the variable is filled in a FORM
  * written further down, say — does every write in the source count, and then
- * one write of anything else is enough to make the value unknown (QA review of
- * 2f5a8b9fc249). Every form of write counts, not only `x = …`: `MOVE … TO x`,
+ * one write of anything else is enough to make the value unknown.
+ * Every form of write counts, not only `x = …`: `MOVE … TO x`,
  * `CLEAR x`, `CONCATENATE … INTO x`, `SELECT … INTO x`, a parameter passed
  * as `IMPORTING`/`CHANGING` (ef56d6b03a58). A write this module cannot read as
  * "this program" is taken as "another program".
@@ -288,8 +287,8 @@ export function alvCallbackForms(
   // 'TOP_OF_PAGE'.` or `VALUE #( ( name = … form = 'TOP_OF_PAGE' ) )`. A
   // literal in a `FORM` component that names a FORM of this source is that
   // registration — but only in a statement that fills **this** table: one
-  // that assigns the table itself, or a row of it (QA review of 23416af0,
-  // bc85f1d42173: a `FORM = '…'` of any other structure registers nothing).
+  // that assigns the table itself, or a row of it (a `FORM = '…'` of any
+  // other structure registers nothing).
   const rows = alvEventRows(statements, events[1].toUpperCase());
   for (const other of statements) {
     const target = /^(<?[\w/]+>?)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(other.text)?.[1]?.toUpperCase()

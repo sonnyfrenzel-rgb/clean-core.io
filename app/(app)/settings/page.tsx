@@ -240,7 +240,7 @@ export default function SettingsPage() {
   const [pwChangeStatus, setPwChangeStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [pwChangeError, setPwChangeError] = useState('');
   // With a second factor enrolled, Firebase answers the re-authentication with
-  // auth/multi-factor-auth-required; the code resolves it (QA 5f599cbcc567).
+  // auth/multi-factor-auth-required; the code resolves it.
   const [pwChangeMfaCode, setPwChangeMfaCode] = useState('');
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
@@ -267,7 +267,7 @@ export default function SettingsPage() {
    * on to paste nothing (UX review of 52f171091948, 1b363262f915).
    */
   // Which copy failed is kept: the recovery for the link is not the recovery
-  // for the key (carried QA finding 91cf1930b78a).
+  // for the key.
   const [mfaCopied, setMfaCopied] = useState<'idle' | 'secret' | 'link' | 'failed-secret' | 'failed-link'>('idle');
   const copyMfa = async (what: 'secret' | 'link', text: string) => {
     try {
@@ -297,7 +297,7 @@ export default function SettingsPage() {
     setEnrolledFactorCount(count);
     // A factor Firebase knows and the profile does not: the setup enrolled it
     // and the server's record of it failed. Recording is idempotent and needs
-    // no recency, so it is simply done again here (QA 9cba6508b10b).
+    // no recency, so it is simply done again here.
     if (count > 0 && profile && profile.mfaEnabled !== true && !reconciledRef.current) {
       reconciledRef.current = true;
       user.getIdToken().then((token) =>
@@ -850,7 +850,7 @@ export default function SettingsPage() {
         throw new Error(errorData.error || 'Failed to submit tenant integration request.');
       }
 
-      // The route records the request document itself (QA 04ad2108af07) —
+      // The route records the request document itself —
       // before it mails the administrator, so the mailed links always have a
       // request to act on, and a repeat request is not refused by the rules.
 
@@ -1842,7 +1842,7 @@ export default function SettingsPage() {
         }
         actions={
           // No secret means the setup never began (an unverified address): there
-          // is nothing to add, so no step forward either (QA 1e50094bc012).
+          // is nothing to add, so no step forward either.
           mfaSetupStep === 1 && !totpSecret ? (
             <CcButton variant="ghost" onClick={() => setShowMfaSetup(false)}>
               Close

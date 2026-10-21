@@ -21,8 +21,7 @@
  * with the acting administrator, the affected account and the time". Approval,
  * revocation and deletion write that record through `logAuditEvent`; this
  * script wrote only an `mfaResetAt` stamp on the user document — a single field
- * that the next reset overwrites and that names nobody
- * (security audit of v2.11.0, SEC-2026-023).
+ * that the next reset overwrites and that names nobody.
  *
  * Application Default Credentials identify a Google principal, not a Firestore
  * user, so the acting person cannot be derived here — which is why it has to be
@@ -83,8 +82,8 @@ async function main() {
 
   // The Firestore half in one batch with its audit record: the profile, the two
   // legacy documents and the record commit together or not at all. Written as
-  // separate calls, a failed last write left a reset without a record (carried
-  // QA finding 90ef26f96c2b). A failed commit leaves the factor gone and
+  // separate calls, a failed last write left a reset without a record.
+  // A failed commit leaves the factor gone and
   // `mfaEnabled` still true — running the script again finishes it.
   //
   // The record has the shape `logAuditEvent` writes for approval, revocation

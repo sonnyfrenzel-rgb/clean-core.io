@@ -283,8 +283,7 @@ export function anchorNarrative(
   for (const raw of splitSentences(text || '')) {
     const { anchors, rejected, stripped } = resolveAnchors(raw, findingsById, totalLines, engine);
     // A fabricated citation is checked first: one valid anchor beside it made
-    // the sentence count as sourced and hid the invented one (QA full review of
-    // v2.20.0, a42b040e23a5).
+    // the sentence count as sourced and hid the invented one.
     const status: SentenceStatus =
       rejected.length > 0 ? 'invalid-anchor' : anchors.length > 0 ? 'anchored' : 'unevidenced';
     sentences.push({ text: stripped || raw, anchors, rejected, status });

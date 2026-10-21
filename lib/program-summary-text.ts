@@ -677,7 +677,7 @@ export interface RuleStateTally {
 
 /**
  * What the normal flow changes, then what a user's command can also change —
- * as the changes line says it (QA review of 5ec8488a, 8016d373c55f): the
+ * as the changes line says it: the
  * command-only changes were folded into the normal ones, so a change behind a
  * button read as one the program makes on every run.
  */

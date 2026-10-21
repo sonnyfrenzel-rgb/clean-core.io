@@ -41,7 +41,7 @@ import { formalParameterNames } from './call-graph';
  * level outside any routine or event block is not read either.
  *
  * From engine 3.0.18 (`ENGINE_READS_FROM`, `engineReads`), the stop is read
- * only as far as the source shows it (QA delta of 73b8cad63d3e):
+ * only as far as the source shows it:
  *
  *   - a gate inside another block — an `IF` arm, a loop, a `TRY`, a `WHEN` —
  *     is reached only on some paths: it locks away the rest of that arm of the
@@ -244,13 +244,13 @@ export function readConstantGates(source: string, options: ConstantGateOptions =
     let stopEnd = 0;
     // A class-based exception raised inside a TRY may be caught there: it ends
     // no run, but it still leaves the arm and the block it stands in, so what
-    // follows it there up to the next arm is never reached (QA 92e791c30e02).
+    // follows it there up to the next arm is never reached.
     let caughtRaise = false;
     if (outcome.always) {
       for (let i = head.headerIndex + 1; i < nextHeader; i++) {
         if (structure.enclosing[i].length !== depth + 1) continue;
         const kind = stopOf(statements[i], insideLoop);
-        // A resumable exception may RESUME after CATCH BEFORE UNWIND: it ends nothing for sure (QA 4453a4e9519c).
+        // A resumable exception may RESUME after CATCH BEFORE UNWIND: it ends nothing for sure.
         if (kind === 'raise' && /^RAISE\s+RESUMABLE\b/i.test(statements[i].text)) break;
         if (kind === 'raise' && inTry && /^RAISE\s+EXCEPTION\b/i.test(statements[i].text)) {
           caughtRaise = true;
@@ -288,7 +288,7 @@ export function readConstantGates(source: string, options: ConstantGateOptions =
         if (to >= from) regions.push({ reason: 'gate-arm', gate: gateIndex, lineStart: from, lineEnd: to });
       }
       if (stop || caughtRaise) {
-        // The rest of the arm after the statement that ends the run (QA 9992f1339e12)…
+        // The rest of the arm after the statement that ends the run…
         const armEnd = statements[nextHeader].lineStart - 1;
         if (armEnd > stopEnd) regions.push({ reason: 'after-gate', gate: gateIndex, lineStart: stopEnd + 1, lineEnd: armEnd });
         if (around.length) {

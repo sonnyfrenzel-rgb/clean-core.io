@@ -284,7 +284,7 @@ export default function VerifyPackPage() {
                 </div>
               </dl>
               {/* Shown values a format before 3 does not sign are said to be
-                  exactly that, beside the values (SEC-66dd82b-01). */}
+                  exactly that, beside the values. */}
               {!bindsIssuanceMetadata(result.manifest.version) && (
                 <p className="m-0 mt-3 flex items-start gap-2 text-[12px] text-cc-warning">
                   <AlertCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />

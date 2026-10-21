@@ -92,8 +92,8 @@ async function fetchOAuth2Token(
       // caller by `buildAuthHeaders`' catch below ("Authentication failed:
       // …"), so quoting the token endpoint verbatim passed 200 characters from
       // a host the caller merely *named* back out through our answer — an error
-      // page, a redirect target, an internal hostname, whatever was there
-      // (security audit of b88c77b). The status is our own observation and
+      // page, a redirect target, an internal hostname, whatever was there.
+      // The status is our own observation and
       // stays: it is what tells a wrong secret from an unreachable endpoint.
       logger.warn('oauth token exchange rejected', {
         route: 'api/fetch-odata-metadata',
@@ -349,8 +349,8 @@ export async function POST(req: NextRequest) {
     // paths or three metadata candidates against a host the body names, each
     // with a 20-second deadline. `middleware.ts` excludes `/api` from its
     // matcher, so nothing else bounded it — a single MFA-confirmed account
-    // could drive unlimited outgoing fetch cycles from our address (security
-    // audit of b88c77b). 30/h is well above what configuring a tenant takes.
+    // could drive unlimited outgoing fetch cycles from our address.
+    // 30/h is well above what configuring a tenant takes.
     try {
       await assertRateLimit(`fetch-odata-metadata:${decodedToken.uid}`, 30, 60 * 60 * 1000);
     } catch (rateErr: unknown) {
@@ -476,7 +476,7 @@ export async function POST(req: NextRequest) {
           lastError = `HTTP ${response.status}`;
         } catch (err: any) {
           // The reason goes to the server log only; the caller gets a fixed
-          // sentence (SEC-2026-497).
+          // sentence.
           logger.warn('odata metadata candidate failed', {
             route: 'api/fetch-odata-metadata',
             error: errMessage(err),
@@ -573,8 +573,7 @@ export async function POST(req: NextRequest) {
     // Fixed sentence outward, cause into the log — the shape
     // `app/api/secrets/gemini/test/route.ts` already uses. This used to hand
     // out 200 characters of whatever threw: a stack line, a resolver failure
-    // naming an internal host, an Admin SDK message about our own collections
-    // (security audit of b88c77b).
+    // naming an internal host, an Admin SDK message about our own collections.
     logger.error('fetch-odata-metadata failed', {
       route: 'api/fetch-odata-metadata',
       error: errMessage(error),

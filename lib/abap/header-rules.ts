@@ -125,7 +125,7 @@ export function readHeaderRules(source: string): HeaderRuleCandidate[] {
 /**
  * "R01–R16" — the numbered ids, a run of three or more consecutive numbers of
  * one prefix as a range, everything else listed as written: "R01, R03, R04",
- * never "R01–R04" when R02 is absent (QA delta of 73b8cad63d3e).
+ * never "R01–R04" when R02 is absent.
  */
 export function headerRuleRange(candidates: readonly HeaderRuleCandidate[]): string {
   const ids = candidates.filter((c) => c.kind === 'rule').map((c) => c.id);

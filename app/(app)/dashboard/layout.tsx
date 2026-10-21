@@ -17,7 +17,7 @@ import MyWorkspaceSwitch from '@/components/MyWorkspaceSwitch';
  * is a client component. The route is rendered per request (the page is
  * `force-dynamic`), so there is no ISR here; the engine runs once per server
  * process instead — `demoListRow` holds its answer, which cannot change
- * before the next deploy (QA review of 072f79996d01, 6794b045c131).
+ * before the next deploy.
  */
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

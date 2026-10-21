@@ -222,7 +222,7 @@ async function callWithRetry<T>(
     if (retries > 0 && isTransientModelError(message)) {
       // The wait ends early when the caller goes, and a caller gone during it
       // gets no retry: the lease slot is given back now, not after the backoff
-      // and one more provider call (QA review of 03501b79, 08b88f95cff6).
+      // and one more provider call.
       await new Promise<void>((resolve) => {
         const onAbort = () => { clearTimeout(timer); resolve(); };
         const timer = setTimeout(() => { signal?.removeEventListener('abort', onAbort); resolve(); }, delay);
@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
     // budget it is counted against (roadmap 3.0.12, `lib/transformation/lease.ts`).
     // Read under a byte bound: this runs before any limiter, and `request.json()`
     // buffered a body of any size for an account at its hourly limit as readily
-    // as for any other (QA review of 03501b79, 7dd12d385189).
+    // as for any other.
     let body: unknown;
     try {
       body = await readBoundedJson(new Response(request.body, { headers: request.headers }), GEMINI_BODY_LIMITS);
@@ -300,7 +300,7 @@ export async function POST(request: NextRequest) {
         //
         // What the body alone can refuse is refused first: a leased call skips
         // the hourly counter, so a request that was going to be a 400 anyway
-        // must not cost a lease read (QA review of 03501b79, 456824b829b3).
+        // must not cost a lease read.
         // The same checks stand again below for every call.
         const leased = body as { prompt?: unknown; stage?: unknown };
         if (leased.stage !== 'transformation') {
@@ -317,8 +317,8 @@ export async function POST(request: NextRequest) {
         }
         // A leased call is a fill call, and a fill prompt is small (design §2
         // goal 4): the general 250,000 would let a lease spend its calls on
-        // prompts eighteen times the size the design promises (QA finding
-        // 804d0920fff4). Refused before the lease is read.
+        // prompts eighteen times the size the design promises.
+        // Refused before the lease is read.
         if (leased.prompt.length > LEASED_PROMPT_MAX_CHARS) {
           return NextResponse.json(
             {
@@ -348,7 +348,7 @@ export async function POST(request: NextRequest) {
       } else {
         // Every account has an hourly model-call limit, administrators included:
         // an account with the admin claim is counted in a bucket of its own with
-        // a higher ceiling (`lib/model-hourly-limit.ts`, SEC-2026-827), by the
+        // a higher ceiling (`lib/model-hourly-limit.ts`), by the
         // same Firestore-backed window. The bucket is chosen first, so there is
         // one call to the limiter for both.
         //
@@ -472,8 +472,8 @@ export async function POST(request: NextRequest) {
     // `prompt` goes to the model as its `contents`, which the API also takes as
     // a structured array. An array has a `.length` of its own — the element
     // count — so the character limit below measured 1 for a client that sent
-    // one element holding a megabyte. One shape, one measure (security audit
-    // of b88c77b, SEC-2026-225). The only client, lib/gemini.ts, sends a string.
+    // one element holding a megabyte. One shape, one measure.
+    // The only client, lib/gemini.ts, sends a string.
     if (typeof prompt !== 'string') {
       return NextResponse.json(
         { error: 'The prompt must be a single string.' },
@@ -500,8 +500,8 @@ export async function POST(request: NextRequest) {
     // The test suite's stand-in for the provider — never in a deployment
     // (`lib/gemini-test-stub.ts`: no K_SERVICE, the emulator build, and a
     // per-request secret). Every gate above has run; only the call is replaced,
-    // and the receipt below is minted exactly as for a real answer
-    // (QA review of 75b573cd22f0, 080cd5fce607). The test server stubs by
+    // and the receipt below is minted exactly as for a real answer.
+    // The test server stubs by
     // default, and a listed spec opts in to the real model with the second
     // header (roadmap "before 3.0.7 — Tests never spend the production model
     // budget"; the list is tests/gemini-real-model-guard.spec.ts).
@@ -651,7 +651,7 @@ export async function POST(request: NextRequest) {
               : { ...(thinkingConfig ? { thinkingConfig } : {}), abortSignal: callSignal },
           }).catch((providerErr: unknown) => {
             // A failed attempt is a call too: its duration is logged, its
-            // counts are null (QA review of 6500c65c81c7).
+            // counts are null.
             logger.warn('gemini usage', modelUsageLog({
               usage: undefined,
               model,
@@ -738,7 +738,7 @@ export async function POST(request: NextRequest) {
     const receipt = issueModelReceipt(
       // The stage goes into the receipt when the caller named one — it was
       // validated above — so a store of one stage can refuse a receipt of
-      // another (QA review of 8f9ea35a000e, 33a42c475f1a).
+      // another.
       //
       // The provider is named here, by the handler that made the call — the
       // provider it actually called (Gemini, or Anthropic for an own Claude
@@ -793,8 +793,7 @@ export async function POST(request: NextRequest) {
     // The cause is in the log line above and nowhere else. It used to be the
     // answer: a provider error carries back the prompt it refused, the project
     // the key belongs to, a quota figure for the community key, or a stack line
-    // from our own code — all of it to whoever made the call (security audit of
-    // b88c77b).
+    // from our own code — all of it to whoever made the call.
     return NextResponse.json(
       { error: 'The AI request could not be completed. Please try again.' },
       { status: 500 },

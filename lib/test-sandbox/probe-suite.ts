@@ -15,7 +15,7 @@ import type { SandboxFile } from './files';
  * package.
  *
  * The generated code never runs as a peer of the probes (as in the engine
- * pass, QA 342adaac5625; `./engine-suite.ts`). The pass is a driver, written
+ * pass, `./engine-suite.ts`). The pass is a driver, written
  * here, deterministically, from the candidate's own `acceptance-adapter.json`
  * (engine-written by the scaffold). It
  *   1. imports the probes and the confinement runtime and takes the stdout

@@ -75,8 +75,8 @@ export const RUN_MOVED_ERROR =
  * An invited reader reads the project document from Firestore and its run from
  * the server, in two reads. If the owner activates another run in between, the
  * server answers with that run — and spreading it over the document read first
- * would show one revision's source with another revision's findings (codex
- * architecture-01). The route returns the `activeRunId` it chose, so the two
+ * would show one revision's source with another revision's findings. The
+ * route returns the `activeRunId` it chose, so the two
  * are compared here, and the run's own `runId` too where the run carries one.
  * A mismatch is `moved`, never `found`.
  */
@@ -113,7 +113,7 @@ export const READER_RUN_UNREAD_ERROR = 'The analysis run could not be read. Relo
 /**
  * A refused request or an unreadable body is a run that could not be read, not
  * a run that does not exist: the first is "failed" with a reason, the second
- * "missing" (QA review of 695850c7f838). Only a readable answer reaches
+ * "missing". Only a readable answer reaches
  * `readerRunFor`.
  */
 export function readerAnswerOf(ok: boolean, body: unknown): NonNullable<ReaderAnswer> {

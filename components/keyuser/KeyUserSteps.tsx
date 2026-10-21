@@ -5,7 +5,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { CcTag } from '@/components/cc/Tag';
 import CcTable from '@/components/cc/Table';
-import type { KeyUserCodePart, KeyUserStep, KeyUserStepList } from '@/lib/key-user-steps';
+import { keyUserLevelSentence, type KeyUserCodePart, type KeyUserStep, type KeyUserStepList } from '@/lib/key-user-steps';
 import { keyUserEffortLine, stepLines, type KeyUserMode } from '@/lib/key-user-route';
 
 /**
@@ -58,7 +58,7 @@ export default function KeyUserSteps({
       </p>
       {list.levelByConstruction ? (
         <p className="m-0 cc-text-cell text-cc-ink" data-key-user-level={list.levelByConstruction}>
-          Clean core level {list.levelByConstruction} by construction: key-user extensions use released extension points only.
+          {keyUserLevelSentence(list.levelByConstruction)}
         </p>
       ) : null}
       <CcMessageStrip state="information">{list.note}</CcMessageStrip>

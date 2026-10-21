@@ -89,8 +89,7 @@ export default function AbcdClassificationPanel({
   // A lookup answers for one set of objects on one target. When either moves,
   // what the last one said goes with it — grades, snapshot, coverage and a
   // refusal alike — so a failed or refused lookup for the new target never
-  // stands beside the previous target's catalog grades (QA slice review of
-  // e7372791c70d, 0e5a2deebd7a). Reset while rendering, as React prescribes
+  // stands beside the previous target's catalog grades. Reset while rendering, as React prescribes
   // for state that follows a prop.
   const lookupTarget = `${lookupKey}#${deployment ?? ''}#${release ?? ''}`;
   const [lookupFor, setLookupFor] = useState(lookupTarget);
@@ -349,7 +348,7 @@ function gradeOrigin(it: {
   const access = it.use === 'read' ? 'read' : it.use === 'write' ? 'written' : null;
   // A direct write moves an SAP object to D whatever its own grade, and the
   // sentence has to say both, or a residual C on the catalog page and a D here
-  // disagree without a word (codex code-engine-05).
+  // disagree without a word.
   if (it.use === 'write' && it.grade === 'D' && it.objectGrade && it.provenance !== 'own-object') {
     return `Written directly by this code, which makes it D; the object on its own is ${it.objectGrade}${it.sapState ? ` (SAP state: ${it.sapState})` : ''}`;
   }

@@ -10,7 +10,7 @@ import { countSourceLines } from '@/lib/source-lines';
  * ~4.5 MB SAP catalog. Kept here, importing nothing but the dependency-free
  * line counter (`lib/source-lines.ts`), the list can load
  * these two statically and fetch the run (engine and catalog with it) on the
- * click (external audit PERF-01, 02.10.2026). `analysis-run.ts` throws this
+ * click (since 02.10.2026). `analysis-run.ts` throws this
  * same class and re-exports both, so no other caller changes.
  */
 

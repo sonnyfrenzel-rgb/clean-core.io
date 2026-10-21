@@ -1,6 +1,6 @@
 /**
  * Raw or derived: where a check of the original belongs in the target
- * (rule 15 as fixed by QA finding 4e9d1315469d, owner/coordinator 12.10.2026).
+ * (rule 15 as fixed by owner/coordinator 12.10.2026).
  *
  *   - A **raw** check reads only the request: selection inputs, constants,
  *     literals and the fields of an input record. It runs on the whole input

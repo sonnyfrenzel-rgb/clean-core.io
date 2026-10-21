@@ -33,6 +33,15 @@ import { validateConfirmation } from './sap-test-results';
 
 export const KEY_USER_ACCEPTANCE_VERSION = 1;
 
+/**
+ * The version of the acceptance checks the step list builder writes (`lib/key-user-steps.ts`: id, given, when, then
+ * — what `keyUserListDigest` binds). The list is built from the signed run, so for one run it changes only when the
+ * builder does; bumped then, a record stamped with another version reads as recorded for another list on every
+ * screen, those that hold no list included (the dashboard, the rail). Pinned by `tests/key-user-checks-version.spec.ts`.
+ * A record without a stamp was written under version 1.
+ */
+export const KEY_USER_CHECKS_VERSION = 1;
+
 export interface KeyUserAcceptanceSubject {
   runId: string | null;
   /** SHA-256 of the source the step list was built from — the signed run's input fingerprint. */
@@ -46,6 +55,8 @@ export interface KeyUserAcceptanceSummary {
   subject: KeyUserAcceptanceSubject;
   /** SHA-256 over the step list's checks (id, given, when, then) when it was recorded. */
   listDigest: string;
+  /** `KEY_USER_CHECKS_VERSION` of the builder that wrote that list; absent on a record of version 1. */
+  checksVersion?: number;
   /** Every check id of the step list when it was recorded. */
   total: number;
   /** The check ids the account recorded as run in its system, in the list's order. */
@@ -99,6 +110,7 @@ export function isKeyUserAcceptanceSummary(value: unknown): value is KeyUserAcce
   if (!isStr(s.listDigest) || !isStr(s.recordedAt) || !isStr(s.recordedBy) || !isStr(s.system) || !isStr(s.ranOn)) return false;
   if (typeof s.total !== 'number' || !Number.isInteger(s.total) || s.total < 0) return false;
   if (!Array.isArray(s.checkIds) || !s.checkIds.every(isStr)) return false;
+  if (s.checksVersion !== undefined && !(typeof s.checksVersion === 'number' && Number.isInteger(s.checksVersion) && s.checksVersion >= 1)) return false;
   return s.note === null || isStr(s.note);
 }
 
@@ -112,7 +124,7 @@ export type KeyUserAcceptanceReading =
 /**
  * The record as it stands for this project. With `list` — the step list as it
  * is built now — the record counts only for the checks it was given for
- * (`listDigest`), and `complete` is read against that list (SEC-2026-899).
+ * (`listDigest`), and `complete` is read against that list.
  * Without one it is read off the project document alone; every screen that
  * holds the list passes it.
  */
@@ -132,6 +144,8 @@ export function keyUserAcceptanceReading(
     const recorded = new Set(stored.checkIds);
     return { state: 'current', summary: stored, complete: ids.length > 0 && ids.every((id) => recorded.has(id)) };
   }
+  // Without the list: the record binds the list of its builder's version; a list built by another version is another list.
+  if ((stored.checksVersion ?? 1) !== KEY_USER_CHECKS_VERSION) return { state: 'earlier', summary: stored, because: 'list' };
   return { state: 'current', summary: stored, complete: stored.total > 0 && stored.checkIds.length >= stored.total };
 }
 
@@ -191,5 +205,5 @@ export function mergeKeyUserAcceptance(
     previous.subject.sourceSha256 === next.subject.sourceSha256 &&
     previous.listDigest === next.listDigest;
   const ids = new Set([...(same ? (previous as KeyUserAcceptanceSummary).checkIds : []), ...next.checkIds]);
-  return { v: KEY_USER_ACCEPTANCE_VERSION, kind: 'confirmed', ...next, checkIds: order.filter((id) => ids.has(id)) };
+  return { v: KEY_USER_ACCEPTANCE_VERSION, kind: 'confirmed', ...next, checksVersion: KEY_USER_CHECKS_VERSION, checkIds: order.filter((id) => ids.has(id)) };
 }

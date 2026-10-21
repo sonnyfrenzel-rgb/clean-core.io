@@ -956,8 +956,8 @@ class RuleSetBuilder {
     for (const { table, row, name } of uses) {
       // An IF/ELSEIF chain is read first match first: a later row applies only
       // where no earlier row held, and saying "where x > 10 holds" after a row
-      // for "x > 0" would name a case the code never reaches that way (QA
-      // 975b5ad60247). CASE rows are disjoint, so they keep the plain sentence.
+      // for "x > 0" would name a case the code never reaches that way. CASE
+      // rows are disjoint, so they keep the plain sentence.
       const later = table.selector === null && table.rows.indexOf(row) > 0;
       sentences.add('decision-value', [
         code(table.field), text(' is set to '), code(name),

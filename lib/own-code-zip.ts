@@ -128,8 +128,7 @@ export interface UploadedFileLike {
  * One uploaded file to a row of the list. Every size ceiling is asked of
  * `size` — the number the browser knows without reading anything — before
  * `arrayBuffer()` is called, so a file that is too large never enters memory.
- * For a ZIP that used to happen only after the whole archive was read (QA
- * review of acd1eb0d73aa, 7f4da1440c2b).
+ * For a ZIP that used to happen only after the whole archive was read.
  */
 export async function readUploadedFile(file: UploadedFileLike, id: string): Promise<OwnCodeFile> {
   const base = { id, name: file.name, bytes: file.size, zip: isZipName(file.name) };

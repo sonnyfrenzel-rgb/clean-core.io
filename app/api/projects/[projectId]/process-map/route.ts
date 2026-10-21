@@ -114,9 +114,7 @@ async function openProject(
     // The same gate the three sibling process routes apply, and the one this
     // route was missing: a suspended account, or one that has not accepted the
     // current terms, kept its write access to the process map while naming,
-    // revisions and states refused it (security audit of b88c77b,
-    // SEC-b88c77b-13, verified by counting the call in all four routes on
-    // 21.09.2026 — this was the only zero).
+    // revisions and states refused it.
     try {
       await assertAccountActive(decodedToken.uid, {
         requireCurrentTerms: true,
@@ -153,7 +151,7 @@ async function openProject(
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -171,7 +169,7 @@ async function openProject(
   // Reading is by membership, writing is the owner's: an invited reader may
   // open what the owner shared and never change or start anything. Until
   // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
-  // opened the project and hid its process (Gegenreview c5085bb, CR-13).
+  // opened the project and hid its process (CR-13).
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     // Not the route's 'Unauthorized.' any more: a stranger who was told 403
     // here and 404 above could read off the status code alone whether a

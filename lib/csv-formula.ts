@@ -1,7 +1,7 @@
 /**
  * Spreadsheet formula injection (CWE-1236): a cell a spreadsheet would run as a
  * formula. Excel and LibreOffice skip leading spaces before `=`, `+`, `-` and
- * `@`, so a value like `  =HYPERLINK(...)` is a formula too (SEC-2026-803); a
+ * `@`, so a value like ` =HYPERLINK(...)` is a formula too; a
  * leading tab or carriage return is one on its own. Plain numbers (`-12.5`)
  * are data, not formulas, and stay as they are.
  *

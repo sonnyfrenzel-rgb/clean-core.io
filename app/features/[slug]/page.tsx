@@ -49,7 +49,7 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
     <main className="max-w-3xl mx-auto px-6 py-12 md:py-16">
       {/* Back to the landing's overview, the section that lists the deep dives.
           The 3.0 landing has no feature grid any more: the old features and
-          access fragments landed at the top of the page (codex code-public-04), and
+          access fragments landed at the top of the page, and
           tests/landing-fragment-guard.spec.ts now checks every landing fragment. */}
       <Link
         href="/#what"

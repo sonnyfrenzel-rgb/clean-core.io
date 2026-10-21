@@ -7,8 +7,8 @@
  * The design page used to store any non-empty answer as the design, with
  * `status: 'designed'` — `{}`, a truncated object, prose, an object whose
  * sections were strings. The renderer then painted an empty design as if it
- * were one, and every later stage was built on it (QA full review of
- * fc787674705f, 6a5a3b3546de). A reply that does not have the shape the prompt
+ * were one, and every later stage was built on it.
+ * A reply that does not have the shape the prompt
  * asked for is now a failed generation, and the stored design stays what it was.
  */
 
@@ -95,7 +95,7 @@ export function checkDesignResponse(text: string): DesignCheck {
     return { ok: false, reason: 'The design has no roadmap.' };
   }
   // A list of empty objects is not a roadmap: at least one phase has to say
-  // which phase it is (QA review of 1e520bfaf727, c24eab489d3d).
+  // which phase it is.
   if (!data.roadmap.some((p) => nonEmptyString(p.phase) || nonEmptyString(p.title))) {
     return { ok: false, reason: 'No roadmap phase is named.' };
   }

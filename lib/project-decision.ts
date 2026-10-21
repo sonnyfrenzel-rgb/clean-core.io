@@ -673,7 +673,7 @@ export function canonicalProjectDecision(decision: ProjectDecision): string {
   // and no line break inside a value can move a boundary. The form this
   // replaces joined raw values with `@`, `#` and `;`: an attestation by `a@b`
   // at `c` and one by `a` at `b@c` had the same canonical line, and so the same
-  // fingerprint (QA review of 4b4586aff273).
+  // fingerprint.
   const line = (tag: string, ...values: unknown[]) => `${tag}=${JSON.stringify(values)}`;
   const lines: string[] = [
     line('v', decision.decisionVersion),
@@ -731,8 +731,8 @@ export function canonicalProjectDecision(decision: ProjectDecision): string {
 }
 
 /**
- * The canonical form before the QA review of 4b4586aff273, kept for one purpose
- * only: a record stored under it still carries its old fingerprint, and
+ * The previous canonical form, kept for one purpose only: a record stored
+ * under it still carries its old fingerprint, and
  * `normaliseProjectDecision()` accepts that value as "the fingerprint of this
  * record" so a decision on record does not become unreadable with the format
  * change. What it returns is always the fingerprint of the current form.
@@ -975,7 +975,7 @@ function readTimelineEntry(value: unknown): DecisionTimelineEntry | null {
   const sentence = str(value.sentence);
   const kind = value.kind;
   // A real instant, as a server clock writes it — `tomorrow` is not a time a
-  // timeline can be ordered by (carried QA finding 5724ea86c33b).
+  // timeline can be ordered by.
   if (!at || !sentence || !isIsoInstant(at)) return null;
   if (typeof kind !== 'string' || !(TIMELINE_KINDS as readonly string[]).includes(kind)) return null;
   return {

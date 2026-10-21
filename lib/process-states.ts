@@ -574,7 +574,7 @@ export function checkStateChoices(
         };
       }
       // One canonical shape: the standard meets the need, so no value source beside it — a
-      // customizing source would read as "Move to configuration" in fit to standard (QA review of 45ab7b5f6a4c).
+      // customizing source would read as "Move to configuration" in fit to standard.
       if (valueSource !== null) {
         return {
           ok: false,

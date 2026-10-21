@@ -12,7 +12,7 @@
  * The fix was three lines in the route, and the guard around it read those
  * three lines out of the source. That guard cannot fail for the reason it
  * exists: a regression that keeps the characters and still performs two reads
- * passes it (QA review of 9e408888bfec, 78b84b92aa49). A route handler cannot
+ * passes it. A route handler cannot
  * easily be driven with a deferred Firestore call from a spec; this can, so the
  * mechanism is tested by running it and the wiring is what the source guard
  * checks.

@@ -155,7 +155,7 @@ export default function AdminConsole() {
         try {
           // A 500 from the mail route resolves like a 200; only a network
           // error threw, so a welcome mail that was never sent was reported as
-          // sent (QA review of 33471220d6e9, 57876fae0053). The approval itself
+          // sent. The approval itself
           // stands either way — it is the notification that failed.
           const mailRes = await fetch('/api/send-approval-email', {
             method: 'POST',
@@ -275,7 +275,7 @@ export default function AdminConsole() {
               ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
             // The route looks the address up on the account; the request
-            // document's copy is the requester's own writing (SEC-2026-235).
+            // document's copy is the requester's own writing.
             body: JSON.stringify({
               uid: targetReq.uid,
               name: targetReq.name
@@ -415,7 +415,7 @@ export default function AdminConsole() {
                   <span className="flex flex-col items-start gap-1">
                     {/* Every non-approved account used to read "Pending
                         Review", including one an administrator had just
-                        suspended (QA review of 33471220d6e9, aad1ecf24d47). */}
+                        suspended. */}
                     <AccountStateText entry={accountState(req.status)} />
                     {req.s4TenantAccessAllowed && <CcTag>S/4 tenant access granted</CcTag>}
                     {!req.s4TenantAccessAllowed && req.s4TenantAccessRequested && (

@@ -8,7 +8,7 @@ import NewVersionAvailable from '@/components/NewVersionAvailable';
 import { isStaleBuildError, reloadOnceForStaleBuild } from '@/lib/stale-build';
 
 /**
- * The second half of QA findings 0d8443fae823 / 58201e6aaedb.
+ * The second half of the guard against a blueprint this stage cannot draw.
  *
  * The first half stops a blueprint this stage cannot draw from ever being
  * stored. This one is for the case where something gets through anyway. Until

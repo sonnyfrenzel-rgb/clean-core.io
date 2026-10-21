@@ -132,7 +132,7 @@ export function targetChangeImpact(project: Project | null, now: string = new Da
     .filter((s) => s.key !== 'analyze' && s.state === 'stale' && before.find((b) => b.key === s.key)?.state !== 'stale')
     .map((s) => ({ key: s.key, label: s.label }));
   // Only a decision bound to the run standing now is made outdated by this
-  // change; one bound to an earlier run already was (QA review of 1c402c400e05).
+  // change; one bound to an earlier run already was.
   const stored = storedDecision(project);
   const active = str(project.activeRunId);
   const decision = stored && (!stored.boundRunId || stored.boundRunId === active) ? stored : null;

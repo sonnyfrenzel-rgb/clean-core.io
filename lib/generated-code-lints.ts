@@ -753,7 +753,7 @@ const CAP_CONFIGURED = /^(?:@cap-js\/[\w.-]+|@sap\/xssec)$/;
 /**
  * The packages of that list that are used only when the configuration names what they serve — the database kind of
  * `@cap-js/hana` and `@cap-js/postgres`, the authentication kinds that run on `@sap/xssec` — so a configuration that
- * names neither does not excuse them (QA 3adfcf87ca21). `@cap-js/sqlite` is the development database `cds` takes by
+ * names neither does not excuse them. `@cap-js/sqlite` is the development database `cds` takes by
  * default, and the other `@cap-js/*` packages are plugins `cds` loads by being declared: both stay excused.
  */
 const CAP_CONFIGURED_BY: Readonly<Record<string, { service: 'db' | 'auth'; kinds: readonly string[] }>> = {
@@ -765,7 +765,7 @@ const CAP_CONFIGURED_BY: Readonly<Record<string, { service: 'db' | 'auth'; kinds
 /**
  * The kinds a CAP configuration names for `requires.db` and `requires.auth`: as a string (`db: "hana"`) or a
  * `kind`, in any profile (`[production]`) around or inside them. Read from the parsed configuration, never from
- * any string value anywhere in it (QA 51233ed8f1e9).
+ * any string value anywhere in it.
  */
 function capRequiredKinds(configs: readonly unknown[]): { db: Set<string>; auth: Set<string> } {
   const out = { db: new Set<string>(), auth: new Set<string>() };
@@ -811,7 +811,7 @@ function unusedDependencies(files: readonly SandboxFile[]): GeneratedCodeLintFin
     const s = readSource(f.path, f.content);
     // An import, a require, or a triple-slash types reference (`/// <reference types="@cap-js/cds-types" />`).
     for (const m of f.content.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|^\/\/\/\s*<reference\s+types\s*=\s*)(['"`])([^'"`\n]+)\1/gm)) {
-      // SEC-2026-894: only an import in code counts — the keyword itself is code, or the triple-slash directive opens
+      // Only an import in code counts — the keyword itself is code, or the triple-slash directive opens
       // a line outside a block comment; the same words in a comment or a string import nothing.
       const at = m.index ?? 0;
       const directive = f.content.startsWith('///', at);

@@ -120,8 +120,8 @@ export type RevisionXmlCheck =
  * "Another kind" is decided by parsing, not by a regex, since 19.09.2026: the
  * regex this replaces took `<bpmn:definitions>` with no end tag and a
  * `definitions` in a foreign namespace, and refused a well-formed document
- * that put BPMN in the default namespace (Gegenreview c5085bb, CR-20, three
- * probes). Well-formedness and the namespace of the root are the structural
+ * that put BPMN in the default namespace (CR-20, three probes).
+ * Well-formedness and the namespace of the root are the structural
  * floor; schema, import into a tool and the meaning of the graph stay
  * separate questions with their own answers.
  */
@@ -131,7 +131,7 @@ export async function checkRevisionXml(value: unknown): Promise<RevisionXmlCheck
   }
   // Bytes, not characters: Firestore's 1 MiB limit is on the UTF-8 document,
   // and 300,000 three-byte characters passed a character count while the write
-  // failed as a 500 (carried QA finding 43c81664dd53). TextEncoder, because
+  // failed as a 500. TextEncoder, because
   // this module also runs in the browser (lib/bpmn/import.ts).
   const bytes = new TextEncoder().encode(value).length;
   if (bytes > MAX_REVISION_XML) {
@@ -270,8 +270,7 @@ function labelOf(element: Element): string {
 function outgoing(id: string, flows: Flow[], byId: Map<string, Element>): { key: string; text: string } {
   const mine = flows.filter((f) => f.sourceRef === id);
   // The expression is part of the key: a condition changed in the editor or in
-  // an imported file lives there, while the trace keeps the code's condition
-  // (codex code-engine-01).
+  // an imported file lives there, while the trace keeps the code's condition.
   const key = mine.map((f) => `${f.condition}\u0000${f.expression ?? '\u0002'}\u0000${f.targetRef}`).join('\u0001');
   const text = mine.length === 0
     ? 'none'
@@ -431,7 +430,7 @@ async function wellFormedBpmn(
  * read: it only ever moves forward. An answer that left before this screen's
  * own save and lands after it names an older revision, and taking it would
  * make the next save be refused as `revision-moved` for a revision this
- * screen wrote itself (QA review of 072f79996d01, 0c2270d51419).
+ * screen wrote itself.
  */
 export function newerBase(current: number | null, fetched: number): number {
   return current === null || fetched > current ? fetched : current;

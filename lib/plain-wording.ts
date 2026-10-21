@@ -233,7 +233,7 @@ export function plainSentenceProblem(engine: string, worded: string, options: Pl
   const kept = text.toUpperCase().replace(THOUSANDS, '');
   const engineNumbers = sentenceClaims(engine).filter((c) => /^\d/.test(c));
   if (engineNumbers.some((n) => !containsClaim(kept, n))) return 'number-lost';
-  // Counted per kind, not "one such word anywhere": a rewording that keeps the "only" and drops the "not" has lost one (QA review of 45ab7b5f6a4c).
+  // Counted per kind, not "one such word anywhere": a rewording that keeps the "only" and drops the "not" has lost one.
   if (LIMIT_FAMILIES.some((family) => countOf(family, text) < countOf(family, engine))) return 'negation-lost';
   if (findSensitive(text).length > findSensitive(engine).length) return 'sensitive';
   if (options.sapMismatch?.(text)) return 'sap-mismatch';
@@ -468,7 +468,7 @@ export async function runPlainWording(
  * Whether this browser may ask for these sentences now: true the first time a
  * project, scope and digest are seen, and records them; false ever after. Keyed
  * by the project too, so two projects with the same source each get their one
- * call, and by every digest seen, not only the last (QA review of 45ab7b5f6a4c).
+ * call, and by every digest seen, not only the last.
  */
 export function takeFirstAsk(asked: Set<string>, projectId: string, scope: PlainScope, digest: string): boolean {
   const key = `${projectId}\u0000${scope}\u0000${digest}`;

@@ -377,7 +377,7 @@ function technicalValue(value: string): boolean {
   if (/^[a-z]+:\/\//i.test(value)) return true;
   if (/^[a-z]:[\\/]/i.test(value)) return true;
   if (/[\\/].*[\\/]/.test(value)) return true;
-  // An absolute path with one segment, `/tmp` (carried QA finding 241ba1f2fb0b).
+  // An absolute path with one segment, `/tmp`.
   if (/^[\\/][\w.-]+$/.test(value)) return true;
   return false;
 }
@@ -643,8 +643,7 @@ function weigh(
     return;
   }
   // The rule the header states for constants holds for a literal written in
-  // place: a path, a URL or a mail address is technical, not a business value
-  // (carried QA finding 241ba1f2fb0b).
+  // place: a path, a URL or a mail address is technical, not a business value.
   if (valued.values.every(technicalValue)) {
     reject(reader, 'technischer-wert', comparison, range);
     return;
@@ -788,8 +787,8 @@ function readWhenArm(
   for (const token of tokenize(context.conditionText)) {
     // `WHEN c_approved` compares the selector with the constant's value, as
     // `IF status = c_approved` does: resolve it through the constant index,
-    // or the arm is dropped and the constant reads as declared but never used
-    // (QA full review b64e0d3ad7c1). A variable or keyword (`OR`) resolves to
+    // or the arm is dropped and the constant reads as declared but never used.
+    // A variable or keyword (`OR`) resolves to
     // nothing and states no value here.
     const valued = token.literal ? null : valueOf(token, reader.constants);
     if (!token.literal && !valued) continue;

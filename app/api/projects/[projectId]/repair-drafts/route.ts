@@ -13,8 +13,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 
 // A draft is one Firestore document (at most 1 MiB), so a body twice that size
-// is already no draft; read no more than that (QA slice review of
-// 81810c8026e0, e6a8d32f903a).
+// is already no draft; read no more than that.
 const REPAIR_BODY_LIMITS = { maxBytes: 2 * 1024 * 1024, timeoutMs: 20_000 };
 
 /**
@@ -89,7 +88,7 @@ export async function POST(
     }
 
     const { projectId } = await params;
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }

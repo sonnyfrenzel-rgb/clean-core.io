@@ -111,8 +111,8 @@ export interface AnalysisRunResult {
 /**
  * The cancellation class and the scope sentence live in
  * `lib/analysis-run-basics.ts`, which imports nothing, so the workspace list
- * can show them without loading the engine this module imports (external
- * audit PERF-01). Re-exported here unchanged.
+ * can show them without loading the engine this module imports. Re-exported
+ * here unchanged.
  */
 export { AnalysisRunCancelled, runScope } from './analysis-run-basics';
 

@@ -52,7 +52,7 @@ const COUNTERPARTS: readonly ReleasedCounterpart[] = [
     functionModule: 'DATE_CHECK_PLAUSIBILITY',
     // IMPORTING VALUE(DATE) LIKE SY-DATUM, EXCEPTIONS PLAUSIBILITY_CHECK_FAILED. The function module accepts a valid
     // Gregorian calendar date and raises for any other value. The check is written out explicitly — it does not lean
-    // on a conversion rule (QA review of 6af6aa60): the parameter is converted to `d` first, as the function module's
+    // on a conversion rule: the parameter is converted to `d` first, as the function module's
     // typed VALUE parameter converts it at the call; the initial date 00000000 passes, as the function module accepts
     // it (our reading of the module — to be confirmed in the SAP trial by the `ltc_counterparts` case); otherwise all
     // eight characters must be digits, the year 0001–9999, the month 01–12 and the day 01 to the last day of that

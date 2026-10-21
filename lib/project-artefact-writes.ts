@@ -174,7 +174,7 @@ export async function storeDocumentation(
   return inTransaction(db, args.projectId, args.uid, async (tx, stored, project) => {
     // Built from the source of the run the page loaded. A second tab can
     // re-analyse in between; then it describes an earlier run and is not
-    // written as the current one (QA review of 4b4586aff273).
+    // written as the current one.
     if (project.activeRunId !== fromRunId || textDigest(project.legacyCode) !== sourceSha256) {
       return {
         status: 409,
@@ -185,7 +185,7 @@ export async function storeDocumentation(
     const refused = statusRefused(project);
     if (refused) return refused;
     // The business layer was written from the documentation this replaces,
-    // keyed to its step ids, so it goes with it (QA full review 96b39ec78c97).
+    // keyed to its step ids, so it goes with it.
     const cleanup = documentationPackageCleanup(project.generatedCode);
     return commit(
       tx, db, args.projectId, stored,

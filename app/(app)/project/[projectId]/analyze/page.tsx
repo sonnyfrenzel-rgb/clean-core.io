@@ -47,7 +47,7 @@ import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
  */
 // Read from its own module, which `lib/analysis-run.ts` re-exports: the run
 // module imports the evidence engine and with it the SAP catalog, and this page
-// loads the engine only when it has a source (external audit PERF-01).
+// loads the engine only when it has a source.
 import { findingsWorklist } from '@/lib/findings-worklist';
 import { PASTED_SOURCE_NAME, sourceFileName } from '@/lib/source-file-name';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
@@ -126,7 +126,7 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
-// downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
+// downloaded by this page (owner decision 30.09.2026).
 import { EVIDENCE_UNREAD, previewRunEvidence, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, levelFacetCounts, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
@@ -158,7 +158,7 @@ export default function AnalyzePage() {
   const [showConceptQuestion, setShowConceptQuestion] = useState(false);
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
   // Only the stored project says it is the example; a query parameter granted
-  // the example's exemptions to any project (QA full review of a12774cd2b7f).
+  // the example's exemptions to any project.
   const isFromExample = !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState(PASTED_SOURCE_NAME);
@@ -269,8 +269,8 @@ export default function AnalyzePage() {
   // Prose is not code. The keyword list below was already here and already
   // right; what followed it — `|| code.trim().length > 0` — made it decorative,
   // so any non-empty text was accepted, sent to the model, charged against the
-  // quota and signed into a run as ABAP (QA review of 33471220d6e9,
-  // 2d714ac42b63). The list is the deterministic engine's own vocabulary of
+  // quota and signed into a run as ABAP.
+  // The list is the deterministic engine's own vocabulary of
   // top-level constructs; one of them has to appear.
   const isLegacyCode = (code: string) => looksLikeAbap(code);
 
@@ -281,21 +281,21 @@ export default function AnalyzePage() {
     return scanCodeContent(content);
   };
 
-  /** The limit the upload area has always advertised (QA 8d9184e6f94f). */
+  /** The limit the upload area has always advertised. */
   const MAX_UPLOAD_BYTES = 1024 * 1024;
 
   /**
    * Which file selection is the latest. A slow read of an earlier file used to
    * finish after a later one and stage itself last, so the run analysed and
-   * signed the file the user had already replaced (QA full review of
-   * fc787674705f, 9be8a33c243e). Only the newest selection may stage.
+   * signed the file the user had already replaced.
+   * Only the newest selection may stage.
    */
   const fileSelectionRef = useRef(0);
 
   /**
    * A rejected replacement leaves nothing staged. Keeping the previous source
    * after "that file was refused" let Start Analysis sign a file the user had
-   * just tried to replace (QA full review of fc787674705f, 654ca9f3a217).
+   * just tried to replace.
    */
   const rejectFile = (message: string) => {
     setError(message);
@@ -315,7 +315,7 @@ export default function AnalyzePage() {
 
     // "Max 1MB" was written on the screen and checked nowhere: the browser read
     // the whole file into memory, rendered it into the textarea and the scanner,
-    // and tried to put it in a model request (QA 8d9184e6f94f).
+    // and tried to put it in a model request.
     if (file.size > MAX_UPLOAD_BYTES) {
         rejectFile(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB — analyse one object at a time, or paste the part you want assessed.`);
         return;
@@ -324,7 +324,7 @@ export default function AnalyzePage() {
     // The replacement is being read: what was staged before it is no longer the
     // user's choice, so it leaves now and not only when the read succeeds —
     // otherwise Start Analysis, enabled by the old source, signs the file the
-    // user just replaced (QA full review of 3f90d50e8e2f, 16cebd26aec5).
+    // user just replaced.
     setLegacyCode('');
     setUploadedFileName(PASTED_SOURCE_NAME);
     const reader = new FileReader();
@@ -375,7 +375,7 @@ export default function AnalyzePage() {
    * scan, the extensibility routing, the prompt, and `s4Deployment` on the
    * signed run — while the screen re-rendered with the new choice. That is a
    * result that does not belong to the run that attests it, which is the one
-   * thing this product may not do (QA full review of 3131afa, 2878b5f8fae3).
+   * thing this product may not do.
    */
   const handleAnalyze = async (
     codeToAnalyze: string = legacyCode,
@@ -387,8 +387,7 @@ export default function AnalyzePage() {
     // The scan runs here, on exactly the text that is about to leave the
     // browser. The upload path scanned the file, and the screen scanned what
     // was staged — but the textarea can be edited after both, and this is the
-    // only place that sees the final string (QA review of 33471220d6e9,
-    // 2ea4b0048642).
+    // only place that sees the final string.
     const scanBlock = scanCodeContent(codeToAnalyze);
     if (scanBlock) {
         setError(`Security Block: ${scanBlock} Remove the flagged content before analysing.`);
@@ -402,7 +401,7 @@ export default function AnalyzePage() {
     // here as well so that no caller of this function starts a run without
     // them: a target deployment, accepted Terms, and — for anything but an
     // unchanged shipped example — the tick on the lines the hint panel shows for exactly this
-    // text (QA full review of 81810c8, 7d0d04a45324).
+    // text.
     const hintKeyForThisText = isUnchangedShippedExample(codeToAnalyze) ? '' : personalDataHintKey(scanForPersonalDataHints(codeToAnalyze));
     if (!deployment || !acceptedTerms || (hintKeyForThisText !== '' && hintKeyForThisText !== personalDataAckFor)) {
         setError('Select a target deployment, accept the Terms & Conditions and tick the box under any highlighted lines before starting the analysis.');
@@ -496,15 +495,14 @@ export default function AnalyzePage() {
           // model is asked for the same fields and sometimes answers with its
           // own numbers; stored alongside the signed ones they became a second,
           // unsigned truth that the screen and the Confluence export were happy
-          // to print (QA review of 33471220d6e9, e184fc0c59bf). They are
+          // to print. They are
           // dropped here, once, before anything is stored, and the routing
           // block carries the router's values (`lib/model-owned-fields.ts`).
           pinRunOwnedFields(obj, computedRouteReport);
           // The router's checkpoints and track comparison, as
           // /api/runs/create stores them on the run. Kept from the model, a
           // partially shaped comparison reached the decision matrix and the
-          // Confluence export of this session and broke them (QA full review
-          // of fc787674705f, 329a0da707f6).
+          // Confluence export of this session and broke them.
           const routing = obj.extensibilityRouting as Record<string, unknown>;
           routing.decisionTreeCheckpoints = computedRouteReport.checkpoints;
           routing.comparativeAnalysis = computedRouteReport.comparativeAnalysis;
@@ -654,8 +652,8 @@ export default function AnalyzePage() {
       const errMessage = err instanceof Error ? err.message : String(err);
       // Always said on the screen. A message carrying JSON used to be rethrown
       // from this click handler instead: an unhandled rejection, the spinner
-      // gone and no word about why (QA full review of fc787674705f,
-      // ca61e8967379). The structured detail stays in the console above.
+      // gone and no word about why.
+      // The structured detail stays in the console above.
       const shown = errMessage && !errMessage.includes('{') ? errMessage : 'the service reported an error';
       setError(`Failed to analyze the code: ${shown}. Please try again.`);
     } finally {
@@ -678,7 +676,7 @@ export default function AnalyzePage() {
   const exportToConfluence = async () => {
     if (!project?.analysis) return;
     // Loaded on the click: the export recomputes the evidence, so it imports
-    // the engine and the SAP catalog with it (external audit PERF-01).
+    // the engine and the SAP catalog with it.
     const { buildAnalysisExportHtml, analysisExportFileName } = await import('@/lib/analysis-export');
     // SAP's synced name lists, so the export's identifier marks read them too (3.0.12).
     await loadSapNameLists();
@@ -693,7 +691,7 @@ export default function AnalyzePage() {
     // Said once the file is handed to the browser: which file, and that it was
     // only downloaded — nothing was sent to Confluence (UX-161). The browser
     // gives no signal that the file was saved, so the toast says what is known:
-    // it was asked to save it (QA 22911ff00bda).
+    // it was asked to save it.
     setExportToast(`Your browser was asked to save ${exportFileName}. The file goes to your device only; nothing was sent to Confluence.`);
     
     // The export is no longer written back into the project document.
@@ -919,8 +917,8 @@ export default function AnalyzePage() {
 
   /**
    * The route's confidence as the run signed it (`recommendationConfidence`) —
-   * never the number in the model's JSON (QA full review of 81810c8,
-   * d5a87a5db395). A run just made here puts its figures on `project` itself.
+   * never the number in the model's JSON.
+   * A run just made here puts its figures on `project` itself.
    */
   const signedRouteConfidence: number | null =
     typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null;
@@ -1005,8 +1003,7 @@ export default function AnalyzePage() {
   /**
    * On a page opened later the reason above is the state *now*, not the reason
    * the run has none, which is not recorded. Said in so many words, so the
-   * present state does not read as the past cause (carried QA finding
-   * 99d1991763df).
+   * present state does not read as the past cause.
    */
   const narrativeAbsenceWhy: string | undefined =
     narrativeAbsence && !lastNarrativeAbsence
@@ -1494,7 +1491,7 @@ export default function AnalyzePage() {
         />
         {/* The prose renderer cannot carry an inline mark, so the SAP
             identifiers it names are listed with their check beside it, as in
-            the structured report (QA 3d9477ec8c7b). */}
+            the structured report. */}
         <SapIdentifierChecks
           texts={[withoutUnapprovedMoney(project.analysis)]}
           title="SAP identifiers named in the model's analysis"
@@ -1958,7 +1955,7 @@ export default function AnalyzePage() {
               // Same boundary as `usageReport` above and for the same
               // reason: server-only, held to the model's key set and a
               // row ceiling — see lib/project-commands.ts. Shown as
-              // imported only once stored (carried QA finding 0817087d54b5).
+              // imported only once stored.
               const stored = await runProjectCommand(projectId as string, {
                 command: 'record-atc-report',
                 atcReport: report,

@@ -151,11 +151,11 @@ const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset
 
 /**
  * The seal the audit-pack route just wrote, read back from the server. The route
- * records the seal only while the run it packed is still the active one (codex
- * code-trust-07), and the IT view reads the marker with the same run binding
- * (`lib/it-sections.ts`). A failed read is its own state, never "the run moved"
- * (QA 1f314d94f6d1); the server's active run and the seal's time are checked in
- * `auditPackSealState` (QA acb0eb4bfb45).
+ * records the seal only while the run it packed is still the active one, and
+ * the IT view reads the marker with the same run binding
+ * (`lib/it-sections.ts`). A failed read is its own state, never "the run moved";
+ * the server's active run and the seal's time are checked in
+ * `auditPackSealState`.
  */
 async function readSeal(
   projectId: string,
@@ -250,7 +250,7 @@ export default function DeliveryPage() {
   const [auditPackError, setAuditPackError] = useState<string | null>(null);
   // The pack left, but this download is not confirmed as its seal — the read
   // failed, the run moved, or the seal predates it (owner, 12.10.2026: say so,
-  // do not leave "Never" standing without a reason; QA 1f314d94f6d1, acb0eb4bfb45).
+  // do not leave "Never" standing without a reason).
   const [sealNotice, setSealNotice] = useState<AuditPackSealState | null>(null);
   // A side action that finished — one toast at a time (§2.6).
   const [toast, setToast] = useState<string | null>(null);
@@ -458,8 +458,7 @@ export default function DeliveryPage() {
       // 3.0.12 — the boundary cases the engine derived from the original, as
       // data (input → expected outcome, traced), beside the suite that asserts them.
       // `testCases` is client-written: only the cases the engine reproduces from
-      // the signed source ship, recomputed; the rest are named as unverified
-      // (QA review of 2e6596ddbbc8, 0297134b3b87).
+      // the signed source ship, recomputed; the rest are named as unverified.
       const engineCasesJson = Array.isArray(project.testCases)
         ? (() => {
             const provenance = engineCaseProvenance(
@@ -536,7 +535,7 @@ export default function DeliveryPage() {
       // Roadmap 3.0.19: the engine's key-user step list, from the same evidence read, as docs/key-user-steps.md.
       const keyUserList = keyUserStepsOf(evidenceRead.evidence, project);
       const keyUserMode = keyUserModeOf(project, keyUserList);
-      // QA review of 317d5f7a9c53 (63537ea20c25): the card says the bundle holds the step list with its
+      // The card says the bundle holds the step list with its
       // acceptance checks. A key-user decision whose list cannot be built downloads nothing and says why,
       // rather than a ZIP with a placeholder where the step list was promised.
       if (isKeyUserDecision(project) && !(keyUserList && keyUserMode !== 'none')) {
@@ -677,7 +676,7 @@ export default function DeliveryPage() {
   /**
    * The Testing stage draws its "record the result" section only once
    * scenarios exist; before that the anchor names nothing and the link landed
-   * at the top of a page with no such section (QA b8524354846a). Without
+   * at the top of a page with no such section. Without
    * scenarios the link leads to step 1, where they are written.
    */
   const hasScenarios = Array.isArray(project.testCases) && project.testCases.length > 0;
@@ -705,8 +704,8 @@ export default function DeliveryPage() {
       <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name}>
         {/* `proven`, not `done`. The material can all be present while the test
             run behind the verdicts never happened — `testCases[].status` is
-            client-writable and used to be read as an execution (QA full review
-            of a19945ef01dc). In that case the lead falls through to the phase's
+            client-writable and used to be read as an execution.
+            In that case the lead falls through to the phase's
             own detail, which says so. */}
         {deliveryPhase.proven
           ? deliveryPhase.mock
@@ -1322,7 +1321,7 @@ export default function DeliveryPage() {
             )}
             {/* What the reader does with it, in one line (owner, 12.10.2026: "does a user still have to do anything with it?"). */}
             <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted" data-audit-pack-use="">
-              {/* Said by state, never as a promise about this download (QA reviews of 0316b4e2 and 4117e8ab, 7531ad62f7a4, 5193ba3183e3). */}
+              {/* Said by state, never as a promise about this download. */}
               {exportedAt
                 ? 'This run is sealed; a new download is the same signed record. '
                 : 'The first download of this run seals it. '}

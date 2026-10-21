@@ -391,7 +391,7 @@ export function ScoreDeductions({
             <span className="hidden sm:inline">
               100 − {model.deducted} for what the code does
               {model.notAssessed ? ` − ${model.notAssessed.points} for what could not be assessed` : ''}{' '}
-              {/* Floored, the left side does not come to the score: it says what it comes to, then the floor (QA 3c6cfc5de45d). */}
+              {/* Floored, the left side does not come to the score: it says what it comes to, then the floor. */}
               {model.floored ? `= ${signedFigure(100 - model.deducted - (model.notAssessed?.points ?? 0))}, raised to the floor of ${SCORE_FLOOR} ` : ''}
             </span>
             = <b className="font-bold text-cc-ink">{score}</b>

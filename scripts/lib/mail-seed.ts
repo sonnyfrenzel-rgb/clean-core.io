@@ -403,7 +403,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     build: (ctx) => {
       // send-survey.ts builds the unsubscribe URLs on a fixed https://clean-core.io,
       // with the same helper: the one-click URL for the header, the fragment
-      // link for the body (QA finding 8e25777f1339).
+      // link for the body.
       const unsubscribe = unsubscribeUrls('https://clean-core.io', unsignedToken('unsub', ctx));
       const closesOn = new Date(ctx.now.getTime() + 7 * 24 * 60 * 60 * 1000)
         .toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });

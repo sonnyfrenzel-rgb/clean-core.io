@@ -15,7 +15,7 @@ const VIEW_PLACES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * The `#fragment` a view switch carries over (Gegenreview c5085bb, CR-14).
+ * The `#fragment` a view switch carries over (CR-14).
  *
  * A subject — a line such as `#L42`, a selected element — stays, so the other
  * view opens on the same thing. A place of the old view — a layer

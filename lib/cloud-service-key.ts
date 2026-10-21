@@ -44,7 +44,7 @@ export const getCloudServiceKey = (serviceName: string): CloudServiceKey => {
    * One rule used to read `postgres || hana || database` and return the PostgreSQL
    * guide for all three. "SAP HANA Cloud Database" therefore handed an architect the
    * `pg` package, PostgreSQL credentials and a PostgreSQL connection — for a service
-   * that speaks none of it (QA 62c08912d745, 498a8c35f988). The guide was not merely
+   * that speaks none of it. The guide was not merely
    * unhelpful; it was copyable, and it cannot connect.
    *
    * So each database is matched by its own name, and a service that only says

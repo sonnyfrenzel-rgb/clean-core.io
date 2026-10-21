@@ -134,7 +134,7 @@ const CHECKS: CcCheckMessage[] = [
  * The check of the invite demo, on leaving the field and on submit (§2.7):
  * what is wrong and how it becomes right. The dialog's form is `noValidate`,
  * so this is the only check there is — a demo that closed on an empty address
- * would teach the pattern the wrong way round (QA c07adecd2fb5, 910b9b225271).
+ * would teach the pattern the wrong way round.
  */
 function inviteProblem(value: string): string | null {
   const address = value.trim();

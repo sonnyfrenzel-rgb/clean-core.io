@@ -115,8 +115,8 @@ export default async function SurveyPage({
     // In a transaction, because the concurrency it describes is the concurrency
     // it suffers from: a mail gateway and the recipient open the same link at
     // the same moment, both reads see no `linkFetchedAt`, both merge-writes go
-    // through, and the stored value is the later arrival rather than the first
-    // (QA review of 33471220d6e9, finding 8ccb1b1b765b). The transaction re-runs
+    // through, and the stored value is the later arrival rather than the first.
+    // The transaction re-runs
     // on a conflict, and the second attempt reads the field the first one wrote.
     // `getAdminDb()` hands back an untyped handle (the Admin SDK is imported
     // dynamically), so the reference is named for what it is — otherwise
@@ -124,7 +124,7 @@ export default async function SurveyPage({
     const docRef = ref as DocumentReference;
     // The claim itself is `lib/survey/link-fetch.ts`, so that two of them can be
     // run at once against the emulator and the winner counted — which a page
-    // component cannot be (roadmap 0.17, QA finding cca300dfb572).
+    // component cannot be (roadmap 0.17).
     const { previous: current } = await claimLinkFetch(db, docRef, {
       campaign: identity.campaign,
       uid: identity.uid,

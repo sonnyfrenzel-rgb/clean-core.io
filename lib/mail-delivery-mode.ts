@@ -5,8 +5,7 @@
  * absent and then answered `{ success: true }` regardless. Locally that is
  * correct — the log *is* the delivery channel and the developer is reading it.
  * In production it means no request was made, nobody was told anything, and the
- * admin console reported the mail as sent (QA review of 33471220d6e9, finding
- * 14edf99a390c).
+ * admin console reported the mail as sent.
  *
  * `NODE_ENV` alone is the wrong test, for the reason `app/api/request-tenant-access`
  * already writes down: CI runs a production build against the Firebase emulators

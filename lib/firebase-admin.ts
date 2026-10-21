@@ -126,7 +126,7 @@ export async function verifyIdToken(idToken: string) {
  * `isAdminClaim` on `assertS4TenantAccess` and `assertAccountActive`. A
  * withdrawal whose token revocation failed therefore still opened the live
  * S/4 endpoints and still waived the approval and Terms gates, for as long as
- * the old token lived (QA full review of a19945ef01dc, 79dc8a8a2d59).
+ * the old token lived.
  *
  * The claim is dropped from the decoded token rather than the token refused:
  * the person is still a signed-in user, they are simply no longer an
@@ -233,8 +233,8 @@ function logRejectedToken(err: unknown): void {
  * revocation invalidates the ID token the administrator is holding, because
  * nothing rewrites a JWT. If that last call fails — a transient Firebase error
  * — the route reports it, and until then the old token still says
- * `admin: true` and Firebase has no revocation time to check it against (QA
- * review of 146ac2e1a724, 9f4046043f12). The mirror is written *before* the
+ * `admin: true` and Firebase has no revocation time to check it against. The
+ * mirror is written *before* the
  * claim is removed and is therefore already `false` in exactly that window.
  *
  * That check no longer lives here. It moved into `verifyRequestAuth`
@@ -490,7 +490,7 @@ export async function refundRunQuota(
     // Best-effort for the request — a run that already failed is not also
     // failed by its refund — but not silent: an unrefunded reservation keeps a
     // unit and a fingerprint charged, and this line is how an operator finds
-    // the account to put right (QA full review of v2.20.0). The account is
+    // the account to put right. The account is
     // named by accountLogRef(uid), not by its uid, and the error by its code
     // or class, because a Firestore error message can carry the document path.
     const code = (err as { code?: unknown } | null)?.code;
@@ -605,7 +605,7 @@ export async function assertByokAllowed(uid: string, isAdminClaim: boolean): Pro
 }
 
 /**
- * Writes that must not outlive an erasure (QA full review of a12774cd2b7f).
+ * Writes that must not outlive an erasure.
  *
  * `deleteUserDataAndAccount` deletes the profile in its last Firestore step. A
  * request that verified its token before that step and writes afterwards used
@@ -740,7 +740,7 @@ export async function activateAccount(uid: string): Promise<{ activated: boolean
  * that was the opposite half-state: a successful claim write followed by a
  * failed mirror write reported failure to the operator and handed the account
  * working administrator rights on its next token refresh, because an absent
- * mirror is not a denial (QA full review of a19945ef01dc, 76c6c79c6f72). A
+ * mirror is not a denial. A
  * console that shows a button it may not press is a cosmetic fault; a grant
  * that was reported as failed and works is not.
  *
@@ -931,7 +931,7 @@ export async function deleteUserDataAndAccount(
   //    exists). So they run again in step 5b, once the profile is gone and no
   //    such create can commit any more: a project saved in a tab while this
   //    erasure was between here and step 5 is erased too, instead of outliving
-  //    an erasure that reported success (QA full review 5a693a12546c).
+  // an erasure that reported success.
   const sweepClientCreatable = async () => {
     const q = db.collection('projects').where('userId', '==', uid).limit(200);
     let snapshot = await q.get();
@@ -985,7 +985,7 @@ export async function deleteUserDataAndAccount(
   //    The name the signup notification was sent under, read before step 3
   //    deletes the registration record that holds it. That notification goes
   //    to the operator's mailbox, so its delivery record matches neither the
-  //    account's uid (before codex code-mail-02 it carried none) nor its
+  //    account's uid (earlier records carried none) nor its
   //    address; its subject names the account. See step 3c.
   let signupName: string | null = null;
   try {
@@ -1323,8 +1323,8 @@ export async function approveTenantWithToken(
     // and nothing else — no nonce, no server state, seven days of validity. A
     // rejection deleted the request document (below) but could not invalidate
     // the approve token minted beside it, so an approve link for a rejected
-    // request still worked for the rest of that week (security audit of
-    // v2.14.0, SEC-2026-343). The token now signs the request's nonce too
+    // request still worked for the rest of that week.
+    // The token now signs the request's nonce too
     // (`uid.requestType.action.exp.nonce`, `createApprovalToken`), and this
     // check stays as the second condition.
     //
@@ -1352,8 +1352,8 @@ export async function approveTenantWithToken(
   } else if (action === 'reject') {
     // The same condition as the approval: a request that is still open. A
     // manual grant in the admin console resolves the request as well, and a
-    // reject link used afterwards must not reverse it (QA review of
-    // a7e0ae36c896) — the grant also retires the nonce (`adminGrantS4`), this
+    // reject link used afterwards must not reverse it
+    // — the grant also retires the nonce (`adminGrantS4`), this
     // is the second door.
     const requestRef: DocumentReference = db.collection('tenant_access_requests').doc(uid);
     await db.runTransaction(async (tx: Transaction) => {
@@ -1419,7 +1419,7 @@ export async function assertMfaSatisfied(
     // is "nothing to require" and the caller decides what a missing profile
     // means; for a route that requires enrolment it is a refusal - returning
     // here let a verified Auth account without a Firestore document past the
-    // own-key requirement (QA review of 14ab490793cb, the low finding).
+    // own-key requirement.
     if (opts?.requireEnrolment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {
       throw new QuotaError('This account has no profile on record, so multi-factor authentication cannot be verified. Sign in again; if this persists, contact support.', 403);
     }
@@ -1513,7 +1513,7 @@ export async function recordRunnerSelftest(adminUid: string, status: string): Pr
 }
 
 // The four governance actions below write their Firestore state and their
-// `audit_events` row in one batch (QA full review of v2.20.0): written one
+// `audit_events` row in one batch: written one
 // after the other, a failed audit write left a suspension or an S/4 grant in
 // force with no record of who made it, while the route reported an error. The
 // Auth half of approve and revoke still follows the batch — it is not a
@@ -1531,7 +1531,7 @@ export async function recordRunnerSelftest(adminUid: string, status: string): Pr
  * The entitlement fields a reinstatement writes. An enterprise account keeps its
  * tier: `adminRevokeUser` never touches the tier, so writing `pilot` here turned
  * a suspension and its undo into a silent downgrade to the metered community
- * quota (QA full review of v2.20.0). Every other account is reinstated as a
+ * quota. Every other account is reinstated as a
  * pilot, as before.
  */
 export function reinstatedEntitlements(profile: { tier?: unknown } | undefined): {
@@ -1590,7 +1590,7 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
     // an ID token minted before the suspension lives up to an hour; without
     // it a suspended administrator kept every admin branch of the rules for
     // that hour — other profiles, uploads, tickets, and an unrestricted update
-    // of their own profile back to `approved` (SEC-b6716f0-03). The server
+    // of their own profile back to `approved`. The server
     // drops the claim on the same mirror (`withoutWithdrawnAdminClaim`).
     // Reinstating an administrator is an explicit grant (`setAdminClaim`).
     isAdmin: false,
@@ -1609,8 +1609,7 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   // half did not: the browser keeps a refresh token, renews its ID token for as
   // long as it likes, and `firestore.rules` asks only `userId == request.auth.uid`
   // for the account's own projects. A revoked account therefore kept direct read
-  // and write access to its own data through the client SDK, indefinitely (QA
-  // full review of 3131afa, b97e45a2976d).
+  // and write access to its own data through the client SDK, indefinitely.
   //
   // `setAdminClaim` has revoked tokens on withdrawal since it was written
   // (`auth.revokeRefreshTokens` above); this is the same act for the account
@@ -1626,7 +1625,7 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   // tests/firestore-rules-suspended.spec.ts, live since the rules deploy
   // recorded in `docs/registers/rules-deployment.json`. An earlier version of
   // this comment said no rule consults `status`; that stopped being true with
-  // 3.0.12 (QA reviews of 4d6f35c59546, 2a9864f3b52e, a12774cd2b7f).
+  // 3.0.12.
   const auth = await getAdminAuth();
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });
@@ -1638,7 +1637,7 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
  * first, before the decision is written. Otherwise a reject link used after a
  * manual grant took the access away again, and an approve link used after a
  * manual revocation — which puts the request back to `pending` — granted it
- * again (QA review of a7e0ae36c896).
+ * again.
  */
 async function retireTenantApprovalLinks(db: Firestore, targetUid: string): Promise<void> {
   await db.collection(TENANT_APPROVAL_NONCES).doc(targetUid).delete();
@@ -1712,7 +1711,7 @@ export async function saveOwnModelKey(uid: string, apiKey: string, provider: Mod
   const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
 
   // The secret and the profile's metadata in one transaction that reads the
-  // profile (QA full review of v2.20.0). Two separate writes could leave a key
+  // profile. Two separate writes could leave a key
   // `loadOwnModelKey` serves while the save reported failure; and a merge-set
   // recreated the profile of an account erased while the save was in flight.
   // Now both commit or neither does, a missing profile refuses the save, and
@@ -1828,8 +1827,8 @@ export async function loadOwnModelKey(
  * errors propagate now — the route reports success only when the delete went
  * through.
  *
- * One transaction that reads the profile, the way `saveOwnModelKey` writes
- * (QA 0ce264ac607d). It was two writes — the secret deleted, then the profile
+ * One transaction that reads the profile, the way `saveOwnModelKey` writes.
+ * It was two writes — the secret deleted, then the profile
  * merge-set — and the merge-set onto a profile erased in between created it
  * again, holding nothing but these fields; a save committing between the two
  * writes was also left with a profile that denied the key it had just stored.

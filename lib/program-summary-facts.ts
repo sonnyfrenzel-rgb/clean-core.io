@@ -247,8 +247,8 @@ const ALWAYS_ROOT = new Set(['CONSTRUCTOR', 'CLASS_CONSTRUCTOR']);
 /**
  * Links every statement's container to the methods of this program it calls by
  * name — `CALL METHOD x`, `me->x( )`, `lo_obj->x( )`, `lcl=>x( )`, `x( )` — and
- * returns the names of the methods so called (QA review of 5ec8488a,
- * ac6c538bee0d). Empty, and nothing linked, where a call cannot be followed: a
+ * returns the names of the methods so called.
+ * Empty, and nothing linked, where a call cannot be followed: a
  * dynamic method call anywhere, or a global class whose methods other programs
  * call. Constructors and event handlers run by themselves and are never returned.
  */
@@ -261,8 +261,7 @@ function methodCallEdges(
   const called = new Set<string>();
   const defined = new Set(containers.filter((c) => c.kind === 'method').map((c) => c.name));
   // A name two local classes both define cannot be told apart by name alone: such a method stays a
-  // root of the normal flow, so its changes are never reported as command-only (QA review of
-  // 0316b4e2, 895b0df96abb).
+  // root of the normal flow, so its changes are never reported as command-only.
   const seen = new Map<string, number>();
   for (const c of containers) if (c.kind === 'method') seen.set(c.name, (seen.get(c.name) ?? 0) + 1);
   const ambiguous = new Set([...seen].filter(([, n]) => n > 1).map(([name]) => name));
@@ -313,8 +312,8 @@ const COMMAND_EVENTS = /^(?:ADDED_FUNCTION|USER_COMMAND|DOUBLE_CLICK|LINK_CLICK|
  *
  * and every FORM or method reached only from those. A FORM or method the normal
  * flow also reaches (START-OF-SELECTION, a PBO module, a function module …) is
- * not command-only. Method calls are followed only where they are certain
- * (QA review of 5ec8488a, ac6c538bee0d): in a global class, or a program with a
+ * not command-only. Method calls are followed only where they are certain:
+ * in a global class, or a program with a
  * dynamic method call anywhere, every method counts as the normal flow — the
  * side that says "changes" rather than hides it.
  */
@@ -339,7 +338,7 @@ export function commandOnlyReader(source: string, calls: CallGraphReport): { onC
 
   const next = new Map<string, string[]>();
   const link = (from: string, to: string) => next.set(from, [...(next.get(from) ?? []), to]);
-  // Method calls are followed like PERFORMs (QA review of 5ec8488a, ac6c538bee0d).
+  // Method calls are followed like PERFORMs.
   const calledMethods = methodCallEdges(statements, containers, keyOf, link);
 
   const commandRoots = new Set<string>();

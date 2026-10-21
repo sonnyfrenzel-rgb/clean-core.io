@@ -428,8 +428,8 @@ function effectsOf(statements: readonly AbapStatement[], facts: ExplainFacts, ct
 
 /**
  * An effect that ends the flow for the case — the step or the program stops.
- * A loop that skips one entry and takes the next does not stop anything
- * (QA review of b89b39fbc913): it is `SKIPS`, said as a skip, never as a stop.
+ * A loop that skips one entry and takes the next does not stop anything:
+ * it is `SKIPS`, said as a skip, never as a stop.
  */
 const STOPS = /^stops|^ends the program/;
 const SKIPS = /^skips/;
@@ -540,8 +540,8 @@ function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   if (rc.stems.some((s) => /^sy-|^(?:subrc|tabix|index|dbcnt)$/.test(s))) {
     return { text: 'It reads a system field of the program run, not a business value.', anchors: [where] };
   }
-  // A number alone proves nothing: 999999 can be a business limit on an amount
-  // (QA review of b89b39fbc913). Only a subject named as a setting of the
+  // A number alone proves nothing: 999999 can be a business limit on an amount.
+  // Only a subject named as a setting of the
   // program makes the rule technical; the sentinel then says what its value is.
   const technicalSubject = rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s));
   if (technicalSubject && values.some(isSentinel)) {

@@ -141,8 +141,7 @@ export async function probeService(
     throw new Error(connectionFailure(getError));
   }
 
-  // Only the status is used. Cancelled while the deadline still runs (QA full
-  // review of fc787674705f, b8dfbd24e73a).
+  // Only the status is used. Cancelled while the deadline still runs.
   await response.body?.cancel().catch(() => {});
   clearTimeout(timeout);
   return { httpStatus: response.status };
@@ -193,8 +192,8 @@ export function describeProbeStatus(httpStatus: number, authMethod: string, serv
       checked: checked(true, anonymous ? null : true, true),
     };
   }
-  // A redirect (often to a login page) confirms nothing about the service, so it is no "connected" (QA review of
-  // 33d378a056fd); a 403 is a refused access, not a rejected credential — the user may be signed in without the
+  // A redirect (often to a login page) confirms nothing about the service, so it is no "connected";
+  // a 403 is a refused access, not a rejected credential — the user may be signed in without the
   // authorisation for this service.
   if (httpStatus >= 300 && httpStatus < 400) {
     return {

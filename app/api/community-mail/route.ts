@@ -14,7 +14,7 @@ import { COMMUNITY_MAIL_FIELD } from '@/lib/community-mail';
 /**
  * POST /api/community-mail — the account's consent to community mail.
  *
- * Owner decision of 30.09.2026 (QA finding bef96e7f054f): survey invitations and
+ * Owner decision of 30.09.2026: survey invitations and
  * community updates go only to an account that switched them on here. Off by
  * default; nothing at sign-up sets it.
  *
@@ -53,8 +53,7 @@ export async function POST(req: NextRequest) {
     await assertRateLimit(`community_mail:${uid}:${getClientIp(req)}`, 30, 60 * 60 * 1000);
 
     const body = await req.json().catch(() => ({}));
-    // A JSON `null` body parses; reading a field of it threw into the 500 below
-    // (QA slice review of 5477b308afc3, f87ce9ae9496).
+    // A JSON `null` body parses; reading a field of it threw into the 500 below.
     const optIn = body && typeof body === 'object' ? (body as { optIn?: unknown }).optIn : undefined;
     if (typeof optIn !== 'boolean') {
       return NextResponse.json({ error: 'Expected { optIn: true } or { optIn: false }.' }, { status: 400 });

@@ -329,7 +329,7 @@ function answerDetails(before: StateEntry, after: StateEntry): string[] {
  * an answer given again the same in every part (`sameAnswer`: state, note,
  * value source, "also applies to", the answer) is none either. A moved value
  * source or "also applies to" under the same word is a change, said in
- * `details` (QA review of 45ab7b5f6a4c).
+ * `details`.
  */
 export function ruleChanges(explanation: Pick<RuleSetExplanation, 'order'>, made: readonly StateEntry[]): RuleChange[] {
   const known = new Set(explanation.order);

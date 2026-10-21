@@ -6,7 +6,7 @@
  * The first version set a node's level on its first visit and, on a later
  * visit by a longer path, raised that one node and returned — its successors
  * kept the old level. `A → B → D` plus `A → C → X → B` then drew `B → D`
- * backwards (QA full review of v2.20.0, be67ec5f9d29). A raised level is now
+ * backwards. A raised level is now
  * passed on. An edge back into the path that is being walked is a loop, not a
  * longer path, and is skipped; a loop used to push its target — the start node,
  * often — to the right of the node it came back from.

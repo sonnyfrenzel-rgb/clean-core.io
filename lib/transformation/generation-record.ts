@@ -268,8 +268,8 @@ export interface CurrentSlot {
 /**
  * Does a tool read differently now than when the generation read it? Its `when` or **any** of its facts —
  * compared in the form the record stores them (at most four facts, each capped as `basisOf` caps it), so a
- * fact cut short in the record is not taken for a change (QA caa5712913ad: only the first fact was compared,
- * and "2 gaps" turning into "3 gaps" in the second fact went unseen). A slot still loading or not read is
+ * fact cut short in the record is not taken for a change (comparing only the first fact let "2 gaps" turning
+ * into "3 gaps" in the second fact go unseen). A slot still loading or not read is
  * never stale: nothing is known yet.
  */
 export function basisSlotChanged(b: BasisSlot, now: readonly CurrentSlot[]): boolean {

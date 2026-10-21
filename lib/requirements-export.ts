@@ -483,8 +483,8 @@ function blocksDocument(blocks: DocBlock[]): string {
     else if (block.k === 'kv') for (const [k, v] of block.items) b.push(para(run(`${k}: `, { bold: true }) + run(v, { mono: k === 'Lines' })));
     else if (block.k === 'ol') block.items.forEach((t, i) => b.push(para(run(`${i + 1}. ${t}`))));
     else if (block.k === 'ul') block.items.forEach((t) => b.push(para(run(`•  ${t}`))));
-    // An internal hyperlink to the heading's bookmark, and the section in words for print
-    // (QA review of 35b97d90c6e1); without a bookmark to lead to, the words alone.
+    // An internal hyperlink to the heading's bookmark, and the section in words for print;
+    // without a bookmark to lead to, the words alone.
     else if (block.k === 'links') {
       block.items.forEach((l) => {
         const target = docxBookmarkName(l.href);

@@ -170,7 +170,7 @@ export function useCanvasFullscreen({
       const state = window.history.state;
       if (state?.[HISTORY_FLAG] === scope && state?.[DEPTH_KEY] === 0) {
         // The entry underneath may be a level entry of an earlier full screen:
-        // taking ours off must not restore its level (QA 7e0254da77f0).
+        // taking ours off must not restore its level.
         unwindingRef.current = true;
         window.history.back();
       }

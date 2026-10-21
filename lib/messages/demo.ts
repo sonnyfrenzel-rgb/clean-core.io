@@ -112,7 +112,7 @@ export function demoSourceLineLabel(line: number | string): string {
 /**
  * "source: SAP catalog", "source: Clean-Core.io curated mapping" — or "source:
  * not stated" when the engine recorded none. A curated pairing is never read as
- * SAP's (`lib/successor-source.ts`, external audit PRV-01).
+ * SAP's (`lib/successor-source.ts`).
  */
 export function demoEvidence(provenance: string | null | undefined): string {
   return `${m('demo.evidence')} ${provenance ? successorSourceNote(provenance) : m('demo.notStated')}`;

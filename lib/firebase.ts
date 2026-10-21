@@ -84,8 +84,7 @@ export enum OperationType {
  * `console.error` **and** into the `Error.message` that `ErrorBoundary.tsx`
  * then renders on screen. A support screenshot of a failed save therefore
  * carried the person's identity, and so did any browser log shipped anywhere
- * (security audit of v2.14.0, SEC-2026-352; GDPR Art. 5(1)(c) data
- * minimisation).
+ * (GDPR Art. 5(1)(c) data minimisation).
  *
  * What debugging actually needs from the account is whether someone was signed
  * in and whether the token was verified — which uid, which address and which

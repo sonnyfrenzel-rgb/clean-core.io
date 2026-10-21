@@ -97,8 +97,7 @@ export interface AnswerDocRef {
  * contained a dot and `data.answers` stayed `undefined`. The endpoint returned
  * `ok: true` the whole time, and `app/survey/[token]/page.tsx` and
  * `scripts/send-survey-digest.ts` — both of which read the nested map — saw
- * nothing. A live satisfaction survey ran that way (QA findings b22563b1cd74,
- * a0a649312df1).
+ * nothing. A live satisfaction survey ran that way.
  *
  * A nested map with `merge: true` is the form that does what the old comment
  * promised: Firestore merges maps key by key, so a second question's answer

@@ -1,7 +1,7 @@
 /**
  * Whether opening the Design stage writes the solution design (ADR-070,
  * amended 03.10.2026). Pure, so the rule is held by a test rather than only by
- * the page that applies it (QA f63973a2cf05).
+ * the page that applies it.
  *
  * Wanted when there is none on record, or the one on record was written for a
  * previous basis — never again when a current one is there, which would cost a

@@ -9,7 +9,7 @@
  * When the sandbox reports a compile error, the testing stage asks the model to
  * repair **one** module. Its answer — a single TypeScript source — used to be
  * written straight over `project.generatedCode`, which for a package meant every
- * other generated file was replaced by that one module and lost (QA c1523df5fc4e).
+ * other generated file was replaced by that one module and lost.
  *
  * A module of its own, rather than three closures inside the hook, so the
  * replacement can be run and read back in a test without a browser, a project and
@@ -61,12 +61,12 @@ export function namedFileIndex(files: GeneratedFile[], errorText: string): numbe
   files.forEach((f, i) => {
     // A package file at the root named `test.ts` is written where the suite is
     // written next and overwritten by it (`lib/test-sandbox/core.ts`), so an
-    // error naming that path is always the suite's (QA finding 2df28c419550).
+    // error naming that path is always the suite's.
     if (f.path.replace(/^\.\//, '') === 'test.ts') return;
     const base = f.path.split('/').pop() || f.path;
     // `test.ts` is also the name the sandbox gives the suite (SUITE_ENTRY), so a
     // package file of that name is matched by its full path only — by name
-    // alone it took the suite's error (carried QA finding d87fb0856761).
+    // alone it took the suite's error.
     const byName = base !== 'test.ts' && errorText.includes(base);
     if ((errorText.includes(f.path) || byName) && f.path.length > bestLen) {
       best = i;
@@ -113,8 +113,8 @@ export type RepairTarget =
  * the flat legacy module, or the test suite.
  *
  * The rule is "the package unless the error demonstrably belongs to the suite",
- * and it is that way round because the package is what was transformed. Until
- * QA 1c8234b64f35 the whole decision was `/app\.ts/.test(errorText) ||
+ * and it is that way round because the package is what was transformed. The
+ * whole decision used to be `/app\.ts/.test(errorText) ||
  * !suite` — one filename, in an artefact that contains arbitrary paths. A CAP
  * package reports its errors in `srv/service.cds`, `db/schema.cds` or
  * `srv/handlers/order.ts`; none of those matches `app.ts`, and because a suite

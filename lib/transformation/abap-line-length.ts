@@ -87,7 +87,7 @@ function splitLongLiterals(code: string, room: number): string {
       if (end < body.length && body.slice(at, end).split(q).length % 2 === 0) end--;
       const chunk = body.slice(at, end);
       // Every chunk but the last is a string literal (`…`), which keeps its blanks — a text literal ('…') would
-      // drop trailing ones (QA review of 0dc9c0d8bf27). The last chunk ends where the original ends: as written.
+      // drop trailing ones. The last chunk ends where the original ends: as written.
       parts.push(end < body.length && q === "'" ? `\`${chunk.replace(/''/g, "'").replace(/`/g, '``')}\`` : `${q}${chunk}${q}`);
       at = end;
     }

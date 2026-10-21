@@ -63,8 +63,7 @@
  * copies of this rule would drift, and then the Business view and the BPMN
  * export would disagree about what a decision is.
  *
- * The rule of 2.15 has **two halves** and they are two functions, since the QA
- * review of `9e408888bfec` (fingerprint `f51d99129444`):
+ * The rule of 2.15 has **two halves** and they are two functions:
  * `hasOnlyTechnicalConditions` is the condition half — that is the one the
  * Business view and 2.15's "is this a business decision?" ask —
  * and `isTechnicalGateway` is the whole rule, condition **and** exactly one
@@ -96,7 +95,7 @@ export type ComparisonOutcome = 'covered' | 'not-covered' | 'unknown';
 export type ComparabilityDisplay =
   | 'standard-candidate'
   // A reference that can answer this was asked and holds no candidate: an
-  // established absence, not an open question (carried QA finding b676336827e1).
+  // established absence, not an open question.
   | 'no-standard-candidate'
   | 'not-determined'
   | 'not-comparable'
@@ -290,8 +289,7 @@ export function technicalMarkersIn(condition: string | undefined | null): string
  * (`CALL FUNCTION`, a mail/IDoc send, `SUBMIT`/`PERFORM` into another program,
  * `CALL TRANSACTION`, a call this reader has no source for, a `FORM` of its own).
  *
- * `task` and `output` stood here until the QA review of `9e408888bfec`
- * (fingerprint `f51d99129444`) counted what they let through. Neither is a call,
+ * `task` and `output` used to stand here. Neither is a call,
  * a read or a write: `task` is "a step with an effect and no type of its own" —
  * an assignment, a computation — and `output` is a data object, a `WRITE` to the
  * list or to a file. Neither sets `sy-subrc` in a way a following branch could
@@ -329,9 +327,9 @@ export interface GatewayContext {
  * nothing was proven about it.
  *
  * It is exported because the two halves of 2.15 answer two different questions,
- * and the QA review of `9e408888bfec` (fingerprint `f51d99129444`) showed what
- * happens when one function tries to answer both: a caller without predecessor
- * data got a `true` that read like the whole rule. **2.15 needs both halves** —
+ * and one function that tries to answer both goes wrong: a caller without
+ * predecessor data got a `true` that read like the whole rule. **2.15 needs
+ * both halves** —
  * this one to decide that a branch on a return code is no business decision,
  * `isTechnicalGateway` to decide whether the export may re-shape the gateway
  * into a boundary event on the step in front of it. The Business view
@@ -350,8 +348,8 @@ export function hasOnlyTechnicalConditions(conditions: readonly string[]): boole
  * Exported so 2.15 can ask exactly this question before it decides not to export
  * an `exclusiveGateway` — one rule, one place.
  *
- * **Missing predecessor data answers `false`.** Until the QA review of
- * `9e408888bfec` (fingerprint `f51d99129444`) it answered `true`: a caller that
+ * **Missing predecessor data answers `false`.** It used to answer `true`: a
+ * caller that
  * passed no predecessors got the decision on the conditions alone, under the
  * comment that "not knowing the predecessors is not the same as them being
  * wrong". That sentence is true, and it is the argument for *unknown* — never

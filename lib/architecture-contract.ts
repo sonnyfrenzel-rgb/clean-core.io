@@ -611,8 +611,7 @@ export function buildArchitectureContract(args: {
   /**
    * The inputs the caller derived from that differ from the run's manifest —
    * named, e.g. `source`, `target deployment`. Any one blocks the contract: its
-   * evidence would be about inputs the run never had (carried QA finding
-   * 79759e45695d).
+   * evidence would be about inputs the run never had.
    */
   inputsDiffer?: ReadonlyArray<string>;
   /**
@@ -709,7 +708,7 @@ export function buildArchitectureContract(args: {
   // and so this contract's — stays the code route that takes a part should a
   // candidate not hold (`ExtensibilityRouteReport.keyUser`). Naming that
   // artifact after the RAP runtime sentence put two routes into one field, the
-  // failure of QA review 4b4586aff273 again. The field names the code route's
+  // same failure as before. The field names the code route's
   // artifact and says what the router recommends ahead of it.
   const followsRouter = chosen === recommended;
   const keyUserAhead = followsRouter && route.keyUser?.recommended === true;

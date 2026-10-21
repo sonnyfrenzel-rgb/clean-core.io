@@ -156,7 +156,7 @@ export default function UserOnboarding() {
   };
 
   /*
-   * Three dialogs (QA b0b3150a1974), all `CcDialog` since Block D (D.7): focus
+   * Three dialogs, all `CcDialog` since Block D (D.7): focus
    * in and held, the page behind inert, focus back on close. The sign-up is
    * mandatory, so its two ways out — Escape and the close button — both lead
    * to the "Leave the sign-up?" question rather than away; that question's own
@@ -276,7 +276,7 @@ export default function UserOnboarding() {
               are written by a language model — and leaves out the label: §3.1
               has no "powered by Generative AI", and the provenance of a given
               text is the job of the chip where that text is shown. The same fact
-              as section 4.1 of Terms v2.2.0 (QA c9ab2c6a6c1c). */}
+              as section 4.1 of Terms v2.2.0. */}
           <CcMessageStrip state="warning" headline="System disclaimer and terms.">
             This application is a <strong>free community project</strong>. Findings, route and score come from a
             deterministic engine, without a language model. Summaries, designs, generated code, documentation and

@@ -1,7 +1,7 @@
 /**
  * The reason a load answer of the executor is not a successful load, or null
  * when it is one. A failure is a failure whatever its text — an empty message
- * included (QA 7752de789154) — and a success must name every module it was
+ * included — and a success must name every module it was
  * asked to import (`expected`). No imports: `run.mjs` and the spec read it alike.
  */
 export function loadFailure(answer, expected) {

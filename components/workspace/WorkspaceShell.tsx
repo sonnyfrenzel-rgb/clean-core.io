@@ -487,7 +487,7 @@ export default function WorkspaceShell({
    *
    * Read from the address as it is now, not the layer state: that may still be
    * the last view's — a switch from Business `#standard` would otherwise send
-   * the reader straight back (QA 6ec03d013196).
+   * the reader straight back.
    */
   const hasActiveRun = Boolean(project?.activeRunId?.trim());
   // The address last sent on, so the effect re-running before the navigation
@@ -524,7 +524,7 @@ export default function WorkspaceShell({
    * the top. Wait for the map, bring it into view, and hold it there for five
    * seconds while the blocks above it grow; a wheel, a touch, a key or a
    * pointer press by the reader ends it at once — the press covers a drag of
-   * the scrollbar, which sends no wheel (QA 341b71202202). Not until the page
+   * the scrollbar, which sends no wheel. Not until the page
    * is still for a moment: the blocks above grow in steps (the first look, the
    * result line), and a pause between two steps read as the end left the
    * reader a screen above the map.
@@ -539,7 +539,7 @@ export default function WorkspaceShell({
     const onMap = () => window.location.hash === `#${BUSINESS_MAP_ID}`;
     const follow = () => {
       // A new hash ends the loop that is running, whatever it points at; only
-      // the map's own hash starts another (QA 6eaa3be7e7ad).
+      // the map's own hash starts another.
       window.cancelAnimationFrame(frame);
       stop = true;
       if (!onMap()) return;
@@ -763,7 +763,7 @@ export default function WorkspaceShell({
               <span>{started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}</span>
             </span>
             <span className="cc-no-print ml-auto">
-              {/* A fold folds back (QA review of 247b20c16e38). */}
+              {/* A fold folds back. */}
               <CcButton onClick={() => setStatusOpen((v) => !v)} aria-expanded={statusOpen} data-workspace-status-toggle="">
                 {statusOpen ? wt('page.hideProjectStatus') : wt('page.showProjectStatus')}
                 <ChevronDown size={14} aria-hidden={true} className={statusOpen ? 'rotate-180' : undefined} />
@@ -1007,7 +1007,7 @@ export default function WorkspaceShell({
     // Business only: the process map and its linked source column (roadmap
     // 2.5, mockup s1). It stays under every layer — the map is the anchor of
     // the Business view and the chosen layer reads beside it (owner,
-    // 01.10.2026; QA 55bcde6ea5e1).
+    // 01.10.2026).
     process:
       view === 'business' ? (
         <div id={BUSINESS_MAP_ID} className="mt-4 scroll-mt-20" data-workspace-process-block="">

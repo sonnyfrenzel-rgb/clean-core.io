@@ -80,7 +80,7 @@ async function fetchOAuth2Token(
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
       // Neither the caller nor the log gets the body: the caller the status,
-      // the log the status and a shape word (SEC-2026-525; QA review of 46a7d64baad3).
+      // the log the status and a shape word.
       logger.warn('oauth token exchange rejected', {
         route: 'api/fetch-s4-metadata',
         status: response.status,
@@ -256,8 +256,8 @@ export async function POST(req: NextRequest) {
     // `app/api/fetch-odata-metadata/route.ts`: this route reaches out to a host
     // the body names and reads a document of up to 8 MB from it, and
     // `middleware.ts` excludes `/api` from its matcher, so nothing bounded how
-    // often one MFA-confirmed account could do that (security audit of
-    // b88c77b). Same budget as the sibling, so one journey through the S/4
+    // often one MFA-confirmed account could do that.
+    // Same budget as the sibling, so one journey through the S/4
     // screens cannot be refused by one route and allowed by the other.
     try {
       await assertRateLimit(`fetch-s4-metadata:${decodedToken.uid}`, 30, 60 * 60 * 1000);
@@ -357,7 +357,7 @@ export async function POST(req: NextRequest) {
       // ours to forward: an undici error carries the address it tried, a
       // resolver failure carries the name it resolved, and a TLS failure
       // carries the chain. It goes to the log; the caller gets the one sentence
-      // that tells them what to check (security audit of b88c77b).
+      // that tells them what to check.
       logger.error('s4 metadata fetch failed', {
         route: 'api/fetch-s4-metadata',
         code: fetchErr?.cause?.code ?? null,
@@ -379,7 +379,7 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, ODATA_BODY_LIMITS).catch(() => '');
       // The tenant's body goes nowhere: the caller gets our own wording for
-      // the status, the log a shape word (SEC-2026-525; QA review of 46a7d64baad3).
+      // the status, the log a shape word.
       logger.warn('s4 metadata endpoint rejected', {
         route: 'api/fetch-s4-metadata',
         status: response.status,

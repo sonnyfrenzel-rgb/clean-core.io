@@ -102,7 +102,7 @@ export function keyUserPlanRanges(
 
 /**
  * Why a run whose engine reads key user cannot generate yet, or null when it
- * can (QA review of 317d5f7a9c53, a78673fa61ff). The planner's key-user ranges
+ * can. The planner's key-user ranges
  * come from the evidence read: while it loads, and when it failed, they are
  * empty, and a split program would build units for the lines a key user
  * configures. So such a run waits for a ready read — a failed one says why
@@ -119,8 +119,8 @@ export function keyUserEvidenceBlock(
   if (!keyUserGateOpen(project)) return null;
   if (evidence.state === 'ready') {
     // A ready read that carries no key-user reading gives the planner no ranges either: the whole source would be
-    // planned, the configured lines included (QA review of 7fe620f4c919, e6be8bc2a9fd). A ready state handed over
-    // without its report holds generation as well (QA review of f6b07e692346, 442c3294dcf2): only a reading opens it.
+    // planned, the configured lines included. A ready state handed over
+    // without its report holds generation as well: only a reading opens it.
     return evidence.value?.evidence?.keyUser
       ? null
       : "The engine's findings for this source carry no key-user reading, so the lines a key user configures cannot be left out of the code. Run the analysis again.";

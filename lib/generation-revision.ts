@@ -3,8 +3,7 @@ import { missingArtefacts, missingEngineLedArtefacts, usableTestSuite, type Gene
 
 /**
  * Roadmap 3.0.11 — the generation is stored by the server, against the state
- * the page read **before** the model was asked (QA full review of 81810c8026e0,
- * `e649177b3894`, `c42de15e9c75`).
+ * the page read **before** the model was asked.
  *
  * The Transformation stage used to guard a generation with a per-tab ref and
  * then write `generatedCode`, `testSuite` and `status` from the browser, after a
@@ -61,7 +60,7 @@ export interface GenerationRevisionState {
   solutionDesign?: unknown;
   analysis?: unknown;
   generatedCode?: unknown;
-  /** Replaced by the same store as `generatedCode`, and regenerated on its own (codex code-trust-05). */
+  /** Replaced by the same store as `generatedCode`, and regenerated on its own. */
   testSuite?: unknown;
   generationBinding?: unknown;
   /** The PLATFORM KNOWLEDGE block and its revisions; absent when none was built (version 3). */

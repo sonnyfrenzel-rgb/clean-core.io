@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (!uid || typeof uid !== 'string' || uid.length > 128) {
       return NextResponse.json({ error: 'Missing or invalid uid.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(uid)) {
       return NextResponse.json({ error: 'Missing or invalid uid.' }, { status: 400 });
     }
@@ -83,8 +83,7 @@ export async function POST(request: NextRequest) {
      * The old check validated the *shape* of the address and not its *binding*,
      * which is why "F-04: validate the recipient address" did not prevent this.
      * Firebase Auth holds the address the account was created with, so that is
-     * what this reads. Security audit of bc2f786, SEC-bc2f786-12 — the only part
-     * of that finding that stands.
+     * what this reads.
      *
      * **What this does not do, said plainly.** An Auth address is only *proven*
      * once `emailVerified` is true, and this product's password accounts are not
@@ -106,8 +105,8 @@ export async function POST(request: NextRequest) {
       account = await adminAuth.getUser(uid);
     } catch (lookupErr: unknown) {
       // Only "no such user" is a 404. An Auth outage is not a missing account,
-      // and saying so sent the operator looking for an account that exists
-      // (carried QA finding 27b5c754d332); the outer catch answers it as a 500.
+      // and saying so sent the operator looking for an account that exists;
+      // the outer catch answers it as a 500.
       if ((lookupErr as { code?: string })?.code === 'auth/user-not-found') {
         return NextResponse.json({ error: 'No such account.' }, { status: 404 });
       }
@@ -185,7 +184,7 @@ export async function POST(request: NextRequest) {
       // On the real deployment a missing key means nobody was told anything. The
       // console fallback ran here unguarded and the route still answered
       // `success: true`, so the admin console reported a welcome mail that was
-      // never sent (QA review of 33471220d6e9, finding 14edf99a390c).
+      // never sent.
       console.error('[Email] RESEND_API_KEY missing in production — welcome mail not sent.');
       return NextResponse.json(
         { error: 'Email delivery is not configured. Nothing was delivered to the user.' },

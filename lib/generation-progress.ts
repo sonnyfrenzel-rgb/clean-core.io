@@ -49,7 +49,7 @@ export function generationProgressAt(phase: GenerationPhase | null, now: number)
   const from = Math.max(band.from, phase.startedFrom);
   // A step begun beyond its own band — the second model call after checking,
   // with the bar already past 90 — climbs on towards 99 instead of standing at
-  // the band's end (QA review of 1c402c400e05).
+  // the band's end.
   const to = from >= band.to ? Math.max(from, 99) : band.to;
   const t = Math.max(0, now - phase.startedAt);
   return from + (to - from) * (t / (t + band.halfAfterMs));

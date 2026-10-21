@@ -145,7 +145,7 @@ export function nextTestRunFailure(
     /**
      * When the receipt that covers this subject was executed, if one does. A
      * run that gave a result after the stored failure breaks the row: fail,
-     * run, fail again is one attempt, not two in a row (QA 02095ce5c0a7) — the
+     * run, fail again is one attempt, not two in a row — the
      * same comparison `testRunFailureReading` makes.
      */
     receiptAt?: string | null;
@@ -372,7 +372,7 @@ export function closureSentence(c: TestingClosure): string {
  * The provenance note beside a closed testing phase. "you" only for the reader
  * who closed it — the owner, the one account `close-testing` accepts; a reader
  * the project is shared with sees the recorded account instead of being told
- * they made the statement themselves (QA 035a6c65b96f).
+ * they made the statement themselves.
  */
 export function closureByline(c: TestingClosure, viewerIsOwner: boolean): string {
   return `closed by ${viewerIsOwner ? 'you' : c.account} · not verified`;

@@ -67,8 +67,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, termsVersion: TERMS_VERSION });
   } catch (err: unknown) {
-    // The reason goes to the server log; the caller gets a fixed sentence
-    // (SEC-2026-492).
+    // The reason goes to the server log; the caller gets a fixed sentence.
     logger.error('consent record failed', {
       route: 'api/consent',
       error: errMessage(err),

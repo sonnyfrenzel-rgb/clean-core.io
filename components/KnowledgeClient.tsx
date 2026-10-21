@@ -121,7 +121,7 @@ export default function KnowledgeClient() {
                   <div
                     id={`faq-answer-${i}`}
                     /* In the HTML for crawlers, out of the accessibility tree while
-                       the button says "collapsed" (QA full review of v2.20.0). */
+                       the button says "collapsed". */
                     inert={!isActive}
                     role="region"
                     aria-labelledby={`faq-question-${i}`}

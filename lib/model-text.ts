@@ -316,8 +316,8 @@ export function stripModelMarkdown(text: string): string {
  * the input. Only the Markdown is repaired: a blocklisted phrase or a symbol is
  * reported in `findings` and stays in the text — no rewrite here decides what a
  * sentence should have said. It does not throw; a caller that must not ship a
- * tell at all uses `assertNoAiTells` below (carried QA finding cd5f4ff882b7 —
- * this comment used to say the mail went out "with the tell removed").
+ * tell at all uses `assertNoAiTells` below (this comment used to say the mail
+ * went out "with the tell removed").
  */
 export function cleanModelText(
   text: string,

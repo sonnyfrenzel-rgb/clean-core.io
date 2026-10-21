@@ -127,8 +127,8 @@ function openerKind(statement: AbapStatement): BlockKind | null {
     case 'DEFINE': return 'define';
     // Only a SELECT that can be a loop opens a candidate. A SELECT SINGLE or a
     // SELECT INTO TABLE inside a SELECT … ENDSELECT used to take the outer
-    // loop's ENDSELECT, and the real loop was dropped as never closed (QA
-    // review of a88149856dcc). INTO TABLE with PACKAGE SIZE is a loop.
+    // loop's ENDSELECT, and the real loop was dropped as never closed.
+    // INTO TABLE with PACKAGE SIZE is a loop.
     case 'SELECT': return selectCanLoop(statement.text) ? 'select' : null;
     case 'AT': return AT_BLOCK.test(statement.text) ? 'at' : null;
     default: return null;
@@ -154,7 +154,7 @@ function isEventStatement(statement: AbapStatement): boolean {
 function nameOf(statement: AbapStatement, kind: BlockKind): string {
   // `METHOD if_ex_foo~check` implements an interface method: the component
   // selector `~` belongs to the name, or every method of one interface would
-  // read as one container (QA full review 3f8b458bfc1a).
+  // read as one container.
   const m = new RegExp(`^${kind}\\s+([\\w/~]+)`, 'i').exec(statement.text);
   return m ? m[1].toUpperCase() : '';
 }
@@ -208,7 +208,7 @@ function readEventBlocks(statements: AbapStatement[]): Container[] {
  * a `BlockKind`: that table is shared with the branch reader, the call graph and
  * the comparability rules (see process-skeleton.ts), and what a line needs from
  * it is the routine it belongs to. An unclosed FUNCTION runs to the last
- * statement. Carried QA findings ea12fd0bac04 / 46734b4a0a61.
+ * statement.
  */
 function readFunctionModules(statements: AbapStatement[]): Container[] {
   const out: Container[] = [];

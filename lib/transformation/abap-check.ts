@@ -93,8 +93,8 @@ function unreleasedReferences(path: string, content: string, own: ReadonlySet<st
   // A list of exception classes, up to the statement's end: `CATCH cx_a cx_b`, `RAISING cx_a RESUMABLE(cx_b)`.
   const list = /\b(?:CATCH|RAISING)\s+([^.]*)/gi;
   // Literals, a comment line and the comment after `"` blanked, so a name in text is not a reference. The lines
-  // are joined, so a reference split across lines (`RAISING` on the next line of `METHODS`) is still one
-  // (QA 7cb667d7d03b); every line stays a line, so an offset still names its line.
+  // are joined, so a reference split across lines (`RAISING` on the next line of `METHODS`) is still one;
+  // every line stays a line, so an offset still names its line.
   const code = content
     .split('\n')
     .map((raw) => (/^\*/.test(raw) ? '' : raw.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''").replace(/".*$/, '')))

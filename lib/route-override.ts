@@ -3,9 +3,8 @@
  *
  * The recommendation carries a confidence and a rationale. Printed beside a
  * route somebody switched to by hand, they read as support for the opposite
- * decision — which is what the Analyze stage did until the full review of
- * 33471220d6e9 (210bafeb4c8b). The stage asks this, and labels the card
- * accordingly.
+ * decision — which is what the Analyze stage used to do. The stage asks this,
+ * and labels the card accordingly.
  *
  * Deliberately conservative: an override is only claimed when both routes are
  * known. A missing recommendation or a project with no stored route is not an

@@ -48,8 +48,7 @@ export function toDate(value: unknown): Date | null {
     date = new Date(value);
   } else if (typeof value === 'string') {
     // A date-time without an offset is read as UTC, like everything else here;
-    // `new Date` reads it in the machine's zone (QA slice review of
-    // c053fc5909c1, 8cb6c1c5c361).
+    // `new Date` reads it in the machine's zone.
     date = new Date(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(value) ? `${value}Z` : value);
   } else if (typeof value === 'object') {
     const seconds = (value as { seconds?: unknown; _seconds?: unknown }).seconds ??

@@ -609,7 +609,7 @@ export interface HarnessNode {
 
 let harnessNodeCache: HarnessNode | null = null;
 
-/** The one Node version the harness step fetches through npx (SEC-2026-902). */
+/** The one Node version the harness step fetches through npx. */
 export const HARNESS_NODE_VERSION = '25.9.0';
 
 /** How `harnessNode` starts a process: `args === null` runs `command` through a shell. */
@@ -634,7 +634,7 @@ const nodeMajor = (v: string) => Number(v.replace(/^v/, '').split('.')[0]);
  * `HARNESS_NODE_VERSION` (cached by npm after the first fetch); `ACCEPTANCE_HARNESS_NODE=self` keeps it in this
  * process. Only the harness step runs there; the generation and the gates stay in this process.
  *
- * SEC-2026-902: the npx path names one exact version, and the binary it returns must report exactly that version.
+ * The npx path names one exact version, and the binary it returns must report exactly that version.
  * `spawn` and `current` exist for the spec; a call that passes its own `spawn` neither reads nor fills the cache.
  */
 export function harnessNode(
@@ -1352,7 +1352,7 @@ export async function main(argv: string[]): Promise<number> {
 
 /**
  * The suite's exit status: 3 when the cost cap stopped it, 4 when a package failed on the SAP trial (the status of
- * `--trial-from`), 0 otherwise. The report is written before either (QA review of 62eae6a082bb).
+ * `--trial-from`), 0 otherwise. The report is written before either.
  */
 export function suiteExitCode(capReached: boolean, trial: readonly TrialRecord[] | undefined): number {
   if (capReached) return 3;

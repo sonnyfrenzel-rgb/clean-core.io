@@ -84,7 +84,7 @@ const DE_WORDS = new Set(['der', 'die', 'das', 'und', 'für', 'mit', 'auf', 'nic
 const OTHER_WORDS = new Set(['le', 'la', 'les', 'et', 'pour', 'avec', 'est', 'une', 'el', 'los', 'las', 'para', 'con', 'y', 'il', 'di', 'che', 'het', 'een', 'voor', 'van', 'met', 'niet', 'uma', 'não', 'por', 'de', 'en', 'du', 'del', 'och', 'af', 'og', 'ett', 'av']);
 
 /*
- * Positive evidence besides function words (QA review of 5ec8488a, 39760557b864): a short
+ * Positive evidence besides function words: a short
  * claim has few function words or none, and the language used to default to English —
  * "Contabiliza facturas." was read as English and quoted. A word counts for English when
  * the glossary's business words hold it ("cost", "center", "order") or it has an English
@@ -101,8 +101,8 @@ const OTHER_FORM = /^\p{L}{3,}(?:as|os|ción|ciones|zione|zioni|ção|ções|men
 
 /**
  * `en`, `de`, or `other` when the claim is in a language the check does not read — and
- * `unknown` when it shows too little of any language to tell (QA review of 5ec8488a,
- * 39760557b864). Only `en` and `de` are read; every other answer fails closed.
+ * `unknown` when it shows too little of any language to tell.
+ * Only `en` and `de` are read; every other answer fails closed.
  */
 export function claimLanguage(text: string): 'en' | 'de' | 'other' | 'unknown' {
   const t = String(text ?? '');
@@ -231,7 +231,7 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   if (!t.trim()) return { ok: false, problems: ['empty'] };
 
   // Only a text in a language the check reads can pass it (SD review, 12.10.2026).
-  // Fail closed: a claim not shown to be English or German is not read (QA review of 5ec8488a, 39760557b864).
+  // Fail closed: a claim not shown to be English or German is not read.
   const language = claimLanguage(t);
   if (language !== 'en' && language !== 'de') return { ok: false, problems: [UNREAD_LANGUAGE] };
 
@@ -287,8 +287,8 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   const touched = new Set([...facts.reads, ...facts.writes].map((o) => o.name));
   // A business object named in a denial ("No accounting documents are posted") is not claimed —
   // but only the denial itself is set aside, whatever joins it to the rest: "It does not post,
-  // but reads …" and "It does not post and reads …" still claim what they read (QA reviews of
-  // fb74afe8 and 82616b80, 59320e766df2, 68a0ef78392d). A denial that names its object outside the
+  // but reads …" and "It does not post and reads …" still claim what they read. A denial that
+  // names its object outside the
   // matched words is checked too: on the safe side, the engine's own sentence is shown instead.
   const affirmed = undenied;
   for (const { re, tables } of WORD_TABLES) {

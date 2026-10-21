@@ -75,8 +75,7 @@ const MAX_SOURCE_BYTES = MAX_CONTRACT_SOURCE_BYTES;
 /** The bound `firestore.rules` sets on a browser-written `generatedCode`, kept for the server's write. */
 const MAX_PACKAGE_CHARS = 1_000_000;
 // A package of MAX_PACKAGE_CHARS UTF-16 units is at most three times that in
-// UTF-8, plus the suite beside it; nothing larger is read (QA slice review of
-// bd016957d13c, 44f03f652da7).
+// UTF-8, plus the suite beside it; nothing larger is read.
 const STORE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
@@ -156,7 +155,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     if (!auth.ok) return auth.response;
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
     const loaded = await loadProjectAndRun(projectId, auth.uid, purpose === 'generation');
@@ -235,9 +234,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
  * Before 3.0.11 this wrote the binding alone and the page wrote code, suite and
  * status afterwards, unconditionally. Two tabs interleaving stored one tab's code
  * under the other's binding, and code built from a design that had since been
- * replaced overwrote the newer design's stand (QA full review of 81810c8026e0,
- * `e649177b3894`, `c42de15e9c75`). Now all four fields land in one transaction,
- * or none does.
+ * replaced overwrote the newer design's stand. Now all four fields land in one
+ * transaction, or none does.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
@@ -245,7 +243,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (!auth.ok) return auth.response;
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
     const loaded = await loadProjectAndRun(projectId, auth.uid, true);
@@ -301,7 +299,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // model call. The binding is the server's rebuild, so it is written only if
     // that rebuild is still the contract the page generated against: a contract
     // that moved while the model ran would otherwise be bound to code computed
-    // for its predecessor (QA review of 4b4586aff273).
+    // for its predecessor.
     const expectedFingerprint =
       typeof body.expectedContractFingerprint === 'string' ? body.expectedContractFingerprint : '';
     if (!expectedFingerprint) {
@@ -325,8 +323,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       );
     }
 
-    // The same bound the GET applies before it derives the contract (QA slice
-    // review of bd016957d13c, 44f03f652da7).
+    // The same bound the GET applies before it derives the contract.
     const storedSource = typeof data.legacyCode === 'string' ? data.legacyCode : '';
     if (Buffer.byteLength(storedSource, 'utf8') > MAX_SOURCE_BYTES) {
       return NextResponse.json(
@@ -456,11 +453,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // Every comparison above was made on the project as it was loaded. The four
     // fields are written only if the project has not been written since —
     // otherwise another analysis could have moved it between the comparison and
-    // the write (QA review of 8adfa0e6db63), and of two interleaved generations
+    // the write, and of two interleaved generations
     // that both passed the token check the later would silently win.
     const projectRef: DocumentReference = db.collection('projects').doc(projectId);
     //
-    // Codex architecture-02: every field has a bound of its own, but they all
+    // Every field has a bound of its own, but they all
     // share one document and Firestore refuses one over 1 MiB. The merged
     // document is estimated from the transaction's own snapshot; a stand that
     // would outgrow it is refused by name, with nothing written, instead of

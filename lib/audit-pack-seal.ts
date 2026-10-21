@@ -5,9 +5,8 @@
  * (`tests/audit-pack-seal.spec.ts`).
  *
  * The route records the seal only while the run it packed is still the active
- * one (codex code-trust-07). The page used to compare the stored run id with the
- * run it displays and nothing else, and to read a failed read as "the run is no
- * longer active" (QA 5ec8488a, 1f314d94f6d1 and acb0eb4bfb45). Now:
+ * one. The page used to compare the stored run id with the run it displays and
+ * nothing else, and to read a failed read as "the run is no longer active". Now:
  *
  * - `unconfirmed` — the read failed; nothing is claimed about the run.
  * - `not-sealed` — the server's active run is not the one on the page, or it

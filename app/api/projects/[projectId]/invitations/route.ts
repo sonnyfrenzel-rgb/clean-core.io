@@ -124,7 +124,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   // The route sends mail to an address the caller types. Without a ceiling it is
   // a mailer. Per account, not per account and address: with the client
   // address in the key every new source address was a fresh budget of mails
-  // (SEC-b6716f0-46) — the account is already the narrower identity.
+  // — the account is already the narrower identity.
   try {
     await assertRateLimit(`invitations:${decodedToken.uid}`, INVITATION_SEND_RATE_LIMIT, 60 * 60 * 1000);
   } catch (rateErr: unknown) {
@@ -151,7 +151,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
   }
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(projectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -263,13 +263,13 @@ export async function POST(
         // The project again, inside the transaction: one deleted (or handed
         // away) since `openProject` read it must not get an invitation — the
         // recipient's address and the inviter's name — written beneath its
-        // path after its erasure (QA full review of a12774cd2b7f).
+        // path after its erasure.
         const current = await tx.get(db.collection('projects').doc(gate.projectId));
         if (!current.exists || current.data()?.userId !== gate.uid) throw projectGone;
         // Only invitations that have not expired can hold a slot, so only they
         // are read: the history of accepted, withdrawn and expired ones grows
-        // for the life of the project and was read whole on every invitation
-        // (carried QA finding dbab5852246e). `expiresAt` is an ISO string, so
+        // for the life of the project and was read whole on every invitation.
+        // `expiresAt` is an ISO string, so
         // the range compares in time order; one field, no composite index.
         const existing = await tx.get(ref.parent.where('expiresAt', '>', invitedAt.toISOString()));
         const open = existing.docs.filter((d: InviteDoc) =>
@@ -314,9 +314,9 @@ export async function POST(
       //
       // An update, not a merge-set: a merge onto a missing document creates it,
       // so a project deleted (or an account erased) while the mail was out got
-      // back an invitation under a project that no longer exists (QA
-      // 2632d2f80642). A missing invitation (gRPC
-      // NOT_FOUND, code 5) is already as withdrawn as it can be.
+      // back an invitation under a project that no longer exists. A missing
+      // invitation (gRPC NOT_FOUND, code 5) is already as withdrawn as it can
+      // be.
       const withdrawn = await ref
         .update({ status: 'revoked', revokedAt: new Date().toISOString() })
         .then(
@@ -387,8 +387,8 @@ export async function GET(
 
     // Only invitations that have not expired yet are read, as in POST, page by
     // page in expiry order: one bounded page filtered afterwards let accepted
-    // and withdrawn invitations crowd a pending one out (QA review of dd8e996,
-    // 9703f5e20b75). The bound on reads is in the helper.
+    // and withdrawn invitations crowd a pending one out.
+    // The bound on reads is in the helper.
     return NextResponse.json({ open: await readOpenInvitations(gate.db, gate.projectId) });
   } catch (err: unknown) {
     logger.error('open invitations could not be read', {

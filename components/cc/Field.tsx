@@ -73,7 +73,7 @@ export interface CcFieldProps extends CcDataAttributes {
      * Put this on the control as `aria-required`. A native `required` says it
      * too, but a custom control has no native attribute, and §2.7 asks for the
      * asterisk *and* `aria-required` — so the contract hands out both, and a
-     * caller cannot pass one without the other (QA c07adecd2fb5, 14f0276e65ff).
+     * caller cannot pass one without the other.
      */
     ariaRequired: true | undefined;
     className: string;

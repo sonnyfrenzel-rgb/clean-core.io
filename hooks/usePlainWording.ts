@@ -41,7 +41,7 @@ export function usePlainWording(input: {
   const { projectId, scope, source, sentences, owner, active, modelEnabled, initial = null } = input;
   const [record, setRecord] = useState<PlainWordingRecord | null>(initial);
   const [asking, setAsking] = useState(false);
-  // Every project and digest asked for in this browser session (QA review of 45ab7b5f6a4c): one per project, never again for the same one.
+  // Every project and digest asked for in this browser session: one per project, never again for the same one.
   const asked = useRef<Set<string>>(new Set<string>());
 
   const items = useMemo(() => (sentences ? plainItemsOf(sentences) : []), [sentences]);

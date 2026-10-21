@@ -102,8 +102,8 @@ export interface AtcQualityGate {
    * `holds` while a security finding is open — the gate does not let the
    * release pass. `unreviewed` while none is open in our reading but other
    * findings are: the reading goes by words and can miss a security finding,
-   * so only a person's check of those can clear them (QA review of 5a559787,
-   * f45d35bb0e72 — this module never decides that on its own).
+   * so only a person's check of those can clear them (this module never
+   * decides that on its own).
    * `no-open-security` when the import names no open finding at all. Never
    * "passed": the import says only what failed the checks that ran.
    */

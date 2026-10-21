@@ -150,8 +150,7 @@ const BULLET = /^(?:[-•·+o]|\d+[.)]|[a-z][.)])\s+/;
 function clausesOf(text: string): Array<{ start: number; text: string }> {
   const out: Array<{ start: number; text: string }> = [];
   // A concessive or contrasting clause is a clause of its own: "SAP BTP is the approved target, although RAP could be
-  // considered later" — the hedge belongs to the second part and must not erase the binding first (QA review of
-  // 081f6457d09e).
+  // considered later" — the hedge belongs to the second part and must not erase the binding first.
   const re = /;|\.(?=\s+[A-Z(])|\.$|,(?=\s+(?:although|though|even\s+though|whereas|while|but|however|yet)\b)|\s(?=(?:although|whereas)\b)/g;
   let start = 0;
   let m: RegExpExecArray | null;
@@ -255,7 +254,7 @@ function mentionsOf(text: string): Mention[] {
     };
     // A phrase is negated like a name: by a negation before it in the same clause. A phrase that carries no negation of
     // its own ("state … outside the ERP") is also negated by one inside it — "Workflow state must not be kept outside
-    // the ERP" asks for the opposite (QA review of 081f6457d09e); a phrase whose meaning is a negation ("no single ERP
+    // the ERP" asks for the opposite; a phrase whose meaning is a negation ("no single ERP
     // may own …", "… is not authorized") is not turned round by its own word.
     const phrased = (patterns: RegExp[], side: Side) => {
       for (const re of patterns) {

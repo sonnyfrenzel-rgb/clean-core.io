@@ -326,8 +326,7 @@ export function includeCycles(byName: ReadonlyMap<string, OwnCodeSource>): strin
     done.add(name);
   };
   // In name order, not upload order: the cycle is reported on the file it
-  // starts from, and that must not depend on which file was dropped first
-  // (carried QA finding a8d92f4d4a2f).
+  // starts from, and that must not depend on which file was dropped first.
   for (const name of [...byName.keys()].sort()) visit(name, []);
   return cycles;
 }

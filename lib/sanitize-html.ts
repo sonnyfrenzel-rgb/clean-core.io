@@ -102,7 +102,7 @@ export function sanitizeHtml(html: string): string {
 }
 
 /**
- * Sanitizer for the mermaid SVG the design stage renders (SEC-2026-015).
+ * Sanitizer for the mermaid SVG the design stage renders.
  *
  * This was a chain of regular expressions, and its comment said why: DOMPurify
  * emptied every `<foreignObject>`, which is exactly where mermaid v11 renders

@@ -14,7 +14,7 @@ import type { CodeToken } from '@/lib/process-map';
  * frame around it is the workspace's layout, not a capture of it.
  *
  * Focus or hover a step, or hover a line: the step and its code line light up
- * together. Only the steps are Tab stops (QA c912b926e44d): forty focusable
+ * together. Only the steps are Tab stops: forty focusable
  * code lines would be forty stops with nothing to activate. Done in CSS with `:has()`, one rule per anchored line, so the
  * behaviour costs the page no JavaScript.
  */

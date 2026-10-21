@@ -44,7 +44,7 @@ interface ExtensibilityDecisionMatrixProps {
  * a two-track comparison with feasibility grades, pros and cons — all of it
  * decided by one boolean: whether the chosen route contains the letters "BTP".
  * Nothing had been assessed, and the reader had no way to tell which of the two
- * they were looking at (QA 0613631545b2).
+ * they were looking at.
  */
 function NotDetermined({ what }: { what: string }) {
   return (
@@ -278,7 +278,7 @@ export default function ExtensibilityDecisionMatrix({
       </div>
 
       {/* Every checkpoint and both tracks are the model's words; the SAP
-          identifiers in them carry their check (QA bead0ed34426). */}
+          identifiers in them carry their check. */}
       <SapIdentifierChecks
         texts={[
           ...checkpoints.flatMap((cp) => [cp.checkpointName, cp.question, cp.evaluation, cp.cleanCoreImpact]),

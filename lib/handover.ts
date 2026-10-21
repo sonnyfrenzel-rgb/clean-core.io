@@ -149,8 +149,7 @@ export function storedDecisionOf(project: HandoverProject | null): StoredDecisio
  * A confirmation binds the run it was drafted on (`boundRunId`, roadmap 8.8),
  * and `confirm-decision` refuses one whose run is no longer the active one. A
  * new run leaves the old record on the project, so a confirmation of run A is
- * history once run B is active — never the current decision (codex
- * code-trust-03).
+ * history once run B is active — never the current decision.
  */
 export function decisionIsCurrent(project: HandoverProject | null, decision: StoredDecision | null): boolean {
   if (!project || !decision) return false;
@@ -930,7 +929,7 @@ export function handoverGroups(
   // Receipt — an execution on record, or the honest absence of one. A covering
   // receipt whose verdicts hold no pass or fail is still a run on record — the
   // status line says "Receipts: sandbox test run" for it — so this line does
-  // not call it absent (QA review of a88149856dcc).
+  // not call it absent.
   const tests = by('tests');
   const ranWithoutVerdict = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]) !== null;
   const receipt = group('receipt', {

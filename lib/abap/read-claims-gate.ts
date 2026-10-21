@@ -2,7 +2,7 @@ import { engineVersionAtLeast } from '../score-rule';
 
 /**
  * The engine version from which the engine says only what it read (roadmap
- * 3.0.18, item 4a; QA review of 73b8cad63d3e):
+ * 3.0.18, item 4a):
  *
  *   - `FILE_OPEN_DIALOG` / `FILE_SAVE_DIALOG` choose a path and transfer no
  *     file: a dialog-only frontend file finding is no upload or download

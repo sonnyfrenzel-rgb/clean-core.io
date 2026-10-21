@@ -31,7 +31,7 @@ interface LegalOverlayProps {
  * opened from a sign-up form without leaving it.
  *
  * A `CcDialog` (`DESIGN.md` §2.6) rather than a layer of its own. It was one
- * until Block D (D.7), with its own focus handling (QA 58dc160fd6c3); the
+ * until Block D (D.7), with its own focus handling; the
  * library's dialog does all of that — focus in on open, Tab held inside, the
  * page behind `inert`, Escape and the close button as the two ways out, focus
  * back to the link that opened it — and it does it the same way as every other

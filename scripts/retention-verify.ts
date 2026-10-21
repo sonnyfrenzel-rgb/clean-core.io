@@ -271,7 +271,7 @@ export function readLogBucketFact(raw: unknown): LogBucketFact {
     // a false alarm on a bucket configured exactly as the document says. The
     // default is the bucket's own: 30 days for `_Default`, the fixed 400 for
     // `_Required`; any other bucket without the field is unreadable and fails
-    // the comparison (carried QA finding 877ffe725921).
+    // the comparison.
     retentionDays: typeof bucket.retentionDays === 'number' ? bucket.retentionDays : omittedRetentionDays(lastSegment(bucket.name)),
     lifecycleState: String(bucket.lifecycleState ?? 'UNKNOWN'),
   };

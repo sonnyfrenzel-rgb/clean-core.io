@@ -8,8 +8,8 @@
  * environment of every step of the job, and the Workload Identity provider
  * accepts the token it mints on the repository alone. `--ignore-scripts` kept
  * install scripts out; it did nothing about *runtime* code — every package the
- * report loaded ran beside that permission and could mint its own token (QA
- * review, fa0aaea6cc47). The job now installs no package at all: the report is
+ * report loaded ran beside that permission and could mint its own token.
+ * The job now installs no package at all: the report is
  * first-party TypeScript run by Node's own type stripping, and this module is
  * the part `firebase-admin` used to be. `tests/no-fabricated-figures.spec.ts`
  * walks the report's import graph and fails on any import that is not

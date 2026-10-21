@@ -167,8 +167,7 @@ const isBoundary = (text: string, index: number): boolean =>
 export function findGlossaryMentions(text: string): GlossaryMention[] {
   if (!text) return [];
   // Lowercased character by character, keeping every length: `'İ'.toLowerCase()`
-  // is two code units, and one such character shifted every offset after it
-  // (QA slice review of 68a81318dbc1, 978275f2d42d).
+  // is two code units, and one such character shifted every offset after it.
   const haystack = Array.from(text, (ch) => {
     const lower = ch.toLowerCase();
     return lower.length === ch.length ? lower : ch;

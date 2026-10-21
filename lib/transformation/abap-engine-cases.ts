@@ -155,7 +155,7 @@ function fromCondition(c: EngineTestCase, guards: readonly AbapCaseGuard[], cons
     const value = /^abap_true$/i.test(raw) ? 'X' : /^(?:abap_false|space)$/i.test(raw) ? '' : raw.slice(1, -1).replace(/''/g, "'");
     const equal: AbapSet['to'] = value.trim() === '' ? { special: 'empty' } : { value };
     // A literal of zeros ('0', '0.00', '00000000') is the initial value of a numeric, NUMC or date field, so a
-    // cleared field is not different from it there; a filled one ('1', 'X') is, whatever the type (QA 7b6b773c5216).
+    // cleared field is not different from it there; a filled one ('1', 'X') is, whatever the type.
     const zeros = /^[-+]?0+(?:[.,]0+)?$/.test(value.trim());
     const different: AbapSet['to'] = value.trim() === '' || zeros ? { filled: true } : { special: 'empty' };
     const eq = /^(?:=|EQ)$/i.test(cmp![2]);

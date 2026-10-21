@@ -24,7 +24,7 @@ export const SCAN_LIMITS = Object.freeze({
   maxEntries: 50_000,
   maxFiles: 2_000,
   maxBytes: 40_000_000,
-  /** One file larger than this is not read — package.json included — and is named in `limits` (QA 63cc65e43cba). */
+  /** One file larger than this is not read — package.json included — and is named in `limits`. */
   maxFileBytes: 2_000_000,
 });
 

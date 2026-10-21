@@ -74,7 +74,7 @@ export async function openInvitationsAsOwner(
     throw gateErr;
   }
 
-  // Checked before the id forms any document path (SEC-2026-514).
+  // Checked before the id forms any document path.
   if (!isFirestoreId(rawProjectId)) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
@@ -101,8 +101,8 @@ export const OPEN_INVITATIONS_MAX_PAGES = 20;
  * an ISO string, so the range is in time order (one field, no composite
  * index). The read used to stop after one page of 500 and filter afterwards:
  * accepted and withdrawn invitations that expire sooner than a pending one
- * could fill that page and cut the pending one off the owner's list (QA review
- * of dd8e996, 9703f5e20b75). Filtering by `status` in the query would need a
+ * could fill that page and cut the pending one off the owner's list.
+ * Filtering by `status` in the query would need a
  * composite index (equality plus a range on another field), so the pages are
  * walked in `expiresAt` order instead, until one comes back short, with
  * {@link OPEN_INVITATIONS_MAX_PAGES} as the ceiling on reads.

@@ -261,7 +261,7 @@ export function readOriginalContract(source: string): OriginalContract {
   //
   // The formal parameters of a FORM, and of a method as its METHODS
   // declaration names them, shadow a global of the same name in the procedure
-  // the same way (QA delta of 73b8cad63d3e). A method name declared in two
+  // the same way. A method name declared in two
   // classes shadows the parameters of both: which class a METHOD belongs to
   // is not read here.
   const methodParameters = new Map<string, string[]>();

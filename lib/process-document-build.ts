@@ -29,7 +29,7 @@ import { objectSites, sitesByElement, type ObjectSite } from '@/lib/process-over
 import { selectionInputs, summaryOf, type HandbookObject } from '@/lib/process-handbook';
 import { stripModelMarkdown } from '@/lib/model-text';
 import { sapCheckedNarrative } from '@/lib/sap-reference-check';
-import { screenSensitiveText } from '@/lib/sensitive-text';
+import { screenProgramDocument, screenSensitiveText } from '@/lib/sensitive-text';
 import { FR_TOPICS_COVERED_BY_NFR } from '@/lib/requirements-export';
 import {
   PROCESS_DOCUMENT_FORMAT,
@@ -919,7 +919,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const effectKind = (phrase: string): string => {
     if (/\bworkflow\b/i.test(phrase)) return 'Starts a workflow';
     if (/\bas a list\b/i.test(phrase)) return 'Shows a list';
-    // One word boundary for all three, at their start (QA 2f5e13717db7): "files" and "uploaded" count, "profile" does not.
+    // One word boundary for all three, at their start: "files" and "uploaded" count, "profile" does not.
     if (/\b(?:upload|download|file)/i.test(phrase)) return 'Reads or writes a file';
     if (/\bthrough transaction\b/i.test(phrase)) return 'Creates a document (batch input)';
     if (/\bBAPI_|\bcreate the\b/i.test(phrase)) return 'Creates a document';
@@ -1499,7 +1499,6 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       if (anchored.length && !contradicts) {
         purposeProposal = {
           // 3.0.18 item 13 (QM-08, FI-F12): the model's SAP identifiers pass the check before the document shows them.
-          // QA af33f2acba86.
           text: sapCheckedNarrative(screenSensitiveText(anchored.map((s) => s.text.trim()).join(' ')).text),
           anchors: distinctAnchors(anchored.flatMap((s) => s.anchors.map((a) => anchor(a.lineStart, a.lineEnd)))),
           origin: 'narrative',
@@ -1523,7 +1522,9 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const endingGates = path.filter((e) => e.kind === 'gate' && e.outcomes.some((o) => o.ends)).length;
   const overviewSentence = `${steps.length} step${steps.length === 1 ? '' : 's'} on the main path${endingGates ? `; ${endingGates} decision point${endingGates === 1 ? '' : 's'} between them can end the run` : ''}.`;
 
-  return {
+  // Personal data and secrets the program itself carries (a constant, a message) are masked in every string of the
+  // document, so the screen and every export of it carry the masked text (`lib/sensitive-text.ts`).
+  return screenProgramDocument<ProcessDocument>({
     format: PROCESS_DOCUMENT_FORMAT,
     formatVersion: PROCESS_DOCUMENT_FORMAT_VERSION,
     program,
@@ -1548,7 +1549,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     appendix,
     // Owner 11.10.2026: what the program can do — the business page says from it what it does not.
     facts: capabilityFactsOf(source, skeleton, { calls, tables }),
-  };
+  });
 }
 
 /** Business weight of an effect, for the purpose sentence: documents and workflows before table rows and lists. */

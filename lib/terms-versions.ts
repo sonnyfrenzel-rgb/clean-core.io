@@ -100,8 +100,8 @@ export const TERMS_ARCHIVE_DIR = 'docs/terms';
 export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
   {
     // v2.2.0, the version 3.0 ships with (Sonny, 30.09.2026): section 4.1 says
-    // which results the deterministic engine computes and which a model writes
-    // (QA 6b83ef361e80). It was first archived under the placeholder id
+    // which results the deterministic engine computes and which a model writes.
+    // It was first archived under the placeholder id
     // 2026-10-15; on 01.10.2026 the effective date became the agreed release
     // day, 6 October 2026, and the text was re-extracted under it before it was
     // ever published — so this is not an edit of a published version. Only the

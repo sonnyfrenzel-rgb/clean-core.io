@@ -1,9 +1,8 @@
 /**
  * A fixed answer in place of the Gemini provider — for the test suite only.
  *
- * QA review of 75b573cd22f0 (080cd5fce607): that `/api/gemini` signs the
- * stage it was called under into the model receipt was only checked in the
- * source. Proving it at the route needs a call that goes through every gate of
+ * That `/api/gemini` signs the stage it was called under into the model
+ * receipt was only checked in the source. Proving it at the route needs a call that goes through every gate of
  * the route — authentication, rate limit, second factor, account state, the
  * per-stage switch, the model register, the prompt limit — and still returns a
  * receipt, without a provider key in CI and without spending on one.
@@ -146,7 +145,7 @@ export function geminiTestStubFillText(prompt: string): string {
                   .map((g) => ({ helper: g.helper as string, values: Array.isArray(g.values) ? g.values.filter((v): v is string => typeof v === 'string' && /^[A-Za-z_$][\w$]*$/.test(v)) : [] })),
                 predicates: guards.filter((g) => typeof g.regionId === 'string' && typeof g.id === 'string').map((g) => g.id as string),
                 // The original's AUTHORITY-CHECKs (scaffold version 15): called, and the answer used, as the fill checks require;
-                // one the frame runs whole (`wired`, QA 8394df76b027) is not the body's.
+                // one the frame runs whole (`wired`) is not the body's.
                 authority: (Array.isArray(u.authority) ? u.authority : []).flatMap((a) =>
                   a.wired ? [] : typeof a.fn === 'string' && /^authority_L\d+$/.test(a.fn) ? [`${a.fn}()`] : typeof a.call === 'string' && /^authority_check\(/.test(a.call) ? [a.call.replace(/<[^<>]*>/g, 'undefined as never')] : [],
                 ),

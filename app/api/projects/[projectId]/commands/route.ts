@@ -172,7 +172,7 @@ export async function POST(
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
     }
-    // Checked before the id forms any document path (SEC-2026-514).
+    // Checked before the id forms any document path.
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
@@ -197,13 +197,13 @@ export async function POST(
     // evidence build takes seconds and a second tab is all it needs. The
     // sign-off was then validated against run A and landed on a project whose
     // active run was B, so the audit pack carried an architect's approval for a
-    // run the architect never saw (QA full review of a19945ef01dc).
+    // run the architect never saw.
     //
     // A transaction closes it at the source: the snapshot the decision is made
     // on is the snapshot the write is conditional on, and Firestore retries the
     // whole body if the document moved underneath. The project fields and the
     // journal entry still commit together or not at all, which is what the batch
-    // was there for (QA review of fafb3299ae6c) — a transaction is a batch that
+    // was there for — a transaction is a batch that
     // also promises nothing changed while it was deciding.
     //
     // Roadmap 8.8 adds a second read inside the same transaction: the run
@@ -300,8 +300,8 @@ export async function POST(
 
         // ADR-081 — the questions the project has now, from the source and the
         // rule answers this transaction reads, so an answer is stored only for
-        // a group the list shows with the basis the list shows (QA review of
-        // dd8e99691c8d). The rules are derived only for an answer about them.
+        // a group the list shows with the basis the list shows.
+        // The rules are derived only for an answer about them.
         let questionBases: ProjectCommandState['openQuestionBases'] = null;
         if (commandName === 'record-open-question') {
           const action = (body as { action?: unknown }).action;
@@ -399,8 +399,7 @@ export async function POST(
       ...(outcome.notice ? { notice: outcome.notice } : {}),
     });
   } catch (err: unknown) {
-    // The reason goes to the server log; the caller gets a fixed sentence
-    // (SEC-2026-481).
+    // The reason goes to the server log; the caller gets a fixed sentence.
     logger.error('project command failed', {
       route: 'api/projects/[projectId]/commands',
       error: errMessage(err),

@@ -35,8 +35,8 @@ export const DEMO_ROUTE = '/demo';
  *
  * The shell assistant lives in the layout and is mounted on every page,
  * the demo's included. "A demo makes no model call" is said on every demo
- * stage, so the assistant reads this to keep it true there too (Codex review
- * code-demo-01): a non-glossary question on a demo screen gets
+ * stage, so the assistant reads this to keep it true there too: a
+ * non-glossary question on a demo screen gets
  * `DEMO_ASSISTANT_NOTICE` and never reaches `/api/gemini`.
  */
 export function isDemoPath(pathname: string | null | undefined): boolean {

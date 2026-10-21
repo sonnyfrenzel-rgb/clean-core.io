@@ -72,7 +72,7 @@ export function withoutAccount(
   const wanted = new Set(addresses.map(lower).filter(Boolean));
   if (wanted.size === 0) return null;
   // An address counts only as a whole address: erasing a@x.io must not take
-  // the failure of ba@x.io or a@x.io.uk with it (QA 9e198a0085d0).
+  // the failure of ba@x.io or a@x.io.uk with it.
   const whole = [...wanted].map(
     (a) => new RegExp(`(?<![a-z0-9._%+-])${a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![a-z0-9._-])`),
   );

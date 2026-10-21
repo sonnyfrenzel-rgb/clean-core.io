@@ -237,7 +237,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       // draft. Which of the three is `repairTarget`'s decision and nothing
       // else's: it used to be `/app\.ts/.test(errText)`, which misses every other
       // path a generated package contains and sent the repair at the test suite
-      // instead (QA 1c8234b64f35).
+      // instead.
       if (result.buildError && attempt < maxRetries) {
         const errText = result.error || '';
         const target = repairTarget({ code: currentPayload.code, suite: currentPayload.tests?.code, errorText: errText });
@@ -317,8 +317,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       }
       const adoption = { action: 'adopt', draftId: ran.id, expectedDraftDigest: ran.digest };
       // A 5xx is not a refusal: the adoption may have committed before the
-      // server failed to answer, so it takes the lost-answer path below (QA
-      // slice review of 81810c8026e0, 95912ce88e0d).
+      // server failed to answer, so it takes the lost-answer path below.
       const adopt = async () => {
         const answer = await repairDraftCall(adoption);
         if (answer.status >= 500) throw new Error(`The adoption answered ${answer.status}.`);
@@ -329,7 +328,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         adopted = await adopt();
       } catch {
         // The request may have reached the server and committed while its
-        // answer was lost (QA review of 4b4586aff273). Adoption is a
+        // answer was lost. Adoption is a
         // compare-and-swap that refuses a second adoption of the same draft by
         // name, so asking again is safe — and its answer says which it was.
         setSandboxOutput(prev => prev + `\n[Auto-Healing] The answer to the adoption of draft ${ran.id} did not arrive. Asking the server again...\n`);
@@ -450,8 +449,8 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
 
       // The project in this page's state, brought up to what the server just
       // wrote: the verdicts of this run and the receipt that attests to it. It is
-      // a mirror, not a write — `/api/run-tests` stored both with the Admin SDK
-      // (QA 6c38e0c7c620), and nothing here may put a verdict into Firestore,
+      // a mirror, not a write — `/api/run-tests` stored both with the Admin SDK,
+      // and nothing here may put a verdict into Firestore,
       // because a verdict a browser can write is exactly what the receipt exists
       // to distinguish itself from. Without the receipt the page shows the
       // verdicts and the phase contract reads them as self-reported, which is

@@ -28,8 +28,8 @@ import { readTableDependencies } from './table-dependencies';
  * claimed that before the masking was there: `tokenize` keeps a literal's
  * content, so `WRITE 'TO'.` satisfied the `WRITE … TO` exclusion and classic
  * list output went unrecorded — a program whose only statement is that one
- * reported complete coverage (full review of b88c77b4b5d1, 610cc2bf910f /
- * cb60ea95bec2). The delimiters stay, because `CALL FUNCTION 'name'` is told
+ * reported complete coverage.
+ * The delimiters stay, because `CALL FUNCTION 'name'` is told
  * from `CALL FUNCTION lv_name` by the quote alone.
  */
 
@@ -166,8 +166,8 @@ const RULES: Rule[] = [
       // instance form, and the common one — was not, so a statement whose
       // target no static analysis can name came back with no finding and
       // `coverage.complete = true`, and `routeExtensibility` could score the
-      // extension 100 and call it trivial (full review of a19945ef01dc,
-      // fd3e6ec4d394). Both selectors, and the object or class before them.
+      // extension 100 and call it trivial.
+      // Both selectors, and the object or class before them.
       /^CALL\s+METHOD\s*\(/.test(s) ||
       /^CALL\s+METHOD\s+[\w<>/~-]*(?:->|=>)\s*\(/.test(s) ||
       /^CREATE\s+OBJECT\s*\(/.test(s) ||

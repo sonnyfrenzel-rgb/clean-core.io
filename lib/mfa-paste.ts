@@ -9,7 +9,7 @@
  * is a different one.
  *
  * Pure, so the decision is tested by calling it rather than by reading the
- * component that uses it (carried QA finding 108f6c87b29f).
+ * component that uses it.
  */
 
 const OLD_RECOVERY_CODE = /^CC-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;

@@ -1074,7 +1074,7 @@ function EndState({
   endStateOnly,
   questions,
 }: {
-  /** The project a rule request is made for (QA 29935b8109f6). */
+  /** The project a rule request is made for. */
   projectId: string;
   result: Result;
   questions: OpenQuestionsModel | null;

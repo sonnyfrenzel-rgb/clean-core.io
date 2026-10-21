@@ -61,7 +61,7 @@ export function useFunctionModuleAnswers(project: Project | null): CatalogAnswer
       if (cancelled) return;
       // Inside the `try`: a token refresh that rejects ends in `failed` like
       // any other miss, rather than an unhandled rejection that leaves the
-      // list loading for good (QA review of dd8e99691c8d).
+      // list loading for good.
       try {
         const token = await getAuth().currentUser?.getIdToken();
         if (!token) {

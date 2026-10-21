@@ -136,7 +136,7 @@ export function invitationTooManyMessage(max: number = INVITATION_MAX_OPEN): str
  * The route withdraws the invitation in the same request. When that write
  * fails too, the invitation is still waiting, and the owner must not be told it
  * was withdrawn: it is in their list of waiting invitations, with the way to
- * withdraw it (carried QA finding b90ef67b9ed8).
+ * withdraw it.
  */
 export function invitationNotSentMessage(detail: string, withdrawn: boolean): string {
   return withdrawn

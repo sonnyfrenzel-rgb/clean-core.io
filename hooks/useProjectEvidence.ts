@@ -12,7 +12,7 @@ import type { ProjectEvidence } from '@/lib/project-evidence';
  *
  * The screens that show a project's findings — Analyze, Transformation and the
  * workspace's Public-Cloud-Fit card — used to run `buildAbapEvidence` here, in a
- * chunk of its own (external audit PERF-01), with the default catalog and the
+ * chunk of its own, with the default catalog and the
  * file name `main.abap`. The signed run reads the catalog snapshot of the
  * project's target profile and the file name it signed, so a Private Edition
  * project could show findings its run never signed (owner decision 30.09.2026:

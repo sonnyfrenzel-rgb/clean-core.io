@@ -6,7 +6,7 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
  *
  * This is the half of POST /api/mfa/disable that touches Firebase Auth and
  * Firestore, lifted out of the route so that its failure paths can be run
- * (roadmap 0.17, QA review 6a1e32c0b973). The gate itself — recent sign-in and
+ * (roadmap 0.17). The gate itself — recent sign-in and
  * the factor on the token — stays in the route, where the coverage guard and
  * the catalog completeness check read it.
  *
@@ -23,8 +23,7 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
  * and its spec can reach the parameter — it is not a request field, not a
  * header, not an environment variable.
  *
- * The order itself (QA reviews of d93cb53e2631 and 0c35311c7aff: c4f3cb01dc90,
- * b30f4ec006a5): every state a failure can leave behind must be over-strict,
+ * The order itself: every state a failure can leave behind must be over-strict,
  * never under-strict. The factor goes first; if that fails, nothing has changed
  * and the person retries. The flag goes second; if that fails, the account has
  * a flag and no factor: every gated route refuses its first-factor token, which
@@ -113,7 +112,7 @@ export async function retireSecondFactor(
     return true;
   });
   if (!cleared) return { ok: false, status: 409, error: FACTOR_PRESENT };
-  // Not absorbed either (QA full review of v2.20.0): a swallowed failure here
+  // Not absorbed either: a swallowed failure here
   // answered "disabled" with the stored MFA material still in place. It now
   // reaches the route's handler like the flag write above, and the same call
   // repeats both deletes — deleting a document that is already gone succeeds.

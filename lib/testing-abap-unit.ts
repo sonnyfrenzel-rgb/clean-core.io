@@ -463,7 +463,7 @@ function leadingExpression(text: string): string {
 
 /**
  * Traces the value handed in as `io_access` (masked code, `at` = offset of the creation) to what it is: the test
- * double (`ltd_access` only — a class of the suite's own could delegate to SAP; QA 99730bf90288), the default access
+ * double (`ltd_access` only — a class of the suite's own could delegate to SAP), the default access
  * class, or unclear.
  * A variable is resolved through its creations in the same method or test class — `DATA(v) = NEW c( )`,
  * `v = NEW c( )`, `v = NEW #( )` with `DATA v TYPE REF TO c`, `CREATE OBJECT v [TYPE c]` — and a `CAST t( … )`
@@ -860,7 +860,7 @@ export function abapTestEvidenceOfProject(project: { extensibilityRoute?: unknow
 
 /**
  * The sentences of a project on the ABAP route — the Testing page and STATUS.md read the same ones: "passed in SAP"
- * is the SAP result on record for this package when there is a current one (3.0.18 item 13; QA 619a7bf2da46).
+ * is the SAP result on record for this package when there is a current one.
  */
 export function abapTestSentencesOfProject(
   project: (Parameters<typeof outsideReading>[0] & { generatedCode?: unknown; testSuite?: unknown }) | null | undefined,

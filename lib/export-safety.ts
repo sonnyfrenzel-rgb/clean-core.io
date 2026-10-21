@@ -5,8 +5,7 @@
  * model wrote, out of the customer's own ABAP, and from the project name the
  * account holder typed. A comment in that source is enough to steer a model
  * into returning markup, and the result is opened in a browser — in the case of
- * the design preview, in this application's own origin
- * (QA review of 33471220d6e9: 024ec609bc86, 06f7c0c56a6c; SEC-2026-014).
+ * the design preview, in this application's own origin.
  *
  * Escaping is the general answer and lives in `escapeHtml`. A URL is the
  * exception: escaping `javascript:alert(1)` yields a perfectly well-formed
@@ -47,8 +46,7 @@ export function escapeHtml(value: unknown): string {
  * a React `href`, which React quotes itself; `sapApiHubHref` below escapes it
  * once more for a hand-built attribute in an exported document. Kept apart
  * from `safeHttpHref` because the mapping table promises *SAP's* documentation,
- * and a model that puts any other host there has not kept that promise
- * (security audit of b88c77b, SEC-2026-236).
+ * and a model that puts any other host there has not kept that promise.
  */
 export function sapApiHubUrl(raw: unknown): string {
   if (typeof raw !== 'string') return '';
@@ -91,8 +89,8 @@ export function sapApiHubLink(raw: unknown, label: string): string {
  * only `http:` or `https:` with a host survives; everything else — `javascript:`,
  * `data:`, `vbscript:`, a relative path, a bare word — comes back empty, and the
  * caller shows the text without a link. Written for the presentation viewer,
- * which put `row.url` straight on an anchor (security audit of b88c77b,
- * SEC-2026-152); the return value is the *parsed* URL, not the raw string, so
+ * which put `row.url` straight on an anchor;
+ * the return value is the *parsed* URL, not the raw string, so
  * whitespace and case tricks are normalised away before they reach the DOM.
  */
 export function safeHttpHref(raw: unknown): string {

@@ -481,8 +481,7 @@ export default function LandingModals() {
       // creating account": the retry would only meet "already registered". The
       // activation below writes this same request server-side
       // (`app/api/account/register/route.ts`), and the dashboard offers that
-      // call again, so a lost write here is repaired there (QA full review of
-      // v2.20.0).
+      // call again, so a lost write here is repaired there.
       try {
         await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
           email: signedInUser.email,
@@ -540,8 +539,7 @@ export default function LandingModals() {
       setIsSubmitting(false);
     } catch (error: any) {
       // An unknown address ends exactly like a sent reset: telling the two
-      // apart would let anyone test which addresses have an account (QA
-      // db48799dc6a2).
+      // apart would let anyone test which addresses have an account.
       if (error.code === 'auth/user-not-found') {
         setAuthMode('success');
         setIsSubmitting(false);
@@ -1021,7 +1019,7 @@ export default function LandingModals() {
                   the one section 4.1 of Terms v2.2.0 states: findings,
                   route and score are the deterministic engine's, and only the
                   model steps are written by a language model — which an account
-                  can switch off (QA c9ab2c6a6c1c). Kept in step with the Terms
+                  can switch off. Kept in step with the Terms
                   summary below and the onboarding dialog. */}
               <CcMessageStrip state="warning" headline="Disclaimer.">
                 Findings, route and score come from a deterministic engine, without a language model. Summaries,

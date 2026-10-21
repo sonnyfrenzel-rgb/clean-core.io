@@ -399,7 +399,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
                 <span className="sr-only">{label}:</span>
                 {packages.map((pkg, pIdx) => (
                   <code key={pIdx} className="max-w-full font-cc-mono cc-text-meta text-cc-ink [overflow-wrap:anywhere]">
-                    {/* "Released SAP objects" are model-named identifiers too (QA 666aaffb90ab). */}
+                    {/* "Released SAP objects" are model-named identifiers too. */}
                     <CcTag><SapCheckedText text={pkg} /></CcTag>
                   </code>
                 ))}
@@ -461,7 +461,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
                 <div className="flex flex-wrap gap-2">
                   {details.npmPackages.map((pkg, idx) => (
                     <code key={idx} className="font-cc-mono cc-text-meta text-cc-ink">
-                      {/* "Released SAP objects" are model-named identifiers too (QA 666aaffb90ab). */}
+                      {/* "Released SAP objects" are model-named identifiers too. */}
                     <CcTag><SapCheckedText text={pkg} /></CcTag>
                     </code>
                   ))}

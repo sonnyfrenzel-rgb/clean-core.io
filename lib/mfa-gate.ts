@@ -13,8 +13,7 @@
  * What it replaced: an application-level TOTP whose prompt was a React state
  * change after the password had already produced a valid session, backed by an
  * `mfa_session` cookie. A stolen ID token from such an account could read every
- * Firestore document the owner could, because the rules never saw the cookie
- * (QA full review of 33471220d6e9, cfafefac08ec).
+ * Firestore document the owner could, because the rules never saw the cookie.
  */
 
 export interface SecondFactorToken {

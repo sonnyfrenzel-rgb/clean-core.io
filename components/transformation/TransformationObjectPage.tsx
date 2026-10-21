@@ -499,8 +499,8 @@ export default function TransformationObjectPage({
                 : track === 'in-app'
                   // ABAP Unit does not run here at all: the Testing tool writes
                   // the class and says your own system gives the verdict
-                  // (carried QA finding 4aa2e074b134; the browser-side
-                  // "simulated run" is gone since 02.10.2026).
+                  // (the browser-side "simulated run" is gone since
+                  // 02.10.2026).
                   ? `${engineLed ? 'The engine built the frame of every object; the model wrote the function bodies, marked below.' : 'Written by the model against the plan below.'} Not compiled and not run here; the Testing tool writes ABAP Unit scenarios for it, which run only in your own system — that gives them a verdict.`
                   : `${engineLed ? 'The engine built the frame of every module; the model wrote the function bodies, marked below.' : 'Written by the model against the plan below.'} Not compiled and not run here; the Testing tool runs it against mocks.`
             }

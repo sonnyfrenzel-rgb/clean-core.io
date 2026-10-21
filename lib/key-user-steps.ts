@@ -263,9 +263,19 @@ const anchorText = (a: KeyUserAnchor) => (a.lineStart === a.lineEnd ? `L${a.line
 export const KEY_USER_COMPANY_POLICY =
   'Key-user extensibility is a path SAP releases, and Level A — but your company may restrict it or rule it out in its own clean core programme. Common reasons: logic maintained by business key users sits outside the development toolchain (code review, ATC, automated tests, the developer transport pipeline); the logic apps still contain an ABAP editor; key-user and developer extensibility objects cannot use each other by default, so moving a key-user extension to developer extensibility later means rebuilding it; and a field that has been transported cannot simply be deleted. Check your company’s extensibility policy and who owns key-user changes before you choose this route.';
 
+/**
+ * The level line where the whole program is key user (owner decision 21.10.2026): the level holds once each
+ * candidate's release, with its other limits, is checked in the target system — the engine does not settle every
+ * candidate's release, the same caveat the Analyze level line carries. Display and document text only: the signed
+ * run keeps `levelByConstruction` as the bare level.
+ */
+export function keyUserLevelSentence(level: 'A'): string {
+  return `Clean core level ${level} by construction: key-user extensions use released extension points only. It holds once each candidate's release, with its other limits, is checked in the target system — the engine does not settle every candidate's release.`;
+}
+
 export function keyUserStepsMarkdown(list: KeyUserStepList, subject: string): string {
   const out: string[] = [`# Key-user step list — ${subject}`, '', list.sentence, '', `> ${list.note}`, ''];
-  if (list.levelByConstruction) out.push(`Clean core level ${list.levelByConstruction} by construction: key-user extensions use released extension points only.`, '');
+  if (list.levelByConstruction) out.push(keyUserLevelSentence(list.levelByConstruction), '');
   out.push(`> **Your company's policy:** ${KEY_USER_COMPANY_POLICY}`, '');
   for (const s of list.steps) {
     out.push(`## ${s.id} · ${s.app} — ${s.title}`, '');

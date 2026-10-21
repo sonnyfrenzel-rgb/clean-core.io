@@ -4,7 +4,7 @@
  * Roadmap 3.0.7 ("Documentation lean"): the legacy blueprint — the L1–L4 JSON a
  * model wrote before 3.0.5 — is no longer drawn. Its data is kept and offered
  * for download as it was stored, so nothing reads its fields any more and the
- * check of its shape (`checkBlueprintShape`, QA 0d8443fae823 / 58201e6aaedb)
+ * check of its shape (`checkBlueprintShape`)
  * went with the rendering it protected.
  *
  * What stays is the business layer's check: the SOP and RACI layer is still
@@ -63,7 +63,7 @@ const OPTIONAL_LISTS: ReadonlySet<string> = new Set(['audit_controls']);
  *
  * The three lists are read with `.map`, so each must be an array — a truthy
  * object or string used to pass the old truthiness check, get stored, and
- * take the tab down on every load (QA review of fc787674705f, 69cb77382430).
+ * take the tab down on every load.
  */
 export function checkBusinessDocShape(parsed: unknown): BlueprintCheck {
   if (!isPlainObject(parsed)) {
@@ -96,7 +96,7 @@ export function checkBusinessDocShape(parsed: unknown): BlueprintCheck {
         } else {
           // A claim is its text: one without any (`{}`, `{ text: "" }`) is not
           // drawn by `sopStatementsOf`, so a step of such claims would show
-          // nothing at all — refused, like a field of the wrong type (QA review of 11e3bc7d90e8).
+          // nothing at all — refused, like a field of the wrong type.
           entry.claims.forEach((claim, c) => {
             if (!isPlainObject(claim) || !isRenderable(claim.text) || !String(claim.text).trim()) {
               problems.push(`\`${list}[${i}].claims[${c}]\` has no text a page can show.`);

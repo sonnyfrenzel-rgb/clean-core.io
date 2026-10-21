@@ -109,10 +109,9 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
                 {/* How it works Deep Link */}
                 {/* The value comes from the analysis model, so it reaches an
                     anchor only as http(s) — the same rule and the same helper as
-                    the presentation viewer (SEC-2026-152, f9f4ac1). React renders
-                    a `javascript:` href with nothing but a developer warning, and
-                    a click runs it. Security audit of b88c77b, SEC-b88c77b-148:
-                    this was the second site with the same shape. */}
+                    the presentation viewer. React renders a `javascript:` href
+                    with nothing but a developer warning, and a click runs it.
+                    This was the second site with the same shape. */}
                 {safeHttpHref(finding.howItWorks) && (
                   <a
                     href={safeHttpHref(finding.howItWorks)}

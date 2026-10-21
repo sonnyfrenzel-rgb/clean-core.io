@@ -137,8 +137,8 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
     // arrived. A welcome mail that bounced with a reason and was then "opened" by
     // a scanner kept the bounce as its status while the reason was overwritten
     // with the scanner's empty detail and its timestamp — so the operator was
-    // left with a failed onboarding mail and no way to say why (QA review of
-    // 33471220d6e9, finding 5dbe58873773). A losing event is still recorded in
+    // left with a failed onboarding mail and no way to say why. A losing event
+    // is still recorded in
     // `timeline` below; it just does not get to relabel the verdict.
     const lastDetail = statusWins ? input.detail ?? null : data.lastDetail ?? null;
     const lastEventAt = statusWins

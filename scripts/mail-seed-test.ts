@@ -191,7 +191,7 @@ async function main() {
   const done = new Set(log.filter((e) => e.status === 'sent').map((e) => `${e.type}|${e.label}`));
 
   // The daily budget, across every run id this machine has logged, checked
-  // before the key is even read (codex code-mail-04).
+  // before the key is even read.
   const toSend = plan.filter((m) => !done.has(`${m.type}|${m.label}`)).length;
   const scratchDir = path.resolve('scratch');
   const sentToday = fs.readdirSync(scratchDir)

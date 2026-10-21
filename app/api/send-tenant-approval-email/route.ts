@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // document — which the requester writes (tenant_access_requests, own uid,
     // no field check). A request could therefore name any address, and the
     // administrator's approval would mail it from team@clean-core.io, greeting
-    // it by name (security audit of b88c77b, SEC-2026-235). Same rule as the
+    // it by name. Same rule as the
     // welcome mail since 3b8ca34: Auth says who the account is.
     let email: string | null = null;
     try {

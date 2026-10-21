@@ -1304,7 +1304,7 @@ export const ENGINE_CASES_FILE = 'test/engine-cases.json';
  * `VerifiedEngineCase` comes only out of `engineCaseProvenance`
  * (`lib/engine-case-provenance.ts`), so a client-written entry with the engine
  * markers cannot be passed here, and the note "Derived by Clean-Core.io" is
- * true of every case under it (QA e04537f4bb66, 0297134b3b87).
+ * true of every case under it.
  * `unverified`: ids stored as engine cases that the derivation does not
  * reproduce. They are named, not shipped as cases, and not labelled as derived
  * by Clean-Core.io.

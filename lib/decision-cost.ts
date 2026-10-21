@@ -26,7 +26,7 @@
  * Pure and client-safe. No amount is ever said here (ADR-022).
  */
 
-import { costComparison, type OptionKind, type WinnerRefusalCode, WINNER_REFUSAL_CODES } from './cost-assumptions';
+import { costAssumptionsFingerprint, costComparison, type OptionKind, type WinnerRefusalCode, WINNER_REFUSAL_CODES } from './cost-assumptions';
 import { restoreAssumptions, type EconomicsRecord } from './economics-record';
 import { formatTextDate } from './format';
 
@@ -40,6 +40,12 @@ export interface DecisionCostBasis {
   format: typeof DECISION_COST_BASIS_FORMAT;
   /** The cost assumptions' revision key, or `null` when Economics held no figures. Never printed for a reader. */
   revision: string | null;
+  /**
+   * The full SHA-256 fingerprint of those assumptions (`costAssumptionsFingerprint`, 64 hex), or `null` when
+   * Economics held no figures or the basis was recorded before 3.0.20. The revision key carries only twelve
+   * characters of it; two revisions are the same revision only when the full fingerprints match. Never printed.
+   */
+  fingerprint?: string | null;
   /** The revision's number (`EconomicsRecord.sequence`); `null` for figures saved before 3.0.10. */
   sequence: number | null;
   /** When that revision was saved (ISO); `null` when unknown. */
@@ -53,7 +59,7 @@ export interface DecisionCostBasis {
 /** The cost basis Economics gives right now — what a confirmation records. */
 export function costBasisOf(record: EconomicsRecord | null): DecisionCostBasis {
   if (!record) {
-    return { format: DECISION_COST_BASIS_FORMAT, revision: null, sequence: null, at: null, cheapest: null, noCheapest: 'no-figures' };
+    return { format: DECISION_COST_BASIS_FORMAT, revision: null, fingerprint: null, sequence: null, at: null, cheapest: null, noCheapest: 'no-figures' };
   }
   const assumptions = restoreAssumptions(record.assumptions);
   const comparison = costComparison(assumptions);
@@ -61,6 +67,7 @@ export function costBasisOf(record: EconomicsRecord | null): DecisionCostBasis {
   return {
     format: DECISION_COST_BASIS_FORMAT,
     revision: record.revision,
+    fingerprint: costAssumptionsFingerprint(assumptions),
     sequence: typeof record.sequence === 'number' ? record.sequence : null,
     at: record.revisionAt || record.savedAt || null,
     cheapest: winner ? { optionId: winner.id, label: winner.label || winner.id, kind: winner.kind } : null,
@@ -69,6 +76,20 @@ export function costBasisOf(record: EconomicsRecord | null): DecisionCostBasis {
 }
 
 const NO_CHEAPEST_CODES: readonly string[] = [...WINNER_REFUSAL_CODES, 'no-figures'];
+const FINGERPRINT = /^[0-9a-f]{64}$/;
+
+/**
+ * Whether two cost bases stand on the same figures: by the full fingerprint where both carry one, by the revision
+ * key where either was recorded before 3.0.20 (its twelve characters are all that was kept).
+ */
+export function sameCostRevision(
+  a: Pick<DecisionCostBasis, 'revision' | 'fingerprint'>,
+  b: Pick<DecisionCostBasis, 'revision' | 'fingerprint'>,
+): boolean {
+  if (a.revision === null || b.revision === null) return a.revision === b.revision;
+  if (a.fingerprint && b.fingerprint) return a.fingerprint === b.fingerprint;
+  return a.revision === b.revision;
+}
 const str = (v: unknown, max = 200): string | null => (typeof v === 'string' && v.length > 0 && v.length <= max ? v : null);
 
 /** A recorded cost basis read back off the stored decision — `null` for anything this format does not describe. */
@@ -78,6 +99,8 @@ export function readCostBasis(raw: unknown): DecisionCostBasis | null {
   if (v.format !== DECISION_COST_BASIS_FORMAT) return null;
   const revision = v.revision === null ? null : str(v.revision);
   if (revision === null && v.revision !== null) return null;
+  // Recorded before 3.0.20: no fingerprint, and the revision key is what the comparison falls back on.
+  const fingerprint = typeof v.fingerprint === 'string' && FINGERPRINT.test(v.fingerprint) && revision !== null ? v.fingerprint : null;
   const sequence = typeof v.sequence === 'number' && Number.isInteger(v.sequence) && v.sequence >= 1 ? v.sequence : null;
   const at = str(v.at, 40);
   let cheapest: DecisionCostBasis['cheapest'] = null;
@@ -91,7 +114,7 @@ export function readCostBasis(raw: unknown): DecisionCostBasis | null {
   }
   const noCheapest = typeof v.noCheapest === 'string' && NO_CHEAPEST_CODES.includes(v.noCheapest) ? (v.noCheapest as NoCheapestCode) : null;
   if ((cheapest === null) === (noCheapest === null)) return null;
-  return { format: DECISION_COST_BASIS_FORMAT, revision, sequence, at, cheapest, noCheapest };
+  return { format: DECISION_COST_BASIS_FORMAT, revision, fingerprint, sequence, at, cheapest, noCheapest };
 }
 
 /**
@@ -110,7 +133,7 @@ export type DecisionCostCheck =
 /** ADR-092, the rule. `recorded` is `null` for a decision confirmed before 3.0.10. */
 export function decisionCostCheck(recorded: DecisionCostBasis | null, current: DecisionCostBasis): DecisionCostCheck {
   if (!recorded) return { state: 'not-recorded', current };
-  if (recorded.revision === current.revision) return { state: 'same', recorded, current };
+  if (sameCostRevision(recorded, current)) return { state: 'same', recorded, current };
   if (recorded.cheapest && current.cheapest && recorded.cheapest.optionId !== current.cheapest.optionId) {
     return { state: 'outdated', recorded, current };
   }

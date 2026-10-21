@@ -10,8 +10,8 @@
  *
  * Nearly every value in it was written either by the account holder (the
  * project name) or by the model out of the customer's own ABAP — a comment in
- * the uploaded source is enough to steer it into returning markup
- * (SEC-2026-014). Nothing of either kind reaches the template unescaped; the
+ * the uploaded source is enough to steer it into returning markup.
+ * Nothing of either kind reaches the template unescaped; the
  * markup around it is ours. The same `esc` as the design and documentation
  * exports, from the one escaper in `lib/export-safety.ts`.
  *
@@ -24,6 +24,8 @@
 import type { Project, AnalysisData } from '@/lib/types';
 import type { ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
 import { escapeHtml } from '@/lib/export-safety';
+// The program's personal data and secrets in a code excerpt are masked in the export (the app shows the line as written).
+import { screenProgramText } from '@/lib/sensitive-text';
 import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
@@ -145,7 +147,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
      * had been assessed and none of it was read off the customer's code, yet the
      * document said the code "was evaluated step-by-step" and that the comparison
      * was "mapped specifically to this project's requirements". This file is
-     * exported to Confluence and kept as the record of a decision (QA 0613631545b2).
+     * exported to Confluence and kept as the record of a decision.
      *
      * The screen had the same fallback one layer down, in
      * `components/analyze/ExtensibilityDecisionMatrix.tsx`; both are gone, because
@@ -428,7 +430,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                 return `<tr>
                   <td class="strong">${esc(f.title)}${lines.length > 1 ? ` (${lines.length}×)` : ''}<br/><small>${esc(f.kind)}</small></td>
                   <td class="mono">${esc(lines.join(', '))}</td>
-                  <td><code>${esc(snippets[0] || '—')}</code></td>
+                  <td><code>${esc(screenProgramText(snippets[0] || '—'))}</code></td>
                   <td><span class="${sevClass}">${esc(f.severity)}</span></td>
                   <td><span class="${srcClass}">${srcLabel}</span></td>
                   <td>${f.sapReplacement ? `${esc(f.sapReplacement.objectName)}<br/><span class="${confClass}">${esc(successorSourceNote(f.sapReplacement.confidence))}</span>` : '—'}</td>

@@ -183,7 +183,7 @@ export interface FitCondition {
   elementId: string;
   /** `derived`: an open gap the engine reads — it cannot be attested away; `stated`: a gap the account resolved by key user or an organisational change. */
   basis: 'derived' | 'stated';
-  /** `unknown`: a step the engine cannot read — derived, like an open gap (QA review of 4ea0324a13cb, 357cd43a6983). */
+  /** `unknown`: a step the engine cannot read — derived, like an open gap. */
   disposition: 'gap-open' | 'gap-key-user' | 'gap-organisational' | 'unknown';
   text: string;
   anchor: FitEntry['anchor'];
@@ -367,8 +367,7 @@ function changeMarker(text: string): string {
  * The key a browser reads the fit-to-standard route under: the project, its
  * run, the stored revision, the staged source and a reload tick. The source is
  * in it so that an edit of the source on the same run is read again — the
- * gate then answers "not determined" instead of the reading of the old source
- * (QA review of 4ea0324a13cb, 9cdfd5bb083e).
+ * gate then answers "not determined" instead of the reading of the old source.
  */
 export function fitReadKey(
   projectId: string | null | undefined,

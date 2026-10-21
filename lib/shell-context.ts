@@ -54,8 +54,7 @@ export function announceShellProject(projectId: string, name: unknown): void {
  * Forgets the announced name. Called when the signed-in account changes: the
  * name lives in this module for the page view, and a client-side sign-out
  * keeps the module, so the next account opening the same project address was
- * shown a name its own read had refused (QA slice review of 094ef824c55e,
- * 528688d033bd).
+ * shown a name its own read had refused.
  */
 export function forgetShellProject(): void {
   if (!hasWindow() || !announcedProject) return;

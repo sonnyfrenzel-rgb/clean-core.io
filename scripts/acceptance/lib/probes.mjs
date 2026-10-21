@@ -128,7 +128,7 @@ async function attempt(call, spec, args) {
 /**
  * Did the package refuse? An answer matching the adapter's refusal condition.
  * A thrown `Error` proves only that the call threw — "database unavailable"
- * is no refusal (QA d9df190f3850) — unless the adapter documents that this
+ * is no refusal — unless the adapter documents that this
  * package refuses by throwing (`refused.throws: true`); even then a crash (a
  * TypeError, ReferenceError or SyntaxError JavaScript threw by itself) is not.
  */
@@ -137,7 +137,7 @@ function refused(res, matcher) {
   return matches(res.value, matcher);
 }
 
-/** Refused with a structured answer only: the adapter's refusal condition, never an exception (QA 612ac86f6c4c). */
+/** Refused with a structured answer only: the adapter's refusal condition, never an exception. */
 function refusedStructured(res, matcher) {
   return !res.threw && matches(res.value, matcher);
 }
@@ -323,7 +323,7 @@ async function emptySelection(cfg, ctx) {
 /**
  * FP-GUARD-03. Malformed numbers are refused, never coerced. A refusal is the
  * adapter's structured refusal answer; an exception for a malformed value is a
- * failure of the probe, not a refusal (QA 612ac86f6c4c).
+ * failure of the probe, not a refusal.
  */
 async function lenientNumeric(cfg, ctx) {
   const call = makeCaller(ctx);

@@ -155,7 +155,7 @@ export default function WorkspacePrintSheet({
   const runId = typeof project?.activeRunId === 'string' && project.activeRunId ? project.activeRunId : null;
   // With a signed run, a rule may have been confirmed; until the read above has
   // landed (or when it failed) paper does not know, and says so instead of
-  // printing "Not confirmed" under a "reconstructed" basis (QA 137f7c2ef0e4).
+  // printing "Not confirmed" under a "reconstructed" basis.
   const unread = runId !== null && decided === null;
   const today = formatIsoDate(new Date()) ?? '';
   const rules = reading?.ruleSet.rules ?? [];

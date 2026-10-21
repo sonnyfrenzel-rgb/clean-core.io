@@ -41,7 +41,7 @@ export default function BusinessValuePlan({
 }) {
   const data = analysis ? readStoredAnalysis<AnalysisData>(analysis) : null;
   // Decided once, through the helper: the fallback, the origin line and the
-  // chip below all read `plan`, never the raw field (QA 44adc3b1d5b0).
+  // chip below all read `plan`, never the raw field.
   const plan = data ? modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan) : null;
   const shownRoute = routeLabel(route || data?.extensibilityRouting?.recommendedRoute || 'Decoupled Extension');
 

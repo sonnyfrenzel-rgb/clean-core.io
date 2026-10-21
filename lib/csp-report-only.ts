@@ -90,7 +90,7 @@ export interface ReportOnlyPolicyInput {
 /**
  * Emulator hosts are allowed only for a local, non-production build that was
  * built for the emulators. A production build never relaxes, whatever the flag
- * says (SEC-2026-645, SEC-2026-580).
+ * says.
  */
 export function emulatorRelaxationAllowed(nodeEnv: string | undefined, useEmulatorFlag: string | undefined): boolean {
   return useEmulatorFlag === 'true' && nodeEnv !== 'production';

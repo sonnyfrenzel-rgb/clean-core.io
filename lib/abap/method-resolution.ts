@@ -118,8 +118,7 @@ export function resolveMethodTarget(
   // The declared type is not the runtime type: `lo TYPE REF TO lcl_base`
   // can hold an instance of `lcl_sub`, and `lo->run( )` then reaches its
   // redefinition. If a subclass the source writes redefines the method, the
-  // target is not unique (QA full review of
-  // v2.20.0, 5b0e06b9c4ea).
+  // target is not unique.
   if (cls && fromReference) {
     const base = cls;
     const below = (at: string): boolean => {
@@ -139,8 +138,7 @@ export function resolveMethodTarget(
     // Up the chain the source writes: an inherited method is still the
     // class's method. The qualifier is never dropped — a known class that
     // implements nothing under this name means "not here", not "the
-    // same-named method of another class"
-    // (QA review be3f06343260, 045fbec9b5a4).
+    // same-named method of another class".
     const seen = new Set<string>();
     for (let at: string | undefined = cls; at && !seen.has(at); at = model.superOf.get(at)) {
       seen.add(at);

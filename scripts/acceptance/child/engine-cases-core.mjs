@@ -10,8 +10,8 @@
  *     imports the package, and turns those answers into verdicts against the
  *     expectations it holds itself.
  *
- * The package's code never runs as a peer of the collector (QA b1b316b2322a,
- * 342adaac5625, 1021a63b7b6c). The process that executes it first calls SES's
+ * The package's code never runs as a peer of the collector.
+ * The process that executes it first calls SES's
  * `lockdown()` — every JavaScript intrinsic (Object.prototype, JSON, Function,
  * Array.prototype, …) is frozen — and then evaluates the package in a
  * `Compartment` (`createConfinement`): a global object of its own that holds
@@ -1014,7 +1014,7 @@ export function createConfinement(host) {
    * The sandbox's reason for an error, or null when it is the package's own.
    * Inside a compartment an unknown global reads as undefined rather than
    * throwing, so each host-only global is installed as a getter that throws a
-   * refusal (QA 9eac38e0e0b6); a ReferenceError is still recognised by its name
+   * refusal; a ReferenceError is still recognised by its name
    * and message, never by `instanceof` across compartments.
    */
   const notRunnable = (err) => {

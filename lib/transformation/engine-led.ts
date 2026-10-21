@@ -197,9 +197,9 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
           .map((g) => (g.regionId && !regionIds.has(g.regionId) ? { ...g, regionId: null } : g))
           // Node: the keys of `values` as the package declares them (`G0036Values` also holds the routine's parameters a check reads).
           .map((g) => (decls ? { ...g, values: decls.get(`${g.id.replace('-', '')}Values`)?.fields ?? [] } : g))
-          // Node: the ABAP type of each value a predicate the model writes reads (QA finding 95f6ea84e8af).
+          // Node: the ABAP type of each value a predicate the model writes reads.
           .map((g) => (g.regionId && scaffold.predicateTypes?.[g.id] ? { ...g, declared: scaffold.predicateTypes[g.id] } : g))
-          // A check on sy-subrc the frame runs with its AUTHORITY-CHECK: the stub calls it (QA finding 8394df76b027).
+          // A check on sy-subrc the frame runs with its AUTHORITY-CHECK: the stub calls it.
           .map((g) => (wired.has(g.id) ? { ...g, placement: 'entry' as const } : g)),
         facts: {
           decimals: plan.decimals
@@ -317,7 +317,7 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     sliceChars: prep.sliceChars[regionId] ?? prep.sliceChars[unitId] ?? 2_000,
     guardCalls: regionId === unitId ? (unit?.guardCalls ?? []).map(helperOf).filter((h): h is string => !!h) : [],
     required: prep.scaffold.required[regionId] ?? [],
-    // The original's AUTHORITY-CHECKs in the region's lines: called and used, or the body is refused (QA ef6865e7ade4).
+    // The original's AUTHORITY-CHECKs in the region's lines: called and used, or the body is refused.
     ...(prep.scaffold.authority?.[regionId]?.length ? { authority: prep.scaffold.authority[regionId] } : {}),
     ...(params.length > 0 ? { params } : {}),
     ...(Object.keys(shapes).length > 0 ? { shapes } : {}),

@@ -92,7 +92,7 @@ export interface ItFindingRow {
   /**
    * The object's own level, where the code's use moved `level` away from it —
    * a direct write to an SAP table is D whatever the table is on its own
-   * (codex code-engine-05, ADR-062), and a read of a table SAP will not release
+   * (ADR-062), and a read of a table SAP will not release
    * is C where the table is D. Optional: absent where the two agree, and on a
    * row built before it existed.
    */
