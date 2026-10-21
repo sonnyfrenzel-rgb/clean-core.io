@@ -1,6 +1,9 @@
 param(
     [string]$ZipPath = "",
-    [string]$SigningKey = $env:AUDIT_SIGNING_KEY
+    [string]$SigningKey = $env:AUDIT_SIGNING_KEY,
+    # SEC-2026-901. Far above any export of this repository; raise them for an archive you trust.
+    [int]$MaxEntries = 50000,
+    [long]$MaxExtractBytes = 1GB
 )
 
 if (-not $ZipPath -or -not (Test-Path -LiteralPath $ZipPath)) {
@@ -16,7 +19,66 @@ if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
 New-Item -ItemType Directory -Path $tempDir | Out-Null
 
 Write-Output "Extracting archive to: $tempDir"
-Expand-Archive -LiteralPath $ZipPath -DestinationPath $tempDir -Force
+# SEC-2026-901. Extracted entry by entry, counting the entries and the bytes actually written (not the sizes the
+# archive declares), and stopped at the first limit crossed. Exit 2: the check did not run, which is not a forgery.
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$extractBase = [System.IO.Path]::GetFullPath($tempDir).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+$limitHit = $null
+$readError = $null
+$archive = $null
+try {
+    $archive = [System.IO.Compression.ZipFile]::OpenRead([System.IO.Path]::GetFullPath($ZipPath))
+    if ($archive.Entries.Count -gt $MaxEntries) {
+        $limitHit = "the archive holds $($archive.Entries.Count) entries, more than the limit of $MaxEntries (-MaxEntries)."
+    } else {
+        $written = [long]0
+        $buffer = New-Object byte[] 65536
+        foreach ($entry in $archive.Entries) {
+            $dest = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($tempDir, $entry.FullName))
+            if (-not $dest.StartsWith($extractBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $readError = "an archive entry points outside the extraction folder: $($entry.FullName)"
+                break
+            }
+            if ($entry.FullName.EndsWith('/') -or $entry.FullName.EndsWith('\')) {
+                [System.IO.Directory]::CreateDirectory($dest) | Out-Null
+                continue
+            }
+            [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($dest)) | Out-Null
+            $in = $entry.Open()
+            $out = [System.IO.File]::Create($dest)
+            try {
+                while (($n = $in.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                    $written += $n
+                    if ($written -gt $MaxExtractBytes) {
+                        $limitHit = "the archive unpacks to more than the limit of $MaxExtractBytes bytes (-MaxExtractBytes)."
+                        break
+                    }
+                    $out.Write($buffer, 0, $n)
+                }
+            } finally {
+                $out.Dispose()
+                $in.Dispose()
+            }
+            if ($limitHit) { break }
+        }
+    }
+} catch {
+    $readError = "the archive could not be read: $($_.Exception.Message)"
+} finally {
+    if ($archive) { $archive.Dispose() }
+}
+if ($limitHit) {
+    Remove-Item -Recurse -Force $tempDir
+    Write-Warning "Not checked: $limitHit"
+    Write-Output "Verification incomplete: NOT CHECKED. The archive exceeds a limit of this verifier."
+    exit 2
+}
+if ($readError) {
+    Remove-Item -Recurse -Force $tempDir
+    Write-Error "Verification failed: $readError"
+    exit 1
+}
 
 $manifestPath = Join-Path $tempDir "manifest.json"
 if (-not (Test-Path $manifestPath)) {

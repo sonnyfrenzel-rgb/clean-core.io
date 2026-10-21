@@ -54,6 +54,8 @@ test.describe('the offline export verifier', () => {
     for (const branch of [
       'the archive is signed and no -SigningKey',
       'This archive carries no signature',
+      // SEC-2026-901.
+      'Write-Warning "Not checked:',
     ]) {
       const at = s.indexOf(branch);
       expect(at, `the branch "${branch}" is gone`).toBeGreaterThan(-1);
@@ -63,8 +65,8 @@ test.describe('the offline export verifier', () => {
       expect(after.slice(0, after.indexOf('exit 2')), `"${branch}" leaves with another code first`)
         .not.toMatch(/exit [013]/);
     }
-    // Two of them, no more: a third silent path would be the old defect again.
-    expect(s.match(/exit 2/g)?.length, 'the number of "could not tell" exits changed').toBe(2);
+    // Three of them, no more: another silent path would be the old defect again.
+    expect(s.match(/exit 2/g)?.length, 'the number of "could not tell" exits changed').toBe(3);
   });
 
   test('it is plain ASCII, because it is read as ANSI', () => {

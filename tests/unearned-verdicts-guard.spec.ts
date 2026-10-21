@@ -78,7 +78,8 @@ test.describe('the payload banner reports a scan that happened', () => {
     expect(scanCodeContent('REPORT z_ok. WRITE / 1.')).toBeNull();
     expect(scanCodeContent('const x = eval("1");')).toMatch(/Security Block/);
     expect(scanCodeContent('db_password = hunter2')).toMatch(/Security Block/);
-    expect(scanCodeContent('-----BEGIN RSA PRIVATE KEY-----')).toMatch(/Security Block/);
+    // Assembled at run time (SEC-2026-898).
+    expect(scanCodeContent(['-----BEGIN RSA', 'PRIVATE KEY-----'].join(' '))).toMatch(/Security Block/);
   });
 });
 

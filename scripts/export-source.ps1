@@ -13,9 +13,9 @@
     Then three layers of protection:
       1. Deny list   — deletes key files, in case one was ever committed.
       2. Secret scan — regex over every text file; a hit aborts and NO ZIP
-                       is produced (fail closed). Two known hits, proven
-                       harmless, are allowlisted by name with a reason and
-                       are always logged.
+                       is produced (fail closed). A known hit, proven
+                       harmless, is allowlisted by path, rule and the SHA-256
+                       of the hit, with a reason, and is always logged.
       3. Manifest    — SHA-256 per file, overall digest, optionally HMAC-signed.
 
 .PARAMETER WorkingTree
@@ -175,18 +175,17 @@ try {
 
     # Hits that have been checked and are proven harmless. They are NOT
     # hidden, but printed with their reason on every run.
+    # SEC-2026-898: an entry names the exact hit it allows, by the SHA-256 of
+    # the matched text; any other hit in the same file still blocks.
     $allowlist = @(
         @{
             Path    = 'firebase-config.json'
             Pattern = 'GoogleApiKey'
+            Sha256  = 'b4af2fbd1c4ba9bec64148ed4ea1c436bbf7483d7f78bd8cb4024f904d00d0ed'
             Reason  = 'Firebase web API key — not a secret. A public project identifier, compiled into every client bundle and shipped to every browser; protection comes from the Firestore rules and App Check. lib/firebase.ts imports the file, so removing it would break the build.'
         }
-        @{
-            Path    = 'tests/unearned-verdicts-guard.spec.ts'
-            Pattern = 'PrivateKeyBlock'
-            Reason  = 'Literal input string of a guard spec that checks the scanner blocks PEM blocks. No key material, only the header line.'
-        }
     )
+    $hitSha = [System.Security.Cryptography.SHA256]::Create()
 
     $binaryExt = @(
         '.png','.jpg','.jpeg','.gif','.webp','.ico','.bmp','.avif','.pdf',
@@ -213,7 +212,8 @@ try {
 
         foreach ($p in $patterns) {
             foreach ($m in [regex]::Matches($text, $p.Regex)) {
-                $hit = $allowlist | Where-Object { $_.Path -eq $rel -and $_.Pattern -eq $p.Name }
+                $valueSha = [System.BitConverter]::ToString($hitSha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($m.Value))).Replace('-', '').ToLower()
+                $hit = $allowlist | Where-Object { $_.Path -eq $rel -and $_.Pattern -eq $p.Name -and $_.Sha256 -eq $valueSha }
                 $excerpt = $m.Value
                 if ($excerpt.Length -gt 14) {
                     $excerpt = $excerpt.Substring(0, 10) + "..." + $excerpt.Substring($excerpt.Length - 4)
