@@ -233,7 +233,8 @@ export function plainSentenceProblem(engine: string, worded: string, options: Pl
   const kept = text.toUpperCase().replace(THOUSANDS, '');
   const engineNumbers = sentenceClaims(engine).filter((c) => /^\d/.test(c));
   if (engineNumbers.some((n) => !containsClaim(kept, n))) return 'number-lost';
-  if (LIMITED.test(engine) && !KEPT_LIMIT.test(text)) return 'negation-lost';
+  // Counted per kind, not "one such word anywhere": a rewording that keeps the "only" and drops the "not" has lost one (QA review of 45ab7b5f6a4c).
+  if (LIMIT_FAMILIES.some((family) => countOf(family, text) < countOf(family, engine))) return 'negation-lost';
   if (findSensitive(text).length > findSensitive(engine).length) return 'sensitive';
   if (options.sapMismatch?.(text)) return 'sap-mismatch';
   return null;
@@ -242,16 +243,21 @@ export function plainSentenceProblem(engine: string, worded: string, options: Pl
 const THOUSANDS = /(?<=\d),(?=\d{3}(?!\d))/g;
 
 /**
- * A "not", "no", "only", "unless" in the engine sentence: the words a rewording
- * most easily loses, and the meaning with them. Lexical, so generous on the
- * other side — a rewording that says it with "fails", "solely", "rather than"
- * or "would be removed" keeps it; one that says none of these has lost it, and
- * the engine sentence stands. A false drop costs the plain wording of one
- * sentence, nothing more.
+ * The "not", "no", "only", "unless" of the engine sentence: the words a
+ * rewording most easily loses, and the meaning with them. Two kinds — a
+ * negation and a limit — each counted on both sides with the same generous
+ * list of words that say it ("fails", "rejected", "is blocked", "would be
+ * removed" for a negation; "solely", "just", "hard-coded" for a limit). A
+ * rewording that says fewer of a kind than the engine sentence has lost one,
+ * and the engine sentence stands. Lexical: a false drop costs the plain
+ * wording of one sentence, nothing more.
  */
-const LIMITED = /\b(?:not|no|never|none|nothing|nobody|without|only|unless|except|neither|nor|cannot|other than)\b|n['’]t\b/i;
-const KEPT_LIMIT =
-  /\b(?:not|no|never|none|nothing|nobody|without|only|unless|except|excepting|neither|nor|cannot|other than|rather than|instead|solely|exclusively|just|merely|alone|missing|absent|hard-?coded|fixed)\b|n['’]t\b|\b(?:exclud|fail|lack|block|stop|reject|skip|prevent|ceas|eliminat|remov|disappear)\w*/i;
+const LIMIT_FAMILIES: readonly RegExp[] = [
+  /\b(?:not|no|never|none|nothing|nobody|without|unless|except|excepting|neither|nor|cannot|other than|rather than|instead|missing|absent|(?:exclud|fail|lack|block|stop|reject|skip|bypass|avoid|prevent|ceas|eliminat|remov|disappear)\w*|un(?:listed|used|met|handled|processed|answered|reached|reachable|necessary|changed|known|available|authori[sz]ed))\b|n['’]t\b/gi,
+  /\b(?:only|solely|exclusively|just|merely|alone|hard-?coded|fixed)\b/gi,
+];
+
+const countOf = (family: RegExp, text: string): number => (text.match(family) ?? []).length;
 
 const ANCHOR = /^L?(\d+)(?:\s*[-–]\s*L?(\d+))?$/i;
 
@@ -456,6 +462,19 @@ export async function runPlainWording(
   } catch {
     return null;
   }
+}
+
+/**
+ * Whether this browser may ask for these sentences now: true the first time a
+ * project, scope and digest are seen, and records them; false ever after. Keyed
+ * by the project too, so two projects with the same source each get their one
+ * call, and by every digest seen, not only the last (QA review of 45ab7b5f6a4c).
+ */
+export function takeFirstAsk(asked: Set<string>, projectId: string, scope: PlainScope, digest: string): boolean {
+  const key = `${projectId}\u0000${scope}\u0000${digest}`;
+  if (asked.has(key)) return false;
+  asked.add(key);
+  return true;
 }
 
 /**

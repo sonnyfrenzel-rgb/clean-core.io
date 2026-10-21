@@ -60,12 +60,16 @@ import {
  *      identifier SAP names otherwise (`checkSapReferences`). The answer is
  *      not stored; its SHA-256 is.
  *
- * Why the sentences come from the browser rather than being rebuilt here: the
- * walk's sentences are read off the process map the browser drew, with the
- * business names the naming stage gave it. What makes that safe is the other
- * end — a browser shows a rewording only under the key of a sentence it wrote
- * itself from the same source, and reads it through the same guard again, so a
- * rewording of a sentence the engine never wrote is stored for nobody to see.
+ * What this route does **not** establish: that the sentences sent are the
+ * engine's. They come from the owner's browser — the walk's sentences are read
+ * off the process map the browser drew, with the business names the naming
+ * stage gave it, which this route does not rebuild. It checks their shape, that
+ * each key is the key of its own text and anchor, that the anchors are lines of
+ * the stored source and that the digest names exactly these sentences — no
+ * more. A display filter adds to that, and is not proof of origin either: a
+ * browser looks a rewording up only under the key of a sentence it wrote itself
+ * from the same source and guards it again before it shows it
+ * (`plainLookup`), so a stored rewording of any other sentence is not shown.
  *
  * Stored at `projects/{projectId}/plain_wording/{scope}` through the Admin SDK
  * only; `firestore.rules` has no match for that path, so no client reads or

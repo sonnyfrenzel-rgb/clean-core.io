@@ -503,6 +503,8 @@ function TechnicalStop({
           </ul>
         </div>
       ))}
+      {/* The engine's sentences behind the reworded ones, one fold down — as at a business step (QA review of 45ab7b5f6a4c). */}
+      <AsReadFromCode said={guide.technical.flatMap((g) => g.stepIds).map((id) => guide.byId[id]).filter(Boolean).map((s) => say(s.happens.text, s.happens.anchor))} />
       <div data-workspace-walk-question="" className="flex flex-col gap-2 rounded-cc-row bg-cc-surface-muted p-3">
         <p className="m-0 text-[15px] font-bold text-cc-ink">{wt('walk.technicalQuestion')}</p>
         <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('walk.questionNote')}</p>

@@ -232,7 +232,7 @@ export function isStateEntry(value: unknown): value is StateEntry {
       || (isValueSourceKind(e.valueSource.kind)
         && (e.valueSource.note === null || typeof e.valueSource.note === 'string')))
     && (e.appliesTo === undefined || (Array.isArray(e.appliesTo) && e.appliesTo.every((x) => typeof x === 'string')))
-    && (e.answer === undefined || e.answer === null || (isRuleAnswer(e.answer) && e.kind === 'rule' && e.state === 'keep'))
+    && (e.answer === undefined || e.answer === null || (isRuleAnswer(e.answer) && e.kind === 'rule' && e.state === 'keep' && !e.valueSource))
   );
 }
 
@@ -571,6 +571,15 @@ export function checkStateChoices(
           ok: false,
           code: 'bad-request',
           error: `"Move to SAP standard" is an answer to a rule's Keep only; the one for ${choice.subject} is not.`,
+        };
+      }
+      // One canonical shape: the standard meets the need, so no value source beside it — a
+      // customizing source would read as "Move to configuration" in fit to standard (QA review of 45ab7b5f6a4c).
+      if (valueSource !== null) {
+        return {
+          ok: false,
+          code: 'source-invalid',
+          error: `"Move to SAP standard" takes no value source; the one for ${choice.subject} has one.`,
         };
       }
       answer = choice.answer;
