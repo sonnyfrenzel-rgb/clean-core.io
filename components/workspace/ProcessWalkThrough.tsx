@@ -9,6 +9,8 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcSkeleton from '@/components/cc/Skeleton';
 import { CcTag } from '@/components/cc/Tag';
 import StateChoice from '@/components/process-states/StateChoice';
+import { AsReadFromCode, WordedChip } from './WordedText';
+import { ENGINE_ONLY, type WordedSentence } from '@/lib/plain-wording';
 import { codeCardLabel, codeCardLines } from '@/lib/process-map';
 import { PROCESS_WALK_ID } from '@/lib/process-walk-request';
 import {
@@ -21,7 +23,8 @@ import {
   type WalkStop,
   type WalkSummaryItem,
 } from '@/lib/process-walk-guide';
-import { STATE_LABELS, type ElementState, type StateEntry, type StateSubject } from '@/lib/process-states';
+import { ELEMENT_STATES, STATE_LABELS, type ElementState, type StateEntry, type StateSubject } from '@/lib/process-states';
+import { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
 import {
   walkAnswered,
   walkGroupTitle,
@@ -51,6 +54,12 @@ import {
  * Presentational: the sentences come from `lib/process-walk-guide.ts`, the
  * answers from the process-states route through the caller, which stores them
  * where they always were. Nothing here writes anything itself.
+ *
+ * 3.0.20, owner decisions of 21.10.2026: every sentence is shown through `say`
+ * — the plain wording a model proposed for it, when one held the guard
+ * (`lib/plain-wording.ts`), with the engine's sentence one fold down; the
+ * engine's sentence alone otherwise. `demo` is the public demo's walk: read
+ * only, the answers shown and disabled, and the line "Demo: nothing is saved".
  */
 export interface ProcessWalkThroughProps {
   projectId: string;
@@ -74,6 +83,10 @@ export interface ProcessWalkThroughProps {
   onOpenLines: (range: WalkRange) => void;
   source: string;
   fileName: string;
+  /** Each engine sentence as it is shown: reworded or as written. Without it, as written. */
+  say?: (text: string, anchor: WalkRange | null) => WordedSentence;
+  /** The public demo: nothing is answered and nothing is saved. */
+  demo?: boolean;
 }
 
 const TECHNICAL_SUBJECT = WALK_TECHNICAL_SUBJECT;
@@ -128,9 +141,13 @@ export default function ProcessWalkThrough(props: ProcessWalkThroughProps) {
             onClick={() => onGo(owner ? resumeAt : 0)}
             data-workspace-walk-start=""
           >
-            {!owner ? wt('walk.read') : answered > 0 ? wt('walk.continue') : wt('walk.start')}
+            {props.demo ? wt('walk.start') : !owner ? wt('walk.read') : answered > 0 ? wt('walk.continue') : wt('walk.start')}
           </CcButton>
-          {!owner ? <span className="text-[12px] font-medium text-cc-ink-muted">{wt('walk.readerNote')}</span> : null}
+          {props.demo ? (
+            <span data-workspace-walk-demo="" className="text-[12px] font-medium text-cc-ink-muted">{wt('walk.demoNote')}</span>
+          ) : !owner ? (
+            <span className="text-[12px] font-medium text-cc-ink-muted">{wt('walk.readerNote')}</span>
+          ) : null}
         </div>
       </section>
     );
@@ -249,27 +266,29 @@ function PhaseList({
           const done = phase.stepIds.filter((id) => confirmed(answers[id])).length;
           const here = phase.id === currentPhase;
           return (
-            <li key={phase.id}>
+            <li key={phase.id} className="min-w-0 max-w-full">
               <CcButton
                 variant={here ? 'dark' : 'ghost'}
                 onClick={() => onGo(first)}
                 aria-current={here ? 'step' : undefined}
                 data-workspace-walk-phase={i + 1}
               >
-                <span>{walkPhaseChip(phase.label, done, phase.stepIds.length)}</span>
+                {/* A long phase name wraps inside its chip: on a phone a chip wider than the
+                    card made the page scroll sideways (CI of 18a3d8e3, 37 px). */}
+                <span className="min-w-0 text-left break-words whitespace-normal">{walkPhaseChip(phase.label, done, phase.stepIds.length)}</span>
               </CcButton>
             </li>
           );
         })}
         {technical && technical.kind === 'technical' ? (
-          <li>
+          <li className="min-w-0 max-w-full">
             <CcButton
               variant={current === technicalAt ? 'dark' : 'ghost'}
               onClick={() => onGo(technicalAt)}
               aria-current={current === technicalAt ? 'step' : undefined}
               data-workspace-walk-phase="technical"
             >
-              <span>
+              <span className="min-w-0 text-left break-words whitespace-normal">
                 {walkPhaseChip(wt('walk.technicalTag'), technical.ids.filter((id) => confirmed(answers[id])).length, technical.ids.length)}
               </span>
             </CcButton>
@@ -289,11 +308,28 @@ function LineAnchor({ range, onOpen }: { range: WalkRange | null; onOpen: (range
   );
 }
 
-function Said({ line, onOpen }: { line: WalkLine; onOpen: (range: WalkRange) => void }) {
+function Said({ line, said, onOpen }: { line: WalkLine; said: WordedSentence; onOpen: (range: WalkRange) => void }) {
   return (
-    <p className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">
-      {line.text} <LineAnchor range={line.anchor} onOpen={onOpen} />
+    <p data-walk-worded={said.worded ? 'yes' : 'no'} className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">
+      {said.text} <LineAnchor range={line.anchor} onOpen={onOpen} />
+      <WordedChip said={said} />
     </p>
+  );
+}
+
+/** What the reader is told instead of an answer in the public demo: the answers, disabled, and that nothing is saved. */
+function DemoAnswers() {
+  return (
+    <div data-workspace-walk-demo="" className="flex flex-col gap-2">
+      <span role="radiogroup" aria-label={wt('walk.demoAnswersLabel')} aria-disabled={true} className={`${CC_SEGMENTED_GROUP} flex-wrap self-start`}>
+        {ELEMENT_STATES.map((state) => (
+          <button key={state} type="button" role="radio" aria-checked={false} disabled={true} className={ccSegmentClass(false)}>
+            {STATE_LABELS[state]}
+          </button>
+        ))}
+      </span>
+      <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.demoNote')}</p>
+    </div>
   );
 }
 
@@ -318,11 +354,15 @@ function StepStop({
   onOpenLines,
   source,
   fileName,
+  say = ENGINE_ONLY,
+  demo = false,
 }: ProcessWalkThroughProps & { step: WalkGuideStep | undefined; phaseIndex: number }) {
   if (!step || !guide) return null;
   const phase = guide.phases[phaseIndex];
   const subject = subjectOf(step.id);
   const entry = answers[step.id] ?? null;
+  const shown = (line: WalkLine) => say(line.text, line.anchor);
+  const all = [step.happens, step.matters, ...step.decides, ...(step.data ? [step.data] : []), step.ifGone].map(shown);
   return (
     <div data-workspace-walk-step-id={step.id} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -337,34 +377,37 @@ function StepStop({
       </div>
       <dl className="m-0 grid gap-x-6 gap-y-4 min-[900px]:grid-cols-2">
         <Part name="happens" title={wt('walk.happens')}>
-          <Said line={step.happens} onOpen={onOpenLines} />
+          <Said line={step.happens} said={shown(step.happens)} onOpen={onOpenLines} />
         </Part>
         <Part name="matters" title={wt('walk.matters')}>
-          <Said line={step.matters} onOpen={onOpenLines} />
+          <Said line={step.matters} said={shown(step.matters)} onOpen={onOpenLines} />
         </Part>
         <Part name="decides" title={wt('walk.decides')}>
           {step.decides.length > 0 ? (
-            step.decides.map((line, i) => <Said key={i} line={line} onOpen={onOpenLines} />)
+            step.decides.map((line, i) => <Said key={i} line={line} said={shown(line)} onOpen={onOpenLines} />)
           ) : (
             <p className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">{wt('walk.decidesNone')}</p>
           )}
         </Part>
         <Part name="data" title={wt('walk.data')}>
           {step.data ? (
-            <Said line={step.data} onOpen={onOpenLines} />
+            <Said line={step.data} said={shown(step.data)} onOpen={onOpenLines} />
           ) : (
             <p className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">{wt('walk.dataNone')}</p>
           )}
         </Part>
         <Part name="if-gone" title={wt('walk.ifGone')}>
-          <Said line={step.ifGone} onOpen={onOpenLines} />
+          <Said line={step.ifGone} said={shown(step.ifGone)} onOpen={onOpenLines} />
         </Part>
       </dl>
+      <AsReadFromCode said={all} />
       <CodeFold step={step} source={source} fileName={fileName} />
       <div data-workspace-walk-question="" className="flex flex-col gap-2 rounded-cc-row bg-cc-surface-muted p-3">
         <p className="m-0 text-[15px] font-bold text-cc-ink">{wt('walk.question')}</p>
         <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('walk.questionNote')}</p>
-        {!owner ? (
+        {demo ? (
+          <DemoAnswers />
+        ) : !owner ? (
           <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.readerNote')}</p>
         ) : subject ? (
           <StateChoice
@@ -411,6 +454,8 @@ function TechnicalStop({
   subjectOf,
   onAnswerMany,
   onOpenLines,
+  say = ENGINE_ONLY,
+  demo = false,
 }: ProcessWalkThroughProps & { ids: readonly string[] }) {
   if (!guide) return null;
   const answerable = ids.filter((id) => subjectOf(id) !== null);
@@ -448,7 +493,10 @@ function TechnicalStop({
                     <LineAnchor range={step.anchor} onOpen={onOpenLines} />
                     {answers[id] ? <CcTag>{STATE_LABELS[answers[id].state]}</CcTag> : null}
                   </span>
-                  <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{step.happens.text}</span>
+                  <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    {say(step.happens.text, step.happens.anchor).text}
+                    <WordedChip said={say(step.happens.text, step.happens.anchor)} />
+                  </span>
                 </li>
               );
             })}
@@ -458,7 +506,9 @@ function TechnicalStop({
       <div data-workspace-walk-question="" className="flex flex-col gap-2 rounded-cc-row bg-cc-surface-muted p-3">
         <p className="m-0 text-[15px] font-bold text-cc-ink">{wt('walk.technicalQuestion')}</p>
         <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('walk.questionNote')}</p>
-        {!owner ? (
+        {demo ? (
+          <DemoAnswers />
+        ) : !owner ? (
           <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.readerNote')}</p>
         ) : answerable.length > 0 ? (
           <StateChoice

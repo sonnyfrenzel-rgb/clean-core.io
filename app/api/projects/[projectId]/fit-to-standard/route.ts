@@ -19,6 +19,7 @@ import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { projectEvidenceFileName } from '@/lib/project-evidence-build';
 import { signedSourceShaOf } from '@/lib/key-user-acceptance';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
+import { decisionKindOf } from '@/lib/rule-decision-flow';
 import { parseBpmn } from '@/lib/process-map';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
@@ -185,25 +186,38 @@ function runFactsOf(project: Record<string, unknown>, source: string): RunFacts 
   return { runId, signedSha, sourceSha, analyzeState };
 }
 
-/** The rules the account marked as customizing, with their first line — class D of the gate. */
+/**
+ * The rules the account marked as customizing, with their first line — class D
+ * of the gate — and the rules it answered "Move to SAP standard" (3.0.20 (5)).
+ */
 async function customizingRules(db: AdminDb, projectId: string, source: string) {
+  type Marked = Array<{ ruleId: string; lineStart: number; lineEnd?: number }>;
+  const none = { revision: 0, entries: [] as StateEntry[], customizing: [] as Marked, standard: [] as Marked };
   const snap = await db.collection('projects').doc(projectId).collection(PROCESS_STATE_COLLECTION).orderBy('revision', 'desc').limit(1).get();
-  if (snap.empty) return { revision: 0, entries: [] as StateEntry[], customizing: [] };
+  if (snap.empty) return none;
   const data = (snap.docs[0].data() || {}) as Record<string, unknown>;
-  if (data.formatVersion !== PROCESS_STATE_FORMAT_VERSION) return { revision: 0, entries: [] as StateEntry[], customizing: [] };
+  if (data.formatVersion !== PROCESS_STATE_FORMAT_VERSION) return none;
   const entries = (Array.isArray(data.entries) ? data.entries : [])
     .map((e) => ({ ...(e as Record<string, unknown>), confirmedAt: isoOf((e as Record<string, unknown>).confirmedAt) }) as StateEntry)
     .filter(isStateEntry);
   const marked = entries.filter((e) => e.kind === 'rule' && e.valueSource?.kind === 'customizing' && (e.state === 'keep' || e.state === 'change'));
-  const customizing: Array<{ ruleId: string; lineStart: number; lineEnd?: number }> = [];
-  if (marked.length > 0) {
+  // Read as the Business view reads it: the answer `standard`, or an older Keep whose note says so.
+  const wanted = entries.filter((e) => e.kind === 'rule' && decisionKindOf(e) === 'standard');
+  const customizing: Marked = [];
+  const standard: Marked = [];
+  if (marked.length > 0 || wanted.length > 0) {
     const rules = new Map(deriveBusinessRules(source).rules.map((r) => [r.id, r]));
+    const lineOf = (subject: string) => rules.get(subject)?.sentences.flatMap((s) => s.anchors)[0];
     for (const m of marked) {
-      const anchor = rules.get(m.subject)?.sentences.flatMap((s) => s.anchors)[0];
+      const anchor = lineOf(m.subject);
       if (anchor) customizing.push({ ruleId: m.subject, lineStart: anchor.lineStart, lineEnd: anchor.lineEnd });
     }
+    for (const m of wanted) {
+      const anchor = lineOf(m.subject);
+      if (anchor) standard.push({ ruleId: m.subject, lineStart: anchor.lineStart, lineEnd: anchor.lineEnd });
+    }
   }
-  return { revision: typeof data.revision === 'number' ? data.revision : 0, entries, customizing };
+  return { revision: typeof data.revision === 'number' ? data.revision : 0, entries, customizing, standard };
 }
 
 async function latestRevision(db: AdminDb, projectId: string): Promise<FitToStandardRevision | null> {
@@ -241,6 +255,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
     analyzeState: facts.analyzeState,
     signedSourceSha256: facts.signedSha,
     customizing: states.customizing,
+    standardRules: states.standard,
   });
   return { ok: true, source, facts, reading, states };
 }

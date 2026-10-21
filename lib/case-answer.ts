@@ -539,8 +539,8 @@ export function guardCaseAnswer(text: string, facts: readonly CaseFact[], legacy
   return { outcome: 'shown', text: kept.map((s) => s.text).join(' '), anchors, sentences, dropped };
 }
 
-/** A claim found as a whole word (a number not inside a longer number). */
-function containsClaim(support: string, claim: string): boolean {
+/** A claim found as a whole word (a number not inside a longer number). `support` is upper-cased, thousands separators removed. */
+export function containsClaim(support: string, claim: string): boolean {
   const escaped = claim.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
   const pattern = /^\d/.test(claim)
     ? new RegExp(`(?<![0-9])${escaped}(?:\\.0+)?(?![0-9])`)

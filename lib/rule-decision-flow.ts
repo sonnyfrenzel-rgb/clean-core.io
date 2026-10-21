@@ -9,10 +9,12 @@
  *   - the **flow** — the rules by business topic, weightiest first, each with
  *     the engine's proposal and the answer on record, and which rule is next;
  *   - the **one-click answer** — a proposal taken over as a choice the route
- *     already accepts. No new field is written: *Move to configuration* is a
- *     Keep whose value source is the customizing table, *Move to SAP standard*
- *     a Keep whose note says so, *Change the value* a Change with the new value
- *     and its source, *Drop* a Drop with its reason;
+ *     accepts: *Move to configuration* is a Keep whose value source is the
+ *     customizing table, *Move to SAP standard* a Keep with the answer
+ *     `standard` (owner decision 21.10.2026 (5), written by the route through
+ *     the Admin SDK — before it, a Keep whose note started with the words,
+ *     which is still read as standard), *Change the value* a Change with the
+ *     new value and its source, *Drop* a Drop with its reason;
  *   - the **workshop view** — open points, who decided what, and what changed
  *     in the latest session, read off the entries of the latest revision (each
  *     carries its account, its server time and the revision that set it).
@@ -59,16 +61,21 @@ export const RULE_DECISION_MEANINGS: Readonly<Record<RuleDecisionKind, string>> 
   clarify: 'Somebody else must answer — say who and what.',
 });
 
-/** The words a note of *Move to SAP standard* starts with — how the answer is read back from a Keep. */
+/**
+ * The words a note of *Move to SAP standard* started with before the answer
+ * had a value of its own — how such an older Keep is still read back as standard.
+ */
 export const STANDARD_NOTE_PREFIX = 'Move to SAP standard';
 
 /** The answer on record, as one of the six — or null when there is none. */
-export function decisionKindOf(entry: Pick<StateEntry, 'state' | 'note' | 'valueSource'> | null | undefined): RuleDecisionKind | null {
+export function decisionKindOf(entry: Pick<StateEntry, 'state' | 'note' | 'valueSource' | 'answer'> | null | undefined): RuleDecisionKind | null {
   if (!entry) return null;
   if (entry.state === 'clarify') return 'clarify';
   if (entry.state === 'drop') return 'drop';
   if (entry.state === 'change') return 'change-value';
+  if (entry.answer === 'standard') return 'standard';
   if (entry.valueSource?.kind === 'customizing') return 'configure';
+  // Recorded before 3.0.20 (5): a Keep whose note said so.
   if ((entry.note ?? '').startsWith(STANDARD_NOTE_PREFIX)) return 'standard';
   return 'keep';
 }
@@ -105,14 +112,7 @@ export function choiceOf(ruleId: string, kind: RuleDecisionKind, note: string, s
     case 'configure':
       return { subject: ruleId, kind: 'rule', state: 'keep', note: said, valueSource: { kind: 'customizing', note: null }, appliesTo: [] };
     case 'standard':
-      return {
-        subject: ruleId,
-        kind: 'rule',
-        state: 'keep',
-        note: said && said.startsWith(STANDARD_NOTE_PREFIX) ? said : `${STANDARD_NOTE_PREFIX}${said ? `: ${said}` : '.'}`,
-        valueSource: null,
-        appliesTo: [],
-      };
+      return { subject: ruleId, kind: 'rule', state: 'keep', note: said, valueSource: null, appliesTo: [], answer: 'standard' };
     case 'change-value':
       return {
         subject: ruleId,
@@ -240,11 +240,11 @@ const dayOf = (iso: string): string => iso.slice(0, 10);
 const newestFirst = (a: { at: string }, b: { at: string }) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
 
 /**
- * The workshop view of the rules. Read off the latest revision only: every
- * entry there carries who answered, when and in which revision, so the
- * sessions and "what changed in the latest one" need no second read. What an
- * answer replaced is in the earlier revision and is not read here — the view
- * says "answered or changed", never what it was before.
+ * The workshop view of the rules. Read off the latest revision: every entry
+ * there carries who answered, when and in which revision, so the sessions and
+ * "what changed in the latest one" need no second read. What an answer
+ * replaced is in the earlier revisions; `ruleChanges` reads it from those
+ * (3.0.20 (4)), and the workshop shows the two side by side.
  */
 export function workshopView(explanation: RuleSetExplanation, entries: Readonly<Record<string, StateEntry>>): WorkshopView {
   const byId = new Map(explanation.rules.map((r) => [r.id, r]));
@@ -288,6 +288,59 @@ export function workshopView(explanation: RuleSetExplanation, entries: Readonly<
       .filter((d) => d.kind !== 'clarify' && d.kind !== byId.get(d.id)?.proposal.kind)
       .map((d) => ({ ...d, proposal: byId.get(d.id)?.proposal.kind ?? 'keep' })),
   };
+}
+
+/* ------------------------------------------------------- old → new (3.0.20 (4)) */
+
+export interface RuleChange {
+  id: string;
+  /** The answer before, and its note. */
+  from: RuleDecisionKind;
+  fromNote: string | null;
+  /** The answer that replaced it, with who gave it and when. */
+  to: RuleDecisionKind;
+  note: string | null;
+  by: string;
+  at: string;
+  revision: number;
+}
+
+/**
+ * Per rule, every answer that replaced an earlier one — earlier answer → new
+ * answer, who and when — newest first. Read from the answers as they were made
+ * (`ruleAnswersMade`); a first answer replaced nothing and is not a change, and
+ * an answer given again with the same words is none either.
+ */
+export function ruleChanges(explanation: Pick<RuleSetExplanation, 'order'>, made: readonly StateEntry[]): RuleChange[] {
+  const known = new Set(explanation.order);
+  const bySubject = new Map<string, StateEntry[]>();
+  for (const e of made) {
+    if (e.kind !== 'rule' || !known.has(e.subject)) continue;
+    bySubject.set(e.subject, [...(bySubject.get(e.subject) ?? []), e]);
+  }
+  const out: RuleChange[] = [];
+  for (const [id, list] of bySubject) {
+    const ordered = [...list].sort((a, b) => a.revision - b.revision);
+    for (let i = 1; i < ordered.length; i += 1) {
+      const before = ordered[i - 1];
+      const after = ordered[i];
+      const from = decisionKindOf(before);
+      const to = decisionKindOf(after);
+      if (!from || !to) continue;
+      if (from === to && shownNote(before.note) === shownNote(after.note)) continue;
+      out.push({
+        id,
+        from,
+        fromNote: shownNote(before.note),
+        to,
+        note: shownNote(after.note),
+        by: after.account.name,
+        at: after.confirmedAt,
+        revision: after.revision,
+      });
+    }
+  }
+  return out.sort((a, b) => b.revision - a.revision || (a.id < b.id ? -1 : 1));
 }
 
 /* ------------------------------------------------------------- measuring */

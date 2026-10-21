@@ -45,6 +45,8 @@ export interface FitToStandardReadInput {
   analyzeState: FitGateAnalyzeState;
   signedSourceSha256: string | null;
   customizing?: ReadonlyArray<{ ruleId: string; lineStart: number; lineEnd?: number }>;
+  /** Rules the account answered "Move to SAP standard" (3.0.20 (5)), with their lines. */
+  standardRules?: ReadonlyArray<{ ruleId: string; lineStart: number; lineEnd?: number }>;
 }
 
 export interface FitToStandardReading {
@@ -60,6 +62,7 @@ export interface FitToStandardReading {
   edition: 'public' | 'private';
   findings: FitGateFinding[];
   customizing: ReadonlyArray<{ ruleId: string; lineStart: number; lineEnd?: number }>;
+  standardRules: ReadonlyArray<{ ruleId: string; lineStart: number; lineEnd?: number }>;
   source: string;
 }
 
@@ -190,6 +193,7 @@ export function readFitToStandard(input: FitToStandardReadInput): FitToStandardR
     edition,
     findings: evidence.findings.map(gateFindingOf),
     customizing: input.customizing ?? [],
+    standardRules: input.standardRules ?? [],
     source: input.source,
   };
 }
@@ -225,6 +229,7 @@ export function designFromReading(r: FitToStandardReading, requestedAgainstGate:
     successors: r.successors,
     keyUser,
     customizing: r.customizing,
+    standardRules: r.standardRules,
     plainLabels: plain,
   });
 }

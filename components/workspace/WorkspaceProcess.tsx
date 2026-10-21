@@ -22,6 +22,8 @@ import { elementEntries, walkOrder } from '@/lib/process-walk';
 import { restrictGuide, resumeStop, walkStops, WALK_TECHNICAL_SUBJECT, type WalkGuide } from '@/lib/process-walk-guide';
 import { OPEN_WALK_EVENT, PROCESS_WALK_ID, takeProcessWalkRequest } from '@/lib/process-walk-request';
 import ProcessWalkThrough from './ProcessWalkThrough';
+import { usePlainWording } from '@/hooks/usePlainWording';
+import { plainModelEnabled, walkPlainSentences } from '@/lib/plain-wording';
 import { isConfirmedState } from '@/lib/rules-editor';
 import { MAX_STATE_CHOICES, type ElementState } from '@/lib/process-states';
 import { namingContextOf } from '@/lib/process-naming';
@@ -201,6 +203,22 @@ export default function WorkspaceProcess({
   );
   const stops = useMemo(() => (guide ? walkStops(guide) : []), [guide]);
   const [walk, setWalk] = useState<number | null>(null);
+  /**
+   * The walk's sentences in plain business words (3.0.20, owner decision 2):
+   * read — and, for the owner with a model, asked for once — when the walk
+   * opens on a step. The engine's sentences stand until then, and whenever a
+   * rewording does not hold.
+   */
+  const walkSentences = useMemo(() => (fullGuide ? walkPlainSentences(fullGuide.guide) : null), [fullGuide]);
+  const wording = usePlainWording({
+    projectId: projectId || null,
+    scope: 'walk',
+    source: signed?.source ?? null,
+    sentences: walkSentences,
+    owner,
+    active: walk !== null,
+    modelEnabled: plainModelEnabled(availability),
+  });
   const [answering, setAnswering] = useState<{ subject: string; error: string | null } | null>(null);
   /**
    * Answers into the same need revision as the rules — never the signed run.
@@ -767,6 +785,7 @@ export default function WorkspaceProcess({
             onOpenLines={openRange}
             source={signed.source}
             fileName={signed.fileName}
+            say={wording.say}
           />
         </div>
       ) : null}

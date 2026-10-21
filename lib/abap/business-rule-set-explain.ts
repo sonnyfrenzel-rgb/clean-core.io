@@ -4,6 +4,7 @@ import type { Branch, BranchArm, ControlFlowReport } from './control-flow';
 import type { BusinessRule, BusinessRuleSet, RuleParameter } from './business-rule-set';
 import { enclosingBranches, type EnclosingBranch } from './enclosing-branches';
 import { conditionToPhrase, humaniseField, humaniseRoutine, plainContext, ruleConditionText, type PlainContext } from './plain-language';
+import { ruleStandardHint } from '../rule-standard-hints';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -267,25 +268,12 @@ const MONEY = /(?:netwr|wrbtr|dmbtr|amount|betrag|kbetr|netpr|price|preis|value|
 
 /* ------------------------------------------------------- standard pointers */
 
-/**
- * Fields SAP standard has a function of its own for — where a custom rule on
- * them is a candidate for the standard. Worded as a pointer to check, never
- * as a claim that the standard covers this program's need.
+/*
+ * Where SAP standard may meet a rule: owner decision 21.10.2026 (6) — from the
+ * scope items fit to standard uses (`lib/rule-standard-hints.ts`), curated
+ * entries only, worded as a check; none when nothing curated matches. The small
+ * fixed list of standard functions that stood here before is gone.
  */
-const STANDARD_FUNCTIONS: ReadonlyArray<[RegExp, string]> = [
-  [/^(?:cmgst|ctlpc|crblb|klimk)$/, 'SAP Credit Management, which keeps credit limits and the credit status of an order'],
-  [/^(?:frggr|frgkz|frgst|frgzu|release_group|release_strategy)$/, 'the release strategy for purchasing documents'],
-  [/^(?:lifsk)$/, 'the delivery block of the sales document'],
-  [/^(?:faksk)$/, 'the billing block of the sales document'],
-  [/^(?:sperr|sperm|sperq)$/, 'the blocks of the business partner'],
-  [/^(?:zterm)$/, 'payment terms, kept in configuration'],
-  [/^(?:zlspr)$/, 'the payment block of the open item'],
-];
-
-const standardFunctionOf = (stems: readonly string[]): string | null => {
-  for (const [re, words] of STANDARD_FUNCTIONS) if (stems.some((s) => re.test(s))) return words;
-  return null;
-};
 
 /* -------------------------------------------------------- branch reading */
 
@@ -901,8 +889,8 @@ function proposalOf(rc: RuleContext, technical: boolean, hasInclude: boolean): R
     );
   }
   if (rc.unreached) return say('drop', 'No entry point of the program reaches the step it stands in, so it never runs as written. Unless that step is called from elsewhere, it can go.');
-  const standard = standardFunctionOf(rc.stems);
-  if (standard) return say('standard', `SAP standard has its own function for this: ${standard}. Check whether it meets the need before the rule is rebuilt.`);
+  const standard = ruleStandardHint(rc.stems);
+  if (standard) return say('standard', standard.text);
   const tests = rc.tests;
   const values = tests.flatMap(valuesOf);
   const op = tests[0] ? operatorOf(tests[0]) : '=';

@@ -35,6 +35,10 @@ export function thinkingConfigFor(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): ThinkingConfig | undefined {
   if (shape === 'transformation-fill') return { thinkingLevel: ThinkingLevel.LOW };
+  // 3.0.20 (owner decision 2), measured 21.10.2026 on the 1,000-line example: rewording 201
+  // sentences took 124 s with the default thinking (13,079 thinking tokens) — past the 120 s
+  // the service allows a request — and 36 s at LOW, with no thinking tokens.
+  if (shape === 'plain-wording') return { thinkingLevel: ThinkingLevel.LOW };
   if (shape === 'documentation-business') {
     const level = CONFIGURABLE[(env[DOCUMENTATION_BUSINESS_THINKING_ENV] ?? '').trim().toLowerCase()];
     return level ? { thinkingLevel: level } : undefined;
