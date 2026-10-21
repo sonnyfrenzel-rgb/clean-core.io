@@ -2230,6 +2230,13 @@ export function finishDeliveryPackage(input: {
 }): FinishedPackage {
   let facts = input.facts;
   let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', KEY_USER_STEPS_PATH, COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
+  // A key-user decision builds nothing: code generated against an earlier decision stays out, with its generation
+  // record, as on the standard path below — only the documents travel.
+  const keyUserWhole = facts.keyUser?.whole === true;
+  if (keyUserWhole) {
+    entries = entries.filter((e) => e.path.startsWith('docs/'));
+    facts = { ...facts, generation: null };
+  }
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout, engineLed: facts.generation?.path === 'engine-led' });

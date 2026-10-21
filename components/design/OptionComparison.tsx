@@ -11,7 +11,7 @@ import {
   readOptionComparison,
 } from '@/lib/design-option-comparison';
 import { cn } from '@/lib/utils';
-import { KEY_USER_COMPANY_POLICY, type KeyUserStepList } from '@/lib/key-user-steps';
+import { KEY_USER_COMPANY_POLICY, keyUserLevelSentence, type KeyUserStepList } from '@/lib/key-user-steps';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 
 /**
@@ -129,7 +129,7 @@ function KeyUserLimits({ list }: { list: KeyUserStepList }) {
       </span>
       <p className="m-0 text-[13px] text-cc-ink [overflow-wrap:anywhere]">{list.sentence}</p>
       {list.levelByConstruction ? (
-        <p className="m-0 text-[13px] text-cc-ink">Clean core level {list.levelByConstruction} by construction: key-user extensions use released extension points only.</p>
+        <p className="m-0 text-[13px] text-cc-ink" data-key-user-level={list.levelByConstruction}>{keyUserLevelSentence(list.levelByConstruction)}</p>
       ) : null}
       {list.steps.length ? (
         <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-cc-ink">
