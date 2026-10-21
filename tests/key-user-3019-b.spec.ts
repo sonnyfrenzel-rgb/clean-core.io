@@ -308,7 +308,8 @@ test.describe('Economics: configuration effort, not a build — counts and the a
     expect(card).not.toMatch(/\*\s*\d|\d\s*\*/);
     const page = read('app/(app)/project/[projectId]/tco/page.tsx');
     expect(page).toContain('keyUserRate={userRate}');
-    expect(page).toContain("rebuild={assumptions.options.find((o) => o.kind === 'rebuild')}");
+    // Owner decision 19.10.2026: the card reads the key-user cost option, not Rebuild's days.
+    expect(page).toContain("option={assumptions.options.find((o) => o.kind === 'keyuser')}");
   });
 });
 
@@ -357,15 +358,16 @@ test.describe('Delivery: the package carries the step list as a document', () =>
     expect(out.files.find((f) => f.path === 'STATUS.md')!.content).not.toContain('key-user step');
   });
 
-  test('the handover lists the step list and the checks; Delivery is ready with them, never proven', () => {
+  test('the handover lists the step list and the checks; Delivery waits for them to be recorded as run, never proven', () => {
     const p = project({ documentation: '# Process' });
     const chain = buildHandoverChain(p, workflowSteps(p));
     const tf = chain.find((l) => l.key === 'transformation')!;
     expect(tf).toMatchObject({ state: 'on-record', provenance: 'reconstructed', by: 'The deterministic engine' });
     expect(tf.missing).toContain(KEY_USER_STEPS_PATH);
     expect(chain.find((l) => l.key === 'tests')!.value).toBe('Acceptance checks of the key-user step list');
-    expect(phase(p, 'delivery')).toMatchObject({ state: 'done', badge: 'Ready · key-user steps', proven: false });
-    expect(phase(project(), 'delivery')).toMatchObject({ state: 'partial', detail: 'Review material only: no documentation.' });
+    // Owner decision 19.10.2026: Delivery has no gap once the checks are recorded as run (tests/key-user-3019-c.spec.ts).
+    expect(phase(p, 'delivery')).toMatchObject({ state: 'partial', detail: 'Review material only: key-user checks not recorded as run.', proven: false });
+    expect(phase(project(), 'delivery')).toMatchObject({ state: 'partial', detail: 'Review material only: key-user checks not recorded as run, no documentation.' });
     const page = read('app/(app)/project/[projectId]/delivery/page.tsx');
     expect(page).toContain('facts: { ...facts, keyUser },');
   });

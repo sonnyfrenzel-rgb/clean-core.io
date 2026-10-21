@@ -61,9 +61,8 @@ CLASS lcl_im_sd_deliv_prio IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF ls_rule-kvgr1_a IS NOT INITIAL AND cs_header-kvgr1 = ls_rule-kvgr1_a.
-      cs_header-zz_prio_class = 'A'.
-    ELSEIF cs_header-netwr >= ls_rule-value_a.
+    IF ( ls_rule-kvgr1_a IS NOT INITIAL AND cs_header-kvgr1 = ls_rule-kvgr1_a )
+       OR cs_header-netwr >= ls_rule-value_a.
       cs_header-zz_prio_class = 'A'.
     ELSEIF cs_header-netwr >= ls_rule-value_b.
       cs_header-zz_prio_class = 'B'.
@@ -78,9 +77,6 @@ CLASS lcl_im_sd_deliv_prio IMPLEMENTATION.
        AND is_header-zz_prio_class <> 'B'
        AND is_header-zz_prio_class <> 'C'.
       ev_message = |Priority class { is_header-zz_prio_class } is not A, B or C.|.
-    ELSEIF is_header-zz_prio_class = 'A' AND is_header-zz_prio_note IS INITIAL
-       AND is_header-netwr < 1000.
-      ev_message = |Class A below 1000 needs a note why it was set by hand.|.
     ENDIF.
   ENDMETHOD.
 

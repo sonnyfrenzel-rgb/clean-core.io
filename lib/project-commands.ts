@@ -133,6 +133,23 @@ export function recommendedArchitecture(source: {
   return fromRoute(source.originalRecommendation) ?? fromRoute(source.extensibilityRoute);
 }
 
+/**
+ * The recommendation a run records, from the route report it was routed with
+ * (owner decision 19.10.2026, roadmap 3.0.19): `keyuser` where the engine reads
+ * the whole program as key user (`keyUser.recommended`, the checkpoint's
+ * `Key-User Preferred`) — choosing RAP or CAP is then the departure that needs
+ * a reason. Otherwise the code route, `cap` or `rap`; a partial reading keeps
+ * the code route, which is the one the code part takes. A report of an engine
+ * before 3.0.19 carries no `keyUser`, so its runs record what they always did.
+ */
+export function recommendationOfRoute(report: {
+  recommendedRoute: string;
+  keyUser?: { recommended: boolean } | null;
+}): TargetArchitectureCode {
+  if (report.keyUser?.recommended === true) return 'keyuser';
+  return isSideBySideRoute(report.recommendedRoute) || report.recommendedRoute.includes('Side-by-Side') ? 'cap' : 'rap';
+}
+
 /* ------------------------------------------------------------- usage report */
 
 /** Top-level keys of a `UsageReport` the server stores; anything else is dropped. */

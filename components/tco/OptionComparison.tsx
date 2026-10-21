@@ -129,6 +129,37 @@ export function initialCostAssumptions(): CostAssumptions {
 }
 
 /**
+ * Roadmap 3.0.19 (owner decision 19.10.2026): key user as its own cost option,
+ * beside Rebuild (which is unchanged) — offered only where the signed run's
+ * engine read a key-user part. By name only, like every seed: its days are the
+ * reader's key-user days, priced with the test/key-user day rate, and nothing
+ * proposes them. Assumptions that already hold one are returned as they are.
+ */
+export const KEY_USER_COST_OPTION: CostOption = {
+  id: 'keyuser',
+  kind: 'keyuser',
+  label: 'Rebuild with key-user tools (configured, no code)',
+  oneOff: null,
+  perRelease: null,
+  maintenanceBaselinePerYear: null,
+  upgradeDelay: null,
+  effortSource: 'stated',
+};
+
+export function withKeyUserOption(assumptions: CostAssumptions): CostAssumptions {
+  if (assumptions.options.some((o) => o.kind === 'keyuser')) return assumptions;
+  return { ...assumptions, options: [...assumptions.options, KEY_USER_COST_OPTION] };
+}
+
+/** A key-user option's days are key-user days: its developer days are zero, never a field. */
+function keyUserEffort<T extends EffortDays | null>(v: T): T {
+  return (v ? { ...v, devDays: 0 } : v) as T;
+}
+function keyUserRange(r: EffortRange | null): EffortRange | null {
+  return r ? { low: keyUserEffort(r.low), high: keyUserEffort(r.high) } : r;
+}
+
+/**
  * "Not determined", with the reason the page has always given: a statement of
  * its own, never a zero (`Stated` in `lib/cost-assumptions.ts`).
  */
@@ -238,14 +269,18 @@ function EffortFields({
   help,
   value,
   onChange,
+  keyUser = false,
 }: {
   idPrefix: string;
   label: string;
   help: ReactNode;
   value: EffortDays | null;
   onChange: (v: EffortDays | null) => void;
+  /** Roadmap 3.0.19: a key-user option — key-user days only, its developer days zero. */
+  keyUser?: boolean;
 }) {
   const set = (key: keyof EffortDays, v: number | null) => {
+    if (keyUser) return onChange(v === null ? null : { devDays: 0, testDays: v });
     const next: EffortDays = { devDays: value?.devDays ?? NaN, testDays: value?.testDays ?? NaN, [key]: v ?? NaN };
     // Both halves empty is "no figure", not "zero days".
     if (!Number.isFinite(next.devDays) && !Number.isFinite(next.testDays)) return onChange(null);
@@ -253,6 +288,13 @@ function EffortFields({
   };
   const shown = (key: keyof EffortDays) =>
     value && Number.isFinite(value[key]) ? (value[key] as number) : null;
+  if (keyUser) {
+    return (
+      <EffortGroup legend={label} help={help}>
+        <NumField id={`${idPrefix}-test`} label="Key-user days" value={shown('testDays')} onChange={(v) => set('testDays', v)} />
+      </EffortGroup>
+    );
+  }
   return (
     <EffortGroup legend={label} help={help}>
       <div className="grid grid-cols-2 gap-3">
@@ -364,7 +406,8 @@ export type EffortProvenance = 'not-entered' | 'proposal' | 'from-proposal' | 's
 
 export function effortProvenance(option: CostOption, proposal: EffortProposal | null): EffortProvenance {
   const entered = option.oneOff !== null || option.perRelease !== null;
-  if (!entered) return proposal ? 'proposal' : 'not-entered';
+  // Roadmap 3.0.19: nothing proposes key-user days — they are only ever the reader's.
+  if (!entered) return proposal && option.kind !== 'keyuser' ? 'proposal' : 'not-entered';
   return option.effortSource === 'proposal-confirmed' ? 'from-proposal' : 'stated';
 }
 
@@ -635,6 +678,7 @@ export default function OptionComparison({
         {assumptions.options.map((option) => {
           const cost = comparison.costs.find((c) => c.optionId === option.id);
           const isComparison = option.kind === COMPARISON_KIND;
+          const isKeyUser = option.kind === 'keyuser';
           const needsBaseline = BASELINE_KINDS.has(option.kind);
           const groups = optionGroups(cost, option);
           const state = effortProvenance(option, proposal);
@@ -857,20 +901,36 @@ export default function OptionComparison({
 
                 <div id={panelId} hidden={!isEditing} data-cost-option-fields={option.id}>
                   <div className="space-y-4 border-t border-cc-line pt-4 print:hidden">
-                    <EffortGroup legend="One-off effort (range)" help={`${EFFORT_HELP.oneOff} ${EFFORT_HELP.devDays} ${EFFORT_HELP.testDays}`}>
+                    <EffortGroup
+                      legend="One-off effort (range)"
+                      help={
+                        isKeyUser
+                          ? `${EFFORT_HELP.oneOff} Key-user days only — configured in the system, no code is built — priced with your test/key-user day rate. Clean-Core.io proposes no days for key-user work.`
+                          : `${EFFORT_HELP.oneOff} ${EFFORT_HELP.devDays} ${EFFORT_HELP.testDays}`
+                      }
+                    >
                       <div className="grid grid-cols-2 gap-3">
-                        {([
-                          ['low', 'devDays', 'Low · dev days'],
-                          ['low', 'testDays', 'Low · test days'],
-                          ['high', 'devDays', 'High · dev days'],
-                          ['high', 'testDays', 'High · test days'],
-                        ] as const).map(([bound, key, label]) => (
+                        {(isKeyUser
+                          ? ([
+                              ['low', 'testDays', 'Low · key-user days'],
+                              ['high', 'testDays', 'High · key-user days'],
+                            ] as const)
+                          : ([
+                              ['low', 'devDays', 'Low · dev days'],
+                              ['low', 'testDays', 'Low · test days'],
+                              ['high', 'devDays', 'High · dev days'],
+                              ['high', 'testDays', 'High · test days'],
+                            ] as const)
+                        ).map(([bound, key, label]) => (
                           <NumField
                             key={`${bound}-${key}`}
                             id={`${option.id}-oneoff-${bound}-${key === 'devDays' ? 'dev' : 'test'}`}
                             label={label}
                             value={fin(option.oneOff?.[bound][key])}
-                            onChange={(v) => typed(option.id, { oneOff: withOneOffCorner(option, bound, key, v) })}
+                            onChange={(v) => {
+                              const range = withOneOffCorner(option, bound, key, v);
+                              typed(option.id, { oneOff: isKeyUser ? keyUserRange(range) : range });
+                            }}
                           />
                         ))}
                       </div>
@@ -881,7 +941,8 @@ export default function OptionComparison({
                       label="Recurring effort per release"
                       help={`${EFFORT_HELP.perRelease} ${releases}`}
                       value={option.perRelease}
-                      onChange={(v) => typed(option.id, { perRelease: v })}
+                      onChange={(v) => typed(option.id, { perRelease: isKeyUser ? keyUserEffort(v) : v })}
+                      keyUser={isKeyUser}
                     />
 
                     {needsBaseline ? (

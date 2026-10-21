@@ -174,6 +174,8 @@ const ROUTE_WORDS: Readonly<Record<string, string>> = Object.freeze({
   cap: 'side by side on SAP BTP (CAP)',
   integration: 'on SAP Integration Suite',
   event: 'on SAP Event Mesh',
+  // Roadmap 3.0.19 (owner decision 19.10.2026): the run recommends key user where the whole program is.
+  keyuser: 'with SAP’s key-user tools, configured in the system with no code',
 });
 
 /* ------------------------------------------------------------ evidence */

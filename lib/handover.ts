@@ -347,7 +347,17 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
   // ADR-094 — closed by the owner without a passing run: the account's word,
   // named as such, never a result.
   const closure = testingClosureReading(project);
-  const tests = keyUser && ev.total === 0
+  const tests = keyUser && ev.total === 0 && testPhase.done
+    ? // Owner decision 19.10.2026: every check recorded as run in the account's system — its word, not a run here.
+      link('tests', {
+        provenance: 'confirmed',
+        provenanceNote: 'self-declaration',
+        value: 'Acceptance checks of the key-user step list — recorded as run in your system',
+        by: 'The signed-in account',
+        at: null,
+        missing: testPhase.detail,
+      })
+    : keyUser && ev.total === 0
     ? link('tests', {
         provenance: 'proposed',
         provenanceNote: 'run by a key user',

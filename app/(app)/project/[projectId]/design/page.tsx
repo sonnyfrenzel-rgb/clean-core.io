@@ -1140,7 +1140,8 @@ ${DESIGN_ANSWER_REMINDER}`;
   // it derives on the server, so the dialog and the card no longer tell two
   // stories. The stored value stands in only where no contract was read.
   const contractForSignOff = designEvidence.state === 'ready' ? designEvidence.contract : null;
-  const signOffBasis = signOffRecommendation(contractForSignOff ? contractForSignOff.route : null, storedRoute);
+  // Roadmap 3.0.19: where the engine reads the whole program as key user, key user is the recommendation.
+  const signOffBasis = signOffRecommendation(contractForSignOff ? contractForSignOff.route : null, storedRoute, keyUserList?.scope === 'whole-program');
   const recommendation = signOffBasis.code;
   // The run's rationale and confidence describe the run's recommendation; they
   // are shown only when that is the one named here.
@@ -1149,7 +1150,9 @@ ${DESIGN_ANSWER_REMINDER}`;
     runSaysTheSame && project?.recommendationJustification
       ? sapNamesForDisplay(project.recommendationJustification)
       : signOffBasis.basis === 'contract'
-        ? `The architecture contract, derived from the code on the server, recommends the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path for this project.`
+        ? recommendation === 'keyuser'
+          ? 'The engine reads the whole program as key-user extensibility: every part is a key-user candidate, configured in the system with no code. Choosing RAP or CAP departs from this and needs a reason; RAP or CAP stays the route for any part whose candidate does not hold.'
+          : `The architecture contract, derived from the code on the server, recommends the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path for this project.`
         : project?.recommendationJustification
           ? sapNamesForDisplay(project.recommendationJustification)
           : `Based on the code analysis, the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`;

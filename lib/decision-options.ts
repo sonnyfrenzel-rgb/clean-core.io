@@ -56,7 +56,8 @@ export function optionOfArchitecture(code: string | null | undefined): DecisionO
 
 /** The option an Economics cost option stands for — `do-nothing` is Keep. */
 export function optionOfCostKind(kind: OptionKind): DecisionOption {
-  return kind === 'do-nothing' ? 'keep' : kind;
+  // Roadmap 3.0.19: the key-user cost option prices a Rebuild with key-user tools.
+  return kind === 'do-nothing' ? 'keep' : kind === 'keyuser' ? 'rebuild' : kind;
 }
 
 /** The program decision as one question about one program. */

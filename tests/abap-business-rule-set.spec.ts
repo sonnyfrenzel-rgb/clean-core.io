@@ -91,7 +91,9 @@ const PINNED: Pinned[] = [
   ['Z_SALES_ORDER_CREATOR.txt', 0, 0, { rule: 0, control: 0 }, 0, {}],
   // 3.0.19: the key-user example. Its rules stand in the BAdI methods, which the skeleton does not draw; what the
   // engine reads of them as key-user custom logic is pinned in tests/key-user-3019.spec.ts.
-  ['Z_SD_DELIVERY_PRIORITY.abap', 5, 1, { rule: 1, control: 0 }, 0, { 'not-in-skeleton': 1 }],
+  // 19.10.2026: the BAdI trimmed to the 20-statement custom-logic rule (A by customer group or value in one
+  // condition, the "class A below 1000" check removed) — 5 candidates became 3.
+  ['Z_SD_DELIVERY_PRIORITY.abap', 3, 1, { rule: 1, control: 0 }, 0, { 'not-in-skeleton': 1 }],
   // 3.0.15: the freight charge check. Four of its rules are constants of the
   // rate card (volume factor, fuel, express, dangerous goods) and have no
   // element of their own; the foreign-currency test guards the comparison.
@@ -125,11 +127,11 @@ test.describe('the programs this product ships', () => {
   }
 
   // The eight programs until 3.0.15 gave 140 candidates, 34 rules, one control and 21 rules with an element;
-  // the freight charge check adds 30, 14, one and 10; the key-user example of 3.0.19 adds 5, 1, none and none.
-  test('all ten together: 175 candidates, 49 rules, two controls', () => {
+  // the freight charge check adds 30, 14, one and 10; the key-user example of 3.0.19 adds 3, 1, none and none.
+  test('all ten together: 173 candidates, 49 rules, two controls', () => {
     const sets = FILES.map((file) => deriveBusinessRules(read(file)));
     const sum = (pick: (s: BusinessRuleSet) => number) => sets.reduce((n, s) => n + pick(s), 0);
-    expect(sum((s) => s.counts.candidates)).toBe(175);
+    expect(sum((s) => s.counts.candidates)).toBe(173);
     expect(sum((s) => s.counts.rules)).toBe(49);
     expect(sum((s) => s.counts.byType.control)).toBe(2);
     expect(sum((s) => s.counts.withProcessElement)).toBe(31);

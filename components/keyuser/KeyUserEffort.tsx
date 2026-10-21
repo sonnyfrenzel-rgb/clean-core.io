@@ -6,32 +6,34 @@ import { formatAmount, type CostOption } from '@/lib/cost-assumptions';
 import { formatDays } from '@/lib/format';
 import type { KeyUserStepList } from '@/lib/key-user-steps';
 import { keyUserEffortLine, type KeyUserMode } from '@/lib/key-user-route';
+import { KEY_USER_COST_OPTION } from '@/components/tco/OptionComparison';
 
 /**
  * Economics for a key-user route (roadmap 3.0.19): configuration effort, not a
  * build. The engine counts what a key user configures and checks — steps,
  * entries, acceptance checks — and names no number of days and no amount
- * (ADR-035: every figure is the reader's). The days are the reader's, entered
- * as Rebuild's key-user days, and priced with the reader's own key-user day
- * rate; this card shows that product only once both figures are stated.
+ * (ADR-035: every figure is the reader's). Key user is its own cost option
+ * since the owner decision of October 2026 (`kind: 'keyuser'`, beside an
+ * unchanged Rebuild): the days are the reader's, entered on that option as
+ * key-user days, and priced with the reader's own test/key-user day rate; this
+ * card shows that product only once both figures are stated.
  */
 export default function KeyUserEffort({
   list,
   mode,
   currency,
   keyUserRate,
-  rebuild,
+  option,
 }: {
   list: KeyUserStepList;
   mode: Exclude<KeyUserMode, 'none'>;
   currency: string;
   keyUserRate: number | null;
-  /** The Rebuild option as stated, if there is one. */
-  rebuild: CostOption | undefined;
+  /** The key-user cost option as stated, if there is one. */
+  option: CostOption | undefined;
 }) {
-  const range = rebuild?.oneOff ?? null;
+  const range = option?.oneOff ?? null;
   const days = range && Number.isFinite(range.low.testDays) && Number.isFinite(range.high.testDays) ? { low: range.low.testDays, high: range.high.testDays } : null;
-  const devDays = range ? Math.max(Number.isFinite(range.low.devDays) ? range.low.devDays : 0, Number.isFinite(range.high.devDays) ? range.high.devDays : 0) : 0;
   const priced = days && typeof keyUserRate === 'number' && Number.isFinite(keyUserRate) && currency;
   return (
     <section
@@ -48,19 +50,14 @@ export default function KeyUserEffort({
         The engine counts {keyUserEffortLine(list)} in the key-user step list — what a key user configures and checks in the system.
       </p>
       <p className="m-0 cc-text-cell text-cc-ink-muted">
-        How many days that takes is yours to state: enter them as Rebuild&apos;s key-user days
-        {mode === 'whole' ? ', with no developer days — nothing is built in code' : ' — the parts that stay code keep their developer days'}. They are priced with your
+        How many days that takes is yours to state: enter them on the option {KEY_USER_COST_OPTION.label} — key-user days only, nothing is built in code
+        {mode === 'whole' ? '' : '; the parts that stay code keep their days on Rebuild, which is unchanged'}. They are priced with your
         key-user day rate{typeof keyUserRate === 'number' && currency ? ` (${formatAmount(keyUserRate, currency)} per day)` : ', which step 2 asks for'}. Clean-Core.io proposes no number of days for key-user work.
       </p>
       {priced ? (
         <p className="m-0 cc-text-cell text-cc-ink" data-key-user-effort-priced="">
           As stated: {formatDays(days.low)}–{formatDays(days.high)} key-user days × {formatAmount(keyUserRate, currency)} ={' '}
           {formatAmount(days.low * keyUserRate, currency)} – {formatAmount(days.high * keyUserRate, currency)}.
-        </p>
-      ) : null}
-      {mode === 'whole' && devDays > 0 ? (
-        <p className="m-0 cc-text-cell text-cc-ink" data-key-user-effort-dev-days="">
-          Rebuild carries {formatDays(devDays)} developer days. A key-user route builds no code — check whether they belong to it.
         </p>
       ) : null}
     </section>

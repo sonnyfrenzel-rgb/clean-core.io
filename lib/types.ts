@@ -125,6 +125,13 @@ export interface Project {
    */
   outsideTestResult?: import('./sap-test-results').OutsideTestSummary;
   /**
+   * Roadmap 3.0.19 (owner decision 19.10.2026) — the key-user acceptance checks
+   * the account recorded as run in its own system, a self-declaration. Written
+   * only by `/api/projects/{id}/key-user-checks` with the Admin SDK; not in the
+   * client allowlist (`lib/key-user-acceptance.ts`).
+   */
+  keyUserAcceptance?: import('./key-user-acceptance').KeyUserAcceptanceSummary;
+  /**
    * ADR-094 — the last run that gave no result (did not compile, no runner,
    * no usable answer). Written only by `/api/run-tests` with the Admin SDK;
    * not in the client allowlist (`lib/testing-closure.ts`).

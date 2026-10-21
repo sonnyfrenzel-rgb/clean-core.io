@@ -68,7 +68,7 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 // Roadmap 3.0.19: a key-user decision generates no code; the stage shows the engine's step list instead.
 import KeyUserSteps from '@/components/keyuser/KeyUserSteps';
-import { isKeyUserDecision, keyUserModeOf, keyUserStepsOf } from '@/lib/key-user-route';
+import { isKeyUserDecision, keyUserGateOpen, keyUserModeOf, keyUserPlanRanges, keyUserStepsOf } from '@/lib/key-user-route';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
@@ -377,6 +377,17 @@ export default function TransformationPage() {
   const keyUserWhole = isKeyUserDecision(project);
   const keyUserList = useMemo(() => keyUserStepsOf(evidence, project), [evidence, project]);
   const keyUserMode = keyUserModeOf(project, keyUserList);
+  /**
+   * Scaffold 20 (owner decision 19.10.2026): a program that splits builds units
+   * for its code parts only — the lines the key-user steps replace are handed to
+   * the planner, which writes no function and asks no model for them. Kept in a
+   * ref: the generation callback reads it when it runs.
+   */
+  const keyUserRanges = useMemo(() => keyUserPlanRanges(keyUserList, keyUserMode), [keyUserList, keyUserMode]);
+  const keyUserRangesRef = useRef(keyUserRanges);
+  useEffect(() => {
+    keyUserRangesRef.current = keyUserRanges;
+  }, [keyUserRanges]);
 
   /**
    * The rules' states, for the tips (roadmap 3.0.12) — the hook the Business
@@ -1426,6 +1437,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           contextText: platformKnowledge,
           // A live decision on record that builds nothing (retire, standard, keep): every main file says so first (B6).
           against: againstDecisionOf((projectRef.current as { decision?: unknown } | null)?.decision),
+          // Scaffold 20: a program that splits — no unit for the lines a key user configures.
+          keyUser: keyUserRangesRef.current,
         },
         controller.signal,
       );
@@ -1732,7 +1745,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * resolves it, and the button waits until the list is empty.
    */
   const prerequisites = generationPrerequisites(project, 'transformation');
-  const canGenerate = project !== null && !keyUserWhole && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  // Scaffold 20: a run whose engine reads key user waits for the evidence, so a split program never builds its key-user parts.
+  const canGenerate = project !== null && !keyUserWhole && !(keyUserGateOpen(project) && evidencePending) && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
   /** The plan before the click is read whenever a generation could start and none runs (see the effect that reads it below). */
   const planWanted = canGenerate && !loading;
   /** The pre-flight check (owner, 13.10.2026): a plan that cannot succeed does not start. */
@@ -1878,6 +1892,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               program: projectRef.current?.name ?? null,
               decisions: generation.inputs.context.decisions ?? [],
               contextText: generation.inputs.context.text,
+              keyUser: keyUserRangesRef.current,
             },
             controller.signal,
           ),

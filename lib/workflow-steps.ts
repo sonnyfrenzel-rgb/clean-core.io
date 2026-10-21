@@ -28,6 +28,7 @@ import { storedActivation, storedContextDigest, storedTypeCheck } from './transf
 import { activationClosureRefusal, typeCheckClosureRefusal } from './transformation/check-words';
 import { PREVIOUS_PACKAGE, testedPackageMoved } from './test-suite-basis';
 import { isKeyUserDecision, KEY_USER_STEPS_PATH } from './key-user-route';
+import { keyUserAcceptanceLine, keyUserAcceptanceReading } from './key-user-acceptance';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -967,14 +968,29 @@ export function workflowSteps(project: Project | null): RailStep[] {
       detail: `${closureSentence(c)} Not verified — a self-declaration, not a test result.`,
     });
   let testing: RailStep;
-  if (keyUser && tests.total === 0) {
+  // Owner decision 19.10.2026: the account records the checks it ran in its
+  // system (`lib/key-user-acceptance.ts`, server-written) — a self-declaration.
+  const keyUserChecks = keyUser ? keyUserAcceptanceReading(project) : { state: 'none' as const };
+  const keyUserChecksDone = keyUserChecks.state === 'current' && keyUserChecks.complete;
+  if (keyUser && tests.total === 0 && keyUserChecksDone) {
+    // Roadmap 3.0.19: every acceptance check of the step list is recorded as run
+    // in the account's own system. Done, never proven: nothing ran here.
+    testing = phase('testing', {
+      state: 'done',
+      badge: 'Key-user checks confirmed',
+      detail: `${keyUserAcceptanceLine(keyUserChecks.summary)} — confirmed by ${keyUserChecks.summary.recordedBy} (${keyUserChecks.summary.system}, ${keyUserChecks.summary.ranOn}), a self-declaration, not a run here.`,
+    });
+  } else if (keyUser && tests.total === 0) {
     // Roadmap 3.0.19: no test code for a key-user decision — the step list's
     // acceptance checks, run by a key user in the system. Nothing here runs
-    // them or records their result, so the phase never reads done.
+    // them; until every one is recorded as run, the phase does not read done.
     testing = phase('testing', {
       state: 'partial',
       badge: 'Key-user checks',
-      detail: 'No test code: a key user runs the acceptance checks of the key-user step list in the system. Nothing here runs them or records their result.',
+      detail:
+        keyUserChecks.state === 'current'
+          ? `No test code: a key user runs the acceptance checks of the key-user step list in the system. ${keyUserAcceptanceLine(keyUserChecks.summary)}; record the rest once they are run.`
+          : 'No test code: a key user runs the acceptance checks of the key-user step list in the system. Nothing here runs them; record them in Testing once they are run.',
     });
   } else if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });
@@ -1139,7 +1155,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
 
   const gaps = keyUser
     ? // Roadmap 3.0.19: the step list replaces the code, and its checks are a key user's to run in the system.
-      ([!hasDocs && 'no documentation'].filter(Boolean) as string[])
+      ([!keyUserChecksDone && 'key-user checks not recorded as run', !hasDocs && 'no documentation'].filter(Boolean) as string[])
     : ([
         !hasGenerated && 'no generated code',
         tests.total === 0 ? 'no test suite' : testing.state !== 'done' ? (tests.failed > 0 ? 'failing tests' : 'tests not run') : null,
@@ -1161,7 +1177,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
     ? phase('delivery', {
         state: 'done',
         badge: 'Ready · key-user steps',
-        detail: `The key-user step list (\`${KEY_USER_STEPS_PATH}\` in the package) with its acceptance checks and the documentation are on record — configured and checked by a key user in the system, not here. Whether to configure remains an architect’s decision.`,
+        detail: `The key-user step list (\`${KEY_USER_STEPS_PATH}\` in the package), the documentation and your confirmation that every acceptance check ran in your system are on record — a self-declaration, configured and checked by a key user in the system, not here. Whether to configure remains an architect’s decision.`,
       })
     : gaps.length === 0
     ? phase('delivery', {

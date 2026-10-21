@@ -17,7 +17,7 @@ import { absenceFromError, type ModelAbsence, type ModelParticipation } from '@/
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
-import { SIDE_BY_SIDE_ROUTE } from '@/lib/sap-naming';
+import { recommendationOfRoute } from '@/lib/project-commands';
 import { findingRows } from '@/lib/findings-view';
 
 /**
@@ -269,7 +269,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         codeInventory: extractCodeInventory(legacyCode),
         dataCoupling: extractDataCoupling(legacyCode, APP_VERSION),
         evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
-        originalRecommendation: routeReport.recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
+        originalRecommendation: recommendationOfRoute(routeReport),
         recommendationConfidence: routeReport.confidenceScore,
         recommendationJustification: routeReport.rationale,
         uploadedFileName: fileName,

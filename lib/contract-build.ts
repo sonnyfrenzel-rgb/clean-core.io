@@ -168,6 +168,11 @@ export function recommendationOfProject(state: ContractProjectState): TargetArch
   if (Buffer.byteLength(source, 'utf8') > MAX_CONTRACT_SOURCE_BYTES) return null;
   const routed = routeOfProject(state);
   if (!routed) return null;
+  // Roadmap 3.0.19 (owner decision 19.10.2026): where the signed run's engine
+  // reads the whole program as key user (`Key-User Preferred`), key user is the
+  // recommendation and RAP or CAP is the departure that needs a reason. The
+  // contract itself stays on the code route — the one the code part takes.
+  if (routed.route.keyUser?.recommended === true) return 'keyuser';
   return routed.recommended === 'side-by-side-cap' ? 'cap' : 'rap';
 }
 

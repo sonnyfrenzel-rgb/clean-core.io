@@ -85,6 +85,21 @@ export function stepLines(step: Pick<KeyUserStep, 'anchors'>): string {
   return step.anchors.map((a) => (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`)).join(', ');
 }
 
+/**
+ * Scaffold 20 (owner decision 19.10.2026): the lines the planner leaves to the
+ * key user in a program that splits — every `replaced` anchor of every step.
+ * Null unless the mode is `split`: a whole key-user decision builds nothing at
+ * all, and every other program is planned as it always was.
+ */
+export function keyUserPlanRanges(
+  list: KeyUserStepList | null,
+  mode: KeyUserMode,
+): { ranges: Array<{ lineStart: number; lineEnd: number; step: string }> } | null {
+  if (!list || mode !== 'split') return null;
+  const ranges = list.steps.flatMap((s) => s.anchors.filter((a) => a.role === 'replaced').map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd, step: s.id })));
+  return ranges.length > 0 ? { ranges } : null;
+}
+
 /** The PLATFORM KNOWLEDGE input for a split program, declared in `lib/transformation-context.ts`. */
 export type { KeyUserContextInput };
 

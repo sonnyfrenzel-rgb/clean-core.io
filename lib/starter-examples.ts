@@ -64,7 +64,7 @@ export const STARTER_EXAMPLES: StarterExample[] = [
       'Delivery priority of sales orders: two customer fields on the order header, a BAdI that derives and checks the priority class from a settings table, and a list of open orders per class.',
     demonstrates:
       'A change SAP’s key-user tools cover as a whole — custom fields, custom logic, a configuration object and an analytical query, each with its limit — so no code is built.',
-    lines: 136,
+    lines: 132,
     size: 'small',
   },
   {

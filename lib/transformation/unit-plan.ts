@@ -621,6 +621,13 @@ export interface PlanInput {
   decisions?: readonly RuleDecisionInput[];
   /** Fallback when the source names no program. */
   program?: string | null;
+  /**
+   * Scaffold 20 (roadmap 3.0.19, owner decision 19.10.2026): the lines a key user configures in a program that
+   * splits — the `replaced` anchors of the key-user steps (`KeyUserStepList.steps`). A FORM or METHOD that lies
+   * wholly inside them is no unit: no function, no fill request, no model call; it is not carried, with reason
+   * `key-user` (and so is a FORM reached only from such routines). Absent or empty: the plan of before.
+   */
+  keyUser?: { ranges: ReadonlyArray<{ lineStart: number; lineEnd: number; step: string }> } | null;
 }
 
 interface Routine {
@@ -699,6 +706,26 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     // Demo data first: a small demo routine is still demo data, not a helper of its caller.
     if (DEMO_NAME.test(r.name) || demoByShape.has(r.name)) fixture.add(r.name);
     else if (span < FOLD_MAX_LINES && rulesIn(r) === 0 && guardsIn(r) === 0 && writesIn(r) === 0 && nCallers === 1) helper.add(r.name);
+  }
+  // Scaffold 20 (3.0.19): a routine wholly inside the lines a key user configures is no unit (`PlanInput.keyUser`).
+  const keyUserRanges = input.keyUser?.ranges ?? [];
+  const configured = new Set<string>();
+  for (const r of reachable) {
+    if (fixture.has(r.name) || helper.has(r.name)) continue;
+    if (keyUserRanges.some((k) => r.lineStart >= k.lineStart && r.lineEnd <= k.lineEnd)) configured.add(r.key);
+  }
+  for (let changed = configured.size > 0; changed; ) {
+    changed = false;
+    for (const r of reachable) {
+      if (r.kind !== 'form' || configured.has(r.key) || fixture.has(r.name)) continue;
+      const from = callers.get(r.name);
+      if (!from || from.size === 0 || graph.callbacks.some((c) => c.to === r.name)) continue;
+      if ([...from].every((c) => configured.has(c))) {
+        configured.add(r.key);
+        helper.delete(r.name);
+        changed = true;
+      }
+    }
   }
   // Reached only from demo-data routines: also a fixture (§7.1 rule 6).
   for (let changed = true; changed; ) {
@@ -843,7 +870,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   for (const name of order) {
     const r = byName.get(name)!;
-    if (helper.has(name) || fixture.has(name)) continue;
+    if (helper.has(name) || fixture.has(name) || configured.has(name)) continue;
     const unit = routineUnit(r, r.kind === 'method' ? 'method' : 'routine');
     units.push(unit);
     unitOfRoutine.set(name, unit);
@@ -852,6 +879,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   for (const r of routines) {
     if (r.kind === 'form' && unreachable.has(r.name) && !outsideCalled.has(r.name)) notCarried.push({ routine: r.name, reason: 'unreachable', lineStart: r.lineStart, lineEnd: r.lineEnd });
     else if (fixture.has(r.name)) notCarried.push({ routine: r.name, reason: 'fixture', lineStart: r.lineStart, lineEnd: r.lineEnd });
+    else if (configured.has(r.key)) notCarried.push({ routine: r.owner ? `${r.owner}=>${r.name}` : r.name, reason: 'key-user', lineStart: r.lineStart, lineEnd: r.lineEnd });
   }
   for (const name of order) {
     if (!helper.has(name)) continue;
@@ -859,8 +887,8 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     const host = hostOf(name);
     const into = host === '(program)' || host === null ? orchestrator : unitOfRoutine.get(host) ?? null;
     if (!into) {
-      // The host is a fixture: the helper goes with it.
-      notCarried.push({ routine: name, reason: 'fixture', lineStart: r.lineStart, lineEnd: r.lineEnd });
+      // The host is a fixture (or, scaffold 20, configured by a key user): the helper goes with it.
+      notCarried.push({ routine: name, reason: host && configured.has(host) ? 'key-user' : 'fixture', lineStart: r.lineStart, lineEnd: r.lineEnd });
       continue;
     }
     into.folded.push(name);

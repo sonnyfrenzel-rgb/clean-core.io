@@ -101,6 +101,8 @@ const NEW_RUN = new Set([
   'app/(app)/project/[projectId]/analyze/page.tsx#handleAnalyze', // the analysis being made
   'lib/example-catalog.ts#describeSnippet', // a shipped example, described by this engine
   'lib/own-code-import.ts#countSource', // an upload being staged, before any run
+  // 3.0.19: the acceptance suite's key-user decision over a source no run has signed, read by this engine.
+  'scripts/acceptance/suite.ts#runOne',
 ]);
 
 function calleeName(expr: ts.Expression): string | null {

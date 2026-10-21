@@ -234,10 +234,16 @@ export interface KeyUserReading {
 
 /* ------------------------------------------------------------------ rules */
 
-/** Clean-Core.io's rule, not SAP's: an exit or BAdI with more executable statements than this is more logic than custom logic holds. */
-export const KEY_USER_LOGIC_MAX_STATEMENTS = 40;
-/** Clean-Core.io's rule, not SAP's: a list with more executable statements than this is more logic than a query expresses. */
-export const KEY_USER_LIST_MAX_STATEMENTS = 80;
+/**
+ * Clean-Core.io's rule, not SAP's: an exit or BAdI with more executable statements than this is more logic than custom logic holds.
+ * 20 since the owner decision of 19.10.2026 (was 40 before 3.0.19 shipped).
+ */
+export const KEY_USER_LOGIC_MAX_STATEMENTS = 20;
+/**
+ * Clean-Core.io's rule, not SAP's: a list with more executable statements than this is more logic than a query expresses.
+ * 40 since the owner decision of 19.10.2026 (was 80 before 3.0.19 shipped).
+ */
+export const KEY_USER_LIST_MAX_STATEMENTS = 40;
 
 const RELEASED_INTERFACES: ReadonlySet<string> = new Set(
   (releasedInterfaceList as { interfaces: string[] }).interfaces.map((n) => n.toUpperCase()),

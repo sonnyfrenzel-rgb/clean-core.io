@@ -17,6 +17,15 @@
  * code), 182 have no key-user part — 118 programs with at least one key-user
  * part; of 604 parts 171 are candidates, 430 stay code, 3 are not determined.
  *
+ * Measured again on 21.10.2026 with the tighter limits of the owner decision of
+ * 19.10.2026 (custom logic at most 20 executable statements, a list at most 40;
+ * was 40 and 80 — Clean-Core.io's rule, not SAP's): 15 key user as a whole
+ * (BM-107 now splits), 103 split, 182 none — still 118 programs with at least
+ * one key-user part; of 604 parts 169 are candidates (custom logic 17 → 15),
+ * 432 stay code, 3 not determined. Programs with a too-much-logic blocker:
+ * 94 → 166 (a long list now stops at the statement limit before the missing
+ * list output is reached: no-list-output 90 → 54).
+ *
  * Not a spec and not part of CI: a measurement, not a ratchet.
  */
 import { readdirSync, readFileSync, writeFileSync } from 'fs';

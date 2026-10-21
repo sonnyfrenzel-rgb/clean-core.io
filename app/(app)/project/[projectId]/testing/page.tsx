@@ -56,6 +56,8 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis, testsPreviousBasis } from '@/lib/workflow-steps';
 // Roadmap 3.0.19: a key-user decision writes no test code; the step list's acceptance checks are its tests.
 import KeyUserSteps from '@/components/keyuser/KeyUserSteps';
+import KeyUserChecksRecord from '@/components/keyuser/KeyUserChecksRecord';
+import { keyUserAcceptanceReading } from '@/lib/key-user-acceptance';
 import { useKeyUserSteps } from '@/hooks/useKeyUserSteps';
 import { isKeyUserDecision } from '@/lib/key-user-route';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
@@ -1327,7 +1329,19 @@ export default function TestingSandboxPage() {
         </span>
       </StageHeader>
       {keyUserSteps.state === 'ready' && keyUserSteps.list ? (
-        <KeyUserSteps list={keyUserSteps.list} mode="whole" view="checks" />
+        <>
+          <KeyUserSteps list={keyUserSteps.list} mode="whole" view="checks" />
+          {/* Owner decision 19.10.2026: the checks as run in the account's system — a self-declaration, server-written. */}
+          {keyUserSteps.list.steps.length > 0 ? (
+            <KeyUserChecksRecord
+              projectId={projectId as string}
+              list={keyUserSteps.list}
+              canRecord={isOwner}
+              reading={keyUserAcceptanceReading(project)}
+              onRecorded={(summary) => setProject((prev) => (prev ? { ...prev, keyUserAcceptance: summary } : prev))}
+            />
+          ) : null}
+        </>
       ) : keyUserSteps.state === 'loading' ? (
         <p className="cc-text-body text-cc-ink-muted" data-key-user-loading="">Reading the key-user step list…</p>
       ) : (

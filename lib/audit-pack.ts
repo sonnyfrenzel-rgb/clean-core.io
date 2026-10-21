@@ -116,6 +116,8 @@ const ARCH_LABELS: Record<string, string> = {
   // ADR-079: added, never renamed — a pack signed before keeps its bytes.
   keep: 'Keep',
   standard: 'Move to SAP standard',
+  // Roadmap 3.0.19: added, never renamed.
+  keyuser: 'Key-user extensibility (configured, no code)',
 };
 
 /**

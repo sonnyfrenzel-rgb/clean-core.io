@@ -136,6 +136,14 @@ export function decisionWeighing(src: DecisionWeighingSource): DecisionWeighing 
   const routeRow = (key: 'rap' | 'cap'): Pick<WeighingRow, 'signal' | 'why'> => {
     if (!src.hasRun) return { signal: rebuild.signal, why: rebuild.reason };
     const other = key === 'rap' ? 'cap' : 'rap';
+    // Roadmap 3.0.19 (owner decision 19.10.2026): the engine reads the whole
+    // program as key user, so a build in code is the departure that needs a reason.
+    if (src.engineRoute === 'keyuser') {
+      return {
+        signal: 'against',
+        why: `The engine reads the whole program as key-user extensibility, so building it ${key === 'rap' ? 'in-app (RAP)' : 'side by side (CAP)'} departs from the recommendation and needs a reason. It stays the route for any part whose key-user candidate does not hold.`,
+      };
+    }
     if (src.engineRoute === key) {
       return {
         signal: rebuild.signal === 'against' ? 'against' : 'for',
@@ -157,7 +165,7 @@ export function decisionWeighing(src: DecisionWeighingSource): DecisionWeighing 
   const keyUserRow = (): Pick<WeighingRow, 'signal' | 'why'> => {
     const ku = src.keyUser;
     if (!src.hasRun) return { signal: 'not-determined', why: rebuild.reason };
-    if (!ku) return { signal: 'not-determined', why: 'The signed run has no key-user reading (an engine before 3.0.19), so whether key-user tools cover a part is not determined.' };
+    if (!ku) return { signal: 'not-determined', why: 'The key-user reading of the signed run is not at hand here — an engine before 3.0.19, or the engine’s evidence could not be read — so whether key-user tools cover a part is not determined.' };
     if (ku.scope === 'whole-program') return { signal: 'for', why: ku.sentence };
     if (ku.scope === 'partial') return { signal: 'not-determined', why: `In part only: ${ku.sentence}` };
     return { signal: 'against', why: ku.sentence };

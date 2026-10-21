@@ -461,7 +461,11 @@ const bindingOf = (decision: ProjectDecision, key: DecisionBindingKey): Decision
  * rests on instead — the account's architecture sign-off — and says that no
  * contract is required, rather than pretending to bind one.
  */
-export const NO_GENERATION_OPTION_KINDS: readonly OptionKind[] = Object.freeze(['do-nothing', 'keep', 'standard', 'retire']);
+/**
+ * `keyuser` (roadmap 3.0.19): configured in the system with SAP's key-user tools — no code is generated and
+ * `contractOfProject()` derives no contract for it (`off-track`), so it rests on the sign-off like the others.
+ */
+export const NO_GENERATION_OPTION_KINDS: readonly OptionKind[] = Object.freeze(['do-nothing', 'keep', 'standard', 'retire', 'keyuser']);
 
 export function optionGeneratesNothing(kind: OptionKind | null | undefined): boolean {
   return kind !== null && kind !== undefined && NO_GENERATION_OPTION_KINDS.includes(kind);

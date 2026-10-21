@@ -19,6 +19,7 @@ import dynamic from 'next/dynamic';
 import OptionComparison, {
   OptionVerdict,
   initialCostAssumptions,
+  withKeyUserOption,
   pendingProposals,
   takeOverPatch,
   type OptionProposals,
@@ -198,6 +199,16 @@ export default function TcoCalculatorPage() {
   const proposal = useMemo(() => proposeEffort(loc), [loc]);
   /** Roadmap 3.0.19: the key-user step list's counts, where the run's engine reads key user (else no request). */
   const keyUserSteps = useKeyUserSteps(projectId as string, project);
+  /**
+   * Owner decision 19.10.2026: key user is its own cost option beside Rebuild
+   * (unchanged) wherever the engine read a key-user part — by name only, its
+   * key-user days the reader's own (`withKeyUserOption`).
+   */
+  const keyUserOffered = keyUserSteps.state === 'ready' && !!keyUserSteps.list && keyUserSteps.list.steps.length > 0;
+  const statedHasKeyUser = stated.options.some((o) => o.kind === 'keyuser');
+  useEffect(() => {
+    if (keyUserOffered && !statedHasKeyUser) setStated((a) => withKeyUserOption(a));
+  }, [keyUserOffered, statedHasKeyUser]);
   const patch = (p: Partial<CostAssumptions>) => setStated((a) => ({ ...a, ...p }));
   // Which option cards show their fields — closed until the reader asks.
   const [editingOptions, setEditingOptions] = useState<ReadonlySet<string>>(() => new Set());
@@ -814,7 +825,7 @@ export default function TcoCalculatorPage() {
               mode={keyUserSteps.mode}
               currency={currency}
               keyUserRate={userRate}
-              rebuild={assumptions.options.find((o) => o.kind === 'rebuild')}
+              option={assumptions.options.find((o) => o.kind === 'keyuser')}
             />
           ) : null}
           <OptionComparison

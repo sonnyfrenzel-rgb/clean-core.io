@@ -183,7 +183,7 @@ test.describe('each candidate kind, with its limit and its lines', () => {
   test('custom analytical query: the same list, when it aggregates', () => {
     const r = must(readExample(EXAMPLE), EXAMPLE);
     const query = r.candidates.find((c) => c.tool === 'custom-analytical-query')!;
-    expect(query.items.filter((i) => i.kind === 'aggregation').map((i) => i.lines)).toEqual([[121]]);
+    expect(query.items.filter((i) => i.kind === 'aggregation').map((i) => i.lines)).toEqual([[117]]);
     expect(query.limits[0].check).toContain('find the released analytical (cube) view over I_SALESDOCUMENT');
   });
 
@@ -311,7 +311,7 @@ test.describe('the starter example of its own: Z_SD_DELIVERY_PRIORITY', () => {
       objects: ['LIF_SD_DELIV_PRIO'],
       text: "LIF_SD_DELIV_PRIO is the customer's own BAdI interface: the Custom Logic app offers SAP's key-user BAdIs only, and which of them is called at the same point for VBAK is not determined from the code.",
     });
-    expect(logic.anchors.map((a) => [a.lineStart, a.lineEnd])).toEqual([[49, 73], [75, 85]]);
+    expect(logic.anchors.map((a) => [a.lineStart, a.lineEnd])).toEqual([[49, 72], [74, 81]]);
     expect(r.candidates[1].items.map((i) => i.name)).toEqual(['ZZ_PRIO_CLASS', 'ZZ_PRIO_NOTE']);
     expect(r.candidates[3].release.objects).toEqual(['I_SALESDOCUMENT']);
   });
@@ -342,16 +342,16 @@ test.describe('the starter example of its own: Z_SD_DELIVERY_PRIORITY', () => {
       ['S3', 'Custom Logic', 'KU-1', ['S1', 'S2']],
       ['S4', 'Custom Analytical Queries', 'KU-4', ['S1']],
     ]);
-    expect(list.steps.map((s) => s.checks.length)).toEqual([2, 1, 7, 1]);
+    expect(list.steps.map((s) => s.checks.length)).toEqual([2, 1, 5, 1]);
     // The ELSE arm is said as the negation of the arms before it, never as the last condition.
     const elseCheck = list.steps[2].checks.find((c) => c.then.endsWith("= 'C'") && c.given.startsWith('a record where none of'))!;
-    expect(elseCheck.lines).toEqual([64, 66, 68, 71]);
+    expect(elseCheck.lines).toEqual([64, 67, 70]);
     expect(list.codeParts).toEqual([]);
-    expect(list.effort).toEqual({ steps: 4, entries: 29, checks: 11, byTool: { 'custom-field': 1, 'custom-business-configuration': 1, 'custom-logic': 1, 'custom-analytical-query': 1 } });
+    expect(list.effort).toEqual({ steps: 4, entries: 25, checks: 9, byTool: { 'custom-field': 1, 'custom-business-configuration': 1, 'custom-logic': 1, 'custom-analytical-query': 1 } });
     expect(list.note).toBe(KEY_USER_STEPS_NOTE);
     const doc = keyUserStepsMarkdown(list, EXAMPLE);
     expect(doc).toContain('## S3 · Custom Logic — Implement the rules of LIF_SD_DELIV_PRIO (LCL_IM_SD_DELIV_PRIO) in custom logic for VBAK');
-    expect(doc).toContain('- Replaces or relies on: L49–73 (BAdI method LIF_SD_DELIV_PRIO~DERIVE_PRIORITY)');
+    expect(doc).toContain('- Replaces or relies on: L49–72 (BAdI method LIF_SD_DELIV_PRIO~DERIVE_PRIORITY)');
     expect(doc).not.toContain('## What stays code');
     expect(buildKeyUserSteps(undefined)).toBeNull();
   });
@@ -375,7 +375,8 @@ test.describe('key user as a decision and as the fourth option of the design com
     expect(TARGET_ARCHITECTURES).toContain('keyuser');
     expect(TARGET_ARCHITECTURES.slice(0, 7)).toEqual(['rap', 'cap', 'integration', 'event', 'retire', 'keep', 'standard']);
     expect(optionOfArchitecture('keyuser')).toBe('rebuild');
-    expect(ARCHITECTURE_OPTION.keyuser).toEqual({ label: 'Key-user extensibility (configured, no code)', kind: 'rebuild' });
+    // Its own cost kind since the owner decision of 19.10.2026; the decision option stays Rebuild.
+    expect(ARCHITECTURE_OPTION.keyuser).toEqual({ label: 'Key-user extensibility (configured, no code)', kind: 'keyuser' });
     expect(REFERENCE_OF_TARGET.keyuser[0].fit).toBe('none');
     expect(declaredDeviation({ targetArchitecture: 'keyuser' }, 'in-app-rap')).toEqual({ kind: 'off-track', decided: 'keyuser' });
     const refusal = offTrackRefusal('keyuser');

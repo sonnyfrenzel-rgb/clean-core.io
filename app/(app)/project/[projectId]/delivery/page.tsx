@@ -97,7 +97,7 @@ import { abapGitRepoSettingsXml, singleCallRapClassFiles } from '@/lib/transform
 import { placeModelTestClasses } from '@/lib/testing-abap-unit';
 import { deliverableClassXml } from '@/lib/transformation/abapgit-check';
 import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
-import { isKeyUserDecision, keyUserModeOf, keyUserStepsOf, KEY_USER_STEPS_PATH } from '@/lib/key-user-route';
+import { isKeyUserDecision, keyUserGateOpen, keyUserModeOf, keyUserStepsOf, KEY_USER_STEPS_PATH } from '@/lib/key-user-route';
 import { keyUserStepsMarkdown } from '@/lib/key-user-steps';
 
 /**
@@ -525,6 +525,11 @@ export default function DeliveryPage() {
         appVersion: APP_VERSION,
         referenceSection,
         documentationFromEngine: isEngineDocumentation(project.documentation),
+        // Roadmap 3.0.19 (owner decision 19.10.2026): the weighing in docs/decision.md gets a
+        // key-user row — for a run whose engine reads key user only; unread, it says so.
+        ...(keyUserGateOpen(project)
+          ? { keyUser: evidenceRead.evidence?.keyUser ?? null }
+          : {}),
       });
       // Roadmap 3.0.19: the engine's key-user step list, from the same evidence read, as docs/key-user-steps.md.
       const keyUserList = keyUserStepsOf(evidenceRead.evidence, project);

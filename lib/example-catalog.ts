@@ -42,7 +42,9 @@ export const NEXT_EXAMPLES: readonly { file: string; goal: string }[] = Object.f
   // 18.10.2026: the two that did not run cleanly end to end (application-server files, an unreleased BAPI the analysis
   // did not name) left "Next" until they do; they stay in the list below.
   { file: 'Z_SD_FREIGHT_RATE_CHECK.abap', goal: 'A side-by-side CAP package that runs on SAP BTP' },
-  { file: 'Z_MATERIAL_STOCK_CALC.txt', goal: 'Direct table reads and their released successors' },
+  // 19.10.2026 (owner decision, roadmap 3.0.19): the key-user example takes the third place; Z_MATERIAL_STOCK_CALC
+  // moves to the list below.
+  { file: 'Z_SD_DELIVERY_PRIORITY.abap', goal: 'A small change configured with key-user tools, no code built' },
 ]);
 
 function byFile(file: string): StarterExample {

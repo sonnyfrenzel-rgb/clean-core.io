@@ -38,7 +38,7 @@ export default function KeyUserSteps({
         ? 'What a key user configures in the system instead of code — in this order, each step anchored to the ABAP lines it replaces.'
         : 'The parts a key user configures in the system. Code is generated for the parts that stay code only.'
       : mode === 'whole'
-        ? 'Run by a key user in the system once the steps are configured. They are derived from the code, not executed here, and their result is not recorded here.'
+        ? 'Run by a key user in the system once the steps are configured. They are derived from the code and not executed here; record below which of them ran in your system.'
         : 'For the key-user parts, run by a key user in the system. The test suite below covers the parts that stay code only.';
   return (
     <section

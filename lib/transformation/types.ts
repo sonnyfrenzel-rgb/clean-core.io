@@ -205,8 +205,14 @@ export const PLAN_VERSION = 2;
  *    Also in 19 (QA review of 62eae6a082bb): RAP — TRACE.md's ABAP Unit line names every class the acceptance counts,
  * ltc_counterparts with ltc_engine_cases and ltc_golden_master (`ABAP_UNIT_EVIDENCE_LINE`).
  * Nothing signed changes (§12.3).
+ * 20 (3.0.19, owner decision 19.10.2026: a split program builds its code parts only): both tracks — where the engine
+ * reads a program as partly key user and the decision builds code (RAP or CAP), the lines the key-user steps replace
+ * (`keyUserPlanRanges`, lib/key-user-route.ts) reach the planner (`PlanInput.keyUser`): a FORM or METHOD wholly inside
+ * them, and a FORM reached only from such routines, is no unit — no function, no fill request, no model call — and is
+ * listed as not carried with reason `key-user`; TRACE.md names each as configured by a key user from
+ * docs/key-user-steps.md. A program that does not split is planned as before. Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 19;
+export const SCAFFOLD_VERSION = 20;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -418,7 +424,8 @@ export interface Unit {
 
 export interface NotCarried {
   routine: string;
-  reason: 'unreachable' | 'dropped' | 'fixture';
+  /** `key-user` (scaffold 20, roadmap 3.0.19): configured by a key user in a program that splits — not generated. */
+  reason: 'unreachable' | 'dropped' | 'fixture' | 'key-user';
   lineStart: number;
   lineEnd: number;
 }

@@ -103,7 +103,16 @@ export function designAnswer(args: {
 export function signOffRecommendation(
   contractRoute: { recommended: TargetRoute } | null,
   stored: StoredRoute | null,
+  /**
+   * Roadmap 3.0.19 (owner decision 19.10.2026): the engine reads the whole
+   * program as key user (`KeyUserStepList.scope === 'whole-program'`, from the
+   * same signed source the contract is derived from). Then key user is the
+   * recommendation — the one `recommendationOfProject()` checks a departure
+   * against on the server — and RAP or CAP needs a reason.
+   */
+  keyUserWhole = false,
 ): { code: TargetArchitectureCode; basis: 'contract' | 'stored' | 'default' } {
+  if (contractRoute && keyUserWhole) return { code: 'keyuser', basis: 'contract' };
   if (contractRoute) return { code: ARCHITECTURE_OF_ROUTE[contractRoute.recommended], basis: 'contract' };
   if (stored) return { code: stored.code, basis: 'stored' };
   return { code: 'rap', basis: 'default' };

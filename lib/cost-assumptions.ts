@@ -90,7 +90,14 @@ export type Stated<T> =
   | { state: 'stated'; value: T }
   | { state: 'not-determined'; reason: string };
 
-export const OPTION_KINDS = ['do-nothing', 'keep', 'standard', 'rebuild', 'retire'] as const;
+/**
+ * `keyuser` (roadmap 3.0.19, owner decision 19.10.2026): rebuilt with SAP's key-user tools — configured in the
+ * system, no code. Its own cost option beside Rebuild, which is unchanged: its days are key-user days, priced with
+ * the test/key-user day rate, and it carries no developer days (`option-keyuser-dev-days`). Clean-Core.io proposes
+ * no days for it (`option-keyuser-proposal`) — every figure is the reader's (ADR-035). Appended, never inserted, so
+ * no stored kind changes meaning.
+ */
+export const OPTION_KINDS = ['do-nothing', 'keep', 'standard', 'rebuild', 'retire', 'keyuser'] as const;
 export type OptionKind = (typeof OPTION_KINDS)[number];
 
 /**
@@ -387,6 +394,10 @@ export const COST_GAP_CODES = [
   'upgrade-delay-unstated',
   /** *Do nothing* whose upgrade deferral is explicitly not determined, with a reason. */
   'upgrade-delay-not-determined',
+  /** Roadmap 3.0.19: a key-user option resting on a proposal — key-user days are only ever the reader's. */
+  'option-keyuser-proposal',
+  /** Roadmap 3.0.19: a key-user option with developer days — configuration builds no code. */
+  'option-keyuser-dev-days',
 ] as const;
 export type CostGapCode = (typeof COST_GAP_CODES)[number];
 
@@ -448,6 +459,10 @@ const SENTENCES: Record<CostGapCode, (subject: string | null) => string> = {
   'upgrade-delay-unstated': (s) =>
     `${s} says nothing about the upgrade deferral it causes. State it, or state that it is not determined and why.`,
   'upgrade-delay-not-determined': (s) => `${s} Costs are shown as unconfirmed.`,
+  'option-keyuser-proposal': (s) =>
+    `${s} is key-user extensibility, and Clean-Core.io proposes no days for key-user work. State the key-user days yourself.`,
+  'option-keyuser-dev-days': (s) =>
+    `${s} is key-user extensibility — configured in the system, no code — and carries developer days. State its effort as key-user days; they are priced with your test/key-user day rate.`,
 };
 
 function gap(code: CostGapCode, severity: CostGapSeverity, subject: string | null): CostGap {
@@ -474,6 +489,12 @@ function optionGaps(o: CostOption): CostGap[] {
 
   if (o.effortSource === 'proposal-unconfirmed') {
     gaps.push(gap('option-effort-unconfirmed', 'rejects', name));
+  }
+  // Roadmap 3.0.19: a key-user option is configuration — key-user days only, and only the reader's own.
+  if (o.kind === 'keyuser') {
+    if (o.effortSource !== 'stated') gaps.push(gap('option-keyuser-proposal', 'rejects', name));
+    const dev = [o.oneOff?.low.devDays, o.oneOff?.high.devDays, o.perRelease?.devDays];
+    if (dev.some((d) => typeof d === 'number' && d > 0)) gaps.push(gap('option-keyuser-dev-days', 'rejects', name));
   }
 
   if (!o.oneOff) {

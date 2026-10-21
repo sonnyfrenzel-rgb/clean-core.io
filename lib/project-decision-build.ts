@@ -116,6 +116,10 @@ export interface SignOffBasis {
  * the engine's route (`recommendationOfProject()` answers `rap` or `cap`), so
  * `approve-architecture` refuses such a sign-off without one
  * (`override-needs-reason`). A record without it was not written by that path.
+ * The one exception is key user (roadmap 3.0.19, owner decision 19.10.2026):
+ * where the engine reads the whole program as key user, `keyuser` *is* the
+ * recommendation and its sign-off carries no reason; `approve-architecture`
+ * has already refused it without one wherever it departs.
  */
 function noContractBinding(kind: OptionKind, optionId: string, signOff: SignOffBasis | null | undefined): DecisionBinding {
   const at = signOff?.at && /^[0-9A-Za-z:.-]+$/.test(signOff.at) ? signOff.at : null;
@@ -125,7 +129,7 @@ function noContractBinding(kind: OptionKind, optionId: string, signOff: SignOffB
     ? 'no architecture sign-off is on record.'
     : signOff.notCurrent
       ? signOff.notCurrent
-      : !signOff.reason
+      : !signOff.reason && kind !== 'keyuser'
         ? 'it records no reason, and an option that generates nothing always departs from the route the engine names.'
         : !at
           ? 'the time it was given cannot be read.'
