@@ -137,7 +137,8 @@ jobs:
           path: ${{ runner.temp }}/sap-references-sync
 
       # The artifact may hold the source data files and the AFF schemas with their
-      # LICENSE and nothing else: no other path, no other subdirectory, no symlink.
+      # LICENSE and nothing else: no other path, no other subdirectory, no symlink —
+      # and each file must hold what the sync writes (scripts/check-sap-reference-data.mjs).
       - name: Accept only the expected paths
         run: |
           src="$RUNNER_TEMP/sap-references-sync"
@@ -153,6 +154,10 @@ jobs:
               exit 1
             fi
           done
+          # SEC-2026-892: the content too, before anything is copied — the metadata field by field, every
+          # schema hashed against what the metadata records, the MIT text. The checker comes from this
+          # job's own checkout and needs no install.
+          node scripts/check-sap-reference-data.mjs "$src"
           rm -rf lib/generated/sap-references lib/generated/aff-schemas
           cp -R "$src/lib/generated/sap-references" lib/generated/sap-references
           cp -R "$src/lib/generated/aff-schemas" lib/generated/aff-schemas
