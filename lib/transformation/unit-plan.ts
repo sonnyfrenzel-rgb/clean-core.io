@@ -1212,6 +1212,23 @@ function partOf(plan: Pick<UnitPlan, 'rules' | 'guards'>, u: Unit, c: { lineStar
   };
 }
 
+/**
+ * The parent routine's locals a part of a split routine reads or writes (3.0.20, the SD acceptance of 21.10.2026:
+ * part 2 of a routine used the parent's `ls_effect`, `lv_code`, `ls_work`, `lv_delivered` bare and was refused): of
+ * `names`, those the part's own ABAP statements name, in the order of `names`. The frame hands exactly these over, so
+ * a body uses them under their own names and never reaches for the parent's state another way. A name inside a
+ * literal does not count; a string template's embedded expression does (`|{ lv_code }|`).
+ */
+export function partLocalsOf(statements: readonly Pick<AbapStatement, 'text' | 'lineStart'>[], part: Pick<Unit, 'abap'>, names: readonly string[]): string[] {
+  const range = part.abap[0];
+  if (!range || names.length === 0) return [];
+  const code = statements
+    .filter((s) => s.lineStart >= range.lineStart && s.lineStart <= range.lineEnd)
+    .map((s) => s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`/g, "''"))
+    .join('\n');
+  return names.filter((n) => new RegExp(`(?<![\\w\\-~>/])${n.replace(/[.*+?^${}()|[\]\\/<>]/g, '\\$&')}(?![\\w/])`, 'i').test(code));
+}
+
 /** Lx or Lx–Ly. */
 const lineSpan = (r: { lineStart: number; lineEnd: number }) => (r.lineStart === r.lineEnd ? `L${r.lineStart}` : `L${r.lineStart}–L${r.lineEnd}`);
 

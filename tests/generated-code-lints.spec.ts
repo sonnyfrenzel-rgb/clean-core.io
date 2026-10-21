@@ -362,6 +362,23 @@ test.describe('8. declared but unused dependencies (P2)', () => {
     ];
     expect(of(generatedCodeLints(files), 'unused-dependency')).toEqual([]);
   });
+
+  test('SEC-2026-894: an import in a comment or a string is no use; one in code and the types directive are', () => {
+    const pkg = JSON.stringify({ dependencies: { passport: '^0.7', express: '^4', '@sap/xssec': '^4', '@cap-js/cds-types': '^0.6' } });
+    const service = [
+      '/// <reference types="@cap-js/cds-types" />',
+      "// import passport from 'passport';",
+      "/* const x = require('@sap/xssec');",
+      '/// <reference types="@sap/xssec" />',
+      '*/',
+      "const note = \"import passport from 'passport'\";",
+      "import express from 'express';",
+      'export const app = express();',
+      'void note;',
+    ].join('\n');
+    const f = of(generatedCodeLints([{ path: 'package.json', content: pkg }, { path: 'srv/service.ts', content: service }]), 'unused-dependency');
+    expect(f.map((x) => x.message.match(/^"([^"]+)"/)?.[1])).toEqual(['passport', '@sap/xssec']);
+  });
 });
 
 /* ------------------------------------------------------ 9. ignored option */

@@ -69,7 +69,7 @@ import { deriveEngineCases, type EngineCaseDerivation } from '../testing-engine-
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { goldenMasterForScaffold, type GoldenMasterExpected } from './golden-master';
 import { abapEngineCaseMethods } from './abap-engine-cases';
-import { rangeWords, type EngineFacts } from './unit-plan';
+import { partLocalsOf, rangeWords, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
@@ -417,6 +417,25 @@ function callFunctionPairs(text: string): Array<{ section: 'exporting' | 'import
   return out;
 }
 
+/**
+ * The start values the original gives a split routine's locals (3.0.20): `DATA lv_code TYPE c LENGTH 2 VALUE 'A1'`
+ * → `['lv_code', "'A1'"]`. Only a literal, a number or abap_true / abap_false / space: anything else (a constant,
+ * IS INITIAL) is left to the type's initial value, as the structure component holds it.
+ */
+function startValuesOf(statements: readonly AbapStatement[], parent: UnitPlan['units'][number], names: readonly string[]): Array<[string, string]> {
+  const range = parent.abap[0];
+  if (!range) return [];
+  const want = new Set(names);
+  const out: Array<[string, string]> = [];
+  for (const s of statements) {
+    if (s.lineStart < range.lineStart || s.lineStart > range.lineEnd || (s.keyword !== 'DATA' && s.keyword !== 'STATICS')) continue;
+    const m = /^(?:DATA|STATICS)\s*:?\s*([\w/]+)\b[\s\S]*?\bVALUE\s+('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)\s*\.?\s*$/i.exec(s.text);
+    if (!m || !want.has(m[1].toLowerCase()) || out.some(([n]) => n === m[1].toLowerCase())) continue;
+    out.push([m[1].toLowerCase(), /^\d+\.\d+$|^-/.test(m[2]) ? `'${m[2]}'` : m[2]]);
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------ the scaffold */
 
 /** The RAP scaffold of a plan — see the file comment. */
@@ -492,8 +511,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   /** A METHOD unit's RETURNING parameter, from its class definition (scaffold 17). */
   const returningOf = new Map<string, { name: string; phrase: string }>();
   const localTypes: string[] = [];
-  /** Part → the components of its cs_local (FI review C). */
+  /** Part → the parent's locals, every one its shared structure holds (FI review C). */
   const localComponentsOf = new Map<string, string[]>();
+  /** Part → the parent's locals its lines read or write: its CHANGING parameters under their own names (3.0.20). */
+  const handedOf = new Map<string, string[]>();
   for (const u of plan.units) {
     // A METHOD's parameters from its class definition, as a FORM's from its head (scaffold 17): a local-class method
     // had none, and every body reading one (`mv_vbeln = iv_vbeln`) was refused for names the class does not declare.
@@ -509,9 +530,15 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     if (comps.length > 0) localTypes.push(`TYPES BEGIN OF ${typeName}`, ...comps.map(([n, ph]) => `TYPES ${n} ${ph}`), `TYPES END OF ${typeName}`);
     for (const part of plan.units.filter((p) => p.part?.parent === parent.id)) {
       if (comps.length > 0) localComponentsOf.set(part.id, comps.map(([n]) => n.toLowerCase()));
+      // 3.0.20 (SD acceptance, 21.10.2026: U10P2 used ls_effect, lv_code, ls_work, lv_delivered bare and was refused in
+      // two of three runs): each parent local the part's lines read or write is its own CHANGING parameter under its
+      // own name, typed by its component of the parent's structure. The frame hands it over by reference, so a body
+      // uses it as the original does and a RETURN keeps what the body wrote.
+      const handed = partLocalsOf(facts.statements, part, comps.map(([n]) => n.toLowerCase()));
+      if (handed.length > 0) handedOf.set(part.id, handed);
       paramsOf.set(part.id, [
         ...(paramsOf.get(parent.id) ?? []).map((p) => ({ ...p })),
-        ...(comps.length > 0 ? [{ name: 'cs_local', direction: 'changing' as const, phrase: `TYPE ${typeName}`, original: `the locals of ${parent.routine ?? parent.fn}` }] : []),
+        ...handed.map((n) => ({ name: n, direction: 'changing' as const, phrase: `TYPE ${typeName}-${n}`, original: `the local ${n} of ${parent.routine ?? parent.fn}, handed over by the frame` })),
       ]);
     }
   }
@@ -1010,12 +1037,17 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     }
     if (parentsOfParts.includes(u)) {
       const parts = plan.units.filter((p) => p.part?.parent === u.id).sort((a, b) => a.part!.index - b.part!.index);
-      const hasLocal = (paramsOf.get(parts[0].id) ?? []).some((p) => p.name === 'cs_local');
-      if (hasLocal) impls.push(`    DATA ls_local TYPE ty_${name.slice(0, 18)}_local.`);
+      if (parts.some((p) => handedOf.has(p.id))) {
+        impls.push("    \" The routine's locals, shared by its parts: each part gets those its lines read or write (3.0.20).", `    DATA ls_local TYPE ty_${name.slice(0, 18)}_local.`);
+        // A local the original starts with a value (`DATA lv_code TYPE c LENGTH 2 VALUE 'A1'`): a component of a
+        // structure type takes no VALUE, so the frame gives it its start value before the first part runs.
+        for (const [n, value] of startValuesOf(facts.statements, u, localComponentsOf.get(parts[0].id) ?? [])) impls.push(`    ls_local-${n} = ${value}.`);
+      }
       for (const part of parts) {
         const pp = paramsOf.get(part.id) ?? [];
+        const handed = new Set(handedOf.get(part.id) ?? []);
         const exp = pp.filter((p) => p.direction === 'importing').map((p) => `${p.name} = ${p.name}`);
-        const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${p.name === 'cs_local' ? 'ls_local' : p.name}`);
+        const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${handed.has(p.name) ? `ls_local-${p.name}` : p.name}`);
         impls.push(`    ${methodOf.get(part.id)}(${exp.length ? ` EXPORTING ${exp.join(' ')}` : ''}${chg.length ? ` CHANGING ${chg.join(' ')}` : ''} ).`);
       }
     } else if (u.kind === 'orchestrator' && u.abap.length === 0) {
@@ -1034,7 +1066,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         methods: allMethods,
         access: accessNames,
         ...tableNames,
-        ...(localComponentsOf.has(u.id) ? { localComponents: localComponentsOf.get(u.id)! } : {}),
+        ...(localComponentsOf.has(u.id) ? { localComponents: localComponentsOf.get(u.id)!, handedLocals: handedOf.get(u.id) ?? [] } : {}),
         // FI review D: the main path loads the run's input once; a part of a split main path is not judged alone.
         ...(inputs.length > 0 && !(u.part && unitById.get(u.part.parent)?.kind === 'orchestrator') ? { loadInput: u.kind === 'orchestrator' ? ('once' as const) : ('never' as const) } : {}),
       };
@@ -1175,6 +1207,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       });
     unitTypes[u.id] = [
       `CLASS ${logic} (engine-written; your body is one METHOD of it):`,
+      ...(handedOf.has(u.id)
+        ? [`" The parent routine's locals these lines read or write are this method's CHANGING parameters under their own names, handed over by the frame: ${handedOf.get(u.id)!.join(', ')}. Use them as the original does; never declare them.`]
+        : []),
       ...typeLines,
       ...(rowLines.length > 0
         ? [`" Rows of the SAP tables the original reads (${rows.map((r) => r.table.toUpperCase()).join(', ')}): ABAP Cloud has no type of them - type the rows by these, e.g. DATA lt_rows TYPE STANDARD TABLE OF ${rows[0].rowType} WITH EMPTY KEY.`, ...rowLines]

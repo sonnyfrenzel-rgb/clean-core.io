@@ -211,8 +211,15 @@ export const PLAN_VERSION = 2;
  * them, and a FORM reached only from such routines, is no unit — no function, no fill request, no model call — and is
  * listed as not carried with reason `key-user`; TRACE.md names each as configured by a key user from
  * docs/key-user-steps.md. A program that does not split is planned as before. Nothing signed changes (§12.3).
+ * 21 (3.0.20 quality, the SD acceptance of 21.10.2026: split part U10P2 was refused in two of three runs for using the
+ * parent routine's locals bare): both tracks — the frame hands a split part every parent local its lines read or write
+ * (`partLocalsOf`, unit-plan.ts) under its own name. RAP: each is a CHANGING parameter typed by its component of the
+ * parent's structure (`TYPE ty_<parent>_local-lv_code`); the parent passes `ls_local-lv_code`; there is no `cs_local`
+ * any more. Node: the parent starts `local` with each local's initial value, and the part declares each from `local`
+ * before its body and writes it back after it, in a `finally`. A body that declares a handed local again, or names
+ * `cs_local`, is refused (markers.ts). Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 20;
+export const SCAFFOLD_VERSION = 21;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -612,6 +619,11 @@ export interface BodyGuardContext {
    */
   shapes?: Readonly<Record<string, readonly string[]>>;
   /**
+   * Node, since scaffold version 21 (3.0.20): the parent routine's locals the frame of a split part declares from
+   * `local` before the body (`Scaffold.partLocals`). A body that declares one again is refused: it would not compile.
+   */
+  partLocals?: readonly string[];
+  /**
    * RAP only (scaffold version 6): the names the logic class declares around this region — a body that calls a
    * method the class or the access interface does not have, or reads an original's global, selection input or
    * parameter-like name the class does not declare, is refused (`scaffold-rap.ts`, `rap-contract.ts`).
@@ -647,10 +659,15 @@ export interface AbapRegionNames {
   /** SAP tables the access layer reads → the access method that reads them (`vbak` → `read_vbak`). */
   sapReads?: Record<string, string>;
   /**
-   * A part of a split routine (FI review C, 18.10.2026): the components of its `cs_local`, the parent's locals every part
-   * shares. A body that names another (`cs_local-ls_company`) is refused with these listed.
+   * A part of a split routine (FI review C, 18.10.2026): the parent's locals, every one its shared structure holds. A
+   * body that uses one bare without it being handed over, or names `cs_local`, is refused with the handed ones listed.
    */
   localComponents?: string[];
+  /**
+   * The parent's locals this part's lines read or write (3.0.20, scaffold version 21): the method's CHANGING parameters
+   * under their own names, handed over by the frame. A body that declares one again is refused.
+   */
+  handedLocals?: string[];
   /**
    * The run's input (FI review D): `once` — the orchestrator calls `load_input( )` exactly once, where the original runs
    * its first demo-data routine; `never` — any other body; absent — the class has no input.
@@ -761,6 +778,11 @@ export interface Scaffold {
   authority?: Record<string, AuthorityEntry[]>;
   /** Node only, since scaffold version 15 (3.0.17): the original's reads inside its steps, per region (`lookups-node.ts`). */
   lookups?: Record<string, LookupEntry[]>;
+  /**
+   * Node only, since scaffold version 21 (3.0.20): per split part, the parent routine's locals its lines read or write,
+   * as the frame declares them from `local` before the body (`lvCode`). A body that declares one again is refused.
+   */
+  partLocals?: Record<string, string[]>;
   /**
    * Node only (QA finding 95f6ea84e8af): for each check whose predicate stays a fill region, the ABAP type of each
    * value it reads, in words — the fill request names them, so the model writes that type's initial value.

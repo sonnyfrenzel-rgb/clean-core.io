@@ -336,7 +336,9 @@ test.describe('the starter example of its own: Z_SD_DELIVERY_PRIORITY', () => {
     expect(cp.resultState).toBe('Key-User Preferred');
     expect(cp.evaluation).toMatch(/^Indicated for the whole program\./);
     expect(cp.cleanCoreImpact).toMatch(/^Upgrade-stable by construction where every candidate is released for key-user use/);
-    expect(cp.cleanCoreImpact).not.toMatch(/level [A-D]/i);
+    // A word boundary, not the two backspace characters the line held (QA review of f6b07e692346, 7223a86eee7f).
+    expect(cp.cleanCoreImpact).not.toMatch(/\blevel [A-D]\b/i);
+    expect('Clean core level B').toMatch(/\blevel [A-D]\b/i);
     // The public edition reads the same parts.
     const pub = buildAbapEvidence(source, EXAMPLE, 'public', undefined, NEW).keyUser!;
     expect(pub.candidates.map((c) => c.tool)).toEqual(must(source, EXAMPLE).candidates.map((c) => c.tool));

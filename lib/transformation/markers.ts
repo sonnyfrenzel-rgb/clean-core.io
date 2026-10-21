@@ -287,6 +287,10 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const shadow = [...declared].filter((n) => guardNames.has(n) || /^(?:guard|stop|skip)_/.test(n));
   if (shadow.length > 0) out.push(refusal('guard-shadowed', `the body redeclares the guard ${shadow.join(', ')}`));
   if (code(/\b(?:guard|stop|skip)_[\w$]*\s*=(?!=)/).length > 0) out.push(refusal('guard-shadowed', 'the body assigns to a guard function'));
+  // A split part (3.0.20, scaffold version 21): the frame declares the parent routine's locals these lines read or
+  // write and writes them back after the body; declared again, the body's copy would never reach the next part.
+  const handedAgain = (ctx.partLocals ?? []).filter((n) => declared.has(n));
+  if (handedAgain.length > 0) out.push(refusal('declaration', `declares the parent routine's locals again: ${handedAgain.slice(0, 8).join(', ')} — the frame declares them from local before the body and writes them back after it; use them, never declare them`));
 
   if (code(/\b(?:Number|parseFloat|parseInt)\s*\(|\bNumber\s*\.\s*(?:parseFloat|parseInt)\s*\(/).length > 0) {
     out.push(refusal('binary-number', BINARY_NUMBER_MESSAGE));
@@ -606,9 +610,10 @@ const codeOf = (s: { text: string }) => s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|
 
 /**
  * The shared locals of a split routine (FI review C, 18.10.2026: part 2 of a routine wrote cs_local-ls_company-currency
- * where the parent's local is ls_c — four syntax errors shipped as "not activatable"): every `cs_local-<component>` a
- * part names must be one of its cs_local, and a component used bare, neither declared in the body nor an attribute,
- * is the parent's local and is written cs_local-<component>.
+ * where the parent's local is ls_c — four syntax errors shipped as "not activatable"). Since scaffold version 21
+ * (3.0.20) the frame hands a part the parent's locals its lines read or write as CHANGING parameters under their own
+ * names: a body that names `cs_local`, declares a handed local again, or uses a parent local it was not handed
+ * (neither declared in the body nor an attribute) is refused, the handed ones listed.
  */
 function localStateRefusals(statements: ReturnType<typeof readStatements>, names: AbapRegionNames): BodyRefusal[] {
   const comps = new Set((names.localComponents ?? []).map((c) => c.toLowerCase()));
@@ -619,20 +624,25 @@ function localStateRefusals(statements: ReturnType<typeof readStatements>, names
     if (d) declared.add(d[1].toLowerCase());
     for (const m of s.text.matchAll(/\b(?:DATA|FINAL|FIELD-SYMBOL)\(\s*(<?[\w/]+>?)\s*\)/gi)) declared.add(m[1].toLowerCase());
   }
-  const unknown = new Set<string>();
+  // 3.0.20 (scaffold version 21): the frame hands over the parent's locals these lines read or write as the method's
+  // CHANGING parameters under their own names — there is no cs_local, and a handed local is never declared again.
+  const handed = new Set((names.handedLocals ?? []).map((c) => c.toLowerCase()));
+  const named = new Set<string>();
+  const redeclared = [...handed].filter((n) => declared.has(n));
   const bare = new Set<string>();
   for (const s of statements) {
     const code = codeOf(s);
-    for (const m of code.matchAll(/\bcs_local-([\w]+)/gi)) if (!comps.has(m[1].toLowerCase())) unknown.add(`cs_local-${m[1]}`);
+    for (const m of code.matchAll(/\bcs_local-([\w]+)/gi)) named.add(`cs_local-${m[1]}`);
     for (const m of code.matchAll(/(^|[^\w\-~>])([A-Za-z_]\w*)(?![\w(])/g)) {
       const n = m[2].toLowerCase();
-      if (comps.has(n) && !declared.has(n) && !attrs.has(n)) bare.add(m[2]);
+      if (comps.has(n) && !handed.has(n) && !declared.has(n) && !attrs.has(n)) bare.add(m[2]);
     }
   }
-  const list = [...comps].join(', ');
+  const list = handed.size > 0 ? [...handed].join(', ') : 'none';
   const out: BodyRefusal[] = [];
-  if (unknown.size > 0) out.push(refusal('unknown-name', `names components of cs_local it does not have: ${[...unknown].slice(0, 8).join(', ')} — cs_local holds the parent routine's locals, under their original names: ${list}`));
-  if (bare.size > 0) out.push(refusal('unknown-name', `uses the parent routine's locals without cs_local: ${[...bare].slice(0, 8).join(', ')} — every part shares them as cs_local-<name> (${list})`));
+  if (named.size > 0) out.push(refusal('unknown-name', `names cs_local, which this method does not have: ${[...named].slice(0, 8).join(', ')} — the parent routine's locals these lines read or write are its CHANGING parameters under their own names: ${list}`));
+  if (redeclared.length > 0) out.push(refusal('unknown-name', `declares the parent routine's locals again: ${redeclared.slice(0, 8).join(', ')} — the frame hands them over as this method's CHANGING parameters; use them, never declare them`));
+  if (bare.size > 0) out.push(refusal('unknown-name', `uses the parent routine's locals these lines do not read or write: ${[...bare].slice(0, 8).join(', ')} — the frame hands over only ${list}`));
   return out;
 }
 

@@ -220,7 +220,15 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         // Of the original's globals (`Locals`), only those this function's ABAP names (3.0.13, A3).
         // RAP since scaffold version 6: the logic class around the body (scaffold-rap.ts).
         ...(decls
-          ? { types: typesText(decls, [u.signature, ...callees], ['Dec'], { Locals: localsNamedIn(`${slice.text}\n${slice.declarations}`) }) }
+          ? {
+              types: [
+                // A split part (3.0.20): the frame declares the parent routine's locals these lines read or write.
+                ...(scaffold.partLocals?.[u.id]?.length
+                  ? [`// The parent routine's locals these lines read or write are declared by the frame before your body, typed as the original declares them, and written back after it: ${scaffold.partLocals[u.id].join(', ')}. Use them under these names; never declare them.`]
+                  : []),
+                typesText(decls, [u.signature, ...callees], ['Dec'], { Locals: localsNamedIn(`${slice.text}\n${slice.declarations}`) }),
+              ].join('\n'),
+            }
           : scaffold.rap?.unitTypes[u.id]
             ? { types: scaffold.rap.unitTypes[u.id] }
             : {}),
@@ -314,6 +322,8 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     ...(params.length > 0 ? { params } : {}),
     ...(Object.keys(shapes).length > 0 ? { shapes } : {}),
     ...(prep.scaffold.rap?.regions[regionId] ? { abap: prep.scaffold.rap.regions[regionId] } : {}),
+    // A split part's handed-over locals (3.0.20): declared by the frame, never again by the body.
+    ...(regionId === unitId && prep.scaffold.partLocals?.[regionId]?.length ? { partLocals: prep.scaffold.partLocals[regionId] } : {}),
   };
 }
 
