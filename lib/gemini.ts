@@ -55,6 +55,11 @@ export interface CallOptions {
    * the proxy; a call without a receipt does not call it.
    */
   onReceipt?: (receipt: ModelReceipt) => void;
+  /**
+   * Roadmap 3.0.21 (owner decision B6): the product started this step by itself when the owner opened a project.
+   * Sent as `trigger: 'automatic'`; the proxy refuses it on an own key whose "Automatic steps" are off.
+   */
+  automatic?: boolean;
 }
 
 export interface GeminiResult {
@@ -122,6 +127,7 @@ export async function callGeminiWithReceipt(
       ...(options?.responseShape ? { responseShape: options.responseShape } : {}),
       ...(options?.lease ? { lease: { projectId: options.lease.projectId, leaseId: options.lease.leaseId } } : {}),
       ...(options?.lease && options.gateRepair ? { gateRepair: true } : {}),
+      ...(options?.automatic ? { trigger: 'automatic' } : {}),
       // No `userId` and no `idToken` in the body. The route has never read
       // either — `app/api/gemini/route.ts:106` derives the identity from
       // `verifyRequestAuth(request)` and the handler destructures only the four

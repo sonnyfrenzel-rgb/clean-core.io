@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { provenance, type ProvenanceForm, type ProvenanceValue } from '@/lib/provenance';
+import { providerLabelOfReceiptId } from '@/lib/model-providers';
 import { STATE_CLASSES } from './state';
 
 /**
@@ -62,9 +63,25 @@ export interface CcProvenanceChipProps {
    * fixed word is always the first thing there.
    */
   note?: string;
+  /**
+   * 3.0.21 — for *AI-generated*: who wrote it, from the model receipt the
+   * statement was stored with (provider id as the receipt records it, model
+   * id). The tooltip names them; without a receipt it names nobody rather than
+   * a guess. Ignored on every other value: the engine's statements have no model.
+   */
+  origin?: { provider: string | null; modelId: string | null; automatic?: boolean } | null;
 }
 
-export default function CcProvenanceChip({ value, note }: CcProvenanceChipProps) {
+/** The chip's tooltip: what the value asserts, and for AI-generated text who wrote it. Pure: exported for the spec. */
+export function provenanceTitle(value: ProvenanceValue, origin?: CcProvenanceChipProps['origin']): string {
+  const entry = provenance(value);
+  if (value !== 'proposed' || !origin) return entry.meaning;
+  const provider = providerLabelOfReceiptId(origin.provider);
+  const who = provider && origin.modelId ? ` Written by ${provider} · ${origin.modelId}.` : provider ? ` Written by ${provider}.` : '';
+  return `${entry.meaning}${who}${origin.automatic ? ' Generated automatically on opening.' : ''}`;
+}
+
+export default function CcProvenanceChip({ value, note, origin }: CcProvenanceChipProps) {
   const entry = provenance(value);
   const state = STATE_CLASSES[entry.state];
   const Icon = ICONS[entry.icon];
@@ -73,7 +90,7 @@ export default function CcProvenanceChip({ value, note }: CcProvenanceChipProps)
     <span
       data-provenance={entry.value}
       data-cc-form={entry.form}
-      title={entry.meaning}
+      title={provenanceTitle(value, origin)}
       className={cn(
         // The word never breaks; a long note wraps inside the chip instead of
         // pushing a phone page wider than its screen (360 px, measured on the

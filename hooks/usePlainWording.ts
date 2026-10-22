@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { askModeOf } from '@/lib/auto-steps';
 import {
   ENGINE_ONLY,
   plainDigestOf,
@@ -43,11 +44,25 @@ export function usePlainWording(input: {
   active: boolean;
   /** The account can call a model for the business sentences right now: known, a key, the stage on (`plainModelEnabled`). */
   modelEnabled: boolean;
+  /**
+   * 3.0.21 (owner decision B6): may the rewording be asked for by itself —
+   * `useModelAvailability().autoSteps`. False with an own key whose
+   * "Automatic steps" are off: then it is offered on a click (`askNow`).
+   */
+  autoAllowed: boolean;
   initial?: PlainWordingRecord | null;
-}): { say: (text: string, anchor: PlainRange | null) => WordedSentence; state: 'engine' | 'asking' | 'worded' } {
-  const { projectId, scope, source, sentences, owner, active, modelEnabled, initial = null } = input;
+}): {
+  say: (text: string, anchor: PlainRange | null) => WordedSentence;
+  state: 'engine' | 'asking' | 'worded';
+  /** Set when the rewording waits for a click (own key, automatic steps off); null otherwise. */
+  askNow: (() => void) | null;
+} {
+  const { projectId, scope, source, sentences, owner, active, modelEnabled, autoAllowed, initial = null } = input;
   const [record, setRecord] = useState<PlainWordingRecord | null>(initial);
   const [asking, setAsking] = useState(false);
+  // The stored record has been read for this digest — a click is offered only then.
+  const [readFor, setReadFor] = useState<string | null>(null);
+  const [clicked, setClicked] = useState(false);
 
   const items = useMemo(() => (sentences ? plainItemsOf(sentences) : []), [sentences]);
   const digest = useMemo(() => (source && items.length ? plainDigestOf(scope, source, items) : ''), [scope, source, items]);
@@ -60,11 +75,14 @@ export function usePlainWording(input: {
       const stored = await client.fetchPlainWording(projectId, scope);
       if (cancelled) return;
       setRecord(stored);
-      if (!shouldAskPlainWording({ owner, modelEnabled, items: items.length, record: stored, digest })) return;
+      setReadFor(digest);
+      const mode = askModeOf({ wanted: shouldAskPlainWording({ owner, modelEnabled, items: items.length, record: stored, digest }), autoAllowed });
+      // On a click (own key, automatic steps off): nothing is asked here — `askNow` below does it.
+      if (mode !== 'auto') return;
       // Once per project, scope and digest in this browser, whatever the answer: a refusal is not retried on every render.
       if (!takeFirstAsk(askedThisSession, projectId, scope, digest)) return;
       setAsking(true);
-      const fresh = await client.requestPlainWording(projectId, scope, digest, items);
+      const fresh = await client.requestPlainWording(projectId, scope, digest, items, { automatic: true });
       if (cancelled) return;
       setAsking(false);
       if (fresh) setRecord(fresh);
@@ -72,9 +90,26 @@ export function usePlainWording(input: {
     return () => {
       cancelled = true;
     };
-  }, [active, projectId, scope, digest, items, owner, modelEnabled, initial]);
+  }, [active, projectId, scope, digest, items, owner, modelEnabled, autoAllowed, initial]);
+
+  const clickMode =
+    !clicked &&
+    readFor === digest &&
+    !!projectId &&
+    askModeOf({ wanted: shouldAskPlainWording({ owner, modelEnabled, items: items.length, record, digest }), autoAllowed }) === 'click';
+  const askNow = useCallback(() => {
+    if (!projectId || !digest) return;
+    setClicked(true);
+    setAsking(true);
+    void (async () => {
+      const client = await import('@/lib/plain-wording-client');
+      const fresh = await client.requestPlainWording(projectId, scope, digest, items, { automatic: false });
+      setAsking(false);
+      if (fresh) setRecord(fresh);
+    })();
+  }, [projectId, scope, digest, items]);
 
   const say = useMemo(() => (digest ? plainLookup(record, scope, digest) : ENGINE_ONLY), [record, scope, digest]);
   const worded = !!record && record.digest === digest && Object.keys(record.wording).length > 0;
-  return { say, state: asking ? 'asking' : worded ? 'worded' : 'engine' };
+  return { say, state: asking ? 'asking' : worded ? 'worded' : 'engine', askNow: clickMode ? askNow : null };
 }

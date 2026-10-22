@@ -29,6 +29,8 @@ import { explainBusinessRules } from '@/lib/abap/business-rule-set-explain';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { openingDecisions, type OpeningDecisions } from '@/lib/first-look-plain';
 import { firstLookPlainSentences, plainModelEnabled } from '@/lib/plain-wording';
+import AskOnClick from './AskOnClick';
+import { PLAIN_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
@@ -693,6 +695,9 @@ export default function FirstLook({
     owner,
     active: plainSentences !== null && namingFrom !== 'none',
     modelEnabled: plainModelEnabled(availability),
+    // 3.0.21 (owner decision B6): by itself only on the platform key or with
+    // "Automatic steps" on for the own key; otherwise on a click.
+    autoAllowed: availability.autoSteps,
   });
   const [sourceOpen, setSourceOpen] = useState(false);
 
@@ -856,6 +861,7 @@ export default function FirstLook({
 
   return (
     <>
+      <AskOnClick askNow={plain.askNow} label={PLAIN_ON_CLICK_LABEL} />
       <section
         data-first-look={endStateOnly ? 'end-state' : 'complete'}
         data-reduced-motion={reduced ? 'true' : 'false'}

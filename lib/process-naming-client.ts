@@ -65,12 +65,21 @@ export async function requestProcessNaming(
   context: NamingContext,
   availability?: NamingAvailability | null,
   signal?: AbortSignal,
+  /** 3.0.21: `automatic` when the product started it by itself on opening (`lib/auto-steps.ts`). */
+  opts: { automatic?: boolean } = {},
 ): Promise<NamingRequestOutcome> {
   return runNamingRequest(
     context,
     {
       callModel: async (prompt) => {
-        const { text, receipt } = await callGeminiWithReceipt(prompt, NAMING_GEMINI_MODEL, true, NAMING_STAGE, signal);
+        const { text, receipt } = await callGeminiWithReceipt(
+          prompt,
+          NAMING_GEMINI_MODEL,
+          true,
+          NAMING_STAGE,
+          signal,
+          opts.automatic ? { automatic: true } : undefined,
+        );
         return { text, receipt };
       },
       store: async (submission) => {

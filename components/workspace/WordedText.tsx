@@ -18,7 +18,7 @@ export function WordedChip({ said }: { said: WordedSentence }) {
   if (!said.worded) return null;
   return (
     <span data-worded-chip="" className="ml-1 inline-flex align-middle">
-      <CcProvenanceChip value="proposed" note={wt('walk.worded')} />
+      <CcProvenanceChip value="proposed" note={wt('walk.worded')} origin={said.origin ?? null} />
     </span>
   );
 }

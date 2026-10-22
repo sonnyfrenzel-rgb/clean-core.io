@@ -112,8 +112,9 @@ const w = window as any;
 w.__asks = []; w.__stored = 0; w.__events = 0;
 window.addEventListener('cc:process-naming-stored', () => { w.__events += 1; });
 function Probe(props: any) {
-  const state = useAutoProcessNaming({ ...props, onStored: () => { w.__stored += 1; } });
-  return React.createElement('span', { id: 'state' }, state);
+  const out = useAutoProcessNaming({ ...props, onStored: () => { w.__stored += 1; } });
+  w.__askNow = out.askNow;
+  return React.createElement('span', { id: 'state', 'data-click': out.askNow ? 'offered' : 'none' }, out.state);
 }
 const root = createRoot(document.getElementById('root')!);
 w.__render = (props: any) => root.render(React.createElement(Probe, props));
@@ -150,7 +151,8 @@ test.describe('the hook in a page', () => {
     };
     const asks = () => page.evaluate(() => (window as unknown as { __asks: string[] }).__asks.length);
     const counter = (name: '__stored' | '__events') => page.evaluate((n) => (window as unknown as Record<string, number>)[n], name);
-    const base = { projectId: 'p1', source: SOURCE_A, owner: true, availability: ON, state: 'not-named' };
+    // The platform key (or "Automatic steps" on for an own key): asked by itself (3.0.21, owner decision B6).
+    const base = { projectId: 'p1', source: SOURCE_A, owner: true, availability: ON, state: 'not-named', autoAllowed: true };
 
     // Before the map is drawn, before availability is known, a reader, no key, the stage off: no ask.
     await render({ ...base, state: null });
@@ -185,5 +187,36 @@ test.describe('the hook in a page', () => {
     await expect(page.locator('#state')).toHaveText('idle');
     expect(await counter('__stored')).toBe(2);
     expect(await counter('__events')).toBe(2);
+  });
+
+  test('3.0.21 (owner decision B6): with an own key and automatic steps off, nothing is asked until the click — then once', async ({ page }) => {
+    const script = await bundleHook();
+    await page.setContent('<!doctype html><div id="root"></div>');
+    await page.addScriptTag({ content: script });
+    const render = async (props: Record<string, unknown>) => {
+      await page.evaluate((p) => (window as unknown as { __render: (p: unknown) => void }).__render(p), props);
+      await page.waitForTimeout(80);
+    };
+    const asks = () => page.evaluate(() => (window as unknown as { __asks: string[] }).__asks.length);
+    const off = { projectId: 'p9', source: SOURCE_A, owner: true, availability: ON, state: 'not-named', autoAllowed: false };
+
+    await render(off);
+    await render({ ...off, state: 'stale' });
+    expect(await asks()).toBe(0);
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'offered');
+
+    // A reader, or a named map, is offered no click either.
+    await render({ ...off, owner: false });
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+    await render({ ...off, state: 'named' });
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+
+    await render(off);
+    await page.evaluate(() => (window as unknown as { __askNow: () => void }).__askNow());
+    await page.waitForTimeout(80);
+    expect(await asks()).toBe(1);
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+    await render(off);
+    expect(await asks()).toBe(1);
   });
 });

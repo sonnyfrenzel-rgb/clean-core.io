@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { askModeOf } from '@/lib/auto-steps';
 import { sha256Hex } from '@/lib/artefact-digest';
 import {
   PROCESS_NAMING_STORED_EVENT,
@@ -29,6 +30,11 @@ const ASKED = new Set<string>();
  * so every reader of it on the page reads it again. Without a model, while it
  * loads, and when anything is refused, the engine's plain names stand and the
  * reader sees no error.
+ *
+ * 3.0.21 (owner decision B6): with the account's own key and "Automatic steps"
+ * off for it (`autoAllowed` false), nothing is asked by itself — the hook hands
+ * the page a click instead (`askNow`), once per project and source like the
+ * automatic ask, and the call goes out only on that click.
  */
 export function useAutoProcessNaming(input: {
   projectId: string | null;
@@ -37,41 +43,69 @@ export function useAutoProcessNaming(input: {
   availability: NamingAvailability | null;
   state: NamingState | null;
   onStored?: () => void;
-}): 'idle' | 'asking' {
-  const { projectId, source, owner, availability, state, onStored } = input;
+  /** May the names be asked for by itself — `useModelAvailability().autoSteps`. */
+  autoAllowed: boolean;
+}): { state: 'idle' | 'asking'; askNow: (() => void) | null } {
+  const { projectId, source, owner, availability, state, onStored, autoAllowed } = input;
   const [asking, setAsking] = useState(false);
+  const [clickedFor, setClickedFor] = useState<string | null>(null);
   const modelEnabled = namingModelEnabled(availability);
   // Primitives for the dependency list: the availability object is new on every render.
   const keyAvailable = availability?.keyAvailable === true;
   const known = availability?.known === true;
+  // `onStored` is a callback of the page, new on every render: read through a
+  // ref, so a new one never asks again.
+  const storedRef = useRef(onStored);
+  useEffect(() => {
+    storedRef.current = onStored;
+  }, [onStored]);
+
+  const ask = useCallback(
+    (pid: string, src: string, automatic: boolean) => {
+      // Not cancelled by a later render: the ask is taken once, so its answer
+      // is always announced and the wait always ends.
+      void (async () => {
+        setAsking(true);
+        try {
+          const [naming, client] = await Promise.all([import('@/lib/process-naming'), import('@/lib/process-naming-client')]);
+          const outcome = await client.requestProcessNaming(
+            pid,
+            naming.namingContextOf(src),
+            { known, keyAvailable, stages: { [naming.NAMING_STAGE]: modelEnabled } },
+            undefined,
+            { automatic },
+          );
+          if (!outcome.ok) return;
+          window.dispatchEvent(new CustomEvent(PROCESS_NAMING_STORED_EVENT, { detail: pid }));
+          storedRef.current?.();
+        } catch {
+          // The plain names stand.
+        } finally {
+          setAsking(false);
+        }
+      })();
+    },
+    [known, keyAvailable, modelEnabled],
+  );
+
+  const digest = source ? sha256Hex(source) : null;
+  const mode = projectId && digest ? askModeOf({ wanted: shouldAskNaming({ owner, modelEnabled, state }), autoAllowed }) : null;
 
   useEffect(() => {
-    if (!projectId || !source) return;
-    if (!shouldAskNaming({ owner, modelEnabled, state })) return;
-    if (!takeFirstNamingAsk(ASKED, projectId, sha256Hex(source))) return;
-    // Not cancelled by a later render: the ask is taken once, so its answer is
-    // always announced and the wait always ends.
-    void (async () => {
-      setAsking(true);
-      try {
-        const [naming, client] = await Promise.all([import('@/lib/process-naming'), import('@/lib/process-naming-client')]);
-        const outcome = await client.requestProcessNaming(projectId, naming.namingContextOf(source), {
-          known,
-          keyAvailable,
-          stages: { [naming.NAMING_STAGE]: modelEnabled },
-        });
-        if (!outcome.ok) return;
-        window.dispatchEvent(new CustomEvent(PROCESS_NAMING_STORED_EVENT, { detail: projectId }));
-        onStored?.();
-      } catch {
-        // The plain names stand.
-      } finally {
-        setAsking(false);
-      }
-    })();
-    // `onStored` is a callback of the page; a new one on every render must not ask again (and cannot: the ask is taken).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, source, owner, modelEnabled, state, known, keyAvailable]);
+    if (!projectId || !source || !digest || mode !== 'auto') return;
+    if (!takeFirstNamingAsk(ASKED, projectId, digest)) return;
+    ask(projectId, source, true);
+  }, [projectId, source, digest, mode, ask]);
 
-  return asking ? 'asking' : 'idle';
+  const askNow = useCallback(() => {
+    if (!projectId || !source || !digest) return;
+    setClickedFor(digest);
+    if (!takeFirstNamingAsk(ASKED, projectId, digest)) return;
+    ask(projectId, source, false);
+  }, [projectId, source, digest, ask]);
+
+  return {
+    state: asking ? 'asking' : 'idle',
+    askNow: mode === 'click' && clickedFor !== digest && !asking ? askNow : null,
+  };
 }

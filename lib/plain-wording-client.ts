@@ -46,11 +46,14 @@ export async function requestPlainWording(
   scope: PlainScope,
   digest: string,
   items: PlainItem[],
+  /** 3.0.21: `automatic` when the product started it by itself on opening (`lib/auto-steps.ts`). */
+  opts: { automatic?: boolean } = {},
 ): Promise<PlainWordingRecord | null> {
   return runPlainWording(scope, digest, items, {
     callModel: async (prompt) => {
       const { text, receipt } = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, PLAIN_WORDING_STAGE, undefined, {
         responseShape: PLAIN_WORDING_SHAPE,
+        ...(opts.automatic ? { automatic: true } : {}),
       });
       return { text, receipt };
     },

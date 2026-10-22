@@ -444,6 +444,12 @@ export interface WordedSentence {
   /** The engine sentence, kept one fold down when `worded`. */
   engine: string;
   worded: boolean;
+  /**
+   * 3.0.21 — who wrote the rewording, from the verified receipt the record was
+   * stored with: the chip's tooltip names provider and model, never a
+   * hard-coded name. Present only when `worded`.
+   */
+  origin?: { provider: string | null; modelId: string | null };
 }
 
 /**
@@ -464,7 +470,7 @@ export function plainLookup(
     if (!usable || !anchor) return { text: engine, engine, worded: false };
     const worded = usable.wording[plainKeyOf(text.trim(), { lineStart: anchor.lineStart, lineEnd: Math.max(anchor.lineStart, anchor.lineEnd) })];
     if (!worded || plainSentenceProblem(engine.trim(), worded) !== null) return { text: engine, engine, worded: false };
-    return { text: worded, engine, worded: true };
+    return { text: worded, engine, worded: true, origin: { provider: usable.origin.provider, modelId: usable.origin.modelId } };
   };
 }
 

@@ -38,6 +38,8 @@ import { ANSWERS_READING, NO_BUSINESS_QUESTIONS, businessAnswersOf, type Busines
 import { recordRuleChoices } from '@/lib/rule-record-client';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { usePlainWording } from '@/hooks/usePlainWording';
+import AskOnClick from '@/components/workspace/AskOnClick';
+import { PLAIN_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
 import type { Project } from '@/lib/types';
@@ -484,6 +486,7 @@ export default function RuleQuestions({
     owner,
     active: explanation !== null,
     modelEnabled: plainModelEnabled(availability),
+    autoAllowed: availability.autoSteps,
     initial: plainWording ?? null,
   });
   // What the page hears: still reading, no question at all, or every question with its answer.
@@ -524,6 +527,8 @@ export default function RuleQuestions({
   if (!source.trim() || !reading || reading.ruleSet.rules.length === 0) return null;
   if (!explanation) return null;
   return (
+    <>
+    <AskOnClick askNow={wording.askNow} label={PLAIN_ON_CLICK_LABEL} />
     <RuleQuestionsView
       explanation={explanation}
       entries={entries}
@@ -536,5 +541,6 @@ export default function RuleQuestions({
       say={wording.say}
       registerHref={`/project/${encodeURIComponent(projectId)}?view=it#${BUSINESS_RULES_ID}`}
     />
+    </>
   );
 }

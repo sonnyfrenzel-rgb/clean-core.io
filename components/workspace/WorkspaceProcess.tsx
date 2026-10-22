@@ -29,6 +29,8 @@ import { isConfirmedState } from '@/lib/rules-editor';
 import type { ElementState, StateSubject } from '@/lib/process-states';
 import { anchorWords } from '@/lib/rule-anchor';
 import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
+import AskOnClick from './AskOnClick';
+import { NAMES_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -211,6 +213,7 @@ export default function WorkspaceProcess({
     owner,
     active: tourOpen,
     modelEnabled: plainModelEnabled(availability),
+    autoAllowed: availability.autoSteps,
   });
   const [answering, setAnswering] = useState<{ subject: string; error: string | null } | null>(null);
   /**
@@ -295,13 +298,16 @@ export default function WorkspaceProcess({
    * names, with nothing said about it.
    */
   const bumpNaming = useCallback(() => setNamingRead((n) => n + 1), []);
-  useAutoProcessNaming({
+  const naming = useAutoProcessNaming({
     projectId: projectId || null,
     source: signed?.source ?? null,
     owner: !!owner,
     availability,
     state: map.model?.naming.state ?? null,
     onStored: bumpNaming,
+    // 3.0.21 (owner decision B6): by itself only on the platform key or with
+    // "Automatic steps" on for the own key; otherwise on a click.
+    autoAllowed: availability.autoSteps,
   });
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
@@ -697,11 +703,12 @@ export default function WorkspaceProcess({
         >
           {wt('biz.needAndProcess')}
         </h2>
+        <AskOnClick askNow={naming.askNow} label={NAMES_ON_CLICK_LABEL} />
       </div>
       {/* The guided tour, over the page while it is open (owner decision
           21.10.2026): the map and the narration on one screen. */}
       {tourOpen && model ? (
-        <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} />
+        <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
       <div data-coach-target="decision">
