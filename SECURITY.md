@@ -356,6 +356,7 @@ proven on the deployed profile.
 | `PILOT_APPROVAL_SECRET` | Yes | HMAC key of the tenant approval links (at least 16 characters, §3.4) |
 | `RESEND_WEBHOOK_SECRET` | Yes, for delivery events | Svix signature of the mail provider's webhook; unset = the webhook answers 503 |
 | `BYOK_ENCRYPTION_KEY` | Yes | AES-256-GCM key for stored own model keys (BYOK), version 1 (`lib/byok-key.ts`). Unset or not 32 bytes = the production deploy stops before deploying; on a running revision, storing a key is refused and `/api/health` reports degraded. Never falls back to `S4_ENCRYPTION_KEY` |
+| `RUNNER_SECONDS_PER_DAY` | No | Test-runner seconds one account may use per UTC day (positive whole number; unset or invalid = 1,800). With it, one run per account at a time (`lib/test-run-lock.ts`) |
 | `PLATFORM_MODEL_DAILY_CALLS` | No | Daily cap on model calls served with the community key (positive whole number; unset or invalid = 2,000). Own keys are not counted (§6) |
 | `S4_HOST_ALLOWLIST` | Recommended | Comma-separated SAP host suffixes for SSRF allowlist |
 | `RUNNER_URL` | Yes, for test execution | URL of the isolated mock runner (`clean-core-runner`). Unset = a deployed app runs no tests (fail closed) |

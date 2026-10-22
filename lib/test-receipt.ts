@@ -1,5 +1,6 @@
 import { artefactDigest, sha256Hex } from './artefact-digest';
 import { isMutationProbeReport, type MutationProbeReport } from './testing-mutation';
+import { resolveVerdicts } from './test-verdicts';
 
 /**
  * The server's own record that a test suite ran — and over which artefacts.
@@ -179,9 +180,79 @@ export interface TestRunReceipt {
    * Absent means no engine pass ran.
    */
   engine?: { digest: string; contractModule: string; viaContract: string[] };
+  /**
+   * 3.0.21 (CA-INT-01) — where the suite that ran came from (`suiteOriginOf`):
+   * `generation` or `model` only when the server recorded storing exactly
+   * that suite; otherwise `owner-edited`, and every view that names the run
+   * says so. Optional and additive like `engine`: the version stays 2. Absent
+   * on receipts written before.
+   */
+  suiteOrigin?: ReceiptSuiteOrigin;
 }
 
 const VERDICTS: readonly string[] = ['Passed', 'Failed', 'Not run', 'Skipped', 'Todo', 'Error'];
+
+/* ------------------------------------------------- where the suite came from */
+
+/**
+ * The project field the server writes when it stores a test suite (CA-INT-01):
+ * how the suite reached the project and the digest of the suite it stored.
+ * Admin SDK only — the client allowlist of `firestore.rules` does not contain
+ * it — so a suite the owner edits afterwards no longer matches it.
+ */
+export const TEST_SUITE_ORIGIN_FIELD = 'testSuiteOrigin';
+
+/**
+ * - `generation` — written by the engine-led transformation with its package
+ *   (`/api/projects/{id}/contract`, under the generation lease);
+ * - `model` — stored by the Testing stage with a model receipt this server
+ *   verified (`storeTestSuite`);
+ * - `unverified` — stored by the Testing stage without one.
+ */
+export type TestSuiteOriginKind = 'generation' | 'model' | 'unverified';
+
+export interface TestSuiteOrigin {
+  kind: TestSuiteOriginKind;
+  /** `suiteOriginDigest` of the suite as stored. */
+  suiteDigest: string;
+  recordedAt: string;
+}
+
+/** What a receipt says about the suite it ran: server-recorded, or not. */
+export type ReceiptSuiteOrigin = 'generation' | 'model' | 'owner-edited';
+
+/**
+ * The SHA-256 of the suite source that runs — `code`, or `spec` when `code` is
+ * empty, the choice `/api/run-tests` makes — or null for a suite with neither.
+ */
+export function suiteOriginDigest(testSuite: unknown): string | null {
+  const s = testSuite as { code?: unknown; spec?: unknown } | null | undefined;
+  const source = s && typeof s.code === 'string' && s.code ? s.code : s && typeof s.spec === 'string' && s.spec ? s.spec : '';
+  return source ? sha256Hex(source) : null;
+}
+
+/** The record a store writes beside the suite it stores, or null for an empty suite. */
+export function testSuiteOriginRecord(kind: TestSuiteOriginKind, testSuite: unknown, now: Date = new Date()): TestSuiteOrigin | null {
+  const suiteDigest = suiteOriginDigest(testSuite);
+  return suiteDigest ? { kind, suiteDigest, recordedAt: now.toISOString() } : null;
+}
+
+/**
+ * Where the suite a run executed came from. Server-recorded only when the
+ * project's origin record names the generation or a verified model answer
+ * *and* its digest is the digest of the source that ran; everything else —
+ * no record, an unverified store, a suite changed since it was stored, a
+ * repair draft — is `owner-edited`.
+ */
+export function suiteOriginOf(origin: unknown, executedSuiteSource: string): ReceiptSuiteOrigin {
+  const o = origin as Partial<TestSuiteOrigin> | null | undefined;
+  if (!o || (o.kind !== 'generation' && o.kind !== 'model') || typeof o.suiteDigest !== 'string') return 'owner-edited';
+  if (!executedSuiteSource || o.suiteDigest !== sha256Hex(executedSuiteSource)) return 'owner-edited';
+  return o.kind;
+}
+
+/** The sentence a reader sees beside a recorded run whose suite the server did not record as generated. */
+export const OWNER_EDITED_SUITE_NOTE = 'Suite edited by the owner — the passes test the suite as the owner wrote it, not as it was generated.';
 
 /** What a receipt is taken over — computed identically by the writer and every reader. */
 export function testRunSubject(source: {
@@ -286,6 +357,7 @@ export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
     (r.runner === undefined || isRunnerProvenance(r.runner)) &&
     (r.mutation === undefined || isMutationProbeReport(r.mutation)) &&
     (r.engine === undefined || isEngineProvenance(r.engine)) &&
+    (r.suiteOrigin === undefined || r.suiteOrigin === 'generation' || r.suiteOrigin === 'model' || r.suiteOrigin === 'owner-edited') &&
     Array.isArray(r.verdicts) &&
     r.verdicts.every(
       (entry) =>
@@ -366,6 +438,8 @@ export function viaContractOfRun(
  */
 export function executedPasses(receipt: TestRunReceipt | null, ids: string[]): number {
   if (!receipt) return 0;
-  const passed = new Set(receipt.verdicts.filter((v) => v.status === 'Passed').map((v) => v.id));
-  return [...new Set(ids)].filter((id) => passed.has(id)).length;
+  // The worse of every report for an id (CA-INT-01) — the rule the stored
+  // verdicts follow, so a counted pass is never a shown failure.
+  const resolved = resolveVerdicts(receipt.verdicts);
+  return [...new Set(ids)].filter((id) => resolved.get(id)?.status === 'Passed').length;
 }

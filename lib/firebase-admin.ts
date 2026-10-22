@@ -1017,6 +1017,8 @@ export async function deleteUserDataAndAccount(
   //    The per-account write ceiling (`lib/write-ceiling.ts`): counts and the
   //    ids of the last created project and ticket.
   await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+  //    The account's test-run slot and its runner seconds of the day (`lib/test-run-lock.ts`).
+  await tryDelete('test_run_locks', () => db.collection('test_run_locks').doc(uid).delete());
   // Note: rate_limits docs are pseudonymised (HMAC ids) and self-expire via a
   // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
 
@@ -1246,6 +1248,7 @@ export async function deleteUserDataAndAccount(
       erasureErrors.push(`second sweep: ${e instanceof Error ? e.message : String(e)}`);
     }
     await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+    await tryDelete('test_run_locks', () => db.collection('test_run_locks').doc(uid).delete());
   }
   if (erasureErrors.length > 0) {
     throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);

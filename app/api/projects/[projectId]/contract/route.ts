@@ -21,6 +21,7 @@ import { verifyModelReceiptIssuer } from '@/lib/model-receipt';
 import { claimReceiptUse } from '@/lib/model-receipt-uses';
 import { aiModelRecordOf } from '@/lib/ai-marking';
 import { TEST_SUITE_MODEL_FIELD } from '@/lib/project-artefact-writes';
+import { TEST_SUITE_ORIGIN_FIELD, testSuiteOriginRecord } from '@/lib/test-receipt';
 import { APP_VERSION } from '@/lib/version';
 
 /**
@@ -456,6 +457,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       [GENERATION_BINDING_FIELD]: binding,
       // Roadmap 3.0.17: the suite is now the package's own, so the Testing stage's record of who wrote its suite goes.
       [TEST_SUITE_MODEL_FIELD]: null,
+      // CA-INT-01: the suite came with the generation; a run of it changed since reads as owner-edited.
+      [TEST_SUITE_ORIGIN_FIELD]: testSuiteOriginRecord('generation', checked.testSuite),
     };
     // Every comparison above was made on the project as it was loaded. The four
     // fields are written only if the project has not been written since —

@@ -69,7 +69,7 @@ import TestPipeline from '@/components/testing/TestPipeline';
 import HandChecks from '@/components/testing/HandChecks';
 import type { StripTick } from '@/components/testing/ProgramStrip';
 import { readProgram } from '@/components/testing/program-reading';
-import { coveringTestRunReceipt, viaContractOfRun } from '@/lib/test-receipt';
+import { coveringTestRunReceipt, OWNER_EDITED_SUITE_NOTE, viaContractOfRun } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
@@ -1715,6 +1715,14 @@ export default function TestingSandboxPage() {
                 in this session. Before that they were a row of zeros and
                 dashes under a disabled button. */}
             {run.kind !== 'none' ? <TestPipeline written={testCases.length} run={run} /> : null}
+
+            {/* CA-INT-01 — the recorded run executed a suite the server did not
+                record storing as generated: said beside the counts. */}
+            {run.kind === 'recorded' && run.suiteEditedByOwner ? (
+              <div data-testing-suite-owner-edited="" className="mb-4">
+                <CcMessageStrip state="neutral">{OWNER_EDITED_SUITE_NOTE}</CcMessageStrip>
+              </div>
+            ) : null}
 
             {/* 3.0.10 — rule coverage against the original, the shared-selection
                 invariant and the mutation probe (external review F-01/F-02/F-05). */}
