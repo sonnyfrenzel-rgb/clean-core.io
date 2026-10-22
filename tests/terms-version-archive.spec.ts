@@ -163,11 +163,16 @@ test.describe('every archived version has a text, a date and a digest', () => {
       .readdirSync(path.resolve(ROOT, TERMS_ARCHIVE_DIR))
       .map((name) => `${TERMS_ARCHIVE_DIR}/${name}`)
       .sort();
-    const listed = ARCHIVED_TERMS_VERSIONS.map((v) => v.file).sort();
+    // From v2.3.0 a version is archived in German beside the English file
+    // (section 1.4), and the German file is listed with it.
+    const listed = ARCHIVED_TERMS_VERSIONS.flatMap((v) => [v.file, ...(v.translations ?? []).map((t) => t.file)]).sort();
     expect(onDisk, `${TERMS_ARCHIVE_DIR} and lib/terms-versions.ts disagree about what is archived`).toEqual(listed);
   });
 
   test('each digest is the SHA-256 of the archived wording', () => {
+    for (const t of ARCHIVED_TERMS_VERSIONS.flatMap((v) => v.translations ?? [])) {
+      expect(sha256(normaliseTermsText(read(t.file))), `${t.file} no longer hashes to the digest recorded for it`).toBe(t.sha256);
+    }
     for (const entry of ARCHIVED_TERMS_VERSIONS) {
       expect(
         sha256(normaliseTermsText(read(entry.file))),
@@ -276,6 +281,15 @@ test.describe('the archived text is the one that was in force', () => {
         .filter((c) => c.trim().length > 0).length;
       const items = blocks.reduce((n, b) => n + (b.kind === 'list' ? b.items.length : 1), 0);
       expect(items, `${entry.file} loses text between the file and the blocks`).toBe(chunks);
+    }
+    for (const t of ARCHIVED_TERMS_VERSIONS.flatMap((v) => v.translations ?? [])) {
+      const blocks = parseArchivedTerms(read(t.file));
+      expect(blocks.length, `${t.file} parses to nothing`).toBeGreaterThan(20);
+      expect(blocks[0], `${t.file} does not begin with its title`).toEqual({
+        kind: 'heading',
+        level: 1,
+        text: 'Nutzungsbedingungen und Community-Richtlinien',
+      });
     }
   });
 });
