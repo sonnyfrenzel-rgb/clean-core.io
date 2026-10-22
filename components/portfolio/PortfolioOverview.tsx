@@ -89,7 +89,7 @@ function FigureRow({
     <li
       data-portfolio-figure={figure}
       data-count={count}
-      className={`flex min-w-0 flex-col gap-1 border-b border-cc-line py-2 last:border-b-0 print:py-0.5${onPaper ? '' : ' print:hidden'}`}
+      className={`flex min-w-0 flex-col gap-1 border-b border-cc-line py-2 last:border-b-0 print:py-1${onPaper ? '' : ' print:hidden'}`}
     >
       <div className="flex min-w-0 items-center gap-2">
         {lead}
@@ -148,7 +148,7 @@ export default function PortfolioOverview({
   return (
     <div className="flex min-w-0 flex-col gap-4" data-portfolio-overview="" data-portfolio-print="">
       <div className="flex flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc print:border-0 print:p-0 print:shadow-none">
-        <h2 className="m-0 hidden text-[18px] font-extrabold text-cc-ink print:block">
+        <h2 className="m-0 hidden text-[22px] font-extrabold text-cc-ink print:block">
           {wt('portfolio.printHeading')} · {title}
         </h2>
         <p data-portfolio-coverage="" className="m-0 text-[15px] font-bold text-cc-ink">
@@ -302,7 +302,7 @@ export default function PortfolioOverview({
       <div className="print:hidden">
         <CcCard title={wt('portfolio.programsTitle')} level={2} count={view.programs.length}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-left text-[12px]" data-portfolio-table="">
+            <table className="doc-table w-full min-w-[640px] border-collapse text-left text-[12px]" data-portfolio-table="">
               <thead>
                 <tr className="border-b border-cc-line text-cc-ink-muted">
                   <th scope="col" className="py-2 pr-3 font-semibold">{wt('portfolio.colProgram')}</th>

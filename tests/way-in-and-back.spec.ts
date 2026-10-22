@@ -359,7 +359,9 @@ test.describe('(2) the quota has one name — analysis runs, counted as left', (
     expect(runsLeftLabel({ transformationsUsed: 1, transformationsLimit: 5 })).toBe('4 of 5 runs left');
     expect(runsLeftLabel({ transformationsUsed: 0, transformationsLimit: 5 })).toBe('5 of 5 runs left');
     expect(runsLeftLabel({ transformationsUsed: 9, transformationsLimit: 5 })).toBe('0 of 5 runs left');
-    expect(runsLeftLabel({ byokConfigured: true, transformationsUsed: 3, transformationsLimit: 5 })).toBe('Unlimited');
+    expect(runsLeftLabel({ byokConfigured: true, byokTestedAt: '2026-10-22T00:00:00Z', transformationsUsed: 3, transformationsLimit: 5 } as Parameters<typeof runsLeftLabel>[0])).toBe('Unlimited');
+    // An own key that never passed its test counts nothing (3.0.21).
+    expect(runsLeftLabel({ byokConfigured: true, transformationsUsed: 3, transformationsLimit: 5 })).toBe('2 of 5 runs left');
     expect(runsLeftLabel({ tier: 'enterprise' })).toBe('Unlimited');
     expect(runsLeftLabel({ transformationsUsed: 0, transformationsLimit: 1000 })).toBe('Unlimited');
     expect(QUOTA_NAME).toBe('Analysis runs');

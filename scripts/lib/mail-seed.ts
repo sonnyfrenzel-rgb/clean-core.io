@@ -60,6 +60,7 @@ import {
   ADDRESS_CONFIRMATION_SUBJECT,
 } from '../../lib/invitation-email';
 import { invitationLinkPath } from '../../lib/invitations';
+import { buildPortfolioInvitationEmail, PORTFOLIO_INVITATION_SUBJECT, portfolioInvitationLinkPath } from '../../lib/portfolio/invitation-email';
 import { BYOK_AGREEMENT_ACCEPTED_SUBJECT, BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementAcceptedMail, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
@@ -385,6 +386,34 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         buildAddressConfirmationEmail({ recipient: escapeHtml(ctx.recipient.address), link }),
         'Clean-Core.io — confirm your address',
       );
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: ADDRESS_CONFIRMATION_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  {
+    type: 'portfolio-invitation',
+    audience: 'nutzer',
+    source: 'app/api/portfolio/selections/[selectionId]/invitations/route.ts',
+    template: 'lib/portfolio/invitation-email.ts',
+    build: (ctx) => {
+      const link = `${APP_BASE_URL}${portfolioInvitationLinkPath(sampleId('seed-selection', ctx), sampleId('seed-invitation', ctx))}`;
+      const expires = new Date(ctx.now.getTime() + 14 * 24 * 60 * 60 * 1000).toUTCString().slice(5, 16);
+      const html = wrapEmailDocument(
+        buildPortfolioInvitationEmail({ inviterName: escapeHtml(SEED_NAME), recipient: escapeHtml(ctx.recipient.address), link, expires }),
+        'Clean-Core.io — portfolio invitation',
+      );
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: PORTFOLIO_INVITATION_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  {
+    type: 'portfolio-address-confirmation',
+    audience: 'nutzer',
+    source: 'app/api/portfolio/selections/[selectionId]/invitations/[invitationId]/accept/route.ts',
+    template: 'lib/invitation-email.ts',
+    build: (ctx) => {
+      const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'firebase-config.json'), 'utf8')) as { authDomain: string; apiKey: string };
+      const q = new URLSearchParams({ mode: 'verifyEmail', oobCode: unsignedToken('oob-portfolio', ctx).replace('.', ''), apiKey: cfg.apiKey, lang: 'en' });
+      const link = ownDomainVerifyEmailLink(`https://${cfg.authDomain}/__/auth/action?${q}`);
+      const html = wrapEmailDocument(buildAddressConfirmationEmail({ recipient: escapeHtml(ctx.recipient.address), link }), 'Clean-Core.io — confirm your address');
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: ADDRESS_CONFIRMATION_SUBJECT, html, text: htmlToText(html) };
     },
   },

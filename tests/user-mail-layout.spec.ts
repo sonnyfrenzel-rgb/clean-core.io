@@ -39,9 +39,9 @@ const built: { type: string; audience: 'nutzer' | 'betrieb'; mail: ProductionMai
 const userMails = built.filter((b) => b.audience === 'nutzer');
 
 test('the catalogue still has every mail, and the user mails are the eight expected', () => {
-  expect(built).toHaveLength(13);
+  expect(built).toHaveLength(17);
   expect(userMails.map((b) => b.type).sort()).toEqual(
-    ['address-confirmation', 'invitation', 'survey', 'tenant-approval', 'tenant-pending', 'tenant-revoke', 'welcome', 'welcome-approval'],
+    ['address-confirmation', 'byok-agreement-accepted', 'byok-agreement-ended', 'invitation', 'portfolio-address-confirmation', 'portfolio-invitation', 'survey', 'tenant-approval', 'tenant-pending', 'tenant-revoke', 'welcome', 'welcome-approval'],
   );
 });
 
