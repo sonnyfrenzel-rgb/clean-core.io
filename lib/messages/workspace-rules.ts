@@ -41,6 +41,10 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.noBaseline':
     'Rules can be confirmed once the process has been reconstructed from a signed run of this source. Run the analysis first.',
   'rules.openAnalyze': 'Open Analyze',
+  'rules.baselineTooLarge':
+    'The process reconstructed from this program is too large to store, so answers cannot be recorded yet. Nothing was changed.',
+  'rules.baselineFailed':
+    'The as-is process could not be stored just now, so your answers were not recorded. Try again in a moment.',
   // BusinessRulesEditor — editing
   'rules.editingTitle': 'Decide on the business rules',
   'rules.revisionOne': 'revision 1',

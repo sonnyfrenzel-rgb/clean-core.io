@@ -14,6 +14,7 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
+import { revisionDocData, storedRevisionXml } from '@/lib/process-revision-store';
 import {
   PROCESS_REVISION_COLLECTION,
   PROCESS_REVISION_FORMAT_VERSION,
@@ -239,7 +240,8 @@ function summaryOf(data: Record<string, unknown>): ProcessRevisionSummary {
 }
 
 function recordOf(data: Record<string, unknown>): ProcessRevisionRecord {
-  return { ...summaryOf(data), xml: String(data.xml ?? '') };
+  const doc = revisionDocData(data);
+  return { ...summaryOf(doc), xml: String(doc.xml ?? '') };
 }
 
 type AdminDb = Awaited<ReturnType<typeof getAdminDb>>['db'];
@@ -461,8 +463,18 @@ async function ensureBaseline(
     xml,
   };
 
+  const stored = storedRevisionXml(xml);
+  if (!stored) {
+    return {
+      refusal: NextResponse.json(
+        { error: 'The process reconstructed from this program is too large to keep as a revision.', code: 'too-large' },
+        { status: 413 },
+      ),
+    };
+  }
+
   try {
-    await revisionsOf(db, gate.projectId).doc('1').create(record);
+    await revisionsOf(db, gate.projectId).doc('1').create({ ...record, ...stored });
     return { record, created: true };
   } catch (err: unknown) {
     // Two calls reconstructed at once. The one that lost reads the winner's
@@ -615,8 +627,16 @@ export async function POST(
       xml: checked.xml,
     };
 
+    const stored = storedRevisionXml(checked.xml);
+    if (!stored) {
+      return NextResponse.json(
+        { error: 'This model is too large to keep as a revision.', code: 'too-large' },
+        { status: 413 },
+      );
+    }
+
     try {
-      await revisionsOf(db, gate.projectId).doc(String(record.revision)).create(record);
+      await revisionsOf(db, gate.projectId).doc(String(record.revision)).create({ ...record, ...stored });
     } catch (err: unknown) {
       if (!isAlreadyExists(err)) throw err;
       // Somebody else got this number between the read and the write. Nothing

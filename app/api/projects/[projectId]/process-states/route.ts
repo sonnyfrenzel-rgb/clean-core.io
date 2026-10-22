@@ -1,3 +1,4 @@
+import { revisionDocData } from '@/lib/process-revision-store';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
@@ -370,7 +371,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
       ),
     };
   }
-  const baseline = snap.data() as Record<string, unknown>;
+  const baseline = revisionDocData(snap.data() as Record<string, unknown>);
   const record = { ...baseline, savedAt: isoOf(baseline.savedAt) };
   if (!isProcessRevisionRecord(record)) {
     return {

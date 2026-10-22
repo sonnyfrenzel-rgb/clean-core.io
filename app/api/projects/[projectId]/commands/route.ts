@@ -1,3 +1,4 @@
+import { revisionDocData } from '@/lib/process-revision-store';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyRequestAuth,
@@ -68,7 +69,7 @@ async function rulesNow(
   if (Buffer.byteLength(source, 'utf8') > MAX_RULES_SOURCE_BYTES) return null;
   const baseline = await tx.get(ref.collection(PROCESS_REVISION_COLLECTION).doc('1'));
   if (!baseline.exists) return null;
-  const data = baseline.data() as Record<string, unknown>;
+  const data = revisionDocData(baseline.data() as Record<string, unknown>);
   const record = { ...data, savedAt: isoOf(data.savedAt) };
   if (!isProcessRevisionRecord(record) || sha256Hex(source) !== record.sourceSha256) return null;
   const statesSnap = await tx.get(ref.collection(PROCESS_STATE_COLLECTION).orderBy('revision', 'desc').limit(1));

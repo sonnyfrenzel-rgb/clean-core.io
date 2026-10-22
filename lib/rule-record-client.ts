@@ -23,7 +23,10 @@ export async function recordRuleChoices(input: {
       return { ok: false, text: rulesReadRefusal(outcome && !outcome.ok ? outcome.code : 'unreachable') || wt('rules.noBaseline'), moved: false };
     }
     const built = await ensureProcessBaseline(projectId);
-    const fresh = built.ok ? await readProcessStatesOutcome(projectId) : null;
+    // The run exists — the as-is process could not be kept. Saying "run the analysis first" here
+    // sent the reader back to a step already done.
+    if (!built.ok) return { ok: false, text: wt(built.code === 'too-large' ? 'rules.baselineTooLarge' : 'rules.baselineFailed'), moved: false };
+    const fresh = await readProcessStatesOutcome(projectId);
     if (!fresh || !fresh.ok) return { ok: false, text: wt('rules.noBaseline'), moved: false };
     publishProcessStates(projectId, fresh.view);
     revision = fresh.view.revision;
