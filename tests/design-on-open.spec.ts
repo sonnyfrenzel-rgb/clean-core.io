@@ -2,8 +2,10 @@ import { test, expect } from '@playwright/test';
 import { designOnOpen, type DesignOnOpenInput } from '../lib/design-on-open';
 
 /**
- * When opening Design writes the solution design (ADR-070, amended
- * 03.10.2026) — QA f63973a2cf05: the stale-design path had no test.
+ * Whether a design is wanted when Design opens, and whether the owner could
+ * start one — since owner decision 22.10.2026 opening writes nothing; the page
+ * uses this to wait for a generation another tab holds
+ * (QA f63973a2cf05: the stale-design path had no test).
  */
 const base: DesignOnOpenInput = {
   hasDesign: false,

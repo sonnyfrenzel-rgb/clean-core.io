@@ -142,13 +142,14 @@ export const START_NARRATIVE_CEILING_MS = 90_000;
 export const DESIGN_GENERATION_CEILING_MS = 120_000;
 
 /**
- * What opening Design costs, said where the reader arrives (the toolbar's
- * purpose, the next step) and on the stage while it runs. Two model calls under
- * the account's `design` switch; neither is counted against the analysis runs,
- * which are metered once per signed run (`app/api/gemini/route.ts`).
+ * What writing the solution design costs, said where the reader arrives (the
+ * next step) and on the stage while it runs. Two model calls under the
+ * account's `design` switch, made on the owner's click only (owner decision
+ * 22.10.2026); neither is counted against the analysis runs, which are metered
+ * once per signed run (`app/api/gemini/route.ts`).
  */
-export const DESIGN_ON_OPEN_COST =
-  'Opening Design writes the solution design with the model once — one call for the design, one for its non-functional proposals — not counted against your analysis runs.';
+export const DESIGN_WRITE_COST =
+  'Writing the solution design calls the model twice — once for the design, once for its non-functional proposals — on your click, not counted against your analysis runs.';
 
 /**
  * The words V25-A12 asks for, in one spelling.

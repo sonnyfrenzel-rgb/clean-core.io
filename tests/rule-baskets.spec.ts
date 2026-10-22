@@ -432,7 +432,7 @@ test.describe('the questions in Design, rendered', () => {
     expect(html).not.toContain('data-questions-accept=');
   });
 
-  test('answered questions fold away with their answer; the architecture options for IT follow', async () => {
+  test('answered questions fold away with their answer; the architecture options for IT are named in one line, taken in the IT view', async () => {
     const { ex, reading } = explain(PO);
     const tolerance = ex.questions.find((q) => q.ruleIds.includes(ruleId(reading, /lv_dev_pct > 5/)))!;
     const { byId } = entriesOf(questionChoices(tolerance, 'yes', ''));
@@ -440,9 +440,10 @@ test.describe('the questions in Design, rendered', () => {
     expect(html).toContain(`1 of ${ex.questions.length} questions answered`);
     expect(html).toContain(`data-question-done="${tolerance.id}"`);
     expect(html).not.toContain(`data-question="${tolerance.id}"`);
-    expect(html).toContain('Architecture options for IT');
-    expect(html).toContain('data-architecture-option="configure"');
-    expect(html).toContain('Keep the value in configuration');
+    // Owner decision 22.10.2026: the options left Design for the rule register of the IT view.
+    expect(html).not.toContain('data-architecture-option="configure"');
+    expect(html).toContain('IT checks where these values live:');
+    expect(html).toContain('1 proposal in the IT view');
   });
 
   test('the Business view’s opening says one sentence and leads into Design — no rule decision', async () => {

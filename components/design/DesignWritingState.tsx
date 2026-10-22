@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { DESIGN_GENERATION_CEILING_MS, DESIGN_ON_OPEN_COST } from '@/lib/model-stages';
+import { DESIGN_GENERATION_CEILING_MS, DESIGN_WRITE_COST } from '@/lib/model-stages';
 
 /**
  * The visible wait while the solution design is written (owner decision
- * 03.10.2026, ADR-070 amendment): what is happening, by whom, the seconds
+ * 03.10.2026; on the owner's click since 22.10.2026): what is happening, by whom, the seconds
  * waited against the ceiling, and what it costs — in place of the document
  * when there is none yet, above it when one written for a previous basis is
  * being replaced. The pattern of the project start's narrative wait
@@ -63,7 +63,7 @@ export default function DesignWritingState({
             {since === null ? 0 : waited} s waited · {ceiling} s at most
           </p>
           <p data-design-writing-cost="" className="m-0 text-[12px] text-cc-ink-muted">
-            {DESIGN_ON_OPEN_COST}
+            {DESIGN_WRITE_COST}
           </p>
         </div>
       </div>

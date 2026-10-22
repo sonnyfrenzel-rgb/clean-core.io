@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, CircleHelp, PenLine, Trash2, CheckCheck, Building2, Cog } from 'lucide-react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { Check, CircleHelp, PenLine, Trash2, CheckCheck } from 'lucide-react';
 import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -11,6 +11,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTextarea from '@/components/cc/Textarea';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
+import { cn } from '@/lib/utils';
 import { AsReadFromCode, WordedChip } from '@/components/workspace/WordedText';
 import { BUSINESS_RULES_ID, useIsOwner } from '@/components/workspace/BusinessRulesEditor';
 import type { SourceReading } from '@/lib/first-look';
@@ -25,20 +26,22 @@ import {
   acceptAllChoices,
   answerNeedsText,
   answerProblem,
-  architectureChoice,
   architectureOptions,
   questionChoices,
   questionFlow,
+  recommendedAnswerOf,
   type QuestionAnswer,
   type QuestionState,
+  type RecommendedAnswer,
 } from '@/lib/rule-questions';
+import { ANSWERS_READING, NO_BUSINESS_QUESTIONS, businessAnswersOf, type BusinessAnswersReading } from '@/lib/design-business-answers';
 import { recordRuleChoices } from '@/lib/rule-record-client';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
 import type { Project } from '@/lib/types';
-import { questionsAnsweredOf, questionsLater, wt, type WorkspaceMessageKey } from '@/lib/workspace-messages';
+import { itProposals, questionsAnsweredOf, questionsLater, wt, type WorkspaceMessageKey } from '@/lib/workspace-messages';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
@@ -53,9 +56,16 @@ import { engineVersionOfProject } from '@/lib/run-engine-version';
  * the program goes on to “Request approval”. Is the limit still right?") —
  * no rule id, no impact tag, no code on top; *More about it* folds the
  * explanation, the lines and the code. Four answers; "Accept all proposals"
- * confirms the code as it stands for every open question in one click. The
- * answered rules then get Design's architecture options for IT —
- * configuration or SAP standard — which are no longer business answers.
+ * confirms the code as it stands for every open question in one click. Each
+ * row frames the answer the engine recommends, with its reason under the row;
+ * nothing is pre-selected (owner decision 22.10.2026). The architecture
+ * options for IT — configuration or SAP standard — are no business answers:
+ * they are taken in the rule register of the IT view, and Design says in one
+ * line how many there are.
+ *
+ * The page hears what is answered (`onAnswers`): the solution design is
+ * written only on a click, once every question has an answer, and carries the
+ * answers as given requirements (`lib/design-business-answers.ts`).
  *
  * Stored as before: one need revision per answer through the `process-states`
  * route (`lib/rule-questions.ts`). The technical rules and the undetermined
@@ -138,11 +148,14 @@ interface CardProps {
   onRecord: (choices: StateChoiceInput[]) => void;
   onCancel?: () => void;
   say: Say;
+  /** The answer the engine recommends, framed in the row; never pre-selected. */
+  recommended: RecommendedAnswer | null;
 }
 
 /** One question: the statement, the question, four answers; the rest one fold down. */
-function QuestionCard({ state, explained, rules, owner, busy, onRecord, onCancel, say }: CardProps) {
+function QuestionCard({ state, explained, rules, owner, busy, onRecord, onCancel, say, recommended }: CardProps) {
   const { question } = state;
+  const reasonId = useId();
   const [chosen, setChosen] = useState<QuestionAnswer | null>(null);
   const [text, setText] = useState('');
   const pick = (answer: QuestionAnswer) => {
@@ -185,16 +198,28 @@ function QuestionCard({ state, explained, rules, owner, busy, onRecord, onCancel
                 type="button"
                 role="radio"
                 aria-checked={(chosen ?? state.answer) === answer}
+                aria-describedby={recommended?.answer === answer ? reasonId : undefined}
                 disabled={busy}
                 data-question-pick={answer}
+                data-question-recommended={recommended?.answer === answer ? '' : undefined}
                 onClick={() => pick(answer)}
-                className={ccSegmentClass((chosen ?? state.answer) === answer)}
+                className={cn(ccSegmentClass((chosen ?? state.answer) === answer), recommended?.answer === answer && 'ring-2 ring-cc-brand-strong ring-inset')}
               >
                 {ANSWER_ICON[answer]}
                 {wt(ANSWER_LABEL[answer])}
+                {recommended?.answer === answer ? (
+                  <span data-question-recommended-label="" className="ml-1 rounded-full border border-current px-1.5 text-[10px] leading-4 font-bold tracking-[0.04em] uppercase">
+                    {wt('questions.recommended')}
+                  </span>
+                ) : null}
               </button>
             ))}
           </span>
+          {recommended ? (
+            <p id={reasonId} data-question-recommended-reason={recommended.answer} className="m-0 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">
+              <span className="font-semibold text-cc-ink">{wt('questions.recommendedReason')}</span> {say(recommended.reason.text, recommended.reason.anchors[0] ?? null).text}
+            </p>
+          ) : null}
           {chosen ? (
             <div data-question-form={chosen} className="flex max-w-xl flex-col gap-2">
               <CcTextarea
@@ -256,14 +281,18 @@ export interface RuleQuestionsViewProps {
   registerHref: string | null;
 }
 
-/** Presentational: the flow, the answered questions, the architecture options. */
+/** Presentational: the flow, the answered questions, and one line on IT's options. */
 export function RuleQuestionsView({ explanation, entries, rules, owner, busy, error, recorded, onRecord, say, registerHref }: RuleQuestionsViewProps) {
   const flow = useMemo(() => questionFlow(explanation, entries), [explanation, entries]);
+  // Taken in the rule register of the IT view; Design names how many there are.
   const options = useMemo(() => architectureOptions(explanation, entries), [explanation, entries]);
   const accept = useMemo(() => acceptAllChoices(explanation, entries), [explanation, entries]);
   const byId = useMemo(() => new Map(explanation.rules.map((r) => [r.id, r])), [explanation]);
   const [editing, setEditing] = useState<string | null>(null);
   const explainedOf = (ids: readonly string[]) => ids.map((id) => byId.get(id)).filter((e): e is RuleExplanation => !!e);
+  const recommendedOf = (s: QuestionState) => recommendedAnswerOf(s.question, explanation);
+  // "Every question has an answer." is said once: by the strip right after the last answer, else by the line.
+  const allAnsweredNow = recorded && flow.shown.length === 0;
   const percent = flow.total ? Math.round((flow.answered / flow.total) * 100) : 0;
   const record = (choices: StateChoiceInput[]) => {
     setEditing(null);
@@ -307,7 +336,7 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
           ) : null}
           {recorded ? (
             <CcMessageStrip state="success" announce={true}>
-              {flow.shown.length ? wt('questions.recorded') : wt('questions.allAnswered')}
+              {allAnsweredNow ? wt('questions.allAnswered') : wt('questions.recorded')}
             </CcMessageStrip>
           ) : null}
           {error ? (
@@ -319,10 +348,10 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
           {flow.shown.length > 0 ? (
             <ol data-questions-open="" className="m-0 flex list-none flex-col gap-3 p-0">
               {flow.shown.map((s) => (
-                <QuestionCard key={s.question.id} state={s} explained={explainedOf(s.question.ruleIds)} rules={rules} owner={owner} busy={busy} onRecord={record} say={say} />
+                <QuestionCard key={s.question.id} state={s} explained={explainedOf(s.question.ruleIds)} rules={rules} owner={owner} busy={busy} onRecord={record} say={say} recommended={recommendedOf(s)} />
               ))}
             </ol>
-          ) : flow.total > 0 ? (
+          ) : flow.total > 0 && !allAnsweredNow ? (
             <p data-questions-all-answered="" className="m-0 text-[13px] font-semibold text-cc-ink">{wt('questions.allAnswered')}</p>
           ) : null}
           {flow.later > 0 ? <p data-questions-later="" className="m-0 text-[12px] font-medium text-cc-ink-muted">{questionsLater(flow.later)}</p> : null}
@@ -343,6 +372,7 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
                         onRecord={record}
                         onCancel={() => setEditing(null)}
                         say={say}
+                        recommended={recommendedOf(s)}
                       />
                     ) : (
                       <li key={s.question.id} data-question-done={s.question.id} data-question-answer={s.answer ?? 'none'} className="flex min-w-0 flex-col gap-1 border-t border-cc-line pt-2">
@@ -366,35 +396,16 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
           ) : null}
 
           {options.length > 0 ? (
-            <section data-architecture-options="" className="flex min-w-0 flex-col gap-2 border-t border-cc-line pt-3">
-              <h3 className="m-0 text-[14px] font-bold text-cc-ink">{wt('questions.architecture')}</h3>
-              <p className="m-0 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('questions.architectureLead')}</p>
-              <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                {options.map((o) => {
-                  const rule = rules.find((r) => r.id === o.ruleId);
-                  return (
-                    <li key={`${o.ruleId}-${o.kind}`} data-architecture-option={o.kind} data-architecture-rule={o.ruleId} data-architecture-taken={o.taken ? 'yes' : 'no'} className="flex min-w-0 flex-col gap-1 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
-                      <span className="flex flex-wrap items-center gap-2">
-                        {o.kind === 'standard' ? <Building2 size={14} aria-hidden={true} /> : <Cog size={14} aria-hidden={true} />}
-                        <span className="text-[13px] font-bold text-cc-ink">{wt(o.kind === 'standard' ? 'questions.optionStandard' : 'questions.optionConfigure')}</span>
-                        <span className="text-[12px] font-medium text-cc-ink-muted">{byId.get(o.ruleId)?.headline ?? rule?.title ?? o.ruleId}</span>
-                        <CcProvenanceChip value="reconstructed" />
-                      </span>
-                      <Said sentence={o.reason} say={say} mark="option" />
-                      {o.taken ? (
-                        <span className="text-[12px] font-semibold text-cc-ink">{wt('questions.optionTaken')}</span>
-                      ) : owner ? (
-                        <span>
-                          <CcButton variant="ghost" busy={busy} onClick={() => record([architectureChoice(o, entries[o.ruleId])])} data-architecture-take={o.ruleId}>
-                            {wt('questions.takeOption')}
-                          </CcButton>
-                        </span>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+            <p data-architecture-pointer="" data-architecture-count={options.length} className="m-0 flex flex-wrap items-center gap-2 border-t border-cc-line pt-3 text-[13px] font-medium text-cc-ink">
+              {wt('questions.itPointer')}
+              {registerHref ? (
+                <CcLinkButton href={registerHref} variant="ghost" data-architecture-pointer-link="">
+                  {itProposals(options.length)}
+                </CcLinkButton>
+              ) : (
+                <span>{itProposals(options.length)}</span>
+              )}
+            </p>
           ) : null}
 
           <p className="m-0 flex flex-wrap items-center gap-2 text-[12px] font-medium text-cc-ink-muted">
@@ -417,18 +428,22 @@ export default function RuleQuestions({
   projectId,
   reading: given,
   plainWording,
+  onAnswers,
 }: {
   project: Project | null;
   projectId: string;
   /** A reading handed in without parsing (a rendered test). */
   reading?: SourceReading | null;
   plainWording?: PlainWordingRecord | null;
+  /** Told what is answered, each time it changes — the page gates and feeds the solution design with it. */
+  onAnswers?: (reading: BusinessAnswersReading) => void;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   // The rules and their explanation are read for the engine of the project's signed run (3.0.20).
   const engineVersion = engineVersionOfProject(project);
   const owner = useIsOwner(project);
   const [read, setRead] = useState<SourceReading | null>(given ?? null);
+  const [readFailed, setReadFailed] = useState(false);
   useEffect(() => {
     if (given !== undefined || !source.trim()) return;
     let cancelled = false;
@@ -436,8 +451,10 @@ export default function RuleQuestions({
       if (cancelled) return;
       try {
         setRead(m.readSource(source, engineVersion));
+        setReadFailed(false);
       } catch {
         setRead(null);
+        setReadFailed(true);
       }
     });
     return () => {
@@ -469,6 +486,19 @@ export default function RuleQuestions({
     modelEnabled: plainModelEnabled(availability),
     initial: plainWording ?? null,
   });
+  // What the page hears: still reading, no question at all, or every question with its answer.
+  const answersReading = useMemo<BusinessAnswersReading>(() => {
+    if (!project) return ANSWERS_READING;
+    if (!source.trim() || readFailed) return NO_BUSINESS_QUESTIONS;
+    if (!reading) return ANSWERS_READING;
+    if (reading.ruleSet.rules.length === 0 || !explanation) return NO_BUSINESS_QUESTIONS;
+    if (explanation.questions.length === 0) return NO_BUSINESS_QUESTIONS;
+    if (outcome === null) return ANSWERS_READING;
+    return businessAnswersOf(explanation, entries);
+  }, [project, source, readFailed, reading, explanation, outcome, entries]);
+  useEffect(() => {
+    onAnswers?.(answersReading);
+  }, [onAnswers, answersReading]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recorded, setRecorded] = useState(false);

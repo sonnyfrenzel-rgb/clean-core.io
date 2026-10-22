@@ -9,21 +9,23 @@ import { signInViaLanding } from './helpers/sign-in';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { TERMS_VERSION } from '../lib/constants';
-import { DESIGN_ON_OPEN_COST } from '../lib/model-stages';
+import { DESIGN_WRITE_COST } from '../lib/model-stages';
 import { PHASE_PURPOSE } from '../lib/workflow-steps';
 import { nextOpenPoint } from '../lib/next-step';
 import type { Project } from '../lib/types';
 
 /**
- * Design writes what is not on record when it is opened (owner 03.10.2026:
- * "When I click Design, everything should be generated directly as well,
- * except the functional requirements"; ADR-070 and ADR-074, amended):
+ * What opening Design does about the solution design. Owner 03.10.2026 had it
+ * written on opening; owner decision 22.10.2026 replaced that: the business
+ * questions come first and the design is written on a click (ADR-102):
  *
- *   - the non-functional requirements are read by the engine on opening;
- *   - the solution design is written by the model, once, with a visible wait,
- *     its cost said, a ceiling, and "Try again" on a failure;
+ *   - opening Design writes nothing; "Generate the design" writes it once,
+ *     with a visible wait, its cost said, a ceiling, and "Try again" on a
+ *     failure (the example asks the business no question, so the action is
+ *     enabled once the questions are read);
  *   - a current design is never written again, the model switch and an
- *     invited reader start nothing, and two tabs opened together pay once.
+ *     invited reader start nothing, and a tab opened while another writes
+ *     waits for that one and pays nothing.
  *
  * No model is called: `/api/gemini` is answered with recorded fixtures.
  */
@@ -117,25 +119,34 @@ async function openDesign(page: Page, projectId: string) {
   await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
 }
 
+/** The owner's click: enabled once the questions are read — the example asks the business none. */
+async function generate(page: Page) {
+  await expect(page.locator('[data-design-write-gate]')).toHaveAttribute('data-design-write-gate', 'ready', { timeout: 120_000 });
+  const action = page.locator('[data-design-generate]');
+  await expect(action).toBeEnabled();
+  await action.click();
+}
+
 test.describe('what opening Design costs, said before the click', () => {
   test('the toolbar purpose and the next step name the one model write and that it is not an analysis run', () => {
-    expect(PHASE_PURPOSE.design).toMatch(/Opening it writes the solution design once with the model/);
+    // Owner decision 22.10.2026: the questions first, the design on a click.
+    expect(PHASE_PURPOSE.design).toMatch(/business questions come first; then the solution design is written with the model on your click/);
     expect(PHASE_PURPOSE.design).toMatch(/not counted against your analysis runs/);
-    expect(DESIGN_ON_OPEN_COST).toMatch(/not counted against your analysis runs/);
+    expect(DESIGN_WRITE_COST).toMatch(/not counted against your analysis runs/);
     const analysed = { name: 'p', legacyCode: 'REPORT z.', activeRunId: 'r', status: 'analyzed', analysis: '{}', cleanCoreScore: 50 } as unknown as Project;
     const point = nextOpenPoint(analysed);
     // QA f1d02d0dd36e: the next step is Design here, so the check is never skipped.
     expect(point?.key).toBe('design');
-    expect(point?.reason).toContain(DESIGN_ON_OPEN_COST);
-    // With the stage off nothing is written on opening, and the step says so instead.
+    expect(point?.reason).toContain(DESIGN_WRITE_COST);
+    // With the stage off nothing can be written, and the step says so instead.
     const off = nextOpenPoint(analysed, { modelStages: { design: false } });
     expect(off?.key).toBe('design');
-    expect(off?.reason).not.toContain(DESIGN_ON_OPEN_COST);
+    expect(off?.reason).not.toContain(DESIGN_WRITE_COST);
   });
 });
 
 test.describe('opening Design', () => {
-  test('writes a missing design once, with a visible wait and its cost; opening it again calls nothing', async ({ page }) => {
+  test('opening writes nothing; the click writes a missing design once, with a visible wait and its cost; opening it again calls nothing', async ({ page }) => {
     test.setTimeout(300_000);
     const seeded = await seedUndesigned('design-open-once');
     const log: ModelLog = { design: 0, proposals: 0 };
@@ -144,14 +155,19 @@ test.describe('opening Design', () => {
     await signInViaLanding(page, seeded.email, PASSWORD);
     await openDesign(page, seeded.projectId);
 
+    // Owner decision 22.10.2026: nothing is written on opening; the action waits for the click.
+    await expect(page.locator('[data-design-generate]')).toBeVisible({ timeout: 120_000 });
+    await page.waitForTimeout(2_000);
+    expect(log, 'no model call on opening').toEqual({ design: 0, proposals: 0 });
+    await expect(page.locator('[data-design-writing]')).toHaveCount(0);
+    await generate(page);
+
     // The wait is on screen, in place of the document: what, how long, what it costs.
     const writing = page.locator('[data-design-writing="here"]');
     await expect(writing).toBeVisible({ timeout: 60_000 });
     await expect(writing).toContainText('Writing the solution design (model)…');
     await expect(writing.locator('[data-design-writing-seconds]')).toContainText('120 s at most');
-    await expect(writing.locator('[data-design-writing-cost]')).toHaveText(DESIGN_ON_OPEN_COST);
-    // No button had to be found.
-    await expect(page.locator('[data-design-generate]')).toHaveCount(0);
+    await expect(writing.locator('[data-design-writing-cost]')).toHaveText(DESIGN_WRITE_COST);
 
     await expect(page.locator('[data-design-overview]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-design-overview]')).toContainText('Sales order creation');
@@ -233,6 +249,7 @@ test.describe('opening Design', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signInViaLanding(page, seeded.email, PASSWORD);
     await openDesign(page, seeded.projectId);
+    await generate(page);
     await expect(page.getByText('Generation failed.')).toBeVisible({ timeout: 120_000 });
     await expect(page.getByText('The model is busy. Nothing was generated — try again in a moment.')).toBeVisible();
     expect(log.design).toBe(1);
@@ -244,20 +261,20 @@ test.describe('opening Design', () => {
     expect(log.design).toBe(2);
   });
 
-  test('two tabs opened together write it once, and both show it', async ({ context }) => {
+  test('a tab opened while another writes it waits for that one, and both show it after one call', async ({ context }) => {
     test.setTimeout(300_000);
     const seeded = await seedUndesigned('design-open-twice');
     const log: ModelLog = { design: 0, proposals: 0 };
-    await answerModel(context, log, { delayMs: 4_000 });
+    await answerModel(context, log, { delayMs: 6_000 });
     const first = await context.newPage();
     await first.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(first, seeded.email, PASSWORD);
+    await openDesign(first, seeded.projectId);
+    await generate(first);
+    await expect(first.locator('[data-design-writing="here"]')).toBeVisible({ timeout: 60_000 });
     const second = await context.newPage();
     await second.setViewportSize({ width: 1440, height: 900 });
-    await Promise.all([
-      first.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' }),
-      second.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' }),
-    ]);
+    await second.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
     for (const p of [first, second]) await expect(p.locator('[data-design-overview]')).toBeVisible({ timeout: 180_000 });
     expect(log.design, 'one design call for two tabs').toBe(1);
   });

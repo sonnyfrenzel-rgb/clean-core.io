@@ -42,7 +42,7 @@ import { publishProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries, type EditorRule } from '@/lib/rules-editor';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { usePlainWording } from '@/hooks/usePlainWording';
-import { technicalKeepChoices } from '@/lib/rule-questions';
+import { ARCHITECTURE_OPTIONS_ID, architectureChoice, architectureOptions, technicalKeepChoices } from '@/lib/rule-questions';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
 import {
@@ -100,6 +100,12 @@ export interface RuleDecisionFlowProps {
   fallback?: React.ReactNode;
   /** A stored plain wording handed in without a fetch (a rendered test). */
   plainWording?: PlainWordingRecord | null;
+  /**
+   * Show the architecture options for IT under the rules — where a value the
+   * business answered lives in the new solution (owner decision 22.10.2026:
+   * taken here, in the rule register of the IT view, not in Design).
+   */
+  withArchitectureOptions?: boolean;
 }
 
 const DECISION_ICON: Record<RuleDecisionKind, React.ReactNode> = {
@@ -400,6 +406,7 @@ export default function RuleDecisionFlow({
   reload,
   fallback = null,
   plainWording,
+  withArchitectureOptions = false,
 }: RuleDecisionFlowProps) {
   const explanation = useMemo(() => {
     try {
@@ -410,6 +417,7 @@ export default function RuleDecisionFlow({
   }, [source, reading, engineVersion]);
   const entries = useMemo(() => ruleEntries(view), [view]);
   const flow = useMemo(() => (explanation ? ruleFlow(explanation, entries) : null), [explanation, entries]);
+  const options = useMemo(() => (explanation && withArchitectureOptions ? architectureOptions(explanation, entries) : []), [explanation, entries, withArchitectureOptions]);
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [recorded, setRecorded] = useState(false);
@@ -591,6 +599,42 @@ export default function RuleDecisionFlow({
             {wt('rules.goNext')}
           </CcButton>
         </span>
+      ) : null}
+      {options.length > 0 ? (
+        <section id={ARCHITECTURE_OPTIONS_ID} data-architecture-options="" className="flex min-w-0 scroll-mt-28 flex-col gap-2 border-t border-cc-line pt-3">
+          <h3 className="m-0 text-[14px] font-bold text-cc-ink">{wt('questions.architecture')}</h3>
+          <p className="m-0 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('questions.architectureLead')}</p>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {options.map((o) => {
+              const rule = byId.get(o.ruleId);
+              return (
+                <li key={`${o.ruleId}-${o.kind}`} data-architecture-option={o.kind} data-architecture-rule={o.ruleId} data-architecture-taken={o.taken ? 'yes' : 'no'} className="flex min-w-0 flex-col gap-1 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                  <span className="flex flex-wrap items-center gap-2">
+                    {o.kind === 'standard' ? <Building2 size={14} aria-hidden={true} /> : <Cog size={14} aria-hidden={true} />}
+                    <span className="text-[13px] font-bold text-cc-ink">{wt(o.kind === 'standard' ? 'questions.optionStandard' : 'questions.optionConfigure')}</span>
+                    <span className="text-[12px] font-medium text-cc-ink-muted">{explained.get(o.ruleId)?.headline ?? rule?.title ?? o.ruleId}</span>
+                    <CcProvenanceChip value="reconstructed" />
+                  </span>
+                  <Said sentence={o.reason} say={say} mark="option" />
+                  {o.taken ? (
+                    <span className="text-[12px] font-semibold text-cc-ink">{wt('questions.optionTaken')}</span>
+                  ) : owner ? (
+                    <span>
+                      <CcButton variant="ghost" busy={busy.has(o.ruleId)} onClick={() => void record([architectureChoice(o, entries[o.ruleId])])} data-architecture-take={o.ruleId}>
+                        {wt('questions.takeOption')}
+                      </CcButton>
+                    </span>
+                  ) : null}
+                  {errors[o.ruleId] ? (
+                    <CcMessageStrip state="error" announce={true}>
+                      {errors[o.ruleId]}
+                    </CcMessageStrip>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       ) : null}
     </div>
   );

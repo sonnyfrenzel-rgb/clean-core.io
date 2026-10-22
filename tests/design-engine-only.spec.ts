@@ -103,7 +103,7 @@ test.describe('on screen', () => {
     });
   }
 
-  test('an engine-only project writes its design on opening, and the prompt carries the engine evidence', async ({ page }) => {
+  test('an engine-only project writes its design on the click, and the prompt carries the engine evidence', async ({ page }) => {
     test.setTimeout(300_000);
     const seeded = await seedEngineOnly('design-engine-only');
     const prompts: string[] = [];
@@ -111,9 +111,11 @@ test.describe('on screen', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, seeded.email, PASSWORD);
     await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-    // Written on opening since 03.10.2026 (ADR-070, amended): no button to find.
+    // Owner decision 22.10.2026: nothing on opening; the example asks the business no question, so the action is enabled once read.
+    await expect(page.locator('[data-design-write-gate]')).toHaveAttribute('data-design-write-gate', 'ready', { timeout: 120_000 });
+    expect(prompts, 'no model call on opening').toHaveLength(0);
+    await page.locator('[data-design-generate]').click();
     await expect(page.locator('[data-design-section="overview"]')).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-design-generate]')).toHaveCount(0);
     expect(prompts, 'one design call and one for its proposals').toHaveLength(2);
 
     const prompt = prompts[0];
@@ -121,7 +123,7 @@ test.describe('on screen', () => {
     expect(prompt).toContain('Analysis Context: none');
     expect(prompt).toContain('BAPI_SALESORDER_CREATEFROMDAT2');
     expect(prompt).toMatch(/FR-\d{3} \[must\]/);
-    // The design waits for the contract on opening, so the route is in the prompt.
+    // The design is asked for after the contract is read, so the route is in the prompt.
     expect(prompt).toContain('"route"');
     // The schema is restated after the evidence, where the model reads last: a
     // live answer in CI of b879ad8b came back without its nodeAppBlueprint.

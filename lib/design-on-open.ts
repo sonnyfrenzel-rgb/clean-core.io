@@ -1,13 +1,17 @@
 /**
- * Whether opening the Design stage writes the solution design (ADR-070,
- * amended 03.10.2026). Pure, so the rule is held by a test rather than only by
- * the page that applies it.
+ * What opening the Design stage does about the solution design. Pure, so the
+ * rule is held by a test rather than only by the page that applies it.
+ *
+ * Since owner decision 22.10.2026 opening Design never writes the design: the
+ * business questions come first, and the owner asks for it with "Generate the
+ * design" (`lib/design-business-answers.ts` says when that is enabled). This
+ * says whether a design is wanted and whether the owner could start one now —
+ * the page then waits for a generation another tab of this browser holds.
  *
  * Wanted when there is none on record, or the one on record was written for a
- * previous basis — never again when a current one is there, which would cost a
- * model call for nothing. A changed source wants a new analysis first, not a
- * design for code nobody analysed. Started only by the owner: an invited
- * reader reads.
+ * previous basis — never again when a current one is there. A changed source
+ * wants a new analysis first, not a design for code nobody analysed. Only the
+ * owner starts one: an invited reader reads.
  */
 export interface DesignOnOpenInput {
   hasDesign: boolean;

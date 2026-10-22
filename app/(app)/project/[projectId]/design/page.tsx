@@ -35,7 +35,18 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import StageFooter from '@/components/StageFooter';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import { wt } from '@/lib/workspace-messages';
+import { designOpenQuestions, wt } from '@/lib/workspace-messages';
+import {
+  ANSWERS_READING,
+  businessAnswersDigest,
+  businessAnswersMoved,
+  businessAnswersPromptRule,
+  businessAnswersSection,
+  designWriteEnabled,
+  designWriteGate,
+  withBusinessAnswersBasis,
+  type BusinessAnswersReading,
+} from '@/lib/design-business-answers';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
 // Extracted Subcomponents
@@ -154,11 +165,16 @@ function modelFailureText(err: unknown): string {
  * the run's narrative only where it has one (coordinator decision,
  * 03.10.2026). An engine-only run used to leave the design with nothing to be
  * written from, and Transformation stopped behind it.
+ *
+ * The business answers of the Design questions follow the evidence as given
+ * requirements, and the questions still open are named as open (owner
+ * decision 22.10.2026, `lib/design-business-answers.ts`).
  */
 async function designContextFor(
   narrative: string | null,
   { source, evidence, keyUser = null }: { source: string | null; evidence: DesignEvidence | null; keyUser?: KeyUserReading | null },
   target: { deployment: 'public' | 'private' | null; engineVersion: string | null },
+  answers: BusinessAnswersReading = ANSWERS_READING,
 ): Promise<string> {
   const [{ buildRequirementSet }, { engineDesignContext }, { keyUserRouteBasis }] = await Promise.all([
     import('@/lib/functional-requirements'),
@@ -185,10 +201,13 @@ async function designContextFor(
     ? `Analysis Context (the run's model narrative, further context only):
 ${prepareAnalysisContext(narrative)}`
     : 'Analysis Context: none. The signed run was made without a model narrative; design from the engine evidence below.';
+  const answersPart = businessAnswersSection(answers);
   return `${narrativePart}
 
 Engine Evidence (the signed run, read from the code without a model):
-${engine}`;
+${engine}${answersPart ? `
+
+${answersPart}` : ''}`;
 }
 
 /**
@@ -229,9 +248,10 @@ export default function DesignPage() {
   const [nfrData, setNfrData] = useState<NFRData | null>(null);
   const [designError, setDesignError] = useState<string | null>(null);
   /**
-   * When the solution design this page is writing was started, or `null`
-   * (ADR-070, amended 03.10.2026: Design writes it on opening). `elsewhereSince`
-   * is the same for a generation another tab of this browser holds.
+   * When the solution design this page is writing was started, or `null`.
+   * It is written on the owner's click only (owner decision 22.10.2026: the
+   * business questions first). `elsewhereSince` is the same for a generation
+   * another tab of this browser holds.
    */
   const [generatingSince, setGeneratingSince] = useState<number | null>(null);
   const [elsewhereSince, setElsewhereSince] = useState<number | null>(null);
@@ -260,6 +280,12 @@ export default function DesignPage() {
 
   /** The signed source and the server's evidence, for the design prompt — kept current below. */
   const engineEvidenceRef = useRef<{ source: string | null; evidence: DesignEvidence | null; keyUser: KeyUserReading | null }>({ source: null, evidence: null, keyUser: null });
+  /** The business questions and their answers, as the questions above the canvas read them. */
+  const [businessAnswers, setBusinessAnswers] = useState<BusinessAnswersReading>(ANSWERS_READING);
+  const businessAnswersRef = useRef<BusinessAnswersReading>(ANSWERS_READING);
+  useEffect(() => {
+    businessAnswersRef.current = businessAnswers;
+  }, [businessAnswers]);
 
   /**
    * The design on record now, read again — what a page adopts when another
@@ -285,10 +311,10 @@ export default function DesignPage() {
   }, [projectId]);
 
   /**
-   * Writes the solution design. `open` is the generation the stage starts by
-   * itself when it is opened; `asked` is the reader's own Regenerate or Try
-   * again. Only `open` defers to a design another writer saved meanwhile — an
-   * asked regeneration is asked for.
+   * Writes the solution design. `asked` is the owner's own click — Generate,
+   * Write it without the open answers, Regenerate or Try again. `open` defers
+   * to a design another writer saved meanwhile; the stage no longer starts a
+   * generation by itself (owner decision 22.10.2026), so every call is asked.
    */
   const generateDesign = useCallback((analysis: string | null, mode: 'open' | 'asked' = 'asked'): Promise<void> => {
     const id = projectId as string;
@@ -325,6 +351,9 @@ export default function DesignPage() {
     // The design this page showed when it started — none, or one written for a
     // previous basis. Another design on record means somebody else wrote one.
     const seenDesign = projectRef.current?.solutionDesign ?? '';
+    // The business answers this design is written with — in its prompt, and as
+    // the basis stored with it, so a later change of an answer reads as stale.
+    const answersAtStart = businessAnswersRef.current;
     // One wait for the whole generation (`DESIGN_GENERATION_CEILING_MS`).
     let ceilingTimer: ReturnType<typeof setTimeout> | undefined;
     const ceiling = new Promise<never>((_, reject) => {
@@ -346,10 +375,16 @@ export default function DesignPage() {
         return;
       }
       const route = projData?.extensibilityRoute || SIDE_BY_SIDE_ROUTE;
-      const designContext = await designContextFor(analysis, engineEvidenceRef.current, {
-        deployment: projData?.s4Deployment === 'public' ? 'public' : projData?.s4Deployment === 'private' ? 'private' : null,
-        engineVersion: signedEngineVersionOf(projData),
-      });
+      const designContext = await designContextFor(
+        analysis,
+        engineEvidenceRef.current,
+        {
+          deployment: projData?.s4Deployment === 'public' ? 'public' : projData?.s4Deployment === 'private' ? 'private' : null,
+          engineVersion: signedEngineVersionOf(projData),
+        },
+        answersAtStart,
+      );
+      const answersRule = businessAnswersPromptRule(answersAtStart);
       const isAbapCloud = !isSideBySideRoute(route);
       // 3.0.18 item 13 (QM-07, FI-F02): the RAP variant the package will be — a custom entity has no table, BDEF or DCL.
       const designSource = engineEvidenceRef.current.source ?? projData?.legacyCode ?? null;
@@ -396,7 +431,9 @@ ${SAP_REFERENCE_PROMPT_RULES}
 
 OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
-${DESIGN_CONSISTENCY_PROMPT_RULE} ${RAP_TEMPLATE_PROMPT_RULE} ${prePostingPromptRule(designSource, 'rap')}
+${DESIGN_CONSISTENCY_PROMPT_RULE} ${RAP_TEMPLATE_PROMPT_RULE} ${prePostingPromptRule(designSource, 'rap')}${answersRule ? `
+
+${answersRule}` : ''}
 
 ${designContext}
 
@@ -448,7 +485,9 @@ ${SAP_REFERENCE_PROMPT_RULES}
 
 OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
-${DESIGN_CONSISTENCY_PROMPT_RULE} ${prePostingPromptRule(designSource, 'cap')}
+${DESIGN_CONSISTENCY_PROMPT_RULE} ${prePostingPromptRule(designSource, 'cap')}${answersRule ? `
+
+${answersRule}` : ''}
 
 ${designContext}
 
@@ -524,6 +563,9 @@ ${DESIGN_ANSWER_REMINDER}`;
         }
       } catch { /* NFR generation failure is non-critical */ }
 
+      // The design as stored: the model's text with the digest of the answers it
+      // was written with, so a later change of an answer reads as stale.
+      if (answersAtStart.state === 'ready') responseText = withBusinessAnswersBasis(responseText, businessAnswersDigest(answersAtStart));
       const projectDoc = doc(db, 'projects', projectId as string);
       const savedElsewhere: { data: Record<string, unknown> | null } = { data: null };
       await runTransaction(db, async (tx) => {
@@ -588,28 +630,7 @@ ${DESIGN_ANSWER_REMINDER}`;
   const keyUserList = keyUserSteps.state === 'ready' ? keyUserSteps.list : null;
   const keyUserReading = keyUserSteps.state === 'ready' ? keyUserSteps.reading : null;
 
-  // The generation the stage starts on opening (ADR-070, amended 03.10.2026),
-  // held until `/api/model-stages` has answered: with the stage off or no key,
-  // nothing is asked of the model and the reason is on screen instead.
-  const [autoStart, setAutoStart] = useState<{ narrative: string | null } | null>(null);
   const designAvailable = modelAvailability.enabled('design');
-  // It also waits for the contract and the findings (a few hundred ms), so
-  // the prompt carries the route and the levels as a Regenerate would.
-  const evidenceSettled = designEvidence.state !== 'loading';
-  useEffect(() => {
-    if (autoStart === null || modelAvailability.loading || !evidenceSettled) return;
-    // Started from a task, not from the effect body: the effect only decides
-    // that the answer is in; a dependency change before it runs reschedules it,
-    // and StrictMode's second run finds the first one cleared.
-    const timer = setTimeout(() => {
-      setAutoStart(null);
-      if (designAvailable) {
-        console.log('[Design] Writing the solution design on opening');
-        void generateDesignRef.current(autoStart.narrative, 'open');
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [autoStart, modelAvailability.loading, designAvailable, evidenceSettled]);
 
   // A tab that is closed or reloaded mid-generation gives its lease back, so
   // the next opening is not kept waiting for a call nobody will save.
@@ -656,7 +677,9 @@ ${DESIGN_ANSWER_REMINDER}`;
         setProject(data);
         const stored = data as { nonFunctionalRequirements?: NFRData | null };
         const stale = staleness(data);
-        // Written on opening (ADR-070, amended 03.10.2026): `designOnOpen`.
+        // Never written on opening (owner decision 22.10.2026): the business
+        // questions come first and the owner asks for the design. A generation
+        // another tab of this browser holds is still waited for (`designOnOpen`).
         const owner = isProjectOwner(data, getAuth().currentUser?.uid ?? null);
         setIsOwner(owner);
         const { wanted, canStart } = designOnOpen({
@@ -675,18 +698,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         }
         if (wanted && canStart) {
             const elsewhere = otherTabWriting(projectId as string, DESIGN_TAB);
-            if (elsewhere) {
-              setElsewhereSince(elsewhere.since);
-            } else {
-              // Started above once the stage's availability is known: a stage
-              // that is off, or has no key, gets its reason on screen instead
-              // of a request the proxy will refuse.
-              // The narrative is further context where the run has one.
-              const narrative = data.analysis
-                ? typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis
-                : null;
-              setAutoStart({ narrative });
-            }
+            if (elsewhere) setElsewhereSince(elsewhere.since);
             setLoading(false);
         } else if (data.solutionDesign) {
             setLoading(false);
@@ -700,8 +712,8 @@ ${DESIGN_ANSWER_REMINDER}`;
             setLoading(false);
         } else {
             // No run, no source, a source changed after the run, or a reader:
-            // nothing is generated on opening. The document region names what
-            // is missing, or offers "Generate the design".
+            // the document region names what is missing, or offers "Generate
+            // the design".
             setLoading(false);
         }
       } else {
@@ -877,14 +889,21 @@ ${DESIGN_ANSWER_REMINDER}`;
   const phases = workflowSteps(project, { keyUserList: keyUserSteps.state === 'ready' ? keyUserSteps.list : null });
   // E01-F01-US02: a design or a sign-off left over from a previous source.
   const stale = staleness(project);
-  const designStale = Boolean(design) && stale.design;
+  // Owner decision 22.10.2026: a design written before the business answers on
+  // record now needs regenerating, like one written for a previous analysis.
+  const answersMoved = businessAnswersMoved(design, businessAnswers);
+  const designStale = Boolean(design) && (stale.design || answersMoved);
   const staleNotes = [
     ...(stale.sourceChanged ? ['The source changed after the signed run. Re-run the analysis in stage 1.'] : []),
-    ...(designStale && !stale.sourceChanged
+    ...(design && stale.design && !stale.sourceChanged
       ? [`This design was generated for ${previousBasis(project)}. Regenerate it — the analysis it was written from no longer describes the code under review.`]
       : []),
+    ...(answersMoved && !stale.sourceChanged ? [wt('design.answersMoved')] : []),
     ...(stale.signOff ? [`The sign-off below was given for ${previousBasis(project)}. Unlock it and confirm the target architecture again.`] : []),
   ];
+  const onlyAnswersMoved = answersMoved && !stale.sourceChanged && !stale.design && !stale.signOff;
+  // Step 1 is the questions: "Generate the design" waits until each has an answer.
+  const writeGate = designWriteGate(businessAnswers);
   // The sign-off is current when it was given for the code under review —
   // `stale.signOff` says when it was not (a source or profile change after it).
   // A design document older than the analysis is the document's state and is
@@ -921,14 +940,11 @@ ${DESIGN_ANSWER_REMINDER}`;
   };
 
   // The wait, wherever the design is being written: this page, an earlier
-  // mount of it, or another tab. A start still waiting for the model switch
-  // shows it too, so the stage never flashes an empty state before it.
-  const pendingOpen = autoStart !== null && (modelAvailability.loading || designAvailable);
+  // mount of it, or another tab.
   const writingSince = generatingSince ?? elsewhereSince;
   const writingState =
-    writingSince !== null || pendingOpen ? (
+    writingSince !== null ? (
       <DesignWritingState
-        // `pendingOpen` has not started yet; it counts from its first second.
         since={writingSince}
         step={loadingMessage}
         elsewhere={generatingSince === null && elsewhereSince !== null}
@@ -1120,9 +1136,33 @@ ${DESIGN_ANSWER_REMINDER}`;
         illustration={<FileText size={32} aria-hidden={true} className="text-cc-ink-muted" />}
         title="No solution design yet"
         action={
-          <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={generating} onClick={regenerate} data-design-generate="">
-            {designError ? 'Try again' : 'Generate the design'}
-          </CcButton>
+          <span data-design-write-gate={writeGate.kind} className="flex flex-col items-center gap-2">
+            <CcButton
+              variant="primary"
+              density="cozy"
+              icon={<RefreshCw size={16} aria-hidden={true} />}
+              busy={generating}
+              disabled={!designWriteEnabled(writeGate)}
+              aria-describedby={writeGate.kind === 'ready' ? undefined : 'design-generate-reason'}
+              onClick={regenerate}
+              data-design-generate=""
+            >
+              {designError ? wt('design.tryAgain') : wt('design.generate')}
+            </CcButton>
+            {writeGate.kind !== 'ready' ? (
+              <span id="design-generate-reason" data-design-generate-reason="" className="text-[13px] font-medium text-cc-ink-muted">
+                {writeGate.kind === 'open' ? designOpenQuestions(writeGate.open) : wt('design.readingQuestions')}
+              </span>
+            ) : null}
+            {writeGate.kind === 'open' ? (
+              <span className="flex flex-col items-center gap-1">
+                <CcButton variant="ghost" busy={generating} onClick={regenerate} data-design-generate-without="">
+                  {wt('design.writeWithoutOpen')}
+                </CcButton>
+                <span className="text-[12px] font-medium text-cc-ink-muted">{wt('design.writeWithoutOpenNote')}</span>
+              </span>
+            ) : null}
+          </span>
         }
       >
         {project?.analysis
@@ -1236,7 +1276,7 @@ ${DESIGN_ANSWER_REMINDER}`;
 
   return (
     <StageFrame stage="design" className="min-h-screen">
-      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
+      <StaleNotice title={onlyAnswersMoved ? wt('design.answersMovedTitle') : `Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <ReplaceStoredBox
         open={replaceDesignAsk}
@@ -1298,9 +1338,11 @@ A design merely older than the analysis is
       </StageHeader>
 
       {/* Owner decision 21.10.2026 — the new set-up of the business rules: the
-          questions a business sets, a few at a time, before Transformation. */}
+          questions a business sets, a few at a time, before Transformation.
+          Owner decision 22.10.2026 — step 1: the design below is written on a
+          click, once they are answered, and carries the answers. */}
       <div className="mb-12">
-        <RuleQuestions project={project} projectId={projectId as string} />
+        <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />
       </div>
 
       <div className="mb-12">

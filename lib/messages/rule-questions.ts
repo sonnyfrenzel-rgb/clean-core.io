@@ -44,6 +44,16 @@ export const RULE_QUESTION_MESSAGES = {
   'questions.openRegister': 'Open the rule register',
   'questions.openDesign': 'Answer them in Design',
   'questions.undeterminedTag': 'Not determined',
+  'questions.recommended': 'Recommended',
+  'questions.recommendedReason': 'Why recommended:',
+  'questions.itPointer': 'IT checks where these values live:',
+  'design.generate': 'Generate the design',
+  'design.tryAgain': 'Try again',
+  'design.writeWithoutOpen': 'Write it without the open answers',
+  'design.writeWithoutOpenNote': 'The design then names these questions as open; answer them later and regenerate.',
+  'design.readingQuestions': 'Reading the business questions first…',
+  'design.answersMovedTitle': 'Written before the latest business answers',
+  'design.answersMoved': 'The business answers changed after this design was written. Regenerate it so the design carries them.',
   'questions.technicalNote':
     'Plausibility checks, technical limits, test data and run options. Confirming them says they stay as coded; it is recorded like any answer and is not counted as confirmed by the business.',
 } as const;
@@ -51,6 +61,16 @@ export const RULE_QUESTION_MESSAGES = {
 /** "3 of 7 questions answered". */
 export function questionsAnsweredOf(answered: number, total: number): string {
   return `${answered} of ${total} ${total === 1 ? 'question' : 'questions'} answered`;
+}
+
+/** "Answer the 3 open business questions first". */
+export function designOpenQuestions(n: number): string {
+  return n === 1 ? 'Answer the 1 open business question first' : `Answer the ${n} open business questions first`;
+}
+
+/** "3 proposals in the IT view". */
+export function itProposals(n: number): string {
+  return n === 1 ? '1 proposal in the IT view' : `${n} proposals in the IT view`;
 }
 
 /** "4 more questions after these". */

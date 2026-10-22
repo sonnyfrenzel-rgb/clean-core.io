@@ -312,8 +312,14 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // A stage is a tool of the workspace since roadmap 3.0.1: the way across is
     // the tools bar under the stage header, not a "Continue to …" button.
     await openTool(page, 'design');
-    // The design is written on opening (ADR-070, amended 03.10.2026) and its
-    // document opens on the group "What we build", which holds the blueprint.
+    // The design is written on the owner's click once the business questions
+    // are read (owner decision 22.10.2026); with questions open, the secondary
+    // action writes it and names them as open. Its document opens on the group
+    // "What we build", which holds the blueprint.
+    const gate = page.locator('[data-design-write-gate]');
+    await expect(gate).toHaveAttribute('data-design-write-gate', /^(ready|open)$/, { timeout: 120_000 });
+    if ((await gate.getAttribute('data-design-write-gate')) === 'open') await page.locator('[data-design-generate-without]').click();
+    else await page.locator('[data-design-generate]').click();
     // Design and its NFR proposals are two model calls in sequence, saved in one
     // write (eb8987e0): wait as long as the product itself waits, not 45 s.
     await expect(page.locator('[data-design-section="blueprint"]')).toBeVisible({ timeout: DESIGN_GENERATION_CEILING_MS + 15_000 });

@@ -34,7 +34,7 @@ export interface Capability {
  * happens — a tool of the tool bar, or the view. No duration is stated: none is
  * measured. What a step costs follows the metering: the analysis runs are
  * counted once per signed run (`app/api/gemini/route.ts`); Design's cost is
- * `DESIGN_ON_OPEN_COST` (`lib/model-stages.ts`).
+ * `DESIGN_WRITE_COST` (`lib/model-stages.ts`).
  */
 export const CAPABILITIES: Capability[] = [
   {
@@ -68,7 +68,7 @@ export const CAPABILITIES: Capability[] = [
     benefit:
       'Turns "use released APIs" into named successors for the objects your code actually uses, and requirements that can be traced to the line they came from.',
     effort:
-      'Opening Design writes the solution design with the model — two calls, not counted against your analysis runs. The functional requirements come from the code, without a model.',
+      'The business questions come first; the solution design is then written with the model on your click — two calls, not counted against your analysis runs. The functional requirements come from the code, without a model.',
     limit:
       'The design is a Model proposal until you record the target you accept. Where SAP names no released successor, it says so rather than inventing one.',
   },

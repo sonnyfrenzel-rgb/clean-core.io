@@ -25,7 +25,9 @@
  *     engine proposal is to move the value into configuration or to SAP
  *     standard (`lib/rule-standard-hints.ts`): what Design proposes, recorded
  *     with the answers the route already accepts (`standard`, a customizing
- *     value source). They are no longer business answers.
+ *     value source). They are no longer business answers, and since owner
+ *     decision 22.10.2026 they are taken in the rule register of the IT view;
+ *     Design names how many there are in one line.
  *
  * Nothing new is stored: every answer is a choice the route already accepts,
  * and an older record with *Move to configuration* or *Move to SAP standard*
@@ -120,6 +122,31 @@ export function answerTextOf(question: Pick<RuleQuestion, 'ruleIds'>, entries: R
 /** Answered: anything but a question for somebody else, which is still open. */
 export const isAnswered = (answer: QuestionAnswer | null): boolean => answer !== null && answer !== 'unsure';
 
+/* -------------------------------------------------------- recommendation */
+
+export interface RecommendedAnswer {
+  answer: QuestionAnswer;
+  /** The engine's reason for its proposal, one sentence with its lines. */
+  reason: ExplainedSentence;
+}
+
+/**
+ * The answer the engine proposes for a question, read from the proposal of its
+ * weightiest rule (owner decision 22.10.2026: the recommendation is shown in
+ * every question row, nothing is pre-selected). Keep, Move to configuration
+ * and Move to SAP standard all read as *Yes, that's right* — the last two are
+ * IT's options on top of a kept value; Change the value reads as *No, it
+ * should be …*, Drop as *We don't need it any more*. Null when the rule has no
+ * explanation.
+ */
+export function recommendedAnswerOf(question: Pick<RuleQuestion, 'ruleIds'>, explanation: Pick<RuleSetExplanation, 'rules'>): RecommendedAnswer | null {
+  const lead = explanation.rules.find((r) => r.id === question.ruleIds[0]);
+  if (!lead) return null;
+  const kind = lead.proposal.kind;
+  const answer: QuestionAnswer = kind === 'change-value' ? 'change' : kind === 'drop' ? 'drop' : 'yes';
+  return { answer, reason: lead.proposal.reason };
+}
+
 /* ------------------------------------------------------------------ flow */
 
 export interface QuestionState {
@@ -175,6 +202,9 @@ export const isTechnicalKeep = (entry: Pick<StateEntry, 'state' | 'note'> | null
   entry?.state === 'keep' && (entry.note ?? '').trim() === TECHNICAL_KEEP_NOTE;
 
 /* ------------------------------------------------- architecture options (IT) */
+
+/** The place of the architecture options in the rule register of the IT view. */
+export const ARCHITECTURE_OPTIONS_ID = 'architecture-options';
 
 export type ArchitectureOptionKind = 'configure' | 'standard';
 

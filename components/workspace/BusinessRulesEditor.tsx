@@ -427,11 +427,14 @@ export default function BusinessRulesEditor({
   project,
   projectId,
   reading,
+  withArchitectureOptions = false,
 }: {
   project: Project | null;
   projectId: string;
   /** The first look's reading of the source — the same rule set, not a second parse. */
   reading: SourceReading | null;
+  /** The rule register of the IT view: IT's architecture options stand under the rules. */
+  withArchitectureOptions?: boolean;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const owner = useIsOwner(project);
@@ -658,6 +661,7 @@ export default function BusinessRulesEditor({
             view={view}
             owner={owner}
             reload={reload}
+            withArchitectureOptions={withArchitectureOptions}
             fallback={
               <>
               {openRules.length > 0 && answered.length > 0 ? (
