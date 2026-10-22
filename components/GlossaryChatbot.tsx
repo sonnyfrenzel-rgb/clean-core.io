@@ -448,7 +448,7 @@ export default function GlossaryChatbot() {
       return;
     }
 
-    const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false);
+    const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false, 'glossary');
     if (moved()) return;
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
@@ -579,7 +579,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
       const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
-      const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false);
+      const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false, 'glossary');
       // Asked outside a project; the reader has since opened one, where this
       // panel answers from that project's evidence only.
       if (currentProjectRef.current !== null || superseded()) return;

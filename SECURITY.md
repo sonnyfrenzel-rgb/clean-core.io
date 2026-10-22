@@ -198,6 +198,7 @@ Firestore
 - **Not metered**: re-analysing the same input fingerprint, the first run of each starter example, enterprise-tier accounts and accounts using their own model key (BYOK). There are no hardcoded super-admins.
 - **Refund**: `refundRunQuota(…)` gives the reservation back when the run fails (best-effort, never below 0, a failure is logged).
 - **Client**: there is no client-side counter any more — quota is only enforced server-side.
+- **Model proxy** (`/api/gemini`, since 3.0.21): every call names its stage (`lib/model-call-stage.ts`; a call without one is refused with `stage-required`), and the stage bounds the answer's output tokens. Calls served with the community key count against a daily budget per UTC day (`lib/platform-model-budget.ts`, `PLATFORM_MODEL_DAILY_CALLS`, default 2,000); once it is spent, a circuit breaker refuses further community-key calls with `platform-model-budget-exhausted` until midnight UTC. Calls on an account's own key are not counted. Model receipts bind the SHA-256 of the prompt and carry a random id; the stores that check a receipt without its text accept each receipt for one artefact only (`lib/model-receipt-uses.ts`), and `/api/runs/create` accepts a narrative receipt only under the `analyze` stage.
 - **Prerequisite**: Cloud Run service account needs `Cloud Datastore User` role for Firestore write access.
 
 ---
@@ -355,6 +356,7 @@ proven on the deployed profile.
 | `PILOT_APPROVAL_SECRET` | Yes | HMAC key of the tenant approval links (at least 16 characters, §3.4) |
 | `RESEND_WEBHOOK_SECRET` | Yes, for delivery events | Svix signature of the mail provider's webhook; unset = the webhook answers 503 |
 | `BYOK_ENCRYPTION_KEY` | Yes | AES-256-GCM key for stored own model keys (BYOK), version 1 (`lib/byok-key.ts`). Unset or not 32 bytes = the production deploy stops before deploying; on a running revision, storing a key is refused and `/api/health` reports degraded. Never falls back to `S4_ENCRYPTION_KEY` |
+| `PLATFORM_MODEL_DAILY_CALLS` | No | Daily cap on model calls served with the community key (positive whole number; unset or invalid = 2,000). Own keys are not counted (§6) |
 | `S4_HOST_ALLOWLIST` | Recommended | Comma-separated SAP host suffixes for SSRF allowlist |
 | `RUNNER_URL` | Yes, for test execution | URL of the isolated mock runner (`clean-core-runner`). Unset = a deployed app runs no tests (fail closed) |
 | `RUNNER_LIVE_URL` | No (live path locked) | URL of the isolated live runner (`clean-core-runner-live`). Unset = no live runs, even with the lock lifted |

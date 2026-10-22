@@ -569,19 +569,16 @@ export async function POST(req: NextRequest) {
     // `/api/model-stages`. Putting a client-supplied reason in the signed run
     // would sign a sentence the client chose.
     const narrativeAsSubmitted = typeof analysis === 'string' ? analysis : '';
-    // No `stage` asked for, deliberately. The naming and statements stores
-    // require their stage
-    // because a receipt there *is* the permission to store under a switch. Here
-    // the receipt decides nothing about whether the run is created — only
-    // whether its narrative may name a provider and a model — and the narrative
-    // is the Analyze stage's by construction (both callers, `analyze/page.tsx`
-    // and `lib/analysis-run.ts`, ask under 'analyze'). Requiring it would turn
-    // every run with a receipt from before the stage field into "origin not
-    // established" for no gain in what the signed run claims.
+    // Under 'analyze' (roadmap 3.0.21, CA-INT-02). The narrative is the Analyze
+    // stage's by construction — both callers, `analyze/page.tsx` and
+    // `lib/analysis-run.ts`, ask under 'analyze' — so a receipt minted under
+    // any other stage, or under none, is not a receipt for this narrative. A
+    // receipt lives ten minutes, so none from before the stage field remains.
     const receiptVerdict = verifyModelReceipt(body.modelReceipt, {
       uid: decodedToken.uid,
       text: narrativeAsSubmitted,
       key: signingKey,
+      stage: 'analyze',
     });
     const attested = receiptVerdict.ok ? receiptVerdict.receipt : null;
     if (!receiptVerdict.ok && receiptVerdict.refusal !== 'absent') {

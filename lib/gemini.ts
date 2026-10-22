@@ -1,5 +1,5 @@
 import { getAuth } from '@/lib/firebase';
-import type { ModelStage } from '@/lib/model-stages';
+import type { ModelCallStage } from '@/lib/model-call-stage';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import type { LeaseReference } from '@/lib/transformation/lease';
@@ -82,7 +82,8 @@ export async function callGeminiWithReceipt(
   prompt: string,
   modelName: string = PRODUCT_GEMINI_MODEL,
   jsonResponse: boolean = false,
-  stage?: ModelStage,
+  /** Required since 3.0.21 (SEC-01): the route refuses a call that names none. */
+  stage: ModelCallStage,
   /**
    * Roadmap 1.8 — lets a caller stop *waiting*. It does not stop the call: the
    * route below runs to completion on the server whatever this browser does,
@@ -154,7 +155,8 @@ export async function callGemini(
   prompt: string,
   modelName: string = PRODUCT_GEMINI_MODEL,
   jsonResponse: boolean = false,
-  stage?: ModelStage,
+  /** Required since 3.0.21 (SEC-01): the route refuses a call that names none. */
+  stage: ModelCallStage,
   signal?: AbortSignal,
   options?: CallOptions,
 ): Promise<string> {
