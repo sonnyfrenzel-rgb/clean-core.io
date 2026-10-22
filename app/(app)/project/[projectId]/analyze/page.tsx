@@ -8,7 +8,7 @@ import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import { isUnchangedShippedExample } from '@/lib/shipped-example-fingerprint';
-import { looksLikeAbap } from '@/lib/abap-input-check';
+import { declarationOperandSentence, invalidDeclarationOperands, looksLikeAbap } from '@/lib/abap-input-check';
 import { routeWasOverridden } from '@/lib/route-override';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -175,6 +175,9 @@ export default function AnalyzePage() {
     () => deriveReviewTasks(project?.legacyCode || legacyCode || '', { usage: (usageReport || project?.usageReport) ?? undefined }),
     [project?.legacyCode, legacyCode, usageReport, project?.usageReport],
   );
+  // Declarations SAP would not activate as written (a LENGTH or DECIMALS that is no number and no constant the
+  // source defines): said with their lines, never repaired.
+  const declarationProblems = useMemo(() => invalidDeclarationOperands(project?.legacyCode || legacyCode || ''), [project?.legacyCode, legacyCode]);
   // Roadmap 7.1: ATC-Import — kept as its own state and its own type, never
   // merged into `usageReport` or the engine's evidence findings.
   const [atcReport, setAtcReport] = useState<AtcReportType | null>(null);
@@ -1131,6 +1134,20 @@ export default function AnalyzePage() {
         title: `${missingDeps.length} ${missingDeps.length === 1 ? 'object' : 'objects'} the code refers to but were not supplied`,
         reason: 'Without their source the engine cannot resolve what this code inherits or calls through them.',
         body: <MissingDependencyPrompt missing={missingDeps} />,
+      });
+    }
+    if (declarationProblems.length > 0) {
+      items.push({
+        key: 'invalid-declarations',
+        title: `${declarationProblems.length} ${declarationProblems.length === 1 ? 'declaration' : 'declarations'} SAP would not activate as written`,
+        reason: 'The analysis reads the source as written and repairs nothing; the original needs the fix before it activates.',
+        body: (
+          <ul className="m-0 pl-5 cc-text-cell text-cc-ink" data-invalid-declarations="">
+            {declarationProblems.map((p) => (
+              <li key={`${p.line}-${p.keyword}-${p.operand}`}>{declarationOperandSentence(p)}</li>
+            ))}
+          </ul>
+        ),
       });
     }
     if (reviewTasks.counts.total > 0) {

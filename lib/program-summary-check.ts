@@ -40,7 +40,10 @@ export interface PurposeCheck {
 // "already posted credits" and "previously posted invoices" (SD review of
 // 14.10.2026, CR-A4/D01: a header naming the posted credits its simulation
 // considers was dropped as claiming a posting).
-const POSTS = /\b(?:posts?|(?<!\b(?:already|previously|earlier|formerly|existing|prior) )posted(?! (?:items?|documents?|amounts?|entries|data|values?|balances?|lines?|costs?|credits?|invoices?|payments?|receipts?|quantit(?:y|ies)|goods))|posting(?! (?:date|period|key|keys))|books?\b(?! of)|booked|creates? (?:an? |the )?(?:accounting |FI |financial |purchase |sales )?(?:documents?|orders?)|updates? the (?:ledger|account|balance|master)|writes? back|settles?\b|clears? (?:the |all )?(?:open )?items?|changes? (?:the )?(?:master|data|records?|documents?) in SAP)\b/i;
+// The same holds for "posted history", "posted records", "posted transactions",
+// "posted movements" and "posted totals", and for "posting history" and
+// "posting records": each names data already in the system that the program reads.
+const POSTS = /\b(?:posts?|(?<!\b(?:already|previously|earlier|formerly|existing|prior) )posted(?! (?:items?|documents?|amounts?|entries|data|values?|balances?|lines?|costs?|credits?|invoices?|payments?|receipts?|quantit(?:y|ies)|goods|histor(?:y|ies)|records?|transactions?|movements?|totals?))|posting(?! (?:date|period|key|keys|histor(?:y|ies)|records?))|books?\b(?! of)|booked|creates? (?:an? |the )?(?:accounting |FI |financial |purchase |sales )?(?:documents?|orders?)|updates? the (?:ledger|account|balance|master)|writes? back|settles?\b|clears? (?:the |all )?(?:open )?items?|changes? (?:the )?(?:master|data|records?|documents?) in SAP)\b/i;
 const DOES_NOT_POST = /\b(?:does not|doesn't|do not|never|cannot|can't|no longer) (?:post|change|update|book)\b|\bread-only\b|\bnon-posting\b|\bno (?:[\w-]+ ){0,3}(?:are |is )?(?:posted|booked|changed)\b|\bwithout posting\b/i;
 /*
  * A negated statement claims nothing (SD review of 14.10.2026, CR-A4): "It never

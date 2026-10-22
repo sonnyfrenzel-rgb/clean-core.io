@@ -1,4 +1,5 @@
 import type { OwnCodeIssue } from '../own-code-import';
+import { declarationOperandSentence } from '../abap-input-check';
 
 /**
  * Interface text of the own-code page — "New project" with your own ABAP
@@ -161,6 +162,8 @@ export function ownCodeIssueText(issue: OwnCodeIssue): string {
       return `${issue.name} is included more than once (${issue.lines.length === 1 ? 'line' : 'lines'} ${issue.lines.join(', ')} of this file, after it was already read). Its routines and data would stand twice — remove the extra INCLUDE line.`;
     case 'missing-includes':
       return `Referenced but missing: ${list(issue.names)}. These stay Not determined.`;
+    case 'invalid-declaration':
+      return `${declarationOperandSentence(issue.problem)} The analysis reads it as written and repairs nothing.`;
   }
 }
 

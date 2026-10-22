@@ -628,6 +628,13 @@ export interface AbapUnitCounts {
   /** Methods whose every assertion sits inside `IF sy-subrc = 0` (the row it reads found): a missing row passes. Not tests. */
   guardedOnly?: number;
   guardedOnlyNames?: string[];
+  /**
+   * Methods whose every call of the code under test hands in an empty input (`is_input = VALUE #( )`) and whose only
+   * assertions are that the whole result is not initial or bound: they test that an empty run returns something, not
+   * the rule their name stands for. Not tests.
+   */
+  emptyInputOnly?: number;
+  emptyInputOnlyNames?: string[];
 }
 
 /** Method bodies of one source: lower-case `class.method` → statements. */
@@ -709,6 +716,24 @@ function guardedOnly(statements: AbapStatement[]): boolean {
   return inside > 0 && outside === 0;
 }
 
+/** `is_input = VALUE #( )` (or `VALUE some_type( )`) among the arguments of a call. */
+const EMPTY_INPUT = new RegExp(String.raw`(?:^|\s)${INPUT_PARAM}\s*=\s*VALUE\s+(?:#|[\w/]+)\s*\(\s*\)`, 'i');
+
+/**
+ * Whether a method hands the code under test only an empty input and asserts no more than that the whole result is
+ * there: every call of the code under test that passes `is_input` passes it empty, at least one does, and every
+ * assertion is `assert_not_initial` or `assert_bound` on a plain variable (`act = ls_res`, not `act = ls_res-status`).
+ */
+function emptyInputOnly(statements: AbapStatement[], calls: readonly Call[], cut: ReadonlySet<string>): boolean {
+  const withInput = calls.filter((c) => c.target !== null && cut.has(c.target) && namedArgs(c.args).includes(INPUT_PARAM));
+  if (withInput.length === 0 || !withInput.every((c) => EMPTY_INPUT.test(c.args))) return false;
+  const asserts = statements.map((s) => maskText(s.text)).filter((t) => /cl_abap_unit_assert=>(?:assert_\w+|fail)\s*\(/i.test(t));
+  return (
+    asserts.length > 0 &&
+    asserts.every((t) => /cl_abap_unit_assert=>assert_(?:not_initial|bound)\s*\(/i.test(t) && /(?:^|[\s(])act\s*=\s*[a-z_]\w*(?=\s|\)|$)/i.test(t))
+  );
+}
+
 export function countAbapUnitTests(
   testSources: ReadonlyArray<{ path?: string; content: string }>,
   underTest: Iterable<string>,
@@ -766,6 +791,9 @@ export function countAbapUnitTests(
           } else if (body && guardedOnly(body.statements)) {
             counts.guardedOnly = (counts.guardedOnly ?? 0) + 1;
             (counts.guardedOnlyNames ??= []).push(key);
+          } else if (body && !expectsRefusal && emptyInputOnly(body.statements, calls, cut)) {
+            counts.emptyInputOnly = (counts.emptyInputOnly ?? 0) + 1;
+            (counts.emptyInputOnlyNames ??= []).push(key);
           } else counts.tests++;
         } else {
           counts.noCall++;
@@ -786,6 +814,7 @@ export function abapUnitCountsSentence(c: AbapUnitCounts): string {
   if (c.withoutData) not.push(`${c.withoutData} ${c.withoutData === 1 ? 'calls' : 'call'} it without its case data`);
   if (c.withoutInput) not.push(`${c.withoutInput} ${c.withoutInput === 1 ? 'calls' : 'call'} the run without handing in its input (${INPUT_PARAM})`);
   if (c.guardedOnly) not.push(`${c.guardedOnly} ${c.guardedOnly === 1 ? 'asserts only when the row it reads is' : 'assert only when the row they read is'} found`);
+  if (c.emptyInputOnly) not.push(`${c.emptyInputOnly} ${c.emptyInputOnly === 1 ? 'calls' : 'call'} it with an empty input only and ${c.emptyInputOnly === 1 ? 'checks' : 'check'} no more than that a result comes back`);
   return `${c.tests} of ${c.methods} ABAP Unit test ${c.methods === 1 ? 'method calls' : 'methods call'} the code under test${not.length ? `; ${not.join(' and ')} — not counted as tests` : ''}.`;
 }
 
@@ -890,6 +919,8 @@ export function abapTestEvidenceSentences(e: AbapTestEvidence, sap: GoldenMaster
   if (e.counts.withoutInput)
     out.push(`Test does not hand in input — its expectation is not evidence: ${named(e.counts.withoutInputNames)} call the run without ${INPUT_PARAM}, so it runs on empty tables.`);
   if (e.counts.guardedOnly) out.push(`Test asserts only when its row is found — a missing row passes, so it is not evidence: ${named(e.counts.guardedOnlyNames)}.`);
+  if (e.counts.emptyInputOnly)
+    out.push(`Test calls it with an empty input only — it checks that a result comes back, not the rule its name stands for: ${named(e.counts.emptyInputOnlyNames)} pass ${INPUT_PARAM} = VALUE #( ) and assert only that the whole result is not initial.`);
   if (e.model) out.push(`${modelClassWords(e.model.classes)}: ${abapUnitCountsSentence(e.model)} A green or red method there says nothing about the logic until a reviewer confirms its preconditions and expected result.`);
   return out;
 }
