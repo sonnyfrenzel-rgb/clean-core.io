@@ -188,12 +188,9 @@ export function useUserProfile() {
       getDoc(userDocRef).then((docSnap) => {
         if (thisGeneration !== generation || auth.currentUser?.uid !== user.uid) return;
         if (docSnap.exists()) {
-          const data = docSnap.data() as UserProfile;
-          // Enforce pilot limit for pilot users
-          if (data.tier === 'pilot') {
-            data.transformationsLimit = 5;
-          }
-          setProfile(data);
+          // The stored limit is the one the server counts against: a browser may create it only as 5
+          // (firestore.rules) and never change it, so a limit the operator raised is shown as raised.
+          setProfile(docSnap.data() as UserProfile);
           setLoading(false);
         }
       }).catch((err) => {
@@ -202,12 +199,7 @@ export function useUserProfile() {
 
       unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as UserProfile;
-          // Enforce pilot limit for pilot users
-          if (data.tier === 'pilot') {
-            data.transformationsLimit = 5;
-          }
-          setProfile(data);
+          setProfile(docSnap.data() as UserProfile);
         } else {
           setProfile(null);
         }
