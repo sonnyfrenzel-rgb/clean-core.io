@@ -51,6 +51,7 @@ export const RULE_QUESTION_MESSAGES = {
   'design.tryAgain': 'Try again',
   'design.writeWithoutOpen': 'Write it without the open answers',
   'design.regenerateWithoutOpen': 'Regenerate without the open answers',
+  'design.regenerateWaits': 'Regenerate waits for the business answers.',
   'design.writeWithoutOpenNote': 'The design then names these questions as open; answer them later and regenerate.',
   'design.readingQuestions': 'Reading the business questions first…',
   'design.answersMovedTitle': 'Written before the latest business answers',

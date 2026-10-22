@@ -1285,6 +1285,28 @@ ${DESIGN_ANSWER_REMINDER}`;
     <StageFrame stage="design" className="min-h-screen">
       <StaleNotice title={onlyAnswersMoved ? wt('design.answersMovedTitle') : `Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
+      {/* Regenerate waits for the business answers like the first write does (owner decision
+          22.10.2026); the reason stands here, with the way to rewrite it without the open ones. */}
+      {design && writeGate.kind !== 'ready' && isOwner && designAvailable ? (
+        <div data-design-regenerate-gate={writeGate.kind} className="mb-6">
+          <CcMessageStrip
+            state="information"
+            headline={wt('design.regenerateWaits')}
+            actions={
+              writeGate.kind === 'open' ? (
+                <CcButton variant="secondary" busy={generating} disabled={stale.sourceChanged || elsewhereSince !== null} onClick={askRegenerate} data-design-regenerate-without="">
+                  {wt('design.regenerateWithoutOpen')}
+                </CcButton>
+              ) : undefined
+            }
+          >
+            <span id="design-regenerate-reason" data-design-regenerate-reason="">
+              {writeGate.kind === 'open' ? designOpenQuestions(writeGate.open) : wt('design.readingQuestions')}
+            </span>
+          </CcMessageStrip>
+        </div>
+      ) : null}
+
       <ReplaceStoredBox
         open={replaceDesignAsk}
         title={wt('input.replaceDesignTitle')}
@@ -1331,20 +1353,7 @@ A design merely older than the analysis is
                 >
                   Regenerate
                 </CcButton>
-                {/* Regenerate waits for the business answers like the first write does; the reason
-                    stands beside it, and the design can still be rewritten without the open ones. */}
-                {writeGate.kind !== 'ready' && isOwner && designAvailable ? (
-                  <span data-design-regenerate-gate={writeGate.kind} className="flex flex-wrap items-center gap-2">
-                    <span id="design-regenerate-reason" data-design-regenerate-reason="" className="text-[13px] font-medium text-cc-ink-muted">
-                      {writeGate.kind === 'open' ? designOpenQuestions(writeGate.open) : wt('design.readingQuestions')}
-                    </span>
-                    {writeGate.kind === 'open' ? (
-                      <CcButton variant="ghost" busy={generating} disabled={stale.sourceChanged || elsewhereSince !== null} onClick={askRegenerate} data-design-regenerate-without="">
-                        {wt('design.regenerateWithoutOpen')}
-                      </CcButton>
-                    ) : null}
-                  </span>
-                ) : null}
+
                 <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
                   View HTML
                 </CcButton>
