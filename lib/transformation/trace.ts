@@ -19,7 +19,7 @@ import { LOOKUPS_FILE, lookupListsIn } from './lookups-node';
 import { inputReadsIn } from './input-lists';
 import { displaysIn } from './display-node';
 import { capAuthorizationIn, capAuthorizationWords } from './cap-shell';
-import { rapNoInputIn, rapNoInputWords, rapSaveIn } from './rap-save';
+import { rapNoInputIn, rapNoInputWords, rapSaveIn, rapUnresolvedTypesIn, rapUnresolvedTypesWords } from './rap-save';
 import { INITIAL_ASSUMPTION, initialAssumptionsIn } from './initial-node';
 import { ABAP_UNIT_EVIDENCE_LINE, goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
@@ -77,6 +77,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
   const bdef = scaffold.files.find((f) => f.path.endsWith('.bdef.asbdef'));
   const rapSave = bdef ? rapSaveIn(bdef.content) : null;
   const noInput = rapNoInputIn(scaffold.files);
+  const unresolvedTypes = rapUnresolvedTypesIn(scaffold.files);
   const displays = scaffold.files.filter((f) => f.path.startsWith('srv/') && f.path.endsWith('.ts')).flatMap((f) => displaysIn(f.content));
   const initialAssumptions = scaffold.files.filter((f) => f.path === 'srv/lib/guards.ts').flatMap((f) => initialAssumptionsIn(f.content));
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
@@ -163,6 +164,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     ...(capAuthorization ? { capAuthorization } : {}),
     ...(rapSave ? { rapSave } : {}),
     ...(noInput.length ? { noInput } : {}),
+    ...(unresolvedTypes.length ? { unresolvedTypes } : {}),
     ...(lookupLists.length ? { lookupLists } : {}),
     ...(initialAssumptions.length ? { initialAssumptions } : {}),
   };
@@ -231,6 +233,7 @@ export function traceMarkdown(trace: Trace): string {
   if (trace.capAuthorization) lines.push(`- ${capAuthorizationWords(trace.capAuthorization)}`);
   if (trace.rapSave) lines.push(`- Implementation type of the business object: ${trace.rapSave}.`);
   if (trace.noInput?.length) lines.push(`- ${rapNoInputWords(trace.noInput)}`);
+  if (trace.unresolvedTypes?.length) lines.push(`- ${rapUnresolvedTypesWords(trace.unresolvedTypes)}`);
   if (trace.inputReads?.length) {
     lines.push(
       `- Input lists a SELECT of the original fills — the request's rows stand for what it reads: ${trace.inputReads.join('; ')} The handed-in rows are not filtered by the SELECT's WHERE (its selection, date or row limit): they are taken as its result, so a request hands in only the rows the selection would read.`,

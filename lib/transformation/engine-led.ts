@@ -31,6 +31,7 @@ import { sliceFor } from './abap-slice';
 import { fillGuardsOf, planUnits, readEngineFacts, type PlanInput } from './unit-plan';
 import { engineVersionOfProject, type ProjectEngineStamp } from '../run-engine-version';
 import { camelName } from './naming';
+import { nodeStopFlagNote } from './part-exit';
 import { parameterShapes, regionSignature, typeDeclarations, typesText, type TypeDeclaration } from './type-shapes';
 import { traceJson, traceMarkdown, withTrace } from './trace';
 import { checkSummaryOf, type AbapActivation, type NodeTypeCheck } from './check-words';
@@ -235,6 +236,8 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
                 ...(scaffold.partLocals?.[u.id]?.length
                   ? [`// The parent routine's locals these lines read or write are declared by the frame before your body, typed as the original declares them, and written back after it: ${scaffold.partLocals[u.id].join(', ')}. Use them under these names; never declare them.`]
                   : []),
+                // A split part (scaffold version 22): the parent runs the next part unless the routine has ended.
+                ...(scaffold.stopFlags?.[u.id] ? [nodeStopFlagNote(scaffold.stopFlags[u.id])] : []),
                 typesText(decls, [u.signature, ...callees], ['Dec'], { Locals: localsNamedIn(`${slice.text}\n${slice.declarations}`) }),
               ].join('\n'),
             }
@@ -333,6 +336,8 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     ...(prep.scaffold.rap?.regions[regionId] ? { abap: prep.scaffold.rap.regions[regionId] } : {}),
     // A split part's handed-over locals (3.0.20): declared by the frame, never again by the body.
     ...(regionId === unitId && prep.scaffold.partLocals?.[regionId]?.length ? { partLocals: prep.scaffold.partLocals[regionId] } : {}),
+    // A split part's stop flag (scaffold version 22): an exit that leaves the routine sets it first.
+    ...(regionId === unitId && prep.scaffold.stopFlags?.[regionId] ? { stopFlag: prep.scaffold.stopFlags[regionId] } : {}),
   };
 }
 

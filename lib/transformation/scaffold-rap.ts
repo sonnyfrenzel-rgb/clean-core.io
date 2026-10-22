@@ -70,6 +70,7 @@ import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './marker
 import { goldenMasterForScaffold, type GoldenMasterExpected } from './golden-master';
 import { abapEngineCaseMethods } from './abap-engine-cases';
 import { partLocalsOf, rangeWords, staticLocalsOf, type EngineFacts } from './unit-plan';
+import { RAP_STOP_FLAG, rapStopFlagNote, stopFlagName } from './part-exit';
 import { requiredGuardsOf } from './scaffold-node';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
@@ -85,7 +86,7 @@ import { ENGINE_COUNTERPART_TAG, releasedCounterpartOf, type ReleasedCounterpart
 import { calledFromOutsideLines, NO_ENTRY_POINT, SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 import { wrapAbapFiles } from './abap-line-length';
 import { hoistAccessTypes, type HoistedAccessTypes } from './access-types';
-import { RAP_NO_INPUT_TAG, RAP_SAVE_NOT_WIRED, rapSaveHeader, rapSaveOf, rapSaveTagLine, type RapSave } from './rap-save';
+import { RAP_NO_INPUT_TAG, RAP_SAVE_NOT_WIRED, RAP_UNRESOLVED_TYPE_TAG, rapSaveHeader, rapSaveOf, rapSaveTagLine, type RapSave } from './rap-save';
 
 /**
  * Marks a place the engine wrote and a developer completes — never the model
@@ -361,6 +362,26 @@ function cdsType(phrase: string, contract: RapContract, depth = 0): string | nul
   return /^[a-z][\w]*$/i.test(named) ? named.toLowerCase() : null;
 }
 
+/**
+ * An elementary character, numeric text, byte or packed type whose LENGTH or DECIMALS is no number (`TYPE c LENGTH
+ * ode`): `cdsType` cannot name it, and the custom entity carries the field as text with a note instead of dropping it.
+ */
+function unresolvedElementary(phrase: string): boolean {
+  const m = /^TYPE\s+[cnxp](?:\s+LENGTH\s+(\S+))?(?:\s+DECIMALS\s+(\S+))?$/i.exec(phrase.trim());
+  return !!m && [m[1], m[2]].some((v) => v !== undefined && !/^\d+$/.test(v));
+}
+
+/** The original's declaration of component `name` of the structure type `line` (`TYPES status TYPE c LENGTH ode`), with its line. */
+function componentDeclaration(statements: readonly AbapStatement[], line: string, name: string): AbapStatement | null {
+  const begin = statements.findIndex((s) => new RegExp(`^(?:TYPES|DATA)\\s+BEGIN\\s+OF\\s+${escapeRe(line)}$`, 'i').test(s.text));
+  if (begin < 0) return null;
+  for (let i = begin + 1; i < statements.length; i++) {
+    const s = statements[i];
+    if (new RegExp(`^(?:TYPES|DATA)\\s+END\\s+OF\\s+${escapeRe(line)}$`, 'i').test(s.text)) return null;
+    if (new RegExp(`^(?:TYPES|DATA)\\s+${escapeRe(name)}(?![\\w/-])`, 'i').test(s.text)) return s;
+  }
+  return null;
+}
 
 /* ---------------------------------------------------- the access layer */
 
@@ -515,6 +536,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const localComponentsOf = new Map<string, string[]>();
   /** Part → the parent's locals its lines read or write: its CHANGING parameters under their own names (3.0.20). */
   const handedOf = new Map<string, string[]>();
+  /** Part (and its parent) → the flag "the routine has ended" in the parent's shared locals (scaffold version 22). */
+  const stopFlagOf = new Map<string, string>();
   for (const u of plan.units) {
     // A METHOD's parameters from its class definition, as a FORM's from its head (scaffold 17): a local-class method
     // had none, and every body reading one (`mv_vbeln = iv_vbeln`) was refused for names the class does not declare.
@@ -527,8 +550,15 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     const scope = parent.routine ? contract.scopeOf(parent.routine, parent.abap[0]?.lineStart) : null;
     const typeName = `ty_${methodOf.get(parent.id)!.slice(0, 18)}_local`;
     const comps = scope ? [...scope.locals].filter(([n, ph]) => ph && !scope.params.some((p) => p.name === n) && !n.startsWith('<')) : [];
-    if (comps.length > 0) localTypes.push(`TYPES BEGIN OF ${typeName}`, ...comps.map(([n, ph]) => `TYPES ${n} ${ph}`), `TYPES END OF ${typeName}`);
+    // Owner decision 22.10.2026 (scaffold version 22): an exit that leaves the routine in one part must not let the
+    // next part run. The shared locals hold the flag "the routine has ended", named apart from every local, parameter
+    // and attribute; each part takes it as a CHANGING parameter, and the parent calls the next part only while it is
+    // not set (part-exit.ts).
+    const flag = stopFlagName(RAP_STOP_FLAG, [...(scope ? [...scope.locals.keys()] : []), ...(paramsOf.get(parent.id) ?? []).map((p) => p.name), ...attributeNames]);
+    stopFlagOf.set(parent.id, flag);
+    localTypes.push(`TYPES BEGIN OF ${typeName}`, ...comps.map(([n, ph]) => `TYPES ${n} ${ph}`), `TYPES ${flag} TYPE abap_bool`, `TYPES END OF ${typeName}`);
     for (const part of plan.units.filter((p) => p.part?.parent === parent.id)) {
+      stopFlagOf.set(part.id, flag);
       if (comps.length > 0) localComponentsOf.set(part.id, comps.map(([n]) => n.toLowerCase()));
       // 3.0.20 (SD acceptance, 21.10.2026: U10P2 used ls_effect, lv_code, ls_work, lv_delivered bare and was refused in
       // two of three runs): each parent local the part's lines read or write is its own CHANGING parameter under its
@@ -539,6 +569,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       paramsOf.set(part.id, [
         ...(paramsOf.get(parent.id) ?? []).map((p) => ({ ...p })),
         ...handed.map((n) => ({ name: n, direction: 'changing' as const, phrase: `TYPE ${typeName}-${n}`, original: `the local ${n} of ${parent.routine ?? parent.fn}, handed over by the frame` })),
+        { name: flag, direction: 'changing' as const, phrase: 'TYPE abap_bool', original: `set to abap_true right before this part leaves ${parent.routine ?? parent.fn}: the frame then runs no further part` },
       ]);
     }
   }
@@ -1033,7 +1064,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     for (const id of u.guards) {
       if (engineCalled.get(id) !== 'entry') continue;
       const g = carried.find((x) => x.id === id)!;
-      impls.push(`    " ${g.id}${g.rule ? ` ${g.rule}` : ''} L${g.line}: the original's check, at the entry.`, `    IF ${callOf(predicates.get(id)!)} = abap_true.`, `      ${ending(g)}`, '    ENDIF.');
+      // In a part of a split routine a RETURN leaves only the part: it sets the routine's stop flag first.
+      const ends = u.part && g.outcome !== 'refuses' ? [`      ${stopFlagOf.get(u.id)} = abap_true.`] : [];
+      impls.push(`    " ${g.id}${g.rule ? ` ${g.rule}` : ''} L${g.line}: the original's check, at the entry.`, `    IF ${callOf(predicates.get(id)!)} = abap_true.`, ...ends, `      ${ending(g)}`, '    ENDIF.');
     }
     if (parentsOfParts.includes(u)) {
       const parts = plan.units.filter((p) => p.part?.parent === u.id).sort((a, b) => a.part!.index - b.part!.index);
@@ -1043,9 +1076,12 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       const handedAll = new Set(parts.flatMap((p) => handedOf.get(p.id) ?? []));
       const holder = (n: string) => (statics.has(n) ? 'ls_static' : 'ls_local');
       const typeOfLocal = `ty_${name.slice(0, 18)}_local`;
-      if ([...handedAll].some((n) => !statics.has(n))) {
-        impls.push("    \" The routine's locals, shared by its parts: each part gets those its lines read or write (3.0.20).", `    DATA ls_local TYPE ${typeOfLocal}.`);
-      }
+      const flag = stopFlagOf.get(u.id)!;
+      impls.push(
+        "    \" The routine's locals, shared by its parts: each part gets those its lines read or write (3.0.20),",
+        `    " and ${flag}, which a part sets before it leaves the routine: no further part runs then.`,
+        `    DATA ls_local TYPE ${typeOfLocal}.`,
+      );
       if ([...handedAll].some((n) => statics.has(n))) {
         impls.push("    \" The routine's STATICS: they keep their value from one call to the next, as in the original.", `    STATICS ls_static TYPE ${typeOfLocal}.`);
       }
@@ -1062,8 +1098,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         const pp = paramsOf.get(part.id) ?? [];
         const handed = new Set(handedOf.get(part.id) ?? []);
         const exp = pp.filter((p) => p.direction === 'importing').map((p) => `${p.name} = ${p.name}`);
-        const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${handed.has(p.name) ? `${holder(p.name)}-${p.name}` : p.name}`);
+        const chg = pp.filter((p) => p.direction === 'changing').map((p) => `${p.name} = ${handed.has(p.name) ? `${holder(p.name)}-${p.name}` : p.name === flag ? `ls_local-${flag}` : p.name}`);
         impls.push(`    ${methodOf.get(part.id)}(${exp.length ? ` EXPORTING ${exp.join(' ')}` : ''}${chg.length ? ` CHANGING ${chg.join(' ')}` : ''} ).`);
+        if (part !== parts[parts.length - 1]) impls.push(`    IF ls_local-${flag} = abap_true.`, '      RETURN.', '    ENDIF.');
       }
     } else if (u.kind === 'orchestrator' && u.abap.length === 0) {
       // No entry point (scaffold 15, roadmap 3.0.17 item 6): nothing to port, so no region a model would fill with an
@@ -1213,10 +1250,12 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         // A CHECK inside a routine (3.0.17 criterion 3) leaves the method, or the loop's pass, when its condition does
         // not hold — never a refusal of the input. Written with IF, as exit_or_check (Clean ABAP) wants it.
         const leaves = p.guard.effect === 'check' && p.guard.outcome !== 'refuses';
+        // A part of a split routine sets its stop flag before a RETURN that leaves the routine (scaffold version 22).
+        const exit = p.guard.outcome === 'skips' ? 'CONTINUE' : stopFlagOf.has(u.id) ? `${stopFlagOf.get(u.id)} = abap_true. RETURN` : 'RETURN';
         const by = engineCalled.has(id)
           ? 'the engine calls it already'
           : leaves
-            ? `call it where the original's CHECK stands (L${p.guard.line}): IF ${callOf(p)} = abap_false. ${p.guard.outcome === 'skips' ? 'CONTINUE' : 'RETURN'}. ENDIF.`
+            ? `call it where the original's CHECK stands (L${p.guard.line}): IF ${callOf(p)} = abap_false. ${exit}. ENDIF.`
             : `call it where the original checks (L${p.guard.line}): IF ${callOf(p)} = abap_true. … ENDIF.`;
         return `${signatures[p.guard.regionId ?? id]} " ${id}: ${by}`;
       });
@@ -1225,6 +1264,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       ...(handedOf.has(u.id)
         ? [`" The parent routine's locals these lines read or write are this method's CHANGING parameters under their own names, handed over by the frame: ${handedOf.get(u.id)!.join(', ')}. Use them as the original does; never declare them.`]
         : []),
+      ...(u.part && stopFlagOf.has(u.id) ? [rapStopFlagNote(stopFlagOf.get(u.id)!)] : []),
       ...typeLines,
       ...(rowLines.length > 0
         ? [`" Rows of the SAP tables the original reads (${rows.map((r) => r.table.toUpperCase()).join(', ')}): ABAP Cloud has no type of them - type the rows by these, e.g. DATA lt_rows TYPE STANDARD TABLE OF ${rows[0].rowType} WITH EMPTY KEY.`, ...rowLines]
@@ -1446,13 +1486,23 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       return !!loop && facts.statements.some((w) => w.keyword === 'WRITE' && w.lineStart > loop.lineStart && w.lineStart < loop.lineStart + 30);
     });
     const resultTable = (outtab ? contract.globals.find((g) => g.name === outtab && lineOf(g)) : undefined) ?? listed[0] ?? [...contract.globals].reverse().find((g) => lineOf(g)) ?? null;
-    const comps = resultTable ? structureComponents(contract, lineOf(resultTable)!) ?? [] : [];
+    const resultLine = resultTable ? lineOf(resultTable)! : null;
+    const comps = resultLine ? structureComponents(contract, resultLine) ?? [] : [];
     const taken = new Set<string>();
     const elements = comps
       // QM-05 (scaffold version 18): a reason or message the logic computes reaches the service, also where its type
       // is another object's (`LIKE ls_rule-text`, `TYPE ty_out-reason`) that CDS cannot name — as text.
-      .map((c) => ({ comp: c.name, type: cdsType(c.phrase, contract) ?? (REASON_COMPONENT.test(c.name) && /^(?:LIKE\s+[\w/]+(?:-[\w/]+)*|TYPE\s+[\w/]+-[\w/]+)$/i.test(c.phrase.trim()) ? 'abap.char( 255 )' : null) }))
-      .filter((c): c is { comp: string; type: string } => c.type !== null)
+      .map((c): { comp: string; type: string | null; unresolved?: string } => {
+        const type = cdsType(c.phrase, contract) ?? (REASON_COMPONENT.test(c.name) && /^(?:LIKE\s+[\w/]+(?:-[\w/]+)*|TYPE\s+[\w/]+-[\w/]+)$/i.test(c.phrase.trim()) ? 'abap.char( 255 )' : null);
+        if (type) return { comp: c.name, type };
+        // Owner decision 22.10.2026 (scaffold version 22): an elementary type whose length or decimals name no number
+        // and no constant of the program (`status TYPE c LENGTH ode`) is carried as text, with a note — never
+        // dropped, so the reader still sees the value.
+        if (!unresolvedElementary(c.phrase)) return { comp: c.name, type: null };
+        const decl = componentDeclaration(facts.statements, resultLine!, c.name);
+        return { comp: c.name, type: 'abap.char( 255 )', unresolved: `${c.name}: type not resolved from the original (line ${decl?.lineStart ?? '?'}): ${decl?.text ?? `${c.name} ${c.phrase}`} - carried as abap.char( 255 )` };
+      })
+      .filter((c): c is { comp: string; type: string; unresolved?: string } => c.type !== null)
       .map((c) => {
         let name = isDdicReserved(c.comp) || c.comp === 'row_no' ? `${c.comp}_value`.slice(0, 30) : c.comp;
         for (let i = 2; taken.has(name); i++) name = `${c.comp.slice(0, 26)}_${i}`;
@@ -1469,7 +1519,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         ...(cdsParams.length > 0 ? ['  with parameters', ...cdsParams.map((p, i) => `    ${p.name} : ${p.type}${i < cdsParams.length - 1 ? ',' : ''}`)] : []),
         '{',
         '  key row_no : abap.int4;',
-        ...elements.map((e) => `      ${e.name} : ${e.type};`),
+        ...elements.flatMap((e) => [...(e.unresolved ? [`      // ${RAP_UNRESOLVED_TYPE_TAG} ${e.unresolved}`] : []), `      ${e.name} : ${e.type};`]),
         '}',
         '',
       ].join('\n'),
@@ -2036,6 +2086,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     available,
     required,
     rap,
+    ...(stopFlagOf.size > 0 ? { stopFlags: Object.fromEntries(stopFlagOf) } : {}),
     ...(collision ? { refusal: { code: 'rap-attribute-collision' as const, detail: collision } } : {}),
   };
 }

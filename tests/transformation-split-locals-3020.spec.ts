@@ -65,13 +65,14 @@ test('RAP: each part takes the parent locals its lines read or write as CHANGING
   // No cs_local: the parent's structure is handed over component by component.
   expect(logic).not.toMatch(/cs_local/i);
   const [one, two] = parts.slice(0, 2).map((u) => p.scaffold.rap!.signatures[u.id]);
-  expect(one).toMatch(/CHANGING ls_c TYPE ty_\w+_local-ls_c lv_code TYPE ty_\w+_local-lv_code lv_count TYPE ty_\w+_local-lv_count\./);
+  // Since scaffold version 22 each part also takes the routine's stop flag, after the handed locals.
+  expect(one).toMatch(/CHANGING ls_c TYPE ty_\w+_local-ls_c lv_code TYPE ty_\w+_local-lv_code lv_count TYPE ty_\w+_local-lv_count cc_routine_ended TYPE abap_bool\./);
   // Part 2's lines never name lv_code: it is not handed over.
-  expect(two).toMatch(/CHANGING ls_c TYPE ty_\w+_local-ls_c lv_count TYPE ty_\w+_local-lv_count\./);
+  expect(two).toMatch(/CHANGING ls_c TYPE ty_\w+_local-ls_c lv_count TYPE ty_\w+_local-lv_count cc_routine_ended TYPE abap_bool\./);
   expect(two).not.toMatch(/lv_code/);
   // The parent gives the local its start value (a structure component takes no VALUE) and passes each component.
   expect(logic).toMatch(/ls_local-lv_code = 'A1'\./);
-  expect(logic).toMatch(/evaluate_part2\( CHANGING ls_c = ls_local-ls_c lv_count = ls_local-lv_count \)\./);
+  expect(logic).toMatch(/evaluate_part2\( CHANGING ls_c = ls_local-ls_c lv_count = ls_local-lv_count cc_routine_ended = ls_local-cc_routine_ended \)\./);
   // The fill request says so.
   const req = p.fillUnits.find((u) => u.unitId === parts[1].id)!;
   expect(req.types).toContain("The parent routine's locals these lines read or write are this method's CHANGING parameters under their own names, handed over by the frame: ls_c, lv_count.");
@@ -112,7 +113,7 @@ test('Node: the parent starts local with the start values, each part declares it
   const p = prep('node');
   const [one, two] = partsOf(p);
   const parent = p.scaffold.files.find((f) => f.path === p.plan.units.find((u) => u.id === one.part!.parent)!.file)!.content;
-  expect(parent).toContain("const local: Record<string, unknown> = { lsC: { bukrs: '', currency: '' }, lvCode: \"A1\", lvCount: 0 };");
+  expect(parent).toContain("const local: Record<string, unknown> = { lsC: { bukrs: '', currency: '' }, lvCode: \"A1\", lvCount: 0, ccRoutineEnded: false };");
   const file = p.scaffold.files.find((f) => f.path === two.file)!.content;
   expect(file).toContain('  let lsC = local.lsC as TyCo;\n  let lvCount = local.lvCount as number;\n  try {');
   expect(file).toMatch(/\} finally \{\n {4}local\.lsC = lsC;\n {4}local\.lvCount = lvCount;\n {2}\}/);

@@ -232,6 +232,15 @@ export const PLAN_VERSION = 2;
  * carries no class attributes, so it merges nothing. Also in 22 (owner decision 22.10.2026): an engine case refused by
  * the original's authorization check says "the authority check refused it" instead of "this run did not grant it" —
  * true in the package's own run and in the app's sandbox, which always grants (engine-cases-core.mjs).
+ * Also in 22 (owner decision 22.10.2026): both tracks — the parts of a split routine share a stop flag in the parent's
+ * locals (RAP `ls_local-cc_routine_ended`, a CHANGING parameter of each part; Node `local.ccRoutineEnded`), a part sets
+ * it right before it leaves the routine (RETURN, a CHECK or EXIT outside a loop), the parent calls the next part only
+ * while it is not set, and a part body whose routine-level exit does not set it is refused (part-exit.ts, markers.ts).
+ * Also in 22 (owner decision 22.10.2026): both tracks — a body with an empty CATCH (RAP) or catch (Node) is refused,
+ * the reason telling the model to report what the original reports or raise again (markers.ts).
+ * Also in 22 (owner decision 22.10.2026): RAP — a field of the custom entity whose type the engine cannot resolve from
+ * the original (`status TYPE c LENGTH ode`) is carried as `abap.char( 255 )` with a `@cc-type-unresolved` note naming
+ * its declaration and line, and TRACE.md and STATUS.md list it, instead of leaving the entity silently (rap-save.ts).
  * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 22;
@@ -639,6 +648,12 @@ export interface BodyGuardContext {
    */
   partLocals?: readonly string[];
   /**
+   * A part of a split routine, since scaffold version 22 (owner decision 22.10.2026): the flag "the routine has
+   * ended" (`Scaffold.stopFlags`, part-exit.ts). A body that leaves the routine early — RAP: RETURN, a CHECK or EXIT
+   * outside a loop; Node: a bare `return;` at its own function level — without setting it right before is refused.
+   */
+  stopFlag?: string;
+  /**
    * RAP only (scaffold version 6): the names the logic class declares around this region — a body that calls a
    * method the class or the access interface does not have, or reads an original's global, selection input or
    * parameter-like name the class does not declare, is refused (`scaffold-rap.ts`, `rap-contract.ts`).
@@ -739,7 +754,9 @@ export type BodyRefusalCode =
   | 'sap-select'
   | 'customer-select'
   | 'customer-write'
-  | 'sap-type';
+  | 'sap-type'
+  | 'part-exit'
+  | 'empty-catch';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;
@@ -810,6 +827,12 @@ export interface Scaffold {
    * as the frame declares them from `local` before the body (`lvCode`). A body that declares one again is refused.
    */
   partLocals?: Record<string, string[]>;
+  /**
+   * Since scaffold version 22 (owner decision 22.10.2026), both tracks: per split part, the name of the flag in the
+   * parent routine's shared locals that says the routine has ended (RAP `cc_routine_ended`, a CHANGING parameter of
+   * the part; Node `ccRoutineEnded`, a property of `local`). The parent calls the next part only while it is not set.
+   */
+  stopFlags?: Record<string, string>;
   /**
    * Node only: for each check whose predicate stays a fill region, the ABAP type of each
    * value it reads, in words — the fill request names them, so the model writes that type's initial value.
@@ -939,6 +962,11 @@ export interface Trace {
   rapSave?: string;
   /** 3.0.18 (QM-03, FI-F09): the logic's input tables no caller in the package hands in (`rapNoInputIn`). Absent when none. */
   noInput?: string[];
+  /**
+   * Since scaffold version 22 (owner decision 22.10.2026): the custom entity's fields whose type the engine did not
+   * resolve from the original, each carried as text with its declaration and line (`rapUnresolvedTypesIn`). Absent when none.
+   */
+  unresolvedTypes?: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** See `GenerationStatus`. */
