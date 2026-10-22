@@ -31,6 +31,16 @@ The first insights are for understanding only: they explain, they ask for no dec
   without a click (the engine sentence stays one fold down), and the "Suggest business names" button is gone: the
   names are asked for once per project and source, only on the owner's page and only when a model key exists.
 - **The Business view fits a phone.**
+- **Design asks the business first, then writes the design on a click** (owner decisions 22 October 2026). Opening
+  Design writes nothing. The questions for the business come first; in every row the recommended answer is framed
+  and labelled "Recommended", with its reason in one line, and nothing is pre-selected. "Generate the design",
+  "Regenerate" and "Try again" are enabled once every question has an answer; until then the reason stands beside
+  them, with the choice to write it without the open answers. The answers reach the design as given requirements —
+  a changed value is designed in, a dropped rule left out, an open one named as open — and a changed answer marks
+  the design as needing regeneration. The architecture options for IT (configuration, SAP standard) moved to the
+  rule register of the IT view; Design names them in one line with a link.
+- **The run limit a page shows is the one the server counts against.** An account whose limit the operator raised
+  was blocked by the page at five runs while the server would have let it run.
 
 ### Removed
 
@@ -74,6 +84,21 @@ The first insights are for understanding only: they explain, they ask for no dec
   not another field whose name ends alike; a rule that also picks out a live value is not test data; "within a
   tolerance" is said only when a condition, a filter or a calculation applies it.
 - **A loop skip is said as a skip,** never as stopping the process.
+- **An external review of a generated MM package (22 October 2026)** found the routine split losing its early exits:
+  a `RETURN` in the first part of a split routine left only that part, and the next part could overwrite a
+  rejection with an acceptance. Every split routine now carries a stop flag (`cc_routine_ended`, Node
+  `ccRoutineEnded`): a part sets it before it leaves the routine, the wrapper calls no further part once it is set,
+  and a fill check refuses a part body that leaves the routine without setting it — an exit inside a loop or an
+  inner block stays local. Also from that review: an empty `CATCH` in a generated body is refused (the original's
+  error must be reported or raised again); a result field whose original type cannot be resolved stays in the
+  service entity as text, with a note, instead of being dropped; an invalid length in the original (`LENGTH ode`,
+  no number and no constant) is reported as an input problem with its line; "posted history" in a header comment is
+  no longer read as a claim that the program posts; the design post-check no longer refuses a sentence that says a
+  custom entity has no DCL, and no longer lists delivered objects as "not in the package"; a test method that only
+  calls the code with an empty input and checks that something comes back is not counted as a test. The review's
+  other points are a 3.0.21 row of the roadmap. Scaffold version 22.
+- **The owner's reference programs are read only when `CC_OWNER_SOURCES` names their folder** — specs and the
+  acceptance suite no longer default to a personal synced folder.
 - **Security:** SEC-2026-892, -894 and -897 to -902 fixed. SEC-2026-888 to -890 still wait for the next Firestore
   rules deploy. Details stay in the sealed register.
 
