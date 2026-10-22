@@ -428,8 +428,10 @@ export function locateSourceLine(map: IncludeAnchorMap, line: number): SourceLoc
  * The line of the analysed source that holds line `line` of `object` — the
  * other direction, for a result another tool reports against the include it
  * read (an ATC finding, say). `object` null or the main program's name means
- * the main program. Null when that object is not part of the source or the
- * line is beyond its end.
+ * the main program. Null when that object is not part of the source, or — for
+ * a joined source — the line is beyond the end of that part. A single file is
+ * the identity for the main program; whether the line exists there is the
+ * caller's to check against the source.
  */
 export function joinedLineOf(map: IncludeAnchorMap, object: string | null, line: number, mainObject?: string | null): number | null {
   if (!Number.isInteger(line) || line < 1) return null;
