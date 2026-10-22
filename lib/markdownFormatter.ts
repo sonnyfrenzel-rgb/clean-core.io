@@ -10,6 +10,8 @@ import { businessSopMarkdown } from './business-sop-markdown';
 import { BTP, BTP_FIRST, sapNamesForDisplay } from './sap-naming';
 import {
   COVERAGE_CLAIM_NOTE,
+  STANDARD_EXCLUSION_NOTE,
+  standardExclusionClaims,
   annotateSapReferences as checked,
   catalogNoteForMapping,
   coverageClaims,
@@ -96,6 +98,9 @@ export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExp
       md += `- **Technical Rationale:** ${sapCheckedNarrative(data.standardFit.rationale || 'N/A')}\n`;
       if (data.standardFit.potential === 'High' || coverageClaims(`${data.standardFit.rationale ?? ''} ${data.recommendations?.cloudReadiness ?? ''}`).length) {
         md += `- **Note:** ${COVERAGE_CLAIM_NOTE}\n`;
+      }
+      if (standardExclusionClaims(`${data.standardFit.rationale ?? ''} ${data.recommendations?.cloudReadiness ?? ''}`).length) {
+        md += `- **Note:** ${STANDARD_EXCLUSION_NOTE}\n`;
       }
       md += `\n`;
     }

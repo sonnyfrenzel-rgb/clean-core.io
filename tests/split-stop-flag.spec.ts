@@ -6,6 +6,7 @@ import { bodyGuards, spliceBodies } from '../lib/transformation/markers';
 import { abapCheck } from '../lib/transformation/abap-check';
 import { traceMarkdown, traceOf } from '../lib/transformation/trace';
 import { rapUnresolvedTypesIn } from '../lib/transformation/rap-save';
+import { QUERY_FILTER_AND_SORT } from '../lib/transformation/scaffold-rap';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
 import { fileUrl, runInPackage, typecheck, writePackage } from './helpers/transformation-scaffold';
 
@@ -316,6 +317,12 @@ const digestOf = (p: EngineLedPrepared) =>
 
 test('a program that is not split generates exactly as before the stop flag, on both tracks', () => {
   // Pinned from the scaffold the engine wrote before the stop flag existed: nothing of a non-split routine changes.
-  expect(digestOf(prep('rap', smallSource()))).toBe('6304fc02c0493fa5a23fe44414debc917be15816462873a11daebda573088902');
+  // Scaffold version 23 (3.0.21, the external MM review, point 1) adds the request's filter and sort order to every
+  // query provider; with exactly those lines taken out, the RAP scaffold is still the pinned one.
+  const rap = prep('rap', smallSource());
+  const block = QUERY_FILTER_AND_SORT.join('\n');
+  expect(rap.scaffold.files.filter((f) => f.content.includes(block))).toHaveLength(1);
+  for (const f of rap.scaffold.files) f.content = f.content.replace(`${block}\n`, '');
+  expect(digestOf(rap)).toBe('6304fc02c0493fa5a23fe44414debc917be15816462873a11daebda573088902');
   expect(digestOf(prep('node', smallSource()))).toBe('f146362ac8b94346d66fc5bdc80502851dd5fbdb21c2e1b6916520fce04f863a');
 });

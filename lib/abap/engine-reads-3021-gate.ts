@@ -7,7 +7,10 @@ import { engineVersionAtLeast } from '../score-rule';
  *     "declared, not used" (`business-rule-set-explain.ts`, `constantUsesOf`);
  *   - the program's writes are read from what the run reaches, with its posting calls and batch input
  *     (`reachable-writes.ts`): the target architecture (`lib/transformation/architecture.ts`) and the
- *     extensibility route (`extensibility-router.ts`) read the same fact.
+ *     extensibility route (`extensibility-router.ts`) read the same fact;
+ *   - an `rfc-call` whose destination is a constant this source declares carries where it goes (`evidence-model.ts`);
+ *   - the BPMN reconstruction is drawn at the business level — a routine once, a run of guard checks as one step
+ *     (`lib/bpmn/model.ts`, read for the exporter version).
  *
  * Each changes what a run shows or signs, so a run made by an older engine keeps the reading it was made with:
  * whatever rebuilds a run passes that run's engine version (`engineVersionOfProject`). The readings go live when

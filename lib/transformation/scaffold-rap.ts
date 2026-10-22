@@ -253,6 +253,41 @@ function jobParameterType(f: ContractField): { datatype: string; length: number;
   }
 }
 
+/**
+ * The query provider's filter and sort order (scaffold version 23, the external MM review of 22.10.2026, point 1):
+ * the request's filter and sort elements are applied to the rows the logic computed over the whole input. A filter
+ * that only narrows the display therefore never removes a competing document from what is computed — the logic ran
+ * before it, with the selection the entity's parameters name. A filter that is not a list of ranges (a free search)
+ * is not applied, and the class says so where it is caught.
+ */
+export const QUERY_FILTER_AND_SORT: readonly string[] = Object.freeze([
+  "    \" The request's filter narrows the rows shown, after the logic ran over the whole input: it never removes a",
+  '    " document the logic compares the others with. Then the requested sort order.',
+  '    DATA lt_ranges TYPE if_rap_query_filter=>tt_name_range_pairs.',
+  '    TRY.',
+  '        lt_ranges = io_request->get_filter( )->get_as_ranges( ).',
+  '      CATCH cx_rap_query_filter_no_range.',
+  '        " A filter that is not a list of ranges (a free search) is not applied: every computed row is shown.',
+  '        CLEAR lt_ranges.',
+  '    ENDTRY.',
+  '    LOOP AT lt_ranges INTO DATA(ls_range).',
+  '      LOOP AT lt_data ASSIGNING FIELD-SYMBOL(<ls_filtered>).',
+  '        DATA(lv_index) = sy-tabix.',
+  '        ASSIGN COMPONENT ls_range-name OF STRUCTURE <ls_filtered> TO FIELD-SYMBOL(<lv_field>).',
+  '        IF sy-subrc = 0 AND <lv_field> NOT IN ls_range-range.',
+  '          DELETE lt_data INDEX lv_index.',
+  '        ENDIF.',
+  '      ENDLOOP.',
+  '    ENDLOOP.',
+  '    DATA lt_order TYPE abap_sortorder_tab.',
+  '    LOOP AT io_request->get_sort_elements( ) INTO DATA(ls_sort).',
+  '      APPEND VALUE #( name = to_upper( ls_sort-element_name ) descending = ls_sort-descending ) TO lt_order.',
+  '    ENDLOOP.',
+  '    IF lt_order IS NOT INITIAL.',
+  '      SORT lt_data BY (lt_order).',
+  '    ENDIF.',
+]);
+
 /* ------------------------------------------------------------ helpers */
 
 const quote = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -360,6 +395,41 @@ function cdsType(phrase: string, contract: RapContract, depth = 0): string | nul
   if (def) return /TABLE\s+OF|RANGE\s+OF|REF\s+TO/i.test(def) ? null : cdsType(def, contract, depth + 1);
   // Not declared in the program: a DDIC data element, which CDS takes by its name.
   return /^[a-z][\w]*$/i.test(named) ? named.toLowerCase() : null;
+}
+
+/** A component that holds a currency key: `waers`, `currency`, `doc_currency` … */
+const CURRENCY_COMPONENT = /^(?:waers|waerk|hwaer|rwcur|cuky|curr|currency|currency_code)$|_(?:waers|currency|curr|cuky)$/i;
+/** A component that holds an amount by its name. */
+const AMOUNT_COMPONENT = /(?:^|_)(?:amount|amt|netwr|wrbtr|dmbtr|betrg|brtwr|value|price|minor|cents|subunits?)(?:_|$)/i;
+/** The DDIC data elements of an amount (CURR) the custom entity names by name — they need a currency reference. */
+const AMOUNT_DATA_ELEMENT = /^(?:wrbtr|dmbtr|netwr|brtwr|bwert|kbetr|wertv\d+|betrg|dmbe2|dmbe3|wmwst|fwste|hwste)$/i;
+
+/** Where an amount of the custom entity marks the line before it: currency reference, or a note on minor units. */
+export const RAP_AMOUNT_MINOR_UNITS_TAG = '@cc-amount-minor-units';
+
+/**
+ * The custom entity's amounts with their currency and scale (scaffold version 23, the external MM review of
+ * 22.10.2026, point 3): where the result row holds a currency key, that key is `abap.cuky( 5 )` and every amount —
+ * a packed number named as an amount, or an amount data element — references it with
+ * `@Semantics.amount.currencyCode`, a packed one as `abap.curr( p, s )`. An integer named as an amount is the
+ * original's whole count of the currency's smallest unit; it stays an integer, and a note says it is not the amount
+ * itself (a BHD value 201 is 0.201 BHD) — the engine does not invent the scaling. Without a currency key nothing changes.
+ */
+function amountElements<T extends { name: string; comp: string; type: string; unresolved?: string }>(elements: readonly T[]): Array<T & { before: string[] }> {
+  const currency = elements.find((e) => CURRENCY_COMPONENT.test(e.comp) && /^(?:abap\.char\( [1-5] \)|waers|waers_curc|cuky)$/i.test(e.type));
+  return elements.map((e) => {
+    if (!currency) return { ...e, before: [] };
+    if (e === currency) return { ...e, type: 'abap.cuky( 5 )', before: [] };
+    const packed = /^abap\.dec\( (\d+), (\d+) \)$/.exec(e.type);
+    if (packed && AMOUNT_COMPONENT.test(e.comp)) {
+      return { ...e, type: `abap.curr( ${packed[1]}, ${packed[2]} )`, before: [`      @Semantics.amount.currencyCode: '${currency.name}'`] };
+    }
+    if (AMOUNT_DATA_ELEMENT.test(e.type)) return { ...e, before: [`      @Semantics.amount.currencyCode: '${currency.name}'`] };
+    if (/^abap\.int[248]$/.test(e.type) && AMOUNT_COMPONENT.test(e.comp)) {
+      return { ...e, before: [`      // ${RAP_AMOUNT_MINOR_UNITS_TAG} ${e.name} is a whole number of the smallest unit of ${currency.name}, as the original counts it - not the amount itself (a BHD value 201 is 0.201 BHD); scale it by the currency's decimals before it is shown as an amount.`] };
+    }
+    return { ...e, before: [] };
+  });
 }
 
 /**
@@ -1519,7 +1589,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         ...(cdsParams.length > 0 ? ['  with parameters', ...cdsParams.map((p, i) => `    ${p.name} : ${p.type}${i < cdsParams.length - 1 ? ',' : ''}`)] : []),
         '{',
         '  key row_no : abap.int4;',
-        ...elements.flatMap((e) => [...(e.unresolved ? [`      // ${RAP_UNRESOLVED_TYPE_TAG} ${e.unresolved}`] : []), `      ${e.name} : ${e.type};`]),
+        ...amountElements(elements).flatMap((e) => [...(e.unresolved ? [`      // ${RAP_UNRESOLVED_TYPE_TAG} ${e.unresolved}`] : []), ...e.before, `      ${e.name} : ${e.type};`]),
         '}',
         '',
       ].join('\n'),
@@ -1558,6 +1628,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         ...(ranges.length > 0 ? [`    " ${OPEN_MARKER} QUERY: the original's SELECT-OPTIONS ${ranges.map((r) => r.name.toUpperCase()).join(', ')} - map the request's filter (get_filter( )->get_as_ranges( )) to ls_selection.`] : []),
         ...runCall('ls_selection', '    '),
         ...(resultTable ? [`    lt_data = CORRESPONDING #( ls_result-${resultTable.name}${mapping.length ? ` MAPPING ${mapping.join(' ')}` : ''} ).`] : ['    CLEAR ls_result.']),
+        ...QUERY_FILTER_AND_SORT,
         '    LOOP AT lt_data ASSIGNING FIELD-SYMBOL(<ls_data>).',
         '      <ls_data>-row_no = sy-tabix.',
         '    ENDLOOP.',

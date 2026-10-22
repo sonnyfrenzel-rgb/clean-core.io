@@ -1026,6 +1026,32 @@ export function coverageClaims(text: unknown): string[] {
   return out;
 }
 
+/**
+ * The other half of an overclaim (external MM review of 22.10.2026, point 5): a blanket claim that the SAP standard
+ * cannot do something — "the SAP standard cannot simulate the invoice" — where SAP documents a function for it. The
+ * honest statement names the concrete combination the standard does not cover and the closest standard function.
+ */
+const BLANKET_EXCLUSION = [
+  /\b(?:the\s+)?(?:SAP\s+)?standard\s+(?:cannot|can\s*not|can't|does\s+not|doesn't|is\s+not\s+able\s+to|is\s+unable\s+to|offers\s+no|provides\s+no|has\s+no)\b[^.;]{0,80}/i,
+  /\bnot\s+(?:covered|supported|possible|available)\s+(?:in|by|with)\s+(?:the\s+)?(?:SAP\s+)?standard\b/i,
+  /\bno\s+(?:SAP\s+)?standard\s+(?:function|functionality|app|application|solution|process|transaction|way)\b[^.;]{0,60}/i,
+  /\b(?:the\s+)?(?:SAP\s+)?standard\s+(?:is\s+)?(?:excluded|ruled\s+out)\b/i,
+];
+
+/** The phrases in a text that exclude the SAP standard as a blanket claim — every occurrence. */
+export function standardExclusionClaims(text: unknown): string[] {
+  if (!text || typeof text !== 'string') return [];
+  const out: string[] = [];
+  for (const re of BLANKET_EXCLUSION) {
+    for (const m of text.matchAll(new RegExp(re.source, 'gi'))) out.push(m[0].trim());
+  }
+  return out;
+}
+
+/** Said beside a blanket claim that the SAP standard cannot do something. */
+export const STANDARD_EXCLUSION_NOTE =
+  "The model's claim that the SAP standard cannot do this is not backed by an evidence list here. SAP may document a function for it; name the concrete combination the standard does not cover, and the closest standard function, before ruling the standard out.";
+
 /** Said beside a claim of full coverage or a "High" fit the model wrote. */
 export const COVERAGE_CLAIM_NOTE =
   "The model's claim of full standard coverage is not backed by an evidence list here. Confirm the fit capability by capability before relying on it.";
@@ -1042,7 +1068,9 @@ export const SAP_REFERENCE_PROMPT_RULES = `SAP IDENTIFIERS — every SAP identif
 - When you are not certain, describe the capability in words without an ID, or write the ID followed by "(verify)".
 - A communication scenario is not an API: never give a SAP_COM_ ID where an API is asked for.
 - Never present one API as a general replacement for several tables without saying what it does not cover (for example entry view versus ledger view, or a restriction of the edition).
-- Never claim "full coverage", "fully covers", "covers all functionality" or a "High" fit unless you list, capability by capability, the standard function that covers each one. Otherwise say which capabilities are unconfirmed.`;
+- Never claim "full coverage", "fully covers", "covers all functionality" or a "High" fit unless you list, capability by capability, the standard function that covers each one. Otherwise say which capabilities are unconfirmed.
+- Never rule the SAP standard out with a blanket claim ("the standard cannot …", "no standard function"). Where SAP documents a function for the need, name it, and name the concrete combination of conditions it does not cover — that combination is the fit gap.
+- Name a Fiori app by its exact ID and SAP's exact name, and do not swap the app that manages documents for the app that only lists them; name a scope item by its ID and SAP's exact name, and only for the process it covers.`;
 
 /** The comparison every recommendation of a route carries (review 6.3). */
 export const OPTION_COMPARISON_RULE = `Compare the options before you recommend one — adopt the SAP standard and retire the custom code; adapt the existing logic; an in-app RAP extension; a side-by-side CAP application. State the reason for the option you recommend over the others, and what is not known that could change it (target release, usage, volumes, external users, cost data). Do not assume the standard covers everything, and do not assume CAP is better.`;

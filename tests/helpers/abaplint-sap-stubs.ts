@@ -99,8 +99,25 @@ ENDCLASS.`,
   METHODS get_page_size RETURNING VALUE(rv_page_size) TYPE int8.
 ENDINTERFACE.`,
   'if_rap_query_filter.intf.abap': `INTERFACE if_rap_query_filter PUBLIC.
+  TYPES: BEGIN OF ty_range_option,
+           sign TYPE c LENGTH 1,
+           option TYPE c LENGTH 2,
+           low TYPE string,
+           high TYPE string,
+         END OF ty_range_option,
+         tt_range_option TYPE STANDARD TABLE OF ty_range_option WITH EMPTY KEY,
+         BEGIN OF ty_name_range_pairs,
+           name TYPE string,
+           range TYPE tt_range_option,
+         END OF ty_name_range_pairs,
+         tt_name_range_pairs TYPE STANDARD TABLE OF ty_name_range_pairs WITH EMPTY KEY.
   METHODS get_sql_filter RETURNING VALUE(rv_string) TYPE string.
+  METHODS get_as_ranges RETURNING VALUE(rt_ranges) TYPE tt_name_range_pairs RAISING cx_rap_query_filter_no_range.
 ENDINTERFACE.`,
+  'cx_rap_query_filter_no_range.clas.abap': `CLASS cx_rap_query_filter_no_range DEFINITION PUBLIC INHERITING FROM cx_static_check CREATE PUBLIC.
+ENDCLASS.
+CLASS cx_rap_query_filter_no_range IMPLEMENTATION.
+ENDCLASS.`,
   'if_rap_query_request.intf.abap': `INTERFACE if_rap_query_request PUBLIC.
   TYPES: BEGIN OF ty_parameter,
            parameter_name TYPE string,
@@ -112,6 +129,12 @@ ENDINTERFACE.`,
   METHODS is_total_numb_of_rec_requested RETURNING VALUE(rv_is_requested) TYPE abap_bool.
   METHODS get_paging RETURNING VALUE(ro_paging) TYPE REF TO if_rap_query_paging.
   METHODS get_filter RETURNING VALUE(ro_filter) TYPE REF TO if_rap_query_filter.
+  TYPES: BEGIN OF ty_sort_element,
+           element_name TYPE string,
+           descending TYPE abap_bool,
+         END OF ty_sort_element,
+         tt_sort_elements TYPE STANDARD TABLE OF ty_sort_element WITH EMPTY KEY.
+  METHODS get_sort_elements RETURNING VALUE(rt_sort_elements) TYPE tt_sort_elements.
 ENDINTERFACE.`,
   'if_rap_query_response.intf.abap': `INTERFACE if_rap_query_response PUBLIC.
   METHODS set_total_number_of_records IMPORTING iv_total_number_of_records TYPE int8.

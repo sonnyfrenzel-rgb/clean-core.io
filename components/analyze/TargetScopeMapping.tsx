@@ -5,7 +5,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
-import { COVERAGE_CLAIM_NOTE, coverageClaims } from '@/lib/sap-reference-check';
+import { COVERAGE_CLAIM_NOTE, STANDARD_EXCLUSION_NOTE, coverageClaims, standardExclusionClaims } from '@/lib/sap-reference-check';
 
 /** A step of the model's three-word answer: an amount, not a state (§1.8) — never green. */
 const FIT_STEP = SEQUENTIAL_CHART_COLORS[SEQUENTIAL_CHART_COLORS.length - 1].bg;
@@ -62,6 +62,9 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
             <p className="cc-text-cell text-cc-ink"><SapCheckedText text={standardFit?.rationale} /></p>
             {standardFit && (standardFit.potential === 'High' || coverageClaims(`${standardFit.rationale ?? ''} ${recommendations?.cloudReadiness ?? ''}`).length > 0) ? (
               <p data-coverage-claim="" className="cc-text-meta text-cc-ink-muted">{COVERAGE_CLAIM_NOTE}</p>
+            ) : null}
+            {standardFit && standardExclusionClaims(`${standardFit.rationale ?? ''} ${recommendations?.cloudReadiness ?? ''}`).length > 0 ? (
+              <p data-standard-exclusion="" className="cc-text-meta text-cc-ink-muted">{STANDARD_EXCLUSION_NOTE}</p>
             ) : null}
           </div>
           <div>
