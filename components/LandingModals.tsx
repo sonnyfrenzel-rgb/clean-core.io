@@ -49,11 +49,14 @@ type AuthMode = 'signin' | 'signup' | 'forgot' | 'mfa' | 'success';
 
 /** The dialog's title per step: the heading each screen used to draw itself. */
 const AUTH_TITLE: Record<AuthMode, string> = {
-  signin: 'Welcome Back',
-  signup: 'Create Account',
-  forgot: 'Reset Password',
-  success: 'Check your Inbox',
-  mfa: 'Two-Factor Auth',
+  // Every signed-out call to action opens this step, for a returning account
+  // and a new reader alike: a neutral title, not "Welcome Back" (roadmap 3.0.21
+  // (15)). Sentence case throughout the dialog.
+  signin: 'Sign in or create a free account',
+  signup: 'Create a free account',
+  forgot: 'Reset password',
+  success: 'Check your inbox',
+  mfa: 'Two-factor authentication',
 };
 
 /**
@@ -194,6 +197,8 @@ export default function LandingModals() {
   const [lastName, setLastName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+  // The registration failed because the address has an account: the error then offers the two ways on.
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -517,8 +522,9 @@ export default function LandingModals() {
     } catch (error: any) {
       console.error('Registration error:', error);
       let errorMsg = 'Error creating account. Please try again.';
+      setAlreadyRegistered(error.code === 'auth/email-already-in-use');
       if (error.code === 'auth/email-already-in-use') {
-        errorMsg = 'This email address is already registered.';
+        errorMsg = 'This email address is already registered. Sign in with it, or reset its password if you no longer know it.';
       } else if (error.code === 'auth/invalid-email') {
         errorMsg = 'Invalid email address.';
       } else if (error.code === 'auth/weak-password') {
@@ -734,7 +740,7 @@ export default function LandingModals() {
 
               <div className="flex flex-col">
                 <CcButton variant="ghost" density="cozy" onClick={closeAuthModal} icon={<ArrowLeft size={16} aria-hidden={true} />}>
-                  Back to Sign In
+                  Back to sign in
                 </CcButton>
               </div>
             </div>
@@ -772,7 +778,7 @@ export default function LandingModals() {
 
               <div className="flex flex-col gap-2">
                 <CcButton type="submit" variant="primary" density="cozy" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={16} aria-hidden={true} />
+                  {isSubmitting ? 'Sending…' : 'Send reset link'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
                 <CcButton
                   variant="ghost"
@@ -780,7 +786,7 @@ export default function LandingModals() {
                   onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
                   icon={<ArrowLeft size={16} aria-hidden={true} />}
                 >
-                  Back to Sign In
+                  Back to sign in
                 </CcButton>
               </div>
             </div>
@@ -799,7 +805,7 @@ export default function LandingModals() {
                 density="cozy"
                 onClick={() => { setAuthMode('signin'); setEmail(''); setAuthError(''); updateQueryParams('auth', 'signin'); }}
               >
-                Back to Sign In
+                Back to sign in
               </CcButton>
             </div>
           </div>
@@ -810,10 +816,10 @@ export default function LandingModals() {
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
+                onClick={() => { setAuthMode('signin'); setAuthError(''); setAlreadyRegistered(false); updateQueryParams('auth', 'signin'); }}
                 className={INLINE_LINK}
               >
-                Sign In
+                Sign in
               </button>
             </p>
 
@@ -1028,7 +1034,37 @@ export default function LandingModals() {
                 before deployment. Liability: Terms, section 4.
               </CcMessageStrip>
 
-              {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
+              {authError && (
+                <div data-auth-error={alreadyRegistered ? 'already-registered' : ''}>
+                  <CcMessageStrip
+                    state="error"
+                    actions={
+                      // The address has an account already: the two ways on, with the
+                      // address carried over (roadmap 3.0.21 (15)) — not a dead end.
+                      alreadyRegistered ? (
+                        <>
+                          <CcButton
+                            variant="ghost"
+                            onClick={() => { setAuthMode('signin'); setAuthError(''); setAlreadyRegistered(false); updateQueryParams('auth', 'signin'); }}
+                            data-auth-signin-instead=""
+                          >
+                            Sign in instead
+                          </CcButton>
+                          <CcButton
+                            variant="ghost"
+                            onClick={() => { setAuthMode('forgot'); setAuthError(''); setAlreadyRegistered(false); updateQueryParams('auth', 'forgot'); }}
+                            data-auth-reset-instead=""
+                          >
+                            Reset password
+                          </CcButton>
+                        </>
+                      ) : undefined
+                    }
+                  >
+                    {authError}
+                  </CcMessageStrip>
+                </div>
+              )}
 
               <div className="flex flex-col gap-2">
                 <CcButton
@@ -1038,7 +1074,7 @@ export default function LandingModals() {
                   disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword) || !agreedGDPR || !agreedTerms}
                   aria-describedby={!agreedGDPR || !agreedTerms ? 'register-consent-hint' : undefined}
                 >
-                  {isSubmitting ? 'Registering...' : 'Register'} <ArrowRight size={16} aria-hidden={true} />
+                  {isSubmitting ? 'Registering…' : 'Register'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
                 {/* The same reason the Google button gives, for the same gate (UX-079). */}
                 {(!agreedGDPR || !agreedTerms) && (
@@ -1085,7 +1121,7 @@ export default function LandingModals() {
                 variant="secondary"
                 onClick={() => { setAuthMode('signup'); setAuthError(''); updateQueryParams('auth', 'signup'); }}
               >
-                Create Account
+                Create account
               </CcButton>
             </div>
 
@@ -1137,7 +1173,7 @@ export default function LandingModals() {
                     onClick={() => { setAuthMode('forgot'); setAuthError(''); updateQueryParams('auth', 'forgot'); }}
                     className={cn(INLINE_LINK, 'text-[12px]')}
                   >
-                    Forgot Password?
+                    Forgot password?
                   </button>
                 </p>
               </div>
@@ -1151,7 +1187,7 @@ export default function LandingModals() {
 
               <div className="flex flex-col">
                 <CcButton type="submit" variant="primary" density="cozy" disabled={isSubmitting}>
-                  {isSubmitting ? 'Signing In...' : 'Sign In'} <ArrowRight size={16} aria-hidden={true} />
+                  {isSubmitting ? 'Signing in…' : 'Sign in'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
               </div>
 

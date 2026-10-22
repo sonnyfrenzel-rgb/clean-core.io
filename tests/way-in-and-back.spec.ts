@@ -315,6 +315,45 @@ test.describe('(12) the start names the target as one line, and the own-code foo
   });
 });
 
+test.describe('(15) the sign-in dialog: a neutral title, a way on from "already registered", sentence case — the sign-up fields unchanged', () => {
+  const src = read('components/LandingModals.tsx');
+
+  test('the step every call to action opens has a neutral title', () => {
+    const titles = src.slice(src.indexOf('const AUTH_TITLE'), src.indexOf('};', src.indexOf('const AUTH_TITLE')));
+    expect(titles).toContain("signin: 'Sign in or create a free account',");
+    expect(titles).toContain("signup: 'Create a free account',");
+    expect(titles).toContain("forgot: 'Reset password',");
+    expect(titles).toContain("success: 'Check your inbox',");
+    expect(titles).toContain("mfa: 'Two-factor authentication',");
+    expect(titles).not.toContain(": 'Welcome Back'");
+  });
+
+  test('"already registered" offers "Sign in instead" and "Reset password"', () => {
+    expect(src).toContain("setAlreadyRegistered(error.code === 'auth/email-already-in-use');");
+    const strip = src.slice(src.indexOf("data-auth-error={alreadyRegistered ? 'already-registered' : ''}"), src.indexOf('{authError}', src.indexOf('data-auth-error=')));
+    expect(strip).toMatch(/data-auth-signin-instead=""\s*>\s*Sign in instead/);
+    expect(strip).toMatch(/data-auth-reset-instead=""\s*>\s*Reset password/);
+    expect(strip).toContain("updateQueryParams('auth', 'signin')");
+    expect(strip).toContain("updateQueryParams('auth', 'forgot')");
+  });
+
+  test('the dialog\'s own words are in sentence case', () => {
+    for (const titleCase of ['>Sign In<', "'Sign In'", 'Back to Sign In', 'Create Account\n', 'Forgot Password?', 'Send Reset Link', 'Signing In']) {
+      expect(src.replace(/\s*\n\s*/g, '\n').replace(/>\n/g, '>').replace(/\n</g, '<'), titleCase).not.toContain(titleCase);
+    }
+  });
+
+  test('the sign-up fields are the ones they were — names, address, passwords, the optional motivation and both agreements', () => {
+    const signup = src.slice(src.indexOf("authMode === 'signup' ? ("), src.indexOf('/* Sign In Screen (Default) */'));
+    for (const label of ['label="First Name" required', 'label="Last Name" required', 'label="Email Address" required', 'label="Motivation / Use Case (Optional)"']) {
+      expect(signup, label).toContain(label);
+    }
+    expect(signup.match(/<CcCheckbox/g)).toHaveLength(2);
+    // The five fields of v3.0.20, counted so that none is added or dropped unnoticed.
+    expect(signup.match(/<CcField /g)?.length).toBe(5);
+  });
+});
+
 test.describe('(2) the quota has one name — analysis runs, counted as left', () => {
   test('the header, Settings and the notices count what is left, in runs', () => {
     expect(runsLeftLabel({ transformationsUsed: 1, transformationsLimit: 5 })).toBe('4 of 5 runs left');
