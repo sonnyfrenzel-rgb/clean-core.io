@@ -881,7 +881,7 @@ export function abapTestEvidenceSentences(e: AbapTestEvidence, sap: GoldenMaster
     const notCarried = e.goldenMaster.notCarried ?? 0;
     out.push(
       // 3.0.18 item 13: the fourth state from the SAP result on record, when there is one for this package.
-      `${goldenMasterStates(n, e.goldenMaster.rowsPassed ? n - notCarried : 0, e.goldenMaster.compared, sap)} — ${goldenMasterComparedWords(n, e.goldenMaster.compared)}` +
+      `${goldenMasterStates(n, e.goldenMaster.rowsPassed ? n - notCarried : 0, e.goldenMaster.compared, sap)} — ${goldenMasterComparedWords(n, e.goldenMaster.compared, notCarried)}` +
         (notCarried ? `; ${notCarriedWords(notCarried)}` : '') +
         (e.goldenMaster.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic (its state has no component for them), so they run the logic without the case data.'),
     );
