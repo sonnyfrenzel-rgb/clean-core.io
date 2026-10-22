@@ -11,7 +11,10 @@ import PersonalDataHints from '@/components/PersonalDataHints';
 import { isUnchangedShippedExample } from '@/lib/shipped-example-fingerprint';
 import {
   COMMUNITY_QUOTA_FALLBACK,
+  OWN_KEY_ACTION,
+  OWN_KEY_HREF,
   quotaExhausted,
+  quotaSpentSentence,
   runsAreSelfFunded,
   starterExampleIsFree,
   type QuotaSubject,
@@ -23,6 +26,7 @@ import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
 import { formatNumber } from '@/lib/format';
 import { Eye, FileCode2, Info, Play } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcDialog from '@/components/cc/Dialog';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcFilterBar from '@/components/cc/FilterBar';
@@ -370,12 +374,18 @@ export default function StarterExamples({
             headline="Limit reached."
             announce
             actions={
-              <CcButton variant="ghost" onClick={() => setLimitHit(false)}>
-                Close
-              </CcButton>
+              // The way on, not only "Close" (roadmap 3.0.21 (3)): straight to the own-key card.
+              <>
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+                <CcButton variant="ghost" onClick={() => setLimitHit(false)}>
+                  Close
+                </CcButton>
+              </>
             }
           >
-            {`You've used all ${limit} free analysis runs. Add your own Gemini API key in Settings for unlimited runs — Clean-Core.io stays free.`}
+            {quotaSpentSentence(limit)}
           </CcMessageStrip>
         </div>
       ) : null}

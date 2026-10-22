@@ -51,11 +51,16 @@ import CcDateText from '@/components/cc/DateText';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { SemanticState } from '@/lib/provenance';
 import { cn } from '@/lib/utils';
+import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_HREF, QUOTA_NAME, runsLeftLabel } from '@/lib/run-quota-rule';
+import { signInLinkFor } from '@/lib/return-path';
 
 /** A quiet block inside a card — a note, an explanation, the strength meter. */
 const INSET = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-4';
+/** The two cards a link can name (roadmap 3.0.21 (3)): the own key, and the two-factor it needs. */
+const OWN_KEY_ID = OWN_KEY_HREF.slice(OWN_KEY_HREF.indexOf('#') + 1);
+const SIGN_IN_SECURITY_ID = 'sign-in-security';
 /** A link in running text. */
-const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
+const TEXT_LINK ='font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
 
 /**
  * A state in words with its dot — the shape of `CcObjectStatus` (§2.4, "Status
@@ -155,6 +160,16 @@ export default function SettingsPage() {
   // Who may bring their own key: one list, shared with the routes that store and
   // test it (lib/byok-eligibility.ts, roadmap 3.0.13 c).
   const isPilotTier = byokAllowed(profile);
+  // `/settings#own-key` arrives before the cards exist (they wait for the
+  // profile), so the browser's own jump finds nothing: bring the named card into
+  // view once the page has drawn it (roadmap 3.0.21 (3)).
+  useEffect(() => {
+    if (loading) return;
+    const id = window.location.hash.slice(1);
+    if (id !== OWN_KEY_ID && id !== SIGN_IN_SECURITY_ID) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading]);
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -1073,13 +1088,13 @@ export default function SettingsPage() {
     if (hasCustomKey && (tier === 'pilot' || tier === 'pilot_byok')) {
       return {
         label: `Free Community Edition, with ${ownKeyName}`,
-        text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use, so there is no limit on transformations.`,
+        text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use, so there is no limit on analysis runs.`,
       };
     }
 
     switch (tier) {
-      case 'pilot_byok': return { label: `Free Community Edition, with ${ownKeyName}`, text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use — no limit on transformations, every feature, always free.` };
-      default: return { label: 'Free Community Edition', text: `Every feature, with 5 free transformations.${isPilotTier ? ' Add your own model key below for unlimited runs.' : ''}` };
+      case 'pilot_byok': return { label: `Free Community Edition, with ${ownKeyName}`, text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use — no limit on analysis runs, every feature, always free.` };
+      default: return { label: 'Free Community Edition', text: `Every feature, with ${profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs.${isPilotTier ? ' Add your own model key below for unlimited runs.' : ''}` };
     }
   };
 
@@ -1150,18 +1165,18 @@ export default function SettingsPage() {
 
       {/* The plan and its quota — a sidebar until the single column (gap
           audit 3.0, §18). The "community status" card beside it repeated the
-          plan in other words and is folded in here. */}
-      <CcCard level={2} title="Plan and usage" meta={<StateWord state="success">Active</StateWord>}>
+          plan in other words and is folded in here. There are no plans, so
+          the card is named after what it counts — the quota's one name,
+          counted as left like the header (roadmap 3.0.21 (2)). */}
+      <CcCard level={2} title={QUOTA_NAME} meta={<StateWord state="success">Active</StateWord>}>
         <p className="m-0 cc-text-body text-cc-ink">{tierInfo.label}</p>
         <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{tierInfo.text}</p>
 
         <dl className="m-0 mt-4 space-y-2 border-t border-cc-line pt-4 cc-text-cell">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-cc-ink-muted">Transformations used</dt>
-            <dd className="m-0 font-semibold text-cc-ink">
-              {profile?.byokConfigured
-                ? `${profile?.transformationsUsed || 0} of unlimited (your own key)`
-                : `${profile?.transformationsUsed || 0} of ${profile?.transformationsLimit || 5}`}
+            <dt className="text-cc-ink-muted">{QUOTA_NAME}</dt>
+            <dd data-settings-quota="" className="m-0 font-semibold text-cc-ink">
+              {profile?.byokConfigured ? 'Unlimited (your own key)' : runsLeftLabel(profile)}
             </dd>
           </div>
           {profile?.accessUntil && (
@@ -1178,7 +1193,7 @@ export default function SettingsPage() {
         </p>
       </CcCard>
 
-      <CcCard level={2} title="Sign-in security">
+      <CcCard level={2} title="Sign-in security" id={SIGN_IN_SECURITY_ID}>
         <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
           Ask for a code from an authenticator app at every sign-in, and change your password.
         </p>
@@ -1382,10 +1397,11 @@ export default function SettingsPage() {
         <CcCard
           level={2}
           title="Your own model key (BYOK)"
+          id={OWN_KEY_ID}
           meta={profile?.byokConfigured ? <StateWord state="success">{savedProvider ? `${PROVIDER_LABEL[savedProvider]} key saved` : 'Key saved'}</StateWord> : undefined}
         >
           <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-            With your own Google Gemini or Anthropic API key, the limit of 5 free transformations no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
+            With your own Google Gemini or Anthropic API key, the limit of {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
           </p>
 
           <form onSubmit={handleSaveKey} className="space-y-4 text-cc-ink">
@@ -1474,8 +1490,11 @@ export default function SettingsPage() {
                 own-key routes require an enrolled factor (lib/mfa-gate.ts,
                 byokRequiresEnrolment). */}
             <p className="m-0 cc-text-cell text-cc-ink-muted">
-              Saving, testing or removing your own key needs two-factor authentication on this account —
-              set it up under Sign-in security first.
+              Saving, testing or removing your own key needs two-factor authentication on this account —{' '}
+              <a href={`#${SIGN_IN_SECURITY_ID}`} data-own-key-mfa-link="" className={TEXT_LINK}>
+                set it up under Sign-in security
+              </a>{' '}
+              first.
             </p>
           </form>
         </CcCard>
@@ -1874,7 +1893,8 @@ export default function SettingsPage() {
               <CcButton
                 variant="primary"
                 icon={<ArrowRight size={16} aria-hidden={true} />}
-                onClick={async () => { setShowMfaSetup(false); await signOut(getAuth()); router.push('/?auth=signin'); }}
+                // Back to the own key after the new sign-in, the step two-factor was turned on for (roadmap 3.0.21 (3)).
+                onClick={async () => { setShowMfaSetup(false); await signOut(getAuth()); router.push(signInLinkFor(isPilotTier ? OWN_KEY_HREF : '/settings')); }}
               >
                 Sign out and sign in again
               </CcButton>
@@ -2055,7 +2075,7 @@ export default function SettingsPage() {
         onConfirm={handleDeleteKey}
         onCancel={() => setConfirmDeleteKey(false)}
       >
-        The key is deleted from our server, and you are back to the 5 free transformations.
+        The key is deleted from our server, and you are back to the {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs.
       </CcMessageBox>
 
       {/* GDPR erasure — the three browser prompts as the fields of one

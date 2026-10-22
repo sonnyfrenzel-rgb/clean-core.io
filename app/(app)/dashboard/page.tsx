@@ -12,7 +12,16 @@ import { collection, query, where, onSnapshot, orderBy, serverTimestamp, getDocs
 import { createWithinCeiling } from '@/lib/write-ceiling';
 import { Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, FileText, FileCode2, Download, Copy, Eye, BookOpen, ShieldAlert, Clock, HelpCircle, UserPlus, Play } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quota-rule';
+import {
+  OWN_KEY_ACTION,
+  OWN_KEY_HREF,
+  QUOTA_NAME,
+  quotaExhausted,
+  quotaSpentSentence,
+  runsAreSelfFunded,
+  runsLeftLabel,
+} from '@/lib/run-quota-rule';
+import { signInLinkFor } from '@/lib/return-path';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
@@ -160,8 +169,9 @@ export default function Dashboard() {
             setUser(auth.currentUser);
             setLoadingAuth(false);
           } else {
-            console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to /');
-            router.push('/');
+            // To the sign-in, with the way back here (roadmap 3.0.21 (1)) — not the bare landing page.
+            console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to sign-in');
+            router.push(signInLinkFor('/dashboard'));
           }
         }, 3000);
       } else {
@@ -443,20 +453,23 @@ export default function Dashboard() {
   const showYourTurn = !loadingProjects && projects.length === 0;
 
   // What a new run costs this account, said inside the dialog that starts one.
+  // The quota's one name — "analysis runs", counted as left (roadmap 3.0.21 (2)).
   const quotaStrip = exhausted ? (
-    <CcMessageStrip state="warning" headline="Quota exceeded.">
-      You have used all <strong>{limitCount}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
+    <CcMessageStrip
+      state="warning"
+      headline="Limit reached."
+      actions={<CcLinkButton href={OWN_KEY_HREF} variant="ghost">{OWN_KEY_ACTION}</CcLinkButton>}
+    >
+      {quotaSpentSentence(limitCount)}
     </CcMessageStrip>
   ) : (
-    <CcMessageStrip state="information" headline="Free balance.">
+    <CcMessageStrip state="information" headline={`${QUOTA_NAME}.`}>
       {runsAreSelfFunded(profile) ? (
         profile?.tier === 'enterprise'
-          ? 'Unlimited enterprise transformations remaining.'
-          : 'Your own Gemini key — runs are not counted against the free quota.'
+          ? 'Unlimited analysis runs.'
+          : 'Your own model key — runs are not counted against the free analysis runs.'
       ) : (
-        <>
-          You have <strong>{runsRemaining(profile)}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
-        </>
+        <>{runsLeftLabel(profile)}.</>
       )}
     </CcMessageStrip>
   );
@@ -580,12 +593,12 @@ export default function Dashboard() {
             state="warning"
             headline="Limit reached."
             actions={
-              <CcButton variant="ghost" onClick={() => router.push('/settings')}>
-                Go to settings
-              </CcButton>
+              <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                {OWN_KEY_ACTION}
+              </CcLinkButton>
             }
           >
-            You&apos;ve used your {limitCount} free transformations. Add your own Gemini API key in settings for unlimited runs — at no cost.
+            {quotaSpentSentence(limitCount)}
           </CcMessageStrip>
         ) : null}
 
@@ -595,12 +608,17 @@ export default function Dashboard() {
             headline="Limit reached."
             announce
             actions={
-              <CcButton variant="ghost" onClick={() => setQuotaBlocked(false)}>
-                Close
-              </CcButton>
+              <>
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+                <CcButton variant="ghost" onClick={() => setQuotaBlocked(false)}>
+                  Close
+                </CcButton>
+              </>
             }
           >
-            You&apos;ve used all {limitCount} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
+            {quotaSpentSentence(limitCount)}
           </CcMessageStrip>
         ) : null}
 
@@ -796,9 +814,9 @@ export default function Dashboard() {
           <div>
             <h3 className="m-0 cc-text-h3 text-cc-ink">Free Community Edition limits</h3>
             <p className="mt-1 mb-0">
-              Free accounts are limited to <strong>{limitCount} transformations</strong>. For unlimited
-              transformations, configure your own Gemini API key in{' '}
-              <a href="/settings" className={LINK}>Profile Settings</a> (BYOK mode) at no extra cost.
+              Free accounts have <strong>{limitCount} free analysis runs</strong>. For unlimited runs, add your
+              own model key in{' '}
+              <a href={OWN_KEY_HREF} className={LINK}>Settings</a> at no extra cost.
             </p>
           </div>
           <div>

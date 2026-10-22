@@ -61,7 +61,7 @@ const STEPS: Step[] = [
     // reader is working out what the thing costs. The wording is the header's
     // own, and `tests/claims-honesty-guard.spec.ts` reads both from the
     // rendered pages so the two cannot drift apart again.
-    see: 'The dashboard, with your transformation balance shown in the header — "5 of 5 left" on a fresh account.',
+    see: 'The dashboard, with your analysis runs shown in the header — "5 of 5 runs left" on a fresh account.',
   },
   {
     n: 2,
@@ -79,7 +79,7 @@ const STEPS: Step[] = [
     detail:
       'One click creates the project and opens its workspace, and the start is the analysis: the deterministic engine reads the source and the result is sealed as a signed run. With the model on, the narrative is written into the same run while you watch; without it, the engine’s reading is signed alone. At 552 lines it is a real approval process — vendor block list, price tolerance, approval by department head or manager — and it shows the honest gaps too: two includes the code names but does not contain are marked Not determined, never guessed.',
     see: 'The first look, about 20 seconds in six steps — the code read, the process recognised, plain names, the rules hard-coded in the program, what could not be determined, and your process as numbered steps beside the map. Pause or skip it at any time.',
-    note: 'This is the one step that costs a transformation — except the starter examples, which are free the first time you run each of them. Everything after it is included, and re-running the analysis on the same source is free; starting the same example a second time is an ordinary analysis, counted once it completes.',
+    note: 'This is the one step that uses one of your analysis runs — except the starter examples, which are free the first time you run each of them. Everything after it is included, and re-running the analysis on the same source is free; starting the same example a second time is an ordinary analysis, counted once it completes.',
   },
   {
     n: 4,
@@ -167,7 +167,7 @@ export default function FirstRunPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { icon: CheckCircle2, t: 'What you need', d: 'An account. That is all — no approval to wait for, no system connection, no credentials, no data.' },
-          { icon: FileCode2, t: 'What it costs', d: 'Nothing for a starter example the first time you run it. Any other analysis spends one of your five transformations when it completes. The six stages after it are included.' },
+          { icon: FileCode2, t: 'What it costs', d: 'Nothing for a starter example the first time you run it. Any other analysis uses one of your five analysis runs when it completes. The six stages after it are included.' },
           { icon: Clock, t: 'How long', d: 'About fifteen minutes end to end, most of it spent reading the output rather than waiting.' },
         ].map((c) => (
           <div key={c.t} className="bg-cc-surface border border-cc-line rounded-2xl p-5">

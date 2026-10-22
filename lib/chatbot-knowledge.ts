@@ -218,9 +218,9 @@ A cost model for your modernization project — priced only with figures you ent
 ### Settings (/settings)
 Global platform configuration.
 - **Profile**: User profile management (name, email, company)
-- **Gemini API Key (BYOK)**: Bring Your Own Key — enter your personal Google Gemini API key (encrypted server-side with AES-256-GCM, used only via the backend proxy) for unlimited transformations. Without a key you get 5 free transformations on the shared platform key.
+- **Gemini API Key (BYOK)**: Bring Your Own Key — enter your personal Google Gemini API key (encrypted server-side with AES-256-GCM, used only via the backend proxy) for unlimited analysis runs. Without a key you get 5 free analysis runs on the shared platform key; the header shows them as "4 of 5 runs left", and Settings lists them under "Analysis runs".
 - **S/4HANA Live Tenant Integration**: Configure your S/4HANA sandbox connection for connection checks and metadata reads (same as the Testing page configuration, but global). Read-only, non-production only, admin-gated. Running tests against the tenant is locked.
-- **Access & Usage**: Clean-Core.io is 100% free. Every user has the Free Community Edition with full feature access and 5 transformations; add your own Gemini key for unlimited runs. There are no paid, premium, or purchasable tiers.
+- **Access & Usage**: Clean-Core.io is 100% free. Every user has the Free Community Edition with full feature access and 5 free analysis runs; add your own Gemini key for unlimited runs. There are no paid, premium, or purchasable tiers.
 
 ### Knowledge Hub (/knowledge)
 Reference library for SAP Clean Core architecture and ${BTP} extensibility patterns.
@@ -310,10 +310,10 @@ Individual SAP architects, developers, and modernization decision-makers. It is 
 
 ### What every user gets (Free Community Edition)
 - The FULL 7-stage workflow and every feature — nothing is locked behind a paywall: analysis, solution design, code transformation, documentation (BPMN/Confluence), testing, TCO, delivery (ZIP bundle), and the server-signed audit evidence pack.
-- 5 free transformations on the shared platform Gemini key.
+- 5 free analysis runs on the shared platform Gemini key. Only the analysis is counted; the six tools after it are included.
 
 ### BYOK (Bring Your Own Key) — unlimited, still free
-- Add your own Google Gemini API key in Settings for UNLIMITED transformations. Your key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client. Usage is billed by Google to your key; Clean-Core.io charges no platform fee.
+- Add your own Google Gemini API key in Settings for UNLIMITED analysis runs. Your key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client. Usage is billed by Google to your key; Clean-Core.io charges no platform fee.
 
 ### Live S/4HANA sandbox (developer, admin-gated)
 - Connecting a real, NON-PRODUCTION S/4HANA sandbox for OData connection checks is opt-in, read-only, encrypted, and admin-gated (manually approved). Running tests against it is locked. It is free — approval is granted by an administrator, not purchased.

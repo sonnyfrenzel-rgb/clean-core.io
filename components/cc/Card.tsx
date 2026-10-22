@@ -42,6 +42,8 @@ export interface CcCardProps {
   /** Buttons, right-aligned in the header row. */
   actions?: React.ReactNode;
   density?: 'compact' | 'cozy';
+  /** An anchor a link can name (`/settings#own-key`); the card scrolls clear of the shell bar. */
+  id?: string;
   children: React.ReactNode;
 }
 
@@ -52,14 +54,17 @@ export default function CcCard({
   meta,
   actions,
   density = 'cozy',
+  id,
   children,
 }: CcCardProps) {
   const Heading = level === 2 ? 'h2' : 'h3';
   return (
     <section
+      id={id}
       data-cc-card=""
       className={cn(
         'cc-card min-w-0 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc',
+        id && 'scroll-mt-20',
         density === 'compact' ? 'p-3' : 'p-4',
       )}
     >
