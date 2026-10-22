@@ -29,9 +29,5 @@ export function askModeOf(input: { wanted: boolean; autoAllowed: boolean }): Ask
   return input.autoAllowed ? 'auto' : 'click';
 }
 
-/** The line beside the click, said once, in the view's words. */
-export const ON_A_CLICK_NOTE = 'Automatic steps are off for your own key — nothing is sent until you click.';
-
-/** The buttons of the two steps when they wait for a click. */
-export const PLAIN_ON_CLICK_LABEL = 'Reword in plain language';
-export const NAMES_ON_CLICK_LABEL = 'Name the steps in business language';
+/** The two steps that can wait for a click; their words are in the catalogue (`autoSteps.*`). */
+export type ClickStep = 'plain' | 'names';

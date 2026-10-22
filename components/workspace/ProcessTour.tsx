@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Footprints, RotateCcw, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import AskOnClick from './AskOnClick';
-import { PLAIN_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -334,7 +333,7 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
               </CcButton>
             </span>
           </div>
-          <AskOnClick askNow={askWording} label={PLAIN_ON_CLICK_LABEL} />
+          <AskOnClick askNow={askWording} step="plain" />
           {tour && tour.chapters.length > 1 ? (
             <nav aria-label={wt('walk.chaptersLabel')} className="cc-tour-wide-only mt-2">
               <ol className="m-0 flex list-none flex-wrap gap-1 p-0">

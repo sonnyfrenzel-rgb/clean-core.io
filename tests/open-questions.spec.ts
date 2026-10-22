@@ -279,7 +279,8 @@ test.describe('what went in exchange (source guards)', () => {
   test('the workspace shows one list, and the line everywhere else', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell.match(/<OpenQuestions\b/g) ?? []).toHaveLength(1);
-    for (const rel of ['components/workspace/FirstLook.tsx', 'components/workspace/BusinessOpening.tsx', 'components/workspace/StandardFitTable.tsx']) {
+    // First insights carries no open-questions line since 3.0.21 (ADR-103); the workspace's one list stands below it.
+    for (const rel of ['components/workspace/FirstLook.tsx', 'components/workspace/StandardFitTable.tsx']) {
       expect(read(rel), rel).toContain('<OpenQuestionsLine');
     }
     expect(read('components/workspace/ItAnswers.tsx')).toContain('openQuestionsLine(');

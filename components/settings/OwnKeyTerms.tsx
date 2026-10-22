@@ -30,7 +30,7 @@ export function OwnKeyNotices({ provider }: { provider: ModelKeyProvider }) {
   return (
     <div data-own-key-notices={provider} className="flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-3">
       {notices.field ? <p className="m-0 cc-text-cell font-medium text-cc-ink">{notices.field}</p> : null}
-      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {notices.points.map((point) => (
           <li key={point.title} className="cc-text-cell text-cc-ink-muted">
             <strong className="font-semibold text-cc-ink">{point.title}:</strong> {point.text}

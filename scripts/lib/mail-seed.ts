@@ -60,6 +60,7 @@ import {
   ADDRESS_CONFIRMATION_SUBJECT,
 } from '../../lib/invitation-email';
 import { invitationLinkPath } from '../../lib/invitations';
+import { BYOK_AGREEMENT_ACCEPTED_SUBJECT, BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementAcceptedMail, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
 import { summarise, type SurveyResponse } from '../../lib/survey/store';
@@ -343,6 +344,28 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       );
       // lib/transactional-mail.ts: DEFAULT_FROM, reply_to USER_MAIL_REPLY_TO, text from htmlToText.
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: INVITATION_EMAIL_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  {
+    type: 'byok-agreement-accepted',
+    audience: 'nutzer',
+    source: 'lib/byok-agreement-mail.ts',
+    template: 'lib/byok-agreement-email.ts',
+    build: (ctx) => {
+      const html = wrapEmailDocument(
+        buildAgreementAcceptedMail({ recipient: escapeHtml(ctx.recipient.address), version: 'ZV-BYOK-1.0', language: 'en', contentSha256: null, acceptedAt: ctx.now.toISOString() }),
+      );
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: BYOK_AGREEMENT_ACCEPTED_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  {
+    type: 'byok-agreement-ended',
+    audience: 'nutzer',
+    source: 'lib/byok-agreement-mail.ts',
+    template: 'lib/byok-agreement-email.ts',
+    build: (ctx) => {
+      const html = wrapEmailDocument(buildAgreementEndedMail({ recipient: escapeHtml(ctx.recipient.address), ending: 'settings', endedAt: ctx.now.toISOString() }));
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: BYOK_AGREEMENT_ENDED_SUBJECT, html, text: htmlToText(html) };
     },
   },
   {

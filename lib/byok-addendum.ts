@@ -146,7 +146,7 @@ export const OWN_KEY_NOTICES = {
     points: [
       {
         title: 'Tier',
-        text: 'Use a key from a Google Cloud project with an active Cloud Billing account (paid tier); only there does Google not use your requests for training, and limited logging serves only abuse detection and legally required disclosures. For users in the EEA, Switzerland and the UK, Google applies these rules under its terms (as of 28 April 2026) to the unpaid quota as well; outside those regions, without a billing account, Google’s free-tier terms apply (use for training, human review).',
+        text: 'Use an own Gemini key from a Google Cloud project with an active Cloud Billing account (paid tier); only there does Google not use your requests for training, and limited logging serves only abuse detection and legally required disclosures. For users in the EEA, Switzerland and the UK, Google applies these rules under its terms (as of 28 April 2026) to the unpaid quota as well; outside those regions, without a billing account, Google’s free-tier terms apply (use for training, human review).',
       },
     ],
   },

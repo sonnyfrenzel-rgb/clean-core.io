@@ -30,7 +30,6 @@ import type { ElementState, StateSubject } from '@/lib/process-states';
 import { anchorWords } from '@/lib/rule-anchor';
 import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
 import AskOnClick from './AskOnClick';
-import { NAMES_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -703,7 +702,7 @@ export default function WorkspaceProcess({
         >
           {wt('biz.needAndProcess')}
         </h2>
-        <AskOnClick askNow={naming.askNow} label={NAMES_ON_CLICK_LABEL} />
+        <AskOnClick askNow={naming.askNow} step="names" />
       </div>
       {/* The guided tour, over the page while it is open (owner decision
           21.10.2026): the map and the narration on one screen. */}

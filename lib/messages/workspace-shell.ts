@@ -7,6 +7,10 @@
  * business and not the component's.
  */
 export const WORKSPACE_SHELL_MESSAGES = {
+  // A step that waits for a click (3.0.21, owner decision B6) — components/workspace/AskOnClick.tsx.
+  'autoSteps.onClickNote': 'Automatic steps are off for your own key — nothing is sent until you click.',
+  'autoSteps.plainLabel': 'Reword in plain language',
+  'autoSteps.namesLabel': 'Name the steps in business language',
   // The shell bar (app/(app)/layout.tsx) — the path and the search slot, §2.1.
   'shell.path': 'Path',
   'shell.loading': 'Loading the workspace…',

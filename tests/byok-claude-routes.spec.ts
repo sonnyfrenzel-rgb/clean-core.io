@@ -102,7 +102,7 @@ test('a key saved before 3.0.15 — no provider on record or profile — reads a
   const sealed = sealByokSecret('AIza-byok-claude-bridge-0000', { uid, provider: 'gemini' });
   await (await secretRef('gemini')).set({ encryptedApiKey: sealed.encryptedApiKey, keyVersion: sealed.keyVersion, last4: '0000' });
   await db.collection('users').doc(uid).update({ byokConfigured: true, byokLast4: '0000' });
-  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'gemini', apiKey: 'AIza-byok-claude-bridge-0000' });
+  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'gemini', apiKey: 'AIza-byok-claude-bridge-0000', autoSteps: false });
   await deleteOwnModelKey(uid);
   await expect(loadOwnModelKey(uid)).resolves.toBeNull();
 });

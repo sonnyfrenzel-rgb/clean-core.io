@@ -3,7 +3,8 @@
 import React from 'react';
 import { PenLine } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
-import { ON_A_CLICK_NOTE } from '@/lib/auto-steps';
+import type { ClickStep } from '@/lib/auto-steps';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The click that replaces an automatic step (roadmap 3.0.21, owner decision
@@ -15,14 +16,14 @@ import { ON_A_CLICK_NOTE } from '@/lib/auto-steps';
  *
  * The pen, never a sparkle (DESIGN.md §3.1): what comes back is AI-generated.
  */
-export default function AskOnClick({ askNow, label }: { askNow: (() => void) | null; label: string }) {
+export default function AskOnClick({ askNow, step }: { askNow: (() => void) | null; step: ClickStep }) {
   if (!askNow) return null;
   return (
     <div data-ask-on-click="" className="flex min-w-0 flex-wrap items-center gap-2">
       <CcButton variant="secondary" icon={<PenLine size={16} aria-hidden={true} />} onClick={askNow}>
-        {label}
+        {wt(step === 'names' ? 'autoSteps.namesLabel' : 'autoSteps.plainLabel')}
       </CcButton>
-      <span className="text-[12px] font-medium text-cc-ink-muted">{ON_A_CLICK_NOTE}</span>
+      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('autoSteps.onClickNote')}</span>
     </div>
   );
 }
