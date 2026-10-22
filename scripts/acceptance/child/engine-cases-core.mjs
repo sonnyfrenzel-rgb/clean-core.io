@@ -500,11 +500,12 @@ export function judgeControl(control) {
     return { ok: false, cause: 'base-threw', reason: `the code behind the contract threw on the accepted baseRequest in simulate (${s.threw})` };
   }
   if (s && s.ok === false && typeof s.authority === 'string') {
-    // Refused by the original's authorization check, not by the mapping (3.0.17 criterion 3): the run did not grant it.
+    // Refused by the original's authorization check, not by the mapping (3.0.17 criterion 3). Worded so it is true both
+    // in the package's own run, which may not grant the check, and in the app's sandbox, which always grants it.
     return {
       ok: false,
       cause: 'authority',
-      reason: `the contract's baseRequest is refused by the original's authorization check (${s.authority}) — srv/lib/authority.ts denies every check until it is granted, and this run did not grant it (${AUTHORITY_DEMO_ENV}=grant, test only)`,
+      reason: `the contract's baseRequest is refused by the original's authorization check (${s.authority}) — srv/lib/authority.ts denies every check until it is granted (${AUTHORITY_DEMO_ENV}=grant, test only), and the authority check refused it`,
     };
   }
   if (!s || s.ok === false) {
