@@ -93,8 +93,9 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
       const { ex } = explain(s);
       return { rows: ex.rules.length, ...Object.fromEntries(Object.entries(ex.baskets).map(([k, v]) => [k, v.length])), questions: ex.questions.length, shown: questionFlow(ex, {}).shown.length };
     });
-    // The 1,000-line example: 30 rule rows before; 14 questions, 6 technical, 2 not determined.
-    expect(counts[0]).toEqual({ rows: 30, business: 22, technical: 6, undetermined: 2, questions: 14, shown: 5 });
+    // The 1,000-line example: 30 rule rows before; 15 questions, 5 technical, 2 not determined. It has no demo
+    // cases of its own, so its TEST*/DUMMY* customer reference is asked (owner decision 22.10.2026).
+    expect(counts[0]).toEqual({ rows: 30, business: 23, technical: 5, undetermined: 2, questions: 15, shown: 5 });
     // The PO demo: 12 rows; 7 questions, 4 not determined (three constants nobody reads, one subject the code does not name).
     expect(counts[1]).toEqual({ rows: 12, business: 8, technical: 0, undetermined: 4, questions: 7, shown: 5 });
     // The goods receipt / invoice program: 9 rows (its 4 demo cases are apart already); 6 questions, 3 technical.
@@ -107,8 +108,9 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     const basket = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
     expect(basket(/p_lim IS INITIAL/).kind).toBe('technical');
     expect(basket(/iv_level = 'WARN'/).kind).toBe('technical');
-    expect(basket(/bstnk CP 'TEST\*'/).kind).toBe('technical');
-    expect(basket(/bstnk CP 'TEST\*'/).reason.text).toContain('test data');
+    // A TEST*/DUMMY* value is test data only in a program with demo cases of its own (owner decision 22.10.2026);
+    // this one has none, so the business is asked.
+    expect(basket(/bstnk CP 'TEST\*'/).kind).toBe('business');
     // The program sets the action itself (line 431) and dispatches on it — a marker of its own.
     const action = basket(/CASE <fs_order>-action: 'SET_DELIVERY_BLOCK'/);
     expect(action.kind).toBe('technical');
@@ -158,6 +160,7 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
   test('a rule that picks out test documents and a live one is not test data', () => {
     const source = [
       'REPORT zsd_order_check.',
+      'PARAMETERS p_demo AS CHECKBOX DEFAULT space.',
       'DATA ls_order TYPE vbak.',
       'START-OF-SELECTION.',
       '  SELECT SINGLE * FROM vbak INTO ls_order.',
@@ -173,6 +176,10 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     const reasonOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket.reason.text;
     expect(reasonOf(/CP 'TEST\*'/)).toContain('test data');
     expect(reasonOf(/'LIVE'/)).not.toContain('test data');
+    // Without demo cases of its own a TEST* prefix proves nothing: DEMO-ORDER can be a live order type.
+    const noDemo = explain(source.replace('PARAMETERS p_demo AS CHECKBOX DEFAULT space.\n', ''));
+    const noDemoReason = noDemo.ex.rules.find((r) => r.id === ruleId(noDemo.reading, /CP 'TEST\*'/))!.basket.reason.text;
+    expect(noDemoReason).not.toContain('test data');
   });
 
   test('the program’s own demo data is no marker: a company code the demo routine fills stays a question', () => {
@@ -209,7 +216,7 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     const register = ruleRegisterFromSource(BIG);
     expect(register.state).toBe('read');
     const md = ruleRegisterMarkdown(register).join('\n');
-    expect(md).toContain('Grouped by basket: 22 rules for the business · 6 technical rules (stay as coded) · 2 not determined.');
+    expect(md).toContain('Grouped by basket: 23 rules for the business · 5 technical rules (stay as coded) · 2 not determined.');
     expect(md).toContain('### Technical rules — stay as coded');
     expect(md).toContain('### Not determined');
     expect(md).toMatch(/Why here: The program sets the action to SET_DELIVERY_BLOCK itself/);
@@ -321,7 +328,7 @@ test.describe('four answers, stored as before (owner decision 21.10.2026 (4), (7
     const { byId } = entriesOf(choices);
     expect(Object.values(byId).every(isTechnicalKeep)).toBe(true);
     const summary = basketSummary(ex, byId);
-    expect(summary).toMatchObject({ technical: 6, technicalConfirmed: 6, businessDecided: 0, questionsAnswered: 0 });
+    expect(summary).toMatchObject({ technical: 5, technicalConfirmed: 5, businessDecided: 0, questionsAnswered: 0 });
     expect(TECHNICAL_KEEP_NOTE).toMatch(/stays as coded/);
   });
 
@@ -381,7 +388,7 @@ test.describe('the questions in Design, rendered', () => {
     expect(html).toContain('data-rule-questions=""');
     expect((html.match(/data-question="/g) ?? []).length).toBe(5);
     expect(html).toContain(`0 of ${ex.questions.length} questions answered`);
-    expect(html).toContain('9 more questions after these');
+    expect(html).toContain('10 more questions after these');
     for (const answer of QUESTION_ANSWERS) expect(html).toContain(`data-question-pick="${answer}"`);
     for (const label of ['Yes, that’s right', 'No, it should be …', 'We don’t need it any more', 'I don’t know / someone else']) expect(html).toContain(label);
     expect(html).toContain('Accept all proposals');
@@ -441,7 +448,7 @@ test.describe('the register in IT, rendered', () => {
     expect(html).toContain('data-rule-topic="technical"');
     expect(html).toContain('data-rule-topic="undetermined"');
     expect(html).toContain('data-rule-keep-technical=""');
-    expect(html).toContain('Technical rules stay as coded (6)');
+    expect(html).toContain('Technical rules stay as coded (5)');
     expect(html).toContain('not counted as confirmed by the business');
     expect(html).toContain('data-rule-said="basket"');
     // "Not business decisions" is said over the technical rules only — an undetermined rule may be one.

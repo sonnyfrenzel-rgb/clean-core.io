@@ -211,11 +211,25 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     // Set-up of fixed values around the CASE: the FORM is the switch's own.
     const own = switchOf(literal).replace('\nFORM apply_case.\n', "\nFORM apply_case.\n  CLEAR lt_rows.\n");
     expect(readDemoSwitches(own, AFTER)?.routines).toEqual(['APPLY_CASE']);
+    // A check that also tests a live field beside the switch: the FORM is not demo-only.
+    const alsoLive = switchOf(literal).replace('  ENDCASE.\nENDFORM.', "  ENDCASE.\n  IF p_case = 1 AND ls_in-name = 'B'.\n    MESSAGE 'b' TYPE 'I'.\n  ENDIF.\nENDFORM.");
+    expect(readDemoSwitches(alsoLive, AFTER)?.routines).toEqual([]);
+    // A check of the switch alone keeps it the switch's own.
+    const switchOnly = switchOf(literal).replace('  ENDCASE.\nENDFORM.', "  ENDCASE.\n  IF p_case = 0.\n    MESSAGE 'none' TYPE 'I'.\n  ENDIF.\nENDFORM.");
+    expect(readDemoSwitches(switchOnly, AFTER)?.routines).toEqual(['APPLY_CASE']);
     // A row the program read, appended beside the CASE: the switch stands, the FORM is not demo-only.
     const mixed = switchOf(literal).replace('\nFORM apply_case.\n', '\nFORM apply_case.\n  APPEND ls_in TO lt_rows.\n');
     const demo = readDemoSwitches(mixed, AFTER);
     expect(demo?.flag.name).toBe('P_CASE');
     expect(demo?.routines).toEqual([]);
+  });
+
+  test('a copy of the parameter is the switch only while it is never given another value', () => {
+    const arms = [1, 2, 3, 4, 5].map((n) => `    WHEN ${n}.\n      APPEND VALUE #( id = ${n} ) TO lt_rows.`).join('\n');
+    const base = (between: string) =>
+      `REPORT zcases.\nPARAMETERS p_mode TYPE i.\nDATA: lv_case TYPE i, lv_other TYPE i, lt_rows TYPE TABLE OF zrow.\nSTART-OF-SELECTION.\n  lv_case = p_mode.\n${between}  PERFORM apply_case.\nFORM apply_case.\n  CASE lv_case.\n${arms}\n  ENDCASE.\nENDFORM.\n`;
+    expect(readDemoSwitches(base(''), AFTER)?.flag.name).toBe('P_MODE');
+    expect(readDemoSwitches(base('  lv_case = lv_other.\n'), AFTER)).toBeNull();
   });
 
   test('a row the program read, or a write to the database, is not test data however the arms are shaped', () => {

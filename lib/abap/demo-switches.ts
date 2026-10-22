@@ -365,15 +365,52 @@ function testDataStatement(s: AbapStatement, filled: Set<string> | null = null):
   return { ok: false, fills: false };
 }
 
+/** Does this condition test the switch and nothing else? `IF p_case = 1 AND ls_order-status = 'B'` also tests the order. */
+function onlyTheSwitch(text: string, onSelector: RegExp): boolean {
+  if (!onSelector.test(text)) return false;
+  const rest = text
+    .replace(/'(?:[^']|'')*'|`[^`]*`/g, ' ')
+    .replace(new RegExp(onSelector.source, 'gi'), ' ')
+    .replace(/^\s*(?:IF|ELSEIF|CHECK)\b/i, ' ')
+    .replace(/\.\s*$/, ' ')
+    .replace(/\b(?:AND|OR|NOT|IS|INITIAL|EQ|NE|LT|LE|GT|GE|BETWEEN|IN|ABAP_TRUE|ABAP_FALSE|SPACE)\b/gi, ' ')
+    .replace(/-?\d+(?:\.\d+)?/g, ' ')
+    .replace(/[=<>()]/g, ' ');
+  return rest.trim() === '';
+}
+
+/**
+ * Does the program have demo cases of its own — a selection parameter named for demo data, or a
+ * switch `readDemoSwitches` recognises? Where it does not, a value written like test data
+ * (`TEST*`, `DEMO-ORDER`) is not taken for test data on its prefix alone (owner decision 22.10.2026).
+ */
+export function hasDemoCases(source: string, engineVersion: string | null = APP_VERSION): boolean {
+  let statements: AbapStatement[];
+  try {
+    statements = readStatements(source);
+  } catch {
+    return false;
+  }
+  if (statements.some((s) => DEMO_NAME.test(PARAMETER.exec(s.text)?.[1] ?? ''))) return true;
+  return readDemoSwitches(source, engineVersion) !== null;
+}
+
 /** Shape 5: a test data switch without a demo flag (see `readDemoSwitches`). */
 function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<string, number>): DemoSwitches | null {
   if (parameters.size === 0) return null;
   const structure = readBlocks(statements);
   const { branches } = readControlFlowFrom(statements, structure);
+  // A variable stands for the parameter only when that copy is the one value it is ever given:
+  // `lv_case = p_mode` and later `lv_case = lv_other` is no longer the switch.
+  const assignedTimes = new Map<string, number>();
+  for (const s of statements) {
+    const target = /^([\w/]+(?:-[\w/]+)*)\s*=[^=]/.exec(s.text.trim())?.[1];
+    if (target) assignedTimes.set(norm(target), (assignedTimes.get(norm(target)) ?? 0) + 1);
+  }
   const fromParameter = new Map<string, string>();
   for (const s of statements) {
     const a = /^([\w/]+(?:-[\w/]+)*)\s*=\s*([\w/]+)\s*$/.exec(s.text);
-    if (a && parameters.has(norm(a[2]))) fromParameter.set(norm(a[1]), norm(a[2]));
+    if (a && parameters.has(norm(a[2])) && assignedTimes.get(norm(a[1])) === 1) fromParameter.set(norm(a[1]), norm(a[2]));
   }
   for (const branch of branches) {
     if (branch.kind !== 'case' || !branch.selector) continue;
@@ -405,7 +442,8 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
       if (i >= branch.openIndex && i <= branch.closeIndex) return true;
       const keyword = s.keyword.toUpperCase();
       if (/^(?:FORM|ENDFORM|ENDIF|ELSE|MESSAGE|RETURN|EXIT)$/.test(keyword) || DECLARATION.test(keyword)) return true;
-      if (keyword === 'IF' || keyword === 'ELSEIF' || keyword === 'CHECK') return onSelector.test(s.text);
+      // A check of the switch alone: nothing in the condition but the selector, fixed values and operators.
+      if (keyword === 'IF' || keyword === 'ELSEIF' || keyword === 'CHECK') return onlyTheSwitch(s.text, onSelector);
       return testDataStatement(s, ownFilled).ok;
     });
     return {

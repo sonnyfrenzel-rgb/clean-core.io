@@ -5,7 +5,7 @@ import type { BusinessRule, BusinessRuleSet, RuleParameter } from './business-ru
 import { enclosingBranches, type EnclosingBranch } from './enclosing-branches';
 import { conditionToPhrase, humaniseField, humaniseRoutine, plainContext, ruleConditionText, type PlainContext } from './plain-language';
 import { ruleStandardHint } from '../rule-standard-hints';
-import { readDemoSwitches } from './demo-switches';
+import { hasDemoCases, readDemoSwitches } from './demo-switches';
 import { APP_VERSION } from '../version';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 
@@ -1058,6 +1058,8 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
 }
 
 interface BasketFacts {
+  /** The program has demo cases of its own — a demo flag or a test data switch (`readDemoSwitches`). */
+  hasDemo: boolean;
   written: Map<string, Map<string, number>>;
   /** `declaredTypes` of the source: what makes two components one field. */
   types: ReadonlyMap<string, string>;
@@ -1094,7 +1096,9 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   const values = tests.flatMap(valuesOf);
   const testValues = values.filter((v) => TEST_DATA.test(v));
   // Test data only when every value it picks out is: `IN ('TEST-1', 'LIVE')` still picks out a live one.
-  if (testValues.length > 0 && tests.every((p) => valuesOf(p).length === 0 || valuesOf(p).every((v) => TEST_DATA.test(v)))) {
+  // And only in a program that has demo cases of its own (a demo flag or a test data switch): a prefix alone
+  // proves nothing — `DEMO-ORDER` can be a live order type (owner decision 22.10.2026).
+  if (bf.hasDemo && testValues.length > 0 && tests.every((p) => valuesOf(p).length === 0 || valuesOf(p).every((v) => TEST_DATA.test(v)))) {
     return say('technical', `It picks out test documents (${[...new Set(testValues)].join(', ')}) — test data, not a business decision.`);
   }
   // "No limit" written as a number on anything but money: a technical cap, whatever the field is called.
@@ -1303,7 +1307,8 @@ export function explainBusinessRules(
   const demoIds = new Set((set.demoCases?.rules ?? []).map((d) => d.id));
   const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source, engineVersion)?.routines ?? [] : []).map((r) => r.toUpperCase()));
   const types = declaredTypes(facts.statements);
-  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines, types), types, ctx, hasInclude };
+  const hasDemo = hasDemoCases(source, engineVersion);
+  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines, types), types, ctx, hasInclude, hasDemo };
   const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
     const rc = contextOf(rule, facts, ctx, reads3020);

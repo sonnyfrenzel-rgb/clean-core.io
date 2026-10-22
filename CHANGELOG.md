@@ -68,7 +68,9 @@ The first insights are for understanding only: they explain, they ask for no dec
   refuse a baseline with unread statements. In the app: no account menu before sign-in has answered; a tour or tour
   map that cannot load says so; plain wording asks once per browser session even when the view is left; the tour's
   stations pick the step a reader learns most from.
-- **The rule baskets read more carefully:** a marker is a field the program writes and reads back on one row type,
+- **The rule baskets read more carefully:** a value written like test data (TEST*, DUMMY*, DEMO*) is test data only in a
+  program with demo cases of its own — elsewhere the business is asked (owner decision 22 October 2026); a marker is a
+  field the program writes and reads back on one row type,
   not another field whose name ends alike; a rule that also picks out a live value is not test data; "within a
   tolerance" is said only when a condition, a filter or a calculation applies it.
 - **A loop skip is said as a skip,** never as stopping the process.
