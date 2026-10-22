@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isFirestoreId } from '@/lib/firestore-id';
 import { logger, errMessage } from '@/lib/logger';
 import { escapeHtml } from '@/lib/utils';
 import { APP_BASE_URL } from '@/lib/constants';
@@ -51,7 +52,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ sele
     const gate = await openPortfolioRoute(req, { bucket: 'portfolio-read', perHour: 600, mode: 'manage' });
     if (!gate.ok) return gate.response;
     const { selectionId } = await params;
-    return NextResponse.json(await selectionSharing(gate.db, gate.uid, String(selectionId ?? '')));
+    if (!isFirestoreId(selectionId)) return NextResponse.json({ error: 'No such selection.' }, { status: 404 });
+    return NextResponse.json(await selectionSharing(gate.db, gate.uid, selectionId));
   } catch (err: unknown) {
     if (err instanceof BatchRefusal) return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });
     logger.error('portfolio sharing list could not be read', { route: 'api/portfolio/selections/invitations', error: errMessage(err) });
@@ -64,11 +66,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     const gate = await openPortfolioRoute(req, { bucket: 'invitations', perHour: INVITATION_SEND_RATE_LIMIT });
     if (!gate.ok) return gate.response;
     const { selectionId } = await params;
+    if (!isFirestoreId(selectionId)) return NextResponse.json({ error: 'No such selection.' }, { status: 404 });
     const body = (await req.json().catch(() => null)) as { email?: unknown; expiresInDays?: unknown } | null;
     const invitation = await createSelectionInvitation(
       gate.db,
       { uid: gate.uid, email: gate.email, name: await inviterName(gate.db, gate.uid, gate.email) },
-      String(selectionId ?? ''),
+      selectionId,
       body,
     );
 

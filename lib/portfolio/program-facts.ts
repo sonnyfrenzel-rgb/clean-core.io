@@ -40,7 +40,7 @@ export interface StoredRun {
   status?: unknown;
 }
 
-function findingsOf(run: StoredRun | null): { objectName?: string; kind: string }[] {
+function signedFindingsOf(run: StoredRun | null): { objectName?: string; kind: string }[] {
   if (!run || !Array.isArray(run.evidenceReport)) return [];
   return run.evidenceReport
     .filter((f): f is { objectName?: unknown; kind: unknown } => Boolean(f) && typeof f === 'object')
@@ -54,7 +54,7 @@ export function programFactsOf(project: StoredProject, run: StoredRun | null): P
   const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
   const analysed = Boolean(run) && (run!.status === undefined || run!.status === 'completed');
   const score = analysed && typeof run!.cleanCoreScore === 'number' ? run!.cleanCoreScore : null;
-  const findings = analysed ? findingsOf(run) : [];
+  const findings = analysed ? signedFindingsOf(run) : [];
 
   let objects: ProgramObjectFact[] = [];
   if (analysed) {

@@ -1,3 +1,4 @@
+import type { Firestore } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
 import {
   PORTFOLIO_MAX_SELECTIONS,
@@ -32,7 +33,7 @@ import { BatchRefusal } from './batch-store';
  * are the same — what it opens is the overview (assumption, see the report).
  */
 
-type AdminDb = any; // untyped Admin SDK handle, as in lib/portfolio/batch-store.ts
+type AdminDb = Firestore;
 
 export const SELECTION_COLLECTION = 'portfolio_selections';
 
@@ -162,7 +163,10 @@ async function overviewOf(
       .map((p) => db.collection('projects').doc(p.id).collection('runs').doc(p.data.activeRunId as string));
     const runSnaps = runRefs.length ? await db.getAll(...runRefs, { fieldMask: RUN_FIELDS }) : [];
     const runOf = new Map<string, StoredRun>();
-    for (const r of runSnaps) if (r.exists) runOf.set(r.ref.parent.parent.id, r.data() as StoredRun);
+    for (const r of runSnaps) {
+      const projectId = r.ref.parent.parent?.id;
+      if (r.exists && projectId) runOf.set(projectId, r.data() as StoredRun);
+    }
     for (const p of projects) facts.push(programFactsOf(p, runOf.get(p.id) ?? null));
   }
   return { view: aggregatePortfolio(facts, missing), openable };

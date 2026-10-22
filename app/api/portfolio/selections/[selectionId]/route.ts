@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isFirestoreId } from '@/lib/firestore-id';
 import { logger, errMessage } from '@/lib/logger';
 import { openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
@@ -18,7 +19,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
     const gate = await openPortfolioRoute(req, { bucket: 'portfolio-upload', perHour: 120, mode: 'manage' });
     if (!gate.ok) return gate.response;
     const { selectionId } = await params;
-    await deleteSelection(gate.db, gate.uid, String(selectionId ?? ''));
+    if (!isFirestoreId(selectionId)) return NextResponse.json({ error: 'No such selection.' }, { status: 404 });
+    await deleteSelection(gate.db, gate.uid, selectionId);
     return NextResponse.json({ deleted: true });
   } catch (err: unknown) {
     if (err instanceof BatchRefusal) return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });

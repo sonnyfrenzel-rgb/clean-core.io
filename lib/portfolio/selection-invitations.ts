@@ -1,3 +1,4 @@
+import type { Firestore, FieldValue, Transaction } from 'firebase-admin/firestore';
 import crypto from 'crypto';
 import {
   INVITATION_MAX_OPEN,
@@ -28,8 +29,8 @@ import { SELECTION_COLLECTION, readSelection } from './selection-store';
  * only; no rule opens it to a browser.
  */
 
-type AdminDb = any; // untyped Admin SDK handle, as in lib/portfolio/batch-store.ts
-type FieldValueT = any;
+type AdminDb = Firestore;
+type FieldValueT = typeof FieldValue;
 
 export const SELECTION_INVITATIONS = 'invitations';
 
@@ -85,7 +86,7 @@ export async function createSelectionInvitation(
   };
   const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
   const ref = invitationsRef(db, selectionId).doc(invitation.id);
-  await db.runTransaction(async (tx: any) => {
+  await db.runTransaction(async (tx: Transaction) => {
     const current = await tx.get(selectionRef);
     if (!current.exists || (current.data() || {}).ownerId !== owner.uid) {
       throw new BatchRefusal('No such selection.', 404, 'selection-not-found');
@@ -118,7 +119,7 @@ export async function withdrawSelectionInvitation(
   if (!isFirestoreId(invitationId)) throw new BatchRefusal('No such invitation.', 404, 'invitation-not-found');
   const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
   const ref = invitationsRef(db, selectionId).doc(invitationId);
-  await db.runTransaction(async (tx: any) => {
+  await db.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new BatchRefusal('No such invitation.', 404, 'invitation-not-found');
     const data = (snap.data() || {}) as Partial<SelectionInvitation>;
@@ -161,7 +162,7 @@ export async function acceptSelectionInvitation(
   if (!isFirestoreId(selectionId) || !isFirestoreId(invitationId)) return null;
   const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
   const ref = invitationsRef(db, selectionId).doc(invitationId);
-  return db.runTransaction(async (tx: any) => {
+  return db.runTransaction(async (tx: Transaction) => {
     const [inv, sel] = await Promise.all([tx.get(ref), tx.get(selectionRef)]);
     if (!inv.exists || !sel.exists) return null;
     const invitation = (inv.data() || {}) as Partial<SelectionInvitation>;

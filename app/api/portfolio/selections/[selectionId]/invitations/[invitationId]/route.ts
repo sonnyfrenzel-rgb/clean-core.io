@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isFirestoreId } from '@/lib/firestore-id';
 import { logger, errMessage } from '@/lib/logger';
 import { INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
 import { openPortfolioRoute } from '@/lib/portfolio/access-server';
@@ -19,7 +20,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
     const gate = await openPortfolioRoute(req, { bucket: 'invitations-withdraw', perHour: INVITATION_SEND_RATE_LIMIT, mode: 'manage' });
     if (!gate.ok) return gate.response;
     const { selectionId, invitationId } = await params;
-    await withdrawSelectionInvitation(gate.db, gate.FieldValue, gate.uid, String(selectionId ?? ''), String(invitationId ?? ''));
+    if (!isFirestoreId(selectionId) || !isFirestoreId(invitationId)) {
+      return NextResponse.json({ error: 'No such invitation.' }, { status: 404 });
+    }
+    await withdrawSelectionInvitation(gate.db, gate.FieldValue, gate.uid, selectionId, invitationId);
     return NextResponse.json({ withdrawn: true });
   } catch (err: unknown) {
     if (err instanceof BatchRefusal) return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });

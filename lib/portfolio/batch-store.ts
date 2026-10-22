@@ -1,3 +1,4 @@
+import type { Firestore, FieldValue, Transaction } from 'firebase-admin/firestore';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { scanCodeContent } from '@/lib/staged-code-scan';
 import { normaliseAssessmentTarget } from '@/lib/assessment-target';
@@ -43,8 +44,8 @@ import { portfolioBatchMessages as M } from '../messages/portfolio';
  * batch drops the sources of every program not yet made into a project.
  */
 
-type AdminDb = any; // the Admin SDK is reached through a dynamic import (lib/firebase-admin.ts) and arrives untyped
-type FieldValueT = any;
+type AdminDb = Firestore;
+type FieldValueT = typeof FieldValue;
 
 export const BATCH_COLLECTION = 'portfolio_batches';
 export const BATCH_ITEMS = 'items';
@@ -152,7 +153,7 @@ export async function readBatch(
 export async function appendPrograms(db: AdminDb, uid: string, batchId: string, rawPrograms: unknown[]): Promise<number> {
   if (!Array.isArray(rawPrograms) || rawPrograms.length === 0) throw new BatchRefusal(M.empty, 400, 'batch-empty');
   const batchRef = db.collection(BATCH_COLLECTION).doc(batchId);
-  return db.runTransaction(async (tx: any) => {
+  return db.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(batchRef);
     if (!snap.exists) throw new BatchRefusal(M.notFound, 404, 'batch-not-found');
     const data = snap.data() || {};
@@ -253,7 +254,7 @@ export async function stepBatch(
   const batchRef = db.collection(BATCH_COLLECTION).doc(batchId);
   const started = clock();
 
-  const taken = await db.runTransaction(async (tx: any) => {
+  const taken = await db.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(batchRef);
     if (!snap.exists) throw new BatchRefusal(M.notFound, 404, 'batch-not-found');
     const batch = batchOfStored(batchId, snap.data() || {});

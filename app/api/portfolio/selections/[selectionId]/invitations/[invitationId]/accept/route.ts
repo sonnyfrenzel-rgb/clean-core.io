@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isFirestoreId } from '@/lib/firestore-id';
 import { logger, errMessage } from '@/lib/logger';
 import { verifyRequestAuth, getAdminAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -58,8 +59,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ sele
     const accountEmail = normaliseInvitedEmail(decodedToken.email);
     if (!accountEmail || decodedToken.email_verified !== true) return closed();
     const { selectionId, invitationId } = await params;
+    if (!isFirestoreId(selectionId) || !isFirestoreId(invitationId)) return closed();
     const { db } = await getAdminDb();
-    const preview = await previewSelectionInvitation(db, accountEmail, String(selectionId ?? ''), String(invitationId ?? ''));
+    const preview = await previewSelectionInvitation(db, accountEmail, selectionId, invitationId);
     return preview ? NextResponse.json(preview) : closed();
   } catch (err: unknown) {
     logger.error('portfolio invitation preview failed', { route: 'api/portfolio/invitations/accept', error: errMessage(err) });
@@ -140,7 +142,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     }
 
     const { selectionId, invitationId } = await params;
-    const result = await acceptSelectionInvitation(db, FieldValue, { uid, email: accountEmail }, String(selectionId ?? ''), String(invitationId ?? ''));
+    if (!isFirestoreId(selectionId) || !isFirestoreId(invitationId)) return closed();
+    const result = await acceptSelectionInvitation(db, FieldValue, { uid, email: accountEmail }, selectionId, invitationId);
     if (!result) return closed();
     logger.info('portfolio invitation accepted', { route: 'api/portfolio/invitations/accept', already: result.already });
     return NextResponse.json({ accepted: true, already: result.already, selectionId, name: result.name });
