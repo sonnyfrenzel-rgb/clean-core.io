@@ -11,7 +11,7 @@ import { routeLabel } from '@/lib/sap-naming';
 import type { AnalysisData } from '@/lib/types';
 
 /**
- * "Business value and action plan · Model proposal" — on Economics since
+ * "Business value and action plan · AI-generated" — on Economics since
  * 02.10.2026 (owner decision on the Analyze clean-up). It used to be the last
  * fold of the Analyze stage, where it answered none of that stage's four
  * questions (how clean, what must change and where, which way, what is not

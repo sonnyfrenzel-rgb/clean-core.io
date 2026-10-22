@@ -238,7 +238,7 @@ test.describe('a real project', () => {
     const specific = section.locator('[data-nfr-proposal="retention"]');
     await expect(specific).toHaveAttribute('data-nfr-proposal-generic', 'false');
     await expect(specific).toContainText('ZMM_PO_APPR');
-    await specific.getByRole('button', { name: /Model proposal/ }).click();
+    await specific.getByRole('button', { name: /AI-generated/ }).click();
     await expect(specific.getByText(PROPOSALS.dataRetention)).toBeVisible();
     await expect(specific.locator('[data-provenance="proposed"]')).toBeVisible();
 

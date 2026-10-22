@@ -1325,7 +1325,7 @@ export async function main(argv: string[]): Promise<number> {
     const label = `acceptance package (${commit.slice(0, 8)}, suite run ${startedAt.toISOString().slice(0, 10)})`;
     report.trial = runTrialStage(keptRapPackages(workDir), trialRunnerOf(args, path.join(runDir, 'trial-push')), label);
     const tt = trialTotals(report.trial);
-    console.log(`trial: ${tt.ran}/${tt.packages} package(s) ran · ${tt.activated} activated, ${tt.activationErrors} activation error(s) · engine ABAP Unit ${tt.engine.green} green, ${tt.engine.red} red, ${tt.engine.skipped} skipped · model proposal ${tt.model.red} red`);
+    console.log(`trial: ${tt.ran}/${tt.packages} package(s) ran · ${tt.activated} activated, ${tt.activationErrors} activation error(s) · engine ABAP Unit ${tt.engine.green} green, ${tt.engine.red} red, ${tt.engine.skipped} skipped · AI-generated ${tt.model.red} red`);
   }
   // The unpacked packages were only the harness's input, unless asked to keep them.
   if (!args.keepPackages) fs.rmSync(workDir, { recursive: true, force: true });

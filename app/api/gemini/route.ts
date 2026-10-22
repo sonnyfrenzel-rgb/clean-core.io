@@ -13,11 +13,17 @@ import {
 } from '@/lib/firebase-admin';
 import {
   ALLOWED_CLAUDE_MODELS,
+  AUTO_STEPS_OFF_CODE,
+  MODEL_PROVIDERS_SUSPENDED_ENV,
   OWN_CLAUDE_MODEL,
   PLATFORM_PROVIDER,
   PROVIDER_LABEL,
+  PROVIDER_SUSPENDED_CODE,
   RECEIPT_PROVIDER_ID,
+  autoStepsOffMessage,
+  providerSuspendedMessage,
   stageAnswerNeedsWrite,
+  suspendedProvidersOf,
   type KeyOwner,
   type ModelKeyProvider,
   type StageAnswerRecord,
@@ -412,10 +418,13 @@ export async function POST(request: NextRequest) {
       jsonResponse = false,
       stage,
       responseShape,
+      trigger,
     } = (body ?? {}) as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
+      /** 3.0.21 — `'automatic'` for a step the product started by itself on opening a project. */
+      trigger?: unknown;
       /** Which of the five model stages is asking. Absent for the glossary chatbot and the key test. */
       stage?: string;
       /** An answer shape within the stage (`lib/model-response-schema.ts`): the fill calls of 3.0.12. */
@@ -424,6 +433,7 @@ export async function POST(request: NextRequest) {
     // The product default, named or omitted, is this deployment's product
     // model — so `GEMINI_MODEL` reaches the callers that name the constant.
     const model = resolveRequestedModel(requestedModel, productModel());
+    const automatic = trigger === 'automatic';
 
     // Roadmap 1.2 — the per-stage switch, enforced on the server.
     //
@@ -542,6 +552,21 @@ export async function POST(request: NextRequest) {
     const byokKey = ownKey?.apiKey ?? null;
     calledWithOwnKey = ownKey?.provider ?? null;
     const provider: ModelKeyProvider = ownKey ? ownKey.provider : PLATFORM_PROVIDER;
+    // 3.0.21 (T01) — the per-provider switch-off: a provider the operator has
+    // suspended is not called, and nothing else is called in its place — not
+    // another provider, not the platform key. The step stops with the reason.
+    if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
+      return NextResponse.json({ error: providerSuspendedMessage(provider), code: PROVIDER_SUSPENDED_CODE }, { status: 503 });
+    }
+    // 3.0.21 (owner decision B6) — a step the product starts by itself when the
+    // owner opens a project (`trigger: 'automatic'`) runs on an own key only
+    // once the account switched "Automatic steps" on for that key; until then
+    // it comes on a click. With the platform key it runs as before. Like the
+    // stage switch, the account's preference about its own key, held here so a
+    // page left open cannot spend on it.
+    if (automatic && ownKey && !ownKey.autoSteps) {
+      return NextResponse.json({ error: autoStepsOffMessage(PROVIDER_LABEL[ownKey.provider]), code: AUTO_STEPS_OFF_CODE }, { status: 403 });
+    }
     // The model the provider is asked for: a Gemini request runs as asked; with
     // an own Claude key every stage runs on the one Claude model set in
     // `lib/model-providers.ts`, checked against its own register.
@@ -596,6 +621,8 @@ export async function POST(request: NextRequest) {
     const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
     // Fill and repair calls think LOW (`lib/model-thinking.ts`, measured 13.10.2026); every other shape keeps the default.
     const thinkingConfig = thinkingConfigFor(shape);
+    // Set inside the provider call below; typed so the assignment there is not narrowed away.
+    let inferenceGeo = null as string | null;
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : provider === 'anthropic'
@@ -631,6 +658,9 @@ export async function POST(request: NextRequest) {
             leased: lease !== null,
             durationMs: Date.now() - attemptAt,
           }));
+          // Where Anthropic says inference ran (`usage.inference_geo`, 3.0.21) —
+          // recorded with who answered, beside the receipt, never inside it.
+          inferenceGeo = result.inferenceGeo;
           return result.answer;
         }, undefined, undefined, callSignal)
       : await callWithRetry(async () => {
@@ -716,8 +746,12 @@ export async function POST(request: NextRequest) {
     // trust record — the receipt below is that.
     const keyOwner: KeyOwner = ownKey ? 'own' : 'platform';
     const receiptProvider = RECEIPT_PROVIDER_ID[provider];
+    // Who answered, as every answer carries it: the receipt's claim set is
+    // unchanged (no signed format changes what it signs); the data region of a
+    // Claude answer travels beside it.
+    const answeredBy = { provider: receiptProvider, modelId: servedModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };
     if (stage !== undefined && !stubbed) {
-      const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString() };
+      const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString(), ...(inferenceGeo ? { inferenceGeo } : {}) };
       const previous = (profile.data() as { modelAnswers?: Record<string, unknown> } | undefined)?.modelAnswers?.[stage];
       if (stageAnswerNeedsWrite(previous, record)) {
         try {
@@ -732,7 +766,7 @@ export async function POST(request: NextRequest) {
     const signingKey = getAuditSigningKey();
     if (!signingKey) {
       console.error(MISSING_SIGNING_KEY_LOG);
-      return NextResponse.json({ text, answeredBy: { provider: receiptProvider, modelId: servedModel, keyOwner } });
+      return NextResponse.json({ text, answeredBy });
     }
 
     const receipt = issueModelReceipt(
@@ -756,7 +790,7 @@ export async function POST(request: NextRequest) {
       signingKey,
     );
 
-    return NextResponse.json({ text, receipt, answeredBy: { provider: receiptProvider, modelId: servedModel, keyOwner } });
+    return NextResponse.json({ text, receipt, answeredBy });
   } catch (error: unknown) {
     // The deadline ended the call: said as such, with a code, before Cloud Run
     // would have answered 504 with no body (13.10.2026). Not retried here: the

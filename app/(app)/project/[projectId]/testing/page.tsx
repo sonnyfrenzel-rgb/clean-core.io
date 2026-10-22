@@ -1411,7 +1411,7 @@ export default function TestingSandboxPage() {
           tenantLocked={LIVE_TEST_EXECUTION.locked}
           status={[
             testCases.length > 0
-              ? { label: 'Suite', value: 'model proposal', tone: 'proposal' }
+              ? { label: 'Suite', value: 'AI-generated', tone: 'proposal' }
               : { label: 'Suite', value: 'not written yet', tone: 'plain' },
             {
               label: 'Runner',

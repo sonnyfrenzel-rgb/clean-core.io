@@ -158,7 +158,7 @@ export interface ChainFact {
   /** A stable key, for a reader that wants the value rather than the words. */
   key: string;
   text: string;
-  /** The level of the fact — engine, your decision, model proposal, SAP's catalog (`lib/provenance.ts`). */
+  /** The level of the fact — engine, your decision, AI-generated draft, SAP's catalog (`lib/provenance.ts`). */
   provenance: ProvenanceValue;
   /** Whether the prompt reads it (`PROMPT_READS`). */
   read: boolean;

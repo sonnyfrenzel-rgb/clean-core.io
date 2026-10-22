@@ -151,7 +151,7 @@ export const FROM_LANDING = {
     { key: 'source', t: 'Your ABAP source', d: 'Every statement keeps its program, include and line — that is what a line anchor points to. Includes that were not uploaded are named as not determined.', pv: 'reconstructed' as ProvenanceValue },
     { key: 'engine', t: 'Deterministic engine', d: 'Parses the code and finds the constructs, rules and SAP objects without a language model. The same file gives the same result.', pv: 'reconstructed' as ProvenanceValue },
     { key: 'imports', t: 'Your imports, optional', d: 'ATC results and usage data you upload. They are marked as imported, never as proven.', pv: 'imported' as ProvenanceValue },
-    { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as a model proposal until someone confirms them.', pv: 'proposed' as ProvenanceValue },
+    { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as AI-generated until someone confirms them.', pv: 'proposed' as ProvenanceValue },
   ],
 
   verifySteps: [

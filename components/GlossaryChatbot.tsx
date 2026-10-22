@@ -29,6 +29,9 @@ import {
 import { screenSensitiveText, sensitiveTextNote } from '@/lib/sensitive-text';
 import { cleanModelText } from '@/lib/model-text';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
+import { aiAssistantNotice } from '@/lib/ai-assistant-notice';
+import { OWN_CLAUDE_MODEL, PROVIDER_LABEL } from '@/lib/model-providers';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP_FIRST } from '@/lib/sap-naming';
 import { isDemoPath, DEMO_ASSISTANT_NOTICE } from '@/lib/demo-marks';
@@ -415,7 +418,7 @@ export default function GlossaryChatbot() {
    *     is what a statement read off the code is (`DESIGN.md` §4).
    *   - **a model proposal, grounded** — the model sees the anchored evidence
    *     and nothing else, and only the sentences of the reply that cite one of
-   *     those anchors are shown (`guardCaseAnswer`). Marked *Model proposal*.
+   *     those anchors are shown (`guardCaseAnswer`). Marked *AI-generated*.
    */
   const answerInProject = async (id: string, text: string, asked: number): Promise<void> => {
     const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;
@@ -587,7 +590,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       const botMessage: Message = {
         sender: 'bot',
         text: responseText || 'My apologies, I could not compile a response. Please rephrase your question.',
-        timestamp: clockNow()
+        timestamp: clockNow(),
+        // 3.0.21: a model's answer carries the AI-generated provenance, outside a
+        // project as inside one; a fallback sentence of ours is not a model's.
+        ...(responseText ? { provenance: 'proposed' as const } : {}),
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -621,6 +627,18 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
    * close button instead of relying on this one.
    */
   const floatingOffOnDesktop = profile?.desktopChatbotEnabled !== true;
+  /**
+   * Art. 50(1) AI Act (roadmap 3.0.21, legal review L3): the notice that the
+   * reader is talking to an AI system, permanently at the input — with the
+   * provider and model the account's calls go to: the own Claude key's model,
+   * otherwise the Gemini model this panel asks for.
+   */
+  const keyInfo = useModelAvailability();
+  const noticeProvider = keyInfo.known && keyInfo.provider ? keyInfo.provider : 'gemini';
+  const assistantNotice = aiAssistantNotice(
+    PROVIDER_LABEL[noticeProvider],
+    noticeProvider === 'anthropic' ? OWN_CLAUDE_MODEL : PRODUCT_GEMINI_MODEL,
+  );
   const openToggle = () => {
     openerRef.current = toggleRef.current?.querySelector('button') ?? null;
     setIsOpen((prev) => !prev);
@@ -730,7 +748,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <div className="flex min-w-0 items-center gap-2">
               {/* No sparkles: `DESIGN.md` §3.1 forbids them as the icon for
                   model work. A pen is what `lib/provenance.ts` gives the
-                  value *Model proposal*, so the panel and its chips agree. */}
+                  value *AI-generated*, so the panel and its chips agree. */}
               <PenLine size={16} aria-hidden className="shrink-0 text-cc-ink-muted" />
               <div className="min-w-0">
                 <h2 id="chatbot-panel-title" className="m-0 cc-text-h3 text-cc-ink" data-chatbot-title="">
@@ -892,6 +910,17 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               </span>
             ))}
           </div>
+
+          {/* Art. 50(1) AI Act — permanently visible at the input, never folded
+              away; not in the demo, where no model is called. */}
+          {!inDemo ? (
+            <p
+              data-chatbot-ai-notice=""
+              className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-medium text-cc-ink-muted"
+            >
+              {assistantNotice}
+            </p>
+          ) : null}
 
           {/* Message input */}
           <form

@@ -103,7 +103,7 @@ test('the engine documentation export carries the business layer, escaped and ma
   const engine = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
   expect(engine).toContain('const businessSection = parsedBusinessDoc');
   expect(engine).toMatch(/\$\{questionsSection\}\s*\$\{businessSection\}\s*\$\{appendixSection\}\s*<\/body>/);
-  expect(engine).toContain('Business layer — Model proposal');
+  expect(engine).toContain('Business layer — AI-generated');
   const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const a = document.appendix'));
   // Owner review 10.10.2026: the RACI and SOP tables are read through `sopSteps` —
   // only the steps of the process, never a row the model wrote for a step the

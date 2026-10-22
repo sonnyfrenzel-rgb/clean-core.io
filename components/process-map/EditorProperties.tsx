@@ -38,7 +38,7 @@ export interface EditorPropertiesProps {
   origin: ElementOrigin;
   /** "Revision 3 · saved by …" when `origin` is `revision`. */
   revisionLine: string | null;
-  /** The business name of 2.4 is a model proposal for this element. */
+  /** The business name of 2.4 is AI-generated for this element. */
   proposal: boolean;
   /** The Technical names switch: the token first. */
   technical: boolean;

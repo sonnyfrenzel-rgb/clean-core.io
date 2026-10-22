@@ -53,7 +53,7 @@ export interface RequirementsExportMeta {
 }
 
 export const PROVENANCE_NOTE =
-  'Every requirement below is reconstructed by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source. Priorities follow from what the code does (a hard-coded rule or a change of data is Must). Nothing here is confirmed by the business. Where a sentence is marked as a model proposal, a language model reworded it and the server checked it against the anchors; the engine wording is kept beside it.';
+  'Every requirement below is reconstructed by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source. Priorities follow from what the code does (a hard-coded rule or a change of data is Must). Nothing here is confirmed by the business. Where a sentence is marked as AI-generated, a language model reworded it and the server checked it against the anchors; the engine wording is kept beside it.';
 
 const statementOf = (r: FunctionalRequirement, meta: RequirementsExportMeta) => meta.wording?.[r.id] ?? r.statement;
 const isProposed = (r: FunctionalRequirement, meta: RequirementsExportMeta) => Boolean(meta.wording?.[r.id]);
@@ -88,7 +88,7 @@ export function requirementText(set: RequirementSet, r: FunctionalRequirement, m
     `SAP objects: ${objectText(r)}`,
     'Acceptance criteria:',
     ...r.acceptance.map((c, i) => `  ${i + 1}. Given ${c.given}, when ${c.when}, then ${c.then}.`),
-    `Provenance: reconstructed from the code by the engine${isProposed(r, m) ? '; wording: model proposal, checked against the anchors' : ''}.`,
+    `Provenance: reconstructed from the code by the engine${isProposed(r, m) ? '; wording: AI-generated, checked against the anchors' : ''}.`,
   );
   return lines.join('\n');
 }
@@ -103,7 +103,7 @@ export function requirementsMarkdown(set: RequirementSet, meta: RequirementsExpo
   out.push('## 1. Overview', '');
   out.push('| ID | Priority | Requirement | Process step | Lines |', '|---|---|---|---|---|');
   for (const r of set.requirements) {
-    out.push(`| ${r.id} | ${PRIORITY_LABEL[r.priority]} | ${mdCell(statementOf(r, meta))}${isProposed(r, meta) ? ' *(model proposal)*' : ''} | ${mdCell(stepLabel(set, r.stepId))} | ${anchorList(r.anchors)} |`);
+    out.push(`| ${r.id} | ${PRIORITY_LABEL[r.priority]} | ${mdCell(statementOf(r, meta))}${isProposed(r, meta) ? ' *(AI-generated)*' : ''} | ${mdCell(stepLabel(set, r.stepId))} | ${anchorList(r.anchors)} |`);
   }
   out.push('');
 
@@ -120,7 +120,7 @@ export function requirementsMarkdown(set: RequirementSet, meta: RequirementsExpo
     for (const r of g.items) {
       out.push(`#### ${r.id} — ${PRIORITY_LABEL[r.priority]} · ${BASIS_LABEL[r.basis.kind]}`, '');
       out.push(`**${statementOf(r, meta)}**`, '');
-      if (isProposed(r, meta)) out.push(`Model proposal. Engine wording: ${r.statement}`, '');
+      if (isProposed(r, meta)) out.push(`AI-generated. Engine wording: ${r.statement}`, '');
       out.push(`- Rationale: ${r.rationale}`);
       out.push(`- Priority: ${PRIORITY_LABEL[r.priority]} — ${r.priorityReason}`);
       out.push(`- Lines: ${anchorList(r.anchors)}`);
@@ -164,13 +164,13 @@ export function requirementsHtml(set: RequirementSet, meta: RequirementsExportMe
   parts.push(`<p><em>${esc(PROVENANCE_NOTE)}</em></p>`);
   parts.push('<h2>1. Overview</h2>');
   parts.push(table(['ID', 'Priority', 'Requirement', 'Process step', 'Lines'], set.requirements.map((r) => [
-    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (model proposal)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
+    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (AI-generated)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
   ])));
   parts.push('<h2>2. Requirements</h2>');
   for (const r of set.requirements) {
     parts.push(`<h3>${esc(r.id)} — ${PRIORITY_LABEL[r.priority]} · ${esc(stepLabel(set, r.stepId))}</h3>`);
     parts.push(`<p><strong>${esc(statementOf(r, meta))}</strong></p>`);
-    if (isProposed(r, meta)) parts.push(`<p>Model proposal. Engine wording: ${esc(r.statement)}</p>`);
+    if (isProposed(r, meta)) parts.push(`<p>AI-generated. Engine wording: ${esc(r.statement)}</p>`);
     parts.push(`<ul><li>Rationale: ${esc(r.rationale)}</li><li>Priority: ${PRIORITY_LABEL[r.priority]} — ${esc(r.priorityReason)}</li><li>Lines: ${esc(anchorList(r.anchors))}</li><li>SAP objects: ${esc(objectText(r))}</li></ul>`);
     parts.push(`<ol>${r.acceptance.map((c) => `<li>Given ${esc(c.given)}, when ${esc(c.when)}, then ${esc(c.then)}.</li>`).join('')}</ol>`);
   }
@@ -234,7 +234,7 @@ function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string 
   b.push(para(run(PROVENANCE_NOTE, { italic: true })));
   b.push(para(run('1. Overview'), 'Heading1'));
   b.push(docxTable(['ID', 'Priority', 'Requirement', 'Process step', 'Lines'], set.requirements.map((r) => [
-    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (model proposal)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
+    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (AI-generated)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
   ])));
   b.push(para(run('2. Requirements by process step'), 'Heading1'));
   const groups: Array<{ title: string; items: FunctionalRequirement[] }> = [];
@@ -249,7 +249,7 @@ function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string 
     for (const r of g.items) {
       b.push(para(run(`${r.id} — ${PRIORITY_LABEL[r.priority]} · ${BASIS_LABEL[r.basis.kind]}`), 'Heading3'));
       b.push(para(run(statementOf(r, meta), { bold: true })));
-      if (isProposed(r, meta)) b.push(para(run(`Model proposal. Engine wording: ${r.statement}`, { italic: true })));
+      if (isProposed(r, meta)) b.push(para(run(`AI-generated. Engine wording: ${r.statement}`, { italic: true })));
       b.push(para(run('Rationale: ', { bold: true }) + run(r.rationale)));
       b.push(para(run('Priority: ', { bold: true }) + run(`${PRIORITY_LABEL[r.priority]} — ${r.priorityReason}`)));
       b.push(para(run('Lines: ', { bold: true }) + run(anchorList(r.anchors), { mono: true })));
@@ -575,7 +575,7 @@ export async function blocksDocx(blocks: DocBlock[], meta: DocxMeta = {}): Promi
 /* ---------------------------------------------------- non-functional */
 
 export const NFR_PROVENANCE_NOTE =
-  'Every non-functional requirement below is read by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source, and only code an entry point reaches counts. The questions to be decided are what the code cannot answer — service levels, volumes, retention periods, roles, the cutover date. They are not requirements found in the code, and no value is assumed for them. Model proposals, where listed, are marked and were not checked against the code.';
+  'Every non-functional requirement below is read by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source, and only code an entry point reaches counts. The questions to be decided are what the code cannot answer — service levels, volumes, retention periods, roles, the cutover date. They are not requirements found in the code, and no value is assumed for them. AI-generated proposals, where listed, are marked and were not checked against the code.';
 
 /** The design model's text for one category, with what it names of this program. */
 export interface NfrProposalExport {
@@ -709,7 +709,7 @@ function proposalEntries(meta: Pick<NfrExportMeta, 'proposals'>): Array<[NfrCate
   return entries;
 }
 
-/** True when the export prints a model proposal's text: one that names something of this program (`proposalBlocks`). */
+/** True when the export prints an AI-generated draft's text: one that names something of this program (`proposalBlocks`). */
 function printsNfrProposal(meta: Pick<NfrExportMeta, 'proposals'>): boolean {
   return proposalEntries(meta).some(([, p]) => p.references.length > 0);
 }
@@ -732,7 +732,7 @@ function proposalBlocks(meta: NfrExportMeta, level: 2 | 3, title: string): DocBl
   const generic = entries.length - specific.length;
   const out: DocBlock[] = [{ k: 'h', level, text: title }];
   out.push({ k: 'p', em: true, text: 'Written by the design model with the solution design. Proposals, not requirements: not checked against the code.' });
-  if (specific.length) out.push({ k: 'table', head: ['Category', 'Model proposal', 'Names'], rows: specific.map(([c, p]) => [NFR_CATEGORY_LABEL[c], p.text.trim(), p.references.join(', ')]) });
+  if (specific.length) out.push({ k: 'table', head: ['Category', 'AI-generated proposal', 'Names'], rows: specific.map(([c, p]) => [NFR_CATEGORY_LABEL[c], p.text.trim(), p.references.join(', ')]) });
   if (generic) out.push({ k: 'p', text: `${generic} further proposal${generic === 1 ? '' : 's'} named nothing from this program and ${generic === 1 ? 'is' : 'are'} left out.` });
   return out;
 }
@@ -754,7 +754,7 @@ function nfrBlocks(set: NfrSet, meta: NfrExportMeta): DocBlock[] {
     { k: 'h', level: 2, text: '3. To be decided by the business / IT operations' },
     { k: 'p', text: 'The code cannot answer these. They are questions, not requirements found in the code.' },
     { k: 'table', head: ['ID', 'Category', 'Owner', 'Question', 'Evidence', 'Lines'], rows: questionRows(set.questions) },
-    ...proposalBlocks(meta, 2, '4. Model proposals'),
+    ...proposalBlocks(meta, 2, '4. AI-generated proposals'),
   ];
 }
 
@@ -779,7 +779,7 @@ function frBlocks(set: RequirementSet, meta: RequirementsExportMeta): DocBlock[]
   out.push({
     k: 'table',
     head: ['ID', 'Priority', 'Requirement', 'Process step', 'Lines'],
-    rows: set.requirements.map((r) => [r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (model proposal)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors)]),
+    rows: set.requirements.map((r) => [r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (AI-generated)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors)]),
   });
   out.push({ k: 'h', level: 3, text: 'A.2 Requirements by process step' });
   const groups: Array<{ title: string; items: FunctionalRequirement[] }> = [];
@@ -794,7 +794,7 @@ function frBlocks(set: RequirementSet, meta: RequirementsExportMeta): DocBlock[]
     for (const r of g.items) {
       out.push({ k: 'h', level: 5, text: `${r.id} — ${PRIORITY_LABEL[r.priority]} · ${BASIS_LABEL[r.basis.kind]}` });
       out.push({ k: 'p', text: statementOf(r, meta), strong: true });
-      if (isProposed(r, meta)) out.push({ k: 'p', em: true, text: `Model proposal. Engine wording: ${r.statement}` });
+      if (isProposed(r, meta)) out.push({ k: 'p', em: true, text: `AI-generated. Engine wording: ${r.statement}` });
       out.push({
         k: 'kv',
         items: [
@@ -849,7 +849,7 @@ function specificationBlocks(fr: RequirementSet, nfr: NfrSet, meta: Specificatio
         ...questionRows(nfr.questions),
       ],
     },
-    ...proposalBlocks(meta, 2, 'D. Model proposals for the non-functional requirements'),
+    ...proposalBlocks(meta, 2, 'D. AI-generated proposals for the non-functional requirements'),
   ];
 }
 

@@ -759,7 +759,7 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
     const h = await handover(projectId);
     expect(h.project.generationBinding?.contractFingerprint).toBe(fresh.contract.fingerprint);
     expect(h.link('transformation').state).toBe('on-record');
-    expect(h.link('transformation').provenance, 'generated code is a model proposal, never proven').toBe('proposed');
+    expect(h.link('transformation').provenance, 'generated code is AI-generated, never proven').toBe('proposed');
   });
 
   test('documentation: the Documentation stage reads the process out of the signed source', async ({ page }) => {

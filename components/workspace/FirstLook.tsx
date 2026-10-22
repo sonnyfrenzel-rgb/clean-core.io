@@ -31,6 +31,8 @@ import { codeGivesAway, type CodeGivesAway } from '@/lib/first-look-findings';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { openingDecisions, type OpeningDecisions } from '@/lib/first-look-plain';
 import { firstLookPlainSentences, plainModelEnabled } from '@/lib/plain-wording';
+import AskOnClick from './AskOnClick';
+import { PLAIN_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
@@ -489,7 +491,7 @@ export default function FirstLook({
    * "adjusting state when a prop changes"): a new project or source starts
    * every stage, the naming wait and Skip over from nothing.
    */
-  const readingKey = `${projectId} ${source}`;
+  const readingKey = `${projectId}\u0000${source}`;
   const [readFor, setReadFor] = useState(readingKey);
   if (readFor !== readingKey) {
     setReadFor(readingKey);
@@ -755,6 +757,9 @@ export default function FirstLook({
     owner,
     active: plainSentences !== null && namingFrom !== 'none',
     modelEnabled: plainModelEnabled(availability),
+    // 3.0.21 (owner decision B6): by itself only on the platform key or with
+    // "Automatic steps" on for the own key; otherwise on a click.
+    autoAllowed: availability.autoSteps,
   });
   /** "What it changes" on top: three, business words first (3.0.21). */
   const changesTop = useMemo(() => (result ? changesOnTop(result.changes.changes, result.changes.more) : null), [result]);
@@ -922,6 +927,7 @@ export default function FirstLook({
 
   return (
     <>
+      <AskOnClick askNow={plain.askNow} label={PLAIN_ON_CLICK_LABEL} />
       <section
         data-first-look={endStateOnly ? 'end-state' : 'complete'}
         data-reduced-motion={reduced ? 'true' : 'false'}

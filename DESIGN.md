@@ -523,7 +523,7 @@ For first-time users less is more — the depth stays, it just does not come fir
 
 What a language model has written appears on screen, in HTML and PDF exports and in mails like any other
 text of this product: rendered, factual, without traces of its origin in the text itself (ADR-014). **Where a text
-comes from is said by the chip *Model proposal* — never by the text.**
+comes from is said by the chip *AI-generated* — never by the text.**
 
 - **Never raw Markdown characters:** `**`, `__`, `#`/`##`/`###` at the start of a line, single backticks, code fences, `[Text](url)`
   as text, `- ` or `* ` as visible bullet characters in body text, a literal `\n`. Model text is either
@@ -540,7 +540,7 @@ comes from is said by the chip *Model proposal* — never by the text.**
   labels like "AI-powered", "magic", "Smart …"; no emojis in interface text. "Ask AI" is called "Ask this case".
 - **No loading states that play at thinking:** no "AI is thinking…", no typing effect, no dot animation — the
   phase says what is being read or generated right now (§2.8, §5.4).
-- **What stays:** the factual provenance statement (*Model proposal*, §4) and, where it is legally necessary or needed for traceability,
+- **What stays:** the factual provenance statement (*AI-generated*, §4) and, where it is legally necessary or needed for traceability,
   the name of the model in the meta line or evidence — as a statement, not as advertising.
 
 Technically: model output goes through a shared cleanup before display, export and mail (step 1.5,
@@ -560,7 +560,7 @@ forbids freely worded provenance badges (ADR-006).
 | `confirmed` | **Confirmed** | information | Person | confirmed by the account — self-declaration, no mandate | Signed off, confirmed rule |
 | `reconstructed` | **Reconstructed** | information | Gear/code | derived from the code, not confirmed | process skeleton, lanes from AUTHORITY-CHECK |
 | `imported` | **Imported** | information | File arrow | taken over from a file (ATC, BPMN, usage, SAP catalogs) | Usage import, ATC findings, Catalog Match, Level A–D, Readiness (computed from the levels with rule version) |
-| `proposed` | **Model proposal** | warning | Pen (draft) — never sparkles | proposed by the language model, unchecked | AI Generated, business naming |
+| `proposed` | **AI-generated** | warning | Pen (draft) — never sparkles | written by a language model, unchecked | AI Generated, Model proposal (the word until 3.0.21), business naming |
 | `simulation` | **Simulation** | warning | Calculator | computed on assumptions | Economics, Model estimate |
 | `demonstrated-mock` | **Demonstrated · mock** | warning | Test tube | shown against mocks, not against real systems | Simulated, mock test run |
 | `stale` | **Stale** | warning | Clock | no longer current — recompute | Stale notice |
@@ -589,7 +589,7 @@ list has its own shape, its own file in the code next to `lib/provenance.ts` and
 
 | List | Values | Shape | Example |
 |---|---|---|---|
-| **Provenance** (§4) | the nine values | pill with icon, filled/outline/dashed | *Model proposal* |
+| **Provenance** (§4) | the nine values | pill with icon, filled/outline/dashed | *AI-generated* |
 | **Object status** (§2.3) | not started · partial · draft · open · confirmed · mock only · handed over · done · blocked by SAP · failed — *signed* and *stale* are provenance (§4), not a status | text with a state dot, no border | ● draft |
 | **Evidence level** (roadmap 7.2) | E0 none · E1 catalog reference · E2 documented · E3 demonstrated · E4 accepted in the target system | identifier: rectangle, radius 4 px, code in mono, the word after it; neutral for all levels — a maturity of evidence, not a state | `E1` catalog reference |
 | **Clean core level** | A · B · C · D | identifier like evidence level, colour per §1.8 | `D` |
@@ -645,7 +645,7 @@ moment.
 1. **Code read** — lines light up, counters follow the lines: lines · programs · tables · findings.
 2. **Process recognised** — the process skeleton (roadmap 2.3) grows out of the marked lines; decision points carry
    their condition from the code. From here the workspace is usable.
-3. **In business language** — the technical names change once to business names, with the chip *Model proposal*. Without
+3. **In business language** — the technical names change once to business names, with the chip *AI-generated*. Without
    a model call (model unreachable or deselected) the stage is dropped; the skeleton keeps its technical names —
    a valid result.
 4. **This is your process** — process name, the plain-language sentence with anchor, the **reveal line** with the hidden
@@ -882,7 +882,7 @@ multi-instance is therefore never a step.
 | **Collapsed pool + message flow** | another system: `CALL FUNCTION … DESTINATION`, mail recipient, file system | credit system `PRD_CREDIT_RFC` (L401–402), mail recipient |
 | **Data store** | tables read/written; SAP tables and Z tables distinguishable. In Business shown via the overlay "Data" (§5.9), in IT and in the export always there | reads VBAK, VBAP, KNA1, KNB1, MARA, MARD; writes ZSD_ORD_RISK, ZSD_LEGACY_LOG |
 | **Data object** | file, result list | CSV to `C:\TEMP` (L538) |
-| **Lanes** (proposal) | AUTHORITY-CHECK, user/batch context, naming — always *Model proposal* or *Reconstructed* | batch run · reviewer (outside the program) |
+| **Lanes** (proposal) | AUTHORITY-CHECK, user/batch context, naming — always *AI-generated* or *Reconstructed* | batch run · reviewer (outside the program) |
 | **Text annotation** | what the code does not say, on the element: *Not determined*, hard-wired values | "Review entry is a table row — who works on it is not determined" (L500) |
 
 **Why subprocess start and early ends (ADR-054, Sonny 27.09.2026).** Measured on the
@@ -962,7 +962,7 @@ On the element and in the list of all business statements (ADR-055, roadmap 17.1
 
 | What | How |
 |---|---|
-| **Proposal** (path B, model) | on top, reading size 13 px, `--cc-ink`, followed by the chip *Model proposal* |
+| **Proposal** (path B, model) | on top, reading size 13 px, `--cc-ink`, followed by the chip *AI-generated* |
 | **Evidence** (path A, engine) | directly below, 12 px, `--cc-ink-muted`, preceded by the chip *Reconstructed*; never drops away for the proposal. If the engine has no sentence at these lines, that is what it says |
 | **Contradiction** | on the proposal, no chip: a 2-px edge stroke on the left and one line of words with an icon — *Contradicts the evidence* (`warning`) or *Not supported by the code* (`neutral`). The reason and the lines sit one action deeper (§2.11, `<details>`) |
 | **Request** | a button *Propose business sentences* (Secondary), after the first proposal *Ask the model again* (Ghost); next to it, before the click, the cost line per §2.8 — one model call, does not count against the analysis runs, counts against the hourly limit of model calls; with your own key "with your own Gemini key". Only the owner has it; an invited reader sees what the owner requested |

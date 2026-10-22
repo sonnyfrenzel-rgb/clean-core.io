@@ -176,10 +176,10 @@ export function traceJson(trace: Trace): string {
 
 const FILLED_WORD: Record<FilledBy, string> = {
   engine: 'engine',
-  model: 'model proposal',
-  'model-repair-1': 'model proposal (repair round 1)',
-  'model-repair-2': 'model proposal (repair round 2)',
-  'model-repair-3': 'model proposal (repair round 3, gate errors)',
+  model: 'AI-generated',
+  'model-repair-1': 'AI-generated (repair round 1)',
+  'model-repair-2': 'AI-generated (repair round 2)',
+  'model-repair-3': 'AI-generated (repair round 3, gate errors)',
   'not-filled': 'not written — stub',
 };
 

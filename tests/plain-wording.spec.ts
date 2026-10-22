@@ -289,7 +289,7 @@ test.describe('on screen (server-free render)', () => {
     const plain = record.wording[plainKeyOf(station.happens.text, station.happens.anchor!)];
     expect(text).toContain(withoutCodes(plain));
     expect(worded).toContain('data-tour-worded="yes"');
-    expect(text).toContain('Model proposal');
+    expect(text).toContain('AI-generated');
     expect(text).toContain('worded');
     // The engine's sentence is still there — folded, "As read from the code".
     expect(worded).toContain('data-worded-engine=""');

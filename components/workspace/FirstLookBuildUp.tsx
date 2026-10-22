@@ -606,7 +606,7 @@ export default function FirstLookBuildUp({
       })();
 
   // Plain names for the fallback list: the stored business names where a
-  // naming exists (Model proposal), otherwise the engine's plain wording.
+  // naming exists (AI-generated), otherwise the engine's plain wording.
   const proposed = named?.state === 'named' && named.counts.named > 0;
   const names = useMemo(() => {
     const out = new Map<string, string>();

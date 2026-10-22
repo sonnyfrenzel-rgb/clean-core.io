@@ -113,7 +113,7 @@ test.describe('4. the head does not contradict itself about the model', () => {
   test("the answer says the evidence is the engine's, with or without a narrative — the fold says what the model wrote", () => {
     // Since 10.10.2026 the answer is one sentence (DESIGN.md §2.11): the
     // pointer to the model's summary left the prose, because the fold marks
-    // the summary "Model proposal" where it stands.
+    // the summary "AI-generated" where it stands.
     const a = analysisAnswer({ counts, lines: 669, route: null, routeChosenByReader: false });
     expect(a.detail).toContain('read all 669 lines without a model');
     expect(a.detail).not.toContain('Summary');
@@ -125,7 +125,7 @@ test.describe('4. the head does not contradict itself about the model', () => {
     // Since ADR-093 (11.10.2026) the status line is gone: "engine only, no
     // model" is the hero's provenance line — the "Reconstructed · fixed rules"
     // chip and "no model involved" — and the narrative still says what it is
-    // where it stands, folded as "Model summary" and marked "Model proposal".
+    // where it stands, folded as "Model summary" and marked "AI-generated".
     expect(page).not.toMatch(/\{ key: '(\w+)', label: '\w+', value:/);
     const hero = read('components/analyze/CleanCoreScoreSection.tsx');
     expect(hero).toMatch(/<CcProvenanceChip value="reconstructed" note="fixed rules" \/>\s*no model involved/);

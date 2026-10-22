@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key';
-import { PLATFORM_PROVIDER, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
+import {
+  MODEL_PROVIDERS_SUSPENDED_ENV,
+  PLATFORM_PROVIDER,
+  isStageAnswerRecord,
+  suspendedProvidersOf,
+  type ModelKeyProvider,
+  type StageAnswerRecord,
+} from '@/lib/model-providers';
 import {
   verifyRequestAuth,
   assertMfaSatisfied,
@@ -55,6 +62,17 @@ interface StageAnswer {
    * stage that has not been answered since 3.0.15.
    */
   answers: Partial<Record<ModelStage, StageAnswerRecord>>;
+  /**
+   * 3.0.21 (owner decision B6) — whether the steps the product starts by
+   * itself may run on the key: always on the platform key; on an own key only
+   * once the account switched them on for that key.
+   */
+  autoSteps: boolean;
+  /**
+   * 3.0.21 (T01) — the provider of the key when the operator has switched it
+   * off; `keyAvailable` is then false, and the screens say why.
+   */
+  suspendedProvider: ModelKeyProvider | null;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -78,15 +96,18 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers };
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
       ? 'community'
       : null;
   const provider = ownKey ? ownKey.provider : keySource === 'community' ? PLATFORM_PROVIDER : null;
+  // A switched-off provider is no available key: `/api/gemini` refuses it.
+  const suspendedProvider = provider && suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider) ? provider : null;
+  const autoSteps = keySource === 'community' || (ownKey !== null && ownKey.autoSteps);
 
-  return { stages, keyAvailable: keySource !== null, keySource, provider, answers };
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider };
 }
 
 export async function GET(req: NextRequest) {

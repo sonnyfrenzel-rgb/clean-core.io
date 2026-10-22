@@ -114,7 +114,7 @@ test.describe('the measurement: unanchored sentences in real replies (item 9, fi
       const declined = rs.filter((r) => guarded(r).outcome === 'refused');
       expect(declined).toHaveLength(6);
       // Before item 9 a decline without an anchor read as "named none of the evidence", and one with an anchor
-      // ("does not answer … [L1]") was shown as a model proposal — two of the after-prompt replies.
+      // ("does not answer … [L1]") was shown as AI-generated — two of the after-prompt replies.
       expect(declined.filter((r) => shownToday(r))).toHaveLength(which === 'before' ? 0 : 2);
       expect(refusedProposalText('declined')).toBe(DECLINED_PROPOSAL);
       expect(DECLINED_PROPOSAL).not.toBe(UNANCHORED_PROPOSAL);

@@ -314,7 +314,7 @@ test.describe('the origin on the Testing stage', () => {
     await expect(first.locator('[data-origin-check="anchored"]')).toContainText('matches BR-009 at L412');
     await expect(first.locator('[data-origin-match="BR-009"]')).toBeVisible();
     await expect(first.locator('[data-provenance="reconstructed"]')).toBeVisible();
-    // The scenario itself stays a model proposal.
+    // The scenario itself stays AI-generated.
     await expect(rows.nth(0).locator('[data-scenario-details] [data-provenance="proposed"]').first()).toBeVisible();
     await first.locator('[data-origin-statement] [data-cc-anchor]').first().click();
     const excerpt = first.locator('[data-origin-excerpt="L412"]');

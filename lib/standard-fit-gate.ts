@@ -15,7 +15,7 @@
  *     confirmed decision moves the program to SAP standard, or when the stored
  *     solution design compared the standard with RAP and CAP on facts (a
  *     fit-gap for the standard, and a reason that is not circular —
- *     `lib/design-option-comparison.ts`). The second is a model proposal and
+ *     `lib/design-option-comparison.ts`). The second is AI-generated and
  *     is said to be one. Nothing else counts: the Standard fit table's rows
  *     carry catalog pointers at E0/E1 and no fit (`lib/standard-fit-view.ts`).
  *   - `decisionOnRecord(project)` — the stored decision record (roadmap 8.4),
@@ -125,7 +125,7 @@ export function standardFitAssessed(project: GateProject): StandardFitAssessment
       return {
         assessed: true,
         basis: 'design-comparison',
-        sentence: 'The solution design compared the SAP standard with RAP and CAP on the engine\'s facts (a model proposal, not a decision).',
+        sentence: 'The solution design compared the SAP standard with RAP and CAP on the engine\'s facts (an AI-generated draft, not a decision).',
       };
     }
     if (view.state === 'ready' && view.refused) {

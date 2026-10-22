@@ -169,10 +169,15 @@ test.describe('the Anthropic key test', () => {
   });
 
   test('the test route sends an Anthropic key to the Models API and a Gemini key as before', () => {
+    // 3.0.21: one key test for both routes (`lib/own-key-test.ts`): Anthropic's Models API, Gemini's models.get.
     const src = read('app/api/secrets/gemini/test/route.ts');
-    expect(src).toMatch(/if \(provider === 'anthropic'\) \{[\s\S]*?await testAnthropicKey\(apiKey\.trim\(\)\);/);
-    expect(src.indexOf('assertByokAllowed(')).toBeLessThan(src.indexOf('testAnthropicKey('));
-    expect(src.indexOf("assertByokRateLimit('test', decodedToken.uid)")).toBeLessThan(src.indexOf('testAnthropicKey('));
+    expect(src).toContain('await testOwnModelKey(provider, apiKey!, { stubbed });');
+    expect(src.indexOf('assertByokAllowed(')).toBeLessThan(src.indexOf('testOwnModelKey('));
+    expect(src.indexOf("assertByokRateLimit('test', decodedToken.uid)")).toBeLessThan(src.indexOf('testOwnModelKey('));
+    const one = read('lib/own-key-test.ts');
+    expect(one).toMatch(/if \(provider === 'anthropic'\) \{\s*await testAnthropicKey\(key\);/);
+    expect(one).toContain('ai.models.get({ model: PRODUCT_GEMINI_MODEL })');
+    expect(one).not.toContain('generateContent');
   });
 });
 
@@ -211,7 +216,8 @@ test.describe('the proxy routes by provider', () => {
     expect(json.system).toMatch(/JSON value only/);
     expect(json).not.toHaveProperty('output_config');
     const text = claudeRequestBody({ model: OWN_CLAUDE_MODEL, prompt: 'p', jsonResponse: false });
-    expect(Object.keys(text).sort()).toEqual(['max_tokens', 'messages', 'model']);
+    // 3.0.21: the data region travels on every call, plain text included.
+    expect(Object.keys(text).sort()).toEqual(['inference_geo', 'max_tokens', 'messages', 'model']);
   });
 
   test('the schema adaptation adds additionalProperties:false everywhere and drops what structured outputs refuse', () => {
@@ -352,7 +358,7 @@ test.describe('Settings', () => {
   test('the page renders the choice in the key card and sends the provider with save and test', () => {
     const page = read('app/(app)/settings/page.tsx');
     expect(page).toContain('<OwnKeyProviderChoice');
-    expect(page).toContain('body: JSON.stringify({ apiKey: geminiKey.trim(), provider: keyProvider }),');
+    expect(page).toMatch(/body: JSON\.stringify\(\{\s*apiKey: geminiKey\.trim\(\),\s*provider: keyProvider,/);
     expect(page).toContain('body: JSON.stringify(enteredKey ? { apiKey: enteredKey, provider: keyProvider } : {}),');
     // The save route checks the same list the choice is drawn from.
     const save = read('app/api/secrets/gemini/route.ts');

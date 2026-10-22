@@ -469,7 +469,7 @@ function objectsSection(input: TransformationContextInput): Draft {
   return { key: 'objects', head, items, rest: (n) => `   (${plural(n, 'more line')} — see Findings in the IT view)` };
 }
 
-/** An accepted requirement's line — the budget tells it from a model proposal by this shape. */
+/** An accepted requirement's line — the budget tells it from an AI-generated draft by this shape. */
 const isAcceptedLine = (line: string) => /^\s*(?:FR|NFR)-\S+ ACCEPTED /.test(line);
 
 function requirementsSection(input: TransformationContextInput): Draft {

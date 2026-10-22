@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Footprints, RotateCcw, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
+import AskOnClick from './AskOnClick';
+import { PLAIN_ON_CLICK_LABEL } from '@/lib/auto-steps';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -77,6 +79,11 @@ export interface ProcessTourProps {
   demo?: boolean;
   /** The station the tour opens at (a rendered test); the overview (-1) otherwise. */
   initialStation?: number;
+  /**
+   * 3.0.21 (owner decision B6): the click that asks for the plain wording when
+   * it waits for one (own key, automatic steps off); null or absent otherwise.
+   */
+  askWording?: (() => void) | null;
 }
 
 /** The layer, portalled to the page. */
@@ -154,7 +161,7 @@ export function cardPlace(box: TourBox, card: { width: number; height: number },
 }
 
 /** The dialog itself — exported so a server-free render can read it without a portal. */
-export function ProcessTourLayer({ tour, unavailable = false, model, onClose, say = ENGINE_ONLY, designHref = null, demo = false, initialStation = OVERVIEW }: ProcessTourProps) {
+export function ProcessTourLayer({ tour, unavailable = false, model, onClose, say = ENGINE_ONLY, designHref = null, demo = false, initialStation = OVERVIEW, askWording = null }: ProcessTourProps) {
   const stations = tour?.stations ?? [];
   const end = stations.length;
   const [at, setAt] = useState(() => Math.max(OVERVIEW, Math.min(initialStation, end)));
@@ -327,6 +334,7 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
               </CcButton>
             </span>
           </div>
+          <AskOnClick askNow={askWording} label={PLAIN_ON_CLICK_LABEL} />
           {tour && tour.chapters.length > 1 ? (
             <nav aria-label={wt('walk.chaptersLabel')} className="cc-tour-wide-only mt-2">
               <ol className="m-0 flex list-none flex-wrap gap-1 p-0">

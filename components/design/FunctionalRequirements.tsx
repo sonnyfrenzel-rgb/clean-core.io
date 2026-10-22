@@ -524,7 +524,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
                       <dt className="font-semibold text-cc-ink">Provenance</dt>
                       <dd className="m-0 flex flex-wrap items-center gap-2 text-cc-ink">
                         <CcProvenanceChip value="reconstructed" />
-                        <span className="text-cc-ink-muted">Read from the code by the engine{proposed ? '; the sentence above is a model proposal, checked against these lines' : ''}.</span>
+                        <span className="text-cc-ink-muted">Read from the code by the engine{proposed ? '; the sentence above is AI-generated, checked against these lines' : ''}.</span>
                       </dd>
                     </dl>
                     <div className="min-w-0">

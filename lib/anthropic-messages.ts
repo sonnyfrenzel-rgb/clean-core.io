@@ -18,6 +18,8 @@ import type { ModelAnswer } from './model-completion';
  * What is sent, and what deliberately is not:
  *
  *   - `model`, `max_tokens`, one user message with the prompt — always.
+ *   - `inference_geo: "us"` — always (3.0.21): the data region the legal
+ *     texts name; the answer's `usage.inference_geo` is read back.
  *   - `output_config.format` (JSON schema) where the stage has a fixed answer
  *     shape (`lib/model-response-schema.ts`), the equivalent of Gemini's
  *     `responseJsonSchema`; the schema is adapted to what structured outputs
@@ -85,6 +87,14 @@ export interface ClaudeRequest {
   effort?: ClaudeEffort;
 }
 
+/**
+ * The data region every call sets (3.0.21, legal review B7): `inference_geo`
+ * as a top-level request parameter. A literal here rather than an import, so
+ * this module stays free of imports beyond types; `tests/byok-claude.spec.ts`
+ * holds it equal to `ANTHROPIC_INFERENCE_GEO` in `lib/model-providers.ts`.
+ */
+export const CLAUDE_INFERENCE_GEO = 'us';
+
 /** The Messages API request body. Pure, so a spec reads exactly what would be sent. */
 export function claudeRequestBody(req: ClaudeRequest): Record<string, unknown> {
   const outputConfig: Record<string, unknown> = {
@@ -94,6 +104,7 @@ export function claudeRequestBody(req: ClaudeRequest): Record<string, unknown> {
   return {
     model: req.model,
     max_tokens: CLAUDE_MAX_TOKENS,
+    inference_geo: CLAUDE_INFERENCE_GEO,
     ...(req.jsonResponse && !req.schema ? { system: JSON_ONLY_SYSTEM } : {}),
     messages: [{ role: 'user', content: req.prompt }],
     ...(Object.keys(outputConfig).length ? { output_config: outputConfig } : {}),
@@ -126,7 +137,7 @@ const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFi
  * `max_tokens` is cut off (`MAX_TOKENS`); `refusal` is the provider's filter
  * (`SAFETY`); anything else is not a finished answer.
  */
-export function claudeAnswerOf(json: unknown): { answer: ModelAnswer; usage: ClaudeUsage } {
+export function claudeAnswerOf(json: unknown): { answer: ModelAnswer; usage: ClaudeUsage; inferenceGeo: string | null } {
   const m = (json ?? {}) as { content?: unknown; stop_reason?: unknown; usage?: Record<string, unknown> };
   const blocks = Array.isArray(m.content) ? m.content : [];
   const text = blocks
@@ -146,6 +157,8 @@ export function claudeAnswerOf(json: unknown): { answer: ModelAnswer; usage: Cla
       thoughtsTokenCount: null,
       totalTokenCount: input !== null && output !== null ? input + output : null,
     },
+    // Where the provider says inference ran — a short region word, never free text.
+    inferenceGeo: typeof m.usage?.inference_geo === 'string' && /^[a-z_-]{1,16}$/.test(m.usage.inference_geo) ? m.usage.inference_geo : null,
   };
 }
 
@@ -173,7 +186,7 @@ function headersFor(apiKey: string): Record<string, string> {
 export async function callClaudeMessages(
   req: ClaudeRequest & { apiKey: string; signal?: AbortSignal },
   fetchImpl: Fetch = fetch,
-): Promise<{ answer: ModelAnswer; usage: ClaudeUsage }> {
+): Promise<{ answer: ModelAnswer; usage: ClaudeUsage; inferenceGeo: string | null }> {
   const res = await fetchImpl(ANTHROPIC_MESSAGES_URL, {
     method: 'POST',
     headers: { ...headersFor(req.apiKey), 'content-type': 'application/json' },

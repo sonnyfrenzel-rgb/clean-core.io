@@ -179,7 +179,7 @@ const extractJSON = (text: string) => {
  *   which `docs/ROADMAP.md` §6 forbids: a lane is a reconstruction, never an
  *   organisational statement, and 2.4 proposes lanes with a provenance chip;
  * - RACI and SOP text rode along inside a process file as if they were facts
- *   about the process. They are model proposals, they are shown as such on the
+ *   about the process. They are AI-generated proposals, they are shown as such on the
  *   Business tab and in the Confluence export, and they have no place in an
  *   exchange format where the chip that qualifies them does not travel.
  *
@@ -1386,7 +1386,7 @@ export default function DocumentationPage() {
   );
 
   /**
-   * What the model proposals cost before any click — DESIGN.md §2.8, one line
+   * What the AI-generated proposals cost before any click — DESIGN.md §2.8, one line
    * for the card (roadmap 3.0.7). Every part of it is a fact of this page: the
    * model it names is the one `generateBusinessDocumentation` passes to
    * `/api/gemini`, the key is the one `/api/model-stages` reports, and that
@@ -1406,7 +1406,7 @@ export default function DocumentationPage() {
   const tracePanel = engineDoc ? (
     <ProcessDocumentationView appendix doc={engineDoc} proposal={statementPanelProps} proposalPanel={false} groups={processDocument.document?.appendix.groups} />
   ) : null;
-  /** The technical trace, last on the page — after the model proposals and the map. */
+  /** The technical trace, last on the page — after the AI-generated proposals and the map. */
   const appendixPanel = engineDoc ? (
     <ProcessDocumentAppendix document={processDocument.document}>{tracePanel}</ProcessDocumentAppendix>
   ) : null;
@@ -1692,7 +1692,7 @@ export default function DocumentationPage() {
 
       {/* Owner 04.10.2026 (ADR-077 amended) — the stage reads top-down like
           the document a business reader opens: the process description first;
-          the model proposals right after it; the map with its chapters to
+          the AI-generated proposals right after it; the map with its chapters to
           explore below; the technical trace last. Printed, the description
           and its appendix are the page — everything else is `cc-no-print`. */}
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -1832,7 +1832,7 @@ export default function DocumentationPage() {
         )}
       </section>
 
-      {/* The model proposals — who does what, who is accountable, and the
+      {/* The AI-generated proposals — who does what, who is accountable, and the
           business sentences — on top of the description, so after it. */}
       {proposalsCard}
 

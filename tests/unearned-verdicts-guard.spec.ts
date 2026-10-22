@@ -134,7 +134,7 @@ test.describe('generated code is labelled as generated', () => {
     // No compiler, no test runner, no deterministic check has looked at this
     // output; the path even falls back to accepting arbitrary non-JSON text.
     expect(rendered(REL)).not.toContain('AI Verified');
-    // Block D, D.15: the label is the provenance chip's "Model proposal"
+    // Block D, D.15: the label is the provenance chip's "AI-generated"
     // (`lib/provenance.ts` maps the old "AI Generated" to `proposed`), and it
     // is still shown only over files a generation produced.
     expect(rendered(REL)).toMatch(/files\.length > 0 && <CcProvenanceChip value="proposed" \/>/);

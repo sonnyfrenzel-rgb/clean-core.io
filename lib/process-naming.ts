@@ -43,7 +43,7 @@ import type { ProvenanceValue } from './provenance';
  *   - A lane is a proposal. It carries the sentence the mockup gives it —
  *     reconstructed from AUTHORITY-CHECK and naming, not an organisational
  *     statement — and a lane with no AUTHORITY-CHECK behind it has no anchor.
- *   - Every business name is `proposed` (*Model proposal*). The type below does
+ *   - Every business name is `proposed` (*AI-generated*). The type below does
  *     not admit any other provenance, so a name cannot be shown as proven or
  *     confirmed by a later change that forgets why.
  *

@@ -16,7 +16,7 @@ import { layerFacts, sopStatementLine, SOP_BASIS } from '@/lib/sop-provenance';
  *
  *   - every step is headed by its business name and its lines, never a node id;
  *   - every sentence carries its basis — Reconstructed (from the code, with its
- *     line), Model proposal, or **Proposal — not in the program** for roles,
+ *     line), AI-generated, or **Proposal — not in the program** for roles,
  *     approval, escalation and every capability the program does not have
  *     (`lib/sop-provenance.ts`, `lib/documentation-capabilities.ts`);
  *   - the business exception is a proposal, always;
@@ -100,7 +100,7 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
 
   out.push(`# Business SOP${doc ? ` — ${doc.processName}` : ''}`, '');
   out.push('> Written by a language model from the process documentation; not current practice until the business confirms it. '
-    + 'Every sentence says its basis: **Reconstructed** — read from the code, with its line; **Model proposal** — the model\'s wording, unchecked; '
+    + 'Every sentence says its basis: **Reconstructed** — read from the code, with its line; **AI-generated** — the model\'s wording, unchecked; '
     + '**Proposal — not in the program** — roles, approval, escalation, and anything the program does not do.', '');
 
   if (facts) {
@@ -154,7 +154,7 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
   if (controls.length) {
     const name = new Map(steps.map((s) => [s.stepId, nameOf(s, layer)]));
     out.push(`## Controls an earlier proposal named — ${SOP_BASIS['not-in-program'].label}`, '');
-    // The rows are model proposals only — the sentence
+    // The rows are AI-generated proposals only — the sentence
     // that introduces them must not read as if they came from the code.
     out.push('These rows are historical: a language model proposed them before 3.0.7, and nothing in them was read from or checked against the code.', '');
     out.push('Separately, the controls the code actually has are listed in the process documentation.', '');

@@ -9,7 +9,7 @@ import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
  * Holds a model's wording of what a program is for against the engine's facts
  * (roadmap 3.0.11, "In short"; owner, 12.10.2026): *"Where the purpose needs
  * words the code does not hold, a model may phrase it from those facts, marked
- * Model proposal and checked against them — no claim the facts contradict;
+ * AI-generated and checked against them — no claim the facts contradict;
  * every business object it names must be one the engine read."*
  *
  * A proposal that fails is not shown; the engine's sentence stands alone. The
@@ -149,7 +149,7 @@ const WORD_TABLES: Array<{ re: RegExp; tables: Set<string> }> = (() => {
  * The model's purpose of a program, from the Analyze narrative (`asIsContext`,
  * else `summary`): its first two sentences, without citations and Markdown —
  * or null when there is none or it fails the check. The caller shows it with
- * the chip *Model proposal*, the engine's sentence underneath.
+ * the chip *AI-generated*, the engine's sentence underneath.
  */
 export function purposeProposalOf(narrative: string | null | undefined, facts: ProgramSummaryFacts | null): string | null {
   if (!narrative || !facts) return null;
@@ -185,7 +185,7 @@ export type AuthorClaim =
 
 /**
  * The header comment's statement of purpose as an *Author's claim* (owner,
- * 12.10.2026), held to the same check as a model proposal. A claim the facts
+ * 12.10.2026), held to the same check as AI-generated. A claim the facts
  * contradict is **not shown** — the safer of the two choices the owner left
  * open: a reader who skims would take the quoted sentence for the program's
  * behaviour even under a warning. What stands instead is one line that the

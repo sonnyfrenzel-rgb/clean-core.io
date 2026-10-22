@@ -20,7 +20,7 @@ import { wt } from '@/lib/workspace-messages';
  * The level is always said: the chip *Reconstructed* and the sentence that the
  * business has not confirmed it. A model's wording of the purpose, where one
  * passed the check against the engine's facts, stands first with the chip
- * *Model proposal* — the engine's sentences stay underneath it.
+ * *AI-generated* — the engine's sentences stay underneath it.
  *
  * Only layout: the sentences and the anchors come in ready.
  */

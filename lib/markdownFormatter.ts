@@ -89,7 +89,7 @@ export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExp
       // The fit is the model's word. SAP identifiers in it are checked, and a
       // claim of full coverage is said to be unbacked (external review F-03/F-09).
       md += `## Target Standard Process & SAP Fit\n`;
-      md += `> Model proposal. SAP identifiers below are checked against SAP data this product holds.\n\n`;
+      md += `> AI-generated. SAP identifiers below are checked against SAP data this product holds.\n\n`;
       md += `- **Fit Potential (model's estimate, not a measured fit):** ${data.standardFit.potential || 'N/A'}\n`;
       // 3.0.18 item 13 (QM-08, FI-F12): a sentence whose SAP ID contradicts SAP's data is dropped, SAP's title shown.
       md += `- **Target Standard Process:** \`${sapCheckedNarrative(data.standardFit.targetStandardProcess || 'N/A')}\`\n`;
@@ -241,7 +241,7 @@ export function formatDesignToMarkdown(rawJson: string, options?: ModelTextExpor
     
     if (Array.isArray(data.sapStandardApiMapping) && data.sapStandardApiMapping.length > 0) {
       md += `## SAP Business Accelerator Hub Mappings\n`;
-      md += `Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use, and “name found in catalog” means the name is in a list and nothing more.\n\n`;
+      md += `AI-generated: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use, and “name found in catalog” means the name is in a list and nothing more.\n\n`;
       md += `| Legacy Object | Proposed SAP API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
       data.sapStandardApiMapping.forEach((map: any) => {

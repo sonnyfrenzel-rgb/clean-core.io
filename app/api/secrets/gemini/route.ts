@@ -14,7 +14,18 @@ import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { ByokKeyUnavailableError } from '@/lib/byok-key';
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
-import { isModelKeyProvider, offeredKeyProviders } from '@/lib/model-providers';
+import {
+  MODEL_PROVIDERS_SUSPENDED_ENV,
+  PROVIDER_SUSPENDED_CODE,
+  isModelKeyProvider,
+  offeredKeyProviders,
+  providerSuspendedMessage,
+  suspendedProvidersOf,
+} from '@/lib/model-providers';
+import { ADDENDUM_REQUIRED_CODE, BYOK_ADDENDUM_VERSION, addendumAcceptanceOf, addendumRequired } from '@/lib/byok-addendum';
+import { sendAgreementAcceptedMail, sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
+import { OWN_KEY_TEST_FAILED_CODE, OWN_KEY_TEST_FAILED_MESSAGE, testOwnModelKey } from '@/lib/own-key-test';
+import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '@/lib/gemini-test-stub';
 
 /**
  * POST /api/secrets/gemini
@@ -60,10 +71,43 @@ export async function POST(req: NextRequest) {
     if (!isModelKeyProvider(provider) || !offeredKeyProviders().includes(provider)) {
       return NextResponse.json({ error: 'Unknown or unavailable key provider.', code: 'byok-provider-unknown' }, { status: 400 });
     }
+    // 3.0.21 (T01): a provider the operator has switched off takes no new key.
+    if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
+      return NextResponse.json({ error: providerSuspendedMessage(provider), code: PROVIDER_SUSPENDED_CODE }, { status: 409 });
+    }
+    // 3.0.21: an Anthropic key is stored only with the Additional Agreement on
+    // Own Model Keys accepted — the version in force, in a published language
+    // version (`lib/byok-addendum.ts`). Each save accepts anew (T03).
+    const addendum = addendumAcceptanceOf(body);
+    if (addendumRequired(provider) && !addendum) {
+      return NextResponse.json(
+        {
+          error: `An Anthropic key is stored only once you accept the Additional Agreement on Own Model Keys (${BYOK_ADDENDUM_VERSION}).`,
+          code: ADDENDUM_REQUIRED_CODE,
+        },
+        { status: 400 },
+      );
+    }
+
+    // 3.0.21: an own key counts as configured only after a successful test, so
+    // the key is tested with the provider before anything is stored — reading
+    // the model it will be used with, no code, no tokens (`lib/own-key-test.ts`).
+    // A key that does not pass is not stored: no quota lift, nothing changed.
+    try {
+      await testOwnModelKey(provider, apiKey, {
+        stubbed: geminiTestStubActive(process.env, req.headers.get(GEMINI_TEST_STUB_HEADER), req.headers.get(GEMINI_TEST_REAL_MODEL_HEADER)),
+      });
+    } catch {
+      await logAuditEvent((await getAdminDb()).db, decodedToken.uid, 'BYOK_SAVE_TEST_FAIL', decodedToken.uid).catch(() => undefined);
+      return NextResponse.json({ error: OWN_KEY_TEST_FAILED_MESSAGE, code: OWN_KEY_TEST_FAILED_CODE }, { status: 400 });
+    }
 
     let metadata: Awaited<ReturnType<typeof saveOwnModelKey>>;
     try {
-      metadata = await saveOwnModelKey(decodedToken.uid, apiKey.trim(), provider);
+      metadata = await saveOwnModelKey(decodedToken.uid, apiKey.trim(), provider, {
+        addendum: addendumRequired(provider) ? addendum : null,
+        tested: true,
+      });
     } catch (sealErr: unknown) {
       // 3.0.13 (g): no usable BYOK_ENCRYPTION_KEY on this deployment. Refused
       // with a reason, and nothing written — never sealed with the S/4 key
@@ -81,6 +125,10 @@ export async function POST(req: NextRequest) {
     // 3. Security Audit Logging
     const { db } = await getAdminDb();
     await logAuditEvent(db, decodedToken.uid, 'BYOK_SAVE', decodedToken.uid);
+
+    // The account's copy of the proof log (T03), best effort, to the verified address.
+    if (metadata.agreementReplaced) await sendAgreementEndedMail(decodedToken.email, decodedToken.uid, 'replaced');
+    if (addendumRequired(provider) && addendum) await sendAgreementAcceptedMail(decodedToken.email, decodedToken.uid, addendum);
 
     return NextResponse.json({ ok: true, ...metadata });
   } catch (err: any) {
@@ -130,13 +178,16 @@ export async function DELETE(req: NextRequest) {
     // one state in which the key cannot be withdrawn. Every route that *spends*
     // the key does check (POST above, /test, /status), which is where the gate
     // belongs.
-    await deleteOwnModelKey(decodedToken.uid);
+    // 3.0.21: deleting an Anthropic key is "Delete key and end agreement" —
+    // the proof log records the ending in the same transaction (clause 11).
+    const { agreementEnded } = await deleteOwnModelKey(decodedToken.uid, { ending: 'settings' });
 
     // 3. Security Audit Logging
     const { db } = await getAdminDb();
     await logAuditEvent(db, decodedToken.uid, 'BYOK_DELETE', decodedToken.uid);
+    if (agreementEnded) await sendAgreementEndedMail(decodedToken.email, decodedToken.uid, 'settings');
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, agreementEnded });
   } catch (err: any) {
     if (err instanceof QuotaError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

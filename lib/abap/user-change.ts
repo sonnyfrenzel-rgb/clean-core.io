@@ -110,7 +110,7 @@ import { APP_VERSION } from '../version';
  *
  * Not a plain-language name for anything: the labels stay the tokens the source
  * writes (`ME21N`, `RV_ORDER_FLOW_INFORMATION`, `GS_EBAN-WAERS`). A readable
- * name is roadmap 7.8's job and arrives with the *Model proposal* provenance on
+ * name is roadmap 7.8's job and arrives with the *AI-generated* provenance on
  * it. Not a store either: nothing here is written to an artefact, a run or an
  * audit pack — this is a reading of the source, recomputed from it, the same
  * rule the view attribute of roadmap 6.1 keeps.

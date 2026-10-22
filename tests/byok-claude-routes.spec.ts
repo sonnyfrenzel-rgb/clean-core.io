@@ -108,16 +108,16 @@ test('a key saved before 3.0.15 — no provider on record or profile — reads a
 });
 
 test('an Anthropic key is stored with its provider, replaces a Gemini key, and opens as Anthropic\'s', async () => {
-  await saveOwnModelKey(uid, 'AIza-byok-claude-replaced-1111', 'gemini');
+  await saveOwnModelKey(uid, 'AIza-byok-claude-replaced-1111', 'gemini', { tested: true });
   expect((await (await secretRef('gemini')).get()).exists).toBe(true);
-  await expect(saveOwnModelKey(uid, CLAUDE_KEY, 'anthropic')).resolves.toMatchObject({ byokConfigured: true, byokProvider: 'anthropic' });
+  await expect(saveOwnModelKey(uid, CLAUDE_KEY, 'anthropic', { tested: true, addendum: { version: 'ZV-BYOK-1.0', language: 'en' } })).resolves.toMatchObject({ byokConfigured: true, byokProvider: 'anthropic' });
   const record = (await (await secretRef('anthropic')).get()).data();
   expect(record).toMatchObject({ provider: 'anthropic', keyVersion: BYOK_KEY_VERSION });
   expect(JSON.stringify(record)).not.toContain(CLAUDE_KEY);
   expect((await (await secretRef('gemini')).get()).exists, 'two own keys are held at once').toBe(false);
   const profile = (await (await getAdminDb()).db.collection('users').doc(uid).get()).data();
   expect(profile).toMatchObject({ byokConfigured: true, byokProvider: 'anthropic' });
-  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'anthropic', apiKey: CLAUDE_KEY });
+  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'anthropic', apiKey: CLAUDE_KEY, autoSteps: false });
 });
 
 test('the proxy sends a call of an account with an own Claude key to Anthropic, never to Google, and receipts it so', async () => {

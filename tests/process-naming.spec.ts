@@ -455,7 +455,7 @@ test.describe('what the map gets', () => {
     expect(view.notice).not.toContain('No Gemini key');
   });
 
-  test('the business name stands beside the technical name, the anchor does not move, and the chip is always Model proposal', () => {
+  test('the business name stands beside the technical name, the anchor does not move, and the chip is always AI-generated', () => {
     const ctx = context();
     const { denied, release } = ids(ctx);
     const validated = validateNamingAnswer(ctx, answer({

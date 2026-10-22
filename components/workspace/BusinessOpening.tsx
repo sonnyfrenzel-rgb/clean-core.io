@@ -103,12 +103,12 @@ export default function BusinessOpening({
    * Roadmap 3.0.20: the plain wording of the engine's sentences (`usePlainWording`,
    * scope `firstlook`), when a rewording is on record. A reworded sentence stands
    * in place; the engine's own sentences stay one fold down, under the chip
-   * *Model proposal · worded*.
+   * *AI-generated · worded*.
    */
   say?: (text: string, anchor: PlainRange | null) => WordedSentence;
   /** The title: a proposed business name, or the program's name, or the sentence that there is none. */
   name: string;
-  /** The title is a model's proposal — chip *Model proposal · name*, program name under it. */
+  /** The title is a model's proposal — chip *AI-generated · name*, program name under it. */
   nameIsProposed: boolean;
   programName: string | null;
   nameReason: string | null;

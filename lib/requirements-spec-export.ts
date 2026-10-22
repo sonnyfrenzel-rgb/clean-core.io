@@ -219,7 +219,7 @@ export function specBlocks(spec: RequirementsSpec, meta: SpecExportMeta): DocBlo
   blocks.push({ k: 'h', level: 2, text: SECTIONS[6] });
   blocks.push({
     k: 'p',
-    text: `${counts.openDecisions} of ${counts.decisions} decisions are open. Suggested answers are starting points, not read from the code; a model proposal is printed as one and was not taken over.`,
+    text: `${counts.openDecisions} of ${counts.decisions} decisions are open. Suggested answers are starting points, not read from the code; an AI-generated draft is printed as one and was not taken over.`,
   });
   blocks.push({
     k: 'table',
@@ -228,7 +228,7 @@ export function specBlocks(spec: RequirementsSpec, meta: SpecExportMeta): DocBlo
       d.id,
       d.question,
       DECISION_OWNER_LABEL[d.owner],
-      `${answerText(d)}${d.proposal.trim() && decisionOpen(d) ? ` · Model proposal: ${richPlain(d.proposal)}` : ''}`,
+      `${answerText(d)}${d.proposal.trim() && decisionOpen(d) ? ` · AI-generated: ${richPlain(d.proposal)}` : ''}`,
       d.affects.join(', ') || '—',
       linesText(d.lines) || 'not in the code',
     ]),

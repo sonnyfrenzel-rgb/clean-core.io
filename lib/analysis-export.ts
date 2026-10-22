@@ -242,7 +242,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
             <p>${esc(checked(data.asIsContext))}</p>
 
             <h2>Standard Fit Assessment</h2>
-            <p class="muted">Model proposal. SAP identifiers are checked against SAP data this product holds.</p>
+            <p class="muted">AI-generated. SAP identifiers are checked against SAP data this product holds.</p>
             <p><strong>Target Standard Process ID / Module:</strong> ${esc(sapCheckedNarrative(data.standardFit?.targetStandardProcess || 'N/A', checked))}</p>
             <p><strong>Standardization Potential (model's estimate, not a measured fit):</strong> <span class="tag tone-neutral">${esc(data.standardFit?.potential || 'not determined')}</span></p>
             <p>${esc(sapCheckedNarrative(data.standardFit?.rationale, checked))}</p>

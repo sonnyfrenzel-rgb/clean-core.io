@@ -28,7 +28,7 @@ import { signInViaLanding } from './helpers/sign-in';
  *      the pieces that did not fit counted, not kept;
  *   2. an answer without a receipt that verifies for this text and this account
  *      is refused and stores nothing — a name typed by anyone must not wear the
- *      chip *Model proposal*;
+ *      chip *AI-generated*;
  *   3. an answer for another reading of the source is refused with 409;
  *   4. only the owner reads or writes the names, and no browser reads them
  *      straight out of Firestore;

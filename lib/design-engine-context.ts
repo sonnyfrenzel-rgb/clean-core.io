@@ -23,7 +23,7 @@ import { engineOptionFacts } from '@/lib/design-option-comparison';
  *   - what the code cannot determine, so the model does not decide it.
  *
  * A narrative, where the run has one, is handed in beside this, not instead.
- * The design stays a model proposal either way. Pure; capped, so a large
+ * The design stays AI-generated either way. Pure; capped, so a large
  * program cannot crowd out the prompt's own instructions.
  */
 

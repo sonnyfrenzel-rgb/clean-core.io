@@ -21,7 +21,7 @@ import { EXPORT_COLORS, EXPORT_FONT_MONO, EXPORT_STYLE_ELEMENT } from '@/lib/exp
 import { NOT_DETERMINED_LABEL } from '@/lib/process-documentation';
 import {
   EMPTY_SECTION,
-  MODEL_PROPOSAL_LABEL,
+  AI_GENERATED_LABEL,
   linesLabel,
   sectionName,
   sectionTitle,
@@ -187,7 +187,7 @@ export function buildEngineConfluenceHtml(
   const para = (t: PdText) => `<p>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</p>`;
   const item = (t: PdText) => `<li>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</li>`;
   const proposal = (text: string, anchors: PdText['anchors'], engineWord: string) =>
-    `<p class="card accent-information"><span class="tag tone-information">${esc(MODEL_PROPOSAL_LABEL)}</span> ${esc(text)}${anchors.length ? ` <small>${lines(anchors)}</small>` : ''}<br><small>${esc(engineWord)}</small></p>`;
+    `<p class="card accent-information"><span class="tag tone-information">${esc(AI_GENERATED_LABEL)}</span> ${esc(text)}${anchors.length ? ` <small>${lines(anchors)}</small>` : ''}<br><small>${esc(engineWord)}</small></p>`;
   const table = (head: string[], rows: string[][], muted: number[] = []) =>
     `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
       .map((row) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}>${esc(cell)}</td>`).join('')}</tr>`)
@@ -301,7 +301,7 @@ export function buildEngineConfluenceHtml(
     ? sopLevelBusinessLine(sop.length, sop.reduce((n, st) => n + st.technical.length, 0))
     : sopLevelLegacyLine(sop.length);
   const businessSection = parsedBusinessDoc
-    ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
+    ? `<h2 data-business-layer="">${esc('Business layer — AI-generated')}</h2>
     <p><em>${esc('Written by a language model from the process description above. Every sentence says its basis: Reconstructed only where it cites a line of its step and nothing in it contradicts the code; roles, approvals, escalations and anything the program does not do are a proposal, not in the program.')}</em></p>
     <p class="meta" data-sop-level="${esc(business ? 'business' : 'technical')}">${esc(levelLine)}</p>
     ${edited ? `<p data-raci-edited=""><span class="tag tone-information">${esc('Confirmed')}</span> ${esc("The RACI below is the owner's, not the model's. " + editedNote)}</p>` : ''}
@@ -421,7 +421,7 @@ const anchorWords = (a: GlanceAnchor) => (a.lineStart === a.lineEnd ? `L${a.line
  * The business layer as tables (owner 03.10.2026): the SOP steps in process
  * order and the RACI matrix with its gaps. It stands **in addition to** the
  * full RACI table below it, which keeps every row as stored. Every value is
- * escaped; the tables are marked as a model proposal.
+ * escaped; the tables are marked as AI-generated.
  */
 /** The SOP sentences of one cell, each with its basis; *Not determined* when there are none. Every value escaped. */
 export function sopStatementsHtml(list: readonly SopStatement[]): string {
@@ -447,7 +447,7 @@ function glanceHtml(
   if (parsedBusinessDoc) {
     const steps = sopSteps(parsedBusinessDoc, processSteps, judgement);
     const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.statements[0]?.text ?? s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(s.statements[0] ? SOP_BASIS[s.statements[0].basis].label : NOT_DETERMINED_LABEL)}</td></tr>`).join('');
-    parts.push(`<h3>SOP steps — Model proposal</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
+    parts.push(`<h3>SOP steps — AI-generated</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
     const matrix = raciMatrix(steps);
     if (matrix.steps.length > 0) {
       // At most six role columns (`MAX_RACI_COLUMNS`); a long name is shortened
@@ -458,7 +458,7 @@ function glanceHtml(
       const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc([...s.gaps.map(raciGapWord), ...(s.hiddenAccountable.length ? [`A: ${s.hiddenAccountable.join(', ')}`] : [])].join(', '))}</td></tr>`).join('');
       const key = matrix.roles.filter((r) => r.short !== r.name).map((r) => `${r.short} = ${r.name}`).join(' · ');
       const more = matrix.moreRoles.map((r) => `<li>${esc(r.name)}: ${esc(matrix.steps.map((st) => ({ st, l: lettersOf(st, r.name) })).filter((x) => x.l.length).map((x) => `${x.l.join('')} on ${x.st.ref ?? x.st.number}`).join(', '))}</li>`).join('');
-      parts.push(`<h3>RACI matrix — ${editedNote ? 'Edited by the owner' : 'Model proposal'}</h3><p><small>${editedNote ? `${esc(editedNote)} ` : ''}${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
+      parts.push(`<h3>RACI matrix — ${editedNote ? 'Edited by the owner' : 'AI-generated'}</h3><p><small>${editedNote ? `${esc(editedNote)} ` : ''}${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
     }
   }
   return parts.join('\n');

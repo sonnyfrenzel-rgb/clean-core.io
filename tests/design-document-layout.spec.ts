@@ -178,7 +178,7 @@ test.describe('the design document', () => {
     await expect(overview.locator('[data-design-fact="endpoints"]')).toContainText('5 endpoints');
     await expect(overview.locator('[data-design-fact="mappings"]')).toContainText('4 SAP API mappings');
     await expect(overview.locator('[data-design-fact="files"]')).toContainText('7 files');
-    // One "Model proposal" per section, not one per card.
+    // One "AI-generated" per section, not one per card.
     expect(await overview.locator('[data-provenance="proposed"]').count()).toBe(1);
     expect(calls).toEqual([]);
   });

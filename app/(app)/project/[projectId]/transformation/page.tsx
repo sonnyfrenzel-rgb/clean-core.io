@@ -2092,7 +2092,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           </div>
           {/* Roadmap 3.0.12, step E (design §12.1): a step's anchor — its ABAP
               lines, its rules with the owner's decision, and who wrote what:
-              the frame is the engine's, the body a model proposal, a body
+              the frame is the engine's, the body an AI-generated draft, a body
               nobody wrote is not determined. */}
           {selectedUnits.map((u) => (
             <div key={u.unitId} data-unit-anchor={u.unitId} className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
