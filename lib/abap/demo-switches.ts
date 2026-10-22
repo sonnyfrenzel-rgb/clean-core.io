@@ -402,10 +402,14 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
   const { branches } = readControlFlowFrom(statements, structure);
   // A variable stands for the parameter only when that copy is the one value it is ever given:
   // `lv_case = p_mode` and later `lv_case = lv_other` is no longer the switch.
+  // Every statement that gives a variable a value counts: `x = …`, `MOVE … TO x`, `… INTO x`, `CHANGING x`.
   const assignedTimes = new Map<string, number>();
+  const written = (name: string) => assignedTimes.set(norm(name), (assignedTimes.get(norm(name)) ?? 0) + 1);
   for (const s of statements) {
-    const target = /^([\w/]+(?:-[\w/]+)*)\s*=[^=]/.exec(s.text.trim())?.[1];
-    if (target) assignedTimes.set(norm(target), (assignedTimes.get(norm(target)) ?? 0) + 1);
+    const text = s.text.trim();
+    const target = /^([\w/]+(?:-[\w/]+)*)\s*=[^=]/.exec(text)?.[1];
+    if (target) written(target);
+    for (const m of text.matchAll(/\b(?:TO|INTO(?:\s+TABLE)?|CHANGING)\s+([\w/]+(?:-[\w/]+)*)/gi)) written(m[1]);
   }
   const fromParameter = new Map<string, string>();
   for (const s of statements) {

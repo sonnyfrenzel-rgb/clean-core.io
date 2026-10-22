@@ -427,14 +427,15 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // secret is still a secret. The name may carry a prefix (`lv_password`,
     // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
     // matched inside one.
-    // From 3.0.20 every name that carries the word is a credential (`c_token_jwt`, `lv_token2`), unless
-    // it ends in what only counts, measures or kinds a credential: `lv_token_count` stays readable.
-    .replace(assigned, (m, word, mid) =>
-      engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) ? m : `${word}${mid}'…<redacted>'`);
+    // From 3.0.20 every name that carries the word is a credential (`c_token_jwt`, `lv_token2`,
+    // `password_type`), unless it only counts or measures one AND holds a plain number: `lv_token_count = '12'`
+    // stays readable, a word in such a field does not.
+    .replace(assigned, (m, word, mid, value) =>
+      engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`);
 }
 
-/** The endings of a name that counts, measures or kinds a credential rather than holding one. */
-const COUNTS_A_CREDENTIAL = /_(?:COUNT|CNT|COUNTER|LEN|LENGTH|SIZE|NUM|NUMBER|NR|IDX|INDEX|POS|LINES|ROWS|MAX|MIN|LIMIT|TYPE|KIND|FLAG|DATE|TIME|TTL|AGE|FIELD|COLUMN)$/i;
+/** The endings of a name that counts or measures a credential rather than holding one. */
+const COUNTS_A_CREDENTIAL = /_(?:COUNT|CNT|COUNTER|LEN|LENGTH|SIZE|NUM|NUMBER|NR|IDX|INDEX|POS|LINES|ROWS|MAX|MIN|LIMIT|TTL|AGE)$/i;
 
 /** `the purchase order schedule line (EKET)`, or `EKET` where the glossary has no word for it. */
 function tablePhrase(table: string): string {

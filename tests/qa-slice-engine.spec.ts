@@ -39,6 +39,9 @@ test('21933f60c24d — a secret assigned to a prefixed name is redacted', () => 
   expect(redactCredentials("lv_secret_bearer = 'abc'.")).toBe("lv_secret_bearer = '…<redacted>'.");
   expect(redactCredentials("lv_password_len = '12'.")).toBe("lv_password_len = '12'.");
   expect(redactCredentials("gv_token_max = '3'.")).toBe("gv_token_max = '3'.");
+  // A counting name with a word in it holds a secret after all; a kind or type of credential is no exception.
+  expect(redactCredentials("lv_password_len = 'hunter2'.")).toBe("lv_password_len = '…<redacted>'.");
+  expect(redactCredentials("password_type = 'myActualPassword123'.")).toBe("password_type = '…<redacted>'.");
 });
 
 test('b99ee9f51490 — a variable WAIT is undetermined, a literal decides', () => {

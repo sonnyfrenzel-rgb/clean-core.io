@@ -230,6 +230,8 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
       `REPORT zcases.\nPARAMETERS p_mode TYPE i.\nDATA: lv_case TYPE i, lv_other TYPE i, lt_rows TYPE TABLE OF zrow.\nSTART-OF-SELECTION.\n  lv_case = p_mode.\n${between}  PERFORM apply_case.\nFORM apply_case.\n  CASE lv_case.\n${arms}\n  ENDCASE.\nENDFORM.\n`;
     expect(readDemoSwitches(base(''), AFTER)?.flag.name).toBe('P_MODE');
     expect(readDemoSwitches(base('  lv_case = lv_other.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(base('  MOVE lv_other TO lv_case.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(base('  SELECT SINGLE mode FROM zcfg INTO lv_case.\n'), AFTER)).toBeNull();
   });
 
   test('a row the program read, or a write to the database, is not test data however the arms are shaped', () => {

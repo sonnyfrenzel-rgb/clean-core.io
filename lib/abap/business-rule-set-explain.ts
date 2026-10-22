@@ -1122,7 +1122,8 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   const marker = markerTopic && tests.length > 0 && tests.every((p) => {
     const held = bf.written.get(markerKey(p.subject, bf.types));
     const vs = valuesOf(p).map((v) => v.toUpperCase());
-    return !!held && vs.length > 0 && vs.every((v) => held.has(v));
+    // Set by the program before it is tested: a value assigned only after the check was read, not set.
+    return !!held && vs.length > 0 && vs.every((v) => held.has(v) && (held.get(v) ?? Infinity) < p.lineStart);
   });
   if (marker) {
     const p = tests[0];

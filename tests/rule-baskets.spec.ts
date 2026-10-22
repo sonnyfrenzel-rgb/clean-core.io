@@ -157,6 +157,23 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     expect(kindOf(/status = 'C'/).reason.text).toMatch(/marker of its own/);
   });
 
+  test('a value assigned only after the check is no marker the program set', () => {
+    const source = [
+      'REPORT zsd_status_check.',
+      'DATA ls_document TYPE vbak.',
+      'START-OF-SELECTION.',
+      '  SELECT SINGLE * FROM vbak INTO ls_document.',
+      "  IF ls_document-status = 'A'.",
+      "    WRITE / 'released'.",
+      '  ENDIF.',
+      "  ls_document-status = 'A'.",
+      '',
+    ].join('\n');
+    const { ex, reading } = explain(source);
+    const reason = ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    expect(reason).not.toMatch(/marker of its own/);
+  });
+
   test('a rule that picks out test documents and a live one is not test data', () => {
     const source = [
       'REPORT zsd_order_check.',
