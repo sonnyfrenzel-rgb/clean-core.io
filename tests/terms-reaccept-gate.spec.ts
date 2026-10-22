@@ -88,6 +88,9 @@ test('a stale acceptance is stopped, and accepting is recorded on the server', a
   const before = await adminGetDoc('users', uid);
   expect(before?.termsVersionAccepted, 'the fixture did not start stale').toBe(STALE);
 
+  // C2 of the legal texts (Fassung 1.1): Accept is enabled once the statement naming the version is ticked.
+  await expect(gate.locator('[data-terms-gate-accept]'), 'Accept was enabled before the statement was ticked').toBeDisabled();
+  await gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]').check();
   await gate.locator('[data-terms-gate-accept]').click();
   await expect(gate, 'the gate stayed up after accepting').toBeHidden({ timeout: 60000 });
 
@@ -173,9 +176,13 @@ test('the keyboard cannot leave the gate', async ({ page }) => {
     });
 
   expect(await insideGate(), 'focus did not start inside the dialog').toBe(true);
-  // On the one action that opens the product again — not on the layer, not on
-  // "Sign out instead".
-  await expect(gate.locator('[data-terms-gate-accept]'), 'the caret did not start on Accept').toBeFocused();
+  // On the statement to tick (C2 of the legal texts, Fassung 1.1): Accept stays
+  // disabled until it is ticked, so the caret starts on the box — not on the
+  // layer, not on "Sign out instead".
+  await expect(
+    gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]'),
+    'the caret did not start on the statement to accept',
+  ).toBeFocused();
 
   // Forwards past the last control, and backwards past the first: both are the
   // moments a trap is missing.
@@ -241,6 +248,9 @@ test('an account with no recorded acceptance is led to accept, not shut out', as
   await expect(gate.locator('[data-terms-gate-decline]'), '"carry on under the Terms I accepted" offered to an account that accepted none').toHaveCount(0);
   await expect(gate.locator('[data-terms-gate-signout]')).toBeVisible();
 
+  // C2 of the legal texts (Fassung 1.1): Accept is enabled once the statement naming the version is ticked.
+  await expect(gate.locator('[data-terms-gate-accept]'), 'Accept was enabled before the statement was ticked').toBeDisabled();
+  await gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]').check();
   await gate.locator('[data-terms-gate-accept]').click();
   await expect(gate, 'the gate stayed up after accepting').toBeHidden({ timeout: 60000 });
   await expect.poll(async () => (await adminGetDoc('users', cred.user.uid))?.termsVersionAccepted, {
