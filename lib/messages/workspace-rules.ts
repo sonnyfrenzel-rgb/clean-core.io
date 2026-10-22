@@ -1,7 +1,7 @@
 /**
- * Interface text of the rule-editing mode (mockup `s2`), the standard-fit table
- * (`s3`) and the first look's build-up (`s0`) — components/workspace/
- * BusinessRulesEditor.tsx, StandardFitTable.tsx, FirstLookBuildUp.tsx and the
+ * Interface text of the rule-editing mode (mockup `s2`)
+ * and the first look's build-up (`s0`) — components/workspace/
+ * BusinessRulesEditor.tsx, FirstLookBuildUp.tsx and the
  * parts of FirstLook.tsx they added.
  *
  * One part of the catalogue in `lib/workspace-messages.ts` (DESIGN.md §3).
