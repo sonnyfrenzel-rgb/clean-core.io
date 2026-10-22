@@ -105,7 +105,8 @@
         "assessmentProfile",
         "profileCoverage",
         "assessmentSubject",
-        "metering"
+        "metering",
+        "signatureScheme"
       ],
       "unsignedFieldsOnTheRun": [
         "analysis",

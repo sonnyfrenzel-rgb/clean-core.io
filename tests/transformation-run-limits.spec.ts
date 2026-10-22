@@ -244,7 +244,8 @@ test.describe('fill and repair calls think LOW; nothing else changes', () => {
     expect(src).toContain('const thinkingConfig = thinkingConfigFor(shape);');
     const call = src.slice(src.indexOf('ai!.models.generateContent({'), src.indexOf('ai!.models.generateContent({') + 900);
     expect(call.match(/\.\.\.\(thinkingConfig \? \{ thinkingConfig \} : \{\}\)/g)).toHaveLength(2);
-    expect(call).not.toContain('maxOutputTokens');
+    // Since 3.0.21 (SEC-01) every call carries its stage's output bound, on both branches, and nothing else changed.
+    expect(call.match(/maxOutputTokens,/g)).toHaveLength(2);
     // One rate limiter, as before.
     expect(src.match(/assertRateLimit\(/g)).toHaveLength(1);
     // The orchestrator's repairs go through the same leased fill model.

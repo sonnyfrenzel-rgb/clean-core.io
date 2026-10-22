@@ -275,8 +275,8 @@ test.describe('who answered is recorded', () => {
     const v = verifyModelReceipt(r, { uid: 'u', text: 't', key: KEY });
     expect(v.ok).toBe(true);
     expect(v.ok && v.receipt).toMatchObject({ provider: 'anthropic', modelId: OWN_CLAUDE_MODEL, byok: true });
-    // The claim set is unchanged: the same eight keys as a Gemini receipt with a stage.
-    expect(Object.keys(r).sort()).toEqual(['byok', 'iat', 'mac', 'modelId', 'provider', 'stage', 'textSha256', 'uid', 'v']);
+    // The claim set is the one a Gemini receipt with a stage has, with the one-time id of 3.0.21 (CA-INT-02).
+    expect(Object.keys(r).sort()).toEqual(['byok', 'iat', 'jti', 'mac', 'modelId', 'provider', 'stage', 'textSha256', 'uid', 'v']);
   });
 
   test('STATUS.md names the provider, model and key owner of the signed analysis', () => {

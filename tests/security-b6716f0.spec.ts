@@ -35,7 +35,8 @@ test('SEC-b6716f0-46 · the invitation mail budget is per account, not per accou
   const calls = [...src.matchAll(/assertRateLimit\(\s*`([^`]+)`/g)].map((m) => m[1]);
   expect(calls.length).toBeGreaterThan(0);
   for (const key of calls) {
-    expect(key).toContain('${decodedToken.uid}');
+    // The account: the verified token's uid, read directly or through the gate that holds it.
+    expect(key).toMatch(/\$\{(decodedToken|gate)\.uid\}/);
     expect(key, 'the key holds something the caller can change').not.toContain('getClientIp');
   }
 });
