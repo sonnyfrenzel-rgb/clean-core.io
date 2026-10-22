@@ -340,6 +340,28 @@ test('the same bytes again add no revision, and a save from a stale revision is 
   expect((await history(request)).length).toBe(list.length);
 });
 
+test('the history list is one page of summaries: no drawing, a cursor, and a refused bad cursor', async ({ request }) => {
+  const res = await request.get(path, { headers: headers() });
+  expect(res.status(), await res.text()).toBe(200);
+  const body = await res.json();
+  expect(body.revisions.length).toBeGreaterThan(1);
+  expect(JSON.stringify(body.revisions)).not.toContain('bpmn:definitions');
+  for (const r of body.revisions) expect(r).not.toHaveProperty('xml');
+  // A history this short fits one page: nothing older to ask for.
+  expect(body.nextBefore).toBeNull();
+  expect(body.latest).toBe(body.revisions[body.revisions.length - 1].revision);
+
+  // Asking for what came before revision 2 is revision 1 alone, and the newest number still comes back.
+  const older = await request.get(`${path}?before=2`, { headers: headers() });
+  expect(older.status(), await older.text()).toBe(200);
+  const olderBody = await older.json();
+  expect(olderBody.revisions.map((r: ProcessRevisionSummary) => r.revision)).toEqual([1]);
+  expect(olderBody.latest).toBe(body.latest);
+
+  const bad = await request.get(`${path}?before=abc`, { headers: headers() });
+  expect(bad.status()).toBe(400);
+});
+
 test('only the owner reads or writes, and no browser reads the revisions out of Firestore', async ({ request }) => {
   // 404, not 403: the route answers a non-owner exactly as it answers an id
   // that names nothing, so a refusal cannot be used to ask whether a project

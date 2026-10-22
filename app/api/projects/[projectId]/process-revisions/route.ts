@@ -25,11 +25,13 @@ import {
   type RevisionAccount,
 } from '@/lib/process-revisions';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { parseRevisionCursor, readRevisionPage, type RevisionQuery } from '@/lib/process-revision-page';
 
 /**
  * The revisions of a project's process model — roadmap 3.2.
  *
- *   GET                 → `{ latest, revisions }`, the history without the BPMN.
+ *   GET [?before=n]     → `{ latest, revisions, nextBefore }`, one page of the history
+ *                         without the BPMN, newest page first (`lib/process-revision-page.ts`).
  *   GET ?revision=n     → `{ record }`, one revision with its BPMN, or 404.
  *   POST {}             → `{ record, created }`, revision 1, reconstructed if absent.
  *   POST { xml, baseRevision } → `{ record, created }`, the next revision.
@@ -525,14 +527,23 @@ export async function GET(
         : NextResponse.json({ error: 'This revision was written in a shape this build cannot read.', code: 'format-version' }, { status: 409 });
     }
 
-    const snap = await revisionsOf(db, gate.projectId).orderBy('revision', 'asc').get();
-    const docs = snap.docs as Array<{ data: () => Record<string, unknown> }>;
-    const revisions = docs
-      .map((d): ProcessRevisionSummary => summaryOf(d.data()))
-      .filter((r: ProcessRevisionSummary) => r.formatVersion === PROCESS_REVISION_FORMAT_VERSION);
+    // The history in pages, summaries only: `lib/process-revision-page.ts`.
+    const before = parseRevisionCursor(req.nextUrl.searchParams.get('before'));
+    if (before === 'bad') {
+      return NextResponse.json({ error: 'before is a whole number from 2 upwards.', code: 'bad-request' }, { status: 400 });
+    }
+    const collection = revisionsOf(db, gate.projectId) as unknown as RevisionQuery;
+    const page = await readRevisionPage(collection, before);
+    const summaries = (docs: Array<Record<string, unknown>>) =>
+      docs
+        .map((d): ProcessRevisionSummary => summaryOf(d))
+        .filter((r: ProcessRevisionSummary) => r.formatVersion === PROCESS_REVISION_FORMAT_VERSION);
+    const revisions = summaries(page.docs);
+    const newest = before === null ? revisions : summaries((await readRevisionPage(collection, null, 1)).docs);
     return NextResponse.json({
-      latest: revisions.length ? revisions[revisions.length - 1].revision : null,
+      latest: newest.length ? newest[newest.length - 1].revision : null,
       revisions,
+      nextBefore: page.nextBefore,
     });
   } catch (err: unknown) {
     logger.error('process-revisions read failed', { route: 'api/projects/process-revisions', error: errMessage(err) });
