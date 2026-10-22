@@ -337,6 +337,8 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 the assistant and this menu (Sonny, 01.10.2026). */}
             <ShellHelpMenu assistantLabel={assistantLabel} inProject={inProject} />
 
+            {/* Neither control until Firebase has answered: the first render
+                (and the server's) must not show a signed-out visitor an account menu. */}
             {signedIn === false ? (
               <Link
                 href="/"
@@ -345,7 +347,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               >
                 Sign in
               </Link>
-            ) : (
+            ) : signedIn === true ? (
             <div ref={accountMenuRootRef} className="relative">
               <button
                 ref={accountButtonRef}
@@ -427,7 +429,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 </div>
               )}
             </div>
-            )}
+            ) : null}
           </div>
         </div>
       </header>

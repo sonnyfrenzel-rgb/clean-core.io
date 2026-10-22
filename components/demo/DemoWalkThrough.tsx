@@ -30,23 +30,33 @@ export default function DemoWalkThrough({
 }) {
   const [open, setOpen] = useState(false);
   const [tour, setTour] = useState<Tour | null>(initialTour);
+  /** The tour could not be read (a module that did not load, a build that threw): said, never an endless "Reading …". */
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (initialTour || !open || tour) return;
+    if (initialTour || !open || tour || failed) return;
     let cancelled = false;
-    void Promise.all([import('@/lib/process-walk-guide'), import('@/lib/process-tour')]).then(([g, t]) => {
-      if (cancelled) return;
-      const guide = g.buildWalkGuide(source, model, walkOrder(model, null));
-      setTour(t.buildProcessTour(guide, model, t.tourClosingOf(source, APP_VERSION)));
-    });
+    void Promise.all([import('@/lib/process-walk-guide'), import('@/lib/process-tour')])
+      .then(([g, t]) => {
+        if (cancelled) return;
+        const guide = g.buildWalkGuide(source, model, walkOrder(model, null));
+        setTour(t.buildProcessTour(guide, model, t.tourClosingOf(source, APP_VERSION)));
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [model, source, initialTour, open, tour]);
-  const close = useCallback(() => setOpen(false), []);
+  }, [model, source, initialTour, open, tour, failed]);
+  // Closing clears a failure, so opening the tour again reads it again.
+  const close = useCallback(() => {
+    setOpen(false);
+    setFailed(false);
+  }, []);
   return (
     <>
       <ProcessTourEntry projectId="demo" onOpen={() => setOpen(true)} />
-      {open ? <ProcessTour tour={tour} model={model} onClose={close} designHref={designHref} demo={true} /> : null}
+      {open ? <ProcessTour tour={tour} unavailable={failed} model={model} onClose={close} designHref={designHref} demo={true} /> : null}
     </>
   );
 }

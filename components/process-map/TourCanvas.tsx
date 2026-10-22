@@ -6,6 +6,7 @@ import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
 import { fitWhole, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The map of the guided tour (`components/workspace/ProcessTour.tsx`): the
@@ -135,6 +136,9 @@ export default function TourCanvas({ xml, plane, focus, align, label, onPlaced, 
   const viewerRef = useRef<Viewer | null>(null);
   const topRef = useRef<object | null>(null);
   const [ready, setReady] = useState(0);
+  /** The file the viewer could not be loaded for or could not read: said, not left blank. A new file is tried again. */
+  const [failedXml, setFailedXml] = useState<string | null>(null);
+  const failed = failedXml === xml;
   const placed = useRef(onPlaced);
   useEffect(() => {
     placed.current = onPlaced;
@@ -147,12 +151,14 @@ export default function TourCanvas({ xml, plane, focus, align, label, onPlaced, 
     void (async () => {
       const host = hostRef.current;
       if (!host) return;
-      const { default: NavigatedViewer } = await import('bpmn-js/lib/NavigatedViewer');
-      if (cancelled) return;
-      viewer = new NavigatedViewer({ container: host, textRenderer: textRendererConfig(host), bpmnRenderer: rendererColors(host) }) as unknown as Viewer;
       try {
+        // The viewer's chunk can fail to load (offline, a deploy in between) as the file can fail to read.
+        const { default: NavigatedViewer } = await import('bpmn-js/lib/NavigatedViewer');
+        if (cancelled) return;
+        viewer = new NavigatedViewer({ container: host, textRenderer: textRendererConfig(host), bpmnRenderer: rendererColors(host) }) as unknown as Viewer;
         await viewer.importXML(xml);
       } catch {
+        if (!cancelled) setFailedXml(xml);
         return;
       }
       if (cancelled) return;
@@ -269,10 +275,12 @@ export default function TourCanvas({ xml, plane, focus, align, label, onPlaced, 
     <div
       ref={hostRef}
       role="img"
-      aria-label={label}
-      data-process-tour-map=""
+      aria-label={failed ? wt('walk.mapUnavailable') : label}
+      data-process-tour-map={failed ? 'unavailable' : ''}
       className={`cc-map-canvas cc-tour-canvas overflow-hidden ${className ?? ''}`}
-    />
+    >
+      {failed ? <p className="m-0 p-4 text-[13px] font-medium text-cc-ink-muted">{wt('walk.mapUnavailable')}</p> : null}
+    </div>
   );
 }
 

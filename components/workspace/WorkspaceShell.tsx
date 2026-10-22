@@ -60,7 +60,7 @@ import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { runTrust, scrollToWhenThere } from '@/lib/it-sections';
 import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
 import { useSourceReading } from '@/hooks/useSourceReading';
-import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { engineStampOf, engineVersionOfProject } from '@/lib/run-engine-version';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleTallyOf } from '@/lib/management-rule-tally';
 import { managementInShort, programSummary } from '@/lib/program-summary-text';
@@ -414,24 +414,31 @@ export default function WorkspaceShell({
    */
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const [processSummary, setProcessSummary] = useState<{ source: string; summary: ProcessSummary | null } | null>(null);
+  // The summary's inputs as values, so a snapshot that changes another field of
+  // the project does not count the same source again: the source, its file, the
+  // process name and the engine that signed it (`engineStampOf`, what the worker reads).
+  const summarySource = signed?.source ?? null;
+  const summaryFileName = signed?.fileName ?? '';
+  const summaryName = project?.name || '';
+  const summaryEngine = JSON.stringify(engineStampOf(project));
   useEffect(() => {
-    if (!signed) return;
+    if (!summarySource) return;
     let cancelled = false;
     // Counted in the reading worker, off this thread (owner, 12.10.2026: the
     // CO project froze the Documentation tool). Until it answers the layers
     // count what is stored, as they did while the reader was being loaded; a
     // failure reads as no summary, as a throw did before.
     void import('@/lib/bpmn/reading-exports-client')
-      .then((m) => m.processSummaryOffThread(signed.source, signed.fileName, project?.name || '', project))
+      .then((m) => m.processSummaryOffThread(summarySource, summaryFileName, summaryName, JSON.parse(summaryEngine) as object | null))
       .catch((): ProcessSummary | null => null)
       .then((summary) => {
         if (cancelled) return;
-        setProcessSummary({ source: signed.source, summary });
+        setProcessSummary({ source: summarySource, summary });
       });
     return () => {
       cancelled = true;
     };
-  }, [signed, project]);
+  }, [summarySource, summaryFileName, summaryName, summaryEngine]);
   const mapSummary = signed && processSummary?.source === signed.source ? processSummary.summary : null;
 
   // The layers count the process, the rules and the capabilities of that

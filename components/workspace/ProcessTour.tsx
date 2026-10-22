@@ -47,6 +47,8 @@ import { walkLinesLabel, walkMapLabel, walkStepOf, wt } from '@/lib/workspace-me
 export interface ProcessTourProps {
   /** The tour, read from the code; null while it is being read. */
   tour: Tour | null;
+  /** The tour could not be read: said in place of "Reading …", which would never end. */
+  unavailable?: boolean;
   model: ProcessMapModel;
   onClose: () => void;
   /** Each engine sentence as it is shown: reworded or as written. Without it, as written. */
@@ -98,7 +100,7 @@ export function cardPlace(box: TourBox, card: { width: number; height: number },
 }
 
 /** The dialog itself — exported so a server-free render can read it without a portal. */
-export function ProcessTourLayer({ tour, model, onClose, say = ENGINE_ONLY, designHref = null, demo = false, initialStation = 0 }: ProcessTourProps) {
+export function ProcessTourLayer({ tour, unavailable = false, model, onClose, say = ENGINE_ONLY, designHref = null, demo = false, initialStation = 0 }: ProcessTourProps) {
   const stations = tour?.stations ?? [];
   const end = stations.length;
   const [at, setAt] = useState(() => Math.max(0, Math.min(initialStation, end)));
@@ -264,8 +266,14 @@ export function ProcessTourLayer({ tour, model, onClose, say = ENGINE_ONLY, desi
                 <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold text-cc-ink">
                   {wt('walk.title')}
                 </h2>
-                <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.preparing')}</p>
-                <CcSkeleton shape="text" count={3} label={wt('walk.title')} />
+                {unavailable ? (
+                  <p role="alert" data-tour-unavailable="" className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.unavailable')}</p>
+                ) : (
+                  <>
+                    <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.preparing')}</p>
+                    <CcSkeleton shape="text" count={3} label={wt('walk.title')} />
+                  </>
+                )}
               </>
             ) : station ? (
               <StationCard
