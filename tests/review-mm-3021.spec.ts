@@ -104,7 +104,7 @@ test('(5) a blanket claim that the SAP standard cannot do something is found and
   expect(standardExclusionClaims('Simulate in supplier invoice processing covers one document; the cumulative tolerance across several receipts is the gap.')).toEqual([]);
   expect(coverageClaims('The SAP standard cannot simulate it.')).toEqual([]);
   expect(SAP_REFERENCE_PROMPT_RULES).toContain('Never rule the SAP standard out with a blanket claim');
-  const md = formatAnalysisToMarkdown(JSON.stringify({ standardFit: { potential: 'Low', targetStandardProcess: 'Supplier invoice processing', rationale: 'The SAP standard cannot simulate the invoice.' } }));
+  const md = formatAnalysisToMarkdown(JSON.stringify({ recommendations: { cloudReadiness: 'The SAP standard cannot simulate the invoice.' } }));
   expect(md).toContain(STANDARD_EXCLUSION_NOTE);
 });
 
