@@ -3502,6 +3502,25 @@
       "measured": {
         "lines": 11
       }
+    },
+    {
+      "path": "public/.well-known/security.txt",
+      "kind": "notice",
+      "purpose": "RFC 9116 contact for reporting a vulnerability: the operator address from the imprint, expiry, canonical URL, link to the reporting section of SECURITY.md",
+      "audience": "Security researchers, scanners",
+      "saysToday": "Contact info@clean-core.io; expires 2027-10-22; preferred languages English and German; policy in SECURITY.md#reporting-a-vulnerability.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The reporting path for vulnerabilities (L-21); renewed before its Expires date.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": ["SECURITY.md"],
+      "measured": {
+        "lines": 5
+      }
     }
   ],
   "served": [
