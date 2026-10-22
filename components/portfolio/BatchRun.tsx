@@ -72,7 +72,12 @@ export default function BatchRun({
 
   const split = useMemo(() => splitIntoPrograms(files), [files]);
   const notReady = split.programs.filter((p) => !p.ready);
-  const open = state && !state.progress.finished && state.batch.status !== 'cancelled';
+  // An upload that stopped half-way (the tab closed between two parts) has
+  // nothing left to work: it is shown with its record's removal, not stepped.
+  const incomplete = Boolean(
+    state && !state.progress.finished && state.progress.queued === 0 && state.progress.running === 0 && state.items.length < state.batch.total,
+  );
+  const open = Boolean(state && !state.progress.finished && state.batch.status !== 'cancelled' && !incomplete);
 
   const addFiles = useCallback(async (list: FileList | File[]) => {
     const chosen = Array.from(list);
@@ -305,6 +310,9 @@ export default function BatchRun({
                 )}
               </span>
             </div>
+            {incomplete ? (
+              <CcMessageStrip state="warning">{wt('portfolio.uploadIncomplete')}</CcMessageStrip>
+            ) : null}
             {open ? <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('portfolio.progressLead')}</p> : null}
             {open ? <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('portfolio.cancelConfirm')}</p> : null}
             <ul className="m-0 flex max-h-96 list-none flex-col gap-1 overflow-y-auto p-0">

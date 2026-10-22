@@ -40,6 +40,8 @@ export const PORTFOLIO_MESSAGES = {
   'portfolio.cancelConfirm':
     'Programs not started yet are not analysed and their source is dropped. Projects already made stay in My workspace.',
   'portfolio.removeRecord': 'Remove this record',
+  'portfolio.uploadIncomplete':
+    'This upload stopped before all programs arrived. Remove the record and upload again; the projects already made stay in My workspace.',
   'portfolio.statusQueued': 'queued',
   'portfolio.statusRunning': 'running',
   'portfolio.statusDone': 'done',

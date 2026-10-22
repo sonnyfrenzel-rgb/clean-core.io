@@ -38,6 +38,9 @@ import { scoreBand } from '@/lib/clean-core-score';
  * (`data-portfolio-print`, `print:` variants).
  */
 
+/** Rows of a long list the one-page print keeps. */
+const PRINT_ROWS = 6;
+
 function ProgramLinks({ programs, openable }: { programs: ProgramRef[]; openable: ReadonlySet<string> }) {
   if (programs.length === 0) return null;
   return (
@@ -69,7 +72,10 @@ function FigureRow({
   openable,
   figure,
   lead,
+  onPaper = true,
 }: {
+  /** `false` keeps the row off the one-page print (long lists print their top rows only). */
+  onPaper?: boolean;
   label: React.ReactNode;
   count: number;
   of: number;
@@ -80,7 +86,11 @@ function FigureRow({
 }) {
   const width = of > 0 ? Math.round((count / of) * 100) : 0;
   return (
-    <li data-portfolio-figure={figure} data-count={count} className="flex min-w-0 flex-col gap-1 border-b border-cc-line py-2 last:border-b-0">
+    <li
+      data-portfolio-figure={figure}
+      data-count={count}
+      className={`flex min-w-0 flex-col gap-1 border-b border-cc-line py-2 last:border-b-0 print:py-0.5${onPaper ? '' : ' print:hidden'}`}
+    >
       <div className="flex min-w-0 items-center gap-2">
         {lead}
         <span className="min-w-0 flex-1 text-[13px] font-semibold text-cc-ink">{label}</span>
@@ -250,9 +260,10 @@ export default function PortfolioOverview({
             <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('portfolio.noneRecur')}</p>
           ) : (
             <ul className="m-0 list-none p-0" data-portfolio-recurring="">
-              {view.recurring.map((r) => (
+              {view.recurring.map((r, i) => (
                 <FigureRow
                   key={r.object}
+                  onPaper={i < PRINT_ROWS}
                   figure={`object-${r.object}`}
                   label={portfolioRecurringLine(r.object, r.use, r.programs.length)}
                   count={r.programs.length}
@@ -271,9 +282,10 @@ export default function PortfolioOverview({
             <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('portfolio.noKinds')}</p>
           ) : (
             <ul className="m-0 list-none p-0" data-portfolio-kinds="">
-              {view.kinds.slice(0, 20).map((k) => (
+              {view.kinds.slice(0, 20).map((k, i) => (
                 <FigureRow
                   key={k.kind}
+                  onPaper={i < PRINT_ROWS}
                   figure={`kind-${k.kind}`}
                   label={k.label}
                   count={k.programs.length}
