@@ -12,6 +12,7 @@ import { normaliseEmail, suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
 import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-email';
+import { isRecentLogin } from './recent-login';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -105,8 +106,9 @@ export async function getAdminAuth() {
  * routes and the `isAdminClaim` exemptions — at the price of one lookup per
  * request from a handful of accounts.
  */
-export async function verifyIdToken(idToken: string) {
+export async function verifyIdToken(idToken: string, checkRevoked = false) {
   const auth = (await ensureAuthModule()).getAuth();
+  if (checkRevoked) return auth.verifyIdToken(idToken, true);
   const decoded = await auth.verifyIdToken(idToken);
   if (decoded.admin === true) {
     return auth.verifyIdToken(idToken, true);
@@ -165,7 +167,17 @@ async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T)
  * A token that still claims `admin` after the claim was withdrawn comes back
  * without it — see `withoutWithdrawnAdminClaim`.
  */
-export async function verifyRequestAuth(req: Request) {
+export async function verifyRequestAuth(
+  req: Request,
+  /**
+   * `checkRevoked: true` asks Firebase Auth whether the account still exists,
+   * is enabled and has not revoked its tokens (one Auth lookup). For the doors
+   * into an account — registration and consent (L-01): an ID token outlives
+   * the erasure of its account by up to an hour, and those routes would
+   * otherwise write a profile back for an account that no longer exists.
+   */
+  opts: { checkRevoked?: boolean } = {},
+) {
   const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) return null;
 
@@ -173,7 +185,7 @@ export async function verifyRequestAuth(req: Request) {
   if (!token) return null;
 
   try {
-    return await withoutWithdrawnAdminClaim(await verifyIdToken(token));
+    return await withoutWithdrawnAdminClaim(await verifyIdToken(token, opts.checkRevoked === true));
   } catch (err) {
     logRejectedToken(err);
     return null;
@@ -251,10 +263,7 @@ export async function verifyAdminRequest(req: Request) {
 }
 
 export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {
-  const authTime = Number(decodedToken?.auth_time);
-  const nowSeconds = Math.floor(Date.now() / 1000);
-
-  if (!Number.isFinite(authTime) || nowSeconds - authTime > maxAgeSeconds) {
+  if (!isRecentLogin(decodedToken, maxAgeSeconds)) {
     throw new QuotaError('Security timeout. Please re-authenticate and try again.', 403);
   }
 }

@@ -23,7 +23,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
  */
 export async function POST(req: NextRequest) {
   try {
-    const decoded = await verifyRequestAuth(req);
+    const decoded = await verifyRequestAuth(req, { checkRevoked: true });
     if (!decoded) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
