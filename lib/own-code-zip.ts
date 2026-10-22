@@ -69,6 +69,17 @@ function isHousekeeping(path: string): boolean {
   return path.startsWith('__MACOSX/') || path.split('/').some((part) => part.startsWith('.'));
 }
 
+/**
+ * An abapGit object description — `zfoo.prog.xml`, `zfoo.fugr.xml`,
+ * `package.devc.xml`: the file name, a four-letter object type, `.xml`. An
+ * abapGit export carries one beside every source; naming each of them as "not
+ * ABAP source" buried the one file that was really not read.
+ */
+function isAbapGitMetadata(path: string): boolean {
+  const base = path.split('/').pop() ?? path;
+  return /^[^.]+\.[a-z]{4}(?:\.[^.]+)?\.xml$/i.test(base);
+}
+
 export async function readZipSources(
   bytes: ArrayBuffer | Uint8Array,
 ): Promise<{ sources: OwnCodeSource[]; issues: OwnCodeIssue[] }> {
@@ -91,9 +102,11 @@ export async function readZipSources(
   const sources: OwnCodeSource[] = [];
   const issues: OwnCodeIssue[] = [];
   const skipped: string[] = [];
+  let abapGitMetadata = 0;
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name, 'en'))) {
     if (!isSourceName(entry.name)) {
-      skipped.push(entry.name);
+      if (isAbapGitMetadata(entry.name)) abapGitMetadata += 1;
+      else skipped.push(entry.name);
       continue;
     }
     let entryBytes: Uint8Array;
@@ -113,6 +126,7 @@ export async function readZipSources(
     }
   }
   if (skipped.length > 0) issues.push({ kind: 'zip-skipped', names: skipped });
+  if (abapGitMetadata > 0) issues.push({ kind: 'zip-abapgit-metadata', count: abapGitMetadata });
   if (sources.length === 0 && !issues.some((i) => i.kind === 'blocked')) issues.unshift({ kind: 'zip-empty' });
   return { sources, issues };
 }

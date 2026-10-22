@@ -1,7 +1,9 @@
 import { engineVersionAtLeast } from '../score-rule';
 
 /**
- * The engine version from which the readings of the 3.0.21 cycle apply —
+ * The engine version from which the readings and corrections of the 3.0.21
+ * cycle apply.
+ *
  * "First insights becomes the strongest page" (owner decisions 22.10.2026):
  *
  *   - a check or a stop on a raw field is said with the program's own message
@@ -17,10 +19,15 @@ import { engineVersionAtLeast } from '../score-rule';
  *   - "What it decides" lists the rules of the business basket, the same
  *     classification the basket line counts (`lib/first-look-plain.ts`).
  *
- * Each changes what the Business view, the Documentation and the analysis
- * prompt read, so a project of an older engine keeps its reading: whatever
- * rebuilds one passes its engine version (`engineVersionOfProject`). The
- * readings go live when `APP_VERSION` (`lib/version.ts`) reaches this
+ * Includes and macros (owner decision 22.10.2026):
+ *
+ *   - a macro is named where it is used, not only where it is defined
+ *     (`assessCoverage`, option `macroUsesNamed`, `coverage.ts`).
+ *
+ * Each changes what the Business view, the Documentation, the analysis prompt
+ * or a signed run reads, so a project of an older engine keeps its reading:
+ * whatever rebuilds one passes its engine version (`engineVersionOfProject`).
+ * The readings go live when `APP_VERSION` (`lib/version.ts`) reaches this
  * version. Same pattern as `ENGINE_READS_3020_FROM`.
  *
  * Pure: no imports beyond the version comparison.

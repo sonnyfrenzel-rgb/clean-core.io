@@ -15,6 +15,7 @@ import { precisionFixesApply } from './precision-fixes-gate';
 import { engineReadsApply } from './engine-reads-gate';
 import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
+import { engineReads3021Apply } from './engine-reads-3021-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
@@ -1939,6 +1940,8 @@ export function buildAbapEvidence(
     answerCall: (name) => functionModuleCatalogAnswer(name, catalogSnapshot),
     // From 3.0.18 the file statements are findings (`dataset-io` above).
     datasetAssessed: reads,
+    // From 3.0.21 a macro is named where it is used (`ENGINE_READS_3021_FROM`).
+    macroUsesNamed: engineReads3021Apply(engine),
   });
   // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the
   // comments, beside the findings and never among them.

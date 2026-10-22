@@ -24,9 +24,21 @@
  */
 export type AtcPriority = 'error' | 'warning' | 'info' | 'unknown';
 
+/**
+ * The shapes an ATC result is read from (roadmap 3.0.21): a table (CSV, TSV or
+ * XLSX, from the SAP GUI list or an ADT export), the ADT ATC worklist XML, or
+ * checkstyle XML as CI pipelines write it. Closed: the server refuses any other
+ * value (`lib/project-commands.ts`).
+ */
+export const ATC_FORMATS = ['table', 'adt-worklist-xml', 'checkstyle-xml'] as const;
+export type AtcFormat = (typeof ATC_FORMATS)[number];
+
+export const ATC_RUN_DATE_SOURCES = ['file', 'declared'] as const;
+export type AtcRunDateSource = (typeof ATC_RUN_DATE_SOURCES)[number];
+
 /** A row the import did not take over, and why. */
 export interface AtcQuarantineEntry {
-  /** Spreadsheet row number, header = 1. */
+  /** Spreadsheet row number, header = 1 — or, for an XML file, the finding's position in it, from 1. */
   row: number;
   objectName: string;
   reason: string;
@@ -52,8 +64,18 @@ export interface AtcFinding {
   /** The finding text ATC produced for this line. Never rewritten. */
   message: string;
   priority: AtcPriority;
-  /** Line number inside the object, when the export names one. Display only — matching against the engine's evidence is by object, never by line (see `atc-join.ts`). */
+  /**
+   * Line number inside the object — or inside `include`, when the export names
+   * one — as ATC reported it. The object comparison (`atc-join.ts`) never reads
+   * it; the line comparison (`atc-lines.ts`) places it in the analysed source,
+   * through the include map when the program was uploaded with its includes.
+   */
   line?: number;
+  /**
+   * The include the line stands in, when the export names one other than the
+   * object (an ADT worklist's finding location, roadmap 3.0.21). Upper-cased.
+   */
+  include?: string;
   /**
    * Whether the export marked this finding as exempted (a customer's own
    * waiver, decided in ATC — never decided here). `undefined` when the export
@@ -82,6 +104,20 @@ export interface AtcReport {
   quarantined?: AtcQuarantineEntry[];
   /** ISO date: when the import was performed. */
   importedAt: string;
+  /**
+   * The shape the file had (roadmap 3.0.21). Absent on a report imported
+   * before 3.0.21, which was always a table.
+   */
+  format?: AtcFormat;
+  /**
+   * ISO date of the ATC run the results come from — "from your ATC run of
+   * <date>". Read from the file where it says (an ADT worklist's timestamp),
+   * else entered by the person importing it, else absent: then the panel says
+   * when the file was imported and that the run date is not known.
+   */
+  runAt?: string;
+  /** Where `runAt` came from: the file, or the person who imported it. */
+  runAtSource?: AtcRunDateSource;
   /** Parser warnings (unmapped columns, unreadable priorities, etc.). Never silently guessed. */
   warnings: string[];
   /** Retention TTL — ISO date after which this report may be auto-deleted. */
