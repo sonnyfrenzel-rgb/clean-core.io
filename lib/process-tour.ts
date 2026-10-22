@@ -150,14 +150,16 @@ export function buildProcessTour(guide: WalkGuide, model: ProcessMapModel, closi
     if (steps.length === 0) continue;
     const inner = steps.filter((s) => !byId.get(s.id)?.opensPlane);
     const pool = inner.length > 0 ? inner : steps.slice(0, 1);
-    // One station per name: "Show the result list" four times is one station.
-    const seen = new Set<string>();
-    const distinct = pool.filter((s) => {
+    // One station per name: "Show the result list" four times is one station. Of steps of one name the one a
+    // reader learns most from stands for them (of equals the first), so a later change is not lost to an earlier read.
+    const best = new Map<string, WalkGuideStep>();
+    for (const s of pool) {
       const key = s.title.trim().toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+      const held = best.get(key);
+      if (!held || weightOf(s) > weightOf(held)) best.set(key, s);
+    }
+    const kept = new Set([...best.values()].map((s) => s.id));
+    const distinct = pool.filter((s) => kept.has(s.id));
     const order = new Map(distinct.map((s, i) => [s.id, i]));
     const ranked = [...distinct].sort((a, b) => weightOf(b) - weightOf(a) || order.get(a.id)! - order.get(b.id)!);
     const chosen = ranked.slice(0, 1);
