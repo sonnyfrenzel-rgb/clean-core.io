@@ -191,7 +191,8 @@ test.describe('the trial run of the 1,000-line starter example (3.0.17 criterion
       // Not "the mapping does not fit the code": the authorization check refused, and the report says so.
       expect(denied.first.status).toBe('Not run');
       expect(denied.first.reason).toContain("the contract's baseRequest is refused by the original's authorization check (L200: the authorization check at L197");
-      expect(denied.first.reason).toContain('this run did not grant it (CC_AUTHORITY_DEMO=grant, test only)');
+      expect(denied.first.reason).toContain('denies every check until it is granted (CC_AUTHORITY_DEMO=grant, test only), and the authority check refused it');
+      expect(denied.first.reason).not.toContain('this run did not grant it');
       expect(denied.first.reason).not.toContain('mapping does not fit');
       const granted = run("process.env.CC_AUTHORITY_DEMO = 'grant';");
       expect(granted.seam).toEqual({ status: 'Passed' });

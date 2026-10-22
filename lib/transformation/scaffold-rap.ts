@@ -75,7 +75,7 @@ import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
 import { programArchitecture } from './architecture';
 import { sliceFor } from './abap-slice';
-import { readRapContract, simpleTypeName, structureComponents, tableLineOf, typeDefinition, type RapContract, type RapParam } from './rap-contract';
+import { attributeCollisionReason, readRapContract, simpleTypeName, structureComponents, tableLineOf, typeDefinition, type RapContract, type RapParam } from './rap-contract';
 import type { AuthorityCheck } from '../abap/call-graph';
 import type { AbapStatement } from '../abap/statement-reader';
 import { rapShortName, rapTableName } from './rap-names';
@@ -2022,5 +2022,20 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     guards[p.guard.id] = { predicate: p.name, call: callOf(p), calledBy: engineCalled.has(p.guard.id) ? 'engine' : 'body', written: p.condition !== null ? 'engine' : 'model' };
   }
   const rap: RapClassContract = { logicClass: logic, refusal, signatures, unitTypes, regions: regionNames, guards, architecture };
-  return { track: 'rap', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter: null, notCarried: plan.notCarried, available, required, rap };
+  // Two local classes with an attribute of the same name (owner decision 22.10.2026): the program is not generated.
+  const collision = attributeCollisionReason(contract.attributeCollisions);
+  return {
+    track: 'rap',
+    version: SCAFFOLD_VERSION,
+    files,
+    units: plan.units,
+    regions: findRegions(files),
+    digest: scaffoldDigest(files),
+    adapter: null,
+    notCarried: plan.notCarried,
+    available,
+    required,
+    rap,
+    ...(collision ? { refusal: { code: 'rap-attribute-collision' as const, detail: collision } } : {}),
+  };
 }

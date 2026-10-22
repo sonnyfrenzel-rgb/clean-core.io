@@ -309,6 +309,12 @@ export const TRANSFORMATION_CODES = {
     action: 'The rest is written; split the routine in the original or write it by hand.',
     kind: 'change',
   },
+  'rap-attribute-collision': {
+    title: 'two classes declare the same attribute',
+    explain: 'Two local classes of the original declare an attribute of the same name; the ABAP Cloud logic class would merge them into one, so the program is not generated.',
+    action: 'Rename the attribute in one of the classes in the original, then generate again.',
+    kind: 'change',
+  },
 } as const satisfies Record<string, CodeExplanation>;
 
 export type TransformationCode = keyof typeof TRANSFORMATION_CODES;

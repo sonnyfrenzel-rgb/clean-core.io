@@ -67,6 +67,8 @@ export function preflightFactsOf(prep: EngineLedPrepared, context: string): Omit
   return {
     functions: prep.fillUnits.length,
     fillCalls: Math.max(1, bundles.length),
+    // A program the engine refuses (owner decision 22.10.2026) does not start, whatever its limits.
+    refusal: prep.scaffold.refusal ?? null,
     // The plan's reason where it could not split a function small enough (3.0.17: one statement, or the main path).
     oversize: bundles
       .filter((b) => b.prompt.length > LEASED_PROMPT_MAX_CHARS)
