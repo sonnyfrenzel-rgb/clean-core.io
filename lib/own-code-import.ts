@@ -29,7 +29,7 @@
  * stored byte for byte as it was read, so its line numbers are the file's own.
  */
 
-import { looksLikeAbap } from './abap-input-check';
+import { invalidDeclarationOperands, looksLikeAbap, type DeclarationOperandProblem } from './abap-input-check';
 import { scanCodeContent } from './staged-code-scan';
 import { extractDataCoupling } from './abap/code-assessment';
 import { APP_VERSION } from './version';
@@ -88,7 +88,12 @@ export type OwnCodeIssue =
   /** The includes form a loop — `chain` starts and ends with the same name. */
   | { kind: 'include-cycle'; chain: readonly string[] }
   /** One include is named more than once; `lines` are lines of this file. */
-  | { kind: 'include-repeated'; name: string; lines: readonly number[] };
+  | { kind: 'include-repeated'; name: string; lines: readonly number[] }
+  /**
+   * A declaration whose LENGTH or DECIMALS is no number and no constant the source defines; `line` is a line of
+   * the joined source the project holds. A notice: it repairs nothing and does not stop the start.
+   */
+  | { kind: 'invalid-declaration'; problem: DeclarationOperandProblem };
 
 export type OwnCodeState = 'ok' | 'warning' | 'error';
 
@@ -472,6 +477,9 @@ export function assembleOwnCode(files: readonly OwnCodeFile[]): OwnCodeAssembly 
       const row = ownerOf.get(main.object);
       row?.issues.push({ kind: 'missing-includes', names: missing });
     }
+    // Read on the joined source, so a constant a TOP include defines counts for the program that uses it.
+    const mainRow = ownerOf.get(main.object);
+    for (const problem of invalidDeclarationOperands(source)) mainRow?.issues.push({ kind: 'invalid-declaration', problem });
   }
 
   for (const row of rows) row.state = stateOf(row.issues);
