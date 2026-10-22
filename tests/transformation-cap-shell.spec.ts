@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipWithoutReference } from './helpers/reference-sources';
+import { skipWithoutReference, OWNER_SOURCES } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import { typeCheckCandidate } from '../lib/test-sandbox/type-check';
@@ -29,8 +29,8 @@ import { fixture, poDemo, ROOT, fileUrl, runInPackage, writePackage } from './he
 
 test.describe.configure({ timeout: 180_000 });
 
-const SD_DESKTOP = 'C:/Users/felix/OneDrive/Desktop/SD_LE_Legacy_ABAP.txt';
-const PM_DESKTOP = 'C:/Users/felix/OneDrive/Desktop/PM_Legacy_ABAP.txt';
+const SD_DESKTOP = path.join(OWNER_SOURCES, 'SD_LE_Legacy_ABAP.txt');
+const PM_DESKTOP = path.join(OWNER_SOURCES, 'PM_Legacy_ABAP.txt');
 const GM_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'golden-master', 'three-cases.abap');
 
 function prep(source: string, track: 'node' | 'rap' = 'node'): EngineLedPrepared {

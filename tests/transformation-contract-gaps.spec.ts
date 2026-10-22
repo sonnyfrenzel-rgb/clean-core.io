@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipWithoutReference } from './helpers/reference-sources';
+import { skipWithoutReference, OWNER_SOURCES } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import { typeCheckCandidate, type TypeCheckResult } from '../lib/test-sandbox/type-check';
@@ -263,7 +263,7 @@ test.describe('Node 3–6 — faithful bodies compile against the package they l
 /* ------------------------------------------------- the seven acceptance programs */
 
 test.describe('the seven acceptance programs: every scaffold is gate-clean before any fill', () => {
-  const sources = path.join(process.env.USERPROFILE ?? process.env.HOME ?? '.', 'OneDrive', 'Desktop');
+  const sources = OWNER_SOURCES;
   for (const program of loadPrograms()) {
     test(`${program.id}: RAP activatable, Node type-clean, CAP shell compiles (scaffold version ${SCAFFOLD_VERSION})`, async () => {
       skipWithoutReference(!program.source.repo && !fs.existsSync(path.join(sources, program.source.file ?? '')), `${program.source.file} is not on this machine`);
@@ -283,7 +283,7 @@ test.describe('the seven acceptance programs: every scaffold is gate-clean befor
 /* ---------------------------------------------- the dry run's stub passes the Node gate */
 
 test.describe("a dry run's stub calls each check with the scaffold's signature", () => {
-  const sources = path.join(process.env.USERPROFILE ?? process.env.HOME ?? '.', 'OneDrive', 'Desktop');
+  const sources = OWNER_SOURCES;
   for (const program of loadPrograms()) {
     test(`${program.id}: the stub's fills type-check on Node`, async () => {
       skipWithoutReference(!program.source.repo && !fs.existsSync(path.join(sources, program.source.file ?? '')), `${program.source.file} is not on this machine`);

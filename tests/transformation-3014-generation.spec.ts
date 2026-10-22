@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipWithoutReference } from './helpers/reference-sources';
+import { skipWithoutReference, OWNER_SOURCES } from './helpers/reference-sources';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -211,7 +211,7 @@ test.describe('2 — a gate repair of the largest units fits the leased call: th
 
   test('the acceptance programs, measured: every unit\'s gate repair fits with a body 1.2 times its slice (local sources)', async () => {
     test.setTimeout(180_000);
-    const SOURCES = 'C:/Users/felix/OneDrive/Desktop';
+    const SOURCES = OWNER_SOURCES;
     // The holdout is left out: no figure is tuned on it (programs.json).
     const programs = loadPrograms().filter((p) => !p.holdout);
     const missing = programs.filter((p) => !p.source.repo && !fs.existsSync(path.join(SOURCES, p.source.file ?? '')));

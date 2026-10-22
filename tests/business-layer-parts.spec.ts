@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipWithoutReference } from './helpers/reference-sources';
+import { skipWithoutReference, OWNER_SOURCES } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
@@ -219,7 +219,7 @@ test.describe('the wait follows the model-call deadline, and the thinking is con
 });
 
 /* The size references (owner, 14.10.2026) — only where the files are on this machine; never committed. */
-const DESKTOP = 'C:/Users/felix/OneDrive/Desktop';
+const DESKTOP = OWNER_SOURCES;
 for (const [file, expectWhole] of [['SD_LE_Legacy_ABAP.txt', false], ['PM_Legacy_ABAP.txt', null]] as const) {
   test(`size reference ${file}`, () => {
     const full = path.join(DESKTOP, file);

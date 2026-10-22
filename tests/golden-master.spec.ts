@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipWithoutReference } from './helpers/reference-sources';
+import { skipWithoutReference, OWNER_SOURCES } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
 import { build } from 'esbuild';
@@ -485,7 +485,7 @@ test('the model’s local test class goes into the test include of the class und
  * holdout) are not in the repository. Where they are on this machine — or
  * named by CC_GOLDEN_SD / CC_GOLDEN_PM — their cases are held here.
  */
-const desktop = path.join(process.env.USERPROFILE ?? process.env.HOME ?? '', 'OneDrive', 'Desktop');
+const desktop = OWNER_SOURCES;
 const SD = process.env.CC_GOLDEN_SD ?? path.join(desktop, 'SD_LE_Legacy_ABAP.txt');
 const PM = process.env.CC_GOLDEN_PM ?? path.join(desktop, 'PM_Legacy_ABAP.txt');
 

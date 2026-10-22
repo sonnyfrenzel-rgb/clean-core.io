@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipWithoutReference } from './helpers/reference-sources';
+import { skipWithoutReference, OWNER_SOURCES } from './helpers/reference-sources';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -150,7 +150,7 @@ test.describe('the fill prompt names the recurring gate errors (14.10.2026)', ()
 
 /* -------------------------------------- the seven acceptance programs, measured */
 
-const SOURCES = 'C:/Users/felix/OneDrive/Desktop';
+const SOURCES = OWNER_SOURCES;
 const PLATFORM = Array.from({ length: 40 }, (_, i) => `- platform fact ${i}: ${'k'.repeat(50)}`).join('\n');
 
 test.describe('the largest units of the seven acceptance programs, measured (local sources)', () => {

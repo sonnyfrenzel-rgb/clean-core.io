@@ -13,7 +13,7 @@
  * Options: --mode dry|real · --programs a,b · --tracks rap,node · --runs n (default 1 dry, 3 real) ·
  * --cap-usd x (default 10; hard, for the whole invocation) · --price-in / --price-out (real only, required;
  * or ACCEPTANCE_PRICE_IN / ACCEPTANCE_PRICE_OUT) · --model name (default PRODUCT_GEMINI_MODEL) ·
- * --sources dir (sources not in the repository; default the owner's Desktop) · --out dir
+ * --sources dir (sources not in the repository; default: the folder CC_OWNER_SOURCES names, none otherwise) · --out dir
  * (default .acceptance/runs, gitignored) · --env-file f (keys; default .env.local) · --seal (write the
  * report sealed and remove the plaintext) · --keep-packages (keep the unpacked Node packages under
  * <run>/packages, e.g. to push one to a Cloud Foundry trial; not with --seal) · --list ·
@@ -300,7 +300,7 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
     priceIn: null,
     priceOut: null,
     model: PRODUCT_GEMINI_MODEL,
-    sources: path.join(env.USERPROFILE ?? env.HOME ?? '.', 'OneDrive', 'Desktop'),
+    sources: env.CC_OWNER_SOURCES?.trim() || '',
     out: path.join(ROOT, '.acceptance', 'runs'),
     envFile: null,
     seal: false,
