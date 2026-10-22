@@ -555,7 +555,8 @@ ${DESIGN_ANSWER_REMINDER}`;
               const kept: Record<string, string> = {};
               for (const key of Object.values(nfrLib.NFR_MODEL_KEY)) {
                 const value = (parsed as Record<string, unknown>)[key];
-                if (typeof value === 'string' && value.trim()) kept[key] = value.trim();
+                // firestore.rules holds each topic to 20,000 characters.
+                if (typeof value === 'string' && value.trim()) kept[key] = value.trim().slice(0, 20_000);
               }
               nfrForDesign = Object.keys(kept).length ? kept : null;
             }
