@@ -168,7 +168,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
 
   // The fit-to-standard card (ADR-069) — ManagementExecutive.
   // ADR-079: renamed from "Fit to standard" — how far the program is from the standard.
-  'stdFit.title': 'Distance to SAP standard',
+  'stdFit.title': 'What stands in the way of the SAP standard',
   'stdFit.ownMeasure': 'Clean-Core.io measure, not an SAP figure',
   'stdFit.notDetermined': 'Not determined',
   'stdFit.reading': 'Reading…',
@@ -186,6 +186,11 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'stdFit.allObjects': 'Every object, with its evidence',
   'stdFit.demoBasis': 'Demo — from the engine reading of the demo source; a demo is never signed.',
   'stdFit.setTarget': 'Choose the target platform',
+  // Owner decision 22.10.2026: the card is the one standard check, and says what it does not measure.
+  'stdFit.notMeasured': 'Functional fit to the SAP standard is not measured.',
+  'stdFit.notMeasuredWhy': 'This card counts the SAP objects the code uses that have a released path. Whether SAP standard does what the program does is decided with the option Move to SAP standard, after your own fit-to-standard workshop.',
+  'stdFit.touchTitle': 'Where it touches SAP standard',
+  'stdFit.touchLink': 'See where, and check it rule by rule',
 
   // The one fold under the Management answer — collapsed whenever the page
   // opens (ADR-087; owner 03.10.2026: progressive disclosure).

@@ -116,7 +116,7 @@ export const FROM_LANDING = {
   views: [
     { key: 'business', name: 'Business', q: 'Do I still need this, and what changes for me?', a: 'Opens with one next step, then the process as numbered steps in plain words with their lines, what it decides and what it changes, and the business rules — the hard-coded ones too — unanswered first.' },
     { key: 'it', name: 'IT', q: 'What exactly, where to, and is it right?', a: 'Opens with the findings at their line, the successor named and who names it, and the chain from requirement to anchor, finding and target draft.' },
-    { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and fit to standard as one figure; costs only as a simulation.' },
+    { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and what stands in the way of the SAP standard as one figure; costs only as a simulation.' },
   ],
   /** The demo rule in three views — the landing's stage card. */
   viewExample: {

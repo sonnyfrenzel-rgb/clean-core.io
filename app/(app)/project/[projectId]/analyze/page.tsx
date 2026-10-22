@@ -71,7 +71,6 @@ import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
 import { keyUserStepsOf } from '@/lib/key-user-route';
-import TargetScopeMapping from '@/components/analyze/TargetScopeMapping';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
 import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
@@ -1367,13 +1366,6 @@ export default function AnalyzePage() {
       // What the run did not record about its route is said in the route card,
       // as one muted line: it is about the run, not the code (audit §3.9).
       const openItems: OpenItem[] = [...sourceOpenItems()];
-      if (!analysisData.standardFit?.potential) {
-        openItems.push({
-          key: 'standard-fit',
-          title: 'How much of it the SAP standard covers',
-          reason: 'The narrative named no standard fit for this code.',
-        });
-      }
 
       return (
         <div className="space-y-6 font-sans">
@@ -1417,9 +1409,12 @@ export default function AnalyzePage() {
                 stageOutput
                 modelWords
               >
-                {/* "Why this route" — the decision path and the standard fit,
-                    one action deeper (owner decision 02.10.2026). What drives
-                    the route and what it assumes stand open above it. */}
+                {/* "Why this route" — the decision path, one action deeper
+                    (owner decision 02.10.2026). What drives the route and what
+                    it assumes stand open above it. The model's "Standard Fit"
+                    that stood beside it is gone (owner decision 22.10.2026):
+                    whether SAP standard does what the program does is not
+                    measured, and the Management decision says so. */}
                 <div className="mt-3 border-t border-cc-line pt-1" data-route-why="">
                   <CcDisclosure title="Why this route">
                     <SectionBoundary name="Route decision path">
@@ -1431,11 +1426,6 @@ export default function AnalyzePage() {
                           comparativeAnalysis={comparative}
                         />
 
-                        {/* S/4HANA Standard Fit */}
-                        <TargetScopeMapping
-                          showHelpMode={false}
-                          standardFit={analysisData.standardFit}
-                        />
                       </div>
                     </SectionBoundary>
                   </CcDisclosure>
@@ -1446,8 +1436,7 @@ export default function AnalyzePage() {
 
           {/* What the model wrote about this code — outside the signature by
               design, so folded and marked as a proposal (owner decision
-              02.10.2026). The standard fit it used to repeat is under "Why
-              this route", with the route it explains. */}
+              02.10.2026). */}
           <FoldedSection
             id="analyze-summary"
             data-analysis-summary="model"
@@ -1479,8 +1468,6 @@ export default function AnalyzePage() {
                 texts={[
                   analysisData.summary,
                   analysisData.asIsContext,
-                  analysisData.standardFit?.targetStandardProcess,
-                  analysisData.standardFit?.rationale,
                   analysisData.recommendations?.keepCoreClean,
                   analysisData.recommendations?.decommissioning,
                   analysisData.recommendations?.cloudReadiness,

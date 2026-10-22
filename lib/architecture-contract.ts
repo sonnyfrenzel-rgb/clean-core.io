@@ -444,6 +444,7 @@ export function contractForDisplay(contract: ArchitectureContract): Architecture
     fields: contract.fields.map((f) => ({
       ...f,
       statement: f.statement === null ? null : forDisplay(f.statement),
+      limits: f.limits.map((l) => ({ ...l, sentence: forDisplay(l.sentence) })),
     })),
     alternatives: contract.alternatives.map((a) => ({
       ...a,
@@ -460,7 +461,31 @@ export function contractForDisplay(contract: ArchitectureContract): Architecture
  * ABAP, not key user extensibility. The stored bytes keep it (fingerprints).
  */
 function forDisplay(text: string): string {
-  return sapNamesForDisplay(text).replace(/\s*\(tier 3\)/gi, '');
+  return withoutStandardCoverageClaim(sapNamesForDisplay(text).replace(/\s*\(tier 3\)/gi, ''));
+}
+
+/**
+ * The stored wording sent the reader to "the standard-coverage analysis", a
+ * table that never measured coverage and is gone (owner decision 22.10.2026).
+ * The bytes stay as stored — the alternative's reason is inside the contract's
+ * fingerprint — and a screen reads what is true: nothing here measures it, and
+ * the account decides it with *Move to SAP standard* after its own workshop.
+ */
+const STANDARD_COVERAGE_WORDING: ReadonlyArray<[string, string]> = [
+  [
+    'Whether SAP standard already covers the requirement is not assessed by the router; it is a question about the business capability, answered by the standard-coverage analysis with its own evidence. Covering the requirement without building anything therefore stays open here rather than being rejected.',
+    'Whether SAP standard already covers the requirement is not assessed here, and nothing in this product measures it: the code shows where the program touches SAP standard, not whether SAP standard does what it does. It stays open — decided with the option Move to SAP standard after your own fit-to-standard workshop — rather than being rejected.',
+  ],
+  [
+    'whether SAP standard already covers the requirement is answered by the standard-coverage analysis against scope items, with its own evidence levels.',
+    'whether SAP standard already covers the requirement is not measured in this product; it is decided with the option Move to SAP standard after your own fit-to-standard workshop.',
+  ],
+];
+
+function withoutStandardCoverageClaim(text: string): string {
+  let out = text;
+  for (const [stored, shown] of STANDARD_COVERAGE_WORDING) out = out.split(stored).join(shown);
+  return out;
 }
 
 /** An alternative's label as a screen shows it (`contractForDisplay`). */

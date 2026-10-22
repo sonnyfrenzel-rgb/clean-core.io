@@ -647,7 +647,8 @@ export function decisionWarning(inputs: Pick<ChainInputs, 'projectId' | 'project
   return {
     kind: 'standard-fit-open',
     text: M['transformation.warnDecision.standardFitOpen'],
-    link: { label: M['transformation.warnDecision.checkStandardFit'], href: choice(inputs, 'it.standard-fit') },
+    // To the decision (owner decision 22.10.2026): only the account's own decision weighs the standard.
+    link: { label: M['transformation.warnDecision.checkStandardFit'], href: choice(inputs, 'management.confirm') },
   };
 }
 
