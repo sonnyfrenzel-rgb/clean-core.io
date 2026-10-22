@@ -8,6 +8,7 @@ import { ruleStandardHint } from '../rule-standard-hints';
 import { hasDemoCases, readDemoSwitches } from './demo-switches';
 import { APP_VERSION } from '../version';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
+import { engineReads3021Apply } from './engine-reads-3021-gate';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -554,6 +555,56 @@ function conditionFor(rule: BusinessRule, p: RuleParameter): string {
   return when[2].split(/,\s*/).filter(Boolean).map((v) => `${when[1]} = ${v}`).join(' OR ');
 }
 
+/* ------------------------------------------------- what a constant does */
+
+/**
+ * One place a constant that no condition tests is used for something a business reader would call a decision
+ * (roadmap 3.0.21, owner decision 22.10.2026): `filter` — it narrows what the program reads (a WHERE of a SELECT, a
+ * LOOP, a DELETE or an UPDATE, a READ TABLE … WITH KEY); `sets` — the program writes it into what it creates or
+ * changes (an assignment, a component of a VALUE #( … ), a SET of an UPDATE).
+ */
+export interface ConstantUse extends SourceRange {
+  kind: 'filter' | 'sets';
+  /** The routine the statement stands in, upper case, or null at program level. */
+  routine: string | null;
+}
+
+/** Literals blanked, so a name inside a text does not count. */
+const withoutLiterals = (text: string) => text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''");
+
+/**
+ * Where the constant `name` (declared on `declaredAt`) filters what the program reads or sets what it writes. A
+ * constant read only by a condition is a rule of its own and not looked at here; one passed to a call or shown in a
+ * list is neither and is not listed. Pure — statements in, places out.
+ */
+export function constantUsesOf(statements: readonly AbapStatement[], name: string, declaredAt: number): ConstantUse[] {
+  const n = name.toLowerCase().replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const named = new RegExp(`(?<![\\w\\-~>/])@?${n}(?![\\w/])`, 'i');
+  const out: ConstantUse[] = [];
+  let routine: string | null = null;
+  for (const s of statements) {
+    const keyword = s.keyword.toUpperCase();
+    if (keyword === 'FORM' || keyword === 'METHOD') routine = (/^(?:FORM|METHOD)\s+([\w/~]+)/i.exec(s.text)?.[1] ?? '').toUpperCase();
+    if (keyword === 'ENDFORM' || keyword === 'ENDMETHOD') routine = null;
+    if (s.lineStart === declaredAt || /^(?:CONSTANTS|DATA|TYPES|STATICS|CLASS-DATA|IF|ELSEIF|WHEN|CHECK|WHILE|CASE)$/.test(keyword)) continue;
+    const text = withoutLiterals(s.text);
+    if (!named.test(text)) continue;
+    const at = { lineStart: s.lineStart, lineEnd: s.lineEnd, routine };
+    // A filter: the name after the statement's WHERE or WITH (TABLE) KEY.
+    const where = /\bWHERE\b|\bWITH\s+(?:TABLE\s+)?KEY\b/i.exec(text);
+    if (/^(?:SELECT|LOOP|DELETE|UPDATE|MODIFY|READ|OPEN)$/.test(keyword) && where && named.test(text.slice(where.index))) {
+      out.push({ ...at, kind: 'filter' });
+      continue;
+    }
+    // A write: `x = c`, `x-f = c`, `VALUE #( f = c )`, `SET f = c` — the name on the right of an `=` whose left is
+    // not the constant itself and outside a WHERE.
+    const head = where ? text.slice(0, where.index) : text;
+    const assigned = new RegExp(`[\\w\\-~>)]\\s*=\\s*@?${n}(?![\\w/])`, 'i');
+    if (assigned.test(head) && !new RegExp(`^${n}\\s*=`, 'i').test(head.trim())) out.push({ ...at, kind: 'sets' });
+  }
+  return out;
+}
+
 /* ---------------------------------------------------------------- explain */
 
 interface RuleContext {
@@ -570,29 +621,70 @@ interface RuleContext {
   anchor: SourceRange;
   /** From engine 3.0.20: a cap of a thousand million or more is technical on any subject. */
   reads3020: boolean;
+  /**
+   * From engine 3.0.21: where a constant no condition tests filters what the program reads or sets what it writes
+   * (`constantUsesOf`). Non-empty only for such a constant, which is then not `declarationOnly`.
+   */
+  uses: ConstantUse[];
 }
 
-function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext, reads3020 = false): RuleContext {
+function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext, reads3020 = false, reads3021 = false): RuleContext {
   const tests = testsOf(rule);
   const first = tests[0] ?? rule.parameters[0];
   const stems = [...new Set(rule.parameters.map((p) => fieldStem(p.subject)).filter(Boolean))];
   const conditionLine = tests[0]?.lineStart ?? rule.parameters[0]?.lineStart ?? rule.sentences[0]?.anchors[0]?.lineStart ?? 1;
   const statementIndex = facts.statements.findIndex((s) => s.lineStart === conditionLine && /^(?:IF|ELSEIF|WHEN|CHECK|WHILE|CASE)$/.test(s.keyword.toUpperCase()));
   const anchor = tests[0] ? range(tests[0].lineStart, tests[0].lineEnd) : rule.sentences[0]?.anchors[0] ? range(rule.sentences[0].anchors[0].lineStart, rule.sentences[0].anchors[0].lineEnd) : range(conditionLine);
+  const declarationOnly = rule.withoutProcessElement?.reason === 'declaration-only' || tests.length === 0;
+  // 3.0.21 (owner decision 22.10.2026): a constant that filters what is read or sets what is written is a business
+  // decision, not "declared, not used". Only a constant that reaches no condition, WHERE or write stays as it was.
+  const decl = rule.parameters[0];
+  const uses = reads3021 && declarationOnly && decl?.subject && operatorOf(decl) === 'VALUE' ? constantUsesOf(facts.statements, decl.subject, decl.lineStart) : [];
   return {
     rule,
     tests,
     first,
     subject: subjectWords(first, ctx),
     stems,
-    declarationOnly: rule.withoutProcessElement?.reason === 'declaration-only' || tests.length === 0,
+    declarationOnly: declarationOnly && uses.length === 0,
     unreached: rule.withoutProcessElement?.reason === 'unreached',
     control: rule.type === 'control',
     place: tests[0] ? armAt(facts.control, tests[0].lineStart) : null,
     statementIndex,
-    anchor,
+    anchor: uses.length > 0 ? range(uses[0].lineStart, uses[0].lineEnd) : anchor,
     reads3020,
+    uses,
   };
+}
+
+/** "line 155", "lines 155 and 270", "lines 155, 270, 300, 365 and 2 more" — the lines of a constant's uses. */
+function usesLines(uses: readonly ConstantUse[]): string {
+  const lines = [...new Set(uses.map((u) => u.lineStart))];
+  const shown = lines.slice(0, 4).map(String);
+  const more = lines.length - shown.length;
+  const list = more > 0 ? `${shown.join(', ')} and ${more} more` : joinWords(shown);
+  return `${lines.length === 1 ? 'line' : 'lines'} ${list}`;
+}
+
+/** "decides which data the program reads", "is written into what the program creates", or both. */
+function constantWhat(uses: readonly ConstantUse[]): string {
+  const filter = uses.some((u) => u.kind === 'filter');
+  const sets = uses.some((u) => u.kind === 'sets');
+  return [filter ? 'decides which data the program reads' : '', sets ? 'is written into what the program creates' : ''].filter(Boolean).join(' and ');
+}
+
+const usesAnchors = (uses: readonly ConstantUse[]): SourceRange[] => uses.slice(0, 8).map((u) => range(u.lineStart, u.lineEnd));
+
+/** What a constant that filters or sets does, in one sentence for a business reader (3.0.21). */
+function constantDoes(rc: RuleContext): ExplainedSentence {
+  const decl = rc.rule.parameters[0];
+  const value = valueWords(valuesOf(decl)[0] ?? '');
+  const filters = rc.uses.filter((u) => u.kind === 'filter');
+  const sets = rc.uses.filter((u) => u.kind === 'sets');
+  const parts: string[] = [];
+  if (filters.length) parts.push(`The program reads only data with ${rc.subject} ${value} (${usesLines(filters)}); data with any other ${rc.subject} is never read, so it is never processed.`);
+  if (sets.length) parts.push(`${filters.length ? 'It also writes' : 'The program writes'} ${rc.subject} ${value} into what it creates or changes (${usesLines(sets)}).`);
+  return { text: parts.join(' '), anchors: usesAnchors(rc.uses) };
 }
 
 function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
@@ -659,6 +751,7 @@ function firstTestOf(rc: RuleContext, ctx: PlainContext): FirstTest | null {
 function protectsOf(rc: RuleContext, sidesHolds: string[], sidesOtherwise: string[], ctx: PlainContext): ExplainedSentence {
   const { rule, subject } = rc;
   const anchors = [rc.anchor];
+  if (rc.uses.length > 0) return constantDoes(rc);
   if (rc.declarationOnly) {
     const decl = rule.parameters[0];
     const fixed = decl ? valuesOf(decl).map(valueWords).join(', ') : '';
@@ -721,6 +814,15 @@ function protectsOf(rc: RuleContext, sidesHolds: string[], sidesOtherwise: strin
 
 function exampleOf(rc: RuleContext, siblings: ReadonlyMap<string, string[]>, ctx: PlainContext): ExplainedSentence | null {
   const { rule } = rc;
+  if (rc.uses.length > 0) {
+    const decl = rule.parameters[0];
+    const v = valueWords(valuesOf(decl)[0] ?? '');
+    const filter = rc.uses.find((u) => u.kind === 'filter');
+    const Subject = ucFirst(rc.subject);
+    return filter
+      ? { text: `${Subject} ${v}: read and processed. Any other ${rc.subject}: not read at all (line ${filter.lineStart}).`, anchors: [range(filter.lineStart, filter.lineEnd)] }
+      : { text: `Every record the program writes there gets ${rc.subject} ${v} (line ${rc.uses[0].lineStart}); another ${rc.subject} needs a change of the program.`, anchors: [range(rc.uses[0].lineStart, rc.uses[0].lineEnd)] };
+  }
   if (rc.declarationOnly) {
     const decl = rule.parameters[0];
     const v = decl ? valuesOf(decl)[0] : undefined;
@@ -788,7 +890,7 @@ function exampleOf(rc: RuleContext, siblings: ReadonlyMap<string, string[]>, ctx
 }
 
 function sidesOf(rc: RuleContext, facts: ExplainFacts, ctx: PlainContext): { holds: ExplainedSentence; otherwise: ExplainedSentence; holdsEffects: string[]; otherwiseEffects: string[] } | null {
-  if (rc.declarationOnly) return null;
+  if (rc.declarationOnly || rc.uses.length > 0) return null;
   const p = rc.tests[0];
   if (!p) return null;
   const statement = rc.statementIndex >= 0 ? facts.statements[rc.statementIndex] : null;
@@ -876,6 +978,9 @@ function headlineOf(rc: RuleContext, technical: boolean, ctx: PlainContext, hold
   const value = valuesOf(decl)[0] ?? '';
   const name = ucFirst(subjectWords(decl, ctx));
   if (rc.declarationOnly) return `${name} ${valueWords(value)} — declared, not used`;
+  if (rc.uses.length > 0 && !technical) {
+    return rc.uses.some((u) => u.kind === 'filter') ? `Only ${lcFirst(name)} ${valueWords(value)}` : `${name} ${valueWords(value)} — set by the program`;
+  }
   const t = firstTestOf(rc, ctx);
   const subject = t ? ucFirst(t.subject) : name;
   if (technical) return `${subject}: ${valueWords(value)} (technical setting)`;
@@ -889,6 +994,11 @@ function headlineOf(rc: RuleContext, technical: boolean, ctx: PlainContext, hold
 
 function whereOf(rc: RuleContext, facts: ExplainFacts, ctx: PlainContext): { where: ExplainedSentence; parents: ExplainedSentence[] } {
   const { rule } = rc;
+  if (rc.uses.length > 0) {
+    const steps = [...new Set(rc.uses.map((u) => u.routine).filter((r): r is string => !!r))];
+    const inSteps = steps.length ? ` — in the step${steps.length === 1 ? '' : 's'} ${joinWords(steps.slice(0, 3).map((r) => `“${humaniseRoutine(r)}”`))}${steps.length > 3 ? ` and ${steps.length - 3} more` : ''}` : '';
+    return { where: { text: `Where the program uses it: ${usesLines(rc.uses)}${inSteps}.`, anchors: usesAnchors(rc.uses) }, parents: [] };
+  }
   const routines = [...new Set(rule.sources.map((s) => s.routine).filter((r): r is string => !!r))];
   const places = placesOf(rc);
   const parents: ExplainedSentence[] = rc.statementIndex >= 0
@@ -912,6 +1022,28 @@ function impactOf(rc: RuleContext, technical: boolean, sides: ReturnType<typeof 
   const reasons: string[] = [];
   if (technical) return { score: 0, level: 'low', reasons: ['a technical setting'] };
   if (rc.declarationOnly) return { score: 0, level: 'low', reasons: ['nothing reads it'] };
+  if (rc.uses.length > 0) {
+    const because: string[] = [];
+    let points = 1;
+    if (rc.uses.some((u) => u.kind === 'filter')) {
+      points += 3;
+      because.push('decides which data is read');
+    }
+    if (rc.uses.some((u) => u.kind === 'sets')) {
+      points += 1;
+      because.push('sets what is written');
+    }
+    const places = new Set(rc.uses.map((u) => u.lineStart)).size;
+    if (places > 1) {
+      points += 1;
+      because.push(`stands at ${places} places`);
+    }
+    if (rc.rule.classes.includes('organisationseinheit')) {
+      points += 1;
+      because.push('ties the program to one unit');
+    }
+    return { score: points, level: points >= 5 ? 'high' : points >= 3 ? 'medium' : 'low', reasons: because };
+  }
   if (rc.unreached) return { score: 0, level: 'low', reasons: ['no entry point reaches it'] };
   let score = 1;
   const ending = endingOf([...(sides?.holdsEffects ?? []), ...(sides?.otherwiseEffects ?? [])]);
@@ -952,6 +1084,11 @@ function proposalOf(rc: RuleContext, technical: boolean, hasInclude: boolean): R
   const anchors = [rc.anchor];
   const say = (kind: RuleProposalKind, text: string, at: SourceRange[] = anchors) => ({ kind, reason: { text, anchors: at } });
   if (technical) return say('keep', 'A technical setting, not a business decision: keep it as it is, or leave it to IT.');
+  if (rc.uses.length > 0) {
+    const value = valueWords(valuesOf(rule.parameters[0])[0] ?? '');
+    const what = constantWhat(rc.uses);
+    return say('configure', `${ucFirst(subject)} ${value} is fixed in the code and ${what}. Kept in configuration, another value needs no program change.`, usesAnchors(rc.uses));
+  }
   if (rc.declarationOnly) {
     return say(
       'drop',
@@ -1083,6 +1220,11 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   const anchors = [rc.anchor];
   const say = (kind: RuleBasket, text: string, at: SourceRange[] = anchors): RuleExplanation['basket'] => ({ kind, reason: { text, anchors: at } });
   if (technical) return say('technical', technical.text, technical.anchors);
+  if (rc.uses.length > 0) {
+    const value = valueWords(valuesOf(rc.rule.parameters[0])[0] ?? '');
+    const what = constantWhat(rc.uses);
+    return say('business', `${ucFirst(rc.subject)} ${value} ${what} (${usesLines(rc.uses)}) — a value the business sets, so the business is asked.`, usesAnchors(rc.uses));
+  }
   if (rc.declarationOnly) {
     const decl = rc.rule.parameters[0];
     return say(
@@ -1240,6 +1382,17 @@ function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
   }
   // One rule — or several on one subject that do not read as one list: the weightiest speaks for them.
   const more = group.length > 1 ? ` The same subject is tested at ${group.length - 1} more ${group.length === 2 ? 'place' : 'places'}.` : '';
+  // A constant that filters or sets (3.0.21): what it does, and whether that is still the business's choice.
+  if (first.rc.uses.length > 0) {
+    const filter = first.rc.uses.some((u) => u.kind === 'filter');
+    const value = valueWords(valuesOf(first.rc.rule.parameters[0])[0] ?? '');
+    return {
+      ...base,
+      shape: 'values',
+      statement: constantDoes(first.rc),
+      ask: filter ? `Only ${first.rc.subject} ${value} — is that still right?` : 'Is that still right?',
+    };
+  }
   const money = amountInCurrency(first.rc, ctx);
   if (money) {
     const v = valuesOf(money.limit)[0];
@@ -1292,6 +1445,7 @@ export function explainBusinessRules(
   engineVersion: string | null = APP_VERSION,
 ): RuleSetExplanation {
   const reads3020 = engineReads3020Apply(engineVersion);
+  const reads3021 = engineReads3021Apply(engineVersion);
   const ctx = plainContext(source);
   const hasInclude = facts.statements.some((s) => s.keyword.toUpperCase() === 'INCLUDE' && !/^INCLUDE\s+(?:TYPE|STRUCTURE)\b/i.test(s.text));
   // The values the code tests one field against, across rules — for "handled by another rule".
@@ -1312,7 +1466,7 @@ export function explainBusinessRules(
   const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines, types), types, ctx, hasInclude, hasDemo };
   const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
-    const rc = contextOf(rule, facts, ctx, reads3020);
+    const rc = contextOf(rule, facts, ctx, reads3020, reads3021);
     const technical = technicalOf(rc, demoIds.has(rule.id));
     const sides = sidesOf(rc, facts, ctx);
     const { where, parents } = whereOf(rc, facts, ctx);
