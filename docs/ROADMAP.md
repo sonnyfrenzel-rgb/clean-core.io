@@ -1641,8 +1641,28 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-903 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-904 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
 | SEC-2026-905 | info | P3 | after 3.0.18 · comment hygiene (owner decides) | scheduled |
+| SEC-2026-906 | high | P1 | 3.0.21 · first (owner 22.10.2026: remove the workflow and its secret) | scheduled |
+| SEC-2026-907 | high | P1 | 3.0.21 · first (owner 22.10.2026: manual runs on dev/main only, checkout pinned) | scheduled |
+| SEC-2026-908 | medium | P2 | 3.0.21 | scheduled |
+| SEC-2026-909 | low | P3 | 3.0.21 · bounded JSON bodies | scheduled |
+| SEC-2026-910 | low | P3 | 3.0.21 · bounded JSON bodies | scheduled |
+| SEC-2026-911 | low | P3 | 3.0.21 · bounded JSON bodies | scheduled |
+| SEC-2026-912 | medium | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-913 | medium | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-914 | medium | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-915 | medium | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-916 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-917 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-918 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-919 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-920 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-921 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-922 | info | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-923 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 
 **Audit of v3.0.19 (`cdde58e`), 21.10.2026: 0 critical, 0 high, 4 medium, 2 low, 3 info.** SEC-2026-897 to -902 go to 3.0.20; SEC-2026-903 to -905 join the comment-hygiene decision. No QA full review was needed (the change was under the thresholds). The reasons are in the sealed register.
+
+**Audit of v3.0.20 (`52cdc27`), 22.10.2026: 0 critical, 2 high, 9 medium, 28 low, 3 info — all 180 candidates verified by the agent, all 42 findings checked by hand.** The two high findings (SEC-2026-906, -907) concern the agents' own workflows and need write access to the repository; by owner decision of 22.10.2026 they are fixed first in 3.0.21. SEC-2026-908 joins 3.0.21; the rest is P3 hardening, mostly of operator scripts. Nine findings were refuted and fifteen are duplicates of scheduled ones (the Firestore rules findings of SEC-2026-888 to -890 among them). The reasons are in the sealed register.
 
 **Audit of v3.0.18 (`3f90d50`), 21.10.2026: 0 critical, 0 high, 4 medium, 5 low, 3 info — 125 candidates verified.** SEC-2026-885 to -887, -891 and -893 go to 3.0.19; the three findings in the Firestore rules (SEC-2026-888 to -890) go with the next rules deploy, which needs the owner's go; SEC-2026-892 and -894 to 3.0.20; SEC-2026-895 and -896 join the comment-hygiene decision. The reasons are in the sealed register.
 
