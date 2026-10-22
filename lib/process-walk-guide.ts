@@ -99,6 +99,12 @@ export interface WalkGuideStep {
   /** Set when a business reader need not answer it one by one. */
   technical: WalkTechnicalGroup | null;
   happens: WalkLine;
+  /**
+   * A long list of cases said short — "It tells 3 cases apart." — for the tour's
+   * card (owner decision 22.10.2026); `happens` keeps the full list, which the
+   * tour shows one level down. Absent where `happens` is short or no case list.
+   */
+  brief?: WalkLine;
   matters: WalkLine;
   /** The step's own condition and the branches it stands in; empty when nothing decides it. */
   decides: WalkLine[];
@@ -524,6 +530,12 @@ function afterAuthority(r: Reading, element: ProcessMapElement): boolean {
   return false;
 }
 
+/**
+ * From how many characters a case list is said short on the tour's card
+ * (owner decision 22.10.2026: a 351-character list pushed "Next" off a phone).
+ */
+export const CASE_LIST_BRIEF_FROM = 140;
+
 /** An outcome that holds a case back: an error, an end, a skip, or a routine named for rejecting it. */
 const STOPS = /stops|ends here|skipped|“(?:Reject|Cancel|Block|Refuse|Deny|Error|Fail|Abort)[^”]*”/i;
 
@@ -538,6 +550,8 @@ function decisionStep(r: Reading, element: ProcessMapElement): Omit<WalkGuideSte
   const keyword = head?.keyword.toUpperCase() ?? '';
   const decides: WalkLine[] = [];
   let happens: string | null = null;
+  /** The short form of a case list, set beside `happens` where the list is long. */
+  let brief: string | null = null;
   let stops: string | null = null;
   let stopsOnly = false;
   let plain = false;
@@ -585,6 +599,7 @@ function decisionStep(r: Reading, element: ProcessMapElement): Omit<WalkGuideSte
       if (cases.length >= 2) {
         const otherwise = usable[usable.length - 1].condition === null ? '' : '; in every other case it carries on';
         happens = `It tells ${usable.length} cases apart, in this order — ${cases.join('; ')}${otherwise}.`;
+        brief = `It tells ${usable.length} cases apart.`;
         plain = true;
       }
       for (const arm of usable) {
@@ -623,6 +638,7 @@ function decisionStep(r: Reading, element: ProcessMapElement): Omit<WalkGuideSte
       .filter((c) => !ABAP_TOKEN.test(c));
     if (!ABAP_TOKEN.test(field) && cases.length) {
       happens = `It looks at the ${field} and goes a different way for each value — ${cases.join('; ')}.`;
+      brief = `It looks at the ${field} and goes one of ${arms.length} ways, depending on its value.`;
       plain = true;
       decides.push({ text: sentence(`Decided by: the ${field}`), anchor: own });
     }
@@ -651,8 +667,10 @@ function decisionStep(r: Reading, element: ProcessMapElement): Omit<WalkGuideSte
     : stops
       ? `Without it, the cases held back here would go on to the next steps. Today, for those cases, ${stops}.`
       : 'Without it, every case would go the same way — say which way is right.';
+  const full = sentence(happens);
   return {
-    happens: { text: sentence(happens), anchor: own },
+    happens: { text: full, anchor: own },
+    ...(brief && full.length > CASE_LIST_BRIEF_FROM ? { brief: { text: sentence(brief), anchor: own } } : {}),
     matters: { text: matters, anchor: own },
     decides,
     data,
@@ -836,7 +854,7 @@ export function buildWalkGuide(source: string, model: ProcessMapModel, order: re
       if (isDecisionTag(element.tag)) {
         const d = decisionStep(r, element);
         stopsOnly = d.stopsOnly;
-        composed = { happens: d.happens, matters: d.matters, decides: d.decides, data: d.data, ifGone: d.ifGone, plain: d.plain, role: d.role };
+        composed = { happens: d.happens, ...(d.brief ? { brief: d.brief } : {}), matters: d.matters, decides: d.decides, data: d.data, ifGone: d.ifGone, plain: d.plain, role: d.role };
       } else {
         composed = activityStep(r, element, model, facts);
       }
