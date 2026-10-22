@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { useParams, useRouter } from 'next/navigation';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { getAuth } from '@/lib/firebase';
-import { ArrowRight, Check, Loader2, Lock, Mail } from 'lucide-react';
-import { signInLinkFor } from '@/lib/return-path';
+import { ArrowRight, Loader2, Lock, Mail } from 'lucide-react';
+import { signInLinkFor, signUpLinkFor } from '@/lib/return-path';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -37,21 +37,20 @@ export default function InvitationPage() {
   const projectId = String(params?.projectId ?? '');
   const invitationId = String(params?.invitationId ?? '');
   const here = invitationLinkPath(projectId, invitationId);
+  const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [busy, setBusy] = useState(false);
+  // Set once the server has accepted: the page is on its way to the project.
+  const [opening, setOpening] = useState(false);
   const [error, setError] = useState('');
-  // Bound to the account it was accepted with, like the preview below: after a
-  // sign-out or an account switch the project name is no longer shown.
-  const [acceptedState, setAccepted] = useState<{ readFor: string; projectName: string } | null>(null);
   // The preview remembers whom it was read for: it is shown only to that
   // account, for that invitation. It used to stay on screen after a sign-out
   // or a switch to another account.
   const [preview, setPreview] = useState<{ readFor: string; invitedBy: string; expiresAt: string } | null>(null);
   const previewKey = user ? `${user.uid}|${projectId}|${invitationId}` : null;
   const shownPreview = preview && preview.readFor === previewKey ? preview : null;
-  const accepted = acceptedState && acceptedState.readFor === previewKey ? acceptedState : null;
 
   // Signed in: ask who sent it and until when. Any refusal simply leaves the
   // page as it was — the accept button gives the reason when it is pressed.
@@ -102,17 +101,25 @@ export default function InvitationPage() {
         setError(String(body?.error || 'This invitation could not be opened.'));
         return;
       }
-      setAccepted({ readFor: `${user.uid}|${projectId}|${invitationId}`, projectName: String(body?.projectName || '') });
+      // Accepting opens the project directly (roadmap 3.0.21 (4)) — no "You now
+      // have read access" page and a second click. What the access does not give
+      // is said there, by the reader strip on the workspace and every tool. A
+      // shared project opens where its owner reads it: in the workspace (3.0.1).
+      setOpening(true);
+      router.replace(`/project/${projectId}`);
     } catch {
       setError('The invitation could not be opened just now. Try again in a moment.');
     } finally {
       setBusy(false);
     }
-  }, [user, projectId, invitationId]);
+  }, [user, projectId, invitationId, router]);
 
-  // A shared project opens where its owner reads it: in the workspace, like
-  // every project (roadmap 3.0.1).
-  const openHref = `/project/${projectId}`;
+  // "Use another account": sign out here, and sign in again with the address
+  // the invitation went to — straight back to this page.
+  const useAnotherAccount = useCallback(async () => {
+    await signOut(getAuth()).catch(() => undefined);
+    router.push(signInLinkFor(here));
+  }, [router, here]);
 
   // One card in the app's own language (cc library, 22/800 head, §1.2): what
   // the link is, whose it is, until when, and the one action. No marketing
@@ -125,7 +132,7 @@ export default function InvitationPage() {
             aria-hidden="true"
             className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted"
           >
-            {accepted ? <Check size={18} /> : <Lock size={18} />}
+            <Lock size={18} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
@@ -135,26 +142,15 @@ export default function InvitationPage() {
               data-invitation-title
               className="mt-1 mb-0 text-[22px] leading-tight font-extrabold tracking-[-0.02em] text-cc-ink"
             >
-              {accepted ? 'You now have read access' : 'An invitation to read a project'}
+              An invitation to read a project
             </h1>
           </div>
         </div>
 
-        {accepted ? (
-          <div className="mt-4 flex flex-col gap-4">
-            <p className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink-muted">
-              {accepted.projectName
-                ? `“${accepted.projectName}” is open for reading with this account.`
-                : 'The project is open for reading with this account.'}{' '}
-              {INVITATION_LIMITS_SENTENCE_RECIPIENT}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <CcLinkButton href={openHref} variant="primary" icon={<ArrowRight size={16} aria-hidden="true" />}>
-                Open the project
-              </CcLinkButton>
-              <CcLinkButton href="/dashboard">My workspace</CcLinkButton>
-            </div>
-          </div>
+        {opening ? (
+          <p role="status" data-invitation-opening="" className="mt-4 mb-0 flex items-center gap-2 text-[13px] font-semibold text-cc-ink-muted">
+            <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden="true" /> Opening the project…
+          </p>
         ) : (
           <div className="mt-4 flex flex-col gap-4">
             <p className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink-muted">
@@ -191,7 +187,22 @@ export default function InvitationPage() {
                 <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden="true" /> Checking your session…
               </p>
             ) : user ? (
-              <div>
+              <div className="flex flex-col items-start gap-3">
+                {/* Which account is about to open it — the one thing a reader with
+                    two addresses needs before a "this invitation is for another
+                    address" refusal (roadmap 3.0.21 (4)). */}
+                <p data-invitation-account="" className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink-muted">
+                  Signed in as <span className="font-semibold text-cc-ink">{user.email ?? 'this account'}</span>
+                  {' · '}
+                  <button
+                    type="button"
+                    data-invitation-switch=""
+                    onClick={useAnotherAccount}
+                    className="font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-information"
+                  >
+                    Use another account
+                  </button>
+                </p>
                 <CcButton
                   data-invitation-accept=""
                   variant="primary"
@@ -205,14 +216,19 @@ export default function InvitationPage() {
               </div>
             ) : (
               <div className="flex flex-col items-start gap-2">
-                <CcLinkButton
-                  data-invitation-signin=""
-                  href={signInLinkFor(here)}
-                  variant="primary"
-                  icon={<ArrowRight size={16} aria-hidden="true" />}
-                >
-                  Sign in to open it
-                </CcLinkButton>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CcLinkButton
+                    data-invitation-signin=""
+                    href={signInLinkFor(here)}
+                    variant="primary"
+                    icon={<ArrowRight size={16} aria-hidden="true" />}
+                  >
+                    Sign in to open it
+                  </CcLinkButton>
+                  <CcLinkButton data-invitation-signup="" href={signUpLinkFor(here)}>
+                    Create an account
+                  </CcLinkButton>
+                </div>
                 <p className="m-0 text-[12px] leading-relaxed font-medium text-cc-ink-muted">
                   No account yet? Create one with the address the invitation was sent to — you come back here
                   afterwards.

@@ -8,7 +8,9 @@ import {
   quotaSpentSentence,
   runsLeftLabel,
 } from '../lib/run-quota-rule';
-import { safeReturnPath, signInLinkFor } from '../lib/return-path';
+import { safeReturnPath, signInLinkFor, signUpLinkFor } from '../lib/return-path';
+import { invitationLinkPath } from '../lib/invitations';
+import { ownDomainVerifyEmailLink, withReturnPath } from '../lib/auth-action-link';
 import {
   accessFromAnswer,
   NO_ACCESS_SENTENCE,
@@ -119,6 +121,59 @@ test.describe('(13) an invited reader sees one strip, on the workspace and on ev
     for (const rel of ['components/process-map/ProcessMap.tsx', 'components/ArchitectSignOff.tsx', 'components/design/DesignCanvasStage.tsx', 'components/documentation/BusinessLayer.tsx']) {
       expect(read(rel), `${rel} lost the note beside its control`).toContain('<OwnerOnlyNote');
     }
+  });
+});
+
+test.describe('(4) a new invited reader: the invitation path survives the confirmation, sign-up is offered, acceptance opens the project', () => {
+  const here = invitationLinkPath('proj-1', 'Ab3-_xyz');
+
+  test('the confirmation link carries the invitation path, and nothing it would refuse', () => {
+    const base = ownDomainVerifyEmailLink(
+      'https://x.firebaseapp.com/__/auth/action?mode=verifyEmail&oobCode=AbC-12_xyz890&apiKey=k',
+      'https://clean-core.io',
+    );
+    const withNext = withReturnPath(base, here);
+    const url = new URL(withNext);
+    expect(url.pathname).toBe('/auth/action');
+    expect(url.searchParams.get('oobCode')).toBe('AbC-12_xyz890');
+    expect(url.searchParams.get('next')).toBe(here);
+    // An unknown target leaves the link exactly as it was.
+    for (const bad of ['https://evil.example', '/dashboard#@evil', '//evil', '/project/a/secrets']) {
+      expect(withReturnPath(base, bad), bad).toBe(base);
+    }
+    const route = read('app/api/projects/[projectId]/invitations/[invitationId]/accept/route.ts');
+    expect(route).toMatch(/withReturnPath\(\s*ownDomainVerifyEmailLink\([\s\S]*?\),\s*invitationLinkPath\(projectId, invitationId\),\s*\)/);
+  });
+
+  test('the confirmation page checks the path again and leads back to the invitation in one click', () => {
+    const page = read('app/auth/action/page.tsx');
+    expect(page).toContain('const returnTo = safeReturnPath(next);');
+    expect(page).toContain('returnTo={returnTo}');
+    const client = read('app/auth/action/AuthActionClient.tsx');
+    const done = client.slice(client.indexOf("if (state === 'done')"), client.indexOf("if (state === 'error')"));
+    expect(done).toContain('href={signInLinkFor(returnTo)}');
+    expect(done).toContain('Open the invitation');
+  });
+
+  test('signed out, the invitation offers sign-in and "Create an account", both coming back to it', () => {
+    expect(signUpLinkFor(here)).toBe(`/?auth=signup&next=${encodeURIComponent(here)}`);
+    expect(signUpLinkFor('https://evil.example')).toBe('/?auth=signup');
+    const src = read('app/(app)/invitation/[projectId]/[invitationId]/page.tsx');
+    expect(src).toMatch(/data-invitation-signup="" href=\{signUpLinkFor\(here\)\}>\s*Create an account/);
+    expect(src).toContain('href={signInLinkFor(here)}');
+  });
+
+  test('signed in, it says which account, offers another, and accepting opens the project directly', () => {
+    const src = read('app/(app)/invitation/[projectId]/[invitationId]/page.tsx');
+    expect(src).toMatch(/Signed in as <span[^>]*>\{user\.email \?\? 'this account'\}<\/span>/);
+    expect(src).toMatch(/data-invitation-switch=""[\s\S]{0,400}Use another account/);
+    const switchAccount = src.slice(src.indexOf('const useAnotherAccount'), src.indexOf('}, [router, here]);'));
+    expect(switchAccount).toContain('await signOut(getAuth())');
+    expect(switchAccount).toContain('router.push(signInLinkFor(here));');
+    const accept = src.slice(src.indexOf('const accept = useCallback'), src.indexOf('const useAnotherAccount'));
+    expect(accept).toContain('router.replace(`/project/${projectId}`);');
+    expect(src, 'the in-between page is back').not.toContain('You now have read access');
+    expect(src).not.toContain('Open the project</CcLinkButton>');
   });
 });
 

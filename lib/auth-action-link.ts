@@ -1,4 +1,5 @@
 import { APP_BASE_URL } from '@/lib/constants';
+import { safeReturnPath } from '@/lib/return-path';
 
 /**
  * The address-confirmation link on the product's own domain (roadmap 3.0.9).
@@ -31,4 +32,20 @@ export function ownDomainVerifyEmailLink(firebaseLink: string, baseUrl: string =
   if (!oobCode || !/^[A-Za-z0-9_-]{8,2048}$/.test(oobCode)) throw new Error('the Firebase link carries no usable oobCode');
   const q = new URLSearchParams({ mode: 'verifyEmail', oobCode });
   return `${baseUrl.replace(/\/+$/, '')}${AUTH_ACTION_PATH}?${q.toString()}`;
+}
+
+/**
+ * The confirmation link with the page to return to once the address is
+ * confirmed — roadmap 3.0.21 (4). The invitation mail promises "the link brings
+ * you back here afterwards", and the confirmation used to end with "open the
+ * invitation link from the other email". The path rides along as `next`, and
+ * only a path `safeReturnPath` accepts does: anything else leaves the link as it
+ * was, and the confirmation page checks it again on the way out.
+ */
+export function withReturnPath(confirmationLink: string, next: string): string {
+  const target = safeReturnPath(next);
+  if (!target) return confirmationLink;
+  const url = new URL(confirmationLink);
+  url.searchParams.set('next', target);
+  return url.toString();
 }

@@ -101,3 +101,13 @@ export function signInLinkFor(path: string): string {
   const target = safeReturnPath(path);
   return target ? `/?auth=signin&next=${encodeURIComponent(target)}` : '/?auth=signin';
 }
+
+/**
+ * `/?auth=signup&next=<path>` — the same, opening the registration step of the
+ * dialog (roadmap 3.0.21 (4): a new invited reader). Registration itself is
+ * unchanged; only where it lands afterwards is, as for a sign-in.
+ */
+export function signUpLinkFor(path: string): string {
+  const target = safeReturnPath(path);
+  return target ? `/?auth=signup&next=${encodeURIComponent(target)}` : '/?auth=signup';
+}
