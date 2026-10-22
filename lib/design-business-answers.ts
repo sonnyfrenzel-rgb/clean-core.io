@@ -83,6 +83,28 @@ export function designWriteGate(reading: BusinessAnswersReading): DesignWriteGat
 /** Whether "Generate the design" is enabled — and "Write it without the open answers" is never needed then. */
 export const designWriteEnabled = (gate: DesignWriteGate): boolean => gate.kind === 'ready';
 
+/* ------------------------------------------------------------ page order */
+
+/**
+ * Whether the Design page shows its proposal — the target on the canvas, the
+ * decision with the recommended route and the alternatives, the design
+ * document with the option comparison (owner decision 22.10.2026, roadmap
+ * 3.0.21, amending ADR-102's page order). Until then the canvas holds a calm
+ * placeholder and the questions stand beside it. Shown once
+ *
+ *   - every business question has an answer, or the program asks none
+ *     (`designWriteGate` is `ready`);
+ *   - the reader clicked *Skip questions*; or
+ *   - a solution design is on record — it was asked for by a click before, so
+ *     the questions were passed then.
+ *
+ * Nothing is written by showing it: the design is still written only on the
+ * owner's click (ADR-102).
+ */
+export function designProposalShown({ gate, skipped, hasDesign }: { gate: DesignWriteGate; skipped: boolean; hasDesign: boolean }): boolean {
+  return hasDesign || skipped || gate.kind === 'ready';
+}
+
 /* ---------------------------------------------------------------- prompt */
 
 /**

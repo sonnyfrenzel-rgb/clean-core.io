@@ -337,7 +337,11 @@ header comes from `StageHeader` and stands like the project title: **22 px / 800
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
 not a button), which leads back to the view and layer from which the stage was opened — on a demo stage to the demo
-workspace (`/demo/workspace`) by the same rule. Below it the same toolbar as in
+workspace (`/demo/workspace`) by the same rule. On the same row, top right, the **view switch** (ADR-105): the segmented
+control "Business | IT | Management" of §1.5, the view the tool is read in selected (from `?view=`; none or an unknown
+one reads as Business, where the way back leads); one click changes the view in the address and stays on the same tool,
+every other parameter kept — the view stays a view only. On S it wraps under the way back and its segments share the
+row. Below it the same toolbar as in
 the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
 It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
@@ -348,6 +352,16 @@ frame's full width, sticky under the shell bar, the section being read marked (o
 has no anchor of its own — ADR-093). Analyze, Transformation, Documentation,
 Testing and Delivery carry it; Design (a canvas with its own tabs) and Economics (a guided flow whose step guide is its
 navigation) do not.
+
+**The Design tool reads canvas first** (ADR-106, amending ADR-102's order). The canvas is the page's picture, right
+under the header; the questions for the business stand beside it as its side panel from L (below it on S and M) — the
+questions that change the target on top ("N questions change the target"), the others folded ("+ M without impact on
+the target"). The proposal — the target drawn on the canvas, its KPIs, the decision with the recommended route and
+the alternatives, the document drawer with the option comparison — shows once every question has an answer (or none
+is asked), once the reader clicks *Skip questions*, or when a design is already on record. Until then the canvas holds
+one calm placeholder, "The target appears after the questions — or skip them", with *Skip questions* as its one
+secondary button. Afterwards the questions fold to one line in the side panel ("Business questions · n of m
+answered"), open while questions are still open. The design is still written only on the owner's click.
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A

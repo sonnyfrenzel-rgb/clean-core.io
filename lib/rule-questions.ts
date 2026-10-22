@@ -183,6 +183,73 @@ export function questionFlow(explanation: Pick<RuleSetExplanation, 'questions'>,
   };
 }
 
+/* ---------------------------------------------- impact on the target */
+
+/**
+ * Whether a question changes the target (owner decision 22.10.2026, roadmap
+ * 3.0.21: "N questions change the target", the others folded). Deterministic,
+ * from what the engine and the record already say:
+ *
+ *   - the answer on record is *No, it should be …* or *We don't need it any
+ *     more* — the design then carries a new value or leaves the rule out; or
+ *   - the engine proposes, for any rule of the question, something other than
+ *     Keep — change the value, drop it, move it into configuration or to SAP
+ *     standard (`proposalOf` in `lib/abap/business-rule-set-explain.ts`): the
+ *     target then differs from the code as it stands.
+ *
+ * A question whose rules the engine proposes to keep as coded, and that nobody
+ * answered otherwise, carries the rule into the target unchanged — *without
+ * impact on the target*. Its answer still goes into the design prompt like
+ * every other (`lib/design-business-answers.ts`); only the order on the page
+ * follows this.
+ */
+export function changesTarget(
+  question: Pick<RuleQuestion, 'ruleIds'>,
+  explanation: Pick<RuleSetExplanation, 'rules'>,
+  answer: QuestionAnswer | null,
+): boolean {
+  if (answer === 'change' || answer === 'drop') return true;
+  return question.ruleIds.some((id) => {
+    const rule = explanation.rules.find((r) => r.id === id);
+    return rule ? rule.proposal.kind !== 'keep' : false;
+  });
+}
+
+export interface TargetQuestionGroups {
+  /** Open questions that change the target, at most `QUESTION_BATCH`, weightiest first. */
+  changing: QuestionState[];
+  /** How many open questions change the target, shown or not. */
+  changingOpen: number;
+  /** Open questions without impact on the target, at most `QUESTION_BATCH` — the page folds them. */
+  quiet: QuestionState[];
+  /** How many open questions have no impact on the target, shown or not. */
+  quietOpen: number;
+  /** Open questions beyond the ones shown in the two groups. */
+  later: number;
+}
+
+/** The open questions of the flow in two groups: those that change the target first, the rest folded. */
+export function targetQuestionGroups(
+  explanation: Pick<RuleSetExplanation, 'questions' | 'rules'>,
+  entries: Readonly<Record<string, StateEntry>>,
+  batch = QUESTION_BATCH,
+): TargetQuestionGroups {
+  const open = explanation.questions
+    .map((question): QuestionState => ({ question, answer: questionAnswerOf(question, entries), text: answerTextOf(question, entries) }))
+    .filter((s) => !isAnswered(s.answer));
+  const changingAll = open.filter((s) => changesTarget(s.question, explanation, s.answer));
+  const quietAll = open.filter((s) => !changesTarget(s.question, explanation, s.answer));
+  const changing = changingAll.slice(0, batch);
+  const quiet = quietAll.slice(0, batch);
+  return {
+    changing,
+    changingOpen: changingAll.length,
+    quiet,
+    quietOpen: quietAll.length,
+    later: changingAll.length - changing.length + (quietAll.length - quiet.length),
+  };
+}
+
 /** "Accept all proposals": a Keep, with the note that says what it is, for every business rule nobody answered. */
 export function acceptAllChoices(explanation: Pick<RuleSetExplanation, 'baskets'>, entries: Readonly<Record<string, StateEntry>>): StateChoiceInput[] {
   return explanation.baskets.business

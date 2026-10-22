@@ -126,6 +126,7 @@ import { readProcessStatesOutcome, type StatesReadOutcome } from '@/lib/process-
 import type { RuleRegister } from '@/lib/rule-register';
 import { engineStampOf, engineVersionOfProject } from '@/lib/run-engine-version';
 import { rulesReadRefusal, tfFilesResult, tfFillsNote, tfLiteralsResult, tfSingleCallNote } from '@/lib/workspace-messages';
+import { useLocationSearch } from '@/lib/location-search';
 
 /**
  * An authenticated JSON POST that honours the generation's cancel — the
@@ -215,9 +216,6 @@ async function ruleRegisterOf(outcome: StatesReadOutcome, source: string, engine
 }
 
 /** The address the page is on, read in the browser only (as `StageHeader` reads it). */
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 /** Tailwind's `xl`: from here the two code panes stand side by side (roadmap 3.0.14, item 6). */
 const SIDE_BY_SIDE_QUERY = '(min-width: 1280px)';
 const subscribeSideBySide = (onChange: () => void) => {
@@ -395,7 +393,7 @@ export default function TransformationPage() {
    * decided rules there and came back sees the new count, never the one this
    * tab held before. Until the fresh read is in, the tip says "Reading…".
    */
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const search = useLocationSearch();
   const readerView = new URLSearchParams(search).get('view');
   const readsRules = Boolean(isOwner && project?.legacyCode);
   const { outcome: statesOutcome, reload: reloadStates } = useProcessStates(projectId as string, readsRules);

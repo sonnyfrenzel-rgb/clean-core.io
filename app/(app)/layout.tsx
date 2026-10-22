@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAuth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect } from 'react';
 import ShellHelpMenu, {
   SHELL_MENU_ITEMS,
   SHELL_MENU_PANEL,
@@ -32,10 +32,8 @@ import { forgetShellProject, openProjectSearch, useProjectSearchAvailable, useSh
 import { workspaceBackHref } from '@/lib/workspace-back-href';
 import { nav } from '@/lib/messages/navigation';
 import { wt } from '@/lib/workspace-messages';
+import { useLocationSearch } from '@/lib/location-search';
 
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -197,7 +195,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   // in the view the stage was opened from (the same rule as the stage's own
   // "Back to workspace", `lib/workspace-back-href.ts`). On the object page it is
   // where the reader stands.
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const search = useLocationSearch();
   const projectHref = projectId ? workspaceBackHref({ projectId, search }) : null;
   // The search slot of §2.1: a button only while a project search is on the
   // page (the object page's ⌘K dialog), opening it by a named event.

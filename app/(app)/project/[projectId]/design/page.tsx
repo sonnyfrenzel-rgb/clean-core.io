@@ -35,13 +35,15 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import StageFooter from '@/components/StageFooter';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import { designOpenQuestions, wt } from '@/lib/workspace-messages';
+import { designOpenQuestions, questionsPanelSummary, wt } from '@/lib/workspace-messages';
+import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import {
   ANSWERS_READING,
   businessAnswersDigest,
   businessAnswersMoved,
   businessAnswersPromptRule,
   businessAnswersSection,
+  designProposalShown,
   designWriteEnabled,
   designWriteGate,
   withBusinessAnswersBasis,
@@ -286,6 +288,27 @@ export default function DesignPage() {
   useEffect(() => {
     businessAnswersRef.current = businessAnswers;
   }, [businessAnswers]);
+  /**
+   * "Skip questions" was clicked (owner decision 22.10.2026, ADR-106): the
+   * proposal shows without the answers. A view of this tab, nothing stored on
+   * the project — kept for the tab's session so a reload does not ask again.
+   */
+  const skipKey = `cc:design-skip-questions:${String(projectId)}`;
+  const [skipped, setSkipped] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && window.sessionStorage.getItem(skipKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const skipQuestions = useCallback(() => {
+    setSkipped(true);
+    try {
+      window.sessionStorage.setItem(skipKey, '1');
+    } catch {
+      /* the choice holds for this page view */
+    }
+  }, [skipKey]);
 
   /**
    * The design on record now, read again — what a page adopts when another
@@ -904,6 +927,11 @@ ${DESIGN_ANSWER_REMINDER}`;
   const onlyAnswersMoved = answersMoved && !stale.sourceChanged && !stale.design && !stale.signOff;
   // Step 1 is the questions: "Generate the design" waits until each has an answer.
   const writeGate = designWriteGate(businessAnswers);
+  // Owner decision 22.10.2026 (ADR-106, amending ADR-102's page order): the
+  // canvas first, the questions beside it, and the proposal — the target, the
+  // decision, the document with the option comparison — only once the
+  // questions are answered, skipped, or a design is already on record.
+  const proposalShown = designProposalShown({ gate: writeGate, skipped, hasDesign: Boolean(design) });
   // The sign-off is current when it was given for the code under review —
   // `stale.signOff` says when it was not (a source or profile change after it).
   // A design document older than the analysis is the document's state and is
@@ -911,6 +939,11 @@ ${DESIGN_ANSWER_REMINDER}`;
   // on as well, so "Confirm & Lock" landed on the server (Transformation ran
   // against the contract) while this page kept saying "Not confirmed".
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff;
+  // Owner decision 22.10.2026: the key-user limits only where key user is the
+  // option in question — the engine recommends it (the whole program reads as
+  // key user, as `signOffRecommendation` takes it) or the owner confirmed it;
+  // the comparison's own proposal is the third reason (`keyUserLimitsShown`).
+  const keyUserChosen = keyUserList?.scope === 'whole-program' || (signOffCurrent && project?.targetArchitecture === 'keyuser');
 
   const regenerate = () => {
     if (!isOwner) {
@@ -1051,6 +1084,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         nfrTopics={nfrTopics}
         banner={<LegacyRunBanner capabilities={caps} projectId={projectId as string} />}
         keyUser={keyUserList}
+        keyUserChosen={keyUserChosen}
       />
     );
   })() : null;
@@ -1281,6 +1315,36 @@ ${DESIGN_ANSWER_REMINDER}`;
       ? `${editionWord} assumed · target not bound by the run`
       : 'Edition not determined · target not bound by the run';
 
+  // Owner decision 21.10.2026 — the new set-up of the business rules: the
+  // questions a business sets, a few at a time, before Transformation. Owner
+  // decision 22.10.2026 — the design is written on a click once they are
+  // answered (ADR-102), and they stand beside the canvas (ADR-106).
+  const questionsPanel = <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />;
+  const questionsSummary =
+    businessAnswers.state === 'ready' && businessAnswers.total > 0
+      ? questionsPanelSummary(businessAnswers.total - businessAnswers.open, businessAnswers.total)
+      : null;
+  // Once the proposal shows, the panel opens by itself while questions are
+  // open, or when the address names it (the Business view's open questions lead there).
+  const questionsOpenFirst =
+    (businessAnswers.state === 'ready' && businessAnswers.open > 0) ||
+    (typeof window !== 'undefined' && window.location.hash === `#${RULE_QUESTIONS_ID}`);
+  // What the canvas holds until then: calm, one sentence, one way past it.
+  const proposalPending = (
+    <div
+      data-design-pending-state={writeGate.kind}
+      className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface px-4 py-8 text-center"
+    >
+      <p className="m-0 text-[15px] font-bold text-cc-ink">
+        {writeGate.kind === 'reading' ? wt('design.readingQuestions') : wt('design.targetAfterQuestions')}
+      </p>
+      <p className="m-0 max-w-md text-[13px] font-medium text-cc-ink-muted">{wt('design.targetAfterQuestionsNote')}</p>
+      <CcButton variant="secondary" onClick={skipQuestions} data-design-skip-questions="">
+        {wt('design.skipQuestions')}
+      </CcButton>
+    </div>
+  );
+
   return (
     <StageFrame stage="design" className="min-h-screen">
       <StaleNotice title={onlyAnswersMoved ? wt('design.answersMovedTitle') : `Built for ${previousBasis(project)}`} reasons={staleNotes} />
@@ -1368,14 +1432,8 @@ A design merely older than the analysis is
         Where this code should run after the change, and the design that gets it there.
       </StageHeader>
 
-      {/* Owner decision 21.10.2026 — the new set-up of the business rules: the
-          questions a business sets, a few at a time, before Transformation.
-          Owner decision 22.10.2026 — step 1: the design below is written on a
-          click, once they are answered, and carries the answers. */}
-      <div className="mb-12">
-        <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />
-      </div>
-
+      {/* The canvas is the page's picture; the questions stand beside it (below
+          it on a phone) and the proposal waits for them (ADR-106). */}
       <div className="mb-12">
         <DesignCanvasStage
           evidence={designEvidence}
@@ -1446,6 +1504,11 @@ A design merely older than the analysis is
             ) : null
           }
           view={view}
+          questions={questionsPanel}
+          questionsSummary={questionsSummary}
+          questionsOpenFirst={questionsOpenFirst}
+          proposalShown={proposalShown}
+          pending={proposalPending}
         />
       </div>
 
