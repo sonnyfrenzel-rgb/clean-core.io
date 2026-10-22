@@ -116,7 +116,7 @@ export default function InvitationPage() {
 
   // "Use another account": sign out here, and sign in again with the address
   // the invitation went to — straight back to this page.
-  const useAnotherAccount = useCallback(async () => {
+  const switchAccount = useCallback(async () => {
     await signOut(getAuth()).catch(() => undefined);
     router.push(signInLinkFor(here));
   }, [router, here]);
@@ -197,7 +197,7 @@ export default function InvitationPage() {
                   <button
                     type="button"
                     data-invitation-switch=""
-                    onClick={useAnotherAccount}
+                    onClick={switchAccount}
                     className="font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-information"
                   >
                     Use another account

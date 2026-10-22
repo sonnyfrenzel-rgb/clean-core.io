@@ -179,10 +179,10 @@ test.describe('(4) a new invited reader: the invitation path survives the confir
     const src = read('app/(app)/invitation/[projectId]/[invitationId]/page.tsx');
     expect(src).toMatch(/Signed in as <span[^>]*>\{user\.email \?\? 'this account'\}<\/span>/);
     expect(src).toMatch(/data-invitation-switch=""[\s\S]{0,400}Use another account/);
-    const switchAccount = src.slice(src.indexOf('const useAnotherAccount'), src.indexOf('}, [router, here]);'));
+    const switchAccount = src.slice(src.indexOf('const switchAccount'), src.indexOf('}, [router, here]);'));
     expect(switchAccount).toContain('await signOut(getAuth())');
     expect(switchAccount).toContain('router.push(signInLinkFor(here));');
-    const accept = src.slice(src.indexOf('const accept = useCallback'), src.indexOf('const useAnotherAccount'));
+    const accept = src.slice(src.indexOf('const accept = useCallback'), src.indexOf('const switchAccount'));
     expect(accept).toContain('router.replace(`/project/${projectId}`);');
     expect(src, 'the in-between page is back').not.toContain('You now have read access');
     expect(src).not.toContain('Open the project</CcLinkButton>');
