@@ -37,6 +37,12 @@ export interface ExcerptOptions {
    * reader never mistakes the cut for the end of the process.
    */
   mainElements?: number;
+  /**
+   * A step of the main line that is not part of the business process — the
+   * program's own test-data switch (3.0.21, `lib/first-look-excerpt.ts`). It is
+   * passed over with everything inside it, the way the step list sets it apart.
+   */
+  skipStep?: (node: ExportNode) => boolean;
 }
 
 const MAX_EXIT_STEPS = 3;
@@ -128,6 +134,7 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
     if (!n || isEnd(n)) break;
     cur = n;
     if (n.tag.endsWith('Gateway') || n.tag.endsWith('Event')) continue;
+    if (options.skipStep?.(n)) continue;
 
     const routineRange = n.inner ? rangeOf(n.inner, byId) : null;
     if (main + 1 > maxMain) {
@@ -196,7 +203,7 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
     const counted = new Set<string>();
     for (let at: ExportNode | undefined = cutAt; at && !counted.has(at.id) && !isEnd(at);) {
       counted.add(at.id);
-      if (!at.tag.endsWith('Gateway') && !at.tag.endsWith('Event')) remaining += 1;
+      if (!at.tag.endsWith('Gateway') && !at.tag.endsWith('Event') && !options.skipStep?.(at)) remaining += 1;
       const on: ExportFlow | undefined = outOf(root, at.id).find((f) => !isEnd(byId.get(f.targetId)) && !f.back);
       at = on ? byId.get(on.targetId) : undefined;
     }

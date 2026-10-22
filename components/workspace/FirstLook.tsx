@@ -594,7 +594,7 @@ export default function FirstLook({
    * skeleton, same layout, plain names, every node with its line — nothing is
    * added (`lib/first-look-excerpt.ts`).
    */
-  const drawing = useMemo(() => firstLookExcerpt(process?.skeleton ?? null, source), [process, source]);
+  const drawing = useMemo(() => firstLookExcerpt(process?.skeleton ?? null, source, 5, engineVersion), [process, source, engineVersion]);
 
   useEffect(() => {
     if (!process || !rules || tables === null) return;
@@ -844,6 +844,7 @@ export default function FirstLook({
               narrative={narrative}
               pause={pause}
               story={result?.story ?? null}
+              engineVersion={engineVersion}
             />
           </CcCard>
         </section>
