@@ -31,6 +31,7 @@ tests/korpus/** text eol=lf
 # keeps one from appearing in the first place, which is also what makes the file
 # a reader opens byte-for-byte the file the digest names.
 docs/terms/** text eol=lf
+docs/byok-addendum/** text eol=lf
 
 # The process benchmark is frozen by hashes: `frozen-*.json` carries the SHA-256
 # of every case's `expected.json` and source, taken over the LF form, and

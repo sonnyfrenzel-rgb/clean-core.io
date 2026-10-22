@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useId } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { Check, ExternalLink } from 'lucide-react';
+import { Check } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { getAuth } from '@/lib/firebase';
 import LegalOverlay from '@/app/components/LegalOverlay';
@@ -10,6 +11,13 @@ import CcDialog from '@/components/cc/Dialog';
 import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import { PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+
+/** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
+const LegalOverlayBody = dynamic(() => import('@/components/legal/LegalOverlayBody'), {
+  ssr: false,
+  loading: () => <p className="m-0 cc-text-cell text-cc-ink-muted">Loading the text&hellip;</p>,
+});
 
 /** A link inside running text: ink and underlined, never a surface of its own. */
 const INLINE_LINK =
@@ -236,30 +244,20 @@ export default function UserOnboarding() {
             )}
           </CcField>
 
+          {/* C1 of the legal texts (Fassung 1.1): the notice above the boxes,
+              the two boxes — "taken note of" the Privacy Policy, which is
+              information, not something one agrees to; "accept" the Terms,
+              which are the contract — and the notice below. */}
           <div className="space-y-3 border-t border-cc-line pt-4">
+            <p className="m-0 cc-text-cell text-cc-ink-muted" data-signup-notice="above">{signupNoticeAbove()}</p>
             <ConsentLine checked={agreedGDPR} onChange={setAgreedGDPR}>
-              I agree to the{' '}
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                className={INLINE_LINK}
-              >
-                GDPR provisions and Privacy Policy
-              </button>{' '}
-              and understand that this is a Free Community Edition.
+              <PrivacyConsentLabel onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />
             </ConsentLine>
 
             <ConsentLine checked={agreedTerms} onChange={setAgreedTerms}>
-              I accept the{' '}
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setShowTerms(true); }}
-                className={INLINE_LINK}
-              >
-                Terms of Service and Guidelines
-              </button>
-              .
+              <TermsConsentLabel onOpen={() => setShowTerms(true)} linkClassName={INLINE_LINK} />
             </ConsentLine>
+            <p className="m-0 cc-text-cell text-cc-ink-muted" data-signup-notice="below">{signupNoticeBelow(user.email)}</p>
           </div>
 
           <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
@@ -276,25 +274,14 @@ export default function UserOnboarding() {
               are written by a language model — and leaves out the label: §3.1
               has no "powered by Generative AI", and the provenance of a given
               text is the job of the chip where that text is shown. The same fact
-              as section 4.1 of Terms v2.2.0. */}
+              as section 4.1 of Terms v2.3.0. */}
           <CcMessageStrip state="warning" headline="System disclaimer and terms.">
             This application is a <strong>free community project</strong>. Findings, route and score come from a
             deterministic engine, without a language model. Summaries, designs, generated code, documentation and
-            tests are written by a language model (Google Gemini) where you use those steps, and may contain
+            tests are written by a language model (Google Gemini, or the provider of your own key) where you use those steps, and may contain
             inaccuracies, invented details or syntax errors.
             <span className="mt-2 block">
               Both are drafts, not a guarantee. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects. Liability is set out in section 4 of the Terms.
-            </span>
-            <span className="mt-2 block font-semibold">
-              By creating a workspace, you acknowledge these conditions and agree to our{' '}
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                className={INLINE_LINK}
-              >
-                Privacy Policy (Datenschutz)
-              </button>{' '}
-              and standard terms.
             </span>
           </CcMessageStrip>
 
@@ -384,129 +371,14 @@ export default function UserOnboarding() {
         </div>
       </CcDialog>
 
-      {/* The two legal summaries the consent lines link to. Dialogs of their own,
-          stacked over the sign-up while open. */}
-      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-cc-ink">
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">1. Privacy at a Glance</h3>
-            <p className="m-0 mb-2 cc-text-body">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
-            </p>
-            <p className="m-0 cc-text-cell text-cc-ink-muted">
-              <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">2. Data Collection & Processing Purposes</h3>
-            <p className="m-0 mb-3 cc-text-body">
-              We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
-            </p>
-            <ul className="list-disc pl-5 space-y-2 cc-text-cell text-cc-ink-muted">
-              <li>
-                <strong>Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
-              </li>
-              <li>
-                <strong>Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database.
-              </li>
-              <li>
-                <strong>Bring Your Own Key (BYOK):</strong> If you configure your own Google Gemini API key in the settings, this key is encrypted and stored in our secure Firestore instance. It is used exclusively to forward your transformation requests directly via a secure backend proxy to the Gemini API, never exposing your key to the browser.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">3. Processing of Source Code & Project Assets</h3>
-            <p className="m-0 cc-text-body">
-              The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
-            </p>
-            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
-              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Which of Google&apos;s data-use terms apply depends on the key that makes the request. The shared community key is a paid Gemini API key, so the paid Gemini API terms govern every request made with it: Google does not use your code to train its models. When you use your own key (BYOK), the terms of your own Google account apply — a key on Google&apos;s free tier is governed by Google&apos;s free-tier data-use terms, which differ.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">4. Cloud Node Hosting & Third-Party Services</h3>
-            <p className="m-0 cc-text-body">
-              To provide this service, we rely on the following trusted cloud services:
-            </p>
-            <ul className="list-disc pl-5 space-y-2 cc-text-cell text-cc-ink-muted">
-              <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on secure European servers in the <strong>Belgium (europe-west1)</strong> region. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
-              </li>
-              <li>
-                <strong>Google Gemini API:</strong> Generative AI models for the model-written parts of the service — the analysis narrative, business names and sentences for the process reconstructed from the code, the solution design, the code proposal, the documentation and the test suite — via secure stateless proxy layers. The findings, the route and the Clean Core Score are computed without a model.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
-            <p className="m-0 mb-2 cc-text-body">
-              Since our platform is hosted in compliance with EU regulations, you have all rights under the General Data Protection Regulation (GDPR):
-            </p>
-            <ul className="list-disc pl-5 space-y-1 cc-text-cell text-cc-ink-muted">
-              <li>Right of Access (Art. 15 GDPR)</li>
-              <li>Right to Rectification (Art. 16 GDPR)</li>
-              <li>Right to Erasure / "Right to be Forgotten" (Art. 17 GDPR)</li>
-              <li>Right to Restriction of Processing (Art. 18 GDPR)</li>
-              <li>Right to Data Portability (Art. 20 GDPR)</li>
-              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
-            </ul>
-            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
-              To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <strong>info@clean-core.io</strong>.
-            </p>
-          </div>
-        </div>
+      {/* The two legal texts the consent lines link to, in full (C1: "Please
+          read both texts"). Dialogs of their own, stacked over the sign-up. */}
+      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy">
+        <LegalOverlayBody id="privacy" />
       </LegalOverlay>
 
-      {/* Terms of Service & Guidelines overlay */}
-      <LegalOverlay isOpen={showTerms} onClose={() => setShowTerms(false)} title="Terms of Service & Guidelines">
-        <div className="space-y-6 text-cc-ink">
-          <CcMessageStrip state="information">
-            This is a short summary.{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>
-              Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms
-              <ExternalLink size={12} aria-hidden={true} className="ml-1 inline align-baseline" />
-            </a>
-          </CcMessageStrip>
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">1. Scope and Purpose</h3>
-            <p className="m-0 cc-text-body">
-              This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native Node.js). By participating, you help shape and improve this community utility.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">2. Free Community Edition Usage</h3>
-            <CcMessageStrip state="warning">
-              Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code is a draft — it must be reviewed, tested and approved by qualified architects before deployment to any live production environment.
-            </CcMessageStrip>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">3. What is computed, and what is generated</h3>
-            <p className="m-0 cc-text-body">
-              The findings, the route, the Clean Core Score, the clean core levels and the process reconstructed from your code are computed by a deterministic engine, without a language model. They are evidence, not a guarantee. Summaries, the solution design, generated code, documentation and test suites are written by a language model where you use those steps. Liability is set out in section 4 of the Terms.
-            </p>
-            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
-              <strong>Architect Directive:</strong> Before applying or utilizing any generated code in staging or production environments, all files must be thoroughly inspected, validated, and approved by qualified software architects.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">4. Community Guidelines & Code of Conduct</h3>
-            <p className="m-0 mb-2 cc-text-body">
-              As a Free Community Edition participant, you agree to adhere to constructive and respectful rules of engagement:
-            </p>
-            <ul className="list-disc pl-5 space-y-1 cc-text-cell text-cc-ink-muted">
-              <li>Do not upload malicious software, illegal scripts, or proprietary source code that violates intellectual property rights.</li>
-              <li>Maintain a respectful, collaborative, and professional tone in our community spaces.</li>
-              <li>Report system hallucinations, security vulnerabilities, or compilation errors to help us continuously refine the engine.</li>
-            </ul>
-          </div>
-        </div>
+      <LegalOverlay isOpen={showTerms} onClose={() => setShowTerms(false)} title="Terms of Service & Community Guidelines">
+        <LegalOverlayBody id="terms" />
       </LegalOverlay>
     </>
   );

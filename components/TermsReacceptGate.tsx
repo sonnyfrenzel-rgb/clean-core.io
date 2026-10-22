@@ -13,6 +13,10 @@ import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcCheckbox from '@/components/cc/Checkbox';
+import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
+import { renderOpenValue } from '@/lib/legal/open-values';
+import { TERMS_LABEL } from '@/lib/legal/documents';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -183,6 +187,9 @@ export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // C2 of the legal texts: the acceptance is a ticked statement and a button,
+  // not the button alone — the box names the version and the language accepted.
+  const [ticked, setTicked] = useState(false);
   // Safe as a lazy initialiser despite SSR: this component renders `null` while
   // the profile is loading, so the server and the first client paint agree
   // regardless of what storage holds.
@@ -305,11 +312,21 @@ export default function TermsReacceptGate() {
    */
   const blocking = !mayDecline;
 
+  /*
+   * C2 of the legal texts (Fassung 1.1): the date and version the Terms change
+   * on, what changes and why (the list below, from `lib/terms-changes.ts`),
+   * where the full wording is, and that the previous version goes on applying
+   * until then (section 10.3). English: the acceptance record does not yet
+   * store the language accepted in (open value `t02AcceptedLanguage`).
+   */
+  const C2 = CONSENT_TEXTS.amendment;
+  const fill = (text: string) =>
+    text.replace(/\{Datum\}/g, renderOpenValue('releaseDate', 'en')).replace(/\{Fassung\}/g, TERMS_LABEL);
   const explanation = noAcceptance && !mayDecline
     ? 'Your account has no recorded acceptance of the Terms of Service, so the platform is closed to it until there is one. Please read the Terms and accept them to carry on. Your account and your data are unchanged.'
     : mayDecline
-      ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
-      : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.';
+      ? fill(consentText(C2.lead, 'en'))
+      : `The version your account accepted is no longer in force, so the platform is closed to it. ${fill(consentText(C2.lead, 'en'))}`;
   const title = noAcceptance && !mayDecline ? 'Please accept the Terms of Service' : 'The Terms of Service have changed';
 
   // What changed, the two documents and the error: the same in both forms.
@@ -328,7 +345,18 @@ export default function TermsReacceptGate() {
         )}
       </div>
 
+      {(mayDecline || !noAcceptance) && (
+        <p className="mt-3 mb-0 cc-text-cell text-cc-ink-muted" data-terms-gate-after-list="">
+          {fill(consentText(C2.afterList, 'en'))}
+        </p>
+      )}
+
       <TermsInline />
+
+      <div className="mt-4" data-terms-gate-checkbox="">
+        <CcCheckbox checked={ticked} onChange={setTicked} label={fill(consentText(C2.checkbox, 'en'))} />
+      </div>
+      <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">{consentText(C2.notice, 'en')}</p>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 cc-text-identifier">
         <Link
@@ -371,11 +399,11 @@ export default function TermsReacceptGate() {
       </CcButton>
       {mayDecline && (
         <CcButton data-terms-gate-decline variant="ghost" onClick={() => setDeclined(true)}>
-          Not now &mdash; carry on under the Terms I accepted
+          {consentText(C2.later, 'en')} &mdash; carry on under the Terms I accepted
         </CcButton>
       )}
-      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="dark" busy={busy} onClick={accept}>
-        I have read and accept the Terms
+      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="dark" busy={busy} disabled={!ticked} onClick={accept}>
+        {consentText(C2.accept, 'en')}
       </CcButton>
     </>
   );

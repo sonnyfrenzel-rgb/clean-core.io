@@ -79,6 +79,22 @@ export interface ArchivedTermsVersion {
     /** How the prose was taken out of the JSX. */
     method: string;
   };
+  /**
+   * The same version in another language, archived beside it (from v2.3.0 on,
+   * which can be concluded in German or English — section 1.4). A consent
+   * record names the language it was given in and carries that file's digest.
+   */
+  translations?: readonly ArchivedTermsTranslation[];
+}
+
+export interface ArchivedTermsTranslation {
+  lang: 'de';
+  /** What the document calls itself in that language. */
+  effectiveOn: string;
+  /** Repository-relative path of the immutable text. */
+  file: string;
+  /** SHA-256 of the LF-normalised file content, lowercase hex. */
+  sha256: string;
 }
 
 /** Where archived texts live. Every file in it is listed below, and vice versa. */
