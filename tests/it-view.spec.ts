@@ -435,11 +435,17 @@ test.describe('the IT view on a real project', () => {
     const answerTop = await page.locator('[data-it-headline]').boundingBox();
     const notDetermined = await page.locator('#not-determined').boundingBox();
     expect(answerTop && notDetermined && answerTop.y < notDetermined.y).toBe(true);
-    // IT shows only its own content (ADR-086): no layer bar, no first look, no
-    // "Ask this case" — its own anchor bar under the answer, in the page's order.
+    // IT shows only its own content (ADR-086): no layer bar, no first look —
+    // its own anchor bar under the answer, in the page's order. "Ask this case"
+    // stands in IT since 22.10.2026 (owner decision: it left the Business view),
+    // under IT's own answer, never above it.
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
     await expect(page.locator('[data-first-look]')).toHaveCount(0);
-    await expect(page.locator('[data-ask-this-case]')).toHaveCount(0);
+    const ask = page.locator('[data-ask-this-case]');
+    if ((await ask.count()) > 0) {
+      const askTop = await ask.first().boundingBox();
+      expect(answerTop && askTop && answerTop.y < askTop.y).toBe(true);
+    }
     const anchors = page.locator('[data-it-anchor]');
     await expect(anchors.first()).toBeVisible({ timeout: 30000 });
     // The three sections this page always has are in the bar; only the route

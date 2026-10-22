@@ -424,8 +424,12 @@ test.describe('the Business view on screen', () => {
     await opening.getByRole('button', { name: /How this was read/ }).click();
     await expect(page.locator('[data-first-look-details] [data-first-look-traceability]')).toBeVisible();
 
-    // "Ask this case": plain on top, the code under "Show the code".
+    // "Ask this case" left the Business view (owner decision 22.10.2026, DESIGN.md §5.3) and stands in IT:
+    // plain on top, the code under "Show the code".
+    await expect(page.locator('[data-workspace-shell="business"] [data-ask-this-case]')).toHaveCount(0);
+    await page.goto(`/project/${ids.po}?view=it`, { waitUntil: 'domcontentloaded' });
     const ask = page.locator('[data-ask-this-case="answered"]');
+    await expect(ask).toBeVisible({ timeout: 90_000 });
     await expect(ask).toHaveAttribute('data-ask-wording', 'plain');
     const question = (await ask.locator('[data-ask-question]').innerText()).trim();
     expect(question).not.toMatch(ABAP_TOKENS);
