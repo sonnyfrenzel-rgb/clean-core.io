@@ -4,8 +4,8 @@ import LegalPage from '@/components/legal/LegalPage';
 import { legalDocumentBlocks } from '@/lib/legal/documents';
 
 /**
- * Die Datenschutzerklärung, deutsche Fassung — Fassung 1.1 (3.0.21). Sie ist
- * maßgeblich, wenn die beiden Fassungen je voneinander abweichen.
+ * The privacy policy, German version — Fassung 1.1 (3.0.21). It prevails if
+ * the two versions ever differ.
  *
  * Why it exists: Art. 12(1) GDPR requires the information in clear and plain
  * language; the controller, the supervisory authority and most of the

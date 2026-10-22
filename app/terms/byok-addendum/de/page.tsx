@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import ByokAddendumPage from '@/components/legal/ByokAddendumPage';
 
-/** Die Zusatzvereinbarung zu eigenen Modellschlüsseln (ZV-BYOK-1.0), deutsche Fassung. Wortlaut: `lib/legal/texts/byok-addendum.de.ts`. */
+/** The Additional Agreement on Own Model Keys (ZV-BYOK-1.0), German version. Words: `lib/legal/texts/byok-addendum.de.ts`. */
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Zusatzvereinbarung zu eigenen Modellschlüsseln | Clean-Core.io',

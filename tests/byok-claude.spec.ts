@@ -363,12 +363,20 @@ test.describe('Settings', () => {
 // ── the Trust page ──────────────────────────────────────────────────────────
 
 test('the Trust page says where code goes per provider, links the providers\' own terms, and names the engine-only path', () => {
-  const trust = read('app/(app)/trust/page.tsx');
-  expect(trust).toContain('title="Where your code goes"');
-  expect(trust).toContain('PROVIDER_TERMS.gemini.map(');
-  expect(trust).toContain('PROVIDER_TERMS.anthropic.map(');
-  expect(trust).toContain('data-trust-engine-only');
-  expect(trust).toMatch(/Code that may not leave:/);
+  // Since Fassung 1.1 of the legal texts (3.0.21) the trust page renders its
+  // words from lib/legal/texts/trust.en.ts — "Where your code goes" lists the
+  // engine-only path first, then our key, an own Gemini key, an own Anthropic
+  // key and other providers, each with the provider's own terms linked.
+  const trust = read('lib/legal/texts/trust.en.ts');
+  expect(read('app/(app)/trust/page.tsx')).toContain('TRUST_EN');
+  expect(trust).toContain('## Where your code goes');
+  expect(trust).toMatch(/\*\*No model — the engine only\.\*\*/);
+  expect(trust).toMatch(/This is the choice for code that must not reach any model provider/);
+  expect(trust).toMatch(/\*\*Your own Gemini key/);
+  expect(trust).toMatch(/\*\*Your own Anthropic key/);
+  expect(trust).toContain('https://ai.google.dev/gemini-api/terms');
+  expect(trust).toContain('https://www.anthropic.com/legal/commercial-terms');
+  expect(trust).toContain('https://www.anthropic.com/legal/privacy');
   for (const p of MODEL_KEY_PROVIDERS) {
     expect(PROVIDER_TERMS[p].length).toBeGreaterThan(0);
     for (const t of PROVIDER_TERMS[p]) expect(t.href).toMatch(/^https:\/\/(ai\.google\.dev|policies\.google\.com|www\.anthropic\.com)\//);

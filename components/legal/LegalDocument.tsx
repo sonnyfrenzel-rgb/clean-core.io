@@ -96,7 +96,7 @@ function Block({ block, k, compact }: { block: LegalBlock; k: string; compact?: 
       );
     case 'box':
       return (
-        <div className="p-4 mb-3 bg-cc-surface-muted border border-cc-line rounded-2xl">
+        <div className="p-4 mb-3 bg-cc-surface-muted border border-cc-line rounded-cc-card">
           <p className={compact ? 'm-0 cc-text-cell' : 'text-base m-0'}>
             <LegalInline text={block.text} keyBase={k} />
           </p>

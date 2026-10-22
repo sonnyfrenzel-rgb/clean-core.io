@@ -5,7 +5,7 @@ import LegalPage from '@/components/legal/LegalPage';
 import { legalDocumentBlocks } from '@/lib/legal/documents';
 
 /**
- * Die Nutzungsbedingungen, deutsche Fassung — v2.3.0, Fassung 1.1 (3.0.21).
+ * The Terms of Service, German version — v2.3.0, Fassung 1.1 (3.0.21).
  *
  * From v2.3.0 the contract can be concluded in German or English (section
  * 1.4); the version accepted in that language governs. The words are in

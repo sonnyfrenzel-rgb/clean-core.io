@@ -433,7 +433,9 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     source: REGISTER,
     template: 'lib/admin-signup-email.ts',
     build: (ctx) => {
-      const seedUid = sampleId('seed-uid', ctx);
+      // One id per run, not per recipient: the subject names the account id (privacy policy
+      // section 2, Fassung 1.1), and every recipient of a run gets the same production subject.
+      const seedUid = `seed-uid-${ctx.runId}`.toLowerCase();
       const html = wrapEmailDocument(buildAdminSignupEmail({
         uid: escapeHtml(seedUid),
         authMethod: 'Email / password',

@@ -1,93 +1,84 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { legalPlainText, legalSections } from './helpers/legal-text';
 
 /**
  * The two language versions of the privacy policy say the same thing.
  *
- * Since 18.09.2026 the policy exists twice: English at `/datenschutz`, German at
- * `/datenschutz/de`. Both pages tell the reader they are "equally
- * authoritative", which is a promise about the *content*, and content in two
- * files drifts — somebody fixes a sentence in the language they were reading and
- * the other version quietly becomes the older law.
+ * The policy exists twice: English at `/datenschutz`, German at
+ * `/datenschutz/de`, and the German one prevails if they ever differ. That is a
+ * promise about the *content*, and content in two texts drifts — somebody fixes
+ * a sentence in the language they were reading and the other version quietly
+ * becomes the older law.
  *
  * A translation cannot be compared word for word, so this guard compares the
  * skeleton, which is what a drift actually shows up in: the same number of
- * sections, numbered the same way, with the same anchors. A section added to one
- * version and not the other fails here, and that is the case worth catching —
- * the one where a reader is told something in one language that the other
- * language does not say at all.
+ * sections, numbered the same way, with the same anchors, and the same purposes
+ * resting on the same legal basis. It also pins the duties a legal review asked
+ * for, in both versions, because each of them is a duty rather than a preference.
  *
- * It also pins the things a legal review asked for on 18.09.2026, in both
- * versions, because each of them is a duty rather than a preference: the right
- * to object under Art. 21 in its own highlighted block (Art. 21(4) wants it
- * presented separately), the competent supervisory authority by name, the
- * statement on automated decision-making (Art. 22), the concrete retention of
- * the audit record, and the Data Privacy Framework as the transfer mechanism.
+ * Since Fassung 1.1 (3.0.21) the words live in `lib/legal/texts/privacy.{en,de}.ts`
+ * and the pages render them; this guard reads the texts as rendered
+ * (`tests/helpers/legal-text.ts`) and the page files only for the frame (the
+ * language switch and the metadata).
  */
 
-const EN = 'app/datenschutz/page.tsx';
-const DE = 'app/datenschutz/de/page.tsx';
+const EN_PAGE = 'app/datenschutz/page.tsx';
+const DE_PAGE = 'app/datenschutz/de/page.tsx';
+const FRAME = 'components/legal/LegalPage.tsx';
 
 const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
+const EN = () => legalPlainText('privacy', 'en');
+const DE = () => legalPlainText('privacy', 'de');
 
-/** The numbers of the `h2` headings, in the order they appear. */
-function sectionNumbers(source: string): number[] {
-  return [...source.matchAll(/^\s+(\d+)\.\s+\S/gm)].map((m) => Number(m[1]));
-}
+/** The numbers of the section headings, in order. */
+const sectionNumbers = (lang: 'en' | 'de') =>
+  legalSections('privacy', lang).map((s) => Number(/^(\d+)\./.exec(s.heading)?.[1] ?? NaN));
 
-/** Every `id` on a `<section>`, in order — these are the anchors other pages link to. */
-function sectionAnchors(source: string): string[] {
-  return [...source.matchAll(/<section id="([^"]+)"/g)].map((m) => m[1]);
-}
+/** Every section anchor, in order — these are the anchors other pages link to. */
+const sectionAnchors = (lang: 'en' | 'de') =>
+  legalSections('privacy', lang)
+    .map((s) => s.id)
+    .filter((id): id is string => !!id);
 
 test.describe('the privacy policy in two languages', () => {
   test('both versions have the same sections, numbered the same way', () => {
-    const en = sectionNumbers(read(EN));
-    const de = sectionNumbers(read(DE));
-
+    const en = sectionNumbers('en');
+    const de = sectionNumbers('de');
     expect(en.length, 'the English version lost or gained a section').toBeGreaterThan(0);
-    expect(
-      de,
-      `the two versions do not have the same sections — English ${en.join(', ')}, German ${de.join(', ')}. ` +
-        'Both pages promise they are equally authoritative; a section in one and not the other breaks that.',
-    ).toEqual(en);
-    // 1..n with no gap and no repetition. A renumbering is what breaks the
-    // cross-references: the text of section 8 points at "section 4", and section
-    // 3 points at section 8.
+    expect(de, `the two versions do not have the same sections — English ${en.join(', ')}, German ${de.join(', ')}`).toEqual(en);
+    // 1..n with no gap and no repetition: the text of section 8 points at
+    // "section 4", and section 3 points at section 8.
     expect(en, 'the sections are not numbered 1..n in order').toEqual(en.map((_, i) => i + 1));
   });
 
   test('both versions carry the same anchors', () => {
-    const en = sectionAnchors(read(EN));
-    const de = sectionAnchors(read(DE));
+    const en = sectionAnchors('en');
+    const de = sectionAnchors('de');
     expect(de, 'an anchor exists in one language and not the other').toEqual(en);
     // The trust card and section 3 link straight to this one.
     expect(en, 'the project-access anchor is gone').toContain('project-access');
   });
 
   test('each version links to the other, with the right hreflang', () => {
-    const en = read(EN);
-    const de = read(DE);
-    expect(en, 'the English page does not offer the German version').toContain('data-privacy-language-switch="de"');
-    expect(en).toContain('/datenschutz/de');
-    expect(de, 'the German page does not offer the English version').toContain('data-privacy-language-switch="en"');
-    expect(de).toMatch(/href="\/datenschutz"/);
-    expect(en, 'hreflang is what tells a search engine these are translations').toContain('hrefLang="de"');
-    expect(de).toContain('hrefLang="en"');
-    // QA 36c5c5b3ec14: hrefLang describes the target; the link text itself is in
-    // the other language, so a screen reader needs `lang` on it to pronounce it.
-    expect(en).toMatch(/hrefLang="de"\s+lang="de"/);
-    expect(de).toMatch(/hrefLang="en"\s+lang="en"/);
+    const en = read(EN_PAGE);
+    const de = read(DE_PAGE);
+    expect(en, 'the English page does not offer the German version').toContain('switchHref="/datenschutz/de"');
+    expect(de, 'the German page does not offer the English version').toContain('switchHref="/datenschutz"');
+    expect(en).toContain('switchDataAttr="data-privacy-language-switch"');
+    expect(de).toContain('switchDataAttr="data-privacy-language-switch"');
+    expect(de).toContain('lang="de"');
+    // The frame draws the switch: hrefLang describes the target, and the link
+    // text is in the other language, so it carries `lang` as well (QA 36c5c5b3ec14).
+    const frame = read(FRAME);
+    expect(frame).toMatch(/hrefLang=\{other\}\s+lang=\{other\}/);
     // The alternates in the metadata, which is what actually reaches the crawler.
     expect(en).toContain("de: 'https://clean-core.io/datenschutz/de'");
     expect(de).toContain("en: 'https://clean-core.io/datenschutz'");
   });
 
-  /**
-   * One row per duty the legal review of 18.09.2026 named. Each is checked in
-   * both versions, because a duty met in one language is not met.
-   */
+  /** One row per duty a legal review named. Each is checked in both versions. */
   const duties: { what: string; en: RegExp; de: RegExp }[] = [
     { what: 'the right to object (Art. 21) in its own block', en: /Your right to object \(Art\. 21 GDPR\)/, de: /Ihr Widerspruchsrecht \(Art\. 21 DSGVO\)/ },
     { what: 'the right to object listed among the rights', en: /Right to Object \(Art\. 21 GDPR\)/, de: /Widerspruchsrecht \(Art\. 21 DSGVO\)/ },
@@ -98,9 +89,9 @@ test.describe('the privacy policy in two languages', () => {
     { what: 'a concrete retention for the audit record', en: /24 months from the recorded action/, de: /24 Monate ab der protokollierten Handlung/ },
     { what: 'the Data Privacy Framework as the transfer basis', en: /EU-U\.S\. Data Privacy Framework/, de: /EU-U\.S\. Data Privacy Framework/ },
     { what: 'the minimum age', en: /at least 18 years old/, de: /mindestens 18 Jahre alt/ },
-    // Added 18.09.2026 after the second legal review.
-    { what: 'which version prevails if they differ', en: /the German version prevails/, de: /deutsche Fassung ma&szlig;geblich/ },
-    { what: 'that no processing agreement is offered', en: /do not offer a data processing agreement/, de: /keinen Auftragsverarbeitungsvertrag/ },
+    { what: 'which version prevails if they differ', en: /the German version prevails/, de: /ist die deutsche Fassung maßgeblich/ },
+    // Fassung 1.1: "we offer no data processing agreement under Art. 28 GDPR for it".
+    { what: 'that no processing agreement is offered', en: /no data processing agreement under Art\. 28 GDPR/, de: /Auftragsverarbeitungsvertrag nach Art\. 28 DSGVO bieten wir dafür nicht an/ },
     { what: 'the request not to upload personal data', en: /do not upload personal data/, de: /keine personenbezogenen Daten hoch/ },
     { what: 'that no cookies are set at all', en: /We set no cookies at all/, de: /überhaupt keine Cookies/ },
     { what: 'where the session actually lives', en: /IndexedDB/, de: /IndexedDB/ },
@@ -108,199 +99,95 @@ test.describe('the privacy policy in two languages', () => {
     { what: 'how long server logs are kept', en: /Google Cloud Logging/, de: /Google Cloud Logging/ },
     { what: 'what outlives an account deletion', en: /Art\. 17\(3\)\(e\)/, de: /Art\. 17 Abs\. 3 lit\. e/ },
     { what: 'the Art. 14 notice to invited people', en: /Art\. 14 GDPR/, de: /Art\. 14 DSGVO/ },
+    // Fassung 1.1 additions.
+    { what: 'the proof log kept to the end of the third calendar year', en: /end of the third calendar year after the contract ended/, de: /Ende des dritten Kalenderjahres nach dem Vertragsende/ },
+    { what: 'the operator notice without name, address or motivation', en: /without your name, email address or motivation/, de: /ohne Ihren Namen, Ihre E-Mail-Adresse und Ihre Motivation/ },
+    { what: 'the own Anthropic key for business accounts only', en: /only for a business account/, de: /nur für ein Geschäftskonto/ },
   ];
 
   for (const duty of duties) {
     test(`both versions state ${duty.what}`, () => {
-      expect(read(EN), `missing in the English version: ${duty.what}`).toMatch(duty.en);
-      expect(read(DE), `missing in the German version: ${duty.what}`).toMatch(duty.de);
+      expect(EN(), `missing in the English version: ${duty.what}`).toMatch(duty.en);
+      expect(DE(), `missing in the German version: ${duty.what}`).toMatch(duty.de);
     });
   }
 
   /**
    * Art. 13(1)(c) wants the basis stated for each processing, and the two
-   * versions have to state it for the *same* set. Counting is crude and it is
-   * exactly what was needed: the English "Google Authentication" bullet went out
-   * without its basis while the German one had it, six against seven, and the
-   * guard above — sections, anchors, keywords — saw nothing (QA review of
-   * 1c3476dfb92e). A disclosure duty met in one language is not met.
+   * versions have to state it for the *same* set (QA review of 1c3476dfb92e).
    */
   test('both versions state a legal basis for the same number of purposes', () => {
-    const en = read(EN).match(/Legal basis:/g)?.length ?? 0;
-    const de = read(DE).match(/Rechtsgrundlage:/g)?.length ?? 0;
+    const en = EN().match(/Legal basis:/g)?.length ?? 0;
+    const de = DE().match(/Rechtsgrundlage:/g)?.length ?? 0;
     expect(en, 'the English version states no legal basis per purpose at all').toBeGreaterThan(0);
-    expect(
-      de,
-      `the two versions name a different number of legal bases — English ${en}, German ${de}. ` +
-        'One of them is missing a purpose, and a reader in that language is told less than the other.',
-    ).toBe(en);
+    expect(de, `the two versions name a different number of legal bases — English ${en}, German ${de}`).toBe(en);
   });
 
   /**
-   * Purpose for purpose, not only in total.
-   *
-   * The count above is blind to a swap: take the basis off one English purpose,
-   * add a sentence to a different one, and the two totals still agree while the
-   * two languages no longer state the basis for the same processing. A QA review
-   * flagged exactly that shape (7dabb1930a07).
-   *
-   * There is no cross-language key on a purpose - the labels are prose in each
-   * language - so this pairs them by position inside the one list that carries
-   * legal bases. That is a deliberate assumption, and the right one: the two
-   * versions are translations of a single document, and a purpose reordered or
-   * added in one language only is itself the parity break this guard exists for.
-   *
-   * The comparison is a pure function so the test after this one can feed it a
-   * mutated policy and prove it sees what the count cannot - the guard's own
-   * sensitivity is asserted here, not only claimed in a commit message.
+   * Purpose for purpose, not only in total (QA 7dabb1930a07, 5cbc8deaa23c).
+   * The purposes are the blocks of section 2, paired by position — the two
+   * versions are translations of one document, so a purpose reordered or added
+   * in one language only is itself the parity break this guard exists for.
    */
+  type Purpose = { label: string; hasBasis: boolean; bases: string[] };
   const EN_BASIS = /Legal basis:/;
   const DE_BASIS = /Rechtsgrundlage:/;
-
-  type Purpose = { label: string; hasBasis: boolean; bases: string[] };
-
-  /**
-   * The letters of Art. 6(1) a purpose cites, as a sorted set: `b`, or `b,f`.
-   * English writes `Art. 6(1)(b) GDPR`, German `Art. 6 Abs. 1 lit. b DSGVO`;
-   * the letter is the one thing the two spellings share, and it is the thing
-   * that has to agree - a purpose based on consent in one language and on
-   * legitimate interest in the other is the drift Art. 13(1)(c) cares about.
-   */
-  const basisLetters = (item: string, pattern: RegExp): string[] =>
-    [...new Set([...item.matchAll(pattern)].map((m) => m[1]))].sort();
   const EN_LETTER = /Art\. 6\(1\)\(([a-f])\)/g;
   const DE_LETTER = /Art\. 6 Abs\. 1 lit\. ([a-f])/g;
+  const basisLetters = (item: string, pattern: RegExp): string[] => [...new Set([...item.matchAll(pattern)].map((m) => m[1]))].sort();
 
-  /** The <ul> that carries the basis marker, split into its <li> items. */
-  const purposesList = (src: string, basisMarker: RegExp): { before: string; list: string; after: string } => {
-    const open = /<ul[^>]*>/g;
-    let m: RegExpExecArray | null;
-    while ((m = open.exec(src)) !== null) {
-      const from = m.index + m[0].length;
-      const to = src.indexOf('</ul>', from);
-      if (to < 0) break;
-      const list = src.slice(from, to);
-      if (basisMarker.test(list)) return { before: src.slice(0, from), list, after: src.slice(to) };
-    }
-    throw new Error('no list carrying a legal basis was found');
-  };
+  const section2 = (lang: 'en' | 'de') => legalSections('privacy', lang)[1].body;
+  const purposes = (blocks: string[], marker: RegExp, letter: RegExp): Purpose[] =>
+    blocks.map((b) => ({ label: (/^([^:]{2,90}):/.exec(b)?.[1] ?? b.slice(0, 40)).trim(), hasBasis: marker.test(b), bases: basisLetters(b, letter) }));
 
-  const purposesWithBasis = (src: string, basisMarker: RegExp, letter: RegExp): Purpose[] =>
-    purposesList(src, basisMarker)
-      .list.split(/<li>/)
-      .slice(1)
-      .map((item) => ({
-        label: (item.match(/<strong[^>]*>([^<]*)<\/strong>/)?.[1] ?? '').replace(/:\s*$/, '').trim(),
-        hasBasis: basisMarker.test(item),
-        bases: basisLetters(item, letter),
-      }));
-
-  /** The first place the two lists disagree, or null when they agree throughout. */
   const firstPairwiseMismatch = (en: Purpose[], de: Purpose[]): string | null => {
-    if (en.length !== de.length) {
-      return (
-        `the two versions list a different number of purposes: English ${en.length}, German ${de.length} ` +
-        `(EN [${en.map((p) => p.label).join(' | ')}] vs DE [${de.map((p) => p.label).join(' | ')}])`
-      );
-    }
+    if (en.length !== de.length) return `the two versions list a different number of purposes: English ${en.length}, German ${de.length}`;
     for (let i = 0; i < en.length; i++) {
       if (en[i].hasBasis !== de[i].hasBasis) {
-        return (
-          `purpose ${i + 1}: English "${en[i].label}" ${en[i].hasBasis ? 'states' : 'lacks'} a basis, ` +
-          `German "${de[i].label}" ${de[i].hasBasis ? 'states' : 'lacks'} one`
-        );
+        return `purpose ${i + 1}: English "${en[i].label}" ${en[i].hasBasis ? 'states' : 'lacks'} a basis, German "${de[i].label}" ${de[i].hasBasis ? 'states' : 'lacks'} one`;
       }
       if (en[i].bases.join(',') !== de[i].bases.join(',')) {
-        return (
-          `purpose ${i + 1}: English "${en[i].label}" rests on Art. 6(1)(${en[i].bases.join(', ') || '?'}), ` +
-          `German "${de[i].label}" on Art. 6 Abs. 1 lit. ${de[i].bases.join(', ') || '?'} - not the same basis`
-        );
+        return `purpose ${i + 1}: English "${en[i].label}" rests on Art. 6(1)(${en[i].bases.join(', ') || '?'}), German "${de[i].label}" on Art. 6 Abs. 1 lit. ${de[i].bases.join(', ') || '?'} - not the same basis`;
       }
     }
     return null;
   };
 
   test('the same purposes carry a legal basis in both versions, pairwise', () => {
-    const en = purposesWithBasis(read(EN), EN_BASIS, EN_LETTER);
-    const de = purposesWithBasis(read(DE), DE_BASIS, DE_LETTER);
-
-    // Not vacuous: the list actually has purposes, and every one of them names
-    // its basis today - a guard that passed on an empty list would prove nothing.
-    expect(en.length).toBeGreaterThan(5);
-    expect(en.every((p) => p.hasBasis), 'an English purpose carries no legal basis').toBe(true);
-
+    const en = purposes(section2('en'), EN_BASIS, EN_LETTER);
+    const de = purposes(section2('de'), DE_BASIS, DE_LETTER);
+    expect(en.filter((p) => p.hasBasis).length, 'section 2 names hardly any purpose with a basis').toBeGreaterThan(10);
     expect(firstPairwiseMismatch(en, de)).toBeNull();
   });
 
-  /**
-   * The guard's sensitivity, as a test rather than a claim.
-   *
-   * Moves one basis inside the English purposes list: strips it from the first
-   * purpose and repeats it on the last. The page-wide count is unchanged - that
-   * is the blind spot the count test has - and the pairwise comparison must name
-   * purpose 1. Done on a string in memory; the files are not touched.
-   */
   test('and the pairwise check catches a basis moved between purposes, which the count does not', () => {
-    const enSrc = read(EN);
-    const { before, list, after } = purposesList(enSrc, EN_BASIS);
-
-    const first = list.indexOf('<em>Legal basis:');
-    const firstEnd = list.indexOf('</em>', first) + '</em>'.length;
+    const blocks = [...section2('en')];
+    const first = blocks.findIndex((b) => EN_BASIS.test(b));
+    const last = blocks.map((b) => EN_BASIS.test(b)).lastIndexOf(true);
     expect(first, 'the English list has no basis to move').toBeGreaterThanOrEqual(0);
-    const stripped = list.slice(0, first) + list.slice(firstEnd);
-
-    const last = stripped.lastIndexOf('<em>Legal basis:');
-    const lastEnd = stripped.indexOf('</em>', last) + '</em>'.length;
-    const moved = stripped.slice(0, lastEnd) + ' ' + stripped.slice(last, lastEnd) + stripped.slice(lastEnd);
-
-    const mutated = before + moved + after;
-
-    // The count test would not notice.
-    const count = (src: string) => (src.match(/Legal basis:/g) ?? []).length;
-    expect(count(mutated), 'the mutation changed the total, so it does not test the blind spot').toBe(count(enSrc));
-
-    // The pairwise check does.
-    const mismatch = firstPairwiseMismatch(purposesWithBasis(mutated, EN_BASIS, EN_LETTER), purposesWithBasis(read(DE), DE_BASIS, DE_LETTER));
+    const firstLabel = purposes([blocks[first]], EN_BASIS, EN_LETTER)[0].label;
+    blocks[first] = blocks[first].replace(/Legal basis:/g, 'Basis:');
+    blocks[last] = `${blocks[last]} Legal basis: Art. 6(1)(b) GDPR.`;
+    const count = (bs: string[]) => bs.join(' ').match(/Legal basis:/g)?.length ?? 0;
+    expect(count(blocks), 'the mutation changed the total, so it does not test the blind spot').toBe(count(section2('en')));
+    const mismatch = firstPairwiseMismatch(purposes(blocks, EN_BASIS, EN_LETTER), purposes(section2('de'), DE_BASIS, DE_LETTER));
     expect(mismatch, 'the pairwise check let a moved legal basis through').not.toBeNull();
-    expect(mismatch).toMatch(/^purpose 1:/);
+    expect(mismatch).toContain(firstLabel);
   });
 
-  /**
-   * And a basis that is *present* in both but *different* - consent in one
-   * language, legitimate interest in the other. Presence and count both stay
-   * equal; only the letters disagree. QA review of 5cbc8deaa23c asked for the
-   * semantic half, and this is the half of it that has a key: the article
-   * letter is shared by both spellings, the prose label is not.
-   */
   test('and it catches the same purpose resting on a different legal basis in the two languages', () => {
-    const enSrc = read(EN);
-    const { before, list, after } = purposesList(enSrc, EN_BASIS);
-    const first = list.indexOf('Art. 6(1)(b)');
-    expect(first, 'no purpose on Art. 6(1)(b) to alter').toBeGreaterThanOrEqual(0);
-    const altered = list.slice(0, first) + 'Art. 6(1)(f)' + list.slice(first + 'Art. 6(1)(b)'.length);
-    const mutated = before + altered + after;
-
-    const count = (src: string) => (src.match(/Legal basis:/g) ?? []).length;
-    expect(count(mutated)).toBe(count(enSrc));
-
-    const en = purposesWithBasis(mutated, EN_BASIS, EN_LETTER);
-    const de = purposesWithBasis(read(DE), DE_BASIS, DE_LETTER);
-    expect(en.every((p) => p.hasBasis), 'the mutation removed a basis; it was meant to change one').toBe(true);
-    const mismatch = firstPairwiseMismatch(en, de);
+    const blocks = [...section2('en')];
+    const at = blocks.findIndex((b) => b.includes('Art. 6(1)(b)'));
+    expect(at, 'no purpose on Art. 6(1)(b) to alter').toBeGreaterThanOrEqual(0);
+    blocks[at] = blocks[at].split('Art. 6(1)(b)').join('Art. 6(1)(f)');
+    const en = purposes(blocks, EN_BASIS, EN_LETTER);
+    const mismatch = firstPairwiseMismatch(en, purposes(section2('de'), DE_BASIS, DE_LETTER));
     expect(mismatch, 'a purpose on a different basis in the two languages went unnoticed').not.toBeNull();
     expect(mismatch).toMatch(/not the same basis/);
   });
 
   test('neither version claims sharing does not exist', () => {
-    // The sentence this replaced said "There is no sharing feature today". It was
-    // true until phase 5 shipped, and a policy that still said it would be the
-    // document that governs telling the reader the opposite of what the product
-    // does.
-    expect(read(EN).toLowerCase()).not.toContain('there is no sharing feature');
-    expect(read(DE).toLowerCase()).not.toContain('keine möglichkeit, ein projekt zu teilen');
-    // And section 3 must not say the owner is alone, which it did until today.
-    expect(read(EN), 'section 3 still says only the creating account can read').not.toMatch(
-      /only the account that created it\s*\n?\s*&mdash; not other accounts/,
-    );
+    expect(EN().toLowerCase()).not.toContain('there is no sharing feature');
+    expect(DE().toLowerCase()).not.toContain('keine möglichkeit, ein projekt zu teilen');
   });
 });

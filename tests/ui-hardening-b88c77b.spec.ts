@@ -102,7 +102,8 @@ test.describe('the trust page promises only what the code does', () => {
   });
 
   test('the public page states the retirement instead of the retired scheme', () => {
-    const page = rendered('app/(app)/trust/page.tsx');
+    // Since Fassung 1.1 (3.0.21) the trust page's words are in lib/legal/texts/trust.en.ts.
+    const page = read('lib/legal/texts/trust.en.ts');
     expect(page, 'the hashing promise is back').not.toMatch(/backup codes?[^.]{0,60}hashed/i);
     expect(page, 'scrypt is claimed again').not.toMatch(/scrypt/i);
     // Deleting the line would have left the reader who came for the codes with

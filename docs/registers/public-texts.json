@@ -2902,6 +2902,94 @@
       "executed": "2026-10-02"
     },
     {
+      "path": "docs/terms/2026-10-23.md",
+      "kind": "legal",
+      "purpose": "Terms of Service v2.3.0, English version (Fassung 1.1, 3.0.21; provisional id = release date)",
+      "audience": "public, legal (lib/terms-versions.ts)",
+      "saysToday": "Terms of Service and Community Guidelines v2.3.0: German and English contract versions, the own Anthropic key under the Additional Agreement, no right of withdrawal (section 13).",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 169
+      }
+    },
+    {
+      "path": "docs/terms/2026-10-23.de.md",
+      "kind": "legal",
+      "purpose": "Terms of Service v2.3.0, German version (Fassung 1.1, 3.0.21) — a German legal text, section 1.4",
+      "audience": "public, legal (lib/terms-versions.ts)",
+      "saysToday": "Nutzungsbedingungen und Community-Richtlinien v2.3.0, deutsche Fassung.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 169
+      }
+    },
+    {
+      "path": "docs/byok-addendum/ZV-BYOK-1.0.md",
+      "kind": "legal",
+      "purpose": "Additional Agreement on Own Model Keys ZV-BYOK-1.0, English version (Fassung 1.1, 3.0.21)",
+      "audience": "public, legal (lib/legal/byok-addendum-versions.ts)",
+      "saysToday": "The agreement accepted when storing an own Anthropic key: recipient, roles, transfer, model, costs, ending, record.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/byok-addendum-versions.ts"
+      ],
+      "measured": {
+        "lines": 41
+      }
+    },
+    {
+      "path": "docs/byok-addendum/ZV-BYOK-1.0.de.md",
+      "kind": "legal",
+      "purpose": "Additional Agreement on Own Model Keys ZV-BYOK-1.0, German version (Fassung 1.1, 3.0.21) — a German legal text",
+      "audience": "public, legal (lib/legal/byok-addendum-versions.ts)",
+      "saysToday": "Zusatzvereinbarung zu eigenen Modellschlüsseln ZV-BYOK-1.0, deutsche Fassung.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/byok-addendum-versions.ts"
+      ],
+      "measured": {
+        "lines": 41
+      }
+    },
+    {
       "path": "docs/terms/2026-10-03.md",
       "kind": "legal",
       "purpose": "Terms of Service, version effective 3 October 2026 (v2.2.0, with 3.0)",
