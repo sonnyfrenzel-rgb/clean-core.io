@@ -18,8 +18,10 @@ import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-
 import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from '@/lib/project-artefact-store';
 import { getAuditSigningKey } from '@/lib/audit-signing-key';
 import { verifyModelReceiptIssuer } from '@/lib/model-receipt';
+import { claimReceiptUse } from '@/lib/model-receipt-uses';
 import { aiModelRecordOf } from '@/lib/ai-marking';
 import { TEST_SUITE_MODEL_FIELD } from '@/lib/project-artefact-writes';
+import { TEST_SUITE_ORIGIN_FIELD, testSuiteOriginRecord } from '@/lib/test-receipt';
 import { APP_VERSION } from '@/lib/version';
 
 /**
@@ -412,7 +414,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const receiptVerdict = signingKey
       ? verifyModelReceiptIssuer(body.modelReceipt, { uid: auth.uid, key: signingKey, stage: 'transformation' })
       : null;
-    const model = receiptVerdict?.ok ? aiModelRecordOf(receiptVerdict.receipt, APP_VERSION) : null;
+    // One receipt marks one artefact (CA-INT-02): accepted again only for this
+    // project's transformation, never for another (`lib/model-receipt-uses.ts`).
+    const model =
+      receiptVerdict?.ok &&
+      (await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'transformation' }))
+        ? aiModelRecordOf(receiptVerdict.receipt, APP_VERSION)
+        : null;
 
     // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
     // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
@@ -449,6 +457,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       [GENERATION_BINDING_FIELD]: binding,
       // Roadmap 3.0.17: the suite is now the package's own, so the Testing stage's record of who wrote its suite goes.
       [TEST_SUITE_MODEL_FIELD]: null,
+      // CA-INT-01: the suite came with the generation; a run of it changed since reads as owner-edited.
+      [TEST_SUITE_ORIGIN_FIELD]: testSuiteOriginRecord('generation', checked.testSuite),
     };
     // Every comparison above was made on the project as it was loaded. The four
     // fields are written only if the project has not been written since —

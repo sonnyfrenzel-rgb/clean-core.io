@@ -5,8 +5,16 @@ import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { isUrlSafe, readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
+import {
+  acquireTestRunLock,
+  releaseTestRunLock,
+  runnerBudgetMessage,
+  TEST_RUN_BUSY_CODE,
+  TEST_RUN_BUSY_MESSAGE,
+  type HeldTestRunLock,
+} from '@/lib/test-run-lock';
 import { parseTapOutput, applyRunnerVerdicts } from '@/lib/test-verdicts';
-import { testRunSubject, sameTestRunInputs, coveringTestRunReceipt, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
+import { testRunSubject, sameTestRunInputs, coveringTestRunReceipt, suiteOriginOf, TEST_RUN_RECEIPT_VERSION, TEST_SUITE_ORIGIN_FIELD, type TestRunReceipt } from '@/lib/test-receipt';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store';
 import type { RepairDraft } from '@/lib/repair-draft';
@@ -109,6 +117,44 @@ function gateCheckFailed(err: unknown, step: string, extra: Record<string, unkno
     { output: '', error: 'The check could not run. Please try again shortly.', exitCode: 1, ...extra },
     { status: 503 },
   );
+}
+
+/**
+ * SEC-04 — the account's one run slot and its daily runner seconds
+ * (`lib/test-run-lock.ts`), taken before a run starts. A store that cannot be
+ * asked is answered like the other gate checks, without running anything.
+ */
+async function takeRunSlot(uid: string): Promise<{ ok: true; lock: HeldTestRunLock } | { ok: false; response: NextResponse }> {
+  try {
+    const { db } = await getAdminDb();
+    const taken = await acquireTestRunLock(db, uid);
+    if (taken.ok) return taken;
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          output: '',
+          error: taken.code === TEST_RUN_BUSY_CODE ? TEST_RUN_BUSY_MESSAGE : runnerBudgetMessage(taken.budgetSeconds),
+          code: taken.code,
+          exitCode: 1,
+          testResults: [],
+        },
+        { status: 429 },
+      ),
+    };
+  } catch (err) {
+    return { ok: false, response: gateCheckFailed(err, 'run-slot', { testResults: [] }) };
+  }
+}
+
+/** Gives the slot back and charges its seconds; a failure is logged, the slot then lapses on its own. */
+async function giveBackRunSlot(lock: HeldTestRunLock): Promise<void> {
+  try {
+    const { db } = await getAdminDb();
+    await releaseTestRunLock(db, lock);
+  } catch (err) {
+    logger.error('run-tests: the run slot could not be given back; it lapses on its own', { route: 'api/run-tests', error: errMessage(err) });
+  }
 }
 
 /** What an execution produced, whichever executor produced it. */
@@ -355,7 +401,11 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    // SEC-04: the account's one run slot first (across instances); this instance's cap after it.
+    const slot = await takeRunSlot(decodedToken.uid);
+    if (!slot.ok) return slot.response;
     if (activeRuns >= MAX_CONCURRENT_RUNS) {
+      await giveBackRunSlot(slot.lock);
       return NextResponse.json(
         { output: '', error: 'The test runner is at capacity right now. Please retry in a few seconds.', exitCode: 1 },
         { status: 429 },
@@ -369,6 +419,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ output: '', error: 'Internal Server Error during the verify run.', exitCode: 1 }, { status: 500 });
     } finally {
       activeRuns--;
+      await giveBackRunSlot(slot.lock);
     }
   }
   if (draft && isGenerationDraft(draft)) {
@@ -422,7 +473,11 @@ export async function POST(req: Request) {
     if (target.kind === 'unavailable') {
       return NextResponse.json({ output: '', error: target.reason, exitCode: 1 }, { status: target.status });
     }
+    // SEC-04: the account's one run slot first (across instances); this instance's cap after it.
+    const slot = await takeRunSlot(decodedToken.uid);
+    if (!slot.ok) return slot.response;
     if (activeRuns >= MAX_CONCURRENT_RUNS) {
+      await giveBackRunSlot(slot.lock);
       return NextResponse.json(
         { output: '', error: 'The test runner is at capacity right now. Please retry in a few seconds.', exitCode: 1 },
         { status: 429 },
@@ -443,6 +498,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ output: '', error: 'Internal Server Error during the mutation probe.', exitCode: 1 }, { status: 500 });
     } finally {
       activeRuns--;
+      await giveBackRunSlot(slot.lock);
     }
   }
   // A run of the project's own suite against mocks; a draft or a live run is not recorded as the project's failure.
@@ -484,7 +540,11 @@ export async function POST(req: Request) {
   // cannot exhaust the instance with many parallel executions. Check + increment run
   // synchronously (no await between) so the guard is race-free; the try/finally below
   // guarantees the decrement even if setup throws.
+  // SEC-04: the account's one run slot first (across instances); this instance's cap after it.
+  const slot = await takeRunSlot(decodedToken.uid);
+  if (!slot.ok) return slot.response;
   if (activeRuns >= MAX_CONCURRENT_RUNS) {
+    await giveBackRunSlot(slot.lock);
     return NextResponse.json(
       { output: '', error: 'The test runner is at capacity right now. Please retry in a few seconds.', exitCode: 1 },
       { status: 429 },
@@ -754,6 +814,9 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       ...(execution.engine && execution.engine.ran
         ? { engine: { digest: execution.engine.digest, contractModule: execution.engine.contractModule, viaContract: engineMerge?.viaContract ?? [] } }
         : {}),
+      // CA-INT-01: the suite that ran, held to the server's record of the suite
+      // it stored — generation or verified model answer — or owner-edited.
+      suiteOrigin: suiteOriginOf(projectData[TEST_SUITE_ORIGIN_FIELD], testCode),
     };
     let recorded = false;
     // A draft run is recorded on the draft and nowhere else: no verdicts and no
@@ -915,6 +978,7 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
     );
   } finally {
     activeRuns--;
+    await giveBackRunSlot(slot.lock);
     // Single-run: the capability dies with its run, whatever the run did.
     if (capabilityId) {
       try {

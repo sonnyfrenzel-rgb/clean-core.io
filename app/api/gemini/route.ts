@@ -67,6 +67,8 @@ import { LEASED_PROMPT_MAX_CHARS, isGateRepairPrompt } from '@/lib/transformatio
 import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
+import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
+import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -425,7 +427,7 @@ export async function POST(request: NextRequest) {
       jsonResponse?: boolean;
       /** 3.0.21 — `'automatic'` for a step the product started by itself on opening a project. */
       trigger?: unknown;
-      /** Which of the five model stages is asking. Absent for the glossary chatbot and the key test. */
+      /** Which stage is asking (`lib/model-call-stage.ts`): required since 3.0.21. */
       stage?: string;
       /** An answer shape within the stage (`lib/model-response-schema.ts`): the fill calls of 3.0.12. */
       responseShape?: unknown;
@@ -438,16 +440,22 @@ export async function POST(request: NextRequest) {
     // Roadmap 1.2 — the per-stage switch, enforced on the server.
     //
     // The switch is the account owner's preference about their own key and
-    // their own quota, not a security boundary: a caller that omits `stage`
-    // is not stopped, and the five product callers name themselves. It is
+    // their own quota, not a security boundary. It is
     // enforced here rather than only in the browser so that a page left open
     // in another tab cannot spend on a stage the owner has since switched off.
     // The answer carries a code as well as a sentence, because the screens
     // branch on the reason and a message is for a person to read.
-    if (stage !== undefined) {
-      if (!isModelStage(stage)) {
-        return NextResponse.json({ error: `Unknown model stage: ${stage}.` }, { status: 400 });
-      }
+    //
+    // SEC-01 (3.0.21): every call names its stage — one of the seven, or the
+    // help chatbot's — and the stage bounds the answer's length below. A call
+    // without one is refused before any key is loaded.
+    if (!isModelCallStage(stage)) {
+      return NextResponse.json(
+        { error: stage === undefined ? 'Every model call names its stage.' : `Unknown model stage: ${stage}.`, code: 'stage-required' },
+        { status: 400 },
+      );
+    }
+    if (isModelStage(stage)) {
       if (!modelStageEnabled(profile.exists ? (profile.data() as { modelStages?: Record<string, boolean> }) : null, stage)) {
         return NextResponse.json(
           {
@@ -603,6 +611,24 @@ export async function POST(request: NextRequest) {
     // back in `finally` below, whatever the call does; the call itself stays
     // counted. A leased call also ends with its request: when the browser
     // cancels the generation, the provider call is aborted and not retried.
+    // SEC-01 (3.0.21): the community key's daily budget, with its breaker
+    // (`lib/platform-model-budget.ts`). Only a call the platform key would pay
+    // for is counted; an own key is never counted or refused here. Asked
+    // before a lease counts the call, so a refused call costs the lease nothing.
+    if (!ownKey && !stubbed) {
+      let admitted: boolean;
+      try {
+        const { db, FieldValue } = await getAdminDb();
+        admitted = (await reservePlatformModelCall(db, (n) => FieldValue.increment(n))).ok;
+      } catch (budgetErr: unknown) {
+        logger.error('platform model budget check failed', { route: 'api/gemini', error: budgetErr instanceof Error ? budgetErr.name : 'unknown' });
+        return NextResponse.json({ error: 'The usage check could not run. Please try again shortly.' }, { status: 503 });
+      }
+      if (!admitted) {
+        return NextResponse.json({ error: platformBudgetMessage(), code: PLATFORM_BUDGET_CODE }, { status: 503 });
+      }
+    }
+
     if (lease) {
       const { db } = await getAdminDb();
       const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
@@ -623,6 +649,8 @@ export async function POST(request: NextRequest) {
     const thinkingConfig = thinkingConfigFor(shape);
     // Set inside the provider call below; typed so the assignment there is not narrowed away.
     let inferenceGeo = null as string | null;
+    // SEC-01 (3.0.21): the most output (thinking included) one call of this stage may produce.
+    const maxOutputTokens = STAGE_MAX_OUTPUT_TOKENS[stage];
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : provider === 'anthropic'
@@ -676,9 +704,10 @@ export async function POST(request: NextRequest) {
                   responseMimeType: 'application/json',
                   ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
                   ...(thinkingConfig ? { thinkingConfig } : {}),
+                  maxOutputTokens,
                   abortSignal: callSignal,
                 }
-              : { ...(thinkingConfig ? { thinkingConfig } : {}), abortSignal: callSignal },
+              : { ...(thinkingConfig ? { thinkingConfig } : {}), maxOutputTokens, abortSignal: callSignal },
           }).catch((providerErr: unknown) => {
             // A failed attempt is a call too: its duration is logged, its
             // counts are null.
@@ -750,7 +779,7 @@ export async function POST(request: NextRequest) {
     // unchanged (no signed format changes what it signs); the data region of a
     // Claude answer travels beside it.
     const answeredBy = { provider: receiptProvider, modelId: servedModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };
-    if (stage !== undefined && !stubbed) {
+    if (isModelStage(stage) && !stubbed) {
       const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString(), ...(inferenceGeo ? { inferenceGeo } : {}) };
       const previous = (profile.data() as { modelAnswers?: Record<string, unknown> } | undefined)?.modelAnswers?.[stage];
       if (stageAnswerNeedsWrite(previous, record)) {
@@ -786,6 +815,8 @@ export async function POST(request: NextRequest) {
         modelId: servedModel,
         byok: !!byokKey,
         ...(stage !== undefined ? { stage } : {}),
+        // CA-INT-02 (3.0.21): the receipt binds the prompt as well as the answer.
+        prompt,
       },
       signingKey,
     );

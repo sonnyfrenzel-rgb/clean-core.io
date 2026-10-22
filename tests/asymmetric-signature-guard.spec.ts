@@ -288,7 +288,11 @@ test.describe('the HMAC is kept, not replaced', () => {
       'the HMAC signature has been removed. Every pack issued before the Ed25519 ' +
         'key existed carries only that one, and dropping it makes them ' +
         'unverifiable by anybody.',
-    ).toContain("createHmac('sha256', signingKey)");
+    ).toContain('signManifestHash(manifestHash, signingKey)');
+    // Since 3.0.21 under the key derived for manifests (lib/pack-signature.ts);
+    // still an HMAC, and packs signed before keep verifying.
+    const helper = fs.readFileSync(path.resolve(__dirname, '..', 'lib/pack-signature.ts'), 'utf8');
+    expect(helper).toContain("createHmac('sha256', purposeKey(key, 'pack-manifest'))");
     // And the asymmetric one covers the same string, or the two could disagree
     // about what was signed.
     expect(src).toContain('signEd25519(manifestHash)');

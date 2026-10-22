@@ -7,6 +7,7 @@ import { projectTooLargeMessage, PROJECT_TOO_LARGE_CODE, type ProjectSizeCheck }
 import { planArtefactWrite, withStoredArtefacts, writeArtefactParts } from './project-artefact-store';
 import { packageDigest, testSuiteBasisOf, TEST_SUITE_BASIS_FIELD, type TestSuiteBasis } from './test-suite-basis';
 import type { AiModelRecord } from './ai-marking';
+import { TEST_SUITE_ORIGIN_FIELD, testSuiteOriginRecord } from './test-receipt';
 
 /**
  * The three artefact writes the browser used to make itself — roadmap 3.0.14,
@@ -267,13 +268,17 @@ export async function storeTestSuite(
   if (claimed !== undefined && claimed !== null && !(typeof claimed === 'string' && /^[0-9a-f]{64}$/.test(claimed))) {
     return { status: 400, code: 'bad-request', error: 'generatedCodeSha256 must be the SHA-256 of the generated package, or null.' };
   }
+  const testSuite = storedTestSuite(args.body.testSuite);
   const fields = {
     testCases,
-    testSuite: storedTestSuite(args.body.testSuite),
+    testSuite,
     coverageEstimate: storedCoverageEstimate(args.body.coverageEstimate),
     manualTestingRequirements: manual,
     status: 'testing',
     [TEST_SUITE_MODEL_FIELD]: args.aiModel ?? null,
+    // CA-INT-01: how this suite reached the project, and the digest of exactly
+    // what was stored — a run of a suite changed since reads as owner-edited.
+    [TEST_SUITE_ORIGIN_FIELD]: testSuiteOriginRecord(args.aiModel ? 'model' : 'unverified', testSuite),
   };
   return inTransaction(db, args.projectId, args.uid, async (tx, stored, project) => {
     const refused = statusRefused(project);

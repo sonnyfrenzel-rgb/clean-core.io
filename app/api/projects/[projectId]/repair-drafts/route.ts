@@ -4,7 +4,6 @@ import {
   getAdminDb,
   assertAccountActive,
   assertMfaSatisfied,
-  auditActorEmail,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -132,13 +131,11 @@ export async function POST(
     }
 
     if (action === 'adopt') {
-      const actorEmail = await auditActorEmail(db, decodedToken.uid);
       const outcome = await adoptRepairDraft(db, {
         projectId: safeProjectId,
         uid: decodedToken.uid,
         body,
         now: new Date(),
-        actorEmail,
       });
       if (!('fields' in outcome)) {
         return NextResponse.json({ error: outcome.error, code: outcome.code }, { status: outcome.status });

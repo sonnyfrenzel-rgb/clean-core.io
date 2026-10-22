@@ -21,7 +21,10 @@ test('recordConsent commits the event and the profile mirror in one batch', () =
 
   expect(body).toContain('db.batch()');
   expect(body).toMatch(/batch\.create\(\s*db\.collection\('consent_events'\)\.doc\(\)/);
-  expect(body).toMatch(/batch\.set\(\s*db\.collection\('users'\)\.doc\(uid\)/);
+  // An update, not a merge (L-01): it fails on an erased profile, and the
+  // whole batch with it, so a consent never recreates a deleted account.
+  expect(body).toMatch(/batch\.update\(\s*db\.collection\('users'\)\.doc\(uid\)/);
+  expect(body).not.toMatch(/batch\.set\(\s*db\.collection\('users'\)/);
   expect(body.match(/await batch\.commit\(\)/g) ?? []).toHaveLength(1);
   // No write of its own outside the batch.
   expect(body).not.toMatch(/await db\.collection\(/);

@@ -5,8 +5,13 @@ import { wrapEmailDocument } from '../lib/email-layout';
 import {
   buildInvitationEmail,
   buildAddressConfirmationEmail,
+  buildInviterAddressConfirmationEmail,
+  inviterNameForMail,
   INVITATION_EMAIL_SUBJECT,
+  INVITER_CONFIRMATION_SUBJECT,
+  INVITER_NAME_MAX_CHARS,
 } from '../lib/invitation-email';
+import { INVITATION_SEND_DAILY_LIMIT, INVITATION_SEND_RATE_LIMIT } from '../lib/invitation-owner-gate';
 import { INVITATION_DEFAULT_DAYS, INVITATION_MAX_DAYS, invitationNotSentMessage } from '../lib/invitations';
 import { APP_BASE_URL, CONTACT_EMAIL } from '../lib/constants';
 
@@ -225,4 +230,75 @@ test('the open-invitation ceiling is counted from the invitations that have not 
   const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
   expect(route).not.toContain('tx.get(ref.parent)');
   expect(route).toContain("tx.get(ref.parent.where('expiresAt', '>', invitedAt.toISOString()))");
+});
+
+/* ---------------------------------------------- SEC-02: the inviter's name */
+
+test.describe('the invitation mail does not lend its sender line to a free-text name (SEC-02)', () => {
+  test('the first, bold sentence is the platform\'s own; the name follows once, plain and labelled as unchecked', () => {
+    const html = invitation();
+    expect(html).toContain('<strong>You have been invited to read a project on Clean-Core.io.</strong>');
+    expect(html).toContain('whose holder entered the name Sonny Frenzel. Clean-Core.io has not checked that name.');
+    expect(html, 'the name is in bold again').not.toMatch(/<strong[^>]*>[^<]*Sonny Frenzel/);
+    expect(html.split('Sonny Frenzel').length - 1, 'the name is repeated more than once').toBe(1);
+  });
+
+  test('without a usable name the mail names nobody', () => {
+    const html = buildInvitationEmail({ inviterName: '', recipient: LONG_ADDRESS, link: `${APP_BASE_URL}/invitation/p/x`, expires: '02 Oct 2026' });
+    expect(html).toContain('<strong>You have been invited to read a project on Clean-Core.io.</strong>');
+    expect(html).not.toContain('whose holder entered the name');
+  });
+
+  test('inviterNameForMail bounds, cleans and drops what a mail client would link', () => {
+    expect(inviterNameForMail('  Sonny \n\t Frenzel ')).toBe('Sonny Frenzel');
+    expect(inviterNameForMail('Dr. Anna Müller')).toBe('Dr. Anna Müller');
+    expect(inviterNameForMail('a‮b\u0007c')).toBe('a b c');
+    const long = inviterNameForMail('x'.repeat(200));
+    expect([...long].length).toBe(INVITER_NAME_MAX_CHARS);
+    expect(long.endsWith('…')).toBe(true);
+    for (const linky of ['Pay now at evil.example', 'support@clean-core.io', 'https://x.test/login', 'www.example', 'IT Service Desk - reset.your-password.com']) {
+      expect(inviterNameForMail(linky), linky).toBe('');
+    }
+    expect(inviterNameForMail(42)).toBe('');
+    expect(inviterNameForMail(undefined)).toBe('');
+  });
+
+  test('the route passes the profile name through inviterNameForMail and escapes it', () => {
+    const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
+    expect(route).toContain('inviterName: escapeHtml(inviterNameForMail(invitation.invitedBy.name))');
+  });
+});
+
+test.describe('inviting needs a confirmed address and a daily budget (SEC-02)', () => {
+  const route = () => fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
+
+  test('the route refuses an unconfirmed inviter before anything is written or mailed to the invitee', () => {
+    const src = route();
+    const post = src.slice(src.indexOf('export async function POST('));
+    const check = post.indexOf('await unconfirmedInviterResponse(gate)');
+    expect(check, 'the POST asks whether the inviter is confirmed').toBeGreaterThan(-1);
+    expect(check).toBeLessThan(post.indexOf('tx.create(ref,'));
+    expect(check).toBeLessThan(post.indexOf('subject: INVITATION_EMAIL_SUBJECT'));
+    expect(src).toContain('emailVerified: decodedToken.email_verified === true');
+    // The confirmation goes to the account's own address under the shared, small budget.
+    expect(src).toContain('assertRateLimit(`invitation-confirm-mail:${gate.uid}`, 3, 60 * 60 * 1000)');
+    expect(src).toContain("code: 'email-unconfirmed'");
+  });
+
+  test('a daily budget stands beside the hourly one, before anything is written', () => {
+    expect(INVITATION_SEND_DAILY_LIMIT).toBeGreaterThan(0);
+    expect(INVITATION_SEND_DAILY_LIMIT).toBeLessThan(INVITATION_SEND_RATE_LIMIT * 24);
+    const src = route();
+    const post = src.slice(src.indexOf('export async function POST('));
+    const day = post.indexOf('assertRateLimit(`invitations-day:${gate.uid}`, INVITATION_SEND_DAILY_LIMIT, 24 * 60 * 60 * 1000)');
+    expect(day).toBeGreaterThan(-1);
+    expect(day).toBeLessThan(post.indexOf('tx.create(ref,'));
+  });
+
+  test('the inviter\'s confirmation mail says what it is for and carries no Art. 14 notice', () => {
+    const html = buildInviterAddressConfirmationEmail({ recipient: LONG_ADDRESS, link: `${APP_BASE_URL}/auth/action?x=1` });
+    expect(html).toContain('tried to invite someone to read a project');
+    expect(html).not.toContain('Art. 14');
+    expect(INVITER_CONFIRMATION_SUBJECT.toLowerCase()).toContain('confirm');
+  });
 });

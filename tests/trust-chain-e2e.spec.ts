@@ -258,10 +258,21 @@ test.describe('v1.19 Trust Chain Closure', () => {
 
       // The same verifier says no to one byte of difference — otherwise "valid:
       // true" above would be a constant rather than an answer.
+      // One hex digit of the first file's digest: still a canonical manifest
+      // (the endpoint checks nothing else since 3.0.21), no longer the signed one.
+      const tamperedManifest = canonicalManifest.replace(/:([0-9a-f])/, (_m: string, d: string) => `:${d === '0' ? '1' : '0'}`);
+      expect(tamperedManifest).not.toBe(canonicalManifest);
       const tampered = await request.post('/api/export/verify', {
+        data: { canonicalManifest: tamperedManifest, signature: manifest.signature },
+      });
+      expect(tampered.status()).toBe(200);
+      expect((await tampered.json()).valid).toBe(false);
+      // And a string that is not a manifest at all is not answered with a verdict.
+      const notAManifest = await request.post('/api/export/verify', {
         data: { canonicalManifest: canonicalManifest + ' ', signature: manifest.signature },
       });
-      expect((await tampered.json()).valid).toBe(false);
+      expect(notAManifest.status()).toBe(400);
+      expect((await notAManifest.json()).valid).toBeUndefined();
 
       // The evidence inside is the run's own: the engine's finding on VBAK, and
       // the decision record pointing back at the same run.

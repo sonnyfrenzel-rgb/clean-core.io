@@ -70,7 +70,7 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
     // Test invalid signature format (wrong length)
     const res2 = await request.post('/api/export/verify', {
       data: {
-        canonicalManifest: 'test-manifest',
+        canonicalManifest: `00-executive-summary.md:${'a'.repeat(64)};`,
         signature: 'abc12345',
       }
     });
@@ -81,15 +81,24 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
     // Test invalid signature format (non-hex)
     const res3 = await request.post('/api/export/verify', {
       data: {
-        canonicalManifest: 'test-manifest',
+        canonicalManifest: `00-executive-summary.md:${'a'.repeat(64)};`,
         signature: 'g'.repeat(64),
       }
     });
     expect(res3.status()).toBe(400);
+
+    // A string that is not a canonical manifest is not checked at all (3.0.21).
+    const res4 = await request.post('/api/export/verify', {
+      data: { canonicalManifest: 'test-manifest', signature: 'a'.repeat(64) },
+    });
+    expect(res4.status()).toBe(400);
+    const body4 = await res4.json();
+    expect(body4.code).toBe('not-a-manifest');
+    expect(body4.valid).toBeUndefined();
   });
 
   test('api/export/verify should validate a correct signature against the configured signing key', async ({ request }) => {
-    const canonicalManifest = '00-executive-summary.md:hash123;';
+    const canonicalManifest = `00-executive-summary.md:${'1'.repeat(64)};`;
     const crypto = require('crypto');
     const expectedHash = crypto.createHash('sha256').update(canonicalManifest).digest('hex');
     const signature = crypto.createHmac('sha256', SIGNING_KEY).update(expectedHash).digest('hex');
@@ -105,10 +114,10 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
 
   test('api/export/verify should validate run-bound signature and reject tampered metadata', async ({ request }) => {
     const crypto = require('crypto');
-    const filesString = '00-executive-summary.md:hash123;';
+    const filesString = `00-executive-summary.md:${'1'.repeat(64)};`;
     const projectId = 'test-project-123';
     const runId = 'run-555';
-    const runHash = 'runhash777';
+    const runHash = '7'.repeat(64);
     const engineVersion = 'v1.18.1';
     const sapApiCatalogVersion = '2024.FPS02';
     

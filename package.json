@@ -12,7 +12,7 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 661",
-    "typecheck": "tsc --noEmit -p .",
+    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit -p .",
     "clean": "next clean",
     "build:guide-pdf": "tsx scripts/generate-guide-pdf.ts",
     "build:whitepaper-pdf": "tsx scripts/generate-whitepaper-pdf.ts",

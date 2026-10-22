@@ -4,6 +4,7 @@ import { logger, errMessage } from '@/lib/logger';
 import {
   verifyRequestAuth,
   getAdminDb,
+  getAdminAuth,
   assertAccountActive,
   assertMfaSatisfied,
   QuotaError,
@@ -13,7 +14,14 @@ import { escapeHtml } from '@/lib/utils';
 import { APP_BASE_URL } from '@/lib/constants';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { sendTransactionalMail } from '@/lib/transactional-mail';
-import { buildInvitationEmail, INVITATION_EMAIL_SUBJECT } from '@/lib/invitation-email';
+import {
+  buildInvitationEmail,
+  buildInviterAddressConfirmationEmail,
+  inviterNameForMail,
+  INVITATION_EMAIL_SUBJECT,
+  INVITER_CONFIRMATION_SUBJECT,
+} from '@/lib/invitation-email';
+import { ownDomainVerifyEmailLink } from '@/lib/auth-action-link';
 import {
   INVITATION_COLLECTION,
   INVITATION_MAX_OPEN,
@@ -27,7 +35,12 @@ import {
   type Invitation,
 } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
-import { openInvitationsAsOwner, readOpenInvitations, INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
+import {
+  openInvitationsAsOwner,
+  readOpenInvitations,
+  INVITATION_SEND_DAILY_LIMIT,
+  INVITATION_SEND_RATE_LIMIT,
+} from '@/lib/invitation-owner-gate';
 
 /**
  * Inviting one person to read one project — roadmap 5.2.
@@ -83,7 +96,7 @@ interface ProjectShape {
 }
 
 type Gate =
-  | { ok: true; uid: string; email: string; projectId: string; project: ProjectShape }
+  | { ok: true; uid: string; email: string; emailVerified: boolean; projectId: string; project: ProjectShape }
   | { ok: false; response: NextResponse };
 
 /**
@@ -179,6 +192,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
     ok: true,
     uid: decodedToken.uid,
     email: typeof decodedToken.email === 'string' ? decodedToken.email : '',
+    emailVerified: decodedToken.email_verified === true,
     projectId,
     project,
   };
@@ -198,6 +212,59 @@ async function inviterName(db: AdminDb, uid: string, fallback: string): Promise<
     /* a missing profile must not stop the invitation — it is named by the token's address */
   }
   return (fallback || uid).slice(0, 200);
+}
+
+/**
+ * The answer for an inviter whose address is not confirmed, or null when it is.
+ *
+ * Confirmed on the token, or `emailVerified: true` on the profile. Otherwise a
+ * confirmation link is mailed to the account's own address — never one from the
+ * body — under the budget the acceptance route uses for the same mail (three an
+ * hour, shared), and the request is refused with a code the page can branch on.
+ */
+async function unconfirmedInviterResponse(gate: Extract<Gate, { ok: true }>): Promise<NextResponse | null> {
+  if (gate.emailVerified) return null;
+  const { db } = await getAdminDb();
+  try {
+    const profile = await db.collection('users').doc(gate.uid).get();
+    if ((profile.data() as { emailVerified?: unknown } | undefined)?.emailVerified === true) return null;
+  } catch {
+    /* an unreadable profile confirms nothing */
+  }
+  let sent = false;
+  const accountEmail = normaliseInvitedEmail(gate.email);
+  if (accountEmail) {
+    try {
+      await assertRateLimit(`invitation-confirm-mail:${gate.uid}`, 3, 60 * 60 * 1000);
+      const link = ownDomainVerifyEmailLink(await (await getAdminAuth()).generateEmailVerificationLink(accountEmail));
+      const outcome = await sendTransactionalMail({
+        to: accountEmail,
+        subject: INVITER_CONFIRMATION_SUBJECT,
+        label: 'address confirmation',
+        uid: gate.uid,
+        html: wrapEmailDocument(
+          buildInviterAddressConfirmationEmail({ recipient: escapeHtml(accountEmail), link }),
+          'Clean-Core.io — confirm your address',
+        ),
+      });
+      sent = outcome.delivered;
+    } catch (mailErr: unknown) {
+      logger.warn('confirmation mail for an inviter could not be sent', {
+        route: 'api/projects/invitations',
+        error: errMessage(mailErr),
+      });
+    }
+  }
+  return NextResponse.json(
+    {
+      error: sent
+        ? 'Inviting a reader needs a confirmed email address. We have just sent a confirmation link to your address — open it, sign in again, and then send the invitation.'
+        : 'Inviting a reader needs a confirmed email address. Confirm your address, sign in again, and then send the invitation.',
+      code: 'email-unconfirmed',
+      confirmationSent: sent,
+    },
+    { status: 403 },
+  );
 }
 
 export async function POST(
@@ -223,6 +290,26 @@ export async function POST(
       return NextResponse.json(
         { error: 'This is your own address. You already have access to this project.', code: 'self-invite' },
         { status: 400 },
+      );
+    }
+
+    // SEC-02 (owner decision 22.10.2026), after the request itself is known to
+    // be one: an invitation is a mail from
+    // clean-core.io to an address this account types, so it goes out only from
+    // an account whose own address is confirmed — on the token (Google sign-in,
+    // or a password account that confirmed) or on the profile.
+    const unconfirmed = await unconfirmedInviterResponse(gate);
+    if (unconfirmed) return unconfirmed;
+
+    // And a day's budget on top of the hourly one: twenty an hour around the
+    // clock is still 480 mails a day.
+    try {
+      await assertRateLimit(`invitations-day:${gate.uid}`, INVITATION_SEND_DAILY_LIMIT, 24 * 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return NextResponse.json(
+        { error: q?.message || 'Too many invitations today.', code: 'invitations-daily-limit' },
+        { status: q?.status || 429 },
       );
     }
 
@@ -298,7 +385,9 @@ export async function POST(
       label: 'invitation',
       html: wrapEmailDocument(
         buildInvitationEmail({
-          inviterName: escapeHtml(invitation.invitedBy.name),
+          // The profile name is the inviting account's own free text: repeated
+          // once, plain, bounded and labelled as unchecked (SEC-02).
+          inviterName: escapeHtml(inviterNameForMail(invitation.invitedBy.name)),
           recipient: escapeHtml(email),
           link,
           expires: new Date(invitation.expiresAt).toUTCString().slice(5, 16),

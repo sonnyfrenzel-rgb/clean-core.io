@@ -15,7 +15,7 @@ import {
   normaliseTermsText,
   parseArchivedTerms,
 } from '../lib/terms-versions';
-import { recordConsent } from '../lib/consent';
+import { ConsentProfileMissingError, recordConsent } from '../lib/consent';
 
 /**
  * The archive of Terms versions, and the three promises it has to keep.
@@ -408,7 +408,19 @@ test.describe('a consent record carries the wording it was given for', () => {
     await db.collection('users').doc(uid).delete().catch(() => {});
   });
 
+  test('recordConsent writes nothing for an account without a profile (L-01)', async () => {
+    const erased = `${uid}-erased`;
+    await expect(
+      recordConsent({ uid: erased, email: `${erased}@cleancore-test.io`, source: 'tests/terms-version-archive.spec.ts', locale: 'en' }),
+    ).rejects.toThrow(ConsentProfileMissingError);
+    const db = adminDb();
+    expect((await db.collection('users').doc(erased).get()).exists, 'a consent recreated an erased profile').toBe(false);
+    expect((await db.collection('consent_events').where('uid', '==', erased).get()).size, 'an event was written without a profile').toBe(0);
+  });
+
   test('recordConsent stores the digest of the version it records', async () => {
+    // The account exists, as it does whenever a consent is recorded.
+    await adminDb().collection('users').doc(uid).set({ email: `${uid}@cleancore-test.io` });
     await recordConsent({
       uid,
       email: `${uid}@cleancore-test.io`,

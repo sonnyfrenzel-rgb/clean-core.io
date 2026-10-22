@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, deleteUserDataAndAccount, assertMfaStepUp } from '@/lib/firebase-admin';
+import { isRecentLogin } from '@/lib/recent-login';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,10 +9,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
 
-    // 1. Enforce recent login (within 5 minutes / 300 seconds) for sensitive operation
-    const authTime = decodedToken.auth_time;
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (nowSeconds - authTime > 300) {
+    // 1. Enforce recent login (within 5 minutes / 300 seconds) for sensitive operation.
+    // Allowed only when provably recent: a token without `auth_time` is refused.
+    if (!isRecentLogin(decodedToken, 300)) {
       return NextResponse.json({
         error: 'Security restriction: Deleting your account requires a recent login. Please sign out, sign back in, and try deleting your account again.',
         code: 'requires-recent-login'

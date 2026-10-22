@@ -16,7 +16,11 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 test('package.json has a typecheck over the whole project', () => {
   const pkg = JSON.parse(read('package.json'));
-  expect(pkg.scripts.typecheck).toBe('tsc --noEmit -p .');
+  // With a heap of its own (L-29): on the default heap tsc runs out of memory
+  // over this tree. Set through cross-env, as `dev` and `build` set theirs, so
+  // the script works the same on Windows and in CI.
+  expect(pkg.scripts.typecheck).toBe('cross-env NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit -p .');
+  expect(pkg.devDependencies?.['cross-env'] ?? pkg.dependencies?.['cross-env'], 'cross-env is installed').toBeTruthy();
 });
 
 /**

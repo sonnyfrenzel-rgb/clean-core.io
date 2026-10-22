@@ -4,7 +4,6 @@ import {
   getAdminDb,
   assertAccountActive,
   assertMfaSatisfied,
-  auditActorEmail,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -216,7 +215,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       return NextResponse.json({ error: 'The owner cannot be revoked.' }, { status: 400 });
     }
 
-    const actorEmail = await auditActorEmail(gate.db, gate.uid);
     const projectRef = gate.db.collection('projects').doc(gate.projectId);
 
     const revokedAt = new Date().toISOString();
@@ -257,7 +255,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       }
       tx.set(gate.db.collection('audit_events').doc(), {
         actorUid: gate.uid,
-        actorEmail,
         action: `project.reader.revoke:${gate.projectId}`,
         targetUid: uid,
         timestamp: new Date(),

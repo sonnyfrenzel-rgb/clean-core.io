@@ -5,7 +5,6 @@ import {
   getAdminDb,
   assertAccountActive,
   assertMfaSatisfied,
-  auditActorEmail,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -185,7 +184,6 @@ export async function POST(
     const email = typeof decodedToken.email === 'string' ? decodedToken.email : '';
     // Resolved before the transaction: it reads a different document, and a
     // transaction's reads all have to happen before its first write.
-    const actorEmail = await auditActorEmail(db, decodedToken.uid);
 
     const commandName =
       typeof body === 'object' && body !== null ? (body as { command?: unknown }).command : undefined;
@@ -361,7 +359,6 @@ export async function POST(
         tx.set(ref, { ...decision.fields, updatedAt: new Date() }, { merge: true });
         tx.set(db.collection('audit_events').doc(), {
           actorUid: decodedToken.uid,
-          actorEmail,
           action: `${decision.action}:${projectId}`,
           targetUid: decodedToken.uid,
           timestamp: new Date(),

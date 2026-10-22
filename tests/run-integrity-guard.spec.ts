@@ -98,7 +98,11 @@ test.describe('the audit pack refuses what it cannot verify', () => {
     const s = route();
     expect(s).toContain('verifyRunIntegrity');
     // The check has to come before the manifest is signed, or it decides nothing.
-    expect(s.indexOf('verifyRunIntegrity')).toBeLessThan(s.indexOf('createHmac'));
+    // The manifest is signed through `signManifestHash` since 3.0.21 (the key
+    // derived for pack manifests, lib/pack-signature.ts).
+    expect(s.indexOf('signManifestHash(manifestHash')).toBeGreaterThan(-1);
+    expect(s.indexOf('verifyRunIntegrity')).toBeLessThan(s.indexOf('signManifestHash(manifestHash'));
+    expect(s, 'the manifest is signed with the raw key again').not.toContain('createHmac');
   });
 
   test('evidence comes from the run, not from the client-writable project', () => {

@@ -16,6 +16,15 @@ import { archivedTermsSha256 } from '@/lib/terms-versions';
  * Both writes go through the Admin SDK. The client can no longer produce either.
  */
 
+/** The account has no profile — erased, or never registered. Nothing was written. */
+export class ConsentProfileMissingError extends Error {
+  readonly code = 'profile-missing';
+  constructor() {
+    super('There is no account profile to record this consent for.');
+    this.name = 'ConsentProfileMissingError';
+  }
+}
+
 export interface RecordConsentInput {
   uid: string;
   /** Server-derived address; never taken from a request body. */
@@ -92,17 +101,26 @@ export async function recordConsent({
   });
 
   // 2) mirror the accepted version onto the profile (server timestamp).
-  batch.set(
-    db.collection('users').doc(uid),
-    {
-      termsVersionAccepted: TERMS_VERSION,
-      termsAcceptedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+  //
+  // An update, not a merge (L-01): it fails when the profile does not exist,
+  // and the batch with it, so the event above is not written either. An ID
+  // token stays valid for up to an hour after the account it names was erased,
+  // and a merge onto a missing document recreates it — a consent recorded with
+  // such a token brought a deleted account's profile back. A consent belongs to
+  // an account that exists.
+  batch.update(db.collection('users').doc(uid), {
+    termsVersionAccepted: TERMS_VERSION,
+    termsAcceptedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
 
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (err: unknown) {
+    // gRPC NOT_FOUND: the profile is gone. Named, so a caller can say so.
+    if ((err as { code?: unknown } | null)?.code === 5) throw new ConsentProfileMissingError();
+    throw err;
+  }
 
   return { termsVersion: TERMS_VERSION };
 }

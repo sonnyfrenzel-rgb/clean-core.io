@@ -16,6 +16,7 @@ import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
 import { erasePortfolioOf } from './portfolio/erasure';
 import { ADMIN_SIGNUP_MAIL_KIND, legacyAdminSignupSubject } from './admin-signup-email';
 import { quotaSpentSentence } from './run-quota-rule';
+import { isRecentLogin } from './recent-login';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -109,8 +110,9 @@ export async function getAdminAuth() {
  * routes and the `isAdminClaim` exemptions — at the price of one lookup per
  * request from a handful of accounts.
  */
-export async function verifyIdToken(idToken: string) {
+export async function verifyIdToken(idToken: string, checkRevoked = false) {
   const auth = (await ensureAuthModule()).getAuth();
+  if (checkRevoked) return auth.verifyIdToken(idToken, true);
   const decoded = await auth.verifyIdToken(idToken);
   if (decoded.admin === true) {
     return auth.verifyIdToken(idToken, true);
@@ -169,7 +171,17 @@ async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T)
  * A token that still claims `admin` after the claim was withdrawn comes back
  * without it — see `withoutWithdrawnAdminClaim`.
  */
-export async function verifyRequestAuth(req: Request) {
+export async function verifyRequestAuth(
+  req: Request,
+  /**
+   * `checkRevoked: true` asks Firebase Auth whether the account still exists,
+   * is enabled and has not revoked its tokens (one Auth lookup). For the doors
+   * into an account — registration and consent (L-01): an ID token outlives
+   * the erasure of its account by up to an hour, and those routes would
+   * otherwise write a profile back for an account that no longer exists.
+   */
+  opts: { checkRevoked?: boolean } = {},
+) {
   const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) return null;
 
@@ -177,7 +189,7 @@ export async function verifyRequestAuth(req: Request) {
   if (!token) return null;
 
   try {
-    return await withoutWithdrawnAdminClaim(await verifyIdToken(token));
+    return await withoutWithdrawnAdminClaim(await verifyIdToken(token, opts.checkRevoked === true));
   } catch (err) {
     logRejectedToken(err);
     return null;
@@ -255,10 +267,7 @@ export async function verifyAdminRequest(req: Request) {
 }
 
 export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {
-  const authTime = Number(decodedToken?.auth_time);
-  const nowSeconds = Math.floor(Date.now() / 1000);
-
-  if (!Number.isFinite(authTime) || nowSeconds - authTime > maxAgeSeconds) {
+  if (!isRecentLogin(decodedToken, maxAgeSeconds)) {
     throw new QuotaError('Security timeout. Please re-authenticate and try again.', 403);
   }
 }
@@ -1015,6 +1024,8 @@ export async function deleteUserDataAndAccount(
   //    The per-account write ceiling (`lib/write-ceiling.ts`): counts and the
   //    ids of the last created project and ticket.
   await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+  //    The account's test-run slot and its runner seconds of the day (`lib/test-run-lock.ts`).
+  await tryDelete('test_run_locks', () => db.collection('test_run_locks').doc(uid).delete());
   // Note: rate_limits docs are pseudonymised (HMAC ids) and self-expire via a
   // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
 
@@ -1136,6 +1147,26 @@ export async function deleteUserDataAndAccount(
     });
   }
 
+  //     The security journal keeps its rows for the retention period
+  //     (`docs/DATA-RETENTION.md`), but not the address of an erased account
+  //     (PRV-01): every row this account acted in has its `actorEmail`
+  //     replaced by the account's pseudonym (`accountLogRef`). The uid stays,
+  //     so the rows still tell apart who did what; nothing in them names a
+  //     person any more once the profile is gone.
+  await tryDelete('audit_events', async () => {
+    const pseudonym = accountLogRef(uid);
+    const rows = await db.collection('audit_events').where('actorUid', '==', uid).get();
+    const toUpdate = rows.docs.filter((row: ErasableDoc) => {
+      const email = row.data()?.actorEmail;
+      return typeof email === 'string' && email !== pseudonym;
+    });
+    for (let i = 0; i < toUpdate.length; i += 400) {
+      const batch = db.batch();
+      toUpdate.slice(i, i + 400).forEach((row: ErasableDoc) => batch.update(row.ref, { actorEmail: pseudonym }));
+      await batch.commit();
+    }
+  });
+
   //     The operator's signup notification about this account, written before
   //     it carried the account's uid: found by its subject, which is built from
   //     the name the registration record kept. Only that kind of record is
@@ -1230,6 +1261,7 @@ export async function deleteUserDataAndAccount(
       erasureErrors.push(`second sweep: ${e instanceof Error ? e.message : String(e)}`);
     }
     await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+    await tryDelete('test_run_locks', () => db.collection('test_run_locks').doc(uid).delete());
   }
   if (erasureErrors.length > 0) {
     throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);
@@ -1493,11 +1525,28 @@ export async function auditActorEmail(db: any, actorUid: string): Promise<string
   return 'system-admin';
 }
 
+/**
+ * The administrative actions whose row names the acting administrator's
+ * address (PRV-01). The journal exists for privileged actions
+ * (`docs/DATA-RETENTION.md`); an account acting on its own key, projects or
+ * readers is recorded by its uid alone, which is enough to tell who did what
+ * and keeps an address out of a record kept for 24 months.
+ */
+const PRIVILEGED_AUDIT_ACTIONS: ReadonlySet<string> = new Set([
+  'GRANT_ADMIN', 'REVOKE_ADMIN', 'APPROVE_USER', 'REVOKE_USER', 'GRANT_S4', 'REVOKE_S4',
+  'GRANT_S4_LINK', 'REJECT_S4_LINK', 'DELETE_USER_CASCADE',
+]);
+
+/** Whether a row for `action` records the actor's address. Exported for the tests. */
+export function auditRowNamesActorEmail(action: string): boolean {
+  return PRIVILEGED_AUDIT_ACTIONS.has(action) || action.startsWith('RUNNER_SELFTEST:');
+}
+
 /** The `audit_events` row for one action, ready for `add()` or for a batch. */
 async function auditEventRecord(db: any, actorUid: string, action: string, targetUid: string) {
   return {
     actorUid,
-    actorEmail: await auditActorEmail(db, actorUid),
+    ...(auditRowNamesActorEmail(action) ? { actorEmail: await auditActorEmail(db, actorUid) } : {}),
     action,
     targetUid,
     timestamp: new Date(),

@@ -21,7 +21,10 @@ import {
 /* ------------------------------------------------------- the invitation mail */
 
 export interface InvitationEmailInput {
-  /** HTML-escaped display name of the person who invited. */
+  /**
+   * HTML-escaped display name of the person who invited, already passed
+   * through `inviterNameForMail` — or `''` to name nobody.
+   */
   inviterName: string;
   /** HTML-escaped invited address; shown in the transactional footer. */
   recipient: string;
@@ -32,6 +35,36 @@ export interface InvitationEmailInput {
 }
 
 export const INVITATION_EMAIL_SUBJECT = 'You have been invited to read a project on Clean-Core.io';
+
+/** The most characters of the inviter's profile name a mail repeats. */
+export const INVITER_NAME_MAX_CHARS = 60;
+
+/**
+ * The inviter's profile name as the invitation mail may repeat it (SEC-02).
+ *
+ * The name is free text the inviting account typed into its own profile, and
+ * the mail goes from clean-core.io to an address that account chose. So the
+ * mail never puts it in the sender line or in bold — the first sentence is the
+ * platform's own — and repeats it once, in plain text, labelled as unchecked:
+ * whitespace collapsed, control characters removed, at most
+ * `INVITER_NAME_MAX_CHARS` characters, and not at all when it carries
+ * something a mail client would turn into a link (an address, a domain, a
+ * URL). Returns raw text; the caller escapes it.
+ */
+export function inviterNameForMail(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  let name = '';
+  for (const ch of raw) {
+    const c = ch.codePointAt(0) ?? 0;
+    const control = c <= 0x1f || (c >= 0x7f && c <= 0x9f) || (c >= 0x200b && c <= 0x200f) || (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069) || c === 0xfeff;
+    name += control ? ' ' : ch;
+  }
+  name = name.replace(/\s+/g, ' ').trim();
+  if (!name) return '';
+  if (/@|:\/\/|www\.|[a-z0-9-]\.[a-z]{2,}/i.test(name)) return '';
+  const chars = [...name];
+  return chars.length > INVITER_NAME_MAX_CHARS ? `${chars.slice(0, INVITER_NAME_MAX_CHARS - 1).join('').trimEnd()}…` : name;
+}
 
 /**
  * The mail deliberately does **not** name the project.
@@ -60,7 +93,12 @@ export function buildInvitationEmail({ inviterName, recipient, link, expires }: 
   return buildUserMail({
     greeting: 'Hello,',
     paragraphs: [
-      `<strong>${inviterName} invited you to read a project on Clean-Core.io.</strong>`,
+      // The platform's own sentence first and in bold; the inviter's name, if
+      // any, after it in plain text and labelled as unchecked (SEC-02).
+      '<strong>You have been invited to read a project on Clean-Core.io.</strong>',
+      ...(inviterName
+        ? [`The invitation comes from a Clean-Core.io account whose holder entered the name ${inviterName}. Clean-Core.io has not checked that name.`]
+        : []),
       INVITATION_SCOPE_SENTENCE_RECIPIENT,
       INVITATION_LIMITS_SENTENCE_RECIPIENT,
       `<strong>The link only opens for you.</strong> It opens for a Clean-Core.io account signed in with <strong>${recipient}</strong> and no other. Forwarding it gives nobody anything: the address on the account has to be this one, and it has to be confirmed. If you have no account yet, create one with this address &mdash; the link brings you back here afterwards.`,
@@ -127,6 +165,34 @@ export function buildAddressConfirmationEmail({ recipient, link }: AddressConfir
     ],
     footer: [
       `Sent to ${recipient} because an account with that address tried to open an invitation on Clean-Core.io.`,
+    ],
+  });
+}
+
+/* ------------------------------------- the confirmation mail for an inviter */
+
+export const INVITER_CONFIRMATION_SUBJECT = 'Confirm your email address to invite readers on Clean-Core.io';
+
+/**
+ * Sent when an account with an unconfirmed address tries to invite a reader
+ * (SEC-02, owner decision 22.10.2026): inviting sends a mail from clean-core.io
+ * to an address the account types, so it needs an address the account has
+ * shown it holds. Registration is untouched — an account that never invites is
+ * never asked. `recipient` is HTML-escaped by the caller.
+ */
+export function buildInviterAddressConfirmationEmail({ recipient, link }: AddressConfirmationEmailInput): string {
+  return buildUserMail({
+    greeting: 'Hello,',
+    paragraphs: [
+      `This mail asks you to confirm that ${recipient} is your address. An account with this address tried to invite someone to read a project on Clean-Core.io, and an invitation goes out only from a confirmed address.`,
+    ],
+    link: { lead: 'To confirm the address, open this link:', url: link },
+    after: [
+      'Then sign in again and send the invitation once more. Nothing else about your account changes.',
+      `If you did not try to invite anyone, you can ignore this mail; the address then stays unconfirmed. Questions go to ${CONTACT_EMAIL}.`,
+    ],
+    footer: [
+      `Sent to ${recipient} because an account with that address tried to invite a reader on Clean-Core.io.`,
     ],
   });
 }

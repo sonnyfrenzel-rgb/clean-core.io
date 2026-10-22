@@ -46,6 +46,15 @@ export type OwnerGate =
  */
 export const INVITATION_SEND_RATE_LIMIT = 20;
 
+/**
+ * The invitations one account may send per day, on top of the hourly budget
+ * (SEC-02, owner decision 22.10.2026): twenty an hour around the clock would
+ * still be 480 mails a day from clean-core.io to addresses one account typed.
+ * A project holds at most three open invitations, so fifty a day is far above
+ * what sharing needs and far below what a mailer wants.
+ */
+export const INVITATION_SEND_DAILY_LIMIT = 50;
+
 export const INVITATION_RATE_LIMITS = {
   'invitations-list': 60,
   'invitations-withdraw': INVITATION_SEND_RATE_LIMIT,

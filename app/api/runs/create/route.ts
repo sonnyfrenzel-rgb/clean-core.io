@@ -9,7 +9,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
-import { canonicalizeJson } from '@/lib/run-signature';
+import { canonicalizeJson, RUN_SIGNATURE_SCHEME, signRunHashV2 } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 import { withStoredArtefacts } from '@/lib/project-artefact-store';
@@ -29,6 +29,7 @@ import {
   runProfileRecord,
 } from '@/lib/assessment-target';
 import { INPUT_IDS } from '@/lib/input-manifest';
+import { uploadedFileNameDefect } from '@/lib/uploaded-file-name';
 import {
   checkProjectWrite,
   mergedDocument,
@@ -188,6 +189,12 @@ export async function POST(req: NextRequest) {
     // (lib/firestore-id.ts).
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
+    }
+    // The file name goes into the signed evidence; it is held to what a
+    // browser's File.name can be before anything is read or charged (L-05).
+    const fileNameDefect = uploadedFileNameDefect(uploadedFileName);
+    if (fileNameDefect) {
+      return NextResponse.json({ error: fileNameDefect, code: 'bad-file-name' }, { status: 400 });
     }
 
     const { db, FieldValue } = await getAdminDb();
@@ -566,19 +573,16 @@ export async function POST(req: NextRequest) {
     // `/api/model-stages`. Putting a client-supplied reason in the signed run
     // would sign a sentence the client chose.
     const narrativeAsSubmitted = typeof analysis === 'string' ? analysis : '';
-    // No `stage` asked for, deliberately. The naming and statements stores
-    // require their stage
-    // because a receipt there *is* the permission to store under a switch. Here
-    // the receipt decides nothing about whether the run is created — only
-    // whether its narrative may name a provider and a model — and the narrative
-    // is the Analyze stage's by construction (both callers, `analyze/page.tsx`
-    // and `lib/analysis-run.ts`, ask under 'analyze'). Requiring it would turn
-    // every run with a receipt from before the stage field into "origin not
-    // established" for no gain in what the signed run claims.
+    // Under 'analyze' (roadmap 3.0.21, CA-INT-02). The narrative is the Analyze
+    // stage's by construction — both callers, `analyze/page.tsx` and
+    // `lib/analysis-run.ts`, ask under 'analyze' — so a receipt minted under
+    // any other stage, or under none, is not a receipt for this narrative. A
+    // receipt lives ten minutes, so none from before the stage field remains.
     const receiptVerdict = verifyModelReceipt(body.modelReceipt, {
       uid: decodedToken.uid,
       text: narrativeAsSubmitted,
       key: signingKey,
+      stage: 'analyze',
     });
     const attested = receiptVerdict.ok ? receiptVerdict.receipt : null;
     if (!receiptVerdict.ok && receiptVerdict.refusal !== 'absent') {
@@ -726,6 +730,10 @@ export async function POST(req: NextRequest) {
       // the weekly report counts units from this rather than from the account's
       // current tier and key.
       metering,
+      // Roadmap 3.0.21 (CA-INT-03): signed under the key derived for runs, and
+      // the scheme is inside the hash, so it cannot be moved back to the
+      // legacy form (`lib/run-signature.ts`).
+      signatureScheme: RUN_SIGNATURE_SCHEME,
     };
 
     // Calculate cryptographic runHash over sorted canonical representation of complete payload (Finding 2)
@@ -733,7 +741,7 @@ export async function POST(req: NextRequest) {
     const runHash = crypto.createHash('sha256').update(canonicalPayloadStr).digest('hex');
 
     // Generate HMAC signature. `signingKey` is non-null past the guard above.
-    const signature = crypto.createHmac('sha256', signingKey).update(runHash).digest('hex');
+    const signature = signRunHashV2(runHash, signingKey);
 
     const analysisRun: AnalysisRun = {
       ...unsignedRunPayload,

@@ -183,7 +183,7 @@ export async function recordDraftExecution(
  */
 export async function adoptRepairDraft(
   db: Firestore,
-  args: { projectId: string; uid: string; body: unknown; now: Date; actorEmail: string },
+  args: { projectId: string; uid: string; body: unknown; now: Date },
 ): Promise<AdoptOutcome> {
   const projectRef = db.collection('projects').doc(args.projectId);
   const body = (args.body && typeof args.body === 'object' ? args.body : {}) as Record<string, unknown>;
@@ -217,7 +217,6 @@ export async function adoptRepairDraft(
     tx.update(draftRef, { adoptedAt: args.now.toISOString(), adoptedBy: args.uid });
     tx.set(db.collection('audit_events').doc(), {
       actorUid: args.uid,
-      actorEmail: args.actorEmail,
       action: `PROJECT_REPAIR_DRAFT_ADOPTED:${args.projectId}:${draftId}`,
       targetUid: args.uid,
       timestamp: args.now,

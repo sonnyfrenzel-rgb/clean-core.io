@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs/promises';
 import fssync from 'node:fs';
 import os from 'node:os';
@@ -516,9 +517,22 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
       await fs.writeFile(path.join(testDir, enginePass ? ENGINE_SES_PATH : PROBE_SES_PATH), ses);
     }
     const runnerPath = confined ? testEntry : path.join(testDir, '__runner.mjs');
+    // The verdicts travel on a channel of their own (CA-INT-01). The suite and
+    // the code run in this one process, so anything on stdout — a test's
+    // console.log, or a line made to look like TAP — is the suite's to write.
+    // The runner therefore reads a per-run secret from stdin before a single
+    // line of the suite loads, keeps it in this module's scope, and writes
+    // each TAP line to fd 3 prefixed with it; the parent accepts only lines
+    // that carry it (`framedTap`). stdout stays the suite's console output.
     const runnerSrc = `
 import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
+import { createWriteStream } from 'node:fs';
+
+let secret = '';
+for await (const chunk of process.stdin) secret += chunk;
+secret = secret.trim();
+const channel = createWriteStream(null, { fd: 3 });
 
 const bundle = ${JSON.stringify(bundlePath)};
 const raw = process.env.SANDBOX_TEST_PATTERNS || '';
@@ -528,9 +542,17 @@ let failed = false;
 const stream = run({ files: [bundle], isolation: 'none', testNamePatterns });
 stream.on('test:fail', () => { failed = true; });
 
+let pending = '';
 for await (const chunk of stream.compose(tap)) {
-  process.stdout.write(chunk);
+  pending += chunk;
+  let nl;
+  while ((nl = pending.indexOf('\\n')) !== -1) {
+    channel.write(secret + ' ' + pending.slice(0, nl) + '\\n');
+    pending = pending.slice(nl + 1);
+  }
 }
+if (pending) channel.write(secret + ' ' + pending + '\\n');
+await new Promise((resolve) => channel.end(resolve));
 process.exitCode = failed ? 1 : 0;
 `;
     if (!confined) await fs.writeFile(runnerPath, runnerSrc);
@@ -583,11 +605,16 @@ process.exitCode = failed ? 1 : 0;
       ...(input.extraEnv || {}),
     };
 
-    const { stdout, stderr, exitCode } = await runSandboxed(args, testDir, childEnv);
+    // The engine and probe drivers write their own report on stdout, outside
+    // the compartment the code runs in; the node:test runner gets the framed
+    // channel (see the runner source above).
+    const framed = !confined;
+    const { stdout, stderr, exitCode, channel, secret } = await runSandboxed(args, testDir, childEnv, framed);
+    const consoleOut = framed ? stdout : '';
     return {
       kind: 'ran',
-      stdout,
-      stderr: scrubRunDir(stderr, testDir),
+      stdout: framed ? framedTap(channel, secret) : stdout,
+      stderr: scrubRunDir(consoleOut.trim() ? `${stderr}${stderr && !stderr.endsWith('\n') ? '\n' : ''}${SUITE_CONSOLE_HEADER}\n${consoleOut}` : stderr, testDir),
       exitCode,
       stubbedPackages: [...stubbedPackages].sort(),
       files: fileHashes,
@@ -639,29 +666,69 @@ export function scrubRunDirNames(text: string): string {
   return out + text.slice(emitted);
 }
 
+/** The line that separates the runner's own messages from what the suite printed, in `stderr`. */
+export const SUITE_CONSOLE_HEADER = '[Sandbox] Output the suite printed (not read as results):';
+
+/**
+ * The TAP the runner wrote on its channel: only lines that carry this run's
+ * secret, with it removed. Anything else on the channel — a line the suite
+ * wrote to the descriptor itself — is not the runner's and is dropped.
+ */
+export function framedTap(channel: string, secret: string): string {
+  if (!secret) return '';
+  const prefix = `${secret} `;
+  const out: string[] = [];
+  for (const line of channel.split('\n')) {
+    if (line.startsWith(prefix)) out.push(line.slice(prefix.length));
+  }
+  return out.length ? `${out.join('\n')}\n` : '';
+}
+
 // Child-process execution with timeout & output cap.
 function runSandboxed(
   args: string[],
   cwd: string,
   env: Record<string, string>,
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  framed: boolean,
+): Promise<{ stdout: string; stderr: string; exitCode: number; channel: string; secret: string }> {
   return new Promise((resolve) => {
+    const secret = framed ? randomBytes(24).toString('hex') : '';
     const child = spawn(process.execPath, args, {
       cwd,
       env: env as NodeJS.ProcessEnv,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: framed ? ['pipe', 'pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
     });
 
     let stdout = '';
     let stderr = '';
+    let channel = '';
     let outBytes = 0;
     let killedForLimit = false;
+
+    if (framed) {
+      // The secret goes in first and stdin closes: the runner has read all of
+      // it before the suite loads, and the suite finds stdin at its end.
+      child.stdin?.on('error', () => { /* a child that died early */ });
+      child.stdin?.end(`${secret}\n`);
+      const fd3 = child.stdio[3] as NodeJS.ReadableStream | null;
+      fd3?.on('data', (d: Buffer) => {
+        outBytes += d.length;
+        if (outBytes > MAX_OUTPUT_BYTES) {
+          if (!killedForLimit) {
+            killedForLimit = true;
+            child.kill('SIGKILL');
+          }
+          return;
+        }
+        channel += d.toString();
+      });
+    }
 
     const timer = setTimeout(() => {
       child.kill('SIGKILL');
     }, EXEC_TIMEOUT_MS);
 
-    child.stdout.on('data', (d: Buffer) => {
+    child.stdout?.on('data', (d: Buffer) => {
       outBytes += d.length;
       if (outBytes > MAX_OUTPUT_BYTES) {
         if (!killedForLimit) {
@@ -673,7 +740,7 @@ function runSandboxed(
       stdout += d.toString();
     });
 
-    child.stderr.on('data', (d: Buffer) => {
+    child.stderr?.on('data', (d: Buffer) => {
       // stderr shares the combined output cap so an stderr-only flood cannot bypass it.
       outBytes += d.length;
       if (outBytes > MAX_OUTPUT_BYTES) {
@@ -688,14 +755,14 @@ function runSandboxed(
 
     child.on('error', (e) => {
       clearTimeout(timer);
-      resolve({ stdout, stderr: stderr || String(e), exitCode: 1 });
+      resolve({ stdout, stderr: stderr || String(e), exitCode: 1, channel, secret });
     });
 
     child.on('close', (codeNum, signal) => {
       clearTimeout(timer);
       if (killedForLimit) stderr += '\n[Sandbox] Output limit exceeded; process terminated.';
       else if (signal === 'SIGKILL') stderr += `\n[Sandbox] Timed out after ${EXEC_TIMEOUT_MS} ms.`;
-      resolve({ stdout, stderr, exitCode: typeof codeNum === 'number' ? codeNum : 1 });
+      resolve({ stdout, stderr, exitCode: typeof codeNum === 'number' ? codeNum : 1, channel, secret });
     });
   });
 }
