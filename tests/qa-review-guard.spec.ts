@@ -1476,7 +1476,7 @@ test.describe('the full review of a release on main', () => {
   };
 
   test('each job runs where it belongs: delta and smoke on dev, the full review on a push to main only', () => {
-    expect(job('review')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && (github.event_name == 'workflow_dispatch' || github.ref_name == 'dev')");
+    expect(job('review')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && (github.ref_name == 'dev' || (github.event_name == 'workflow_dispatch' && github.ref_name == 'main'))");
     expect(job('smoke')).toContain("github.event_name == 'push' && github.ref_name == 'dev'");
     expect(job('full')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'main'");
     // A release is never cancelled by the next one, and a main run never shares a group with a dev run.
@@ -1485,6 +1485,27 @@ test.describe('the full review of a release on main', () => {
     expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
     expect(wf()).toContain("cancel-in-progress: ${{ github.ref_name != 'main' }}");
     expect(wf().match(/^\s+group:/gm), 'one concurrency group for the whole workflow').toHaveLength(1);
+  });
+
+  test('a manual delta review runs only on dev or main, on the commit it was dispatched on (SEC-2026-907)', () => {
+    const review = job('review');
+    const cond = review.match(/^ {4}if: (.*)$/m)![1];
+    // Evaluate the condition for each event and branch the way Actions would.
+    const runs = (event: string, ref: string) =>
+      new Function('github', 'vars', `return ${cond.replace(/==/g, '===').replace(/!=(?!=)/g, '!==')};`)(
+        { event_name: event, ref_name: ref },
+        { QA_REVIEW_ENABLED: 'true' },
+      ) as boolean;
+    expect(runs('workflow_dispatch', 'dev')).toBe(true);
+    expect(runs('workflow_dispatch', 'main')).toBe(true);
+    expect(runs('workflow_dispatch', 'feature/x'), 'a manual run on another branch runs its code with the key').toBe(false);
+    expect(runs('push', 'dev')).toBe(true);
+    expect(runs('push', 'main'), 'a push to main gets the full review, not the delta').toBe(false);
+    // The checkout is the dispatched commit; the requested head is data for the diff, never checked out.
+    const checkout = review.slice(review.indexOf('actions/checkout@'), review.indexOf('- name: Setup Node.js'));
+    expect(checkout).toContain('ref: ${{ github.sha }}');
+    expect(checkout).not.toMatch(/inputs\./);
+    for (const name of ['smoke', 'full-scope', 'full']) expect(job(name), name).toContain("github.event_name == 'push'");
   });
 
   test('the full review job holds the same guardrails: no install, two secrets, a sealed upload', () => {
