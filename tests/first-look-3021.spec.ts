@@ -6,7 +6,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readProcess } from '../lib/first-look';
 import { firstLookExcerpt } from '../lib/first-look-excerpt';
-import { DECIDES_SHOWN, IN_SHORT_WORDS, decidesOnTop, firstLookBrief, splitPurpose } from '../lib/first-look-brief';
+import { DECIDES_SHOWN, IN_SHORT_WORDS, changesOnTop, decidesOnTop, firstLookBrief, splitPurpose } from '../lib/first-look-brief';
 import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
@@ -233,6 +233,50 @@ test.describe('rendered (BusinessOpening, static markup) — the 3.0.21 layout',
     );
     expect(html).toContain('No question for the business');
     expect(html).not.toContain('No value is hard-coded');
+  });
+});
+
+test.describe('"What it changes" on top: three, in business words first', () => {
+  test('a change named by a table or a transaction gives way to one in words; nothing is dropped', () => {
+    const all = [
+      { text: 'Create entry in ZMM_PO_APPR', anchor: 'L353' },
+      { text: 'Create purchase order', anchor: 'L475' },
+      { text: 'Create purchase order (ME21N) by simulated entry', anchor: 'L515' },
+      { text: 'Update purchase requisition', anchor: 'L240' },
+      { text: 'Start workflow', anchor: 'L421' },
+    ];
+    const top = changesOnTop(all, 2);
+    expect(top.changes.map((c) => c.text)).toEqual(['Create purchase order', 'Update purchase requisition', 'Start workflow']);
+    expect(top.more).toBe(4);
+    expect(changesOnTop(all.slice(0, 1)).changes.map((c) => c.text)).toEqual(['Create entry in ZMM_PO_APPR']);
+  });
+});
+
+test.describe('the readings of the 3.0.21 gate on the page', () => {
+  test('freight: checks on a field the code gives no words for are counted one fold down, never named', async () => {
+    const out = path.join(ROOT, 'tmp', 'first-look-3021', String(process.pid), 'BusinessOpening-unsaid.cjs');
+    await build({
+      entryPoints: [path.join(ROOT, 'components', 'workspace', 'BusinessOpening.tsx')],
+      outfile: out, bundle: true, format: 'cjs', platform: 'node', jsx: 'automatic',
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
+      alias: { '@': ROOT }, logLevel: 'silent',
+    });
+    const Opening = require(out).default;
+    const source = read('public/starter-examples/Z_SD_FREIGHT_RATE_CHECK.abap');
+    const proc = readProcess(source);
+    const story = processStory(proc.skeleton, source, null, '3.0.21');
+    const unsaid = story.steps.reduce((n, s) => n + (s.unsaid ?? 0), 0);
+    expect(unsaid).toBeGreaterThan(0);
+    const html = renderToStaticMarkup(
+      React.createElement(Opening, {
+        name: 'Z_SD_FREIGHT_RATE_CHECK', nameIsProposed: false, programName: 'Z_SD_FREIGHT_RATE_CHECK', nameReason: null,
+        story, rules: [], rulesMore: 0, rulesNone: '', changes: [], changesMore: 0, changesNone: '', details: null,
+      }),
+    );
+    const fold = html.slice(html.indexOf('data-first-look-details'));
+    expect(fold).toContain('data-process-story-unsaid=');
+    expect(fold).toContain('on a field the code gives no words for');
+    expect(html).not.toMatch(/Vsbed|Gewei|Voleh/);
   });
 });
 

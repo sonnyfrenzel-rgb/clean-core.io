@@ -26,7 +26,7 @@ import { businessInShort, programSummary, type ProgramSummaryFacts, type Summary
 import { authorClaimOf, purposeProposalOf, type AuthorClaim } from '@/lib/program-summary-check';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
 import { explainBusinessRules, type RuleSetExplanation } from '@/lib/abap/business-rule-set-explain';
-import { decidesOnTop, firstLookBrief, type FirstLookBrief } from '@/lib/first-look-brief';
+import { changesOnTop, decidesOnTop, firstLookBrief, type FirstLookBrief } from '@/lib/first-look-brief';
 import { codeGivesAway, type CodeGivesAway } from '@/lib/first-look-findings';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { openingDecisions, type OpeningDecisions } from '@/lib/first-look-plain';
@@ -256,6 +256,8 @@ interface Result {
   story: ProcessStory;
   /** What the program creates and changes, in the map's plain words. */
   changes: { changes: StoryChange[]; more: number };
+  /** Every change, for the fold under the three on top (3.0.21). */
+  changesAll: StoryChange[];
   /** What the program is for, in short (owner, 12.10.2026) — null when it could not be read. */
   inShort: { lines: SummaryLine[]; level: SummaryLine; proposal: string | null; authorClaim: AuthorClaim | null } | null;
   /** From engine 3.0.20: "What it decides" from the rule explanations — business rules first, technical ones counted. */
@@ -620,8 +622,9 @@ export default function FirstLook({
         steps: stepStrip(process.skeleton, source),
         story,
         changes: processChanges(process.skeleton, source),
+        changesAll: processChanges(process.skeleton, source, 100, engineVersion).changes,
         inShort: summarised.inShort,
-        decides: explanation ? openingDecisions(explanation) : null,
+        decides: explanation ? openingDecisions(explanation, 4, engineVersion) : null,
         explanation,
         brief: summarised.inShort ? firstLookBrief(summarised.inShort.lines) : null,
         givesAway: givesAwayOf(source, process, engineVersion, summarised.facts, story, summarised.inShort?.authorClaim ?? null),
@@ -753,6 +756,8 @@ export default function FirstLook({
     active: plainSentences !== null && namingFrom !== 'none',
     modelEnabled: plainModelEnabled(availability),
   });
+  /** "What it changes" on top: three, business words first (3.0.21). */
+  const changesTop = useMemo(() => (result ? changesOnTop(result.changes.changes, result.changes.more) : null), [result]);
   const [sourceOpen, setSourceOpen] = useState(false);
 
   /** The lines the card points to — the rules and the decisions — for "Show source". */
@@ -958,8 +963,9 @@ export default function FirstLook({
                   story={result.story}
                   {...openingDecides(result)}
                   say={plain.state === 'worded' ? plain.say : undefined}
-                  changes={result.changes.changes}
-                  changesMore={result.changes.more}
+                  changes={changesTop?.changes ?? []}
+                  changesMore={changesTop?.more ?? 0}
+                  changesAll={result.changesAll}
                   changesNone={result.card.summary.kind === 'none' ? result.card.summary.sentence : wt('biz.changesNoData')}
                   inShort={result.inShort}
                   givesAway={result.givesAway}

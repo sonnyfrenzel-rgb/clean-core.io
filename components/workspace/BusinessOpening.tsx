@@ -19,6 +19,7 @@ import {
   bizStoryChecks,
   bizStoryStops,
   bizStoryTechnical,
+  bizStoryUnsaid,
   bizStoryWithin,
   bizTestData,
   givesMore,
@@ -84,6 +85,7 @@ export default function BusinessOpening({
   changes,
   changesMore,
   changesNone,
+  changesAll = [],
   givesAway = null,
   elsewhere = null,
   details,
@@ -122,6 +124,8 @@ export default function BusinessOpening({
   changesMore: number;
   /** Said under "What it changes" when the code shows no change — what the program does work on. */
   changesNone: string;
+  /** Every change with its line — listed one fold down when more stand than on top (3.0.21). */
+  changesAll?: StoryChange[];
   /** "What the code gives away" (`lib/first-look-findings.ts`); null while it is not read. */
   givesAway?: CodeGivesAway | null;
   /** Where "+ N more" leads: the Documentation tool and the IT view. */
@@ -379,6 +383,21 @@ export default function BusinessOpening({
               />
             ) : null}
             <StepDetails story={story} />
+            {changesMore > 0 && changesAll.length > changes.length ? (
+              <section data-story-changes-all={changesAll.length} aria-labelledby="story-changes-all-title" className="flex min-w-0 flex-col gap-2">
+                <h4 id="story-changes-all-title" className={BLOCK_TITLE}>
+                  {wt('biz.changesAllTitle')}
+                </h4>
+                <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                  {changesAll.map((change) => (
+                    <li key={`${change.text}-${change.anchor ?? ''}`} className="flex flex-wrap items-center gap-x-2 text-[12px] leading-snug font-medium text-cc-ink">
+                      <span className="min-w-0 break-words">{change.text}</span>
+                      <Line anchor={change.anchor} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
             {details}
           </div>
         </CcDisclosure>
@@ -396,7 +415,7 @@ export default function BusinessOpening({
 function StepDetails({ story }: { story: ProcessStory }) {
   const withDetail = story.steps
     .map((step, i) => ({ step, n: i + 1 }))
-    .filter(({ step }) => step.checks.length > 0 || step.stops.length > 0 || (step.technical ?? 0) > 0);
+    .filter(({ step }) => step.checks.length > 0 || step.stops.length > 0 || (step.technical ?? 0) > 0 || (step.unsaid ?? 0) > 0);
   return (
     <section data-process-story-detail={withDetail.length} aria-labelledby="story-detail-title" className="flex min-w-0 flex-col gap-2">
       <h4 id="story-detail-title" className={BLOCK_TITLE}>
@@ -420,6 +439,11 @@ function StepDetails({ story }: { story: ProcessStory }) {
               {step.technical ? (
                 <p data-process-story-technical={step.technical} className="m-0 text-[12px] leading-snug font-medium break-words text-cc-ink-muted">
                   {bizStoryTechnical(step.technical, step.checks.length === 0)}
+                </p>
+              ) : null}
+              {step.unsaid ? (
+                <p data-process-story-unsaid={step.unsaid} className="m-0 text-[12px] leading-snug font-medium break-words text-cc-ink-muted">
+                  {bizStoryUnsaid(step.unsaid)}
                 </p>
               ) : null}
               {step.stops.length > 0 ? (

@@ -74,6 +74,7 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.stepsTitle': 'Step by step',
   'biz.stepsDetailTitle': 'What each step checks, and where it can end',
   'biz.stepsDetailNone': 'No step checks anything a business reader decides on.',
+  'biz.changesAllTitle': 'Everything it changes',
   'biz.toDocumentation': 'In Documentation',
   'biz.toItView': 'In the IT view',
   'biz.storyNamesNote': 'names',
@@ -170,6 +171,14 @@ export function bizStoryStops(stops: readonly string[]): string {
 export function bizStoryTechnical(n: number, alone: boolean): string {
   const what = `${n} technical ${n === 1 ? 'check' : 'checks'} (data found, input filled, run options)`;
   return alone ? `${what.charAt(0).toUpperCase()}${what.slice(1)} — no business decision.` : `Plus ${what} — no business decision.`;
+}
+
+/**
+ * Checks on a field the code gives no words for (3.0.21, `StoryStep.unsaid`) —
+ * counted, never said as a field name; the step's line leads to them.
+ */
+export function bizStoryUnsaid(n: number): string {
+  return `Plus ${n} ${n === 1 ? 'check' : 'checks'} on a field the code gives no words for — see the step's line in the source.`;
 }
 
 /** The program's own demo cases, set apart from the steps (3.0.20). */

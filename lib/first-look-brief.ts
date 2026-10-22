@@ -131,3 +131,23 @@ export function decidesOnTop(explanation: RuleSetExplanation, max = DECIDES_SHOW
   });
   return { lines, more: Math.max(0, explanation.questions.length - lines.length) };
 }
+
+/** The most changes on top (3.0.21); the rest stand in the fold with their lines. */
+export const CHANGES_SHOWN = 3;
+
+/** A change named by a table, a transaction or another code — "Create entry in ZMM_PO_APPR", "(ME21N)". */
+const CODE_NAMED = /\b[ZY][A-Z0-9_/]{2,}\b|\([A-Z0-9_]{3,}\)|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b/;
+
+/**
+ * "What it changes" on top: at most {@link CHANGES_SHOWN}, the ones said in
+ * business words first (the analysis's block D — business objects on top,
+ * table and transaction names one fold down). Order within each group stays
+ * the engine's (creating first, then changing). Nothing is dropped: `more`
+ * counts the rest, and the fold lists every change.
+ */
+export function changesOnTop<T extends { text: string }>(all: readonly T[], more = 0, max = CHANGES_SHOWN): { changes: T[]; more: number } {
+  const plain = all.filter((c) => !CODE_NAMED.test(c.text));
+  const coded = all.filter((c) => CODE_NAMED.test(c.text));
+  const changes = [...plain, ...coded].slice(0, max);
+  return { changes, more: more + all.length - changes.length };
+}
