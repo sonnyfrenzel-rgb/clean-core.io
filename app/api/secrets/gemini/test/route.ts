@@ -16,8 +16,9 @@ import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key'
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import { isModelKeyProvider, offeredKeyProviders, type ModelKeyProvider } from '@/lib/model-providers';
+import { isModelKeyProvider, offeredKeyProviders, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
 import { testAnthropicKey } from '@/lib/anthropic-messages';
+import { markStoredKeyTested, readBeforeTest, type TestedRecordRef } from '@/lib/byok-tested';
 
 /**
  * POST /api/secrets/gemini/test
@@ -26,6 +27,11 @@ import { testAnthropicKey } from '@/lib/anthropic-messages';
  * If body contains { apiKey, provider? }, tests that specific key (provider absent: Gemini).
  * If body is empty, loads and decrypts the user's saved key, then tests it.
  * An Anthropic key is tested against the Models API, which spends no tokens.
+ *
+ * Roadmap 3.0.21: a passed test of the **saved** key is recorded on its record
+ * (`testedAt`, `lib/byok-tested.ts`) — the "tested" half of the portfolio's
+ * "own key stored and tested". An entered key that is not saved records
+ * nothing.
  */
 export async function POST(req: NextRequest) {
   const decodedToken = await verifyRequestAuth(req);
@@ -74,8 +80,20 @@ export async function POST(req: NextRequest) {
       provider = requested;
     }
 
+    // The saved key's record, read before the key is loaded, so the mark below
+    // speaks for exactly the key that was tested (`lib/byok-tested.ts`).
+    let testedRecord: { ref: TestedRecordRef; before: Awaited<ReturnType<typeof readBeforeTest>> } | null = null;
+
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
       // No key entered: test the saved one, of whichever provider it is.
+      const { db } = await getAdminDb();
+      const profile = (await db.collection('users').doc(decodedToken.uid).get()).data() ?? null;
+      const named = ownKeyProviderOf(profile);
+      const recordRef: TestedRecordRef | null =
+        named && named !== 'unknown'
+          ? db.collection('user_secrets').doc(decodedToken.uid).collection('providers').doc(named)
+          : null;
+      const before = recordRef ? await readBeforeTest(recordRef) : null;
       let saved: OwnModelKey | null;
       try {
         saved = await loadOwnModelKey(decodedToken.uid);
@@ -92,13 +110,22 @@ export async function POST(req: NextRequest) {
       }
       apiKey = saved.apiKey;
       provider = saved.provider;
+      if (recordRef && saved.provider === named) testedRecord = { ref: recordRef, before };
     }
+
+    // Written only after the provider accepted the key; a failed write leaves
+    // the key untested and is not the caller's failure.
+    const recordTested = async (): Promise<boolean> => {
+      if (!testedRecord) return false;
+      const { FieldValue } = await getAdminDb();
+      return markStoredKeyTested(testedRecord.ref, testedRecord.before, FieldValue.serverTimestamp());
+    };
 
     if (provider === 'anthropic') {
       // Anthropic's Models API: the key is accepted or refused, and no token
       // is spent (`lib/anthropic-messages.ts`). Server-side only.
       await testAnthropicKey(apiKey.trim());
-      return NextResponse.json({ ok: true, provider });
+      return NextResponse.json({ ok: true, provider, recorded: await recordTested() });
     }
 
     // Call Gemini to verify key
@@ -112,7 +139,7 @@ export async function POST(req: NextRequest) {
       throw new Error('Invalid response from AI provider.');
     }
 
-    return NextResponse.json({ ok: true, provider });
+    return NextResponse.json({ ok: true, provider, recorded: await recordTested() });
   } catch (err: any) {
     if (err instanceof QuotaError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

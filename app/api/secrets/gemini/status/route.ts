@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     const provider = named === null || named === 'unknown' ? 'gemini' : named;
     const snap = await db.collection('user_secrets').doc(decodedToken.uid).collection('providers').doc(provider).get();
     if (!snap.exists) {
-      return NextResponse.json({ byokConfigured: false, provider: null, last4: '', rotatedAt: null });
+      return NextResponse.json({ byokConfigured: false, provider: null, last4: '', rotatedAt: null, testedAt: null });
     }
 
     const data = snap.data();
@@ -48,6 +48,8 @@ export async function GET(req: Request) {
       provider,
       last4: data?.last4 || '',
       rotatedAt: data?.rotatedAt ? data.rotatedAt.toDate().toISOString() : null,
+      // Roadmap 3.0.21: when the saved key last passed its test (`lib/byok-tested.ts`).
+      testedAt: data?.testedAt ? data.testedAt.toDate().toISOString() : null,
     });
   } catch (err: unknown) {
     // A refusal says why — those messages are ours. Anything else is an Admin
