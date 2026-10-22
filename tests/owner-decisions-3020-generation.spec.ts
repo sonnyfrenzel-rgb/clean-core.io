@@ -4,6 +4,7 @@ import { preflight } from '../lib/transformation/preflight';
 import { TRANSFORMATION_CODES } from '../lib/transformation/error-codes';
 import { attributeCollisionReason } from '../lib/transformation/rap-contract';
 import { ENGINE_RUNTIME_JS } from '../lib/test-sandbox/engine-runtime';
+import { PROBE_RUNTIME_JS } from '../lib/test-sandbox/probe-runtime';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -134,5 +135,8 @@ test.describe('decision 2 — the authority wording of the engine-case runtime',
   test('one neutral sentence, true in the package\'s own run and in the app\'s sandbox', () => {
     expect(ENGINE_RUNTIME_JS).toContain('denies every check until it is granted (${AUTHORITY_DEMO_ENV}=grant, test only), and the authority check refused it');
     expect(ENGINE_RUNTIME_JS).not.toContain('this run did not grant it');
+    // The adapter probes say the same sentence.
+    expect(PROBE_RUNTIME_JS).toContain('the authority check refused it');
+    expect(PROBE_RUNTIME_JS).not.toContain('this run did not grant it');
   });
 });

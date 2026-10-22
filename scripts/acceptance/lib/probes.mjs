@@ -256,7 +256,7 @@ async function runIdCollision(cfg, ctx) {
   if (idA === undefined || idA === null || idA === '') {
     // Refused by the original's authorization check (3.0.17 criterion 3): no run, so no id — not a mapping defect.
     const authority = authorityRefusal(a);
-    if (authority) throw new Error(`the request is refused by the original's authorization check (${authority}) — srv/lib/authority.ts denies it until it is granted, and this run did not grant it (CC_AUTHORITY_DEMO=grant, test only)`);
+    if (authority) throw new Error(`the request is refused by the original's authorization check (${authority}) — srv/lib/authority.ts denies it until it is granted (CC_AUTHORITY_DEMO=grant, test only), and the authority check refused it`);
     throw adapterError(`no run id at '${cfg.id}' in ${short(a)}`);
   }
   const ids = new Set();
