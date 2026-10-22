@@ -41,6 +41,7 @@ import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 import { countSourceLines } from '@/lib/source-lines';
 import { isTargetChange, projectTarget } from '@/lib/target-change';
+import { portfolioStepFor } from '@/lib/portfolio/run-context';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -154,8 +155,11 @@ export async function POST(req: NextRequest) {
     // fingerprint is free by design, so one account could repeat the same
     // expensive analysis of a large source without limit.
     // 30/h is far above what a person analysing ABAP produces.
+    // Roadmap 3.0.21: a portfolio step signs each program through this very
+    // handler, in-process, and is bounded by the batch's own limits instead
+    // (`lib/portfolio/run-context.ts` — no request can set that context).
     try {
-      await assertRateLimit(`runs-create:${decodedToken.uid}`, 30, 60 * 60 * 1000);
+      if (!portfolioStepFor(decodedToken.uid)) await assertRateLimit(`runs-create:${decodedToken.uid}`, 30, 60 * 60 * 1000);
     } catch (rateErr: any) {
       if (rateErr instanceof QuotaError) {
         return NextResponse.json({ error: rateErr.message }, { status: rateErr.status });

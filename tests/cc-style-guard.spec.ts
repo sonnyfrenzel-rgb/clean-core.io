@@ -160,7 +160,8 @@ test.describe('the components cannot be overridden from outside', () => {
  * `aria-label="Search results"`). The parser sees all three, and does not
  * mistake a generic's `>` for the end of a tag.
  */
-const TEXT_SURFACES = ['components/workspace', 'components/process-map'];
+// Roadmap 3.0.21: the portfolio's components follow the same rule.
+const TEXT_SURFACES = ['components/workspace', 'components/process-map', 'components/portfolio'];
 const TEXT_SURFACE_FILES = ['components/demo/DemoWorkspaceShell.tsx', 'components/demo/DemoTourStop.tsx'];
 
 /** Attributes whose value a reader sees or hears. Identifiers, classes, roles and data hooks are not text. */

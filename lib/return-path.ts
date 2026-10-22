@@ -55,6 +55,10 @@ const ALLOWED_TARGETS: RegExp[] = [
   /^\/verify-pack$/,
   // Roadmap 5.1: the reason this module exists.
   new RegExp(`^/invitation/${ID}/${ID}$`),
+  // Roadmap 3.0.21: the portfolio, its invitation link and the overview it opens.
+  /^\/portfolio$/,
+  new RegExp(`^/portfolio/invitation/${ID}/${ID}$`),
+  new RegExp(`^/portfolio/shared/${ID}$`),
   new RegExp(`^/project/${ID}$`),
   new RegExp(`^/project/${ID}/(?:${STAGES})$`),
 ];

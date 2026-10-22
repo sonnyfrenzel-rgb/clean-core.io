@@ -13,6 +13,7 @@ import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } f
 import { normaliseEmail, suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
+import { erasePortfolioOf } from './portfolio/erasure';
 import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-email';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
@@ -1069,6 +1070,12 @@ export async function deleteUserDataAndAccount(
       }
     });
   }
+
+  //     Roadmap 3.0.21: the account's portfolio batches and named selections,
+  //     and its uid among the readers of selections shared with it
+  //     (`lib/portfolio/erasure.ts`). Invitations addressed to it there go with
+  //     the collection-group sweep of `invitations` below.
+  await tryDelete('portfolio', () => erasePortfolioOf(db, FieldValue, uid));
 
   //     The invitations are **deleted, not withdrawn**. A withdrawal writes
   //     `status: 'revoked'` and leaves `email` in place — the address of the

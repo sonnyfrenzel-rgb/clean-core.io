@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { targetEditionOf } from '@/lib/target-edition';
 import { createWithinCeiling } from '@/lib/write-ceiling';
-import { ArrowDownUp, Plus } from 'lucide-react';
+import { ArrowDownUp, Layers, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -63,6 +63,7 @@ import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcFilterBar from '@/components/cc/FilterBar';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
@@ -792,7 +793,14 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           count={shownRows.length}
           density="cozy"
           actions={
-            hasOwn ? (
+            <span className="flex flex-wrap items-center gap-2">
+              {/* Roadmap 3.0.21: the portfolio — many programs in one batch,
+                  one aggregated view. Every account sees the way in; the page
+                  says why it is closed without an own model key. */}
+              <CcLinkButton href="/portfolio" density="cozy" icon={<Layers size={16} aria-hidden={true} />} data-workspace-portfolio="">
+                {wt('portfolio.entry')}
+              </CcLinkButton>
+            {hasOwn ? (
               <span className="flex flex-wrap items-center gap-2">
                 <CcButton
                   icon={<ArrowDownUp size={16} aria-hidden={true} />}
@@ -811,7 +819,8 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
                   {t('workspace.newProject')}
                 </CcButton>
               </span>
-            ) : null
+            ) : null}
+            </span>
           }
         >
           {/* Nothing to filter while the demo is the only row, which is also what
