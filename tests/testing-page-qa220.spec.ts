@@ -131,11 +131,12 @@ test.describe('testing page — QA full review of fc787674705f', () => {
 });
 
 test.describe('testing error boundary — stale chunk recovery (1ef3f93640d4)', () => {
-  // Since 3.0.6 every boundary shares lib/stale-build.ts; this one must use it,
-  // and the shared matcher must still know every message below.
+  // Since 3.0.6 every boundary shares lib/stale-build.ts; the one that covers
+  // this tool — the project's, since 3.0.21 (7) — must use it, and the shared
+  // matcher must still know every message below.
   const matcher = () => {
-    const src = fs.readFileSync(path.join(SEGMENT, 'error.tsx'), 'utf8');
-    expect(src, 'the testing boundary no longer uses the shared matcher').toContain("from '@/lib/stale-build'");
+    const src = fs.readFileSync(path.join(SEGMENT, '..', 'error.tsx'), 'utf8');
+    expect(src, 'the boundary over the testing tool no longer uses the shared matcher').toContain("from '@/lib/stale-build'");
     return { test: (msg: string) => isStaleBuildError({ message: msg }) };
   };
 
