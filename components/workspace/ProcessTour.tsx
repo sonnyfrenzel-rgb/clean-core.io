@@ -2,10 +2,9 @@
 
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Footprints, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Footprints, RotateCcw, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
-import CcDisclosure from '@/components/cc/Disclosure';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcSkeleton from '@/components/cc/Skeleton';
 import { useCcModal, useCcPortalTarget } from '@/components/cc/modal';
@@ -13,10 +12,10 @@ import TourCanvas, { type TourBox } from '@/components/process-map/TourCanvas';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { ENGINE_ONLY, type WordedSentence } from '@/lib/plain-wording';
 import type { ProcessMapModel } from '@/lib/process-map';
-import type { ProcessTour as Tour, TourStation } from '@/lib/process-tour';
+import type { ProcessTour as Tour, TourOverview, TourStation } from '@/lib/process-tour';
 import type { WalkLine, WalkRange } from '@/lib/process-walk-guide';
 import { withoutCodes } from '@/lib/program-summary-text';
-import { walkLinesLabel, walkMapLabel, walkStepOf, wt } from '@/lib/workspace-messages';
+import { walkChecks, walkLinesLabel, walkMapLabel, walkStepOf, walkStops, walkStoryStep, wt } from '@/lib/workspace-messages';
 
 /**
  * The guided tour on the process map — owner decision 21.10.2026. It replaced
@@ -24,20 +23,39 @@ import { walkLinesLabel, walkMapLabel, walkStepOf, wt } from '@/lib/workspace-me
  * the process without you getting it onto one screen", and asked for an
  * answer before the reader understood the step.
  *
- * **One screen.** The tour is a layer over the page: the map fills it, and at
- * every station the map moves to the station's element, marks it and lets the
- * rest step back (`TourCanvas`). Nothing on the page has to be scrolled to.
- * Beside the element stands a small card — on a phone under the map — that
- * says in two or three plain sentences what happens here, why it matters and
- * where the process goes next. No question, no answer, no code and no rule
- * id: "More about it" folds the lines, what decides the step and the engine's
- * own sentences behind a model's wording.
+ * **One screen.** The tour is a layer over the page: at every station the map
+ * moves to the station's element, marks it and lets the rest step back
+ * (`TourCanvas`). Nothing on the page has to be scrolled to. A small card says
+ * in two or three plain sentences what happens here, why it matters and where
+ * the process goes next. No question, no answer, no code and no rule id:
+ * "More about it" holds the full list of cases, what the step checks and
+ * where it can end, the lines, what decides it and the engine's own sentences
+ * behind a model's wording.
  *
- * **Chapters.** The phases stand in a slim bar on top, with "Step 4 of 9";
- * a phase can be jumped to. **Per click only** — Back and Next, or the arrow
- * keys; nothing moves by itself, and nothing opens by itself. At the end, one
- * sentence about the whole program and a quiet link to the business questions
- * in Design.
+ * **First an overview** (owner, 22.10.2026): the whole map, and a card "What
+ * this process is about" — engine sentences only. It is not a step: the
+ * stations stay "Step 1 of N".
+ *
+ * **Three layouts** (owner decisions 22.10.2026, option A), chosen by CSS
+ * from the first paint (`process-map.css`) and by the same media queries here
+ * for the camera:
+ *
+ *   - **wide** ({@link TOUR_WIDE}): the map fills the layer and the card stands
+ *     beside the element;
+ *   - **stacked** (a phone upright): the map on top, the card under it at most
+ *     46 % of the screen high, and Back / Next pinned in a bar under the card,
+ *     outside what scrolls — Next is always on the screen;
+ *   - **landscape** ({@link TOUR_LANDSCAPE}, a phone on its side): the card in a
+ *     column beside the map, the buttons under the card.
+ *
+ * On a phone "More about it" opens as a panel over the whole tour with "Back
+ * to the map"; on a wide screen it opens in the card. A swipe across the card
+ * (never the map, which pans) moves a step, as the arrow keys do.
+ *
+ * **Chapters.** The phases stand in a slim bar on top, with "Step 4 of 9"; a
+ * phase can be jumped to. **Per click only** — Back and Next, the arrow keys,
+ * a swipe; nothing moves by itself, and nothing opens by itself. At the end
+ * "That was the process" and a quiet link to the business questions in Design.
  *
  * Modal the product's one way (`useCcModal`): the page behind is inert, the
  * focus moves to the card's title at every station and goes back to the
@@ -57,7 +75,7 @@ export interface ProcessTourProps {
   designHref?: string | null;
   /** The public demo: the same tour, said as the demo's. */
   demo?: boolean;
-  /** The station the tour opens at (a rendered test); 0 otherwise. */
+  /** The station the tour opens at (a rendered test); the overview (-1) otherwise. */
   initialStation?: number;
 }
 
@@ -68,26 +86,62 @@ export default function ProcessTour(props: ProcessTourProps) {
   return createPortal(<ProcessTourLayer {...props} />, target);
 }
 
-/** Wide enough for the card beside the element: the `md` step. */
-const WIDE = '(min-width: 768px)';
+/** Wide and tall enough for the card beside the element. The same query stands in `process-map.css`. */
+export const TOUR_WIDE = '(min-width: 768px) and (min-height: 560px)';
+/** A phone on its side: the card in a column beside the map. The same query stands in `process-map.css`. */
+export const TOUR_LANDSCAPE = '(max-width: 1023px) and (max-height: 559px) and (orientation: landscape)';
+export type TourMode = 'wide' | 'landscape' | 'stacked';
+
+/** The layout for what the screen matches. Pure: exported for the spec. */
+export function tourModeOf(matches: (query: string) => boolean): TourMode {
+  if (matches(TOUR_WIDE)) return 'wide';
+  if (matches(TOUR_LANDSCAPE)) return 'landscape';
+  return 'stacked';
+}
+
+/** The index the overview stands at, before the first station. */
+const OVERVIEW = -1;
 const GAP = 28;
 const EDGE = 16;
+/** The least sideways travel of a swipe, in pixels. */
+const SWIPE_MIN = 48;
 
-function useWide(): boolean {
-  const [wide, setWide] = useState(true);
+function readMode(): TourMode {
+  try {
+    return tourModeOf((query) => window.matchMedia(query).matches);
+  } catch {
+    return 'stacked';
+  }
+}
+
+/**
+ * The layout, read from the media queries at once — never a wide first paint
+ * on a phone (the camera of a wide card would put the element off to the side
+ * of a phone's map until the next frame).
+ */
+function useMode(): TourMode {
+  const [mode, setMode] = useState<TourMode>(() => (typeof window === 'undefined' ? 'stacked' : readMode()));
   useEffect(() => {
-    let query: MediaQueryList;
+    let queries: MediaQueryList[];
     try {
-      query = window.matchMedia(WIDE);
+      queries = [TOUR_WIDE, TOUR_LANDSCAPE].map((query) => window.matchMedia(query));
     } catch {
       return undefined;
     }
-    const update = () => setWide(query.matches);
+    const update = () => setMode(readMode());
     update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
+    for (const query of queries) query.addEventListener('change', update);
+    return () => {
+      for (const query of queries) query.removeEventListener('change', update);
+    };
   }, []);
-  return wide;
+  return mode;
+}
+
+/** A swipe across the card: 1 for the next step (to the left), -1 for the one before, 0 for none. Pure: exported for the spec. */
+export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
+  if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < 1.5 * Math.abs(dy)) return 0;
+  return dx < 0 ? 1 : -1;
 }
 
 /** Where the card stands beside the element: right of it, else left of it, inside the map. Pure: exported for the spec. */
@@ -100,16 +154,33 @@ export function cardPlace(box: TourBox, card: { width: number; height: number },
 }
 
 /** The dialog itself — exported so a server-free render can read it without a portal. */
-export function ProcessTourLayer({ tour, unavailable = false, model, onClose, say = ENGINE_ONLY, designHref = null, demo = false, initialStation = 0 }: ProcessTourProps) {
+export function ProcessTourLayer({ tour, unavailable = false, model, onClose, say = ENGINE_ONLY, designHref = null, demo = false, initialStation = OVERVIEW }: ProcessTourProps) {
   const stations = tour?.stations ?? [];
   const end = stations.length;
-  const [at, setAt] = useState(() => Math.max(0, Math.min(initialStation, end)));
-  const station: TourStation | null = tour && at < end ? stations[at] : null;
+  const [at, setAt] = useState(() => Math.max(OVERVIEW, Math.min(initialStation, end)));
+  const station: TourStation | null = tour && at >= 0 && at < end ? stations[at] : null;
+  const overview = !!tour && at === OVERVIEW;
   const titleId = useId();
-  const layerRef = useCcModal<HTMLDivElement>({ open: true, onClose });
-  const wide = useWide();
+  const moreId = useId();
+  const mode = useMode();
+  const wide = mode === 'wide';
 
-  const go = useCallback((index: number) => setAt(Math.max(0, Math.min(index, end))), [end]);
+  /* "More about it" belongs to one station: moving on closes it. */
+  const [moreAt, setMoreAt] = useState<number | null>(null);
+  const more = station !== null && moreAt === at;
+  const morePanel = more && !wide;
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const backToMapRef = useRef<HTMLButtonElement>(null);
+  const closeMore = useCallback(() => {
+    setMoreAt(null);
+    // The focus goes back to the button that opened it.
+    requestAnimationFrame(() => moreButtonRef.current?.focus({ preventScroll: true }));
+  }, []);
+
+  /* Escape closes the panel over the map first, then the tour (the modal ignores a handled key). */
+  const layerRef = useCcModal<HTMLDivElement>({ open: true, onClose });
+
+  const go = useCallback((index: number) => setAt(Math.max(OVERVIEW, Math.min(index, end))), [end]);
 
   /* The focus moves to the card's title at every station, so a screen reader reads where the tour is. */
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -117,6 +188,9 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
     // The layer took the focus on open (useCcModal); the title takes it from there.
     headingRef.current?.focus({ preventScroll: true });
   }, [at, tour]);
+  useEffect(() => {
+    if (morePanel) backToMapRef.current?.focus({ preventScroll: true });
+  }, [morePanel]);
 
   /* The page behind does not scroll under the layer. */
   useEffect(() => {
@@ -130,19 +204,39 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const tag = (event.target as HTMLElement).tagName;
+    if (event.key === 'Escape' && morePanel) {
+      event.preventDefault();
+      closeMore();
+      return;
+    }
     if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
-    if (event.key === 'ArrowRight' && at < end) {
+    if (morePanel) return;
+    if (event.key === 'ArrowRight' && tour && at < end) {
       event.preventDefault();
       go(at + 1);
-    } else if (event.key === 'ArrowLeft' && at > 0) {
+    } else if (event.key === 'ArrowLeft' && tour && at > OVERVIEW) {
       event.preventDefault();
       go(at - 1);
     }
   };
 
+  /* A swipe across the card moves a step — a touch or a pen, never a mouse selecting text, never on the map. */
+  const swipe = useRef<{ x: number; y: number; id: number } | null>(null);
+  const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    swipe.current = event.pointerType === 'mouse' ? null : { x: event.clientX, y: event.clientY, id: event.pointerId };
+  };
+  const onPointerUp = (event: React.PointerEvent<HTMLElement>) => {
+    const start = swipe.current;
+    swipe.current = null;
+    if (!start || start.id !== event.pointerId || !tour) return;
+    const step = swipeStep(event.clientX - start.x, event.clientY - start.y);
+    if (step === 1 && at < end) go(at + 1);
+    else if (step === -1 && at > OVERVIEW) go(at - 1);
+  };
+
   /* The card beside the element, on a wide screen. */
   const areaRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<TourBox | null>(null);
   const [place, setPlace] = useState<{ left: number; top: number } | null>(null);
   const measure = useCallback(() => {
@@ -165,6 +259,8 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
 
   const chapter = station && tour ? tour.chapters[station.chapter] : null;
   const shown = (line: WalkLine) => say(line.text, line.anchor);
+  const position = overview ? wt('walk.overview') : station ? walkStepOf(at + 1, end) : null;
+  const moreContent = station ? <MoreAbout station={station} shown={shown} /> : null;
 
   return (
     <div className="cc cc-tour-layer">
@@ -176,75 +272,82 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
         tabIndex={-1}
         onKeyDown={onKeyDown}
         data-process-tour=""
-        data-tour-at={station ? at + 1 : tour ? 'end' : 'reading'}
+        data-tour-mode={mode}
+        data-tour-at={!tour ? 'reading' : overview ? 'overview' : station ? at + 1 : 'end'}
         className="flex h-full w-full flex-col bg-cc-surface"
       >
-        {/* The slim bar: what this is, the parts of the process, where the tour is, the way out. */}
-        <header className="flex flex-col gap-2 border-b border-cc-line px-4 py-2 md:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-            <p className="m-0 flex min-w-0 items-center gap-2 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+        {/* The slim bar, one row on a phone: where the tour is, the part of the process, the way out. */}
+        <header className="cc-tour-head border-b border-cc-line">
+          <div className="flex min-w-0 items-center gap-2 md:gap-4">
+            <p className="cc-tour-wide-only m-0 min-w-0 items-center gap-2 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
               <Footprints size={14} aria-hidden={true} />
               <span className="min-w-0 truncate">{wt('walk.eyebrow')}</span>
               {demo ? <span className="font-medium tracking-normal normal-case">{wt('walk.demoNote')}</span> : null}
             </p>
-            <div className="flex items-center gap-3">
-              {station ? (
-                <span data-tour-position="" className="text-[13px] font-semibold text-cc-ink">
-                  {walkStepOf(at + 1, end)}
-                </span>
-              ) : null}
-              <CcButton variant="ghost" icon={<X size={16} aria-hidden={true} />} onClick={onClose} data-tour-close="">
-                {wt('walk.close')}
-              </CcButton>
-            </div>
-          </div>
-          {tour && tour.chapters.length > 1 ? (
-            <>
-              <nav aria-label={wt('walk.chaptersLabel')} className="hidden md:block">
-                <ol className="m-0 flex list-none flex-wrap gap-1 p-0">
-                  {tour.chapters.map((c, i) => {
-                    const here = station?.chapter === i;
-                    return (
-                      <li key={c.id} className="min-w-0 max-w-full">
-                        <CcButton
-                          variant={here ? 'dark' : 'ghost'}
-                          onClick={() => go(c.first)}
-                          aria-current={here ? 'step' : undefined}
-                          data-tour-chapter={i + 1}
-                        >
-                          {/* A long name wraps inside its chip rather than widening the bar. */}
-                          <span className="min-w-0 text-left break-words whitespace-normal">{c.label}</span>
-                        </CcButton>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </nav>
-              <label className="flex min-w-0 items-center gap-2 text-[12px] font-semibold text-cc-ink-muted md:hidden">
-                <span className="shrink-0">{wt('walk.chapterSelect')}</span>
+            {position ? (
+              // On a phone the part select says "Overview" itself; the counter would say it twice.
+              <span
+                data-tour-position=""
+                className={`shrink-0 text-[13px] font-semibold text-cc-ink ${overview && tour && tour.chapters.length > 1 ? 'cc-tour-wide-only' : ''}`}
+              >
+                {position}
+              </span>
+            ) : null}
+            {tour && tour.chapters.length > 1 ? (
+              <label className="cc-tour-narrow-only min-w-0 flex-1 items-center gap-2 text-[12px] font-semibold text-cc-ink-muted">
+                <span className="sr-only">{wt('walk.chapterSelect')}</span>
                 <select
-                  value={station ? String(station.chapter) : ''}
+                  value={overview ? 'overview' : station ? String(station.chapter) : 'end'}
                   onChange={(event) => {
+                    if (event.target.value === 'overview') {
+                      go(OVERVIEW);
+                      return;
+                    }
                     const c = tour.chapters[Number(event.target.value)];
                     if (c) go(c.first);
                   }}
                   data-tour-chapter-select=""
                   className="min-w-0 flex-1 rounded-cc-row border border-cc-line bg-cc-surface px-2 py-1 text-[13px] font-semibold text-cc-ink"
                 >
-                  {station ? null : <option value="">{wt('walk.endTitle')}</option>}
+                  <option value="overview">{wt('walk.overview')}</option>
                   {tour.chapters.map((c, i) => (
                     <option key={c.id} value={String(i)}>
                       {c.label}
                     </option>
                   ))}
+                  {overview || station ? null : <option value="end">{wt('walk.endTitle')}</option>}
                 </select>
               </label>
-            </>
+            ) : (
+              <span className="flex-1" />
+            )}
+            <span className="ml-auto shrink-0">
+              <CcButton variant="ghost" icon={<X size={16} aria-hidden={true} />} onClick={onClose} aria-label={wt('walk.close')} data-tour-close="">
+                <span className="cc-tour-wide-only">{wt('walk.close')}</span>
+              </CcButton>
+            </span>
+          </div>
+          {tour && tour.chapters.length > 1 ? (
+            <nav aria-label={wt('walk.chaptersLabel')} className="cc-tour-wide-only mt-2">
+              <ol className="m-0 flex list-none flex-wrap gap-1 p-0">
+                {tour.chapters.map((c, i) => {
+                  const here = station?.chapter === i;
+                  return (
+                    <li key={c.id} className="min-w-0 max-w-full">
+                      <CcButton variant={here ? 'dark' : 'ghost'} onClick={() => go(c.first)} aria-current={here ? 'step' : undefined} data-tour-chapter={i + 1}>
+                        {/* A long name wraps inside its chip rather than widening the bar. */}
+                        <span className="min-w-0 text-left break-words whitespace-normal">{c.label}</span>
+                      </CcButton>
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
           ) : null}
         </header>
 
-        {/* The map fills the rest; the card stands beside the element (under the map on a phone). */}
-        <div ref={areaRef} className="relative flex min-h-0 flex-1 flex-col md:block">
+        {/* The map, and the card with its buttons: beside the element, under the map, or beside the map. */}
+        <div ref={areaRef} className="cc-tour-body">
           <TourCanvas
             xml={model.xml}
             plane={station?.plane ?? null}
@@ -252,45 +355,81 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
             align={wide ? 'side' : 'center'}
             label={walkMapLabel(station?.title ?? null)}
             onPlaced={setBox}
-            className="h-[44dvh] w-full shrink-0 border-b border-cc-line md:absolute md:inset-0 md:h-full md:border-b-0"
+            className="cc-tour-map"
           />
-          <article
+          <div
             ref={cardRef}
-            data-tour-card={station ? station.id : 'end'}
-            aria-labelledby={titleId}
+            data-tour-sheet=""
             style={wide ? (place ? { left: place.left, top: place.top } : { right: EDGE, top: EDGE }) : undefined}
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-cc-surface p-4 md:absolute md:max-h-[calc(100%-32px)] md:w-[380px] md:flex-none md:rounded-cc-card md:border md:border-cc-line md:shadow-cc"
+            className="cc-tour-side bg-cc-surface"
           >
-            {!tour ? (
-              <>
-                <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold text-cc-ink">
-                  {wt('walk.title')}
-                </h2>
-                {unavailable ? (
-                  <p role="alert" data-tour-unavailable="" className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.unavailable')}</p>
-                ) : (
-                  <>
-                    <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.preparing')}</p>
-                    <CcSkeleton shape="text" count={3} label={wt('walk.title')} />
-                  </>
-                )}
-              </>
-            ) : station ? (
-              <StationCard
-                station={station}
-                chapterLabel={chapter && chapter.label !== station.title ? chapter.label : null}
-                titleId={titleId}
-                headingRef={headingRef}
-                shown={shown}
-              />
-            ) : (
-              <EndCard tour={tour} titleId={titleId} headingRef={headingRef} shown={shown} designHref={designHref} />
-            )}
+            <article
+              data-tour-card={overview ? 'overview' : station ? station.id : tour ? 'end' : 'reading'}
+              aria-labelledby={titleId}
+              onPointerDown={onPointerDown}
+              onPointerUp={onPointerUp}
+              onPointerCancel={() => {
+                swipe.current = null;
+              }}
+              className="cc-tour-card"
+            >
+              {!tour ? (
+                <>
+                  <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold text-cc-ink">
+                    {wt('walk.title')}
+                  </h2>
+                  {unavailable ? (
+                    <p role="alert" data-tour-unavailable="" className="m-0 text-[13px] font-medium text-cc-ink-muted">
+                      {wt('walk.unavailable')}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.preparing')}</p>
+                      <CcSkeleton shape="text" count={3} label={wt('walk.title')} />
+                    </>
+                  )}
+                </>
+              ) : overview ? (
+                <OverviewCard overview={tour.overview} titleId={titleId} headingRef={headingRef} shown={shown} />
+              ) : station ? (
+                <>
+                  <StationCard
+                    station={station}
+                    chapterLabel={chapter && chapter.label !== station.title ? chapter.label : null}
+                    titleId={titleId}
+                    headingRef={headingRef}
+                    shown={shown}
+                  />
+                  <div data-tour-more="" className="cc-no-print">
+                    <button
+                      ref={moreButtonRef}
+                      type="button"
+                      aria-expanded={more}
+                      aria-controls={moreId}
+                      onClick={() => (more ? closeMore() : setMoreAt(at))}
+                      data-tour-more-open=""
+                      className="inline-flex min-h-8 items-center gap-1 rounded-cc-row text-left text-[13px] font-semibold text-cc-ink pointer-coarse:min-h-11"
+                    >
+                      {wt('walk.more')}
+                      <ChevronRight size={16} aria-hidden={true} className={wide && more ? 'rotate-90 text-cc-ink-muted' : 'text-cc-ink-muted'} />
+                    </button>
+                  </div>
+                  {wide ? (
+                    <div id={moreId} data-tour-more-body="" hidden={!more}>
+                      {moreContent}
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <EndCard tour={tour} titleId={titleId} headingRef={headingRef} designHref={designHref} />
+              )}
+              <p className="sr-only m-0 text-[12px]">{wt('walk.keys')}</p>
+            </article>
             {tour ? (
-              <div className="cc-no-print mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-cc-line pt-3">
-                {station ? (
+              <div data-tour-nav="" className="cc-tour-nav cc-no-print border-t border-cc-line">
+                {overview || station ? (
                   <>
-                    <CcButton icon={<ChevronLeft size={16} aria-hidden={true} />} onClick={at > 0 ? () => go(at - 1) : undefined} disabled={at === 0} data-tour-back="">
+                    <CcButton icon={<ChevronLeft size={16} aria-hidden={true} />} onClick={at > OVERVIEW ? () => go(at - 1) : undefined} disabled={at === OVERVIEW} data-tour-back="">
                       {wt('walk.back')}
                     </CcButton>
                     <CcButton variant="secondary" onClick={() => go(at + 1)} data-tour-next="">
@@ -300,23 +439,77 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
                   </>
                 ) : (
                   <>
-                    {end > 0 ? (
-                      <CcButton icon={<ChevronLeft size={16} aria-hidden={true} />} onClick={() => go(end - 1)} data-tour-back="">
-                        {wt('walk.back')}
-                      </CcButton>
-                    ) : null}
-                    {end > 0 ? (
-                      <CcButton icon={<RotateCcw size={16} aria-hidden={true} />} onClick={() => go(0)} data-tour-again="">
-                        {wt('walk.again')}
-                      </CcButton>
-                    ) : null}
+                    <CcButton icon={<ChevronLeft size={16} aria-hidden={true} />} onClick={() => go(end - 1)} data-tour-back="">
+                      {wt('walk.back')}
+                    </CcButton>
+                    <CcButton icon={<RotateCcw size={16} aria-hidden={true} />} onClick={() => go(OVERVIEW)} data-tour-again="">
+                      {wt('walk.again')}
+                    </CcButton>
                   </>
                 )}
               </div>
             ) : null}
-            <p className="sr-only m-0 text-[12px]">{wt('walk.keys')}</p>
-          </article>
+          </div>
+          {/* On a phone "More about it" is a panel over the whole tour, with its own way back. */}
+          {station && !wide ? (
+            <section id={moreId} data-tour-more-panel="" aria-labelledby={`${moreId}-title`} hidden={!more} className="cc-tour-more-panel bg-cc-surface">
+              <div className="flex items-center gap-2 border-b border-cc-line px-4 py-2">
+                <CcButton ref={backToMapRef} variant="ghost" icon={<ArrowLeft size={16} aria-hidden={true} />} onClick={closeMore} data-tour-back-to-map="">
+                  {wt('walk.backToMap')}
+                </CcButton>
+              </div>
+              <div className="cc-tour-more-scroll">
+                <h3 id={`${moreId}-title`} className="m-0 text-[15px] leading-snug font-bold break-words text-cc-ink">
+                  {station.title}
+                </h3>
+                <p className="m-0 text-[12px] font-semibold text-cc-ink-muted">{wt('walk.more')}</p>
+                {moreContent}
+              </div>
+            </section>
+          ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function OverviewCard({
+  overview,
+  titleId,
+  headingRef,
+  shown,
+}: {
+  overview: TourOverview;
+  titleId: string;
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
+  shown: (line: WalkLine) => WordedSentence;
+}) {
+  const said = [...overview.purpose, ...(overview.trigger ? [overview.trigger] : []), ...(overview.result ? [overview.result] : [])];
+  return (
+    <div data-tour-overview="" className="flex flex-col gap-3">
+      <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold break-words text-cc-ink">
+        {wt('walk.overviewTitle')}
+      </h2>
+      <div data-tour-narration="" className="flex flex-col gap-2">
+        {overview.purpose.map((line, i) => (
+          <Said key={i} said={shown(line)} />
+        ))}
+        {overview.trigger ? <Said said={shown(overview.trigger)} /> : null}
+        {overview.route ? (
+          <p data-tour-route="" className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">
+            {overview.route}
+          </p>
+        ) : null}
+        {overview.involved ? (
+          <p data-tour-involved="" className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">
+            {overview.involved}
+          </p>
+        ) : null}
+        {overview.result ? <Said said={shown(overview.result)} /> : null}
+        {said.length === 0 ? <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('walk.overviewEmpty')}</p> : null}
+        <p data-tour-count="" className="m-0 text-[14px] leading-relaxed font-semibold text-cc-ink">
+          {overview.count}
+        </p>
       </div>
     </div>
   );
@@ -335,10 +528,6 @@ function StationCard({
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   shown: (line: WalkLine) => WordedSentence;
 }) {
-  const happens = shown(station.happens);
-  const matters = shown(station.matters);
-  const more = [...station.decides, ...(station.data ? [station.data] : [])];
-  const said = [happens, matters, ...more.map(shown)];
   return (
     <>
       <div className="flex flex-col gap-1">
@@ -352,43 +541,82 @@ function StationCard({
         </h2>
       </div>
       <div data-tour-narration="" className="flex flex-col gap-2">
-        <Said said={happens} />
-        <Said said={matters} />
-        <p data-tour-next-sentence="" className="m-0 text-[14px] leading-relaxed font-semibold text-cc-ink">
-          {station.next}
-        </p>
-        {station.aside ? (
-          <p data-tour-aside="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            {station.aside}
+        <Said said={shown(station.happens)} />
+        <Said said={shown(station.matters)} />
+        {station.next ? (
+          <p data-tour-next-sentence="" className="m-0 text-[14px] leading-relaxed font-semibold text-cc-ink">
+            {station.next}
           </p>
         ) : null}
-      </div>
-      <div data-tour-more="" className="cc-no-print">
-        <CcDisclosure title={wt('walk.more')}>
-          <div className="flex flex-col gap-3 pt-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[12px] font-semibold text-cc-ink-muted">{wt('walk.lines')}</span>
-              {station.anchor ? <Lines range={station.anchor} /> : <span className="text-[12px] font-medium text-cc-ink-muted">{wt('walk.noLines')}</span>}
-            </div>
-            {station.decides.length > 0 ? (
-              <MoreList title={wt('walk.decides')} lines={station.decides} shown={shown} />
-            ) : null}
-            {station.data ? <MoreList title={wt('walk.data')} lines={[station.data]} shown={shown} /> : null}
-            {station.engine ? (
-              <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                <span className="font-semibold text-cc-ink">{wt('walk.engineReading')}: </span>
-                {station.engine}
-              </p>
-            ) : null}
-            <AsReadFromCode said={said} />
-          </div>
-        </CcDisclosure>
       </div>
     </>
   );
 }
 
-/** A sentence as the card says it: the plain wording, without table codes on top (they stay one fold down). */
+/**
+ * One level down: first what a business reader asks next — the full list of
+ * cases, what the step checks and where it can end, the next part, what the
+ * tour leaves out here — then the lines, what decides it, the data it touches
+ * and the engine's own sentences.
+ */
+function MoreAbout({ station, shown }: { station: TourStation; shown: (line: WalkLine) => WordedSentence }) {
+  const more = [...station.decides, ...(station.data ? [station.data] : [])];
+  const said = [shown(station.happens), shown(station.matters), ...(station.cases ? [shown(station.cases)] : []), ...more.map(shown)];
+  return (
+    <div className="flex flex-col gap-3 pt-2">
+      {station.cases || station.story.length > 0 ? (
+        <div data-tour-more-business="" className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+          {station.cases ? (
+            <div data-tour-cases="" className="flex flex-col gap-1">
+              <p className="m-0 text-[12px] font-semibold text-cc-ink-muted">{wt('walk.cases')}</p>
+              <Said said={shown(station.cases)} />
+            </div>
+          ) : null}
+          {station.story.map((note, i) => (
+            <div key={i} data-tour-story="" className="flex flex-col gap-1">
+              {note.step ? <p className="m-0 text-[12px] font-semibold text-cc-ink-muted">{walkStoryStep(note.step)}</p> : null}
+              {note.checks.length > 0 ? (
+                <p data-tour-story-checks="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
+                  {walkChecks(note.checks)}
+                </p>
+              ) : null}
+              {note.stops.length > 0 ? (
+                <p data-tour-story-stops="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
+                  {walkStops(note.stops)}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {station.nextPart ? (
+        <p data-tour-next-part="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">
+          {station.nextPart}
+        </p>
+      ) : null}
+      {station.aside ? (
+        <p data-tour-aside="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+          {station.aside}
+        </p>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] font-semibold text-cc-ink-muted">{wt('walk.lines')}</span>
+        {station.anchor ? <Lines range={station.anchor} /> : <span className="text-[12px] font-medium text-cc-ink-muted">{wt('walk.noLines')}</span>}
+      </div>
+      {station.decides.length > 0 ? <MoreList title={wt('walk.decides')} lines={station.decides} shown={shown} /> : null}
+      {station.data ? <MoreList title={wt('walk.data')} lines={[station.data]} shown={shown} /> : null}
+      {station.engine ? (
+        <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+          <span className="font-semibold text-cc-ink">{wt('walk.engineReading')}: </span>
+          {station.engine}
+        </p>
+      ) : null}
+      <AsReadFromCode said={said} />
+    </div>
+  );
+}
+
+/** A sentence as the card says it: the plain wording, without table codes on top (they stay one level down). */
 function Said({ said }: { said: WordedSentence }) {
   return (
     <p data-tour-worded={said.worded ? 'yes' : 'no'} className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">
@@ -425,36 +653,19 @@ function EndCard({
   tour,
   titleId,
   headingRef,
-  shown,
   designHref,
 }: {
   tour: Tour;
   titleId: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
-  shown: (line: WalkLine) => WordedSentence;
   designHref: string | null;
 }) {
-  const closing = tour.closing ? shown(tour.closing) : null;
   return (
     <div data-tour-end="" className="flex flex-col gap-3">
       <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold text-cc-ink">
         {tour.stations.length > 0 ? wt('walk.endTitle') : wt('walk.title')}
       </h2>
       {tour.stations.length === 0 ? <p className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">{wt('walk.empty')}</p> : null}
-      {closing ? (
-        <p data-tour-closing="" className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">
-          {withoutCodes(closing.text)}
-          <WordedChip said={closing} />
-          {tour.closing?.anchor ? (
-            <>
-              {' '}
-              <Lines range={tour.closing.anchor} />
-            </>
-          ) : null}
-        </p>
-      ) : (
-        <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('walk.endNone')}</p>
-      )}
       {designHref ? (
         <span className="cc-no-print">
           <CcLinkButton href={designHref} variant="ghost" data-tour-to-design="">

@@ -9,7 +9,7 @@ import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
 import { ABAP_TOKEN, buildWalkGuide, type WalkGuide } from '../lib/process-walk-guide';
-import { asideSentence, buildProcessTour, MAX_STATIONS, tourClosingOf, type ProcessTour } from '../lib/process-tour';
+import { asideSentence, buildProcessTour, MAX_STATIONS, tourReadingOf, type ProcessTour } from '../lib/process-tour';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { readExample } from './helpers/starter-example-files';
 
@@ -36,7 +36,7 @@ function readOf(file: string): { source: string; model: ProcessMapModel; guide: 
   const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file });
   const model = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null), fileName: file });
   const guide = buildWalkGuide(source, model, walkOrder(model, null));
-  return { source, model, guide, tour: buildProcessTour(guide, model, tourClosingOf(source)) };
+  return { source, model, guide, tour: buildProcessTour(guide, model, tourReadingOf(source)) };
 }
 
 const BIG = readOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
@@ -103,18 +103,24 @@ test.describe('the stations: business steps only, a handful per phase, phases as
     }
   });
 
-  test('each station says where the process goes next; the end is one sentence about the whole program', () => {
+  test('each station says where the process goes next — a new part one level down; the purpose sentence opens the tour', () => {
+    // Owner decision 22.10.2026 (5): "Then the part … begins" moves behind "More about it"; the step after,
+    // inside a part, stays on the card. (8): the purpose sentence moved from the end card to the overview.
     const [first, second] = PO.tour.stations;
-    expect(first.next).toBe(`Then the part “${PO.tour.chapters[second.chapter].label}” begins.`);
+    expect(first.next).toBeNull();
+    expect(first.nextPart).toBe(`Then the part “${PO.tour.chapters[second.chapter].label}” begins.`);
+    const inPart = PO.tour.stations.findIndex((s, i) => PO.tour.stations[i + 1]?.chapter === s.chapter);
+    expect(PO.tour.stations[inPart].next).toBe(`Then it goes on to “${PO.tour.stations[inPart + 1].title}”.`);
+    expect(PO.tour.stations[inPart].nextPart).toBeNull();
     expect(PO.tour.stations[PO.tour.stations.length - 1].next).toBe('This is the last step of the tour.');
-    expect(PO.tour.closing?.text).toMatch(/^Creates purchase orders/);
-    expect(BIG.tour.closing?.text).toMatch(/sales orders/);
+    expect(PO.tour.overview.purpose[0]?.text).toMatch(/^Creates purchase orders/);
+    expect(BIG.tour.overview.purpose.map((l) => l.text).join(' ')).toMatch(/sales orders/);
   });
 
   test('nothing on a card reads as code', () => {
     for (const { tour } of [BIG, PO]) {
       for (const s of tour.stations) {
-        for (const text of [s.happens.text, s.matters.text, s.next, s.aside ?? '']) {
+        for (const text of [s.happens.text, s.matters.text, s.next ?? '', s.nextPart ?? '', s.aside ?? '']) {
           expect(text, text).not.toMatch(ABAP_TOKEN);
           expect(text).not.toMatch(/\bIF\b|\bPERFORM\b|\bSELECT\b|\bBR-\d+/);
         }
@@ -161,7 +167,10 @@ test.describe('the tour on screen (server-free render)', () => {
     expect(text).toContain(`Step ${at + 1} of ${PO.tour.stations.length}`);
     expect(text).toContain('It checks: Currency not EUR? If yes, it goes on to “Convert to EUR”. If no, it carries on.');
     expect(text).toContain('It is a business rule: it decides which way each case goes.');
-    expect(html).toContain('data-tour-next-sentence=""');
+    // The next part begins after it: said one level down, not on the card (owner decision 22.10.2026).
+    expect(html).not.toContain('data-tour-next-sentence=""');
+    expect(html).toContain('data-tour-next-part=""');
+    expect(text.slice(0, text.indexOf('More about it'))).not.toContain('Then the part');
     // The map moves to the element: the canvas is told which, and names it for a screen reader.
     expect(html).toContain('data-process-tour-map=""');
     expect(html).toContain('aria-label="Process map, highlighted: Currency not EUR?"');
@@ -189,7 +198,7 @@ test.describe('the tour on screen (server-free render)', () => {
     expect(narration).not.toContain('VBAK');
   });
 
-  test('the end: one sentence about the program and a quiet link to the questions in Design', async () => {
+  test('the end: "That was the process" and a quiet link to the questions in Design — no recap', async () => {
     const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
     const html = renderToStaticMarkup(
       React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: PO.tour.stations.length, designHref: '/project/p1/design' }),
@@ -197,8 +206,9 @@ test.describe('the tour on screen (server-free render)', () => {
     const text = textOf(html);
     expect(html).toContain('data-tour-at="end"');
     expect(text).toContain('That was the process');
-    expect(html).toContain('data-tour-closing=""');
-    expect(text).toContain('Creates purchase orders');
+    // Owner decision 22.10.2026 (8): the purpose sentence moved to the overview; the end recaps nothing.
+    expect(html).not.toContain('data-tour-closing');
+    expect(text).not.toContain('Creates purchase orders');
     expect(html).toMatch(/<a[^>]*href="\/project\/p1\/design"[^>]*data-tour-to-design=""|<a[^>]*data-tour-to-design=""[^>]*href="\/project\/p1\/design"/);
     expect(text).toContain('Answer the questions for the business in Design');
     expect(html).toContain('data-tour-again=""');
@@ -214,7 +224,7 @@ test.describe('the tour on screen (server-free render)', () => {
   test('a reworded sentence carries its chip, the engine sentence one fold down', async () => {
     const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
     const say = (text: string) => ({ text: `Plainly: ${text}`, engine: text, worded: true });
-    const html = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {}, say }));
+    const html = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {}, say, initialStation: 0 }));
     expect(html).toContain('data-tour-worded="yes"');
     expect(html).toContain('data-worded-chip=""');
     expect(html).toContain('data-worded-engine=""');

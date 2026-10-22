@@ -548,8 +548,11 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     await page.locator('[data-tour-entry-open]').click();
     const tour = page.locator('[data-process-tour]');
-    await expect(tour).toHaveAttribute('data-tour-at', '1', { timeout: 60_000 });
+    // It opens on its overview (owner decision 22.10.2026), not counted; the first station follows.
+    await expect(tour).toHaveAttribute('data-tour-at', 'overview', { timeout: 60_000 });
     await expect(tour.locator('[data-tour-card]')).toBeInViewport();
+    await page.keyboard.press('ArrowRight');
+    await expect(tour).toHaveAttribute('data-tour-at', '1');
     await expect(tour.getByRole('radio')).toHaveCount(0);
     await expect(tour.locator('[data-state-confirm]')).toHaveCount(0);
     await page.keyboard.press('ArrowRight');

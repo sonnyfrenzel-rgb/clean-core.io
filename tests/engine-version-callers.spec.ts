@@ -46,7 +46,7 @@ const POSITIONAL: Readonly<Record<string, number>> = {
   explainBusinessRules: 4,
   processStory: 4,
   processSummaryOf: 4,
-  tourClosingOf: 2,
+  tourReadingOf: 2,
   ruleRegisterFromView: 5,
   ruleRegisterFromSource: 3,
   ruleFactsOf: 5,
@@ -58,6 +58,8 @@ const POSITIONAL: Readonly<Record<string, number>> = {
   travellingFact: 2,
   // 3.0.21: the First-insights drawing sets the test-data switch apart from engine 3.0.20 on.
   firstLookExcerpt: 4,
+  // 3.0.21: "What it decides" reads the rule baskets from that engine on.
+  openingDecisions: 3,
 };
 
 /** Object argument: the first argument must be an object literal naming `engineVersion`. */

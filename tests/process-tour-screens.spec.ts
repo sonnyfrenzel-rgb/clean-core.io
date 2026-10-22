@@ -7,7 +7,7 @@ import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
 import { buildWalkGuide } from '../lib/process-walk-guide';
-import { buildProcessTour, tourClosingOf } from '../lib/process-tour';
+import { buildProcessTour, tourReadingOf } from '../lib/process-tour';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -34,7 +34,7 @@ function tourOf(file: string) {
   const exports = buildReadingExports(source, { processName: file, sourceFileName: file });
   const model = buildProcessMapModel({ bpmn: exports.bpmn, technical: exports.technical, named: applyNaming(namingContextOf(source), null), fileName: file });
   const guide = buildWalkGuide(source, model, walkOrder(model, null));
-  return { model, tour: buildProcessTour(guide, model, tourClosingOf(source)) };
+  return { model, tour: buildProcessTour(guide, model, tourReadingOf(source)) };
 }
 const BIG = tourOf(FILE);
 const PO = tourOf('Z_MM_PO_APPROVAL.abap');
@@ -94,10 +94,10 @@ async function open(page: Page, at: number, which = BIG): Promise<void> {
   await page.setContent(page_html.replace('__DATA__', () => data), { waitUntil: 'load' });
   await expect(page.locator('[data-process-tour]')).toBeVisible();
   await expect(page.locator('[data-process-tour-map] .djs-container')).toBeVisible({ timeout: 30_000 });
-  if (at < which.tour.stations.length) await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1, { timeout: 30_000 });
+  if (at >= 0 && at < which.tour.stations.length) await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1, { timeout: 30_000 });
 }
 
-/** Where the highlighted element and the card stand, and whether the page scrolls. */
+/** Where the highlighted element, the map, the card and its buttons stand, and whether anything scrolls. */
 async function measure(page: Page) {
   return page.evaluate(() => {
     const rect = (el: Element | null) => {
@@ -106,9 +106,14 @@ async function measure(page: Page) {
       return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
     };
     const shape = document.querySelector('[data-process-tour-map] .cc-tour-here .djs-visual');
+    const card = document.querySelector('[data-tour-card]') as HTMLElement | null;
     return {
       element: rect(shape),
-      card: rect(document.querySelector('[data-tour-card]')),
+      card: rect(card),
+      cardScroll: card ? { scrollHeight: card.scrollHeight, clientHeight: card.clientHeight } : null,
+      next: rect(document.querySelector('[data-tour-next]')),
+      back: rect(document.querySelector('[data-tour-back]')),
+      head: rect(document.querySelector('.cc-tour-head')),
       map: rect(document.querySelector('[data-process-tour-map]')),
       width: window.innerWidth,
       height: window.innerHeight,
@@ -119,6 +124,7 @@ async function measure(page: Page) {
       })(),
       focused: document.activeElement?.tagName ?? '',
       at: document.querySelector('[data-process-tour]')?.getAttribute('data-tour-at'),
+      mode: document.querySelector('[data-process-tour]')?.getAttribute('data-tour-mode'),
     };
   });
 }
@@ -126,26 +132,52 @@ async function measure(page: Page) {
 const inside = (r: { left: number; top: number; right: number; bottom: number }, w: number, h: number) =>
   r.left >= -1 && r.top >= -1 && r.right <= w + 1 && r.bottom <= h + 1;
 
-for (const viewport of [
-  { name: 'desktop', width: 1440, height: 900 },
-  { name: 'phone', width: 390, height: 844 },
-]) {
+/**
+ * Owner decisions 22.10.2026 (option A): a phone upright stacks map, card and a
+ * pinned button bar; a phone on its side puts the card in a column beside the
+ * map; 390 × 664 is what Safari leaves of a 390 × 844 phone. On every one, at
+ * every station, Next is on the screen without scrolling anything.
+ */
+const VIEWPORTS = [
+  { name: 'desktop', width: 1440, height: 900, mode: 'wide' },
+  { name: 'phone', width: 390, height: 844, mode: 'stacked' },
+  { name: 'phone-browser-bars', width: 390, height: 664, mode: 'stacked' },
+  { name: 'phone-landscape', width: 844, height: 390, mode: 'landscape' },
+  { name: 'small-phone-landscape', width: 667, height: 375, mode: 'landscape' },
+] as const;
+
+for (const viewport of VIEWPORTS) {
   test.describe(`the tour of the 1,000-line example at ${viewport.width} × ${viewport.height}`, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height }, contextOptions: { reducedMotion: 'reduce' } });
 
-    test('at every station the highlighted element and its card are both on one screen, with no scrolling', async ({ page }, info) => {
+    test('the overview first, then at every station the element, its card and Next on one screen, with no scrolling', async ({ page }, info) => {
       test.setTimeout(240_000);
-      await open(page, 0);
+      await open(page, -1);
+      // The overview: the whole map, "What this process is about", not counted as a step.
+      await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', 'overview');
+      await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-mode', viewport.mode);
+      await expect(page.locator('[data-tour-overview]')).toBeVisible();
+      await expect(page.locator('[data-tour-count]')).toBeVisible();
+      await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(0);
+      // Said once: by the counter on a wide screen, by the part select on a phone.
+      if (viewport.mode === 'wide') await expect(page.locator('[data-tour-position]')).toHaveText('Overview');
+      else {
+        await expect(page.locator('[data-tour-position]')).toBeHidden();
+        await expect(page.locator('[data-tour-chapter-select]')).toHaveValue('overview');
+      }
+      const o = await measure(page);
+      expect(inside(o.next!, o.width, o.height), `overview: Next ${JSON.stringify(o.next)}`).toBe(true);
+      await page.screenshot({ path: info.outputPath(`tour-${viewport.name}-overview.png`) });
+
       const shots = new Set([0, Math.floor(tour.stations.length / 2), tour.stations.length - 1]);
       for (let at = 0; at < tour.stations.length; at += 1) {
-        if (at > 0) {
-          await page.keyboard.press('ArrowRight');
-          await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(at + 1));
-          await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1);
-        }
+        await page.keyboard.press('ArrowRight');
+        await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(at + 1));
+        await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1);
         // The map highlights the element the card narrates, not the one before it (QA review of ee72ca2218e1,
         // db6418710512): bpmn-js marks the element's own group, which carries its id.
         await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveAttribute('data-element-id', tour.stations[at].id);
+        await expect(page.locator('[data-tour-position]')).toHaveText(`Step ${at + 1} of ${tour.stations.length}`);
         // The card's placement follows the camera in the next frame.
         await page.waitForTimeout(120);
         const m = await measure(page);
@@ -154,13 +186,27 @@ for (const viewport of [
         expect(inside(m.element!, m.width, m.height), `${title}: element ${JSON.stringify(m.element)}`).toBe(true);
         expect(inside(m.card!, m.width, m.height), `${title}: card ${JSON.stringify(m.card)}`).toBe(true);
         expect(inside(m.element!, m.map!.right, m.map!.bottom), `${title}: element inside the map`).toBe(true);
-        if (viewport.name === 'desktop') {
+        // Next and Back are on the screen, and the card says its station without scrolling (More closed).
+        expect(inside(m.next!, m.width, m.height), `${title}: Next ${JSON.stringify(m.next)}`).toBe(true);
+        expect(inside(m.back!, m.width, m.height), `${title}: Back ${JSON.stringify(m.back)}`).toBe(true);
+        expect(m.cardScroll!.scrollHeight, `${title}: the card scrolls ${JSON.stringify(m.cardScroll)}`).toBeLessThanOrEqual(m.cardScroll!.clientHeight + 1);
+        if (viewport.mode === 'wide') {
           // Beside it, not over it.
           const apart = m.card!.left >= m.element!.right || m.card!.right <= m.element!.left;
           expect(apart, `${title}: card ${JSON.stringify(m.card)} over element ${JSON.stringify(m.element)}`).toBe(true);
-        } else {
-          // Under the map, stacked.
+        } else if (viewport.mode === 'stacked') {
+          // Under the map, stacked, and the buttons under the card.
           expect(m.card!.top).toBeGreaterThanOrEqual(m.map!.bottom - 1);
+          expect(m.next!.top).toBeGreaterThanOrEqual(m.card!.bottom - 1);
+          // One row of header.
+          expect(m.head!.height, `${title}: header ${JSON.stringify(m.head)}`).toBeLessThanOrEqual(56);
+        } else {
+          // Beside the map, the buttons under the card.
+          expect(m.card!.left).toBeGreaterThanOrEqual(m.map!.right - 1);
+          expect(m.card!.width).toBeLessThanOrEqual(361);
+          expect(m.next!.top).toBeGreaterThanOrEqual(m.card!.bottom - 1);
+          expect(m.next!.left).toBeGreaterThanOrEqual(m.map!.right - 1);
+          expect(m.head!.height, `${title}: header ${JSON.stringify(m.head)}`).toBeLessThanOrEqual(56);
         }
         expect(m.scrollWidth, 'the page scrolls sideways').toBeLessThanOrEqual(m.width);
         expect(m.dialogScroll.scrollWidth).toBeLessThanOrEqual(m.dialogScroll.clientWidth);
@@ -171,9 +217,30 @@ for (const viewport of [
       }
       await page.keyboard.press('ArrowRight');
       await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', 'end');
-      await expect(page.locator('[data-tour-closing]')).toBeVisible();
+      await expect(page.locator('[data-tour-end]')).toBeVisible();
       await expect(page.locator('[data-tour-to-design]')).toBeVisible();
       await page.screenshot({ path: info.outputPath(`tour-${viewport.name}-end.png`) });
+    });
+  });
+}
+
+/* The PO example has the longest case list (351 characters): on the card it is said short, the list is one level down. */
+for (const viewport of VIEWPORTS.filter((v) => v.mode !== 'wide')) {
+  test.describe(`the tour of the PO example at ${viewport.width} × ${viewport.height}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height }, contextOptions: { reducedMotion: 'reduce' } });
+
+    test('at every station Next is on the screen and the card does not scroll', async ({ page }) => {
+      test.setTimeout(180_000);
+      await open(page, 0, PO);
+      for (let at = 0; at < PO.tour.stations.length; at += 1) {
+        if (at > 0) await page.keyboard.press('ArrowRight');
+        await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(at + 1));
+        await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1);
+        const m = await measure(page);
+        const title = PO.tour.stations[at].title;
+        expect(inside(m.next!, m.width, m.height), `${title}: Next ${JSON.stringify(m.next)}`).toBe(true);
+        expect(m.cardScroll!.scrollHeight, `${title}: the card scrolls ${JSON.stringify(m.cardScroll)}`).toBeLessThanOrEqual(m.cardScroll!.clientHeight + 1);
+      }
     });
   });
 }
@@ -181,13 +248,19 @@ for (const viewport of [
 test.describe('moving through the tour', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Back and Next, a chapter jump, Escape closes and the focus goes back to the button that opened it', async ({ page }) => {
+  test('Back and Next from the overview, a chapter jump, More in the card, Escape closes and the focus goes back', async ({ page }) => {
     test.setTimeout(120_000);
-    await open(page, 0);
+    await open(page, -1);
+    await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', 'overview');
+    await expect(page.locator('[data-tour-back]')).toBeDisabled();
+    await page.locator('[data-tour-next]').click();
+    await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', '1');
     await page.locator('[data-tour-next]').click();
     await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', '2');
     await page.locator('[data-tour-back]').click();
     await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', '1');
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', 'overview');
     const last = tour.chapters[tour.chapters.length - 1];
     await page.locator(`[data-tour-chapter="${tour.chapters.length}"]`).click();
     await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(last.first + 1));
@@ -195,10 +268,11 @@ test.describe('moving through the tour', () => {
     // Nothing moves by itself.
     await page.waitForTimeout(1500);
     await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(last.first + 1));
-    // "More about it" folds the lines.
+    // On a wide screen "More about it" opens in the card.
     await expect(page.locator('[data-tour-card] [data-cc-anchor]').first()).toBeHidden();
-    await page.locator('[data-tour-more] button').first().click();
+    await page.locator('[data-tour-more-open]').click();
     await expect(page.locator('[data-tour-card] [data-cc-anchor]').first()).toBeVisible();
+    await expect(page.locator('[data-tour-more-panel]')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-tour-closed]')).toBeVisible();
     await expect(page.locator('#opener')).toBeFocused();
@@ -227,5 +301,68 @@ test.describe('moving through the tour', () => {
     const jumped = await viewbox();
     await page.waitForTimeout(600);
     expect(await viewbox()).toBe(jumped);
+  });
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 664 }, contextOptions: { reducedMotion: 'reduce' } });
+
+  test('"More about it" is a panel over the tour with "Back to the map"; Escape closes the panel first', async ({ page }, info) => {
+    test.setTimeout(120_000);
+    const at = PO.tour.stations.findIndex((s) => s.cases !== null);
+    expect(at).toBeGreaterThan(-1);
+    await open(page, at, PO);
+    const panel = page.locator('[data-tour-more-panel]');
+    await expect(panel).toBeHidden();
+    await page.locator('[data-tour-more-open]').click();
+    await expect(panel).toBeVisible();
+    // Over the whole tour below the bar: the map and the card are covered, the full list of cases is in it.
+    const box = (await panel.boundingBox())!;
+    const map = (await page.locator('[data-process-tour-map]').boundingBox())!;
+    expect(box.y).toBeLessThanOrEqual(map.y + 1);
+    expect(box.y + box.height).toBeGreaterThanOrEqual(663);
+    await expect(panel.locator('[data-tour-cases]')).toContainText(PO.tour.stations[at].cases!.text.slice(0, 40));
+    await expect(page.locator('[data-tour-back-to-map]')).toBeFocused();
+    await page.screenshot({ path: info.outputPath('tour-phone-more-panel.png') });
+    await page.locator('[data-tour-back-to-map]').click();
+    await expect(panel).toBeHidden();
+    await expect(page.locator('[data-tour-more-open]')).toBeFocused();
+    await page.locator('[data-tour-more-open]').click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(page.locator('[data-process-tour]')).toBeVisible();
+    // Moving on closes it: a panel belongs to one station.
+    await page.locator('[data-tour-more-open]').click();
+    await page.locator('[data-tour-back-to-map]').click();
+    await page.keyboard.press('ArrowLeft');
+    await expect(panel).toBeHidden();
+  });
+
+  test('a swipe across the card moves a step; the same swipe on the map does not', async ({ page }) => {
+    test.setTimeout(120_000);
+    await open(page, 1, PO);
+    const swipe = (selector: string, dx: number) =>
+      page.evaluate(
+        ({ selector, dx }) => {
+          const el = document.querySelector(selector) as HTMLElement;
+          const r = el.getBoundingClientRect();
+          const x = r.left + r.width / 2;
+          const y = r.top + Math.min(40, r.height / 2);
+          const init = { bubbles: true, pointerId: 7, pointerType: 'touch', isPrimary: true };
+          el.dispatchEvent(new PointerEvent('pointerdown', { ...init, clientX: x, clientY: y }));
+          el.dispatchEvent(new PointerEvent('pointerup', { ...init, clientX: x + dx, clientY: y + 4 }));
+        },
+        { selector, dx },
+      );
+    const tourAt = page.locator('[data-process-tour]');
+    await expect(tourAt).toHaveAttribute('data-tour-at', '2');
+    await swipe('[data-tour-card]', -120);
+    await expect(tourAt).toHaveAttribute('data-tour-at', '3');
+    await swipe('[data-tour-card]', 120);
+    await expect(tourAt).toHaveAttribute('data-tour-at', '2');
+    await swipe('[data-process-tour-map]', -120);
+    await page.waitForTimeout(200);
+    await expect(tourAt).toHaveAttribute('data-tour-at', '2');
   });
 });
