@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { Cloud, Shield } from 'lucide-react';
 import CcSelect from '@/components/cc/Select';
 import { pinnedReleaseOptions } from '@/lib/assessment-profile';
@@ -38,6 +38,11 @@ export const TARGET_EDITION_OPTIONS: readonly { value: TargetEdition; title: str
   },
 ];
 
+/** The name a chosen edition is shown by — the same title its card carries. */
+export function targetEditionTitle(value: TargetEdition): string {
+  return (TARGET_EDITION_OPTIONS.find((option) => option.value === value) ?? TARGET_EDITION_OPTIONS[0]).title;
+}
+
 const CARD = 'block cursor-pointer rounded-cc-card border p-3 text-left';
 const CARD_ON = 'border-cc-ink bg-cc-surface-muted ring-1 ring-cc-ink';
 const CARD_OFF = 'border-cc-field-border bg-cc-surface hover:border-cc-ink-muted';
@@ -57,6 +62,7 @@ export default function TargetEditionChoice({
   disabled = false,
   release,
   onReleaseChange,
+  folded = false,
 }: {
   value: TargetEdition;
   onChange: (value: TargetEdition) => void;
@@ -70,9 +76,39 @@ export default function TargetEditionChoice({
    */
   release?: string;
   onReleaseChange?: (release: string) => void;
+  /**
+   * The start screens' form (roadmap 3.0.21 (12), owner decision 22.10.2026):
+   * one line — "Assessed against SAP Cloud ERP Private · Change" — instead of an
+   * IT decision spread over a business reader's first screen. The preselection
+   * stays, so a one-click start still works; "Change" opens the choice below.
+   */
+  folded?: boolean;
 }) {
   const titleId = useId();
   const name = useId();
+  const [open, setOpen] = useState(false);
+  if (folded && !open) {
+    const releaseLabel = value === 'private' && release ? START_RELEASE_OPTIONS.find((o) => o.value === release)?.label : undefined;
+    return (
+      <div data-target-edition-choice="" data-target-edition={value} data-target-edition-folded="" className="flex flex-col gap-2">
+        <p data-target-edition-line="" className="m-0 cc-text-cell text-cc-ink-muted">
+          {wt('tgt.assessedAgainst')} <b className="font-semibold text-cc-ink">{targetEditionTitle(value)}</b>
+          {releaseLabel ? <> ({releaseLabel})</> : null}
+          {' · '}
+          <button
+            type="button"
+            data-target-edition-change=""
+            aria-label={wt('tgt.changeAtStartLabel')}
+            disabled={disabled}
+            onClick={() => setOpen(true)}
+            className="font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-information disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {wt('tgt.changeAtStart')}
+          </button>
+        </p>
+      </div>
+    );
+  }
   return (
     <div data-target-edition-choice="" data-target-edition={value} className="flex flex-col gap-2">
       <div>

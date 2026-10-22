@@ -26,6 +26,7 @@ import { readUploadedFile } from '@/lib/own-code-zip';
 import { leaveOwnCodeHandoff } from '@/lib/own-code-handoff';
 import {
   wt,
+  ownCodeStartNext,
   ownCodeAttention,
   ownCodeChecked,
   ownCodeDropLimit,
@@ -40,7 +41,7 @@ import {
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
-import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
+import TargetEditionChoice, { targetEditionTitle, type TargetEdition } from '@/components/TargetEditionChoice';
 import { leaveStartRelease } from '@/lib/start-release-handoff';
 import CcCard from '@/components/cc/Card';
 import CcCheckbox from '@/components/cc/Checkbox';
@@ -603,6 +604,7 @@ export default function OwnCodeImport() {
           disabled={busy}
           release={release}
           onReleaseChange={setRelease}
+          folded
         />
         </div>
 
@@ -639,7 +641,7 @@ export default function OwnCodeImport() {
               </p>
             ) : (
               <p className="m-0 text-[12px] font-medium text-cc-ink-muted">
-                {startCallsModel ? wt('ownCode.startNextModel') : wt('ownCode.startNext')}
+                <span data-own-code-start-next="">{ownCodeStartNext(startCallsModel, targetEditionTitle(edition))}</span>
               </p>
             )}
           </div>

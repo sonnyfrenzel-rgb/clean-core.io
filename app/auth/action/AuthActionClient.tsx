@@ -6,6 +6,7 @@ import { applyActionCode } from 'firebase/auth';
 import { getAuth } from '@/lib/firebase';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { publicButton } from '@/components/landing/public-button';
+import { signInLinkFor } from '@/lib/return-path';
 
 type State = 'ready' | 'working' | 'done' | 'error';
 
@@ -39,7 +40,16 @@ function errorCode(err: unknown): string {
  * gone for the reader, who would then see "already used" for a step they never
  * took. Loading the page does nothing with the code at all.
  */
-export default function AuthActionClient({ mode, oobCode }: { mode: string; oobCode: string }) {
+export default function AuthActionClient({
+  mode,
+  oobCode,
+  returnTo = null,
+}: {
+  mode: string;
+  oobCode: string;
+  /** The checked page to return to afterwards (`safeReturnPath`), or `null`. */
+  returnTo?: string | null;
+}) {
   const valid = mode === 'verifyEmail' && oobCode.length > 0;
   const [state, setState] = useState<State>(valid ? 'ready' : 'error');
   const [message, setMessage] = useState(
@@ -81,15 +91,35 @@ export default function AuthActionClient({ mode, oobCode }: { mode: string; oobC
         <p className="text-sm text-cc-ink leading-relaxed">
           Clean-Core.io now knows this mailbox is yours. Nothing else about your account changed.
         </p>
-        <p className="text-sm text-cc-ink leading-relaxed mt-3">
-          Next: sign in (again, if you were signed in before) and open the invitation link from the other email.
-        </p>
-        <Link
-          href="/?auth=signin"
-          className={`${publicButton('primary', 'sm')} mt-4`}
-        >
-          Sign in
-        </Link>
+        {returnTo ? (
+          <>
+            {/* The invitation this confirmation was sent for (roadmap 3.0.21 (4)): one click
+                back to it, through the sign-in where this browser is not signed in. */}
+            <p className="text-sm text-cc-ink leading-relaxed mt-3">
+              Next: open the invitation. If you are not signed in in this browser, you sign in first and come
+              straight back to it.
+            </p>
+            <Link
+              href={signInLinkFor(returnTo)}
+              data-auth-action-return=""
+              className={`${publicButton('primary', 'sm')} mt-4`}
+            >
+              Open the invitation
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-cc-ink leading-relaxed mt-3">
+              Next: sign in (again, if you were signed in before) and open the invitation link from the other email.
+            </p>
+            <Link
+              href="/?auth=signin"
+              className={`${publicButton('primary', 'sm')} mt-4`}
+            >
+              Sign in
+            </Link>
+          </>
+        )}
       </div>
     );
   }

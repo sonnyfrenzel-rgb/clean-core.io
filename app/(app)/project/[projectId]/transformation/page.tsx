@@ -21,7 +21,6 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
 import { isProjectOwner } from '@/lib/project-readers';
 import { wt } from '@/lib/workspace-messages';
@@ -1997,11 +1996,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           The decision is key-user extensibility: no code is generated. A key user configures the program in the system from the step list the engine built from the signed run.
         </span>
       </StageHeader>
-      {project && !isOwner ? (
-        <div className="mb-6">
-          <OwnerOnlyNote />
-        </div>
-      ) : null}
+      {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={blockers} />
       {evidenceFailed ? (
         <div className="mb-6" data-transformation-evidence-failed="">
@@ -2290,11 +2285,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         }}
       />
 
-      {project && !isOwner ? (
-        <div className="mb-6">
-          <OwnerOnlyNote />
-        </div>
-      ) : null}
+      {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
 
       {/* Why the code cannot be generated now, each reason with the one
           action that resolves it (owner report 03.10.2026). On the

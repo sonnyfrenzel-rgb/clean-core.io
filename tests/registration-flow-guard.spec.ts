@@ -185,7 +185,7 @@ test.describe('the one welcome mail does the whole job', () => {
 
   test('it states the quota honestly', () => {
     const s = html();
-    expect(s).toContain('5 free transformations');
+    expect(s).toContain('5 free analysis runs');
     // Only the analysis is metered — claiming otherwise reads as a smaller
     // allowance than the person actually has. Analyze is stage 1 of 7: the
     // upload is part of it, not a stage of its own (lib/workflow-steps.ts).

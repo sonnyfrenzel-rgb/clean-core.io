@@ -54,8 +54,9 @@ test('the error boundary reloads once on the two mixed-build errors, and on noth
 test.describe('a tab from the previous build says so', () => {
   const BOUNDARIES = [
     'app/error.tsx',
-    'app/(app)/project/[projectId]/documentation/error.tsx',
-    'app/(app)/project/[projectId]/testing/error.tsx',
+    // Roadmap 3.0.21 (7): one boundary for the workspace and all seven tools,
+    // in place of the two that only Documentation and Testing had.
+    'app/(app)/project/[projectId]/error.tsx',
   ];
 
   test('the matcher knows stale chunks and mixed builds, and nothing else', async () => {

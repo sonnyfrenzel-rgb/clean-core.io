@@ -11,7 +11,7 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { escapeHtml } from '@/lib/utils';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { sendTransactionalMail } from '@/lib/transactional-mail';
-import { ownDomainVerifyEmailLink } from '@/lib/auth-action-link';
+import { ownDomainVerifyEmailLink, withReturnPath } from '@/lib/auth-action-link';
 import { buildAddressConfirmationEmail, ADDRESS_CONFIRMATION_SUBJECT } from '@/lib/invitation-email';
 import {
   INVITATION_CLOSED_CODE,
@@ -19,6 +19,7 @@ import {
   INVITATION_COLLECTION,
   PROJECT_READERS_FIELD,
   effectiveStatus,
+  invitationLinkPath,
   normaliseInvitedEmail,
   type Invitation,
 } from '@/lib/invitations';
@@ -256,9 +257,13 @@ export async function POST(
         await assertRateLimit(`invitation-confirm-mail:${uid}`, 3, 60 * 60 * 1000);
         // Firebase issues the one-time code; the link itself points at our own
         // domain (`/auth/action`), not at <project>.firebaseapp.com — roadmap
-        // 3.0.9, see lib/auth-action-link.ts.
-        const link = ownDomainVerifyEmailLink(
-          await (await getAdminAuth()).generateEmailVerificationLink(accountEmail),
+        // 3.0.9, see lib/auth-action-link.ts. It carries this invitation's path,
+        // so the confirmation leads back here (roadmap 3.0.21 (4)).
+        const link = withReturnPath(
+          ownDomainVerifyEmailLink(
+            await (await getAdminAuth()).generateEmailVerificationLink(accountEmail),
+          ),
+          invitationLinkPath(projectId, invitationId),
         );
         const outcome = await sendTransactionalMail({
           to: accountEmail,
@@ -280,7 +285,7 @@ export async function POST(
       return NextResponse.json(
         {
           error: sent
-            ? 'Your email address is not confirmed yet. We have just sent a confirmation link to it — open it, sign in again, and then open this invitation.'
+            ? 'Your email address is not confirmed yet. We have just sent a confirmation link to it — open it, and it brings you back to this invitation.'
             : 'Your email address is not confirmed yet. Confirm it from your account before opening an invitation.',
           code: 'email-unconfirmed',
           confirmationSent: sent,

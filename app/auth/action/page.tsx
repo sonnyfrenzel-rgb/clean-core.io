@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import AuthActionClient from './AuthActionClient';
+import { safeReturnPath } from '@/lib/return-path';
 
 /**
  * `/auth/action` — where the address-confirmation mail links to (roadmap 3.0.9).
@@ -23,9 +24,12 @@ export const dynamic = 'force-dynamic';
 export default async function AuthActionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; oobCode?: string }>;
+  searchParams: Promise<{ mode?: string; oobCode?: string; next?: string }>;
 }) {
-  const { mode, oobCode } = await searchParams;
+  const { mode, oobCode, next } = await searchParams;
+  // Where the confirmation leads afterwards — the invitation it was sent for
+  // (roadmap 3.0.21 (4)). Checked here as on every way out of a sign-in.
+  const returnTo = safeReturnPath(next);
 
   return (
     <main className="min-h-screen bg-cc-page flex items-center justify-center px-6 py-16">
@@ -41,7 +45,11 @@ export default async function AuthActionPage({
 
         <h1 className="text-3xl font-extrabold text-cc-ink tracking-tight mb-3">Confirm your email address</h1>
 
-        <AuthActionClient mode={typeof mode === 'string' ? mode : ''} oobCode={typeof oobCode === 'string' ? oobCode : ''} />
+        <AuthActionClient
+          mode={typeof mode === 'string' ? mode : ''}
+          oobCode={typeof oobCode === 'string' ? oobCode : ''}
+          returnTo={returnTo}
+        />
 
         <p className="text-xs text-cc-ink-muted mt-8 leading-relaxed">
           Clean-Core.io · Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany

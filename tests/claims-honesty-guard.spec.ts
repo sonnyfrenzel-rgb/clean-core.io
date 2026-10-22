@@ -315,10 +315,11 @@ test.describe('a signed-in account reading its own project', () => {
   test('UX-084 · the first-run guide quotes the header it is describing', async ({ page }) => {
     // What the header actually renders for this account, read from the app.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    const quota = page.locator('text=/\\d+ of \\d+ left/i').first();
+    // Roadmap 3.0.21 (2): the quota has one name — "analysis runs", counted as left.
+    const quota = page.locator('[data-shell-quota]').first();
     await quota.waitFor({ timeout: 60000 });
     const header = (await quota.innerText()).trim();
-    expect(header.toLowerCase(), 'a fresh account has spent nothing').toBe('5 of 5 left');
+    expect(header.toLowerCase(), 'a fresh account has spent nothing').toBe('5 of 5 runs left');
 
     await page.goto('/first-run', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('text=Sign in with the account you registered', { timeout: 60000 });

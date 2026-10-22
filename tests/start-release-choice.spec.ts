@@ -179,6 +179,8 @@ test.describe('an example started for Private Edition 2023 FPS03', () => {
     await expect(list).toBeVisible({ timeout: 90000 });
     const choice = list.locator('[data-target-edition-choice]');
     await expect(choice).toHaveAttribute('data-target-edition', 'private');
+    // One line until the reader asks to change it (roadmap 3.0.21 (12)).
+    await choice.locator('[data-target-edition-change]').click();
     const releaseChoice = choice.locator('[data-target-release-choice]');
     await expect(releaseChoice, 'asked for the Private Edition').toBeVisible();
     await expect(releaseChoice.locator('select')).toHaveValue('');
@@ -245,6 +247,8 @@ test.describe('own code imported for Private Edition 2023 FPS03', () => {
 
     const choice = page.locator('[data-cc-own-code] [data-target-edition-choice]');
     await expect(choice).toHaveAttribute('data-target-edition', 'private');
+    // One line until the reader asks to change it (roadmap 3.0.21 (12)).
+    await choice.locator('[data-target-edition-change]').click();
     const releaseChoice = choice.locator('[data-target-release-choice]');
     await expect(releaseChoice, 'asked for the Private Edition').toBeVisible();
     await releaseChoice.locator('select').selectOption('2023 FPS03');

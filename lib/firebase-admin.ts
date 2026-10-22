@@ -15,6 +15,7 @@ import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
 import { erasePortfolioOf } from './portfolio/erasure';
 import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-email';
+import { quotaSpentSentence } from './run-quota-rule';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -433,10 +434,8 @@ export async function reserveRunQuota(
     }
 
     if (used >= limit) {
-      throw new QuotaError(
-        `You've used all ${limit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`,
-        403,
-      );
+      // The quota's one name, roadmap 3.0.21 (2): the same sentence the screens show.
+      throw new QuotaError(quotaSpentSentence(limit), 403);
     }
 
     tx.set(

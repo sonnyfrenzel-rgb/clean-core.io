@@ -86,7 +86,6 @@ import SapResultCard from '@/components/testing/SapResultCard';
 import { outsideChipNote, outsideCountsLine, outsideReading, summaryOf, type OutsideTestRecord } from '@/lib/sap-test-results';
 import { isProjectOwner } from '@/lib/project-readers';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { wt } from '@/lib/workspace-messages';
 import { targetEditionOf } from '@/lib/target-edition';
 import TestEvidenceCard from '@/components/testing/TestEvidenceCard';
@@ -1455,11 +1454,7 @@ export default function TestingSandboxPage() {
         }}
       />
 
-      {reader ? (
-        <div className="mb-6">
-          <OwnerOnlyNote />
-        </div>
-      ) : null}
+      {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
 
       <div data-testing-flow="" className={clsx(RAIL_GRID, 'mb-8')}>
         <div className="flex min-w-0 flex-col gap-5">

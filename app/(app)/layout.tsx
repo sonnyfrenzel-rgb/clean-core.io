@@ -25,7 +25,9 @@ import SiteFooter from '@/components/SiteFooter';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
-import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
+import NewVersionWatcher from '@/components/NewVersionWatcher';
+import { runsLeftLabel } from '@/lib/run-quota-rule';
+import { signInLinkFor } from '@/lib/return-path';
 import { Lightbulb } from 'lucide-react';
 import { showTipsAgain } from '@/lib/show-tips-again';
 import { forgetShellProject, openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
@@ -306,9 +308,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                   {planLabel(profile.tier) ? <CcTag>{planLabel(profile.tier)}</CcTag> : null}
                 </div>
                 <div data-shell-quota="" className="whitespace-nowrap text-[12px] font-semibold text-cc-ink-muted">
-                  {runsAreSelfFunded(profile) || profile.transformationsLimit > 900
-                    ? 'Unlimited'
-                    : `${runsRemaining(profile)} of ${profile.transformationsLimit} left`}
+                  {runsLeftLabel(profile)}
                 </div>
               </div>
             )}
@@ -339,7 +339,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 (and the server's) must not show a signed-out visitor an account menu. */}
             {signedIn === false ? (
               <Link
-                href="/"
+                // Back to this page after the sign-in, where the page is one a mail or a bookmark leads to
+                // (`lib/return-path.ts`); every other page signs in to My workspace (roadmap 3.0.21 (1)).
+                href={signInLinkFor(pathname ?? '/')}
                 data-shell-sign-in=""
                 className={cn(SHELL_TRIGGER, 'px-3 text-[13px] font-semibold text-cc-ink no-underline')}
               >
@@ -457,6 +459,8 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl',
         )}
       >
+        {/* A tab left open across a deploy says so when it comes back into view, and waits for the reader's click (roadmap 3.0.21 (8)). */}
+        <NewVersionWatcher />
         {children}
       </main>
       {/* The legal links of every page in this shell live here, in one of

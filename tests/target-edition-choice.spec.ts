@@ -96,8 +96,11 @@ test.describe('an example started for the Public Edition', () => {
     const list = page.locator('[data-cc-workspace]');
     await expect(list).toBeVisible({ timeout: 90000 });
     const choice = list.locator('[data-target-edition-choice]');
-    // Asked, and visibly preselected — a one-click start still works.
+    // Visibly preselected, as one line — a one-click start still works
+    // (roadmap 3.0.21 (12): "Assessed against SAP Cloud ERP Private · Change").
     await expect(choice).toHaveAttribute('data-target-edition', 'private');
+    await expect(choice.locator('[data-target-edition-line]')).toContainText(`Assessed against ${CLOUD_ERP_PRIVATE}`);
+    await choice.locator('[data-target-edition-change]').click();
     await choice.locator('[data-target-edition-option="public"]').click();
     await expect(choice).toHaveAttribute('data-target-edition', 'public');
 

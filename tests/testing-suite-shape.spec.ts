@@ -294,21 +294,23 @@ test.describe('the check runs before the write', () => {
     await expect(page.getByRole('button', { name: /^Generate scenarios$/ })).toBeVisible();
     await expect(page.locator('[data-stage-title]').first()).toBeVisible();
     // And the root boundary never fired — the stage is on the screen, not a crash card.
-    await expect(page.locator('[data-testing-error-boundary]')).toHaveCount(0);
+    await expect(page.locator('[data-stage-error-boundary]')).toHaveCount(0);
   });
 });
 
-test.describe('the testing segment has an error boundary of its own', () => {
-  test('error.tsx sits in the segment, not only at the root', () => {
-    const boundary = path.join(SEGMENT, 'error.tsx');
+test.describe('the testing segment is inside an error boundary below the root', () => {
+  test('the project boundary covers it, not only the root (roadmap 3.0.21 (7): one boundary for every tool)', () => {
+    // No boundary of its own any more: the project segment's covers this tool and the other six.
+    expect(fs.existsSync(path.join(SEGMENT, 'error.tsx')), 'a second, drifting copy of the boundary').toBe(false);
+    const boundary = path.join(SEGMENT, '..', 'error.tsx');
     expect(fs.existsSync(boundary), `missing: ${boundary}`).toBe(true);
 
     const src = fs.readFileSync(boundary, 'utf8');
     expect(src.startsWith("'use client'")).toBe(true);
     // The two things a boundary is for: retrying, and getting out.
     expect(src).toContain('reset()');
-    expect(src).toContain('data-testing-error-retry');
-    expect(src).toContain('data-testing-error-back');
+    expect(src).toContain('data-stage-error-retry');
+    expect(src).toContain('data-stage-error-back');
     // Scoped to the page: a full-screen card here would hide the workflow shell
     // exactly the way the root boundary did.
     expect(src).not.toContain('min-h-screen');
