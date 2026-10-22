@@ -31,6 +31,7 @@ import { sha256Hex } from '../artefact-digest';
 import { readBlocks } from '../abap/block-structure';
 import { createLiteralScanner, readStatements } from '../abap/statement-reader';
 import { codeMask } from '../ts-source-scan';
+import { abapStopFlagRefusals, nodeStopFlagRefusals } from './part-exit';
 // The class names SAP releases for ABAP Cloud (~1,400, 9 kB gzip; written by the catalog sync) — never the catalog itself.
 import releasedClassList from '../abap/generated/released-classes.latest.json';
 import releasedInterfaceList from '../abap/generated/released-interfaces.latest.json';
@@ -291,6 +292,9 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   // write and writes them back after the body; declared again, the body's copy would never reach the next part.
   const handedAgain = (ctx.partLocals ?? []).filter((n) => declared.has(n));
   if (handedAgain.length > 0) out.push(refusal('declaration', `declares the parent routine's locals again: ${handedAgain.slice(0, 8).join(', ')} — the frame declares them from local before the body and writes them back after it; use them, never declare them`));
+  // A split part (scaffold version 22, owner decision 22.10.2026): an early return sets the routine's stop flag first.
+  if (ctx.stopFlag) for (const m of nodeStopFlagRefusals(body, mask, ctx.stopFlag)) out.push(refusal('part-exit', m));
+  out.push(...nodeEmptyCatchRefusals(body, mask));
 
   if (code(/\b(?:Number|parseFloat|parseInt)\s*\(|\bNumber\s*\.\s*(?:parseFloat|parseInt)\s*\(/).length > 0) {
     out.push(refusal('binary-number', BINARY_NUMBER_MESSAGE));
@@ -598,11 +602,59 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
       out.push(refusal('customer-write', `a database write to customer tables this package does not ship: ${words.join(', ')}`));
     }
   }
+  // A split part (scaffold version 22, owner decision 22.10.2026): an exit that leaves the routine sets its stop flag first.
+  if (ctx.stopFlag) for (const m of abapStopFlagRefusals(statements, blocks, ctx.stopFlag)) out.push(refusal('part-exit', m));
+  out.push(...abapEmptyCatchRefusals(statements));
   if (ctx.abap?.localComponents) out.push(...localStateRefusals(statements, ctx.abap));
   if (ctx.abap?.loadInput) out.push(...loadInputRefusals(statements, ctx.abap.loadInput));
   if (ctx.abap?.sapTypes) out.push(...sapTypeRefusals(statements, ctx.abap));
   if (ctx.abap) out.push(...unknownAbapNames(body, statements, ctx.abap));
   return out;
+}
+
+/**
+ * An empty CATCH (owner decision 22.10.2026: a body caught the access exception with nothing in the CATCH where the
+ * original reported an error message, so the failure vanished): no statement between a CATCH and the next CATCH,
+ * CLEANUP or ENDTRY. A comment alone does not count.
+ */
+function abapEmptyCatchRefusals(statements: ReturnType<typeof readStatements>): BodyRefusal[] {
+  const empty = statements.flatMap((s, i) => {
+    const next = statements[i + 1];
+    return s.keyword === 'CATCH' && (!next || /^(?:CATCH|CLEANUP|ENDTRY)$/.test(next.keyword)) ? [`body line ${s.lineStart}: ${s.text.slice(0, 60)}`] : [];
+  });
+  if (empty.length === 0) return [];
+  return [
+    refusal(
+      'empty-catch',
+      `an empty CATCH block (${empty.slice(0, 4).join('; ')}) — the error would vanish silently: inside the CATCH, report what the original reports there (a message of TYPE E/A/X as the refusal exception, of TYPE I/S/W a line in mt_messages) or raise the exception again (RAISE EXCEPTION with previous = the caught one)`,
+    ),
+  ];
+}
+
+/** Node: an empty `catch {}` or `catch (e) {}` — the same rule as `abapEmptyCatchRefusals`. */
+function nodeEmptyCatchRefusals(body: string, mask: Uint8Array): BodyRefusal[] {
+  const lines: number[] = [];
+  for (const m of body.matchAll(/\bcatch\b\s*(?:\(\s*[A-Za-z_$][\w$]*(?:\s*:\s*[\w$]+)?\s*\)\s*)?\{/g)) {
+    const at = m.index ?? 0;
+    if (!mask[at]) continue;
+    let content = false;
+    for (let k = at + m[0].length; k < body.length; k++) {
+      if (!mask[k]) continue;
+      if (body[k] === '}') break;
+      if (!/\s/.test(body[k])) {
+        content = true;
+        break;
+      }
+    }
+    if (!content) lines.push(body.slice(0, at).split('\n').length);
+  }
+  if (lines.length === 0) return [];
+  return [
+    refusal(
+      'empty-catch',
+      `an empty catch block (body line ${lines.slice(0, 4).join(', ')}) — the error would vanish silently: inside the catch, report what the original reports there (return a Refusal where it refuses) or throw the error again`,
+    ),
+  ];
 }
 
 /** Statement text with literals and templates blanked. */

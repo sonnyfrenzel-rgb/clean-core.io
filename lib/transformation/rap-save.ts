@@ -117,6 +117,28 @@ export function rapNoInputIn(files: ReadonlyArray<{ path: string; content: strin
   return [...out];
 }
 
+/**
+ * The tag on a field of the custom entity whose type the engine could not resolve from the original's declaration
+ * (owner decision 22.10.2026: `status TYPE c LENGTH ode` — `ode` is no constant — and the field silently left the
+ * entity, so the reader saw neither status nor reason). The field is carried as text with this note, never dropped.
+ */
+export const RAP_UNRESOLVED_TYPE_TAG = '@cc-type-unresolved';
+
+/** The notes of the custom entity's fields whose type was not resolved (`@cc-type-unresolved` lines), for TRACE.md and STATUS.md. */
+export function rapUnresolvedTypesIn(files: ReadonlyArray<{ path: string; content: string }>): string[] {
+  const out: string[] = [];
+  const re = new RegExp(`^\\s*//\\s*${RAP_UNRESOLVED_TYPE_TAG} (.+)$`, 'gm');
+  for (const f of files) {
+    if (!f.path.endsWith('.ddls.asddls')) continue;
+    for (const m of f.content.matchAll(re)) out.push(m[1].trim());
+  }
+  return out;
+}
+
+/** The plain sentence about the custom entity's fields whose type the engine did not resolve. */
+export const rapUnresolvedTypesWords = (notes: readonly string[]) =>
+  `Fields of the service entity whose type the engine could not resolve from the original — carried as text so their values stay visible, to be typed by hand: ${notes.join('; ')}.`;
+
 /** The plain sentence about a package whose callers hand the logic no input. */
 export const rapNoInputWords = (tables: readonly string[]) =>
   `A business library: the service (its query or action) and the job call the logic class without data until an adapter is written — the logic takes the original's input tables (${tables.join(', ')}) as is_input, and nothing in this package fills them. Connecting the access layer's SAP calls does not change that; an adapter that reads these tables and hands them in as is_input does.`;

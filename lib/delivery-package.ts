@@ -70,7 +70,7 @@ import { abapGitXmlHolds } from './transformation/abapgit-check';
 import { engineCounterpartsIn } from './transformation/released-counterparts';
 import { inputReadsIn } from './transformation/input-lists';
 import { capAuthorizationIn, capAuthorizationWords } from './transformation/cap-shell';
-import { RAP_SAVE_NOT_WIRED, rapNoInputIn, rapNoInputWords, rapSaverUnwired } from './transformation/rap-save';
+import { RAP_SAVE_NOT_WIRED, rapNoInputIn, rapNoInputWords, rapSaverUnwired, rapUnresolvedTypesIn, rapUnresolvedTypesWords } from './transformation/rap-save';
 
 import { TARGET_EDITION_NAMES } from './sap-naming';
 import { AI_MARKING_BASIS, aiMarkingField, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
@@ -1451,6 +1451,8 @@ export interface StatusInputs {
   noInput?: readonly string[];
   /** 3.0.18: a RAP saver whose save_modified is not wired yet (`rapSaverUnwired`). */
   saverUnwired?: boolean;
+  /** 3.0.20: the custom entity's fields whose type was not resolved from the original, carried as text (`rapUnresolvedTypesIn`). */
+  unresolvedTypes?: readonly string[];
 }
 
 /**
@@ -1784,6 +1786,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   }
   if (inputs.capAuthorization) lines.push(capAuthorizationWords(inputs.capAuthorization), '');
   if (inputs.noInput?.length) lines.push(rapNoInputWords(inputs.noInput), '');
+  if (inputs.unresolvedTypes?.length) lines.push(rapUnresolvedTypesWords(inputs.unresolvedTypes), '');
   const notable = files.filter((f) => f.status === 'stub' || f.status === 'proposed');
   for (const f of notable) lines.push(`- \`${f.path}\` — ${f.status}${f.note ? `: ${f.note}` : ''}`);
   if (notable.length) lines.push('');
@@ -2269,7 +2272,7 @@ export function finishDeliveryPackage(input: {
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
   const engineCounterparts = [...new Set(entries.filter((e) => /^src\/.+_access\.clas\.abap$/i.test(e.path)).flatMap((e) => engineCounterpartsIn(e.content)))];
   const inputReads = entries.filter((e) => e.path === 'srv/lib/input-contract.ts').flatMap((e) => inputReadsIn(e.content));
-  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts, inputReads, authoritySeam: entries.some((e) => e.path === 'srv/lib/authority.ts'), capAuthorization: capAuthorizationOf(entries), noInput: rapNoInputIn(entries.filter((e) => e.path.startsWith('src/'))), saverUnwired: entries.some((e) => e.path.startsWith('src/') && rapSaverUnwired(e.content)) }), origin: 'engine' };
+  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints, engineCounterparts, inputReads, authoritySeam: entries.some((e) => e.path === 'srv/lib/authority.ts'), capAuthorization: capAuthorizationOf(entries), noInput: rapNoInputIn(entries.filter((e) => e.path.startsWith('src/'))), unresolvedTypes: rapUnresolvedTypesIn(entries.filter((e) => e.path.startsWith('src/'))), saverUnwired: entries.some((e) => e.path.startsWith('src/') && rapSaverUnwired(e.content)) }), origin: 'engine' };
   const listed = [...entries, decision, ...keyUserSteps, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
