@@ -9,7 +9,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
-import { canonicalizeJson } from '@/lib/run-signature';
+import { canonicalizeJson, RUN_SIGNATURE_SCHEME, signRunHashV2 } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 import { withStoredArtefacts } from '@/lib/project-artefact-store';
@@ -729,6 +729,10 @@ export async function POST(req: NextRequest) {
       // the weekly report counts units from this rather than from the account's
       // current tier and key.
       metering,
+      // Roadmap 3.0.21 (CA-INT-03): signed under the key derived for runs, and
+      // the scheme is inside the hash, so it cannot be moved back to the
+      // legacy form (`lib/run-signature.ts`).
+      signatureScheme: RUN_SIGNATURE_SCHEME,
     };
 
     // Calculate cryptographic runHash over sorted canonical representation of complete payload (Finding 2)
@@ -736,7 +740,7 @@ export async function POST(req: NextRequest) {
     const runHash = crypto.createHash('sha256').update(canonicalPayloadStr).digest('hex');
 
     // Generate HMAC signature. `signingKey` is non-null past the guard above.
-    const signature = crypto.createHmac('sha256', signingKey).update(runHash).digest('hex');
+    const signature = signRunHashV2(runHash, signingKey);
 
     const analysisRun: AnalysisRun = {
       ...unsignedRunPayload,

@@ -85,6 +85,13 @@ export interface AnalysisRun {
    * guessing from the account's current state.
    */
   metering?: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example' | 'target-change';
+  /**
+   * Roadmap 3.0.21 — how `signature` was made (`RUN_SIGNATURE_SCHEME` in
+   * `lib/run-signature.ts`): under a key derived for runs alone. Inside the
+   * signed payload. Absent on runs signed before; those verify with the
+   * legacy form they were sealed with.
+   */
+  signatureScheme?: string;
   // Results
   extensibilityRoute: string;
   cleanCoreScore: number;

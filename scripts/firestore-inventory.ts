@@ -30,7 +30,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
+import { expectedRunSignature, recomputeStoredRunHash } from '../lib/run-signature';
 
 const PROJECT_ID = 'cleancore-491216';
 
@@ -84,7 +84,7 @@ export function runIntegrity(data: Record<string, unknown>, key?: string): strin
   if (typeof data.signature !== 'string' || !data.signature) return 'missing-signature';
   if (recomputeStoredRunHash(data) !== data.runHash) return 'hash-mismatch';
   if (!key) return 'hash-ok-signature-unchecked';
-  return signRunHash(data.runHash, key) === data.signature ? 'verified' : 'signature-mismatch';
+  return expectedRunSignature(data, key) === data.signature ? 'verified' : 'signature-mismatch';
 }
 
 function argValue(flag: string): string | undefined {
