@@ -4,6 +4,7 @@ import { buildProcessFacts } from '@/lib/abap/process-facts';
 import { containerAt } from '@/lib/abap/block-structure';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { getCatalogSnapshotRef, gradeSapObjectUse } from '@/lib/abap/catalog-service';
+import { getObjectAppComponent } from '@/lib/abap/catalog-index';
 import { rfcCallTarget, routeKindLabel } from '@/lib/abap/extensibility-router';
 import {
   CLASSIC_VIEW_META,
@@ -280,6 +281,10 @@ function usesOf(
           ? CLASSIC_VIEW_META[graded.classicView].label
           : null,
       findingIds: onIt.map((r) => r.id),
+      // SAP's application component from the Cloudification Repository
+      // (Apache-2.0), for the stage-1 card "Where this program touches SAP
+      // standard" (`lib/standard-touch.ts`). Display only, never stored.
+      appComponent: isCustomerObject(d.object) ? null : getObjectAppComponent(d.object) || null,
     };
   });
   // Calls first, in the order the program makes them (the order the process

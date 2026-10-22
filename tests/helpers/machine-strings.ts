@@ -36,6 +36,9 @@ export const ENGLISH_HYPHENATED = new Set([
   'ready-to-deploy', 'never-been-run', 'at-a-glance', 'up-to-the-minute', 'back-and-forth',
   'run-of-the-mill', 'in-the-loop', 'end-of-life', 'out-of-scope', 'line-of-business', 'end-of-support',
   'one-time-only', 'one-off', 'cross-check', 'counter-check', 'not-determined',
+  // SAP Activate's name for the workshop method, in the owner's limits sentence of the
+  // fit-to-standard stages (owner decision 22.10.2026) — prose, not a key.
+  'fit-to-standard',
   // Proper names of published artefacts, named as the source of a figure: SAP's
   // release-state repository is called this, and the product says whose list it reads.
   'abap-atc-cr-cv-s4hc',

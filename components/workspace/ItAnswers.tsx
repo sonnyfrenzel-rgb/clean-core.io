@@ -69,6 +69,9 @@ import {
 import { itOpening, itState, usesSummary } from '@/lib/it-state';
 import ItRail, { useContract } from './ItRail';
 import PageAnchorBar from '@/components/PageAnchorBar';
+import StandardTouchCard from './StandardTouchCard';
+import FitCheckPanel from './FitCheckPanel';
+import { standardTouch } from '@/lib/standard-touch';
 import ItDependencyGraph, { objectKindWord, objectUseWord } from './ItDependencyGraph';
 import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
@@ -284,6 +287,8 @@ export default function ItAnswers({
     [source],
   );
   const fit = useFitByPlatform(findingsRead, project, wt('mgmt.lookupFailed'));
+  /** Stage 1 of the fit-to-standard approach (owner decision 22.10.2026): read from the same findings. */
+  const touch = useMemo(() => (source === undefined ? undefined : standardTouch(source)), [source]);
   const where: WhereTo | null = useMemo(() => (fit.state === 'ready' ? whereTo(fit.value) : null), [fit]);
 
   /**
@@ -459,7 +464,12 @@ export default function ItAnswers({
                   ? ''
                   : null,
             trust: trust !== 'demo' && trust.signed,
-            standard: null,
+            standard:
+              touch === undefined || source === null
+                ? null
+                : touch.gate.outcome === 'offered'
+                  ? touch.gate.classes.join(', ')
+                  : '',
           })}
         />
       ) : null}
@@ -722,6 +732,19 @@ export default function ItAnswers({
       {/* The rule register (owner decision 21.10.2026): every rule by basket, explained, with its lines and code. */}
       {showContent && rules ? <div data-it-register="" className="mt-4">{rules}</div> : null}
 
+      {/* Where this program touches SAP standard, and the guided check under
+          it (owner decision 22.10.2026; it took the place of the Standard fit
+          table, ADR-096's address `#standard` kept). Full width, last in the
+          page's order, so last in the anchor bar. */}
+      {showContent ? (
+        <div id={IT_SECTION_IDS.standard} data-it-standard="" className="mt-4 scroll-mt-28">
+          <StandardTouchCard touch={touch}>
+            {touch && source ? (
+              <FitCheckPanel projectId={projectId} project={project} touch={touch} rows={source.rows} demo={demo} />
+            ) : null}
+          </StandardTouchCard>
+        </div>
+      ) : null}
 
       {/* One quiet row of links out (ADR-086): what IT does not answer, and
           where it is answered. */}

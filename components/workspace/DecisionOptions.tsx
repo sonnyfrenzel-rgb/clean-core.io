@@ -19,7 +19,7 @@ import {
   type OptionSignal,
 } from '@/lib/decision-option-signals';
 import { cn } from '@/lib/utils';
-import { decideChooseTitle, wt } from '@/lib/workspace-messages';
+import { decideChooseTitle, optionConditionsLabel, optionConditionsMore, wt } from '@/lib/workspace-messages';
 
 /**
  * The four options of the program decision, side by side — ADR-079.
@@ -88,10 +88,13 @@ function Card({
   card,
   hrefFor,
   action,
+  conditions = [],
 }: {
   card: OptionCard;
   hrefFor: (place: OptionPlace) => string;
   action: React.ReactNode;
+  /** What stays open for this option — the fit-to-standard check's open points, on *Move to SAP standard*. */
+  conditions?: readonly string[];
 }) {
   return (
     <li
@@ -123,6 +126,20 @@ function Card({
         </a>
       </div>
 
+      {conditions.length > 0 ? (
+        <div className="mt-3" data-option-conditions={conditions.length}>
+          <p className={LABEL}>{optionConditionsLabel(conditions.length)}</p>
+          <ul className="m-0 mt-1 list-disc space-y-1 pl-4 text-[12px] leading-snug font-medium text-cc-ink">
+            {conditions.slice(0, 5).map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+          {conditions.length > 5 ? (
+            <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{optionConditionsMore(conditions.length - 5)}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mt-3 grid gap-3 border-t border-cc-line pt-3">
         <Figure title={wt('decide.effort')} figure={card.effort} hook="effort" />
         <Figure title={wt('decide.cost')} figure={card.cost} hook="cost" />
@@ -139,7 +156,14 @@ export default function DecisionOptions({
   choice,
   mode,
   pending = null,
+  standardConditions = [],
 }: {
+  /**
+   * The open points of the fit-to-standard check (`standardConditions`,
+   * `lib/fit-check.ts`): conditions of *Move to SAP standard*, shown on its card.
+   * A display — never written into the decision record.
+   */
+  standardConditions?: readonly string[];
   /**
    * Why `choice` is null although the project has a signed run: the decision
    * is still being read, or the read failed. Not "no signed run".
@@ -257,7 +281,13 @@ export default function DecisionOptions({
       </p>
       <ul className="m-0 mt-3 grid list-none grid-cols-1 gap-3 p-0 min-[560px]:grid-cols-2 xl:grid-cols-4">
         {view.cards.map((card) => (
-          <Card key={card.option} card={card} hrefFor={hrefFor} action={actionFor(card)} />
+          <Card
+            key={card.option}
+            card={card}
+            hrefFor={hrefFor}
+            action={actionFor(card)}
+            conditions={card.option === 'standard' ? standardConditions : []}
+          />
         ))}
       </ul>
       {/* ADR-022: an amount is shown here only as a takeover, with the way to

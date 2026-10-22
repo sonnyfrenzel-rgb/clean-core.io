@@ -25,6 +25,7 @@ import type { ExecutiveSummary, ExecutiveTarget } from '@/lib/management-executi
 import type { ProvenanceValue } from '@/lib/provenance';
 import { NO_SAP_DEPENDENCY_TITLE, STANDARD_FIT_DEFINITION, type StandardFit, type StandardFitItem } from '@/lib/standard-fit';
 import InfoPopover from './InfoPopover';
+import { STANDARD_TOUCH_LIMITS, type StandardTouch } from '@/lib/standard-touch';
 import { STEERING_TITLE } from '@/lib/steering-one-pager';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import type { DecisionOptionsView, DecisionStage } from '@/lib/decision-option-signals';
@@ -249,8 +250,17 @@ export function StandardFitCard({
   setTargetHref,
   otherEdition = null,
   otherBlockers = [],
+  touch = null,
+  touchHref,
 }: {
   fit: StandardFit;
+  /**
+   * Stage 1 of the fit-to-standard approach in one line (owner decision
+   * 22.10.2026): where the program touches SAP standard, with its limits
+   * sentence and the way to IT's card and check. `null` draws nothing.
+   */
+  touch?: StandardTouch | null;
+  touchHref?: string;
   /** What else stands in the way that is not an SAP object — listed first under "What stands in the way". */
   otherBlockers?: readonly FitOtherBlocker[];
   /** The same reading on the other edition, in one line (ADR-079) — or `null`. */
@@ -266,7 +276,7 @@ export function StandardFitCard({
     </InfoPopover>
   );
   // The one standard check says what it does not measure, in every state (owner decision 22.10.2026).
-  const notMeasured = <NotMeasured />;
+  const notMeasured = <NotMeasured touch={touch} touchHref={touchHref} />;
   if (fit.state === 'not-determined') {
     return (
       <section id="standard-fit" data-standard-fit="not-determined" data-standard-fit-why={fit.why} className={CARD}>
@@ -437,12 +447,31 @@ export function StandardFitCard({
   );
 }
 
-/** The sentence the card owes its reader: functional fit is not measured. */
-function NotMeasured() {
+/**
+ * The sentence the card owes its reader — functional fit is not measured —
+ * and, where the findings are read, stage 1 in one line with its limits.
+ */
+function NotMeasured({ touch, touchHref }: { touch: StandardTouch | null; touchHref?: string }) {
   return (
     <div data-standard-fit-not-measured="" className="mt-4 border-t border-cc-line pt-3">
       <p className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">{wt('stdFit.notMeasured')}</p>
       <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">{wt('stdFit.notMeasuredWhy')}</p>
+      {touch ? (
+        <div data-standard-fit-touch={touch.gate.outcome} className="mt-3">
+          <h4 className="m-0 text-[13px] font-bold text-cc-ink">{wt('stdFit.touchTitle')}</h4>
+          <p className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink">{touch.sentence}</p>
+          <p data-standard-fit-touch-limits="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {STANDARD_TOUCH_LIMITS}
+          </p>
+          {touchHref ? (
+            <p className="m-0 mt-2">
+              <a href={touchHref} className="text-[12px] font-semibold text-cc-ink underline underline-offset-2">
+                {wt('stdFit.touchLink')}
+              </a>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -474,6 +503,8 @@ export default function ManagementExecutive({
   optionsView = null,
   otherEdition = null,
   otherBlockers = [],
+  touch = null,
+  touchHref,
   trend,
   onOpenOnePager,
 }: {
@@ -512,6 +543,10 @@ export default function ManagementExecutive({
   otherEdition?: string | null;
   /** What else stands in the way that is not an SAP object (ADR-087) — on the fit card. */
   otherBlockers?: readonly FitOtherBlocker[];
+  /** Where the program touches SAP standard (stage 1, owner decision 22.10.2026) — on the fit card, in one line. */
+  touch?: StandardTouch | null;
+  /** Where IT's card and the fit-to-standard check stand. */
+  touchHref?: string;
   /**
    * The readiness trend — the third block of the first screen (mockup s5,
    * ADR-087): beside the distance to SAP standard on a wide screen, under it
@@ -750,6 +785,8 @@ export default function ManagementExecutive({
           setTargetHref={setTargetHref}
           otherEdition={otherEdition}
           otherBlockers={otherBlockers}
+          touch={touch}
+          touchHref={touchHref}
         />
       </div>
       {trend ? <div className={cn('min-w-0', decision ? 'lg:col-span-4' : 'lg:col-span-12')}>{trend}</div> : null}

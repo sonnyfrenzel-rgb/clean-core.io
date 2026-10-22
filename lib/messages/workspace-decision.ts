@@ -46,6 +46,16 @@ export const WORKSPACE_DECISION_MESSAGES = {
   'decide.refRecommended': 'recommended by the analysis',
 } as const;
 
+/** The open points of the fit-to-standard check on Move to SAP standard (owner decision 22.10.2026). */
+export function optionConditionsLabel(n: number): string {
+  return n === 1 ? '1 condition from the fit-to-standard check' : `${n} conditions from the fit-to-standard check`;
+}
+
+/** "3 more in the IT view". */
+export function optionConditionsMore(n: number): string {
+  return `${n} more in the fit-to-standard check in the IT view`;
+}
+
 /** "Choose Keep?" */
 export function decideChooseTitle(label: string): string {
   return `Choose ${label}?`;
