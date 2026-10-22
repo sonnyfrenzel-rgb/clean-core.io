@@ -13,6 +13,14 @@ import { invitationLinkPath } from '../lib/invitations';
 import { ownDomainVerifyEmailLink, withReturnPath } from '../lib/auth-action-link';
 import { stageErrorCopy } from '../lib/stage-error';
 import {
+  isOtherBuild,
+  learnBuild,
+  NEW_VERSION_CHECK_INTERVAL_MS,
+  NEW_VERSION_HEADLINE,
+  servedBuild,
+} from '../lib/new-version';
+import { markTyping, readerIsTyping, reloadOnceForStaleBuild, TYPING_PAUSE_MS } from '../lib/stale-build';
+import {
   accessFromAnswer,
   NO_ACCESS_SENTENCE,
   projectGate,
@@ -209,6 +217,64 @@ test.describe('(7) one error boundary for every tool, with "Back to project work
     const workspace = stageErrorCopy('/project/p1');
     expect(workspace.onTool).toBe(false);
     expect(workspace.backLabel).toBe('Go to My workspace');
+  });
+});
+
+test.describe('(8) a tab left open across a deploy says so when it comes back, and never reloads while the reader types', () => {
+  test('another version, or another commit of the same version, is another build', () => {
+    const tab = { version: 'v3.0.21', commit: null };
+    expect(servedBuild({ status: 'ok', version: 'v3.0.21', commit: 'abc123def456' })).toEqual({ version: 'v3.0.21', commit: 'abc123def456' });
+    expect(servedBuild({ status: 'degraded' })).toBeNull();
+    expect(servedBuild(null)).toBeNull();
+    expect(isOtherBuild(tab, { version: 'v3.0.22', commit: null })).toBe(true);
+    expect(isOtherBuild(tab, { version: 'v3.0.21', commit: 'abc' })).toBe(false);
+    expect(isOtherBuild(tab, null), 'an answer without a build says nothing').toBe(false);
+    // The commit is learnt from the first answer of the tab's own version…
+    const learnt = learnBuild(tab, { version: 'v3.0.21', commit: 'abc' });
+    expect(learnt).toEqual({ version: 'v3.0.21', commit: 'abc' });
+    expect(isOtherBuild(learnt, { version: 'v3.0.21', commit: 'def' }), 'a fix without a version bump').toBe(true);
+    expect(isOtherBuild(learnt, { version: 'v3.0.21', commit: 'abc' })).toBe(false);
+    // …never from an answer that already names another version, and only once.
+    expect(learnBuild(tab, { version: 'v3.0.22', commit: 'def' })).toBe(tab);
+    expect(learnBuild(learnt, { version: 'v3.0.21', commit: 'zzz' })).toBe(learnt);
+  });
+
+  test('the shell asks on mount and when the tab comes back into view, at most once a minute, and the reload is a click', () => {
+    expect(NEW_VERSION_CHECK_INTERVAL_MS).toBe(60_000);
+    expect(NEW_VERSION_HEADLINE).toBe('Clean-Core.io was updated.');
+    const watcher = read('components/NewVersionWatcher.tsx');
+    expect(watcher).toContain("document.addEventListener('visibilitychange', onVisible);");
+    expect(watcher).toContain("fetch('/api/health', { cache: 'no-store' })");
+    expect(watcher).toContain('if (Date.now() - lastAsked.current < NEW_VERSION_CHECK_INTERVAL_MS) return;');
+    // The only reload is the button's.
+    expect(watcher.match(/window\.location\.reload\(\)/g)).toHaveLength(1);
+    expect(watcher).toMatch(/onClick=\{\(\) => window\.location\.reload\(\)\}/);
+    expect(read('app/(app)/layout.tsx')).toMatch(/<NewVersionWatcher \/>\s*\n\s*\{children\}/);
+  });
+
+  test('the automatic reload after a missing chunk waits while the reader types', () => {
+    const g = globalThis as unknown as Record<string, unknown>;
+    const hadWindow = 'window' in g;
+    const prevStorage = g.sessionStorage;
+    let reloads = 0;
+    const store = new Map<string, string>();
+    g.window = { location: { reload: () => { reloads += 1; } } };
+    g.sessionStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
+    try {
+      const t = 1_000_000_000_000;
+      markTyping(t);
+      expect(readerIsTyping(t + 1_000)).toBe(true);
+      expect(reloadOnceForStaleBuild(t + 1_000), 'reloaded while the reader was typing').toBe(false);
+      expect(reloads).toBe(0);
+      expect(readerIsTyping(t + TYPING_PAUSE_MS + 1)).toBe(false);
+      expect(reloadOnceForStaleBuild(t + TYPING_PAUSE_MS + 1)).toBe(true);
+      expect(reloads).toBe(1);
+    } finally {
+      markTyping(0);
+      if (!hadWindow) delete g.window;
+      g.sessionStorage = prevStorage;
+      if (prevStorage === undefined) delete g.sessionStorage;
+    }
   });
 });
 

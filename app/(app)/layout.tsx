@@ -25,6 +25,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
+import NewVersionWatcher from '@/components/NewVersionWatcher';
 import { runsLeftLabel } from '@/lib/run-quota-rule';
 import { signInLinkFor } from '@/lib/return-path';
 import { Lightbulb } from 'lucide-react';
@@ -460,6 +461,8 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl',
         )}
       >
+        {/* A tab left open across a deploy says so when it comes back into view, and waits for the reader's click (roadmap 3.0.21 (8)). */}
+        <NewVersionWatcher />
         {children}
       </main>
       {/* The legal links of every page in this shell live here, in one of
