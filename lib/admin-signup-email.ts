@@ -26,17 +26,22 @@ import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
  * delayed, quarantined or bounced afterwards, and only the webhook can say which;
  * so the sentence points at the account's row in the admin console, where that
  * verdict lands.
+ *
+ * **What it carries, and what it does not (privacy policy, section 2 —
+ * Fassung 1.1, owner decision B2 of 22.10.2026).** The account id, the way the
+ * account signed in, the accepted Terms version and the time — and nothing
+ * else: no name, no e-mail address, no motivation. Its one purpose is to spot
+ * misuse early, such as a burst of sign-ups, and for that the id is enough;
+ * the admin console behind a login shows the rest when it is needed. A name or
+ * a motivation in an operator mail would be a use of account data beyond
+ * providing the platform, and the absence of a right of withdrawal (Terms,
+ * section 13; § 312(1a) sentence 2 BGB) rests on there being none. The subject
+ * names the account id for the same reason.
  */
 
 export interface AdminSignupEmailInput {
-  /** HTML-escaped full name. */
-  name: string;
-  /** HTML-escaped email address of the new account. */
-  email: string;
   /** Firebase Auth UID — safe characters only, but escaped by the caller anyway. */
   uid: string;
-  /** HTML-escaped free-text motivation, or an empty string. */
-  motivation: string;
   /** 'Email / password' | 'Google' — how the account was created. */
   authMethod: string;
   /** Terms version recorded against the account, or null when none was captured. */
@@ -52,35 +57,36 @@ export interface AdminSignupEmailInput {
  */
 export const ADMIN_SIGNUP_MAIL_KIND = 'admin signup notification';
 
-export function buildAdminSignupSubject(name: string): string {
+/** The subject: the account id, never a name (see above). */
+export function buildAdminSignupSubject(uid: string): string {
+  return `New Clean-Core.io account: ${uid}`;
+}
+
+/**
+ * The subject the notification carried until 3.0.20, when it named the person.
+ * Account erasure still looks for delivery records under it: those written
+ * before the records carried the account's uid can only be found this way.
+ */
+export function legacyAdminSignupSubject(name: string): string {
   return `New Clean-Core.io account: ${name}`;
 }
 
 export function buildAdminSignupEmail({
-  name,
-  email,
   uid,
-  motivation,
   authMethod,
   termsVersion,
   signedUpAt,
 }: AdminSignupEmailInput): string {
   const adminUrl = `${APP_BASE_URL}/admin`;
-  const motivationHtml = motivation
-    ? `&ldquo;${motivation}&rdquo;`
-    : '<span style="color: #94a3b8;">&mdash; none given &mdash;</span>';
   const consentHtml = termsVersion
     ? `Terms ${termsVersion} accepted, recorded server-side in consent_events`
     : '<strong style="color: #b45309;">No consent record</strong> &mdash; this account has not accepted the current Terms';
 
   const rows: { label: string; value: string }[] = [
-    { label: 'Full name', value: `<strong style="color: #0f172a;">${name}</strong>` },
-    { label: 'Email address', value: `<a href="mailto:${email}" style="color: #006b2c; font-weight: 600; text-decoration: none; word-break: break-all;">${email}</a>` },
     { label: 'Auth ID (UID)', value: `<span style="font-family: monospace; font-size: 12px; color: #475569; word-break: break-all;">${uid}</span>` },
     { label: 'Sign-in method', value: authMethod },
     { label: 'Registered (UTC)', value: signedUpAt },
     { label: 'Consent', value: consentHtml },
-    { label: 'Motivation / use case', value: `<em>${motivationHtml}</em>` },
   ];
 
   const rowsHtml = rows.map(

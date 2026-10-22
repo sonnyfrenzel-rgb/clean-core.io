@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '../lib/welcome-email';
-import { buildAdminSignupEmail } from '../lib/admin-signup-email';
+import { buildAdminSignupEmail, buildAdminSignupSubject } from '../lib/admin-signup-email';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -113,10 +113,7 @@ test.describe('registration sends one mail to the user and one to the administra
 
   test('the administrator mail carries no privileged action', () => {
     const html = buildAdminSignupEmail({
-      name: 'Test Person',
-      email: 'test@example.com',
       uid: 'uid-123',
-      motivation: '',
       authMethod: 'Email / password',
       termsVersion: '2026-07-07',
       signedUpAt: '2026-08-27 09:00:00 UTC',
@@ -129,15 +126,37 @@ test.describe('registration sends one mail to the user and one to the administra
 
   test('the administrator mail names a missing consent instead of staying quiet', () => {
     const html = buildAdminSignupEmail({
-      name: 'Test Person',
-      email: 'test@example.com',
       uid: 'uid-123',
-      motivation: '',
       authMethod: 'Google',
       termsVersion: null,
       signedUpAt: '2026-08-27 09:00:00 UTC',
     });
     expect(html).toContain('No consent record');
+  });
+
+  /*
+   * Privacy policy, section 2 (Fassung 1.1, owner decision B2 of 22.10.2026):
+   * the operator is told the account id, the sign-in method, the Terms version
+   * and the time — without the person's name, address or motivation. The mail
+   * may not be able to carry them at all, and the route may not hand them over.
+   */
+  test('the administrator mail carries no name, no address and no motivation', () => {
+    const html = buildAdminSignupEmail({
+      uid: 'uid-123',
+      authMethod: 'Google',
+      termsVersion: '2026-10-23',
+      signedUpAt: '2026-10-23 09:00:00 UTC',
+    });
+    expect(html).toContain('uid-123');
+    expect(html).toContain('Google');
+    expect(html).toContain('2026-10-23');
+    expect(html).not.toMatch(/Full name|Email address|Motivation/);
+    expect(buildAdminSignupSubject('uid-123')).toBe('New Clean-Core.io account: uid-123');
+
+    const s = route();
+    const call = s.slice(s.indexOf('buildAdminSignupEmail({'), s.indexOf('}),', s.indexOf('buildAdminSignupEmail({')));
+    expect(call, 'the route hands the operator mail a name, an address or the motivation').not.toMatch(/\bname\b|email:|motivation/);
+    expect(s).toContain('subject: buildAdminSignupSubject(uid),');
   });
 });
 

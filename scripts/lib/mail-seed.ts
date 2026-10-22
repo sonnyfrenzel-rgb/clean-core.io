@@ -433,11 +433,9 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     source: REGISTER,
     template: 'lib/admin-signup-email.ts',
     build: (ctx) => {
+      const seedUid = sampleId('seed-uid', ctx);
       const html = wrapEmailDocument(buildAdminSignupEmail({
-        name: escapeHtml(SEED_NAME),
-        email: escapeHtml(ctx.recipient.address),
-        uid: escapeHtml(sampleId('seed-uid', ctx)),
-        motivation: escapeHtml('Seed test 3.0.9 — deliverability measurement, not a real sign-up.'),
+        uid: escapeHtml(seedUid),
         authMethod: 'Email / password',
         termsVersion: '2026-09-18',
         signedUpAt: ctx.now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
@@ -445,7 +443,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       return {
         from: 'Clean-Core <system@clean-core.io>',
         replyTo: CONTACT_EMAIL,
-        subject: buildAdminSignupSubject(SEED_NAME),
+        subject: buildAdminSignupSubject(seedUid),
         html,
         text: htmlToText(html),
       };

@@ -10,7 +10,7 @@ import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
-import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from '../lib/admin-signup-email';
+import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject, legacyAdminSignupSubject } from '../lib/admin-signup-email';
 import fs from 'fs';
 import path from 'path';
 
@@ -237,13 +237,13 @@ test('the operator notification about the signup goes with the account, in both 
     await seedOwnedData(uid, email);
     await db.collection('registration_requests').doc(uid).set({ email, name, status: 'approved' });
     await db.collection('email_events').doc(ids.current).set({
-      messageId: ids.current, to: [operator], subject: buildAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid, status: 'email.delivered',
+      messageId: ids.current, to: [operator], subject: buildAdminSignupSubject(uid), kind: ADMIN_SIGNUP_MAIL_KIND, uid, status: 'email.delivered',
     });
     await db.collection('email_events').doc(ids.legacy).set({
-      messageId: ids.legacy, to: [operator], subject: buildAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
+      messageId: ids.legacy, to: [operator], subject: legacyAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
     });
     await db.collection('email_events').doc(ids.other).set({
-      messageId: ids.other, to: [operator], subject: buildAdminSignupSubject(`Somebody Else ${uid}`), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
+      messageId: ids.other, to: [operator], subject: legacyAdminSignupSubject(`Somebody Else ${uid}`), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
     });
 
     const auth = recordingAuth();
