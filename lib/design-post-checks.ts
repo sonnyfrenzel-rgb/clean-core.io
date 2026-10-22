@@ -260,6 +260,29 @@ export const CUSTOM_ENTITY_AUTH_NOTE =
  */
 const DCL_CLAIM = /\bDCL\b|\bpfcg_auth\b|\bdefine\s+role\b|\bCDS\s+access\s+controls?\b|\.dcls\b|\basdcls\b/i;
 
+/** The words that name a CDS access control, as the negations below set them aside. */
+const DCL_TERM = String.raw`(?:CDS\s+)?(?:DCL|access\s+controls?|pfcg_auth|define\s+role)(?:\s+(?:access\s+controls?|roles?|rules?|protection|objects?))?`;
+
+/**
+ * A mention of a CDS access control that says it is absent, not proposed: "custom entities lack DCL access
+ * controls", "has no DCL", "without a DCL", "is not protected by a DCL", "instead of DCL", "DCL does not
+ * apply", "DCL is not supported". Set aside before `DCL_CLAIM` is asked, so "Ensure the authorization check
+ * runs in the query implementation as custom entities lack DCL access controls" proposes nothing, while
+ * "Define a DCL for the custom entity" still does.
+ */
+const DCL_NEGATED = new RegExp(
+  String.raw`\b(?:lacks?|lacking|has\s+no|have\s+no|with\s+no|without|no|not\s+(?:protected|covered|secured|restricted|guarded)\s+(?:by|through|via|with)|not\s+(?:via|through|by|with)|cannot\s+(?:use|have|rely\s+on|be\s+protected\s+by)|can't\s+(?:use|have|rely\s+on)|(?:does|do)\s+not\s+(?:support|have|use|rely\s+on)|(?:doesn't|don't)\s+(?:support|have|use|rely\s+on)|instead\s+of|rather\s+than|in\s+place\s+of)\s+(?:(?:an?|the|any)\s+)?`
+    + DCL_TERM
+    + String.raw`|\b` + DCL_TERM
+    + String.raw`\s+(?:(?:is|are)\s+(?:not\s+(?:supported|available|applicable|possible|used)|unavailable|unsupported)|(?:does|do)\s+not\s+apply|(?:doesn't|don't)\s+apply|cannot\s+be\s+used)`,
+  'gi',
+);
+
+/** Does this text propose a CDS access control — a mention of one that is not a negation of it? */
+export function proposesDcl(text: string): boolean {
+  return DCL_CLAIM.test(String(text ?? '').replace(DCL_NEGATED, ' '));
+}
+
 /** The program a source declares (`REPORT`/`PROGRAM`), as the engine reads it; `null` when it declares none. */
 export function programOfSource(code: string | null | undefined): string | null {
   if (typeof code !== 'string' || !code.trim()) return null;
@@ -356,14 +379,23 @@ export function alignRapDesignNames<T>(design: T, program: string | null, delive
   const beyond: string[] = [];
   // 3.0.18 item 13 (QM-07, FI-F02): what the package delivers decides, never a fixed list of roles.
   const deliveredKeys = delivered ? new Set(delivered.objects.map((o) => `${o.name}.${o.type}`)) : null;
+  const deliveredNames = delivered ? new Set(delivered.objects.map((o) => o.name)) : null;
   const structure = design.nodeAppBlueprint.projectStructure.map((entry: unknown) => {
     const path = typeof entry === 'string' ? entry : isObj(entry) && typeof entry.path === 'string' ? entry.path : '';
     const purpose = isObj(entry) && typeof entry.purpose === 'string' ? entry.purpose : '';
-    const m = /^(.*\/)?([A-Za-z0-9_/]+?)\.([a-z]{4})(?:\.[A-Za-z0-9.]+)?$/.exec(path.trim());
+    // The type suffix in any case: "ZMM_X_CE.DDLS" names the same object as "zmm_x_ce.ddls".
+    const m = /^(.*\/)?([A-Za-z0-9_/]+?)\.([A-Za-z]{4})(?:\.[A-Za-z0-9._]+)?$/.exec(path.trim());
     const type = m ? m[3].toLowerCase() : '';
     // An object the package delivers under the model's own name stays, and is never "not generated".
     if (m && deliveredKeys?.has(`${m[2].toLowerCase()}.${type}`)) {
       taken.add(m[2].toLowerCase());
+      return entry;
+    }
+    // A bare object name without a type suffix ("zmm_x_ce", "src/zcl_mm_x_query") is the package's own
+    // object when the package delivers an object of that name.
+    const bare = m ? null : /^(?:.*\/)?([A-Za-z0-9_/]+)$/.exec(path.trim())?.[1]?.toLowerCase() ?? null;
+    if (bare && deliveredNames?.has(bare)) {
+      taken.add(bare);
       return entry;
     }
     const mapped = m ? scaffoldNameFor(m[2], type, purpose, names, taken, delivered?.variant ?? null) : null;
@@ -664,7 +696,7 @@ export function refuseCustomEntityDcl<T>(design: T): { design: T; refused: strin
   const refused: string[] = [];
   const kept = design.securityHardening.filter((row: unknown) => {
     const text = strings(row).map((s) => s.text).join(' ');
-    if (!DCL_CLAIM.test(text)) return true;
+    if (!proposesDcl(text)) return true;
     refused.push(isObj(row) && typeof row.requirement === 'string' ? row.requirement : text);
     return false;
   });
