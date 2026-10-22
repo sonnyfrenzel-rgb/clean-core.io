@@ -31,6 +31,15 @@ export interface ModelAvailability {
   provider: ModelKeyProvider | null;
   /** 3.0.15 — per stage, who answered last (provider, model, whose key). */
   answers: Partial<Record<ModelStage, StageAnswerRecord>>;
+  /**
+   * 3.0.21 (owner decision B6) — may the steps the product starts by itself
+   * run now: always on the platform key, on an own key only with "Automatic
+   * steps" switched on for it. Optimistic only on the platform side: false
+   * until the answer is in, so an own key is never spent before it is known.
+   */
+  autoSteps: boolean;
+  /** 3.0.21 (T01) — the key's provider when the operator switched it off. */
+  suspendedProvider: ModelKeyProvider | null;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -46,6 +55,8 @@ export function useModelAvailability(): ModelAvailability {
   const [keySource, setKeySource] = useState<'byok' | 'community' | null>(null);
   const [provider, setProvider] = useState<ModelKeyProvider | null>(null);
   const [answers, setAnswers] = useState<Partial<Record<ModelStage, StageAnswerRecord>>>({});
+  const [autoSteps, setAutoSteps] = useState(false);
+  const [suspendedProvider, setSuspendedProvider] = useState<ModelKeyProvider | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -66,6 +77,8 @@ export function useModelAvailability(): ModelAvailability {
         keySource?: 'byok' | 'community' | null;
         provider?: unknown;
         answers?: Record<string, unknown>;
+        autoSteps?: unknown;
+        suspendedProvider?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -76,6 +89,8 @@ export function useModelAvailability(): ModelAvailability {
         if (isModelStage(stage) && isStageAnswerRecord(a)) read[stage] = a;
       }
       setAnswers(read);
+      setAutoSteps(data.autoSteps === true);
+      setSuspendedProvider(isModelKeyProvider(data.suspendedProvider) ? data.suspendedProvider : null);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -110,7 +125,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

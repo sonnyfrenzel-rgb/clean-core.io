@@ -36,14 +36,75 @@ export const PLATFORM_PROVIDER: ModelKeyProvider = 'gemini';
  * route. One switch for both, so the page and the route cannot disagree.
  * The owner turns it off here should the privacy texts for Anthropic as a
  * recipient not be live when this reaches production.
+ *
+ * On since 3.0.21 (owner 22.10.2026: "claude in 3.0.21 freischalten als BYOK
+ * feature"), together with the legal texts 1.0 and the Additional Agreement on
+ * Own Model Keys: an Anthropic key is stored only with that agreement accepted
+ * (`lib/byok-addendum.ts`), for a business account (its clause 9).
  */
-// Off until the owner's privacy policy, terms and DPA name Anthropic (3.0.15 legal TODO, owner 16.10.2026).
-export const ANTHROPIC_OWN_KEY_OFFERED = false;
+export const ANTHROPIC_OWN_KEY_OFFERED = true;
 
 /** The providers a save may name today. */
 export function offeredKeyProviders(): ModelKeyProvider[] {
   return MODEL_KEY_PROVIDERS.filter((p) => p !== 'anthropic' || ANTHROPIC_OWN_KEY_OFFERED);
 }
+
+/**
+ * The per-provider switch-off (legal review 22.10.2026, acceptance T01; the
+ * Additional Agreement, clause 6): should the recipient of a provider change or
+ * the basis for calling it cease, the operator stops every call to that
+ * provider — **without** a deploy, by setting the server environment variable
+ * `MODEL_PROVIDERS_SUSPENDED` (comma-separated provider ids, e.g.
+ * `anthropic`). A suspended provider is never replaced by another provider or
+ * by the platform key: the step stops and says why, the stored key stays until
+ * its owner deletes it, and Settings says so beside the key.
+ *
+ * Pure: the caller hands the variable's value in; an unknown id is ignored.
+ */
+export const MODEL_PROVIDERS_SUSPENDED_ENV = 'MODEL_PROVIDERS_SUSPENDED';
+
+export function suspendedProvidersOf(value: string | null | undefined): ModelKeyProvider[] {
+  if (!value) return [];
+  const named = value.split(',').map((s) => s.trim().toLowerCase());
+  return MODEL_KEY_PROVIDERS.filter((p) => named.includes(p));
+}
+
+/** The code a refused call carries when its provider is switched off. */
+export const PROVIDER_SUSPENDED_CODE = 'model-provider-suspended';
+
+/** What the step and Settings say when a provider is switched off. */
+export function providerSuspendedMessage(provider: ModelKeyProvider): string {
+  return `Calls to ${PROVIDER_LABEL[provider]} are switched off by the operator (${PROVIDER_SUSPENDED_CODE}). Nothing was sent, and no other provider or key was used instead. Your stored key stays until you delete it; until then, the model steps of this account are not available.`;
+}
+
+/**
+ * 3.0.21 (owner decision B6) — the code a step the product started by itself
+ * carries when it is refused because the account has not switched "Automatic
+ * steps" on for its own key. The screens read the code and offer the step on a
+ * click instead; nothing is shown as an error.
+ */
+export const AUTO_STEPS_OFF_CODE = 'own-key-auto-steps-off';
+
+export function autoStepsOffMessage(providerLabel: string): string {
+  return `Automatic steps are off for your own ${providerLabel} key (${AUTO_STEPS_OFF_CODE}). Nothing was sent. Start the step with a click, or switch automatic steps on in Settings.`;
+}
+
+/**
+ * Whether a step the product starts by itself may run for this account now:
+ * on the platform key always; on an own key only with the switch on.
+ */
+export function autoStepsAllowed(a: { keySource: 'byok' | 'community' | null; autoSteps: boolean }): boolean {
+  return a.keySource === 'community' || (a.keySource === 'byok' && a.autoSteps);
+}
+
+/**
+ * The data region of every call on an own Claude key (legal review B7, the
+ * Additional Agreement clause 6): `inference_geo: "us"` — the direct API knows
+ * only `us` and `global`, and a named region documents better than `global`.
+ * Anthropic charges 1.1× its standard price for it, which the key owner bears.
+ * Supported from Claude 4.6 on; `OWN_CLAUDE_MODEL` below is newer.
+ */
+export const ANTHROPIC_INFERENCE_GEO = 'us';
 
 /**
  * The provider id a model receipt and a signed run carry. `google-gemini` is
@@ -130,6 +191,11 @@ export interface StageAnswerRecord {
   keyOwner: KeyOwner;
   /** ISO time of the call. */
   at: string;
+  /**
+   * 3.0.21 — where the provider says inference ran (`usage.inference_geo` of a
+   * Claude answer). Absent for Gemini and for records written before.
+   */
+  inferenceGeo?: string;
 }
 
 export function isStageAnswerRecord(v: unknown): v is StageAnswerRecord {
@@ -153,6 +219,7 @@ export const STAGE_ANSWER_REFRESH_MS = 10 * 60 * 1000;
 export function stageAnswerNeedsWrite(previous: unknown, next: StageAnswerRecord): boolean {
   if (!isStageAnswerRecord(previous)) return true;
   if (previous.provider !== next.provider || previous.modelId !== next.modelId || previous.keyOwner !== next.keyOwner) return true;
+  if ((previous.inferenceGeo ?? null) !== (next.inferenceGeo ?? null)) return true;
   const before = Date.parse(previous.at);
   const now = Date.parse(next.at);
   return !Number.isFinite(before) || !Number.isFinite(now) || now - before >= STAGE_ANSWER_REFRESH_MS;

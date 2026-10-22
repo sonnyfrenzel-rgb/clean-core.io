@@ -7,7 +7,11 @@ import {
   adminGrantS4,
   adminRevokeS4,
   adminDeleteUser,
+  adminBlockOwnModelKey,
+  adminEndByokAgreement,
+  getAdminAuth,
 } from '@/lib/firebase-admin';
+import { sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
 
@@ -58,6 +62,21 @@ export async function POST(req: NextRequest) {
       case 'delete-user':
         await adminDeleteUser(decodedAdmin.uid, uid);
         break;
+      // 3.0.21 — the Additional Agreement on Own Model Keys ended in text form
+      // (its clause 11, legal review E24): first block the stored key, so no
+      // call goes out on it, then delete it. Both are recorded in the proof log;
+      // the deletion is confirmed to the account's sign-in address.
+      case 'block-own-key':
+        await adminBlockOwnModelKey(decodedAdmin.uid, uid);
+        break;
+      case 'end-byok-agreement': {
+        const { agreementEnded } = await adminEndByokAgreement(decodedAdmin.uid, uid);
+        if (agreementEnded) {
+          const email = await getAdminAuth().then((auth) => auth.getUser(uid)).then((u) => u.email ?? null, () => null);
+          await sendAgreementEndedMail(email, uid, 'text-form');
+        }
+        break;
+      }
       default:
         return NextResponse.json({ error: 'Invalid action name.' }, { status: 400 });
     }

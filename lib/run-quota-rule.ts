@@ -22,6 +22,13 @@
 export interface QuotaSubject {
   tier?: string | null;
   byokConfigured?: boolean | null;
+  /**
+   * When the stored own key last passed its test (server time, written by the
+   * Admin SDK only). Roadmap 3.0.21: an own key counts as configured — lifts
+   * the quota, may run automatic steps, counts as "own key" anywhere else —
+   * only once it passed a test.
+   */
+  byokTestedAt?: unknown;
   transformationsUsed?: number | null;
   transformationsLimit?: number | null;
   /**
@@ -33,10 +40,21 @@ export interface QuotaSubject {
 
 export const COMMUNITY_QUOTA_FALLBACK = 5;
 
+/**
+ * The account's own key counts: stored **and** tested successfully (roadmap
+ * 3.0.21). A key saved before the rule, or one whose last test failed, carries
+ * no `byokTestedAt` and does not count until a test passes. The one rule —
+ * `reserveRunQuota`, the automatic-steps switch and the screens read it.
+ */
+export function ownKeyCounts(profile: Pick<QuotaSubject, 'byokConfigured' | 'byokTestedAt'> | null | undefined): boolean {
+  if (!profile) return false;
+  return profile.byokConfigured === true && profile.byokTestedAt !== undefined && profile.byokTestedAt !== null;
+}
+
 /** The account pays for its own runs — the community quota does not apply. */
 export function runsAreSelfFunded(profile: QuotaSubject | null | undefined): boolean {
   if (!profile) return false;
-  return profile.tier === 'enterprise' || profile.byokConfigured === true;
+  return profile.tier === 'enterprise' || ownKeyCounts(profile);
 }
 
 /**

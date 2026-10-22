@@ -33,6 +33,10 @@ import {
 import ModelStagesCard from '@/components/ModelStagesCard';
 import { byokAllowed } from '@/lib/byok-eligibility';
 import OwnKeyProviderChoice from '@/components/settings/OwnKeyProviderChoice';
+import { ByokAddendumAcceptance, OwnKeyAutoSteps, OwnKeyNotices, OwnKeyProviderSuspended, OwnKeyUntested } from '@/components/settings/OwnKeyTerms';
+import { BYOK_ADDENDUM_VERSION, addendumRequired, type ByokAddendumLanguage } from '@/lib/byok-addendum';
+import { ownKeyCounts } from '@/lib/run-quota-rule';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { KEY_PLACEHOLDER, PROVIDER_LABEL, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
 import CommunityMailCard from '@/components/CommunityMailCard';
 import CcButton from '@/components/cc/Button';
@@ -188,6 +192,14 @@ export default function SettingsPage() {
   // after a refused save or removal (DESIGN.md §2.6).
   const [confirmDeleteKey, setConfirmDeleteKey] = useState(false);
   const [keyError, setKeyError] = useState('');
+  // 3.0.21 — the Additional Agreement on Own Model Keys (an Anthropic key is
+  // stored only with it accepted), the automatic-steps switch per key, and the
+  // operator's per-provider switch-off (`lib/byok-addendum.ts`).
+  const [addendumAccepted, setAddendumAccepted] = useState(false);
+  const [addendumLanguage, setAddendumLanguage] = useState<ByokAddendumLanguage>('en');
+  const [autoStepsBusy, setAutoStepsBusy] = useState(false);
+  const keyAvailability = useModelAvailability();
+  const ownKeyTested = ownKeyCounts(profile);
 
   // GDPR Account Deletion
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -705,6 +717,7 @@ export default function SettingsPage() {
   const handleSaveKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !isPilotTier || !geminiKey.trim()) return;
+    if (addendumRequired(keyProvider) && !addendumAccepted) return;
     setKeyError('');
     setIsSavingKey(true);
     try {
@@ -716,7 +729,12 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ apiKey: geminiKey.trim(), provider: keyProvider }),
+        body: JSON.stringify({
+          apiKey: geminiKey.trim(),
+          provider: keyProvider,
+          // The acceptance in the language version the reader ticked (E26), sent only for an Anthropic key.
+          ...(addendumRequired(keyProvider) ? { addendum: { version: BYOK_ADDENDUM_VERSION, language: addendumLanguage, accepted: addendumAccepted } } : {}),
+        }),
       });
 
       if (!res.ok) {
@@ -726,6 +744,8 @@ export default function SettingsPage() {
 
       setKeySaved(true);
       setGeminiKey('');
+      setAddendumAccepted(false);
+      void keyAvailability.refresh();
       // The profile now names the saved provider; the choice follows it again.
       setChosenProvider(null);
       setValidationStatus('idle'); // Reset test connection banner after saving
@@ -769,6 +789,8 @@ export default function SettingsPage() {
       }
 
       const tested = (await res.json().catch(() => ({}))) as { provider?: unknown };
+      // A passed test of the stored key makes it count (3.0.21); the profile follows.
+      void keyAvailability.refresh();
       setTestedProvider(tested.provider === 'anthropic' ? 'anthropic' : 'gemini');
       setValidationStatus('success');
     } catch (error) {
@@ -777,6 +799,29 @@ export default function SettingsPage() {
       setValidationError(error instanceof Error ? error.message : 'Invalid API key or network error.');
     } finally {
       setIsValidatingKey(false);
+    }
+  };
+
+  // 3.0.21 (owner decision B6) — "Automatic steps on my key", per stored key.
+  const handleAutoSteps = async (on: boolean) => {
+    setKeyError('');
+    setAutoStepsBusy(true);
+    try {
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/secrets/gemini/auto-steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ on }),
+      });
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({ error: 'The switch could not be saved.' }));
+        throw new Error(errorBody.error || 'The switch could not be saved.');
+      }
+      void keyAvailability.refresh();
+    } catch (error) {
+      setKeyError(error instanceof Error ? error.message : 'The switch could not be saved.');
+    } finally {
+      setAutoStepsBusy(false);
     }
   };
 
@@ -1399,6 +1444,8 @@ export default function SettingsPage() {
               disabled={isSavingKey || isDeletingKey}
             />
 
+            <OwnKeyNotices provider={keyProvider} />
+
             <SettingsInput
               label={`${PROVIDER_LABEL[keyProvider]} API key`}
               value={geminiKey}
@@ -1418,6 +1465,28 @@ export default function SettingsPage() {
               mono
               reveal={{ shown: showKey, onToggle: () => setShowKey(!showKey), label: 'Show API key' }}
             />
+
+            {addendumRequired(keyProvider) && geminiKey.trim() ? (
+              <ByokAddendumAcceptance
+                checked={addendumAccepted}
+                language={addendumLanguage}
+                onChange={setAddendumAccepted}
+                onLanguage={setAddendumLanguage}
+                disabled={isSavingKey}
+              />
+            ) : null}
+
+            {keyAvailability.suspendedProvider ? <OwnKeyProviderSuspended provider={keyAvailability.suspendedProvider} /> : null}
+            {profile?.byokConfigured && !ownKeyTested ? <OwnKeyUntested /> : null}
+            {profile?.byokConfigured && savedProvider ? (
+              <OwnKeyAutoSteps
+                provider={savedProvider}
+                checked={profile.byokAutoSteps === true}
+                tested={ownKeyTested}
+                busy={autoStepsBusy}
+                onChange={(on) => void handleAutoSteps(on)}
+              />
+            ) : null}
 
             {validationStatus === 'success' && (
               <CcMessageStrip state="success" headline="The key works" announce>
@@ -1452,7 +1521,7 @@ export default function SettingsPage() {
                 type="submit"
                 variant="primary"
                 busy={isSavingKey}
-                disabled={!geminiKey.trim()}
+                disabled={!geminiKey.trim() || (addendumRequired(keyProvider) && !addendumAccepted)}
                 icon={keySaved ? <CheckCircle2 size={16} aria-hidden={true} /> : undefined}
               >
                 {isSavingKey ? 'Saving the key...' : keySaved ? 'Key saved' : 'Save the key'}
@@ -1466,7 +1535,7 @@ export default function SettingsPage() {
                   busy={isDeletingKey}
                   icon={<Trash2 size={16} aria-hidden={true} />}
                 >
-                  Remove the key
+                  {savedProvider === 'anthropic' ? 'Delete key and end agreement' : 'Remove the key'}
                 </CcButton>
               )}
             </div>
@@ -2050,11 +2119,12 @@ export default function SettingsPage() {
       {/* Removing the own key: the confirmation `window.confirm` used to ask. */}
       <CcMessageBox
         open={confirmDeleteKey}
-        title="Remove your Gemini API key?"
-        confirmLabel="Remove API key"
+        title={savedProvider === 'anthropic' ? 'Delete your Anthropic key and end the agreement?' : `Remove your ${savedProvider ? PROVIDER_LABEL[savedProvider] : 'own'} API key?`}
+        confirmLabel={savedProvider === 'anthropic' ? 'Delete key and end agreement' : 'Remove API key'}
         onConfirm={handleDeleteKey}
         onCancel={() => setConfirmDeleteKey(false)}
       >
+        {savedProvider === 'anthropic' ? 'This ends the Additional Agreement on Own Model Keys; no call goes to Anthropic after it, and you get a confirmation by e-mail. ' : null}
         The key is deleted from our server, and you are back to the 5 free transformations.
       </CcMessageBox>
 

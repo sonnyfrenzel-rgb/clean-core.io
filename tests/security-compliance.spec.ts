@@ -1307,7 +1307,9 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     }
     expect(directReadFailed).toBe(true);
 
-    // 5. Test Key connection testing endpoint (expect 400 since it is a dummy key, but it proves the endpoint decrypted and used the key)
+    // 5. Test Key connection testing endpoint. 3.0.21: the save itself tested the key first,
+    // and the test server's stand-in (lib/own-key-test.ts, the gates of lib/gemini-test-stub.ts)
+    // answers the key test — so the stored key decrypts and passes, as it did at the save.
     const testRes = await request.post('/api/secrets/gemini/test', {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1315,9 +1317,20 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       },
       data: {} // tests the saved key
     });
-    expect(testRes.status()).toBe(400); // Invalid key error expected
+    expect(testRes.status()).toBe(200);
     const testBody = await testRes.json();
-    expect(testBody.error).toBeDefined();
+    expect(testBody).toMatchObject({ ok: true, provider: 'gemini' });
+
+    // 5b. A key the provider refuses is not stored, and nothing about the stored one changes.
+    const refusedRes = await request.post('/api/secrets/gemini', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: { apiKey: 'AIzaSy-stub-refused-0000000000' }
+    });
+    expect(refusedRes.status()).toBe(400);
+    expect((await refusedRes.json()).code).toBe('own-key-test-failed');
 
     // 6. Delete the key securely
     const deleteRes = await request.delete('/api/secrets/gemini', {

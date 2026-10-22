@@ -8,16 +8,24 @@ import {
   assertByokAllowed,
   getAdminDb,
   logAuditEvent,
+  recordOwnKeyTest,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key';
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
-import { GoogleGenAI } from '@google/genai';
-import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import { isModelKeyProvider, offeredKeyProviders, type ModelKeyProvider } from '@/lib/model-providers';
-import { testAnthropicKey } from '@/lib/anthropic-messages';
+import {
+  MODEL_PROVIDERS_SUSPENDED_ENV,
+  PROVIDER_SUSPENDED_CODE,
+  isModelKeyProvider,
+  offeredKeyProviders,
+  providerSuspendedMessage,
+  suspendedProvidersOf,
+  type ModelKeyProvider,
+} from '@/lib/model-providers';
+import { testOwnModelKey } from '@/lib/own-key-test';
+import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '@/lib/gemini-test-stub';
 
 /**
  * POST /api/secrets/gemini/test
@@ -74,7 +82,8 @@ export async function POST(req: NextRequest) {
       provider = requested;
     }
 
-    if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
+    const testingSaved = !apiKey || typeof apiKey !== 'string' || !apiKey.trim();
+    if (testingSaved) {
       // No key entered: test the saved one, of whichever provider it is.
       let saved: OwnModelKey | null;
       try {
@@ -94,23 +103,24 @@ export async function POST(req: NextRequest) {
       provider = saved.provider;
     }
 
-    if (provider === 'anthropic') {
-      // Anthropic's Models API: the key is accepted or refused, and no token
-      // is spent (`lib/anthropic-messages.ts`). Server-side only.
-      await testAnthropicKey(apiKey.trim());
-      return NextResponse.json({ ok: true, provider });
+    // 3.0.21 (T01): a provider the operator has switched off is not asked.
+    if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
+      return NextResponse.json({ error: providerSuspendedMessage(provider), code: PROVIDER_SUSPENDED_CODE }, { status: 409 });
     }
 
-    // Call Gemini to verify key
-    const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
-    const result = await ai.models.generateContent({
-      model: PRODUCT_GEMINI_MODEL,
-      contents: "Ping. Respond with exactly 'OK' to confirm connectivity.",
-    });
-
-    if (!result.text || !result.text.includes('OK')) {
-      throw new Error('Invalid response from AI provider.');
+    // The one key test (`lib/own-key-test.ts`): it reads the model the key will
+    // be used with — no code, no tokens. Anthropic: the Models API
+    // (`testAnthropicKey`); Gemini: `models.get`. Server-side only.
+    const stubbed = geminiTestStubActive(process.env, req.headers.get(GEMINI_TEST_STUB_HEADER), req.headers.get(GEMINI_TEST_REAL_MODEL_HEADER));
+    try {
+      await testOwnModelKey(provider, apiKey!, { stubbed });
+    } catch (testErr) {
+      // The stored key failed: it stops counting as configured until a test
+      // passes again (3.0.21). An entered key that fails changes nothing.
+      if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, false);
+      throw testErr;
     }
+    if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, true);
 
     return NextResponse.json({ ok: true, provider });
   } catch (err: any) {

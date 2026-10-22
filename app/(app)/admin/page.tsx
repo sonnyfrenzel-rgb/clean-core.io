@@ -23,6 +23,7 @@ import UsageQuotaPanel from '@/components/admin/UsageQuotaPanel';
 import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
 import RunnerSelftestPanel from '@/components/admin/RunnerSelftestPanel';
+import ByokEndingPanel from '@/components/admin/ByokEndingPanel';
 
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
@@ -578,6 +579,9 @@ export default function AdminConsole() {
       {/* The negative test of the isolated runners (roadmap 8.9), one click.
           Same gate as every action here: admin claim plus a fresh step-up. */}
       <RunnerSelftestPanel />
+
+      {/* 3.0.21 — an own-key agreement ended in text form: block, then delete. */}
+      <ByokEndingPanel />
 
       {/* Console sections. The usage panel streams every user profile, so it
           is only mounted while its tab is the chosen one. */}

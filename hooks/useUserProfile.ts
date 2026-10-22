@@ -39,6 +39,16 @@ export interface UserProfile {
    */
   byokProvider?: string;
   /**
+   * 3.0.21 — server-written with the key and by a passed key test: an own key
+   * counts as configured only once it passed a test (`ownKeyCounts` in
+   * `lib/run-quota-rule.ts`).
+   */
+  byokTestedAt?: unknown;
+  /** 3.0.21 — "Automatic steps" switched on for the stored own key (owner decision B6). Server-written. */
+  byokAutoSteps?: boolean;
+  /** 3.0.21 — the operator blocked the key after the agreement was ended in text form. Server-written. */
+  byokBlocked?: boolean;
+  /**
    * Which of the five model stages this account has switched on (roadmap 1.2).
    * Server-written, like `transformationsUsed`: only `POST /api/model-stages`
    * puts a value in here, `userClientUpdateKeys()` in `firestore.rules` keeps
