@@ -81,6 +81,8 @@ export interface EngineFacts {
   contract: OriginalContract;
   ruleSet: BusinessRuleSet;
   material: MaterialRule[];
+  /** The engine the facts were read for (3.0.21: the architecture reads what a run reaches from then on). */
+  engineVersion?: string | null;
 }
 
 /** `engineVersion`: the engine the rules are read for (3.0.20 demo switches) — the project's run's. */
@@ -91,7 +93,7 @@ export function readEngineFacts(source: string, engineVersion: string | null = A
   const graph = readCallGraphFrom(statements, blocks);
   const contract = readOriginalContract(text);
   const ruleSet = deriveBusinessRules(text, engineVersion);
-  return { source: text, lines: text.split('\n'), statements, blocks, graph, contract, ruleSet, material: materialRules(ruleSet) };
+  return { source: text, lines: text.split('\n'), statements, blocks, graph, contract, ruleSet, material: materialRules(ruleSet), engineVersion };
 }
 
 /* --------------------------------------------------------------- naming */

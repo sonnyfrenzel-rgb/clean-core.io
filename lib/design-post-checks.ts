@@ -217,7 +217,7 @@ export function rapDeliveredFromSource(code: string | null | undefined): RapDeli
     const graph = readCallGraphFrom(statements, readBlocks(statements));
     const contract = readOriginalContract(text);
     const n = rapDesignNames(programNameOf(statements));
-    const variant: RapVariant = programArchitecture({ graph }) === 'writing' ? 'managed-bo' : 'custom-entity';
+    const variant: RapVariant = programArchitecture({ graph, source: text, statements }) === 'writing' ? 'managed-bo' : 'custom-entity';
     const delivery = abapDeliveryOf({ statements, graph, contract });
     const withJob = delivery.kind !== 'ui-service';
     const withService = delivery.kind !== 'application-job';

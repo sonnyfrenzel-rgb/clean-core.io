@@ -122,6 +122,12 @@ export interface ItFindingRow {
    * which `routeDrivers` reads as outbound — the rule every RFC had before.
    */
   rfcTarget?: RfcTarget;
+  /**
+   * True where no run reaches the finding — behind a constant gate or in a FORM nothing calls
+   * (`EvidenceFinding.unreachable`, `uncalled`). From engine 3.0.21 such a finding chooses no route
+   * (`routeDrivers`). Absent otherwise.
+   */
+  notReached?: true;
   /** The extensibility targets the router named for this finding. Possibly empty. */
   targetOptions: string[];
   /** `BR-nnn` of every derived rule whose own anchor covers `lineStart`. */

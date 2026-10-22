@@ -15,11 +15,12 @@ import { precisionFixesApply } from './precision-fixes-gate';
 import { engineReadsApply } from './engine-reads-gate';
 import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
+import { engineReads3021Apply } from './engine-reads-3021-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
 import { gateOfLine, readConstantGates } from './constant-gates';
-import { readCallGraph } from './call-graph';
+import { collectConstants, readCallGraph } from './call-graph';
 import { readSecurityReviewTasksFrom } from './security-review';
 import { readSapCodeCopySignals } from './sap-code-copy';
 import { readLegacyTechnology } from './legacy-technology';
@@ -110,6 +111,13 @@ export interface EvidenceFinding {
    * else, and in every run of an earlier engine.
    */
   uncalled?: { routine: string };
+  /**
+   * From engine 3.0.21 (`ENGINE_READS_3021_FROM`): where an `rfc-call` names its destination by a constant this
+   * source declares, where the call goes — `local` for a constant whose value is `NONE` (this system), `outbound`
+   * for any other value. Absent where the destination is a literal or not a constant (`rfcCallTarget` reads the
+   * statement then), and in every run of an earlier engine.
+   */
+  rfcTarget?: 'local' | 'outbound';
 }
 
 export interface AbapEvidenceReport {
@@ -1930,6 +1938,18 @@ export function buildAbapEvidence(
         const form = dead.find((f) => finding.lineStart >= f.lineStart && finding.lineStart <= f.lineEnd);
         if (form) finding.uncalled = { routine: form.name };
       }
+    }
+  }
+
+  // From 3.0.21 (`ENGINE_READS_3021_FROM`, external code audit of 22.10.2026): `DESTINATION c_dest` with
+  // `CONSTANTS c_dest … VALUE 'NONE'` calls this system — the statement alone showed only a name, read as outbound.
+  if (engineReads3021Apply(engineVersion === undefined ? APP_VERSION : engineVersion)) {
+    const constants = collectConstants(readStatements(code));
+    for (const finding of findings) {
+      if (finding.kind !== 'rfc-call') continue;
+      const dest = /\bDESTINATION\s+(?!IN\s+GROUP\b)([A-Za-z_][\w/]*)(?![\w/])(?!\s*=)/i.exec(finding.snippet ?? '');
+      const value = dest ? constants.get(dest[1].toUpperCase()) : undefined;
+      if (value !== undefined) finding.rfcTarget = value.trim().toUpperCase() === 'NONE' ? 'local' : 'outbound';
     }
   }
 

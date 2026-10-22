@@ -40,6 +40,8 @@ export interface CanvasFinding {
   successorConfidence?: string | null;
   /** Where an RFC finding calls (`ItFindingRow.rfcTarget`), which picks whether it drives the route from 3.0.12. */
   rfcTarget?: RfcTarget;
+  /** No run reaches it (`ItFindingRow.notReached`): from 3.0.21 it chooses no route. */
+  notReached?: boolean;
 }
 
 export type SuccessorTag = 'odata' | 'cds' | 'other';

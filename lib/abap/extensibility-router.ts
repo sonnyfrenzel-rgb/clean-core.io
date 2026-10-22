@@ -6,6 +6,7 @@ import { precisionFixesApply } from './precision-fixes-gate';
 import { readClaimsApply } from './read-claims-gate';
 import { citeStatement, statedRequirementsApply, statedTargetOf, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
+import { engineReads3021Apply } from './engine-reads-3021-gate';
 import type { KeyUserBlockerCode, KeyUserReading, KeyUserScope, KeyUserTool } from './key-user-candidates';
 
 export interface DecisionCheckpoint {
@@ -416,7 +417,16 @@ export type RouteDriverFinding = {
   snippet?: string | null;
   /** Where an RFC goes, for a caller that holds no snippet (`ItFindingRow`). */
   rfcTarget?: RfcTarget | null;
+  /** The finding stands behind a constant gate (`EvidenceFinding.unreachable`). */
+  unreachable?: unknown;
+  /** The finding stands in a FORM no entry point reaches (`EvidenceFinding.uncalled`). */
+  uncalled?: unknown;
+  /** Either of the two, for a findings row that carries neither (`ItFindingRow.notReached`). */
+  notReached?: boolean;
 };
+
+/** A finding no run reaches: behind a constant gate, or in a FORM nothing calls. */
+export const findingNotReached = (f: Pick<RouteDriverFinding, 'unreachable' | 'uncalled' | 'notReached'>): boolean => !!f.unreachable || !!f.uncalled || f.notReached === true;
 
 /**
  * The constructs that choose a side-by-side route, in the order the rule reads
@@ -440,8 +450,11 @@ export function routeDrivers(
   deploymentModel: 'public' | 'private',
   engineVersion: string | null,
 ): RouteDriver[] {
+  // From 3.0.21 (`ENGINE_READS_3021_FROM`, external code audit of 22.10.2026): only what a run reaches chooses the
+  // route — a construct behind a constant gate or in a FORM nothing calls still counts as a finding, never as a driver.
+  const reached = engineReads3021Apply(engineVersion);
   const driver = (kind: EvidenceKind, keep: (f: RouteDriverFinding) => boolean = () => true): RouteDriver | null => {
-    const hits = evidence.findings.filter((f) => f.kind === kind && keep(f));
+    const hits = evidence.findings.filter((f) => f.kind === kind && keep(f) && !(reached && findingNotReached(f)));
     if (hits.length === 0) return null;
     return {
       kind,
@@ -676,7 +689,9 @@ export function routeExtensibility(
   // Before 3.0.12 every RFC call was a trigger; from then on only a call to
   // another system is, and a local one (`DESTINATION 'NONE'`, `IN GROUP`) is
   // rework on-stack (`rfcCallTarget`).
-  const outboundRfc = legacyRule ? rfcCalls : rfcCalls.filter((f) => rfcCallTarget(f) === 'outbound');
+  // From 3.0.21 an outbound call no run reaches is said as local rework would be: it chooses nothing.
+  const reachedOnly = engineReads3021Apply(engineVersion);
+  const outboundRfc = legacyRule ? rfcCalls : rfcCalls.filter((f) => rfcCallTarget(f) === 'outbound' && !(reachedOnly && findingNotReached(f)));
   const localRfc = legacyRule ? [] : rfcCalls.filter((f) => rfcCallTarget(f) === 'local');
 
   // The constructs that actually chose the route, in the order the rule reads

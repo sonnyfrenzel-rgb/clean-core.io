@@ -193,7 +193,7 @@ function unquote(token: string): { value: string; literal: boolean } {
  * which are already comment-free and chain-expanded, so a constant declared in a
  * `CONSTANTS: a …, b …` block is found as readily as a standalone one.
  */
-function collectConstants(statements: AbapStatement[]): Map<string, string> {
+export function collectConstants(statements: readonly AbapStatement[]): Map<string, string> {
   const out = new Map<string, string>();
   // The map is keyed by name alone, not by the method or routine that declares
   // it. Two declarations of one name with different values — a local constant
