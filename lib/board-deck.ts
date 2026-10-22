@@ -3,6 +3,7 @@ import type { Project } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { rollupLevel, LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
 import { formatIsoDate } from '@/lib/format';
+import { COMPLEXITY_HIGH, COMPLEXITY_MODERATE, COMPLEXITY_RISK, formatTenPointScore } from '@/lib/score-scale';
 import { APP_VERSION } from '@/lib/version';
 import { BTP, routeLabel, routeLabelFirst } from '@/lib/sap-naming';
 import type { PresentationData, SlideData } from '@/components/PresentationViewer';
@@ -43,7 +44,7 @@ function buildRunTrendSlide(history: RunTrendPoint[]): SlideData {
     metrics: [
       { label: 'Clean Core Score', value: `${curr.cleanCoreScore}/100`, sub: fmtDelta(dScore, true) },
       { label: 'Findings', value: `${curr.findings}`, sub: fmtDelta(dFindings, false) },
-      { label: 'Complexity', value: `${curr.complexityScore}/100`, sub: fmtDelta(dComplexity, false) },
+      { label: 'Complexity', value: formatTenPointScore(curr.complexityScore), sub: fmtDelta(dComplexity, false) },
     ],
     content: [
       `**Trajectory**: Clean Core Score has moved **${overall >= 0 ? '+' : ''}${overall} point${Math.abs(overall) === 1 ? '' : 's'}** since the first recorded run (${sorted.length} runs total).`,
@@ -289,9 +290,9 @@ export function buildBoardDeck(input: {
   const blastRadius =
     typeof complexity !== 'number'
       ? 'not computed'
-      : complexity > 70
+      : complexity > COMPLEXITY_HIGH
         ? 'High Impact'
-        : complexity > 40
+        : complexity > COMPLEXITY_MODERATE
           ? 'Moderate Impact'
           : 'Localized Impact';
 
@@ -300,7 +301,7 @@ export function buildBoardDeck(input: {
     type: 'metrics',
     subtitle: 'What the analysis measured — no savings are estimated',
     metrics: [
-      { label: 'Complexity Score', value: measured(complexity, (v) => `${v}/100`), sub: `Criticality: ${measured(criticality, (v) => `${v}/100`)}` },
+      { label: 'Complexity Score', value: measured(complexity, formatTenPointScore), sub: `Criticality: ${measured(criticality, formatTenPointScore)}` },
       { label: 'Needs Hand Work', value: nothingEstablished ? 'not determined' : `${counts.notSupported}`, sub: nothingEstablished ? 'no findings — coverage not established' : 'Constructs no generator can transform' },
       { label: 'Needs Review', value: nothingEstablished ? 'not determined' : `${counts.partial}`, sub: nothingEstablished ? 'no findings — coverage not established' : 'Transformable, architect decides' }
     ],
@@ -309,7 +310,7 @@ export function buildBoardDeck(input: {
       `**Migration Sequence**: Standardize custom databases first, followed by method signatures, and then UI integration.`,
       `**Effort and cost**: not estimated here. This deck reports what the engine measured; converting that into person-days or euros needs your own rates and your own delivery model.`
     ],
-    speakerNotes: `Complexity is ${measured(complexity, (v) => `${v}/100`)} and criticality ${measured(criticality, (v) => `${v}/100`)}. ${nothingEstablished ? 'No findings were detected, so nothing can be said about hand work or review needs.' : `${counts.notSupported} construct(s) cannot be transformed automatically and ${counts.partial} need an architect decision.`} This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
+    speakerNotes: `Complexity is ${measured(complexity, formatTenPointScore)} and criticality ${measured(criticality, formatTenPointScore)}. ${nothingEstablished ? 'No findings were detected, so nothing can be said about hand work or review needs.' : `${counts.notSupported} construct(s) cannot be transformed automatically and ${counts.partial} need an architect decision.`} This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
   };
 
   // Slide 6: Trust & Security Boundaries (bullets slide)
@@ -373,7 +374,7 @@ export function buildBoardDeck(input: {
       col4: 'Complexity score present in the run record',
       status: 'warning'
     });
-  } else if (complexity > 60) {
+  } else if (complexity > COMPLEXITY_RISK) {
     riskRows.push({
       col1: 'High legacy code complexity',
       col2: 'QA Lead',

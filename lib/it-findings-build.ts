@@ -97,6 +97,7 @@ function rowOf(
     successorType: finding.sapReplacement?.objectType ?? null,
     successorConfidence: finding.sapReplacement?.confidence ?? null,
     ...(finding.kind === 'rfc-call' ? { rfcTarget: rfcCallTarget(finding) } : {}),
+    ...(finding.unreachable || finding.uncalled ? { notReached: true as const } : {}),
     targetOptions: [...(finding.targetOptions ?? [])],
     rulesCoveringLine,
     rulesInRoutine,

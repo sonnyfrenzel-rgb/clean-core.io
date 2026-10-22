@@ -50,6 +50,7 @@ import { splitSentences } from './abap/narrative-anchors';
 import { BTP } from './sap-naming';
 import type { DecisionLine } from './first-look';
 import { searchWorkspace, type SearchResult, type SearchResultKind } from './workspace-search';
+import { NO_RESULT_KIND_WORDS, readNoResultStates } from './abap/no-result-states';
 
 /**
  * One thing this project's evidence actually says, and where it stands.
@@ -223,6 +224,32 @@ export function preAnsweredDecisionAnswer(
   const head = `This program branches in ${count} ${count === 1 ? 'place' : 'places'}, all read from the code:`;
   const lines = facts.map((f) => `${f.anchor} — ${f.title} (${f.detail})`);
   return { question: PRE_ANSWERED_QUESTION, text: [head, ...lines].join('\n'), facts };
+}
+
+/* --------------------------------------------------- why there is no result */
+
+/**
+ * "Why is there no result?" (external MM review of 22.10.2026, point 6) — answered from the code, no model call:
+ * the concrete states in which a run ends with nothing to show (`readNoResultStates`), each with its line — input
+ * rejected, nothing found to work on, a document excluded, rows filtered before they are shown — instead of a
+ * model sentence such as "no early exit found". Null when the code shows none of them: the question then goes the
+ * ordinary way.
+ */
+export const NO_RESULT_QUESTION = /\bwhy\b[^?]*\b(?:no|empty|nothing|zero|missing)\b[^?]*\b(?:results?|output|rows?|lines?|list|entries|documents?|records?)\b|\bno\s+results?\b|\bempty\s+(?:result|list|output)\b/i;
+
+export function noResultAnswer(legacyCode: string | undefined): { text: string; facts: CaseFact[] } | null {
+  if (!legacyCode) return null;
+  const states = readNoResultStates(legacyCode).slice(0, MAX_CASE_FACTS);
+  if (states.length === 0) return null;
+  const facts: CaseFact[] = states.map((s) => ({
+    id: `no-result:${s.kind}:${s.lineStart}`,
+    kind: 'decision',
+    title: NO_RESULT_KIND_WORDS[s.kind],
+    detail: s.text,
+    anchor: s.lineEnd > s.lineStart ? `L${s.lineStart}-${s.lineEnd}` : `L${s.lineStart}`,
+  }));
+  const head = `A run ends with no result in ${states.length === 1 ? 'one state' : `${states.length} states`} the code shows, each read from the code:`;
+  return { text: [head, ...facts.map((f) => `${f.anchor} — ${f.title}: ${f.detail}`)].join('\n'), facts };
 }
 
 /** The question forms the pre-answered decision answer also covers when typed. */
@@ -572,6 +599,10 @@ export function answerCase(
   question: string,
   decisions: readonly DecisionLine[] = [],
 ): CaseAnswer {
+  if (NO_RESULT_QUESTION.test(question)) {
+    const none = noResultAnswer(context.legacyCode);
+    if (none) return { mode: 'deterministic', text: none.text, facts: none.facts, anchors: anchorsOf(none.facts) };
+  }
   if (DECISION_QUESTION.test(question)) {
     const pre = preAnsweredDecisionAnswer(decisions);
     if (pre) {

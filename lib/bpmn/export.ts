@@ -1,6 +1,7 @@
 import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
+import { engineReads3021Apply } from '../abap/engine-reads-3021-gate';
 import { anchorText, flowText, layoutModel, NOTE_W, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
@@ -45,7 +46,11 @@ export interface BpmnExportOptions {
   processName: string;
   /** The file the signed run analysed (`inputFingerprint.fileName`). */
   sourceFileName: string;
-  /** Recorded as `exporterVersion`. Defaults to this release. */
+  /**
+   * Recorded as `exporterVersion`. Defaults to this release. It is also the engine the map is drawn for: from 3.0.21
+   * (`ENGINE_READS_3021_FROM`) at the business level — a routine drawn once, a run of guard checks as one step
+   * (`ExportModelOptions.businessLevel`).
+   */
   exporterVersion?: string;
   /**
    * `plain` names every element for a business reader (`lib/abap/plain-language.ts`,
@@ -116,6 +121,7 @@ export interface BpmnExport {
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
   const model = buildExportModel(skeleton, {
     labels: options.names === 'plain' ? plainLabels(skeleton, options.source) : undefined,
+    businessLevel: engineReads3021Apply(options.exporterVersion ?? APP_VERSION),
   });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;

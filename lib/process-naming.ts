@@ -304,6 +304,11 @@ export type NamingRejection =
   | 'model-text'
   /** The "business" name is the technical name again. */
   | 'same-as-technical'
+  /**
+   * The name speaks of a count ("item count is zero", "no items") where the decision counts nothing — it compares a
+   * field such as a price unit with a value (external MM review of 22.10.2026, point 6).
+   */
+  | 'count-not-in-code'
   /** A lane named as a position, a person or a unit of an organisation. */
   | 'lane-organisational'
   /** Two lanes with the same name — both dropped. */
@@ -452,9 +457,24 @@ function validateNames(
     if (problem) { tally.bump(problem); continue; }
     const name = entry.name.trim();
     if (name.toLowerCase() === node.label.trim().toLowerCase()) { tally.bump('same-as-technical'); continue; }
+    if (claimsCountNotInCode(name, node.label)) { tally.bump('count-not-in-code'); continue; }
     accepted.push({ id: node.id, technicalName: node.label, name });
   }
   return accepted;
+}
+
+/** Words of a name that say a count of things. */
+const COUNT_WORDS = /\b(?:count|counts|number\s+of|how\s+many|no\s+(?:items|lines|entries|records|rows|positions)|(?:items|lines|entries|records|rows|positions)\s+(?:is|are)\s+(?:zero|empty|none)|anzahl)\b/i;
+/** What in a decision's own text counts something: a table's lines, a counter, a table that is empty or not. */
+const COUNTS_IN_CODE = /\blines\s*\(|\bdbcnt\b|\btabix\b|count|\bcnt\b|\banz|\bnum|\b(?:lt|gt|et|it|ct|mt)_\w+\s+IS\s+(?:NOT\s+)?INITIAL\b|\bline_exists\s*\(/i;
+
+/**
+ * A model name that calls a decision a count of things when its condition counts nothing — "Item count is zero" for
+ * `ls_item-peinh = 0`, a zero price unit (external MM review of 22.10.2026, point 6). Only a gateway is judged, and
+ * only where its own text holds no table, counter or `lines( )`; the plain wording of the engine keeps "Price unit zero".
+ */
+export function claimsCountNotInCode(name: string, condition: string): boolean {
+  return COUNT_WORDS.test(name) && !COUNTS_IN_CODE.test(condition);
 }
 
 function validateLanes(

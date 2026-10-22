@@ -24,6 +24,17 @@ import { engineVersionAtLeast } from '../score-rule';
  *   - a macro is named where it is used, not only where it is defined
  *     (`assessCoverage`, option `macroUsesNamed`, `coverage.ts`).
  *
+ * Engine and transformation (owner decisions 22.10.2026):
+ *
+ *   - a constant the code filters its reads with or writes into what it creates is a business decision, not
+ *     "declared, not used" (`business-rule-set-explain.ts`, `constantUsesOf`);
+ *   - the program's writes are read from what the run reaches, with its posting calls and batch input
+ *     (`reachable-writes.ts`): the target architecture (`lib/transformation/architecture.ts`) and the
+ *     extensibility route (`extensibility-router.ts`) read the same fact;
+ *   - an `rfc-call` whose destination is a constant this source declares carries where it goes (`evidence-model.ts`);
+ *   - the BPMN reconstruction is drawn at the business level — a routine once, a run of guard checks as one step
+ *     (`lib/bpmn/model.ts`, read for the exporter version).
+ *
  * Each changes what the Business view, the Documentation, the analysis prompt
  * or a signed run reads, so a project of an older engine keeps its reading:
  * whatever rebuilds one passes its engine version (`engineVersionOfProject`).

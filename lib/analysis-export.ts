@@ -41,7 +41,7 @@ import { BTP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
 import { EXPORT_CSS, severityClass, toneClass } from '@/lib/export-style';
 // SAP identifiers the model wrote, each followed by its check (external review F-03/F-09).
-import { COVERAGE_CLAIM_NOTE, coverageClaims, sapAttributionHtml, sapCheckedNarrative, sapReferenceAnnotator } from '@/lib/sap-reference-check';
+import { COVERAGE_CLAIM_NOTE, STANDARD_EXCLUSION_NOTE, coverageClaims, sapAttributionHtml, sapCheckedNarrative, sapReferenceAnnotator, standardExclusionClaims } from '@/lib/sap-reference-check';
 
 export interface AnalysisExportInput {
   project: Project;
@@ -135,6 +135,10 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
     const coverageNote = data.standardFit?.potential === 'High'
       || coverageClaims([data.standardFit?.rationale, data.recommendations?.cloudReadiness].join(' ')).length > 0
       ? `<p class="muted">${esc(COVERAGE_CLAIM_NOTE)}</p>`
+      : '';
+    // 3.0.21 (MM review, point 5): a blanket exclusion of the SAP standard is said to be unbacked too.
+    const exclusionNote = standardExclusionClaims([data.standardFit?.rationale, data.recommendations?.cloudReadiness].join(' ')).length > 0
+      ? `<p class="muted">${esc(STANDARD_EXCLUSION_NOTE)}</p>`
       : '';
 
     /*
@@ -246,7 +250,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
             <p><strong>Target Standard Process ID / Module:</strong> ${esc(sapCheckedNarrative(data.standardFit?.targetStandardProcess || 'N/A', checked))}</p>
             <p><strong>Standardization Potential (model's estimate, not a measured fit):</strong> <span class="tag tone-neutral">${esc(data.standardFit?.potential || 'not determined')}</span></p>
             <p>${esc(sapCheckedNarrative(data.standardFit?.rationale, checked))}</p>
-            ${coverageNote}
+            ${coverageNote}${exclusionNote}
 
             <h2>SAP Extensibility Routing Decision Path</h2>
             ${checkpoints === null ? notDetermined('This analysis did not return the step-by-step checkpoints behind the routing decision.') : `
