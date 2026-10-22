@@ -35,6 +35,8 @@ import { conditionToQuestion, humaniseField, plainContext, type PlainContext } f
 import { isDemoSubject, type DemoSwitches } from './abap/demo-switches';
 import { isKnownField, tableTerm } from './abap/business-glossary';
 import type { RuleExplanation, RuleSetExplanation } from './abap/business-rule-set-explain';
+import { engineReads3021Apply } from './abap/engine-reads-3021-gate';
+import { APP_VERSION } from './version';
 
 export interface FirstLookReading {
   ctx: PlainContext;
@@ -334,12 +336,29 @@ export interface OpeningDecisions {
  * each said by what it does to a case ("Leaves out entries where … kind REV
  * …"); a rule that decides nothing as written is not shown, and technical
  * settings are only counted.
+ *
+ * From engine 3.0.21 (`ENGINE_READS_3021_FROM`; owner decision 22.10.2026) it
+ * reads the rule's basket — the classification the basket line below it counts
+ * (`RuleBasketLine`, `explanation.baskets`): a rule of the technical basket (a
+ * marker the program sets itself, a plausibility check of the input …) is
+ * counted as technical, not listed as a business decision, and a rule whose
+ * basket is not determined is neither. Before, it read the rule's topic, which
+ * calls only the technical-settings topic technical: the delivery priority's
+ * one rule — a class the program sets itself and checks back — stood under
+ * "What it decides" while the basket line said "0 questions for the business ·
+ * 1 technical rule".
  */
-export function openingDecisions(explanation: RuleSetExplanation, max = 4): OpeningDecisions {
+export function openingDecisions(
+  explanation: RuleSetExplanation,
+  max = 4,
+  /** The engine the panel is read for (`ENGINE_READS_3021_FROM`). */
+  engineVersion: string | null = APP_VERSION,
+): OpeningDecisions {
   const byId = new Map(explanation.rules.map((r) => [r.id, r]));
   const ordered = explanation.order.map((id) => byId.get(id)).filter((r): r is RuleExplanation => !!r);
-  const technical = ordered.filter((r) => r.topic === 'technical').length;
-  const business = ordered.filter((r) => r.topic !== 'technical');
+  const byBasket = engineReads3021Apply(engineVersion);
+  const technical = ordered.filter((r) => (byBasket ? r.basket.kind === 'technical' : r.topic === 'technical')).length;
+  const business = ordered.filter((r) => (byBasket ? r.basket.kind === 'business' : r.topic !== 'technical'));
   const deciding = business.filter((r) => r.impact.score > 0);
   const rules = deciding.slice(0, max).map((r) => {
     const clause = r.protects.text.split(/:\s/)[0].replace(/[.;]\s*$/, '').replace(/^It\s+/, '');
