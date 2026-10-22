@@ -4,6 +4,7 @@ import { isProjectOwner, mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readerFacingOwnerName } from '@/lib/project-gate';
 
 /**
  * GET /api/projects/{projectId}  — roadmap 5.4
@@ -73,6 +74,22 @@ export async function GET(
       return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     }
 
+    const role = isProjectOwner(project, decoded.uid) ? 'owner' : 'reader';
+
+    // `?for=access` (roadmap 3.0.21 (1), (13)): who the caller is on this
+    // project, without the run — what the project frame needs to send a reader
+    // without access to one sentence, and to tell an invited reader whose
+    // project they are reading. The owner's name is what the invitation already
+    // told the reader ("Invited by"), and only a reader on the list gets it.
+    if (req.nextUrl.searchParams.get('for') === 'access') {
+      let ownerName: string | null = null;
+      if (role === 'reader' && typeof project.userId === 'string' && isFirestoreId(project.userId)) {
+        const owner = (await db.collection('users').doc(project.userId).get()).data() ?? {};
+        ownerName = readerFacingOwnerName(owner.firstName, owner.lastName);
+      }
+      return NextResponse.json({ role, ownerName });
+    }
+
     const activeRunId = typeof project.activeRunId === 'string' ? project.activeRunId : null;
     let run: Record<string, unknown> | null = null;
     if (activeRunId) {
@@ -81,7 +98,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      role: isProjectOwner(project, decoded.uid) ? 'owner' : 'reader',
+      role,
       activeRunId,
       run,
     });

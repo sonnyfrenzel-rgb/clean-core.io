@@ -9,6 +9,13 @@ import {
   runsLeftLabel,
 } from '../lib/run-quota-rule';
 import { safeReturnPath, signInLinkFor } from '../lib/return-path';
+import {
+  accessFromAnswer,
+  NO_ACCESS_SENTENCE,
+  projectGate,
+  readerFacingOwnerName,
+  readerStripSentence,
+} from '../lib/project-gate';
 
 /**
  * Roadmap 3.0.21 — "The way in and the way back work" (owner decisions
@@ -19,6 +26,101 @@ import { safeReturnPath, signInLinkFor } from '../lib/return-path';
  */
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+
+test.describe('(1) a project link signed out goes to sign-in and back; without access, one sentence', () => {
+  test('the frame decides from the restored session and the server\'s answer', () => {
+    expect(projectGate(undefined, undefined)).toBe('checking');
+    expect(projectGate(false, undefined)).toBe('sign-in');
+    expect(projectGate(false, { kind: 'owner' })).toBe('sign-in');
+    expect(projectGate(true, undefined)).toBe('open');
+    expect(projectGate(true, { kind: 'owner' })).toBe('open');
+    expect(projectGate(true, { kind: 'reader', ownerName: 'Ada Lovelace' })).toBe('open');
+    expect(projectGate(true, { kind: 'none' })).toBe('no-access');
+    // A read that failed is not "no access": the page says what it says about a failed load.
+    expect(projectGate(true, { kind: 'unknown' })).toBe('open');
+  });
+
+  test('only the route\'s 404 means "no access"; anything else it could not say is unknown', () => {
+    expect(accessFromAnswer(404, { error: 'Project not found.' })).toEqual({ kind: 'none' });
+    expect(accessFromAnswer(200, { role: 'owner', ownerName: null })).toEqual({ kind: 'owner' });
+    expect(accessFromAnswer(200, { role: 'reader', ownerName: ' Ada Lovelace ' })).toEqual({ kind: 'reader', ownerName: 'Ada Lovelace' });
+    expect(accessFromAnswer(200, { role: 'reader', ownerName: '' })).toEqual({ kind: 'reader', ownerName: null });
+    for (const status of [401, 403, 500]) expect(accessFromAnswer(status, { error: 'x' })).toEqual({ kind: 'unknown' });
+    expect(accessFromAnswer(200, null)).toEqual({ kind: 'unknown' });
+    expect(accessFromAnswer(200, { role: 'admin' })).toEqual({ kind: 'unknown' });
+  });
+
+  test('every project and tool link is a target the sign-in returns to', () => {
+    for (const stage of ['', '/analyze', '/design', '/transformation', '/documentation', '/testing', '/tco', '/delivery']) {
+      const here = `/project/p-42${stage}`;
+      expect(signInLinkFor(here)).toBe(`/?auth=signin&next=${encodeURIComponent(here)}`);
+    }
+  });
+
+  test('the frame wraps the workspace and all seven tools, and the workspace no longer 404s a good link', () => {
+    expect(read('app/(app)/project/[projectId]/layout.tsx')).toContain('<ProjectFrame>{children}</ProjectFrame>');
+    const frame = read('components/ProjectFrame.tsx');
+    expect(frame).toContain('auth.authStateReady()');
+    expect(frame).toContain("router.replace(signInLinkFor(pathname ?? '/'))");
+    expect(frame).toContain('`/api/projects/${encodeURIComponent(projectId)}?for=access`');
+    expect(frame).toContain("if (gate === 'no-access') return <ProjectNoAccess />;");
+    const page = read('app/(app)/project/[projectId]/page.tsx');
+    expect(page).toContain('if (profileLoading || (!enabled && !getAuth().currentUser)) {');
+    const missing = page.slice(page.indexOf("if (state === 'missing')"));
+    expect(missing.slice(0, missing.indexOf('}'))).toContain('return <ProjectNoAccess />;');
+    const noAccess = read('components/ProjectNoAccess.tsx');
+    expect(noAccess).toContain('{NO_ACCESS_SENTENCE}');
+    expect(noAccess).toContain('href="/dashboard"');
+    expect(noAccess).toContain("nav('nav.goToMyWorkspace')");
+    expect(NO_ACCESS_SENTENCE).toBe('This project does not exist or is not shared with this account.');
+  });
+
+  test('the access answer tells nobody more than the project read did', () => {
+    const route = read('app/api/projects/[projectId]/route.ts');
+    const access = route.slice(route.indexOf("get('for') === 'access'"), route.indexOf('const activeRunId'));
+    // After the one 404 for "not there" and "not yours", never before it.
+    expect(route.indexOf("get('for') === 'access'")).toBeGreaterThan(route.indexOf('if (!mayReadProject(project, decoded.uid))'));
+    expect(access, 'the run is not read for the access answer').not.toContain("collection('runs')");
+    expect(access, 'only a reader is told the owner name').toContain("role === 'reader'");
+    expect(access).toContain('readerFacingOwnerName(owner.firstName, owner.lastName)');
+    expect(access).toContain('return NextResponse.json({ role, ownerName });');
+    expect(readerFacingOwnerName(' Ada ', 'Lovelace')).toBe('Ada Lovelace');
+    expect(readerFacingOwnerName(undefined, null)).toBeNull();
+    expect(readerFacingOwnerName('x'.repeat(100), '')!.length).toBe(80);
+  });
+
+  test('the shell\'s Sign in link and the dashboard\'s signed-out redirect carry the way back', () => {
+    const layout = read('app/(app)/layout.tsx');
+    expect(layout).toMatch(/href=\{signInLinkFor\(pathname \?\? '\/'\)\}\s*\n\s*data-shell-sign-in=""/);
+    const dashboard = read('app/(app)/dashboard/page.tsx');
+    expect(dashboard).toContain("router.push(signInLinkFor('/dashboard'));");
+    expect(dashboard).not.toContain("router.push('/');");
+  });
+});
+
+test.describe('(13) an invited reader sees one strip, on the workspace and on every tool', () => {
+  test('the strip names the owner and says it is read only', () => {
+    expect(readerStripSentence('Ada Lovelace')).toBe('Shared with you for reading by Ada Lovelace — read only.');
+    expect(readerStripSentence(null)).toBe('Shared with you for reading — read only.');
+    const frame = read('components/ProjectFrame.tsx');
+    expect(frame).toMatch(/current\?\.kind === 'reader' \? \(\s*\n\s*<div data-reader-strip=""/);
+    expect(frame).toContain('headline={readerStripSentence(current.ownerName)}');
+    expect(frame).toContain('{INVITATION_LIMITS_SENTENCE_RECIPIENT}');
+  });
+
+  test('the page-wide owner-only notes the strip replaces are gone; the ones beside a control stay', () => {
+    for (const rel of [
+      'app/(app)/project/[projectId]/transformation/page.tsx',
+      'app/(app)/project/[projectId]/testing/page.tsx',
+      'app/(app)/project/[projectId]/tco/page.tsx',
+    ]) {
+      expect(read(rel), `${rel} still repeats the strip as a note`).not.toContain('<OwnerOnlyNote');
+    }
+    for (const rel of ['components/process-map/ProcessMap.tsx', 'components/ArchitectSignOff.tsx', 'components/design/DesignCanvasStage.tsx', 'components/documentation/BusinessLayer.tsx']) {
+      expect(read(rel), `${rel} lost the note beside its control`).toContain('<OwnerOnlyNote');
+    }
+  });
+});
 
 test.describe('(2) the quota has one name — analysis runs, counted as left', () => {
   test('the header, Settings and the notices count what is left, in runs', () => {
