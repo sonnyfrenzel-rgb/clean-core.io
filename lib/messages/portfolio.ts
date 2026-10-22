@@ -81,6 +81,9 @@ export const PORTFOLIO_MESSAGES = {
   'portfolio.colLevels': 'Levels A · B · C · D · unknown',
   'portfolio.colIncludes': 'Includes not read',
   'portfolio.notAnalysed': 'not analysed',
+  'portfolio.levelWord': 'Level',
+  'portfolio.levelUnknown': 'Level unknown',
+  'portfolio.viewTruncated': 'The overview reads at most 500 projects; the rest are not in these figures. Use named selections for larger sets.',
 
   'portfolio.selectionTitle': 'Named selection',
   'portfolio.selectionLead': 'A list of projects you name, to read and share on its own. Nothing is written onto the projects or their runs.',
@@ -202,4 +205,50 @@ export function portfolioObjectsAssigned(objects: number, programs: number): str
 
 export function portfolioWaitingSince(expires: string): string {
   return `expires ${expires}`;
+}
+
+export type PortfolioNotDeterminedKey =
+  | 'not-analysed'
+  | 'includes-not-read'
+  | 'level-unknown'
+  | 'level-not-determined'
+  | 'target-platform-not-set'
+  | 'catalog-evidence-missing';
+
+/** What each "not determined" figure counts, in a reader's words. */
+export function portfolioNotDeterminedLabel(key: PortfolioNotDeterminedKey): string {
+  switch (key) {
+    case 'not-analysed':
+      return 'Programs without a signed run — in no band, no level and no bucket';
+    case 'includes-not-read':
+      return 'Programs that name includes nobody uploaded — what those hold was not read';
+    case 'level-unknown':
+      return 'SAP objects whose level SAP’s catalog does not give';
+    case 'level-not-determined':
+      return 'Objects not assigned to a bucket because their level is not determined';
+    case 'target-platform-not-set':
+      return 'Objects not assigned to a bucket because the project has no target platform';
+    case 'catalog-evidence-missing':
+      return 'Objects not assigned to a bucket because the catalog evidence is missing';
+  }
+}
+
+/** The sentence an export and the print carry, so a copy says what it is. */
+export const PORTFOLIO_EXPORT_NOTE =
+  'A read-only overview computed from each project’s signed run. Not signed, not an audit pack, and no portfolio score: the score is a grade per program.';
+
+/** The bucket's name on the overview. */
+export function portfolioBucketLabel(bucket: 'retire' | 'keep' | 'rebuild' | 'no-catalogued-path' | 'not-assigned'): string {
+  switch (bucket) {
+    case 'retire':
+      return 'Retire';
+    case 'keep':
+      return 'Keep';
+    case 'rebuild':
+      return 'Rebuild';
+    case 'no-catalogued-path':
+      return 'No catalogued path';
+    case 'not-assigned':
+      return 'Not assigned';
+  }
 }
