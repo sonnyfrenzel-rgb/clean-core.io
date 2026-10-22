@@ -150,6 +150,12 @@ export interface ProgramSummaryFacts {
   domain?: { text: string; lines: number[] } | null;
   /** Roadmap 3.0.20: the functions it gets its data through, each with the business object it is about. Absent before. */
   dataCalls?: Array<{ name: string; word: string; line: number }>;
+  /**
+   * Roadmap 3.0.21 (owner decision 22.10.2026): the purpose the program's names support (`domain`) stands before the
+   * purpose line whenever it exists — not only when the program reads no table by name, which hid it for a freight
+   * check that opened on "Records entries in a custom table in SAP". Absent in facts read by an earlier engine.
+   */
+  purposeAlways?: true;
 }
 
 export type SummaryBasis = 'reconstructed' | 'not-determined' | 'confirmed';
@@ -624,7 +630,8 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   // Roadmap 3.0.20: where the purpose line can only say what kind of program it is ("A read-only
   // report that reads no table by name …"), the purpose the program's names support stands before it.
   const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
-  const aim: SummaryLine[] = f.domain && namesNoObject && /^A /.test(purpose.text)
+  // Roadmap 3.0.21: from that engine it stands whenever the names support one (`purposeAlways`).
+  const aim: SummaryLine[] = f.domain && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
     ? [{ key: 'purpose', text: f.domain.text, anchors: anchorsOf(f.domain.lines), basis: 'reconstructed', aim: true }]
     : [];
   const lines: SummaryLine[] = [...aim, purpose];

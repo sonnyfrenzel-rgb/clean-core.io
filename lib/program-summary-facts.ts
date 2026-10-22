@@ -12,6 +12,7 @@ import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
+import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
 import { APP_VERSION } from '@/lib/version';
 import { headerRuleRange } from '@/lib/abap/header-rules';
 import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
@@ -207,14 +208,72 @@ const OTHER_HEADING = /^[A-Z][A-Z0-9 ()/&-]{3,}:?$/;
  * engine facts exactly like a model proposal"). Quoted verbatim, as code is;
  * null when the header has no such section. Only headed sections count: a
  * banner line or a change log is not a statement of purpose.
+ *
+ * `titleLine` (from engine 3.0.21, `ENGINE_READS_3021_FROM`): without a headed
+ * section, the header block's title line (`titleClaim`) is the claim.
  */
-export function headerClaimOf(source: string): ProgramSummaryFacts['headerClaim'] {
+export function headerClaimOf(source: string, options: { titleLine?: boolean } = {}): ProgramSummaryFacts['headerClaim'] {
   const lines = String(source ?? '').replace(/\r\n?/g, '\n').split('\n');
   const limit = Math.min(lines.length, 150);
   const contentOf = (raw: string): string | null => {
     const m = /^\s*(?:\*&?|")(.*)$/.exec(raw);
     return m ? m[1].replace(/\*+\s*$/, '').trim() : null;
   };
+  const headed = headedClaim(lines, limit, contentOf);
+  if (headed || !options.titleLine) return headed;
+  return titleClaim(lines, limit, contentOf);
+}
+
+/** The name of a template line: "Report  Z_X", "Program: …", "Author …", "Created on …" — not a statement of purpose. */
+const TEMPLATE_LINE = /^(?:report|program|include|function(?:\s+(?:pool|group|module))?|class(?:\s+pool)?|module|transaction|t-?code|package|development\s+class|author|created|creation|changed|change\s+log|last\s+changed|date|version|request|transport|ticket|copyright|company|owner|developer|modified)\b/i;
+/** A line that speaks about the code as an example or a test, not about what the program is for. */
+const META_LINE = /\b(?:example|sample|demo|test(?:ing)?|fictional|synthetic|template|tutorial|all rights reserved)\b/i;
+const DATE_LIKE = /\b\d{1,4}[./-]\d{1,2}[./-]\d{2,4}\b/;
+/** The prefix of a title said as a heading: "Title: …", "Titel: …". */
+const TITLE_HEADING = /^(?:title|titel)\s*:\s*(.*)$/i;
+
+/**
+ * Roadmap 3.0.21 (owner decision 22.10.2026): the title line of the header
+ * block — "*& Emergency purchase approval" under "*& Report Z_MM_PO_APPROVAL" —
+ * as the author's claim. The header block is the comment lines at the top of
+ * the source and right after its REPORT / PROGRAM statement; the title is its
+ * first meaningful line: template lines (the program's name, "Report …",
+ * author, dates), rules of dashes and blank comments are passed over. A line
+ * that calls the code an example or a test ends the search: what follows is not
+ * a title either. Quoted verbatim, as the headed claim is; it stays the
+ * author's claim (`AUTHOR_CLAIM_LABEL`), held to the same check.
+ */
+function titleClaim(lines: string[], limit: number, contentOf: (raw: string) => string | null): ProgramSummaryFacts['headerClaim'] {
+  const program = /^\s*(?:REPORT|PROGRAM)\s+([\w/]+)/im.exec(lines.slice(0, limit).join('\n'))?.[1]?.toUpperCase() ?? null;
+  let reportSeen = false;
+  for (let i = 0; i < limit; i++) {
+    const raw = lines[i];
+    if (!raw.trim()) continue;
+    const content = contentOf(raw);
+    if (content === null) {
+      // The REPORT statement (and its additions) is part of the header block; any other code ends it.
+      if (!reportSeen && /^\s*(?:REPORT|PROGRAM)\b/i.test(raw)) {
+        reportSeen = true;
+        continue;
+      }
+      return null;
+    }
+    if (DECOR.test(content) || /^[-=*_#.\s]*$/.test(content)) continue;
+    const titled = TITLE_HEADING.exec(content);
+    const text = (titled ? titled[1] : content).trim();
+    if (!text) continue;
+    if (TEMPLATE_LINE.test(text) || DATE_LIKE.test(text) || (program && text.toUpperCase().includes(program))) continue;
+    if (META_LINE.test(text)) return null;
+    const words = text.split(/\s+/).filter((w) => /\p{L}{2,}/u.test(w));
+    // A title is short words, not a sentence that runs on ("…:"), not a line of code.
+    if (words.length < 2 || words.length > 12 || text.length < 8 || /[:;]$/.test(text) || /[=(){}]|^\w+\s*\.$/.test(text)) return null;
+    return { heading: 'Title', text, lineStart: i + 1, lineEnd: i + 1 };
+  }
+  return null;
+}
+
+/** The headed section (see `headerClaimOf`), or null. */
+function headedClaim(lines: string[], limit: number, contentOf: (raw: string) => string | null): ProgramSummaryFacts['headerClaim'] {
   for (let i = 0; i < limit; i++) {
     const content = contentOf(lines[i]);
     if (content === null) continue;
@@ -430,8 +489,8 @@ function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | n
  * program that names no table reads by calling (`BAPI_PO_GETDETAIL1`), and
  * "reads no table by name" told a business reader nothing.
  */
-function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[]): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
-  const domain = readProgramDomain(text);
+function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[], wider: boolean): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
+  const domain = readProgramDomain(text, { wider });
   const seen = new Set(actions.map((a) => a.name));
   const dataCalls: NonNullable<ProgramSummaryFacts['dataCalls']> = [];
   for (const f of calls.functionModules) {
@@ -468,6 +527,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const skeleton = readers.skeleton ?? buildProcessSkeleton(text);
   const engineVersion = readers.engineVersion === undefined ? APP_VERSION : readers.engineVersion;
   const reads3020 = engineReads3020Apply(engineVersion);
+  const reads3021 = engineReads3021Apply(engineVersion);
   let ruleSet: Pick<BusinessRuleSet, 'rules' | 'program' | 'demoCases' | 'headerRules'> | null = readers.ruleSet ?? null;
   if (!readers.ruleSet) {
     try {
@@ -594,7 +654,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     screenTitles: texts.titles,
     fixedLists: fixedListsOf(calls, ctx),
     rules: ruleCount,
-    headerClaim: headerClaimOf(text),
+    headerClaim: headerClaimOf(text, { titleLine: reads3021 }),
     // Roadmap 3.0.13 — present only when the source has them, so every other
     // program's facts stay byte for byte what they were.
     ...(lockingGate
@@ -613,7 +673,9 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       : {}),
     ...demoFacts(text, ruleSet, readers.engineVersion),
     // Roadmap 3.0.20 — present only from that engine, so earlier facts stay what they were.
-    ...(reads3020 ? purposeFacts(text, calls, actions) : {}),
+    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021) : {}),
+    // Roadmap 3.0.21 — the purpose the names support stands whenever it exists; present only from that engine.
+    ...(reads3021 ? { purposeAlways: true as const } : {}),
     ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };

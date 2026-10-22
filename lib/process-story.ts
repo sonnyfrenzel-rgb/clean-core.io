@@ -25,6 +25,15 @@
  * pairs, the pair that carries least first — the story stays short and loses
  * no step.
  *
+ * From engine 3.0.21 (`ENGINE_READS_3021_FROM`; owner decisions 22.10.2026):
+ * a check or a stop on a raw dictionary field ("Mmsta 01 or Z9") is said with
+ * the program's own text on that branch ("Material is blocked for purchasing
+ * in this plant"), or left out of the business line and counted (`unsaid`) —
+ * never said as a field name; a code value is said as its words; loops and
+ * set-up steps left unopened are no steps — what they check rolls up into the
+ * step before them; a stop is said once, at the first step it belongs to, and
+ * without its message code.
+ *
  * Pure and deterministic: the same source gives the same story. No model, no
  * network.
  */
@@ -34,6 +43,8 @@ import { plainLabels } from './abap/plain-language';
 import { anchorLabel } from './first-look';
 import { readDemoSwitches } from './abap/demo-switches';
 import { engineReads3020Apply } from './abap/engine-reads-3020-gate';
+import { engineReads3021Apply } from './abap/engine-reads-3021-gate';
+import { armAroundLine, branchReadingOf, decisionArmsAt, plainValues, rawFieldsOf, type BranchReading } from './abap/branch-messages';
 import { APP_VERSION } from './version';
 import {
   chainWordsAt,
@@ -63,6 +74,13 @@ export interface StoryStep {
    * never listed (`lib/first-look-plain.ts`). Absent before.
    */
   technical?: number;
+  /**
+   * From engine 3.0.21: the checks and stops of the step on a raw dictionary
+   * field for which the program gives no text of its own on that branch — left
+   * out of the business line and counted, never said as a field name
+   * (`lib/abap/branch-messages.ts`). The step keeps its anchor. Absent before.
+   */
+  unsaid?: number;
 }
 
 export interface ProcessStory {
@@ -105,18 +123,38 @@ function order(a: SkeletonNode, b: SkeletonNode): number {
   return (a.anchor?.lineStart ?? Number.MAX_SAFE_INTEGER) - (b.anchor?.lineStart ?? Number.MAX_SAFE_INTEGER);
 }
 
+/** What a stop comes to: said in words, counted as technical (3.0.20), or counted as unsaid (3.0.21). */
+type StopWords = { kind: 'said'; text: string } | { kind: 'technical' } | { kind: 'unsaid' };
+
+/** A set-up step — "Initialize run", "Clear buffers": machinery of the program, not a step of the business (3.0.21). */
+const SET_UP = /^(?:initiali[sz]e|init|set ?up|reset|clear|refresh)\b/i;
+/** A message code after a stop's words — "not authorized (E002)": the words say it (3.0.21). */
+const MESSAGE_CODE = /\s*\([A-Z]{1,2}\d{3}\)\s*$/;
+
+const escapeRe = (text: string): string => text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const wordIn = (text: string, word: string): boolean => new RegExp(`(?<![A-Za-z0-9])${escapeRe(word)}(?![A-Za-z0-9])`, 'i').test(text);
+const withoutCode = (text: string): string => {
+  const bareText = text.replace(MESSAGE_CODE, '').trim();
+  return bareText.length > 0 ? bareText : text;
+};
+
 export function processStory(
   skeleton: ProcessSkeleton,
   source: string,
   /** Business names a model proposed, by node id — used where present. */
   businessNames?: ReadonlyMap<string, string> | null,
-  /** The engine the story is read for; from 3.0.20 technical checks are counted and demo cases set apart. */
+  /**
+   * The engine the story is read for; from 3.0.20 technical checks are counted and demo cases set apart; from 3.0.21
+   * raw field checks are said by the program's own text or counted, loops and set-up are no steps, and a stop is said
+   * once, without its message code.
+   */
   engineVersion: string | null = APP_VERSION,
 ): ProcessStory {
   const labels = plainLabels(skeleton, source);
   const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
     ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion))
     : null;
+  const plain: BranchReading | null = engineReads3021Apply(engineVersion) ? branchReadingOf(source) : null;
   let testData: ProcessStory['testData'] = null;
   /** A decision point the reader need not decide on (3.0.20). */
   const technicalCheck = (node: SkeletonNode): boolean => !!reading && !!node.anchor && technicalCheckAt(reading, node.anchor.lineStart);
@@ -126,12 +164,54 @@ export function processStory(
     if (!reading || !node.anchor || !/^which case applies$/i.test(label)) return label;
     return chainWordsAt(reading, node.anchor.lineStart) ?? label;
   };
-  /** A stop in plain words, or null when it is technical and only counted (3.0.20). */
-  const stopOf = (node: SkeletonNode, label: string): string | null => {
+  /**
+   * 3.0.21: a check as the business line says it — a part of it on a raw dictionary field by the program's own text on
+   * that arm, or left out; null when nothing of it can be said (the step counts it as unsaid). Before, the plain label.
+   */
+  const sayCheck = (node: SkeletonNode): string | null => {
+    const label = checkName(node);
+    if (!plain || !node.anchor || businessNames?.get(node.id)?.trim()) return label;
+    const at = plain.statements.findIndex((s) => s.lineStart <= node.anchor!.lineStart && s.lineEnd >= node.anchor!.lineStart);
+    const header = at >= 0 ? plain.statements[at] : null;
+    // A CASE on a raw field: its arms are values of that field — nothing of it can be said in words.
+    if (header && header.keyword.toUpperCase() === 'CASE') {
+      const subject = header.text.replace(/\.\s*$/, '').replace(/^CASE\s+/i, '').trim();
+      const raw = rawFieldsOf(subject, plain);
+      return raw.length > 0 && raw.some((w) => wordIn(label, w)) ? null : plainValues(label);
+    }
+    const arms = decisionArmsAt(plain, node.anchor.lineStart);
+    const raws = (arms ?? []).map((arm) => ({ arm, words: rawFieldsOf(arm.condition, plain) })).filter((x) => x.words.length > 0);
+    if (raws.length === 0) return plainValues(label);
+    const said: string[] = [];
+    for (const part of label.split(/,\s+or\s+/)) {
+      if (/^\d+ more$/.test(part)) {
+        said.push(part);
+        continue;
+      }
+      const hit = raws.find((x) => x.words.some((w) => wordIn(part, w)));
+      if (!hit) said.push(plainValues(part));
+      else if (hit.arm.message) said.push(hit.arm.message);
+    }
+    const words = unique(said);
+    if (words.every((p) => /^\d+ more$/.test(p))) return null;
+    return words.map((p, i) => (i === 0 ? sentence(p) : lower(p))).join(', or ');
+  };
+  /** A stop in plain words, or counted: technical (3.0.20), or a raw field the program says nothing about (3.0.21). */
+  const stopOf = (node: SkeletonNode, label: string): StopWords => {
     const bareLabel = label.replace(STOP_PREFIX, '');
-    if (!reading || !node.anchor) return bareLabel;
-    const read = stopReading(reading, node.anchor.lineStart, bareLabel);
-    return read.technical ? null : read.text;
+    let text = bareLabel;
+    if (reading && node.anchor) {
+      const read = stopReading(reading, node.anchor.lineStart, bareLabel);
+      if (read.technical) return { kind: 'technical' };
+      text = read.text;
+    }
+    if (!plain || !node.anchor) return { kind: 'said', text };
+    const around = armAroundLine(plain, node.anchor.lineStart);
+    const raw = around ? rawFieldsOf(around.arm.condition, plain) : [];
+    if (around && raw.some((w) => wordIn(text, w))) {
+      return around.arm.message ? { kind: 'said', text: withoutCode(lower(around.arm.message)) } : { kind: 'unsaid' };
+    }
+    return { kind: 'said', text: withoutCode(plainValues(text)) };
   };
   let proposed = false;
   const nameOf = (node: SkeletonNode): string => {
@@ -147,23 +227,30 @@ export function processStory(
   for (const node of skeleton.nodes) byRegion.set(node.region, [...(byRegion.get(node.region) ?? []), node]);
   for (const list of byRegion.values()) list.sort(order);
 
+  interface Inside { checks: string[]; stops: string[]; technical: number; unsaid: number }
   /** The checks and stops of a region and the regions under it, a few levels down. */
-  const inside = (region: string | null | undefined, depth: number, seen: Set<string>): { checks: string[]; stops: string[]; technical: number } => {
-    if (!region || depth > 3 || seen.has(region)) return { checks: [], stops: [], technical: 0 };
+  const inside = (region: string | null | undefined, depth: number, seen: Set<string>): Inside => {
+    if (!region || depth > 3 || seen.has(region)) return { checks: [], stops: [], technical: 0, unsaid: 0 };
     seen.add(region);
     const checks: string[] = [];
     const stops: string[] = [];
     let technical = 0;
+    let unsaid = 0;
     for (const node of byRegion.get(region) ?? []) {
       if (node.kind === 'gateway') {
         if (technicalCheck(node)) technical += 1;
-        else checks.push(checkName(node));
+        else {
+          const check = sayCheck(node);
+          if (check === null) unsaid += 1;
+          else checks.push(check);
+        }
       } else if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const label = nameOf(node);
         if (STOP_PREFIX.test(label)) {
           const stop = stopOf(node, label);
-          if (stop === null) technical += 1;
-          else stops.push(stop);
+          if (stop.kind === 'technical') technical += 1;
+          else if (stop.kind === 'unsaid') unsaid += 1;
+          else stops.push(stop.text);
         }
       }
       if (node.expandsTo) {
@@ -171,16 +258,21 @@ export function processStory(
         checks.push(...deeper.checks);
         stops.push(...deeper.stops);
         technical += deeper.technical;
+        unsaid += deeper.unsaid;
       }
     }
-    return { checks: unique(checks), stops: unique(stops), technical };
+    return { checks: unique(checks), stops: unique(stops), technical, unsaid };
   };
+
+  /** 3.0.21: a loop or a set-up step — machinery, not a step of the business story. */
+  const machinery = (item: Item): boolean => !!plain && (item.loop || SET_UP.test(item.text));
 
   const itemsOf = (region: string, within: string | null): Item[] => {
     const out: Item[] = [];
     // Decision points before the first step of a level wait for it.
     let pending: string[] = [];
     let pendingTechnical = 0;
+    let pendingUnsaid = 0;
     for (const node of byRegion.get(region) ?? []) {
       const previous = out[out.length - 1];
       if (node.kind === 'gateway') {
@@ -189,16 +281,23 @@ export function processStory(
         if (technicalCheck(node)) {
           if (previous) previous.technical = (previous.technical ?? 0) + 1;
           else pendingTechnical += 1;
-        } else if (previous) previous.checks = unique([...previous.checks, checkName(node)]);
-        else pending.push(checkName(node));
+          continue;
+        }
+        const check = sayCheck(node);
+        if (check === null) {
+          if (previous) previous.unsaid = (previous.unsaid ?? 0) + 1;
+          else pendingUnsaid += 1;
+        } else if (previous) previous.checks = unique([...previous.checks, check]);
+        else pending.push(check);
         continue;
       }
       if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const label = nameOf(node);
         if (previous && STOP_PREFIX.test(label)) {
           const stop = stopOf(node, label);
-          if (stop === null) previous.technical = (previous.technical ?? 0) + 1;
-          else previous.stops = unique([...previous.stops, stop]);
+          if (stop.kind === 'technical') previous.technical = (previous.technical ?? 0) + 1;
+          else if (stop.kind === 'unsaid') previous.unsaid = (previous.unsaid ?? 0) + 1;
+          else previous.stops = unique([...previous.stops, stop.text]);
         }
         continue;
       }
@@ -214,11 +313,15 @@ export function processStory(
         }
         pending = [];
         pendingTechnical = 0;
+        pendingUnsaid = 0;
         continue;
       }
       const text = sentence(nameOf(node));
       const loop = node.kind === 'loop' || String(node.detail?.multiInstance ?? '') === 'true';
-      const deeper = loop ? { checks: [], stops: [], technical: 0 } : inside(node.expandsTo, 1, new Set());
+      // 3.0.21: a loop left unopened rolls up into the step around it — with what it checks.
+      const deeper = loop
+        ? plain ? inside(loopRegion(node), 1, new Set()) : { checks: [], stops: [], technical: 0, unsaid: 0 }
+        : inside(node.expandsTo, 1, new Set());
       out.push({
         text,
         within,
@@ -229,9 +332,11 @@ export function processStory(
         expands: node.expandsTo ?? (loop ? loopRegion(node) : null),
         loop,
         ...(reading ? { technical: pendingTechnical + deeper.technical } : {}),
+        ...(plain ? { unsaid: pendingUnsaid + deeper.unsaid } : {}),
       });
       pending = [];
       pendingTechnical = 0;
+      pendingUnsaid = 0;
     }
     return out;
   };
@@ -256,9 +361,13 @@ export function processStory(
   let items = itemsOf(entry, null);
 
   // Open levels while the story is too short to say anything: the program's
-  // process often sits one routine, or one loop, down.
-  for (let guard = 0; guard < 6 && items.length + (testData ? 1 : 0) < STORY_MIN; guard += 1) {
-    const at = items.findIndex((item) => item.expands && (byRegion.get(item.expands) ?? []).some((n) => !NOT_A_STEP.has(n.kind)));
+  // process often sits one routine, or one loop, down. From 3.0.21 loops and
+  // set-up do not count as steps, and a set-up step is not opened.
+  const counted = (list: Item[]) => list.filter((item) => !machinery(item)).length;
+  for (let guard = 0; guard < 6 && counted(items) + (testData ? 1 : 0) < STORY_MIN; guard += 1) {
+    const at = items.findIndex(
+      (item) => item.expands && !(plain && !item.loop && SET_UP.test(item.text)) && (byRegion.get(item.expands) ?? []).some((n) => !NOT_A_STEP.has(n.kind)),
+    );
     if (at < 0) break;
     const item = items[at];
     const within = item.loop ? item.text : item.within;
@@ -268,24 +377,57 @@ export function processStory(
     items = [...items.slice(0, at), ...opened, ...items.slice(at + 1)];
   }
 
-  // The same step twice in a row is one step.
+  // 3.0.21: loops and set-up left unopened are no steps of the story; what they
+  // check and where they stop rolls up into the step before them (the step
+  // after them, at the start).
+  if (plain && counted(items) > 0) {
+    const kept: Item[] = [];
+    let carry: Item | null = null;
+    const fold = (into: Item, from: Item) => {
+      into.checks = unique([...into.checks, ...from.checks]);
+      into.stops = unique([...into.stops, ...from.stops]);
+      if (from.technical !== undefined) into.technical = (into.technical ?? 0) + from.technical;
+      if (from.unsaid !== undefined) into.unsaid = (into.unsaid ?? 0) + from.unsaid;
+    };
+    for (const item of items) {
+      const copy: Item = { ...item, checks: [...item.checks], stops: [...item.stops] };
+      if (machinery(item)) {
+        const last = kept[kept.length - 1];
+        if (last) fold(last, copy);
+        else if (carry) fold(carry, copy);
+        else carry = copy;
+        continue;
+      }
+      if (carry) {
+        fold(copy, carry);
+        carry = null;
+      }
+      kept.push(copy);
+    }
+    items = kept;
+  }
+
+  // The same step twice in a row is one step — from 3.0.21 also when one of the
+  // two stood in a loop: the loop is no step of its own.
   const merged: Item[] = [];
   for (const item of items) {
     const last = merged[merged.length - 1];
-    if (last && last.text === item.text && last.within === item.within) {
+    if (last && last.text === item.text && (plain !== null || last.within === item.within)) {
       last.checks = unique([...last.checks, ...item.checks]);
       last.stops = unique([...last.stops, ...item.stops]);
       if (item.technical !== undefined) last.technical = (last.technical ?? 0) + item.technical;
+      if (item.unsaid !== undefined) last.unsaid = (last.unsaid ?? 0) + item.unsaid;
     } else merged.push({ ...item, checks: [...item.checks], stops: [...item.stops] });
   }
 
   // More than eight: join neighbours, the pair that carries least first.
+  const load = (item: Item) => item.checks.length + item.stops.length + (item.technical ?? 0) + (item.unsaid ?? 0);
   while (merged.length > STORY_MAX) {
     let best = 0;
     let weight = Number.MAX_SAFE_INTEGER;
     for (let i = 0; i + 1 < merged.length; i += 1) {
       if (merged[i].within !== merged[i + 1].within) continue;
-      const w = merged[i].checks.length + merged[i].stops.length + (merged[i].technical ?? 0) + merged[i + 1].checks.length + merged[i + 1].stops.length + (merged[i + 1].technical ?? 0);
+      const w = plain ? load(merged[i]) + load(merged[i + 1]) : merged[i].checks.length + merged[i].stops.length + (merged[i].technical ?? 0) + merged[i + 1].checks.length + merged[i + 1].stops.length + (merged[i + 1].technical ?? 0);
       if (w < weight) {
         weight = w;
         best = i;
@@ -299,12 +441,28 @@ export function processStory(
       checks: unique([...a.checks, ...b.checks]),
       stops: unique([...a.stops, ...b.stops]),
       ...(a.technical !== undefined || b.technical !== undefined ? { technical: (a.technical ?? 0) + (b.technical ?? 0) } : {}),
+      ...(a.unsaid !== undefined || b.unsaid !== undefined ? { unsaid: (a.unsaid ?? 0) + (b.unsaid ?? 0) } : {}),
     });
   }
 
+  // 3.0.21: a stop is said once, at the first step it belongs to.
+  if (plain) {
+    const said = new Set<string>();
+    for (const item of merged) {
+      item.stops = item.stops.filter((stop) => {
+        const key = stop.toLowerCase();
+        if (said.has(key)) return false;
+        said.add(key);
+        return true;
+      });
+    }
+  }
+
   return {
-    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical }) => ({
-      text, within, checks, stops, anchor, nodeId, ...(technical !== undefined ? { technical } : {}),
+    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid }) => ({
+      text, within, checks, stops, anchor, nodeId,
+      ...(technical !== undefined ? { technical } : {}),
+      ...(plain && unsaid !== undefined ? { unsaid } : {}),
     })),
     proposedNames: proposed,
     ...(reading ? { testData } : {}),

@@ -176,6 +176,9 @@ export function purposeProposalOf(narrative: string | null | undefined, facts: P
 /** The tag beside a quoted header comment — a tag, not one of the nine provenance values (DESIGN.md §4). */
 export const AUTHOR_CLAIM_LABEL = "Author's claim";
 
+/** The heading a claim read off the header's title line carries (`lib/program-summary-facts.ts`, from engine 3.0.21). */
+export const TITLE_HEADING = 'Title';
+
 export type AuthorClaim =
   | { state: 'shown'; heading: string; text: string; lineStart: number; lineEnd: number }
   | { state: 'contradicted'; heading: string; problems: string[]; lineStart: number; lineEnd: number; note: string };
@@ -195,6 +198,10 @@ export function authorClaimOf(facts: ProgramSummaryFacts | null): AuthorClaim | 
   const check = checkPurposeProposal(claim.text, facts);
   const quoted = check.ok ? quotableClaim(claim.text) : null;
   if (quoted) return { state: 'shown', ...claim, text: quoted };
+  // Roadmap 3.0.21: a title line of a few words often shows too little of any language to tell
+  // ("Freight charge check before goods issue"). Unread, it is not quoted — and, being only a
+  // title, not announced either: a note on it would outweigh the line itself.
+  if (claim.heading === TITLE_HEADING && check.problems.every((p) => p === UNREAD_LANGUAGE)) return null;
   const range = claim.lineEnd > claim.lineStart ? `L${claim.lineStart}–${claim.lineEnd}` : `L${claim.lineStart}`;
   const problems = check.ok ? [TOO_LONG] : check.problems;
   return {

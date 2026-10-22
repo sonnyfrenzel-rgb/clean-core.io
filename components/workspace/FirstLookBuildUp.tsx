@@ -563,6 +563,7 @@ export default function FirstLookBuildUp({
   narrative = null,
   pause = null,
   story = null,
+  engineVersion,
 }: {
   source: string;
   sourceName: string;
@@ -585,6 +586,8 @@ export default function FirstLookBuildUp({
   pause?: BuildUpPause | null;
   /** The process as numbered steps — the last step lands on it; null while the engine has not returned it. */
   story?: ProcessStory | null;
+  /** The engine of the project's signed run — the drawing sets the test-data switch apart as the steps do (3.0.21). */
+  engineVersion: string | null;
 }) {
   const withModel = narrative?.withModel === true;
   const lines = useMemo(() => source.split(/\r\n|\r|\n/), [source]);
@@ -592,7 +595,7 @@ export default function FirstLookBuildUp({
   // no empty one (lib/source-lines.ts). `lines` above still indexes them.
   const totalLines = useMemo(() => countSourceLines(source), [source]);
   const events = useMemo(() => buildUpEvents(access, skeleton), [access, skeleton]);
-  const drawing = useMemo(() => firstLookExcerpt(skeleton, source), [skeleton, source]);
+  const drawing = useMemo(() => firstLookExcerpt(skeleton, source, 5, engineVersion), [skeleton, source, engineVersion]);
   const nodeLines = useMemo(() => drawing.nodes.map((n) => n.line), [drawing]);
   const withExcerpt = drawing.nodes.length > 0;
   const frame = withExcerpt

@@ -677,7 +677,10 @@ the same end state. A second visit has no build-up.
   mark invites it: *"Select the decision point."*
 - **One question is already answered.** *"Ask this case"* shows, when first opened, an asked question with answer and
   anchors (*"What happens when the limit is exceeded?"*) — **derived from the branches of the code** (roadmap 2.1,
-  chip *Reconstructed*), without a model call and without touching the user's quota.
+  chip *Reconstructed*), without a model call and without touching the user's quota. **Since 3.0.21 it stands in the
+  IT view, not in Business** (owner decision 22.10.2026, ADR-103): its question names a decision point the first
+  insights and the walk-through already show the business reader. The assistant of the same name stays in Help in
+  every view.
 - **Standard fit as the second surprise**, one level deeper: *"2 of 7 rules have a standard candidate (scope item … —
   to verify)"* with evidence level (roadmap 7.2). Never "the standard covers it" as long as the level does not carry that.
 - **Take-away:** "Export PNG" and "Export PDF" of the process map with provenance chips and anchors. **No public
@@ -711,6 +714,13 @@ and the end state never waits for a model — the map's place says what is still
 
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
 - **Head of the content:** process name, plain-language sentence, reveal line, the open questions in one line (§5.1, ADR-081).
+  **In Business since 3.0.21 (ADR-103), First insights is at most five blocks on one screen:** *In short* (one sentence);
+  *Started by · Goes in · Comes out*; *Step by step* (one line per step — what a step checks and where it can end are
+  in the walk-through and one fold down); *What the code gives away* (at most three things the code shows that a business
+  reader would not expect, each with its line and who to ask, deterministic readers only, "none of the seven signs found"
+  when there is nothing — never "clean"); *What it decides* (the weightiest questions for the business, as statements,
+  and one quiet line into Design) beside *What it changes*. The step list, the main-line drawing and the full map all
+  stay. The open questions stand once on the page, in their own block; Level A–D is not on First insights.
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
 - **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map. IT and Management show no first look (ADR-086, ADR-087): the process is Business's, and they link to it.
 - **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it. Since ADR-099 the header also carries the tools in one compact row above "Next step", for the reader who comes back to a project and needs one tool again.

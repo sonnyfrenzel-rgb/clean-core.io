@@ -736,6 +736,10 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               rulesOverride={demoRulesStatus}
               questions={questions}
               onReviewRules={openDemoRules}
+              elsewhere={{
+                documentation: stageHref({ base: '/demo', path: 'documentation', view, from: WORKSPACE_RETURN.tools, layer: hashLayer }),
+                it: '/demo/workspace?view=it',
+              }}
             />
           </Place>
 

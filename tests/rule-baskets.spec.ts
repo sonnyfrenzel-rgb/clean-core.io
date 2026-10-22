@@ -481,8 +481,10 @@ test.describe('the places (source guards)', () => {
     expect(block).toContain('rules: null');
     expect(shell).not.toContain('<BusinessRulesEditor');
     const firstLook = read('components/workspace/FirstLook.tsx');
-    expect(firstLook).toContain('onDecideRules={onReviewRules}');
-    expect(firstLook).toMatch(/rulesLine=\{onReviewRules \|\| !rules \? undefined : <RuleBasketLine/);
+    // 3.0.21 (owner decisions 22.10.2026): the Business opening offers no rule action at all, the demo's
+    // included; the one quiet basket line stands everywhere, and in the demo it names no Design.
+    expect(firstLook).not.toContain('onDecideRules=');
+    expect(firstLook).toMatch(/<RuleBasketLine [^>]*designHref=\{onReviewRules \? null : undefined\}/);
     expect(firstLook).not.toMatch(/const decideRules\b/);
     expect(shell).toContain('businessNextStep({ point: nextStep, rules: null, owner })');
     const order = shell.slice(shell.indexOf('const BUSINESS_ORDER'), shell.indexOf('];', shell.indexOf('const BUSINESS_ORDER')));

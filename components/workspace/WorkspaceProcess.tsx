@@ -186,7 +186,7 @@ export default function WorkspaceProcess({
       void Promise.all([import('@/lib/process-walk-guide'), import('@/lib/process-tour')]).then(([g, t]) => {
         if (cancelled) return;
         const guide = g.buildWalkGuide(signed.source, current, walkOrder(current, null));
-        setRead({ model: current, guide, tour: t.buildProcessTour(guide, current, t.tourClosingOf(signed.source, tourEngine)) });
+        setRead({ model: current, guide, tour: t.buildProcessTour(guide, current, t.tourReadingOf(signed.source, tourEngine)) });
       });
     }, 0);
     return () => {
