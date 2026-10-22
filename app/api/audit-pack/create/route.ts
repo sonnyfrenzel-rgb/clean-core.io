@@ -3,7 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { signEd25519, getSigningKeypair } from '@/lib/audit-signing-keypair';
@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
     // to write into the very chain that is supposed to prove provenance.
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr?.message || 'Multi-factor authentication required.' },
-        { status: mfaErr?.status || 403 },
+        { error: mfaRefusal(mfaErr).message || 'Multi-factor authentication required.' },
+        { status: mfaRefusal(mfaErr).status || 403 },
       );
     }
 

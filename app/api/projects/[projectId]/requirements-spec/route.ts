@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -12,6 +13,10 @@ import { mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
+
+/** Four bytes per character is the most UTF-8 needs, so the character limit below stays the one that decides. */
+const SPEC_BODY_LIMITS = { maxBytes: SPEC_LIMITS.maxBodyChars * 4, timeoutMs: 20_000 };
 import {
   SPEC_COLLECTION,
   SPEC_DOC,
@@ -76,7 +81,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return { ok: false, response: NextResponse.json({ error: q?.message || 'Multi-factor authentication required.' }, { status: q?.status || 403 }) };
   }
   if (mutating) {
@@ -159,8 +164,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (!(req.headers.get('content-type') || '').toLowerCase().includes('application/json')) {
       return bad('Send the specification as JSON.', 'unsupported-media-type', 415);
     }
-    const raw = await req.text().catch(() => '');
-    if (raw.length > SPEC_LIMITS.maxBodyChars) {
+    const raw = await readBoundedBody(req, SPEC_BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
+    if (raw === null || raw.length > SPEC_LIMITS.maxBodyChars) {
       return bad('The specification is too large to store.', 'too-large', 413);
     }
     let body: unknown;

@@ -13,6 +13,7 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 
 /**
  * The per-stage model switch, and whether there is a key to switch on.
@@ -142,7 +143,9 @@ export async function POST(req: NextRequest) {
     // gave one account a fresh allowance per address.
     await assertRateLimit(`model_stages:${uid}`, 60, 60 * 60 * 1000);
 
-    const body = await req.json().catch(() => ({}));
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body ?? {};
     // `null` is valid JSON and has no properties: read through `?.`, so it is the
     // 400 below and not a TypeError answered as 500.
     const requested = (body as { stages?: unknown } | null)?.stages;

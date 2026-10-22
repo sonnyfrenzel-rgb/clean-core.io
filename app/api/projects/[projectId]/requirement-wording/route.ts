@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -14,6 +15,10 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { verifyModelReceipt } from '@/lib/model-receipt';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson } from '@/lib/url-validation';
+
+/** The answer, its digest and its receipt, read under a bound before parsing. */
+const ANSWER_BODY_LIMITS = { maxBytes: MAX_WORDING_ANSWER * 6 + 64 * 1024, timeoutMs: 20_000 };
 import { sha256Hex } from '@/lib/artefact-digest';
 import { buildRequirementSet } from '@/lib/functional-requirements';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
@@ -79,7 +84,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return { ok: false, response: NextResponse.json({ error: q?.message || 'Multi-factor authentication required.' }, { status: q?.status || 403 }) };
   }
   if (mutating) {
@@ -162,7 +167,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    const body = (await req.json().catch(() => null)) as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
+    const read = await readBoundedRequestJson(req, ANSWER_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
     if (!body || typeof body.text !== 'string' || typeof body.digest !== 'string') {
       return NextResponse.json(
         { error: 'Expected { digest, text, receipt }: the answer from /api/gemini as it came back.', code: 'bad-request' },

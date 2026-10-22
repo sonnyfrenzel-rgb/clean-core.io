@@ -303,6 +303,21 @@ export class QuotaError extends Error {
   }
 }
 
+/**
+ * What a route may tell the caller when its MFA gate throws.
+ *
+ * The gate's own refusal (`QuotaError`) is written for the account and is
+ * passed on, with its status. Anything else — a failed profile read, an
+ * infrastructure error — is logged here and the caller gets an empty object,
+ * so its own generic sentence (`q.message || '…'`) and status (`q.status || 403`)
+ * apply and no internal error text leaves the server.
+ */
+export function mfaRefusal(err: unknown): { message?: string; status?: number } {
+  if (err instanceof QuotaError) return { message: err.message, status: err.status };
+  logger.error('mfa gate failed', { error: providerErrorShape(err) });
+  return {};
+}
+
 /** Outcome of a run-quota reservation — see `reserveRunQuota`. */
 export interface RunQuotaResult {
   /** true only when a unit was actually deducted (and must be refunded on failure). */

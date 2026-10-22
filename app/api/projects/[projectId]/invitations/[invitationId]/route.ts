@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, assertMfaSatisfied, auditActorEmail } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertMfaSatisfied, auditActorEmail } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { openInvitationsAsOwner } from '@/lib/invitation-owner-gate';
@@ -50,7 +50,7 @@ export async function DELETE(
     try {
       await assertMfaSatisfied(req, decodedToken);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },

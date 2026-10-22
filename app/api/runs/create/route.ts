@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
 import { recommendationOfRoute } from '@/lib/project-commands';
 import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
@@ -142,10 +142,10 @@ export async function POST(req: NextRequest) {
     // to write into the very chain that is supposed to prove provenance.
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr?.message || 'Multi-factor authentication required.' },
-        { status: mfaErr?.status || 403 },
+        { error: mfaRefusal(mfaErr).message || 'Multi-factor authentication required.' },
+        { status: mfaRefusal(mfaErr).status || 403 },
       );
     }
 

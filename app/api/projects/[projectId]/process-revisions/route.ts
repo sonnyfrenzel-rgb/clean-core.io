@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -17,6 +18,7 @@ import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
 import {
   PROCESS_REVISION_COLLECTION,
   PROCESS_REVISION_FORMAT_VERSION,
+  MAX_REVISION_XML,
   checkRevisionXml,
   isProcessRevisionRecord,
   readRevisionStats,
@@ -25,6 +27,10 @@ import {
   type RevisionAccount,
 } from '@/lib/process-revisions';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson } from '@/lib/url-validation';
+
+/** A drawing of at most MAX_REVISION_XML characters and its base revision, read under a bound before parsing. */
+const SAVE_BODY_LIMITS = { maxBytes: MAX_REVISION_XML * 6 + 16 * 1024, timeoutMs: 20_000 };
 import { parseRevisionCursor, readRevisionPage, type RevisionQuery } from '@/lib/process-revision-page';
 
 /**
@@ -116,7 +122,7 @@ async function openProject(
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -559,7 +565,9 @@ export async function POST(
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    const body = (await req.json().catch(() => null)) as { xml?: unknown; baseRevision?: unknown } | null;
+    const read = await readBoundedRequestJson(req, SAVE_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { xml?: unknown; baseRevision?: unknown } | null;
     const { db } = await getAdminDb();
 
     // A model that is refused is refused before anything is written: checked

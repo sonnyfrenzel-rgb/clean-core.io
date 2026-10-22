@@ -335,6 +335,37 @@ export async function readBoundedJson(
 }
 
 /**
+ * An incoming request body as JSON, read under a byte bound before it is
+ * parsed — what `req.json().catch(() => null)` did, without buffering a body of
+ * any size first. `tooLarge` when the body is over the bound (the caller answers
+ * 413); otherwise `body` is the parsed value, or `null` when the body is empty,
+ * not JSON, or could not be read.
+ */
+export async function readBoundedRequestJson(
+  req: Pick<Request, 'headers' | 'body'>,
+  limits: { maxBytes: number; timeoutMs: number },
+): Promise<{ tooLarge: true } | { tooLarge: false; body: unknown }> {
+  let raw: string;
+  try {
+    raw = await readBoundedBody(req, limits);
+  } catch (err) {
+    if (err instanceof ResponseLimitError) return { tooLarge: true };
+    return { tooLarge: false, body: null };
+  }
+  try {
+    return { tooLarge: false, body: JSON.parse(raw) };
+  } catch {
+    return { tooLarge: false, body: null };
+  }
+}
+
+/** The bound for a small JSON command body: an id, an address, a few switches. */
+export const SMALL_REQUEST_BODY_LIMITS = { maxBytes: 16 * 1024, timeoutMs: 10_000 };
+
+/** The bound for an S/4 connection request: URL, credentials, a service path and at most a destination document. */
+export const S4_REQUEST_BODY_LIMITS = { maxBytes: 256 * 1024, timeoutMs: 10_000 };
+
+/**
  * What a tenant's OAuth token endpoint may answer with.
  *
  * A client-credentials token response is a JSON object of a few hundred bytes;

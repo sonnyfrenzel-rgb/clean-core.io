@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -27,6 +28,7 @@ import {
   type Invitation,
 } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 import { openInvitationsAsOwner, readOpenInvitations, INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
 
 /**
@@ -111,7 +113,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -208,7 +210,9 @@ export async function POST(
     const gate = await openProject(req, params);
     if (!gate.ok) return gate.response;
 
-    const body = (await req.json().catch(() => null)) as { email?: unknown; expiresInDays?: unknown } | null;
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { email?: unknown; expiresInDays?: unknown } | null;
     const email = normaliseInvitedEmail(body?.email);
     if (!email) {
       return NextResponse.json(
@@ -375,7 +379,7 @@ export async function GET(
     try {
       await assertMfaSatisfied(req, decodedToken);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },

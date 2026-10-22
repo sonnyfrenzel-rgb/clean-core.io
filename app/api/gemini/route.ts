@@ -3,6 +3,7 @@ import { logger, providerErrorShape } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
 import type { DocumentSnapshot } from 'firebase-admin/firestore';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   QuotaError,
   assertMfaSatisfied,
@@ -382,9 +383,9 @@ export async function POST(request: NextRequest) {
     try {
       profile = await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get();
       await assertMfaSatisfied(request, decodedToken, { profile });
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr.message || 'MFA verification required.' },
+        { error: mfaRefusal(mfaErr).message || 'MFA verification required.' },
         { status: 403 }
       );
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, deleteUserDataAndAccount, assertMfaStepUp } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, deleteUserDataAndAccount, assertMfaStepUp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,9 +21,9 @@ export async function POST(req: NextRequest) {
     // 2. Enforce recent MFA step-up verification if user has MFA enabled
     try {
       await assertMfaStepUp(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json({
-        error: mfaErr.message || 'Recent MFA step-up verification required.',
+        error: mfaRefusal(mfaErr).message || 'Recent MFA step-up verification required.',
         code: 'requires-mfa-stepup'
       }, { status: 403 });
     }

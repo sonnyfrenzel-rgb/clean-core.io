@@ -5,10 +5,12 @@ import {
   SsrfError,
   readBoundedBody,
   readBoundedJson,
+  readBoundedRequestJson,
   TOKEN_BODY_LIMITS,
   ODATA_BODY_LIMITS,
+  S4_REQUEST_BODY_LIMITS,
 } from '@/lib/url-validation';
-import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, errMessage } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
@@ -328,9 +330,9 @@ export async function POST(req: NextRequest) {
 
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { status: 'failed', message: mfaErr.message || 'MFA verification required.' },
+        { status: 'failed', message: mfaRefusal(mfaErr).message || 'MFA verification required.' },
         { status: 403 }
       );
     }
@@ -364,8 +366,17 @@ export async function POST(req: NextRequest) {
       throw rateErr;
     }
 
-    const body = await req.json();
-    const { servicePath } = body;
+    // Connection details and at most a destination document: bounded before parsing.
+    const read = await readBoundedRequestJson(req, S4_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ status: 'failed', message: 'The request is too large.' }, { status: 413 });
+    if (!read.body || typeof read.body !== 'object') {
+      return NextResponse.json({ status: 'failed', message: 'Expected the connection details as JSON.' }, { status: 400 });
+    }
+    const body = read.body as Record<string, unknown>;
+    if (body.servicePath !== undefined && body.servicePath !== null && typeof body.servicePath !== 'string') {
+      return NextResponse.json({ status: 'failed', message: 'Invalid service path.' }, { status: 400 });
+    }
+    const servicePath = typeof body.servicePath === 'string' ? body.servicePath : '';
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
     const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
