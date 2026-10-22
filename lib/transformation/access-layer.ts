@@ -58,8 +58,8 @@ const methodName = (verb: string, object: string) =>
 
 /** A statement on a file of the application server: what it does and the file operand (upper case), or null. */
 function datasetStatementOf(text: string): { op: 'OPEN' | 'READ' | 'TRANSFER' | 'CLOSE' | 'DELETE'; file: string; input: boolean } | null {
-  // A string template path (`OPEN DATASET |{ p_dir }/out.csv|`) is a literal path as well: the file "FILE" (QA review
-  // of ee72ca2218e1, 6641831dcbe5 — it had no method, and the body's statement was refused naming one).
+  // A string template path (`OPEN DATASET |{ p_dir }/out.csv|`) is a literal path as well: the file "FILE".
+  // Without that it had no access method, and the body's statement was refused naming one.
   const t = text.replace(/'(?:[^']|'')*'|`[^`]*`|\|(?:[^|\\]|\\.)*\|/g, "''").trim();
   const ds = /^(OPEN|READ|CLOSE|DELETE)\s+DATASET\s+([\w/<>~-]+|'')/i.exec(t);
   if (ds) return { op: ds[1].toUpperCase() as 'OPEN', file: fileName(ds[2]), input: /\bFOR\s+INPUT\b/i.test(t) };

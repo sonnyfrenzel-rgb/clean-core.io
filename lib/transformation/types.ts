@@ -220,8 +220,14 @@ export const PLAN_VERSION = 2;
  * `cs_local`, is refused (markers.ts). A local the original declares with STATICS keeps its value from one call to the
  * next (`staticLocalsOf`): RAP holds it in `STATICS ls_static`, started once;
  * Node in the run's own `local` (`STATICS_OF_RUN`, keyed by the run state). Nothing signed changes (§12.3).
+ * 22 (3.0.20 quality, the slice review of 22.10.2026, tests/qa-3020-transformation.spec.ts): a long line keeps a
+ * string template whole when it wraps (abap-line-length.ts); a file named by a string template is an access method
+ * like a literal path (access-layer.ts); a case whose unchanged baseline table holds rows the state type has no place
+ * for is not carried, with that reason, and the golden master's sentence and pass count speak only of the carried
+ * cases (golden-master.ts, testing-abap-unit.ts); the Node fixtures' runCase also refuses a baseline with unread
+ * statements (node-demo.ts). Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 21;
+export const SCAFFOLD_VERSION = 22;
 
 /* -------------------------------------------------------------- budgets */
 

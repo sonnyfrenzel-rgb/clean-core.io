@@ -125,7 +125,7 @@ export const SAP_API_CATALOG: Record<string, SapApiEntry> = {
   // LQUA is the warehouse *quant* \u2014 stock at a place, with quantity and
   // batch. It was mapped to I_WarehouseStorageBin, which is storage-bin
   // master data: the place itself, without any stock on it. Same reason as
-  // VBKD above (778c72a5cde2); LAGP below is the bin and stays.
+  // VBKD above; LAGP below is the bin and stays.
   'LAGP':  { view: 'I_WarehouseStorageBin',      type: 'CDS View' },
   'T001W': { view: 'I_Plant',                    type: 'CDS View' },
   'T001L': { view: 'I_StorageLocation',          type: 'CDS View' },

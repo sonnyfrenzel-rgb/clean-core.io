@@ -76,7 +76,7 @@ function wrapComment(line: string, max: number): string[] {
 function splitLongLiterals(code: string, room: number): string {
   const limit = Math.max(40, Math.min(200, room - 20));
   // A string template (`|…|`) is matched too, and left as it is: an apostrophe inside it is template text, not a
-  // literal's delimiter (QA review of ee72ca2218e1, e32348bc3bf7).
+  // literal's delimiter.
   return code.replace(/\|(?:[^|\\]|\\.)*\||'(?:[^']|'')*'|`(?:[^`]|``)*`/g, (lit) => {
     if (lit[0] === '|' || lit.length <= limit) return lit;
     const q = lit[0];

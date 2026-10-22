@@ -1322,8 +1322,8 @@ export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, bi
     if (!b || !b.range) out.push(`select-option ${name} (${binding.selectionType} has no range for it)`);
   }
   for (const t of c.changed) if (!binding.state[t]) out.push(`table ${t} (${binding.stateType} has no component for it)`);
-  // A table the case leaves as the baseline has it is not passed either when it holds rows (QA review of ee72ca2218e1,
-  // 7f457d6823d1): the logic would run without them.
+  // A table the case leaves as the baseline has it is not passed either when it holds rows: the logic
+  // would run without them.
   for (const t of Object.keys(gm.baseline)) {
     if (binding.state[t] || c.changed.includes(t)) continue;
     const rows = (c.tables[t] ?? gm.baseline[t] ?? []).length;
@@ -1619,7 +1619,7 @@ export function goldenMasterTestClass(
 export function goldenMasterSentence(cls: Pick<GoldenMasterTestClass, 'methods'>): string {
   const n = cls.methods.length;
   if (n === 0) return 'No demo case of the original was recognised.';
-  // A case not carried over skips without running: it passes no rows to the logic (QA review of ee72ca2218e1, 851baeec2d3d).
+  // A case not carried over skips without running: it passes no rows to the logic.
   const bound = cls.methods.filter((m) => m.bound && m.carried !== false).length;
   const partial = cls.methods.filter((m) => m.partial).length;
   const compared = cls.methods.filter((m) => m.compared).length;
@@ -1670,7 +1670,7 @@ export function notCarriedWords(n: number): string {
 /**
  * How many demo cases compare a result: the same words in the sentence above and in the testing evidence. Only the
  * cases carried over run through the logic; those not carried over (`notCarried`) skip without running and are said
- * apart (`notCarriedWords`), never as run (QA review of ee72ca2218e1, 851baeec2d3d).
+ * apart (`notCarriedWords`), never as run.
  */
 export function goldenMasterComparedWords(cases: number, compared: number, notCarried = 0): string {
   const ran = cases - notCarried;

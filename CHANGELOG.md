@@ -45,7 +45,7 @@ The first insights are for understanding only: they explain, they ask for no dec
   are handed over under their own names — RAP as `CHANGING` parameters with start values set by the parent, Node
   declared locally and written back in a `finally`; a redeclared handed local is refused. `STATICS` of a split
   routine keep their value from call to call. This removes the refusal of the SD return credit part U10P2
-  scheduled from 3.0.19. Scaffold version 21.
+  scheduled from 3.0.19. Scaffold version 21, and 22 for the fixes of the slice review below.
 - **A key-user decision ships no code from an earlier decision,** and the Level line says that Level A by
   construction holds once each candidate's release is checked in the target system. A key-user check record
   carries the version of the list that built it.
@@ -60,6 +60,14 @@ The first insights are for understanding only: they explain, they ask for no dec
   2026). A program with a demo flag is read by its flag, as before.
 - **Every reading of an existing project uses the engine its run was made with** — the rule derivation, the first
   insights, the documentation and the summaries. `tests/engine-version-callers.spec.ts` names every caller.
+- **The slice review of 22 October 2026** read the whole release again, from v3.0.19, in four parts; of 128 open
+  findings 23 were confirmed and fixed, 100 refuted with evidence in the sealed register, 5 wait for an owner decision. For the generated
+  packages (scaffold version 22): a long line keeps a string template whole when it wraps; a file named by a string
+  template gets its access method like a literal path; a golden-master case whose baseline table has no place in the
+  state type is not carried, with that reason, and the pass count speaks only of carried cases; the Node fixtures
+  refuse a baseline with unread statements. In the app: no account menu before sign-in has answered; a tour or tour
+  map that cannot load says so; plain wording asks once per browser session even when the view is left; the tour's
+  stations pick the step a reader learns most from.
 - **The rule baskets read more carefully:** a marker is a field the program writes and reads back on one row type,
   not another field whose name ends alike; a rule that also picks out a live value is not test data; "within a
   tolerance" is said only when a condition, a filter or a calculation applies it.
