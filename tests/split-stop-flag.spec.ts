@@ -86,7 +86,7 @@ const partsOf = (p: EngineLedPrepared) => p.plan.units.filter((u) => u.part).sor
 const messages = (p: EngineLedPrepared, regionId: string, body: string) => bodyGuards(body, guardContextOf(p, regionId)).map((r) => r.message);
 
 test('the stop flag, the empty-catch refusal and the unresolved-type note come with scaffold version 22', () => {
-  expect(SCAFFOLD_VERSION).toBe(22);
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(22);
 });
 
 /* ------------------------------------------------------------------ RAP */

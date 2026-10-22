@@ -846,7 +846,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   const routineUnit = (r: Routine, kind: UnitKind): Unit => {
     const id = nextId();
     const fn = uniqueFn(camelName(r.owner ? `${r.owner}_${r.name}` : r.name));
-    const argsType = r.parameters.length > 0 ? `, args: ${fn[0].toUpperCase()}${fn.slice(1)}Args` : '';
+    const argsType = r.parameters.length > 0 ? `, args: ${argsTypeName(fn)}` : '';
     return {
       id,
       kind,
@@ -1192,6 +1192,9 @@ export function estimateFillPrompt(unit: Unit, plan: Pick<UnitPlan, 'rules' | 'u
   return { chars: least + FILL_CONTEXT_MAX_CHARS + PROMPT_CONTEXT_ESCAPE_CHARS, least };
 }
 
+/** The name of a routine function's parameter interface: `evaluate` → `EvaluateArgs` (Node). */
+export const argsTypeName = (fn: string) => `${fn[0].toUpperCase()}${fn.slice(1)}Args`;
+
 /** A routine's lines `c` as part `index` of `of` — the unit the split writes, and the one it measures before it cuts. */
 function partOf(plan: Pick<UnitPlan, 'rules' | 'guards'>, u: Unit, c: { lineStart: number; lineEnd: number }, index: number, of: number): Unit {
   return {
@@ -1211,7 +1214,10 @@ function partOf(plan: Pick<UnitPlan, 'rules' | 'guards'>, u: Unit, c: { lineStar
     guardCalls: [],
     bodyCalls: [],
     callees: u.callees,
-    signature: `export function ${u.fn}Part${index}(sel: Selection, st: RunState, local: Record<string, unknown>): StepResult`,
+    // Scaffold version 23 (3.0.21, the SD acceptance of 3.0.20: a part never saw the routine's USING/CHANGING
+    // parameters and guessed where its input came from): a part takes its parent's `args` after `local`, the parent
+    // hands its own `args` to every part — as RAP has always done.
+    signature: `export function ${u.fn}Part${index}(sel: Selection, st: RunState, local: Record<string, unknown>${u.parameters.length > 0 ? `, args: ${argsTypeName(u.fn)}` : ''}): StepResult`,
     part: { index, of, parent: u.id },
   };
 }
@@ -1277,9 +1283,33 @@ function promptOverCapReason(u: Unit, est: FillPromptEstimate, facts: EngineFact
   return `${who} ${where} carries ${what}; ${need}. The engine splits a routine only between its top-level statements and never cuts a statement or its ABAP. ${tail}`;
 }
 
-/** The statements directly inside a routine whose own line is `formLine` and whose end is `endLine`. */
+/**
+ * The statements directly inside a routine whose own line is `formLine` and whose end is `endLine`: the innermost block
+ * around each is the FORM or METHOD itself. Since scaffold version 23 (3.0.21) a METHOD of a local class counts too —
+ * its `CLASS … IMPLEMENTATION` encloses it as well, and a count of one enclosing block never found a statement in it,
+ * so a method of 483 lines stayed one unit.
+ */
 function topStatements(facts: EngineFacts, formLine: number, endLine: number): AbapStatement[] {
-  return facts.statements.filter((s, i) => s.lineStart > formLine && s.lineEnd < endLine && (facts.blocks.enclosing[i]?.length ?? 0) === 1);
+  return facts.statements.filter((s, i) => {
+    if (s.lineStart <= formLine || s.lineEnd >= endLine) return false;
+    const around = facts.blocks.enclosing[i] ?? [];
+    const inner = around[around.length - 1];
+    return !!inner && (inner.kind === 'form' || inner.kind === 'method');
+  });
+}
+
+/**
+ * Whether a METHOD unit returns a value (`RETURNING VALUE(…)` in a METHODS declaration of its name): such a method is
+ * kept whole (3.0.21) — its parts could not hand the value back the way the original's caller reads it. Read
+ * conservatively: any declaration of the name with RETURNING (the class's own, an ancestor's, an interface's) counts.
+ */
+export function methodReturnsValue(statements: readonly Pick<AbapStatement, 'keyword' | 'text'>[], routine: string): boolean {
+  const name = routine.replace(/^.*~/, '').toLowerCase();
+  return statements.some((s) => {
+    if (!/^(?:CLASS-)?METHODS$/i.test(s.keyword)) return false;
+    const m = /^(?:CLASS-)?METHODS\s*:?\s*([\w/~]+)/i.exec(s.text);
+    return !!m && m[1].replace(/^.*~/, '').toLowerCase() === name && /\bRETURNING\b/i.test(s.text);
+  });
 }
 
 /**
@@ -1298,6 +1328,8 @@ function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
   for (const u of plan.units) {
     out.push(u);
     if (u.kind !== 'routine' && u.kind !== 'method') continue;
+    // A method that returns a value is kept whole (3.0.21, owner decision 22.10.2026).
+    if (u.kind === 'method' && u.routine && methodReturnsValue(facts.statements, u.routine)) continue;
     const own = u.abap[0];
     const ownLines = own.lineEnd - own.lineStart + 1;
     const ownChars = facts.lines.slice(own.lineStart - 1, own.lineEnd).join('\n').length;
