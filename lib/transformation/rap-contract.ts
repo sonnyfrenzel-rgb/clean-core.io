@@ -124,13 +124,45 @@ export interface RapContract {
    * The instance and static attributes the original's local classes declare (`DATA`/`CLASS-DATA` in a CLASS …
    * DEFINITION), as attributes of the one logic class the routines become (scaffold 17): a method's body reads them
    * (`rv_tax = mv_netwr * '0.19'`), and undeclared every faithful body was refused. One per name — the classes are
-   * flattened into one; a name the program also declares globally is the global's. In source order.
+   * flattened into one, and a program where two classes declare the same name is not generated (`attributeCollisions`);
+   * a name the program also declares globally is the global's. In source order.
    */
   classAttributes: AbapDecl[];
+  /**
+   * Attribute names two or more different local classes declare, each with the classes and the line of each
+   * declaration, in source order. The one logic class would hold them as one attribute, so a program with any is not
+   * generated (owner decision 22.10.2026; `attributeCollisionReason`). A name the program also declares globally is the
+   * global's and is not listed. Empty when there is none.
+   */
+  attributeCollisions: AttributeCollision[];
   /** A phrase a METHODS parameter can carry for this declaration phrase, naming a type when it must (hint: the parameter). */
   paramPhrase(phrase: string | null, hint: string, generic?: 'table' | 'any'): string;
   /** A declaration phrase with LIKE resolved in this scope, or null when it cannot be. */
   resolve(phrase: string, scope?: ReadonlyMap<string, string>): string | null;
+}
+
+export interface AttributeCollision {
+  /** The attribute name, lower case. */
+  name: string;
+  /** Each class that declares it (upper case) with the line of its declaration, in source order. */
+  classes: Array<{ name: string; line: number }>;
+}
+
+/**
+ * Why a program whose local classes collide on an attribute name is not generated: each name with the classes that
+ * declare it and their lines, then what the merge would do. Null when there is no collision.
+ */
+export function attributeCollisionReason(collisions: readonly AttributeCollision[]): string | null {
+  if (collisions.length === 0) return null;
+  const words = collisions.map((c) => {
+    const classes = c.classes.map((k) => `${k.name} (L${k.line})`);
+    const listed = `${classes.slice(0, -1).join(', ')} and ${classes[classes.length - 1]}`;
+    return `${listed} ${classes.length === 2 ? 'both' : 'all'} declare the attribute ${c.name}`;
+  });
+  return (
+    `The local classes ${words.join('; ')}. The ABAP Cloud package holds the original's classes as one logic class ` +
+    `with one attribute per name, so these would silently share one value — generation is refused for this program.`
+  );
 }
 
 export interface CustomerTable {
@@ -731,10 +763,18 @@ export function readRapContract(
   // ---- the local classes' definitions (scaffold 17): their attributes, their methods' declarations, their parents
   const classes = readClassDefinitions(statements, containers);
   const classAttributes: AbapDecl[] = [];
+  // The classes declaring each attribute name: a second, different class declaring one is a collision.
+  const declaredBy = new Map<string, AttributeCollision>();
   for (const def of classes.values()) {
     for (const a of def.attributes) {
       const name = a.name;
-      if (globalScope.has(name) || typeNames.has(name) || classAttributes.some((x) => x.name === name)) continue;
+      if (globalScope.has(name) || typeNames.has(name)) continue;
+      const first = declaredBy.get(name);
+      if (first) {
+        if (!first.classes.some((k) => k.name === def.name)) first.classes.push({ name: def.name, line: a.line });
+        continue;
+      }
+      declaredBy.set(name, { name, classes: [{ name: def.name, line: a.line }] });
       const original = resolveIn(normalisePhrase(a.phrase, a.length), null);
       if (!original) {
         skipped.push({ line: a.line, text: a.text.slice(0, 80) });
@@ -745,6 +785,7 @@ export function readRapContract(
     }
   }
   for (const a of classAttributes) globalScope.set(a.name, a.phrase);
+  const attributeCollisions = [...declaredBy.values()].filter((c) => c.classes.length > 1);
   for (const n of [...typeNames, ...globals.map((g) => g.name), ...classAttributes.map((g) => g.name), ...selection.map((s) => s.name), ...constantNames]) usedNames.add(n.toLowerCase());
 
   const paramPhrase: RapContract['paramPhrase'] = (phrase, hint, generic = 'any') => {
@@ -912,6 +953,7 @@ export function readRapContract(
     constantNames,
     globals,
     classAttributes,
+    attributeCollisions,
     selection,
     skipped,
     typeNames,

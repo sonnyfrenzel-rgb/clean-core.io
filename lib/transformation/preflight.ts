@@ -24,6 +24,7 @@ import {
   leaseTtlMs,
 } from './lease';
 import { expectedFillDuration, expectedWords, minutesWords } from './duration-estimate';
+import type { ScaffoldRefusal } from './types';
 
 export interface PreflightInput {
   /** Functions with a fill region. */
@@ -34,6 +35,8 @@ export interface PreflightInput {
   oversize: ReadonlyArray<{ unitIds: readonly string[]; chars: number; reason?: string }>;
   /** The account's generations this hour, or null when they could not be read. */
   window: { used: number; limit: number; nextFreeInSeconds: number | null } | null;
+  /** Why the engine refuses this program (`Scaffold.refusal`): it blocks the start before every limit. */
+  refusal?: ScaffoldRefusal | null;
 }
 
 export interface PreflightLimit {
@@ -73,7 +76,9 @@ export function preflight(input: PreflightInput): Preflight {
   const retries = Math.max(0, budget - planned);
 
   let blocked: PreflightIssue | null = null;
-  if (planned > LEASE_MAX_CALLS) {
+  if (input.refusal) {
+    blocked = issue(input.refusal.code, input.refusal.detail);
+  } else if (planned > LEASE_MAX_CALLS) {
     blocked = issue('plan-too-large', `This program needs ${n(planned)} fill calls; one generation may make ${n(LEASE_MAX_CALLS)}.`);
   } else if (expected.lowMs > ttl) {
     blocked = issue('plan-over-time-limit', `Writing it is expected to take ${minutesWords(expected)}; one generation may run ${Math.round(ttl / 60_000)} minutes.`);

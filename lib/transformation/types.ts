@@ -225,7 +225,14 @@ export const PLAN_VERSION = 2;
  * like a literal path (access-layer.ts); a case whose unchanged baseline table holds rows the state type has no place
  * for is not carried, with that reason, and the golden master's sentence and pass count speak only of the carried
  * cases (golden-master.ts, testing-abap-unit.ts); the Node fixtures' runCase also refuses a baseline with unread
- * statements (node-demo.ts). Nothing signed changes (§12.3).
+ * statements (node-demo.ts). Also in 22 (owner decision 22.10.2026): RAP — a program where two different local classes
+ * declare an attribute of the same name is not generated: the scaffold carries the refusal with the classes, their
+ * lines and the name (`Scaffold.refusal`, rap-contract.ts), and the pre-flight check blocks the start with code
+ * `rap-attribute-collision`; a class attribute that is also a global name stays the global's, and the Node track
+ * carries no class attributes, so it merges nothing. Also in 22 (owner decision 22.10.2026): an engine case refused by
+ * the original's authorization check says "the authority check refused it" instead of "this run did not grant it" —
+ * true in the package's own run and in the app's sandbox, which always grants (engine-cases-core.mjs).
+ * Nothing signed changes (§12.3).
  */
 export const SCAFFOLD_VERSION = 22;
 
@@ -765,6 +772,12 @@ export interface ScaffoldFile {
   owner: 'engine' | 'fill';
 }
 
+/** Why the engine refuses to generate a program, as the pre-flight check shows it: the code and this program's reason. */
+export interface ScaffoldRefusal {
+  code: 'rap-attribute-collision';
+  detail: string;
+}
+
 export interface Scaffold {
   track: 'node' | 'rap';
   version: number;
@@ -782,6 +795,12 @@ export interface Scaffold {
   required: Record<string, RequiredGuard[]>;
   /** RAP only, since scaffold version 6: the logic class's typed contract. */
   rap?: RapClassContract;
+  /**
+   * Since scaffold version 22 (owner decision 22.10.2026): why this program is not generated at all, with the code the
+   * pre-flight check shows (`preflight.ts`) — no lease is bought and no model call is made. RAP: two different local
+   * classes declare an attribute of the same name (`rap-contract.ts`, `attributeCollisions`). Absent otherwise.
+   */
+  refusal?: ScaffoldRefusal;
   /** Node only, since scaffold version 15 (3.0.17): the original's authority checks per region (`authority-node.ts`). */
   authority?: Record<string, AuthorityEntry[]>;
   /** Node only, since scaffold version 15 (3.0.17): the original's reads inside its steps, per region (`lookups-node.ts`). */
