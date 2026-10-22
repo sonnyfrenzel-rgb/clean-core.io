@@ -911,6 +911,11 @@ ${DESIGN_ANSWER_REMINDER}`;
   // on as well, so "Confirm & Lock" landed on the server (Transformation ran
   // against the contract) while this page kept saying "Not confirmed".
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff;
+  // Owner decision 22.10.2026: the key-user limits only where key user is the
+  // option in question — the engine recommends it (the whole program reads as
+  // key user, as `signOffRecommendation` takes it) or the owner confirmed it;
+  // the comparison's own proposal is the third reason (`keyUserLimitsShown`).
+  const keyUserChosen = keyUserList?.scope === 'whole-program' || (signOffCurrent && project?.targetArchitecture === 'keyuser');
 
   const regenerate = () => {
     if (!isOwner) {
@@ -1051,6 +1056,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         nfrTopics={nfrTopics}
         banner={<LegacyRunBanner capabilities={caps} projectId={projectId as string} />}
         keyUser={keyUserList}
+        keyUserChosen={keyUserChosen}
       />
     );
   })() : null;
