@@ -101,6 +101,16 @@ test('a second write replaces the first', async ({ request }) => {
   expect(res.status(), await res.text()).toBe(200);
   const read = (await (await request.get(`${path_}?scope=rules`, { headers: headers() })).json()) as { record: PlainWordingRecord };
   expect(Object.keys(read.record.wording).sort()).toEqual(ITEMS.map((i) => i.key).sort());
+  // Replaced, not merged (QA review of ee72ca2218e1, 8a1128ccd069): the first item carries the second write's words.
+  expect(read.record.wording[ITEMS[0].key]).toBe('Only amounts up to 500,000 continue; anything higher stops here.');
+  expect(read.record.wording[ITEMS[1].key]).toBe('If it holds, the run stops with an error message.');
+  // A third write whose second sentence is dropped (its anchor changed) leaves no word of the earlier record behind.
+  const third = answer('Only amounts up to 500,000 pass; a higher amount stops here.', 'If it holds, the program halts with an error.', 'L5');
+  const res3 = await request.post(path_, { headers: headers(), data: { scope: 'rules', digest: DIGEST, items: ITEMS, text: third, receipt: receiptFor(third) } });
+  expect(res3.status(), await res3.text()).toBe(200);
+  const after = (await (await request.get(`${path_}?scope=rules`, { headers: headers() })).json()) as { record: PlainWordingRecord };
+  expect(Object.keys(after.record.wording)).toEqual([ITEMS[0].key]);
+  expect(after.record.wording[ITEMS[0].key]).toBe('Only amounts up to 500,000 pass; a higher amount stops here.');
 });
 
 test('no receipt, or one from another stage: nothing is stored', async ({ request }) => {

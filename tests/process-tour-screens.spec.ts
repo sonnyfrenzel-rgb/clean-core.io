@@ -143,6 +143,9 @@ for (const viewport of [
           await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(at + 1));
           await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1);
         }
+        // The map highlights the element the card narrates, not the one before it (QA review of ee72ca2218e1,
+        // db6418710512): bpmn-js marks the element's own group, which carries its id.
+        await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveAttribute('data-element-id', tour.stations[at].id);
         // The card's placement follows the camera in the next frame.
         await page.waitForTimeout(120);
         const m = await measure(page);
