@@ -55,8 +55,9 @@ test.describe('the real read in stage 5 claims only what it did', () => {
     const s = testing();
     expect(s).toContain('handleReadEntitySet');
     expect(s).toContain("'/api/test-s4-odata-read'");
-    // The count shown has to be the one that came back.
-    expect(s).toContain('result.recordCount');
+    // What is shown is what came back: since 3.0.21 the fields the metadata declares, no record count.
+    expect(s).toContain('result.sampleFields');
+    expect(s).not.toContain('result.recordCount');
   });
 
   test('it does not claim equivalence, and signs nothing off', () => {

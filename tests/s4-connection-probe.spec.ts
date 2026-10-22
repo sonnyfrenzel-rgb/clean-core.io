@@ -263,7 +263,7 @@ test.describe('the route reaches the tenant only through the probe', () => {
   test('the interfaces name the check and the read honestly', () => {
     const testing = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/testing/page.tsx'), 'utf8');
     expect(testing).toContain('reads no record');
-    expect(testing).toContain("'Read one record from the tenant'");
+    expect(testing).toContain("'Check the entity set in the tenant'");
     expect(testing).not.toContain("'Read records from tenant'");
     const settings = fs.readFileSync(path.join(ROOT, 'app/(app)/settings/page.tsx'), 'utf8');
     expect(settings).toContain('It reads no record.');

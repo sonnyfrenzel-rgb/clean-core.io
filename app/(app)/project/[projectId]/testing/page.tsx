@@ -266,7 +266,7 @@ export default function TestingSandboxPage() {
   const [odataServicePath, setOdataServicePath] = useState('');
   // Per-entity-set result of an actual read against the connected tenant.
   const [odataReadState, setOdataReadState] = useState<
-    Record<string, { status: 'reading' | 'done' | 'failed'; message: string; recordCount?: number }>
+    Record<string, { status: 'reading' | 'done' | 'failed'; message: string; fieldCount?: number }>
   >({});
   const [odataSelectedService, setOdataSelectedService] = useState('');
   const [odataMessage, setOdataMessage] = useState('');
@@ -684,13 +684,13 @@ export default function TestingSandboxPage() {
       if (result.status === 'success') {
         setOdataReadState(prev => ({
           ...prev,
-          [entitySet]: { status: 'done', message: result.message || '', recordCount: result.recordCount },
+          [entitySet]: { status: 'done', message: result.message || '', fieldCount: result.sampleFields?.length ?? 0 },
         }));
         setTenantLog(prev => prev +
-          `[odata-explorer] [SUCCESS] ${result.recordCount ?? 0} record(s) returned from ${entitySet}.
+          `[odata-explorer] [SUCCESS] ${entitySet} is declared in the service metadata (no record read).
 ` +
           (result.sampleFields?.length
-            ? `[odata-explorer] Fields in first record: ${result.sampleFields.join(', ')}
+            ? `[odata-explorer] Fields in the metadata: ${result.sampleFields.join(', ')}
 `
             : '') +
           `[odata-explorer] Read complete. Note: this is a read, not a comparison — nothing here checks the generated code against these rows.
@@ -2344,11 +2344,11 @@ export default function TestingSandboxPage() {
                                           onClick={() => handleReadEntitySet(et.name)}
                                           disabled={odataReadState[et.name]?.status === 'reading'}
                                         >
-                                          {odataReadState[et.name]?.status === 'reading' ? 'Reading…' : 'Read one record from the tenant'}
+                                          {odataReadState[et.name]?.status === 'reading' ? 'Checking…' : 'Check the entity set in the tenant'}
                                         </CcButton>
                                         {odataReadState[et.name]?.status === 'done' && (
                                           <span className="cc-text-meta text-cc-ink">
-                                            {odataReadState[et.name]?.recordCount ?? 0} record(s) returned
+                                            Declared in the metadata — no record read
                                           </span>
                                         )}
                                         {odataReadState[et.name]?.status === 'failed' && (

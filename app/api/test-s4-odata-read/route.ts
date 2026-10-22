@@ -15,19 +15,18 @@ import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
+import { entitySetFields } from '@/lib/s4-entity-set-metadata';
 
 /**
  * POST /api/test-s4-odata-read
  *
- * Executes a read-only OData GET request against a live S/4HANA tenant
- * to verify that an EntitySet is accessible and returns data.
- *
- * This READS A BUSINESS RECORD (`$top=1`) and is therefore not part of the
- * connection test (`/api/test-s4-connection` reads only `$metadata`, owner
- * decision 17.10.2026). It runs only when the user starts it explicitly
- * ("Read one record from the tenant" in the Testing stage), behind the same
- * tenant-access gate. What leaves this route is the count and the field
- * names of the first record — never a value.
+ * Checks that an EntitySet exists at a service path of a live S/4HANA tenant
+ * and names the fields it offers — read from the service's `$metadata`, never
+ * from a record. Since 3.0.21 (owner decision 22.10.2026) it reads no record
+ * and no count, as the privacy policy, terms and trust page of Fassung 1.1
+ * say; until then it read one record with an inline count. It runs only when the
+ * user starts it explicitly in the Testing stage, behind the tenant-access
+ * gate. What leaves this route is the set's type and its field names.
  *
  * Request body:
  *   {
@@ -46,7 +45,6 @@ import { upstreamBodyShape } from '@/lib/upstream-body-shape';
  *     status: 'success' | 'failed',
  *     message: string,
  *     entitySet: string,
- *     recordCount?: number,
  *     httpStatus?: number,
  *     sampleFields?: string[]
  *   }
@@ -267,7 +265,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: 'failed', message: urlCheck.reason || 'URL not allowed.', entitySet }, { status: 403 });
     }
 
-    // Build OData read URL: GET EntitySet?$top=1&$format=json
+    // Only the service's metadata document: GET <service>/$metadata — no record, no count.
     const servicePath = resolvedBody.servicePath || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
     // Audit P2: constrain path building — no arbitrary GET paths on the allowed host.
     if (!isSafeODataServicePath(servicePath)) {
@@ -277,7 +275,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: 'failed', message: 'Invalid entity set name.', entitySet }, { status: 400 });
     }
     const baseUrl = targetUrl.replace(/\/$/, '');
-    const readUrl = `${baseUrl}${servicePath}/${entitySet}?$top=1&$format=json&$inlinecount=allpages`;
+    const readUrl = `${baseUrl}${servicePath}/$metadata`;
 
     // Execute GET with timeout
     const controller = new AbortController();
@@ -320,38 +318,37 @@ export async function POST(req: NextRequest) {
         status: 'failed',
         message: response.status === 401 ? 'Authentication rejected.'
           : response.status === 403 ? 'Access forbidden — missing authorization.'
-          : response.status === 404 ? `EntitySet "${entitySet}" not found at this service path.`
+          : response.status === 404 ? 'No OData service at this service path.'
           : `HTTP ${response.status}`,
         entitySet,
         httpStatus: response.status,
       });
     }
 
-    // Parse the JSON response, under a size limit and a deadline of its own:
-    // the abort timer above ended with the headers, and `response.json()` then
-    // buffered an entity read of any length from the tenant.
-    const data = await readBoundedJson(response, ODATA_BODY_LIMITS).catch(() => null);
-    if (!data) {
+    // The metadata document, under a size limit and a deadline of its own.
+    const xml = await readBoundedBody(response, ODATA_BODY_LIMITS).catch(() => null);
+    if (!xml) {
       return NextResponse.json({
         status: 'failed',
-        message: 'Response was not valid JSON.',
+        message: 'The service metadata could not be read.',
         entitySet,
         httpStatus: response.status,
       });
     }
-
-    // OData v2 response structure: d.results[] or d.__count
-    const results = data?.d?.results || [];
-    const count = data?.d?.__count ? parseInt(data.d.__count, 10) : results.length;
-    const sampleFields = results.length > 0
-      ? Object.keys(results[0]).filter(k => !k.startsWith('__')).slice(0, 8)
-      : [];
-
+    const described = entitySetFields(xml, entitySet);
+    if (!described) {
+      return NextResponse.json({
+        status: 'failed',
+        message: `EntitySet "${entitySet}" is not declared at this service path.`,
+        entitySet,
+        httpStatus: response.status,
+      });
+    }
+    const sampleFields = described.fields.slice(0, 8);
     return NextResponse.json({
       status: 'success',
-      message: `${entitySet}: ${count} record(s) available, ${sampleFields.length} fields accessible`,
+      message: `${entitySet}: declared in the service metadata with ${described.fields.length} field(s) — no record was read.`,
       entitySet,
-      recordCount: count,
       httpStatus: response.status,
       sampleFields,
     });

@@ -286,7 +286,7 @@ Paste the full JSON export of your destination from the ${SAP_BTP_COCKPIT}.
   - Endpoint reachability (DNS resolution, TLS certificate validity)
   - Authentication status (credential verification)
   - That the OData service exists
-- The connection check reads no business record. Reading one record is a separate action in the Testing stage ("Read one record from the tenant").
+- The connection check reads no business record. Checking one entity set is a separate action in the Testing stage ("Check the entity set in the tenant"); it reads the service metadata, never a record.
 - Click "Save Connection" to persist the configuration.
 
 ### Security

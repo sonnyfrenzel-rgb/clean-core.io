@@ -212,6 +212,8 @@ const MAX_PROMPT_LENGTH = 250_000;
 const GEMINI_BODY_LIMITS = { maxBytes: MAX_PROMPT_LENGTH * 6 + 64 * 1024, timeoutMs: 30_000 };
 
 const MAX_RETRIES = 3;
+/** Anthropic is asked again at most twice (privacy policy and terms, Fassung 1.1: "höchstens zweimal"). */
+const ANTHROPIC_MAX_RETRIES = 2;
 const INITIAL_DELAY = 2000;
 
 async function callWithRetry<T>(
@@ -690,7 +692,7 @@ export async function POST(request: NextRequest) {
           // recorded with who answered, beside the receipt, never inside it.
           inferenceGeo = result.inferenceGeo;
           return result.answer;
-        }, undefined, undefined, callSignal)
+        }, ANTHROPIC_MAX_RETRIES, undefined, callSignal)
       : await callWithRetry(async () => {
           const attemptAt = Date.now();
           const result = await ai!.models.generateContent({
