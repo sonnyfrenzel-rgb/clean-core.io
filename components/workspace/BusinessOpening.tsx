@@ -205,7 +205,7 @@ export default function BusinessOpening({
         >
           {rows.map((row) => (
             <React.Fragment key={row.key}>
-              <dt className="pt-0.5 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">{row.label}</dt>
+              <dt className="pt-1 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">{row.label}</dt>
               <dd data-first-look-row={row.key} className="m-0 flex flex-wrap items-center gap-x-2 text-[14px] leading-snug font-medium text-cc-ink max-sm:mb-1">
                 <span className="min-w-0 break-words">{word(row.line.text, plainRangeOf(row.line.anchor))}</span>
                 <Line anchor={row.line.anchor} />
@@ -230,7 +230,7 @@ export default function BusinessOpening({
               <li
                 key={`${step.nodeId}-${i}`}
                 data-process-story-step={i + 1}
-                className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 border-b border-cc-line py-1.5 last:border-b-0"
+                className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 border-b border-cc-line py-2 last:border-b-0"
               >
                 <span
                   aria-hidden={true}
@@ -279,7 +279,7 @@ export default function BusinessOpening({
                   key={`${finding.reader}-${finding.anchor}-${k}`}
                   data-code-finding={finding.reader}
                   data-code-finding-anchor={finding.anchor}
-                  className="flex min-w-0 flex-col gap-0.5"
+                  className="flex min-w-0 flex-col gap-1"
                 >
                   <p className="m-0 flex flex-wrap items-center gap-x-2 text-[14px] leading-snug font-semibold text-cc-ink">
                     <span className="min-w-0 break-words">{finding.text}</span>
@@ -291,7 +291,7 @@ export default function BusinessOpening({
                 </li>
               ))}
               {testSwitchShown && givesAway.testSwitch ? (
-                <li data-code-finding="test-switch" data-process-story-test-data="" className="flex min-w-0 flex-col gap-0.5">
+                <li data-code-finding="test-switch" data-process-story-test-data="" className="flex min-w-0 flex-col gap-1">
                   <p className="m-0 flex flex-wrap items-center gap-x-2 text-[14px] leading-snug font-semibold text-cc-ink">
                     <span className="min-w-0 break-words">{givesAway.testSwitch.sentence}</span>
                     <Line anchor={givesAway.testSwitch.anchor} />
@@ -331,7 +331,7 @@ export default function BusinessOpening({
           {rules.length === 0 ? (
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{rulesNone}</p>
           ) : (
-            <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {rules.map((rule, k) => (
                 <li key={rule.id} data-story-rule={rule.id} className="flex flex-wrap items-center gap-x-2 text-[13px] leading-snug font-semibold text-cc-ink">
                   <span className="min-w-0 break-words">{ruleTexts[k]}</span>
@@ -355,7 +355,7 @@ export default function BusinessOpening({
           {changes.length === 0 ? (
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{changesNone}</p>
           ) : (
-            <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {changes.map((change, k) => (
                 <li key={change.text} className="flex flex-wrap items-center gap-x-2 text-[13px] leading-snug font-semibold text-cc-ink">
                   <span className="min-w-0 break-words">{changeTexts[k]}</span>
@@ -426,7 +426,7 @@ function StepDetails({ story }: { story: ProcessStory }) {
       ) : (
         <ol className="m-0 flex list-none flex-col gap-2 p-0">
           {withDetail.map(({ step, n }) => (
-            <li key={`${step.nodeId}-${n}`} data-process-story-detail-step={n} className="flex min-w-0 flex-col gap-0.5">
+            <li key={`${step.nodeId}-${n}`} data-process-story-detail-step={n} className="flex min-w-0 flex-col gap-1">
               <p className="m-0 flex flex-wrap items-center gap-x-2 text-[13px] leading-snug font-semibold text-cc-ink">
                 <span className="min-w-0 break-words">{`${n}. ${step.text}`}</span>
                 <Line anchor={step.anchor} />
