@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useSyncExternalStore } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { stageBackLink } from '@/lib/workspace-back-href';
 import { useShellProjectName } from '@/lib/shell-context';
 import StageBackText from '@/components/StageBackText';
+import { useLocationSearch } from '@/lib/location-search';
 
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 
 /**
  * The end of a stage page: the way back to the workspace, at the end of a long
@@ -28,7 +26,7 @@ const serverSearch = () => '';
 export default function StageFooter() {
   const params = useParams();
   const projectId = typeof params?.projectId === 'string' ? params.projectId : '';
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const search = useLocationSearch();
 
   // The name the stage's own read announced to the shell bar (`lib/shell-context.ts`).
   const projectName = useShellProjectName(projectId || null);

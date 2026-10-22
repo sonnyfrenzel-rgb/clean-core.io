@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronDown, Wrench } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -13,6 +13,7 @@ import { toolsNextHint, wt } from '@/lib/workspace-messages';
 import InfoPopover from './InfoPopover';
 import { useAnalysisRead } from '@/hooks/useAnalysisRead';
 import { analysisKeyOfBase, resultReadyTag } from '@/lib/analysis-read';
+import { useLocationSearch } from '@/lib/location-search';
 
 export interface WorkspaceTool {
   key: PhaseKey;
@@ -440,9 +441,6 @@ export default function WorkspaceToolBar({
   );
 }
 
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 
 /**
  * The same bar on a stage (Sonny 02.10.2026: from every tool straight back to
@@ -464,7 +462,7 @@ export function StageToolBar({
 }) {
   // Read from the address in the browser only, as `StageHeader` does: a
   // statically generated demo stage must not depend on the query.
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const search = useLocationSearch();
   const params = new URLSearchParams(search);
   const fromParam = params.get('from') ?? '';
   const from = (Object.values(WORKSPACE_RETURN) as string[]).includes(fromParam)

@@ -337,7 +337,11 @@ header comes from `StageHeader` and stands like the project title: **22 px / 800
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
 not a button), which leads back to the view and layer from which the stage was opened — on a demo stage to the demo
-workspace (`/demo/workspace`) by the same rule. Below it the same toolbar as in
+workspace (`/demo/workspace`) by the same rule. On the same row, top right, the **view switch** (ADR-103): the segmented
+control "Business | IT | Management" of §1.5, the view the tool is read in selected (from `?view=`; none or an unknown
+one reads as Business, where the way back leads); one click changes the view in the address and stays on the same tool,
+every other parameter kept — the view stays a view only. On S it wraps under the way back and its segments share the
+row. Below it the same toolbar as in
 the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
 It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
