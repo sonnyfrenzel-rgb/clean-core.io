@@ -121,6 +121,35 @@ test.describe('acceptance suite', () => {
     await expect(loadSource(wrong, ROOT)).rejects.toThrow(/does not match its fingerprint/);
   });
 
+  test('without --programs the suite selects every program of the run list, each on every route it declares', async () => {
+    // QA review of ee72ca2218e1 (460d39b12740): the end-to-end case below runs one program, so a default
+    // selection that dropped a program or a route went unseen. `--list` prints the selection `main` runs,
+    // without reading any source.
+    const programs = loadPrograms();
+    const listed = async (argv: string[]): Promise<string[]> => {
+      const lines: string[] = [];
+      const log = console.log;
+      console.log = (...parts: unknown[]) => void lines.push(parts.map(String).join(' '));
+      try {
+        expect(await main(argv)).toBe(0);
+      } finally {
+        console.log = log;
+      }
+      return lines;
+    };
+    const all = await listed(['--list']);
+    expect(all).toHaveLength(programs.length);
+    for (const p of programs) {
+      const line = all.find((l) => l.split(/\s+/)[0] === p.id);
+      expect(line, `${p.id} is not in the default selection`).toBeTruthy();
+      expect(line!.split(/\s+/)[1], `${p.id} does not run on every route it declares`).toBe(p.tracks.join('+'));
+    }
+    expect(programs.some((p) => p.tracks.includes('rap') && p.tracks.includes('node'))).toBe(true);
+    // A named selection narrows it; an unknown name is refused rather than run as nothing.
+    expect(await listed(['--list', '--programs', 'po-mm-po-approval'])).toEqual([expect.stringMatching(/^po-mm-po-approval\s+rap\+node\s/)]);
+    await expect(main(['--list', '--programs', 'no-such-program'])).rejects.toThrow(/unknown program no-such-program/);
+  });
+
   test('a plaintext scenario file is checked before it is sealed', async () => {
     const mod = (await import(pathToFileURL(path.join(ROOT, 'scripts', 'acceptance', 'scenarios.mjs')).href)) as {
       validateScenarioFile: (doc: unknown, ids: string[]) => string[];
