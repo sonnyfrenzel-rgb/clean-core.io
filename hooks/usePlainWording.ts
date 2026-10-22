@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ENGINE_ONLY,
   plainDigestOf,
@@ -11,6 +11,13 @@ import {
   type PlainWordingRecord,
   type WordedSentence,
 } from '@/lib/plain-wording';
+
+/**
+ * Every project, scope and digest asked for in this browser session: one ask per
+ * project, never again for the same one. Held by the module, not by the hook, so
+ * a view that unmounts and comes back does not ask again.
+ */
+const askedThisSession = new Set<string>();
 
 /**
  * The plain wording of one scope's engine sentences — roadmap 3.0.20, owner
@@ -41,8 +48,6 @@ export function usePlainWording(input: {
   const { projectId, scope, source, sentences, owner, active, modelEnabled, initial = null } = input;
   const [record, setRecord] = useState<PlainWordingRecord | null>(initial);
   const [asking, setAsking] = useState(false);
-  // Every project and digest asked for in this browser session: one per project, never again for the same one.
-  const asked = useRef<Set<string>>(new Set<string>());
 
   const items = useMemo(() => (sentences ? plainItemsOf(sentences) : []), [sentences]);
   const digest = useMemo(() => (source && items.length ? plainDigestOf(scope, source, items) : ''), [scope, source, items]);
@@ -57,7 +62,7 @@ export function usePlainWording(input: {
       setRecord(stored);
       if (!shouldAskPlainWording({ owner, modelEnabled, items: items.length, record: stored, digest })) return;
       // Once per project, scope and digest in this browser, whatever the answer: a refusal is not retried on every render.
-      if (!takeFirstAsk(asked.current, projectId, scope, digest)) return;
+      if (!takeFirstAsk(askedThisSession, projectId, scope, digest)) return;
       setAsking(true);
       const fresh = await client.requestPlainWording(projectId, scope, digest, items);
       if (cancelled) return;

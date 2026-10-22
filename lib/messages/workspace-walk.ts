@@ -16,6 +16,8 @@ export const WORKSPACE_WALK_MESSAGES = {
   'walk.entryLead': 'A short tour on the process map: each part said in plain business words, one step at a time.',
   'walk.entryOpen': 'Walk through the process',
   'walk.preparing': 'Reading the steps out of the code…',
+  'walk.unavailable': 'The tour could not be read in this browser. Close it and open it again.',
+  'walk.mapUnavailable': 'The map could not be drawn in this browser. The card still says each step.',
   'walk.close': 'Close the tour',
   'walk.back': 'Back',
   'walk.next': 'Next',
