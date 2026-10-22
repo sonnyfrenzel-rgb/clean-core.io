@@ -2050,9 +2050,10 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:16.109Z",
-      "status": "zurückgestellt",
+      "status": "behoben",
       "reason": "3.0.1 replaces the target: every project then opens in the workspace instead of on /analyze; until then /analyze shows the report when an analysis exists, and a run requires ownership server-side.",
-      "updatedAt": "2026-09-24T07:21:16.109Z"
+      "updatedAt": "2026-10-22T19:46:12.391Z",
+      "fixedIn": "fd572b4e"
     },
     {
       "id": "UX-154",

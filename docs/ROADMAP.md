@@ -1962,7 +1962,7 @@ source, so they and their audit packs still verify. `tests/source-line-count.spe
 | UX-148 | medium | Invitation without context forces blind acceptance | sofort | fixed |
 | UX-149 | medium | Error boundary shows the raw error message open instead of collapsed | sofort | fixed |
 | UX-152 | medium | Automatic approval runs without a way to cancel | sofort | fixed |
-| UX-153 | medium | Invited readers land on the analysis start | — | deferred |
+| UX-153 | medium | Invited readers land on the analysis start | — | fixed |
 | UX-157 | medium | Approval page: counter-decision only via a second mail link | — | deferred |
 | UX-158 | medium | Invite only as an icon without a visible name, hard to find | 3.0.18 | fixed |
 | UX-159 | medium | Workspace loading shows sighted users an empty page | 3.0.18 | fixed |
