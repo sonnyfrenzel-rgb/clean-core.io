@@ -19,7 +19,7 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.drop': 'Drop files here or choose files',
   'ownCode.choose': 'Choose files',
   'ownCode.dropHelp':
-    'Upload the main program and every include it uses — missing includes stay Not determined.',
+    'Upload the main program and every include it uses, as files or as one ZIP — an abapGit export too. Each include goes where its INCLUDE stands; a missing one stays Not determined.',
   'ownCode.reading': 'Reading the files…',
   'ownCode.checkedNote':
     'Checked in your browser. Nothing has been uploaded or stored yet.',
@@ -33,7 +33,7 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.figRoutines': 'Routines',
   'ownCode.figTablesRead': 'Tables read',
   'ownCode.figTablesWritten': 'Tables written',
-  'ownCode.notDeterminedLead': 'Named in the code, not uploaded:',
+  'ownCode.notDeterminedLead': 'Named in the code, not uploaded — the analysis lists them as not read:',
   'ownCode.paidLegend': 'How this analysis is paid',
   'ownCode.payOwnKey': 'Runs on your own Gemini key',
   'ownCode.payOwnKeyOn': 'No limit and not counted against the free runs. Change the key in',
@@ -152,6 +152,8 @@ export function ownCodeIssueText(issue: OwnCodeIssue): string {
       return 'No ABAP source in this ZIP. Remove it.';
     case 'zip-skipped':
       return `Not read — not ABAP source: ${list(issue.names)}.`;
+    case 'zip-abapgit-metadata':
+      return `abapGit description files not read (${issue.count}): they describe the objects, the .abap files hold the code that is analysed.`;
     case 'second-program':
       return `${issue.object} is a second program besides ${issue.main}. One project holds one program with its includes — remove one.`;
     case 'not-referenced':

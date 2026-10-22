@@ -70,7 +70,7 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
           <p className="mt-1 text-[12px] font-medium text-cc-ink-muted">
             {element.kind}
             {element.businessName ? ` · ${element.technicalName}` : ''}
-            {element.anchor ? ` · ${codeCardLabel(fileName, element.anchor)}` : ''}
+            {element.anchor ? ` · ${codeCardLabel(fileName, element.anchor, source)}` : ''}
           </p>
         </div>
         <span className="flex shrink-0 items-center gap-2">
@@ -82,7 +82,7 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
       </div>
 
       {element.anchor ? (
-        <CcCodeSurface lines={lines} label={codeCardLabel(fileName, element.anchor)} />
+        <CcCodeSurface lines={lines} label={codeCardLabel(fileName, element.anchor, source)} />
       ) : (
         <p data-process-code-card-unanchored="" className="text-[13px] font-medium text-cc-ink-muted">
           <b className="font-semibold text-cc-ink">{element.evidenceLabel}.</b>{' '}

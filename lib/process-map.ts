@@ -1,6 +1,7 @@
 import { CC_NAMESPACE, type BpmnExport } from './bpmn/export';
 import { UNANCHORED, type NamedProcess, type NamingState } from './process-naming';
 import { isProvenanceValue, provenance, type ProvenanceValue } from './provenance';
+import { locateSourceLine, readIncludeAnchors } from './abap/include-resolution';
 
 /**
  * The reading view of the reconstructed process — roadmap 2.5.
@@ -854,11 +855,42 @@ export function codeCardLines(
   return out;
 }
 
-/** "Z_MM_PO_CHECK, lines 405 to 415" — the label of a code card. */
-export function codeCardLabel(fileName: string, anchor: { lineStart: number; lineEnd: number }): string {
-  return anchor.lineStart === anchor.lineEnd
-    ? `${fileName}, line ${anchor.lineStart}`
-    : `${fileName}, lines ${anchor.lineStart} to ${anchor.lineEnd}`;
+/**
+ * "Z_MM_PO_CHECK, lines 405 to 415" — the label of a code card.
+ *
+ * With the `source` the anchor counts in, a line that stands in an include the
+ * program was uploaded with says so as well: "Z_DEMO_MAIN, line 120 — include
+ * Z_DEMO_F01 (Z_DEMO_F01.abap), line 3". The anchor's own number stays first,
+ * because every other anchor on the screen counts in the analysed source; the
+ * include's line is where the reader finds it in the file they uploaded
+ * (`lib/abap/include-resolution.ts`). A single file reads as it always did.
+ */
+export function codeCardLabel(fileName: string, anchor: { lineStart: number; lineEnd: number }, source?: string): string {
+  const own =
+    anchor.lineStart === anchor.lineEnd
+      ? `${fileName}, line ${anchor.lineStart}`
+      : `${fileName}, lines ${anchor.lineStart} to ${anchor.lineEnd}`;
+  const where = source ? includeLocationLabel(source, anchor) : null;
+  return where ? `${own} — ${where}` : own;
+}
+
+/**
+ * Where an anchor of a joined source stands in the include it came from — "include
+ * Z_DEMO_F01 (Z_DEMO_F01.abap), lines 3 to 5" — or null when the source is one file,
+ * the lines stand in the main program, or the range crosses from one file into
+ * another (then the analysed source's numbers are the only honest ones).
+ */
+export function includeLocationLabel(source: string, anchor: { lineStart: number; lineEnd: number }): string | null {
+  const map = readIncludeAnchors(source);
+  if (!map.joined) return null;
+  const first = locateSourceLine(map, anchor.lineStart);
+  const last = locateSourceLine(map, anchor.lineEnd);
+  if (!first || !last || first.object === null || first.object !== last.object) return null;
+  if (first.marker || last.marker) return null;
+  const file = first.file && first.file.split('/').pop() !== first.object ? ` (${first.file.split('/').pop()})` : '';
+  return first.line === last.line
+    ? `include ${first.object}${file}, line ${first.line}`
+    : `include ${first.object}${file}, lines ${first.line} to ${last.line}`;
 }
 
 /* ------------------------------------------------------------------ *

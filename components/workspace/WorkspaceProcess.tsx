@@ -597,7 +597,7 @@ export default function WorkspaceProcess({
                   <div className={fullSource ? 'max-h-112 overflow-y-auto' : undefined}>
                     <CcCodeSurface
                       lines={lines}
-                      label={marked ? codeCardLabel(signed.fileName, marked) : signed.fileName}
+                      label={marked ? codeCardLabel(signed.fileName, marked, signed.source) : signed.fileName}
                     />
                   </div>
                 ) : (
