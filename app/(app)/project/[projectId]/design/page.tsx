@@ -1067,7 +1067,14 @@ ${DESIGN_ANSWER_REMINDER}`;
         // Without a design the empty state below carries "Try again"; one
         // button for one action.
         design && designAvailable && isOwner ? (
-          <CcButton variant="secondary" icon={<RefreshCw size={16} aria-hidden={true} />} busy={generating} onClick={regenerate}>
+          <CcButton
+            variant="secondary"
+            icon={<RefreshCw size={16} aria-hidden={true} />}
+            busy={generating}
+            disabled={!designWriteEnabled(writeGate)}
+            aria-describedby={writeGate.kind === 'ready' ? undefined : 'design-regenerate-reason'}
+            onClick={regenerate}
+          >
             Try again
           </CcButton>
         ) : undefined
@@ -1317,12 +1324,27 @@ A design merely older than the analysis is
                   variant="ghost"
                   icon={<RefreshCw size={16} aria-hidden={true} />}
                   busy={generating}
-                  disabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
+                  disabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null || !designWriteEnabled(writeGate)}
+                  aria-describedby={writeGate.kind === 'ready' ? undefined : 'design-regenerate-reason'}
                   data-design-regenerate=""
                   onClick={askRegenerate}
                 >
                   Regenerate
                 </CcButton>
+                {/* Regenerate waits for the business answers like the first write does; the reason
+                    stands beside it, and the design can still be rewritten without the open ones. */}
+                {writeGate.kind !== 'ready' && isOwner && designAvailable ? (
+                  <span data-design-regenerate-gate={writeGate.kind} className="flex flex-wrap items-center gap-2">
+                    <span id="design-regenerate-reason" data-design-regenerate-reason="" className="text-[13px] font-medium text-cc-ink-muted">
+                      {writeGate.kind === 'open' ? designOpenQuestions(writeGate.open) : wt('design.readingQuestions')}
+                    </span>
+                    {writeGate.kind === 'open' ? (
+                      <CcButton variant="ghost" busy={generating} disabled={stale.sourceChanged || elsewhereSince !== null} onClick={askRegenerate} data-design-regenerate-without="">
+                        {wt('design.regenerateWithoutOpen')}
+                      </CcButton>
+                    ) : null}
+                  </span>
+                ) : null}
                 <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
                   View HTML
                 </CcButton>

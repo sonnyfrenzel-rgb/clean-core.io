@@ -327,3 +327,14 @@ test.describe('5. “Every question has an answer.” is said once', () => {
     }
   });
 });
+
+test('Regenerate and Try again wait for the business answers like the first write (owner decision 22.10.2026)', () => {
+  const page = read('app/(app)/project/[projectId]/design/page.tsx');
+  const regen = page.slice(page.indexOf('data-design-regenerate=""') - 600, page.indexOf('data-design-regenerate=""'));
+  expect(regen).toContain('!designWriteEnabled(writeGate)');
+  expect(page).toContain('data-design-regenerate-reason=""');
+  expect(page).toContain("wt('design.regenerateWithoutOpen')");
+  const retry = page.slice(page.indexOf('const designErrorStrip'), page.indexOf('</CcMessageStrip>', page.indexOf('const designErrorStrip')));
+  expect(retry).toContain('disabled={!designWriteEnabled(writeGate)}');
+  expect(wt('design.regenerateWithoutOpen')).toBe('Regenerate without the open answers');
+});
