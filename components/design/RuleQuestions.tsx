@@ -208,7 +208,7 @@ function QuestionCard({ state, explained, rules, owner, busy, onRecord, onCancel
                 {ANSWER_ICON[answer]}
                 {wt(ANSWER_LABEL[answer])}
                 {recommended?.answer === answer ? (
-                  <span data-question-recommended-label="" className="ml-1 rounded-full border border-current px-1.5 text-[10px] leading-4 font-bold tracking-[0.04em] uppercase">
+                  <span data-question-recommended-label="" className="ml-1 rounded-full border border-current px-2 text-[11px] leading-4 font-bold tracking-[0.04em] uppercase">
                     {wt('questions.recommended')}
                   </span>
                 ) : null}

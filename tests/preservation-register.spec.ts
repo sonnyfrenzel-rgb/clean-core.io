@@ -944,10 +944,15 @@ test.describe('the register matches the code', () => {
     expect(limit('L-05').subject).toBe('economics');
     expect(sorted(withoutNotice)).toEqual(['tco']);
 
-    // L-06: design still has no blocker target and still generates by itself.
-    expect(limit('L-06').subject).toBe('design');
-    expect(register.stages.find((s) => s.key === 'design')!.preconditions.generationBlockersTarget).toBeNull();
-    expect(src('app/(app)/project/[projectId]/design/page.tsx')).toContain('generateDesignRef.current(');
+    // L-06: resolved in 3.0.20 (owner decision 22.10.2026) — opening Design writes nothing; the
+    // design is written on a click once the business questions are answered.
+    const l06 = register.knownLimits.find((l) => l.id === 'L-06') as { subject: string; status?: string; resolved?: { step?: string } };
+    expect(l06.subject).toBe('design');
+    expect(l06.status).toBe('resolved');
+    expect(l06.resolved?.step).toBe('3.0.20');
+    const designPage = src('app/(app)/project/[projectId]/design/page.tsx');
+    expect(designPage, 'Design generates by itself on opening again — L-06 is back').not.toContain('generateDesignRef.current(');
+    expect(designPage).toContain('designWriteEnabled(writeGate)');
 
     // L-07: the run still carries a status that wins over the project's.
     expect(limit('L-07').subject).toBe('hydration');

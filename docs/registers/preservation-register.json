@@ -358,7 +358,14 @@
             "evidence": "link={{ base: `/project/${projectId}`, view, from: compact ? WORKSPACE_RETURN.headTools : WORKSPACE_RETURN.tools, layer }}"
           }
         ],
-        "note": "The workspace generates nothing; opening the Design tool still generates by itself."
+        "note": "The workspace generates nothing, and neither does opening the Design tool."
+      },
+      "status": "resolved",
+      "resolved": {
+        "at": "2026-10-22",
+        "step": "3.0.20",
+        "decision": "Owner decision 22.10.2026 (ADR-102, amends ADR-070)",
+        "how": "Opening Design writes nothing. The business questions come first; Generate the design, Regenerate and Try again are enabled once every business question has an answer (designWriteGate, lib/design-business-answers.ts), and Write it / Regenerate without the open answers writes it with those questions named as open. The answers flow into the design prompt, and a change of an answer after the design marks it as needing regeneration."
       }
     },
     {
@@ -1263,7 +1270,10 @@
           {
             "field": "testSuite",
             "locator": "[data-stage-output=\"testSuite\"]",
-            "opensWith": ["Run output and module code", "View Module Code"],
+            "opensWith": [
+              "Run output and module code",
+              "View Module Code"
+            ],
             "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as one guided flow, owner 02.10.2026)"
           },
           {
