@@ -113,7 +113,8 @@ test.describe('the landing page and the whitepaper', () => {
   test('the no-training line carries the free-tier caveat (cc161722d461)', () => {
     expect(code('app/page.tsx')).not.toMatch(/\(not used by Google to train its models, per the Gemini API terms\)/);
     const claims = code('lib/trust-claims.ts');
-    expect(claims).toMatch(/With our community key, Google does not use your code to train its models — the paid Gemini API terms apply\. With your own key, your Google account's terms apply\./);
+    // Fassung 1.1 (3.0.21): an own key may be Google's or Anthropic's, so the caveat names the key's provider.
+    expect(claims).toMatch(/With our community key, Google does not use your code to train its models — the paid Gemini API terms apply\. With your own key, the terms of your own account with that key's provider apply\./);
   });
 
   test('the whitepaper describes the route and the table access it really has (55f3dd4a7152, e6f754593747)', () => {
@@ -125,19 +126,21 @@ test.describe('the landing page and the whitepaper', () => {
 
 test.describe('the legal pages', () => {
   test('the privacy policy names every model-written purpose, in both languages (8d820e6a9ed8)', () => {
-    expect(code('app/datenschutz/page.tsx')).not.toMatch(/exclusively for code transformation/);
-    expect(code('app/datenschutz/de/page.tsx')).not.toMatch(/ausschließlich für die Code-Transformation/);
-    expect(code('app/datenschutz/page.tsx')).toMatch(/test suite/);
-    expect(code('app/datenschutz/de/page.tsx')).toMatch(/Testsuite/);
+    // Since Fassung 1.1 (3.0.21) the words are in lib/legal/texts/privacy.{en,de}.ts.
+    expect(code('lib/legal/texts/privacy.en.ts')).not.toMatch(/exclusively for code transformation/);
+    expect(code('lib/legal/texts/privacy.de.ts')).not.toMatch(/ausschließlich für die Code-Transformation/);
+    expect(code('lib/legal/texts/privacy.en.ts')).toMatch(/test suite/);
+    expect(code('lib/legal/texts/privacy.de.ts')).toMatch(/Testsuite/);
   });
 
   test('the German privacy policy declares its language (89a6cbdb1464)', () => {
+    // Since Fassung 1.1 (3.0.21) the page hands lang="de" to the legal frame,
+    // which puts it on both elements it renders: the language switch and the text.
     const src = code('app/datenschutz/de/page.tsx');
-    const ret = src.slice(src.indexOf('return ('));
-    // Since D.25 the page renders a fragment (the public header is the layout's),
-    // so both elements it renders carry lang="de": the language switch and the text.
-    expect(ret).toMatch(/^return \(\s*<>\s*<nav lang="de"/);
-    expect(ret).toMatch(/<main lang="de"/);
+    expect(src).toMatch(/<LegalPage\s+lang="de"/);
+    const frame = code('components/legal/LegalPage.tsx');
+    expect(frame).toMatch(/<nav\s+lang=\{lang\}/);
+    expect(frame).toMatch(/<main lang=\{lang\}/);
   });
 
   test('the legal notice cites § 5 DDG everywhere, the social card included (d850ec1847d3)', () => {

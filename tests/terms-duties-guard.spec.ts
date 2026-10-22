@@ -2,6 +2,8 @@ import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { TERMS_VERSION } from '../lib/constants';
+import { archivedTerms } from '../lib/terms-versions';
+import { renderOpenValue } from '../lib/legal/open-values';
 
 /**
  * The two rules the Terms took on after the legal review of 18.09.2026.
@@ -39,7 +41,8 @@ import { TERMS_VERSION } from '../lib/constants';
  * (`lib/trust-claims.ts`).
  */
 
-const TERMS = 'app/terms/page.tsx';
+// Since Fassung 1.1 (3.0.21) the Terms' words are in lib/legal/texts/terms.en.ts.
+const TERMS = 'lib/legal/texts/terms.en.ts';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
@@ -50,7 +53,9 @@ function prose(rel: string): string {
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
       .replace(/\/\*[\s\S]*?\*\//g, ' ')
       .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
-      .replace(/<[^<>]*>/g, ' '),
+      .replace(/<[^<>]*>/g, ' ')
+      // the legal-text markup's emphasis (lib/legal/markup.ts)
+      .replace(/\*\*/g, ''),
   );
 }
 
@@ -82,26 +87,35 @@ const REQUIRED: { what: string; needle: string }[] = [
     what: 'we do not check age, and what happens when we are told',
     needle: 'we will delete an account on notice that it belongs to someone younger',
   },
+  // Wording of Terms v2.3.0 (Fassung 1.1, 3.0.21). The lawyer-side review
+  // replaced "there is no contract under which the operator could be your
+  // processor" by a role derived from who decides purposes and means (Ä01), and
+  // the masking the platform does in documentation and exports is described as
+  // an aid, not an agreed characteristic (E18, owner decision B1: variant A).
   {
     what: 'personal data of third parties may not be uploaded',
-    needle: 'Do not submit personal data of third parties to the Platform in any form',
+    needle: 'Do not submit any personal data of third parties to the Platform',
   },
   {
     what: 'there is no processing agreement under Art. 28 GDPR',
-    needle: 'does not offer a data processing agreement under Art. 28 GDPR',
+    needle: 'the operator does not offer and does not conclude a data processing agreement under Art. 28 GDPR',
   },
   {
-    what: 'and none will be concluded on request either',
-    needle: 'there is no contract under which the operator could act as your processor',
+    what: 'and the operator processes nobody\'s content on their instructions',
+    needle: 'Clean-Core.io does not process your content on behalf of and under the instructions of others',
   },
   {
     what: 'the prohibition is a rule, not a control the Platform exercises',
     needle: 'This is a rule we ask you to keep, not a control we exercise',
   },
   {
-    what: 'nothing in the product inspects an upload for personal data',
+    what: 'nothing in the product checks an upload for personal data',
     needle:
-      'The Platform does not detect, screen, filter or block personal data in an upload, and nothing in it checks whether you have stripped anything',
+      'it does not recognise names, user ids or numbers without a fixed pattern, and nothing in it checks whether you have cleaned your code',
+  },
+  {
+    what: 'the masking is an aid, not a promise',
+    needle: 'The masking is an aid, not an agreed characteristic of the Platform',
   },
 ];
 
@@ -109,7 +123,7 @@ const REQUIRED: { what: string; needle: string }[] = [
 const EXAMPLES = [
   /developer user IDs/i,
   /names of colleagues or customers in comments/i,
-  /customer, vendor or employee numbers/i,
+  /customer, vendor or (?:employee|personnel) numbers/i,
   /production records pasted in as test data/i,
 ];
 
@@ -170,7 +184,7 @@ test.describe('the Terms carry the two rules decided on 18.09.2026', () => {
 test.describe('the document still points at its own sections', () => {
   /** The numbers of the numbered `h2` headings, in the order they appear. */
   function sectionNumbers(): number[] {
-    return [...read(TERMS).matchAll(/<h2[^>]*>\s*(\d+)\.\s/g)].map((m) => Number(m[1]));
+    return [...read(TERMS).matchAll(/^## (\d+)\.\s/gm)].map((m) => Number(m[1]));
   }
 
   test('the sections are numbered 1..n, with no gap and no repetition', () => {
@@ -192,7 +206,7 @@ test.describe('the document still points at its own sections', () => {
     // The two the trust card names by number (`lib/trust-claims.ts`): §5 is the
     // third-party AI section, §8 is the one about your content. If either moves,
     // the card on the upload screen sends the reader to the wrong place.
-    const headings = [...read(TERMS).matchAll(/<h2[^>]*>\s*(\d+)\.\s([^<]+)</g)].map((m) => [m[1], m[2].trim()]);
+    const headings = [...read(TERMS).matchAll(/^## (\d+)\.\s(.+)$/gm)].map((m) => [m[1], m[2].trim()]);
     expect(headings.find(([n]) => n === '5')?.[1]).toMatch(/Third-Party AI/i);
     expect(headings.find(([n]) => n === '8')?.[1]).toMatch(/Your Content/i);
   });
@@ -229,12 +243,12 @@ test.describe('and a reader opening the page finds them', () => {
     expect(
       rendered,
       'the effective version a reader sees is not the one the gate compares against',
-    ).toContain(normalise('effective 3 October 2026 (v2.2.0)'));
+    ).toContain(normalise(`effective ${renderOpenValue('releaseDate', 'en')} (v2.3.0)`));
     // On the authoritative line itself, not anywhere on the page: the archive
     // list further down also says "effective …" for every earlier version
     // (carried QA finding a76871dd992d).
-    await expect(page.getByText(/Consolidated version — effective/)).toContainText('effective 3 October 2026 (v2.2.0)');
-    expect(TERMS_VERSION).toBe('2026-10-03');
+    await expect(page.getByText(/Consolidated version — effective/)).toContainText(`effective ${renderOpenValue('releaseDate', 'en')} (v2.3.0)`);
+    expect(archivedTerms(TERMS_VERSION)?.label).toBe('v2.3.0');
     // And the two clauses that version was raised for, on the same page.
     expect(rendered).toContain(normalise('at least 18 years old'));
     expect(rendered).toContain(normalise('Do not submit personal data of third parties'));
@@ -251,28 +265,25 @@ test.describe('and a reader opening the page finds them', () => {
  * version in the prose, the constant the gate reads, and the substance.
  */
 test('the effective version, the constant and the new obligations are one change', () => {
-  const terms = fs.readFileSync(path.resolve(__dirname, '..', 'app', 'terms', 'page.tsx'), 'utf8');
+  const terms = read(TERMS);
 
   // The document states a version of its own, and it is the one the gate uses.
-  expect(terms, 'the Terms no longer state an effective version').toMatch(
-    /effective\s+3\s+October\s+2026\s+\(v2\.2\.0\)/,
-  );
-  expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-10-03');
+  // v2.3.0 (Fassung 1.1): its effective date is the release date, an open value
+  // until the owner sets it (lib/legal/open-values.ts).
+  expect(terms, 'the Terms no longer state an effective version').toMatch(/effective \{\{releaseDate\}\} \(v2\.3\.0\)/);
+  expect(archivedTerms(TERMS_VERSION)?.label, 'the constant and the document disagree about which version is current').toBe('v2.3.0');
 
-  // And the substance that version exists for.
-  expect(terms, 'the version moved without the age rule it was raised for').toMatch(/at least 18 years old/);
-  expect(terms, 'the version moved without the personal-data prohibition').toMatch(
-    /Do not submit personal data of third parties/,
-  );
+  // And the substance the earlier versions were raised for, still there.
+  expect(terms, 'the version moved without the age rule').toMatch(/at least 18 years old/);
+  expect(terms, 'the version moved without the personal-data prohibition').toMatch(/Do not submit any personal data of third parties/);
   expect(terms, 'the version moved without the Art. 28 statement').toMatch(/data processing agreement under Art\. 28 GDPR/);
-  // v2.2.0 (QA 6b83ef361e80): section 4.1 separates what the engine computes
-  // from what a model writes. A bump without that separation would ask every
-  // account to re-accept the sentence the QA review found untrue.
-  expect(terms, 'v2.2.0 without the deterministic half of section 4.1').toMatch(
-    /<em>Deterministic results<\/em>[\s\S]*?without a\s+generative AI model/,
-  );
-  expect(terms, 'v2.2.0 without the model-generated half of section 4.1').toMatch(/<em>Model-generated output<\/em>/);
+  expect(terms, 'section 4.1 lost its deterministic half').toMatch(/\(a\) Deterministic results[\s\S]*?without a generative AI model/);
+  expect(terms, 'section 4.1 lost its model-generated half').toMatch(/\(b\) Model-generated output/);
   expect(terms, 'section 4.1 still attributes the analyses to generative AI').not.toMatch(
     /Modernization analyses and source code\s+are generated automatically by generative AI models/,
   );
+  // And what v2.3.0 itself was raised for.
+  expect(terms, 'v2.3.0 without section 13 on termination instead of withdrawal').toMatch(/There is no statutory right of withdrawal/);
+  expect(terms, 'v2.3.0 without the Additional Agreement for an own Anthropic key').toMatch(/Additional Agreement on Own Model Keys/);
+  expect(terms, 'v2.3.0 without the contract language clause').toMatch(/The contract can be concluded in German or English/);
 });

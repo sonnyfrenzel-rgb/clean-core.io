@@ -28,11 +28,7 @@ const MAILS = [
     name: 'admin-signup',
     build: () =>
       buildAdminSignupEmail({
-        name: 'Sonny Frenzel',
-        email: 'a-fairly-long-address@some-customer-domain.example.com',
         uid: 'kJ3nQ8vXpZbR2yTfLm9cWd0aHs41',
-        motivation:
-          'Testing the new registration flow — we have roughly 900 custom ABAP objects to move off the core before the next upgrade.',
         authMethod: 'Email / password',
         termsVersion: '2026-07-07',
         signedUpAt: '2026-08-27 09:00:00 UTC',

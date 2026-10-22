@@ -14,7 +14,7 @@ import { normaliseEmail, suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
 import { erasePortfolioOf } from './portfolio/erasure';
-import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-email';
+import { ADMIN_SIGNUP_MAIL_KIND, legacyAdminSignupSubject } from './admin-signup-email';
 import { quotaSpentSentence } from './run-quota-rule';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
@@ -1142,7 +1142,7 @@ export async function deleteUserDataAndAccount(
   //     touched; another account registered under the identical name loses its
   //     notification record too, which names nobody but that name.
   if (signupName) {
-    const q = db.collection('email_events').where('subject', '==', buildAdminSignupSubject(signupName));
+    const q = db.collection('email_events').where('subject', '==', legacyAdminSignupSubject(signupName));
     await tryDelete('email_events', async () => {
       const snapshot = await q.get();
       const refs = snapshot.docs

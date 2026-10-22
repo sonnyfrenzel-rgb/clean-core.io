@@ -145,11 +145,10 @@ export async function POST(request: NextRequest) {
     const recipient = escapeHtml(rawEmail);
     const welcomeHtml = wrapEmailDocument(buildWelcomeEmail({ name, recipient }));
     const adminHtml = wrapEmailDocument(
+      // Account id, sign-in method, Terms version and time — no name, no
+      // address, no motivation (privacy policy section 2, `lib/admin-signup-email.ts`).
       buildAdminSignupEmail({
-        name,
-        email: recipient,
         uid: escapeHtml(uid),
-        motivation: escapeHtml(motivationRaw),
         authMethod: profile.authMethod === 'password' ? 'Email / password' : 'Google',
         termsVersion,
         signedUpAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
@@ -171,7 +170,7 @@ export async function POST(request: NextRequest) {
       await sendMail(resendApiKey, {
         from: 'Clean-Core <system@clean-core.io>',
         to: CONTACT_EMAIL,
-        subject: buildAdminSignupSubject(rawName),
+        subject: buildAdminSignupSubject(uid),
         html: adminHtml,
         label: ADMIN_SIGNUP_MAIL_KIND,
         // Not for the mirror — the kind keeps it off the person's row — but

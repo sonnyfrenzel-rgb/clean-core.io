@@ -88,15 +88,16 @@ test.describe('no run-wide flag can declare a query verified', () => {
 });
 
 test.describe('the public text claims what it can support', () => {
+  // Since Fassung 1.1 (3.0.21) the policy's words are in lib/legal/texts/privacy.en.ts.
   test('the privacy policy names the email and password path', () => {
-    const jsx = rendered('app/datenschutz/page.tsx');
+    const jsx = read('lib/legal/texts/privacy.en.ts');
     // §3 described only Google Sign-In, although the second path has always
     // existed and processes data.
     expect(jsx).toMatch(/Email and password/i);
   });
 
   test('and carries the free-tier caveat the whitepaper already had', () => {
-    const jsx = rendered('app/datenschutz/page.tsx');
+    const jsx = read('lib/legal/texts/privacy.en.ts');
     // The whitepaper's "Honest boundary" box said free-tier terms differ. The
     // privacy policy — the document that actually governs — said only
     // "applicable terms".

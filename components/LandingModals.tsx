@@ -44,6 +44,14 @@ import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import dynamic from 'next/dynamic';
+import { PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+
+/** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
+const LegalOverlayBody = dynamic(() => import('@/components/legal/LegalOverlayBody'), {
+  ssr: false,
+  loading: () => <p className="m-0 text-sm text-cc-ink-muted">Loading the text&hellip;</p>,
+});
 
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'mfa' | 'success';
 
@@ -980,49 +988,28 @@ export default function LandingModals() {
                 </CcField>
               </div>
 
-              {/* Legal consent checkboxes (required for registration) */}
+              {/* Legal consent (required for registration) — C1 of the legal texts,
+                  Fassung 1.1, the same words as the onboarding dialog. */}
               <div className="space-y-2 border-t border-cc-line pt-3">
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="above">{signupNoticeAbove()}</p>
                 <CcCheckbox
                   checked={agreedGDPR}
                   onChange={setAgreedGDPR}
                   required
-                  label={
-                    <>
-                      I agree to the{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                        className={INLINE_LINK}
-                      >
-                        GDPR provisions and Privacy Policy
-                      </button>{' '}
-                      and understand this is a Free Community Edition.
-                    </>
-                  }
+                  label={<PrivacyConsentLabel onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />}
                 />
                 <CcCheckbox
                   checked={agreedTerms}
                   onChange={setAgreedTerms}
                   required
-                  label={
-                    <>
-                      I accept the{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setShowTermsOverlay(true); }}
-                        className={INLINE_LINK}
-                      >
-                        Terms of Service and Guidelines
-                      </button>
-                      .
-                    </>
-                  }
+                  label={<TermsConsentLabel onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
                 />
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below">{signupNoticeBelow(email.trim() || null)}</p>
               </div>
 
               {/* The disclaimer states the fact and drops the label (§3.1 has no
                   "powered by Generative AI" and no symbol for it). The fact is
-                  the one section 4.1 of Terms v2.2.0 states: findings,
+                  the one section 4.1 of Terms v2.3.0 states: findings,
                   route and score are the deterministic engine's, and only the
                   model steps are written by a language model — which an account
                   can switch off. Kept in step with the Terms
@@ -1270,165 +1257,17 @@ export default function LandingModals() {
         </div>
       </LegalOverlay>
 
-      <LegalOverlay isOpen={legalParam === 'privacy'} onClose={() => updateQueryParams('legal', null)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-cc-ink">
-          <div>
-            <h3 className={LEGAL_H3}>1. Privacy at a Glance</h3>
-            <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
-            </p>
-            <p className="text-xs text-cc-ink-muted">
-              <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>2. Data Collection & Processing Purposes</h3>
-            <p className="text-sm leading-relaxed mb-3">
-              We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
-              <li>
-                <strong>Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
-              </li>
-              <li>
-                <strong>Email and password (Firebase Auth):</strong> You can also register with an email address and a password instead of using Google. In that case we process the email address and the first and last name you enter. The password itself is handled by Firebase Authentication and is never visible to us.
-              </li>
-              <li>
-                <strong>Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database.
-              </li>
-              <li>
-                <strong>Bring Your Own Key (BYOK):</strong> If you configure your own Google Gemini API key in the settings, this key is encrypted and stored in our secure Firestore instance. It is used exclusively to forward your transformation requests directly via a secure backend proxy to the Gemini API, never exposing your key to the browser.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>3. Processing of Source Code & Project Assets</h3>
-            <p className="text-sm leading-relaxed">
-              The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
-            </p>
-            <p className="text-xs text-cc-ink-muted mt-2">
-              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Which of Google&apos;s data-use terms apply depends on the key that makes the request. The shared community key is a paid Gemini API key, so the paid Gemini API terms govern every request made with it: Google does not use your code to train its models. When you use your own key (BYOK), the terms of your own Google account apply — a key on Google&apos;s free tier is governed by Google&apos;s free-tier data-use terms, which differ.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>4. Cloud Node Hosting & Third-Party Services</h3>
-            <p className="text-sm leading-relaxed">
-              To provide this service, we rely on the following trusted cloud services:
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
-              <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
-              </li>
-              <li>
-                <strong>Google Gemini API:</strong> Generative AI models for the model-written parts of the service — the analysis narrative, business names and sentences for the process reconstructed from the code, the solution design, the code proposal, the documentation and the test suite — via secure stateless proxy layers. The findings, the route and the Clean Core Score are computed without a model.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
-            <p className="text-sm leading-relaxed mb-2">
-              Since our platform is hosted in compliance with EU regulations, you have all rights under the General Data Protection Regulation (GDPR):
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
-              <li>Right of Access (Art. 15 GDPR)</li>
-              <li>Right to Rectification (Art. 16 GDPR)</li>
-              <li>Right to Erasure / "Right to be Forgotten" (Art. 17 GDPR)</li>
-              <li>Right to Restriction of Processing (Art. 18 GDPR)</li>
-              <li>Right to Data Portability (Art. 20 GDPR)</li>
-              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
-            </ul>
-            <p className="text-xs text-cc-ink-muted mt-2">
-              To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries, including every project and the source code in it. Residual copies in encrypted backups age out within 30 days, and the record of administrative actions on an account is kept for 24 months; the full privacy policy at clean-core.io/datenschutz says what else deletion does not reach. Alternatively, contact us at <strong>info@clean-core.io</strong>.
-            </p>
-          </div>
-        </div>
+      <LegalOverlay isOpen={legalParam === 'privacy'} onClose={() => updateQueryParams('legal', null)} title="Privacy Policy">
+        <LegalOverlayBody id="privacy" />
       </LegalOverlay>
 
-      {/* Signup-specific GDPR overlay */}
-      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-cc-ink">
-          <div>
-            <h3 className={LEGAL_H3}>1. Privacy at a Glance</h3>
-            <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
-            </p>
-            <p className="text-xs text-cc-ink-muted">
-              <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>2. Data Collection & Processing</h3>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
-              <li><strong>Google Authentication (Firebase Auth):</strong> Your name, email, and profile picture are used to authenticate your session.</li>
-              <li><strong>Email and password (Firebase Auth):</strong> If you register with an email address instead, we process that address and the name you enter; the password is handled by Firebase Authentication and is never visible to us.</li>
-              <li><strong>Firestore User Profiles:</strong> We store metadata about your usage (transformation count, system limits, name) in our secure database.</li>
-              <li><strong>BYOK (Bring Your Own Key):</strong> If configured, your Gemini API key is AES-256-GCM encrypted and never exposed to the browser.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>3. Source Code Processing</h3>
-            <p className="text-sm leading-relaxed">
-              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). For AI-driven modernization, source code is transmitted over encrypted channels to the Google Gemini API. We do not retain it outside your project, and we do not use it to train models; Google&apos;s handling of API data is governed by their applicable API terms.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>4. Your GDPR Rights</h3>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
-              <li>Right of Access (Art. 15 GDPR)</li>
-              <li>Right to Rectification (Art. 16 GDPR)</li>
-              <li>Right to Erasure / &quot;Right to be Forgotten&quot; (Art. 17 GDPR)</li>
-              <li>Right to Data Portability (Art. 20 GDPR)</li>
-              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
-            </ul>
-            <p className="text-xs text-cc-ink-muted mt-2">
-              To exercise these rights, use account deletion in Profile Settings or contact <strong>info@clean-core.io</strong>.
-            </p>
-          </div>
-        </div>
+      {/* The texts the sign-up consent links to, in full. */}
+      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy">
+        <LegalOverlayBody id="privacy" />
       </LegalOverlay>
 
-      {/* Signup-specific Terms overlay */}
-      <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Guidelines">
-        <div className="space-y-6 text-cc-ink">
-          <CcMessageStrip state="information">
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>
-              This is a short summary. Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms ↗
-            </a>
-          </CcMessageStrip>
-          <div>
-            <h3 className={LEGAL_H3}>1. Scope and Purpose</h3>
-            <p className="text-sm leading-relaxed">
-              This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native). By participating, you help shape and improve this community utility.
-            </p>
-          </div>
-          <div>
-            <h3 className={LEGAL_H3}>2. Free Community Edition Usage</h3>
-            <CcMessageStrip state="warning">
-              Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code and evidence are drafts — review, test and approve them with qualified architects before any productive use.
-            </CcMessageStrip>
-          </div>
-          <div>
-            <h3 className={LEGAL_H3}>3. What is computed, and what is generated</h3>
-            <p className="text-sm leading-relaxed">
-              The findings, the route, the Clean Core Score, the clean core levels and the process reconstructed from your code are computed by a deterministic engine, without a language model. They are evidence, not a guarantee. Summaries, the solution design, generated code, documentation and test suites are written by a language model where you use those steps. All of it is a draft and must be verified by qualified software architects before deployment. Liability is set out in section 4 of the Terms.
-            </p>
-          </div>
-          <div>
-            <h3 className={LEGAL_H3}>4. Code of Conduct</h3>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
-              <li>Do not upload malicious software, illegal scripts, or IP-violating source code.</li>
-              <li>Maintain a respectful, professional tone in community spaces.</li>
-              <li>Report system issues to help refine the engine.</li>
-            </ul>
-          </div>
-        </div>
+            <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Community Guidelines">
+        <LegalOverlayBody id="terms" />
       </LegalOverlay>
     </>
   );
