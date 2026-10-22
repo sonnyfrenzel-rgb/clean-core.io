@@ -66,10 +66,18 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.inShortTitle': 'In short',
   'biz.inShortProposalNote': 'purpose',
   'biz.inShortEngine': 'Read from the code:',
-  'biz.storyLead': 'What the program does, in the order of the code. Each step with the line it was read from.',
+  // First insights in at most five blocks, one screen (roadmap 3.0.21, owner decisions 22.10.2026).
+  'biz.firstLookLead': 'What this program does, read from its code. For understanding — nothing to decide here.',
+  'biz.startedBy': 'Started by',
+  'biz.goesIn': 'Goes in',
+  'biz.comesOut': 'Comes out',
+  'biz.stepsTitle': 'Step by step',
+  'biz.stepsDetailTitle': 'What each step checks, and where it can end',
+  'biz.stepsDetailNone': 'No step checks anything a business reader decides on.',
+  'biz.toDocumentation': 'In Documentation',
+  'biz.toItView': 'In the IT view',
   'biz.storyNamesNote': 'names',
   'biz.storyNone': 'The steps of this program could not be read from the source. The map below shows what could be drawn.',
-  'biz.testDataTitle': 'Test data switch — not part of the business process',
   'biz.decidesTitle': 'What it decides',
   'biz.decidesNone': 'No value is hard-coded as a rule in this program.',
   'biz.changesTitle': 'What it changes',
@@ -174,6 +182,18 @@ export function bizTestData(cases: number): string {
 /** The technical settings among the rules, counted — "What it decides" lists business rules only (3.0.20). */
 export function bizTechnicalSettings(n: number): string {
   return `Technical settings, ${n} — caps, decimals and other settings of the program itself; not business decisions.`;
+}
+
+/**
+ * "What it decides" when the code holds rules but none is a question for the
+ * business (3.0.21) — never "no value is hard-coded" while the basket line
+ * under it counts technical rules.
+ */
+export function bizDecidesNoQuestion(technical: number, undetermined: number): string {
+  if (technical > 0 && undetermined === 0) {
+    return `No question for the business: the ${technical === 1 ? 'one value' : `${technical} values`} fixed in the code ${technical === 1 ? 'is a technical setting' : 'are technical settings'}.`;
+  }
+  return 'No question for the business could be read from the values fixed in the code.';
 }
 
 /** "and 7 more". */

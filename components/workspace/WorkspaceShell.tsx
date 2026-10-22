@@ -148,7 +148,10 @@ const BUSINESS_ORDER: readonly ContentBlock[] = [
   'statusTools',
   'layerBar',
   'layerSection',
-  'ask',
+  // "Ask this case" left the Business view (owner decision 22.10.2026,
+  // DESIGN.md §5.3): its pre-answered question named a decision point the
+  // first insights and the walk-through already show. It stands in IT, and the
+  // assistant behind the same name stays in Help in every view.
   'notDetermined',
 ];
 
@@ -474,6 +477,14 @@ export default function WorkspaceShell({
     },
     [projectId, router],
   );
+  /** Where "What the code gives away" sends "+ N more" (3.0.21): Documentation and the IT view. */
+  const givesAwayElsewhere = useMemo(
+    () => ({
+      documentation: stageHref({ base: `/project/${projectId}`, path: 'documentation', view: 'business', from: WORKSPACE_RETURN.tools }),
+      it: `/project/${encodeURIComponent(projectId)}?view=it`,
+    }),
+    [projectId],
+  );
   const toEconomics = useCallback(
     (from: WorkspaceView) => stageHref({ base: `/project/${projectId}`, path: 'tco', view: from, from: WORKSPACE_RETURN.tools }),
     [projectId],
@@ -683,8 +694,13 @@ export default function WorkspaceShell({
   // `workflowSummary` named *a* phase, which was always, because that cursor
   // never returns nothing; the tip pointed at the empty space above the card
   // this step just built on a project that had nothing left to do.
+  // "Select the decision point" points at the map in Business, and Business
+  // has no "Ask this case" any more (22.10.2026): without a map the tip has
+  // nothing to point at there.
+  const decisionTipAtMap =
+    view === 'business' && signed !== null && processSummary?.source === signed.source && !!processSummary.summary;
   const marks = useCoachMarks({
-    hasDecision: answer?.kind === 'answered',
+    hasDecision: answer?.kind === 'answered' && (view !== 'business' || decisionTipAtMap),
     hasNextStep: nextStep !== null,
     order: view === 'it' ? IT_COACH_ORDER : undefined,
     only: view === 'management' ? MANAGEMENT_COACH_MARKS : view === 'it' ? IT_COACH_ORDER : undefined,
@@ -707,8 +723,6 @@ export default function WorkspaceShell({
   const currentMark = marksReady ? marks.current : null;
   // "Select the decision point" stands right above the map where Business has
   // one, in the flow; elsewhere above "Ask this case", whose question is one.
-  const decisionTipAtMap =
-    view === 'business' && signed !== null && processSummary?.source === signed.source && !!processSummary.summary;
 
   // The plain-language fold of ADR-026. Derived, not written: the row says how
   // many of the seven facets have anything on record at all, which is a fact
@@ -1067,6 +1081,7 @@ export default function WorkspaceShell({
           rulesBelow={view === 'business'}
           onSettled={onFirstLookSettled}
           questions={questions}
+          elsewhere={givesAwayElsewhere}
         />
         {/* The first visit's place of the walk entry: under the story (see `walk`). */}
         {view === 'business' && signed !== null && buildUp ? (
@@ -1333,6 +1348,12 @@ export default function WorkspaceShell({
           />
         </div>
       )}
+
+      {/* "Ask this case" in IT (owner decision 22.10.2026): the question already
+          answered from the branches of the code, with its anchors — the IT
+          reader asks about decision points; Business reads them in the first
+          insights and the walk-through. */}
+      {view === 'it' ? contentBlocks.ask : null}
 
       {/* Management, under its answer (ADR-087): the place the steering
           one-pager opens in — from the button at the top of the decision card

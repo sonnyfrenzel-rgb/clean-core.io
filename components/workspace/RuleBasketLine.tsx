@@ -51,11 +51,18 @@ export default function RuleBasketLine({
   source,
   ruleSet,
   engineVersion,
+  designHref,
 }: {
   projectId: string;
   source: string;
   ruleSet: BusinessRuleSet | null;
   engineVersion: string | null;
+  /**
+   * Where the questions are answered: the project's Design by default; null
+   * where the page answers them itself (the demo's rules card, 3.0.21) — the
+   * line then counts and names no way out.
+   */
+  designHref?: string | null;
 }) {
   const counts = useMemo(() => {
     if (!ruleSet || !source.trim() || ruleSet.rules.length === 0) return null;
@@ -67,5 +74,10 @@ export default function RuleBasketLine({
     }
   }, [ruleSet, source, engineVersion]);
   if (!counts) return null;
-  return <RuleBasketLineView {...counts} designHref={`/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}`} />;
+  return (
+    <RuleBasketLineView
+      {...counts}
+      designHref={designHref === undefined ? `/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}` : designHref}
+    />
+  );
 }

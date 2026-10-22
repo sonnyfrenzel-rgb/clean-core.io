@@ -17,6 +17,7 @@ import { processChanges, processStory, type ProcessStory, type StoryChange } fro
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary } from '../lib/program-summary-text';
 import { openingDecisions, type OpeningDecisions } from '../lib/first-look-plain';
+import { codeGivesAway } from '../lib/first-look-findings';
 import {
   firstLookPlainSentences,
   isPlainScope,
@@ -410,25 +411,38 @@ test.describe('rendered (BusinessOpening, static markup)', () => {
     return {
       name: 'ZMM_RECEIPT_INVOICE_CHECK', nameIsProposed: false, programName: 'ZMM_RECEIPT_INVOICE_CHECK', nameReason: null,
       story: panel.story, rules: panel.decides.map((d, i) => ({ id: `R${i}`, ...d })), rulesMore: panel.decidesMore,
-      technicalRules: panel.technicalRules, changes: panel.changes, changesMore: 0, changesNone: '', questions: null, details: null,
+      rulesNone: '', changes: panel.changes, changesMore: 0, changesNone: '', details: null,
       ...extra,
     };
   }
 
-  test('the test data switch stands apart, technical checks and settings are counted', async () => {
+  /** The numbered steps on top — between the list's opening tag and its end. */
+  const stepList = (html: string): string => {
+    const at = html.indexOf('data-process-story=""');
+    return at < 0 ? '' : html.slice(at, html.indexOf('</ol>', at));
+  };
+
+  // 3.0.21 (owner decisions 22.10.2026): on top one line per step — what a step checks, its technical
+  // checks and where it can end are one fold down (and in the walk-through); the test-data switch is one
+  // line of "What the code gives away", said in full in the fold.
+  test('the test data switch stands apart, technical checks are counted one fold down', async () => {
     const Opening = await loadOpening();
-    const html = renderToStaticMarkup(React.createElement(Opening, propsOf(panelOf(FIXTURE, AFTER))));
-    expect(html).toContain('data-process-story-test-data=""');
-    expect(html).toContain('Test data switch — not part of the business process');
+    const panel = panelOf(FIXTURE, AFTER);
+    const givesAway = codeGivesAway({ source: FIXTURE, engineVersion: AFTER, testData: panel.story.testData ?? null });
+    const html = renderToStaticMarkup(React.createElement(Opening, propsOf(panel, { givesAway })));
+    expect(html).toContain('data-code-finding="test-switch"');
+    expect(html).toContain('data-process-story-test-data-detail=""');
     expect(html).toContain('runs on 30 test cases of its own');
     expect(html).toContain('data-process-story-technical="17"');
     expect(html).toContain('Plus 17 technical checks');
-    expect(html).toContain('data-story-technical-rules="3"');
+    expect(stepList(html)).not.toContain('data-process-story-technical');
+    expect(stepList(html)).not.toContain('data-process-story-checks');
+    expect(stepList(html)).not.toContain('data-process-story-stops');
     expect(html).not.toContain('Apply case');
     expect(html).toContain('data-steps="3"');
   });
 
-  test('before 3.0.20 the panel renders as it did — no test data row, no counts', async () => {
+  test('before 3.0.20 the panel renders as it did then — no test data row, no counts', async () => {
     const Opening = await loadOpening();
     const html = renderToStaticMarkup(React.createElement(Opening, propsOf(panelOf(FIXTURE, BEFORE))));
     expect(html).not.toContain('data-process-story-test-data');

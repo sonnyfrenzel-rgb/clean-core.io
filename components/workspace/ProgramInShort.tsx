@@ -31,6 +31,7 @@ export default function ProgramInShort({
   authorClaim = null,
   headingLevel = 4,
   id = 'program-in-short-title',
+  compact = false,
 }: {
   lines: readonly SummaryLine[];
   /** The level of the whole summary — "Reconstructed from the code — not confirmed by the business." */
@@ -45,16 +46,23 @@ export default function ProgramInShort({
   authorClaim?: AuthorClaim | null;
   headingLevel?: 2 | 3 | 4;
   id?: string;
+  /**
+   * The Business view's First insights (roadmap 3.0.21): one sentence under the
+   * heading, and the level said once — by the card's own chip *Reconstructed*
+   * and in its "How this was read" fold — instead of a second chip and a level
+   * sentence here. Analyze keeps the full form.
+   */
+  compact?: boolean;
 }) {
   if (lines.length === 0) return null;
   const Heading = headingLevel === 2 ? 'h2' : headingLevel === 3 ? 'h3' : 'h4';
   return (
-    <section data-program-in-short="" aria-labelledby={id} className="flex min-w-0 flex-col gap-2">
+    <section data-program-in-short={compact ? 'compact' : ''} aria-labelledby={id} className="flex min-w-0 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Heading id={id} className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
           {wt('biz.inShortTitle')}
         </Heading>
-        <CcProvenanceChip value={level.basis === 'confirmed' ? 'confirmed' : 'reconstructed'} />
+        {compact ? null : <CcProvenanceChip value={level.basis === 'confirmed' ? 'confirmed' : 'reconstructed'} />}
       </div>
       {authorClaim?.state === 'shown' ? (
         <p data-program-in-short-author-claim="" className="m-0 flex flex-wrap items-center gap-2 text-[15px] leading-snug font-semibold text-cc-ink">
@@ -89,7 +97,9 @@ export default function ProgramInShort({
       {authorClaim?.state === 'contradicted' ? (
         <p data-program-in-short-author-claim="not-quoted" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{authorClaim.note}</p>
       ) : null}
-      <p data-program-in-short-level="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{level.text}</p>
+      {compact ? null : (
+        <p data-program-in-short-level="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{level.text}</p>
+      )}
     </section>
   );
 }

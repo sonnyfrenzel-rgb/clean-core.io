@@ -22,10 +22,12 @@ import BusinessOpening, { type OpeningRule } from './BusinessOpening';
 import RuleBasketLine from './RuleBasketLine';
 import { processChanges, processStory, type ProcessStory, type StoryChange } from '@/lib/process-story';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
-import { businessInShort, programSummary, type SummaryLine } from '@/lib/program-summary-text';
+import { businessInShort, programSummary, type ProgramSummaryFacts, type SummaryLine } from '@/lib/program-summary-text';
 import { authorClaimOf, purposeProposalOf, type AuthorClaim } from '@/lib/program-summary-check';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
-import { explainBusinessRules } from '@/lib/abap/business-rule-set-explain';
+import { explainBusinessRules, type RuleSetExplanation } from '@/lib/abap/business-rule-set-explain';
+import { decidesOnTop, firstLookBrief, type FirstLookBrief } from '@/lib/first-look-brief';
+import { codeGivesAway, type CodeGivesAway } from '@/lib/first-look-findings';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { openingDecisions, type OpeningDecisions } from '@/lib/first-look-plain';
 import { firstLookPlainSentences, plainModelEnabled } from '@/lib/plain-wording';
@@ -89,6 +91,7 @@ import {
   firstLookUnreadable,
   firstLookConfirmRules,
   firstLookOf,
+  bizDecidesNoQuestion,
 } from '@/lib/workspace-messages';
 
 /**
@@ -257,16 +260,22 @@ interface Result {
   inShort: { lines: SummaryLine[]; level: SummaryLine; proposal: string | null; authorClaim: AuthorClaim | null } | null;
   /** From engine 3.0.20: "What it decides" from the rule explanations — business rules first, technical ones counted. */
   decides: OpeningDecisions | null;
+  /** From engine 3.0.20: the rule explanation itself — its questions for the business lead "What it decides" (3.0.21). */
+  explanation: RuleSetExplanation | null;
+  /** The top blocks of the Business opening, cut from the summary (3.0.21, `lib/first-look-brief.ts`). */
+  brief: FirstLookBrief | null;
+  /** "What the code gives away" (3.0.21, `lib/first-look-findings.ts`); null when it could not be read. */
+  givesAway: CodeGivesAway | null;
 }
 
 /**
  * "What it decides" from the rule explanations, from engine 3.0.20 (`lib/first-look-plain.ts`); null before.
  * `engineVersion`: the engine of the project's signed run.
  */
-function decidesOf(source: string, process: ProcessReading, rules: BusinessRuleSet, engineVersion: string | null): OpeningDecisions | null {
+function explanationOf(source: string, process: ProcessReading, rules: BusinessRuleSet, engineVersion: string | null): RuleSetExplanation | null {
   if (!engineReads3020Apply(engineVersion)) return null;
   try {
-    return openingDecisions(explainBusinessRules(source, rules, process.facts, engineVersion));
+    return explainBusinessRules(source, rules, process.facts, engineVersion);
   } catch {
     return null;
   }
@@ -279,14 +288,52 @@ function inShortOf(
   rules: BusinessRuleSet,
   narrative: string | undefined,
   engineVersion: string | null,
-): Result['inShort'] {
+): { inShort: Result['inShort']; facts: ProgramSummaryFacts | null } {
   try {
     const facts = programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules, engineVersion });
     const summary = programSummary(facts);
-    return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(narrative, facts), authorClaim: authorClaimOf(facts) };
+    return {
+      inShort: { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(narrative, facts), authorClaim: authorClaimOf(facts) },
+      facts,
+    };
+  } catch {
+    return { inShort: null, facts: null };
+  }
+}
+
+/** "What the code gives away" — the deterministic readers, never a model (3.0.21). */
+function givesAwayOf(
+  source: string,
+  process: ProcessReading,
+  engineVersion: string | null,
+  facts: ProgramSummaryFacts | null,
+  story: ProcessStory,
+  authorClaim: AuthorClaim | null,
+): CodeGivesAway | null {
+  try {
+    return codeGivesAway({ source, engineVersion, skeleton: process.skeleton, facts, authorClaim, testData: story.testData ?? null });
   } catch {
     return null;
   }
+}
+
+/**
+ * "What it decides" on top (3.0.21): from engine 3.0.20 the weightiest
+ * questions for the business, as statements; before it the card's rules as
+ * they were shown then. At most three either way.
+ */
+function openingDecides(result: Result): { rules: OpeningRule[]; rulesMore: number; rulesNone: string } {
+  if (result.explanation) {
+    const top = decidesOnTop(result.explanation);
+    const none =
+      result.explanation.rules.length === 0
+        ? wt('biz.decidesNone')
+        : bizDecidesNoQuestion(result.explanation.baskets.technical.length, result.explanation.baskets.undetermined.length);
+    return { rules: top.lines, rulesMore: top.more, rulesNone: none };
+  }
+  const all = openingRules(result.card);
+  const rules = all.slice(0, 3);
+  return { rules, rulesMore: Math.max(0, result.card.rules.length - rules.length), rulesNone: wt('biz.decidesNone') };
 }
 
 export default function FirstLook({
@@ -307,6 +354,7 @@ export default function FirstLook({
   onSettled,
   questions = null,
   onReadingFailed,
+  elsewhere = null,
 }: {
   project: Project | null;
   projectId: string;
@@ -389,6 +437,11 @@ export default function FirstLook({
    * line; the list stands once on the page. `null` while not known.
    */
   questions?: OpenQuestionsModel | null;
+  /**
+   * Where "What the code gives away" sends "+ N more" (3.0.21): the
+   * Documentation tool and the IT view, in this project or the demo.
+   */
+  elsewhere?: { documentation: string; it: string } | null;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   // Every reading below is the one the engine of the project's signed run makes (3.0.20).
@@ -541,6 +594,14 @@ export default function FirstLook({
     try {
       const traceability = traceabilityOf(named);
       const open = notDetermined(project);
+      const story = processStory(
+        process.skeleton,
+        source,
+        new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
+        engineVersion,
+      );
+      const summarised = inShortOf(source, process, rules, project?.analysis, engineVersion);
+      const explanation = explanationOf(source, process, rules, engineVersion);
       const result: Result = {
         processName: processNameOf(rules),
         traceability,
@@ -557,15 +618,13 @@ export default function FirstLook({
           inputs: programInputsOf(process.facts, (name) => humaniseField(name, plainContext(source))),
         }),
         steps: stepStrip(process.skeleton, source),
-        story: processStory(
-          process.skeleton,
-          source,
-          new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
-          engineVersion,
-        ),
+        story,
         changes: processChanges(process.skeleton, source),
-        inShort: inShortOf(source, process, rules, project?.analysis, engineVersion),
-        decides: decidesOf(source, process, rules, engineVersion),
+        inShort: summarised.inShort,
+        decides: explanation ? openingDecisions(explanation) : null,
+        explanation,
+        brief: summarised.inShort ? firstLookBrief(summarised.inShort.lines) : null,
+        givesAway: givesAwayOf(source, process, engineVersion, summarised.facts, story, summarised.inShort?.authorClaim ?? null),
       };
       return { result, failed: false };
     } catch {
@@ -771,8 +830,9 @@ export default function FirstLook({
    * sentence — nothing here borrows the Analyze stage header (`StageHeader`).
    */
   const lead = (
-    <p data-first-look-lead="" className="m-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">
-      {wt('firstLook.lead')}
+    <p data-first-look-lead={rulesBelow ? 'business' : ''} className="m-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">
+      {/* Business (3.0.21): what the page is for — understanding, nothing to decide. */}
+      {wt(rulesBelow ? 'biz.firstLookLead' : 'firstLook.lead')}
     </p>
   );
 
@@ -894,21 +954,24 @@ export default function FirstLook({
                   nameIsProposed={!!proposedName}
                   programName={result.processName.name}
                   nameReason={result.processName.reason ?? null}
+                  brief={result.brief}
                   story={result.story}
-                  rules={result.decides ? result.decides.rules : openingRules(result.card)}
-                  rulesMore={result.decides ? result.decides.more : Math.max(0, result.card.rules.length - openingRules(result.card).length)}
-                  technicalRules={result.decides?.technical ?? 0}
+                  {...openingDecides(result)}
                   say={plain.state === 'worded' ? plain.say : undefined}
                   changes={result.changes.changes}
                   changesMore={result.changes.more}
                   changesNone={result.card.summary.kind === 'none' ? result.card.summary.sentence : wt('biz.changesNoData')}
-                  questions={questions}
                   inShort={result.inShort}
-                  // Owner decision 21.10.2026: no rule decision in the first insights — one sentence and
-                  // the way into Design, where the questions for the business are asked. The demo keeps
-                  // its own rules card (`onReviewRules`).
-                  onDecideRules={onReviewRules}
-                  rulesLine={onReviewRules || !rules ? undefined : <RuleBasketLine projectId={projectId} source={source} ruleSet={rules} engineVersion={engineVersion} />}
+                  givesAway={result.givesAway}
+                  elsewhere={elsewhere}
+                  // Owner decision 21.10.2026: no rule decision in the first insights — one quiet line and
+                  // the way into Design, where the questions for the business are asked. The demo answers
+                  // its rules in its own card on the same page, so its line names no Design (3.0.21).
+                  rulesLine={
+                    rules ? (
+                      <RuleBasketLine projectId={projectId} source={source} ruleSet={rules} engineVersion={engineVersion} designHref={onReviewRules ? null : undefined} />
+                    ) : undefined
+                  }
                   details={
                     <EndState
                       projectId={projectId}
