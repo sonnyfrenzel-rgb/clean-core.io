@@ -1220,6 +1220,9 @@ export default function AnalyzePage() {
             <AtcFindingsPanel
               atcReport={(atcReport || project!.atcReport)!}
               findings={evidenceFindings}
+              // 3.0.21: the line comparison, in the source the findings count in.
+              source={typeof project?.legacyCode === 'string' ? project.legacyCode : legacyCode}
+              fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
             />
           </SectionBoundary>
         )}

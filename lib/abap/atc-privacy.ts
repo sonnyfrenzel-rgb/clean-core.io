@@ -31,6 +31,7 @@ export function sanitizeAtcFindings(findings: AtcFinding[]): AtcFinding[] {
     message: f.message,
     priority: f.priority,
     line: f.line,
+    include: f.include,
     exempted: f.exempted,
   }));
 }
