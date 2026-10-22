@@ -11,6 +11,7 @@ import {
 import { safeReturnPath, signInLinkFor, signUpLinkFor } from '../lib/return-path';
 import { invitationLinkPath } from '../lib/invitations';
 import { ownDomainVerifyEmailLink, withReturnPath } from '../lib/auth-action-link';
+import { stageErrorCopy } from '../lib/stage-error';
 import {
   accessFromAnswer,
   NO_ACCESS_SENTENCE,
@@ -174,6 +175,40 @@ test.describe('(4) a new invited reader: the invitation path survives the confir
     expect(accept).toContain('router.replace(`/project/${projectId}`);');
     expect(src, 'the in-between page is back').not.toContain('You now have read access');
     expect(src).not.toContain('Open the project</CcLinkButton>');
+  });
+});
+
+test.describe('(7) one error boundary for every tool, with "Back to project workspace" and the stale-build recovery', () => {
+  test('it sits at the project segment, and no tool keeps a copy of its own', () => {
+    const dir = path.join(ROOT, 'app', '(app)', 'project', '[projectId]');
+    expect(fs.existsSync(path.join(dir, 'error.tsx'))).toBe(true);
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory())) {
+      expect(fs.existsSync(path.join(dir, entry.name, 'error.tsx')), `${entry.name} has its own boundary again`).toBe(false);
+    }
+    const src = read('app/(app)/project/[projectId]/error.tsx');
+    expect(src).toContain('const staleBuild = isStaleBuildError(error);');
+    expect(src).toContain('if (staleBuild) reloadOnceForStaleBuild();');
+    expect(src.indexOf('<NewVersionAvailable />')).toBeLessThan(src.indexOf('error.message'));
+    expect(src).toContain('workspaceBackHref({ projectId, search:');
+    expect(src).toContain('{copy.backLabel}');
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    expect(code, 'the old hard-coded way to one stage').not.toMatch(/\/transformation`|previous stage/);
+    expect(src, 'sentence case').not.toContain('Try Again');
+    expect(src).not.toContain('min-h-screen');
+  });
+
+  test('on a tool it names the tool and leads back to the project workspace; on the workspace, to My workspace', () => {
+    for (const [stage, label] of [['analyze', 'Analyze'], ['design', 'Design'], ['transformation', 'Transformation'], ['documentation', 'Documentation'], ['testing', 'Testing'], ['tco', 'Economics'], ['delivery', 'Delivery']]) {
+      const copy = stageErrorCopy(`/project/p1/${stage}`);
+      expect(copy.onTool, stage).toBe(true);
+      expect(copy.subject).toBe(label);
+      expect(copy.body.startsWith(`${label} stopped`)).toBe(true);
+      expect(copy.backLabel).toBe('Back to project workspace');
+    }
+    expect(stageErrorCopy('/project/p1/design/requirements').subject).toBe('Design');
+    const workspace = stageErrorCopy('/project/p1');
+    expect(workspace.onTool).toBe(false);
+    expect(workspace.backLabel).toBe('Go to My workspace');
   });
 });
 

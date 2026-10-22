@@ -3,14 +3,14 @@
  *
  * After a deploy a tab opened on the previous build either asks for chunk hashes
  * that no longer exist, or runs a chunk of the new build against the old runtime.
- * Every error boundary that can catch this (`app/error.tsx` and the stage
- * boundaries of documentation and testing) reloads once; when that one reload is
- * spent, it says "A new version of Clean-Core.io is available" with a reload
- * button instead of a crash card with the raw message — after the 3.0.5 deploy an
- * open 3.0.4 tab read like a crash.
+ * Every error boundary that can catch this (`app/error.tsx` and the project's
+ * one boundary for the workspace and its seven tools, roadmap 3.0.21 (7))
+ * reloads once; when that one reload is spent, it says "A new version of
+ * Clean-Core.io is available" with a reload button instead of a crash card with
+ * the raw message — after the 3.0.5 deploy an open 3.0.4 tab read like a crash.
  *
- * One module, so the three boundaries cannot drift apart again (the two stage
- * copies had lost the mixed-build patterns).
+ * One module, so the boundaries cannot drift apart again (the two stage copies
+ * there used to be had lost the mixed-build patterns).
  */
 
 /** True when the error is one build meeting another, not a bug in this build. */
