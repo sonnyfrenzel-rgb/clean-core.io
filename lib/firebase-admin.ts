@@ -1132,6 +1132,26 @@ export async function deleteUserDataAndAccount(
     });
   }
 
+  //     The security journal keeps its rows for the retention period
+  //     (`docs/DATA-RETENTION.md`), but not the address of an erased account
+  //     (PRV-01): every row this account acted in has its `actorEmail`
+  //     replaced by the account's pseudonym (`accountLogRef`). The uid stays,
+  //     so the rows still tell apart who did what; nothing in them names a
+  //     person any more once the profile is gone.
+  await tryDelete('audit_events', async () => {
+    const pseudonym = accountLogRef(uid);
+    const rows = await db.collection('audit_events').where('actorUid', '==', uid).get();
+    const toUpdate = rows.docs.filter((row: ErasableDoc) => {
+      const email = row.data()?.actorEmail;
+      return typeof email === 'string' && email !== pseudonym;
+    });
+    for (let i = 0; i < toUpdate.length; i += 400) {
+      const batch = db.batch();
+      toUpdate.slice(i, i + 400).forEach((row: ErasableDoc) => batch.update(row.ref, { actorEmail: pseudonym }));
+      await batch.commit();
+    }
+  });
+
   //     The operator's signup notification about this account, written before
   //     it carried the account's uid: found by its subject, which is built from
   //     the name the registration record kept. Only that kind of record is
@@ -1489,11 +1509,28 @@ export async function auditActorEmail(db: any, actorUid: string): Promise<string
   return 'system-admin';
 }
 
+/**
+ * The administrative actions whose row names the acting administrator's
+ * address (PRV-01). The journal exists for privileged actions
+ * (`docs/DATA-RETENTION.md`); an account acting on its own key, projects or
+ * readers is recorded by its uid alone, which is enough to tell who did what
+ * and keeps an address out of a record kept for 24 months.
+ */
+const PRIVILEGED_AUDIT_ACTIONS: ReadonlySet<string> = new Set([
+  'GRANT_ADMIN', 'REVOKE_ADMIN', 'APPROVE_USER', 'REVOKE_USER', 'GRANT_S4', 'REVOKE_S4',
+  'GRANT_S4_LINK', 'REJECT_S4_LINK', 'DELETE_USER_CASCADE',
+]);
+
+/** Whether a row for `action` records the actor's address. Exported for the tests. */
+export function auditRowNamesActorEmail(action: string): boolean {
+  return PRIVILEGED_AUDIT_ACTIONS.has(action) || action.startsWith('RUNNER_SELFTEST:');
+}
+
 /** The `audit_events` row for one action, ready for `add()` or for a batch. */
 async function auditEventRecord(db: any, actorUid: string, action: string, targetUid: string) {
   return {
     actorUid,
-    actorEmail: await auditActorEmail(db, actorUid),
+    ...(auditRowNamesActorEmail(action) ? { actorEmail: await auditActorEmail(db, actorUid) } : {}),
     action,
     targetUid,
     timestamp: new Date(),

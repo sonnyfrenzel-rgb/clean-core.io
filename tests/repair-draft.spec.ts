@@ -275,7 +275,7 @@ test.describe('the store, against the Firestore emulator', () => {
 
     // Early adoption: nothing ran yet.
     const early = await adoptRepairDraft(db(), {
-      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(), actorEmail: 'o@x',
+      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(),
     });
     expect(early).toMatchObject({ status: 409, code: 'not-executed' });
 
@@ -286,7 +286,7 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(projectBefore.testRunReceipt).toBeUndefined();
 
     const adopted = await adoptRepairDraft(db(), {
-      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(), actorEmail: 'o@x',
+      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(),
     });
     expect(adopted.status).toBe(200);
 
@@ -298,7 +298,7 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(journal.size).toBe(1);
 
     const again = await adoptRepairDraft(db(), {
-      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(), actorEmail: 'o@x',
+      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(),
     });
     expect(again).toMatchObject({ status: 409, code: 'already-adopted' });
     expect(await loadDraftForRun(db(), { projectId, uid: 'owner', draftId: d.draftId })).toMatchObject({ status: 409 });
@@ -318,7 +318,7 @@ test.describe('the store, against the Firestore emulator', () => {
     await db().collection('projects').doc(projectId).update({ generatedCode: regenerated });
 
     const out = await adoptRepairDraft(db(), {
-      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(), actorEmail: 'o@x',
+      projectId, uid: 'owner', body: { draftId: d.draftId, expectedDraftDigest: d.draftDigest }, now: new Date(),
     });
     expect(out).toMatchObject({ status: 409, code: 'parent-moved' });
     const after = await projectNow(projectId);
@@ -365,7 +365,7 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(await loadDraftForRun(db(), { projectId, uid: 'stranger', draftId: proposed.draft.draftId })).toMatchObject({ status: 404 });
     expect(
       await adoptRepairDraft(db(), {
-        projectId, uid: 'stranger', body: { draftId: proposed.draft.draftId, expectedDraftDigest: proposed.draft.draftDigest }, now: new Date(), actorEmail: 's@x',
+        projectId, uid: 'stranger', body: { draftId: proposed.draft.draftId, expectedDraftDigest: proposed.draft.draftDigest }, now: new Date(),
       }),
     ).toMatchObject({ status: 404 });
   });

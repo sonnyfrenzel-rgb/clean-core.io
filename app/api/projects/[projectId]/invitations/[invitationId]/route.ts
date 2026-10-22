@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, assertMfaSatisfied, auditActorEmail } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { openInvitationsAsOwner } from '@/lib/invitation-owner-gate';
@@ -72,7 +72,6 @@ export async function DELETE(
     const db = gate.db;
     const projectRef = db.collection('projects').doc(gate.projectId);
     const invitationRef = projectRef.collection(INVITATION_COLLECTION).doc(invitationId);
-    const actorEmail = await auditActorEmail(db, gate.uid);
     const revokedAt = new Date().toISOString();
 
     const outcome = await db.runTransaction(async (tx: Tx) => {
@@ -91,7 +90,6 @@ export async function DELETE(
       tx.set(invitationRef, { status: 'revoked', revokedAt }, { merge: true });
       tx.set(db.collection('audit_events').doc(), {
         actorUid: gate.uid,
-        actorEmail,
         action: `project.invitation.withdraw:${gate.projectId}`,
         targetId: invitationId,
         timestamp: new Date(),
