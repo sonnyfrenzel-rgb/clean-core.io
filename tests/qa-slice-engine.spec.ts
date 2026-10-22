@@ -34,6 +34,11 @@ test('21933f60c24d — a secret assigned to a prefixed name is redacted', () => 
   // A number written straight after the keyword is still the credential: a second token, an old password.
   expect(redactCredentials("lv_token2 = 'abc123'.")).toBe("lv_token2 = '…<redacted>'.");
   expect(redactCredentials("gv_password01 = 'hunter2'.")).toBe("gv_password01 = '…<redacted>'.");
+  // Any ending after the word is the credential, unless it only counts or measures one.
+  expect(redactCredentials("CONSTANTS c_token_jwt TYPE string VALUE 'eyJhbGciOi'.")).toBe("CONSTANTS c_token_jwt TYPE string VALUE '…<redacted>'.");
+  expect(redactCredentials("lv_secret_bearer = 'abc'.")).toBe("lv_secret_bearer = '…<redacted>'.");
+  expect(redactCredentials("lv_password_len = '12'.")).toBe("lv_password_len = '12'.");
+  expect(redactCredentials("gv_token_max = '3'.")).toBe("gv_token_max = '3'.");
 });
 
 test('b99ee9f51490 — a variable WAIT is undetermined, a literal decides', () => {

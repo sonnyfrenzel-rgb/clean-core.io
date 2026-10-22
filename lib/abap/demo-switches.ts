@@ -318,8 +318,13 @@ function literalRow(row: string): boolean {
   if (!value) return false;
   // `BASE lt_rows ( … )` carries the rows of another table along: not a row of fixed values.
   if (/\bBASE\b/i.test(value[1])) return false;
-  const values = [...value[1].matchAll(/=\s*('(?:[^']|'')*'|`[^`]*`|[^\s()]+)/g)].map((m) => m[1]);
-  return values.every((v) => LITERAL.test(v));
+  // Nothing but `field = literal` pairs in brackets: a row named without a field (`( gs_order )`) carries live data.
+  let pairs = 0;
+  const rest = value[1].replace(/[\w/-]+\s*=\s*('(?:[^']|'')*'|`[^`]*`|[^\s()]+)/g, (_m, v: string) => {
+    pairs += 1;
+    return LITERAL.test(v) ? ' ' : ' x ';
+  });
+  return pairs > 0 && /^[\s()]*$/.test(rest);
 }
 
 /**
@@ -394,13 +399,14 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     const names = [...selectors].map((n) => n.replace(/[/]/g, '\\/'));
     const onSelector = new RegExp(`(?<![\\w/-])(?:${names.join('|')})(?![\\w/])`, 'i');
     // The FORM is the switch's own only when everything else in it is set-up or a check of the switch.
+    const ownFilled = new Set<string>();
     const own = !!routine && routine.kind === 'form' && statements.every((s, i) => {
       if (s.lineStart < routine.lineStart || s.lineStart > routine.lineEnd) return true;
       if (i >= branch.openIndex && i <= branch.closeIndex) return true;
       const keyword = s.keyword.toUpperCase();
       if (/^(?:FORM|ENDFORM|ENDIF|ELSE|MESSAGE|RETURN|EXIT)$/.test(keyword) || DECLARATION.test(keyword)) return true;
       if (keyword === 'IF' || keyword === 'ELSEIF' || keyword === 'CHECK') return onSelector.test(s.text);
-      return testDataStatement(s).ok;
+      return testDataStatement(s, ownFilled).ok;
     });
     return {
       flag: { name: parameter, line: parameters.get(parameter)! },

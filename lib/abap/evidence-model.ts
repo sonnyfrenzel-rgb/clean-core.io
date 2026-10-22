@@ -380,7 +380,7 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
   // earlier engine keeps what it signed.
   const assigned = engineReads3020Apply(engineVersion)
-    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)(?:S|[0-9]+|_(?:KEY|VALUE|VAL|STRING|STR|TEXT|TXT|HASH|B64|BASE64|ENC|PLAIN|RAW|OLD|NEW|DEV|PROD|PRD|TEST|[0-9]+))*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
       ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
       : /\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi;
@@ -427,8 +427,14 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // secret is still a secret. The name may carry a prefix (`lv_password`,
     // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
     // matched inside one.
-    .replace(assigned, (_m, word, mid) => `${word}${mid}'…<redacted>'`);
+    // From 3.0.20 every name that carries the word is a credential (`c_token_jwt`, `lv_token2`), unless
+    // it ends in what only counts, measures or kinds a credential: `lv_token_count` stays readable.
+    .replace(assigned, (m, word, mid) =>
+      engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) ? m : `${word}${mid}'…<redacted>'`);
 }
+
+/** The endings of a name that counts, measures or kinds a credential rather than holding one. */
+const COUNTS_A_CREDENTIAL = /_(?:COUNT|CNT|COUNTER|LEN|LENGTH|SIZE|NUM|NUMBER|NR|IDX|INDEX|POS|LINES|ROWS|MAX|MIN|LIMIT|TYPE|KIND|FLAG|DATE|TIME|TTL|AGE|FIELD|COLUMN)$/i;
 
 /** `the purchase order schedule line (EKET)`, or `EKET` where the glossary has no word for it. */
 function tablePhrase(table: string): string {

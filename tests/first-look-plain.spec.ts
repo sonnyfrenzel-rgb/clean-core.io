@@ -206,12 +206,26 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(readDemoSwitches(filledArea, AFTER)?.flag.name).toBe('P_CASE');
   });
 
+  test('the switch\'s FORM is demo-only when everything else in it fills fixed values too', () => {
+    const literal = (n: number) => `      APPEND VALUE #( id = ${n} name = 'Case ${n}' ) TO lt_rows.`;
+    // Set-up of fixed values around the CASE: the FORM is the switch's own.
+    const own = switchOf(literal).replace('\nFORM apply_case.\n', "\nFORM apply_case.\n  CLEAR lt_rows.\n");
+    expect(readDemoSwitches(own, AFTER)?.routines).toEqual(['APPLY_CASE']);
+    // A row the program read, appended beside the CASE: the switch stands, the FORM is not demo-only.
+    const mixed = switchOf(literal).replace('\nFORM apply_case.\n', '\nFORM apply_case.\n  APPEND ls_in TO lt_rows.\n');
+    const demo = readDemoSwitches(mixed, AFTER);
+    expect(demo?.flag.name).toBe('P_CASE');
+    expect(demo?.routines).toEqual([]);
+  });
+
   test('a row the program read, or a write to the database, is not test data however the arms are shaped', () => {
     // Appends what the program selected: business data, not a test case.
     expect(readDemoSwitches(switchOf(() => `      APPEND ls_in TO lt_rows.`), AFTER)).toBeNull();
     // A database write in every arm.
     expect(readDemoSwitches(switchOf((n) => `      ls_row-id = ${n}.\n      INSERT zrow FROM ls_row.`), AFTER)).toBeNull();
     expect(readDemoSwitches(switchOf((n) => `      ls_row-id = ${n}.\n      INSERT INTO zrow VALUES ls_row.`), AFTER)).toBeNull();
+    // A row named without a field carries what it names: live data.
+    expect(readDemoSwitches(switchOf(() => `      APPEND VALUE #( ( ls_in ) ) TO lt_rows.`), AFTER)).toBeNull();
     // A VALUE that carries the rows of another table along.
     expect(readDemoSwitches(switchOf((n) => `      APPEND VALUE #( BASE lt_rows ( id = ${n} ) ) TO lt_rows.`), AFTER)).toBeNull();
     // A VALUE that carries a field of what was read.
