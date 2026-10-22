@@ -23,13 +23,8 @@ import {
   BUILD_UP_MIN_STEP,
   BUILD_UP_WINDOW,
 } from '../lib/first-look-buildup';
-import { buildStandardFitView } from '../lib/standard-fit-view';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import { deriveStandardCoverageFrom, type CatalogLookup } from '../lib/abap/standard-coverage';
-import { deriveCounterCheckScenariosFrom } from '../lib/abap/counter-check';
-import { deriveUserChangeFrom } from '../lib/abap/user-change';
-import { readTableDependencies } from '../lib/abap/table-dependencies';
-import { complianceReviewHints, examinedTablesFromDependencies } from '../lib/compliance-review-hints';
 import { workspaceLayers } from '../lib/workspace-model';
 import { applyStateChoices, checkStateChoices, sameAnswer, type ProcessStateView, type StateEntry } from '../lib/process-states';
 import type { Project } from '../lib/types';
@@ -151,39 +146,35 @@ test.describe('s2 — the rule-editing mode', () => {
   });
 });
 
-test.describe('s3 — the standard-fit table', () => {
+// s3's screen — the standard-fit table — was removed by owner decision of
+// 22.10.2026 (every row read "Not determined"); "Where this program touches SAP
+// standard" took its place (tests/standard-touch.spec.ts). The engine module it
+// read from keeps its honesty rules, asserted here on its own output.
+test.describe('s3 — the standard-coverage engine, without a screen', () => {
   const ruleSet = deriveBusinessRules(SRC);
   const catalog: CatalogLookup = { successorFor: (o) => (o === 'EBAN' ? 'I_PURCHASEREQUISITIONITEM' : null) };
-  const view = buildStandardFitView({
-    coverage: deriveStandardCoverageFrom(SRC, ruleSet, { catalog }),
-    scenarios: deriveCounterCheckScenariosFrom(ruleSet),
-    users: deriveUserChangeFrom(SRC, ruleSet, { catalog }),
-    compliance: complianceReviewHints(examinedTablesFromDependencies(readTableDependencies(SRC).dependencies)),
-    name: () => null,
-  });
+  const coverage = deriveStandardCoverageFrom(SRC, ruleSet, { catalog });
 
-  test('one row per capability, and every rule is in a row or named as unassigned', () => {
-    expect(view.rows.length).toBeGreaterThan(0);
-    const placed = new Set([...view.rows.flatMap((r) => r.ruleIds), ...view.unassigned.map((u) => u.ruleId)]);
-    for (const rule of ruleSet.rules) expect(placed.has(rule.id), `${rule.id} is in no row`).toBe(true);
+  test('one capability per subject, and every rule is in one or named as unassigned', () => {
+    expect(coverage.capabilities.length).toBeGreaterThan(0);
+    const placed = new Set([...coverage.capabilities.flatMap((c) => c.ruleIds), ...coverage.unassigned.map((u) => u.ruleId)]);
+    for (const rule of ruleSet.rules) expect(placed.has(rule.id), `${rule.id} is in no capability`).toBe(true);
   });
 
   test('no scope item is invented and nothing reaches above E1 without supplied evidence', () => {
-    for (const row of view.rows) {
-      expect(row.scopeItems).toEqual([]);
-      expect(['E0', 'E1']).toContain(row.level);
-      // E0 and E1 carry no fit — only "not determined", with its reason.
-      expect(row.fit).toBeNull();
-      expect(row.fitProvenance).toBe('not-determined');
-      expect(row.notDetermined).not.toBeNull();
+    for (const cap of coverage.capabilities) {
+      expect(cap.scopeItems).toEqual([]);
+      expect(['E0', 'E1']).toContain(cap.level);
+      expect(cap.fit).toBeNull();
+      expect(cap.fitProvenance).toBe('not-determined');
+      expect(cap.notDetermined).not.toBeNull();
     }
   });
 
-  test('a catalogue hit is a pointer (E1), never a fit', () => {
-    const hit = view.rows.find((r) => r.candidates.length > 0);
-    if (hit) {
-      expect(hit.level).toBe('E1');
-      expect(hit.notDetermined).toBe('pointer-only');
+  test('the table and its route are gone', () => {
+    const root = path.resolve(__dirname, '..');
+    for (const rel of ['components/workspace/StandardFitTable.tsx', 'components/workspace/ItStandardFit.tsx', 'app/api/projects/[projectId]/standard-fit/route.ts', 'lib/standard-fit-view.ts', 'lib/standard-fit-client.ts']) {
+      expect(fs.existsSync(path.join(root, rel)), rel).toBe(false);
     }
   });
 });
@@ -259,7 +250,8 @@ test.describe('s0 — the first look builds up out of lit lines', () => {
 });
 
 test.describe('the anchor bar counts what the editor and the table show', () => {
-  test('rules on Need & process and capabilities on Standard fit, from the reading', () => {
+  // Since 22.10.2026 the standard layer counts nothing of its own: its content is IT's stage-1 card (owner decision).
+  test('rules on Need & process, and no count on the standard layer, from the reading', () => {
     const project = { legacyCode: SRC } as unknown as Project;
     const without = workspaceLayers(project);
     expect(without.find((l) => l.key === 'standard')!.count).toBeNull();
@@ -267,7 +259,7 @@ test.describe('the anchor bar counts what the editor and the table show', () => 
     const need = layers.find((l) => l.key === 'need')!;
     const standard = layers.find((l) => l.key === 'standard')!;
     expect(need.count).toBe(`${reading.ruleSet.rules.length} rules`);
-    expect(standard.count).toMatch(/^\d+ capabilit(y|ies)$/);
+    expect(standard.count).toBeNull();
     // The invariant of the bar: a count exactly when there are rows.
     for (const layer of layers) expect(layer.count === null).toBe(layer.rows.length === 0);
   });

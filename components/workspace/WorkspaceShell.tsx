@@ -1318,8 +1318,6 @@ export default function WorkspaceShell({
             signed={Boolean(project?.activeRunId?.trim()) && project?._runLoadFailed !== true}
             trust={trust}
             elsewhere={itElsewhere}
-            // Standard fit is IT's own section since ADR-096 (owner, 12.10.2026).
-            standardLayer={allLayers.find((l) => l.key === 'standard') ?? null}
             // The full rule register since the new set-up of the business rules (owner decision 21.10.2026).
             rules={<ItRuleRegister project={project} projectId={projectId} reading={reading} />}
             coach={(slot) => (

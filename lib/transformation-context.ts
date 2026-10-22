@@ -74,6 +74,11 @@ export interface ContextRule {
   note: string | null;
   /** First source line, or null. */
   line: number | null;
+  /**
+   * The answer on record is *Move to SAP standard* (a Keep whose need SAP
+   * standard is to meet): the rebuild does not implement the rule. Absent otherwise.
+   */
+  toStandard?: true;
 }
 
 export interface ContextRules {
@@ -332,7 +337,7 @@ function decisionsSection(input: TransformationContextInput): Draft {
   head.push(`A. BUSINESS RULE DECISIONS (${basisLine[rules.basis]}):`);
   if (rules.items.length > 0) {
     head.push(
-      `   KEEP → implement exactly as the original, cite the rule id in a comment. CHANGE → implement the decided text, not the original. DROP → do not implement; a comment "${c} BR-nnn dropped on purpose". OPEN → implement as the original does and mark "${c} OPEN: BR-nnn awaits a decision".`,
+      `   KEEP → implement exactly as the original, cite the rule id in a comment. CHANGE → implement the decided text, not the original. DROP → do not implement; a comment "${c} BR-nnn dropped on purpose". STANDARD → do not implement in custom code: the decision on record leaves this need to SAP standard; a comment "${c} BR-nnn left to SAP standard by decision". OPEN → implement as the original does and mark "${c} OPEN: BR-nnn awaits a decision".`,
     );
   }
   // Decided rules first (CHANGE, DROP, KEEP), then the open ones, each in id
@@ -351,6 +356,7 @@ function decisionsSection(input: TransformationContextInput): Draft {
     if (word === 'DROP') {
       return `   ${r.id} DROP · ${cond}${where}${r.note ? ` — reason: "${oneLine(r.note, MAX_PROPOSAL)}"` : ''}`;
     }
+    if (word === 'KEEP' && r.toStandard) return `   ${r.id} STANDARD · ${cond}${where} — do not implement: left to SAP standard by decision`;
     if (word === 'KEEP') return `   ${r.id} KEEP · ${cond}${where} — ${oneLine(r.meaning, MAX_MEANING)}`;
     // An open rule is the original's behaviour, which the legacy code above
     // already shows: its condition and line are enough to find and mark it,

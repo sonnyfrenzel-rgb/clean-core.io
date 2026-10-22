@@ -187,8 +187,11 @@ test('both metadata routes bound how often one account may reach out', () => {
     expect(call![1], `${rel} keys its limit on something the caller can change`).not.toContain('getClientIp');
     expect(Number(call![2]), `${rel} allows an unbounded number of outbound cycles`).toBeLessThanOrEqual(60);
     // And it is asked for before the body is parsed and the tenant is called.
+    // The body is read under a bound since 3.0.21 (tests/bounded-request-bodies.spec.ts).
+    const bodyRead = src.indexOf('await readBoundedRequestJson(req');
+    expect(bodyRead, `${rel} no longer reads its body through the bounded reader`).toBeGreaterThan(-1);
     expect(src.indexOf('assertRateLimit('), `${rel} limits after it has already reached out`)
-      .toBeLessThan(src.indexOf('await req.json()'));
+      .toBeLessThan(bodyRead);
   }
 });
 

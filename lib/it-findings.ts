@@ -197,6 +197,12 @@ export interface ItUseRow {
   classificationView: string | null;
   /** Ids of the findings that stand on this object at these lines — empty when no detector raised one. */
   findingIds: string[];
+  /**
+   * SAP's application component of the object (`SD-SLS-SO`), as the
+   * Cloudification Repository records it; `null` for a customer object or one
+   * SAP records none for. Optional: an answer built before 3.0.21 has none.
+   */
+  appComponent?: string | null;
 }
 
 /* ------------------------------------------------------------------ chain */

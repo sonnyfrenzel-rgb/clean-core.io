@@ -371,7 +371,7 @@ test.describe('Management, rendered', () => {
 
     const fit = page.locator('#standard-fit');
     await expect(fit).toHaveAttribute('data-standard-fit', 'ready', { timeout: 90000 });
-    await expect(fit.locator('h3')).toHaveText('Distance to SAP standard on Public Edition');
+    await expect(fit.locator('h3')).toHaveText('What stands in the way of the SAP standard on Public Edition');
     await expect(fit).toContainText('Clean-Core.io measure, not an SAP figure');
     const percent = Number(await fit.locator('[data-standard-fit-value]').getAttribute('data-standard-fit-percent'));
     const [fits, counted] = (await fit.locator('[data-standard-fit-count]').getAttribute('data-standard-fit-count'))!

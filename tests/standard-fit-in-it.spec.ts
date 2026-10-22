@@ -47,9 +47,9 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     for (const view of ['business', 'it', 'management']) {
       const search = `?view=${view}&from=workspace-tools&layer=standard`;
       expect(workspaceBackHref({ projectId: 'p-1', search }), view).toBe('/project/p-1?view=it#standard');
-      expect(stageBackPlace(search), view).toBe('IT view, Standard fit');
+      expect(stageBackPlace(search), view).toBe('IT view, Where it touches SAP standard');
     }
-    // Management's open condition "Check standard fit" points at the IT section.
+    // Management's open condition points at the IT section ("See where it touches SAP standard" since 22.10.2026).
     expect(DECISION_PLACE_IDS.itStandardFit).toBe(IT_SECTION_IDS.standard);
   });
 
@@ -57,16 +57,18 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     const answers = read('components/workspace/ItAnswers.tsx');
     // IT's own section, full width under the two columns, after the rail.
     expect(answers).toContain('id={IT_SECTION_IDS.standard}');
-    expect(answers).toContain('<ItStandardFit');
+    // Since 22.10.2026 (owner decision): "Where this program touches SAP standard" and the check, not the table.
+    expect(answers).toContain('<StandardTouchCard');
+    expect(answers).toContain('<FitCheckPanel');
     expect(answers.indexOf('id={IT_SECTION_IDS.standard}')).toBeGreaterThan(answers.indexOf('<ItRail'));
     // No "Standard fit → Business" link out any more.
     expect(answers).not.toContain('itv.elsewhereStandard');
     expect(answers).not.toMatch(/elsewhere\.open\('business', 'standard'\)/);
-    // The shell and the demo hand IT the layer.
-    expect(read('components/workspace/WorkspaceShell.tsx')).toMatch(/standardLayer=\{allLayers\.find\(\(l\) => l\.key === 'standard'\)/);
-    expect(read('components/demo/DemoWorkspaceShell.tsx')).toMatch(/standardLayer=\{layers\.find\(\(l\) => l\.key === 'standard'\)/);
-    // The table is IT's now; the Business layer section no longer draws it.
-    expect(read('components/workspace/ItStandardFit.tsx')).toContain('<StandardFitTable');
+    // The card reads the findings IT already holds: the shell and the demo no longer hand IT a layer.
+    expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('standardLayer=');
+    expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toContain('standardLayer=');
+    // The table is gone; the Business layer section does not draw it either.
+    expect(fs.existsSync(path.resolve(__dirname, '..', 'components/workspace/ItStandardFit.tsx'))).toBe(false);
     expect(read('components/workspace/LayerSection.tsx')).not.toContain('StandardFitTable');
     // One layer is no bar: the bar is drawn only where there are two or more.
     expect(read('components/workspace/WorkspaceShell.tsx')).toContain('layers.length > 1 ? <WorkspaceLayerBar');

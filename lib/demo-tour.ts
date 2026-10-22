@@ -42,7 +42,6 @@ export const TOUR_PLACES = [
   'process-levels',
   'not-determined',
   'confirm-rule',
-  'standard-fit',
   'it-chain',
   'management',
   'four-buckets',
@@ -95,12 +94,6 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
     view: 'business',
     title: 'Decide on rules',
     body: 'Say for each rule what the business needs: keep, change, drop or clarify. A rule stays reconstructed until someone answers; here the answers are kept in this browser and nowhere else.',
-  },
-  {
-    place: 'standard-fit',
-    view: 'business',
-    title: 'Standard fit',
-    body: "Where a successor is named for an object the code uses, it is listed with its source: SAP's catalog or Clean-Core.io's curated mapping. A name without evidence is not a fit.",
   },
   {
     place: 'it-chain',

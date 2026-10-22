@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
-import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -122,7 +122,7 @@ async function authorise(req: NextRequest, bucket = 'project-contract'): Promise
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(

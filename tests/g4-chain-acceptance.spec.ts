@@ -528,14 +528,10 @@ test.describe('G4 path 1 — standard adoption (CC-001: KNA1 list → SAP standa
     expect(c.fields.find((f) => f.key === 'rejected-alternatives')?.statement).toContain('Cover the requirement with SAP standard');
 
     // G3, "no standard fit from a legacy construct": the standard-fit layer
-    // claims no fit. For this case it holds no row at all — the report carries
-    // no business rule for a capability to be read from — and says nothing
-    // rather than something.
+    // that claimed none was removed with its route (owner decision 22.10.2026);
+    // nothing in the product answers a fit any more.
     const res = await a.standardFit(projectId);
-    expect(res.status(), await res.text()).toBe(200);
-    const { view } = (await res.json()) as { view: { rows: Array<{ fit: string | null }>; catalogConsulted: boolean } };
-    test.info().annotations.push({ type: 'standard-fit', description: `CC-001: ${view.rows.length} capability rows, catalogue consulted: ${view.catalogConsulted}` });
-    expect(view.rows.every((r) => r.fit === null), 'a catalogue hit was turned into a standard fit').toBe(true);
+    expect(res.status(), 'the removed standard-fit route answers again').toBe(404);
 
     // Nothing is decided yet, and the handover says so.
     const h = await handover(projectId);

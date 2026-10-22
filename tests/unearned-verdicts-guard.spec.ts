@@ -169,11 +169,11 @@ test.describe('missing values are not replaced by the best available answer', ()
     expect(jsx).toContain('No findings from these detectors');
   });
 
-  test('the standardisation fit is not three invented percentages', () => {
-    const src = read('components/analyze/TargetScopeMapping.tsx');
-    // 90 / 50 / 15 were numbers chosen to look measured. The model returns one
-    // of three words.
-    expect(src).not.toMatch(/'90%'\s*:\s*standardFit\?\.potential === 'Medium'/);
+  test('the standardisation fit is not shown at all', () => {
+    // 90 / 50 / 15 were numbers chosen to look measured; then the model's three
+    // words. Since 3.0.21 (owner decision 22.10.2026) neither: the Analyze page
+    // shows no model standard fit.
+    expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).not.toMatch(/standardFit/);
   });
 
   test('an empty test run is not a pass rate', () => {

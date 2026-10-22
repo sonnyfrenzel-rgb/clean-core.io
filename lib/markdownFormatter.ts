@@ -15,7 +15,6 @@ import {
   annotateSapReferences as checked,
   catalogNoteForMapping,
   coverageClaims,
-  sapCheckedNarrative,
   sapReferenceAppendixMarkdown,
 } from './sap-reference-check';
 import { checkModelLineRefs, engineLineAnchors } from './abap/narrative-anchors';
@@ -87,22 +86,12 @@ export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExp
     md += `## As-Is Process & Legacy Context\n`;
     md += `${checked(data.asIsContext || 'No context available.')}\n\n`;
 
-    if (data.standardFit) {
-      // The fit is the model's word. SAP identifiers in it are checked, and a
-      // claim of full coverage is said to be unbacked (external review F-03/F-09).
-      md += `## Target Standard Process & SAP Fit\n`;
-      md += `> AI-generated. SAP identifiers below are checked against SAP data this product holds.\n\n`;
-      md += `- **Fit Potential (model's estimate, not a measured fit):** ${data.standardFit.potential || 'N/A'}\n`;
-      // 3.0.18 item 13 (QM-08, FI-F12): a sentence whose SAP ID contradicts SAP's data is dropped, SAP's title shown.
-      md += `- **Target Standard Process:** \`${sapCheckedNarrative(data.standardFit.targetStandardProcess || 'N/A')}\`\n`;
-      md += `- **Technical Rationale:** ${sapCheckedNarrative(data.standardFit.rationale || 'N/A')}\n`;
-      if (data.standardFit.potential === 'High' || coverageClaims(`${data.standardFit.rationale ?? ''} ${data.recommendations?.cloudReadiness ?? ''}`).length) {
-        md += `- **Note:** ${COVERAGE_CLAIM_NOTE}\n`;
-      }
-      if (standardExclusionClaims(`${data.standardFit.rationale ?? ''} ${data.recommendations?.cloudReadiness ?? ''}`).length) {
-        md += `- **Note:** ${STANDARD_EXCLUSION_NOTE}\n`;
-      }
-      md += `\n`;
+    // The model's "Standard Fit" is no longer exported (owner decision
+    // 22.10.2026): functional fit to the SAP standard is not measured. An older
+    // analysis that carries it parses and is not shown.
+    // A blanket claim that the SAP standard cannot do something stays marked (MM review point 5).
+    if (standardExclusionClaims(data.recommendations?.cloudReadiness ?? '').length) {
+      md += `> **Note:** ${STANDARD_EXCLUSION_NOTE}\n\n`;
     }
     
     // A single object is one gap; any other shape is said, not left out (lib/model-gaps.ts).
@@ -127,7 +116,10 @@ export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExp
       md += `## Clean Core Architecture Recommendations\n`;
       md += `- **Keep Core Clean Strategy:** ${checked(data.recommendations.keepCoreClean || 'N/A')}\n`;
       md += `- **Decommissioning / Deactivation Strategy:** ${checked(data.recommendations.decommissioning || 'N/A')}\n`;
-      md += `- **Transformed Cloud Readiness:** ${checked(data.recommendations.cloudReadiness || 'N/A')}\n\n`;
+      md += `- **Transformed Cloud Readiness:** ${checked(data.recommendations.cloudReadiness || 'N/A')}\n`;
+      // A claim of full coverage is said to be unbacked (external review F-09).
+      if (coverageClaims(data.recommendations.cloudReadiness ?? '').length) md += `- **Note:** ${COVERAGE_CLAIM_NOTE}\n`;
+      md += `\n`;
     }
 
     if (Array.isArray(data.strategicNextSteps) && data.strategicNextSteps.length > 0) {
@@ -140,7 +132,7 @@ export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExp
 
     // Every SAP identifier of the report, with its state and SAP source (external review F-03).
     md += sapReferenceAppendixMarkdown(
-      data.summary, data.asIsContext, data.standardFit?.targetStandardProcess, data.standardFit?.rationale,
+      data.summary, data.asIsContext,
       ...gapsReading.gaps.flatMap((g) => [g.title, g.strategy, g.rationale]),
       data.recommendations?.keepCoreClean, data.recommendations?.decommissioning, data.recommendations?.cloudReadiness,
       ...(Array.isArray(data.strategicNextSteps) ? data.strategicNextSteps : []),

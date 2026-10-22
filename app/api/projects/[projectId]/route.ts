@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { isProjectOwner, mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { logger, errMessage } from '@/lib/logger';
@@ -41,7 +41,7 @@ export async function GET(
     try {
       await assertMfaSatisfied(req, decoded);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },
@@ -137,10 +137,10 @@ export async function DELETE(
     // not be enough to erase it.
     try {
       await assertMfaSatisfied(req, decoded);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr?.message || 'Multi-factor authentication required.' },
-        { status: mfaErr?.status || 403 },
+        { error: mfaRefusal(mfaErr).message || 'Multi-factor authentication required.' },
+        { status: mfaRefusal(mfaErr).status || 403 },
       );
     }
 

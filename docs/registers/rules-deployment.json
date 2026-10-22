@@ -37,5 +37,17 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "00191548a696ba71e5392977aa8cefa3c269c9e8f02b25d7eed3fbd7657db471",
+    "recordedAt": "2026-10-22",
+    "recordedFor": "3.0.21: SEC-2026-888, -889, -890 - status only 'designed' with the design in the same write; testCases and manualTestingRequirements leave the client allowlist (written by the artefacts route since 3.0.14); nonFunctionalRequirements held to the NFRData shape. Takes fields away, adds none; may sit pending until the owner deploys.",
+    "addsToClient": [],
+    "removesFromClient": [
+      "manualTestingRequirements",
+      "testCases"
+    ],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }

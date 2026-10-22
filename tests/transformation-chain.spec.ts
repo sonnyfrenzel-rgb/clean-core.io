@@ -394,11 +394,12 @@ test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild
     expect(warn(recorded('rebuild · Rebuild side by side'))).toBeNull();
   });
 
-  test('nothing on record that weighs SAP standard: the standard-fit warning, to IT #standard and back', () => {
+  // To the Management decision since 22.10.2026 (owner decision): only the account's decision weighs the standard.
+  test('nothing on record that weighs SAP standard: the standard-fit warning, to the decision in Management and back', () => {
     const expected = {
       kind: 'standard-fit-open',
-      text: 'Standard fit is not assessed yet — SAP standard may already cover this.',
-      link: { label: 'Check standard fit', href: '/project/p1?view=it&origin=transformation.tips#standard' },
+      text: 'SAP standard has not been weighed against a rebuild yet — decide Keep, Rebuild, Move to SAP standard or Retire first.',
+      link: { label: 'Decide in Management', href: '/project/p1?view=management&origin=transformation.tips#decision-card' },
     };
     expect(warn(undefined)).toEqual(expected);
     expect(warn(recorded(null))).toEqual(expected);

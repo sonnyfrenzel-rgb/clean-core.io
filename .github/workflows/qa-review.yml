@@ -48,13 +48,16 @@ concurrency:
 jobs:
   review:
     name: Delta review (sealed)
-    if: vars.QA_REVIEW_ENABLED != 'false' && (github.event_name == 'workflow_dispatch' || github.ref_name == 'dev')
+    # Manual runs: on dev or main only, and the checkout below is pinned to the dispatched commit.
+    # `inputs.head` only names the range to review; it is never checked out.
+    if: vars.QA_REVIEW_ENABLED != 'false' && (github.ref_name == 'dev' || (github.event_name == 'workflow_dispatch' && github.ref_name == 'main'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
+          ref: ${{ github.sha }} # the dispatched commit, not whatever the branch points to when the job starts
           fetch-depth: 0 # the delta needs the previous tip and the last reviewed commit
           persist-credentials: false # nothing in this job pushes; do not leave a token in .git/config
 

@@ -163,7 +163,6 @@ export const TOUR_TARGETS: Record<TourPlace, { figure: keyof DemoReleaseFigures;
   'process-map': { figure: 'processSteps', min: 1 },
   'process-levels': { figure: 'processLevels', min: 2 },
   'confirm-rule': { figure: 'rulesRevealed', min: 1 },
-  'standard-fit': { figure: 'standardCandidates', min: 1 },
   'it-chain': { figure: 'itFindingRows', min: 1 },
   management: null,
   'four-buckets': { figure: 'findings', min: 1 },

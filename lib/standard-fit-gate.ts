@@ -17,7 +17,7 @@
  *     fit-gap for the standard, and a reason that is not circular —
  *     `lib/design-option-comparison.ts`). The second is AI-generated and
  *     is said to be one. Nothing else counts: the Standard fit table's rows
- *     carry catalog pointers at E0/E1 and no fit (`lib/standard-fit-view.ts`).
+ *     carried catalog pointers at E0/E1 and no fit (the table was removed by owner decision 22.10.2026).
  *   - `decisionOnRecord(project)` — the stored decision record (roadmap 8.4),
  *     its status, whether it is confirmed on the run the project analyses now,
  *     and the option it names.

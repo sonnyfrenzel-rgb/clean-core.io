@@ -73,6 +73,7 @@ import { coveringTestRunReceipt, OWNER_EDITED_SUITE_NOTE, viaContractOfRun } fro
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import CounterChecks from '@/components/testing/CounterChecks';
 import { aiAuthorshipFactsOf, testCasesAuthorshipOf } from '@/lib/ai-authorship';
 import { aiMarkingStatement } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
@@ -1909,6 +1910,9 @@ export default function TestingSandboxPage() {
               gaps={program?.gaps ?? []}
               strip={program ? { lines: program.lines, bands: program.bands, marks: program.marks, ticks: findingTicks } : null}
             />
+            {/* How the business checks each rule without ABAP (roadmap 7.3) — here since the IT view's
+                Standard fit table was removed (owner decision 22.10.2026). */}
+            <CounterChecks source={originSource} engineVersion={evidenceEngine} />
             {/* What the testing model itself says no unit test here can cover —
                 only your own system can. It used to appear only after a run in
                 this session, and never on the ABAP Cloud route, which has no

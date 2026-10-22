@@ -10,7 +10,7 @@ import {
   ODATA_BODY_LIMITS,
   ResponseLimitError,
 } from '@/lib/url-validation';
-import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, providerErrorShape } from '@/lib/logger';
@@ -189,8 +189,8 @@ export async function POST(req: NextRequest) {
 
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
-      return NextResponse.json({ status: 'failed', message: mfaErr.message || 'MFA verification required.' }, { status: 403 });
+    } catch (mfaErr: unknown) {
+      return NextResponse.json({ status: 'failed', message: mfaRefusal(mfaErr).message || 'MFA verification required.' }, { status: 403 });
     }
 
     try {

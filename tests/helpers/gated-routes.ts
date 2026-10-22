@@ -151,9 +151,6 @@ export const GATED_ROUTES: GatedRoute[] = [
   // customer's code.
   { file: 'app/api/projects/[projectId]/evidence/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/evidence` },
   { file: 'app/api/projects/[projectId]/evidence/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/evidence`, body: { source: 'REPORT z.', s4Deployment: 'public' } },
-  // Roadmap 7.2, mockup s3 — the standard-fit table, derived on the server from
-  // the project's source and SAP's catalogue. A read of the customer's code.
-  { file: 'app/api/projects/[projectId]/standard-fit/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/standard-fit` },
   // Roadmap 8.3 — the architecture contract the generation follows (GET), and
   // the record of which contract a generated stand was computed against (POST).
   { file: 'app/api/projects/[projectId]/contract/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/contract` },

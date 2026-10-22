@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, RotateCcw } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
-import CcAnchor from '@/components/cc/Anchor';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -93,10 +92,7 @@ import { DEMO_ANALYSIS_KEY, resultOfWorklist } from '@/lib/analysis-read';
 import {
   demoAnalysisReady,
   demoConfirmRoute,
-  demoEvidence,
-  demoFirstFiveOf,
   demoRuleCount,
-  demoSourceLineLabel,
   demoStartingPoint,
   demoSubtitle,
   tourContinuesIn,
@@ -528,7 +524,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     );
   }
 
-  const standard = demo.transformation.plan.filter((p) => p.successor);
 
   /* The process map is what Need & process holds in the demo. The layer
      model's own Need section speaks of usage imports and would say the process
@@ -811,33 +806,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               )}
             </div>
           </Place>
-
-          <Place place="standard-fit">
-            {stop('standard-fit')}
-            <CcCard title={wt('demo.standardFit')} count={standard.length} meta={<CcProvenanceChip value="imported" />}>
-              <p className="m-0 mb-2 text-[12px] font-medium text-cc-ink-muted">
-                {wt('demo.standardFitLead')}
-              </p>
-              <ul data-demo-standard-fit="" className="m-0 flex list-none flex-col gap-2 p-0">
-                {standard.slice(0, 5).map((item) => (
-                  <li key={item.findingId} className="flex flex-wrap items-center gap-2 text-[13px] text-cc-ink">
-                    <CcAnchor label={demoSourceLineLabel(item.lineStart)}>{`L${item.lineStart}`}</CcAnchor>
-                    <span className="min-w-0">{item.title}</span>
-                    <span className="font-semibold">→ {item.successor}</span>
-                    <span className="text-[12px] text-cc-ink-muted">{demoEvidence(item.successorProvenance)}</span>
-                  </li>
-                ))}
-              </ul>
-              {standard.length > 5 ? (
-                <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-                  {demoFirstFiveOf(standard.length)}{' '}
-                  <Link href="/demo/transformation" className="font-semibold text-cc-ink underline underline-offset-2">
-                    {wt('demo.allInPlan')}
-                  </Link>
-                </p>
-              ) : null}
-            </CcCard>
-          </Place>
         </>
       ) : null}
 
@@ -864,8 +832,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               signed="demo"
               trust="demo"
               elsewhere={itElsewhere}
-              // Standard fit is IT's own section since ADR-096, as in the workspace.
-              standardLayer={layers.find((l) => l.key === 'standard') ?? null}
             />
           </Place>
         </>

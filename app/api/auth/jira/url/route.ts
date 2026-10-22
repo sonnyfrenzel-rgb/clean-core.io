@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
-import { verifyRequestAuth, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertMfaSatisfied } from '@/lib/firebase-admin';
 
 /**
  * GET /api/auth/jira/url
@@ -28,8 +28,8 @@ export async function GET(request: Request) {
 
   try {
     await assertMfaSatisfied(request, decodedToken);
-  } catch (mfaErr: any) {
-    return NextResponse.json({ error: mfaErr.message || 'MFA verification required.' }, { status: 403 });
+  } catch (mfaErr: unknown) {
+    return NextResponse.json({ error: mfaRefusal(mfaErr).message || 'MFA verification required.' }, { status: 403 });
   }
 
   const { origin } = new URL(request.url);

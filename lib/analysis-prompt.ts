@@ -79,11 +79,6 @@ interface AnalysisData {
   cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${routeReport.cleanCoreScore}
   summary: string; // Plain english business executive summary. Every sentence that states something about THIS program must end with an anchor in one of the forms listed under CITATIONS above. General advice stays uncited.
   asIsContext: string; // Describe what the legacy program does. Same citation rule: anchor every claim about this code. Open with two plain sentences for a business reader, built only from PROGRAM FACTS: what the program is for, who uses it, which business objects, what it produces, and what it does not do. You may give the business meaning of a code value only as a reading of it (e.g. "FAC, read as facilities"). Never name a business object or table PROGRAM FACTS do not list; never say it posts, sends mail or runs an approval when PROGRAM FACTS say it does not; no money, savings or accuracy claims.
-  standardFit: {
-    potential: 'High' | 'Medium' | 'Low'; // 'High' only when the rationale lists, capability by capability, the standard function that covers each one. Otherwise 'Medium' or 'Low'.
-    targetStandardProcess: string; // The standard process in words. An app ID, scope item or communication scenario only under the SAP IDENTIFIERS rules above.
-    rationale: string; // The capabilities the code performs, which of them a named standard function covers, and which are unconfirmed or not known (target release, usage, volumes). No claim of full coverage without that list.
-  };
   gaps: Array<{
     title: string; 
     severity: 'High' | 'Medium' | 'Low'; 

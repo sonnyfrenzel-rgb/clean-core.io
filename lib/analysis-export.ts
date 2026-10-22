@@ -98,8 +98,8 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
       technicalDebtLevel: data.businessValueAnalysis?.technicalDebtLevel ?? null,
       valueDrivers: data.businessValueAnalysis?.valueDrivers ?? null,
       plainEnglishActionPlan: modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan) ?? [
-        "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
-        "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
+        "1. Check each custom function against SAP standard in your own fit-to-standard workshop before anything is rebuilt.",
+        "2. Retire custom workarounds only after that check, a data migration assessment and business sign-off.",
         `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${routeLabel(project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'decoupled')} architecture.`
       ]
     };
@@ -131,13 +131,14 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
         <li><strong>${esc(checked(step))}</strong></li>
       `).join('') || '';
 
-    // A "High" fit or a claim of full coverage is said to be unbacked (external review F-09).
-    const coverageNote = data.standardFit?.potential === 'High'
-      || coverageClaims([data.standardFit?.rationale, data.recommendations?.cloudReadiness].join(' ')).length > 0
+    // A claim of full coverage is said to be unbacked (external review F-09). The
+    // model's "Standard Fit" is no longer exported (owner decision 22.10.2026):
+    // functional fit to the SAP standard is not measured.
+    const coverageNote = coverageClaims(data.recommendations?.cloudReadiness ?? '').length > 0
       ? `<p class="muted">${esc(COVERAGE_CLAIM_NOTE)}</p>`
       : '';
     // 3.0.21 (MM review, point 5): a blanket exclusion of the SAP standard is said to be unbacked too.
-    const exclusionNote = standardExclusionClaims([data.standardFit?.rationale, data.recommendations?.cloudReadiness].join(' ')).length > 0
+    const exclusionNote = standardExclusionClaims(data.recommendations?.cloudReadiness ?? '').length > 0
       ? `<p class="muted">${esc(STANDARD_EXCLUSION_NOTE)}</p>`
       : '';
 
@@ -245,13 +246,6 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
             <h2>As-Is Process & Legacy Context</h2>
             <p>${esc(checked(data.asIsContext))}</p>
 
-            <h2>Standard Fit Assessment</h2>
-            <p class="muted">AI-generated. SAP identifiers are checked against SAP data this product holds.</p>
-            <p><strong>Target Standard Process ID / Module:</strong> ${esc(sapCheckedNarrative(data.standardFit?.targetStandardProcess || 'N/A', checked))}</p>
-            <p><strong>Standardization Potential (model's estimate, not a measured fit):</strong> <span class="tag tone-neutral">${esc(data.standardFit?.potential || 'not determined')}</span></p>
-            <p>${esc(sapCheckedNarrative(data.standardFit?.rationale, checked))}</p>
-            ${coverageNote}${exclusionNote}
-
             <h2>SAP Extensibility Routing Decision Path</h2>
             ${checkpoints === null ? notDetermined('This analysis did not return the step-by-step checkpoints behind the routing decision.') : `
             <p>The legacy ABAP code was evaluated step-by-step against the official SAP Clean Core extensibility decision tree. Below is the detailed pathway and checkpoint audit:</p>
@@ -331,6 +325,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
               <div class="card">
                 <div class="card-title">Cloud Readiness</div>
                 <p>${esc(checked(data.recommendations?.cloudReadiness))}</p>
+                ${coverageNote}${exclusionNote}
               </div>
             </div>
 

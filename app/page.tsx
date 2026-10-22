@@ -723,7 +723,7 @@ export default function Home() {
                     icon: <BarChart3 className="i" aria-hidden="true" />,
                     name: 'Management',
                     q: 'What do I risk, what do I decide?',
-                    a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and fit to standard as one figure; costs only as a simulation.',
+                    a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and what stands in the way of the SAP standard as one figure; costs only as a simulation.',
                   },
                 ].map((v, i) => (
                   <li key={v.name} data-view-item="" className={i === 0 ? 'cur' : undefined}>
