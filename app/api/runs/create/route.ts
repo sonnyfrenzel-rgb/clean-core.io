@@ -29,6 +29,7 @@ import {
   runProfileRecord,
 } from '@/lib/assessment-target';
 import { INPUT_IDS } from '@/lib/input-manifest';
+import { uploadedFileNameDefect } from '@/lib/uploaded-file-name';
 import {
   checkProjectWrite,
   mergedDocument,
@@ -184,6 +185,12 @@ export async function POST(req: NextRequest) {
     // (lib/firestore-id.ts).
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
+    }
+    // The file name goes into the signed evidence; it is held to what a
+    // browser's File.name can be before anything is read or charged (L-05).
+    const fileNameDefect = uploadedFileNameDefect(uploadedFileName);
+    if (fileNameDefect) {
+      return NextResponse.json({ error: fileNameDefect, code: 'bad-file-name' }, { status: 400 });
     }
 
     const { db, FieldValue } = await getAdminDb();
