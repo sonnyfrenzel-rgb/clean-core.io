@@ -178,12 +178,11 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(deriveBusinessRules(FIXTURE, BEFORE).rules.some((r) => /p_case < 0 OR p_case > 31/i.test(r.label))).toBe(true);
   });
 
-  test('without a demo flag, a CASE whose integer arms only fill test data is a test data switch', () => {
+  test('without a demo flag, demo cases a routine fills are not set apart (owner decision 22.10.2026)', () => {
+    // The example's 31 cases are filled by PERFORM add_docline: with its demo flag they stand apart
+    // (above); without it nothing in the arms is a row of fixed values, so they stay rules.
     expect(NO_FLAG).not.toMatch(/p_demo/i);
-    const demo = readDemoSwitches(NO_FLAG, AFTER);
-    expect(demo?.flag.name).toBe('P_CASE');
-    expect(demo?.routines).toEqual(['APPLY_CASE']);
-    expect(deriveBusinessRules(NO_FLAG, AFTER).rules.map((r) => r.label).join(' | ')).not.toMatch(/p_case/i);
+    expect(readDemoSwitches(NO_FLAG, AFTER)).toBeNull();
     expect(readDemoSwitches(NO_FLAG, BEFORE)).toBeNull();
   });
 
@@ -213,15 +212,17 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     // A database write in every arm.
     expect(readDemoSwitches(switchOf((n) => `      ls_row-id = ${n}.\n      INSERT zrow FROM ls_row.`), AFTER)).toBeNull();
     expect(readDemoSwitches(switchOf((n) => `      ls_row-id = ${n}.\n      INSERT INTO zrow VALUES ls_row.`), AFTER)).toBeNull();
+    // A VALUE that carries the rows of another table along.
+    expect(readDemoSwitches(switchOf((n) => `      APPEND VALUE #( BASE lt_rows ( id = ${n} ) ) TO lt_rows.`), AFTER)).toBeNull();
     // A VALUE that carries a field of what was read.
     expect(readDemoSwitches(switchOf((n) => `      APPEND VALUE #( id = ${n} name = ls_in-name ) TO lt_rows.`), AFTER)).toBeNull();
   });
 
-  test('literals handed to a routine are test data only when the routine keeps them in memory', () => {
+  test('a routine call never makes an arm test data, whatever it is handed (owner decision 22.10.2026)', () => {
     const withForm = (body: string) =>
       `${switchOf((n) => `      PERFORM add_row USING '${n}' 'Case ${n}' 'A'.`)}FORM add_row USING iv_id TYPE c iv_name TYPE c iv_kind TYPE c.\n${body}ENDFORM.\n`;
-    // Builds a row and appends it: test data.
-    expect(readDemoSwitches(withForm('  CLEAR ls_row.\n  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n'), AFTER)?.flag.name).toBe('P_CASE');
+    // Even a routine that only builds a row and appends it: what it does is not read off the call.
+    expect(readDemoSwitches(withForm('  CLEAR ls_row.\n  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n'), AFTER)).toBeNull();
     // Creates a record, commits, or calls out: a business branch, however literal its arguments.
     expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  INSERT zrow FROM ls_row.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(withForm('  ls_row-id = iv_id.\n  APPEND ls_row TO lt_rows.\n  COMMIT WORK.\n'), AFTER)).toBeNull();

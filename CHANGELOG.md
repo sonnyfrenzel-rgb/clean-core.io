@@ -55,6 +55,14 @@ The first insights are for understanding only: they explain, they ask for no dec
   stays readable.
 - **A cost revision is matched by its full fingerprint,** not by the twelve characters of its key; a basis recorded
   before is still read.
+- **Demo cases without a demo flag are set apart only by rows of fixed values** the branches write themselves; a
+  routine call never counts, and a database write or a row the program read never does (owner decision 22 October
+  2026). A program with a demo flag is read by its flag, as before.
+- **Every reading of an existing project uses the engine its run was made with** — the rule derivation, the first
+  insights, the documentation and the summaries. `tests/engine-version-callers.spec.ts` names every caller.
+- **The rule baskets read more carefully:** a marker is a field the program writes and reads back on one row type,
+  not another field whose name ends alike; a rule that also picks out a live value is not test data; "within a
+  tolerance" is said only when a condition, a filter or a calculation applies it.
 - **A loop skip is said as a skip,** never as stopping the process.
 - **Security:** SEC-2026-892, -894 and -897 to -902 fixed. SEC-2026-888 to -890 still wait for the next Firestore
   rules deploy. Details stay in the sealed register.

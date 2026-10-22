@@ -77,9 +77,10 @@ const norm = (name: string) => name.trim().toUpperCase();
  *      body runs only with the flag on;
  *   5. without a demo flag, a **test data switch by shape**: a `CASE` on a
  *      selection parameter with at least five integer `WHEN` arms, each of
- *      which only fills data from literals (a `PERFORM … USING` literals, an
- *      assignment of a literal, `APPEND`, `CLEAR`) and at least half of which
- *      fill a table. The parameter then stands as the switch.
+ *      which only fills data from literals (an assignment of a literal, a
+ *      `VALUE` of literals, `APPEND` of such a row into an internal table,
+ *      `CLEAR`) and at least half of which fill a table. A routine call never
+ *      counts (owner decision 22.10.2026). The parameter then stands as the switch.
  *
  * `engineVersion` is the engine the reading is made for; an older one reads as before.
  */
@@ -315,34 +316,29 @@ function literalRow(row: string): boolean {
   if (/^INITIAL\s+LINE$/i.test(row)) return true;
   const value = /^VALUE\s+[\w#/]*\s*\(([\s\S]*)\)$/i.exec(row);
   if (!value) return false;
+  // `BASE lt_rows ( … )` carries the rows of another table along: not a row of fixed values.
+  if (/\bBASE\b/i.test(value[1])) return false;
   const values = [...value[1].matchAll(/=\s*('(?:[^']|'')*'|`[^`]*`|[^\s()]+)/g)].map((m) => m[1]);
   return values.every((v) => LITERAL.test(v));
 }
 
 /**
- * A statement that only fills test data; `fills` when it puts a row into a table or hands literals to a routine.
+ * A statement that only fills test data; `fills` when it puts a row of fixed values into a table.
  *
  * `filled` is what the same `WHEN` arm has set from literals so far: a row is
  * test data only when it is literal or one of those. Without it (the set-up
  * around the switch) any row into an internal table passes; a database write never does.
+ *
+ * A routine call is never test data here, whatever it is handed (owner decision
+ * 22.10.2026): what a routine does with literals is not read off the call, and
+ * every rule built to read it found another way for a business routine through.
+ * A program whose demo cases are filled by a routine is read by its demo flag
+ * (shapes 1 to 4), or not set apart.
  */
-function testDataStatement(
-  s: AbapStatement,
-  filled: Set<string> | null = null,
-  inMemory: ((routine: string) => boolean) | null = null,
-): { ok: boolean; fills: boolean } {
+function testDataStatement(s: AbapStatement, filled: Set<string> | null = null): { ok: boolean; fills: boolean } {
   const text = s.text.replace(/\.\s*$/, '').trim();
   const keyword = s.keyword.toUpperCase();
-  if (keyword === 'PERFORM') {
-    // Literals handed to a routine are test data only when the routine keeps them in memory.
-    const target = /^PERFORM\s+([\w/]+)/i.exec(text)?.[1] ?? '';
-    if (inMemory && !inMemory(norm(target))) return { ok: false, fills: false };
-    const args = /\b(?:USING|CHANGING)\b([\s\S]*)$/i.exec(text)?.[1] ?? '';
-    const values = args.match(/'(?:[^']|'')*'|`[^`]*`|\S+/g) ?? [];
-    const literals = values.filter((v) => !/^(?:USING|CHANGING)$/i.test(v));
-    // A row of data handed over: three literals at least — `PERFORM run USING 'A'` is a dispatch, not test data.
-    return { ok: literals.every((v) => LITERAL.test(v)), fills: literals.length >= 3 };
-  }
+  if (keyword === 'PERFORM') return { ok: false, fills: false };
   if (keyword === 'APPEND' || keyword === 'INSERT') {
     const row = internalRowOf(text, keyword);
     if (row === null) return { ok: false, fills: false };
@@ -363,42 +359,10 @@ function testDataStatement(
   return { ok: false, fills: false };
 }
 
-/**
- * What a routine may do and still only build test data: declare, assign, clear,
- * and put rows into an internal table — nothing else. No condition, loop or
- * message (that is logic, not a row of data), no read, no write, no call. A
- * routine this program does not contain (`PERFORM … IN PROGRAM`, an include
- * not uploaded) is not known to.
- */
-const ROW_BUILDING = /^(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS|CLEAR|REFRESH|FREE|APPEND)$/i;
-
-function routineKeepsInMemory(statements: readonly AbapStatement[], structure: ReturnType<typeof readBlocks>, name: string): boolean {
-  if (!structure.containers.some((c) => c.kind === 'form' && norm(c.name) === name)) return false;
-  // The routine's own statements, FORM to ENDFORM — by statement, not by line: a routine written on one line has them too.
-  const open = statements.findIndex((st) => /^FORM$/i.test(st.keyword) && norm(/^FORM\s+([\w/]+)/i.exec(st.text)?.[1] ?? '') === name);
-  if (open < 0) return false;
-  const close = statements.findIndex((st, i) => i > open && /^ENDFORM$/i.test(st.keyword));
-  if (close < 0) return false;
-  return statements.slice(open + 1, close).every((st) => {
-    const keyword = st.keyword.toUpperCase();
-    const text = st.text.replace(/\.\s*$/, '').trim();
-    if (keyword === 'APPEND' || keyword === 'INSERT') return internalRowOf(text, keyword) !== null;
-    if (ROW_BUILDING.test(keyword)) return true;
-    const assign = /^[\w/<>~-]+\s*=\s*([^=][\s\S]*)$/.exec(text);
-    // A value, not a call: a method or function on the right can do anything.
-    return !!assign && !/->|=>|[\w/]\(/.test(assign[1]);
-  });
-}
-
 /** Shape 5: a test data switch without a demo flag (see `readDemoSwitches`). */
 function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<string, number>): DemoSwitches | null {
   if (parameters.size === 0) return null;
   const structure = readBlocks(statements);
-  const keeps = new Map<string, boolean>();
-  const inMemory = (routine: string): boolean => {
-    if (!keeps.has(routine)) keeps.set(routine, routineKeepsInMemory(statements, structure, routine));
-    return keeps.get(routine)!;
-  };
   const { branches } = readControlFlowFrom(statements, structure);
   const fromParameter = new Map<string, string>();
   for (const s of statements) {
@@ -418,7 +382,7 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
       const to = branch.arms[k + 1]?.headerIndex ?? branch.closeIndex;
       const body = statements.slice(arm.headerIndex + 1, to);
       const filled = new Set<string>();
-      const read = body.map((s) => testDataStatement(s, filled, inMemory));
+      const read = body.map((s) => testDataStatement(s, filled));
       if (read.some((r) => r.fills)) filling += arm.kind === 'when' ? 1 : 0;
       return read.every((r) => r.ok);
     });
@@ -435,7 +399,7 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
       const keyword = s.keyword.toUpperCase();
       if (/^(?:FORM|ENDFORM|ENDIF|ELSE|MESSAGE|RETURN|EXIT)$/.test(keyword) || DECLARATION.test(keyword)) return true;
       if (keyword === 'IF' || keyword === 'ELSEIF' || keyword === 'CHECK') return onSelector.test(s.text);
-      return testDataStatement(s, null, inMemory).ok;
+      return testDataStatement(s).ok;
     });
     return {
       flag: { name: parameter, line: parameters.get(parameter)! },
