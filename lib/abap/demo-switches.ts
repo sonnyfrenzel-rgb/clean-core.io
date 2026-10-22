@@ -407,9 +407,15 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
   const written = (name: string) => assignedTimes.set(norm(name), (assignedTimes.get(norm(name)) ?? 0) + 1);
   for (const s of statements) {
     const text = s.text.trim();
-    const target = /^([\w/]+(?:-[\w/]+)*)\s*=[^=]/.exec(text)?.[1];
+    // `x = …`, and the compound assignments `x += …`, `x -= …`, `x *= …`, `x /= …`, `x &&= …`.
+    const target = /^([\w/]+(?:-[\w/]+)*)\s*(?:[-+*/]|&&)?=[^=]/.exec(text)?.[1];
     if (target) written(target);
     for (const m of text.matchAll(/\b(?:TO|INTO(?:\s+TABLE)?|CHANGING)\s+([\w/]+(?:-[\w/]+)*)/gi)) written(m[1]);
+    // Statements that change their own operand: SUBTRACT … FROM x, MULTIPLY x BY …, DIVIDE x BY …, CLEAR x.
+    const fromTarget = /^SUBTRACT\b[\s\S]*?\bFROM\s+([\w/]+(?:-[\w/]+)*)/i.exec(text)?.[1];
+    if (fromTarget) written(fromTarget);
+    const own = /^(?:MULTIPLY|DIVIDE|CLEAR|FREE|CONDENSE|SHIFT|TRANSLATE|OVERLAY)\s+([\w/]+(?:-[\w/]+)*)/i.exec(text)?.[1];
+    if (own) written(own);
   }
   const fromParameter = new Map<string, string>();
   for (const s of statements) {

@@ -15,6 +15,7 @@ import {
   DECISION_BINDINGS,
   DECISION_VERSION,
   canonicalProjectDecision,
+  decisionFingerprint,
   emptyProjectDecision,
   normaliseProjectDecision,
 } from '../lib/project-decision';
@@ -75,5 +76,26 @@ test.describe('format 1 stays byte for byte', () => {
     expect(d.conditions.some((c) => (c.source as string) === 'fit-gap')).toBe(false);
     // Format 2 and its bindings are gone from the module.
     expect(Object.keys(projectDecision).filter((k) => /^DECISION_\w*_?V(?:ERSION_)?2$/.test(k))).toEqual([]);
+  });
+});
+
+const LEVEL_OR_VIEW = /\blevel [A-D]\b|clean[- ]core level|\b(Business|Management|IT) view\b/i;
+
+test.describe('format 1 keeps its integrity checks', () => {
+  test('the fingerprint is recomputed, never believed; a wrong one is refused; no Level or view rides along', () => {
+    for (const [, over] of FORMAT_1_PINS) {
+      const d = buildProjectDecision(args(over));
+      expect(decisionFingerprint(d)).toBe(d.fingerprint);
+      // Missing: recomputed from the record (lib/project-decision.ts, normaliseProjectDecision).
+      const missing = normaliseProjectDecision({ ...JSON.parse(JSON.stringify(d)), fingerprint: undefined });
+      expect(missing.ok).toBe(true);
+      if (missing.ok) expect(missing.decision.fingerprint).toBe(d.fingerprint);
+      // Wrong: the record is refused.
+      expect(normaliseProjectDecision({ ...JSON.parse(JSON.stringify(d)), fingerprint: '0'.repeat(64) }).ok).toBe(false);
+      // The clean core Level and the three views are never part of what a decision signs.
+      expect(canonicalProjectDecision(d)).not.toMatch(LEVEL_OR_VIEW);
+    }
+    // Two different decisions never share a fingerprint.
+    expect(new Set(FORMAT_1_PINS.map(([, over]) => buildProjectDecision(args(over)).fingerprint)).size).toBe(FORMAT_1_PINS.length);
   });
 });

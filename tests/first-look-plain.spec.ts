@@ -232,6 +232,9 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(readDemoSwitches(base('  lv_case = lv_other.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(base('  MOVE lv_other TO lv_case.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(base('  SELECT SINGLE mode FROM zcfg INTO lv_case.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(base('  SUBTRACT 1 FROM lv_case.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(base('  lv_case += 1.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(base('  MULTIPLY lv_case BY 2.\n'), AFTER)).toBeNull();
   });
 
   test('a row the program read, or a write to the database, is not test data however the arms are shaped', () => {
