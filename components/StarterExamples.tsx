@@ -404,6 +404,7 @@ export default function StarterExamples({
           disabled={!!busy}
           release={release}
           onReleaseChange={setRelease}
+          folded
         />
 
         <div data-examples-tier="start-here" className="flex flex-col gap-2">

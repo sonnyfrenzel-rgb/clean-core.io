@@ -63,10 +63,6 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.cancel': 'Cancel',
   'ownCode.tryExample': 'Try an example instead',
   'ownCode.start': 'Start analysis',
-  'ownCode.startNext':
-    'Next: your workspace reads the code and signs the reading — no model call, assessed against SAP Cloud ERP Private. Counted only once the run is signed.',
-  'ownCode.startNextModel':
-    'Next: your workspace reads the code, the model writes the narrative, and both are signed as one run, assessed against SAP Cloud ERP Private. Counted only once the run is signed.',
   'ownCode.addSource': 'Add the ABAP source to start.',
   'ownCode.createFailed': 'The project could not be created. Nothing was saved.',
   'ownCode.nothingCreated': 'Nothing was created.',
@@ -174,6 +170,17 @@ export function ownCodeAttention(n: number): string {
 
 export function ownCodeTooLarge(bytes: number, limit: number): string {
   return `Together the files are ${KB(bytes)} of source; one analysis reads at most ${KB(limit)}. Analyse the program in parts.`;
+}
+
+/**
+ * What the start does next, in the footer — assessed against the target the
+ * reader actually chose (roadmap 3.0.21 (12)). It used to name SAP Cloud ERP
+ * Private whatever was chosen, also beside a chosen Public Edition.
+ */
+export function ownCodeStartNext(callsModel: boolean, targetName: string): string {
+  return callsModel
+    ? `Next: your workspace reads the code, the model writes the narrative, and both are signed as one run, assessed against ${targetName}. Counted only once the run is signed.`
+    : `Next: your workspace reads the code and signs the reading — no model call, assessed against ${targetName}. Counted only once the run is signed.`;
 }
 
 /** The free-runs option's help; the own-key way on is the Settings sentence after it. */

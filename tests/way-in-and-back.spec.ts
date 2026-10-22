@@ -12,6 +12,8 @@ import { safeReturnPath, signInLinkFor, signUpLinkFor } from '../lib/return-path
 import { invitationLinkPath } from '../lib/invitations';
 import { ownDomainVerifyEmailLink, withReturnPath } from '../lib/auth-action-link';
 import { stageErrorCopy } from '../lib/stage-error';
+import { ownCodeStartNext, wt } from '../lib/workspace-messages';
+import { CLOUD_ERP_PRIVATE } from '../lib/sap-naming';
 import {
   isOtherBuild,
   learnBuild,
@@ -36,7 +38,8 @@ import {
  * `tests/way-in-and-back-rendered.spec.ts`.
  */
 const ROOT = path.resolve(__dirname, '..');
-const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+// CRLF in a Windows checkout; the source patterns below match on a bare line feed.
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
 
 test.describe('(1) a project link signed out goes to sign-in and back; without access, one sentence', () => {
   test('the frame decides from the restored session and the server\'s answer', () => {
@@ -275,6 +278,40 @@ test.describe('(8) a tab left open across a deploy says so when it comes back, a
       g.sessionStorage = prevStorage;
       if (prevStorage === undefined) delete g.sessionStorage;
     }
+  });
+});
+
+test.describe('(12) the start names the target as one line, and the own-code footer names the edition chosen', () => {
+  test('the footer sentence follows the chosen edition (bug: it always said SAP Cloud ERP Private)', () => {
+    for (const model of [true, false]) {
+      expect(ownCodeStartNext(model, 'SAP S/4HANA Cloud Public Edition')).toContain('assessed against SAP S/4HANA Cloud Public Edition');
+      expect(ownCodeStartNext(model, 'SAP S/4HANA Cloud Public Edition')).not.toContain('Private');
+      expect(ownCodeStartNext(model, CLOUD_ERP_PRIVATE)).toContain(`assessed against ${CLOUD_ERP_PRIVATE}`);
+    }
+    const src = read('components/workspace/OwnCodeImport.tsx');
+    expect(src).toContain('ownCodeStartNext(startCallsModel, targetEditionTitle(edition))');
+    // No fixed edition left in the catalogue's start sentences.
+    expect(read('lib/messages/own-code.ts')).not.toMatch(/'ownCode\.startNext/);
+    const choice = read('components/TargetEditionChoice.tsx');
+    expect(choice).toMatch(/export function targetEditionTitle\(value: TargetEdition\): string \{\s*return \(TARGET_EDITION_OPTIONS\.find/);
+  });
+
+  test('both start screens fold the target to "Assessed against … · Change"; the preselection keeps the one-click start', () => {
+    expect(wt('tgt.assessedAgainst')).toBe('Assessed against');
+    expect(wt('tgt.changeAtStart')).toBe('Change');
+    for (const file of ['components/StarterExamples.tsx', 'components/workspace/OwnCodeImport.tsx']) {
+      const src = read(file);
+      const use = src.slice(src.indexOf('<TargetEditionChoice'), src.indexOf('/>', src.indexOf('<TargetEditionChoice')));
+      expect(use, file).toMatch(/\n\s*folded\n/);
+      expect(src, file).toContain("useState<TargetEdition>('private')");
+    }
+    const choice = read('components/TargetEditionChoice.tsx');
+    const folded = choice.slice(choice.indexOf('if (folded && !open)'), choice.indexOf('  return (\n    <div data-target-edition-choice="" data-target-edition={value} className'));
+    expect(folded).toContain('data-target-edition-folded=""');
+    expect(folded).toContain("{wt('tgt.assessedAgainst')} <b className=\"font-semibold text-cc-ink\">{targetEditionTitle(value)}</b>");
+    expect(folded).toContain('onClick={() => setOpen(true)}');
+    // The "Change target" dialog in the workspace keeps the full choice.
+    expect(read('components/workspace/TargetChange.tsx')).toContain('<TargetEditionChoice value={edition} onChange={chooseEdition} />');
   });
 });
 

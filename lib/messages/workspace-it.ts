@@ -120,6 +120,11 @@ export const WORKSPACE_IT_MESSAGES = {
   'tgt.change': 'Change target',
   // The release a start screen asks a Private Edition project for
   // (`components/TargetEditionChoice.tsx`, `lib/start-release-handoff.ts`).
+  // The start screens show the target as one line until the reader asks to
+  // change it (roadmap 3.0.21 (12)): "Assessed against SAP Cloud ERP Private · Change".
+  'tgt.assessedAgainst': 'Assessed against',
+  'tgt.changeAtStart': 'Change',
+  'tgt.changeAtStartLabel': 'Change the target system',
   'tgt.releaseLabel': 'Release (optional)',
   'tgt.releaseLatest': 'Not sure — use SAP’s latest list',
   'tgt.releaseHelp':
