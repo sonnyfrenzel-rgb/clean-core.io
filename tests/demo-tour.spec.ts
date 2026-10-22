@@ -46,6 +46,7 @@ function walk(): TourProgress[] {
 }
 
 test.describe('the stations', () => {
+  // Eleven since 22.10.2026: the "Standard fit" station left with the demo's Business card (owner decision, fit to standard option b).
   test('about twelve, in the order of §6.1.2, from the reveal to the handover', () => {
     expect(TOUR_STATIONS.map((s) => s.place)).toEqual([
       'reveal',
@@ -53,7 +54,6 @@ test.describe('the stations', () => {
       'process-levels',
       'not-determined',
       'confirm-rule',
-      'standard-fit',
       'it-chain',
       'management',
       'four-buckets',
@@ -102,17 +102,17 @@ test.describe('the stations', () => {
 });
 
 test.describe('the walk', () => {
-  test('"3 of 12" as text', () => {
-    expect(tourPositionLabel(2)).toBe('3 of 12');
-    expect(tourPositionLabel(11)).toBe('12 of 12');
+  test('"3 of 11" as text', () => {
+    expect(tourPositionLabel(2)).toBe('3 of 11');
+    expect(tourPositionLabel(10)).toBe('11 of 11');
   });
 
   test('the invitation after every third station and at the end — once at the end, not twice', () => {
     const after = TOUR_STATIONS.map((_, i) => invitationAfter(i));
-    expect(after.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)).toEqual([2, 5, 8, 11]);
+    expect(after.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)).toEqual([2, 5, 8, 10]);
     // A tour of ten would still invite at its end.
     expect(invitationAfter(9, 10)).toBe(true);
-    expect(invitationAfter(12)).toBe(false);
+    expect(invitationAfter(11)).toBe(false);
     expect(invitationAfter(-1)).toBe(false);
   });
 
@@ -120,7 +120,7 @@ test.describe('the walk', () => {
     const states = walk();
     const shown = states.filter((p) => p.state === 'running' && !p.inviting).map((p) => p.index);
     expect(shown).toEqual(TOUR_STATIONS.map((_, i) => i));
-    expect(states.filter((p) => p.inviting).map((p) => p.index)).toEqual([2, 5, 8, 11]);
+    expect(states.filter((p) => p.inviting).map((p) => p.index)).toEqual([2, 5, 8, 10]);
     expect(states[states.length - 1].state).toBe('ended');
     // Ended is ended: "Next" does not restart it behind the reader's back.
     expect(nextStep(states[states.length - 1])).toEqual(states[states.length - 1]);
@@ -175,7 +175,7 @@ test.describe('one at a time, and only where it stands', () => {
     expect(slot?.kind).toBe('invitation');
     expect(tourInvitationShowing(p, TOUR_STATIONS[2].view)).toBe(true);
     expect(tourInvitationShowing({ ...p, inviting: false }, TOUR_STATIONS[2].view)).toBe(false);
-    const last = tourSlot({ index: 11, state: 'running', inviting: true }, 'handover', 'management');
+    const last = tourSlot({ index: 10, state: 'running', inviting: true }, 'handover', 'management');
     expect(last?.kind === 'invitation' && last.last).toBe(true);
   });
 });

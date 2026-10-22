@@ -195,10 +195,9 @@ test.describe('the catalog service applies contextual successors where a program
     expect(successorInProgram('NOT_A_TABLE_ANYWHERE', [])).toBeNull();
   });
 
-  test('the Standard fit layer asks it with the program\'s tables', () => {
-    const src = fs.readFileSync(path.join(ROOT, 'app/api/projects/[projectId]/standard-fit/route.ts'), 'utf8');
-    expect(src).toContain('successorInProgram(object, tablesInProgram)');
-    expect(src).not.toMatch(/resolveApi\(object\)/);
+  test('the Standard fit layer, which asked it with the program\'s tables, is gone (owner decision 22.10.2026)', () => {
+    // Its route asked `successorInProgram(object, tablesInProgram)`; the route and its table were removed.
+    expect(fs.existsSync(path.join(ROOT, 'app/api/projects/[projectId]/standard-fit/route.ts'))).toBe(false);
   });
 });
 

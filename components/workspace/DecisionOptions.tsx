@@ -53,7 +53,7 @@ const PLACE_LABEL: Record<OptionPlace, Parameters<typeof wt>[0]> = {
   design: 'decide.place.design',
   tco: 'decide.place.tco',
   analyze: 'decide.place.analyze',
-  business: 'decide.place.business',
+  'standard-check': 'decide.place.standardCheck',
   it: 'decide.place.it',
   fit: 'decide.place.fit',
 };

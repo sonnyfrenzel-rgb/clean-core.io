@@ -89,7 +89,7 @@ export const OPTION_SIGNAL_WORDS: Readonly<Record<OptionSignal, string>> = Objec
 });
 
 /** Where a reader goes to change what a line rests on. */
-export type OptionPlace = 'design' | 'tco' | 'analyze' | 'business' | 'it' | 'fit';
+export type OptionPlace = 'design' | 'tco' | 'analyze' | 'standard-check' | 'it' | 'fit';
 
 export interface OptionFigure {
   /** The figure as a reader sees it, or `null` — then `reason` says why there is none. */
@@ -262,9 +262,9 @@ function standardSignal(): Pick<OptionCard, 'signal' | 'reason' | 'provenance' |
   return {
     signal: 'not-determined',
     reason:
-      'Whether SAP standard does what this program does is a business question the code cannot answer. Check it against the standard in the Business view.',
+      'Whether SAP standard does what this program does is a business question the code cannot answer. The fit-to-standard check in the IT view shows where the program touches SAP standard and prepares your workshop.',
     provenance: 'not-determined',
-    place: 'business',
+    place: 'standard-check',
   };
 }
 

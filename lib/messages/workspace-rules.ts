@@ -77,39 +77,6 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.sourceNoteHelp': 'Optional — for example the customizing table or the paragraph of a regulation.',
   'rules.appliesTo': 'Also applies to',
   'rules.appliesToHelp': 'Other rules in the code that decide the same field.',
-  // StandardFitTable
-  'fit.reading': 'Comparing the rules with SAP standard…',
-  'fit.title': 'Standard fit by capability',
-  'fit.titleNote': 'a missing catalog hit proves nothing',
-  'fit.legend': 'Legend',
-  'fit.sortByLevel': 'Sort by evidence',
-  'fit.sortByOrder': 'Sort by order in the code',
-  'fit.colCapability': 'Capability',
-  'fit.colRules': 'Rules',
-  'fit.colCandidate': 'Standard candidate',
-  'fit.colEvidence': 'Evidence',
-  'fit.colFit': 'Fit',
-  'fit.colNext': 'Next',
-  'fit.ruleChanged': 'changed',
-  'fit.ruleDropped': 'dropped',
-  'fit.noCatalogHit': 'No catalog hit',
-  'fit.detailSubject': 'Decides on',
-  'fit.detailObjects': 'Reads or writes',
-  'fit.detailNoObjects': 'The routines of these rules read or write no SAP object.',
-  'fit.detailNext': 'Next:',
-  'fit.noCapabilities':
-    'No business rule with a readable subject, so there is no capability to compare. That is the boundary of the rule reader, not a statement about your process.',
-  'fit.scopeItemsNotDetermined':
-    'Scope items: not determined — no scope-item catalogue is connected, and none is guessed.',
-  'fit.unassigned': 'the field these rules decide could not be read, so they belong to no capability.',
-  'fit.usersTitle': 'What changes for users',
-  'fit.futureNotDetermined': 'Where it moves to: not determined.',
-  'fit.scenariosTitle': 'Counter-check scenarios',
-  'fit.complianceTitle': 'Compliance hints',
-  'fit.complianceNote': 'from tables read',
-  'fit.complianceNone':
-    'No table the program reads belongs to a family that usually calls for a compliance check.',
-  'fit.complianceLead': 'Each hint is a check to make, not a classification.',
   // FirstLookBuildUp
   'buildUp.names': 'names',
   'buildUp.plainNames': 'plain names',
@@ -357,70 +324,6 @@ export function rulesUnchangedLine(ids: readonly string[]): string {
   const list = ids.length === 1 ? ids[0] : `${ids.slice(0, -1).join(', ')} and ${ids[ids.length - 1]}`;
   return `${list} untouched · ${ids.length === 1 ? 'it stays' : 'they stay'} as reconstructed.`;
 }
-
-/* ------------------------------------------------------------ standard fit */
-
-/** "EBAN → released successor API_PURCHASEREQ — to verify". */
-export function fitCandidateLine(object: string, successor: string): string {
-  return `${object} → released successor ${successor} — to verify`;
-}
-
-/** Why a fit is not determined, in five words. The full reason is in the legend. */
-export function fitNotDeterminedShort(reason: 'no-evidence' | 'pointer-only' | null): string {
-  return reason === 'pointer-only' ? 'a catalog hit is not a fit' : 'no hit proves nothing either way';
-}
-
-/** The next task, short — the engine's full sentence is in the row's details. */
-export function fitNextShort(level: 'E0' | 'E1' | 'E2' | 'E3' | 'E4'): string {
-  switch (level) {
-    case 'E0':
-      return 'Name a standard process to compare';
-    case 'E1':
-      return 'Follow the catalog pointer';
-    case 'E2':
-      return 'Run a counter-check scenario';
-    case 'E3':
-      return 'Accept in the target system';
-    case 'E4':
-      return 'Nothing open';
-  }
-}
-
-/** "BR-003 is dropped — no standard needed." */
-export function fitDroppedLine(ids: readonly string[]): string {
-  return `${ids.join(', ')} ${ids.length === 1 ? 'is' : 'are'} dropped — no standard needed.`;
-}
-
-/** The counts under the table. */
-export function fitCountsLine(withCandidate: number, notDetermined: number, consulted: boolean): string {
-  if (!consulted) return 'No catalog was consulted, so no candidate is shown.';
-  return `Counts: ${withCandidate} ${withCandidate === 1 ? 'capability has' : 'capabilities have'} a candidate from the catalog (SAP's data or Clean-Core.io's curated mapping); the fit of ${notDetermined} is not determined.`;
-}
-
-/** Why the table could not be built. */
-export function fitReadRefusal(code: 'no-source' | 'source-too-large' | 'unreachable'): string {
-  switch (code) {
-    case 'no-source':
-      return 'No source is staged on this project, so nothing was compared.';
-    case 'source-too-large':
-      return 'This source is larger than one comparison reads. Analyse the object in parts.';
-    case 'unreachable':
-      return 'The comparison with SAP standard could not be read just now.';
-  }
-}
-
-/** The collapsed row of "What changes for users". */
-export function fitUsersSummary(total: number, pointers: number, training: number): string {
-  if (total === 0) return 'The code names no screen, transaction or report a user works with.';
-  return `${total} ${total === 1 ? 'place' : 'places'} where users meet this program · ${pointers} with a catalog pointer · ${training} training ${training === 1 ? 'hint' : 'hints'} · how many people: not determined.`;
-}
-
-/** The collapsed row of "Counter-check scenarios". */
-export function fitScenariosSummary(total: number, runnable: number, blocked: number): string {
-  if (total === 0) return 'No rule produced a scenario that could be written down.';
-  return `${runnable} of ${total} can be prepared as written · ${blocked} need a field named first · none has been run.`;
-}
-
 
 /* --------------------------------------------------------------- first look */
 

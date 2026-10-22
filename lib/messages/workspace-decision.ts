@@ -35,7 +35,7 @@ export const WORKSPACE_DECISION_MESSAGES = {
   'decide.place.design': 'Open Design',
   'decide.place.tco': 'Open Economics',
   'decide.place.analyze': 'Open Analyze',
-  'decide.place.business': 'Check in the Business view',
+  'decide.place.standardCheck': 'Prepare the fit-to-standard check',
   'decide.place.it': 'Check in the IT view',
   'decide.place.fit': 'See what stands in the way',
   'decide.statusFacet': 'Decision',

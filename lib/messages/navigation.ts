@@ -55,7 +55,7 @@ export const NAVIGATION_MESSAGES = {
   'nav.choice.businessWalk': 'Walk through the process',
   'nav.choice.openQuestions': 'Answer the open questions',
   'nav.choice.itTarget': 'Choose the target',
-  'nav.choice.itStandardFit': 'Check standard fit',
+  'nav.choice.itStandardFit': 'See where it touches SAP standard',
   'nav.choice.economicsRates': 'Enter your rates',
   'nav.choice.economicsCadence': 'Confirm the upgrade cadence',
   'nav.choice.economicsEffort': 'Enter the effort per option',

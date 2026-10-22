@@ -279,7 +279,8 @@ test.describe('what went in exchange (source guards)', () => {
   test('the workspace shows one list, and the line everywhere else', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell.match(/<OpenQuestions\b/g) ?? []).toHaveLength(1);
-    for (const rel of ['components/workspace/FirstLook.tsx', 'components/workspace/BusinessOpening.tsx', 'components/workspace/StandardFitTable.tsx']) {
+    // StandardFitTable.tsx, which carried the line too, was removed with the IT Standard fit table (owner decision 22.10.2026).
+    for (const rel of ['components/workspace/FirstLook.tsx', 'components/workspace/BusinessOpening.tsx']) {
       expect(read(rel), rel).toContain('<OpenQuestionsLine');
     }
     expect(read('components/workspace/ItAnswers.tsx')).toContain('openQuestionsLine(');

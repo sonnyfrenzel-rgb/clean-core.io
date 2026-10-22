@@ -265,6 +265,8 @@ export function StandardFitCard({
       {STANDARD_FIT_DEFINITION}
     </InfoPopover>
   );
+  // The one standard check says what it does not measure, in every state (owner decision 22.10.2026).
+  const notMeasured = <NotMeasured />;
   if (fit.state === 'not-determined') {
     return (
       <section id="standard-fit" data-standard-fit="not-determined" data-standard-fit-why={fit.why} className={CARD}>
@@ -289,6 +291,7 @@ export function StandardFitCard({
             </a>
           </p>
         ) : null}
+        {notMeasured}
       </section>
     );
   }
@@ -315,6 +318,7 @@ export function StandardFitCard({
         {fit.basis === 'demo' ? (
           <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('stdFit.demoBasis')}</p>
         ) : null}
+        {notMeasured}
       </section>
     );
   }
@@ -428,7 +432,18 @@ export function StandardFitCard({
           {wt('stdFit.allObjects')}
         </a>
       </p>
+      {notMeasured}
     </section>
+  );
+}
+
+/** The sentence the card owes its reader: functional fit is not measured. */
+function NotMeasured() {
+  return (
+    <div data-standard-fit-not-measured="" className="mt-4 border-t border-cc-line pt-3">
+      <p className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">{wt('stdFit.notMeasured')}</p>
+      <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">{wt('stdFit.notMeasuredWhy')}</p>
+    </div>
   );
 }
 

@@ -146,8 +146,8 @@ export const CHOICES: Readonly<Record<StaticChoiceKey, ChoiceAddress>> = Object.
   }),
   // C7
   'it.target': c(VIEW('it'), 'it-target-profile', 'nav.choice.itTarget', VIEW_PLACE('it')),
-  // IT's Standard fit section (ADR-096) — asked from Transformation's tips when
-  // no decision on record weighed SAP standard against a rebuild.
+  // IT's "Where this program touches SAP standard" with the fit-to-standard check
+  // (owner decision 22.10.2026), at the address of ADR-096's Standard fit section.
   'it.standard-fit': c(VIEW('it'), 'standard', 'nav.choice.itStandardFit', VIEW_PLACE('it')),
   // C8–C13 — Economics' four steps and what is inside them.
   'economics.rates': c(TOOL('tco'), 'economics-step-rates', 'nav.choice.economicsRates', PHASE_LABEL('tco')),

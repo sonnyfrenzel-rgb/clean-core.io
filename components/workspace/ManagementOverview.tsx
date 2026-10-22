@@ -375,7 +375,8 @@ export default function ManagementOverview({
   }, [decision, subject, hasRun, fitFigure, project]);
   const optionHref = (place: OptionPlace): string => {
     const base = `/project/${projectId}`;
-    if (place === 'business' || place === 'it') return `${base}?view=${place}`;
+    if (place === 'it') return `${base}?view=it`;
+    if (place === 'standard-check') return `${base}?view=it#standard`;
     if (place === 'fit') return '#standard-fit';
     return stageHref({ base, path: place, view: 'management' });
   };
