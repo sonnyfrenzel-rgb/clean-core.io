@@ -1173,8 +1173,8 @@ ${DESIGN_ANSWER_REMINDER}`;
         }
       >
         {project?.analysis
-          ? 'Written from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is a model proposal.'
-          : 'Written from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is a model proposal.'}
+          ? 'Written from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is AI-generated.'
+          : 'Written from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is AI-generated.'}
       </CcEmptyState>
     </div>
   );

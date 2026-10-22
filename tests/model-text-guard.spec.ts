@@ -138,7 +138,7 @@ test.describe('what the checker finds', () => {
     expect(findAiSymbolism('Smart Analysis').length).toBeGreaterThan(0);
     expect(findAiSymbolism('A little magic here').length).toBeGreaterThan(0);
     // The product is allowed to name the model factually (§3.1, "Was bleibt").
-    expect(findAiSymbolism('Model proposal — gemini-2.5-flash, 2026-09-15')).toEqual([]);
+    expect(findAiSymbolism('AI-generated — gemini-2.5-flash, 2026-09-15')).toEqual([]);
     expect(findAiSymbolism('Ask this case')).toEqual([]);
   });
 

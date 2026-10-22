@@ -32,7 +32,7 @@ import type { StatementProposalPanelProps } from '../components/documentation/St
  *   1. **without a proposal the page is what it was** — no pair, no mark, no
  *      empty box, and an invited reader sees nothing to press;
  *   2. **proposal on top, evidence beneath** — at the element and in the list,
- *      *Model proposal* first, *Reconstructed* after it, both through the chip;
+ *      *AI-generated* first, *Reconstructed* after it, both through the chip;
  *   3. **a contradiction is marked, quietly** — words, the reason one action
  *      deeper, and not a chip, because it is not a provenance;
  *   4. **the button says what it costs before it is pressed**, and only the
@@ -140,7 +140,7 @@ test('proposal on top, evidence beneath — at the element and in the list', () 
   const pair = html.slice(html.indexOf('data-statement-pair'));
   const b = pair.indexOf('data-provenance="proposed"');
   const a = pair.indexOf('data-provenance="reconstructed"');
-  expect(b, 'no Model proposal chip at the element').toBeGreaterThan(-1);
+  expect(b, 'no AI-generated chip at the element').toBeGreaterThan(-1);
   expect(a, 'the evidence was dropped for the proposal').toBeGreaterThan(b);
 
   // In the whole-program list: every engine sentence is still there.

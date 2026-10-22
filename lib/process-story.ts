@@ -11,7 +11,7 @@
  * **Nothing is added to the code.** Every step is a node of the skeleton the
  * map draws, named by the plain wording the map uses (`plainLabels`) — or by a
  * business name a model proposed, where one is stored, and then the caller
- * marks the story as a model proposal. What a step checks are the plain
+ * marks the story as AI-generated. What a step checks are the plain
  * labels of the decision points inside it; where it can stop are the plain
  * labels of the error ends and early ends inside it. No role, no purpose and no
  * consequence is named that the code does not name: "a buyer" appears only if

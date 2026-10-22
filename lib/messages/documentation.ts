@@ -93,8 +93,8 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.ownerWrites': 'The owner of this project writes it by opening this stage.',
   'doc.otherTab': 'Another tab of this browser is writing the business layer right now.',
 
-  // Roadmap 3.0.7, "Documentation lean" — one card for the model proposals.
-  'doc.proposalsTitle': 'Model proposals',
+  // Roadmap 3.0.7, "Documentation lean" — one card for the AI-generated proposals.
+  'doc.proposalsTitle': 'AI-generated proposals',
   'doc.proposalsLead':
     'Written by a language model on top of the process description: who does what at each step, and business wording for the code reading. The steps, their lines and the controls stay the code reading.',
   'doc.proposalsSentencesTitle': 'Business sentences',
@@ -199,7 +199,7 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.raciNotSaved': 'The RACI was not saved.',
   'doc.raciDemoKept': 'Kept in this browser only — the demo stores nothing.',
   'doc.raciDemoLead': 'A project starts from the model’s proposal; the demo calls no model. Name the roles yourself and say who does what at each step.',
-  'doc.raciEditedNote': 'Your RACI replaces the model proposal in the matrix and in every export.',
+  'doc.raciEditedNote': 'Your RACI replaces the AI-generated draft in the matrix and in every export.',
   'doc.dataReads': 'Data it reads',
   'doc.derivedValues': 'Values it computes',
   'doc.integrationsTitle': 'Integrations',
@@ -355,7 +355,7 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
 }
 
 /**
- * The one cost line of the model proposals card (DESIGN.md §2.8): what each
+ * The one cost line of the AI-generated proposals card (DESIGN.md §2.8): what each
  * proposal costs, said before any click. Every part is a fact of the page —
  * the model it names is the one the business layer is asked of, the key is
  * the one `/api/model-stages` reports.

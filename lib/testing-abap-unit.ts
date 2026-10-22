@@ -957,7 +957,7 @@ export interface SapUnitMethod {
 }
 
 /** How a red method of the testing model's class is named — never passed, never counted with the engine's. */
-export const MODEL_RED_IN_SAP = 'model proposal, red in SAP';
+export const MODEL_RED_IN_SAP = 'AI-generated, red in SAP';
 
 /** The engine's test classes (ltc_engine_cases, ltc_golden_master, ltc_counterparts): what C(7) counts. */
 export const isEngineTestClass = (name: string) => RESERVED_TEST_CLASSES.includes(name.toLowerCase()) && name.toLowerCase() !== ACCESS_DOUBLE;
@@ -966,7 +966,7 @@ export interface SapUnitSplit {
   engine: { passed: number; failed: number; skipped: number };
   /** The testing model's classes: a proposal, not evidence (owner decision 18.10.2026, C(7)). */
   model: { passed: number; failed: number; skipped: number };
-  /** Every red method in words: "ltc_engine_cases=>tc_eng_g12 — …", "model proposal, red in SAP: ltcl_test=>tc_03 — …". */
+  /** Every red method in words: "ltc_engine_cases=>tc_eng_g12 — …", "AI-generated, red in SAP: ltcl_test=>tc_03 — …". */
   red: string[];
 }
 

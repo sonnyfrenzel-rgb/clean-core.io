@@ -257,7 +257,7 @@ export function DocumentChapterBar({
   openQuestions?: OpenQuestions | null;
   /**
    * Sections the stage draws between the description and its appendix — the
-   * model proposals (owner 16.10.2026): named in the page's order, so a reader
+   * AI-generated proposals (owner 16.10.2026): named in the page's order, so a reader
    * in the RACI is not told they are in "Open questions".
    */
   beforeAppendix?: readonly PageAnchor[];
@@ -1106,9 +1106,13 @@ export default function ProcessDocumentView({
 
 /* ---------------------------------------------------------------- appendix */
 
-/** One line of a step's details: "Label: text" set as a label and its text, anything else as it is. */
+/**
+ * One line of a step's details: "Label: text" set as a label and its text, anything else as it is.
+ * "AI-generated" is named because its hyphen falls outside the general form; a line written with
+ * the chip's word before 3.0.21 (two plain words) still reads as a label through the general form.
+ */
 function DetailLine({ line }: { line: string }) {
-  const m = /^(Technical|Who acts|Model proposal|[A-Z][\w ]{2,24}):\s(.+)$/.exec(line);
+  const m = /^(Technical|Who acts|AI-generated|[A-Z][\w ]{2,24}):\s(.+)$/.exec(line);
   return (
     <li className="min-w-0 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">
       {m ? <><span className="cc-text-label text-cc-ink-muted">{m[1]}</span>{' '}{m[2]}</> : line}

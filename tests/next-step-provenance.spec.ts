@@ -30,7 +30,7 @@ import { signInViaLanding } from './helpers/sign-in';
  *     (`lib/workspace-rows.ts`: *null is not zero*), and nothing anywhere in
  *     it is a percentage or a "should";
  *   - the statement's provenance is **`reconstructed`** — one of the nine, and
- *     specifically not *Model proposal*, which would lend the badge that means
+ *     specifically not *AI-generated*, which would lend the badge that means
  *     "a model said this" to a sentence no model touched;
  *   - **"nothing open" is a claim like any other** and is true of the contract
  *     whenever it is shown, rather than a pleasantry the card falls back to.
@@ -169,7 +169,7 @@ test.describe('the point says why it is this one', () => {
 test.describe('the hint names its origin, in the one vocabulary', () => {
   test('it is Reconstructed — one of the nine, and not the model\'s badge', () => {
     expect(PROVENANCE_VALUES).toContain(NEXT_STEP_PROVENANCE);
-    expect(NEXT_STEP_PROVENANCE, 'a rule-derived sentence is not a model proposal').toBe('reconstructed');
+    expect(NEXT_STEP_PROVENANCE, 'a rule-derived sentence is not an AI-generated draft').toBe('reconstructed');
     expect(PROVENANCE[NEXT_STEP_PROVENANCE].label).toBe('Reconstructed');
     // Green is reserved for `proven`; a reading of records is not a proof.
     expect(PROVENANCE[NEXT_STEP_PROVENANCE].state).not.toBe('success');

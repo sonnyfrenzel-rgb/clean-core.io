@@ -41,7 +41,7 @@ export const STAGE_SHOTS = {
  *     reader starts it. Used where the demo does not show the rebuilt tool
  *     (Analyze, Design) or shows only its refusal (Delivery: a demo has no
  *     signed run, so no audit pack). Whatever a model wrote in such a picture
- *     carries its "Model proposal" mark, as it does in the product.
+ *     carries its "AI-generated" mark, as it does in the product.
  *
  * The caption under each picture says which, so a picture of a real run is
  * never passed off as the demo or the other way round.

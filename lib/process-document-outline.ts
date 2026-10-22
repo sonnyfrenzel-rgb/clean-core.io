@@ -9,7 +9,7 @@ import { authorClaimOf } from '@/lib/program-summary-check';
 import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableHitPolicy, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
 import {
   EMPTY_SECTION,
-  MODEL_PROPOSAL_LABEL,
+  AI_GENERATED_LABEL,
   PROCESS_DOCUMENT_STATUS,
   PROCESS_DOCUMENT_SUBTITLE,
   linesLabel,
@@ -615,7 +615,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
       : {
           cells: [
             stepRef(entry),
-            `${stepName(entry)}${entry.businessName ? ` (${MODEL_PROPOSAL_LABEL})` : ''}`,
+            `${stepName(entry)}${entry.businessName ? ` (${AI_GENERATED_LABEL})` : ''}`,
             ...who(entry.actor),
             [choiceLine(entry), entry.line].filter(Boolean).join(' — ') || '—',
           ],
@@ -758,7 +758,7 @@ export function stepDetailLines(step: PdStep, whoActs = true): string[] {
   out.push(`Technical: ${step.technicalName} · ${step.anchors.length ? linesLabel(step.anchors) : 'lines not determined'}${step.businessName ? ` · engine name: ${step.name}` : ''}`);
   if (step.actor && whoActs) out.push(`${wt('doc.whoActs')}: ${actorWord(step.actor)} — ${step.actor.basis}`);
   if (step.facts) out.push(step.facts);
-  if (step.proposal) out.push(`${MODEL_PROPOSAL_LABEL}: ${withLines(step.proposal.text, step.proposal.anchors)}`);
+  if (step.proposal) out.push(`${AI_GENERATED_LABEL}: ${withLines(step.proposal.text, step.proposal.anchors)}`);
   for (const d of step.does) out.push(withLines(d.text, d.anchors));
   for (const s of step.subSteps) out.push(`${s.depth > 1 ? '– ' : ''}${s.kind}: ${s.label}${s.anchor ? ` (${linesLabel([s.anchor])})` : ''}`);
   if (step.moreSubSteps > 0) out.push(`and ${step.moreSubSteps} more sub-steps — see the process elements below`);
@@ -864,7 +864,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
 
   b.push({ k: 'h', level: 2, text: 'At a glance' });
   for (const s of o.glance.summary) b.push({ k: 'p', text: s.text });
-  if (o.glance.proposal) b.push({ k: 'p', em: true, text: `${MODEL_PROPOSAL_LABEL}: ${withLines(o.glance.proposal.text, o.glance.proposal.anchors)}` });
+  if (o.glance.proposal) b.push({ k: 'p', em: true, text: `${AI_GENERATED_LABEL}: ${withLines(o.glance.proposal.text, o.glance.proposal.anchors)}` });
   b.push({ k: 'p', text: `Started by: ${o.glance.trigger.text}` });
   b.push({ k: 'table', head: o.glance.figures.map((f) => f.label), rows: [o.glance.figures.map(figureText)], muted: [] });
   b.push({ k: 'p', text: goToLine(o.glance.goTo) });

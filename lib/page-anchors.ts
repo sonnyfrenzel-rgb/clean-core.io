@@ -188,7 +188,7 @@ export function deliveryAnchors(content: {
 /* ------------------------------------------------------------ Documentation */
 
 /**
- * The model proposals of the Documentation stage — the business SOP and the
+ * The AI-generated proposals of the Documentation stage — the business SOP and the
  * RACI — as a chapter of its bar (owner 16.10.2026). The seven chapters are
  * the description's (`documentOutline`); the proposals card stands after the
  * open questions and before the appendix, so it is named there. Without its
@@ -206,7 +206,7 @@ export function documentationProposalsAnchor(content: {
     target: DOCUMENTATION_PROPOSALS_ID,
     label: 'SOP & RACI',
     count: content.steps && content.steps > 0 ? n(content.steps) : null,
-    title: 'Who does what, who is accountable — a model proposal',
+    title: 'Who does what, who is accountable — an AI-generated draft',
   };
 }
 

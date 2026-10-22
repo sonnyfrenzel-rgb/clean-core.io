@@ -958,7 +958,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
-      ? { kind: 'documentation', status: 'implemented', note: 'Read by the engine from the signed source; business names and lanes are model proposals where marked.' }
+      ? { kind: 'documentation', status: 'implemented', note: 'Read by the engine from the signed source; business names and lanes are AI-generated where marked.' }
       : { kind: 'documentation', status: 'proposed', note: 'Written by a language model — review material.' };
   }
   if (p.startsWith('docs/')) return { kind: 'documentation', status: 'proposed', note: 'Review material, not approved.' };
@@ -1493,7 +1493,7 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   const e = g.engine;
   if (!e) return [];
   lines.push(
-    'Clean-Core.io wrote the frame of every function from the original ABAP — types with their places, the input contract, the guards with their rule ids, the run store, the CSV writer and the call contract the tests run through. A model wrote only the bodies between the fill markers; every body is a model proposal, never proven.',
+    'Clean-Core.io wrote the frame of every function from the original ABAP — types with their places, the input contract, the guards with their rule ids, the run store, the CSV writer and the call contract the tests run through. A model wrote only the bodies between the fill markers; every body is AI-generated, never proven.',
     '',
     `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${generationStatusWords(g)}**.`,
   );

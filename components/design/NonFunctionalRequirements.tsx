@@ -50,7 +50,7 @@ export type { NFRData } from '@/lib/non-functional-requirements';
  * At the top, the eight categories at a glance: where the code gives evidence,
  * where only a decision can, and where the code is silent. The design model's
  * text for a category, where one was written with the design, sits folded
- * under that category as a *Model proposal* — never in place of what the
+ * under that category as *AI-generated* — never in place of what the
  * code says.
  */
 
@@ -308,7 +308,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
         {proposalCount ? (
           <p className="m-0 text-[13px] text-cc-ink-muted">
             The design model wrote proposals for {proposalCount} of these topics with the design. They are shown beside what
-            the code says, marked as model proposals.
+            the code says, marked as AI-generated.
           </p>
         ) : null}
       </section>
@@ -403,7 +403,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
     return (
       <div data-nfr-proposal={c} data-nfr-proposal-generic={generic ? 'true' : 'false'} className="rounded-cc-row border border-dashed border-cc-field-border px-3">
         <CcDisclosure
-          title="Model proposal"
+          title="AI-generated"
           level={4}
           summary={generic ? 'Generic — names nothing from this program' : `Names ${p.references.slice(0, 5).join(', ')}`}
         >

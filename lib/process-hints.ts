@@ -324,7 +324,7 @@ export function cleanCoreHints(input: CleanCoreHintInput): ProcessHint[] {
       elementId: lane.id,
       elementLabel: label,
       // Roadmap 2.16 changed half of this sentence and left the other half
-      // standing. A lane is no longer *Model proposal*: it is reconstructed from
+      // standing. A lane is no longer *AI-generated*: it is reconstructed from
       // `AUTHORITY-CHECK`, a dynpro, an update task or a destination, it is
       // named after the token the source writes and it carries a line anchor —
       // so calling it a proposal is a sentence about it that is no longer true.

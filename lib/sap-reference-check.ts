@@ -959,7 +959,7 @@ export function sapReferenceAppendixMarkdown(...texts: unknown[]): string {
   const checks = checkSapReferences(...texts);
   if (!checks.length) return '';
   let md = `## SAP identifiers named in this document\n`;
-  md += `Model proposal. Each identifier was checked against SAP data this product holds. "Verified" means a public SAP page lists the identifier with what the text says of it (title, protocol, release) — not that it covers this use. "Name found in catalog" means the name is in a list and nothing more was checked.\n\n`;
+  md += `AI-generated. Each identifier was checked against SAP data this product holds. "Verified" means a public SAP page lists the identifier with what the text says of it (title, protocol, release) — not that it covers this use. "Name found in catalog" means the name is in a list and nothing more was checked.\n\n`;
   md += `| Identifier | Kind | State | SAP's name | Source | Release / edition checked |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n`;
   for (const c of checks) {
     const src = c.source ? (c.source.url ? `[${c.source.label}](${c.source.url})` : c.source.label) : '—';

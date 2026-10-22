@@ -43,7 +43,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  *   2. **The origin is observed, not claimed.** A naming is stored only with a
  *      receipt that verifies for this account and this text. Without one the
  *      text could have been typed by anyone, and a name typed by anyone must not
- *      carry the chip *Model proposal* — so it is refused, not stored as
+ *      carry the chip *AI-generated* — so it is refused, not stored as
  *      something vaguer. The receipt's MAC is not kept; what is kept is that the
  *      server checked it, and which model it named.
  *   3. **The validation is the server's.** `validateNamingAnswer` drops and
@@ -279,7 +279,7 @@ export async function POST(
     if (!verdict.ok) {
       return NextResponse.json(
         {
-          error: 'These names carry no valid receipt from the model call, so they are not stored as a model proposal.',
+          error: 'These names carry no valid receipt from the model call, so they are not stored as AI-generated.',
           code: 'receipt-refused',
           refusal: verdict.refusal,
         },

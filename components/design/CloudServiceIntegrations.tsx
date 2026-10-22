@@ -27,7 +27,7 @@ interface CloudServiceIntegrationsProps {
   cloudServices?: CloudService[];
   /**
    * Inside a group of the design document (03.10.2026): no provenance chip of
-   * its own — the group carries "Model proposal" once.
+   * its own — the group carries "AI-generated" once.
    */
   embedded?: boolean;
 }

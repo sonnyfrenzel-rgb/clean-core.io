@@ -524,7 +524,7 @@ test.describe('QA review of 5ec8488a: fail-closed language, method reachability,
     for (const text of ['Contabiliza facturas.', 'Fattura clienti.', 'Contabiliza facturas de material.']) {
       expect(checkPurposeProposal(text, facts).problems, text).toEqual(['is in a language the check does not read']);
     }
-    // A model proposal is held the same way.
+    // An AI-generated draft is held the same way.
     expect(purposeProposalOf(JSON.stringify({ asIsContext: 'Contabiliza facturas.' }), facts)).toBeNull();
     // Short English and German claims still pass.
     expect(checkPurposeProposal('Monthly cost-center review.', facts).ok).toBe(true);

@@ -1423,7 +1423,7 @@ export function buildNfrSet(input: { source: string }): NfrSet {
   };
 }
 
-/* ---------------------------------------------------------- model proposal */
+/* ---------------------------------------------------------- AI-generated draft */
 
 /** Words a model uses in every answer; naming them is not naming this program. */
 const COMMON_WORDS = new Set([
@@ -1433,7 +1433,7 @@ const COMMON_WORDS = new Set([
 ]);
 
 /**
- * What a model proposal names that belongs to this program: a table, a
+ * What an AI-generated draft names that belongs to this program: a table, a
  * function, an object, a question ID. An empty list means the text is generic —
  * it could stand under any program — and the screen says so.
  */

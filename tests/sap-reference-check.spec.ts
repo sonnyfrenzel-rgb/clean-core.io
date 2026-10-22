@@ -190,7 +190,7 @@ test.describe('the marks travel into the text a reader gets', () => {
     expect(md).toContain('SAP restriction:');
     expect(md).toContain('names I_OperationalAcctgDocItem (CDS View) as the successor of BSID');
     expect(md).toContain('## SAP identifiers named in this document');
-    expect(md).toMatch(/Model proposal/);
+    expect(md).toMatch(/AI-generated/);
   });
 
   test('a cloud service named by an SAP identifier carries its check in both design exports (QA 6e345a77002f, 7fb4ff25c598)', () => {

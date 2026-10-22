@@ -44,7 +44,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  *      project's stored source; a browser whose digest disagrees gets 409.
  *   2. **The origin is observed, not claimed.** Stored only with a receipt that
  *      verifies for this account and this text — a sentence typed by anyone
- *      must not wear the chip *Model proposal*.
+ *      must not wear the chip *AI-generated*.
  *   3. **The validation is the server's.** `validateStatementAnswer` drops and
  *      counts every sentence whose anchor, file, line or element does not hold.
  *      The answer itself is not stored — only its SHA-256, the sentences that
@@ -254,7 +254,7 @@ export async function POST(
     if (!verdict.ok) {
       return NextResponse.json(
         {
-          error: 'These sentences carry no valid receipt from the model call, so they are not stored as a model proposal.',
+          error: 'These sentences carry no valid receipt from the model call, so they are not stored as AI-generated.',
           code: 'receipt-refused',
           refusal: verdict.refusal,
         },

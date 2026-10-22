@@ -31,7 +31,7 @@ import type { RuleSetExplanation } from './abap/business-rule-set-explain';
  *
  * A dropped rewording leaves the engine sentence standing, with no error for
  * the reader. The engine sentence always stays one fold down, as read from the
- * code; the rewording carries the chip *Model proposal · worded*.
+ * code; the rewording carries the chip *AI-generated · worded*.
  *
  * **Once per project, source and engine.** The record is keyed by a digest of
  * the source and of the sentences the engine wrote for it, so the model is

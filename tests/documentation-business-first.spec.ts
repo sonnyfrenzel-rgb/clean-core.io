@@ -264,11 +264,11 @@ test.describe('the business SOP: step names, provenance on every sentence, nothi
     expect(copied.basis).toBe('reconstructed');
     expect(copied.anchors).toEqual([{ lineStart: 24, lineEnd: 24 }]);
     // A cited line of the step does not make the model's wording Reconstructed (QA review of 35b97d90c6e1):
-    // it stays a Model proposal, the line kept as a pointer.
+    // it stays AI-generated, the line kept as a pointer.
     const worded = judgeSentence('The worklist shows each open item.', true, [20], ctx);
     expect(worded.basis).toBe('proposed');
     expect(worded.anchors).toEqual([{ lineStart: 20, lineEnd: 20 }]);
-    expect(sopBasisText(worded)).toBe('Model proposal, cites L20');
+    expect(sopBasisText(worded)).toBe('AI-generated, cites L20');
     expect(judgeSentence('The worklist shows each open item.', true, [20], { ...ctx, stepSentences: [] }).basis).toBe('proposed');
     expect(judgeSentence('The worklist shows each open item.', true, [999], ctx).basis).toBe('proposed');
     expect(judgeSentence('The worklist shows each open item.', false, [20], ctx).basis).toBe('proposed');
@@ -361,7 +361,7 @@ CALL FUNCTION lv_fm.
     expect(judged.flatMap((s) => s.statements).every((st) => st.basis !== 'reconstructed')).toBe(true);
   });
 
-  test('an unreadable stored SOP is never exported as the SOP, and legacy control rows read as model proposals (QA review of 11e3bc7d90e8)', () => {
+  test('an unreadable stored SOP is never exported as the SOP, and legacy control rows read as AI-generated proposals (QA review of 11e3bc7d90e8)', () => {
     const raw = 'Sure! Here is the SOP: the AR Lead approves every posting.';
     const md = formatBusinessDocsToMarkdown(raw);
     expect(md).not.toContain(raw);
@@ -409,7 +409,7 @@ CALL FUNCTION lv_fm.
       for (const h of headings) expect(h).toMatch(/^\d+(?:[a-z](?:\.\d+)?)?\. .+ \((?:L\d+|lines not determined)/);
       const sentences = md.slice(md.indexOf('## Steps'), md.indexOf('## Who is responsible')).split('\n').filter((l) => l.startsWith('- '));
       for (const line of sentences) {
-        expect(line, line).toMatch(/\((?:Reconstructed, L\d+|Model proposal(?:, cites L\d+)?|Proposal — not in the program(?:: [^)]+)?|Not determined)\)$|^- Not determined/);
+        expect(line, line).toMatch(/\((?:Reconstructed, L\d+|AI-generated(?:, cites L\d+)?|Proposal — not in the program(?:: [^)]+)?|Not determined)\)$|^- Not determined/);
       }
       expect(md).toContain('cross-checked against company ledger control totals. (Proposal — not in the program: no ledger reconciliation in the code)');
       expect(md).toContain('## Who is responsible (RACI) — Proposal — not in the program');

@@ -33,7 +33,7 @@ import { STATE_CLASSES } from './state';
  *     Blue carries three values and yellow four, so someone skimming needs
  *     something other than hue to tell a self-declaration from a derivation.
  *
- * The icon is deliberately a pen for *Model proposal* and never a spark: §3.1
+ * The icon is deliberately a pen for *AI-generated* and never a spark: §3.1
  * forbids the sparkle-and-robot iconography that turns evidence into a trick.
  */
 const ICONS: Record<string, React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>> = {

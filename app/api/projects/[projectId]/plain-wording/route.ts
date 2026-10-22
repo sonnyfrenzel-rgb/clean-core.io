@@ -219,7 +219,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (!verdict.ok) {
       return NextResponse.json(
         {
-          error: 'This wording carries no valid receipt from the model call, so it is not stored as a model proposal.',
+          error: 'This wording carries no valid receipt from the model call, so it is not stored as AI-generated.',
           code: 'receipt-refused',
           refusal: verdict.refusal,
         },

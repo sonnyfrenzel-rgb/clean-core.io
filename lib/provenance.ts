@@ -104,11 +104,11 @@ const ENTRIES: ProvenanceEntry[] = [
   {
     value: 'proposed',
     key: 'provenance.proposed',
-    label: 'Model proposal',
+    label: 'AI-generated',
     state: 'warning',
     form: 'dashed',
     icon: 'pen-line',
-    meaning: 'Proposed by the language model, unchecked.',
+    meaning: 'Written by a language model, unchecked.',
   },
   {
     value: 'simulation',
@@ -180,9 +180,10 @@ export function isProvenanceValue(value: unknown): value is ProvenanceValue {
 /**
  * Is this exactly one of the nine labels?
  *
- * Trimmed and case-folded, because "Model Proposal" is the same mistake as
- * "model proposal" — a second spelling of a fixed value. Everything else,
- * including near misses like "AI Generated" or "Signed off", is false.
+ * Trimmed and case-folded, because "AI-Generated" is the same mistake as
+ * "ai-generated" — a second spelling of a fixed value. Everything else,
+ * including near misses like "AI Generated" (no hyphen) or "Signed off", is
+ * false.
  */
 export function isProvenanceLabel(text: string): boolean {
   const needle = text.trim().toLowerCase();
@@ -201,6 +202,9 @@ export const RETIRED_PROVENANCE_WORDINGS: Readonly<Record<string, ProvenanceValu
   passed: 'proven',
   'signed off': 'confirmed',
   'ai generated': 'proposed',
+  // The word on the `proposed` chip until roadmap 3.0.21 (owner decision
+  // 22.10.2026): value, key and pen stay, the face now says AI-generated.
+  'model proposal': 'proposed',
   'model estimate': 'simulation',
   simulated: 'demonstrated-mock',
   'catalog match': 'imported',

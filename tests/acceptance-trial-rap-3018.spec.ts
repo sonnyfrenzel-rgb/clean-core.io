@@ -112,7 +112,7 @@ test.describe('the trial stage of the acceptance suite', () => {
       // C(7): the engine's classes count; the model's class is a proposal and is counted apart.
       expect(r.engineUnit).toEqual({ green: 2, red: 0, skipped: 1 });
       expect(r.modelUnit).toEqual({ green: 1, red: 1, skipped: 0 });
-      expect(r.red).toEqual(['model proposal, red in SAP: ltcl_test=>test_slot_overlap — failedAssertion/critical: Expected [2] Actual [0]']);
+      expect(r.red).toEqual(['AI-generated, red in SAP: ltcl_test=>test_slot_overlap — failedAssertion/critical: Expected [2] Actual [0]']);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -180,7 +180,7 @@ test.describe('the trial stage of the acceptance suite', () => {
       expect(md).toContain('## On the SAP trial (ADT runner)');
       expect(md).toContain('ABAP Unit, engine classes (counted, C(7)): 4 green, 0 red, 2 skipped');
       expect(md).toContain("the testing model's classes (a proposal, not evidence): 2 green, 2 red, 0 skipped");
-      expect(md).toContain('- pm-shutdown-slot-plan: model proposal, red in SAP: ltcl_test=>test_slot_overlap');
+      expect(md).toContain('- pm-shutdown-slot-plan: AI-generated, red in SAP: ltcl_test=>test_slot_overlap');
       // In the suite's report, after the rest.
       const report = { runs: [], rows: [], totals: { rows: 0, gatePassed: 0, functionsWritten: 0, functionsTotal: 0, scenariosMatched: 0, scenariosTotal: 0, calls: 0, usd: 0, durationMs: 0 }, limits: [], diff: null, previous: null, commit: 'abcdef12', mode: 'dry', model: 'm', startedAt: 't', node: 'v', capUsd: 1, spentUsd: 0, capReached: false, runsPerProgram: 1, dirty: false, trial: records } as unknown as SuiteReport;
       expect(toMarkdown(report)).toContain('## On the SAP trial (ADT runner)');

@@ -50,7 +50,7 @@ import { overloadedLayerFor } from './helpers/raci-overload-fixture';
  *     business layer the card that offers it follows the process description;
  *   - an invited reader reads the same order and is offered no generation;
  *   - roadmap 3.0.7: the SOP and RACI and the business sentences are one card
- *     of model proposals with one cost line, the full SOP carries no KPI
+ *     of AI-generated proposals with one cost line, the full SOP carries no KPI
  *     target and no control checkpoint, and the key figures stand once — in
  *     the description, not again above the map.
  */
@@ -148,9 +148,9 @@ test.describe('the SOP and the RACI, as data', () => {
 test.describe('the Confluence export', () => {
   test('keeps every SOP step and every RACI row, after the process description and before the trace', async () => {
     // Owner 03.10.2026: the page opens with the process description; the
-    // business layer follows it as a model proposal, the technical trace last.
+    // business layer follows it as AI-generated, the technical trace last.
     const html = await buildEngineConfluenceHtml(processDocumentOf(SOURCE), LAYER, { processSteps: STEPS }).text();
-    expect(html).toContain('Business layer — Model proposal');
+    expect(html).toContain('Business layer — AI-generated');
     // Roadmap 3.0.7: a stored layer's KPI targets and control checkpoints are
     // data, not part of the page; the controls are the systems section's,
     // named by its key, never by a number a renumbering would leave wrong (ADR-084).
@@ -170,8 +170,8 @@ test.describe('the Confluence export', () => {
       expect(html).toContain(`data-glance-sop-step="${st.stepId}"`);
       expect(html).toContain(`data-glance-raci-step="${st.stepId}"`);
     }
-    expect(html).toContain('SOP steps — Model proposal');
-    expect(html).toContain('RACI matrix — Model proposal');
+    expect(html).toContain('SOP steps — AI-generated');
+    expect(html).toContain('RACI matrix — AI-generated');
     // A missing value reads "Not determined", never a default (ADR-068).
     expect(html.slice(html.indexOf('data-business-layer'))).not.toContain('N/A');
     const at = (marker: string) => html.indexOf(marker);
@@ -323,7 +323,7 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(page.locator('[data-sop-full]')).not.toContainText('Approvals follow the four-eyes principle.');
     await expect(page.locator('[data-sop-controls-from-code]')).toBeVisible();
 
-    // One card for the model proposals, with one cost line.
+    // One card for the AI-generated proposals, with one cost line.
     const card = page.locator('[data-model-proposals]');
     await expect(card).toHaveCount(1);
     await expect(card.locator('[data-business-sop]')).toHaveCount(1);

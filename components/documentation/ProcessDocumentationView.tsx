@@ -70,7 +70,7 @@ export default function ProcessDocumentationView({
   proposal?: StatementProposalPanelProps;
   /**
    * Whether the button that asks for the proposal stands here. The stage puts
-   * it in its one card of model proposals (roadmap 3.0.7) and passes `false`;
+   * it in its one card of AI-generated proposals (roadmap 3.0.7) and passes `false`;
    * the pairs themselves stay at their elements.
    */
   proposalPanel?: boolean;

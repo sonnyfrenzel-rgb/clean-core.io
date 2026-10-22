@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
  *   2. four groups by question instead of nine cards — what we build, how it
  *      connects to SAP, how it is secured and run, when — the first open, the
  *      rest folded, with a sticky section nav;
- *   3. "Model proposal" once per section, not on every card.
+ *   3. "AI-generated" once per section, not on every card.
  *
  * The non-functional requirements have their own section since ADR-074; the
  * document links there instead of repeating them.

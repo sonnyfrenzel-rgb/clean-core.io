@@ -14,7 +14,7 @@ interface ApiEndpointsCatalogProps {
   apiEndpoints?: ApiEndpoint[];
   /**
    * Inside a group of the design document (03.10.2026): no card of its own and
-   * no provenance chip — the group carries "Model proposal" once.
+   * no provenance chip — the group carries "AI-generated" once.
    */
   embedded?: boolean;
 }

@@ -204,7 +204,7 @@ const OTHER_HEADING = /^[A-Z][A-Z0-9 ()/&-]{3,}:?$/;
  * section headed BUSINESS PURPOSE, BUSINESS SCOPE, PURPOSE, DESCRIPTION (or
  * ZWECK, BESCHREIBUNG …) in capitals (owner, 12.10.2026: "use the program's
  * header comments as a source, shown as Author's claim, checked against
- * engine facts exactly like a model proposal"). Quoted verbatim, as code is;
+ * engine facts exactly like an AI-generated draft"). Quoted verbatim, as code is;
  * null when the header has no such section. Only headed sections count: a
  * banner line or a change log is not a statement of purpose.
  */

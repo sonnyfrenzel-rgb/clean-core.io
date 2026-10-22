@@ -979,7 +979,7 @@
       "kind": "concept",
       "purpose": "Concept German version (as of v2.0.0, 06.07.2026, draft for decision)",
       "audience": "internal, Sonny",
-      "saysToday": "Concept of the German version for the product from 3.0: workspace with three views and six layers, seven stages as tools, existing text keys (lib/cc-messages.ts, lib/provenance.ts), /de subpath without redirecting today's URLs, German model output with the Model proposal chip, terminology of the fixed lists; scheduled after 3.0 (ROADMAP §7, 3.1).",
+      "saysToday": "Concept of the German version for the product from 3.0: workspace with three views and six layers, seven stages as tools, existing text keys (lib/cc-messages.ts, lib/provenance.ts), /de subpath without redirecting today's URLs, German model output with the AI-generated chip (KI-generiert), terminology of the fixed lists; scheduled after 3.0 (ROADMAP §7, 3.1).",
       "wrongWith30": [
         {
           "lines": "16, 47, 116, 156",
@@ -3510,7 +3510,7 @@
       "kind": "served",
       "purpose": "llms.txt for AI search engines",
       "audience": "public (crawlers, answer engines)",
-      "saysToday": "3.0 product sentence: deterministic analysis before any model, process as BPMN with line anchors, Level A-D, not determined, signed runs; workspace with three views, seven stages as tools, BPMN 2.0 XML without a Signavio connection; numbers still from lib/facts; Model proposal instead of 'AI-generated'.",
+      "saysToday": "3.0 product sentence: deterministic analysis before any model, process as BPMN with line anchors, Level A-D, not determined, signed runs; workspace with three views, seven stages as tools, BPMN 2.0 XML without a Signavio connection; numbers still from lib/facts; what a model writes is marked AI-generated (the chip word since 3.0.21, before it Model proposal).",
       "wrongWith30": [
         {
           "lines": "22-27",

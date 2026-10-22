@@ -97,7 +97,7 @@ export const NO_CASE_EVIDENCE =
   'Nothing in this project\'s evidence answers that. Inside a project this assistant reads only what the engine found in your code — elements, business rules, findings and source lines — and none of them matched, so there is no grounded answer to give. Naming something out of the code, a rule ID, or a line number such as L120 will find it if it is there.';
 
 /**
- * What the reader is told when a model proposal cited none of the evidence it
+ * What the reader is told when an AI-generated draft cited none of the evidence it
  * was given. The proposal is dropped, not shown with a caveat: a sentence
  * about this code that names no line in it is exactly what this step exists
  * to keep off the screen.

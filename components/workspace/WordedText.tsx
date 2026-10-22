@@ -10,7 +10,7 @@ import { wt } from '@/lib/workspace-messages';
  * The plain wording of an engine sentence, as the walk-through and the rule
  * cards show it — roadmap 3.0.20, owner decision 21.10.2026 (2).
  *
- * A reworded sentence carries the chip *Model proposal · worded*; the engine's
+ * A reworded sentence carries the chip *AI-generated · worded*; the engine's
  * own sentence stays one fold down, "As read from the code". A sentence nobody
  * reworded carries nothing extra: it is the engine's, as it always was.
  */

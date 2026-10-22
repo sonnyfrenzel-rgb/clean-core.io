@@ -38,7 +38,7 @@ import './design-canvas.css';
  * What it says comes from three places and says which: the architecture
  * contract (route, fields, alternatives — `lib/architecture-contract.ts`), the
  * engine's findings (successors, gaps, tables, lines), and the model's design
- * document, every section of which carries "Model proposal". The sign-off is
+ * document, every section of which carries "AI-generated". The sign-off is
  * the existing `ArchitectSignOff`, handed in by the page — its behaviour and the
  * command it sends are unchanged.
  */

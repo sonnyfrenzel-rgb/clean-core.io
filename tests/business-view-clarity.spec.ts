@@ -127,7 +127,7 @@ test.describe('the business-first opening, as pure functions', () => {
     expect(story.proposedNames).toBe(false);
   });
 
-  test('a stored business name is used, and the story says it is a model proposal', () => {
+  test('a stored business name is used, and the story says it is AI-generated', () => {
     const node = reading.skeleton.nodes.find((n) => n.label === 'CHECK_AUTHORITY' && n.kind === 'sub-process');
     const story = processStory(reading.skeleton, PO, new Map([[node!.id, 'Check the buyer may approve']]));
     expect(story.steps[0].text).toBe('Check the buyer may approve');
@@ -469,7 +469,7 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
   });
 
-  test('business names: no "Not generated" notice, no button, asked automatically only with a model, a stored name is a model proposal', async ({ page }) => {
+  test('business names: no "Not generated" notice, no button, asked automatically only with a model, a stored name is AI-generated', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
@@ -509,7 +509,7 @@ test.describe('the Business view on screen', () => {
     namingAsks.length = 0;
 
     // A stored naming (the fixture of a model answer, as the route stores it):
-    // the opening names the step by it and marks it as a model proposal.
+    // the opening names the step by it and marks it as AI-generated.
     const context = namingContextOf(PO);
     const node = context.skeleton.nodes.find((n) => n.label === 'CHECK_AUTHORITY' && n.kind === 'sub-process')!;
     await adminSetDoc(`projects/${ids.po}/process_naming`, 'current', {

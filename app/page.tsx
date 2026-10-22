@@ -788,7 +788,7 @@ export default function Home() {
                   { key: 'engine', t: 'Deterministic engine', d: 'Parses the code and finds the constructs, rules and SAP objects without a language model. The same file gives the same result.', pv: 'reconstructed' as const },
                   { key: 'sap', t: 'SAP’s published data', d: `The Cloudification Repository and SAP’s object classification, ${catalogObjects}, synced ${facts.catalogSyncDate}.`, pv: 'imported' as const },
                   { key: 'imports', t: 'Your imports, optional', d: 'ATC results and usage data you upload. They are marked as imported, never as proven.', pv: 'imported' as const },
-                  { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as a model proposal until someone confirms them.', pv: 'proposed' as const },
+                  { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as AI-generated until someone confirms them.', pv: 'proposed' as const },
                 ].map((s) => ({
                   key: s.key,
                   title: s.t,
