@@ -416,6 +416,10 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     if (fromTarget) written(fromTarget);
     const own = /^(?:MULTIPLY|DIVIDE|CLEAR|FREE|CONDENSE|SHIFT|TRANSLATE|OVERLAY)\s+([\w/]+(?:-[\w/]+)*)/i.exec(text)?.[1];
     if (own) written(own);
+    // A call hands a variable back through a named parameter: `CHANGING iv_case = lv_case`,
+    // `IMPORTING ev_mode = lv_case` — the actual on the right is written, not the formal on the left.
+    const handedBack = /\b(?:CHANGING|IMPORTING|RECEIVING|TABLES)\b([\s\S]*)$/i.exec(text)?.[1] ?? '';
+    for (const m of handedBack.matchAll(/[\w/]+\s*=\s*([\w/]+(?:-[\w/]+)*)/g)) written(m[1]);
   }
   const fromParameter = new Map<string, string>();
   for (const s of statements) {

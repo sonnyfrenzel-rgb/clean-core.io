@@ -235,6 +235,10 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     expect(readDemoSwitches(base('  SUBTRACT 1 FROM lv_case.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(base('  lv_case += 1.\n'), AFTER)).toBeNull();
     expect(readDemoSwitches(base('  MULTIPLY lv_case BY 2.\n'), AFTER)).toBeNull();
+    expect(readDemoSwitches(base("  CALL FUNCTION 'Z_MUTATE' CHANGING iv_case = lv_case.\n"), AFTER)).toBeNull();
+    expect(readDemoSwitches(base("  CALL FUNCTION 'Z_READ' IMPORTING ev_mode = lv_case.\n"), AFTER)).toBeNull();
+    // Handed to a call only (EXPORTING): read, not written — the copy is still the switch.
+    expect(readDemoSwitches(base("  CALL FUNCTION 'Z_LOG' EXPORTING iv_case = lv_case.\n"), AFTER)?.flag.name).toBe('P_MODE');
   });
 
   test('a row the program read, or a write to the database, is not test data however the arms are shaped', () => {
