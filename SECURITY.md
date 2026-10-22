@@ -10,6 +10,17 @@
 
 ---
 
+## Reporting a vulnerability
+
+Please report a suspected vulnerability by e-mail to **info@clean-core.io**, the operator's address from the imprint (`/impressum`). The same contact is published machine-readably at `https://clean-core.io/.well-known/security.txt` (RFC 9116).
+
+- Write in English or German. Include what you observed, the steps to reproduce it and the affected URL or file; please do not include other people's data.
+- Do not open a public GitHub issue for a vulnerability: the repository and its Actions logs are public.
+- Test only against your own account and your own projects. No denial-of-service, no social engineering, no automated scanning that degrades the service for the community.
+- You get an acknowledgement as soon as the operator has read the report. Clean-Core.io is a free community project run by one person, so there is no bug bounty and no fixed response time; reports are triaged and fixed by severity, and you are told when a fix is live.
+
+---
+
 ## 1. Executive Summary
 
 This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Since roadmap 8.9 generated tests no longer execute inside the API service: they run in an **isolated runner service** (own Cloud Run service, service account without roles, no secrets, internal ingress, egress through a VPC without NAT — §7), and a deployed app without that runner runs no tests at all. The Node-level guards inside the runner remain defense in depth, not a boundary of their own (see F-02), and the isolation is configured but not yet proven on the deployed profile (§7.2). The signed files of an audit pack are generated from the signed run only; what the account holder states travels in a separately labelled file outside the signature (§14.3). **Live test execution against a connected S/4HANA tenant is locked** (§7.1, gate `G0:R0`): the route refuses it before any measurement, and the interface says so wherever the path would otherwise be offered. It reopens only under the conditions listed there — a measurement passing is not one of them.
