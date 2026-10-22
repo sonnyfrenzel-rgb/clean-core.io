@@ -1098,7 +1098,8 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
     return say('technical', `It picks out test documents (${[...new Set(testValues)].join(', ')}) — test data, not a business decision.`);
   }
   // "No limit" written as a number on anything but money: a technical cap, whatever the field is called.
-  if (values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s))) {
+  // From engine 3.0.20, like the cap in `technicalOf`: a run of an older engine keeps its reading.
+  if (rc.reads3020 && values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s))) {
     const v = values.find(isSentinel) ?? '';
     return say('technical', `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`);
   }

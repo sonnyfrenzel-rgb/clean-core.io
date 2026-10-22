@@ -353,7 +353,8 @@ function testDataStatement(s: AbapStatement, filled: Set<string> | null = null):
   if (assign) {
     const value = assign[2].trim();
     const ok = LITERAL.test(value) || (/^VALUE\s+#\(/i.test(value) && (filled === null || literalRow(value)));
-    if (ok) filled?.add(rootOf(assign[1]));
+    // Only a whole row set from literals is filled: `ls_row-status = 'X'` fixes one field, the rest may come from a read.
+    if (ok && !assign[1].includes('-')) filled?.add(rootOf(assign[1]));
     return { ok, fills: false };
   }
   return { ok: false, fills: false };

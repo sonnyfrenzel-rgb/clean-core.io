@@ -68,6 +68,9 @@ const VERBS: ReadonlyArray<[string, readonly string[]]> = [
 const CHECKED = ['supplier invoices', 'invoices', 'billing documents', 'deliveries', 'payments', 'goods receipts'];
 
 const TOLERANCE = new Set(['TOLERANCE', 'TOL', 'TOLER']);
+/** A comparison operator, and a fixed value a tolerance can be compared with: a number, or a literal with its text masked. */
+const COMPARED = String.raw`(?:<=|>=|=<|=>|<>|=|<|>|\b(?:EQ|NE|LT|GT|LE|GE)\b)`;
+const FIXED_VALUE = String.raw`(?:-?\d+(?:\.\d+)?|'[^']*'|\x60[^\x60]*\x60)`;
 
 export interface ProgramDomain {
   /** The sentence, a verb phrase in sentence case — "Checks supplier invoices against purchase orders and goods receipts, within a tolerance." */
@@ -135,8 +138,12 @@ export function readProgramDomain(source: string): ProgramDomain | null {
     // Used means it takes part in the check: a condition reads it, a WHERE filters by it, or a
     // calculation takes it in. Shown in a list or a message, it decides nothing.
     const used = statements.some((st) => {
-      // A check that it was entered (`IS INITIAL`) asks for the value; it does not apply it.
-      const text = maskLiterals(st.text).replace(new RegExp(`${word.source}\\s+IS\\s+(?:NOT\\s+)?(?:INITIAL|BOUND|ASSIGNED)\\b`, 'gi'), ' ');
+      // A check that it was entered (`IS INITIAL`) asks for the value; it does not apply it. Nor does a
+      // comparison with a fixed value (`p_tol > 0`, `p_tol <= 100`): it checks the entry, not a business value.
+      const text = maskLiterals(st.text)
+        .replace(new RegExp(`${word.source}\\s+IS\\s+(?:NOT\\s+)?(?:INITIAL|BOUND|ASSIGNED)\\b`, 'gi'), ' ')
+        .replace(new RegExp(`${word.source}\\s*${COMPARED}\\s*${FIXED_VALUE}(?![\\w/])`, 'gi'), ' ')
+        .replace(new RegExp(`(?<![\\w/-])${FIXED_VALUE}\\s*${COMPARED}\\s*${word.source}`, 'gi'), ' ');
       if (!word.test(text)) return false;
       if (/^(?:IF|ELSEIF|CHECK|WHILE|WHEN)$/i.test(st.keyword)) return true;
       if (/\bWHERE\b[\s\S]*$/i.test(text) && word.test(/\bWHERE\b([\s\S]*)$/i.exec(text)?.[1] ?? '')) return true;
