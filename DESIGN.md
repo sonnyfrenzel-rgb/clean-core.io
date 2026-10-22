@@ -353,6 +353,16 @@ has no anchor of its own — ADR-093). Analyze, Transformation, Documentation,
 Testing and Delivery carry it; Design (a canvas with its own tabs) and Economics (a guided flow whose step guide is its
 navigation) do not.
 
+**The Design tool reads canvas first** (ADR-104, amending ADR-102's order). The canvas is the page's picture, right
+under the header; the questions for the business stand beside it as its side panel from L (below it on S and M) — the
+questions that change the target on top ("N questions change the target"), the others folded ("+ M without impact on
+the target"). The proposal — the target drawn on the canvas, its KPIs, the decision with the recommended route and
+the alternatives, the document drawer with the option comparison — shows once every question has an answer (or none
+is asked), once the reader clicks *Skip questions*, or when a design is already on record. Until then the canvas holds
+one calm placeholder, "The target appears after the questions — or skip them", with *Skip questions* as its one
+secondary button. Afterwards the questions fold to one line in the side panel ("Business questions · n of m
+answered"), open while questions are still open. The design is still written only on the owner's click.
+
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A
 view in the URL is a perspective, not an approval:** a link with `?view=management` opens nothing for which the account

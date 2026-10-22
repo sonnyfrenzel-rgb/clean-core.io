@@ -26,6 +26,7 @@ import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { designAnswer, type StoredRoute } from '@/lib/design-recommendation';
 import { useTouchViewport } from '@/components/process-map/useTouchViewport';
+import { wt } from '@/lib/workspace-messages';
 import './design-canvas.css';
 
 /**
@@ -116,6 +117,25 @@ export interface DesignCanvasStageProps {
    * directly.
    */
   confirmTarget?: { label: string; onConfirm: () => Promise<void> | void; chooseOther?: boolean };
+  /**
+   * The questions for the business (`RuleQuestions`, ADR-102), as a panel
+   * beside the canvas — below it on a phone (owner decision 22.10.2026, ADR-104).
+   * Always mounted where given, so what is answered keeps reaching the page.
+   */
+  questions?: React.ReactNode;
+  /** "Business questions · 3 of 7 answered" — the line the panel folds to once the proposal shows. */
+  questionsSummary?: string | null;
+  /** The panel opens by itself once the proposal shows: questions are still open, or the address names them. */
+  questionsOpenFirst?: boolean;
+  /**
+   * Whether the proposal shows — the target on the canvas, the KPIs, the
+   * decision panel and the document drawer with the option comparison
+   * (`designProposalShown`). Until then the canvas holds `pending` and the side
+   * holds the questions alone. Unset (the demo), it always shows.
+   */
+  proposalShown?: boolean;
+  /** What the canvas holds until the proposal shows: "The target appears after the questions — or skip them". */
+  pending?: React.ReactNode;
 }
 
 /**
@@ -266,7 +286,17 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     view,
     signOffWording,
     confirmTarget,
+    questions = null,
+    questionsSummary = null,
+    questionsOpenFirst = false,
+    proposalShown = true,
+    pending = null,
   } = props;
+  // The questions panel once the proposal shows: folded to its line unless
+  // questions are open (or the reader opened it); before that it is the side.
+  const [questionsOpenChoice, setQuestionsOpen] = useState<boolean | null>(null);
+  const questionsOpen = !proposalShown || (questionsOpenChoice ?? questionsOpenFirst);
+  const questionsBodyId = useId();
 
   const storedContract = evidence.state === 'ready' ? evidence.contract : null;
   const contract: ArchitectureContract | null = useMemo(
@@ -568,7 +598,11 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     : 'The target architecture could not be drawn.';
 
   let board: React.ReactNode;
-  if (evidence.state === 'loading') {
+  if (!proposalShown) {
+    // Owner decision 22.10.2026 (ADR-104): the target appears after the
+    // questions, or once they are skipped — until then a calm placeholder.
+    board = <div data-design-pending="">{pending}</div>;
+  } else if (evidence.state === 'loading') {
     board = <CcSkeleton shape="cards" label="the target architecture" />;
   } else if (evidence.state === 'absent') {
     board = (
@@ -1048,6 +1082,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             <rect width="100%" height="100%" fill={`url(#dots-${hintId.replace(/[^a-zA-Z0-9]/g, '')})`} />
           </svg>
           <div className="relative flex flex-col gap-4 p-3 min-[720px]:px-7 min-[720px]:pt-4 min-[720px]:pb-6 min-[1100px]:sticky min-[1100px]:top-0">
+            {proposalShown ? (
             <div className="grid grid-cols-2 gap-2 min-[720px]:flex min-[720px]:flex-wrap min-[720px]:gap-3">
               <Kpi
                 icon={<Cloud size={16} />}
@@ -1067,6 +1102,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               <Kpi icon={<Link2 size={16} />} tint="--cc-seq-4" label="Released successors" value={successorsKpi} />
               <Kpi icon={<User size={16} />} tint="--cc-neutral" label="Sign-off" value={confirmed ? 'Confirmed' : 'Not confirmed'} />
             </div>
+            ) : null}
 
             {/* The canvas card. Full screen is this card filling the window —
                 the element the Fullscreen API shows or, where the browser
@@ -1083,9 +1119,9 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="m-0 flex flex-wrap items-center gap-2 text-[15px] font-bold text-cc-ink">
                   Target architecture
-                  {contract ? <CcProvenanceChip value="reconstructed" note={`from contract ${contract.contractId}`} /> : null}
+                  {contract && proposalShown ? <CcProvenanceChip value="reconstructed" note={`from contract ${contract.contractId}`} /> : null}
                 </h2>
-                {view === 'canvas' && model ? (
+                {view === 'canvas' && model && proposalShown ? (
                   <div className="flex flex-wrap items-center gap-3">
                     <span id={hintId} className="text-[12px] text-cc-ink-muted">
                       click a box to see its evidence
@@ -1144,7 +1180,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               >
                 {evidenceTab}
               </CcCanvasDrawer>
-              {view === 'canvas' && model ? (
+              {view === 'canvas' && model && proposalShown ? (
                 <div
                   aria-label="Legend"
                   role="note"
@@ -1163,10 +1199,12 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
 
         {/* The side panel */}
         <aside
-          aria-label="Decision"
-          data-design-panel=""
+          aria-label={proposalShown ? 'Decision' : 'Questions for the business'}
+          data-design-panel={proposalShown ? 'decision' : 'questions'}
           className="flex min-w-0 flex-col border-t border-cc-line bg-cc-surface min-[1100px]:border-t-0 min-[1100px]:border-l"
         >
+          {proposalShown ? (
+          <>
           <div className="px-4 pt-4 min-[720px]:px-5">
             <p className={LABEL}>Decision</p>
             <p className="m-0 mt-px text-[15px] font-bold text-cc-ink">Where should this code run?</p>
@@ -1185,8 +1223,34 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               ]}
             />
           </div>
+          </>
+          ) : null}
+          {/* The questions for the business, beside the canvas (ADR-104). One
+              place in the tree whatever shows around it, so the panel is never
+              mounted again and its answers keep reaching the page. */}
+          {questions ? (
+            <div data-design-questions={questionsOpen ? 'open' : 'folded'} className={cn('min-w-0', proposalShown && 'border-t border-cc-line')}>
+              {proposalShown ? (
+                <button
+                  type="button"
+                  data-design-questions-toggle=""
+                  aria-expanded={questionsOpen}
+                  aria-controls={questionsBodyId}
+                  onClick={() => setQuestionsOpen(!questionsOpen)}
+                  className="flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 px-4 py-3 text-left text-[13px] font-semibold text-cc-ink pointer-coarse:min-h-11 min-[720px]:px-5"
+                >
+                  <span className="min-w-0">{questionsSummary ?? wt('questions.title')}</span>
+                  <span className="shrink-0 font-medium text-cc-ink-muted">{questionsOpen ? wt('design.hideQuestions') : wt('design.showQuestions')}</span>
+                </button>
+              ) : null}
+              <div id={questionsBodyId} className={cn('px-3 pt-3 pb-4 min-[720px]:px-4', !questionsOpen && 'hidden print:block')}>
+                {questions}
+              </div>
+            </div>
+          ) : null}
           {/* The actions stay in reach: beside a canvas taller than the window
               the footer sticks to the window's bottom edge. */}
+          {proposalShown ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-cc-line bg-cc-surface px-4 py-3 min-[720px]:px-5 min-[1100px]:sticky min-[1100px]:bottom-0">
             {reader ? (
               <OwnerOnlyNote />
@@ -1213,6 +1277,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             </>
             )}
           </div>
+          ) : null}
         </aside>
       </div>
 
@@ -1270,7 +1335,9 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         </CcMessageBox>
       ) : null}
 
-      {/* The drawer */}
+      {/* The drawer — the document with its option comparison, the contract
+          and the alternatives: part of the proposal, so it waits with it (ADR-104). */}
+      {proposalShown ? (
       <section aria-label="Design document and contract" data-design-drawer="" className="border-t border-cc-line bg-cc-surface px-4 pt-2 pb-6 min-[720px]:px-6">
         <CcTabs
           label="Design document and contract"
@@ -1283,6 +1350,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           ]}
         />
       </section>
+      ) : null}
     </div>
   );
 }

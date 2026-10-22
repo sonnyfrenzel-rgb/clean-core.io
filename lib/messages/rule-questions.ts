@@ -54,6 +54,15 @@ export const RULE_QUESTION_MESSAGES = {
   'design.regenerateWaits': 'Regenerate waits for the business answers.',
   'design.writeWithoutOpenNote': 'The design then names these questions as open; answer them later and regenerate.',
   'design.readingQuestions': 'Reading the business questions first…',
+  'design.targetAfterQuestions': 'The target appears after the questions — or skip them.',
+  'design.targetAfterQuestionsNote': 'Your answers decide what the design carries. Nothing is written until you ask for it.',
+  'design.skipQuestions': 'Skip questions',
+  'design.showQuestions': 'Show the questions',
+  'design.hideQuestions': 'Hide the questions',
+  'questions.changingNote':
+    'For these the engine proposes a change — a new value, configuration, SAP standard or leaving the rule out — or your answer says so.',
+  'questions.quietNote':
+    'For these the engine proposes keeping the rule as coded, so the target does not change unless you say otherwise. Your answers still go into the design.',
   'design.answersMovedTitle': 'Written before the latest business answers',
   'design.answersMoved': 'The business answers changed after this design was written. Regenerate it so the design carries them.',
   'questions.technicalNote':
@@ -78,6 +87,21 @@ export function itProposals(n: number): string {
 /** "4 more questions after these". */
 export function questionsLater(n: number): string {
   return n === 1 ? '1 more question after these' : `${n} more questions after these`;
+}
+
+/** "3 questions change the target". */
+export function questionsChangeTarget(n: number): string {
+  return n === 1 ? '1 question changes the target' : `${n} questions change the target`;
+}
+
+/** "+ 4 without impact on the target". */
+export function questionsWithoutImpact(n: number): string {
+  return `+ ${n} without impact on the target`;
+}
+
+/** "Business questions · 3 of 7 answered". */
+export function questionsPanelSummary(answered: number, total: number): string {
+  return `Business questions · ${answered} of ${total} answered`;
 }
 
 /** "7 questions for the business · 6 technical rules stay as coded". */

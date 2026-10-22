@@ -25,6 +25,7 @@ import {
   questionAnswerOf,
   questionChoices,
   questionFlow,
+  targetQuestionGroups,
   technicalKeepChoices,
 } from '../lib/rule-questions';
 import { rulePlainSentences } from '../lib/plain-wording';
@@ -399,13 +400,16 @@ async function renderQuestions(source: string, owner: boolean, entries: Record<s
 }
 
 test.describe('the questions in Design, rendered', () => {
-  test('the owner sees five questions, each in plain words with four answers; the rule id and the code only one fold down', async () => {
+  test('the owner sees the questions that change the target first and the others folded, each in plain words with four answers; the rule id and the code only one fold down', async () => {
     const html = await renderQuestions(BIG, true);
     const { ex } = explain(BIG);
     expect(html).toContain('data-rule-questions=""');
-    expect((html.match(/data-question="/g) ?? []).length).toBe(5);
+    // Owner decision 22.10.2026 (3.0.21): up to five that change the target, up to five without impact folded.
+    const groups = targetQuestionGroups(ex, {});
+    expect(groups.changing.length).toBe(5);
+    expect((html.match(/data-question="/g) ?? []).length).toBe(groups.changing.length + groups.quiet.length);
     expect(html).toContain(`0 of ${ex.questions.length} questions answered`);
-    expect(html).toContain('10 more questions after these');
+    expect(html).toContain(`${groups.later} more questions after these`);
     for (const answer of QUESTION_ANSWERS) expect(html).toContain(`data-question-pick="${answer}"`);
     for (const label of ['Yes, that’s right', 'No, it should be …', 'We don’t need it any more', 'I don’t know / someone else']) expect(html).toContain(label);
     expect(html).toContain('Accept all proposals');
@@ -490,11 +494,14 @@ test.describe('the places (source guards)', () => {
     expect(order.indexOf("'process'")).toBeLessThan(order.indexOf("'rules'"));
   });
 
-  test('the full register is in IT; the questions stand in Design before its canvas; open questions lead there', () => {
+  test('the full register is in IT; the questions stand in Design beside its canvas; open questions lead there', () => {
     expect(shell).toContain('rules={<ItRuleRegister');
     const design = read('app/(app)/project/[projectId]/design/page.tsx');
     expect(design.indexOf('<RuleQuestions')).toBeGreaterThan(-1);
-    expect(design.indexOf('<RuleQuestions')).toBeLessThan(design.indexOf('<DesignCanvasStage'));
+    // Owner decision 22.10.2026 (3.0.21, ADR-104): no longer above the canvas — handed to it as its side panel.
+    expect(design).toContain('const questionsPanel = <RuleQuestions ');
+    const canvas = design.slice(design.indexOf('<DesignCanvasStage'));
+    expect(canvas).toContain('questions={questionsPanel}');
     const oq = read('components/workspace/OpenQuestions.tsx');
     expect(oq).toMatch(/case 'confirm-rules':[\s\S]{0,200}path: 'design'[\s\S]{0,80}RULE_QUESTIONS_ID/);
   });
