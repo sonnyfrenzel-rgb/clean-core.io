@@ -1301,7 +1301,8 @@ function deltaLines(gm: GoldenMaster, c: GoldenMasterCase, table: string, column
 /**
  * Why a case's data would not be exactly the original's on this binding (QM-01, review of 18.10.2026): a statement of
  * the case or of the baseline the reader did not execute (`MODIFY at L1458`), a setting or select-option the selection
- * type has no field for, a table the case changes that the state type has no component for. Empty: carried exactly.
+ * type has no field for, a table the case changes or holds rows in that the state type has no component for. Empty:
+ * carried exactly.
  */
 export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, binding: Pick<GoldenMasterBinding, 'selection' | 'state' | 'selectionType' | 'stateType' | 'inputComponents'>): string[] {
   const out: string[] = [];
@@ -1321,6 +1322,13 @@ export function goldenMasterNotCarried(gm: GoldenMaster, c: GoldenMasterCase, bi
     if (!b || !b.range) out.push(`select-option ${name} (${binding.selectionType} has no range for it)`);
   }
   for (const t of c.changed) if (!binding.state[t]) out.push(`table ${t} (${binding.stateType} has no component for it)`);
+  // A table the case leaves as the baseline has it is not passed either when it holds rows (QA review of ee72ca2218e1,
+  // 7f457d6823d1): the logic would run without them.
+  for (const t of Object.keys(gm.baseline)) {
+    if (binding.state[t] || c.changed.includes(t)) continue;
+    const rows = (c.tables[t] ?? gm.baseline[t] ?? []).length;
+    if (rows > 0) out.push(`table ${t} with ${rows} row${rows === 1 ? '' : 's'} (${binding.stateType} has no component for it)`);
+  }
   return out;
 }
 
@@ -1611,13 +1619,14 @@ export function goldenMasterTestClass(
 export function goldenMasterSentence(cls: Pick<GoldenMasterTestClass, 'methods'>): string {
   const n = cls.methods.length;
   if (n === 0) return 'No demo case of the original was recognised.';
-  const bound = cls.methods.filter((m) => m.bound).length;
+  // A case not carried over skips without running: it passes no rows to the logic (QA review of ee72ca2218e1, 851baeec2d3d).
+  const bound = cls.methods.filter((m) => m.bound && m.carried !== false).length;
   const partial = cls.methods.filter((m) => m.partial).length;
   const compared = cls.methods.filter((m) => m.compared).length;
   const notCarried = cls.methods.filter((m) => m.carried === false).length;
   return (
     `${goldenMasterStates(n, n - notCarried, compared)}. ${bound} of ${n} pass all their rows to the logic${partial ? `; ${partial} read only in part` : ''}${notCarried ? `; ${notCarriedWords(notCarried)}` : ''}` +
-    ` — ${goldenMasterComparedWords(n, compared)}.`
+    ` — ${goldenMasterComparedWords(n, compared, notCarried)}.`
   );
 }
 
@@ -1658,8 +1667,21 @@ export function notCarriedWords(n: number): string {
   return `${n} not carried over exactly (a statement of the original the engine could not read, or a value with no place in the target) - ${n === 1 ? 'it skips' : 'they skip'} without running, naming the statement`;
 }
 
-/** How many demo cases compare a result: the same words in the sentence above and in the testing evidence. */
-export function goldenMasterComparedWords(cases: number, compared: number): string {
+/**
+ * How many demo cases compare a result: the same words in the sentence above and in the testing evidence. Only the
+ * cases carried over run through the logic; those not carried over (`notCarried`) skip without running and are said
+ * apart (`notCarriedWords`), never as run (QA review of ee72ca2218e1, 851baeec2d3d).
+ */
+export function goldenMasterComparedWords(cases: number, compared: number, notCarried = 0): string {
+  const ran = cases - notCarried;
+  if (notCarried > 0) {
+    if (ran <= 0) return 'none runs through the logic';
+    const who = ran === 1 ? 'the one carried over' : `the ${ran} carried over`;
+    if (compared === 0)
+      return `${who} ${ran === 1 ? 'runs' : 'run'} through the logic, but no result is compared yet (no expected result of the original is on record), so ABAP Unit reports ${ran === 1 ? 'it' : 'them'} as skipped, not passed`;
+    if (compared >= ran) return `${who} ${ran === 1 ? 'is' : 'are'} compared with the original's result on record`;
+    return `${compared} compared with the original's result on record; the other ${ran - compared} carried over run through the logic and are reported as skipped, not passed`;
+  }
   if (compared === 0)
     return `${cases === 1 ? 'it runs' : 'each runs'} through the logic, but no result is compared yet (no expected result of the original is on record), so ABAP Unit reports ${cases === 1 ? 'it' : 'them'} as skipped, not passed`;
   if (compared === cases) return "each is compared with the original's result on record";

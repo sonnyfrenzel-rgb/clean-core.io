@@ -76,7 +76,7 @@ export interface OriginalDemo {
   demoFlag: string | null;
   parameters: Record<string, { default: string; written: string; type: string }>;
   aliases: Record<string, string>;
-  baseline?: { rows: Record<string, Array<Record<string, DemoValue>>> };
+  baseline?: { rows: Record<string, Array<Record<string, DemoValue>>>; unread?: Array<{ line: number; text: string }> };
   cases: OriginalDemoCase[];
 }
 
@@ -155,10 +155,13 @@ class NotHeld extends Error {
 }
 
 function runCase(demo: OriginalDemo, c: OriginalDemoCase, initial: Record<string, unknown>, held: (place: string, start: unknown, value: string) => unknown): DemoRun {
-  if (c.unread.length > 0) {
+  // A statement of the baseline not read counts for every case: each case starts from the baseline's tables.
+  const baseUnread = demo.baseline?.unread ?? [];
+  const unread = baseUnread.concat(c.unread);
+  if (unread.length > 0) {
     // QM-01: a case whose data is not exactly the original's is not run; the reason names the statements it could not carry.
-    const kinds = c.unread.slice(0, 3).map((u) => statementKind(u.text) + ' at L' + u.line);
-    return { state: 'not-run', reason: 'not carried over: ' + kinds.join(', ') + (c.unread.length > 3 ? ' and ' + (c.unread.length - 3) + ' more' : '') + " - the engine could not read these statements of the original, so the case's data would not be the original's" };
+    const kinds = unread.slice(0, 3).map((u) => statementKind(u.text) + ' at L' + u.line + (baseUnread.includes(u) ? ' of the baseline' : ''));
+    return { state: 'not-run', reason: 'not carried over: ' + kinds.join(', ') + (unread.length > 3 ? ' and ' + (unread.length - 3) + ' more' : '') + " - the engine could not read these statements of the original, so the case's data would not be the original's" };
   }
   const params: Record<string, string> = {};
   for (const [p, v] of Object.entries(demo.parameters)) params[p] = v.default;
