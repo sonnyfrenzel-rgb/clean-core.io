@@ -1,3 +1,4 @@
+import { providerSuspendedNotice, suspensionDetailsOf } from '@/lib/provider-suspension';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyRequestAuth,
@@ -20,7 +21,6 @@ import {
   PROVIDER_SUSPENDED_CODE,
   isModelKeyProvider,
   offeredKeyProviders,
-  providerSuspendedMessage,
   suspendedProvidersOf,
   type ModelKeyProvider,
 } from '@/lib/model-providers';
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     // 3.0.21 (T01): a provider the operator has switched off is not asked.
     if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
-      return NextResponse.json({ error: providerSuspendedMessage(provider), code: PROVIDER_SUSPENDED_CODE }, { status: 409 });
+      return NextResponse.json({ error: providerSuspendedNotice(provider, suspensionDetailsOf(process.env)), code: PROVIDER_SUSPENDED_CODE }, { status: 409 });
     }
 
     // The one key test (`lib/own-key-test.ts`): it reads the model the key will

@@ -61,6 +61,23 @@ npm run rules:record -- --deployed        # deployed by hand elsewhere; write it
 
 **Never in CI.** No workflow deploys the rules and none may query the Rules API; `tests/rules-deploy-order.spec.ts` fails if one starts to. CI holding credentials that can rewrite security rules is one bad merge from an open database.
 
+## Switching a model provider off (T01, C11)
+
+The Additional Agreement on Own Model Keys (clause 6) and the privacy policy (section 4) promise that, should a provider's contracting entity change or the basis for calling it cease, the operator stops calling that provider — without a fallback to another provider or to the platform key — and the step stops and says since when and why. Three server variables on the Cloud Run service do it, without a deploy:
+
+| Variable | Value | Effect |
+|---|---|---|
+| `MODEL_PROVIDERS_SUSPENDED` | provider ids, comma-separated: `anthropic`, `gemini` | Every call to that provider stops before it is made (`/api/gemini`, the key save and key test routes, the stage availability). Stored keys stay until their owners delete them. |
+| `MODEL_PROVIDERS_SUSPENDED_AT` | the day the calls stopped, `YYYY-MM-DD` | The date the notice C11 names. |
+| `MODEL_PROVIDERS_SUSPENDED_REASON` | `contracting-entity`, `data-region` or `binding-decision` | The reason C11 names — the three reasons of `lib/legal/consent-texts.ts` (`anthropicSuspended.reasons`), in that order. |
+
+```bash
+gcloud run services update clean-core --region=europe-west1 --project=cleancore-491216 \
+  --update-env-vars=MODEL_PROVIDERS_SUSPENDED=anthropic,MODEL_PROVIDERS_SUSPENDED_AT=2026-11-02,MODEL_PROVIDERS_SUSPENDED_REASON=data-region
+```
+
+With all three set for Anthropic, the step, the key routes and Settings show C11 word for word ("Calls to Anthropic have been suspended since {date}: {reason}. …", `lib/provider-suspension.ts`). Without a valid date or reason — or for Gemini, for which C11 has no wording — they show the generic sentence of `providerSuspendedMessage` (`lib/model-providers.ts`), which still says that nothing was sent and no other provider or key was used. Set the date and the reason together with the switch. The deploy merges its own variables into the service (`deploy-cloudrun`, default strategy) and does not touch these three. To lift the switch-off: `--remove-env-vars=MODEL_PROVIDERS_SUSPENDED,MODEL_PROVIDERS_SUSPENDED_AT,MODEL_PROVIDERS_SUSPENDED_REASON`.
+
 ## Secret rotation
 
 Rotate on a defined cadence and after any suspected exposure: `AUDIT_SIGNING_KEY`, `AUDIT_SIGNING_PRIVATE_KEY` (move the old public key into `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` so earlier packs keep verifying), `GEMINI_API_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `S4_ENCRYPTION_KEY`, `BYOK_ENCRYPTION_KEY` (versioned: add a new version to the key ring in `lib/byok-key.ts`, then retire the old one), `RATE_LIMIT_PEPPER` (resets the current windows), `PILOT_APPROVAL_SECRET`, the Firebase service account. `MFA_BACKUP_CODE_PEPPER` is retired with the backup codes: no code reads it and, since 02.10.2026, the deploy no longer passes it. Rotating `AUDIT_SIGNING_KEY` invalidates prior HMAC signatures — there is no key history for it yet (treat old packs as `integrity-only`); see `docs/INCIDENT-RESPONSE.md` R1.

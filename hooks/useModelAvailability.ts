@@ -40,6 +40,8 @@ export interface ModelAvailability {
   autoSteps: boolean;
   /** 3.0.21 (T01) — the key's provider when the operator switched it off. */
   suspendedProvider: ModelKeyProvider | null;
+  /** The notice the server words for a switched-off provider (C11 where it applies). */
+  suspendedNotice: string | null;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -57,6 +59,7 @@ export function useModelAvailability(): ModelAvailability {
   const [answers, setAnswers] = useState<Partial<Record<ModelStage, StageAnswerRecord>>>({});
   const [autoSteps, setAutoSteps] = useState(false);
   const [suspendedProvider, setSuspendedProvider] = useState<ModelKeyProvider | null>(null);
+  const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -79,6 +82,7 @@ export function useModelAvailability(): ModelAvailability {
         answers?: Record<string, unknown>;
         autoSteps?: unknown;
         suspendedProvider?: unknown;
+        suspendedNotice?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -91,6 +95,7 @@ export function useModelAvailability(): ModelAvailability {
       setAnswers(read);
       setAutoSteps(data.autoSteps === true);
       setSuspendedProvider(isModelKeyProvider(data.suspendedProvider) ? data.suspendedProvider : null);
+      setSuspendedNotice(typeof data.suspendedNotice === 'string' ? data.suspendedNotice.slice(0, 600) : null);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -125,7 +130,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

@@ -1,3 +1,4 @@
+import { providerSuspendedNotice, suspensionDetailsOf } from '@/lib/provider-suspension';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
@@ -22,7 +23,6 @@ import {
   PROVIDER_SUSPENDED_CODE,
   RECEIPT_PROVIDER_ID,
   autoStepsOffMessage,
-  providerSuspendedMessage,
   stageAnswerNeedsWrite,
   suspendedProvidersOf,
   type KeyOwner,
@@ -567,7 +567,7 @@ export async function POST(request: NextRequest) {
     // suspended is not called, and nothing else is called in its place — not
     // another provider, not the platform key. The step stops with the reason.
     if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
-      return NextResponse.json({ error: providerSuspendedMessage(provider), code: PROVIDER_SUSPENDED_CODE }, { status: 503 });
+      return NextResponse.json({ error: providerSuspendedNotice(provider, suspensionDetailsOf(process.env)), code: PROVIDER_SUSPENDED_CODE }, { status: 503 });
     }
     // 3.0.21 (owner decision B6) — a step the product starts by itself when the
     // owner opens a project (`trigger: 'automatic'`) runs on an own key only

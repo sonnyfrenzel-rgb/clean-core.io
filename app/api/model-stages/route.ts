@@ -1,3 +1,4 @@
+import { providerSuspendedNotice, suspensionDetailsOf } from '@/lib/provider-suspension';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key';
@@ -74,6 +75,8 @@ interface StageAnswer {
    * off; `keyAvailable` is then false, and the screens say why.
    */
   suspendedProvider: ModelKeyProvider | null;
+  /** What the screens say then: C11 with date and reason where it applies (`lib/provider-suspension.ts`). */
+  suspendedNotice: string | null;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -97,7 +100,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null };
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
@@ -108,7 +111,9 @@ async function answerFor(uid: string): Promise<StageAnswer> {
   const suspendedProvider = provider && suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider) ? provider : null;
   const autoSteps = keySource === 'community' || (ownKey !== null && ownKey.autoSteps);
 
-  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider };
+  const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
+
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice };
 }
 
 export async function GET(req: NextRequest) {
