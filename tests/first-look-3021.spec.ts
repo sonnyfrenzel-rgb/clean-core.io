@@ -207,6 +207,21 @@ test.describe('rendered (BusinessOpening, static markup) — the 3.0.21 layout',
     expect(top).not.toContain('data-story-decide-rules');
   });
 
+  test('the first screen keeps room for the steps: "Read from the code:" leads the sentence, tighter steps (owner decision 23.10.2026)', async () => {
+    const Opening = await loadOpening();
+    const o = opening(PO);
+    const authorClaim = { state: 'shown', heading: 'Title', text: 'Emergency purchase approval', lineStart: 3, lineEnd: 3 };
+    const html = renderToStaticMarkup(React.createElement(Opening, propsFor(PO, { inShort: { lines: o.lines, level: o.summary.level, proposal: null, authorClaim } })));
+    const short = html.slice(html.indexOf('data-program-in-short="compact"'), html.indexOf('data-first-look-who-in-out'));
+    // The author's claim quoted, and the engine's sentence with its label on one line — not a label line of its own.
+    expect(short).toContain('“Emergency purchase approval”');
+    expect(short).toMatch(/<p data-program-in-short-text=""[^>]*><span data-program-in-short-engine=""[^>]*>Read from the code: <\/span>/);
+    expect((short.match(/Read from the code:/g) ?? []).length).toBe(1);
+    // Whole spacing steps only (DESIGN.md §1.3): blocks 16 px apart, a step row 4 px top and bottom.
+    expect(html).toMatch(/data-first-look-business="" class="flex flex-col gap-4"/);
+    expect(html).toMatch(/data-process-story-step="1" class="[^"]*\bpy-1\b/);
+  });
+
   test('a line under "What it decides" that speaks for two shows both lines (owner decision 23.10.2026)', async () => {
     const Opening = await loadOpening();
     const rules = [{ id: 'Q-BR-004', text: 'Sets a limit on the risk score', anchor: 'L394', also: [{ id: 'Q-BR-099', anchor: 'L900' }] }];

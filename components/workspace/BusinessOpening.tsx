@@ -170,7 +170,7 @@ export default function BusinessOpening({
   const testSwitchShown = !!givesAway?.testSwitch && !givesAway.findings.some((f) => f.reader === 'test-switch');
 
   return (
-    <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-5">
+    <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-4">
       {/* 1 — the name and what the program is for, in one sentence. */}
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -187,7 +187,7 @@ export default function BusinessOpening({
         ) : null}
         {nameReason ? <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{nameReason}</p> : null}
         {inShort && shortLine && shortText ? (
-          <div className="mt-2">
+          <div className="mt-1">
             <ProgramInShort
               compact
               lines={[{ ...shortLine, text: shortText }]}
@@ -232,7 +232,7 @@ export default function BusinessOpening({
               <li
                 key={`${step.nodeId}-${i}`}
                 data-process-story-step={i + 1}
-                className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 border-b border-cc-line py-2 last:border-b-0"
+                className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 border-b border-cc-line py-1 last:border-b-0"
               >
                 <span
                   aria-hidden={true}
