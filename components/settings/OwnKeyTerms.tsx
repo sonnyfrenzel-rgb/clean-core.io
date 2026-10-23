@@ -135,10 +135,10 @@ export function OwnKeyUntested() {
 }
 
 /** T01 — the operator switched the key's provider off. */
-export function OwnKeyProviderSuspended({ provider }: { provider: ModelKeyProvider }) {
+export function OwnKeyProviderSuspended({ provider, notice }: { provider: ModelKeyProvider; notice?: string | null }) {
   return (
     <CcMessageStrip state="warning" headline={`Calls to ${PROVIDER_LABEL[provider]} are switched off`}>
-      {providerSuspendedMessage(provider)}
+      {notice || providerSuspendedMessage(provider)}
     </CcMessageStrip>
   );
 }

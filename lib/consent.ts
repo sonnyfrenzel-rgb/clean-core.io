@@ -1,6 +1,7 @@
 import { getAdminDb } from '@/lib/firebase-admin';
 import { TERMS_VERSION } from '@/lib/constants';
-import { archivedTermsSha256 } from '@/lib/terms-versions';
+import { archivedTermsSha256For, isTermsLanguage, type TermsLanguage } from '@/lib/terms-versions';
+import { PROOF_LOG_RETENTION } from '@/lib/proof-log';
 
 /**
  * Server-authoritative Terms/Privacy consent (finding V14).
@@ -36,6 +37,19 @@ export interface RecordConsentInput {
    * so it is the one field here a caller may still supply.
    */
   locale?: string | null;
+  /**
+   * The language version of the Terms the person ticked and accepted (section
+   * 1.4 of v2.3.0; acceptance test T02) — German or English. Not the interface
+   * locale: the dialog lets the reader choose the contract language, and that
+   * choice is what governs. Anything else records English, the only version
+   * the dialogs offered before v2.3.0.
+   */
+  termsLanguage?: unknown;
+}
+
+/** The language version an acceptance request names, or English. */
+export function acceptedTermsLanguageOf(value: unknown): TermsLanguage {
+  return isTermsLanguage(value) ? value : 'en';
 }
 
 /**
@@ -67,18 +81,41 @@ export interface RecordConsentInput {
  * wording is not pinned for this version", which is true and checkable.
  */
 
-export async function recordConsent({
-  uid,
-  email,
-  source,
-  locale,
-}: RecordConsentInput): Promise<{ termsVersion: string }> {
-  const { db, FieldValue } = await getAdminDb();
+/** What a recorded acceptance returns: what the record says, for the confirmation mail. */
+export interface RecordedConsent {
+  termsVersion: string;
+  termsLanguage: TermsLanguage;
+  /** SHA-256 of the archived wording of that language version, or null. */
+  digest: string | null;
+}
 
-  // The wording of the version being accepted, as a digest. Null while that
-  // version has no archived text — see the note above on why null and not a
-  // stand-in.
-  const contentSha256 = archivedTermsSha256(TERMS_VERSION);
+/** The two Firestore calls a consent makes — what a spec stands in for. */
+interface ConsentBatch {
+  create(ref: unknown, data: Record<string, unknown>): unknown;
+  update(ref: unknown, data: Record<string, unknown>): unknown;
+  commit(): Promise<unknown>;
+}
+export interface ConsentDeps {
+  db: { batch(): ConsentBatch; collection(name: string): { doc(id?: string): unknown } };
+  FieldValue: { serverTimestamp(): unknown };
+}
+
+/**
+ * `deps` exists so a spec can watch the writes without a database; callers
+ * pass the input alone.
+ */
+export async function recordConsent(
+  { uid, email, source, locale, termsLanguage }: RecordConsentInput,
+  deps?: ConsentDeps,
+): Promise<RecordedConsent> {
+  const { db, FieldValue } = deps ?? (await getAdminDb());
+
+  // T02: the language version accepted, and the digest of exactly that
+  // version's archived wording — the German file for a German acceptance,
+  // never the English digest for it. Null while that language version has no
+  // archived text — see the note above on why null and not a stand-in.
+  const language = acceptedTermsLanguageOf(termsLanguage);
+  const contentSha256 = archivedTermsSha256For(TERMS_VERSION, language);
 
   // One batch, so the record and the state enforcement reads commit together
   // or not at all. Two awaited writes could leave an acceptance on record that
@@ -92,12 +129,19 @@ export async function recordConsent({
     uid,
     userId: uid,
     email,
+    kind: 'accepted',
     termsVersion: TERMS_VERSION,
     privacyVersion: TERMS_VERSION,
+    termsLanguage: language,
     contentSha256,
-    locale: typeof locale === 'string' ? locale : null,
+    locale: typeof locale === 'string' ? locale.slice(0, 35) : null,
     source,
     createdAt: FieldValue.serverTimestamp(),
+    // The proof log (T05/T06): the record's own deletion date. Unknown while
+    // the contract runs — it is set, with the keyed hash in place of the
+    // address, when the contract ends (`lib/proof-log.ts`).
+    retention: PROOF_LOG_RETENTION,
+    expiresAt: null,
   });
 
   // 2) mirror the accepted version onto the profile (server timestamp).
@@ -110,6 +154,7 @@ export async function recordConsent({
   // an account that exists.
   batch.update(db.collection('users').doc(uid), {
     termsVersionAccepted: TERMS_VERSION,
+    termsLanguageAccepted: language,
     termsAcceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -122,5 +167,5 @@ export async function recordConsent({
     throw err;
   }
 
-  return { termsVersion: TERMS_VERSION };
+  return { termsVersion: TERMS_VERSION, termsLanguage: language, digest: contentSha256 };
 }

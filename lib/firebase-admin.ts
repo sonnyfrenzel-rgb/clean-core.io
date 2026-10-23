@@ -10,13 +10,15 @@ import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
-import { normaliseEmail, suppressionId } from './unsubscribe-token';
+import { suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
 import { erasePortfolioOf } from './portfolio/erasure';
 import { ADMIN_SIGNUP_MAIL_KIND, legacyAdminSignupSubject } from './admin-signup-email';
 import { quotaSpentSentence } from './run-quota-rule';
 import { isRecentLogin } from './recent-login';
+import { retainProofsOfErasedAccount, type ProofLogDb } from './proof-log-erasure';
+import { PROOF_LOG_RETENTION, PseudonymPepperMissingError, type ContractEnding } from './proof-log';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -928,7 +930,7 @@ async function commitInChunks(db: Firestore, writes: Array<(batch: WriteBatch) =
  */
 export async function deleteUserDataAndAccount(
   uid: string,
-  deps: { db?: Firestore; auth?: Auth } = {},
+  deps: { db?: Firestore; auth?: Auth; ending?: ContractEnding } = {},
 ): Promise<void> {
   await ensureInitialized();
   const db = deps.db ?? (await getAdminDb()).db;
@@ -976,11 +978,11 @@ export async function deleteUserDataAndAccount(
   };
   await sweepClientCreatable();
 
-  // 2. Other user-owned top-level collections
-  await deleteCollectionByUid('consent_events'); // F-16: purge consent records (hold uid/email)
-  //    The proof log of the Additional Agreement on Own Model Keys (3.0.21),
-  //    kept like the consent records: with the account, and gone with it.
-  await deleteCollectionByUid(BYOK_AGREEMENT_EVENTS);
+  // 2. Other user-owned top-level collections.
+  //    Not the proof log (`consent_events`, `byok_agreement_events`) and not
+  //    the delivery records (`email_events`): since 3.0.21 (T05/T06) they are
+  //    kept, pseudonymised, with their own deletion date — step 3c,
+  //    `retainProofsOfErasedAccount` (privacy policy section 5, Terms 1.3, C7).
   //    Survey answers and the free-text comment beside them: one document per
   //    campaign, `${campaign}__${uid}`, written by /api/survey/vote with the
   //    owner in `uid`. It was missing from this list, so an erased account's
@@ -990,10 +992,6 @@ export async function deleteUserDataAndAccount(
   //    and campaign, `${campaign}__${uid}`, holding the address beside the uid.
   //    It exists so nobody is mailed twice; an erased account is mailed never.
   await deleteCollectionByUid('email_sends', 'uid');
-  //    The delivery log (`lib/email-events.ts`) keeps the recipient address per
-  //    message. Records written with the account's uid go here; records written
-  //    for the address alone go in step 3c, once the address has been read.
-  await deleteCollectionByUid('email_events', 'uid');
   //    Proxy capabilities of the account's live test runs (`lib/s4-proxy-
   //    capability-store.ts`): project id, uid, tenant host, run id. A run deletes
   //    its own when it returns; one a crashed run left behind waits for the TTL
@@ -1146,21 +1144,40 @@ export async function deleteUserDataAndAccount(
     });
   }
 
-  //     Delivery-log records that name the account by address only — a mail
-  //     sent before the log carried a uid, or by a route that never passed one.
-  //     `to` holds the address as it was sent, so both spellings are asked.
-  for (const address of new Set([profileAddress, invitedAddress].filter((a): a is string => !!a))) {
-    const q = db.collection('email_events').where('to', 'array-contains', address).limit(400);
-    await tryDelete('email_events', async () => {
-      let snapshot = await q.get();
-      while (snapshot.size > 0) {
-        const batch = db.batch();
-        snapshot.docs.forEach((eventDoc: ErasableDoc) => batch.delete(eventDoc.ref));
-        await batch.commit();
-        snapshot = await q.get();
+  //     "Proofs, not data" (privacy policy section 5, Terms 1.3, C7; T05/T06):
+  //     the acceptance and ending records, the delivery records of mails to the
+  //     account (by uid and by address, both spellings) and an opt-out of
+  //     community mail stay — with the keyed hash of the address in place of
+  //     account and address and their own deletion date — plus the record of
+  //     the end of the contract and the deletion note. `lib/proof-log-erasure.ts`.
+  //
+  //     Without `PSEUDONYM_PEPPER` no keyed hash can be made. Then the records
+  //     are deleted as before 3.0.21 rather than kept with the address: an
+  //     erasure that cannot complete is worse than a proof the operator loses,
+  //     and the critical log says the deployment lacks the secret.
+  const proofAddresses = [profileAddress, invitedAddress].filter((a): a is string => !!a);
+  await tryDelete('proof-log', async () => {
+    try {
+      await retainProofsOfErasedAccount(db as unknown as ProofLogDb, () => FieldValue.delete(), {
+        uid,
+        addresses: proofAddresses,
+        endedAt: new Date(),
+        ending: deps.ending ?? 'account-deletion',
+      });
+    } catch (e) {
+      if (!(e instanceof PseudonymPepperMissingError)) throw e;
+      logger.critical('account erasure: PSEUDONYM_PEPPER is not set — proof records deleted instead of pseudonymised', { code: e.code });
+      await deleteCollectionByUid('consent_events');
+      await deleteCollectionByUid(BYOK_AGREEMENT_EVENTS);
+      await deleteCollectionByUid('email_events', 'uid');
+      for (const address of new Set(proofAddresses)) {
+        const rows = await db.collection('email_events').where('to', 'array-contains', address).get();
+        await commitInChunks(db, rows.docs.map((row: ErasableDoc) => (batch: WriteBatch) => batch.delete(row.ref as DocumentReference)));
       }
-    });
-  }
+      const legacy = [...new Set(proofAddresses)].map((a) => db.collection('email_suppressions').doc(suppressionId(a)));
+      await commitInChunks(db, legacy.map((ref) => (batch: WriteBatch) => batch.delete(ref)));
+    }
+  });
 
   //     The security journal keeps its rows for the retention period
   //     (`docs/DATA-RETENTION.md`), but not the address of an erased account
@@ -1198,27 +1215,12 @@ export async function deleteUserDataAndAccount(
     });
   }
 
-  //     The opt-out list (`app/api/unsubscribe/route.ts`) holds the address of
-  //     everyone who unsubscribed from community mail, keyed by its hash. It is
-  //     a record of the person, and an erased account is mailed never anyway —
-  //     `email_sends` above and the profile below go with it, so no send
-  //     script finds the address to skip. Removed by the id the route writes,
-  //     by the stored address in case a spelling differed, and by uid for any
-  //     entry that carries one (Sonny, 30.09.2026).
+  //     The opt-out list (`app/api/unsubscribe/route.ts`) is kept, as the keyed
+  //     hash only, without end (privacy policy sections 2 and 5, C7): the
+  //     proof-log step above turned an entry with the address in clear into
+  //     one without it. Owner decision of 30.09.2026 ("removed on erasure")
+  //     superseded by the legal texts of Fassung 1.1.
   const addresses = [...new Set([profileAddress, invitedAddress].filter((a): a is string => !!a))];
-  const suppressionRefs = new Map<string, unknown>();
-  await tryDelete('email_suppressions', async () => {
-    for (const address of addresses) {
-      const ref = db.collection('email_suppressions').doc(suppressionId(address));
-      suppressionRefs.set(ref.path, ref);
-      const byAddress = await db.collection('email_suppressions').where('email', '==', normaliseEmail(address)).get();
-      byAddress.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
-    }
-    const byUid = await db.collection('email_suppressions').where('uid', '==', uid).get();
-    byUid.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
-    // Deleting an id that does not exist is not an error in Firestore.
-    await commitInChunks(db, [...suppressionRefs.values()].map((ref) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
-  });
 
   //     Weekly-report snapshots (`usage_reports`) written before 30.09.2026
   //     listed accounts by name and address; snapshots since hold figures only
@@ -2034,6 +2036,10 @@ function byokAgreementEventWrite(
       : {}),
     ...(event.kind === 'ended' ? { ending: event.ending } : {}),
     createdAt: FieldValue.serverTimestamp(),
+    // The proof log (T05/T06): the record's own deletion date, set with the
+    // keyed hash when the contract ends (`lib/proof-log.ts`).
+    retention: PROOF_LOG_RETENTION,
+    expiresAt: null,
   });
 }
 

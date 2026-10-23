@@ -38,10 +38,30 @@ const built: { type: string; audience: 'nutzer' | 'betrieb'; mail: ProductionMai
 }));
 const userMails = built.filter((b) => b.audience === 'nutzer');
 
-test('the catalogue still has every mail, and the user mails are the eight expected', () => {
-  expect(built).toHaveLength(17);
+test('the catalogue still has every mail, and the user mails are the ones expected', () => {
+  // 3.0.21 (T03): the contract confirmation C5 after sign-up, after an amendment
+  // and after the Additional Agreement, each in English and German.
+  expect(built).toHaveLength(22);
   expect(userMails.map((b) => b.type).sort()).toEqual(
-    ['address-confirmation', 'byok-agreement-accepted', 'byok-agreement-ended', 'invitation', 'portfolio-address-confirmation', 'portfolio-invitation', 'survey', 'tenant-approval', 'tenant-pending', 'tenant-revoke', 'welcome', 'welcome-approval'],
+    [
+      'address-confirmation',
+      'amendment-confirmation',
+      'amendment-confirmation-de',
+      'byok-agreement-accepted',
+      'byok-agreement-accepted-de',
+      'byok-agreement-ended',
+      'contract-confirmation',
+      'contract-confirmation-de',
+      'invitation',
+      'portfolio-address-confirmation',
+      'portfolio-invitation',
+      'survey',
+      'tenant-approval',
+      'tenant-pending',
+      'tenant-revoke',
+      'welcome',
+      'welcome-approval',
+    ],
   );
 });
 

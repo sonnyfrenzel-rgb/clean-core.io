@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { mailDeliveryRecordExpiry } from '@/lib/proof-log';
 
 /**
  * What happened to a message after Resend accepted it.
@@ -158,6 +159,9 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
         // Capped: a message with a pathological retry loop must not grow a
         // document past Firestore's 1 MB limit.
         seenEventIds: [...seen, eventId].slice(-40),
+        // A webhook can arrive before the send's own record: the deletion date
+        // is set by whichever writes first, and kept.
+        ...(data.expiresAt ? {} : { expiresAt: mailDeliveryRecordExpiry(new Date()) }),
         timeline: [
           ...(Array.isArray(data.timeline) ? data.timeline : []),
           { type: input.type, at: input.occurredAt ?? new Date().toISOString(), detail: input.detail ?? null },
@@ -224,6 +228,10 @@ export async function recordEmailSent(
         status,
         sentAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
+        // The record's own deletion date (privacy policy section 6, open value
+        // `mailDeliveryRecordRetention`); a Firestore TTL policy on it deletes
+        // the record then (`docs/DATA-RETENTION.md`).
+        expiresAt: mailDeliveryRecordExpiry(new Date()),
       },
       { merge: true },
     );

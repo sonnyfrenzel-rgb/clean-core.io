@@ -17,7 +17,7 @@ import {
   type FunctionalRequirement,
   type RequirementSet,
 } from '@/lib/functional-requirements';
-import { withAiMarkingHtml, withAiMarkings } from '@/lib/ai-marking';
+import { AI_ORIGIN_MARKDOWN_CLOSE, aiOriginMarkdownOpen, withAiMarkingHtml, withAiMarkings, type AiAuthorship } from '@/lib/ai-marking';
 
 /**
  * The functional requirements as a requirement specification — Markdown for
@@ -307,6 +307,13 @@ export function requirementsFileName(projectName: string, ext: 'md' | 'docx'): s
  * functional set into blocks of its own.
  * ==================================================================== */
 
+/**
+ * Who wrote a block a model wrote (3.0.21, acceptance test T08): Markdown puts `<!-- cc:origin … -->` before it and
+ * `<!-- /cc:origin -->` after it (`lib/ai-marking.ts`). Absent on everything the engine wrote. Word carries the
+ * statements in its core properties only (`blocksDocxParts`).
+ */
+export type DocBlockAi = Pick<AiAuthorship, 'provider' | 'modelId'>;
+
 export type DocBlock =
   /** `id`: an anchor a link in the same document points at (`#pd-rules`); in Word a bookmark (`pd_rules`). */
   | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string; id?: string }
@@ -317,10 +324,10 @@ export type DocBlock =
    * follows the link in every spelling.
    */
   | { k: 'links'; items: Array<{ text: string; href: string; plain: string; tail?: string }> }
-  | { k: 'p'; text: string; strong?: boolean; em?: boolean }
+  | { k: 'p'; text: string; strong?: boolean; em?: boolean; ai?: DocBlockAi }
   | { k: 'note'; text: string }
   /** `muted`: columns printed small and grey (a source column of names and lines). */
-  | { k: 'table'; head: string[]; rows: string[][]; muted?: number[] }
+  | { k: 'table'; head: string[]; rows: string[][]; muted?: number[]; ai?: DocBlockAi }
   | { k: 'kv'; items: Array<[string, string]> }
   | { k: 'ol'; items: string[] }
   | { k: 'code'; items: Array<{ label: string; quote: string }> }
@@ -330,7 +337,8 @@ export type DocBlock =
   | { k: 'titlepage'; title: string; subtitle: string; rows: Array<[string, string]>; note: string }
   /** A table of contents, written out (no field to update in Word). */
   | { k: 'toc'; items: Array<{ level: 1 | 2; text: string }> }
-  | { k: 'ul'; items: string[] }
+  /** `ai`: per item, who wrote it when a model did — aligned with `items`, null for the engine's. */
+  | { k: 'ul'; items: string[]; ai?: ReadonlyArray<DocBlockAi | null> }
   /** A new page in Word and in print; nothing in Markdown. */
   | { k: 'pagebreak' };
 
@@ -349,11 +357,16 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
     } else if (b.k === 'links') {
       b.items.forEach((l) => out.push(`- ${SAFE_ID.test(l.href) ? `[${mdLinkText(l.text)}](#${l.href})` : l.text}${l.tail ? ` — ${l.tail}` : ''}`));
       out.push('');
-    } else if (b.k === 'p') out.push(b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text, '');
+    } else if (b.k === 'p') {
+      const text = b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text;
+      out.push(...(b.ai ? [aiOriginMarkdownOpen(b.ai), text, '', AI_ORIGIN_MARKDOWN_CLOSE] : [text]), '');
+    }
     else if (b.k === 'note') out.push(`> ${b.text}`, '');
     else if (b.k === 'table') {
+      if (b.ai) out.push(aiOriginMarkdownOpen(b.ai));
       out.push(`| ${b.head.map(mdCell).join(' | ')} |`, `|${b.head.map(() => '---').join('|')}|`);
       for (const r of b.rows) out.push(`| ${r.map(mdCell).join(' | ')} |`);
+      if (b.ai) out.push('', AI_ORIGIN_MARKDOWN_CLOSE);
       out.push('');
     } else if (b.k === 'kv') {
       for (const [k, v] of b.items) out.push(`- ${k}: ${v}`);
@@ -362,7 +375,10 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
       b.items.forEach((t, i) => out.push(`${i + 1}. ${t}`));
       out.push('');
     } else if (b.k === 'ul') {
-      b.items.forEach((t) => out.push(`- ${t}`));
+      b.items.forEach((t, i) => {
+        const who = b.ai?.[i];
+        out.push(who ? `- ${aiOriginMarkdownOpen(who)}${t}${AI_ORIGIN_MARKDOWN_CLOSE}` : `- ${t}`);
+      });
       out.push('');
     } else if (b.k === 'code' && b.items.length) {
       out.push('```abap', ...b.items.map((a) => `* ${a.label}\n${a.quote}`), '```', '');

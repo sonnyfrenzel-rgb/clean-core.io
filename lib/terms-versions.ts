@@ -234,6 +234,44 @@ export function archivedTermsSha256(version: string | null | undefined): string 
   return archivedTerms(version)?.sha256 ?? null;
 }
 
+/** The language versions a Terms acceptance can name (section 1.4 of v2.3.0). */
+export type TermsLanguage = 'en' | 'de';
+
+export function isTermsLanguage(value: unknown): value is TermsLanguage {
+  return value === 'en' || value === 'de';
+}
+
+/**
+ * The digest of the wording of `version` **in `lang`**, or null when that
+ * language version is not archived (acceptance test T02).
+ *
+ * English is the main file; German is a translation archived beside it from
+ * v2.3.0 on. A version archived only in English has no German wording, so a
+ * German acceptance of it records null — never the English digest, which would
+ * state that the account accepted words in a language it did not read.
+ */
+export function archivedTermsSha256For(version: string | null | undefined, lang: TermsLanguage): string | null {
+  const entry = archivedTerms(version);
+  if (!entry) return null;
+  if (lang === 'en') return entry.sha256;
+  return entry.translations?.find((t) => t.lang === lang)?.sha256 ?? null;
+}
+
+/** The archived file of `version` in `lang`, or null. */
+export function archivedTermsFileFor(version: string | null | undefined, lang: TermsLanguage): string | null {
+  const entry = archivedTerms(version);
+  if (!entry) return null;
+  if (lang === 'en') return entry.file;
+  return entry.translations?.find((t) => t.lang === lang)?.file ?? null;
+}
+
+/** The languages `version` can be accepted in: those archived for it. */
+export function acceptableTermsLanguages(version: string | null | undefined): TermsLanguage[] {
+  const entry = archivedTerms(version);
+  if (!entry) return [];
+  return ['en', ...(entry.translations ?? []).map((t) => t.lang)];
+}
+
 /* --------------------------------------------------------------------------
  * Rendering an archived text.
  *

@@ -61,7 +61,8 @@ import {
 } from '../../lib/invitation-email';
 import { invitationLinkPath } from '../../lib/invitations';
 import { buildPortfolioInvitationEmail, PORTFOLIO_INVITATION_SUBJECT, portfolioInvitationLinkPath } from '../../lib/portfolio/invitation-email';
-import { BYOK_AGREEMENT_ACCEPTED_SUBJECT, BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementAcceptedMail, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
+import { BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
+import { acceptedWording, buildContractConfirmationMail, type ConfirmationOccasion } from '../../lib/contract-confirmation-email';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
 import { summarise, type SurveyResponse } from '../../lib/survey/store';
@@ -347,18 +348,41 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: INVITATION_EMAIL_SUBJECT, html, text: htmlToText(html) };
     },
   },
-  {
-    type: 'byok-agreement-accepted',
-    audience: 'nutzer',
-    source: 'lib/byok-agreement-mail.ts',
-    template: 'lib/byok-agreement-email.ts',
-    build: (ctx) => {
-      const html = wrapEmailDocument(
-        buildAgreementAcceptedMail({ recipient: escapeHtml(ctx.recipient.address), version: 'ZV-BYOK-1.0', language: 'en', contentSha256: null, acceptedAt: ctx.now.toISOString() }),
-      );
-      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: BYOK_AGREEMENT_ACCEPTED_SUBJECT, html, text: htmlToText(html) };
-    },
-  },
+  // The contract confirmation C5 (T03): after sign-up, after an amendment and
+  // after the Additional Agreement, each in the language version accepted, with
+  // the digest and the full wording — `sendContractConfirmationMail` through
+  // `sendTransactionalMail`, called by the register, consent and key-save routes.
+  ...(
+    [
+      ['contract-confirmation', 'sign-up', 'en'],
+      ['contract-confirmation-de', 'sign-up', 'de'],
+      ['amendment-confirmation', 'amendment', 'en'],
+      ['amendment-confirmation-de', 'amendment', 'de'],
+      ['byok-agreement-accepted', 'byok-addendum', 'en'],
+      ['byok-agreement-accepted-de', 'byok-addendum', 'de'],
+    ] as Array<[string, ConfirmationOccasion, 'en' | 'de']>
+  ).map(
+    ([type, occasion, language]): SeedMailType => ({
+      type,
+      audience: 'nutzer',
+      source: 'lib/contract-confirmation-mail.ts',
+      template: 'lib/contract-confirmation-email.ts',
+      build: (ctx) => {
+        const accepted = acceptedWording(occasion, language, 'ZV-BYOK-1.0');
+        if (!accepted) throw new Error(`${type}: the wording does not match its archived digest`);
+        const { subject, html: body } = buildContractConfirmationMail({
+          occasion,
+          language,
+          recipient: ctx.recipient.address,
+          firstName: SEED_NAME.split(' ')[0],
+          ...accepted,
+          acceptedAt: ctx.now.toISOString(),
+        });
+        const html = wrapEmailDocument(body, subject);
+        return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject, html, text: htmlToText(html) };
+      },
+    }),
+  ),
   {
     type: 'byok-agreement-ended',
     audience: 'nutzer',
@@ -605,11 +629,29 @@ export function linkHosts(mail: Pick<ProductionMail, 'html' | 'text' | 'headers'
  * Links a mail may carry outside https://clean-core.io/, per type, with the
  * reason. Only operator mails have any: they go to one watched mailbox.
  */
-export const LINK_EXCEPTIONS: Record<string, { hosts: string[]; why: string }> = {
+/**
+ * The contract confirmation C5 must carry the full wording of the Terms
+ * (Terms 1.3), and that wording quotes two Google terms pages as plain text.
+ * They are quoted contract text, never an `<a href>` — `quotedWording` marks
+ * the one kind of exception a user mail may have, and
+ * `tests/mail-seed-test.spec.ts` checks that each such host is in the archived
+ * wording and is not linked.
+ */
+const C5_WORDING_QUOTES = {
+  hosts: ['https://ai.google.dev', 'https://cloud.google.com'],
+  why: 'the full wording of the Terms the mail must carry (C5, Terms 1.3) quotes Google\'s terms pages as plain text; not links',
+  quotedWording: true,
+};
+
+export const LINK_EXCEPTIONS: Record<string, { hosts: string[]; why: string; quotedWording?: boolean }> = {
   'security-alert': {
     hosts: ['https://github.com'],
     why: 'links the failed GitHub Actions run; operator mail, never to a user',
   },
+  'contract-confirmation': C5_WORDING_QUOTES,
+  'contract-confirmation-de': C5_WORDING_QUOTES,
+  'amendment-confirmation': C5_WORDING_QUOTES,
+  'amendment-confirmation-de': C5_WORDING_QUOTES,
 };
 
 // Emoji and their building blocks: pictographs, variation selector 16, keycaps,

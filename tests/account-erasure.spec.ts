@@ -10,6 +10,7 @@ import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { accountLogRef, deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
+import { accountHashOf } from '../lib/pseudonym';
 import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject, legacyAdminSignupSubject } from '../lib/admin-signup-email';
 import fs from 'fs';
 import path from 'path';
@@ -104,10 +105,17 @@ const otherAddress = (uid: string) => `${uid}-someone-else@cleancore-test.io`;
 
 async function expectOptOutsSorted(email: string, uid: string) {
   const db = adminDb();
+  // Since 3.0.21 (privacy policy sections 2 and 5, C7) the opt-out outlives the
+  // account — as the keyed hash only: the entry with the address in clear goes,
+  // a keyed one without address or uid stays.
   expect(
     (await db.collection('email_suppressions').doc(suppressionId(email)).get()).exists,
-    'the erased account is still on the opt-out list',
+    'the opt-out with the address in clear outlived the account',
   ).toBe(false);
+  const keyed = await db.collection('email_suppressions').doc(accountHashOf(email)).get();
+  expect(keyed.exists, 'the opt-out did not outlive the account as its keyed hash').toBe(true);
+  expect(keyed.data()?.email, 'the kept opt-out still names the address').toBeUndefined();
+  expect(keyed.data()?.uid).toBeUndefined();
   expect(
     (await db.collection('email_suppressions').doc(suppressionId(otherAddress(uid))).get()).exists,
     'somebody else\'s opt-out went with the account',
@@ -118,6 +126,7 @@ async function cleanUp(uid: string, email?: string) {
   const db = adminDb();
   for (const address of [email, otherAddress(uid)]) {
     if (address) await db.collection('email_suppressions').doc(suppressionId(address)).delete().catch(() => {});
+    if (address) await db.collection('email_suppressions').doc(accountHashOf(address)).delete().catch(() => {});
   }
   for (const col of ['users', 's4_credentials', 'mfa_secrets']) {
     await db.collection(col).doc(uid).delete().catch(() => {});

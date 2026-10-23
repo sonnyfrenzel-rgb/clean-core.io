@@ -1,3 +1,4 @@
+import { providerSuspendedNotice, suspensionDetailsOf } from '@/lib/provider-suspension';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyRequestAuth,
@@ -19,10 +20,17 @@ import {
   PROVIDER_SUSPENDED_CODE,
   isModelKeyProvider,
   offeredKeyProviders,
-  providerSuspendedMessage,
   suspendedProvidersOf,
 } from '@/lib/model-providers';
-import { ADDENDUM_REQUIRED_CODE, BYOK_ADDENDUM_VERSION, addendumAcceptanceOf, addendumRequired } from '@/lib/byok-addendum';
+import {
+  ADDENDUM_REQUIRED_CODE,
+  ADDENDUM_TERMS_REQUIRED_CODE,
+  BYOK_ADDENDUM_VERSION,
+  BYOK_MIN_TERMS_LABEL,
+  addendumAcceptanceOf,
+  addendumRequired,
+  termsAllowAddendum,
+} from '@/lib/byok-addendum';
 import { sendAgreementAcceptedMail, sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
 import { OWN_KEY_TEST_FAILED_CODE, OWN_KEY_TEST_FAILED_MESSAGE, testOwnModelKey } from '@/lib/own-key-test';
 import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '@/lib/gemini-test-stub';
@@ -73,7 +81,7 @@ export async function POST(req: NextRequest) {
     }
     // 3.0.21 (T01): a provider the operator has switched off takes no new key.
     if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
-      return NextResponse.json({ error: providerSuspendedMessage(provider), code: PROVIDER_SUSPENDED_CODE }, { status: 409 });
+      return NextResponse.json({ error: providerSuspendedNotice(provider, suspensionDetailsOf(process.env)), code: PROVIDER_SUSPENDED_CODE }, { status: 409 });
     }
     // 3.0.21: an Anthropic key is stored only with the Additional Agreement on
     // Own Model Keys accepted — the version in force, in a published language
@@ -87,6 +95,22 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 },
       );
+    }
+    // T03 (Additional Agreement clause 1, Terms 5.2): the agreement is offered
+    // only to accounts that accepted Terms v2.3.0 or later. An account still
+    // on v2.2.0 may carry on under it (Terms 10.3) — just not store an
+    // Anthropic key until it accepts the current Terms.
+    if (addendumRequired(provider)) {
+      const profile = (await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get()).data() || {};
+      if (!termsAllowAddendum(profile.termsVersionAccepted)) {
+        return NextResponse.json(
+          {
+            error: `An Anthropic key can be stored only once your account has accepted the Terms of Service ${BYOK_MIN_TERMS_LABEL} or later. Accept the current Terms first.`,
+            code: ADDENDUM_TERMS_REQUIRED_CODE,
+          },
+          { status: 409 },
+        );
+      }
     }
 
     // 3.0.21: an own key counts as configured only after a successful test, so

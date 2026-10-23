@@ -1994,7 +1994,13 @@ export function buildRuleRegister(facts: DeliveryFacts): string {
 const bytesOf = (text: string) => new TextEncoder().encode(text).length;
 
 export const DELIVERY_MANIFEST_FORMAT = 'clean-core-delivery-manifest';
-export const DELIVERY_MANIFEST_VERSION = 1;
+/**
+ * 2 from 3.0.21 (acceptance test T08): every row of `files` names the model-written source it comes from (`ai`, the
+ * `source` of an `aiGeneration` statement, or null for a file no model wrote), so each file's origin stands beside
+ * its hash. Version 1 said the same through `aiGeneration.statements[].files` alone; the offline verifier
+ * (`scripts/verify-pack.mjs --package`, `lib/delivery-package-verify.ts`) reads both.
+ */
+export const DELIVERY_MANIFEST_VERSION = 2;
 
 /** The rule counts for the manifest; the rows themselves are in the register. */
 function manifestRules(r: RuleFacts) {
@@ -2009,6 +2015,9 @@ export function buildManifest(
 ): string {
   const { reading, capabilities, files, notes } = inputs;
   const d = facts.decision;
+  // 3.0.21 (T08, manifest version 2): which statement of `aiGeneration` each file comes from.
+  const aiSourceOfPath = new Map<string, AiSource>();
+  for (const st of inputs.aiGeneration?.statements ?? []) for (const path of st.files) aiSourceOfPath.set(path, st.source);
   const manifest = {
     format: DELIVERY_MANIFEST_FORMAT,
     version: DELIVERY_MANIFEST_VERSION,
@@ -2065,7 +2074,7 @@ export function buildManifest(
     implementation: implementationStatement(reading, facts),
     capabilities,
     statusLegend: PACKAGE_STATUS_LEGEND,
-    files: files.map((f) => (notes[f.path] ? { ...f, changes: notes[f.path] } : f)),
+    files: files.map((f) => ({ ...f, ai: aiSourceOfPath.get(f.path) ?? null, ...(notes[f.path] ? { changes: notes[f.path] } : {}) })),
   };
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }

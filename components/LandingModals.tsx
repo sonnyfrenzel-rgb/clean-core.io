@@ -4,14 +4,12 @@ import { useState, useEffect, useRef, FormEvent, KeyboardEvent, ClipboardEvent }
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   browserPopupRedirectResolver,
   GoogleAuthProvider, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  signOut,
   getMultiFactorResolver,
   TotpMultiFactorGenerator,
   type MultiFactorResolver,
@@ -19,7 +17,14 @@ import {
 // Auth only at the top: Firestore and the profile module are loaded by the one
 // handler that writes to Firestore — registration — so the start page does not
 // download the Firestore SDK for every visitor (docs/perf/REPORT.md).
+//
+// `getAuth()` is called where Auth is used — a submit, the session check of an
+// open sign-in step, a pending redirect — and never on render: initialising
+// Auth contacts Google on mobile browsers and Safari, and this component also
+// serves the legal dialogs (`?legal=`), which must not do that (privacy policy
+// section 7; lib/auth-hint.ts).
 import { getAuth } from '@/lib/firebase-app';
+import { clearRedirectPending, isRedirectPending } from '@/lib/auth-hint';
 import {
   ArrowRight,
   ShieldCheck,
@@ -45,7 +50,8 @@ import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import dynamic from 'next/dynamic';
-import { PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import { ContractLanguageChoice, PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import type { TermsLanguage } from '@/lib/terms-versions';
 
 /** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
 const LegalOverlayBody = dynamic(() => import('@/components/legal/LegalOverlayBody'), {
@@ -171,7 +177,6 @@ function GoogleMark() {
 }
 
 export default function LandingModals() {
-  const auth = getAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -214,6 +219,8 @@ export default function LandingModals() {
   const [motivation, setMotivation] = useState('');
   const [agreedGDPR, setAgreedGDPR] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  // T02: the contract language the ticks accept (Terms 1.4), not the interface language.
+  const [termsLanguage, setTermsLanguage] = useState<TermsLanguage>('en');
   const [showDatenschutz, setShowDatenschutz] = useState(false);
   const [showTermsOverlay, setShowTermsOverlay] = useState(false);
 
@@ -259,6 +266,7 @@ export default function LandingModals() {
   const interceptSecondFactor = (error: unknown): boolean => {
     const code = (error as { code?: string } | null)?.code;
     if (code !== 'auth/multi-factor-auth-required') return false;
+    const auth = getAuth();
     setMfaResolver(getMultiFactorResolver(auth, error as Parameters<typeof getMultiFactorResolver>[1]));
     setMfaCode(['', '', '', '', '', '']);
     setAuthError('');
@@ -288,9 +296,27 @@ export default function LandingModals() {
   // asks for the sign-in — the page reloaded after Google or the second factor
   // had finished but before it moved on (a reload, a discarded tab, a switch to
   // a new build). Asking again would read as a failed first attempt; the
-  // sign-in has happened, so go where it was going. Once, for the load itself:
-  // a sign-in made in this dialog navigates on its own.
+  // sign-in has happened, so go where it was going. When the sign-in step
+  // opens: a sign-in made in this dialog navigates on its own. Only then is
+  // Auth initialised — a legal dialog alone does not ask Firebase. This is
+  // also the way on for a returning reader whose browser holds a session but
+  // not yet the signed-in hint (lib/auth-hint.ts): the header offered "Get
+  // Free Access", the click opened this step, and the session is found here.
+  const signInStepOpen = authParam === 'signin' || authParam === 'mfa';
+
+  // Auth is initialised as soon as the access dialog is open, on any step, and
+  // not first on the click: on mobile browsers and Safari `signInWithPopup`
+  // has to wait for Google's sign-in frame before it may open the window, and
+  // a window opened after that wait is no longer the click's own and gets
+  // blocked. Initialising here gives the frame the time the reader spends in
+  // the dialog — the same head start the always-mounted dialog used to have.
+  const authDialogOpen = Boolean(authParam);
   useEffect(() => {
+    if (authDialogOpen) getAuth();
+  }, [authDialogOpen]);
+  useEffect(() => {
+    if (!signInStepOpen) return;
+    const auth = getAuth();
     if (!auth) return;
     let cancelled = false;
     void auth.authStateReady().then(() => {
@@ -304,10 +330,19 @@ export default function LandingModals() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [signInStepOpen]);
 
-  // Handle Google redirect result (fallback from signInWithPopup)
+  // Finish a Google redirect sign-in — only when one left this tab
+  // (`markRedirectPending()` runs right before `signInWithRedirect`,
+  // lib/auth-hint.ts). Asking on every visit initialised Auth for every
+  // visitor of the start page, which contacts Google on mobile browsers and
+  // Safari (privacy policy section 7). The mark is removed once Firebase has
+  // answered, with a result or an error.
+  const redirectChecked = useRef(false);
   useEffect(() => {
+    if (redirectChecked.current || !isRedirectPending()) return;
+    redirectChecked.current = true;
+    const auth = getAuth();
     if (!auth) return;
     // A redirect sign-in used to go straight to the dashboard without ever
     // consulting the profile, so an account with MFA enabled skipped the second
@@ -327,8 +362,9 @@ export default function LandingModals() {
         // A redirect that came back with an error used to end in the console
         // only, with the reader looking at an unchanged sign-in screen.
         setAuthError(googleSignInMessage(err?.code || '', err?.message));
-      });
-  }, [auth, router, afterSignIn]);
+      })
+      .finally(clearRedirectPending);
+  }, [router, afterSignIn]);
 
   const closeAuthModal = async () => {
     setMfaResolver(null);
@@ -351,6 +387,7 @@ export default function LandingModals() {
     setAuthNotice('');
     let signedIn = false;
     const provider = new GoogleAuthProvider();
+    const auth = getAuth();
     try {
       await signInWithPopup(auth, provider, browserPopupRedirectResolver);
       signedIn = true;
@@ -401,6 +438,7 @@ export default function LandingModals() {
     setAuthError('');
     setAuthNotice('');
     setIsSubmitting(true);
+    const auth = getAuth();
     try {
       // On an enrolled account this throws before any session exists and the
       // catch below turns it into the second-factor screen.
@@ -456,6 +494,7 @@ export default function LandingModals() {
         import(/* webpackExports: ["getDb"] */ '@/lib/firebase'),
         import(/* webpackExports: ["finishRegistration"] */ '@/hooks/useUserProfile'),
       ]);
+      const auth = getAuth();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const signedInUser = userCredential.user;
       
@@ -518,6 +557,7 @@ export default function LandingModals() {
           motivation: motivation.trim().slice(0, 2000),
           acceptedTerms: agreedTerms,
           acceptedPrivacy: agreedGDPR,
+          termsLanguage,
         });
       } catch (registerErr) {
         console.error('[Email Signup] account activation failed:', registerErr);
@@ -547,6 +587,7 @@ export default function LandingModals() {
     e.preventDefault();
     setAuthError('');
     setIsSubmitting(true);
+    const auth = getAuth();
     try {
       await sendPasswordResetEmail(auth, email);
       setAuthMode('success');
@@ -991,20 +1032,29 @@ export default function LandingModals() {
               {/* Legal consent (required for registration) — C1 of the legal texts,
                   Fassung 1.1, the same words as the onboarding dialog. */}
               <div className="space-y-2 border-t border-cc-line pt-3">
-                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="above">{signupNoticeAbove()}</p>
+                <ContractLanguageChoice
+                  value={termsLanguage}
+                  onChange={(l) => {
+                    setTermsLanguage(l);
+                    // A tick belongs to the wording it was given for.
+                    setAgreedGDPR(false);
+                    setAgreedTerms(false);
+                  }}
+                />
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="above" lang={termsLanguage}>{signupNoticeAbove(termsLanguage)}</p>
                 <CcCheckbox
                   checked={agreedGDPR}
                   onChange={setAgreedGDPR}
                   required
-                  label={<PrivacyConsentLabel onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />}
+                  label={<PrivacyConsentLabel lang={termsLanguage} onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />}
                 />
                 <CcCheckbox
                   checked={agreedTerms}
                   onChange={setAgreedTerms}
                   required
-                  label={<TermsConsentLabel onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
+                  label={<TermsConsentLabel lang={termsLanguage} onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
                 />
-                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below">{signupNoticeBelow(email.trim() || null)}</p>
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below" lang={termsLanguage}>{signupNoticeBelow(email.trim() || null, termsLanguage)}</p>
               </div>
 
               {/* The disclaimer states the fact and drops the label (§3.1 has no
@@ -1263,11 +1313,11 @@ export default function LandingModals() {
 
       {/* The texts the sign-up consent links to, in full. */}
       <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy">
-        <LegalOverlayBody id="privacy" />
+        <LegalOverlayBody id="privacy" lang={termsLanguage} />
       </LegalOverlay>
 
             <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Community Guidelines">
-        <LegalOverlayBody id="terms" />
+        <LegalOverlayBody id="terms" lang={termsLanguage} />
       </LegalOverlay>
     </>
   );

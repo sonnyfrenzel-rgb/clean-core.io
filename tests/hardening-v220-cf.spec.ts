@@ -20,6 +20,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION, FIRESTORE_DB_ID } from '../lib/constants';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
+import { accountHashOf } from '../lib/pseudonym';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
@@ -367,12 +368,25 @@ test.describe('account erasure and the mail records', () => {
 
       expect(deleted, 'the cascade did not complete').toEqual([uid]);
       expect((await refs.outbox.get()).exists, 'the outbox kept the address').toBe(false);
-      expect((await refs.eventByUid.get()).exists, 'the delivery log kept a record by uid').toBe(false);
-      expect((await refs.eventByAddress.get()).exists, 'the delivery log kept a record by address').toBe(false);
-      expect((await refs.someoneElse.get()).exists, 'another recipient\'s record was taken too').toBe(true);
+      // Since 3.0.21 (privacy policy sections 5 and 6, T05/T06) a delivery record
+      // stays until its own deletion date — with the keyed hash in place of the
+      // address and the uid, no subject and no provider text.
+      const hash = accountHashOf(email);
+      for (const ref of [refs.eventByUid, refs.eventByAddress]) {
+        const row = (await ref.get()).data();
+        expect(row, 'a delivery record of the account went before its period').toBeDefined();
+        expect(row!.to, 'the delivery record kept the address').toEqual([hash]);
+        expect(row!.uid, 'the delivery record kept the uid').toBeUndefined();
+        expect(row!.expiresAt, 'the delivery record has no deletion date').toBeDefined();
+      }
+      expect((await refs.someoneElse.get()).data()?.to, 'another recipient\'s record was touched').toEqual([other]);
 
+      // The opt-out outlives the account as the keyed hash only (C7, privacy section 2).
       expect((await refs.suppressedByAddress.get()).exists, 'the opt-out list kept the address').toBe(false);
       expect((await refs.suppressedByUid.get()).exists, 'the opt-out list kept an entry by uid').toBe(false);
+      const keyed = (await db.collection('email_suppressions').doc(hash).get()).data();
+      expect(keyed, 'the opt-out did not outlive the account as its keyed hash').toBeDefined();
+      expect(keyed!.email).toBeUndefined();
       expect((await refs.suppressedOther.get()).exists, 'somebody else\'s opt-out was taken too').toBe(true);
 
       const kept = (await refs.oldReport.get()).data() || {};

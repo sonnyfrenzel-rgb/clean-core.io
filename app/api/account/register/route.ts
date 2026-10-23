@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, activateAccount, mergeWhileProfileExists } from '@/lib/firebase-admin';
 import { recordConsent } from '@/lib/consent';
+import { sendContractConfirmationMail } from '@/lib/contract-confirmation-mail';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -89,18 +90,31 @@ export async function POST(request: NextRequest) {
     // An account that already carries an acceptance is not asked again here.
     let termsVersion: string | null = profile.termsVersionAccepted || null;
     if (acceptedTerms && acceptedPrivacy && !termsVersion) {
+      let recorded: Awaited<ReturnType<typeof recordConsent>>;
       try {
-        await recordConsent({
+        recorded = await recordConsent({
           uid,
           email: rawEmail,
           source: 'api/account/register',
           locale: typeof body?.locale === 'string' ? body.locale : null,
+          // T02: the contract language chosen in the sign-up dialog (C1).
+          termsLanguage: body?.termsLanguage,
         });
         termsVersion = TERMS_VERSION;
       } catch (consentErr) {
         console.error('[account/register] failed to record consent:', consentErr);
         return NextResponse.json({ error: 'Could not record your consent. Please try again.' }, { status: 500 });
       }
+      // C5 (Terms 1.3, T03): the contract confirmation, in the language version
+      // accepted, with its digest and the full wording — to the verified
+      // address only, best effort, no resend.
+      await sendContractConfirmationMail({
+        to: rawEmail,
+        uid,
+        occasion: 'sign-up',
+        language: recorded.termsLanguage,
+        firstName: (typeof body?.firstName === 'string' && body.firstName.trim() ? body.firstName.trim() : profile.firstName) || null,
+      });
     }
 
     // No consent, no account. Recording the acceptance where it was given is only

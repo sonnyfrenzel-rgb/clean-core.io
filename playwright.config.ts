@@ -17,6 +17,12 @@ if (!process.env.PILOT_APPROVAL_SECRET) {
 if (!process.env.RATE_LIMIT_PEPPER) {
   process.env.RATE_LIMIT_PEPPER = 'test-rate-limit-pepper-for-ci-test-runner-32';
 }
+// The keyed hash of an address in the proof log, the delivery records and the
+// opt-out list (`lib/pseudonym.ts`, 3.0.21). Set at module scope so the specs
+// compute the same hash as the server, which inherits it below.
+if (!process.env.PSEUDONYM_PEPPER) {
+  process.env.PSEUDONYM_PEPPER = 'test-pseudonym-pepper-for-ci-test-runner-32';
+}
 // The signing and verification routes now fail closed without a key in every
 // environment, which is the whole point of removing the committed fallback. Set
 // here at module scope rather than in `webServer.env` so the specs sign with the

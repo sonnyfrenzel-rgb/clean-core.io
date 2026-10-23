@@ -10,6 +10,7 @@ import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { adminSetDoc } from './helpers/admin-seed';
 import { createUnsubscribeToken, suppressionId } from '../lib/unsubscribe-token';
+import { accountHashOf } from '../lib/pseudonym';
 import {
   COMMUNITY_MAIL_FIELD,
   communityMailBlock,
@@ -210,6 +211,7 @@ test.describe('the switch and the withdrawal, against the emulator', () => {
     const db = adminDb();
     await db.collection('users').doc(uid).delete().catch(() => {});
     await db.collection('email_suppressions').doc(suppressionId(EMAIL)).delete().catch(() => {});
+    await db.collection('email_suppressions').doc(accountHashOf(EMAIL)).delete().catch(() => {});
   });
 
   const post = (request: APIRequestContext, data: unknown, token = idToken) =>
@@ -276,7 +278,10 @@ test.describe('the switch and the withdrawal, against the emulator', () => {
     expect(hasCommunityMailOptIn(profile), 'the unsubscribe left the consent switched on').toBe(false);
     expect(profile?.[COMMUNITY_MAIL_FIELD]?.source).toBe('unsubscribe');
     expect(Number.isFinite(toMillis(profile?.[COMMUNITY_MAIL_FIELD]?.withdrawnAt))).toBe(true);
-    expect((await db.collection('email_suppressions').doc(suppressionId(EMAIL)).get()).exists).toBe(true);
+    // Since 3.0.21 the list holds the keyed hash only (privacy policy section 2).
+    const entry = await db.collection('email_suppressions').doc(accountHashOf(EMAIL)).get();
+    expect(entry.exists).toBe(true);
+    expect(entry.data()?.email, 'the opt-out stores the address in clear').toBeUndefined();
     // And the gate says no on the consent alone. The spec's address is a CI
     // test domain the gate refuses first, so the same profile is asked with a
     // real-looking address and an empty suppression list.

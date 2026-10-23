@@ -559,10 +559,11 @@ export default function TransformationPage() {
   // score and signed off a finding on the strength of a timer.
   //
   // The capability it mimed is real and lives in stage 5, where the tenant
-  // connection actually exists: the OData explorer there now reads records from
-  // a chosen entity set through /api/test-s4-odata-read and reports the count it
-  // actually got back. What it does not claim is equivalence — nothing compares
-  // the generated TypeScript against those rows, so nothing says it does.
+  // connection actually exists: the OData metadata read there checks that a
+  // chosen entity set exists and names its fields from the service's $metadata
+  // (/api/test-s4-odata-read) — no record and no count since 3.0.21. What it
+  // does not claim is equivalence — nothing compares the generated TypeScript
+  // against the tenant, so nothing says it does.
 
   // Two substitutions used to live here. `|| 70` invented a baseline for a
   // project that never got scored, and the `: 100` branch declared full

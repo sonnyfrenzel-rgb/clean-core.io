@@ -1,13 +1,9 @@
 import { escapeHtml } from '@/lib/utils';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { sendTransactionalMail } from '@/lib/transactional-mail';
-import { byokAddendumSha256, type ByokAddendumAcceptance, type ByokAgreementEnding } from '@/lib/byok-addendum';
-import {
-  BYOK_AGREEMENT_ACCEPTED_SUBJECT,
-  BYOK_AGREEMENT_ENDED_SUBJECT,
-  buildAgreementAcceptedMail,
-  buildAgreementEndedMail,
-} from '@/lib/byok-agreement-email';
+import { type ByokAddendumAcceptance, type ByokAgreementEnding } from '@/lib/byok-addendum';
+import { BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementEndedMail } from '@/lib/byok-agreement-email';
+import { sendContractConfirmationMail } from '@/lib/contract-confirmation-mail';
 import { logger, providerErrorShape } from '@/lib/logger';
 
 /**
@@ -20,22 +16,17 @@ import { logger, providerErrorShape } from '@/lib/logger';
  * `to` is the address of the verified token or the Auth record — never a value
  * out of a request body.
  */
-export async function sendAgreementAcceptedMail(to: string | null | undefined, uid: string, acceptance: ByokAddendumAcceptance): Promise<void> {
-  if (!to) return;
-  try {
-    const html = wrapEmailDocument(
-      buildAgreementAcceptedMail({
-        recipient: escapeHtml(to),
-        version: acceptance.version,
-        language: acceptance.language,
-        contentSha256: byokAddendumSha256(acceptance.version, acceptance.language),
-        acceptedAt: new Date().toISOString(),
-      }),
-    );
-    await sendTransactionalMail({ to, subject: BYOK_AGREEMENT_ACCEPTED_SUBJECT, html, label: 'byok-agreement-accepted', uid });
-  } catch (err) {
-    logger.warn('byok agreement mail not sent', { kind: 'accepted', error: providerErrorShape(err) });
-  }
+/**
+ * The acceptance is confirmed with the contract confirmation C5, in the
+ * language version accepted, with its digest and the full wording (T03).
+ */
+export async function sendAgreementAcceptedMail(
+  to: string | null | undefined,
+  uid: string,
+  acceptance: ByokAddendumAcceptance,
+  firstName?: string | null,
+): Promise<void> {
+  await sendContractConfirmationMail({ to, uid, occasion: 'byok-addendum', language: acceptance.language, addendum: acceptance, firstName });
 }
 
 export async function sendAgreementEndedMail(to: string | null | undefined, uid: string, ending: ByokAgreementEnding): Promise<void> {

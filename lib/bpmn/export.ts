@@ -16,6 +16,7 @@ import {
 } from './model';
 import { el, serialize, textEl, type XmlElement } from './xml';
 import { readingExportsKey } from './reading-key';
+import { aiMarkingField, aiMarkingStatement, aiModelWords, aiOriginOf, withAiMarking, type AiAuthorship } from '../ai-marking';
 
 /**
  * BPMN 2.0 XML out of the process skeleton — roadmap 2.6.
@@ -69,6 +70,15 @@ export interface BpmnExportOptions {
   wrapOf?: (containerId: string) => number | undefined;
   /** Width of a plane's note (`LayoutOptions.noteWidth`) — the phone's view only, never a file. */
   noteWidth?: number;
+  /**
+   * 3.0.21 (acceptance test T08): element names a language model wrote — the business names of roadmap 2.4, keyed by
+   * skeleton node id — and who wrote them, as recorded. An element named from here carries
+   * `<cc:origin value="ai" ai_provider="…" ai_model="…"/>` in its `extensionElements`; the file then carries the AI
+   * marking as its header comment and as `cc:aiMarking` in the process's extension elements, and its documentation
+   * no longer says "without a language model". Every other element stays unmarked: absence is the engine's. Without
+   * this option the file is byte-identical to what it was.
+   */
+  aiNames?: { names: Readonly<Record<string, string>>; authorship: AiAuthorship };
 }
 
 export interface BpmnExportStats {
@@ -125,9 +135,12 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
   });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;
+  // Before the layout, so a model-written name is measured as the name it is.
+  const aiNamed = applyAiNames(nodes, options.aiNames);
+  const ai = aiNamed.size > 0 && options.aiNames ? { authorship: options.aiNames.authorship, count: aiNamed.size } : null;
   model.root.annotations.unshift({
     id: 'note-reconstruction',
-    text: reconstructionNote(options, anchored, nodes.length),
+    text: reconstructionNote(options, anchored, nodes.length, ai),
   });
   const layout = layoutModel(model, { direction: options.direction, wrap: options.wrap, wrapOf: options.wrapOf, noteWidth: options.noteWidth });
 
@@ -157,8 +170,8 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
   const process = el('bpmn:process', [
     ['id', 'process'], ['name', options.processName], ['isExecutable', 'false'],
   ], [
-    textEl('bpmn:documentation', processDocumentation(skeleton, model, options, anchored, nodes.length)),
-    el('bpmn:extensionElements', [], [el('cc:reconstruction', [
+    textEl('bpmn:documentation', processDocumentation(skeleton, model, options, anchored, nodes.length, ai)),
+    el('bpmn:extensionElements', [], [...(ai ? [aiMarkingElement(ai, options)] : []), el('cc:reconstruction', [
       ['status', STATUS],
       ['file', options.sourceFileName],
       ['engine', options.exporterVersion ?? APP_VERSION],
@@ -174,7 +187,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     // Roadmap 2.16. Before the flow elements, because that is the order the
     // BPMN 2.0 schema fixes for `tProcess`: laneSet*, then flowElement*.
     ...laneSet(model, options),
-    ...containerContent(model.root, options),
+    ...containerContent(model.root, options, aiNamed),
   ]);
 
   const definitions = el('bpmn:definitions', [
@@ -197,8 +210,10 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     ...diagrams(model, layout.planes, layout.participant),
   ]);
 
+  const xml = serialize(definitions);
   return {
-    xml: serialize(definitions),
+    // The file-level marking, after the XML declaration (`withAiMarking` keeps it first).
+    xml: ai ? withAiMarking('process.bpmn', xml, aiMarkingStatement(ai.authorship, options.exporterVersion ?? APP_VERSION)) : xml,
     elementNode,
     dataByElement,
     stats: {
@@ -354,9 +369,57 @@ function tableNamespace(table: string): 'customer' | 'registered' | 'sap' {
   return 'sap';
 }
 
-function reconstructionNote(options: BpmnExportOptions, anchored: number, total: number): string {
+/** What the file says about the model's part, when a model named elements. */
+interface AiPart {
+  authorship: AiAuthorship;
+  count: number;
+}
+
+/**
+ * The model's names put on the elements they belong to; the ids of the export elements that got one. A name that is
+ * empty after trimming is no name, and an element already called that stays the engine's.
+ */
+function applyAiNames(nodes: ExportNode[], aiNames: BpmnExportOptions['aiNames']): Set<string> {
+  const named = new Set<string>();
+  if (!aiNames) return named;
+  for (const node of nodes) {
+    const name = aiNames.names[node.source.id];
+    if (typeof name !== 'string' || !name.trim() || name.trim() === node.name) continue;
+    node.name = name.trim();
+    named.add(node.id);
+  }
+  return named;
+}
+
+function aiSentence(ai: AiPart): string {
+  return `${plural(ai.count, 'element name was', 'element names were')} written by a language model (${aiModelWords(ai.authorship)}) and ${ai.count === 1 ? 'is' : 'are'} marked cc:origin="ai"; everything else was reconstructed without a language model.`;
+}
+
+/** The file-level metadata field: the AI marking's statement and its parts (`lib/ai-marking.ts`). */
+function aiMarkingElement(ai: AiPart, options: BpmnExportOptions): XmlElement {
+  const field = aiMarkingField(ai.authorship, options.exporterVersion ?? APP_VERSION);
+  return el('cc:aiMarking', [
+    ['statement', field.statement],
+    ['provider', field.provider ?? undefined],
+    ['model', field.model ?? undefined],
+    ['keyOwner', field.keyOwner ?? undefined],
+    ['generatedOn', field.generatedOn ?? undefined],
+    ['basis', field.basis],
+    ['elements', ai.count],
+  ]);
+}
+
+/** `<cc:origin value="ai" ai_provider="…" ai_model="…"/>` — the mark of one model-written element. */
+function originElement(authorship: AiAuthorship): XmlElement {
+  const o = aiOriginOf(authorship);
+  return el('cc:origin', [['value', o.origin], ['ai_provider', o.provider], ['ai_model', o.model]]);
+}
+
+function reconstructionNote(options: BpmnExportOptions, anchored: number, total: number, ai: AiPart | null = null): string {
   return [
-    `Reconstructed from the ABAP source ${options.sourceFileName} without a language model.`,
+    ai
+      ? `Reconstructed from the ABAP source ${options.sourceFileName}. ${aiSentence(ai)}`
+      : `Reconstructed from the ABAP source ${options.sourceFileName} without a language model.`,
     'Not confirmed by anyone, and not evidence of how the process runs in production.',
     `${anchored} of ${total} elements carry a line anchor.`,
   ].join('\n');
@@ -372,9 +435,12 @@ function processDocumentation(
   options: BpmnExportOptions,
   anchored: number,
   total: number,
+  ai: AiPart | null = null,
 ): string {
   const lines = [
-    `Reconstructed from the ABAP source ${options.sourceFileName} by Clean-Core.io ${options.exporterVersion ?? APP_VERSION}, without a language model.`,
+    ai
+      ? `Reconstructed from the ABAP source ${options.sourceFileName} by Clean-Core.io ${options.exporterVersion ?? APP_VERSION}. ${aiSentence(ai)}`
+      : `Reconstructed from the ABAP source ${options.sourceFileName} by Clean-Core.io ${options.exporterVersion ?? APP_VERSION}, without a language model.`,
     'Status: reconstructed. Derived from the code; not confirmed by anyone, and not evidence of how the process runs in production.',
     `${anchored} of ${total} elements carry a line anchor in the source.`,
   ];
@@ -485,9 +551,9 @@ function laneSet(model: ExportModel, options: BpmnExportOptions): XmlElement[] {
   }))];
 }
 
-function containerContent(container: ExportContainer, options: BpmnExportOptions): XmlElement[] {
+function containerContent(container: ExportContainer, options: BpmnExportOptions, aiNamed: ReadonlySet<string> = new Set()): XmlElement[] {
   const out: XmlElement[] = [];
-  for (const node of container.nodes) out.push(flowNode(node, container, options));
+  for (const node of container.nodes) out.push(flowNode(node, container, options, aiNamed));
   for (const flow of container.flows) {
     const conditional = flow.condition !== '';
     const shown = flowText(flow);
@@ -524,7 +590,7 @@ function containerContent(container: ExportContainer, options: BpmnExportOptions
   return out;
 }
 
-function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExportOptions): XmlElement {
+function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExportOptions, aiNamed: ReadonlySet<string>): XmlElement {
   const attrs: Array<[string, string | undefined]> = [['id', node.id], ['name', node.name]];
   if (node.tag === 'exclusiveGateway') attrs.push(['default', node.defaultFlow]);
   if (node.tag === 'boundaryEvent') attrs.push(['attachedToRef', node.attachedTo]);
@@ -546,7 +612,10 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
     ...(node.name !== node.technicalName
       ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}`)]
       : []),
-    el('bpmn:extensionElements', [], [nodeTrace(node.source, options.sourceFileName, extra)]),
+    el('bpmn:extensionElements', [], [
+      nodeTrace(node.source, options.sourceFileName, extra),
+      ...(aiNamed.has(node.id) && options.aiNames ? [originElement(options.aiNames.authorship)] : []),
+    ]),
     ...node.incoming.map((id) => textEl('bpmn:incoming', id)),
     ...node.outgoing.map((id) => textEl('bpmn:outgoing', id)),
   ];
@@ -578,7 +647,7 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
       ['id', `${node.id}-mi`], ['isSequential', true],
     ]));
   }
-  if (node.inner) children.push(...containerContent(node.inner, options));
+  if (node.inner) children.push(...containerContent(node.inner, options, aiNamed));
 
   return el(`bpmn:${node.tag}`, attrs, children);
 }

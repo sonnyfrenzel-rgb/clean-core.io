@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyUnsubscribeToken, normaliseEmail, suppressionId } from '@/lib/unsubscribe-token';
+import { suppressionKeyOf } from '@/lib/proof-log-erasure';
 import { APP_BASE_URL } from '@/lib/constants';
 import { readBoundedBody } from '@/lib/url-validation';
 import { COMMUNITY_MAIL_FIELD } from '@/lib/community-mail';
@@ -54,16 +55,20 @@ async function suppress(email: string, source: 'one-click' | 'confirmation-page'
   const address = normaliseEmail(email);
   const profiles = await db.collection('users').where('email', '==', address).get();
   const batch = db.batch();
+  // Only a keyed hash of the address goes on the list (privacy policy section
+  // 2, 3.0.21): the document id is the HMAC under PSEUDONYM_PEPPER, no address
+  // is stored, and a legacy entry (plain SHA-256 id, address in clear) goes.
   batch.set(
-    db.collection('email_suppressions').doc(suppressionId(email)),
+    db.collection('email_suppressions').doc(suppressionKeyOf(address)),
     {
-      email: address,
       list: 'community-updates',
+      keyed: true,
       source,
       unsubscribedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },
   );
+  batch.delete(db.collection('email_suppressions').doc(suppressionId(address)));
   for (const profile of profiles.docs) {
     batch.update(profile.ref, {
       [`${COMMUNITY_MAIL_FIELD}.optIn`]: false,
