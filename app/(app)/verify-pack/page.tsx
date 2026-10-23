@@ -14,7 +14,13 @@ import {
   type FileVerifyResult,
   type Ed25519Result,
 } from '@/lib/audit-pack-verify';
-import { bindsIssuanceMetadata } from '@/lib/audit-pack-canonical';
+import { bindsAiGeneration, bindsIssuanceMetadata } from '@/lib/audit-pack-canonical';
+import {
+  checkDeliveryPackage,
+  deliveryVerdictHeadline,
+  signedRunFactsOf,
+  type DeliveryCheck,
+} from '@/lib/delivery-package-verify';
 import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
@@ -38,11 +44,18 @@ export default function VerifyPackPage() {
   const [fileName, setFileName] = useState<string>('');
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // 3.0.21 (T08): a delivery package, checked against the run of the pack above (`lib/delivery-package-verify.ts`).
+  const [packFile, setPackFile] = useState<File | null>(null);
+  const [delivery, setDelivery] = useState<{ fileName: string; check: DeliveryCheck | null; error: string | null } | null>(null);
+  const [checkingDelivery, setCheckingDelivery] = useState(false);
+  const packageInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
     setVerifying(true);
     setResult(null);
+    setPackFile(file);
+    setDelivery(null);
     try {
       // The file goes in as it is: the verifier asks its size before reading it.
       const res = await verifyAuditPack(file);
@@ -62,6 +75,22 @@ export default function VerifyPackPage() {
       setVerifying(false);
     }
   }, []);
+
+  const handlePackage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setCheckingDelivery(true);
+    setDelivery(null);
+    try {
+      const signed = packFile && result ? await signedRunFactsOf(packFile, result) : null;
+      setDelivery({ fileName: file.name, check: await checkDeliveryPackage(file, signed), error: null });
+    } catch (err) {
+      setDelivery({ fileName: file.name, check: null, error: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setCheckingDelivery(false);
+    }
+  }, [packFile, result]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -283,6 +312,20 @@ export default function VerifyPackPage() {
                   <dd className="m-0 mt-1 break-all font-cc-mono text-[12px] text-cc-ink">{result.manifest.runId || '—'}</dd>
                 </div>
               </dl>
+              {/* 3.0.21 (T08): which model took part in the run, as the signature binds it (format 5). */}
+              {bindsAiGeneration(result.manifest.version) && result.manifest.aiGeneration && (
+                <div className="mt-3 min-w-0" data-verify-ai-marking="">
+                  <h3 className="m-0 cc-text-label text-cc-ink-muted">AI marking</h3>
+                  <p className="m-0 mt-1 text-[13px] font-medium text-cc-ink">
+                    {result.manifest.aiGeneration.statement ?? 'No language model took part in this run.'}
+                  </p>
+                  {result.manifest.aiGeneration.statement && (
+                    <p className="m-0 mt-1 text-[12px] text-cc-ink-muted">
+                      The analysis narrative is model text and not part of this pack; the statement is covered by the signature.
+                    </p>
+                  )}
+                </div>
+              )}
               {/* Shown values a format before 3 does not sign are said to be
                   exactly that, beside the values. */}
               {!bindsIssuanceMetadata(result.manifest.version) && (
@@ -296,6 +339,78 @@ export default function VerifyPackPage() {
               )}
             </CcCard>
           )}
+
+          <CcCard level={2} title="Delivery package">
+            <div data-verify-delivery="">
+              <p className="m-0 text-[13px] font-medium text-cc-ink-muted">
+                Check a delivery package against this pack&apos;s run: every file against its manifest, the AI marking of every
+                file a model wrote, and the run and source the pack signed.
+              </p>
+              <input
+                ref={packageInputRef}
+                type="file"
+                accept=".zip"
+                aria-label="Delivery package ZIP file"
+                onChange={handlePackage}
+                className="hidden"
+              />
+              <div className="mt-3">
+                <CcButton
+                  variant="secondary"
+                  onClick={() => packageInputRef.current?.click()}
+                  busy={checkingDelivery}
+                  icon={<Upload size={16} aria-hidden={true} />}
+                >
+                  {checkingDelivery ? 'Checking...' : 'Choose the delivery package'}
+                </CcButton>
+              </div>
+              {delivery && (
+                <div className="mt-3 flex flex-col gap-3">
+                  <CcMessageStrip
+                    state={delivery.check?.verdict === 'from-signed-run' ? 'success' : delivery.check?.verdict === 'consistent' ? 'warning' : 'error'}
+                    headline={delivery.check ? deliveryVerdictHeadline(delivery.check) : 'The package could not be read.'}
+                    announce
+                  >
+                    <span className="break-all font-cc-mono text-[12px]">{delivery.fileName}</span>
+                  </CcMessageStrip>
+                  {delivery.check?.isDeliveryPackage && (
+                    <ul className="m-0 list-none space-y-1 p-0 text-[12px]" data-verify-delivery-checks="">
+                      <li>
+                        {delivery.check.files} files listed · {delivery.check.missing.length} missing · {delivery.check.altered.length} altered ·{' '}
+                        {delivery.check.unlisted.length} unlisted · {delivery.check.headerMismatch.length + delivery.check.sourceMismatch.length} marking mismatches
+                      </li>
+                      <li className="break-all font-cc-mono text-cc-ink-muted">
+                        Run {delivery.check.run.id ?? '—'} · source {delivery.check.run.sourceSha256 ?? '—'}
+                      </li>
+                    </ul>
+                  )}
+                  {delivery.check?.isDeliveryPackage && (
+                    <div data-verify-delivery-models="">
+                      <h3 className="m-0 mb-1 cc-text-label text-cc-ink-muted">Which model took part</h3>
+                      {delivery.check.models.length > 0 ? (
+                        <ul className="m-0 list-none space-y-1 p-0 text-[12px]">
+                          {delivery.check.models.map((m) => (
+                            <li key={m.source}>
+                              <span className="font-semibold text-cc-ink">{m.statement}</span>{' '}
+                              <span className="text-cc-ink-muted">— {m.files.length} file(s), as the package&apos;s manifest states it</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="m-0 text-[12px] text-cc-ink-muted">The manifest names no file a model wrote.</p>
+                      )}
+                    </div>
+                  )}
+                  {(delivery.error || (delivery.check && delivery.check.problems.length > 0)) && (
+                    <ul className="m-0 list-disc space-y-1 pl-4 text-[12px] text-cc-ink-muted">
+                      {delivery.error && <li>{delivery.error}</li>}
+                      {delivery.check?.problems.map((p, i) => <li key={i}>{p}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </CcCard>
 
           {result.errors.length > 0 && (
             <CcMessageStrip

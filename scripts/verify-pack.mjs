@@ -10,7 +10,18 @@
  * number in the manifest from the files in the ZIP rather than trusting them.
  *
  * Usage:
- *   node scripts/verify-pack.mjs <pack.zip> [--key <base64|path|url>]
+ *   node scripts/verify-pack.mjs <pack.zip> [--key <base64|path|url>] [--package <delivery.zip>]
+ *   node scripts/verify-pack.mjs <delivery.zip>
+ *
+ * With --package it also checks a delivery package against the pack's signed
+ * run (3.0.21, acceptance test T08; `lib/delivery-package-verify.ts` is the
+ * same check for the verification page): every file of the package is the
+ * file its manifest lists, every file a model wrote carries the statement its
+ * manifest names, and the manifest names the pack's run and the source digest
+ * the pack signed in 01-input-fingerprint.json. It prints which model wrote
+ * which files. The package is not signed; the verdict says which link the
+ * signature stands behind. A delivery package given alone is checked against
+ * its own manifest only, and exits 2.
  *
  * With no --key it fetches https://clean-core.io/.well-known/clean-core-io-signing.json
  * — always that address, never one the pack names. Point --key at a file or a
@@ -109,15 +120,20 @@ function readEntryBounded(entry, budget) {
 
 function usage(message) {
   if (message) console.error(c.bad(message) + '\n');
-  console.error('Usage: node scripts/verify-pack.mjs <pack.zip> [--key <base64|path|url>]');
+  console.error('Usage: node scripts/verify-pack.mjs <pack.zip> [--key <base64|path|url>] [--package <delivery.zip>]');
   process.exit(CANNOT_CHECK);
 }
 
 const args = process.argv.slice(2);
-const packPath = args.find((a) => !a.startsWith('--'));
 const keyIndex = args.indexOf('--key');
 const keyArg = keyIndex >= 0 ? args[keyIndex + 1] : undefined;
+const packageIndex = args.indexOf('--package');
+const packageArg = packageIndex >= 0 ? args[packageIndex + 1] : undefined;
+// The pack is the argument that is neither a flag nor a flag's value.
+const flagValue = (i) => (keyIndex >= 0 && i === keyIndex + 1) || (packageIndex >= 0 && i === packageIndex + 1);
+const packPath = args.find((a, i) => !a.startsWith('--') && !flagValue(i));
 if (!packPath) usage('No pack given.');
+if (packageIndex >= 0 && !packageArg) usage('--package names no file.');
 
 /** Rebuild the DER SPKI wrapper around the raw 32 bytes of an Ed25519 key. */
 function publicKeyFromRawBase64(b64) {
@@ -538,6 +554,168 @@ function canonicalDefect(manifest, attested) {
   return null;
 }
 
+/* ------------------------------------------------ the delivery package (3.0.21, T08) */
+
+const DELIVERY_FORMAT = 'clean-core-delivery-manifest';
+const INPUT_FINGERPRINT_FILE = '01-input-fingerprint.json';
+/** The AI marking line among a file's first lines — `aiMarkingOf` of lib/ai-marking.ts. */
+const MARKING_LINE = /^(?:\* |\/\/ |<!-- |# )Generated with AI assistance \(.*$/;
+function markingOf(text) {
+  for (const l of text.split(/\r?\n/, 4)) {
+    if (MARKING_LINE.test(l)) return l.replace(/^(?:\* |\/\/ |<!-- |# )/, '').replace(/ -->$/, '');
+  }
+  return null;
+}
+const strOrNull = (v) => (typeof v === 'string' && v !== '' ? v : null);
+const sha256OfBytes = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+/** What a pack says about its run: the run, the signed source digest, the narrative's model. */
+async function signedRunFacts(zip, manifest, authentic) {
+  let sourceSha256 = null;
+  const listed = (manifest.files || []).find((f) => f.path === INPUT_FINGERPRINT_FILE);
+  const entry = listed && zip.file(INPUT_FINGERPRINT_FILE);
+  if (entry) {
+    const bytes = await readEntryBounded(entry, { remaining: PACK_LIMITS.totalBytes });
+    if (sha256OfBytes(bytes) === listed.sha256) {
+      try {
+        sourceSha256 = strOrNull(JSON.parse(bytes.toString('utf8')).sha256);
+      } catch {
+        sourceSha256 = null;
+      }
+    }
+  }
+  const ai = bindsAiGeneration(manifest.version) && manifest.aiGeneration ? manifest.aiGeneration : null;
+  return {
+    authentic,
+    runId: strOrNull(manifest.runId),
+    sourceSha256,
+    narrative: ai ? { statement: ai.statement ?? null, provider: ai.provider ?? null, model: ai.model ?? null } : null,
+  };
+}
+
+/**
+ * The delivery package against its manifest and, when `signed` is given, against
+ * the pack's run — the check of lib/delivery-package-verify.ts, repeated here so
+ * this script needs no build. Prints as it goes; returns the verdict.
+ */
+async function checkDelivery(JSZip, path, signed) {
+  if ((await stat(path)).size > PACK_LIMITS.archiveBytes) throw new Error(`${shown(path)} is larger than a package may be`);
+  const bytes = await readFile(path);
+  const entryDefect = archiveEntryLimitDefect(bytes);
+  if (entryDefect) throw new Error(entryDefect);
+  const zip = await JSZip.loadAsync(bytes);
+  const budget = { remaining: PACK_LIMITS.totalBytes };
+  console.log(`\nPackage   ${shown(path)}`);
+  const manifestEntry = zip.file('manifest.json');
+  if (!manifestEntry) {
+    console.log(c.bad('FAILED    the package has no manifest.json'));
+    return 'failed';
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse((await readEntryBounded(manifestEntry, budget)).toString('utf8'));
+  } catch {
+    console.log(c.bad('FAILED    manifest.json is not JSON'));
+    return 'failed';
+  }
+  if (manifest.format !== DELIVERY_FORMAT) {
+    console.log(c.bad('FAILED    manifest.json is not the manifest of a Clean-Core.io delivery package'));
+    return 'failed';
+  }
+  const rows = Array.isArray(manifest.files) ? manifest.files : [];
+  const run = manifest.run || {};
+  const source = manifest.source || {};
+  console.log(`Run       ${shown(run.id ?? 'none named')}  ${c.dim(`source ${shown(source.sha256 ?? 'none named')}`)}  ${c.dim(`manifest version ${shown(manifest.version)}`)}`);
+
+  // 1. Contents.
+  let ok = true;
+  const text = new Map();
+  for (const row of rows) {
+    const entry = zip.file(String(row.path ?? ''));
+    if (!entry) {
+      console.log(`${c.bad('missing')}   ${shown(row.path)}`);
+      ok = false;
+      continue;
+    }
+    const content = await readEntryBounded(entry, budget);
+    if (sha256OfBytes(content) !== row.sha256) {
+      console.log(`${c.bad('altered')}   ${shown(row.path)}`);
+      ok = false;
+    }
+    text.set(String(row.path), content.subarray(0, 4096).toString('utf8'));
+  }
+  const listed = new Set(rows.map((r) => String(r.path ?? '')));
+  for (const e of Object.values(zip.files)) {
+    if (e.dir || e.name === 'manifest.json' || listed.has(e.name)) continue;
+    console.log(`${c.bad('unlisted')}  ${shown(e.name)}`);
+    ok = false;
+  }
+  const names = duplicateEntryNames(bytes);
+  for (const name of names.duplicates) {
+    console.log(`${c.bad('twice')}     ${shown(name)}`);
+    ok = false;
+  }
+  if (!names.counted) {
+    console.log(`${c.bad('unread')}    ${c.dim(`duplicate paths were not checked: ${shown(names.why)}`)}`);
+    ok = false;
+  }
+  console.log(ok ? `${c.ok('OK')}        ${rows.length} files match their recorded hashes, nothing else in the package` : c.bad('FAILED    the package contents do not match its manifest'));
+
+  // 2. Markings: which model wrote which files, and the files say so themselves.
+  const statements = Array.isArray(manifest.aiGeneration?.statements) ? manifest.aiGeneration.statements : [];
+  const sourceOf = new Map();
+  let marksOk = true;
+  for (const st of statements) {
+    const files = Array.isArray(st.files) ? st.files.map(String) : [];
+    const without = new Set(Array.isArray(st.withoutHeader) ? st.withoutHeader.map(String) : []);
+    console.log(`${c.dim('ai')}        ${shown(st.source, 40)}: ${shown(st.statement, 300)}  ${c.dim(`${files.length} file(s)`)}`);
+    for (const f of files) {
+      sourceOf.set(f, String(st.source ?? ''));
+      if (without.has(f) || !text.has(f)) continue;
+      if (markingOf(text.get(f)) !== String(st.statement ?? '')) {
+        console.log(`${c.bad('unmarked')}  ${shown(f)}  ${c.dim('the file does not carry the statement its manifest names')}`);
+        marksOk = false;
+      }
+    }
+  }
+  if (!statements.length) console.log(`${c.dim('ai')}        ${c.dim('the manifest names no file a model wrote')}`);
+  if (typeof manifest.version === 'number' && manifest.version >= 2) {
+    for (const row of rows) {
+      const stated = row.ai === undefined ? undefined : row.ai === null ? null : String(row.ai);
+      if (stated !== (sourceOf.get(String(row.path)) ?? null)) {
+        console.log(`${c.bad('origin')}    ${shown(row.path)}  ${c.dim('its ai field and the statement that names it disagree')}`);
+        marksOk = false;
+      }
+    }
+  }
+
+  // 3. The signed run.
+  let runOk = false;
+  if (signed) {
+    const runMatches = strOrNull(run.id) !== null && run.id === signed.runId;
+    const sourceMatches = strOrNull(source.sha256) !== null && source.sha256 === signed.sourceSha256;
+    const analysis = statements.find((st) => st.source === 'analysis');
+    const narrativeMatches = analysis && signed.narrative && signed.narrative.statement
+      ? (analysis.provider ?? null) === signed.narrative.provider && (analysis.model ?? null) === signed.narrative.model
+      : null;
+    console.log(runMatches ? `${c.ok('OK')}        the package names the pack's run` : c.bad("FAILED    the package names another run than the pack's, or none"));
+    console.log(sourceMatches ? `${c.ok('OK')}        the package was built from the source the pack signed` : c.bad('FAILED    the package names another source digest than the pack signed, or none'));
+    if (narrativeMatches === true) console.log(`${c.ok('OK')}        the analysis narrative's model is the one the pack signed`);
+    if (narrativeMatches === false) console.log(c.bad("FAILED    the package names another model for the analysis narrative than the pack signed"));
+    runOk = runMatches && sourceMatches && narrativeMatches !== false;
+    if (!signed.authentic) console.log(c.warn('NOTE      the audit pack did not verify as authentic, so this is not a check against a signed run'));
+  }
+  const verdict = !ok || !marksOk || (signed && signed.authentic && !runOk) ? 'failed' : signed && signed.authentic && runOk ? 'from-signed-run' : 'consistent';
+  console.log(
+    verdict === 'from-signed-run'
+      ? c.ok('\nThe package comes from the signed run: every file is the file its manifest lists, and the manifest names the run and the source the audit pack signed. The package itself is not signed.')
+      : verdict === 'consistent'
+        ? c.warn('\nThe package matches its own manifest; it has not been checked against a signed audit pack.')
+        : c.bad('\nThe package does not match its manifest or the signed run.'),
+  );
+  return verdict;
+}
+
 async function main() {
   let JSZip;
   try {
@@ -571,6 +749,18 @@ async function main() {
     process.exit(CANNOT_CHECK);
   }
   const manifest = JSON.parse((await readEntryBounded(manifestFile, budget)).toString('utf8'));
+
+  // A delivery package given alone: its own manifest is all there is to hold it to.
+  if (manifest.format === DELIVERY_FORMAT) {
+    const verdict = await checkDelivery(JSZip, packPath, null);
+    process.exit(verdict === 'failed' ? FAILED : CANNOT_CHECK);
+  }
+  // The package, when one is named, is checked after the pack, against the pack's run.
+  const finish = async (code, authentic) => {
+    if (!packageArg) process.exit(code);
+    const verdict = await checkDelivery(JSZip, packageArg, await signedRunFacts(zip, manifest, authentic));
+    process.exit(verdict === 'failed' ? FAILED : verdict === 'from-signed-run' ? code : code === OK ? CANNOT_CHECK : code);
+  };
 
   console.log(`\nPack      ${packPath}`);
   console.log(`Run       ${shown(manifest.runId)}  ${c.dim(`project ${shown(manifest.projectId)}`)}`);
@@ -759,7 +949,7 @@ async function main() {
     // Consistent checksums are a fact about the archive, not about its origin:
     // anyone can assemble files, hash them and write the hashes down. Exit 0 is
     // documented as "verified", and this is not that.
-    process.exit(contentsOk && hashOk ? CANNOT_CHECK : FAILED);
+    await finish(contentsOk && hashOk ? CANNOT_CHECK : FAILED, false);
   }
 
   let key, keyId;
@@ -768,7 +958,7 @@ async function main() {
   } catch (e) {
     console.error(c.bad(`\nCould not obtain a public key: ${shown(e.message, 500)}`));
     console.error(c.dim('This is not a statement about the signature.'));
-    process.exit(CANNOT_CHECK);
+    await finish(CANNOT_CHECK, false);
   }
 
   const sigOk = cryptoVerify(
@@ -821,7 +1011,7 @@ async function main() {
         : c.bad('NOT verified. At least one check above failed.')) +
       '\n',
   );
-  process.exit(verified ? OK : FAILED);
+  await finish(verified ? OK : FAILED, verified);
 }
 
 main().catch((e) => {
