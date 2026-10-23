@@ -36,6 +36,7 @@ import {
   wt,
 } from '@/lib/workspace-messages';
 import { describeRunCost, type RunCost } from '@/lib/run-cost';
+import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_ACTION, OWN_KEY_HREF, quotaExhausted, quotaSpentSentence } from '@/lib/run-quota-rule';
 import { saveAs } from '@/lib/fileSaver';
 import { DEMO_LIST_TAGLINE, DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import {
@@ -779,6 +780,26 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">{t('workspace.title')}</h1>
           <p className="mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">{t('workspace.lead')}</p>
         </div>
+
+        {/* The free runs are spent: said where the account lands, with the way
+            on to an own key (roadmap 3.0.21 (3)) — not only once a start has
+            been refused. The old dashboard page carried this strip; the list
+            report that replaced it for every active account (3.0.1) did not. */}
+        {quotaExhausted(profile) ? (
+          <div data-workspace-limit="">
+            <CcMessageStrip
+              state="warning"
+              headline="Limit reached."
+              actions={
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+              }
+            >
+              {quotaSpentSentence(profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK)}
+            </CcMessageStrip>
+          </div>
+        ) : null}
 
         <YourTurnCard
           hasOwnProjects={hasOwn}

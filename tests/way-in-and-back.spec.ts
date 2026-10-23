@@ -416,6 +416,13 @@ test.describe('(3) the way to an own key links every hop', () => {
     for (const after of limitStrips) {
       expect(after.slice(0, after.indexOf('</CcMessageStrip>'))).toContain('href={OWN_KEY_HREF}');
     }
+    // My workspace as every active account sees it (the list report, 3.0.1)
+    // says the runs are spent where the account lands, with the same link.
+    const list = read('components/workspace/WorkspaceListReport.tsx');
+    const listStrip = list.slice(list.indexOf('headline="Limit reached."'), list.indexOf('</CcMessageStrip>', list.indexOf('headline="Limit reached."')));
+    expect(list).toContain('quotaExhausted(profile) ?');
+    expect(listStrip).toContain('href={OWN_KEY_HREF}');
+    expect(listStrip).toContain('{OWN_KEY_ACTION}');
   });
 
   test('the key card is the anchor, and its two-factor sentence links to Sign-in security', () => {

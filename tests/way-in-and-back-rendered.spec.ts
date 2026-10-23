@@ -95,7 +95,11 @@ test('(1, 15) a signed-out tool link goes to the neutral sign-in and comes back 
   await expect(dialog.getByRole('button', { name: 'Forgot password?' })).toBeVisible();
   await expect(page.locator('body')).not.toContainText('There is no page at this address');
   await submitSignIn(page, OWNER);
-  await page.waitForURL(`**${here}`, { timeout: 60000 });
+  // 'commit': the fixture project has no signed run, so Economics sends the
+  // reader on to Analyze (`enforceActiveRun`, reason=no-run) as soon as it has
+  // loaded — the way back is the arrival at the tool, which a 'load' wait
+  // missed whenever that redirect was faster than the load event.
+  await page.waitForURL(`**${here}`, { timeout: 60000, waitUntil: 'commit' });
   await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
 });
 
