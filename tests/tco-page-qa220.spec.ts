@@ -63,6 +63,21 @@ test.beforeAll(async () => {
   }
 });
 
+/**
+ * Since roadmap 3.0.21 (way in and way back, points 1 and 13) the project frame
+ * (`components/ProjectFrame.tsx`) asks the server first and shows the one
+ * no-access sentence for a project this account may not open — the stage is
+ * not rendered at all. The stage's own read-failure path is still what a reader
+ * meets when that answer does not come (`unknown`), so the guard checks both:
+ * the frame's answer, and — with the access answer withheld — the stage's.
+ */
+async function withholdAccessAnswer(page: Page) {
+  await page.route(
+    (url) => url.pathname.startsWith('/api/projects/') && url.searchParams.get('for') === 'access',
+    (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }),
+  );
+}
+
 async function openEconomics(page: Page, projectId: string) {
   await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
   await page.goto(`/project/${projectId}/tco`, { waitUntil: 'domcontentloaded' });
@@ -71,6 +86,11 @@ async function openEconomics(page: Page, projectId: string) {
 test('a project that cannot be read says so, not that it has no score (ffddf6b4fee6)', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, FOREIGN);
+  await expect(page.locator('[data-project-gate="no-access"]')).toBeVisible({ timeout: 30000 });
+  expect(await page.locator('body').innerText(), 'a refused read is not evidence that no score exists').not.toContain('no Clean Core score from a signed run');
+
+  await withholdAccessAnswer(page);
+  await page.goto(`/project/${FOREIGN}/tco`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-tco-load-error]')).toBeVisible({ timeout: 30000 });
   const body = await page.locator('body').innerText();
   expect(body, 'a failed read is not evidence that no score exists').not.toContain('no Clean Core score from a signed run');

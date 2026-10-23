@@ -76,6 +76,21 @@ test.beforeAll(async () => {
   }
 });
 
+/**
+ * Since roadmap 3.0.21 (way in and way back, points 1 and 13) the project frame
+ * (`components/ProjectFrame.tsx`) asks the server first and shows the one
+ * no-access sentence for a project this account may not open — the stage is
+ * not rendered at all. The stage's own read-failure path is still what a reader
+ * meets when that answer does not come (`unknown`), so the guard checks both:
+ * the frame's answer, and — with the access answer withheld — the stage's.
+ */
+async function withholdAccessAnswer(page: Page) {
+  await page.route(
+    (url) => url.pathname.startsWith('/api/projects/') && url.searchParams.get('for') === 'access',
+    (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }),
+  );
+}
+
 async function openDesign(page: Page, projectId: string, email = EMAIL) {
   await signInViaLanding(page, email, SIGN_IN, { pauseMs: 3500 });
   await page.goto(`/project/${projectId}/design`, { waitUntil: 'domcontentloaded' });
@@ -84,6 +99,11 @@ async function openDesign(page: Page, projectId: string, email = EMAIL) {
 test('a project that cannot be read ends in an error, not an endless skeleton (46b8c6352769)', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openDesign(page, FOREIGN);
+  await expect(page.locator('[data-project-gate="no-access"]')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('body')).not.toContainText('Designing Solution...');
+
+  await withholdAccessAnswer(page);
+  await page.goto(`/project/${FOREIGN}/design`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('body')).toContainText('Could not load the project', { timeout: 30000 });
   await expect(page.locator('body')).not.toContainText('Designing Solution...');
 });

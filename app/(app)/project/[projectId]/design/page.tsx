@@ -249,6 +249,10 @@ export default function DesignPage() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [nfrData, setNfrData] = useState<NFRData | null>(null);
   const [designError, setDesignError] = useState<string | null>(null);
+  // The project itself could not be read. Said above everything, not in the
+  // document tab: since the canvas-first page (3.0.21) that tab is not the one
+  // a reader sees first, and a failed read sat behind it unseen.
+  const [loadFailed, setLoadFailed] = useState(false);
   /**
    * When the solution design this page is writing was started, or `null`.
    * It is written on the owner's click only (owner decision 22.10.2026: the
@@ -691,7 +695,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         // forever: it used to reject here with nothing to
         // catch it, and `loading` stayed true.
         console.error('[Design] Project could not be loaded:', err);
-        setDesignError('Could not load the project. This is usually a permissions or connectivity issue — reload the page.');
+        setLoadFailed(true);
         setLoading(false);
         return;
       }
@@ -1435,83 +1439,91 @@ A design merely older than the analysis is
 
       {/* The canvas is the page's picture; the questions stand beside it (below
           it on a phone) and the proposal waits for them (ADR-106). */}
-      <div className="mb-12">
-        <DesignCanvasStage
-          evidence={designEvidence}
-          model={canvasModel}
-          targetLine={targetLine}
-          targetKpi={targetKpi}
-          confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
-          storedRoute={storedRoute}
-          confirmed={
-            signOffCurrent
-              ? {
-                  label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
-                  by: project?.approvedBy ?? null,
-                  at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
-                }
-              : null
-          }
-          stale={designStale || stale.signOff}
-          hasDocument={Boolean(design)}
-          canSignOff={canSignOff}
-          signOffPanel={signOffPanel}
-          // "Confirm target" asks first and then confirms the recommendation
-          // the panel would (owner 02.10.2026); another target goes through
-          // the panel.
-          confirmTarget={
-            canSignOff
-              ? {
-                  label: architectureOptionLabel(recommendation) ?? recommendation,
-                  onConfirm: () => lockArchitecture(recommendation, ''),
-                  chooseOther: true,
-                }
-              : undefined
-          }
-          locked={project?.approvedByArchitect === true}
-          reader={Boolean(project) && !isOwner}
-          onRegenerate={askRegenerate}
-          regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
-          regenerating={generating}
-          legacyCode={project?.legacyCode || ''}
-          sections={docSections}
-          document={structuredDocument}
-          documentFallback={documentFallback}
-          documentNotice={
-            writingState || designErrorStrip ? (
-              <div className="flex flex-col gap-3">
-                {writingState}
-                {designErrorStrip}
-              </div>
-            ) : null
-          }
-          routingRationale={
-            caps.hasRoutingEvidence ? (
-              <SectionBoundary name="Routing Rationale">
-                <RoutingRationale
-                  extensibilityRoute={project?.extensibilityRoute}
-                  cleanCoreScore={project?.cleanCoreScore}
-                  s4Deployment={project?.s4Deployment}
-                  findings={findings}
-                  // The SAP reference row names the signed-off target, else the
-                  // recommendation the card names (roadmap 3.0.9).
-                  targetArchitecture={
-                    signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
-                      ? project.targetArchitecture
-                      : recommendation
+      {loadFailed ? (
+        <div className="mb-12" data-design-load-failed="">
+          <CcMessageStrip state="error" headline="Could not load the project." announce>
+            This is usually a permissions or connectivity issue — reload the page.
+          </CcMessageStrip>
+        </div>
+      ) : (
+        <div className="mb-12">
+          <DesignCanvasStage
+            evidence={designEvidence}
+            model={canvasModel}
+            targetLine={targetLine}
+            targetKpi={targetKpi}
+            confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
+            storedRoute={storedRoute}
+            confirmed={
+              signOffCurrent
+                ? {
+                    label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
+                    by: project?.approvedBy ?? null,
+                    at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
                   }
-                />
-              </SectionBoundary>
-            ) : null
-          }
-          view={view}
-          questions={questionsPanel}
-          questionsSummary={questionsSummary}
-          questionsOpenFirst={questionsOpenFirst}
-          proposalShown={proposalShown}
-          pending={proposalPending}
-        />
-      </div>
+                : null
+            }
+            stale={designStale || stale.signOff}
+            hasDocument={Boolean(design)}
+            canSignOff={canSignOff}
+            signOffPanel={signOffPanel}
+            // "Confirm target" asks first and then confirms the recommendation
+            // the panel would (owner 02.10.2026); another target goes through
+            // the panel.
+            confirmTarget={
+              canSignOff
+                ? {
+                    label: architectureOptionLabel(recommendation) ?? recommendation,
+                    onConfirm: () => lockArchitecture(recommendation, ''),
+                    chooseOther: true,
+                  }
+                : undefined
+            }
+            locked={project?.approvedByArchitect === true}
+            reader={Boolean(project) && !isOwner}
+            onRegenerate={askRegenerate}
+            regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
+            regenerating={generating}
+            legacyCode={project?.legacyCode || ''}
+            sections={docSections}
+            document={structuredDocument}
+            documentFallback={documentFallback}
+            documentNotice={
+              writingState || designErrorStrip ? (
+                <div className="flex flex-col gap-3">
+                  {writingState}
+                  {designErrorStrip}
+                </div>
+              ) : null
+            }
+            routingRationale={
+              caps.hasRoutingEvidence ? (
+                <SectionBoundary name="Routing Rationale">
+                  <RoutingRationale
+                    extensibilityRoute={project?.extensibilityRoute}
+                    cleanCoreScore={project?.cleanCoreScore}
+                    s4Deployment={project?.s4Deployment}
+                    findings={findings}
+                    // The SAP reference row names the signed-off target, else the
+                    // recommendation the card names (roadmap 3.0.9).
+                    targetArchitecture={
+                      signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
+                        ? project.targetArchitecture
+                        : recommendation
+                    }
+                  />
+                </SectionBoundary>
+              ) : null
+            }
+            view={view}
+            questions={questionsPanel}
+            questionsSummary={questionsSummary}
+            questionsOpenFirst={questionsOpenFirst}
+            proposalShown={proposalShown}
+            pending={proposalPending}
+          />
+        </div>
+      )}
 
       {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}
       {project?.legacyCode && conceptSuccessorsOf(project.legacyCode).length > 0 ? (
