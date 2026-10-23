@@ -4,6 +4,7 @@ import path from 'path';
 import { sapApiHubHref, sapApiHubLink, sapApiHubUrl, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
 import { buildEngineConfluenceHtml, sopStatementsHtml, sopTableHtml } from '../lib/documentation-export';
+import { aiOriginHtmlAttributes } from '../lib/ai-marking';
 import { buildProcessDocument } from '../lib/process-document-build';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -79,8 +80,9 @@ test('the engine documentation export escapes every value it prints', () => {
   const src = read(DOCS_EXPORT);
   expect(src).toContain('const engineHtml = `');
   const fn = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
-  // `sopTableHtml` is exported and fed hostile text in the next test.
-  const helpers = /^(esc|lines|para|item|table|tableOf|lead|empty|h2|proposal|processOverviewSvg|glanceHtml|sopTableHtml)\(/;
+  // `sopTableHtml` is exported and fed hostile text in the next test; `aiOriginHtmlAttributes` (3.0.21, T08) writes
+  // a model-written element's origin attributes and is fed hostile provider and model names below.
+  const helpers = /^(esc|lines|para|item|table|tableOf|lead|empty|h2|proposal|processOverviewSvg|glanceHtml|sopTableHtml|aiOriginHtmlAttributes)\(/;
   const assembled = /^(pathRows|subSteps|more|exportCSS|[A-Za-z]+Section)$/;
   const left = modelValues(fn, 'export function buildEngineConfluenceHtml', 'new Blob([engineHtml]')
     .filter((e) => !helpers.test(e) && !assembled.test(e));
@@ -117,7 +119,7 @@ test('the engine documentation export carries the business layer, escaped and ma
   for (const gone of ['audit_controls', 'kpiTarget', 'controlObjective']) expect(section).not.toContain(gone);
   const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
-  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml(') && !e.startsWith('sopStatementsHtml(') && !e.startsWith('sopTableHtml('));
+  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml(') && !e.startsWith('sopStatementsHtml(') && !e.startsWith('sopTableHtml(') && !e.startsWith('aiOriginHtmlAttributes('));
   expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
   // The SOP sentences go through one helper, which prints every value through the escaper (fed hostile text below).
   expect(sopStatementsHtml([{ text: '<script>x</script>', basis: 'not-in-program', anchors: [], reason: '<b>r</b>', short: 'organisational' }]))
@@ -131,6 +133,13 @@ test('the engine documentation export carries the business layer, escaped and ma
     technical: [{ id: 'x', name: '<script>t</script>', kind: '<b>k</b>', anchor: { lineStart: 1, lineEnd: 2 }, depth: 1 }],
   };
   for (const business of [true, false]) expect(sopTableHtml([hostile], business)).not.toMatch(/<script>|<b>|<i>|<u>/);
+  // 3.0.21 (T08): the origin attributes print a provider and model a receipt named — escaped, one attribute each.
+  const attrs = aiOriginHtmlAttributes({ provider: 'x" onload="alert(1)', modelId: '<script>m</script>' });
+  expect(attrs).not.toMatch(/<script>|" onload=/);
+  expect(attrs.match(/="/g)).toHaveLength(3);
+  for (const business of [true, false]) {
+    expect(sopTableHtml([hostile], business, { provider: '"><script>p</script>', modelId: 'm', byok: null, generatedAt: null, appVersion: null })).not.toMatch(/<script>|"><s/);
+  }
 });
 
 test('the analysis and design stages build their Confluence pages only through the escaping modules', () => {
