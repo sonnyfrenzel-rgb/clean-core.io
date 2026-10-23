@@ -419,7 +419,7 @@ test.describe('(3) the way to an own key links every hop', () => {
     // My workspace as every active account sees it (the list report, 3.0.1)
     // says the runs are spent where the account lands, with the same link.
     const list = read('components/workspace/WorkspaceListReport.tsx');
-    const listStrip = list.slice(list.indexOf('headline="Limit reached."'), list.indexOf('</CcMessageStrip>', list.indexOf('headline="Limit reached."')));
+    const listStrip = list.slice(list.indexOf("headline={wt('myWorkspace.limitReached')}"), list.indexOf('</CcMessageStrip>', list.indexOf("headline={wt('myWorkspace.limitReached')}")));
     expect(list).toContain('quotaExhausted(profile) ?');
     expect(listStrip).toContain('href={OWN_KEY_HREF}');
     expect(listStrip).toContain('{OWN_KEY_ACTION}');

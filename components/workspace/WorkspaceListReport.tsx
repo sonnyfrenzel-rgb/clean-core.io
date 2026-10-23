@@ -789,7 +789,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           <div data-workspace-limit="">
             <CcMessageStrip
               state="warning"
-              headline="Limit reached."
+              headline={wt('myWorkspace.limitReached')}
               actions={
                 <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
                   {OWN_KEY_ACTION}

@@ -218,6 +218,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'newProject.personalDataPending':
     'Read the lines above and tick the box to carry on. Nothing has been created yet.',
   // My workspace — the 3.0 list (mockup s7), its sharing section and row menu
+  'myWorkspace.limitReached': 'Limit reached.',
   'myWorkspace.colLevels': 'Levels',
   'myWorkspace.colRules': 'Rules confirmed',
   'myWorkspace.filterLevel': 'Clean-core level',
