@@ -76,7 +76,9 @@ function panelOf(source: string, version: string): Panel {
     inputs: programInputsOf(proc.facts, (n) => humaniseField(n, plainContext(source))),
   });
   const summary = programSummary(programSummaryFactsOf(source, { skeleton: proc.skeleton, ruleSet: rules, engineVersion: version }));
-  const opening = version === AFTER ? openingDecisions(explainBusinessRules(source, rules, proc.facts, version)) : null;
+  // "What it decides" is read for the same engine as the rest of the panel: from 3.0.21 it reads the rule's basket
+  // (roadmap 3.0.21, "First insights becomes the strongest page", owner decision 22.10.2026).
+  const opening = version !== BEFORE ? openingDecisions(explainBusinessRules(source, rules, proc.facts, version), 4, version) : null;
   const ordered = [...card.featured, ...card.rules.filter((r) => !card.featured.some((f) => f.id === r.id))].filter((r) => r.sentence !== null).slice(0, 4);
   const legacy = ordered.map((r) => ({ text: r.sentence as string, anchor: r.anchors[0] ?? null }));
   return {
@@ -344,6 +346,13 @@ test.describe('the examples keep their story, technical checks folded', () => {
     expect(after.story.steps[0]).toMatchObject({ text: 'Authority check', checks: ['Not authorized'], stops: ['not authorized (E001)'] });
     expect(after.story.steps.reduce((n, s) => n + (s.technical ?? 0), 0)).toBeGreaterThan(5);
     expect(after.technicalRules).toBe(2);
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decision 22.10.2026): "What it decides"
+    // counts the rules of the technical basket — the limit plausibility check, the program's own risk class, its two
+    // action codes and the WARN level — so five, not the two of the technical-settings topic.
+    const reads3021 = panelOf(source, '3.0.21');
+    // From 3.0.21 a stop is said without its message code (same roadmap row).
+    expect(reads3021.story.steps[0]).toMatchObject({ text: 'Authority check', checks: ['Not authorized'], stops: ['not authorized'] });
+    expect(reads3021.technicalRules).toBe(5);
   });
 });
 

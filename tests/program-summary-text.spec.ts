@@ -99,21 +99,32 @@ FORM add_segment USING iv_pool TYPE clike
 ENDFORM.
 `;
 
-const summaryOf = (source: string) => {
-  const facts = programSummaryFactsOf(source);
+/** The summary as the current engine reads it, or as the engine `engineVersion` read it. */
+const summaryOf = (source: string, engineVersion?: string) => {
+  const facts = programSummaryFactsOf(source, engineVersion ? { engineVersion } : {});
   return { facts, summary: programSummary(facts) };
 };
+/** The engine before the 3.0.21 readings (`ENGINE_READS_3021_FROM`): the expectations written for it keep guarding it. */
+const BEFORE_3021 = '3.0.20';
 const slot = (s: ReturnType<typeof programSummary>, key: string) => s.lines.filter((l) => l.key === key).map((l) => l.text);
 
-function mapOf(source: string, fileName: string) {
+function mapOf(source: string, fileName: string, engineVersion?: string) {
   const named = applyNaming(namingContextOf(source), null);
-  const { bpmn, technical } = buildReadingExports(source, { processName: fileName, sourceFileName: fileName });
+  const { bpmn, technical } = buildReadingExports(source, { processName: fileName, sourceFileName: fileName, ...(engineVersion ? { exporterVersion: engineVersion } : {}) });
   return buildProcessMapModel({ bpmn, technical, named, fileName });
 }
 
 test.describe('the slots, in order, from engine facts only', () => {
   test('the demo: purpose before counts, what it changes, the result, who starts it, the level', () => {
-    const { summary } = summaryOf(DEMO);
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decision 22.10.2026): from that engine the
+    // purpose the program's names support stands before the purpose line whenever it exists.
+    const current = summaryOf(DEMO).summary;
+    expect(current.lines.map((l) => l.key)).toEqual(['purpose', 'purpose', 'changes', 'reads', 'result', 'trigger', 'rules', 'limits']);
+    expect(current.lines[0]).toMatchObject({ aim: true, text: 'Covers the approval of purchase orders and purchase requisitions.' });
+    expect(current.lines[0].anchors.length).toBeGreaterThan(0);
+    expect(current.lines.slice(1).map((l) => l.text)).toEqual(summaryOf(DEMO, BEFORE_3021).summary.lines.map((l) => l.text));
+
+    const { summary } = summaryOf(DEMO, BEFORE_3021);
     expect(summary.lines.map((l) => l.key)).toEqual(['purpose', 'changes', 'reads', 'result', 'trigger', 'rules', 'limits']);
     expect(slot(summary, 'purpose')[0]).toBe(
       // What it reads is named as read, not as the source of what it creates (SD review, 12.10.2026).
@@ -199,17 +210,26 @@ test.describe('simple on top: the Business view reads without code', () => {
 });
 
 test.describe('the four places say the same thing', () => {
-  test('Documentation stage, the delivery file, Management and the Business view open with the same purpose', () => {
+  // Pinned to the engine before 3.0.21, and read again with the current one (below).
+  for (const engineVersion of [BEFORE_3021, undefined]) {
+  test(`Documentation stage, the delivery file, Management and the Business view open with the same purpose${engineVersion ? '' : ' (from engine 3.0.21)'}`, () => {
     const file = 'Z_MM_PO_APPROVAL.abap';
-    const { facts, summary } = summaryOf(DEMO);
+    const { facts, summary } = summaryOf(DEMO, engineVersion);
     const purpose = slot(summary, 'purpose')[0];
-    const map = mapOf(DEMO, file);
+    const map = mapOf(DEMO, file, engineVersion);
+    const pin = engineVersion ? { engineVersion } : {};
 
-    const outline = documentOutline(buildProcessDocument({ source: DEMO, map }), {});
-    expect(outline.business.does[0].text).toBe(purpose);
+    const outline = documentOutline(buildProcessDocument({ source: DEMO, map, ...pin }), {});
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decision 22.10.2026): the header's title
+    // line is the author's claim, and Documentation shows the claim first, tagged — the purpose follows it.
+    const claims = engineVersion ? [] : ['Title, as the header comment states it: “Emergency purchase approval”'];
+    expect(outline.business.does.slice(0, claims.length).map((d) => d.text)).toEqual(claims);
+    if (!engineVersion) expect(outline.business.does[0].basis).toBe('author-claim');
+    expect(outline.business.does[claims.length].text).toBe(purpose);
 
-    const md = processDocumentationToMarkdown(buildProcessDocumentation({ source: DEMO, map }));
+    const md = processDocumentationToMarkdown(buildProcessDocumentation({ source: DEMO, map, ...pin }));
     const inShort = md.slice(md.indexOf('## In short'), md.indexOf('<a id="process"></a>'));
+    for (const claim of claims) expect(inShort).toContain(`**What it does**\n\n- ${claim} (Author's claim, L3)\n- ${purpose} (Reconstructed`);
     expect(inShort).toContain(`- ${purpose} (Reconstructed`);
     // Counts lead no more: no "decides with N business rules at M decision points".
     expect(inShort).not.toMatch(/decides with \d+ business rules? at \d+ decision points?/);
@@ -217,13 +237,14 @@ test.describe('the four places say the same thing', () => {
     // The rules count is the one the Business view counts.
     expect(inShort).toContain(`${facts.rules} business rules are fixed in the code`);
 
-    const management = processSummaryOf(DEMO, file)?.management ?? '';
+    const management = processSummaryOf(DEMO, file, file, engineVersion ?? undefined)?.management ?? '';
     expect(management.startsWith(purpose)).toBe(true);
     expect(management).toContain('For the decision:');
     expect(management).not.toMatch(/EUR|€|\$|saving/i);
 
     expect(withoutCodes(purpose)).toBe(businessInShort(summary, { codes: false })[0].text);
   });
+  }
 
   test('the reader questions are answered on the page, not only linked', () => {
     const map = mapOf(CO_SHAPED, 'zco.abap');
@@ -291,8 +312,12 @@ test.describe('a model may phrase the purpose — checked against the facts', ()
 ${CO_SHAPED}`);
     expect(mixed.headerClaim?.text).toBe('simulate a non-posting review of cost-center totals.');
     // An ordinary comment that starts with the word is not a heading.
-    expect(programSummaryFactsOf(`* Purpose of this block is to read the plan totals.
-${CO_SHAPED}`).headerClaim).toBeNull();
+    const ordinary = `* Purpose of this block is to read the plan totals.
+${CO_SHAPED}`;
+    expect(programSummaryFactsOf(ordinary, { engineVersion: BEFORE_3021 }).headerClaim).toBeNull();
+    // Roadmap 3.0.21 (owner decision 22.10.2026): from that engine the header block's title line is the author's
+    // claim — still not a "Purpose" heading, but the first line of the header block, quoted as its title.
+    expect(programSummaryFactsOf(ordinary).headerClaim).toEqual({ heading: 'Title', text: 'Purpose of this block is to read the plan totals.', lineStart: 1, lineEnd: 1 });
     expect(programSummaryFactsOf(BM028).headerClaim).toBeNull();
     // Documentation shows the shown claim first, tagged.
     const map = mapOf(header('*& Non-posting review of cost centers and cost totals.'), 'zco.abap');
@@ -404,7 +429,7 @@ ENDFORM.
 
 test.describe('a display cockpit whose changes wait for a user (SD review, 12.10.2026)', () => {
   test('changes reached only from a PAI module or a list callback are marked, and the purpose is the display', () => {
-    const { facts, summary } = summaryOf(SD_COCKPIT);
+    const { facts, summary } = summaryOf(SD_COCKPIT, BEFORE_3021);
     expect(facts.changes.state).toBe('changes');
     expect(facts.changes.actions.map((a) => [a.name, a.onCommand])).toEqual([['VA02', true]]);
     expect(facts.writes.map((w) => [w.name, w.onCommand])).toEqual([['VBAP', true]]);
@@ -426,6 +451,22 @@ test.describe('a display cockpit whose changes wait for a user (SD review, 12.10
     expect(managementInShort(summary, facts, { level: false })).toContain(
       "For the decision: it changes data in SAP only on a user's command — it can change sales orders and write 1 table directly —",
     );
+
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decision 22.10.2026): the purpose the
+    // program's names support ("zsd_order_overview") stands before the display line whenever it exists.
+    const now = summaryOf(SD_COCKPIT);
+    expect(slot(now.summary, 'purpose')).toEqual([
+      'Lists sales orders.',
+      'A report on sales orders (VBAK), sales order items (VBAP) and customers (KNA1), selected by creation date, shown as a list or on a screen.',
+    ]);
+    expect(slot(now.summary, 'changes')).toEqual(slot(summary, 'changes'));
+    const nowShort = businessInShortText(now.summary, { codes: false });
+    expect(nowShort).toBe(`Lists sales orders. ${short}`);
+    expect(nowShort).not.toMatch(/background job|^Changes/);
+    for (const l of businessInShort(now.summary, { codes: false })) expect(businessJargon(l.text), l.text).toEqual([]);
+    expect(managementInShort(now.summary, now.facts, { level: false })).toContain(
+      "For the decision: it changes data in SAP only on a user's command — it can change sales orders and write 1 table directly —",
+    );
   });
 
   test('AT USER-COMMAND counts as a command; a change the normal flow also reaches does not', () => {
@@ -443,23 +484,40 @@ FORM block_items.
   UPDATE vbap SET abgru = '01' WHERE vbeln = gs_head-vbeln.
 ENDFORM.
 `;
-    const onList = summaryOf(listCommand);
+    const onList = summaryOf(listCommand, BEFORE_3021);
     expect(onList.facts.writes.map((w) => w.onCommand)).toEqual([true]);
     expect(slot(onList.summary, 'purpose')[0]).toBe('A report on sales orders (VBAK), selected by creation date, shown as a list.');
     expect(slot(onList.summary, 'changes')[0]).toBe("On a user's command it can also change sales order items (VBAP) in SAP.");
     // The same routine performed from START-OF-SELECTION as well: an ordinary change.
-    const both = summaryOf(listCommand.replace('  ENDLOOP.\n', '  ENDLOOP.\n  PERFORM block_items.\n'));
+    const bothSource = listCommand.replace('  ENDLOOP.\n', '  ENDLOOP.\n  PERFORM block_items.\n');
+    const both = summaryOf(bothSource, BEFORE_3021);
     expect(both.facts.writes.map((w) => w.onCommand ?? false)).toEqual([false]);
     expect(slot(both.summary, 'purpose')[0]).toBe('Changes sales order items (VBAP) in SAP, reading sales orders (VBAK), selected by creation date.');
+
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decision 22.10.2026): the purpose the
+    // program's names support ("zsd_list") stands first whenever it exists; the reading of the flow is unchanged.
+    const onListNow = summaryOf(listCommand);
+    expect(onListNow.facts.writes.map((w) => w.onCommand)).toEqual([true]);
+    expect(slot(onListNow.summary, 'purpose')).toEqual(['Lists sales orders.', 'A report on sales orders (VBAK), selected by creation date, shown as a list.']);
+    expect(slot(onListNow.summary, 'changes')[0]).toBe("On a user's command it can also change sales order items (VBAP) in SAP.");
+    const bothNow = summaryOf(bothSource);
+    expect(bothNow.facts.writes.map((w) => w.onCommand ?? false)).toEqual([false]);
+    expect(slot(bothNow.summary, 'purpose')).toEqual(['Lists sales orders.', 'Changes sales order items (VBAP) in SAP, reading sales orders (VBAK), selected by creation date.']);
   });
 
   test('a read table is never named as the source of what the program changes', () => {
     // "Changes sales orders in SAP from sales order items (VBAP)" read VBAP as the origin of the
     // sales orders; the code shows only that it reads it.
-    const { summary } = summaryOf(SD_COCKPIT.replace("  CASE 'X'.", "  PERFORM change_orders.\n  CASE 'X'."));
+    const changing = SD_COCKPIT.replace("  CASE 'X'.", "  PERFORM change_orders.\n  CASE 'X'.");
+    const { summary } = summaryOf(changing, BEFORE_3021);
     const purpose = slot(summary, 'purpose')[0];
     expect(purpose).toBe('Changes sales orders in SAP, reading sales order items (VBAP) and customers (KNA1), selected by creation date.');
     expect(purpose).not.toMatch(/ from /);
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decision 22.10.2026): the purpose the
+    // program's names support stands first; neither line names a read table as the source of a change.
+    const now = slot(summaryOf(changing).summary, 'purpose');
+    expect(now).toEqual(['Lists sales orders.', purpose]);
+    for (const line of now) expect(line).not.toMatch(/ from /);
   });
 });
 
