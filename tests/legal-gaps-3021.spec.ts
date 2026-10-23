@@ -76,7 +76,8 @@ test.describe('T02 — the record holds the language version accepted and the di
     expect(event.data.locale).toBe('en-US');
     const profile = writes.find((w) => w.path === 'users/u1')!;
     expect(profile.data.termsLanguageAccepted).toBe('de');
-    expect(out).toEqual({ termsVersion: TERMS_VERSION, termsLanguage: 'de', digest: archivedTermsSha256For(TERMS_VERSION, 'de') });
+    // Since G13 (23.10.2026) the result also names the acceptance time and the effective date.
+    expect(out).toMatchObject({ termsVersion: TERMS_VERSION, termsLanguage: 'de', digest: archivedTermsSha256For(TERMS_VERSION, 'de') });
   });
 
   test('English, or anything that is not a published language, records English', async () => {
@@ -138,11 +139,13 @@ test.describe('T03 — an Anthropic key needs Terms v2.3.0 or later', () => {
 
   test('the save route refuses before testing or storing the key', () => {
     const route = read('app/api/secrets/gemini/route.ts');
-    const gate = route.indexOf('if (!termsAllowAddendum(profile.termsVersionAccepted))');
+    // G13: the version in effect, not merely the one accepted (tests/legal-14-3021.spec.ts).
+    const gate = route.indexOf('if (!termsAllowAddendum(termsVersionInEffectFor(profile)))');
     expect(gate).toBeGreaterThan(route.indexOf('if (addendumRequired(provider) && !addendum)'));
     expect(gate).toBeLessThan(route.indexOf('await testOwnModelKey('));
     expect(gate).toBeLessThan(route.indexOf('await saveOwnModelKey('));
-    expect(route.slice(gate, gate + 500)).toContain('code: ADDENDUM_TERMS_REQUIRED_CODE');
+    // 900, not 500: since G13 the refusal also words the early-acceptance case before naming its code.
+    expect(route.slice(gate, gate + 900)).toContain('code: ADDENDUM_TERMS_REQUIRED_CODE');
   });
 
   test('every acceptance row carries the digest of the archived wording of its language', () => {

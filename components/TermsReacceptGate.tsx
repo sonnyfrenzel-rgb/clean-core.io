@@ -15,10 +15,10 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcCheckbox from '@/components/cc/Checkbox';
 import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
-import { renderOpenValue } from '@/lib/legal/open-values';
 import { TERMS_LABEL } from '@/lib/legal/documents';
 import { ContractLanguageChoice } from '@/components/legal/SignupConsent';
 import type { TermsLanguage } from '@/lib/terms-versions';
+import { announcedEffectiveDate, effectiveDateAhead } from '@/lib/terms-effective';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -330,8 +330,13 @@ export default function TermsReacceptGate() {
    */
   const C2 = CONSENT_TEXTS.amendment;
   const lang = termsLanguage;
-  const fill = (text: string, l: TermsLanguage = 'en') =>
-    text.replace(/\{Datum\}/g, renderOpenValue('releaseDate', l)).replace(/\{Fassung\}/g, TERMS_LABEL);
+  // The C2 texts name the day the amendment takes effect — the open value
+  // `termsEffectiveDate` (Terms 10.2, G13/G14): an acceptance before it takes
+  // effect only on it. While that day lies ahead — or is not set yet, when the
+  // open value shows its marker — the dialog says so; after it, an acceptance
+  // applies at once and there is no later day to name.
+  const ahead = !announcedEffectiveDate() || effectiveDateAhead();
+  const fill = (text: string) => text.replace(/\{Fassung\}/g, TERMS_LABEL);
   const explanation = noAcceptance && !mayDecline
     ? 'Your account has no recorded acceptance of the Terms of Service, so the platform is closed to it until there is one. Please read the Terms and accept them to carry on. Your account and your data are unchanged.'
     : mayDecline
@@ -357,7 +362,7 @@ export default function TermsReacceptGate() {
 
       {(mayDecline || !noAcceptance) && (
         <p className="mt-3 mb-0 cc-text-cell text-cc-ink-muted" data-terms-gate-after-list="" lang={lang}>
-          {fill(consentText(C2.afterList, lang), lang)}
+          {fill(ahead ? consentText(C2.afterList, lang) : consentText(C2.afterListPastDate, lang))}
         </p>
       )}
 
@@ -375,7 +380,7 @@ export default function TermsReacceptGate() {
       <TermsInline key={lang} lang={lang} />
 
       <div className="mt-4" data-terms-gate-checkbox="" data-terms-gate-language={lang}>
-        <CcCheckbox checked={ticked} onChange={setTicked} label={<span lang={lang}>{fill(consentText(C2.checkbox, lang), lang)}</span>} />
+        <CcCheckbox checked={ticked} onChange={setTicked} label={<span lang={lang}>{fill(ahead ? consentText(C2.checkbox, lang) : consentText(C2.checkboxPastDate, lang))}</span>} />
       </div>
       <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted" lang={lang}>{consentText(C2.notice, lang)}</p>
 
@@ -410,20 +415,21 @@ export default function TermsReacceptGate() {
     </>
   );
 
-  // Accepting is entering into a contract — the binding confirmation of §1.5,
-  // and the only place on this layer that wears `dark`. `data-cc-initial-focus`
-  // puts the caret on it when the blocking dialog opens.
+  // C2 (G14): "Accept" and "Decide later" are equal in design — the same
+  // variant, neither emphasised — so the dialog puts no pressure on the answer.
+  // `data-cc-initial-focus` puts the caret on Accept when the blocking dialog
+  // opens, where declining is not offered.
   const actions = (
     <>
       <CcButton data-terms-gate-signout variant="ghost" onClick={() => signOut(getAuth())}>
         Sign out instead
       </CcButton>
       {mayDecline && (
-        <CcButton data-terms-gate-decline variant="ghost" onClick={() => setDeclined(true)}>
+        <CcButton data-terms-gate-decline variant="secondary" onClick={() => setDeclined(true)}>
           {consentText(C2.later, 'en')} &mdash; carry on under the Terms I accepted
         </CcButton>
       )}
-      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="dark" busy={busy} disabled={!ticked} onClick={accept}>
+      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="secondary" busy={busy} disabled={!ticked} onClick={accept}>
         {consentText(C2.accept, 'en')}
       </CcButton>
     </>

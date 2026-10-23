@@ -50,6 +50,12 @@ export interface ContractConfirmationInput {
   wording: string;
   /** ISO time of the acceptance as the server recorded it. */
   acceptedAt: string;
+  /**
+   * ISO time an amendment takes effect (Terms 10.2, G13/G14). Later than
+   * `acceptedAt` when it was accepted before its announced day; the mail then
+   * names that day. Ignored for a sign-up and the Additional Agreement.
+   */
+  effectiveAt?: string | null;
 }
 
 type Bi = { de: string; en: string };
@@ -120,6 +126,24 @@ export function wordingFromParagraphs(paragraphs: string[]): string {
     .join('\n\n')}\n`;
 }
 
+/**
+ * The sentence after the acceptance line of an amendment (G13/G14): the day it
+ * takes effect when that is later than the acceptance, else that it applies at
+ * once. Nothing for a sign-up or the Additional Agreement, which take effect
+ * when accepted.
+ */
+function effectiveSentence(input: ContractConfirmationInput, lang: LegalLang): string {
+  if (input.occasion !== 'amendment') return '';
+  const accepted = new Date(input.acceptedAt).getTime();
+  const effective = input.effectiveAt ? new Date(input.effectiveAt).getTime() : NaN;
+  if (Number.isFinite(effective) && effective > accepted) {
+    // The calendar day in Germany, where the announced day begins at midnight.
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(effective));
+    return consentText(CONSENT_TEXTS.confirmationMail.effectiveOn, lang).replace('{Wirksamkeitstag}', formatLegalDate(day, lang));
+  }
+  return consentText(CONSENT_TEXTS.confirmationMail.effectiveNow, lang);
+}
+
 export function buildContractConfirmationMail(input: ContractConfirmationInput): { subject: string; html: string } {
   const lang = input.language;
   const addendum = isAddendum(input.occasion);
@@ -129,6 +153,7 @@ export function buildContractConfirmationMail(input: ContractConfirmationInput):
       ? `die ${doc} von Clean-Core.io (Fassung ${input.versionLabel})`
       : `the Clean-Core.io ${doc} (version ${input.versionLabel})`;
   const { date, time } = timeOf(input.acceptedAt);
+  const effective = effectiveSentence(input, lang);
   const path = publishedWordingPath(input.occasion, input.versionId, lang);
   const version = addendum ? input.versionId : `${input.versionLabel} (${lang === 'de' ? 'Kennung' : 'identifier'} ${input.versionId})`;
 
@@ -139,6 +164,7 @@ export function buildContractConfirmationMail(input: ContractConfirmationInput):
     .replace('{Gegenstand}', subjectMatter)
     .replace('{Datum}', formatLegalDate(date, lang))
     .replace('{Uhrzeit}', time)
+    .replace('{Wirksamkeit}', effective)
     .replace('{Fassung}', version)
     .replace('{Hash}', input.sha256)
     .replace('{E-Mail}', input.recipient)
