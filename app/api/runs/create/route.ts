@@ -526,16 +526,20 @@ export async function POST(req: NextRequest) {
       })),
     ];
     // Narrative, not evidence: project worklist only, never the signed run.
+    // A gap the model sent without one of its fields is stored with null
+    // there: `readModelGaps` admits any gap with a title, and an undefined
+    // value made Firestore refuse the whole write — the run failed after its
+    // reservation, for a missing rationale.
     const narrativeGapItems = gapsList.map((g, idx) => ({
       id: `gap-${idx}`,
       title: g.title,
       category: 'Functional Gap',
-      severity: g.severity,
+      severity: g.severity ?? null,
       location: 'S/4HANA Configuration',
-      recommendation: g.rationale,
-      strategy: g.strategy,
+      recommendation: g.rationale ?? null,
+      strategy: g.strategy ?? null,
       status: 'open',
-      effort: g.complexity
+      effort: g.complexity ?? null
     }));
 
     // 5. Construct run document properties
