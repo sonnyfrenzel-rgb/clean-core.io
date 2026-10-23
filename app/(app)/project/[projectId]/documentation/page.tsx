@@ -1200,6 +1200,8 @@ export default function DocumentationPage() {
       openQuestions: openQuestionsOfProject,
       // The owner's RACI when one is saved, else the model's proposal (owner request 10.10.2026).
       raci: layer ? raciFileTable(layer, processSteps, edit) : null,
+      // 3.0.21 (T08): each model-written block of the Markdown marked where it stands, with its writer.
+      ai: exportAuthorship(),
     });
     // 3.0.17: every statement — the layer's and the glance proposal's — as a header comment line of the Markdown file,
     // and in the Word file's core properties.

@@ -1,5 +1,5 @@
 import type { DocAnchor } from '@/lib/process-documentation';
-import type { DocBlock } from '@/lib/requirements-export';
+import type { DocBlock, DocBlockAi } from '@/lib/requirements-export';
 import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
 import { wt } from '@/lib/workspace-messages';
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPage, type BusinessPageTarget } from '@/lib/documentation-business-page';
@@ -230,6 +230,19 @@ export interface PdOutlineMeta {
    * RACI on record, and the file has no RACI section.
    */
   raci?: PdRaciTable | null;
+  /**
+   * 3.0.21 (acceptance test T08): who wrote the model text the file carries, so each such block is marked where it
+   * stands — the analysis model's proposals (`analysis`) and the business layer's RACI (`sop`). Null or absent: the
+   * text is model-written all the same and is marked with provider and model "not recorded".
+   */
+  ai?: { analysis?: DocBlockAi | null; sop?: DocBlockAi | null };
+}
+
+const UNRECORDED_BLOCK_AI: DocBlockAi = { provider: null, modelId: null };
+
+/** Who wrote a proposal: the analysis model for its narrative; any other proposal's call is not recorded here. */
+function proposalAi(p: PdProposal, meta: PdOutlineMeta): DocBlockAi {
+  return p.origin === 'narrative' ? (meta.ai?.analysis ?? UNRECORDED_BLOCK_AI) : UNRECORDED_BLOCK_AI;
 }
 
 /** The RACI as a table of a file: a heading, its provenance in one line, steps × roles. */
@@ -752,13 +765,19 @@ export function groupTitle(g: PdTraceGroup): string {
 
 const withLines = (text: string, anchors: readonly DocAnchor[]) => (anchors.length ? `${text} (${linesLabel(anchors)})` : text);
 
+/** The line of a step's details that is a model's proposal, or null — the one line of them a model wrote. */
+export function stepProposalLine(step: PdStep): string | null {
+  return step.proposal ? `${AI_GENERATED_LABEL}: ${withLines(step.proposal.text, step.proposal.anchors)}` : null;
+}
+
 /** One step of the appendix's step details, as lines of text. */
 export function stepDetailLines(step: PdStep, whoActs = true): string[] {
   const out: string[] = [];
   out.push(`Technical: ${step.technicalName} · ${step.anchors.length ? linesLabel(step.anchors) : 'lines not determined'}${step.businessName ? ` · engine name: ${step.name}` : ''}`);
   if (step.actor && whoActs) out.push(`${wt('doc.whoActs')}: ${actorWord(step.actor)} — ${step.actor.basis}`);
   if (step.facts) out.push(step.facts);
-  if (step.proposal) out.push(`${AI_GENERATED_LABEL}: ${withLines(step.proposal.text, step.proposal.anchors)}`);
+  const proposed = stepProposalLine(step);
+  if (proposed) out.push(proposed);
   for (const d of step.does) out.push(withLines(d.text, d.anchors));
   for (const s of step.subSteps) out.push(`${s.depth > 1 ? '– ' : ''}${s.kind}: ${s.label}${s.anchor ? ` (${linesLabel([s.anchor])})` : ''}`);
   if (step.moreSubSteps > 0) out.push(`and ${step.moreSubSteps} more sub-steps — see the process elements below`);
@@ -864,7 +883,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
 
   b.push({ k: 'h', level: 2, text: 'At a glance' });
   for (const s of o.glance.summary) b.push({ k: 'p', text: s.text });
-  if (o.glance.proposal) b.push({ k: 'p', em: true, text: `${AI_GENERATED_LABEL}: ${withLines(o.glance.proposal.text, o.glance.proposal.anchors)}` });
+  if (o.glance.proposal) b.push({ k: 'p', em: true, text: `${AI_GENERATED_LABEL}: ${withLines(o.glance.proposal.text, o.glance.proposal.anchors)}`, ai: proposalAi(o.glance.proposal, meta) });
   b.push({ k: 'p', text: `Started by: ${o.glance.trigger.text}` });
   b.push({ k: 'table', head: o.glance.figures.map((f) => f.label), rows: [o.glance.figures.map(figureText)], muted: [] });
   b.push({ k: 'p', text: goToLine(o.glance.goTo) });
@@ -933,7 +952,9 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   if (meta.raci) {
     b.push({ k: 'h', level: 2, text: meta.raci.title });
     b.push({ k: 'p', em: true, text: meta.raci.note });
-    b.push({ k: 'table', head: meta.raci.head, rows: meta.raci.rows, muted: [] });
+    // The owner's edit is the owner's; the model's proposal carries its origin.
+    const edited = meta.raci.note.startsWith(RACI_EDITED_NOTE);
+    b.push({ k: 'table', head: meta.raci.head, rows: meta.raci.rows, muted: [], ...(edited ? {} : { ai: meta.ai?.sop ?? UNRECORDED_BLOCK_AI }) });
   }
 
   b.push({ k: 'pagebreak' });
@@ -948,7 +969,13 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
       continue;
     }
     b.push({ k: 'h', level: 4, text: `${stepRef(entry)}. ${stepName(entry)}` });
-    b.push({ k: 'ul', items: stepDetailLines(entry, o.whoActs) });
+    const items = stepDetailLines(entry, o.whoActs);
+    const proposed = stepProposalLine(entry);
+    b.push({
+      k: 'ul',
+      items,
+      ...(proposed && entry.proposal ? { ai: items.map((l) => (l === proposed ? proposalAi(entry.proposal as PdProposal, meta) : null)) } : {}),
+    });
   }
   const long = longTables(o);
   if (long.length) {
