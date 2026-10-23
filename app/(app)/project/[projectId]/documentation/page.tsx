@@ -1121,13 +1121,19 @@ export default function DocumentationPage() {
     // and already drawn in the reading worker, so the click neither waits for a
     // second layout nor freezes the page for one (owner, 12.10.2026: the CO
     // project froze the Documentation tool).
-    const [{ readingExportsOffThread }, { bpmnFileName }] = await Promise.all([
+    // With stored business names (3.0.21) the file carries them, marked with the provider and model of their
+    // receipt — a reading of its own, still off the main thread; without, the map's reading as it is.
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    const [{ readingExportsOffThread }, { bpmnFileName }, { fetchProcessNaming }] = await Promise.all([
       import('@/lib/bpmn/reading-exports-client'),
       import('@/lib/bpmn/export'),
+      import('@/lib/process-naming-client'),
     ]);
+    const naming = idStr ? await fetchProcessNaming(idStr) : null;
     const { bpmn: { xml } } = await readingExportsOffThread(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
+      ...(naming ? { naming } : {}),
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));
