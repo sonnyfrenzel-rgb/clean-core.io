@@ -44,6 +44,8 @@ export default function PortfolioPage() {
   const [selectionName, setSelectionName] = useState('');
   const [selectionError, setSelectionError] = useState('');
   const [selectionBusy, setSelectionBusy] = useState(false);
+  const [selectionUpdated, setSelectionUpdated] = useState(false);
+  const [shareVersion, setShareVersion] = useState(0);
 
   useEffect(
     () =>
@@ -120,7 +122,8 @@ export default function PortfolioPage() {
       const { selection } = await portfolioApi.createSelection(selectionName.trim(), [...pick]);
       setSelections((prev) => [selection, ...prev]);
       setSelectionName('');
-      setPick(new Set());
+      setPick(new Set(selection.projectIds));
+      setSelectionUpdated(false);
       setScope(selection.id);
     } catch (err) {
       setSelectionError(err instanceof Error ? err.message : String(err));
@@ -129,13 +132,43 @@ export default function PortfolioPage() {
     }
   };
 
+  // Choosing a named selection ticks its projects, so the owner edits the
+  // list in place; "all projects" starts from an empty pick again.
+  const chooseScope = (next: string) => {
+    setScope(next);
+    setSelectionUpdated(false);
+    setSelectionError('');
+    setPick(new Set(next === ALL ? [] : selections.find((s) => s.id === next)?.projectIds ?? []));
+  };
+
+  const updateSelection = async () => {
+    if (scope === ALL) return;
+    setSelectionBusy(true);
+    setSelectionError('');
+    setSelectionUpdated(false);
+    try {
+      const { projectIds } = await portfolioApi.updateSelection(scope, [...pick]);
+      setSelections((prev) => prev.map((s) => (s.id === scope ? { ...s, projectIds } : s)));
+      setPick(new Set(projectIds));
+      setSelectionUpdated(true);
+      setReloadKey((k) => k + 1);
+      setShareVersion((v) => v + 1);
+    } catch (err) {
+      setSelectionError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSelectionBusy(false);
+    }
+  };
+
+  const programNames = useMemo(() => Object.fromEntries(allPrograms.map((p) => [p.projectId, p.name])), [allPrograms]);
+
   const deleteSelection = async () => {
     if (scope === ALL) return;
     setSelectionError('');
     try {
       await portfolioApi.deleteSelection(scope);
       setSelections((prev) => prev.filter((s) => s.id !== scope));
-      setScope(ALL);
+      chooseScope(ALL);
     } catch (err) {
       setSelectionError(err instanceof Error ? err.message : String(err));
     }
@@ -206,7 +239,7 @@ export default function PortfolioPage() {
                     label={wt('portfolio.scope')}
                     value={scope}
                     options={scopeOptions}
-                    onChange={setScope}
+                    onChange={chooseScope}
                     data-portfolio-scope=""
                   />
                   {scope !== ALL ? (
@@ -281,7 +314,22 @@ export default function PortfolioPage() {
                       {selectionError}
                     </CcMessageStrip>
                   ) : null}
-                  <span>
+                  {selectionUpdated ? (
+                    <CcMessageStrip state="success" announce>
+                      {wt('portfolio.selectionUpdated')}
+                    </CcMessageStrip>
+                  ) : null}
+                  <span className="flex flex-wrap gap-2">
+                    {scope !== ALL ? (
+                      <CcButton
+                        busy={selectionBusy}
+                        disabled={selectionBusy || pick.size === 0}
+                        onClick={() => void updateSelection()}
+                        data-portfolio-selection-update=""
+                      >
+                        {wt('portfolio.selectionUpdate')}
+                      </CcButton>
+                    ) : null}
                     <CcButton
                       variant="primary"
                       busy={selectionBusy}
@@ -296,7 +344,7 @@ export default function PortfolioPage() {
               </CcCard>
 
               {scope !== ALL ? (
-                <SharePanel key={scope} selectionId={scope} />
+                <SharePanel key={`${scope}|${shareVersion}`} selectionId={scope} names={programNames} />
               ) : (
                 <CcCard title={wt('portfolio.shareTitle')} level={2}>
                   <p className="m-0 text-[13px] font-medium text-cc-ink-muted" data-portfolio-share-needs-selection="">

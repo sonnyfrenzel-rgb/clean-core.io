@@ -10,7 +10,8 @@ import {
 } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { BatchRefusal } from './batch-store';
-import { SELECTION_COLLECTION, readSelection } from './selection-store';
+import { PORTFOLIO_SELECTION_MAX_PROJECTS } from './limits';
+import { SELECTION_COLLECTION, idsOfStored, readSelection, readerProjectIds, selectionOfStored } from './selection-store';
 
 /**
  * The e-mail-bound read invitation to a named selection — roadmap 3.0.21 (4),
@@ -24,6 +25,14 @@ import { SELECTION_COLLECTION, readSelection } from './selection-store';
  * accepting account's own **confirmed** address compared with the invited one.
  * The accepted uid goes into `readers` on the selection document, which the
  * overview route re-reads on every request; a withdrawal takes it out again.
+ *
+ * **What an invitation opens is fixed when it is sent** (owner decision
+ * 23.10.2026): it carries `projectIds`, the selection's list at that moment,
+ * and accepting writes that list — still filtered to what is in the selection
+ * — into `readerScopes[uid]`. Editing the list afterwards
+ * (`updateSelectionProjects`) never adds to a scope; removing a project takes
+ * it out of every scope and every waiting invitation. Only
+ * `releaseSelectionProjects`, the owner's explicit act, widens them.
  *
  * Stored at `portfolio_selections/{id}/invitations/{invitationId}`, Admin SDK
  * only; no rule opens it to a browser.
@@ -45,6 +54,8 @@ export interface SelectionInvitation {
   acceptedBy: { uid: string; email: string } | null;
   acceptedAt: string | null;
   revokedAt: string | null;
+  /** The selection's project ids when the invitation was sent (or last released). */
+  projectIds: string[];
 }
 
 function invitationsRef(db: AdminDb, selectionId: string) {
@@ -65,7 +76,7 @@ export async function createSelectionInvitation(
   selectionId: string,
   body: { email?: unknown; expiresInDays?: unknown } | null,
 ): Promise<SelectionInvitation> {
-  await ownSelection(db, owner.uid, selectionId);
+  const selection = await ownSelection(db, owner.uid, selectionId);
   const email = normaliseInvitedEmail(body?.email);
   if (!email) throw new BatchRefusal('Enter one email address to invite.', 400, 'bad-email');
   if (email === normaliseInvitedEmail(owner.email)) {
@@ -83,6 +94,7 @@ export async function createSelectionInvitation(
     acceptedBy: null,
     acceptedAt: null,
     revokedAt: null,
+    projectIds: selection.projectIds,
   };
   const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
   const ref = invitationsRef(db, selectionId).doc(invitation.id);
@@ -91,6 +103,8 @@ export async function createSelectionInvitation(
     if (!current.exists || (current.data() || {}).ownerId !== owner.uid) {
       throw new BatchRefusal('No such selection.', 404, 'selection-not-found');
     }
+    // The snapshot is the list as the transaction reads it, not as it was a moment earlier.
+    invitation.projectIds = idsOfStored((current.data() || {}).projectIds);
     const existing = await tx.get(ref.parent.where('expiresAt', '>', invitedAt.toISOString()));
     const open = existing.docs.filter((d: { data: () => Record<string, unknown> }) =>
       isOpen(d.data() as { status: InvitationStatus; expiresAt: string }, invitedAt),
@@ -120,28 +134,120 @@ export async function withdrawSelectionInvitation(
   const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
   const ref = invitationsRef(db, selectionId).doc(invitationId);
   await db.runTransaction(async (tx: Transaction) => {
-    const snap = await tx.get(ref);
+    const [snap, sel] = await Promise.all([tx.get(ref), tx.get(selectionRef)]);
     if (!snap.exists) throw new BatchRefusal('No such invitation.', 404, 'invitation-not-found');
     const data = (snap.data() || {}) as Partial<SelectionInvitation>;
     tx.update(ref, { status: 'revoked', revokedAt: new Date().toISOString() });
     const reader = data.status === 'accepted' ? data.acceptedBy?.uid : null;
-    if (reader) tx.update(selectionRef, { readers: FieldValue.arrayRemove(reader) });
+    if (reader) {
+      const { readerScopes } = selectionOfStored(selectionId, sel.exists ? sel.data() || {} : {});
+      delete readerScopes[reader];
+      tx.update(selectionRef, { readers: FieldValue.arrayRemove(reader), readerScopes });
+    }
   });
 }
 
-/** The owner's list: who is still invited, who reads. Addresses only for the owner. */
+/** A waiting invitation's snapshot, still in the selection (none stored: the list as it stands). */
+function waitingProjectIds(invitation: Partial<SelectionInvitation>, projectIds: string[]): string[] {
+  if (!Array.isArray(invitation.projectIds)) return projectIds;
+  const snapshot = new Set(idsOfStored(invitation.projectIds));
+  return projectIds.filter((id) => snapshot.has(id));
+}
+
+/**
+ * The owner's list: who is still invited, who reads, and which projects each
+ * of them sees. `unreleased` are the projects of the selection that at least
+ * one of them does not see — added after their invitation. Addresses only for
+ * the owner.
+ */
 export async function selectionSharing(db: AdminDb, uid: string, selectionId: string, now: Date = new Date()) {
-  await ownSelection(db, uid, selectionId);
+  const selection = await ownSelection(db, uid, selectionId);
   const snap = await invitationsRef(db, selectionId).get();
   const all = snap.docs.map((d: { id: string; data: () => Record<string, unknown> }) => ({ ...(d.data() as unknown as SelectionInvitation), id: d.id }));
-  return {
-    waiting: all
-      .filter((i: SelectionInvitation) => effectiveStatus(i, now) === 'pending')
-      .map((i: SelectionInvitation) => ({ id: i.id, email: i.email, expiresAt: i.expiresAt })),
-    readers: all
-      .filter((i: SelectionInvitation) => i.status === 'accepted' && i.acceptedBy)
-      .map((i: SelectionInvitation) => ({ id: i.id, email: i.acceptedBy!.email, acceptedAt: i.acceptedAt })),
-  };
+  const waiting = all
+    .filter((i: SelectionInvitation) => effectiveStatus(i, now) === 'pending')
+    .map((i: SelectionInvitation) => ({ id: i.id, email: i.email, expiresAt: i.expiresAt, projectIds: waitingProjectIds(i, selection.projectIds) }));
+  const readers = all
+    .filter((i: SelectionInvitation) => i.status === 'accepted' && i.acceptedBy && selection.readers.includes(i.acceptedBy.uid))
+    .map((i: SelectionInvitation) => ({
+      id: i.id,
+      email: i.acceptedBy!.email,
+      acceptedAt: i.acceptedAt,
+      projectIds: readerProjectIds(selection, i.acceptedBy!.uid),
+    }));
+  const unreleased = selection.projectIds.filter((id) => [...waiting, ...readers].some((x) => !x.projectIds.includes(id)));
+  return { projectIds: selection.projectIds, waiting, readers, unreleased };
+}
+
+type InvitationDoc = { id: string; ref: unknown; data: () => Record<string, unknown> };
+
+/**
+ * Replace the owner's list of projects in a selection — the owner's own
+ * projects only; an id that is not theirs is left out.
+ *
+ * Nothing is added to what a reader or a waiting invitation sees: a project
+ * added here stays invisible to them until `releaseSelectionProjects`. A
+ * project taken out leaves every reader's scope and every invitation's
+ * snapshot in the same transaction, so it is gone for readers at once and
+ * putting it back does not return it to them. A reader accepted before scopes
+ * existed gets the list as it stood written down first.
+ */
+export async function updateSelectionProjects(db: AdminDb, uid: string, selectionId: string, raw: unknown): Promise<{ projectIds: string[] }> {
+  await ownSelection(db, uid, selectionId);
+  const list = Array.isArray((raw as { projectIds?: unknown } | null)?.projectIds) ? ((raw as { projectIds: unknown[] }).projectIds) : [];
+  const wanted = [...new Set(list.filter((x): x is string => typeof x === 'string' && isFirestoreId(x)))];
+  if (wanted.length === 0) throw new BatchRefusal('Choose at least one project.', 400, 'selection-empty');
+  if (wanted.length > PORTFOLIO_SELECTION_MAX_PROJECTS) {
+    throw new BatchRefusal(`A selection holds at most ${PORTFOLIO_SELECTION_MAX_PROJECTS} projects.`, 400, 'selection-too-large');
+  }
+  const snaps = await db.getAll(...wanted.map((id) => db.collection('projects').doc(id)), { fieldMask: ['userId'] });
+  const own = new Set(
+    snaps
+      .filter((s: { exists: boolean; data: () => Record<string, unknown> | undefined }) => s.exists && (s.data() || {}).userId === uid)
+      .map((s: { id: string }) => s.id),
+  );
+  const projectIds = wanted.filter((id) => own.has(id));
+  if (projectIds.length === 0) throw new BatchRefusal('None of these projects is yours.', 400, 'selection-empty');
+  const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
+  await db.runTransaction(async (tx: Transaction) => {
+    const [sel, invitations] = await Promise.all([tx.get(selectionRef), tx.get(invitationsRef(db, selectionId))]);
+    if (!sel.exists || (sel.data() || {}).ownerId !== uid) throw new BatchRefusal('No such selection.', 404, 'selection-not-found');
+    const before = selectionOfStored(selectionId, sel.data() || {});
+    const kept = new Set(projectIds);
+    const readerScopes: Record<string, string[]> = {};
+    for (const reader of before.readers) readerScopes[reader] = readerProjectIds(before, reader).filter((id) => kept.has(id));
+    for (const doc of invitations.docs as InvitationDoc[]) {
+      const data = doc.data() as Partial<SelectionInvitation>;
+      if (data.status === 'revoked') continue;
+      const snapshot = waitingProjectIds(data, before.projectIds).filter((id) => kept.has(id));
+      tx.update(doc.ref as never, { projectIds: snapshot });
+    }
+    tx.update(selectionRef, { projectIds, readerScopes });
+  });
+  return { projectIds };
+}
+
+/**
+ * The owner's explicit act: every current reader and every waiting
+ * invitation of this selection now sees all its projects.
+ */
+export async function releaseSelectionProjects(db: AdminDb, uid: string, selectionId: string): Promise<{ projectIds: string[] }> {
+  await ownSelection(db, uid, selectionId);
+  const selectionRef = db.collection(SELECTION_COLLECTION).doc(selectionId);
+  return db.runTransaction(async (tx: Transaction) => {
+    const [sel, invitations] = await Promise.all([tx.get(selectionRef), tx.get(invitationsRef(db, selectionId))]);
+    if (!sel.exists || (sel.data() || {}).ownerId !== uid) throw new BatchRefusal('No such selection.', 404, 'selection-not-found');
+    const selection = selectionOfStored(selectionId, sel.data() || {});
+    const readerScopes: Record<string, string[]> = {};
+    for (const reader of selection.readers) readerScopes[reader] = [...selection.projectIds];
+    for (const doc of invitations.docs as InvitationDoc[]) {
+      const data = doc.data() as Partial<SelectionInvitation>;
+      if (data.status === 'revoked') continue;
+      tx.update(doc.ref as never, { projectIds: [...selection.projectIds] });
+    }
+    tx.update(selectionRef, { readerScopes });
+    return { projectIds: selection.projectIds };
+  });
 }
 
 /** The one answer for every way a link does not open. */
@@ -169,12 +275,23 @@ export async function acceptSelectionInvitation(
     if (invitation.selectionId !== selectionId) return null;
     if (normaliseInvitedEmail(invitation.email) !== account.email) return null;
     if (typeof invitation.expiresAt !== 'string' || typeof invitation.status !== 'string') return null;
-    const name = String((sel.data() || {}).name ?? '');
+    const selection = selectionOfStored(selectionId, sel.data() || {});
+    const name = selection.name;
     const status = effectiveStatus(invitation as SelectionInvitation);
     if (status === 'accepted') return invitation.acceptedBy?.uid === account.uid ? { name, already: true } : null;
     if (status !== 'pending') return null;
+    // The scope is the invitation's snapshot, still in the selection. An
+    // invitation sent before snapshots existed carries none; the list could not
+    // be edited then, so the list as it stands is that snapshot.
+    const current = new Set(selection.projectIds);
+    const snapshot = Array.isArray(invitation.projectIds) ? idsOfStored(invitation.projectIds) : selection.projectIds;
+    const already = selection.readers.includes(account.uid) ? readerProjectIds(selection, account.uid) : [];
+    const readerScopes = {
+      ...selection.readerScopes,
+      [account.uid]: [...new Set([...already, ...snapshot.filter((id) => current.has(id))])],
+    };
     tx.update(ref, { status: 'accepted', acceptedBy: { uid: account.uid, email: account.email }, acceptedAt: new Date().toISOString() });
-    tx.update(selectionRef, { readers: FieldValue.arrayUnion(account.uid) });
+    tx.update(selectionRef, { readers: FieldValue.arrayUnion(account.uid), readerScopes });
     return { name, already: false };
   });
 }

@@ -111,9 +111,15 @@ export const PORTFOLIO_MESSAGES = {
   'portfolio.shareReaders': 'Can read',
   'portfolio.shareWithdraw': 'Withdraw',
   'portfolio.shareSent': 'The invitation was sent.',
+  'portfolio.shareSnapshot': 'An invitation opens the projects in this selection as it is now. A project you add later becomes visible to readers only once you share it separately; a project you remove is gone for them at once.',
+  'portfolio.shareUnreleasedTitle': 'Added later — not visible to every reader',
+  'portfolio.shareRelease': 'Share the added projects with current readers',
+  'portfolio.shareReleased': 'Current readers and waiting invitations now see every project in this selection.',
+  'portfolio.selectionUpdate': 'Save the ticked projects to this selection',
+  'portfolio.selectionUpdated': 'The selection was saved. A project you added is not visible to readers until you share it with them.',
   'portfolio.shareNeedsSelection': 'Save a named selection first: an invitation opens a fixed list of projects, never “all my projects”.',
   'portfolio.sharedTitle': 'Portfolio shared with you',
-  'portfolio.sharedLead': 'Read only. The overview is computed when you open it, from the projects the owner put into this selection.',
+  'portfolio.sharedLead': 'Read only. The overview is computed when you open it, from the projects of this selection the owner shared with you.',
   'portfolio.invitationTitle': 'Invitation to read a portfolio',
   'portfolio.invitationAccept': 'Open the portfolio',
   'portfolio.invitationOpening': 'Opening the invitation…',
@@ -207,6 +213,11 @@ export function portfolioObjectsAssigned(objects: number, programs: number): str
 
 export function portfolioWaitingSince(expires: string): string {
   return `expires ${expires}`;
+}
+
+/** What one reader or waiting invitation of a selection sees. */
+export function portfolioReaderSees(seen: number, total: number): string {
+  return seen === total ? `sees all ${total} project${total === 1 ? '' : 's'}` : `sees ${seen} of ${total} projects`;
 }
 
 export type PortfolioNotDeterminedKey =

@@ -14,9 +14,10 @@ import { BatchRefusal } from './batch-store';
  * Named selections and the read of the overview — roadmap 3.0.21 (2) and (4).
  *
  *   portfolio_selections/{selectionId}
- *     ownerId, name, projectIds (a list of ids, nothing written onto the
- *     projects or their runs), createdAt, readers (uids that accepted an
- *     invitation)
+ *     ownerId, name, projectIds (a list of ids the owner edits, nothing
+ *     written onto the projects or their runs), createdAt, readers (uids that
+ *     accepted an invitation), readerScopes ({uid: project ids} — what each
+ *     reader may see)
  *   portfolio_selections/{selectionId}/invitations/{invitationId}
  *     the e-mail-bound read invitation (`lib/portfolio/selection-invitations.ts`)
  *
@@ -31,6 +32,15 @@ import { BatchRefusal } from './batch-store';
  * says sharing works "by the same e-mail-bound read invitation as a project";
  * the binding, the confirmation, the expiry, the ceiling and the withdrawal
  * are the same — what it opens is the overview (assumption, see the report).
+ *
+ * **Sharing never extends silently** (owner decision 23.10.2026). An
+ * invitation carries the project ids of the selection at the moment it was
+ * sent; accepting copies them into `readerScopes[uid]`, and a reader's
+ * overview reads only those still in the selection (`readerProjectIds`). A
+ * project the owner adds later is in no reader's scope until the owner
+ * releases it (`releaseSelectionProjects`) or sends a new invitation; a
+ * project the owner removes leaves every scope at once, so adding it back
+ * does not bring it back to a reader either.
  */
 
 type AdminDb = Firestore;
@@ -44,18 +54,51 @@ export interface Selection {
   projectIds: string[];
   createdAt: number;
   readers: string[];
+  /** Per reader uid: the project ids released to that reader. */
+  readerScopes: Record<string, string[]>;
+}
+
+/** The distinct string ids of a stored list. */
+export function idsOfStored(v: unknown): string[] {
+  return Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string'))] : [];
+}
+
+function scopesOfStored(v: unknown): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const [uid, ids] of Object.entries(v as Record<string, unknown>)) {
+    if (Array.isArray(ids)) out[uid] = idsOfStored(ids);
+  }
+  return out;
 }
 
 export function selectionOfStored(id: string, data: Record<string, unknown>): Selection {
-  const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
   return {
     id,
     ownerId: typeof data.ownerId === 'string' ? data.ownerId : '',
     name: typeof data.name === 'string' ? data.name : '',
-    projectIds: ids(data.projectIds),
+    projectIds: idsOfStored(data.projectIds),
     createdAt: typeof data.createdAt === 'number' ? data.createdAt : 0,
-    readers: ids(data.readers),
+    readers: idsOfStored(data.readers),
+    readerScopes: scopesOfStored(data.readerScopes),
   };
+}
+
+/**
+ * The project ids a caller's overview of this selection reads: the owner's
+ * whole list; for a reader, the ids released to them that are still in the
+ * selection; for anybody else, none. A reader accepted before scopes existed
+ * has none stored — their scope is the list as it stood, which no route could
+ * change then; the first edit of the list writes it down
+ * (`updateSelectionProjects`).
+ */
+export function readerProjectIds(selection: Pick<Selection, 'ownerId' | 'projectIds' | 'readers' | 'readerScopes'>, uid: string): string[] {
+  if (selection.ownerId === uid) return selection.projectIds;
+  if (!selection.readers.includes(uid)) return [];
+  const scope = selection.readerScopes[uid];
+  if (!scope) return selection.projectIds;
+  const released = new Set(scope);
+  return selection.projectIds.filter((id) => released.has(id));
 }
 
 /** Owner, or a reader who accepted an invitation. */
@@ -104,7 +147,14 @@ export async function createSelection(db: AdminDb, uid: string, body: { name: st
     .map((s: { id: string }) => s.id);
   if (own.length === 0) throw new BatchRefusal('None of these projects is yours.', 400, 'selection-empty');
   const ref = db.collection(SELECTION_COLLECTION).doc();
-  const selection = { ownerId: uid, name: body.name, projectIds: own, createdAt: Date.now(), readers: [] as string[] };
+  const selection = {
+    ownerId: uid,
+    name: body.name,
+    projectIds: own,
+    createdAt: Date.now(),
+    readers: [] as string[],
+    readerScopes: {} as Record<string, string[]>,
+  };
   await ref.create(selection);
   return { id: ref.id, ...selection };
 }
@@ -181,9 +231,12 @@ export async function overviewOfAll(db: AdminDb, uid: string): Promise<OverviewA
   return { view, openable, truncated };
 }
 
-/** The overview of one selection, for its owner or an accepted reader. */
+/**
+ * The overview of one selection, for its owner or an accepted reader — a
+ * reader's from the projects released to them only (`readerProjectIds`).
+ */
 export async function overviewOfSelection(db: AdminDb, selection: Selection, viewerUid: string): Promise<OverviewAnswer> {
-  const ids = selection.projectIds.filter((id) => isFirestoreId(id));
+  const ids = readerProjectIds(selection, viewerUid).filter((id) => isFirestoreId(id));
   const { view, openable } = await overviewOf(
     db,
     ids.slice(0, PORTFOLIO_VIEW_MAX_PROJECTS).map((id) => ({ id })),
