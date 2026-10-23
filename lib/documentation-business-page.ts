@@ -324,7 +324,9 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
 function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['counts']): EntryQuestion[] {
   const slot = (key: string) => inShort.lines.find((l) => l.key === key)?.text ?? null;
   const strip = (text: string | null) => (text ?? '').replace(/^It /, '').replace(/\.$/, '');
-  const purpose = slot('purpose') ?? '';
+  // The purpose line on what it reads and changes, not the one its names support (`aim`, 3.0.20/3.0.21): only
+  // that line says how the program selects.
+  const purpose = inShort.lines.find((l) => l.key === 'purpose' && !l.aim)?.text ?? '';
   const selection = /selected by ([^.;]+)/.exec(purpose)?.[1] ?? null;
   // What a run reads — not the reads a constant gate locks away (3.0.13), which share the slot.
   const reads = strip(inShort.lines.find((l) => l.key === 'reads' && /^It reads\b/.test(l.text))?.text ?? null);
