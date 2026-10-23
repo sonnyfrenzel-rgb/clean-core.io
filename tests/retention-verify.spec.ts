@@ -66,6 +66,12 @@ const RAW_TTLS = [
     name: 'projects/example-project/databases/example-db/collectionGroups/rate_limits/fields/expiresAt',
     ttlConfig: { state: 'ACTIVE' },
   },
+  // The proof-log policies (3.0.21, T05/T06).
+  ...['consent_events', 'byok_agreement_events', 'erasure_notes', 'email_events'].map((c) => ({
+    indexConfig: { usesAncestorConfig: true },
+    name: `projects/example-project/databases/example-db/collectionGroups/${c}/fields/expiresAt`,
+    ttlConfig: { state: 'ACTIVE' },
+  })),
 ];
 
 const RAW_DATABASE = {
@@ -112,6 +118,7 @@ test.describe('the expected values come out of the document', () => {
     expect(c.ceilingDays, 'the ceiling the privacy policy quotes to users').toBe(30);
     expect(c.pitrWindowDays).toBe(7);
     expect(c.ttl).toEqual({ collectionGroup: 'rate_limits', field: 'expiresAt' });
+    expect(c.ttlRows.map((r) => r.collectionGroup).sort()).toEqual(['byok_agreement_events', 'consent_events', 'email_events', 'erasure_notes']);
     expect(c.logBuckets).toEqual({ defaultDays: 30, requiredDays: 400 });
   });
 
@@ -171,7 +178,7 @@ test.describe('the gcloud responses are read, not scraped', () => {
   });
 
   test('a TTL policy is read down to its state', () => {
-    expect(readTtlFacts(RAW_TTLS)).toEqual([{ collectionGroup: 'rate_limits', field: 'expiresAt', state: 'ACTIVE' }]);
+    expect(readTtlFacts(RAW_TTLS.slice(0, 1))).toEqual([{ collectionGroup: 'rate_limits', field: 'expiresAt', state: 'ACTIVE' }]);
     expect(readTtlFacts([{ name: 'a/b/collectionGroups/x/fields/y' }])[0].state).toBe('UNKNOWN');
   });
 
@@ -256,6 +263,14 @@ test.describe('production and the document, side by side', () => {
     const elsewhere = agreeingFacts();
     elsewhere.ttls = [{ collectionGroup: 'rate_limits', field: 'updatedAt', state: 'ACTIVE' }];
     expect(verdict(elsewhere, 'TTL policy').ok).toBe(false);
+  });
+
+  test('a missing proof-log TTL policy fails and names the collection', () => {
+    const facts = agreeingFacts();
+    facts.ttls = facts.ttls.filter((t) => t.collectionGroup !== 'consent_events');
+    const v = verdict(facts, 'proof-log TTL policy: consent_events');
+    expect(v.ok).toBe(false);
+    expect(v.detail).toContain('deletion date');
   });
 
   test('the two log buckets are never read as one', () => {

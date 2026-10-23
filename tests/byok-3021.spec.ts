@@ -122,8 +122,10 @@ test.describe('an Anthropic key is stored only with the Additional Agreement acc
     const admin = read('lib/firebase-admin.ts');
     expect(admin).toContain("export const BYOK_AGREEMENT_EVENTS = 'byok_agreement_events';");
     expect(admin).toContain('contentSha256: byokAddendumSha256(event.version, event.language),');
-    // Purged with the account, like the consent records.
-    expect(admin).toContain('await deleteCollectionByUid(BYOK_AGREEMENT_EVENTS);');
+    // Since T05/T06 (3.0.21) kept after an erasure, pseudonymised, like the consent
+    // records (`lib/proof-log-erasure.ts`); deleted only when no keyed hash can be made.
+    expect(read('lib/proof-log.ts')).toContain("export const PROOF_LOG_COLLECTIONS = ['consent_events', 'byok_agreement_events'] as const;");
+    expect(admin).toContain('await retainProofsOfErasedAccount(');
     // No client rule names the proof log: Firestore refuses every client access by default.
     expect(read('firestore.rules')).not.toContain('byok_agreement_events');
   });

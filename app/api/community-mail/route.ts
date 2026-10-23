@@ -9,6 +9,7 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { normaliseEmail, suppressionId } from '@/lib/unsubscribe-token';
+import { suppressionKeyOf } from '@/lib/proof-log-erasure';
 import { COMMUNITY_MAIL_FIELD } from '@/lib/community-mail';
 
 /**
@@ -90,6 +91,8 @@ export async function POST(req: NextRequest) {
           .map(normaliseEmail),
       );
       for (const address of addresses) {
+        // The keyed entry (since 3.0.21) and a legacy one, whichever exists.
+        batch.delete(db.collection('email_suppressions').doc(suppressionKeyOf(address)));
         batch.delete(db.collection('email_suppressions').doc(suppressionId(address)));
       }
     }

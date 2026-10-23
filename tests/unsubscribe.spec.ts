@@ -1,11 +1,13 @@
 import { test, expect } from './helpers/test';
 import { createUnsubscribeToken } from '../lib/unsubscribe-token';
 import { adminDocExists } from './helpers/admin-seed';
-import { createHash } from 'crypto';
+import { accountHashOf } from '../lib/pseudonym';
 
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-1234567890';
 
-const suppressionId = (email: string) => createHash('sha256').update(email.toLowerCase()).digest('hex');
+// Since 3.0.21 an opt-out is stored under the keyed hash of the address only
+// (privacy policy section 2; `lib/pseudonym.ts`), with no address in the entry.
+const suppressionId = (email: string) => accountHashOf(email);
 
 /**
  * RFC 8058 one-click unsubscribe. Gmail and Yahoo require this of bulk senders and
