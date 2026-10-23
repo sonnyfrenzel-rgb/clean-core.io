@@ -449,8 +449,8 @@ test.describe('the daily budget (codex code-mail-04)', () => {
     const fiveBoxes = ['a', 'b', 'c', 'd', 'e'].map((l) => `${l} seed-${l}@example.com`).join('\n');
     const r = runCli(['--send', '--run-id', 'spec-big'], { MAIL_SEED_CONFIRM: 'spec-big' }, fiveBoxes);
     expect(r.status, r.out).toBe(1);
-    // 22 types since the contract confirmations C5 (3.0.21, T03), five mailboxes each.
-    expect(r.out).toMatch(/seed budget exceeded: 110 mail\(s\) planned/);
+    // 24 types since the withdrawal receipt C13 (3.0.21), five mailboxes each.
+    expect(r.out).toMatch(/seed budget exceeded: 120 mail\(s\) planned/);
     expect(r.calls, 'an oversized plan reached the network').toEqual([]);
   });
 

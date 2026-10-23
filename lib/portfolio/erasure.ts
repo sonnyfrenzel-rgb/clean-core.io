@@ -6,7 +6,8 @@ import type { FieldValue, Firestore } from 'firebase-admin/firestore';
  *
  *   - the account's batches, with every queued source still in them;
  *   - the account's named selections, with their invitations;
- *   - the account's uid in `readers` of selections other owners shared with it.
+ *   - the account's uid in `readers` of selections other owners shared with it,
+ *     and its entry in their `readerScopes`.
  *
  * Invitations *addressed to* the account in other owners' selections are
  * already taken by the erasure's collection-group sweep of `invitations` by
@@ -34,7 +35,13 @@ export async function erasePortfolioOf(db: Firestore, fieldValue: typeof FieldVa
   let snapshot = await shared.get();
   while (snapshot.size > 0) {
     const batch = db.batch();
-    snapshot.docs.forEach((doc) => batch.update(doc.ref, { readers: fieldValue.arrayRemove(uid) }));
+    snapshot.docs.forEach((doc) => {
+      // The account's scope goes with its uid (`readerScopes`, lib/portfolio/selection-store.ts).
+      const stored = (doc.data() || {}).readerScopes;
+      const readerScopes = stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...(stored as Record<string, unknown>) } : {};
+      delete readerScopes[uid];
+      batch.update(doc.ref, { readers: fieldValue.arrayRemove(uid), readerScopes });
+    });
     await batch.commit();
     snapshot = await shared.get();
   }

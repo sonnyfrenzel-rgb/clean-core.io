@@ -22,6 +22,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
+import { END_CONTRACT_HREF, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE } from '@/lib/contract-withdrawal';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
@@ -487,6 +488,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             <Link href="/impressum" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Legal Notice</Link>
             <Link href="/datenschutz" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Privacy Policy</Link>
             <Link href="/terms" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Terms</Link>
+            {/* C13 (Terms section 13): signed in only — it leads to the account's own deletion. */}
+            {profile ? (
+              <Link href={END_CONTRACT_HREF} className="text-cc-ink-muted hover:text-cc-ink hover:underline" data-footer-end-contract="">
+                {END_CONTRACT_LABEL} · <span lang="de">{END_CONTRACT_LABEL_DE}</span>
+              </Link>
+            ) : null}
             <span aria-hidden={true}>·</span>
             <span className="font-cc-mono">Clean-Core.io {APP_VERSION}</span>
           </div>
@@ -495,6 +502,14 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
         <footer className="cc-no-print border-t border-cc-line bg-cc-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <SiteFooter />
+            {/* C13 (Terms section 13): signed in only — it leads to the account's own deletion. */}
+            {profile ? (
+              <p className="m-0 mt-8 text-center text-xs font-medium text-cc-ink-muted">
+                <Link href={END_CONTRACT_HREF} className="underline-offset-4 hover:text-cc-ink hover:underline" data-footer-end-contract="">
+                  {END_CONTRACT_LABEL} · <span lang="de">{END_CONTRACT_LABEL_DE}</span>
+                </Link>
+              </p>
+            ) : null}
             <div className="mt-8 pt-6 border-t border-cc-line text-center">
               <SapTrademarkNotice className="max-w-3xl mx-auto" />
             </div>

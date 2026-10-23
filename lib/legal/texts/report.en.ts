@@ -15,7 +15,7 @@ Exception: if your report concerns depictions of the sexual abuse of children or
 
 Please send us no copies, screenshots or files of the content — only tell us where it is. For depictions of child sexual abuse, passing them on is itself a criminal offence. You can also report such content directly: to the police (the online police station of your federal state), to jugendschutz.net or to the Internet-Beschwerdestelle (internet-beschwerdestelle.de){{reportingBodiesLinks}}.
 
-What happens next: if you gave a contact address, we confirm receipt. A person examines every report promptly and diligently, without automated means, and informs you and the account concerned of the decision; the account concerned is told the measure, the facts it rests on, the law or rule breached and how to challenge the decision. Where a criminal offence is suspected, we block access to the content immediately, look at it no further than needed to block it, and inform the law-enforcement authorities.
+What happens next: if you gave a contact address, we confirm receipt. A person examines the report — content on Clean-Core.io is not moderated by automated means — and we tell you and the account concerned the decision and, where possible, the reasons. Where a criminal offence is suspected, we block access to the content and inform the law-enforcement authorities.
 
 This procedure is a voluntary standard of the operator (Terms of Service, section 7); further statutory rights remain unaffected{{t07ReportingProcess}}. How we process the information in your report is set out in the Privacy Policy (section 2).
 `;

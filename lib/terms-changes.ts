@@ -29,8 +29,9 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
           'requirements, so there is no statutory right of withdrawal (section 13). Community mail and surveys ' +
           'are not part of the contract: you switch them on, if you want them, after signing up, and doing so ' +
           'changes nothing about access, quota or functions. You can end the contract at any time by deleting ' +
-          'your account, and you can withdraw any consent — community mail, surveys, your motivation note — ' +
-          'whenever you like.',
+          'your account — offered voluntarily as "Withdraw from / end the contract" in Settings and the footer, ' +
+          'with a receipt by e-mail — and you can withdraw any consent — community mail, surveys, your ' +
+          'motivation note — whenever you like.',
       },
       {
         lead: 'Your own Claude key.',
@@ -52,8 +53,8 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
         lead: 'Reporting illegal content.',
         text:
           'Anyone can report content they consider illegal to info@clean-core.io; clean-core.io/report says what ' +
-          'a report should contain. A person examines every report, and both sides get a reasoned decision. Do ' +
-          'not send copies of the content, only where it is (section 7).',
+          'a report should contain. A person examines it, and both sides are told the decision and, where ' +
+          'possible, the reasons. Do not send copies of the content, only where it is (section 7).',
       },
       {
         lead: 'Connecting an SAP system.',

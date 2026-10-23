@@ -62,6 +62,7 @@ import {
 import { invitationLinkPath } from '../../lib/invitations';
 import { buildPortfolioInvitationEmail, PORTFOLIO_INVITATION_SUBJECT, portfolioInvitationLinkPath } from '../../lib/portfolio/invitation-email';
 import { BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
+import { buildWithdrawalReceiptMail, withdrawalReceiptSubject } from '../../lib/withdrawal-receipt-email';
 import { acceptedWording, buildContractConfirmationMail, type ConfirmationOccasion } from '../../lib/contract-confirmation-email';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
@@ -400,6 +401,34 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: BYOK_AGREEMENT_ENDED_SUBJECT, html, text: htmlToText(html) };
     },
   },
+  // C13 (Terms section 13): the receipt of a declaration to withdraw from /
+  // end the contract, in the language of the accepted Terms.
+  ...(
+    [
+      ['withdrawal-receipt', 'en'],
+      ['withdrawal-receipt-de', 'de'],
+    ] as Array<[string, 'en' | 'de']>
+  ).map(
+    ([type, language]): SeedMailType => ({
+      type,
+      audience: 'nutzer',
+      source: 'lib/withdrawal-receipt-mail.ts',
+      template: 'lib/withdrawal-receipt-email.ts',
+      build: (ctx) => {
+        const subject = withdrawalReceiptSubject(language);
+        const html = wrapEmailDocument(
+          buildWithdrawalReceiptMail({
+            language,
+            recipient: escapeHtml(ctx.recipient.address),
+            firstName: escapeHtml(SEED_NAME.split(' ')[0]),
+            receivedAt: ctx.now.toISOString(),
+          }),
+          subject,
+        );
+        return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject, html, text: htmlToText(html) };
+      },
+    }),
+  ),
   {
     type: 'address-confirmation',
     audience: 'nutzer',

@@ -250,7 +250,7 @@ test.describe('the access line tracks the rule it describes', () => {
     // because the Admin SDK bypasses these rules by design and "nobody can read
     // it" would be false.
     expect(prose('lib/legal/texts/privacy.en.ts')).toContain(
-      // Fassung 1.1 (3.0.21, the lawyer's wording) bounds the act as well: only as far as needed, and on record.
+      // The G-series wording of 3.0.21: the access also goes no further than needed.
       'Reaching a project then is a deliberate act by the operator on the server, not a permission that stands open; it goes only as far as needed to examine and block the content, and it leaves a record',
     );
   });

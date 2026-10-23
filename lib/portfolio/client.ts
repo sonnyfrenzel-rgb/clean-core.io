@@ -61,6 +61,15 @@ export interface SelectionSummary {
   readers: number;
 }
 
+/** Who a selection is shared with, and which of its projects each of them sees. */
+export interface SelectionSharing {
+  projectIds: string[];
+  waiting: { id: string; email: string; expiresAt: string; projectIds: string[] }[];
+  readers: { id: string; email: string; acceptedAt: string | null; projectIds: string[] }[];
+  /** Projects of the selection that at least one of them does not see. */
+  unreleased: string[];
+}
+
 export const portfolioApi = {
   access: () => call<PortfolioAccess>('/api/portfolio/access'),
   batches: () => call<{ batches: BatchState[] }>('/api/portfolio/batches'),
@@ -85,10 +94,11 @@ export const portfolioApi = {
   createSelection: (name: string, projectIds: string[]) =>
     call<{ selection: SelectionSummary }>('/api/portfolio/selections', { method: 'POST', body: JSON.stringify({ name, projectIds }) }),
   deleteSelection: (id: string) => call<{ deleted: boolean }>(`/api/portfolio/selections/${id}`, { method: 'DELETE' }),
-  sharing: (id: string) =>
-    call<{ waiting: { id: string; email: string; expiresAt: string }[]; readers: { id: string; email: string; acceptedAt: string | null }[] }>(
-      `/api/portfolio/selections/${id}/invitations`,
-    ),
+  updateSelection: (id: string, projectIds: string[]) =>
+    call<{ projectIds: string[] }>(`/api/portfolio/selections/${id}`, { method: 'PATCH', body: JSON.stringify({ projectIds }) }),
+  releaseSelection: (id: string) =>
+    call<{ projectIds: string[] }>(`/api/portfolio/selections/${id}`, { method: 'PATCH', body: JSON.stringify({ action: 'release' }) }),
+  sharing: (id: string) => call<SelectionSharing>(`/api/portfolio/selections/${id}/invitations`),
   invite: (id: string, email: string) =>
     call<{ invitation: { id: string; email: string; expiresAt: string } }>(`/api/portfolio/selections/${id}/invitations`, {
       method: 'POST',

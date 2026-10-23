@@ -6,19 +6,25 @@ import CcCard from '@/components/cc/Card';
 import CcField from '@/components/cc/Field';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { portfolioApi } from '@/lib/portfolio/client';
-import { wt, portfolioWaitingSince } from '@/lib/workspace-messages';
+import { wt, portfolioReaderSees, portfolioWaitingSince } from '@/lib/workspace-messages';
 import { formatTextDate } from '@/lib/format';
 
 /**
  * Sharing a named selection — roadmap 3.0.21 (4): the e-mail-bound read
  * invitation, as for a project. The dialog says what is handed over and what
  * is not (the overview, not the source code) before anything is sent.
+ *
+ * Sharing never extends silently (owner decision 23.10.2026): each reader and
+ * each waiting invitation is listed with how many of the selection's projects
+ * it sees, the projects added later are named, and only the owner's explicit
+ * "share the added projects" releases them.
  */
-export default function SharePanel({ selectionId }: { selectionId: string }) {
+export default function SharePanel({ selectionId, names }: { selectionId: string; names: Record<string, string> }) {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const [released, setReleased] = useState(false);
   const [list, setList] = useState<Awaited<ReturnType<typeof portfolioApi.sharing>> | null>(null);
 
   const reload = useCallback(async () => {
@@ -59,6 +65,23 @@ export default function SharePanel({ selectionId }: { selectionId: string }) {
     }
   };
 
+  const release = async () => {
+    setBusy(true);
+    setError('');
+    setReleased(false);
+    try {
+      await portfolioApi.releaseSelection(selectionId);
+      setReleased(true);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const total = list?.projectIds.length ?? 0;
+
   const withdraw = async (invitationId: string) => {
     setError('');
     try {
@@ -76,6 +99,9 @@ export default function SharePanel({ selectionId }: { selectionId: string }) {
           {wt('portfolio.shareScope')}
         </p>
         <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('portfolio.shareLimits')}</p>
+        <p className="m-0 text-[12px] font-medium text-cc-ink-muted" data-portfolio-share-snapshot="">
+          {wt('portfolio.shareSnapshot')}
+        </p>
         <div className="flex flex-wrap items-end gap-2">
           <div className="min-w-[240px] flex-1">
             <CcField label={wt('portfolio.shareEmail')}>
@@ -102,10 +128,30 @@ export default function SharePanel({ selectionId }: { selectionId: string }) {
             {wt('portfolio.shareSent')}
           </CcMessageStrip>
         ) : null}
+        {released ? (
+          <CcMessageStrip state="success" announce>
+            {wt('portfolio.shareReleased')}
+          </CcMessageStrip>
+        ) : null}
         {error ? (
           <CcMessageStrip state="error" announce>
             {error}
           </CcMessageStrip>
+        ) : null}
+        {list && list.unreleased.length > 0 ? (
+          <div data-portfolio-share-unreleased="">
+            <h3 className="m-0 mb-1 text-[12px] font-semibold uppercase tracking-[0.06em] text-cc-ink-muted">{wt('portfolio.shareUnreleasedTitle')}</h3>
+            <ul className="m-0 mb-2 flex list-none flex-col gap-1 p-0">
+              {list.unreleased.map((id) => (
+                <li key={id} className="truncate text-[12px] font-medium text-cc-ink">
+                  {names[id] ?? id}
+                </li>
+              ))}
+            </ul>
+            <CcButton density="compact" busy={busy} disabled={busy} onClick={() => void release()} data-portfolio-share-release="">
+              {wt('portfolio.shareRelease')}
+            </CcButton>
+          </div>
         ) : null}
         {list && list.waiting.length > 0 ? (
           <div>
@@ -114,6 +160,9 @@ export default function SharePanel({ selectionId }: { selectionId: string }) {
               {list.waiting.map((w) => (
                 <li key={w.id} className="flex items-center gap-2 text-[12px] font-medium text-cc-ink">
                   <span className="min-w-0 flex-1 truncate">{w.email}</span>
+                  <span className="text-cc-ink-muted" data-portfolio-share-sees={w.projectIds.length}>
+                    {portfolioReaderSees(w.projectIds.length, total)}
+                  </span>
                   <span className="text-cc-ink-muted">{portfolioWaitingSince(formatTextDate(w.expiresAt) ?? w.expiresAt)}</span>
                   <CcButton density="compact" variant="ghost" onClick={() => void withdraw(w.id)}>
                     {wt('portfolio.shareWithdraw')}
@@ -130,6 +179,9 @@ export default function SharePanel({ selectionId }: { selectionId: string }) {
               {list.readers.map((r) => (
                 <li key={r.id} className="flex items-center gap-2 text-[12px] font-medium text-cc-ink">
                   <span className="min-w-0 flex-1 truncate">{r.email}</span>
+                  <span className="text-cc-ink-muted" data-portfolio-share-sees={r.projectIds.length}>
+                    {portfolioReaderSees(r.projectIds.length, total)}
+                  </span>
                   <CcButton density="compact" variant="ghost" onClick={() => void withdraw(r.id)}>
                     {wt('portfolio.shareWithdraw')}
                   </CcButton>

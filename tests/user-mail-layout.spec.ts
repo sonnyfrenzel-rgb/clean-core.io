@@ -41,7 +41,9 @@ const userMails = built.filter((b) => b.audience === 'nutzer');
 test('the catalogue still has every mail, and the user mails are the ones expected', () => {
   // 3.0.21 (T03): the contract confirmation C5 after sign-up, after an amendment
   // and after the Additional Agreement, each in English and German.
-  expect(built).toHaveLength(22);
+  // 3.0.21 (C13): the receipt of a declaration to withdraw from / end the
+  // contract, in English and German.
+  expect(built).toHaveLength(24);
   expect(userMails.map((b) => b.type).sort()).toEqual(
     [
       'address-confirmation',
@@ -61,6 +63,8 @@ test('the catalogue still has every mail, and the user mails are the ones expect
       'tenant-revoke',
       'welcome',
       'welcome-approval',
+      'withdrawal-receipt',
+      'withdrawal-receipt-de',
     ],
   );
 });
