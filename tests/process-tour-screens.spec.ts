@@ -86,12 +86,19 @@ test.beforeAll(async () => {
   const js = fs.readFileSync(path.join(OUT, 'harness.js'), 'utf8');
   const bundleCss = fs.existsSync(path.join(OUT, 'harness.css')) ? fs.readFileSync(path.join(OUT, 'harness.css'), 'utf8') : '';
   const css = await tailwind();
-  page_html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style><style>${bundleCss}</style></head><body style="margin:0;background:var(--cc-page)"><main style="padding:24px"><h1>Business view</h1><button id="opener">Walk through the process</button><div style="height:2000px"></div></main><div id="tour"></div><script>window.__TOUR__=__DATA__;</script><script>${js.replace(/<\/script/g, '<\\/script')}</script></body></html>`;
+  // The product's own face (app/layout.tsx loads Inter from app/fonts). Without
+  // it the harness measured in whatever sans-serif the machine had — Segoe UI
+  // here, DejaVu on the CI runner — and a card that fits in the product
+  // overflowed by a line on Linux at 667 × 375.
+  const inter = fs.readFileSync(path.join(ROOT, 'app', 'fonts', 'inter-latin-variable.woff2')).toString('base64');
+  const fontCss = `@font-face{font-family:'Inter';src:url(data:font/woff2;base64,${inter}) format('woff2');font-weight:300 900;font-style:normal;font-display:block}html{font-family:'Inter',sans-serif}`;
+  page_html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style><style>${fontCss}</style><style>${bundleCss}</style></head><body style="margin:0;background:var(--cc-page)"><main style="padding:24px"><h1>Business view</h1><button id="opener">Walk through the process</button><div style="height:2000px"></div></main><div id="tour"></div><script>window.__TOUR__=__DATA__;</script><script>${js.replace(/<\/script/g, '<\\/script')}</script></body></html>`;
 });
 
 async function open(page: Page, at: number, which = BIG): Promise<void> {
   const data = JSON.stringify({ tour: which.tour, model: which.model, at }).replace(/</g, '\\u003c');
   await page.setContent(page_html.replace('__DATA__', () => data), { waitUntil: 'load' });
+  expect(await page.evaluate(() => document.fonts.ready.then(() => Array.from(document.fonts).some((f) => f.family.replace(/['"]/g, '') === 'Inter' && f.status === 'loaded'))), 'the product face did not load').toBe(true);
   await expect(page.locator('[data-process-tour]')).toBeVisible();
   await expect(page.locator('[data-process-tour-map] .djs-container')).toBeVisible({ timeout: 30_000 });
   if (at >= 0 && at < which.tour.stations.length) await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveCount(1, { timeout: 30_000 });
