@@ -100,9 +100,11 @@ test.describe('the runner job', () => {
 });
 
 test.describe('the runner image', () => {
-  test('node:22-slim, not root, built from the runner and the shared core only', () => {
+  test('Node 22, pinned to a release and its digest, not root, built from the runner and the shared core only', () => {
     const df = read('runner/Dockerfile');
-    expect(df.match(/^FROM node:22-slim/gm)?.length).toBe(2);
+    // A pinned, patched release (Node security release of 21.10.2026: 22.23.4) and its digest — the floating
+    // node:22-slim tag rebuilt to whatever the registry held (code audit L-14).
+    expect(df.match(/^FROM node:22\.\d+\.\d+-slim@sha256:[0-9a-f]{64}/gm)?.length).toBe(2);
     expect(df).toContain('USER node');
     const copies = [...df.matchAll(/^COPY (?!--from)(.+)$/gm)].map((m) => m[1]);
     const sources = copies.flatMap((c) => c.trim().split(/\s+/).slice(0, -1));

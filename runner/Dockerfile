@@ -3,7 +3,7 @@
 # `runner/Dockerfile.dockerignore` admits exactly the files copied below, so the
 # build context holds no app code, no .env and no secrets to begin with.
 
-FROM node:22-slim AS build
+FROM node:22.23.4-slim@sha256:ea11b74b986d520137cdef9a5346e447a00f275ecc4abc0055b7151226231e09 AS build
 WORKDIR /build/runner
 COPY runner/package.json runner/package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
@@ -18,7 +18,7 @@ COPY lib/sandbox-module-guard.ts lib/test-verdicts.ts lib/google-id-token.ts lib
 RUN runner/node_modules/.bin/esbuild runner/server.ts --bundle --platform=node --format=cjs \
       --target=node22 --external:esbuild --outfile=/out/server.cjs
 
-FROM node:22-slim
+FROM node:22.23.4-slim@sha256:ea11b74b986d520137cdef9a5346e447a00f275ecc4abc0055b7151226231e09
 ENV NODE_ENV=production
 WORKDIR /srv
 COPY --from=build /build/runner/node_modules ./node_modules
