@@ -36,15 +36,24 @@ import { readExample } from './helpers/starter-example-files';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-function readOf(file: string): { source: string; model: ProcessMapModel; guide: WalkGuide; tour: ProcessTour } {
+/** The tour of an example for the given engine (map and reading alike); this release's engine when none is given. */
+function readOf(file: string, engineVersion?: string): { source: string; model: ProcessMapModel; guide: WalkGuide; tour: ProcessTour } {
   const source = readExample(file).replace(/\r\n/g, '\n');
-  const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file });
+  const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file, ...(engineVersion ? { exporterVersion: engineVersion } : {}) });
   const model = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null), fileName: file });
   const guide = buildWalkGuide(source, model, walkOrder(model, null));
-  return { source, model, guide, tour: buildProcessTour(guide, model, tourReadingOf(source)) };
+  return { source, model, guide, tour: buildProcessTour(guide, model, tourReadingOf(source, engineVersion)) };
 }
 
 const PO = readOf('Z_MM_PO_APPROVAL.abap');
+/**
+ * The PO example on the 3.0.20 engine. Two 3.0.21 readings meet on its "Check requisition" part: the map draws
+ * the run of guard checks "Material given?" / "Release indicator set?" as one task "2 checks" (roadmap 3.0.21 "The
+ * BPMN reconstruction stays at the business level"), and a raw field check is said with the program's own message
+ * (roadmap 3.0.21 "First insights becomes the strongest page"). The older engine keeps guarding that a station does
+ * not repeat its own title or a station of its part; the 3.0.21 reading is asserted beside it.
+ */
+const PO_3020 = readOf('Z_MM_PO_APPROVAL.abap', '3.0.20');
 const BIG = readOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
 const STOCK = readOf('Z_MATERIAL_STOCK_CALC.txt');
 
@@ -57,7 +66,14 @@ const station = (tour: ProcessTour, title: string) => {
 test.describe('the overview: what this process is about, engine-written, before station 1', () => {
   test('the PO example: purpose, who starts it, where it starts and ends, the result, the count', () => {
     const o = PO.tour.overview;
+    // Roadmap 3.0.21 "First insights becomes the strongest page" (owner decisions 22.10.2026): the wider purpose the
+    // program's names support (approval) is shown whenever it exists, and leads, as for the 1,000-line example.
     expect(o.purpose.map((l) => l.text)).toEqual([
+      'Covers the approval of purchase orders and purchase requisitions.',
+      'Creates purchase orders and starts workflows in SAP, reading purchase requisitions and suppliers, selected by purchase requisition number.',
+    ]);
+    // The 3.0.20 engine reads no approval aim from the names: the purpose sentence alone.
+    expect(PO_3020.tour.overview.purpose.map((l) => l.text)).toEqual([
       'Creates purchase orders and starts workflows in SAP, reading purchase requisitions and suppliers, selected by purchase requisition number.',
     ]);
     expect(o.trigger?.text).toBe("A user starts it from a selection screen with 4 inputs; it runs in the user's session.");
@@ -132,7 +148,8 @@ test.describe('the card says less; "More about it" says the rest', () => {
   });
 
   test('the First insights\' checks and stops are at the station they belong to, without what the part already says', () => {
-    const material = station(PO.tour, 'Material given?');
+    // On the 3.0.20 engine "Material given?" and "Release indicator set?" are stations of their own.
+    const material = station(PO_3020.tour, 'Material given?');
     const [own] = material.story;
     expect(own.step).toBe('Check requisition');
     expect(own.checks).toEqual(['Mmsta 01 or Z9', 'Account assignment category', 'Order number given', 'Plant 1000']);
@@ -140,6 +157,15 @@ test.describe('the card says less; "More about it" says the rest', () => {
     expect(own.checks).not.toContain('Material given');
     expect(own.checks).not.toContain('Release indicator set');
     expect(own.stops).toEqual(['no material']);
+    // From engine 3.0.21 the two guards are one task "2 checks", whose title names neither, so the story names
+    // both; the material status check is said with the program's own message (roadmap rows above PO_3020).
+    expect(PO.tour.stations.some((s) => s.title === 'Material given?' || s.title === 'Release indicator set?')).toBe(false);
+    const guards = station(PO.tour, '2 checks');
+    expect(guards.happens.text).toBe('It applies 2 checks and shows a message.');
+    const [own21] = guards.story;
+    expect(own21.step).toBe('Check requisition');
+    expect(own21.checks).toEqual(['Material given', 'Release indicator set', 'Material is blocked for purchasing in this plant', 'Account assignment category', 'Order number given', 'Plant 1000']);
+    expect(own21.stops).toEqual(['no material', 'release indicator set']);
     // The message number is a code: not said.
     const authority = station(PO.tour, 'Not authorized?');
     expect(authority.story).toEqual([{ step: 'Check authority', checks: [], stops: ['no purchase requisition found'] }]);
@@ -205,20 +231,27 @@ test.describe('on screen (server-free render)', () => {
 
   test('a station: the short case list, the aside and the next part only one level down, the story lines there too', async () => {
     const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
-    const at = PO.tour.stations.findIndex((s) => s.title === 'Material given?');
-    const html = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: at }));
-    const text = textOf(html);
-    const card = text.slice(0, text.indexOf('More about it'));
-    expect(card).not.toContain('Checks:');
-    expect(card).not.toContain('Can end here');
-    expect(card).not.toContain('In this part the program also');
-    const more = text.slice(text.indexOf('More about it'));
-    expect(more).toContain('Around “Check requisition”:');
-    expect(more).toContain('Checks: Mmsta 01 or Z9 · Account assignment category · Order number given · Plant 1000');
-    expect(more).toContain('Can end here: no material');
-    expect(more).toContain(PO.tour.stations[at].aside!);
-    // The business lines stand first one level down, before the lines in the code.
-    expect(more.indexOf('Checks:')).toBeLessThan(more.indexOf('Lines in the code'));
+    // The 3.0.20 engine's station "Material given?", and from 3.0.21 the task "2 checks" of the same guards (see PO_3020).
+    for (const [read, title, checks, stops] of [
+      [PO_3020, 'Material given?', 'Checks: Mmsta 01 or Z9 · Account assignment category · Order number given · Plant 1000', 'Can end here: no material'],
+      [PO, '2 checks', 'Checks: Material given · Release indicator set · Material is blocked for purchasing in this plant · Account assignment category · Order number given · Plant 1000', 'Can end here: no material · release indicator set'],
+    ] as const) {
+      const at = read.tour.stations.findIndex((s) => s.title === title);
+      expect(at, title).toBeGreaterThanOrEqual(0);
+      const html = renderToStaticMarkup(React.createElement(Layer, { tour: read.tour, model: read.model, onClose: () => {}, initialStation: at }));
+      const text = textOf(html);
+      const card = text.slice(0, text.indexOf('More about it'));
+      expect(card).not.toContain('Checks:');
+      expect(card).not.toContain('Can end here');
+      expect(card).not.toContain('In this part the program also');
+      const more = text.slice(text.indexOf('More about it'));
+      expect(more).toContain('Around “Check requisition”:');
+      expect(more).toContain(checks);
+      expect(more).toContain(stops);
+      expect(more).toContain(read.tour.stations[at].aside!);
+      // The business lines stand first one level down, before the lines in the code.
+      expect(more.indexOf('Checks:')).toBeLessThan(more.indexOf('Lines in the code'));
+    }
 
     const caseAt = PO.tour.stations.findIndex((s) => s.title === 'Which case applies?');
     const caseHtml = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: caseAt }));

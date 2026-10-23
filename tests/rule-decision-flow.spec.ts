@@ -43,9 +43,10 @@ const QM = read('tests/fixtures/rule-flow/zqm_inspection_result.abap');
 const PO = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
 const BIG = read('public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
 
-function explain(source: string): { ex: RuleSetExplanation; reading: ReturnType<typeof readSource> } {
-  const reading = readSource(source);
-  return { ex: explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source)), reading };
+/** The explanation for the given engine; this release's engine when none is given. */
+function explain(source: string, engineVersion?: string): { ex: RuleSetExplanation; reading: ReturnType<typeof readSource> } {
+  const reading = readSource(source, engineVersion);
+  return { ex: explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion), reading };
 }
 
 const ruleOf = (ex: RuleSetExplanation, label: RegExp, reading: ReturnType<typeof readSource>) => {
@@ -151,12 +152,20 @@ START-OF-SELECTION.
   });
 
   test('proposals: a constant nothing reads is dropped, a payment block points to a curated scope item, an org unit and a limit move to configuration', () => {
-    const po = explain(PO);
-    const docType = ruleOf(po.ex, /c_doc_type/i, po.reading);
+    // A constant nothing reads: the PO demo's document type on the 3.0.20 engine, which read it so.
+    const po20 = explain(PO, '3.0.20');
+    const docType = ruleOf(po20.ex, /c_doc_type/i, po20.reading);
     expect(docType.proposal.kind).toBe('drop');
     expect(docType.impact.score).toBe(0);
     // The PO demo has includes that are not part of the upload: the reason says to check them first.
     expect(docType.proposal.reason.text).toMatch(/include/);
+    // Roadmap 3.0.21 "A constant the code filters with is not 'declared, not used'": from engine 3.0.21 the
+    // document type is written into the purchase order header, so it moves to configuration instead of going.
+    const po = explain(PO, '3.0.21');
+    const docType21 = ruleOf(po.ex, /c_doc_type/i, po.reading);
+    expect(docType21.proposal.kind).toBe('configure');
+    expect(docType21.impact.score).toBe(2);
+    expect(docType21.proposal.reason.text).toBe('Document type NB is fixed in the code and is written into what the program creates. Kept in configuration, another value needs no program change.');
     expect(ruleOf(po.ex, /werks = '1000'/i, po.reading).proposal.kind).toBe('configure');
     expect(ruleOf(po.ex, /lv_dev_pct > 5/i, po.reading).proposal.kind).toBe('configure');
     const big = explain(BIG);
@@ -257,11 +266,24 @@ test.describe('the decision in one click, on the record that exists (3.0.20)', (
   });
 
   test('taking over a proposal to drop carries the engine reason, so the Drop is reviewable', () => {
-    const { ex, reading } = explain(PO);
+    // The PO demo's document type was a proposal to drop on the 3.0.20 engine.
+    const { ex, reading } = explain(PO, '3.0.20');
     const docType = ruleOf(ex, /c_doc_type/i, reading);
     const note = startingNote('drop', docType);
     expect(note).toBe(docType.proposal.reason.text);
     expect(checkStateChoices([choiceOf(docType.id, 'drop', note)], { elements: [], rules: [docType.id] }).ok).toBe(true);
+    // Roadmap 3.0.21 "A constant the code filters with is not 'declared, not used'": from engine 3.0.21 it is a
+    // proposal to configure, so a Drop starts without an engine reason; a proposal to drop still carries its own.
+    const now = explain(PO, '3.0.21');
+    const docType21 = ruleOf(now.ex, /c_doc_type/i, now.reading);
+    expect(docType21.proposal.kind).toBe('configure');
+    expect(startingNote('drop', docType21)).toBe('');
+    const big = explain(BIG, '3.0.21');
+    const testData = ruleOf(big.ex, /TEST\*/, big.reading);
+    expect(testData.proposal.kind).toBe('drop');
+    const testNote = startingNote('drop', testData);
+    expect(testNote).toBe('The values look like test data (TEST*, DUMMY*). If no such documents are created in production, the rule can go.');
+    expect(checkStateChoices([choiceOf(testData.id, 'drop', testNote)], { elements: [], rules: [testData.id] }).ok).toBe(true);
   });
 
   test('the flow: progress, the next open rule is the weightiest business rule, technical settings answered together', () => {

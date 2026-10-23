@@ -57,9 +57,10 @@ const PO = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
 const GR = read('tests/fixtures/rule-baskets/zmm_gr_invoice_check.abap');
 const ACCOUNT = { uid: 'u1', name: 'Buyer A' };
 
-function explain(source: string) {
-  const reading = readSource(source);
-  return { ex: explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source)), reading };
+/** The explanation for the given engine; this release's engine when none is given. */
+function explain(source: string, engineVersion?: string) {
+  const reading = readSource(source, engineVersion);
+  return { ex: explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion), reading };
 }
 
 const ruleId = (reading: ReturnType<typeof readSource>, label: RegExp): string => {
@@ -90,15 +91,21 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
   });
 
   test('the measured counts: fewer questions than rule rows, at most five shown on first open', () => {
-    const counts = [BIG, PO, GR].map((s) => {
-      const { ex } = explain(s);
+    const countsOf = (s: string, engineVersion?: string) => {
+      const { ex } = explain(s, engineVersion);
       return { rows: ex.rules.length, ...Object.fromEntries(Object.entries(ex.baskets).map(([k, v]) => [k, v.length])), questions: ex.questions.length, shown: questionFlow(ex, {}).shown.length };
-    });
+    };
+    // The PO demo is measured on the 3.0.20 engine, where its counts were taken; the 3.0.21 counts follow below.
+    const counts = [countsOf(BIG), countsOf(PO, '3.0.20'), countsOf(GR)];
     // The 1,000-line example: 30 rule rows before; 15 questions, 5 technical, 2 not determined. It has no demo
     // cases of its own, so its TEST*/DUMMY* customer reference is asked (owner decision 22.10.2026).
     expect(counts[0]).toEqual({ rows: 30, business: 23, technical: 5, undetermined: 2, questions: 15, shown: 5 });
     // The PO demo: 12 rows; 7 questions, 4 not determined (three constants nobody reads, one subject the code does not name).
     expect(counts[1]).toEqual({ rows: 12, business: 8, technical: 0, undetermined: 4, questions: 7, shown: 5 });
+    // Roadmap 3.0.21 "A constant the code filters with is not 'declared, not used'": from engine 3.0.21 the three
+    // constants (document type, release group, purchasing organisation) filter the reads and set the header, so they
+    // are asked; 11 business rules in 10 questions, 1 not determined (the subject the code does not name).
+    expect(countsOf(PO, '3.0.21')).toEqual({ rows: 12, business: 11, technical: 0, undetermined: 1, questions: 10, shown: 5 });
     // The goods receipt / invoice program: 9 rows (its 4 demo cases are apart already); 6 questions, 3 technical.
     expect(counts[2]).toEqual({ rows: 9, business: 6, technical: 3, undetermined: 0, questions: 6, shown: 5 });
     for (const c of counts) expect(c.shown).toBeLessThanOrEqual(QUESTION_BATCH);

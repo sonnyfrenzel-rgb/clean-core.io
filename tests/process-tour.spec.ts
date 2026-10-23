@@ -113,7 +113,12 @@ test.describe('the stations: business steps only, a handful per phase, phases as
     expect(PO.tour.stations[inPart].next).toBe(`Then it goes on to “${PO.tour.stations[inPart + 1].title}”.`);
     expect(PO.tour.stations[inPart].nextPart).toBeNull();
     expect(PO.tour.stations[PO.tour.stations.length - 1].next).toBe('This is the last step of the tour.');
-    expect(PO.tour.overview.purpose[0]?.text).toMatch(/^Creates purchase orders/);
+    // On the 3.0.20 engine the purpose sentence is the first line of the overview.
+    expect(buildProcessTour(PO.guide, PO.model, tourReadingOf(PO.source, '3.0.20')).overview.purpose[0]?.text).toMatch(/^Creates purchase orders/);
+    // Roadmap 3.0.21 "First insights becomes the strongest page" (owner decisions 22.10.2026): the wider purpose the
+    // program's names support (approval) leads whenever it exists; the purpose sentence follows it.
+    expect(PO.tour.overview.purpose[0]?.text).toBe('Covers the approval of purchase orders and purchase requisitions.');
+    expect(PO.tour.overview.purpose[1]?.text).toMatch(/^Creates purchase orders/);
     expect(BIG.tour.overview.purpose.map((l) => l.text).join(' ')).toMatch(/sales orders/);
   });
 
