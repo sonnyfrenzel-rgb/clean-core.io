@@ -154,7 +154,9 @@ test.describe('the audit signing key has no fallback', () => {
 
   test('a signature made with the wrong key is not accepted', async ({ request }) => {
     const crypto = require('crypto');
-    const canonicalManifest = 'guard-fixture.md:hash000;';
+    // A manifest in the canonical form: since CA-INT-03 (3.0.21) the endpoint
+    // checks nothing else and answers 400 — so the fixture names a real digest.
+    const canonicalManifest = `guard-fixture.md:${'0'.repeat(64)};`;
     const manifestHash = crypto.createHash('sha256').update(canonicalManifest).digest('hex');
     // Signed with the constant that used to be honoured everywhere.
     const forged = crypto.createHmac('sha256', RETIRED_FALLBACK).update(manifestHash).digest('hex');

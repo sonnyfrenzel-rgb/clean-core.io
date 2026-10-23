@@ -195,7 +195,11 @@ test.describe('the Testing tool as one guided flow', () => {
 
       // No nested navigation: no tab list, no environment switch.
       await expect(page.getByRole('tablist')).toHaveCount(0);
-      await expect(page.getByRole('radiogroup')).toHaveCount(0);
+      // The one radio group is the view switch every tool's header carries since
+      // owner decision 22.10.2026 (3.0.21, `components/StageViewSwitch.tsx`) —
+      // not navigation inside the tool.
+      await expect(page.getByRole('radiogroup')).toHaveCount(1);
+      await expect(page.locator('[data-stage-view-switch]').getByRole('radiogroup')).toHaveCount(1);
       await expect(page.getByText('Check tenant connection', { exact: true })).toHaveCount(0);
 
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

@@ -500,8 +500,10 @@ test.describe('the Business view on screen', () => {
     await page.unroute('**/api/model-stages');
 
     // A model is available: the owner's page asks once by itself; refused, the plain names stand, no error.
+    // `autoSteps: true` is what the route answers for the platform key (owner decision
+    // 22.10.2026, B6: only an own key waits for the "Automatic steps" switch).
     await page.route('**/api/model-stages', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: true, keySource: 'community' }) }),
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: true, keySource: 'community', autoSteps: true }) }),
     );
     await open(page, ids.po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });

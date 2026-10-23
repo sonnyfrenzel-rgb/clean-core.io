@@ -197,7 +197,9 @@ test('the server under test has the route', async ({ request }) => {
   // and every refusal below would pass for the wrong reason.
   const res = await request.get(path, { headers: headers() });
   expect(res.status(), 'no process-revisions route — wrong server or stale build').toBe(200);
-  expect(await res.json()).toEqual({ latest: null, revisions: [] });
+  // `nextBefore`: the history is read in pages since SEC-2026-908 (3.0.21);
+  // an empty history has no further page.
+  expect(await res.json()).toEqual({ latest: null, revisions: [], nextBefore: null });
 });
 
 test('a refused model writes nothing — not even the reconstructed revision 1', async ({ request }) => {
