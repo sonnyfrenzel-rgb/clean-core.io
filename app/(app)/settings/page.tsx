@@ -1928,10 +1928,9 @@ export default function SettingsPage() {
               <p className="m-0 mb-3 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
               <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} data-settings-end-contract-button="">
                 {END_CONTRACT_LABEL}
-                <span lang="de" className="ml-2 font-medium text-cc-ink-muted">
-                  · {END_CONTRACT_LABEL_DE}
-                </span>
               </CcButton>
+              {/* The German label under the button: one line of button text fits a phone (mobile-responsive). */}
+              <p lang="de" className="m-0 mt-1 cc-text-meta text-cc-ink-muted">{END_CONTRACT_LABEL_DE}</p>
             </div>
           </div>
         )}
