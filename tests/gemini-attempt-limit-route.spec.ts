@@ -105,7 +105,7 @@ async function loopUntilLimited(
     expect(await codeOf(again)).toBe(ATTEMPT_LIMIT_CODE);
   }
   // A second account in the same loop is unaffected.
-  const other = await post(request, bystander, { prompt: 'hello' });
+  const other = await post(request, bystander, { prompt: 'hello', stage: 'glossary' });
   expect(other.status(), await other.text()).toBe(200);
 }
 
@@ -155,5 +155,5 @@ test('a valid lease with an unknown answer shape: 400 until the allowance, then 
 
 test('a request without a lease counts too: answered until the allowance, then attempt-limit', async ({ request }) => {
   const a = await account('no-lease');
-  await loopUntilLimited(request, () => post(request, a, { prompt: 'hello' }), { status: 200 });
+  await loopUntilLimited(request, () => post(request, a, { prompt: 'hello', stage: 'glossary' }), { status: 200 });
 });
