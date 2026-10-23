@@ -291,7 +291,7 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
     if (line.key === 'limits') limits.push({ text: line.text, anchors: [], basis: line.basis });
   }
   limits.push({
-    text: 'A line reference shows where a statement comes from in the code. It does not show that the business has confirmed it.',
+    text: 'A line reference shows where a statement comes from in the code, not that the business confirmed it.',
     anchors: [],
     basis: 'reconstructed',
   });
@@ -301,11 +301,11 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
     does,
     doesNot,
     limits,
-    owner: { text: 'Process owner: Not determined — the code names no owner, and none is recorded here.', anchors: [], basis: 'not-determined' },
+    owner: { text: 'Process owner: Not determined — none is named in the code or recorded here.', anchors: [], basis: 'not-determined' },
     approval: raci
       ? { text: `Business approval: Not recorded. The RACI is the owner's (${raci}); the rest is reconstructed from the code.`, anchors: [], basis: 'confirmed' }
-      : { text: 'Business approval: Not recorded — reconstructed from the code, not confirmed by the business.', anchors: [], basis: 'not-determined' },
-    questions: input.inShort ? answeredQuestions(input.inShort, counts) : [
+      : { text: 'Business approval: Not recorded — not confirmed by the business.', anchors: [], basis: 'not-determined' },
+    questions: input.inShort ? answeredQuestions(input.inShort, counts, !(facts && isAbsent(capabilityPresence(facts).posting))) : [
       { question: 'Why is an item missing?', answer: 'Which rows each read takes, and the checks that skip a record.', target: 'data' },
       { question: 'Why is a value unknown?', answer: 'The rules that set each value, and what happens when none applies.', target: 'rules' },
       { question: 'Why is there no proposal or result?', answer: 'The cases that stop the run or skip a record, with the message the user sees.', target: 'exceptions' },
@@ -321,7 +321,7 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
  * read — the selection, the rule and stop counts, what it changes — and the
  * link leads to the lines.
  */
-function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['counts']): EntryQuestion[] {
+function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['counts'], changesShown: boolean): EntryQuestion[] {
   const slot = (key: string) => inShort.lines.find((l) => l.key === key)?.text ?? null;
   const strip = (text: string | null) => (text ?? '').replace(/^It /, '').replace(/\.$/, '');
   // The purpose line on what it reads and changes, not the one its names support (`aim`, 3.0.20/3.0.21): only
@@ -343,7 +343,7 @@ function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['c
     {
       question: 'Why is a value unknown?',
       answer: counts.rules
-        ? 'The business rules fixed in the code set the values; each says when it applies, and what happens when none does.'
+        ? 'Each rule fixed in the code says when it sets a value and what happens when none applies.'
         : 'No business rule was found that sets a value; the values come as the tables hold them.',
       target: 'rules',
     },
@@ -356,7 +356,9 @@ function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['c
     },
     {
       question: 'What changes in S/4HANA?',
-      answer: `Today it ${changes || 'changes data as listed'}. The move itself is decided in Design and Management, with the open questions.`,
+      // What it changes stands once, under "What it does" (owner 23.10.2026: the page is held to 400 words, and the
+      // answer repeated that line word for word); only where that line is left out does the answer say it.
+      answer: `${changesShown && changes ? 'What it changes today stands above; the move' : `Today it ${changes || 'changes data as listed'}. The move itself`} is decided in Design and Management, with the open questions.`,
       target: 'changes',
     },
   ];
