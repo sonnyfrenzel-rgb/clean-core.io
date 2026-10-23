@@ -161,8 +161,9 @@ jobs:
   # DEADLINE_EXCEEDED after about an hour (runs 37152757092, 37162239309). One
   # emulator per runner for one sixth of the suite, so no restart is needed.
   #
-  # Every test still runs: the matrix lists every shard of N, and each runs
-  # `--shard=<i>/N` with no filter. `fail-fast: false` lets every shard finish
+  # Every test still runs: the matrix lists every shard of N, and each runs the
+  # spec files tests/shard-plan.json gives it (every spec file is in exactly
+  # one shard) with no other filter. `fail-fast: false` lets every shard finish
   # when one is red, so a run shows all its failures at once; any red shard
   # makes this job red, and `validate` with it.
   e2e:
@@ -254,13 +255,37 @@ jobs:
           exit 1
 
       - name: Run End-to-End Tests
-        run: npx playwright test --shard=${{ matrix.shard }}/6
+        # Each shard runs whole spec files from tests/shard-plan.json, split by
+        # measured duration (release 3.0.21). `--shard=i/6` split by test count,
+        # and on run 39819463543 that gave shards of 2.3 to 26.7 minutes. The
+        # plan script adds any spec file the plan does not name yet to the
+        # lightest shard and fails on an empty list, and the step's `bash -e`
+        # stops on that failure, so no spec can fall through and no shard can
+        # silently run nothing (tests/shard-plan.spec.ts holds the plan itself).
+        run: |
+          files="$(node scripts/test/shard-plan.mjs files "$SHARD")"
+          test -n "$files"
+          npx playwright test $files
         env:
+          SHARD: ${{ matrix.shard }}
           # F-11: server-side test key only — do NOT expose a NEXT_PUBLIC_ (client-bundled) key.
           GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
           FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+
+      - name: Skipped and Flaky Tests
+        # Every skipped test with its reason and every test that passed only on a
+        # retry, in this shard's job summary (release 3.0.21). A report, never a
+        # gate: it runs after a red test step too (`always()`), the script exits
+        # 0 whatever it finds, and `continue-on-error` keeps a broken summary
+        # from turning a green shard red. It is the only conditional step and
+        # the only one allowed to fail in this job (tests/quality-gate-guard.spec.ts).
+        if: always()
+        continue-on-error: true
+        run: node scripts/test/ci-test-summary.mjs playwright-report/e2e-results.json --shard "$SHARD"
+        env:
+          SHARD: ${{ matrix.shard }}
 
   # The gate: deploy-runner and deploy need `validate`, so this job is what
   # stands between a red build or a red shard and a deploy. It runs whenever the
