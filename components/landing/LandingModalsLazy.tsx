@@ -1,38 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
+import { isRedirectPending } from '@/lib/auth-hint';
 
 const LandingModals = dynamic(() => import('@/components/LandingModals'), { ssr: false });
+
+/** The redirect mark does not change while the page is open, so there is nothing to subscribe to. */
+const noChanges = () => () => {};
 
 /**
  * The start page's sign-in, registration and legal dialogs, loaded when they
  * are needed rather than with the page (docs/perf/REPORT.md).
  *
  * `LandingModals` renders nothing until the address asks for a dialog
- * (`?auth=…`, `?legal=…`), so it never was part of the first paint — but its
- * code was, for every visitor. Now it is mounted at once when the address asks
- * for a dialog (a link from another page, a click on "Get Free Access"), and
- * otherwise as soon as the browser is idle after the page has loaded, so its
- * load-time work — finishing a Google redirect sign-in, sending on a reader
- * whose session is already in place — still runs on every visit. Nothing about
- * the dialogs themselves changes.
+ * (`?auth=…`, `?legal=…`), and it is mounted only then — or when a Google
+ * redirect sign-in that left this tab is waiting to be finished
+ * (`isRedirectPending`, lib/auth-hint.ts). It used to be mounted on every
+ * visit once the browser was idle, so that it could ask Firebase whether a
+ * redirect had come back; that initialised the Auth SDK for every visitor,
+ * which on mobile browsers and Safari loads Google's sign-in frame — a request
+ * to Google from a page that promises to contact nobody before sign-in
+ * (privacy policy section 7). Once mounted it stays mounted, so closing a
+ * dialog keeps its exit as it was. Nothing about the dialogs themselves
+ * changes.
  */
 export default function LandingModalsLazy() {
   const searchParams = useSearchParams();
   const asked = searchParams.has('auth') || searchParams.has('legal');
-  const [idle, setIdle] = useState(false);
+  // `false` on the server and while hydrating, where sessionStorage does not exist.
+  const redirectPending = useSyncExternalStore(noChanges, isRedirectPending, () => false);
+  const [mounted, setMounted] = useState(false);
+  const wanted = asked || redirectPending;
+  if (wanted && !mounted) setMounted(true);
 
-  useEffect(() => {
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(() => setIdle(true), { timeout: 2000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = window.setTimeout(() => setIdle(true), 200);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  if (!asked && !idle) return null;
+  if (!wanted && !mounted) return null;
   return <LandingModals />;
 }
