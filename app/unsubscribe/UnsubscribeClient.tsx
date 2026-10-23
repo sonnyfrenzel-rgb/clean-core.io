@@ -13,11 +13,6 @@ type State = 'reading' | 'idle' | 'working' | 'done' | 'error';
  */
 export type UnsubscribeList = 'community' | 'invitations';
 
-const ENDPOINT: Record<UnsubscribeList, string> = {
-  community: '/api/unsubscribe',
-  invitations: '/api/unsubscribe/invitations',
-};
-
 /**
  * The token from the address, and the address without it.
  *
@@ -79,11 +74,13 @@ export default function UnsubscribeClient({ list = 'community' }: { list?: Unsub
       // mail carries it in the fragment for the same reason; only the RFC 8058
       // one-click URL in the header keeps it in the query, because providers
       // POST there without a body.
-      const res = await fetch(ENDPOINT[list], {
+      const init: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ t: token }),
-      });
+      };
+      const res =
+        list === 'invitations' ? await fetch('/api/unsubscribe/invitations', init) : await fetch('/api/unsubscribe', init);
       const data = await res.json().catch(() => ({ success: false }));
       if (data.success) {
         setState('done');
