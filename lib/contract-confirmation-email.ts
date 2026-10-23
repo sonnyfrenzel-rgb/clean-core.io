@@ -42,7 +42,7 @@ export interface ContractConfirmationInput {
   firstName: string | null;
   /** The version identifier the record names: "2026-10-23" for the Terms, "ZV-BYOK-1.0" for the agreement. */
   versionId: string;
-  /** What the document calls itself, e.g. "v2.3.0"; the agreement's id again. */
+  /** What the document calls itself, e.g. "Terms v2.3.0"; the agreement's id again. */
   versionLabel: string;
   /** SHA-256 of the archived wording of that language version. */
   sha256: string;

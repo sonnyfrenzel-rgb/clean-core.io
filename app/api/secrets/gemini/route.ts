@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
     // T03 (Additional Agreement clause 1, Terms 5.2): the agreement is offered
     // only to accounts that accepted Terms v2.3.0 or later. An account still
-    // on v2.2.0 may carry on under it (Terms 10.3) — just not store an
+    // on Terms v2.2.0 may carry on under it (Terms 10.3) — just not store an
     // Anthropic key until it accepts the current Terms.
     if (addendumRequired(provider)) {
       const profile = (await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get()).data() || {};

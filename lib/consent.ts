@@ -39,10 +39,10 @@ export interface RecordConsentInput {
   locale?: string | null;
   /**
    * The language version of the Terms the person ticked and accepted (section
-   * 1.4 of v2.3.0; acceptance test T02) — German or English. Not the interface
+   * 1.4 of Terms v2.3.0; acceptance test T02) — German or English. Not the interface
    * locale: the dialog lets the reader choose the contract language, and that
    * choice is what governs. Anything else records English, the only version
-   * the dialogs offered before v2.3.0.
+   * the dialogs offered before Terms v2.3.0.
    */
   termsLanguage?: unknown;
 }

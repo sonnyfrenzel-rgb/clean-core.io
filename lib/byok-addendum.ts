@@ -85,10 +85,10 @@ export function byokAddendumSha256(version: string, language: ByokAddendumLangua
 
 /**
  * The Terms version an Anthropic key needs (Additional Agreement clause 1;
- * Terms 5.2; T03): v2.3.0 or later. Version ids are ISO dates, so "later" is
- * a string comparison against the id of the archived version labelled v2.3.0.
+ * Terms 5.2; T03): Terms v2.3.0 or later. Version ids are ISO dates, so "later" is
+ * a string comparison against the id of the archived version labelled Terms v2.3.0.
  */
-export const BYOK_MIN_TERMS_LABEL = 'v2.3.0';
+export const BYOK_MIN_TERMS_LABEL = 'v2.3.0'; // Terms v2.3.0
 export const BYOK_MIN_TERMS_VERSION: string = (() => {
   const v = ARCHIVED_TERMS_VERSIONS.find((t) => t.label === BYOK_MIN_TERMS_LABEL);
   if (!v) throw new Error(`no archived Terms ${BYOK_MIN_TERMS_LABEL}`);
