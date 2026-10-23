@@ -5,7 +5,14 @@ import { escapeHtml } from '@/lib/utils';
 import { APP_BASE_URL } from '@/lib/constants';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { sendTransactionalMail } from '@/lib/transactional-mail';
-import { invitationNotSentMessage } from '@/lib/invitations';
+import { invitationNotSentMessage, normaliseInvitedEmail } from '@/lib/invitations';
+import { inviterNameForMail } from '@/lib/invitation-email';
+import {
+  INVITATION_SUPPRESSED_CODE,
+  INVITATION_SUPPRESSED_MESSAGE,
+  invitationUnsubscribeUrl,
+  isInvitationSuppressed,
+} from '@/lib/invitation-suppression';
 import { INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
 import { openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
@@ -68,6 +75,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     const { selectionId } = await params;
     if (!isFirestoreId(selectionId)) return NextResponse.json({ error: 'No such selection.' }, { status: 404 });
     const body = (await req.json().catch(() => null)) as { email?: unknown; expiresInDays?: unknown } | null;
+    // C12 (privacy policy section 8): the suppression list is the one project
+    // invitations use — an address that unsubscribed from either gets neither.
+    const requested = normaliseInvitedEmail(body?.email);
+    if (requested && (await isInvitationSuppressed(gate.db, requested))) {
+      return NextResponse.json({ error: INVITATION_SUPPRESSED_MESSAGE, code: INVITATION_SUPPRESSED_CODE }, { status: 409 });
+    }
     const invitation = await createSelectionInvitation(
       gate.db,
       { uid: gate.uid, email: gate.email, name: await inviterName(gate.db, gate.uid, gate.email) },
@@ -81,10 +94,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
       label: 'portfolio invitation',
       html: wrapEmailDocument(
         buildPortfolioInvitationEmail({
-          inviterName: escapeHtml(invitation.invitedBy.name),
+          // The inviting account's own free text: repeated once, plain,
+          // bounded and labelled as unchecked, as in the project mail (SEC-02).
+          inviterName: escapeHtml(inviterNameForMail(invitation.invitedBy.name)),
           recipient: escapeHtml(invitation.email),
           link: `${APP_BASE_URL}${portfolioInvitationLinkPath(invitation.selectionId, invitation.id)}`,
           expires: new Date(invitation.expiresAt).toUTCString().slice(5, 16),
+          unsubscribeUrl: invitationUnsubscribeUrl(invitation.email),
         }),
         'Clean-Core.io — invitation',
       ),

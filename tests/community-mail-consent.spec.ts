@@ -95,6 +95,10 @@ const EXEMPT: Record<string, string> = {
   'lib/community-mail.ts': 'defines the gate',
   'app/api/unsubscribe/route.ts': 'receives the opt-out, sends nothing',
   'scripts/lib/mail-seed.ts': 'synthetic mails to the operator seed mailboxes; reads no account',
+  // 3.0.21 (C10/C12): the unsubscribe link of an invitation mail — one functional
+  // mail a user asked to send, not community mail. Its own list and its own token
+  // purpose (`inv-unsub`), checked by both invitation routes (tests/legal-14-3021.spec.ts).
+  'lib/invitation-suppression.ts': 'builds the invitation unsubscribe link; the invitation routes check the invitation suppression list',
 };
 
 const SENDER_MARK = /createUnsubscribeToken\s*\(|['"]List-Unsubscribe['"]/;

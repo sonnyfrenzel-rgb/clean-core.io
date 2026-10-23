@@ -172,7 +172,7 @@ const NONCE_ROUTES: readonly RegExp[] = [
   /^\/portfolio\/shared\/[^/]+\/?$/,
   /^\/auth\/action\/?$/,
   /^\/survey\/[^/]+\/?$/,
-  /^\/unsubscribe\/?$/,
+  /^\/unsubscribe(\/invitations)?\/?$/,
   /^\/admin\/design-system\/first-render\/?$/,
 ];
 

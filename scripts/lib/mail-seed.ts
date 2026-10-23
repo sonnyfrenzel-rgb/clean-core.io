@@ -341,7 +341,14 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       const link = `${APP_BASE_URL}${invitationLinkPath(sampleId('seed-project', ctx), sampleId('seed-invitation', ctx))}`;
       const expires = new Date(ctx.now.getTime() + 14 * 24 * 60 * 60 * 1000).toUTCString().slice(5, 16);
       const html = wrapEmailDocument(
-        buildInvitationEmail({ inviterName: escapeHtml(SEED_NAME), recipient: escapeHtml(ctx.recipient.address), link, expires }),
+        buildInvitationEmail({
+          inviterName: escapeHtml(SEED_NAME),
+          recipient: escapeHtml(ctx.recipient.address),
+          link,
+          expires,
+          // Production: invitationUnsubscribeUrl (lib/invitation-suppression.ts), a signed inv-unsub token.
+          unsubscribeUrl: `${APP_BASE_URL}/unsubscribe/invitations#t=${unsignedToken('inv-unsub', ctx)}`,
+        }),
         'Clean-Core.io — invitation',
       );
       // lib/transactional-mail.ts: DEFAULT_FROM, reply_to USER_MAIL_REPLY_TO, text from htmlToText.
@@ -422,7 +429,14 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       const link = `${APP_BASE_URL}${portfolioInvitationLinkPath(sampleId('seed-selection', ctx), sampleId('seed-invitation', ctx))}`;
       const expires = new Date(ctx.now.getTime() + 14 * 24 * 60 * 60 * 1000).toUTCString().slice(5, 16);
       const html = wrapEmailDocument(
-        buildPortfolioInvitationEmail({ inviterName: escapeHtml(SEED_NAME), recipient: escapeHtml(ctx.recipient.address), link, expires }),
+        buildPortfolioInvitationEmail({
+          inviterName: escapeHtml(SEED_NAME),
+          recipient: escapeHtml(ctx.recipient.address),
+          link,
+          expires,
+          // C12: the unsubscribe link onto the list shared with project invitations.
+          unsubscribeUrl: `${APP_BASE_URL}/unsubscribe/invitations#t=${unsignedToken('inv-unsub-portfolio', ctx)}`,
+        }),
         'Clean-Core.io — portfolio invitation',
       );
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: PORTFOLIO_INVITATION_SUBJECT, html, text: htmlToText(html) };
@@ -665,7 +679,8 @@ const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/u;
  * - a `text/plain` part (M365: the same mail without one went to spam);
  * - a plain subject: no emoji, no exclamation mark; no emoji in the body either;
  * - user mails in the plain layout (roadmap 3.0.9, round 2): exactly one link,
- *   shown as its URL (the survey may add its unsubscribe link), no button,
+ *   shown as its URL (the survey and the two invitation mails may add their
+ *   unsubscribe link), no button,
  *   table or image markup;
  * - every link on https://clean-core.io/ (mailto: is not a link to a site),
  *   apart from the documented `LINK_EXCEPTIONS`;
@@ -690,9 +705,12 @@ export function mailPolicyWarnings(
   if (EMOJI.test(mail.html) || EMOJI.test(mail.text ?? '')) out.push('emoji in the body');
   if (t.audience === 'nutzer') {
     // The plain layout (lib/user-mail.ts): one link, shown as its URL, and no
-    // button, table scaffolding or image. The survey's unsubscribe link is the
-    // one allowed extra, and only in a mail that declares List-Unsubscribe.
-    const allowedLinks = 1 + (mail.headers?.['List-Unsubscribe'] ? 1 : 0);
+    // button, table scaffolding or image. An unsubscribe link is the one
+    // allowed extra: the survey's, in a mail that declares List-Unsubscribe, and
+    // the invitation mails' (C10/C12), in the footer line `buildUserMail` writes.
+    // Any host: which one is allowed is the link check's business, above.
+    const footerUnsubscribe = /Unsubscribe: <a href="[^"]*\/unsubscribe\/invitations#t=/.test(mail.html);
+    const allowedLinks = 1 + (mail.headers?.['List-Unsubscribe'] || footerUnsubscribe ? 1 : 0);
     const links = htmlLinkCount(mail.html);
     if (links !== allowedLinks) out.push(`user mail has ${links} link(s), not ${allowedLinks}`);
     for (const m of mail.html.matchAll(/<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {

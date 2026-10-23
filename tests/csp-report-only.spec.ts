@@ -208,8 +208,9 @@ test.describe('CSP report-only — source', () => {
     expect(isNonceRoute('/project/abc/analyze')).toBe(true);
     // 14 since 04.10.2026: the requirements workspace under Design (ADR-078).
     expect(isNonceRoute('/project/abc/design/requirements')).toBe(true);
-    // 16 since 3.0.21: the portfolio invitation and the shared portfolio overview.
-    expect(nonced.length).toBe(16);
+    // 16 since 3.0.21: the portfolio invitation and the shared portfolio overview;
+    // 17 with the invitation unsubscribe page (C10/C12, 23.10.2026).
+    expect(nonced.length).toBe(17);
   });
 
   test('every page gets the same enforced policy, whoever delivers it', async () => {

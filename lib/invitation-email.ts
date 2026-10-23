@@ -28,6 +28,12 @@ export interface InvitationEmailInput {
   inviterName: string;
   /** HTML-escaped invited address; shown in the transactional footer. */
   recipient: string;
+  /**
+   * The unsubscribe link (C10; privacy policy section 8): using it puts the
+   * address on the invitation suppression list (`lib/invitation-suppression.ts`).
+   * Built by `invitationUnsubscribeUrl`; shown in the footer.
+   */
+  unsubscribeUrl?: string | null;
   /** Absolute URL of the invitation link. Built from `APP_BASE_URL`, never a Host header. */
   link: string;
   /** Human-readable expiry, e.g. "2 October 2026". */
@@ -89,7 +95,7 @@ export function inviterNameForMail(raw: unknown): string {
  * The notice sits last and small on purpose. What the reader came for is the
  * invitation; a legal panel above the link would bury it.
  */
-export function buildInvitationEmail({ inviterName, recipient, link, expires }: InvitationEmailInput): string {
+export function buildInvitationEmail({ inviterName, recipient, link, expires, unsubscribeUrl }: InvitationEmailInput): string {
   return buildUserMail({
     greeting: 'Hello,',
     paragraphs: [
@@ -111,9 +117,18 @@ export function buildInvitationEmail({ inviterName, recipient, link, expires }: 
     footer: [
       `<strong>How we got your address &mdash; Art. 14 GDPR.</strong> ${ART14_NOTICE}`,
       `Sent to ${recipient} because a Clean-Core.io user invited that address to read one of their projects. You do not have an account with us because of this mail, and we added none.`,
+      INVITATION_ONE_MAIL_SENTENCE,
     ],
+    unsubscribeUrl: unsubscribeUrl ?? null,
   });
 }
+
+/**
+ * C10/C12: one mail per invitation and a way out. The unsubscribe link itself
+ * is the footer line `buildUserMail` adds for `unsubscribeUrl`.
+ */
+export const INVITATION_ONE_MAIL_SENTENCE =
+  'You receive exactly this one e-mail; we send no reminder and no advertising. If you want no further invitations from Clean-Core.io, use the unsubscribe link below: we then keep only a keyed hash of this address on a suppression list, without end, so that no invitation reaches it again.';
 
 /**
  * The Art. 14 notice itself. No caller value is interpolated into it — the

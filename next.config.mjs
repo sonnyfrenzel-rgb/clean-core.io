@@ -66,6 +66,7 @@ export const NONCE_ROUTE_SOURCES = [
   '/auth/action',
   '/survey/:token',
   '/unsubscribe',
+  '/unsubscribe/invitations',
   '/admin/design-system/first-render',
 ];
 

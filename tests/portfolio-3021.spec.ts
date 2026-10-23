@@ -557,10 +557,22 @@ test.describe('selections and sharing', () => {
 
   test('the invitation mail says it opens the overview, not the source code', () => {
     expect(PORTFOLIO_SCOPE_SENTENCE_RECIPIENT).not.toBe(INVITATION_SCOPE_SENTENCE_RECIPIENT);
-    const html = buildPortfolioInvitationEmail({ inviterName: 'A', recipient: 'r@example.com', link: 'https://clean-core.io/portfolio/invitation/s/i', expires: '1 Nov 2026' });
-    expect(html).toContain('Not their source code.');
+    const html = buildPortfolioInvitationEmail({
+      inviterName: 'A',
+      recipient: 'r@example.com',
+      link: 'https://clean-core.io/portfolio/invitation/s/i',
+      expires: '1 Nov 2026',
+      unsubscribeUrl: 'https://clean-core.io/unsubscribe/invitations#t=x',
+    });
+    // C12 (owner decision 23.10.2026): the overview only — no project, no source code.
+    expect(html).toContain('No project and no source code is opened.');
     expect(html).toContain('that one portfolio overview');
     expect(html).not.toContain('including the ABAP source code');
+    // One mail, no reminder, and the way out onto the list shared with project invitations.
+    expect(html).toContain('You receive exactly this one e-mail; we send no reminder and no advertising.');
+    expect(html).toContain('Unsubscribe: <a href="https://clean-core.io/unsubscribe/invitations#t=x"');
+    // The inviting account is named as unchecked, as in the project mail (SEC-02).
+    expect(html).toContain('whose holder entered the name A. Clean-Core.io has not checked that name.');
   });
 
   test('sign-in may return to the portfolio invitation and the shared overview only in their exact shape', () => {
