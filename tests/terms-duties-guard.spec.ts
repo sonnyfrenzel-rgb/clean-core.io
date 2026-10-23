@@ -251,7 +251,7 @@ test.describe('and a reader opening the page finds them', () => {
     expect(archivedTerms(TERMS_VERSION)?.label).toBe('v2.3.0');
     // And the two clauses that version was raised for, on the same page.
     expect(rendered).toContain(normalise('at least 18 years old'));
-    expect(rendered).toContain(normalise('Do not submit personal data of third parties'));
+    expect(rendered).toContain(normalise('Do not submit any personal data of third parties'));
   });
 });
 

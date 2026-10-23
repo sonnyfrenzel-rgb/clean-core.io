@@ -365,15 +365,18 @@ test('an account on the previous published version is asked, and keeps working',
   expect(persisted.local, 'the decline outlives the session — § 7 says it does not').toHaveLength(0);
 });
 
-test('with 3.0 only the current Terms version is in force', () => {
-  // Until 3.0 this asserted that the previous version stayed in force, so the
-  // release would not lock everybody out. With 3.0 that is reversed on purpose
-  // (Sonny, 30.09.2026): consent to the new version is required at sign-in, so
-  // the list holds the current version and nothing else. A version added back
-  // here is a decision to be written down in lib/constants.ts, not a drift.
+test('the current Terms version and v2.2.0 are in force, and nothing older', () => {
+  // With 3.0 the list held the current version alone (Sonny, 30.09.2026):
+  // consent to v2.2.0 was required at sign-in. Fassung 1.1 of the legal texts
+  // (3.0.21, a76a108e, in lib/constants.ts) keeps v2.2.0 (2026-10-03) in force
+  // beside v2.3.0: § 10.3 of the Terms those accounts accepted lets them carry
+  // on if they decline, and ending that takes 30 days' notice — so the dialog
+  // asks and takes "not now" for an answer. v2.1.0 and v2.0.0 stay ended; a
+  // version added back here is a decision to be written down in
+  // lib/constants.ts, not a drift.
   expect(TERMS_VERSIONS_IN_FORCE, 'the current version must always be in force').toContain(TERMS_VERSION);
   expect(
     TERMS_VERSIONS_IN_FORCE,
-    'an earlier Terms version is in force again — the 3.0 decision requires consent to the current one',
-  ).toEqual([TERMS_VERSION]);
+    'the Terms versions in force moved without a decision in lib/constants.ts',
+  ).toEqual([TERMS_VERSION, '2026-10-03']);
 });

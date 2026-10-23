@@ -346,6 +346,18 @@ function unqualifiedTrainingIn(text: string): string[] {
       !TRAINING_QUALIFIED.test(sentences[i + 1] ?? ''),
   );
 }
+/**
+ * The same, for one rendered block (a paragraph or a list item). /trust renders
+ * the legal text of Fassung 1.1 (`lib/legal/texts/trust.en.ts`, 3.0.21), where
+ * each statement about training stands inside the item about the key it
+ * concerns — the reason the source sweep leaves `lib/legal/` to the legal-text
+ * specs. An item that opens by naming the own key is that qualification: what
+ * it says about training is said of the own key.
+ */
+function unqualifiedTrainingInBlock(block: string): string[] {
+  const first = block.split(/(?<=[.!?])\s+/)[0] ?? '';
+  return TRAINING_QUALIFIED.test(first) ? [] : unqualifiedTrainingIn(block);
+}
 const signInInTheEu = (line: string) => SIGN_IN_WORD.test(line) && EU_REGION.test(line) && !NOT_REGIONAL.test(line);
 
 test.describe('the qualifications travel with the claim', () => {
@@ -359,6 +371,9 @@ test.describe('the qualifications travel with the claim', () => {
     // And the qualified forms pass.
     const training = TRUST_CLAIMS.find((c) => c.id === 'training')!.text;
     expect(unqualifiedTrainingIn(training)).toEqual([]);
+    // A block is qualified by its opening only when that opening names the own key.
+    expect(unqualifiedTrainingInBlock('Your own Gemini key. Google, under your account. On the paid tier Google does not use your requests for training.')).toEqual([]);
+    expect(unqualifiedTrainingInBlock('Our key. Google, as our processor. Google does not use your requests for training.')).toHaveLength(1);
     expect(signInInTheEu('Hosting and database run in europe-west1 (Belgium); the sign-in, Firebase Authentication, is a Google service not tied to a region.')).toBe(false);
   });
 
@@ -383,7 +398,7 @@ test.describe('the qualifications travel with the claim', () => {
       // Block by block first, so a header's "Sign in" never joins the next paragraph's sentence.
       const blocks = text.split(/\n+/).map(normalise);
       const sentences = blocks.flatMap((block) => block.split(/(?<=[.!?])\s+/));
-      expect(blocks.flatMap(unqualifiedTrainingIn), `${route} promises no training without the own-key case`).toEqual([]);
+      expect(blocks.flatMap(unqualifiedTrainingInBlock), `${route} promises no training without the own-key case`).toEqual([]);
       expect(sentences.filter(signInInTheEu), `${route} places the sign-in in the EU`).toEqual([]);
       if (route.startsWith('/clean-core-explained')) expect(rendered, route).toContain(training);
     }
