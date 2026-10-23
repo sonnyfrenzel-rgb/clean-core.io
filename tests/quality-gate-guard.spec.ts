@@ -84,7 +84,9 @@ test('the build job lints, builds and type-checks, in that order, and hands its 
   const unpack = e2e.indexOf('tar -xf ');
   expect(unpack, 'the shards do not unpack the build').toBeGreaterThan(-1);
   expect(e2e).toContain('test -f .next/BUILD_ID');
-  expect(unpack).toBeLessThan(e2e.indexOf('npx playwright test --shard='));
+  const runAt = e2e.indexOf('npx playwright test');
+  expect(runAt, 'the shards run no suite').toBeGreaterThan(-1);
+  expect(unpack).toBeLessThan(runAt);
 });
 
 test('the deploy waits for the gate, and the gate for the build and every shard', () => {
@@ -97,10 +99,27 @@ test('the deploy waits for the gate, and the gate for the build and every shard'
   expect(validate).toContain('E2E_RESULT: ${{ needs.e2e.result }}');
   expect(validate).toMatch(/if \[ "\$BUILD_RESULT" != "success" \] \|\| \[ "\$E2E_RESULT" != "success" \]; then\n\s+echo "::error::[^"]*"\n\s+exit 1\n\s+fi/);
   // Nothing in the gate's jobs may swallow a failure.
-  for (const name of ['build', 'e2e', 'validate']) {
+  for (const name of ['build', 'validate']) {
     expect(job(wf, name), `${name} carries continue-on-error`).not.toMatch(/continue-on-error/);
   }
-  expect(job(wf, 'e2e'), 'a step of the e2e job is conditional').not.toMatch(/\n\s+if:/);
+  // One exception since 3.0.21, and only one: the step that writes the skipped
+  // and flaky tests into the job summary runs after a red test step too and may
+  // fail without turning the shard red. It runs the summary script and nothing
+  // else, after the suite, so it can neither skip a test nor hide a red one.
+  const e2eSteps = steps(job(wf, 'e2e'));
+  const loose = e2eSteps.filter((s) => /\n\s+(if|continue-on-error):/.test(s.text));
+  expect(loose.map((s) => s.name), 'a step of the e2e job is conditional or may fail').toEqual(['Skipped and Flaky Tests']);
+  const summary = loose[0];
+  // Its keys exactly, and after them nothing but blank and comment lines up to the next job.
+  expect(summary.text).toMatch(
+    /\n {8}if: always\(\)\n {8}continue-on-error: true\n {8}run: node scripts\/test\/ci-test-summary\.mjs playwright-report\/e2e-results\.json --shard "\$SHARD"\n {8}env:\n {10}SHARD: \$\{\{ matrix\.shard \}\}\n(?: *(?:#[^\n]*)?\n)*$/,
+  );
+  expect(summary.text.split('\n').filter((l) => /^ {8}[a-z-]+:/.test(l)).map((l) => l.trim().split(':')[0])).toEqual(['if', 'continue-on-error', 'run', 'env']);
+  // Nothing at job level loosens the e2e job either.
+  expect(job(wf, 'e2e').split(/\n(?= {6}- name: )/)[0], 'the e2e job carries continue-on-error').not.toMatch(/continue-on-error|\n {4}if:/);
+  const runIndex = e2eSteps.findIndex((s) => s.text.includes('npx playwright test'));
+  expect(runIndex, 'no suite step').toBeGreaterThan(-1);
+  expect(e2eSteps.indexOf(summary), 'the summary step runs before the suite').toBeGreaterThan(runIndex);
   // Both deploy jobs wait for validate, and the app deploy only on its success.
   expect(job(wf, 'deploy-runner')).toMatch(/\n {4}needs: \[validate, security, deploy-gate\]\n/);
   expect(job(wf, 'deploy')).toMatch(/\n {4}needs: \[validate, security, deploy-gate, deploy-runner\]\n/);
@@ -134,7 +153,18 @@ test('the E2E job runs every shard of the suite, each on fresh emulators, and fa
 
   const run = steps(e2e).filter((s) => s.text.includes('npx playwright test'));
   expect(run.length, 'the suite runs more or less than once per shard').toBe(1);
-  expect(run[0].text).toContain(`run: npx playwright test --shard=\${{ matrix.shard }}/${list.length}\n`);
+  // Since 3.0.21 each shard runs the spec files the duration plan gives it
+  // (tests/shard-plan.json, scripts/test/shard-plan.mjs). The plan covers every
+  // spec file once (tests/shard-plan.spec.ts); here: one plan shard per matrix
+  // entry, the list read for this very shard, a failed or empty read stops the
+  // step (`bash -e`, `test -n`), and the list is all that filters the run.
+  expect(run[0].text).toContain(
+    '        run: |\n          files="$(node scripts/test/shard-plan.mjs files "$SHARD")"\n          test -n "$files"\n          npx playwright test $files\n        env:\n          SHARD: ${{ matrix.shard }}\n',
+  );
+  expect(run[0].text, 'the run step sets its own shell').not.toMatch(/\n\s+shell:/);
+  const plan = JSON.parse(read('tests/shard-plan.json'));
+  expect(plan.shardCount).toBe(list.length);
+  expect(plan.shards.length).toBe(list.length);
   expect(run[0].text, 'a skipped or filtered shard').not.toMatch(/--grep|--last-failed|--only-changed|--project|test\.skip|\|\||; *true/);
   expect(e2e, 'a filtered or skipped run').not.toMatch(/--grep|--last-failed|--only-changed|test\.skip/);
 

@@ -50,7 +50,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'line',
+  // In CI also a JSON report: scripts/test/ci-test-summary.mjs lists every
+  // skipped test with its reason and every test that passed only on retry in
+  // the job summary, and scripts/test/shard-plan.mjs re-measures the shard
+  // durations from it (release 3.0.21, test-quality measures 1 and 2).
+  reporter: process.env.CI ? [['line'], ['json', { outputFile: 'playwright-report/e2e-results.json' }]] : 'line',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
