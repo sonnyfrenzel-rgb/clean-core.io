@@ -5,6 +5,179 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.21] — 2026-10-24
+
+Release candidate on dev. Engine-version gated (3.0.21, `ENGINE_READS_3021_FROM`): a project analysed by an
+earlier engine keeps the reading it was given — its First insights, Documentation, BPMN, rule baskets and signed
+run do not move. New runs read with the 3.0.21 engine.
+
+### Changed — First insights and the tour (owner decisions 22 October 2026, ADR-103)
+
+- **First insights in five blocks on one screen:** in short; started by, goes in, comes out; one line per step;
+  what the code gives away; what it decides beside what it changes. The three biggest changes stand on top in
+  business words, each with its detail one fold down. Checks and stops sit one fold down as well; checks the code
+  gives no words for are counted there, not listed.
+- **"What the code gives away"** — at most three things a business reader would not expect, each a plain question
+  with its line anchor and who to ask (IT, the users, the business): code no run reaches, input asked for and then
+  ignored, a test or demo switch in production code, a fixed data scope, a header comment the code contradicts,
+  direct writes to SAP tables, the authority check. Read from the code only, no model call. Unreachable code is
+  named only when reachability is certain and no include is missing; with nothing found the block says "none of
+  the seven signs found", never "clean". Counted before release on the starter examples, the demo and a
+  benchmark sample: 10 findings on 35 cases, 0 false.
+- **The story reads like the business would tell it:** a check on a raw field is said with the program's own
+  message on that branch, or left out of the business line and counted; loops and set-up steps are no longer
+  business steps; a stop is said once, without its message code.
+- **The purpose is wider and shown whenever it exists** (approval, priority, extraction …), and the header's title
+  line is quoted as the author's claim, not taken as a fact.
+- **"What it decides" lists the rules of the business basket** — the same classification the basket line counts.
+- **"Ask this case" moved to the IT view** and Help, to make room; the test-data box is one line.
+- **The tour starts with an overview** — what the process is about, who starts it, where it starts and ends, what
+  comes out — before station 1. The story's checks and stops are at the station they belong to, one level down,
+  and a long case list carries its short form. On a phone the card sits under the map.
+
+### Changed — Design and the view on every tool
+
+- **Every tool shows the view it is read in** — "Business | IT | Management" top right of the stage header; one
+  click changes the view in the address and stays on the tool. Still a view only, never stored.
+- **Design reads canvas first:** the questions for the business stand beside the canvas (below it on a phone),
+  those that change the target on top and the rest folded; the proposal and the option comparison show once the
+  questions are answered or skipped. The design is still written on a click.
+- **The key-user limits** ("Your company may draw its own line") stand only where key user is proposed,
+  recommended or chosen.
+
+### Changed — AI-generated, own keys and Claude
+
+- **"AI-generated" replaces "Model proposal"** in every chip, export, help and public text; the pen icon stays,
+  and the tooltip names provider and model from the run's model receipt. What the engine wrote never carries the
+  label, and every model-written element of a mixed artefact carries its own origin. No signed format changes.
+- **Automatic steps with an own key are a switch, off by default.** With the platform key the automatic plain
+  wording and business names stay as they are; with your own Gemini or Claude key they run only after you turn
+  on "Automatic steps" in Settings, and come on a click until then.
+- **Claude as your own key (BYOK),** under the Additional Agreement on Own Model Keys (ZV-BYOK-1.0). Settings
+  names the model as a reader reads it (Claude Sonnet 5.5). An own key counts only after a successful test, and a
+  key saved again is untested again.
+- **The glossary assistant says it is an AI system** and marks its answers AI-generated (Art. 50(1) AI Act).
+- **A switched-off provider says since when and why.**
+
+### Changed — legal texts, Fassung 1.1
+
+- **Privacy policy, Terms of Service v2.3.0, the BYOK agreement, the trust page and the consent texts** in German
+  and English, each from one source, with the lawyer's replacement texts G01–G23: a precautionary joint
+  controllership clause, the billing-address criterion, the contract kept apart from community mail, an amendment
+  accepted early taking effect on its announced day, Resend retention by account setting, the ATC fields and the
+  SAP interface warranty. Terms v2.2.0 stays in force beside v2.3.0. The release date of Fassung 1.1 and the
+  effective date of v2.3.0 are open values the owner sets on release day; the release gate stays red until then.
+- **The record of an acceptance** carries the language version and its digest, and the confirmation mail the full
+  wording and the effective date. Proof records carry a deletion date and are pseudonymised on erasure.
+- **No request to Google before sign-in:** public pages load the Auth SDK only for a browser that holds the
+  signed-in hint, an open access dialog or a pending redirect. After a Google sign-in the profile picture address
+  leaves the account record.
+- **The operator's new-account mail** carries the account id, the sign-in method, the Terms version and the
+  time — no name, no address, no motivation.
+- **/report and /report/de** — the reporting notes the Terms point to. One suppression list covers project and
+  portfolio invitations.
+- **The tenant connection reads structure only:** the S/4 catalogue mode is gone; only a named service's
+  `$metadata` is read, never a record, a field value or a count.
+
+### Changed — the way in and the way back (owner decisions 22 October 2026)
+
+- **A signed-out project or tool link goes to sign-in and comes back to it,** instead of a 404; an account without
+  access reads one sentence and "Go to My workspace".
+- **The quota has one name:** analysis runs, counted as left ("4 of 5 runs left") in the header, Settings, the
+  server's message and the assistant. When the free runs are spent, "Add your own key" links every hop to the key.
+- **A new invited reader** keeps the invitation through the address confirmation, can create an account from the
+  invitation page, sees "Signed in as … · Use another account", and opens the project directly on accepting. On
+  the workspace and the tools an invited reader sees one strip, "Shared with you for reading by … — read only".
+- **One error boundary** for the workspace and all seven tools, with "Back to project workspace".
+- **A tab left open across a deploy** shows a quiet "Clean-Core.io was updated — Reload"; never an automatic
+  reload while you type.
+- **The start shows the target as one line** ("Assessed against SAP Cloud ERP Private · Change"), and the own-code
+  footer names the edition actually chosen (it always said SAP Cloud ERP Private).
+- **The sign-in dialog** is titled "Sign in or create a free account"; "already registered" offers "Sign in
+  instead" and "Reset password". The sign-up fields are unchanged.
+
+### Changed — engine and transformation
+
+- **A constant the code filters its reads with, or writes into what it creates, is a business decision** — "only
+  purchasing organisation 1000 — still right?" — not "declared, not used".
+- **The program's writes are read from what a run reaches:** posting calls, `IN UPDATE TASK`, batch input and
+  `MODIFY ENTITIES` count as writes; a write or an RFC call no run reaches decides nothing; a `NONE` destination
+  constant is local. The target architecture and the extensibility route read the same fact.
+- **The BPMN stays at the business level for class-based code:** a routine is drawn once (later call sites are
+  call activities), and a run of guard checks is one step "N checks" with every guard line. On the PO demo two
+  rejecting guards become one step (84 → 81 flow nodes).
+- **Complexity and criticality print on their own 1–10 scale** in the audit pack and the board deck, with bands
+  a 1–10 score can reach. A pack issued before keeps its bytes.
+- **Generated packages (scaffold version 23):** a split part on the Node track gets its parent routine's
+  parameters; a large method of a local class is split like a large FORM; a rule answered "Move to SAP standard" is
+  no longer rebuilt. From the rest of the external MM review: the RAP query provider applies filter and sort after
+  the logic, amounts carry their currency and scale, the design does not exclude the SAP standard with a blanket
+  claim, and "why no result" names the concrete states.
+- **Process benchmark (300 cases): unchanged** — 76.1 % node hits, 71.6 % edges; wave 1 81.9 %, wave 2 82.2 %,
+  wave 3 66.4 % node hits. Every case reads exactly as with 3.0.20: the new readings sit above the process
+  skeleton the benchmark measures.
+
+### Added — includes and ATC
+
+- **A program read with its includes traces every line back to its file** — one pure join for the upload and a
+  batch, abapGit file names understood, each code card naming the include and line. A named include that is
+  missing stays "not read". Macros are not expanded; every line that uses one is now named beside its definition.
+- **ATC results dock on as evidence:** the ADT ATC worklist XML and checkstyle XML are read, the run date is said
+  only where it is known, and ATC findings are placed line by line beside the engine's — never merged, never in a
+  signed run or the score.
+
+### Added — portfolio, step 1
+
+- **Many programs in one batch, one aggregated read-only view** — for accounts with a tested own model key. A
+  batch upload becomes one project per program, each analysed by the engine and signed as its own run, with no
+  model call. The view shows score bands, Level A–D of the SAP objects used, the four buckets with "not decided",
+  recurring objects and findings, and what it covers ("412 of 430 analysed · 18 failed"). Never a portfolio
+  score; nothing aggregated is signed. CSV/XLSX export, a one-page print, named selections, and sharing by the same
+  e-mail-bound read invitation.
+
+### Changed — fit to standard: one honest check
+
+- **The IT view's Standard fit table and the model's "Standard Fit" (High/Medium/Low) are gone** — every row read
+  "Not determined". The Management card is the one standard check, "What stands in the way of the SAP standard",
+  and says that functional fit to the standard is not measured. Stored analyses that carry the old field still open.
+- **"Where this program touches SAP standard"** (IT view, one line on the Management card): SAP application areas
+  from the Cloudification Repository, the departures with their lines, and the gate classes A–D or why not.
+- **A guided check and a workshop package:** one question per rule from a fixed catalogue, open points shown as
+  conditions on "Move to SAP standard", and an agenda (Word or Markdown) and the process (BPMN 2.0) for your own
+  workshop. No model call, no SAP website, no Signavio content.
+
+### Fixed — security and the external code audit of v3.0.20
+
+- **Test receipts** carry their verdicts on a channel the suite cannot write, one worse-wins rule counts what is
+  shown, and a receipt says whether the suite that ran is the one stored (CA-INT-01).
+- **Model receipts** bind the prompt as well as the answer and are used once (CA-INT-02); every model call names
+  its stage and is bounded by it, and the community key keeps a daily budget with a breaker (SEC-01).
+- **Runs and audit packs are signed under separate derived keys;** everything signed before still verifies, and the
+  verify endpoint answers only for a canonical manifest (CA-INT-03).
+- **Invitations** need a confirmed address and stay within a daily budget (SEC-02); one test run per account at a
+  time, with runner seconds per day (SEC-04); self-service journal rows carry no address, and erasure
+  pseudonymises the rest (PRV-01); also L-01, L-05, L-09, L-29, and `security.txt` with a reporting section in
+  SECURITY.md (L-21).
+- **SEC-2026-906 to -910 fixed.** SEC-2026-888 to -890 are fixed in `firestore.rules`, which waits for the owner's
+  rules deploy. The runner image is pinned to the Node security release. Details stay in the sealed register.
+- **Operator steps after the deploy:** Firestore TTL policies on `expiresAt` for `platform_model_budget` and
+  `model_receipt_uses` and for the proof log (`docs/DATA-RETENTION.md`).
+
+### Fixed
+
+- **A reconstruction larger than one Firestore document is stored compressed,** and a refused baseline no longer
+  reads as a missing analysis.
+- **A narrative gap without a rationale, strategy, severity or complexity is stored with an empty value** instead
+  of failing the run after its reservation.
+- **The revision history is read in pages of 50,** newest first, with older revisions on request.
+
+### Test infrastructure
+
+- **The E2E shards run whole spec files split by measured duration** (`tests/shard-plan.json`), about 19 minutes a
+  shard, and each shard lists its skipped tests with their reason and the tests that passed only on retry.
+- **`scripts/test/affected-rendered.mjs`** names the rendered specs a change needs before a push.
+- **The QA triage tells a rewritten assertion from a removed one.**
+
 ## [v3.0.20] — 2026-10-22
 
 ### Changed — the Business view for business readers (owner decisions 21 October 2026)
