@@ -42,7 +42,14 @@ async function firstScreen(page: Page) {
   // its steps in plain words, the opening of the Business view (owner: "he just
   // wants to know more about his old process") — and the full map, drawn from
   // the signed run, follows right under it.
-  await expect(page.locator('[data-process-story]')).toBeInViewport();
+  //
+  // Since 3.0.21 (ADR-103, five blocks on one screen) the story is block 3,
+  // under "In short" — which now quotes the header's title as the author's
+  // claim — and "Started by / Goes in / Comes out"; at 1440 × 1000 it begins
+  // just under the fold. The process still stands in the first screen as its
+  // main line, drawn beside the answer; the story is on the page right under it.
+  await expect(page.locator('[data-first-look-process="drawn"]')).toBeInViewport();
+  await expect(page.locator('[data-process-story]')).toBeVisible();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
   // The main line stays on the right after the build-up (owner 10.10.2026,

@@ -176,13 +176,23 @@ test('the keyboard cannot leave the gate', async ({ page }) => {
     });
 
   expect(await insideGate(), 'focus did not start inside the dialog').toBe(true);
-  // On the statement to tick (C2 of the legal texts, Fassung 1.1): Accept stays
-  // disabled until it is ticked, so the caret starts on the box — not on the
-  // layer, not on "Sign out instead".
+  // On the first thing the gate asks (Fassung 1.1): the contract language
+  // (Terms 1.4) stands above the statement to tick, and a tick belongs to the
+  // wording it was given for, so the caret starts on the language choice — not
+  // on the layer, not on "Sign out instead", and not on Accept, which stays
+  // disabled until the statement (C2) is ticked.
   await expect(
-    gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]'),
-    'the caret did not start on the statement to accept',
+    gate.locator('[data-contract-language] input[type="radio"]').first(),
+    'the caret did not start on the contract language',
   ).toBeFocused();
+  // The statement to accept is the next stop the keyboard reaches by Tab.
+  const box = gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]');
+  let reached = false;
+  for (let i = 0; i < 10 && !reached; i++) {
+    await page.keyboard.press('Tab');
+    reached = await box.evaluate((el) => el === document.activeElement);
+  }
+  expect(reached, 'Tab never reached the statement to accept').toBe(true);
 
   // Forwards past the last control, and backwards past the first: both are the
   // moments a trap is missing.
