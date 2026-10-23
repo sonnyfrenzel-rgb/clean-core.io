@@ -1127,6 +1127,77 @@ test.describe('the report a maintainer acts on', () => {
     expect(testSignals('tests/a.spec.ts', diff).map((s: { signal: string }) => s.signal)).toEqual(['assertion removed', 'test skipped or focused', 'lint or type check suppressed']);
     expect(acceptanceCriteria('Roadmap: **„Typecheck, Tests und Fachfreigaben sind Pflichtchecks."**')).toEqual(['Typecheck, Tests und Fachfreigaben sind Pflichtchecks.']);
   });
+
+  // Release 3.0.21 (test-quality measure 7, owner decision 23.10.2026): a rewritten assertion is not a removed one.
+  test('a removed assertion with no replacement in its hunk is "assertion removed"', async () => {
+    const { testSignals } = await lib('triage.mjs');
+    const diff = [
+      'diff --git a/tests/a.spec.ts b/tests/a.spec.ts',
+      '--- a/tests/a.spec.ts',
+      '+++ b/tests/a.spec.ts',
+      '@@ -10,4 +10,3 @@ test(\'x\', () => {',
+      '   const result = run();',
+      '-  expect(result.status).toBe(200);',
+      '   expect(result.body).toContain(\'ok\');',
+      // Another hunk adds an assertion on the same subject: that is not a replacement for this one.
+      '@@ -40,2 +39,3 @@',
+      '+  expect(result.status).toBe(201);',
+    ].join('\n');
+    const signals = testSignals('tests/a.spec.ts', diff);
+    expect(signals.map((s: { signal: string; weight: string }) => [s.signal, s.weight])).toEqual([['assertion removed', 'high']]);
+  });
+
+  test('an assertion rewritten on the same subject in the same hunk is "assertion changed", with lower weight', async () => {
+    const { testSignals, expectSubject } = await lib('triage.mjs');
+    expect(expectSubject("    await expect(page.getByRole('button', { name: 'Run (now)' })).toBeVisible();")).toBe("page.getByRole('button', { name: 'Run (now)' })");
+    expect(expectSubject('  expect(a, `msg (${x})`).toBe(1);')).toBe('a');
+    const diff = [
+      '@@ -10,4 +10,4 @@',
+      "-  await expect(page.getByRole('button', { name: 'Run' })).toBeVisible();",
+      "+  await expect(page.getByRole('button', { name: 'Run' })).toBeEnabled();",
+      '-  expect(result.status).toBe(200);',
+      '-  expect(result.body).toContain(\'ok\');',
+      '+  expect(result.status,   \'status\').toBe(201);',
+    ].join('\n');
+    const signals = testSignals('tests/a.spec.ts', diff).map((s: { signal: string; weight: string }) => [s.signal, s.weight]);
+    expect(signals).toEqual([
+      ['assertion changed', 'low'],
+      ['assertion changed', 'low'],
+      // result.body lost its assertion and nothing in the hunk replaces it.
+      ['assertion removed', 'high'],
+    ]);
+  });
+
+  test('a Test-Change trailer reaches the reviewer, and the removal it names is still reported', async () => {
+    const { triage, testChangeTrailers } = await lib('triage.mjs');
+    const { buildUserMessage } = await lib('prompt.mjs');
+    const diff = ['@@ -10,3 +10,2 @@', '   const result = run();', '-  expect(result.legacyField).toBe(true);'].join('\n');
+    const claims = [
+      '# CHANGELOG.md',
+      // Prose is not a commit: a trailer-shaped line there is not the owner's decision.
+      'Test-Change: owner decision 01.01.2026 FAKE-1',
+      '',
+      '# commits',
+      '--- abc1234',
+      'test: the legacy field is gone',
+      '',
+      'Test-Change: owner decision 23.10.2026 R-3021-7',
+      'Co-Authored-By: Someone <x@example.com>',
+    ].join('\n');
+    expect(testChangeTrailers(claims)).toEqual(['owner decision 23.10.2026 R-3021-7']);
+    const t = triage([{ path: 'tests/a.spec.ts', status: 'M' }], new Map([['tests/a.spec.ts', diff]]), claims);
+    expect(t.signals.map((s: { signal: string }) => s.signal)).toEqual(['assertion removed']);
+    expect(t.testChanges).toEqual(['owner decision 23.10.2026 R-3021-7']);
+    const message = buildUserMessage({ range: { base: 'b', head: 'h', baseReason: 'x', commits: [] }, batch: { files: [] }, batchIndex: 0, batchCount: 1, triage: t, claims: '', previousOpen: [], refuted: [] });
+    expect(message).toContain('- tests/a.spec.ts: assertion removed — `-  expect(result.legacyField).toBe(true);`');
+    expect(message).toContain('Test changes the commits attribute to an owner decision');
+    expect(message).toContain('- owner decision 23.10.2026 R-3021-7');
+    expect(message).not.toContain('FAKE-1');
+    // Without a trailer the reviewer is told there is none.
+    const plain = triage([{ path: 'tests/a.spec.ts', status: 'M' }], new Map([['tests/a.spec.ts', diff]]), '# commits\n--- abc\ntest: x');
+    expect(plain.testChanges).toEqual([]);
+    expect(buildUserMessage({ range: { base: 'b', head: 'h', baseReason: 'x', commits: [] }, batch: { files: [] }, batchIndex: 0, batchCount: 1, triage: plain, claims: '', previousOpen: [], refuted: [] })).toContain('Test changes attributed to an owner decision: none');
+  });
 });
 
 test.describe('the loop starts itself', () => {
