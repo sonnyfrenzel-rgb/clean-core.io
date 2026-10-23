@@ -5,7 +5,7 @@ import { legalDocumentBlocks } from '@/lib/legal/documents';
 
 /**
  * Reporting illegal content, German version — the page section 7 of the German
- * Terms of Service v2.3.0 points to. The words are in
+ * Terms of Service (version of 23.10.2026) points to. The words are in
  * `lib/legal/texts/report.de.ts`.
  */
 

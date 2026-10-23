@@ -5,7 +5,7 @@ import { legalDocumentBlocks } from '@/lib/legal/documents';
 
 /**
  * Reporting illegal content, English version — the page section 7 of the Terms
- * of Service v2.3.0 points to (owner decision 22./23.10.2026).
+ * of Service (version of 23.10.2026) points to (owner decision 22./23.10.2026).
  *
  * The words are in `lib/legal/texts/report.en.ts` (German: `report.de.ts`, at
  * `/report/de`). This page only frames the text.
