@@ -17,10 +17,17 @@ import { CONSENT_TEXTS } from '../lib/legal/consent-texts';
  * (`legal-texts-release-gate.spec.ts`) keeps it from going live unconfirmed.
  *
  * T04 (the withdrawal function) was dropped with the right of withdrawal
- * (operator decision 17.10.2026): no text may promise one.
+ * (operator decision 17.10.2026) and is back since 23.10.2026 as a voluntary
+ * safeguard (owner decision after the lawyer's feedback, § 356a BGB): the
+ * account deletion is offered as "Withdraw from / end the contract", without
+ * acknowledging a statutory right of withdrawal — so the promise carries its
+ * open value like the others, and no text offers a model withdrawal form.
  */
 
 type Case = { id: string; key: string; promises: RegExp[] };
+
+/** Where a text offers the function by its label (Terms section 13). */
+const WITHDRAWAL_OFFER = /"Withdraw from \/ end the contract"|„Vertrag widerrufen \/ beenden“/;
 
 const CASES: Case[] = [
   {
@@ -42,6 +49,11 @@ const CASES: Case[] = [
     id: 'T03 the confirmation mail with version, language, time and digest',
     key: 't03ConfirmationMail',
     promises: [/The confirmation serves as a record for both sides|Die Bestätigung dient dem Nachweis für beide Seiten/],
+  },
+  {
+    id: 'T04 the voluntary withdrawal / termination function with its receipt',
+    key: 't04WithdrawalFunction',
+    promises: [WITHDRAWAL_OFFER],
   },
   {
     id: 'T05/T06 the proof log with per-entry deletion and the nightly purge',
@@ -79,7 +91,13 @@ for (const c of CASES) {
   });
 }
 
-test('T04 was dropped: no text promises a withdrawal function', () => {
+test('T04 is voluntary: no text offers a model withdrawal form or acknowledges a right of withdrawal', () => {
   const all = [...RAW_BLOCKS.map((b) => b.text), ...Object.values(CONSENT_TEXTS).flatMap((g) => Object.values(g).flatMap((v) => (Array.isArray(v) ? v : [v])).flatMap((x) => [x.de, x.en]))].join('\n');
-  expect(all).not.toMatch(/withdrawal function|Widerrufsfunktion|Withdraw from contract|Vertrag widerrufen|Muster-Widerrufsformular|model withdrawal form/i);
+  expect(all).not.toMatch(/Muster-Widerrufsformular|model withdrawal form|Widerrufsbelehrung|Widerrufsfrist|withdrawal period/i);
+  // Where the Terms offer it, the same block says it is voluntary.
+  const offers = RAW_BLOCKS.filter((x) => WITHDRAWAL_OFFER.test(x.text));
+  expect(offers.length).toBeGreaterThan(0);
+  for (const b of offers) {
+    expect(b.text, b.where).toMatch(/without thereby acknowledging a statutory right of withdrawal|ohne damit ein gesetzliches Widerrufsrecht anzuerkennen/);
+  }
 });

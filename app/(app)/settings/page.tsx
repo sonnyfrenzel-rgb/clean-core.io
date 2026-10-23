@@ -57,6 +57,8 @@ import type { SemanticState } from '@/lib/provenance';
 import { cn } from '@/lib/utils';
 import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_HREF, QUOTA_NAME, runsLeftLabel } from '@/lib/run-quota-rule';
 import { signInLinkFor } from '@/lib/return-path';
+import { END_CONTRACT_ID, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE } from '@/lib/contract-withdrawal';
+import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
 
 /** A quiet block inside a card — a note, an explanation, the strength meter. */
 const INSET = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-4';
@@ -230,6 +232,20 @@ export default function SettingsPage() {
   const [deletePasswordError, setDeletePasswordError] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [accountErased, setAccountErased] = useState(false);
+
+  // C13 (Terms section 13): "Withdraw from / end the contract" in the footer
+  // links to `/settings#end-contract`, which brings the Danger Zone into view
+  // with the deletion confirmation open — the declaration is that deletion.
+  // Nothing is sent before the confirmation's own checks pass.
+  useEffect(() => {
+    if (loading || !profile) return;
+    if (window.location.hash.slice(1) !== END_CONTRACT_ID) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(END_CONTRACT_ID)?.scrollIntoView({ block: 'start' });
+      setShowDeleteAccount(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, profile]);
 
   // BYOT (Bring Your Own Tenant) States
   const [byotMotivation, setByotMotivation] = useState('');
@@ -1877,6 +1893,7 @@ export default function SettingsPage() {
           send readers to ("Settings → Danger Zone"). */}
       <CcCard
         level={2}
+        id={END_CONTRACT_ID}
         title={
           <span className="inline-flex items-center gap-2">
             <AlertCircle size={16} className="text-cc-error" aria-hidden={true} />
@@ -1904,6 +1921,18 @@ export default function SettingsPage() {
             <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} icon={<Trash2 size={16} aria-hidden={true} />}>
               Delete my account
             </CcButton>
+            {/* C13 — the voluntary withdrawal / termination function (Terms
+                section 13): the same deletion confirmation, labelled as what
+                it also is; the receipt follows by e-mail. */}
+            <div className={INSET} data-settings-end-contract="">
+              <p className="m-0 mb-3 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
+              <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} data-settings-end-contract-button="">
+                {END_CONTRACT_LABEL}
+                <span lang="de" className="ml-2 font-medium text-cc-ink-muted">
+                  · {END_CONTRACT_LABEL_DE}
+                </span>
+              </CcButton>
+            </div>
           </div>
         )}
       </CcCard>

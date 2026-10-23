@@ -16,7 +16,8 @@ import type { LegalLang } from './open-values';
  *   C7 (deletion dialog), C5 (confirmation mail, acceptance test T03) and C11
  *   (suspension notice, T01) are the texts the Settings / own-key packages
  *   build against. C8 (AI marking) and C10 (invitation mail) live with their
- *   features.
+ *   features. C13 (the voluntary withdrawal function): Settings, the signed-in
+ *   footer of the app shell and the receipt mail `lib/withdrawal-receipt-email.ts`.
  *
  * Removed against the draft, as the review (E14, E26, E27) says: the re-send
  * and the in-app display on a failed delivery of the confirmation mail, the
@@ -237,8 +238,8 @@ export const CONSENT_TEXTS = {
    */
   portfolioInvitation: {
     scope: {
-      de: 'Sie erhalten nur Lesezugriff auf die Übersicht des Portfolios – Kennzahlen über die darin aufgeführten Projekte: ihre Namen, Scores, Clean-Core-Stufen und Gruppen und die verwendeten SAP-Objekte. Kein Projekt und kein Quellcode wird dabei geöffnet.',
-      en: 'You get read access to the portfolio overview only — figures across the listed projects: their names, scores, clean core levels and groups, and the SAP objects they use. No project and no source code is opened.',
+      de: 'Sie erhalten nur Lesezugriff auf die Übersicht des Portfolios – Kennzahlen über die Projekte, die beim Versand dieser Einladung darin aufgeführt sind: ihre Namen, Scores, Clean-Core-Stufen und Gruppen und die verwendeten SAP-Objekte. Ein Projekt, das die einladende Person später hinzufügt, wird für Sie erst sichtbar, wenn sie es gesondert freigibt. Kein Projekt und kein Quellcode wird dabei geöffnet.',
+      en: 'You get read access to the portfolio overview only — figures across the projects listed when this invitation was sent: their names, scores, clean core levels and groups, and the SAP objects they use. A project the person who invited you adds later becomes visible to you only once they share it separately. No project and no source code is opened.',
     },
     about: {
       de: 'Clean-Core.io ist ein unentgeltliches Community-Werkzeug zur Analyse von SAP-ABAP-Code.',
@@ -331,6 +332,41 @@ export const CONSENT_TEXTS = {
     surveyNotice: {
       de: 'Mit Ihrer Antwort willigen Sie ein, dass wir sie mit Ihrem Konto speichern, damit sie einmal zählt (Art. 6 Abs. 1 lit. a DSGVO). Sie können das jederzeit widerrufen — eine Zeile an info@clean-core.io genügt, dann löschen wir Ihre Antwort.',
       en: 'By answering you consent to our storing your answer with your account so that it counts once (Art. 6(1)(a) GDPR). You can withdraw at any time — one line to info@clean-core.io is enough, and we delete your answer.',
+    },
+  },
+
+  /**
+   * C13 — the voluntary withdrawal / termination function (owner decision
+   * 23.10.2026 after the lawyer's feedback, § 356a BGB as a safeguard; Terms
+   * section 13). The entry in Settings and in the signed-in footer leads to the
+   * deletion confirmation (C7); once the declaration is received — before the
+   * erasure, so its delivery record is pseudonymised with the account's — a
+   * receipt goes by e-mail, best effort and without resend (`lib/withdrawal-receipt-mail.ts`), in the
+   * language of the accepted Terms.
+   */
+  withdrawal: {
+    label: { de: 'Vertrag widerrufen / beenden', en: 'Withdraw from / end the contract' },
+    settingsLead: {
+      de: 'Sie können den Vertrag über die Nutzung von Clean-Core.io jederzeit widerrufen oder beenden. Ihre Erklärung geben Sie ab, indem Sie Ihr Konto löschen; den Eingang bestätigen wir Ihnen per E-Mail. Diese Funktion bieten wir freiwillig an (Nutzungsbedingungen, Ziffer 13).',
+      en: 'You can withdraw from or end the contract on the use of Clean-Core.io at any time. You make the declaration by deleting your account; we confirm its receipt by e-mail. We offer this function voluntarily (Terms of Service, section 13).',
+    },
+    receiptSubject: {
+      de: 'Clean-Core.io — Eingang Ihrer Erklärung: Vertrag widerrufen / beenden',
+      en: 'Clean-Core.io — receipt of your declaration: withdraw from / end the contract',
+    },
+    receiptReceived: {
+      de: 'Wir haben Ihre Erklärung erhalten, den Vertrag über die Nutzung von Clean-Core.io zu widerrufen bzw. zu beenden.',
+      en: 'We have received your declaration to withdraw from or end the contract on the use of Clean-Core.io.',
+    },
+    receiptAt: { de: 'Eingegangen am', en: 'Received at' },
+    receiptEffect: {
+      de: 'Wir löschen Ihr Konto jetzt; damit endet der Vertrag (Nutzungsbedingungen, Ziffern 2.3 und 13), und eine Zusatzvereinbarung zu eigenen Modellschlüsseln endet mit ihm. Schlägt die Löschung fehl, sagen Ihnen das die Einstellungen, und Sie können sie wiederholen. Was die Löschung nicht erreicht, steht in der Datenschutzerklärung, Abschnitte 5 und 6.',
+      en: 'We are deleting your account now; with that the contract ends (Terms of Service, sections 2.3 and 13), and an Additional Agreement on Own Model Keys ends with it. If the deletion does not go through, Settings tells you so and you can repeat it. What the deletion does not reach is set out in the Privacy Policy, sections 5 and 6.',
+    },
+    receiptLinkLead: { de: 'Die Nutzungsbedingungen:', en: 'The Terms of Service:' },
+    receiptFooter: {
+      de: 'Gesendet an {E-Mail}, weil diese Adresse zu dem Clean-Core.io-Konto gehört, das auf Ihre Erklärung hin gelöscht wird. Wir senden zu dieser Erklärung nur diese eine Mail.',
+      en: 'Sent to {E-Mail} because this address belongs to the Clean-Core.io account that is being deleted on your declaration. This is the only mail we send about this declaration.',
     },
   },
 
