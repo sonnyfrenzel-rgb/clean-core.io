@@ -179,6 +179,13 @@ export const GATED_ROUTES: GatedRoute[] = [
   // My workspace — which projects were shared with this account (ids only).
   { file: 'app/api/shared-projects/route.ts', method: 'GET', path: () => '/api/shared-projects' },
   { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}/readers`, body: { uid: 'not-a-reader' } },
+  // Roadmap 3.0.21 — the automatic-steps switch of the account's own key (owner
+  // decision 22.10.2026, B6): it decides what the own key is spent on without a
+  // click, so it sits behind the factor like the other own-key routes.
+  { file: 'app/api/secrets/gemini/auto-steps/route.ts', method: 'POST', path: () => '/api/secrets/gemini/auto-steps', body: { on: false } },
+  // Roadmap 3.0.21 — the portfolio view of a shared selection: the gate answers
+  // before the selection is looked up, so an id that does not exist is enough.
+  { file: 'app/api/portfolio/view/route.ts', method: 'GET', path: () => '/api/portfolio/view?selection=not-a-selection' },
 ];
 
 /**
