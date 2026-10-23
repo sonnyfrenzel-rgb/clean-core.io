@@ -146,6 +146,13 @@ export const KEY_PLACEHOLDER: Readonly<Record<ModelKeyProvider, string>> = {
  */
 export const OWN_CLAUDE_MODEL = 'claude-sonnet-5-5';
 
+/**
+ * The same model as a reader reads it, for prose on screen. The id above is
+ * what the API, the receipt and the legal register name; in a sentence it is a
+ * machine string (`tests/helpers/machine-strings.ts`). Changed with the id.
+ */
+export const OWN_CLAUDE_MODEL_NAME = 'Claude Sonnet 5.5';
+
 /** The Claude models the proxy may call. Only a model named here is ever sent. */
 export const ALLOWED_CLAUDE_MODELS: ReadonlySet<string> = new Set([OWN_CLAUDE_MODEL]);
 

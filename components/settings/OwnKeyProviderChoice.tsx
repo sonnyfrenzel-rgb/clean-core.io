@@ -2,7 +2,7 @@
 
 import CcRadioGroup from '@/components/cc/RadioGroup';
 import {
-  OWN_CLAUDE_MODEL,
+  OWN_CLAUDE_MODEL_NAME,
   PROVIDER_LABEL,
   offeredKeyProviders,
   type ModelKeyProvider,
@@ -19,7 +19,7 @@ import {
  */
 const OPTION_HELP: Readonly<Record<ModelKeyProvider, string>> = {
   gemini: 'A Google Gemini API key. Every stage runs on the Gemini model the platform uses.',
-  anthropic: `An Anthropic API key. Every stage runs on Claude (${OWN_CLAUDE_MODEL}).`,
+  anthropic: `An Anthropic API key. Every stage runs on ${OWN_CLAUDE_MODEL_NAME}.`,
 };
 
 export interface OwnKeyProviderChoiceProps {

@@ -8,6 +8,7 @@ import {
   ALLOWED_CLAUDE_MODELS,
   MODEL_KEY_PROVIDERS,
   OWN_CLAUDE_MODEL,
+  OWN_CLAUDE_MODEL_NAME,
   PLATFORM_PROVIDER,
   PROVIDER_TERMS,
   RECEIPT_PROVIDER_ID,
@@ -347,7 +348,10 @@ test.describe('Settings', () => {
     // Anthropic is offered only once the owner's privacy policy, terms and DPA name it (ANTHROPIC_OWN_KEY_OFFERED).
     if (offeredKeyProviders().includes('anthropic')) {
       expect(html).toContain('Anthropic Claude');
-      expect(html).toContain(OWN_CLAUDE_MODEL);
+      // The model by the name a reader reads, not its API id — a raw id in a
+      // sentence is a machine string (tests/machine-strings-guard.spec.ts).
+      expect(html).toContain(OWN_CLAUDE_MODEL_NAME);
+      expect(html).not.toContain(OWN_CLAUDE_MODEL);
       expect(html).toMatch(/value="anthropic"[^>]*checked=""|checked=""[^>]*value="anthropic"/);
     } else {
       expect(html).not.toContain('Anthropic Claude');
