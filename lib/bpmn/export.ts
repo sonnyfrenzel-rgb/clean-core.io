@@ -85,7 +85,9 @@ export interface BpmnExportOptions {
    * roadmap 2.4) for a download. Read by {@link buildBpmnExportFromSource} and {@link buildReadingExports}, which turn
    * it into `aiNames` with the provider and model of the receipt the server verified when it stored the names
    * ({@link aiNamesOfNaming}) — never a name written here. A naming made for another reading of the source applies to
-   * nothing, and the file stays the engine's. `buildBpmnExport` itself reads only `aiNames`.
+   * nothing, and the file stays the engine's. `buildBpmnExport` itself reads only `aiNames`. Only a plain file
+   * (`names: 'plain'`) takes it: the technical file stays byte for byte the engine's, for a clean round trip with
+   * SAP Signavio (owner decision 23.10.2026).
    */
   naming?: ProcessNamingRecord | null;
 }
@@ -244,7 +246,8 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
 /** The same, for a caller that holds the source rather than the skeleton. */
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
   const { naming, ...rest } = options;
-  if (!naming) return buildBpmnExport(buildProcessSkeleton(source), { source, ...rest });
+  // The technical file is the engine's alone (owner decision 23.10.2026): a naming applies to the plain file only.
+  if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source), { source, ...rest });
   // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once.
   const context = namingContextOf(source);
   const aiNames = aiNamesOfNaming(context, naming);

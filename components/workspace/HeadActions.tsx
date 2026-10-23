@@ -130,17 +130,11 @@ export default function WorkspaceHeadActions({
     if (!signed) return;
     setExportError(null);
     try {
-      // Loaded on the click, as on the Documentation stage. The stored business names travel with the file, marked
-      // with the provider and model of their receipt (3.0.21); none stored or none readable, the engine's names.
-      const [{ buildBpmnExportFromSource, bpmnFileName }, { fetchProcessNaming }] = await Promise.all([
-        import('@/lib/bpmn/export'),
-        import('@/lib/process-naming-client'),
-      ]);
-      const naming = await fetchProcessNaming(projectId);
+      // Loaded on the click, as on the Documentation stage.
+      const { buildBpmnExportFromSource, bpmnFileName } = await import('@/lib/bpmn/export');
       const { xml } = buildBpmnExportFromSource(signed.source, {
         processName: project?.name || signed.fileName,
         sourceFileName: signed.fileName,
-        naming,
       });
       saveAs(new Blob([xml], { type: 'application/xml;charset=utf-8' }), bpmnFileName(`${project?.name || 'Project'}_Process`));
       setExportOpen(false);

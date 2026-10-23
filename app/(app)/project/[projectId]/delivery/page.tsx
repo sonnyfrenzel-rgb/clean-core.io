@@ -356,18 +356,11 @@ export default function DeliveryPage() {
 
   const downloadBpmn = async () => {
     if (!signedSource || handoverBlocked) return;
-    // Loaded on the click: the ABAP reader is paid for only when the file is asked for. The stored business names
-    // travel with the file, marked with the provider and model of their receipt (3.0.21).
-    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-    const [{ buildBpmnExportFromSource, bpmnFileName }, { fetchProcessNaming }] = await Promise.all([
-      import('@/lib/bpmn/export'),
-      import('@/lib/process-naming-client'),
-    ]);
-    const naming = idStr ? await fetchProcessNaming(idStr) : null;
+    // Loaded on the click: the ABAP reader is paid for only when the file is asked for.
+    const { buildBpmnExportFromSource, bpmnFileName } = await import('@/lib/bpmn/export');
     const { xml } = buildBpmnExportFromSource(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
-      naming,
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     await saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));

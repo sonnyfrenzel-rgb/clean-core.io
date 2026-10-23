@@ -21,9 +21,11 @@ const ROOT = path.resolve(__dirname, '..');
 const FILE = 'Z_MM_PO_APPROVAL.abap';
 const source = fs.readFileSync(pinnedExamplePath(FILE), 'utf8').replace(/\r\n/g, '\n');
 const options: BpmnExportOptions = { processName: 'PO approval', sourceFileName: FILE, exporterVersion: 'v3.0.21' };
+const plainOptions: BpmnExportOptions = { ...options, names: 'plain' };
 const context = namingContextOf(source);
 
-const engineOnly = buildBpmnExportFromSource(source, options);
+const engineOnly = buildBpmnExportFromSource(source, plainOptions);
+const technicalOnly = buildBpmnExportFromSource(source, options);
 const tasks = parseBpmn(engineOnly.xml).elements.filter((e) => /task/i.test(e.tag)).slice(0, 2);
 const skeletonIds = tasks.map((t) => engineOnly.elementNode[t.id]);
 const NAMES = ['Approve the purchase order', 'Tell the buyer'];
@@ -57,26 +59,26 @@ test.describe('BPMN download: model names marked from the stored receipt', () =>
   });
 
   test('without a stored naming the download is the engine file, byte for byte, and unmarked', () => {
-    expect(buildBpmnExportFromSource(source, { ...options, naming: null }).xml).toBe(engineOnly.xml);
+    expect(buildBpmnExportFromSource(source, { ...plainOptions, naming: null }).xml).toBe(engineOnly.xml);
     expect(engineOnly.xml).not.toContain('cc:origin');
     expect(aiMarkingOf(engineOnly.xml)).toBeNull();
   });
 
   test('with a receipt the named elements carry provider and model of the record, nothing else is marked', () => {
-    const { xml } = buildBpmnExportFromSource(source, { ...options, naming: record('anthropic', 'claude-receipt-model') });
+    const { xml } = buildBpmnExportFromSource(source, { ...plainOptions, naming: record('anthropic', 'claude-receipt-model') });
     expect(originsOf(xml)).toEqual([['anthropic', 'claude-receipt-model'], ['anthropic', 'claude-receipt-model']]);
     const elements = parseBpmn(xml).elements;
     for (const [i, t] of tasks.entries()) expect(elements.find((e) => e.id === t.id)?.name).toBe(NAMES[i]);
     expect(aiMarkingOf(xml)).toContain('claude-receipt-model');
     // The same file with another receipt names the other model: the name comes from the record, not from the code.
-    const other = buildBpmnExportFromSource(source, { ...options, naming: record('google-gemini', 'gemini-receipt-model') }).xml;
+    const other = buildBpmnExportFromSource(source, { ...plainOptions, naming: record('google-gemini', 'gemini-receipt-model') }).xml;
     expect(originsOf(other)).toEqual([['google-gemini', 'gemini-receipt-model'], ['google-gemini', 'gemini-receipt-model']]);
   });
 
   test('a naming made for another reading of the source marks nothing', () => {
     const stale = record('anthropic', 'claude-receipt-model', 'nm1-another-reading');
     expect(aiNamesOfNaming(context, stale)).toBeUndefined();
-    expect(buildBpmnExportFromSource(source, { ...options, naming: stale }).xml).toBe(engineOnly.xml);
+    expect(buildBpmnExportFromSource(source, { ...plainOptions, naming: stale }).xml).toBe(engineOnly.xml);
   });
 
   test('the reading download (Documentation) marks the plain file; the technical file and the map stay the engine\'s', () => {
@@ -89,17 +91,32 @@ test.describe('BPMN download: model names marked from the stored receipt', () =>
     expect(readingExportsKey(source, { ...options, naming: record('anthropic', 'm') })).not.toBe(readingExportsKey(source, options));
   });
 
-  test('every BPMN download path passes the stored naming and names no model itself', () => {
+  test('the technical file ignores a naming: byte for byte the engine\'s, for a clean Signavio round trip', () => {
+    const withNaming = buildBpmnExportFromSource(source, { ...options, naming: record('anthropic', 'claude-receipt-model') });
+    expect(withNaming.xml).toBe(technicalOnly.xml);
+    expect(technicalOnly.xml).not.toContain('cc:origin');
+  });
+
+  test('the plain download passes the stored naming; the technical downloads pass none', () => {
+    const read = (file: string) => fs.readFileSync(path.join(ROOT, file), 'utf8');
+    // Documentation offers the plain reading: it carries the model's names.
+    const docs = read('app/(app)/project/[projectId]/documentation/page.tsx');
+    const start = docs.indexOf('const downloadBPMN');
+    const handler = docs.slice(start, docs.indexOf('\n  };', start));
+    expect(handler).toContain('fetchProcessNaming');
+    expect(handler).toMatch(/\bnaming\b/);
+    // Workspace export, Delivery and the fit-check workshop file offer the technical file: no naming.
     for (const file of [
       'components/workspace/HeadActions.tsx',
       'app/(app)/project/[projectId]/delivery/page.tsx',
-      'app/(app)/project/[projectId]/documentation/page.tsx',
       'components/workspace/FitCheckPanel.tsx',
     ]) {
-      const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
-      expect(text, file).toContain('fetchProcessNaming');
-      expect(text, file).toMatch(/\bnaming\b[,}\s]/);
-      expect(text, file).not.toMatch(/ai_provider|ai_model|aiNames/);
+      const text = read(file);
+      expect(text, file).toContain('buildBpmnExportFromSource(');
+      expect(text, file).not.toMatch(/fetchProcessNaming|\bnaming\b\s*[,}:]/);
+    }
+    for (const file of ['components/workspace/HeadActions.tsx', 'app/(app)/project/[projectId]/delivery/page.tsx', 'components/workspace/FitCheckPanel.tsx', 'app/(app)/project/[projectId]/documentation/page.tsx']) {
+      expect(read(file), file).not.toMatch(/ai_provider|ai_model|aiNames/);
     }
   });
 });
