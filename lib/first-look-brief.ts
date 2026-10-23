@@ -23,9 +23,16 @@ export interface BriefLine {
   anchor: string | null;
 }
 
+/** One sentence of "In short", and the whole summary line it is cut from — the key a plain wording of that line has. */
+export interface InShortPart {
+  text: string;
+  line: string;
+  anchor: string | null;
+}
+
 export interface FirstLookBrief {
-  /** One sentence, at most {@link IN_SHORT_WORDS} words: what the program is for. */
-  inShort: BriefLine | null;
+  /** One or two sentences, at most {@link IN_SHORT_WORDS} words: what the program does for the business. */
+  inShort: (BriefLine & { parts: InShortPart[] }) | null;
   /** Who starts it — the summary's trigger sentence. */
   startedBy: BriefLine | null;
   /** What goes in — the data it reads and what selects it, cut from the purpose sentence. */
@@ -34,8 +41,11 @@ export interface FirstLookBrief {
   comesOut: BriefLine | null;
 }
 
-/** The most words of the one "In short" sentence (analysis §3, block A). */
-export const IN_SHORT_WORDS = 25;
+/**
+ * The most words of "In short" (analysis §3, block A: one sentence of 25). Owner, 23.10.2026: two short sentences,
+ * about 40 words, where one would drop what the program does.
+ */
+export const IN_SHORT_WORDS = 40;
 
 /** The most rule statements under "What it decides" on top (analysis §3, block E). */
 export const DECIDES_SHOWN = 3;
@@ -75,10 +85,30 @@ export function splitPurpose(text: string): { head: string; tail: string | null 
 }
 
 /**
+ * A clause that says only what the program does not do or does not name —
+ * "A read-only report that reads no table by name", "It does not post or
+ * change data in SAP". True to the code, and the weakest thing to open with:
+ * it never leads "In short" while a sentence of what the program does exists
+ * (owner, 23.10.2026). It stays in the summary one fold down.
+ */
+export function isNegativeClause(text: string): boolean {
+  return /\bno table by name\b|\breads (?:no|nothing)\b|^(?:it )?does not\b|^no\b|^nothing\b/i.test(text.trim());
+}
+
+/**
  * The top blocks out of the shared summary lines (`businessInShort`, without
- * codes). The purpose the program's own names give (`aim`, 3.0.20) leads when
- * there is one; the engine's line on what it changes follows it when both fit
- * into {@link IN_SHORT_WORDS} words.
+ * codes).
+ *
+ * "In short" leads with what the program does for the business (owner,
+ * 23.10.2026, after the 22.10.2026 rebuild opened his report with "A read-only
+ * report that reads no table by name." and moved its description into the
+ * fold): the purpose the program's own names give (`aim`, 3.0.20), then the
+ * engine's purpose line cut at its own seam, then a further purpose or reads
+ * line — at most two sentences and {@link IN_SHORT_WORDS} words. A negative
+ * clause ({@link isNegativeClause}) stays in the fold; where nothing else says
+ * what the program does, what comes out leads (and "Comes out" is then not said
+ * a second time). Each part names the whole summary line it comes from, so a plain
+ * wording of that line (`usePlainWording`) can stand in its place.
  */
 export function firstLookBrief(lines: readonly SummaryLine[]): FirstLookBrief {
   const aim = lines.find((l) => l.key === 'purpose' && l.aim);
@@ -87,23 +117,32 @@ export function firstLookBrief(lines: readonly SummaryLine[]): FirstLookBrief {
   const result = lines.find((l) => l.key === 'result');
 
   const split = main ? splitPurpose(main.text) : null;
-  let inShort: BriefLine | null = null;
-  if (aim) {
-    const first = sentence(aim.text);
-    const second = split ? sentence(split.head) : null;
-    inShort = {
-      text: second && words(first) + words(second) <= IN_SHORT_WORDS ? `${first} ${second}` : first,
-      anchor: anchorOf(aim),
-    };
-  } else if (main && split) {
-    inShort = { text: sentence(split.head), anchor: anchorOf(main) };
+  const part = (text: string, line: SummaryLine): InShortPart => ({ text: sentence(text), line: line.text, anchor: anchorOf(line) });
+  const candidates: InShortPart[] = [];
+  if (aim) candidates.push(part(aim.text, aim));
+  if (main && split) candidates.push(part(split.head, main));
+  for (const l of lines) {
+    if ((l.key === 'purpose' && l !== aim && l !== main) || (l.key === 'reads' && /^It reads\b/.test(l.text))) candidates.push(part(l.text, l));
   }
+  const strong = candidates.filter((c) => !isNegativeClause(c.text));
+  const negative = candidates.filter((c) => isNegativeClause(c.text));
+  // Nothing says what it does: what comes out leads.
+  const resultLeads = strong.length === 0 && !!result;
+  // A negative clause leads only where the summary says nothing else at all.
+  const ordered = resultLeads && result ? [part(capital(result.text), result)] : strong.length ? strong : negative.slice(0, 1);
+  const parts: InShortPart[] = [];
+  for (const c of ordered) {
+    if (parts.length === 2) break;
+    // A second sentence only while both stay short.
+    if (parts.length === 0 || words(parts[0].text) + words(c.text) <= IN_SHORT_WORDS) parts.push(c);
+  }
+  const inShort = parts.length ? { text: parts.map((p) => p.text).join(' '), anchor: parts[0].anchor, parts } : null;
 
   return {
     inShort,
     startedBy: trigger ? { text: sentence(trigger.text), anchor: anchorOf(trigger) } : null,
     goesIn: main && split?.tail ? { text: sentence(capital(split.tail)), anchor: anchorOf(main) } : null,
-    comesOut: result ? { text: sentence(capital(result.text.replace(/^The result is\s+/i, ''))), anchor: anchorOf(result) } : null,
+    comesOut: result && !resultLeads ? { text: sentence(capital(result.text.replace(/^The result is\s+/i, ''))), anchor: anchorOf(result) } : null,
   };
 }
 

@@ -32,7 +32,10 @@ export default function ProgramInShort({
   headingLevel = 4,
   id = 'program-in-short-title',
   compact = false,
+  worded = null,
 }: {
+  /** The chip of a plain wording that stands in place of the engine's sentence (First insights); nothing otherwise. */
+  worded?: React.ReactNode;
   lines: readonly SummaryLine[];
   /** The level of the whole summary — "Reconstructed from the code — not confirmed by the business." */
   level: SummaryLine;
@@ -98,6 +101,7 @@ export default function ProgramInShort({
             {i < lines.length - 1 ? ' ' : null}
           </React.Fragment>
         ))}
+        {worded}
       </p>
       {authorClaim?.state === 'contradicted' ? (
         <p data-program-in-short-author-claim="not-quoted" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{authorClaim.note}</p>

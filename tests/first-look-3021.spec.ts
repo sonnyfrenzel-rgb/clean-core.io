@@ -6,7 +6,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readProcess } from '../lib/first-look';
 import { firstLookExcerpt } from '../lib/first-look-excerpt';
-import { DECIDES_SHOWN, IN_SHORT_WORDS, changesOnTop, decidesOnTop, firstLookBrief, splitPurpose } from '../lib/first-look-brief';
+import { DECIDES_SHOWN, IN_SHORT_WORDS, changesOnTop, decidesOnTop, firstLookBrief, isNegativeClause, splitPurpose } from '../lib/first-look-brief';
 import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
@@ -42,6 +42,23 @@ function opening(source: string) {
   const explanation = explainBusinessRules(source, rules, proc.facts, ENGINE);
   const story = processStory(proc.skeleton, source, null, ENGINE);
   return { proc, rules, facts, summary, lines, explanation, story, brief: firstLookBrief(lines) };
+}
+
+/** `BusinessOpening`, bundled for a static render; `tag` keeps parallel describes apart. */
+async function loadOpeningFor(tag: string): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
+  const out = path.join(ROOT, 'tmp', 'first-look-3021', `${process.pid}-${tag}`, 'BusinessOpening.cjs');
+  await build({
+    entryPoints: [path.join(ROOT, 'components', 'workspace', 'BusinessOpening.tsx')],
+    outfile: out,
+    bundle: true,
+    format: 'cjs',
+    platform: 'node',
+    jsx: 'automatic',
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
+    alias: { '@': ROOT },
+    logLevel: 'silent',
+  });
+  return require(out).default;
 }
 
 test.describe('the drawing beside the steps sets the test-data switch apart (fix, 22.10.2026)', () => {
@@ -88,14 +105,77 @@ test.describe('the top blocks, cut from the engine\'s own sentences (lib/first-l
     expect(brief.inShort?.text).toMatch(/^Checks supplier invoices against purchase orders and goods receipts, within a tolerance\./);
   });
 
-  test(`"In short" is one sentence of at most ${IN_SHORT_WORDS} words on every starter example`, () => {
+  test(`"In short" is at most two sentences and ${IN_SHORT_WORDS} words on every starter example, and names what the program does`, () => {
     for (const example of STARTER_EXAMPLES) {
-      const { brief } = opening(read(`public/starter-examples/${example.file}`));
+      const { brief, lines } = opening(read(`public/starter-examples/${example.file}`));
       expect(brief.inShort, example.file).not.toBeNull();
       expect(brief.inShort!.text.split(/\s+/).length, `${example.file}: ${brief.inShort!.text}`).toBeLessThanOrEqual(IN_SHORT_WORDS);
+      expect(brief.inShort!.parts.length, example.file).toBeLessThanOrEqual(2);
+      // Every part is cut from a summary line it names — the key a plain wording of that line has.
+      for (const p of brief.inShort!.parts) expect(lines.map((l) => l.text), example.file).toContain(p.line);
+      expect(isNegativeClause(brief.inShort!.parts[0].text), `${example.file}: ${brief.inShort!.text}`).toBe(false);
       expect(brief.startedBy, example.file).not.toBeNull();
       expect(brief.comesOut, example.file).not.toBeNull();
     }
+  });
+
+  test('the receipt check: the purpose from its names and what it works on, two short sentences (owner 23.10.2026)', () => {
+    const { brief } = opening(RECEIPT);
+    expect(brief.inShort?.parts.map((p) => p.text)).toEqual([
+      'Checks supplier invoices against purchase orders and goods receipts, within a tolerance.',
+      'A read-only report that gets its data through SAP function calls on supplier invoices, purchase orders and goods movements.',
+    ]);
+  });
+});
+
+test.describe('"In short" never leads with what the program does not do (owner, 23.10.2026)', () => {
+  // A report of the owner's shape: selection screen, demo cases, a list on screen, a CSV download, no table by name.
+  const BROKER = read('tests/fixtures/first-look/zmm-supplier-commit-broker.abap');
+
+  test('the negative clauses are recognised; a sentence of what it does is not', () => {
+    expect(isNegativeClause('A read-only report that reads no table by name.')).toBe(true);
+    expect(isNegativeClause('It does not post or change data in SAP.')).toBe(true);
+    expect(isNegativeClause('A read-only report on billing documents and billing document items.')).toBe(false);
+    expect(isNegativeClause('Creates purchase orders and starts workflows in SAP.')).toBe(false);
+  });
+
+  test('a report that reads no table by name opens with what comes out, not with "reads no table by name"', () => {
+    const { brief, lines } = opening(BROKER);
+    // What the 22.10.2026 rebuild put on top — still in the summary, one fold down.
+    expect(lines.map((l) => l.text)).toContain('A read-only report that reads no table by name.');
+    expect(brief.inShort?.text).toBe('The result is a list on screen; it can also save it as a file on the user\'s PC.');
+    expect(brief.inShort?.text).not.toMatch(/no table by name/);
+    // "Comes out" is not said a second time under it.
+    expect(brief.comesOut).toBeNull();
+    expect(brief.startedBy?.text).toMatch(/^A user starts it from a selection screen/);
+  });
+
+  test('the guard: wherever a summary line says what the program does, the lead is not a negative clause', () => {
+    const sources = [...STARTER_EXAMPLES.map((e) => read(`public/starter-examples/${e.file}`)), RECEIPT, BROKER];
+    for (const source of sources) {
+      const { brief, lines } = opening(source);
+      const doing = lines.some((l) => (l.key === 'purpose' || l.key === 'reads' || l.key === 'result') && !isNegativeClause(l.text));
+      if (doing) expect(isNegativeClause(brief.inShort!.parts[0].text), brief.inShort!.text).toBe(false);
+    }
+  });
+
+  test('a plain wording on record of the line a part is cut from stands in its place, with the AI-generated chip', async () => {
+    const Opening = await loadOpeningFor('in-short');
+    const o = opening(BROKER);
+    const part = o.brief.inShort!.parts[0];
+    const worded = 'Shows supplier delivery commitments as a list and can save them as a CSV file.';
+    const say = (text: string, anchor: { lineStart: number; lineEnd: number } | null) =>
+      text === part.line && anchor ? { text: worded, engine: text, worded: true, origin: null } : { text, engine: text, worded: false, origin: null };
+    const html = renderToStaticMarkup(
+      React.createElement(Opening, {
+        name: 'ZMM_SUPPLIER_COMMIT_BROKER', nameIsProposed: false, programName: 'ZMM_SUPPLIER_COMMIT_BROKER', nameReason: null,
+        brief: o.brief, story: o.story, rules: [], rulesMore: 0, rulesNone: '', changes: [], changesMore: 0, changesNone: '',
+        inShort: { lines: o.lines, level: o.summary.level, proposal: null, authorClaim: null }, details: null, say,
+      }),
+    );
+    const short = html.slice(html.indexOf('data-program-in-short="compact"'), html.indexOf('story-steps-title'));
+    expect(short).toContain(worded);
+    expect(short).toContain('data-worded-chip');
   });
 });
 

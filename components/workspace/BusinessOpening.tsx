@@ -42,6 +42,11 @@ const ASK_KEY: Record<AskWho, 'gives.askIt' | 'gives.askUsers' | 'gives.askBusin
 
 const BLOCK_TITLE = 'm-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase';
 
+/** The chip of a plain wording; nothing when no sentence was reworded. */
+function chipOf(said: WordedSentence | null): React.ReactNode {
+  return said ? <WordedChip said={said} /> : null;
+}
+
 function Line({ anchor }: { anchor: string | null }) {
   return anchor ? <CcAnchor label={`${wt('firstLook.sourceLine')} ${anchor}`}>{anchor}</CcAnchor> : null;
 }
@@ -151,12 +156,29 @@ export default function BusinessOpening({
   };
   // The one sentence on top is a summary line, cut at the summary's own seam —
   // reworded where the whole line is, otherwise the engine's.
+  // Each sentence of the brief names the whole summary line it is cut from: where that line has a plain wording on
+  // record, the worded line stands in its place (owner, 23.10.2026), labelled AI-generated.
+  const briefParts = brief?.inShort?.parts ?? [];
+  const shortWorded: WordedSentence[] = [];
+  const shortFromBrief = briefParts.length
+    ? briefParts
+        .map((p) => {
+          if (!say) return p.text;
+          const s = say(p.line, plainRangeOf(p.anchor));
+          if (!s.worded) return p.text;
+          said.push(s);
+          shortWorded.push(s);
+          return s.text;
+        })
+        .join(' ')
+    : null;
+  const firstRange = briefParts.length ? plainRangeOf(briefParts[0].anchor) : null;
   const shortLine: SummaryLine | null = inShort
-    ? brief?.inShort
-      ? { key: 'purpose', text: brief.inShort.text, anchors: inShort.lines.find((l) => l.key === 'purpose')?.anchors ?? [], basis: 'reconstructed' }
+    ? shortFromBrief
+      ? { key: 'purpose', text: shortFromBrief, anchors: firstRange ? [firstRange] : [], basis: 'reconstructed' }
       : inShort.lines[0] ?? null
     : null;
-  const shortText = shortLine ? word(shortLine.text, shortLine.anchors[0] ?? null) : null;
+  const shortText = shortLine ? (shortFromBrief ?? word(shortLine.text, shortLine.anchors[0] ?? null)) : null;
   const stepTexts = story.steps.map((s) => word(s.text, plainRangeOf(s.anchor)));
   const ruleTexts = rules.map((r) => word(r.text, plainRangeOf(r.anchor)));
   const changeTexts = changes.map((c) => word(c.text, plainRangeOf(c.anchor)));
@@ -194,6 +216,7 @@ export default function BusinessOpening({
               level={inShort.level}
               proposal={inShort.proposal ?? null}
               authorClaim={inShort.authorClaim ?? null}
+              worded={shortWorded.length > 0 ? <WordedChip said={shortWorded[0]} /> : null}
             />
           </div>
         ) : null}
@@ -224,7 +247,7 @@ export default function BusinessOpening({
             {wt('biz.stepsTitle')}
           </h4>
           {story.proposedNames ? <CcProvenanceChip value="proposed" note={wt('biz.storyNamesNote')} /> : null}
-          {said.length > 0 ? <WordedChip said={said[0]} /> : null}
+          {chipOf(said.find((s) => !shortWorded.includes(s)) ?? null)}
         </div>
         {story.steps.length > 0 ? (
           <ol data-process-story="" data-steps={story.steps.length} className="m-0 flex list-none flex-col p-0">
