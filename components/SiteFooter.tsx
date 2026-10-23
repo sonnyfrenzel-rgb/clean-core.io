@@ -57,6 +57,7 @@ export const SITE_FOOTER_COLUMNS: { heading: string; links: { href: string; labe
       { href: '/impressum', label: 'Legal Notice' },
       { href: '/datenschutz', label: 'Privacy Policy' },
       { href: '/terms', label: 'Terms of Service' },
+      { href: '/report', label: 'Report Illegal Content' },
       { href: '/licenses', label: 'Licenses' },
     ],
   },

@@ -6,6 +6,8 @@ import { TERMS_DE } from './texts/terms.de';
 import { TERMS_EN } from './texts/terms.en';
 import { BYOK_ADDENDUM_DE } from './texts/byok-addendum.de';
 import { BYOK_ADDENDUM_EN } from './texts/byok-addendum.en';
+import { REPORT_DE } from './texts/report.de';
+import { REPORT_EN } from './texts/report.en';
 
 /**
  * The published legal documents of Fassung 1.1 — one entry per document and
@@ -16,7 +18,7 @@ import { BYOK_ADDENDUM_EN } from './texts/byok-addendum.en';
  * `tests/legal-texts-release-gate.spec.ts` walks this list.
  */
 
-export type LegalDocumentId = 'privacy' | 'terms' | 'byok-addendum';
+export type LegalDocumentId = 'privacy' | 'terms' | 'byok-addendum' | 'report';
 
 export interface PublishedLegalDocument {
   id: LegalDocumentId;
@@ -32,6 +34,9 @@ export const LEGAL_DOCUMENTS: readonly PublishedLegalDocument[] = [
   { id: 'terms', lang: 'de', route: '/terms/de', source: TERMS_DE },
   { id: 'byok-addendum', lang: 'en', route: '/terms/byok-addendum', source: BYOK_ADDENDUM_EN },
   { id: 'byok-addendum', lang: 'de', route: '/terms/byok-addendum/de', source: BYOK_ADDENDUM_DE },
+  // The reporting notes Terms section 7 points to: a notice, not contract text, so not archived (owner decision 22./23.10.2026).
+  { id: 'report', lang: 'en', route: '/report', source: REPORT_EN },
+  { id: 'report', lang: 'de', route: '/report/de', source: REPORT_DE },
 ];
 
 export function legalDocument(id: LegalDocumentId, lang: LegalLang): PublishedLegalDocument {

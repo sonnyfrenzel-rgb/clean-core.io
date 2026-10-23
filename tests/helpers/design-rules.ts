@@ -184,7 +184,7 @@ const PUBLIC_SURFACE: ((rel: string) => boolean)[] = [
     ['whitepaper', 'facts', 'reference-analysis', 'licenses', 'clean-core-explained-print', 'features'].some((n) => r.startsWith(`app/${n}/`)),
   // legal and account-action pages (D.26), `app/datenschutz/de` included
   (r) =>
-    ['terms', 'datenschutz', 'impressum', 'auth', 'survey', 'unsubscribe'].some((n) => r.startsWith(`app/${n}/`)) ||
+    ['terms', 'datenschutz', 'impressum', 'report', 'auth', 'survey', 'unsubscribe'].some((n) => r.startsWith(`app/${n}/`)) ||
     r === 'app/error.tsx' ||
     r === 'app/not-found.tsx',
   // knowledge pages (D.23a/b)

@@ -54,6 +54,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // text rather than the English page that happens to have a German title.
     { url: `${baseUrl}/datenschutz/de`, lastModified: on('/datenschutz/de'), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/terms`, lastModified: on('/terms'), changeFrequency: 'monthly', priority: 0.5 },
+    // The reporting notes Terms section 7 points to (owner decision 22./23.10.2026).
+    { url: `${baseUrl}/report`, lastModified: on('/report'), changeFrequency: 'monthly', priority: 0.3 },
     { url: `${baseUrl}/licenses`, lastModified: on('/licenses'), changeFrequency: 'monthly', priority: 0.4 },
   ];
 
