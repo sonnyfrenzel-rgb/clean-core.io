@@ -180,13 +180,13 @@ test.describe('server side', () => {
   };
 
   /** A write the way a browser would make it: the owner's token, the real rules. */
-  const clientWrite = async (field: string, value: string) => {
+  const clientWrite = async (field: string, value: string, expected = 200) => {
     const res = await fetch(`${EMU}/projects/${PROJECT_ID}?updateMask.fieldPaths=${field}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields: { [field]: { stringValue: value } } }),
     });
-    expect(res.status, await res.clone().text()).toBe(200);
+    expect(res.status, await res.clone().text()).toBe(expected);
   };
 
   const run = (request: APIRequestContext, legacyCode: string) =>
@@ -256,9 +256,11 @@ test.describe('server side', () => {
     expect(refused.status()).toBe(409);
     expect((await refused.json()).blockers).toEqual(['sign-off-stale']);
 
-    // 'documented' — the furthest label a browser may still set since 3.0.6
-    // (SEC-2026-737); 'completed' is refused by the rules outright.
-    await clientWrite('status', 'documented');
+    // 'documented' was the furthest label a browser could set from 3.0.6
+    // (SEC-2026-737) to 3.0.21; since SEC-2026-888 the rules refuse it too (the
+    // browser sets only 'designed', with the design in the same write). The
+    // attempt is made anyway: refused, and the pack is unchanged by it.
+    await clientWrite('status', 'documented', 403);
     const still = await pack(request);
     expect(still.status()).toBe(409);
     expect((await still.json()).blockers).toEqual(['sign-off-stale']);
