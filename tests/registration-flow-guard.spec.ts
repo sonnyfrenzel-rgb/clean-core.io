@@ -233,8 +233,11 @@ test.describe('the optional motivation field', () => {
       expect(s, `${rel} has no motivation input`).toMatch(/<textarea[\s\S]{0,400}?motivation/i);
       // Each path hands it on its own way — one as a named field, the other as a
       // positional argument to createProfile. What matters is that the value
-      // leaves the component instead of being replaced by an empty string.
-      expect(s, `${rel} does not send it`).toMatch(/motivation:\s*motivation|,\s*motivation\)/);
+      // leaves the component instead of being replaced by an empty string. The
+      // positional call has carried two more arguments after it since 3.0.21 (the
+      // sign-in method and the accepted terms language), so it may be followed
+      // by a comma as well as by the closing parenthesis.
+      expect(s, `${rel} does not send it`).toMatch(/motivation:\s*motivation|createProfile\([^)]*,\s*motivation\s*[,)]/);
       expect(s, `${rel} still sends a hard-coded blank`).not.toMatch(/motivation:\s*''\s*,/);
     }
   });

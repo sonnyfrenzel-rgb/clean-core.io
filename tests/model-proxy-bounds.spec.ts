@@ -23,7 +23,8 @@ import { claimReceiptUse, type ReceiptUseStore } from '../lib/model-receipt-uses
  * `tests/gemini-route-deadline.spec.ts`.
  */
 const ROOT = path.resolve(__dirname, '..');
-const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+// Read as LF: a Windows checkout with autocrlf has CRLF on disk, the repository LF.
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
 const KEY = 'r'.repeat(48);
 
 test.describe('the stage of a call (SEC-01)', () => {

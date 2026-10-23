@@ -186,8 +186,11 @@ test.describe('what the text claims', () => {
     const src = code('components/LandingModals.tsx');
     // Since Fassung 1.1 (3.0.21) the overlays show the policy itself, not a
     // summary of it: the summaries had drifted from the text they summarised.
-    expect(src.match(/<LegalOverlayBody id="privacy" \/>/g)?.length).toBe(2);
-    expect(src).toContain('<LegalOverlayBody id="terms" />');
+    // Since 3.0.21 the sign-up overlay shows the policy in the language the
+    // reader accepts the terms in (`lang={termsLanguage}`), and so do the terms;
+    // it is still the policy itself, twice.
+    expect(src.match(/<LegalOverlayBody id="privacy"(?: lang=\{termsLanguage\})? \/>/g)?.length).toBe(2);
+    expect(src).toMatch(/<LegalOverlayBody id="terms"(?: lang=\{termsLanguage\})? \/>/);
     expect(src).not.toMatch(/fully GDPR-compliant/);
     expect(src).not.toMatch(/instantly wipe/);
     expect(src).not.toMatch(/to the Google Gemini API for analysis and transformation/);
