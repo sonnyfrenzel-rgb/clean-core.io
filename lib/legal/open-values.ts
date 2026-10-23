@@ -342,7 +342,8 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Ist der Annahmedialog der Zusatzvereinbarung gebaut und abgenommen: Annahme je Hinterlegen, Nachweis (Kennung, Sprache, Zeitpunkt, SHA-256) im Nachweisprotokoll, Archiv der Fassung mit Hash, und das Gate „nur für Konten, die v2.3.0 oder später angenommen haben“?',
     'Is the acceptance dialog of the Additional Agreement built and accepted: acceptance on every storing, the record (identifier, language, time, SHA-256) in the proof log, the archive of the version with its digest, and the gate "only for accounts that accepted v2.3.0 or later"?',
     'DSE 2; Terms 5.2; ZV 1, 11, 12; Trust',
-    "Verified against dev on 23.10.2026: partial. Holds: acceptance on every save (app/api/secrets/gemini/route.ts:81-90), proof-log row in the key transaction with version, language, server time (lib/firebase-admin.ts:2014-2038), archive with digests (lib/legal/byok-addendum-versions.ts). Missing (product work): the SHA-256 in the row is always null (lib/byok-addendum.ts:73 map is empty; archivedAddendumSha256 is not called), and there is no \"accepted v2.3.0 or later\" gate (requireCurrentTerms lets v2.2.0 through, lib/firebase-admin.ts:607-615).",
+    "Built in 3.0.21 (23.10.2026), holds: acceptance on every save (app/api/secrets/gemini/route.ts addendum check); the row in byok_agreement_events carries version, language, server time and now the SHA-256 of the archived wording of that language (BYOK_ADDENDUM_DIGESTS from lib/legal/byok-addendum-versions.ts, lib/byok-addendum.ts:78); archive with digests (docs/byok-addendum/); the gate \"only for accounts that accepted v2.3.0 or later\" refuses before the key is tested or stored (termsAllowAddendum, lib/byok-addendum.ts:99; app/api/secrets/gemini/route.ts:105, code byok-addendum-terms-required). Tests: tests/legal-gaps-3021.spec.ts, tests/byok-3021.spec.ts.",
+    true,
   ),
   check(
     't03ConfirmationMail',
@@ -351,7 +352,8 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Ist die Bestätigungsmail gebaut und abgenommen — nach der Registrierung, nach der Annahme einer Änderung und nach der Annahme der Zusatzvereinbarung, jeweils mit Fassung, Sprache, Zeitpunkt, SHA-256 und vollständigem Wortlaut? Und: soll der Wortlaut zusätzlich als PDF angehängt werden, falls der Mailtext begrenzt ist (C5)?',
     'Is the confirmation mail built and accepted — after sign-up, after accepting an amendment and after accepting the Additional Agreement, each with version, language, time, SHA-256 and full wording? And: should the wording also be attached as a PDF if the mail body is limited (C5)?',
     'DSE 2; Terms 1.3, 5.2, 10.2; ZV 12; C5',
-    "Verified against dev on 23.10.2026: does not hold (product work). No confirmation mail to the user after sign-up or after accepting an amendment (lib/consent.ts sends nothing). After the Additional Agreement a mail goes out (lib/byok-agreement-mail.ts) but in English only, without the full wording (a link) and with the digest \"not pinned\"; CONSENT_TEXTS.confirmationMail (C5) is used nowhere. No PDF attachment (owner decision whether to add one).",
+    "Built in 3.0.21 (23.10.2026), holds: the contract confirmation C5 (lib/contract-confirmation-email.ts:123, sender lib/contract-confirmation-mail.ts) goes out after sign-up (app/api/account/register/route.ts:111), after accepting an amendment (app/api/consent/route.ts:75) and after accepting the Additional Agreement (lib/byok-agreement-mail.ts:29), each in the language version accepted, with version, language, time (UTC), SHA-256, place, the full wording (the archived text, which hashes to the recorded digest — acceptedWording :176, checked in tests/legal-gaps-3021.spec.ts) and one link to the published version; best effort, no resend (E14/E25). Owner decision still open in the question: no PDF attachment is built (the wording is in the mail body). The ending mail (C6) is still English only.",
+    true,
   ),
   check(
     't02AcceptedLanguage',
@@ -360,7 +362,8 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Hält der Zustimmungsnachweis die angenommene Sprachfassung fest (nicht die Oberflächensprache)? Erst dann kann der Registrierungsdialog die deutsche Fassung anbieten.',
     'Does the acceptance record store the accepted language version (not the interface language)? Only then can the sign-up dialog offer the German version.',
     'Terms 1.4; C1',
-    "Verified against dev on 23.10.2026: does not hold (product work). lib/consent.ts:81-101 records the interface locale and always the English digest; the German archive is never recorded; components/legal/SignupConsent.tsx:10-14 says so.",
+    "Built in 3.0.21 (23.10.2026), holds: both sign-up dialogs and the amendment dialog let the reader choose the contract language (ContractLanguageChoice, components/LandingModals.tsx:1035, components/UserOnboarding.tsx:255, components/TermsReacceptGate.tsx) and show C1/C2 and the full text in it; the choice travels as termsLanguage (app/api/account/register/route.ts, app/api/consent/route.ts) and lib/consent.ts:118-135 records it with the SHA-256 of exactly that language version's archived wording (archivedTermsSha256For, lib/terms-versions.ts), not the interface locale, plus termsLanguageAccepted on the profile. Tests: tests/legal-gaps-3021.spec.ts (T02). Rendered check for the merge: terms-reaccept-gate, terms-30-reconsent, registration flow specs.",
+    true,
   ),
   check(
     'autoStepsSwitch',
@@ -408,7 +411,8 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Ist die anbieterbezogene Abschaltung gebaut und abgenommen: Aufrufe an einen Anbieter lassen sich einstellen, der Schritt hält an und nennt den Grund (C11), kein Wechsel zu einem anderen Anbieter oder zum Plattform-Schlüssel, der Schlüssel bleibt gespeichert?',
     'Is the per-provider switch-off built and accepted: calls to a provider can be stopped, the step stops and says why (C11), no switch to another provider or the platform key, the key stays stored?',
     'DSE 4; Terms 5.3; ZV 6; Trust',
-    "Verified against dev on 23.10.2026: partial. Holds: MODEL_PROVIDERS_SUSPENDED (lib/model-providers.ts:64-78) checked before every provider contact without fallback (app/api/gemini/route.ts:565-571, app/api/secrets/gemini/route.ts:75, app/api/secrets/gemini/test/route.ts:107, app/api/model-stages/route.ts:108-111); the key stays stored. Missing (product work): the C11 notice with date and reason (consent-texts.ts) is used nowhere, users see providerSuspendedMessage; no behavioural test. Setting the variable is an operator step.",
+    "Built in 3.0.21 (23.10.2026), holds: MODEL_PROVIDERS_SUSPENDED (lib/model-providers.ts) is checked before every provider contact without fallback, the key stays stored; the step, the key routes and Settings now show C11 with date and reason from MODEL_PROVIDERS_SUSPENDED_AT and MODEL_PROVIDERS_SUSPENDED_REASON (providerSuspendedNotice, lib/provider-suspension.ts:48; app/api/gemini/route.ts:570, app/api/secrets/gemini/route.ts, app/api/secrets/gemini/test/route.ts, app/api/model-stages/route.ts:114 -> Settings), documented in docs/OPERATIONS.md. Tests: tests/legal-gaps-3021.spec.ts (T01), tests/byok-3021.spec.ts. Setting the three variables is the operator's step.",
+    true,
   ),
   check(
     'proofLog',
@@ -417,7 +421,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Sind Nachweisprotokoll (getrennt, append-only, HMAC statt Adresse nach Kontolöschung), Löschdatum je Eintrag, nächtliche Löschung, die Lösch-Tests (auch für das Nachweisprotokoll) und docs/DATA-RETENTION.md gebaut und abgenommen? Erst dann dürfen DSE 5, Terms 1.3, der Löschdialog C7 und der Satz der Trust-Seite zum automatisierten Löschtest so stehen.',
     'Are the proof log (separate, append-only, HMAC instead of the address after erasure), the per-entry deletion date, the nightly purge, the deletion tests (including the proof log) and docs/DATA-RETENTION.md built and accepted? Only then may privacy section 5, Terms 1.3, the deletion dialog C7 and the trust page sentence on the automated deletion test stand as written.',
     'DSE 5; Terms 1.3; C7; Trust (Your rights)',
-    "Verified against dev on 23.10.2026: does not hold (product work). byok_agreement_events exists and is server-only, but on erasure both logs are deleted (lib/firebase-admin.ts:980, 983) instead of an HMAC replacing the address; consent_events stores the address in clear (lib/consent.ts:94); no per-entry deletion date, no nightly purge, no deletion tests for a kept log; docs/DATA-RETENTION.md does not list it.",
+    "Built in 3.0.21 (23.10.2026), partial. Holds: every proof record carries retention and expiresAt (lib/consent.ts:144, byokAgreementEventWrite in lib/firebase-admin.ts, lib/email-events.ts); on erasure the records stay with HMAC-SHA256 under PSEUDONYM_PEPPER in place of uid and address, the end of the contract and the deletion date 31 December of the third year after, plus the contract-end record and the three-year deletion note (lib/proof-log-erasure.ts, called at lib/firebase-admin.ts:1161); delivery records pseudonymised until their 90 days; community-mail opt-outs kept as the keyed hash only; deletion tests in tests/proof-log-3021.spec.ts (server-free) and tests/account-erasure.spec.ts, tests/hardening-v220-cf.spec.ts (emulator). Missing: (1) the nightly purge is Firestore TTL on expiresAt, and the four policies (consent_events, byok_agreement_events, erasure_notes, email_events) must be created by the owner (docs/DATA-RETENTION.md, 'The proof log'; npm run retention:verify checks them); (2) the repository secret PSEUDONYM_PEPPER must be set (without it an erasure deletes the records instead); (3) the invitation opt-out list and the six-month invitation delivery record (privacy sections 5 and 8, C7 item 4) do not exist — product work; (4) older email_events without expiresAt need a backfill.",
   ),
   check(
     'retentionRegister',
@@ -426,7 +430,8 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Ist docs/DATA-RETENTION.md um Nachweisprotokoll, Löschvermerk, Sperrlisten und Zustellnachweise ergänzt?',
     'Has docs/DATA-RETENTION.md been extended with the proof log, the deletion note, the suppression lists and the delivery records?',
     'DSE 6',
-    "Verified against dev on 23.10.2026: does not hold (docs work after proofLog). docs/DATA-RETENTION.md has no byok_agreement_events and no deletion note; consent_events listed as deleted on erasure; email_suppressions \"until erased\", no invitation suppression list; email_events \"Life of account\" instead of the 30 to 90 days the texts state.",
+    "Done in 3.0.21 (23.10.2026): docs/DATA-RETENTION.md lists byok_agreement_events, erasure_notes (deletion note), the proof-log consent_events, the delivery records (90 days, pseudonymised after erasure) and the opt-out list (keyed hash, without end), with a section 'The proof log'; it states plainly that the invitation opt-out list does not exist yet and that the TTL policies are not yet in place.",
+    true,
   ),
   check(
     'noRequestWithoutSignIn',
