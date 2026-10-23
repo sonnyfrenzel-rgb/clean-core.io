@@ -186,6 +186,26 @@ test.describe('the landing asks Firebase only when the reader does', () => {
   });
 });
 
+test('the one Auth instance keeps the signed-in hint in step with Firebase', () => {
+  // Every sign-in and sign-out anywhere in the product goes through this
+  // instance, so the hint the public headers read cannot outlive a session by
+  // more than the one SDK load that removes it (lib/auth-hint.ts).
+  const src = read('lib/firebase-app.ts');
+  expect(src).toContain("import { setSignedInHint } from './auth-hint';");
+  expect(src).toMatch(/onAuthStateChanged\(authInstance, \(user\) => setSignedInHint\(Boolean\(user\)\)\);/);
+  // Nothing else writes the hint.
+  const writers: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(rel);
+      else if (/\.tsx?$/.test(entry.name) && rel !== 'lib/auth-hint.ts' && /setSignedInHint\(/.test(read(rel))) writers.push(rel);
+    }
+  };
+  for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
+  expect(writers).toEqual(['lib/firebase-app.ts']);
+});
+
 /**
  * Whether every `signInWithRedirect(` in `source` has `markRedirectPending()`
  * before it in the same function. Nothing calls a redirect today (the Google

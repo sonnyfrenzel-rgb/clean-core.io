@@ -384,8 +384,9 @@ export default function LandingModals() {
     setAuthNotice('');
     let signedIn = false;
     const provider = new GoogleAuthProvider();
+    const auth = getAuth();
     try {
-      await signInWithPopup(getAuth(), provider, browserPopupRedirectResolver);
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver);
       signedIn = true;
 
       // A first-time Google user gets no profile here on purpose.
@@ -434,10 +435,11 @@ export default function LandingModals() {
     setAuthError('');
     setAuthNotice('');
     setIsSubmitting(true);
+    const auth = getAuth();
     try {
       // On an enrolled account this throws before any session exists and the
       // catch below turns it into the second-factor screen.
-      await signInWithEmailAndPassword(getAuth(), email, password);
+      await signInWithEmailAndPassword(auth, email, password);
 
       setIsNavigating(true);
       setTimeout(() => {
@@ -489,7 +491,8 @@ export default function LandingModals() {
         import(/* webpackExports: ["getDb"] */ '@/lib/firebase'),
         import(/* webpackExports: ["finishRegistration"] */ '@/hooks/useUserProfile'),
       ]);
-      const userCredential = await createUserWithEmailAndPassword(getAuth(), email, password);
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const signedInUser = userCredential.user;
       
       const db = getDb();
@@ -580,8 +583,9 @@ export default function LandingModals() {
     e.preventDefault();
     setAuthError('');
     setIsSubmitting(true);
+    const auth = getAuth();
     try {
-      await sendPasswordResetEmail(getAuth(), email);
+      await sendPasswordResetEmail(auth, email);
       setAuthMode('success');
       setIsSubmitting(false);
     } catch (error: any) {
