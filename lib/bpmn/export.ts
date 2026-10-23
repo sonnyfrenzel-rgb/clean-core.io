@@ -17,6 +17,7 @@ import {
 import { el, serialize, textEl, type XmlElement } from './xml';
 import { readingExportsKey } from './reading-key';
 import { aiMarkingField, aiMarkingStatement, aiModelWords, aiOriginOf, withAiMarking, type AiAuthorship } from '../ai-marking';
+import { applyNaming, namingContextOf, type NamingContext, type NamingOrigin, type ProcessNamingRecord } from '../process-naming';
 
 /**
  * BPMN 2.0 XML out of the process skeleton — roadmap 2.6.
@@ -79,6 +80,14 @@ export interface BpmnExportOptions {
    * this option the file is byte-identical to what it was.
    */
   aiNames?: { names: Readonly<Record<string, string>>; authorship: AiAuthorship };
+  /**
+   * 3.0.21 (owner decision 23.10.2026): the project's stored business names (`GET /api/projects/{id}/process-naming`,
+   * roadmap 2.4) for a download. Read by {@link buildBpmnExportFromSource} and {@link buildReadingExports}, which turn
+   * it into `aiNames` with the provider and model of the receipt the server verified when it stored the names
+   * ({@link aiNamesOfNaming}) — never a name written here. A naming made for another reading of the source applies to
+   * nothing, and the file stays the engine's. `buildBpmnExport` itself reads only `aiNames`.
+   */
+  naming?: ProcessNamingRecord | null;
 }
 
 export interface BpmnExportStats {
@@ -234,7 +243,40 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
 
 /** The same, for a caller that holds the source rather than the skeleton. */
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
-  return buildBpmnExport(buildProcessSkeleton(source), { source, ...options });
+  const { naming, ...rest } = options;
+  if (!naming) return buildBpmnExport(buildProcessSkeleton(source), { source, ...rest });
+  // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once.
+  const context = namingContextOf(source);
+  const aiNames = aiNamesOfNaming(context, naming);
+  return buildBpmnExport(context.skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
+}
+
+/** Who wrote a stored naming, as the receipt the server verified says — nothing more, nothing assumed. */
+export function authorshipOfNaming(origin: NamingOrigin): AiAuthorship {
+  return {
+    provider: origin.provider || null,
+    modelId: origin.modelId || null,
+    byok: typeof origin.byok === 'boolean' ? origin.byok : null,
+    generatedAt: Number.isFinite(origin.issuedAt) ? new Date(origin.issuedAt).toISOString() : null,
+    appVersion: null,
+  };
+}
+
+/**
+ * The `aiNames` of a stored naming: the business names that still apply to this reading (`applyNaming` — same
+ * digest, same technical name), keyed by skeleton node id, with the authorship of the naming's receipt. `undefined`
+ * when nothing applies — no naming, a stale one, or one whose names all fell away — so the file stays the engine's.
+ */
+export function aiNamesOfNaming(
+  context: NamingContext,
+  record: ProcessNamingRecord | null | undefined,
+): BpmnExportOptions['aiNames'] | undefined {
+  const named = applyNaming(context, record);
+  if (named.state !== 'named' || !named.origin) return undefined;
+  const names: Record<string, string> = {};
+  for (const node of named.nodes) if (node.businessName) names[node.id] = node.businessName;
+  if (Object.keys(names).length === 0) return undefined;
+  return { names, authorship: authorshipOfNaming(named.origin) };
 }
 
 /**
@@ -245,7 +287,7 @@ export function buildBpmnExportFromSource(source: string, options: BpmnExportOpt
  */
 export function buildReadingExports(
   source: string,
-  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion'>,
+  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion' | 'naming'>,
 ): { bpmn: BpmnExport; technical: BpmnExport } {
   // The same source and options always give the same reading, and laying out a
   // large program takes seconds: the map, the process summary and every tool of
@@ -254,10 +296,15 @@ export function buildReadingExports(
   const key = readingExportsKey(source, options);
   const hit = readingCache.get(key);
   if (hit) return hit;
-  const skeleton = buildProcessSkeleton(source);
+  const { naming, ...base } = options;
+  // A stored naming (a download, 3.0.21) puts the model's names on the plain file, marked; the technical file is the
+  // code's own tokens and stays so.
+  const context = naming ? namingContextOf(source) : null;
+  const skeleton = context?.skeleton ?? buildProcessSkeleton(source);
+  const aiNames = context ? aiNamesOfNaming(context, naming) : undefined;
   const out = {
-    bpmn: buildBpmnExport(skeleton, { ...options, source, names: 'plain', wrap: READING_WRAP }),
-    technical: buildBpmnExport(skeleton, { ...options, source, wrap: READING_WRAP }),
+    bpmn: buildBpmnExport(skeleton, { ...base, source, names: 'plain', wrap: READING_WRAP, ...(aiNames ? { aiNames } : {}) }),
+    technical: buildBpmnExport(skeleton, { ...base, source, wrap: READING_WRAP }),
   };
   if (readingCache.size >= 4) readingCache.delete(readingCache.keys().next().value as string);
   readingCache.set(key, out);

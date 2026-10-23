@@ -110,7 +110,9 @@ export default function FitCheckPanel({
       const fromSource = signed ?? (demo && typeof project?.legacyCode === 'string' ? { source: project.legacyCode, fileName: projectName } : null);
       if (!xml && fromSource) {
         const { buildBpmnExportFromSource } = await import('@/lib/bpmn/export');
-        xml = buildBpmnExportFromSource(fromSource.source, { processName: projectName, sourceFileName: fromSource.fileName }).xml;
+        // The stored business names travel with the file, marked with their receipt's provider and model (3.0.21).
+        const naming = demo ? null : await import('@/lib/process-naming-client').then((m) => m.fetchProcessNaming(projectId));
+        xml = buildBpmnExportFromSource(fromSource.source, { processName: projectName, sourceFileName: fromSource.fileName, naming }).xml;
       }
       if (!xml) throw new Error('no process');
       await saveAs(new Blob([xml], { type: 'application/xml;charset=utf-8' }), workshopFileName(projectName, 'bpmn'));

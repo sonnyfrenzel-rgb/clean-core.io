@@ -1,8 +1,15 @@
-/** The options that make a reading (a subset of `BpmnExportOptions`, kept here so this module imports nothing). */
+import type { ProcessNamingRecord } from '../process-naming';
+
+/**
+ * The options that make a reading (a subset of `BpmnExportOptions`, kept here so this module imports nothing at run
+ * time — the one import is a type and is erased).
+ */
 export interface ReadingOptions {
   processName: string;
   sourceFileName: string;
   exporterVersion?: string;
+  /** The project's stored business names, for a download (3.0.21, `BpmnExportOptions.naming`). The map passes none. */
+  naming?: ProcessNamingRecord | null;
 }
 
 /**
@@ -16,5 +23,9 @@ export interface ReadingOptions {
  * loading the BPMN writer onto the page it is there to keep responsive.
  */
 export function readingExportsKey(source: string, options: ReadingOptions): string {
-  return JSON.stringify([options.processName, options.sourceFileName ?? null, options.exporterVersion ?? null, source]);
+  const base = [options.processName, options.sourceFileName ?? null, options.exporterVersion ?? null, source];
+  // A naming changes the plain file; without one the key is what it was.
+  const naming = options.naming;
+  if (!naming) return JSON.stringify(base);
+  return JSON.stringify([...base, [naming.digest, naming.namedAt, naming.origin?.textSha256 ?? null, naming.origin?.provider ?? null, naming.origin?.modelId ?? null]]);
 }
