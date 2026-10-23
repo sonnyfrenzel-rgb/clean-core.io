@@ -307,7 +307,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                   <span className="text-[13px] font-semibold text-cc-ink">{profile.firstName} {profile.lastName}</span>
                   {planLabel(profile.tier) ? <CcTag>{planLabel(profile.tier)}</CcTag> : null}
                 </div>
-                <div data-shell-quota="" className="whitespace-nowrap text-[12px] font-semibold text-cc-ink-muted">
+                {/* On a phone the label may take two lines: "N of 5 runs left"
+                    (3.0.21) beside the project search, the help and the account
+                    menu is two pixels wider than a 360 px screen. */}
+                <div data-shell-quota="" className="text-right text-[12px] font-semibold text-cc-ink-muted sm:whitespace-nowrap">
                   {runsLeftLabel(profile)}
                 </div>
               </div>
