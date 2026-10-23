@@ -129,3 +129,14 @@ test('the Testing stage no longer asks for the service catalog', () => {
   expect(calls.length).toBeGreaterThan(0);
   for (const c of calls) expect(c, 'a call of the metadata route sends no service name').toContain('servicePath:');
 });
+
+test('the tenant-security page says what the routes read, not more', () => {
+  const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'tenant-security', 'page.tsx'), 'utf8');
+  // It promised read-only OData responses for chosen entities and spoke of
+  // transactional records and metadata lists being retrieved — none of which
+  // the routes read since 3.0.21.
+  for (const claim of ['Read-only OData responses', 'read-only OData GET requests', 'transactional records', 'metadata lists']) {
+    expect(page, `/tenant-security claims "${claim}"`).not.toContain(claim);
+  }
+  expect(page).toContain('never a record, a field value or a count');
+});
