@@ -130,7 +130,7 @@ test.describe('the top blocks, cut from the engine\'s own sentences (lib/first-l
 
 test.describe('"In short" never leads with what the program does not do (owner, 23.10.2026)', () => {
   // A report of the owner's shape: selection screen, demo cases, a list on screen, a CSV download, no table by name.
-  const BROKER = read('tests/fixtures/first-look/zmm-supplier-commit-broker.abap');
+  const BROKER = read('tests/fixtures/first-look/report-demo-cases-download.abap');
 
   test('the negative clauses are recognised; a sentence of what it does is not', () => {
     expect(isNegativeClause('A read-only report that reads no table by name.')).toBe(true);
@@ -168,7 +168,7 @@ test.describe('"In short" never leads with what the program does not do (owner, 
       text === part.line && anchor ? { text: worded, engine: text, worded: true, origin: null } : { text, engine: text, worded: false, origin: null };
     const html = renderToStaticMarkup(
       React.createElement(Opening, {
-        name: 'ZMM_SUPPLIER_COMMIT_BROKER', nameIsProposed: false, programName: 'ZMM_SUPPLIER_COMMIT_BROKER', nameReason: null,
+        name: 'Z_REPORT_DEMO_DOWNLOAD', nameIsProposed: false, programName: 'Z_REPORT_DEMO_DOWNLOAD', nameReason: null,
         brief: o.brief, story: o.story, rules: [], rulesMore: 0, rulesNone: '', changes: [], changesMore: 0, changesNone: '',
         inShort: { lines: o.lines, level: o.summary.level, proposal: null, authorClaim: null }, details: null, say,
       }),

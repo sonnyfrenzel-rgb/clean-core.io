@@ -1,11 +1,11 @@
 *&---------------------------------------------------------------------*
-*& Report ZMM_SUPPLIER_COMMIT_BROKER
+*& Report Z_REPORT_DEMO_DOWNLOAD
 *&---------------------------------------------------------------------*
-*& Synthetic test fixture (Clean-Core.io 3.0.21). Same shape as an owner's
+*& Synthetic test fixture (Clean-Core.io 3.0.21). A report-style program shaped like many customer reports
 *& report: a selection screen, built-in demo cases, a list on screen and a
 *& CSV download - and no table read by name.
 *&---------------------------------------------------------------------*
-REPORT zmm_supplier_commit_broker.
+REPORT z_report_demo_download.
 
 TYPES: BEGIN OF ty_commit,
          supplier  TYPE c LENGTH 10,
