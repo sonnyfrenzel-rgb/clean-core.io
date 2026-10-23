@@ -839,7 +839,10 @@ export default function FirstLook({
    * sentence — nothing here borrows the Analyze stage header (`StageHeader`).
    */
   const lead = (
-    <p data-first-look-lead={rulesBelow ? 'business' : ''} className="m-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">
+    <p
+      data-first-look-lead={rulesBelow ? 'business' : ''}
+      className={cn('m-0 text-[13px] leading-snug font-medium text-cc-ink-muted', rulesBelow ? 'mb-2' : 'mb-3')}
+    >
       {/* Business (3.0.21): what the page is for — understanding, nothing to decide. */}
       {wt(rulesBelow ? 'biz.firstLookLead' : 'firstLook.lead')}
     </p>

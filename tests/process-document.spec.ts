@@ -26,7 +26,7 @@ import { documentOutline, longTables, processDocumentBlocks } from '../lib/proce
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { blocksMarkdown, blocksDocxParts } from '../lib/requirements-export';
 import { escapeHtml } from '../lib/export-safety';
-import { pinnedExamplePath } from './helpers/starter-example-files';
+import { EXAMPLES_DIR, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The process description of the Documentation stage — as data, over the two
@@ -220,6 +220,16 @@ for (const [file] of EXAMPLES) {
   });
 }
 
+test('every example the site offers opens with a business page of at most 400 words (owner 11.10.2026, 23.10.2026)', () => {
+  for (const file of fs.readdirSync(EXAMPLES_DIR).sort()) {
+    const source = fs.readFileSync(path.join(EXAMPLES_DIR, file), 'utf8').replace(/\r\n/g, '\n');
+    const md = markdownOf(buildProcessDocument({ source, map: mapOf(source, file) }));
+    const page = md.slice(md.indexOf('## In short'), md.indexOf('## At a glance'));
+    expect(page.length, file).toBeGreaterThan(0);
+    expect(wordCount(page), `the business page of ${file}`).toBeLessThanOrEqual(400);
+  }
+});
+
 test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
   test('the body is about half as long as before, and the summary names the business', () => {
     // Pinned to the engine before 3.0.21: from that engine the page carries two more purpose lines (see the next test).
@@ -253,11 +263,20 @@ test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
     const aim = '- Covers the approval of purchase orders and purchase requisitions. (Reconstructed, L11, L13)';
     expect(page).toContain(title);
     expect(page).toContain(aim);
-    // Everything else on the business page is held to the page as before; the two 3.0.21 lines stand on top of it.
-    expect(wordCount(page.replace(title, '').replace(aim, '')), 'the business page is one page').toBeLessThanOrEqual(400);
-    // Measured whole, the 3.0.21 page is 408 words: eight over the one-page target of 400 (owner 11.10.2026).
-    // Pinned exactly, so it cannot grow unnoticed; trimming it or accepting it is an open owner decision of 3.0.21.
-    expect(wordCount(page), 'the whole 3.0.21 business page').toBe(408);
+    // The whole page, the two 3.0.21 lines included, is held to one page of at most 400 words (owner 11.10.2026;
+    // 23.10.2026: shortened, not the limit raised). It was 408; the answer on S/4HANA no longer repeats the change
+    // line word for word, and the caveat lines say once what they said twice. Pinned exactly, so it cannot grow unnoticed.
+    expect(wordCount(page), 'the business page is one page').toBeLessThanOrEqual(400);
+    expect(wordCount(page), 'the whole 3.0.21 business page').toBe(378);
+    // What it changes stands once on the page: under "What it does", and the S/4HANA answer points to it.
+    const changes = 'It creates purchase orders (BAPI_PO_CREATE1)';
+    expect(page.split(changes).length - 1, 'the change line stands once').toBe(1);
+    expect(page).toContain('[What changes in S/4HANA?](#pd-outputs) — What it changes today stands above; the move is decided in Design and Management, with the open questions.');
+    // Every content category is still on the page.
+    for (const heading of ['What it does', 'What it does not do', 'Limits of this reading', 'Owner and approval', 'Questions a reader asks']) expect(page).toContain(`**${heading}**`);
+    expect(page).toContain('Process owner: Not determined');
+    expect(page).toContain('Business approval: Not recorded');
+    expect(page).toContain('A line reference shows where a statement comes from in the code, not that the business confirmed it.');
     // The reader question still answers with the selection, not with the read list (the aim line carries no "selected by").
     expect(page).toContain('[Why is an item missing?](#pd-data) — It selects by purchase requisition number.');
     const summary = doc.glance.summary.map((s) => s.text).join(' ');

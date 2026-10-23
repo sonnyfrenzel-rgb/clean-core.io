@@ -32,7 +32,10 @@ export default function ProgramInShort({
   headingLevel = 4,
   id = 'program-in-short-title',
   compact = false,
+  worded = null,
 }: {
+  /** The chip of a plain wording that stands in place of the engine's sentence (First insights); nothing otherwise. */
+  worded?: React.ReactNode;
   lines: readonly SummaryLine[];
   /** The level of the whole summary — "Reconstructed from the code — not confirmed by the business." */
   level: SummaryLine;
@@ -77,10 +80,15 @@ export default function ProgramInShort({
           <CcProvenanceChip value="proposed" note={wt('biz.inShortProposalNote')} />
         </p>
       ) : null}
-      {proposal || authorClaim?.state === 'shown' ? (
+      {/* Compact (First insights): "Read from the code:" leads the engine's sentence on its own line instead of
+          taking a line of its own, so the first screen keeps room for the steps (owner decision 23.10.2026). */}
+      {!compact && (proposal || authorClaim?.state === 'shown') ? (
         <p className="m-0 text-[12px] font-semibold text-cc-ink-muted">{wt('biz.inShortEngine')}</p>
       ) : null}
       <p data-program-in-short-text="" className={proposal || authorClaim?.state === 'shown' ? 'm-0 text-[13px] leading-snug font-medium text-cc-ink' : 'm-0 text-[15px] leading-snug font-semibold text-cc-ink'}>
+        {compact && (proposal || authorClaim?.state === 'shown') ? (
+          <span data-program-in-short-engine="" className="font-semibold text-cc-ink-muted">{`${wt('biz.inShortEngine')} `}</span>
+        ) : null}
         {lines.map((line, i) => (
           <React.Fragment key={`${line.key}-${i}`}>
             <span data-in-short-slot={line.key} className="break-words">{line.text}</span>
@@ -93,6 +101,7 @@ export default function ProgramInShort({
             {i < lines.length - 1 ? ' ' : null}
           </React.Fragment>
         ))}
+        {worded}
       </p>
       {authorClaim?.state === 'contradicted' ? (
         <p data-program-in-short-author-claim="not-quoted" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{authorClaim.note}</p>

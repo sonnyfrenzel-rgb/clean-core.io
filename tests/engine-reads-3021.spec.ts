@@ -230,8 +230,41 @@ test.describe('6. "What it decides" and the basket line read one classification'
     for (const source of [PO, FREIGHT, DELIVERY, LEGACY]) {
       const { ex, d } = decides(source, AFTER);
       for (const r of d.rules) expect(ex.baskets.business).toContain(r.id);
-      expect(d.rules.length + d.more).toBe(ex.baskets.business.length);
+      expect(d.rules.reduce((n, r) => n + 1 + (r.also?.length ?? 0), 0) + d.more).toBe(ex.baskets.business.length);
       expect(d.technical).toBe(ex.baskets.technical.length);
     }
+  });
+
+  test('legacy: two limits on the risk score are told apart by their value, not said twice (owner decision 23.10.2026)', () => {
+    const before = decides(LEGACY, BEFORE);
+    const after = decides(LEGACY, AFTER);
+    // What the owner saw: BR-004 and BR-005 in one wording.
+    const risk = (d: typeof after.d) => d.rules.filter((r) => /risk score/.test(r.text));
+    expect(risk(after.d).map((r) => r.id)).toEqual(['BR-004', 'BR-005']);
+    expect(after.d.rules.find((r) => r.id === 'BR-004')?.text).toBe('Sets a limit on the risk score: at or above 80');
+    expect(after.d.rules.find((r) => r.id === 'BR-005')?.text).toBe('Sets a limit on the risk score: at or above 50');
+    // Read for 3.0.20 the panel stays as it was read then.
+    expect(before.d.rules.find((r) => r.id === 'BR-004')?.text).toBe('Sets a limit on the risk score');
+    for (const source of [PO, FREIGHT, DELIVERY, LEGACY]) {
+      const texts = decides(source, AFTER).d.rules.map((r) => r.text.toLowerCase());
+      expect(new Set(texts).size, 'a sentence stands twice under "What it decides"').toBe(texts.length);
+    }
+  });
+
+  test('two rules that say the same thing to the value are one line, with the lines of both rules', () => {
+    const { ex } = decides(LEGACY, AFTER);
+    const twin = ex.rules.find((r) => r.id === 'BR-004')!;
+    // The same rule twice: a copy of BR-004 at another line.
+    const copy = { ...twin, id: 'BR-099', protects: { ...twin.protects, anchors: [{ lineStart: 900, lineEnd: 900 }] } };
+    const order = ex.order.flatMap((id) => (id === 'BR-004' ? [id, 'BR-099'] : [id]));
+    const doubled = { ...ex, rules: [...ex.rules, copy], order, baskets: { ...ex.baskets, business: [...ex.baskets.business, 'BR-099'] } };
+    const d = openingDecisions(doubled, 4, AFTER);
+    const line = d.rules.find((r) => r.id === 'BR-004')!;
+    expect(line.text).toBe('Sets a limit on the risk score: at or above 80');
+    expect(line.also).toEqual([{ id: 'BR-099', anchor: 'L900' }]);
+    expect(d.rules.map((r) => r.id)).not.toContain('BR-099');
+    // The freed place goes to the next rule; every business rule is still counted once.
+    expect(d.rules).toHaveLength(4);
+    expect(d.rules.reduce((n, r) => n + 1 + (r.also?.length ?? 0), 0) + d.more).toBe(doubled.baskets.business.length);
   });
 });

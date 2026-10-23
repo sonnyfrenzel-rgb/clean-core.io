@@ -323,7 +323,13 @@ export function listChangeAt(r: FirstLookReading, line: number): string | null {
 
 export interface OpeningDecisions {
   /** The weightiest business rules, weightiest topic first — what each does to a case, in words. */
-  rules: Array<{ id: string; text: string; anchor: string | null }>;
+  rules: Array<{
+    id: string;
+    text: string;
+    anchor: string | null;
+    /** From engine 3.0.21: further rules that say the same thing to the value — one line, every rule's lines kept. */
+    also?: Array<{ id: string; anchor: string | null }>;
+  }>;
   /** Business rules not shown here (the rules card lists them). */
   more: number;
   /** Technical settings — caps, decimals, system fields, demo data — counted, never listed here. */
@@ -360,16 +366,37 @@ export function openingDecisions(
   const technical = ordered.filter((r) => (byBasket ? r.basket.kind === 'technical' : r.topic === 'technical')).length;
   const business = ordered.filter((r) => (byBasket ? r.basket.kind === 'business' : r.topic !== 'technical'));
   const deciding = business.filter((r) => r.impact.score > 0);
-  const rules = deciding.slice(0, max).map((r) => {
-    const clause = r.protects.text.split(/:\s/)[0].replace(/[.;]\s*$/, '').replace(/^It\s+/, '');
+  const lines = deciding.map((r) => {
+    const [head, ...rest] = r.protects.text.split(/:\s/);
+    const clause = head.replace(/[.;]\s*$/, '').replace(/^It\s+/, '');
     const anchor = r.protects.anchors[0] ?? null;
     return {
       id: r.id,
       text: clause.charAt(0).toUpperCase() + clause.slice(1),
       anchor: anchor ? (anchor.lineEnd > anchor.lineStart ? `L${anchor.lineStart}-${anchor.lineEnd}` : `L${anchor.lineStart}`) : null,
+      // What tells two rules of one wording apart: the value after the colon ("at or above 80"), else the headline.
+      detail: (rest.join(': ').split(/[,;.]\s/)[0].replace(/[.;,]\s*$/, '').trim() || lcFirst(r.headline ?? '')).trim(),
     };
   });
-  return { rules, more: business.length - rules.length, technical };
+  // From engine 3.0.21 (owner decision 23.10.2026): one sentence never stands twice. Two rules the clause words alike
+  // ("Sets a limit on the risk score", BR-004 and BR-005) are told apart by their value; two that say the same
+  // thing to the value are one line, with the other rule's id and lines beside it.
+  const distinct: OpeningDecisions['rules'] = [];
+  for (const line of lines) {
+    const { detail, ...shown } = line;
+    if (!byBasket) {
+      distinct.push(shown);
+      continue;
+    }
+    const twins = lines.filter((l) => l.text.toLowerCase() === line.text.toLowerCase());
+    const told = twins.length > 1 && detail ? { ...shown, text: `${shown.text}: ${detail}` } : shown;
+    const same = distinct.find((d) => d.text.toLowerCase() === told.text.toLowerCase());
+    if (same) same.also = [...(same.also ?? []), { id: line.id, anchor: line.anchor }];
+    else distinct.push(told);
+  }
+  const rules = distinct.slice(0, max);
+  const listed = rules.reduce((n, r) => n + 1 + (r.also?.length ?? 0), 0);
+  return { rules, more: business.length - listed, technical };
 }
 
 function joinOr(items: readonly string[]): string {

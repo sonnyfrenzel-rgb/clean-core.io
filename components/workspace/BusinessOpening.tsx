@@ -30,6 +30,8 @@ export interface OpeningRule {
   id: string;
   text: string;
   anchor: string | null;
+  /** Further rules or questions that read the same — one line, every one's lines beside it. */
+  also?: Array<{ id: string; anchor: string | null }>;
 }
 
 const ASK_KEY: Record<AskWho, 'gives.askIt' | 'gives.askUsers' | 'gives.askBusiness'> = {
@@ -39,6 +41,11 @@ const ASK_KEY: Record<AskWho, 'gives.askIt' | 'gives.askUsers' | 'gives.askBusin
 };
 
 const BLOCK_TITLE = 'm-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase';
+
+/** The chip of a plain wording; nothing when no sentence was reworded. */
+function chipOf(said: WordedSentence | null): React.ReactNode {
+  return said ? <WordedChip said={said} /> : null;
+}
 
 function Line({ anchor }: { anchor: string | null }) {
   return anchor ? <CcAnchor label={`${wt('firstLook.sourceLine')} ${anchor}`}>{anchor}</CcAnchor> : null;
@@ -149,12 +156,29 @@ export default function BusinessOpening({
   };
   // The one sentence on top is a summary line, cut at the summary's own seam —
   // reworded where the whole line is, otherwise the engine's.
+  // Each sentence of the brief names the whole summary line it is cut from: where that line has a plain wording on
+  // record, the worded line stands in its place (owner, 23.10.2026), labelled AI-generated.
+  const briefParts = brief?.inShort?.parts ?? [];
+  const shortWorded: WordedSentence[] = [];
+  const shortFromBrief = briefParts.length
+    ? briefParts
+        .map((p) => {
+          if (!say) return p.text;
+          const s = say(p.line, plainRangeOf(p.anchor));
+          if (!s.worded) return p.text;
+          said.push(s);
+          shortWorded.push(s);
+          return s.text;
+        })
+        .join(' ')
+    : null;
+  const firstRange = briefParts.length ? plainRangeOf(briefParts[0].anchor) : null;
   const shortLine: SummaryLine | null = inShort
-    ? brief?.inShort
-      ? { key: 'purpose', text: brief.inShort.text, anchors: inShort.lines.find((l) => l.key === 'purpose')?.anchors ?? [], basis: 'reconstructed' }
+    ? shortFromBrief
+      ? { key: 'purpose', text: shortFromBrief, anchors: firstRange ? [firstRange] : [], basis: 'reconstructed' }
       : inShort.lines[0] ?? null
     : null;
-  const shortText = shortLine ? word(shortLine.text, shortLine.anchors[0] ?? null) : null;
+  const shortText = shortLine ? (shortFromBrief ?? word(shortLine.text, shortLine.anchors[0] ?? null)) : null;
   const stepTexts = story.steps.map((s) => word(s.text, plainRangeOf(s.anchor)));
   const ruleTexts = rules.map((r) => word(r.text, plainRangeOf(r.anchor)));
   const changeTexts = changes.map((c) => word(c.text, plainRangeOf(c.anchor)));
@@ -168,7 +192,7 @@ export default function BusinessOpening({
   const testSwitchShown = !!givesAway?.testSwitch && !givesAway.findings.some((f) => f.reader === 'test-switch');
 
   return (
-    <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-5">
+    <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-4">
       {/* 1 — the name and what the program is for, in one sentence. */}
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -185,13 +209,14 @@ export default function BusinessOpening({
         ) : null}
         {nameReason ? <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{nameReason}</p> : null}
         {inShort && shortLine && shortText ? (
-          <div className="mt-2">
+          <div className="mt-1">
             <ProgramInShort
               compact
               lines={[{ ...shortLine, text: shortText }]}
               level={inShort.level}
               proposal={inShort.proposal ?? null}
               authorClaim={inShort.authorClaim ?? null}
+              worded={shortWorded.length > 0 ? <WordedChip said={shortWorded[0]} /> : null}
             />
           </div>
         ) : null}
@@ -222,7 +247,7 @@ export default function BusinessOpening({
             {wt('biz.stepsTitle')}
           </h4>
           {story.proposedNames ? <CcProvenanceChip value="proposed" note={wt('biz.storyNamesNote')} /> : null}
-          {said.length > 0 ? <WordedChip said={said[0]} /> : null}
+          {chipOf(said.find((s) => !shortWorded.includes(s)) ?? null)}
         </div>
         {story.steps.length > 0 ? (
           <ol data-process-story="" data-steps={story.steps.length} className="m-0 flex list-none flex-col p-0">
@@ -230,7 +255,7 @@ export default function BusinessOpening({
               <li
                 key={`${step.nodeId}-${i}`}
                 data-process-story-step={i + 1}
-                className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 border-b border-cc-line py-2 last:border-b-0"
+                className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 border-b border-cc-line py-1 last:border-b-0"
               >
                 <span
                   aria-hidden={true}
@@ -336,6 +361,9 @@ export default function BusinessOpening({
                 <li key={rule.id} data-story-rule={rule.id} className="flex flex-wrap items-center gap-x-2 text-[13px] leading-snug font-semibold text-cc-ink">
                   <span className="min-w-0 break-words">{ruleTexts[k]}</span>
                   <Line anchor={rule.anchor} />
+                  {(rule.also ?? []).map((other) => (
+                    <Line key={other.id} anchor={other.anchor} />
+                  ))}
                 </li>
               ))}
             </ul>
