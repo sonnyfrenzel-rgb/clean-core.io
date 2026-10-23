@@ -1492,7 +1492,7 @@ export default function SettingsPage() {
               />
             ) : null}
 
-            {keyAvailability.suspendedProvider ? <OwnKeyProviderSuspended provider={keyAvailability.suspendedProvider} /> : null}
+            {keyAvailability.suspendedProvider ? <OwnKeyProviderSuspended provider={keyAvailability.suspendedProvider} notice={keyAvailability.suspendedNotice} /> : null}
             {profile?.byokConfigured && !ownKeyTested ? <OwnKeyUntested /> : null}
             {profile?.byokConfigured && savedProvider ? (
               <OwnKeyAutoSteps

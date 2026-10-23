@@ -104,6 +104,8 @@ export interface FinishRegistrationInput {
   /** Both must be true for a consent record to be written. */
   acceptedTerms: boolean;
   acceptedPrivacy: boolean;
+  /** The contract language the ticks accepted (Terms 1.4, T02); English when absent. */
+  termsLanguage?: 'en' | 'de';
 }
 
 /**
@@ -130,6 +132,7 @@ export async function finishRegistration(user: User, input: FinishRegistrationIn
       motivation: input.motivation || '',
       acceptedTerms: input.acceptedTerms === true,
       acceptedPrivacy: input.acceptedPrivacy === true,
+      termsLanguage: input.termsLanguage === 'de' ? 'de' : 'en',
       locale: typeof navigator !== 'undefined' ? navigator.language : null,
     }),
   });
@@ -254,6 +257,7 @@ export function useUserProfile() {
     lastName: string,
     motivation?: string,
     authMethod: 'google' | 'password' = 'google',
+    termsLanguage: 'en' | 'de' = 'en',
   ) => {
     // F-06: No email-based privilege escalation. All new users start as 'pilot' / 'pending'.
     // Admin status is granted server-side via the set-admin-claim API.
@@ -312,6 +316,7 @@ export function useUserProfile() {
       motivation: motivation || '',
       acceptedTerms: true,
       acceptedPrivacy: true,
+      termsLanguage,
     });
 
     return newProfile;

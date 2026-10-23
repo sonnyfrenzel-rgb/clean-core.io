@@ -28,8 +28,11 @@
  * account held with Anthropic Ireland, Limited. There is deliberately no second
  * "I confirm …" box.
  *
- * Pure: no imports, so the settings card, the save route and the specs share it.
+ * Pure: only the two import-free archive registries, so the settings card, the
+ * save route and the specs share it.
  */
+import { ARCHIVED_BYOK_ADDENDUM_VERSIONS } from './legal/byok-addendum-versions';
+import { ARCHIVED_TERMS_VERSIONS } from './terms-versions';
 
 /** The version an acceptance names. A new wording is a new version. */
 export const BYOK_ADDENDUM_VERSION = 'ZV-BYOK-1.0';
@@ -65,16 +68,40 @@ export const BYOK_ADDENDUM_ACCEPT_TEXT: Readonly<Record<ByokAddendumLanguage, st
 
 /**
  * SHA-256 of each archived language version's wording (LF-normalised), as
- * `lib/terms-versions.ts` pins the Terms. Empty until the wording is archived
- * with its page; an acceptance then records `null` — "the wording is not
+ * `lib/terms-versions.ts` pins the Terms — read from the archive registry
+ * (`lib/legal/byok-addendum-versions.ts`), whose digests
+ * `tests/legal-archive-sync.spec.ts` recomputes from the files (T03). A
+ * version or language not archived records `null` — "the wording is not
  * pinned for this version" — and never a digest of something adjacent
  * (`lib/consent.ts` explains why).
  */
-export const BYOK_ADDENDUM_DIGESTS: Readonly<Record<string, Partial<Record<ByokAddendumLanguage, string>>>> = {};
+export const BYOK_ADDENDUM_DIGESTS: Readonly<Record<string, Partial<Record<ByokAddendumLanguage, string>>>> = Object.fromEntries(
+  ARCHIVED_BYOK_ADDENDUM_VERSIONS.map((v) => [v.id, Object.fromEntries(v.files.map((f) => [f.lang, f.sha256]))]),
+);
 
 export function byokAddendumSha256(version: string, language: ByokAddendumLanguage): string | null {
   return BYOK_ADDENDUM_DIGESTS[version]?.[language] ?? null;
 }
+
+/**
+ * The Terms version an Anthropic key needs (Additional Agreement clause 1;
+ * Terms 5.2; T03): v2.3.0 or later. Version ids are ISO dates, so "later" is
+ * a string comparison against the id of the archived version labelled v2.3.0.
+ */
+export const BYOK_MIN_TERMS_LABEL = 'v2.3.0';
+export const BYOK_MIN_TERMS_VERSION: string = (() => {
+  const v = ARCHIVED_TERMS_VERSIONS.find((t) => t.label === BYOK_MIN_TERMS_LABEL);
+  if (!v) throw new Error(`no archived Terms ${BYOK_MIN_TERMS_LABEL}`);
+  return v.version;
+})();
+
+/** Whether an account that accepted `accepted` may store an Anthropic key. */
+export function termsAllowAddendum(accepted: unknown): boolean {
+  return typeof accepted === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(accepted) && accepted >= BYOK_MIN_TERMS_VERSION;
+}
+
+/** The code a save carries when the account has not accepted Terms v2.3.0 or later. */
+export const ADDENDUM_TERMS_REQUIRED_CODE = 'byok-addendum-terms-required';
 
 /** Which providers' keys need the agreement. */
 export function addendumRequired(provider: string): boolean {

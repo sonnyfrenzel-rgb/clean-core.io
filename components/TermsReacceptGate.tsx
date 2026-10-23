@@ -17,6 +17,8 @@ import CcCheckbox from '@/components/cc/Checkbox';
 import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
 import { renderOpenValue } from '@/lib/legal/open-values';
 import { TERMS_LABEL } from '@/lib/legal/documents';
+import { ContractLanguageChoice } from '@/components/legal/SignupConsent';
+import type { TermsLanguage } from '@/lib/terms-versions';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -106,8 +108,10 @@ type TermsTextBlock =
  * the consent record carries — and takes only the text of its article, element
  * by element. Text, never markup: nothing fetched reaches `innerHTML`.
  */
-async function loadTermsText(): Promise<TermsTextBlock[]> {
-  const res = await fetch(`/terms/versions/${TERMS_VERSION}`, { credentials: 'same-origin' });
+async function loadTermsText(lang: TermsLanguage): Promise<TermsTextBlock[]> {
+  // The language version being accepted: its archive page is prerendered from
+  // `docs/terms/<version>.de.md` for German (T02).
+  const res = await fetch(`/terms/versions/${TERMS_VERSION}${lang === 'de' ? '/de' : ''}`, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(String(res.status));
   const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
   const article = doc.querySelector('[data-archived-text]');
@@ -128,7 +132,8 @@ async function loadTermsText(): Promise<TermsTextBlock[]> {
   return blocks;
 }
 
-function TermsInline() {
+/** Keyed by the language at its call site, so a change of language starts it afresh. */
+function TermsInline({ lang }: { lang: TermsLanguage }) {
   const [open, setOpen] = useState(false);
   const [blocks, setBlocks] = useState<TermsTextBlock[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -137,12 +142,12 @@ function TermsInline() {
     setOpen(next);
     if (next && !blocks) {
       setFailed(false);
-      loadTermsText().then(setBlocks, () => setFailed(true));
+      loadTermsText(lang).then(setBlocks, () => setFailed(true));
     }
   };
 
   return (
-    <div data-terms-gate-inline={open ? 'open' : 'closed'} className="mt-4">
+    <div data-terms-gate-inline={open ? 'open' : 'closed'} lang={lang} className="mt-4">
       <CcDisclosure title="Read the Terms here" open={open} onOpenChange={onOpenChange}>
         <div data-terms-gate-terms-text="" className="space-y-3 rounded-cc-row border border-cc-line p-3 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">
           {blocks ? (
@@ -190,6 +195,9 @@ export default function TermsReacceptGate() {
   // C2 of the legal texts: the acceptance is a ticked statement and a button,
   // not the button alone — the box names the version and the language accepted.
   const [ticked, setTicked] = useState(false);
+  // T02: the contract language the tick accepts (Terms 1.4) — chosen here, not
+  // read from the interface. Changing it clears the tick.
+  const [termsLanguage, setTermsLanguage] = useState<TermsLanguage>('en');
   // Safe as a lazy initialiser despite SSR: this component renders `null` while
   // the profile is loading, so the server and the first client paint agree
   // regardless of what storage holds.
@@ -277,7 +285,7 @@ export default function TermsReacceptGate() {
       const res = await fetch('/api/consent', {
         method: 'POST',
         headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ termsVersion: TERMS_VERSION }),
+        body: JSON.stringify({ termsVersion: TERMS_VERSION, termsLanguage }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -316,12 +324,14 @@ export default function TermsReacceptGate() {
    * C2 of the legal texts (Fassung 1.1): the date and version the Terms change
    * on, what changes and why (the list below, from `lib/terms-changes.ts`),
    * where the full wording is, and that the previous version goes on applying
-   * until then (section 10.3). English: the acceptance record does not yet
-   * store the language accepted in (open value `t02AcceptedLanguage`).
+   * until then (section 10.3). The statement to tick, the note after the list
+   * and the notice speak the contract language chosen above them, and the
+   * record stores that language with the digest of its wording (T02).
    */
   const C2 = CONSENT_TEXTS.amendment;
-  const fill = (text: string) =>
-    text.replace(/\{Datum\}/g, renderOpenValue('releaseDate', 'en')).replace(/\{Fassung\}/g, TERMS_LABEL);
+  const lang = termsLanguage;
+  const fill = (text: string, l: TermsLanguage = 'en') =>
+    text.replace(/\{Datum\}/g, renderOpenValue('releaseDate', l)).replace(/\{Fassung\}/g, TERMS_LABEL);
   const explanation = noAcceptance && !mayDecline
     ? 'Your account has no recorded acceptance of the Terms of Service, so the platform is closed to it until there is one. Please read the Terms and accept them to carry on. Your account and your data are unchanged.'
     : mayDecline
@@ -346,21 +356,32 @@ export default function TermsReacceptGate() {
       </div>
 
       {(mayDecline || !noAcceptance) && (
-        <p className="mt-3 mb-0 cc-text-cell text-cc-ink-muted" data-terms-gate-after-list="">
-          {fill(consentText(C2.afterList, 'en'))}
+        <p className="mt-3 mb-0 cc-text-cell text-cc-ink-muted" data-terms-gate-after-list="" lang={lang}>
+          {fill(consentText(C2.afterList, lang), lang)}
         </p>
       )}
 
-      <TermsInline />
-
-      <div className="mt-4" data-terms-gate-checkbox="">
-        <CcCheckbox checked={ticked} onChange={setTicked} label={fill(consentText(C2.checkbox, 'en'))} />
+      <div className="mt-4">
+        <ContractLanguageChoice
+          value={lang}
+          onChange={(l) => {
+            setTermsLanguage(l);
+            // A tick belongs to the wording it was given for.
+            setTicked(false);
+          }}
+        />
       </div>
-      <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">{consentText(C2.notice, 'en')}</p>
+
+      <TermsInline key={lang} lang={lang} />
+
+      <div className="mt-4" data-terms-gate-checkbox="" data-terms-gate-language={lang}>
+        <CcCheckbox checked={ticked} onChange={setTicked} label={<span lang={lang}>{fill(consentText(C2.checkbox, lang), lang)}</span>} />
+      </div>
+      <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted" lang={lang}>{consentText(C2.notice, lang)}</p>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 cc-text-identifier">
         <Link
-          href="/terms"
+          href={lang === 'de' ? '/terms/de' : '/terms'}
           target="_blank"
           rel="noopener noreferrer"
           data-terms-gate-link="terms"

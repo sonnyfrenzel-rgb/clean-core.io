@@ -162,8 +162,9 @@ test.describe('consent records what the server knows, not what the caller says',
     // same rule and a better record. What must never come back is a value the
     // caller supplies — see `tests/terms-version-archive.spec.ts` for the other
     // half, that the digest is the one the archived wording actually hashes to.
-    expect(lib, 'the document hash is no longer derived from the version').toContain(
-      'archivedTermsSha256(TERMS_VERSION)',
+    // Since T02 (3.0.21) the digest is that of the language version accepted.
+    expect(lib, 'the document hash is no longer derived from the version and its language').toContain(
+      'archivedTermsSha256For(TERMS_VERSION, language)',
     );
     expect(lib, 'contentSha256 is an input again').not.toMatch(/contentSha256\??:\s*string/);
     expect(lib, 'privacyVersion is an input again').not.toMatch(/privacyVersion\??:\s*string/);

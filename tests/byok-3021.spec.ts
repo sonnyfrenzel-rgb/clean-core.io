@@ -26,7 +26,9 @@ import {
   addendumRequired,
   byokAddendumSha256,
 } from '../lib/byok-addendum';
-import { buildAgreementAcceptedMail, buildAgreementEndedMail } from '../lib/byok-agreement-email';
+import { buildAgreementEndedMail } from '../lib/byok-agreement-email';
+import { acceptedWording, buildContractConfirmationMail } from '../lib/contract-confirmation-email';
+import { archivedAddendumSha256 } from '../lib/legal/byok-addendum-versions';
 import { OWN_KEY_TEST_STUB_REFUSED, testOwnModelKey } from '../lib/own-key-test';
 import { ownKeyCounts, quotaExhausted, runsAreSelfFunded } from '../lib/run-quota-rule';
 import { askModeOf } from '../lib/auto-steps';
@@ -101,8 +103,13 @@ test.describe('an Anthropic key is stored only with the Additional Agreement acc
     expect(addendumAcceptanceOf(null)).toBeNull();
     expect(addendumRequired('anthropic')).toBe(true);
     expect(addendumRequired('gemini')).toBe(false);
-    // Not pinned until the wording is archived: null, never a stand-in digest.
-    expect(byokAddendumSha256('ZV-BYOK-1.0', 'en')).toBeNull();
+    // T03 (3.0.21): the archived wording of each language version is pinned, and
+    // an acceptance names exactly that digest; an unknown version stays null.
+    expect(byokAddendumSha256('ZV-BYOK-1.0', 'en')).toBe(archivedAddendumSha256('ZV-BYOK-1.0', 'en'));
+    expect(byokAddendumSha256('ZV-BYOK-1.0', 'de')).toBe(archivedAddendumSha256('ZV-BYOK-1.0', 'de'));
+    expect(byokAddendumSha256('ZV-BYOK-1.0', 'de')).not.toBe(byokAddendumSha256('ZV-BYOK-1.0', 'en'));
+    expect(byokAddendumSha256('ZV-BYOK-1.0', 'de')).toMatch(/^[0-9a-f]{64}$/);
+    expect(byokAddendumSha256('ZV-BYOK-0.9', 'en')).toBeNull();
   });
 
   test('the save route refuses an Anthropic key without it, before anything is stored, and records the language version accepted', () => {
@@ -144,12 +151,22 @@ test.describe('an Anthropic key is stored only with the Additional Agreement acc
     expect(read('lib/firebase-admin.ts')).toContain('if (data.blockedAt) throw new OwnModelKeyBlockedError();');
   });
 
-  test('the confirmation mails carry version, language version, digest state and time, and one link to the wording', () => {
-    const html = buildAgreementAcceptedMail({ recipient: 'a@example.org', version: 'ZV-BYOK-1.0', language: 'de', contentSha256: null, acceptedAt: '2026-10-22T10:00:00.000Z' });
+  test('the confirmation mails carry version, language version, digest and time, the full wording, and one link to it', () => {
+    // Since T03 (3.0.21) the acceptance is confirmed with C5 in the language accepted.
+    const accepted = acceptedWording('byok-addendum', 'de', 'ZV-BYOK-1.0')!;
+    const { html, subject } = buildContractConfirmationMail({
+      occasion: 'byok-addendum',
+      language: 'de',
+      recipient: 'a@example.org',
+      firstName: null,
+      ...accepted,
+      acceptedAt: '2026-10-22T10:00:00.000Z',
+    });
+    expect(subject).toContain('deutsche Fassung');
     expect(html).toContain('ZV-BYOK-1.0');
-    expect(html).toContain('Deutsch');
-    expect(html).toContain('not pinned for this version');
-    expect(html).toContain('2026-10-22T10:00:00.000Z');
+    expect(html).toContain('Sprache: Deutsch');
+    expect(html).toContain(archivedAddendumSha256('ZV-BYOK-1.0', 'de')!);
+    expect(html).toContain('22. Oktober 2026 um 10:00 (UTC)');
     expect(html).toContain('/terms/byok-addendum/de');
     expect(html.match(/<a /g)).toHaveLength(1);
     expect(buildAgreementEndedMail({ recipient: 'a@example.org', ending: 'text-form', endedAt: 'x' })).toContain('text form');

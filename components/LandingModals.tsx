@@ -45,7 +45,8 @@ import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import dynamic from 'next/dynamic';
-import { PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import { ContractLanguageChoice, PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import type { TermsLanguage } from '@/lib/terms-versions';
 
 /** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
 const LegalOverlayBody = dynamic(() => import('@/components/legal/LegalOverlayBody'), {
@@ -214,6 +215,8 @@ export default function LandingModals() {
   const [motivation, setMotivation] = useState('');
   const [agreedGDPR, setAgreedGDPR] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  // T02: the contract language the ticks accept (Terms 1.4), not the interface language.
+  const [termsLanguage, setTermsLanguage] = useState<TermsLanguage>('en');
   const [showDatenschutz, setShowDatenschutz] = useState(false);
   const [showTermsOverlay, setShowTermsOverlay] = useState(false);
 
@@ -518,6 +521,7 @@ export default function LandingModals() {
           motivation: motivation.trim().slice(0, 2000),
           acceptedTerms: agreedTerms,
           acceptedPrivacy: agreedGDPR,
+          termsLanguage,
         });
       } catch (registerErr) {
         console.error('[Email Signup] account activation failed:', registerErr);
@@ -991,20 +995,29 @@ export default function LandingModals() {
               {/* Legal consent (required for registration) — C1 of the legal texts,
                   Fassung 1.1, the same words as the onboarding dialog. */}
               <div className="space-y-2 border-t border-cc-line pt-3">
-                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="above">{signupNoticeAbove()}</p>
+                <ContractLanguageChoice
+                  value={termsLanguage}
+                  onChange={(l) => {
+                    setTermsLanguage(l);
+                    // A tick belongs to the wording it was given for.
+                    setAgreedGDPR(false);
+                    setAgreedTerms(false);
+                  }}
+                />
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="above" lang={termsLanguage}>{signupNoticeAbove(termsLanguage)}</p>
                 <CcCheckbox
                   checked={agreedGDPR}
                   onChange={setAgreedGDPR}
                   required
-                  label={<PrivacyConsentLabel onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />}
+                  label={<PrivacyConsentLabel lang={termsLanguage} onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />}
                 />
                 <CcCheckbox
                   checked={agreedTerms}
                   onChange={setAgreedTerms}
                   required
-                  label={<TermsConsentLabel onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
+                  label={<TermsConsentLabel lang={termsLanguage} onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
                 />
-                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below">{signupNoticeBelow(email.trim() || null)}</p>
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below" lang={termsLanguage}>{signupNoticeBelow(email.trim() || null, termsLanguage)}</p>
               </div>
 
               {/* The disclaimer states the fact and drops the label (§3.1 has no
@@ -1263,11 +1276,11 @@ export default function LandingModals() {
 
       {/* The texts the sign-up consent links to, in full. */}
       <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy">
-        <LegalOverlayBody id="privacy" />
+        <LegalOverlayBody id="privacy" lang={termsLanguage} />
       </LegalOverlay>
 
             <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Community Guidelines">
-        <LegalOverlayBody id="terms" />
+        <LegalOverlayBody id="terms" lang={termsLanguage} />
       </LegalOverlay>
     </>
   );

@@ -32,11 +32,13 @@ test.describe('C1 — the sign-up consent', () => {
       const s = read(rel);
       expect(s).toContain('<PrivacyConsentLabel');
       expect(s).toContain('<TermsConsentLabel');
-      expect(s).toContain('signupNoticeAbove()');
-      expect(s).toMatch(/signupNoticeBelow\(/);
+      // Since T02 (3.0.21) the notices speak the contract language chosen in the dialog.
+      expect(s).toContain('signupNoticeAbove(termsLanguage)');
+      expect(s).toMatch(/signupNoticeBelow\(.*termsLanguage\)/);
+      expect(s).toContain('<ContractLanguageChoice');
       expect(s, `${rel} still asks the reader to agree to the privacy policy`).not.toMatch(/I agree to the\{' '\}/);
-      expect(s).toContain('<LegalOverlayBody id="privacy" />');
-      expect(s).toContain('<LegalOverlayBody id="terms" />');
+      expect(s).toContain('<LegalOverlayBody id="privacy" lang={termsLanguage} />');
+      expect(s).toContain('<LegalOverlayBody id="terms" lang={termsLanguage} />');
       expect(s, `${rel} still shows a summary of the policy`).not.toContain('1. Privacy at a Glance');
     });
   }

@@ -287,7 +287,20 @@ test.describe('every product mail keeps the rules of run 20260924-a', () => {
     expect(LINK_EXCEPTIONS['security-alert'].hosts).toEqual(['https://github.com']);
     expect(mailPolicyWarnings(user, { ...good, html: '<a href="https://github.com/x">x</a>' }).join(' ')).toMatch(/links outside/);
     for (const [type, e] of Object.entries(LINK_EXCEPTIONS)) {
-      expect(SEED_MAIL_TYPES.find((t) => t.type === type)?.audience, `${type}: a user mail with a link exception`).toBe('betrieb');
+      const seed = SEED_MAIL_TYPES.find((t) => t.type === type);
+      if (seed?.audience === 'nutzer') {
+        // 3.0.21 (C5, T03): a user mail may name a foreign host only where it
+        // quotes the archived contract wording verbatim — as text, never a link.
+        expect(e.quotedWording, `${type}: a user mail with a link exception`).toBe(true);
+        const archived = fs.readdirSync(path.join(ROOT, 'docs/terms')).map((f) => fs.readFileSync(path.join(ROOT, 'docs/terms', f), 'utf8')).join('\n');
+        const mail = seed.build(ctx);
+        for (const host of e.hosts) {
+          expect(archived, `${type}: ${host} is not quoted from the archived wording`).toContain(`${host}/`);
+          expect(mail.html, `${type}: ${host} is linked, not quoted`).not.toMatch(new RegExp(`<a\\s[^>]*href="${host.replace(/[.]/g, '\\.')}`));
+        }
+        continue;
+      }
+      expect(seed?.audience, `${type}: a user mail with a link exception`).toBe('betrieb');
       expect(e.why.length).toBeGreaterThan(10);
     }
   });
@@ -436,7 +449,8 @@ test.describe('the daily budget (codex code-mail-04)', () => {
     const fiveBoxes = ['a', 'b', 'c', 'd', 'e'].map((l) => `${l} seed-${l}@example.com`).join('\n');
     const r = runCli(['--send', '--run-id', 'spec-big'], { MAIL_SEED_CONFIRM: 'spec-big' }, fiveBoxes);
     expect(r.status, r.out).toBe(1);
-    expect(r.out).toMatch(/seed budget exceeded: 85 mail\(s\) planned/);
+    // 22 types since the contract confirmations C5 (3.0.21, T03), five mailboxes each.
+    expect(r.out).toMatch(/seed budget exceeded: 110 mail\(s\) planned/);
     expect(r.calls, 'an oversized plan reached the network').toEqual([]);
   });
 

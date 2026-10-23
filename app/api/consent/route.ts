@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, QuotaError } from '@/lib/firebase-admin';
 import { recordConsent } from '@/lib/consent';
+import { sendContractConfirmationMail } from '@/lib/contract-confirmation-mail';
 import { TERMS_VERSION } from '@/lib/constants';
 import { logger, errMessage } from '@/lib/logger';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -17,7 +18,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
  * The write itself lives in `lib/consent.ts`, shared with the registration route
  * so signup consent and re-consent produce the same record.
  *
- * Body: { termsVersion?, locale? }. The privacy version and the document hash
+ * Body: { termsVersion?, termsLanguage?, locale? }. The privacy version and the document hash
  * are server-derived — a record whose contents the consenting party chooses is
  * not evidence.
  */
@@ -49,23 +50,37 @@ export async function POST(req: NextRequest) {
 
     // Server-derived email — never trust the client for identity.
     let email: string | null = decoded.email || null;
-    if (!email) {
-      const { db } = await getAdminDb();
-      const snap = await db.collection('users').doc(decoded.uid).get();
-      email = snap.exists ? (snap.data()?.email || null) : null;
-    }
+    const { db } = await getAdminDb();
+    const profileSnap = await db.collection('users').doc(decoded.uid).get();
+    const profile = profileSnap.exists ? profileSnap.data() || {} : {};
+    if (!email) email = profile.email || null;
+    // An account with an earlier acceptance is accepting an amendment (Terms 10.2).
+    const occasion = typeof profile.termsVersionAccepted === 'string' && profile.termsVersionAccepted ? 'amendment' : 'sign-up';
 
     // `privacyVersion` and `contentSha256` are no longer read from the body. They
     // were written verbatim into the append-only record, which let the consenting
     // party choose what the record said they consented to.
-    await recordConsent({
+    const recorded = await recordConsent({
       uid: decoded.uid,
       email,
       source: 'api/consent',
       locale: typeof body?.locale === 'string' ? body.locale : null,
+      // T02: the language version ticked in the dialog (C2) — the person's
+      // choice of contract language, which the digest is then derived from.
+      termsLanguage: body?.termsLanguage,
     });
 
-    return NextResponse.json({ ok: true, termsVersion: TERMS_VERSION });
+    // C5 (Terms 10.2 and 1.3, T03): the confirmation of the acceptance, in the
+    // language version accepted — best effort, to the server-derived address.
+    await sendContractConfirmationMail({
+      to: email,
+      uid: decoded.uid,
+      occasion,
+      language: recorded.termsLanguage,
+      firstName: typeof profile.firstName === 'string' ? profile.firstName : null,
+    });
+
+    return NextResponse.json({ ok: true, termsVersion: TERMS_VERSION, termsLanguage: recorded.termsLanguage });
   } catch (err: unknown) {
     // The reason goes to the server log; the caller gets a fixed sentence.
     logger.error('consent record failed', {

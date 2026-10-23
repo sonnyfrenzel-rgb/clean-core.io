@@ -1,11 +1,12 @@
-import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
+import { APP_BASE_URL } from '@/lib/constants';
 import { buildUserMail } from '@/lib/user-mail';
-import { BYOK_ADDENDUM_LANGUAGE_LABEL, BYOK_ADDENDUM_PATH, type ByokAddendumLanguage, type ByokAgreementEnding } from '@/lib/byok-addendum';
+import type { ByokAgreementEnding } from '@/lib/byok-addendum';
 
 /**
- * The confirmation of the Additional Agreement on Own Model Keys (roadmap
- * 3.0.21; legal review E14/E24, acceptance T03): one mail when an Anthropic key
- * is stored with the agreement accepted, one when the agreement ends. A record
+ * The confirmation of the end of the Additional Agreement on Own Model Keys
+ * (roadmap 3.0.21; legal review E14/E24, acceptance T03). The acceptance is
+ * confirmed by the contract confirmation C5 (`lib/contract-confirmation-email.ts`),
+ * in the language version accepted and with the full wording. A record
  * for both sides, not a condition of anything — a mail that does not go out
  * changes nothing about the key or the agreement, and there is deliberately no
  * resend and no "delivery failed" notice (E25 struck both).
@@ -16,36 +17,7 @@ import { BYOK_ADDENDUM_LANGUAGE_LABEL, BYOK_ADDENDUM_PATH, type ByokAddendumLang
  * `recipient` must be HTML-escaped by the caller.
  */
 
-export const BYOK_AGREEMENT_ACCEPTED_SUBJECT = 'Clean-Core.io — your Additional Agreement on Own Model Keys';
 export const BYOK_AGREEMENT_ENDED_SUBJECT = 'Clean-Core.io — your Additional Agreement on Own Model Keys has ended';
-
-export interface AgreementAcceptedMailInput {
-  recipient: string;
-  version: string;
-  language: ByokAddendumLanguage;
-  /** SHA-256 of the accepted wording, or null while it is not archived. */
-  contentSha256: string | null;
-  /** ISO time of the acceptance as the server recorded it. */
-  acceptedAt: string;
-}
-
-export function buildAgreementAcceptedMail(input: AgreementAcceptedMailInput): string {
-  return buildUserMail({
-    greeting: 'Hello,',
-    paragraphs: [
-      'You stored an Anthropic API key on Clean-Core.io and accepted the Additional Agreement on Own Model Keys. This mail is the record of that acceptance.',
-      [
-        `<strong>Version:</strong> ${input.version}`,
-        `<strong>Language version accepted:</strong> ${BYOK_ADDENDUM_LANGUAGE_LABEL[input.language]}`,
-        `<strong>SHA-256 of the wording:</strong> ${input.contentSha256 ?? 'not pinned for this version'}`,
-        `<strong>Accepted at:</strong> ${input.acceptedAt}`,
-      ].join('<br>'),
-      `You can end the agreement at any time: with &ldquo;Delete key and end agreement&rdquo; in Settings, or by writing to ${CONTACT_EMAIL}. Your account and your projects stay.`,
-    ],
-    link: { lead: 'The full wording you accepted:', url: `${APP_BASE_URL}${BYOK_ADDENDUM_PATH[input.language]}` },
-    footer: [`Sent to ${input.recipient} because an Anthropic key was stored for this account on Clean-Core.io.`],
-  });
-}
 
 export interface AgreementEndedMailInput {
   recipient: string;
