@@ -25,18 +25,41 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
       {
         lead: 'No right of withdrawal — but you can leave at any time.',
         text:
-          'The platform is free and your account data is used only to provide it, so there is no statutory ' +
-          'right of withdrawal (section 13). Nothing changes for you in practice: you can end the contract at ' +
-          'any time by deleting your account, and you can withdraw any consent — community mail, surveys, your ' +
-          'motivation note — whenever you like.',
+          'The platform is free and your account data is used only to provide it and to meet legal ' +
+          'requirements, so there is no statutory right of withdrawal (section 13). Community mail and surveys ' +
+          'are not part of the contract: you switch them on, if you want them, after signing up, and doing so ' +
+          'changes nothing about access, quota or functions. You can end the contract at any time by deleting ' +
+          'your account, and you can withdraw any consent — community mail, surveys, your motivation note — ' +
+          'whenever you like.',
       },
       {
         lead: 'Your own Claude key.',
         text:
-          'Besides Google Gemini you can store your own Anthropic key — for a business account held with ' +
-          'Anthropic Ireland — once you accept the separate Additional Agreement on Own Model Keys (section 5.2). ' +
-          'Requests on that key are processed in the United States. Section 5.3 says who is responsible for ' +
-          'what, and that no call ever falls back to the platform key.',
+          'Besides Google Gemini you can store your own Anthropic key — for a business account with a billing ' +
+          'address in the EEA, Switzerland or the UK — once you accept the separate Additional Agreement on Own ' +
+          'Model Keys (section 5.2). Requests on that key are processed in the United States. Section 5.3 says ' +
+          'who is responsible for what, that no call ever falls back to the platform key, and how the two of ' +
+          'us share the duties if we were ever jointly responsible for sending your request to your provider.',
+      },
+      {
+        lead: 'A change takes effect on its announced day.',
+        text:
+          'We announce a change at least six weeks ahead. You can accept it as soon as you see it, but it takes ' +
+          'effect for you only on the announced day; until then the version you accepted before applies. We ' +
+          'record both the time you accepted and that day, and the confirmation mail names the day (section 10.2).',
+      },
+      {
+        lead: 'Reporting illegal content.',
+        text:
+          'Anyone can report content they consider illegal to info@clean-core.io; clean-core.io/report says what ' +
+          'a report should contain. A person examines every report, and both sides get a reasoned decision. Do ' +
+          'not send copies of the content, only where it is (section 7).',
+      },
+      {
+        lead: 'Connecting an SAP system.',
+        text:
+          'If you connect an SAP S/4HANA system, you confirm that your contract with SAP and your organisation ' +
+          'allow it. The platform reads only service metadata and a CSRF token from it (section 8).',
       },
       {
         lead: 'A record of what you accepted.',
@@ -57,8 +80,10 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
         lead: '',
         text:
           'The Privacy Policy was rewritten at the same time: the own Anthropic key and who receives what, the ' +
-          'proof log and how long each record is kept, and a shorter notice to the operator about new accounts ' +
-          'that no longer carries your name, address or motivation.',
+          'proof log and how long each record is kept, a shorter notice to the operator about new accounts ' +
+          'that no longer carries your name, address or motivation, the address of your Google profile picture ' +
+          'removed from your sign-in record, reports of illegal content, ATC imports without personal fields, ' +
+          'and sharing a portfolio overview.',
       },
     ],
   },

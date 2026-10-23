@@ -1,32 +1,21 @@
 /**
- * "Reporting illegal content", English version — the page section 7 of the
- * Terms of Service v2.3.0 points to (`{{reportingNotesUrl}}`, owner decision
- * 22./23.10.2026). German: `report.de.ts`, at `/report/de`.
+ * "Report illegal content", English version — the page section 7 of the Terms
+ * of Service v2.3.0 points to (`{{reportingNotesUrl}}`, owner decision
+ * 22./23.10.2026; wording of Fassung 1.1, 23.10.2026). German: `report.de.ts`,
+ * at `/report/de`.
  *
  * Markup: `lib/legal/markup.ts`. It is a notice, not contract text: it is not
  * archived or hashed, and it says nothing the Terms do not already commit to.
  */
-export const REPORT_EN = `## What the Platform holds {#what-the-platform-holds}
+export const REPORT_EN = `Anyone may report content on Clean-Core.io they consider illegal — for example in a project or portfolio shared with them. You do not need an account. Write to info@clean-core.io.
 
-Clean-Core.io holds only what its users upload in their own accounts. Nothing on the Platform is public: a project can be seen only by its account and by people that account has invited personally, each through a link bound to one confirmed e-mail address. If you can see content you consider illegal, it is because someone shared it with you.
+What a report should contain: which content you mean; where exactly it is (project, run or link); why you consider it illegal; your name and e-mail address; confirmation that your information is accurate and complete to the best of your knowledge.
 
-## Where to send a report {#where-to-send}
+Exception: if your report concerns depictions of the sexual abuse of children or young people, you need not give your name or e-mail address.
 
-Send your report by e-mail to info@clean-core.io, the address in the legal notice (clean-core.io/impressum).
+Please send us no copies, screenshots or files of the content — only tell us where it is. For depictions of child sexual abuse, passing them on is itself a criminal offence. You can also report such content directly: to the police (the online police station of your federal state), to jugendschutz.net or to the Internet-Beschwerdestelle (internet-beschwerdestelle.de){{reportingBodiesLinks}}.
 
-## What a report should contain {#what-to-include}
+What happens next: if you gave a contact address, we confirm receipt. A person examines every report promptly and diligently, without automated means, and informs you and the account concerned of the decision; the account concerned is told the measure, the facts it rests on, the law or rule breached and how to challenge the decision. Where a criminal offence is suspected, we block access to the content immediately, look at it no further than needed to block it, and inform the law-enforcement authorities.
 
-- **Where:** the exact location on the Platform — the project link or the URL of the shared link you received.
-- **Why:** the reasons why you consider the content illegal, with the legal provision if you know it.
-- **Who:** your name and e-mail address. Exception: if the report concerns child sexual abuse material, no name is required.
-- **Good faith:** a statement that you make the report in good faith and that your information is accurate and complete to the best of your knowledge.
-
-## What happens next {#what-happens}
-
-- You receive an acknowledgement of receipt.
-- A person examines the report; content is not moderated by automated means.
-- You receive a reasoned decision.
-- Where content is removed or access to it is restricted, the account concerned also receives a reasoned decision, with the way to object to it.
-
-The procedure is set out in section 7 of the Terms of Service (clean-core.io/terms).
+This procedure is a voluntary standard of the operator (Terms of Service, section 7); further statutory rights remain unaffected{{t07ReportingProcess}}. How we process the information in your report is set out in the Privacy Policy (section 2).
 `;

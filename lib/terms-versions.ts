@@ -125,7 +125,7 @@ export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
     label: 'v2.3.0',
     effectiveOn: '[open: release date]',
     file: 'docs/terms/2026-10-23.md',
-    sha256: '65940afa187c2a8f6abf09681a646ee5aa6238976304bb903f144043647d1d98',
+    sha256: '90786435475b50715739ed76c7d7250eab8f90a2081ddef191cfcb190eb9ee73',
     source: {
       file: 'lib/legal/texts/terms.en.ts',
       commit: 'a76a108e09a1dc203cd871ef7ea40a6bd1c964bd',
@@ -141,7 +141,7 @@ export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
         lang: 'de',
         effectiveOn: '[offen: Datum der Freigabe]',
         file: 'docs/terms/2026-10-23.de.md',
-        sha256: 'd35bad1ffc347ac640e13ce772b35a43e58e919ef1cde23896c8c06c01dac79d',
+        sha256: '6061826194dc1e4b5b075df94437f0faf629c86f5d4df404b88dcd327d67293b',
       },
     ],
   },

@@ -74,6 +74,15 @@ export interface OpenValue {
  */
 export const LEGAL_RELEASE_DATE_ISO: string | null = null;
 
+/**
+ * The day the amended Terms (v2.3.0) take effect for an existing account, ISO
+ * `YYYY-MM-DD`, or null until the owner sets it on the release day with the
+ * announcement mail — at least six weeks after that mail (Terms 10.1). An
+ * amendment accepted before it takes effect only on it (Terms 10.2,
+ * `lib/terms-effective.ts`).
+ */
+export const TERMS_EFFECTIVE_DATE_ISO: string | null = null;
+
 const MONTHS_DE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -325,15 +334,76 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'Owner decision 22./23.10.2026: the page /report (English) and /report/de (German), words in lib/legal/texts/report.en.ts and report.de.ts. The lawyer should read the page.',
   },
 
+  {
+    key: 'resendRetentionDays',
+    kind: 'value',
+    topicDe: 'Aufbewahrung des Mailinhalts bei Resend',
+    topicEn: 'retention of mail content at Resend',
+    questionDe:
+      'Wie lange bewahrt Resend den Inhalt einer Mail laut der Aufbewahrungseinstellung Ihres Resend-Kontos auf (Resend-Dashboard)? Eintrag als ganze Angabe mit Stand, etwa „X Tage laut Kontoeinstellung, Stand TT.MM.JJJJ“ / „X days per account setting, as of D Month YYYY“. Für die bisher genannten 30 Tage gibt es keinen Beleg (Resends DPA nennt sie nicht).',
+    questionEn:
+      'How long does Resend keep the content of a mail under the retention setting of your Resend account (Resend dashboard)? Enter it with its date, e.g. "X days per account setting, as of D Month YYYY" and the German equivalent. The 30 days stated so far have no evidence (Resend\'s DPA does not name them).',
+    suggestedDefault: null,
+    value: null,
+    ownerConfirmed: false,
+    isFact: true,
+    usedIn: 'DSE 2 (Benachrichtigung, Transaktionale E-Mails), DSE 4 (Resend), DSE 5 (bereits versandte Mails), DSE 6 (Benachrichtigung); C7; Trust (Resend, Your rights)',
+  },
+  {
+    key: 'termsEffectiveDate',
+    kind: 'value',
+    topicDe: 'Wirksamkeitstag der geänderten Nutzungsbedingungen',
+    topicEn: 'effective date of the amended Terms',
+    questionDe:
+      'An welchem Tag werden die geänderten Nutzungsbedingungen v2.3.0 für bestehende Konten wirksam? Er steht in der Ankündigungsmail (Ziffer 10.1) und liegt mindestens sechs Wochen nach ihrem Versand. Eintrag als TERMS_EFFECTIVE_DATE_ISO am Freigabetag, zusammen mit der Ankündigungsmail.',
+    questionEn:
+      'On which day do the amended Terms v2.3.0 take effect for existing accounts? It is the date in the announcement mail (section 10.1), at least six weeks after it is sent. Set TERMS_EFFECTIVE_DATE_ISO on the release day, together with the announcement mail.',
+    suggestedDefault: null,
+    value: TERMS_EFFECTIVE_DATE_ISO
+      ? { de: formatLegalDate(TERMS_EFFECTIVE_DATE_ISO, 'de'), en: formatLegalDate(TERMS_EFFECTIVE_DATE_ISO, 'en') }
+      : null,
+    ownerConfirmed: false,
+    isFact: true,
+    usedIn: 'C2 (Änderungsdialog); C5 (Bestätigungsmail nach einer Änderung); Terms 10.2',
+  },
+
   // --- Confirmations: the sentence is published as written; the owner confirms it holds ---
   check(
-    'profilePictureObjection',
-    'Ablauf des Widerspruchs gegen das Profilbild',
-    'objection workflow for the profile picture',
-    'Wie läuft ein Widerspruch gegen das Profilbild ab (heute ein manueller Schritt: wer entfernt das Bild, wo)? Bitte bestätigen, dass Sie das Bild auf Widerspruch hin nicht mehr zeigen und speichern.',
-    'How is an objection to the profile picture handled (a manual step today: who removes the picture, where)? Please confirm that you stop showing and storing it on objection.',
+    'profilePictureRemoved',
+    'Profilbild-Adresse nach der Google-Anmeldung entfernt',
+    'profile picture address removed after Google sign-in',
+    'Variante B (Betreiberentscheidung 23.10.2026): Der Server entfernt die Adresse des Profilbilds nach jeder Google-Anmeldung aus dem Anmeldedatensatz bei Firebase Authentication, auch bei bestehenden Konten bei ihrer nächsten Anmeldung. Bitte an einem Google-Konto in der Firebase-Konsole prüfen, dass danach weder das Feld „Photo URL“ noch die Anbieterangaben (providerData, google.com) eine Bild-Adresse tragen.',
+    'Variant B (owner decision 23.10.2026): the server removes the profile picture address from the Firebase Authentication record after every Google sign-in, for existing accounts at their next sign-in. Please check on one Google account in the Firebase console that afterwards neither the "Photo URL" field nor the provider data (providerData, google.com) carries a picture address.',
     'DSE 2 (Google-Anmeldung)',
-    "Verified against dev on 23.10.2026: owner step; the text needs a look. The app never reads, stores or shows photoURL (no match in app/, components/, hooks/, lib/); it lives only in the Firebase Auth record. An objection today means a manual Admin-SDK updateUser(photoURL: null); no tool exists.",
+    "Built in 3.0.21 (23.10.2026). T-B confirmed by code search: photoURL (and the ID token's picture claim) ends up in no Firestore collection, no log and no mail — no match for photoURL/picture in app/, components/, hooks/, lib/, scripts/ outside this text; no handler stores or logs the decoded token or the Auth user record. The removal: removeProfilePictureAddress (lib/profile-picture.ts) calls the Admin SDK updateUser(uid, { photoURL: null }) when the verified ID token carries a picture claim; it runs in POST /api/account/register (right after sign-up) and POST /api/account/signed-in, which the signed-in shell calls once per page load (hooks/useUserProfile.ts), so an existing account is cleaned at its next sign-in. Tests: tests/profile-picture-3021.spec.ts. Open: updateUser clears the top-level photoURL; whether Firebase also keeps the address in the google.com provider entry (providerData) could not be checked without the Auth emulator — the owner checks one account in the console.",
+  ),
+  check(
+    'atcImportFieldList',
+    'ATC-Import: übernommene Felder',
+    'ATC import: fields taken over',
+    'Übernimmt der ATC-Import nur Prüfung, Objekt, Position, Priorität, Meldungstext und die Ausnahme-Angabe und verwirft alle Felder mit Personenbezug (T-G)?',
+    'Does the ATC import take over only the check, object, position, priority, message text and the exemption flag, and drop every field that relates to a person (T-G)?',
+    'DSE 3 (Import von ATC-Ergebnissen)',
+    "Verified against dev on 23.10.2026: holds, by two whitelists. The browser keeps only objectName, objectType, checkId, checkTitle, message, priority, line, include, exempted (sanitizeAtcFindings, lib/abap/atc-privacy.ts:25-37, applied in lib/abap/atc-parser.ts:180 for tables and :221 for ADT XML); the server stores only the same nine keys per finding (ATC_FINDING_KEYS, lib/project-commands.ts:243-253) and drops every other key. No author, reviewer, approver or last-changed-by column survives. The draft named a check variant: no check variant is stored, so the published text names the real fields; a name inside the message text stays (ATC_PRIVACY_NOTICE says so to the user).",
+    true,
+  ),
+  check(
+    'amendmentEffectiveDate',
+    'Wirksamkeitstag einer frühen Annahme (Ziffer 10.2, C2)',
+    'effective date of an early acceptance (section 10.2, C2)',
+    'Hält der Nachweis einer Änderungsannahme Annahmezeitpunkt und Wirksamkeitstag getrennt fest, zeigt der Dialog C2 den Wirksamkeitstag mit zwei gleichrangigen Schaltflächen, nennt die Bestätigungsmail den Wirksamkeitstag, und gilt bis dahin die bisherige Fassung für das Konto?',
+    'Does the record of an accepted amendment hold the time of acceptance and the effective date separately, does dialog C2 show the effective date with two equal buttons, does the confirmation mail name the effective date, and does the previous version apply to the account until then?',
+    'Terms 10.2; C2; C5',
+    "Built in 3.0.21 (23.10.2026), holds: acceptanceEffectiveAt (lib/terms-effective.ts) puts an amendment accepted before termsEffectiveDate into effect on that day (00:00 Europe/Berlin); recordConsent (lib/consent.ts) writes createdAt and effectiveAt separately to consent_events and termsEffectiveAt plus the version accepted before (termsVersionPrevious) to the profile; termsVersionInEffectFor answers the previous version until the effective date, and the Additional Agreement gate reads it (app/api/secrets/gemini/route.ts); the gate (components/TermsReacceptGate.tsx) shows C2 with the effective date and Accept / Decide later as the same button variant; the confirmation mail names the effective date (lib/contract-confirmation-email.ts). Tests: tests/terms-effective-3021.spec.ts. The date itself is the open value termsEffectiveDate.",
+    true,
+  ),
+  check(
+    'reportingBodiesLinks',
+    'Externe Meldestellen auf /report am Freigabetag prüfen',
+    'external reporting bodies on /report, checked on the release day',
+    'Sind am Freigabetag die genannten externen Meldestellen (Onlinewachen der Polizei, jugendschutz.net, internet-beschwerdestelle.de) erreichbar und für solche Meldungen weiterhin zuständig?',
+    'On the release day, are the external reporting bodies named (police online stations, jugendschutz.net, internet-beschwerdestelle.de) reachable and still the right place for such reports?',
+    '/report, /report/de',
   ),
   check(
     't03AdditionalAgreementAcceptance',

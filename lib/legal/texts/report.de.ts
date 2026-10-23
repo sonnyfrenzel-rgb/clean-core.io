@@ -1,32 +1,21 @@
 /**
- * "Reporting illegal content", German version — the page section 7 of the
+ * "Rechtswidrige Inhalte melden", German version — the page section 7 of the
  * German Terms of Service v2.3.0 points to (`{{reportingNotesUrl}}`, owner
- * decision 22./23.10.2026). English: `report.en.ts`, at `/report`.
+ * decision 22./23.10.2026; wording of Fassung 1.1, 23.10.2026). English:
+ * `report.en.ts`, at `/report`.
  *
  * Markup: `lib/legal/markup.ts`. A notice, not contract text: not archived or
  * hashed, and it commits to nothing the Terms do not already say.
  */
-export const REPORT_DE = `## Was die Plattform enthält {#what-the-platform-holds}
+export const REPORT_DE = `Jede Person kann Inhalte auf Clean-Core.io melden, die sie für rechtswidrig hält – etwa in einem Projekt oder Portfolio, das mit ihr geteilt wurde. Ein Konto brauchen Sie dafür nicht. Schreiben Sie an info@clean-core.io.
 
-Clean-Core.io enthält nur, was Nutzerinnen und Nutzer in ihre eigenen Konten hochladen. Nichts auf der Plattform ist öffentlich: Ein Projekt sieht nur das Konto, dem es gehört, und wer von diesem Konto persönlich eingeladen wurde — jeweils über einen Link, der an eine bestätigte E-Mail-Adresse gebunden ist. Sehen Sie Inhalte, die Sie für rechtswidrig halten, hat jemand sie mit Ihnen geteilt.
+Was eine Meldung enthalten sollte: welchen Inhalt Sie meinen; wo genau er liegt (Projekt, Lauf oder Link); warum Sie ihn für rechtswidrig halten; Ihren Namen und Ihre E-Mail-Adresse; die Bestätigung, dass Ihre Angaben nach bestem Wissen richtig und vollständig sind.
 
-## Wohin Sie eine Meldung senden {#where-to-send}
+Ausnahme: Betrifft Ihre Meldung Darstellungen sexuellen Missbrauchs von Kindern oder Jugendlichen, müssen Sie weder Ihren Namen noch Ihre E-Mail-Adresse angeben.
 
-Senden Sie Ihre Meldung per E-Mail an info@clean-core.io, die Adresse aus dem Impressum (clean-core.io/impressum).
+Bitte senden Sie uns keine Kopien, Screenshots oder Dateien des Inhalts – nennen Sie nur, wo er liegt. Bei Darstellungen sexuellen Missbrauchs von Kindern ist schon das Weitergeben strafbar. Sie können solche Inhalte auch direkt melden: bei der Polizei (Onlinewache Ihres Bundeslandes), bei jugendschutz.net oder bei der Internet-Beschwerdestelle (internet-beschwerdestelle.de){{reportingBodiesLinks}}.
 
-## Was eine Meldung enthalten sollte {#what-to-include}
+Was dann geschieht: Haben Sie eine Kontaktadresse angegeben, bestätigen wir den Eingang. Ein Mensch prüft jede Meldung zeitnah und sorgfältig, ohne automatisierte Mittel, und teilt Ihnen und dem betroffenen Konto die Entscheidung mit; das betroffene Konto erfährt die Maßnahme, die zugrunde liegenden Tatsachen, die verletzte Vorschrift oder Regel und wie es die Entscheidung anfechten kann. Besteht der Verdacht einer Straftat, sperren wir den Zugang zu dem Inhalt sofort, sehen ihn nicht weiter an, als zur Sperrung nötig ist, und informieren die Strafverfolgungsbehörden.
 
-- **Wo:** den genauen Ort auf der Plattform — den Projektlink oder die Adresse des geteilten Links, den Sie erhalten haben.
-- **Warum:** die Gründe, aus denen Sie den Inhalt für rechtswidrig halten, mit der Rechtsgrundlage, soweit Sie sie kennen.
-- **Wer:** Ihren Namen und Ihre E-Mail-Adresse. Ausnahme: Betrifft die Meldung Darstellungen sexuellen Missbrauchs von Kindern, ist kein Name erforderlich.
-- **Guter Glaube:** die Erklärung, dass Sie die Meldung in gutem Glauben abgeben und Ihre Angaben nach bestem Wissen richtig und vollständig sind.
-
-## Wie es weitergeht {#what-happens}
-
-- Sie erhalten eine Eingangsbestätigung.
-- Ein Mensch prüft die Meldung; Inhalte werden nicht automatisiert moderiert.
-- Sie erhalten eine begründete Entscheidung.
-- Wird ein Inhalt entfernt oder der Zugang zu ihm eingeschränkt, erhält auch das betroffene Konto eine begründete Entscheidung, mit dem Weg, ihr zu widersprechen.
-
-Das Verfahren regelt Ziffer 7 der Nutzungsbedingungen (clean-core.io/terms/de).
+Dieses Verfahren ist ein freiwilliger Standard des Betreibers (Nutzungsbedingungen, Ziffer 7); weitergehende gesetzliche Rechte bleiben unberührt{{t07ReportingProcess}}. Wie wir die Angaben aus Ihrer Meldung verarbeiten, steht in der Datenschutzerklärung (Abschnitt 2).
 `;
