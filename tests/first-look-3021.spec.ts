@@ -104,7 +104,7 @@ test.describe('"What it decides" and the basket line count the same rules (fix, 
     const { explanation } = opening(PO);
     const top = decidesOnTop(explanation);
     expect(top.lines.length).toBe(DECIDES_SHOWN);
-    expect(top.lines.length + top.more).toBe(explanation.questions.length);
+    expect(top.lines.reduce((n, l) => n + 1 + (l.also?.length ?? 0), 0) + top.more).toBe(explanation.questions.length);
     expect(top.lines[0].text).toMatch(/deviation percent is above 5/);
     expect(top.lines.every((l) => /^L\d+/.test(l.anchor ?? ''))).toBe(true);
     // A statement of what the code does — never the question asked in Design.
@@ -119,7 +119,25 @@ test.describe('"What it decides" and the basket line count the same rules (fix, 
       const question = explanation.questions.find((q) => q.id === line.id)!;
       expect(question.ruleIds.every((id) => businessIds.has(id))).toBe(true);
     }
-    expect(top.lines.length + top.more).toBe(explanation.questions.length);
+    expect(top.lines.reduce((n, l) => n + 1 + (l.also?.length ?? 0), 0) + top.more).toBe(explanation.questions.length);
+  });
+
+  test('one sentence never stands twice: two questions of one statement are one line with both lines (owner decision 23.10.2026)', () => {
+    const { explanation } = opening(PO);
+    const [first, second, ...rest] = explanation.questions;
+    const twin = { ...second, id: 'Q-TWIN', statement: { ...first.statement, anchors: [{ lineStart: 900, lineEnd: 901 }] } };
+    const doubled = { ...explanation, questions: [first, twin, second, ...rest] };
+    const top = decidesOnTop(doubled);
+    expect(top.lines.map((l) => l.text.toLowerCase()).filter((t) => t === first.statement.text.toLowerCase())).toHaveLength(1);
+    expect(top.lines[0].also).toEqual([{ id: 'Q-TWIN', anchor: 'L900-901' }]);
+    // The freed place goes to the next question; nothing is counted twice or lost.
+    expect(top.lines.map((l) => l.id)).toEqual([first.id, second.id, rest[0].id]);
+    expect(top.lines.reduce((n, l) => n + 1 + (l.also?.length ?? 0), 0) + top.more).toBe(doubled.questions.length);
+    // On every starter example no statement stands twice.
+    for (const source of [PO, DELIVERY]) {
+      const texts = decidesOnTop(opening(source).explanation).lines.map((l) => l.text.toLowerCase());
+      expect(new Set(texts).size).toBe(texts.length);
+    }
   });
 });
 
@@ -187,6 +205,16 @@ test.describe('rendered (BusinessOpening, static markup) — the 3.0.21 layout',
     // No decision asked and no count of open questions on top.
     expect(top).not.toContain('data-story-open');
     expect(top).not.toContain('data-story-decide-rules');
+  });
+
+  test('a line under "What it decides" that speaks for two shows both lines (owner decision 23.10.2026)', async () => {
+    const Opening = await loadOpening();
+    const rules = [{ id: 'Q-BR-004', text: 'Sets a limit on the risk score', anchor: 'L394', also: [{ id: 'Q-BR-099', anchor: 'L900' }] }];
+    const html = renderToStaticMarkup(React.createElement(Opening, propsFor(PO, { rules, rulesMore: 0 })));
+    const block = html.slice(html.indexOf('data-story-decides'), html.indexOf('data-story-changes'));
+    expect((block.match(/Sets a limit on the risk score/g) ?? []).length).toBe(1);
+    expect(block).toContain('L394');
+    expect(block).toContain('L900');
   });
 
   test('every step stands on one line with its anchor; the checks and stops are one fold down', async () => {

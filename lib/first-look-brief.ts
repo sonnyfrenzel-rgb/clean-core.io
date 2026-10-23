@@ -110,6 +110,8 @@ export function firstLookBrief(lines: readonly SummaryLine[]): FirstLookBrief {
 export interface DecidesLine extends BriefLine {
   /** The question's id (`Q-BR-009`) — the rules it speaks for are asked about in Design. */
   id: string;
+  /** Further questions whose statement reads word for word the same — one line, each one's lines kept (23.10.2026). */
+  also?: Array<{ id: string; anchor: string | null }>;
 }
 
 /**
@@ -121,15 +123,23 @@ export interface DecidesLine extends BriefLine {
  * decision while the basket counted it as technical).
  */
 export function decidesOnTop(explanation: RuleSetExplanation, max = DECIDES_SHOWN): { lines: DecidesLine[]; more: number } {
-  const lines = explanation.questions.slice(0, max).map((q) => {
+  // One sentence never stands twice (owner decision 23.10.2026): two questions whose statement reads the same are
+  // one line, with the other one's lines beside it, and the next question takes the freed place.
+  const lines: DecidesLine[] = [];
+  let listed = 0;
+  for (const q of explanation.questions) {
     const a = q.statement.anchors[0];
-    return {
-      id: q.id,
-      text: q.statement.text,
-      anchor: a ? (a.lineEnd > a.lineStart ? `L${a.lineStart}-${a.lineEnd}` : `L${a.lineStart}`) : null,
-    };
-  });
-  return { lines, more: Math.max(0, explanation.questions.length - lines.length) };
+    const line = { id: q.id, text: q.statement.text, anchor: a ? (a.lineEnd > a.lineStart ? `L${a.lineStart}-${a.lineEnd}` : `L${a.lineStart}`) : null };
+    const same = lines.find((l) => l.text.toLowerCase() === line.text.toLowerCase());
+    if (same) {
+      same.also = [...(same.also ?? []), { id: line.id, anchor: line.anchor }];
+      listed += 1;
+    } else if (lines.length < max) {
+      lines.push(line);
+      listed += 1;
+    }
+  }
+  return { lines, more: Math.max(0, explanation.questions.length - listed) };
 }
 
 /** The most changes on top (3.0.21); the rest stand in the fold with their lines. */

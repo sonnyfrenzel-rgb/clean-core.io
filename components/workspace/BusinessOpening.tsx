@@ -30,6 +30,8 @@ export interface OpeningRule {
   id: string;
   text: string;
   anchor: string | null;
+  /** Further rules or questions that read the same — one line, every one's lines beside it. */
+  also?: Array<{ id: string; anchor: string | null }>;
 }
 
 const ASK_KEY: Record<AskWho, 'gives.askIt' | 'gives.askUsers' | 'gives.askBusiness'> = {
@@ -336,6 +338,9 @@ export default function BusinessOpening({
                 <li key={rule.id} data-story-rule={rule.id} className="flex flex-wrap items-center gap-x-2 text-[13px] leading-snug font-semibold text-cc-ink">
                   <span className="min-w-0 break-words">{ruleTexts[k]}</span>
                   <Line anchor={rule.anchor} />
+                  {(rule.also ?? []).map((other) => (
+                    <Line key={other.id} anchor={other.anchor} />
+                  ))}
                 </li>
               ))}
             </ul>
