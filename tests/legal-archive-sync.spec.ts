@@ -113,7 +113,8 @@ test.describe('tokens and open values agree', () => {
 
   test('a fact is never pre-filled unless the owner confirmed it', () => {
     for (const v of OPEN_VALUES) {
-      if (v.isFact && v.value && v.key !== 'claudeModelId') {
+      // A fact entered on the owner's instruction names where it was read (enteredFrom) and stays unconfirmed until he checks it.
+      if (v.isFact && v.value && v.key !== 'claudeModelId' && !v.enteredFrom?.trim()) {
         expect(v.ownerConfirmed, `${v.key} is a fact with a value nobody confirmed`).toBe(true);
       }
     }
@@ -132,7 +133,7 @@ test.describe('tokens and open values agree', () => {
 });
 
 test.describe('the German and the English version have the same structure', () => {
-  for (const id of ['privacy', 'terms', 'byok-addendum'] as const) {
+  for (const id of ['privacy', 'terms', 'byok-addendum', 'report'] as const) {
     test(id, () => {
       const shape = (lang: 'de' | 'en') =>
         legalDocumentBlocks(id, lang)

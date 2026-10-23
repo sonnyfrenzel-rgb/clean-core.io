@@ -15,7 +15,9 @@ import { OWN_CLAUDE_MODEL } from '@/lib/model-providers';
  * - `value` — the token is replaced by words (a date, a period, an address).
  *   A value that is a fact — a date, a re-certification date, an address — is
  *   never pre-filled: until the owner enters it, the page shows a visible
- *   "[offen: …]" / "[open: …]" marker. A period the draft suggested a default
+ *   "[offen: …]" / "[open: …]" marker. The one exception is a fact entered
+ *   on the owner's instruction from a named source (`enteredFrom`), which
+ *   renders but stays unconfirmed until he checks it. A period the draft suggested a default
  *   for ("z. B. 90 Tage") is pre-filled with that default and stays
  *   `ownerConfirmed: false` until the owner confirms it.
  * - `check` — the token renders nothing. The sentence around it states a fact
@@ -55,6 +57,12 @@ export interface OpenValue {
   isFact: boolean;
   /** Where the value appears: DSE = privacy policy, Terms, ZV, Trust, C1–C11. */
   usedIn: string;
+  /**
+   * Where a fact was read when it was entered on the owner's instruction before he
+   * confirmed it (owner decision 23.10.2026). Only such a fact may carry a value
+   * while `ownerConfirmed` is false; the release gate stays red until he confirms.
+   */
+  enteredFrom?: string;
   /** What the build agent found in the code, where it checked. A finding, not a confirmation. */
   agentNote?: string;
 }
@@ -131,7 +139,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'After how many days at the latest do you delete the new-account notice from your mailbox (if the account is not erased before)? The draft suggests 90 days.',
     suggestedDefault: { de: '90 Tage', en: '90 days' },
     value: { de: '90 Tage', en: '90 days' },
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'DSE 2 (Benachrichtigung), DSE 6 (Speicherdauer)',
   },
@@ -146,9 +154,11 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'How long do server and access logs with IP address stay in Cloud Logging (the draft allows 7 to 14 days)? The period must actually be configured in Cloud Logging. Pre-filled: 14 days (the upper bound of the draft).',
     suggestedDefault: { de: '14 Tage', en: '14 days' },
     value: { de: '14 Tage', en: '14 days' },
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'DSE 6, DSE 9',
+    agentNote:
+      'Owner decision 22./23.10.2026: 14 days. The retention of the Cloud Logging bucket must actually be set to 14 days — an operator step outside the code (the owner does it).',
   },
   {
     key: 'mailDeliveryRecordRetention',
@@ -161,7 +171,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'How long do you keep the delivery record of a mail to an account (kind, time, message id, status; the draft allows 30 to 90 days)? Pre-filled: 90 days (the upper bound; the deletion dialog C7 says "30 to 90 days").',
     suggestedDefault: { de: '90 Tage', en: '90 days' },
     value: { de: '90 Tage', en: '90 days' },
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'DSE 6',
   },
@@ -176,7 +186,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'Within how many days after the contract ends do you delete the account and its content when you, the operator, end the contract? The draft suggests 7 days.',
     suggestedDefault: { de: '7 Tagen', en: '7 days' },
     value: { de: '7 Tagen', en: '7 days' },
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'DSE 6; Terms 2.3',
   },
@@ -190,10 +200,12 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     questionEn:
       'How long after your decision on a request for the S/4HANA functions do you delete the request mail from your mailbox at the latest? The draft suggests no value.',
     suggestedDefault: null,
-    value: null,
-    ownerConfirmed: false,
+    value: { de: '30 Tage', en: '30 days' },
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'DSE 2 (S/4HANA-Antrag), DSE 6',
+    agentNote:
+      'Owner decision 22./23.10.2026: 30 days after the decision. The sentence already says "nach der Entscheidung darüber" / "after the decision on it", so the value is the period alone.',
   },
   {
     key: 's4ApprovalCriteria',
@@ -205,8 +217,11 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     questionEn:
       'By which criteria do you grant or refuse the S/4HANA functions? The sentence follows "an administrator grants or refuses it" in the privacy policy — please write it as a full sentence (DE and EN). The draft suggests nothing.',
     suggestedDefault: null,
-    value: null,
-    ownerConfirmed: false,
+    value: {
+      de: 'Freigeschaltet wird ein Geschäftskonto mit aktiver Zwei-Faktor-Anmeldung, das den Zweck nennt und bestätigt, dass es nur ein eigenes Test- oder Sandbox-System verbindet.',
+      en: 'An account is granted the S/4HANA functions when it is a business account with active two-factor sign-in, names the purpose, and confirms that it connects only its own test or sandbox system.',
+    },
+    ownerConfirmed: true,
     isFact: true,
     usedIn: 'DSE 2 (S/4HANA-Anbindung)',
   },
@@ -220,10 +235,13 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     questionEn:
       'Which next re-certification date does the DPF list (dataprivacyframework.gov/list) show for Resend? Look it up on the release day.',
     suggestedDefault: null,
-    value: null,
+    value: { de: formatLegalDate('2027-03-03', 'de'), en: formatLegalDate('2027-03-03', 'en') },
     ownerConfirmed: false,
     isFact: true,
     usedIn: 'DSE 4 (Drittlandübermittlung); Trust (Processors)',
+    enteredFrom: 'dataprivacyframework.gov/list, participant 8907 (Resend), read 23.10.2026',
+    agentNote:
+      'Entered 23.10.2026 from the DPF list (participant 8907, status "re-certification under review"): 3 March 2027. The owner confirms it; it is re-checked on the release day.',
   },
   {
     key: 'transferReviewInterval',
@@ -234,9 +252,9 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'In welchem Turnus prüfen Sie DPF-Zertifizierungen, Vertragspartner der Anbieter und Anthropics Datenregion erneut? Vorschlag des Entwurfs: vierteljährlich.',
     questionEn:
       'How often do you re-check DPF certifications, the providers\' contracting entities and Anthropic\'s data region? The draft suggests quarterly.',
-    suggestedDefault: { de: 'vierteljährlich', en: 'quarter' },
-    value: { de: 'vierteljährlich', en: 'quarter' },
-    ownerConfirmed: false,
+    suggestedDefault: { de: 'vierteljährlich', en: 'quarterly' },
+    value: { de: 'vierteljährlich', en: 'quarterly' },
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'DSE 4 (zweimal); ZV 6',
   },
@@ -250,10 +268,13 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     questionEn:
       'Which address do Anthropic\'s contract documents give for Anthropic Ireland, Limited? (Clause 4 of the Additional Agreement, before "Ireland".)',
     suggestedDefault: null,
-    value: null,
+    value: { de: '6th Floor South Bank House, Barrow Street, Dublin 4', en: '6th Floor South Bank House, Barrow Street, Dublin 4' },
     ownerConfirmed: false,
     isFact: true,
     usedIn: 'ZV 4',
+    enteredFrom: 'Irish company register (CRO), company number 760497, read 23.10.2026',
+    agentNote:
+      'Entered 23.10.2026 from the Irish company register (CRO 760497); the text adds "Irland" / "Ireland" itself. The owner checks it against his contract documents.',
   },
   {
     key: 'claudeModelId',
@@ -281,7 +302,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
       'If someone ends the Additional Agreement by e-mail: within which period do you delete the key at the latest? The draft suggests two working days.',
     suggestedDefault: { de: 'zwei Werktage', en: 'two working days' },
     value: { de: 'zwei Werktage', en: 'two working days' },
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: false,
     usedIn: 'ZV 11',
   },
@@ -295,10 +316,12 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     questionEn:
       'At which address are the details a report of illegal content should contain, and the exceptions, described (Terms section 7)? No such page exists today; it would have to be written, or the sentence goes (then have it removed in both versions).',
     suggestedDefault: null,
-    value: null,
-    ownerConfirmed: false,
+    value: { de: 'clean-core.io/report/de', en: 'clean-core.io/report' },
+    ownerConfirmed: true,
     isFact: true,
     usedIn: 'Terms 7',
+    agentNote:
+      'Owner decision 22./23.10.2026: the page /report (English) and /report/de (German), words in lib/legal/texts/report.en.ts and report.de.ts. The lawyer should read the page.',
   },
 
   // --- Confirmations: the sentence is published as written; the owner confirms it holds ---

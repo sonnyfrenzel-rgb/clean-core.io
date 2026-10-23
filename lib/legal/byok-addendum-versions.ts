@@ -41,12 +41,12 @@ export const ARCHIVED_BYOK_ADDENDUM_VERSIONS: readonly ArchivedAddendumVersion[]
       {
         lang: 'en',
         file: 'docs/byok-addendum/ZV-BYOK-1.0.md',
-        sha256: '195472c67ce9702a699ef9ae85435dc7d37166fa560b4495cc88ebcfa8922462',
+        sha256: 'bd83903ac2c8bdbb3f7e8064b8a8c823120634ff2d979d22764cabc6a0c15f01',
       },
       {
         lang: 'de',
         file: 'docs/byok-addendum/ZV-BYOK-1.0.de.md',
-        sha256: '7517bcce66565390917aec3b7edc9b28bcd8336bafe298180d79295b49925a5e',
+        sha256: 'e0f473453378b5eddd2b80686173401990408cf96db88dce84bac8ab31724741',
       },
     ],
   },
