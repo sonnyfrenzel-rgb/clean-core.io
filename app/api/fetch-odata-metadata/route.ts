@@ -19,16 +19,16 @@ import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 /**
  * POST /api/fetch-odata-metadata
  *
- * Fetches OData service metadata from an S/4HANA tenant. Two modes:
+ * Fetches the `$metadata` document of one named OData service from an
+ * S/4HANA tenant and parses EntityTypes and their Properties. `servicePath` is
+ * required.
  *
- *   1. **Catalog Mode** (no `servicePath`):
- *      Queries the OData Service Catalog at
- *      `/sap/opu/odata/iwfnd/catalogservice;v=2/ServiceCollection`
- *      to list all available OData services.
- *
- *   2. **Metadata Mode** (`servicePath` provided):
- *      Fetches `$metadata` XML for a specific OData service and parses
- *      EntityTypes, Properties, Associations, and Function Imports.
+ * Only the service's `$metadata` is ever requested — the schema, never a
+ * record. The catalog mode that used to answer a call without `servicePath`
+ * read the entries of the gateway catalog's `ServiceCollection` entity set,
+ * which are records of the tenant; the privacy policy (section 2) says the
+ * connection reads no record, so the mode is gone (3.0.21) and a call without
+ * a service name is refused. `tests/s4-metadata-only-guard.spec.ts` holds it.
  *
  * Request body:
  *   {
@@ -41,15 +41,7 @@ import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
  *     servicePath?: string   // e.g. "API_BUSINESS_PARTNER"
  *   }
  *
- * Response (Catalog Mode):
- *   {
- *     status: 'success',
- *     mode: 'catalog',
- *     services: [{ title, path, serviceUrl }],
- *     totalServices: number
- *   }
- *
- * Response (Metadata Mode):
+ * Response:
  *   {
  *     status: 'success',
  *     mode: 'metadata',
@@ -262,62 +254,6 @@ function extractEntityTypes(metadataXml: string) {
   return entityTypes;
 }
 
-/** Extract OData services from catalog JSON response */
-function extractServicesFromCatalogJson(data: any) {
-  const results = data?.d?.results || data?.d?.EntitySets || data?.value || [];
-  if (!Array.isArray(results)) return [];
-
-  return results
-    .map((svc: any) => ({
-      title: svc.Title || svc.Description || svc.ID || svc.ServiceName || svc.name || 'Unknown',
-      path: svc.TechnicalServiceName || svc.ServiceUrl || svc.ID || svc.name || '',
-      serviceUrl: svc.ServiceUrl || svc.MetadataUrl || '',
-    }))
-    .filter((s: any) => s.path);
-}
-
-/** Extract OData services from catalog XML (Atom feed) */
-function extractServicesFromCatalogXml(xml: string) {
-  const services: Array<{ title: string; path: string; serviceUrl: string }> = [];
-
-  // Try <entry> based Atom format (SAP standard)
-  const entryRegex = /<entry[\s\S]*?<\/entry>/gi;
-  let entryMatch;
-
-  while ((entryMatch = entryRegex.exec(xml)) !== null) {
-    const entry = entryMatch[0];
-    const titleMatch = entry.match(/<d:Title[^>]*>([^<]+)<\/d:Title>/i)
-      || entry.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const techNameMatch = entry.match(/<d:TechnicalServiceName[^>]*>([^<]+)<\/d:TechnicalServiceName>/i)
-      || entry.match(/<d:ID[^>]*>([^<]+)<\/d:ID>/i);
-    const urlMatch = entry.match(/<d:ServiceUrl[^>]*>([^<]+)<\/d:ServiceUrl>/i);
-
-    if (techNameMatch) {
-      services.push({
-        title: titleMatch ? titleMatch[1] : techNameMatch[1],
-        path: techNameMatch[1],
-        serviceUrl: urlMatch ? urlMatch[1] : '',
-      });
-    }
-  }
-
-  // Fallback: try <collection> based format (older systems)
-  if (services.length === 0) {
-    const collectionRegex = /<collection\s+href="([^"]+)"[\s\S]*?(?:<atom:title[^>]*>([^<]*)<\/atom:title>)?[\s\S]*?<\/collection>/gi;
-    let colMatch;
-    while ((colMatch = collectionRegex.exec(xml)) !== null) {
-      services.push({
-        title: colMatch[2] || colMatch[1],
-        path: colMatch[1],
-        serviceUrl: colMatch[1],
-      });
-    }
-  }
-
-  return services;
-}
-
-
 export async function POST(req: NextRequest) {
   try {
     const decodedToken = await verifyRequestAuth(req);
@@ -347,8 +283,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Per account, like every other route that spends something. This one
-    // spends *outbound* requests: one call fans out to up to four catalog
-    // paths or three metadata candidates against a host the body names, each
+    // spends *outbound* requests: one call fans out to up to four metadata
+    // candidates against a host the body names, each
     // with a 20-second deadline. `middleware.ts` excludes `/api` from its
     // matcher, so nothing else bounded it — a single MFA-confirmed account
     // could drive unlimited outgoing fetch cycles from our address.
@@ -376,7 +312,16 @@ export async function POST(req: NextRequest) {
     if (body.servicePath !== undefined && body.servicePath !== null && typeof body.servicePath !== 'string') {
       return NextResponse.json({ status: 'failed', message: 'Invalid service path.' }, { status: 400 });
     }
-    const servicePath = typeof body.servicePath === 'string' ? body.servicePath : '';
+    const servicePath = typeof body.servicePath === 'string' ? body.servicePath.trim() : '';
+    // No service name, no request to the tenant: without one the only thing
+    // left to read would be a list of services, and that list is records of
+    // the gateway catalog, not metadata (see the comment at the top).
+    if (!servicePath) {
+      return NextResponse.json(
+        { status: 'failed', message: 'A service name is required, e.g. "API_BUSINESS_PARTNER". Only that service\'s $metadata is read.' },
+        { status: 400 }
+      );
+    }
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
     const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
@@ -437,143 +382,70 @@ export async function POST(req: NextRequest) {
     // Normalize base URL
     resolvedUrl = resolvedUrl.replace(/\/+$/, '');
 
-    // ─────────────────────────────────────────────────────────
-    // MODE 1: Specific service $metadata
-    // ─────────────────────────────────────────────────────────
-    if (servicePath) {
-      // F-08: Strict servicePath validation — only SAP service IDs allowed
-      const SERVICE_PATH_REGEX = /^[A-Za-z0-9_./-]{1,120}$/;
-      if (!SERVICE_PATH_REGEX.test(servicePath) || servicePath.includes('..') || servicePath.includes('?') || servicePath.includes('#')) {
-        return NextResponse.json(
-          { status: 'failed', message: 'Invalid service path. Only alphanumeric characters, dots, underscores, hyphens, and forward slashes are allowed (max 120 chars). No "..", "?", or "#".' },
-          { status: 400 }
-        );
-      }
-
-      const cleanPath = servicePath.replace(/^\/+/, '').replace(/\/\$metadata$/, '');
-      
-      // Try multiple URL patterns that SAP uses
-      const urlCandidates = [
-        `${resolvedUrl}/sap/opu/odata/sap/${cleanPath}/$metadata`,
-        `${resolvedUrl}/sap/opu/odata4/sap/${cleanPath}/$metadata`,
-        `${resolvedUrl}/${cleanPath}/$metadata`,
-      ];
-
-      // For SAP API Hub, the URL structure is different
-      if (resolvedBody.authType === 'sap_hub' || resolvedUrl.includes('sandbox.api.sap.com')) {
-        urlCandidates.unshift(`${resolvedUrl}${resolvedUrl.endsWith('/') ? '' : '/'}${cleanPath}/$metadata`);
-      }
-
-      let lastError = '';
-      for (const candidateUrl of urlCandidates) {
-        try {
-          const response = await fetchWithTimeout(candidateUrl, headers);
-
-          if (response.ok) {
-            const xml = await readBoundedBody(response, ODATA_BODY_LIMITS);
-            const entityTypes = extractEntityTypes(xml);
-
-            return NextResponse.json({
-              status: 'success',
-              mode: 'metadata',
-              servicePath: cleanPath,
-              fetchedUrl: candidateUrl,
-              entityTypes,
-              totalEntityTypes: entityTypes.length,
-              rawSizeBytes: xml.length,
-            });
-          }
-
-          lastError = `HTTP ${response.status}`;
-        } catch (err: any) {
-          // The reason goes to the server log only; the caller gets a fixed
-          // sentence.
-          logger.warn('odata metadata candidate failed', {
-            route: 'api/fetch-odata-metadata',
-            error: errMessage(err),
-          });
-          lastError = 'the request did not complete';
-        }
-      }
-
+    // The named service's $metadata — the only thing this route requests.
+    // F-08: Strict servicePath validation — only SAP service IDs allowed
+    const SERVICE_PATH_REGEX = /^[A-Za-z0-9_./-]{1,120}$/;
+    if (!SERVICE_PATH_REGEX.test(servicePath) || servicePath.includes('..') || servicePath.includes('?') || servicePath.includes('#')) {
       return NextResponse.json(
-        {
-          status: 'failed',
-          message: `Could not fetch $metadata for "${cleanPath}". Last error: ${lastError}. Verify the service name exists on your tenant.`,
-          triedUrls: urlCandidates,
-        },
-        { status: 404 }
+        { status: 'failed', message: 'Invalid service path. Only alphanumeric characters, dots, underscores, hyphens, and forward slashes are allowed (max 120 chars). No "..", "?", or "#".' },
+        { status: 400 }
       );
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MODE 2: Service Catalog discovery
-    // ─────────────────────────────────────────────────────────
-    const catalogPaths = [
-      '/sap/opu/odata/iwfnd/catalogservice;v=2/ServiceCollection?$format=json',
-      '/sap/opu/odata/iwfnd/catalogservice;v=2/ServiceCollection',
-      '/sap/opu/odata/IWFND/CATALOGSERVICE;v=0002/ServiceCollection?$format=json',
-      '/sap/opu/odata4/iwfnd/config/default/iwfnd/catalog/0002/ServiceGroups?$format=json',
+    const cleanPath = servicePath.replace(/^\/+/, '').replace(/\/\$metadata$/, '');
+
+    // Try multiple URL patterns that SAP uses
+    const urlCandidates = [
+      `${resolvedUrl}/sap/opu/odata/sap/${cleanPath}/$metadata`,
+      `${resolvedUrl}/sap/opu/odata4/sap/${cleanPath}/$metadata`,
+      `${resolvedUrl}/${cleanPath}/$metadata`,
     ];
 
-    for (const catalogPath of catalogPaths) {
-      const catalogUrl = `${resolvedUrl}${catalogPath}`;
+    // For SAP API Hub, the URL structure is different
+    if (resolvedBody.authType === 'sap_hub' || resolvedUrl.includes('sandbox.api.sap.com')) {
+      urlCandidates.unshift(`${resolvedUrl}${resolvedUrl.endsWith('/') ? '' : '/'}${cleanPath}/$metadata`);
+    }
+
+    let lastError = '';
+    for (const candidateUrl of urlCandidates) {
       try {
-        const response = await fetchWithTimeout(catalogUrl, headers);
+        const response = await fetchWithTimeout(candidateUrl, headers);
 
-        if (!response.ok) continue;
+        if (response.ok) {
+          const xml = await readBoundedBody(response, ODATA_BODY_LIMITS);
+          const entityTypes = extractEntityTypes(xml);
 
-        const contentType = response.headers.get('content-type') || '';
-        const body = await readBoundedBody(response, ODATA_BODY_LIMITS);
-
-        let services: Array<{ title: string; path: string; serviceUrl: string }> = [];
-
-        if (contentType.includes('json')) {
-          try {
-            const json = JSON.parse(body);
-            services = extractServicesFromCatalogJson(json);
-          } catch {
-            // Not valid JSON, try XML
-          }
-        }
-
-        if (services.length === 0 && (contentType.includes('xml') || body.trim().startsWith('<'))) {
-          services = extractServicesFromCatalogXml(body);
-        }
-
-        if (services.length > 0) {
           return NextResponse.json({
             status: 'success',
-            mode: 'catalog',
-            services: services.slice(0, 200), // cap at 200 services
-            totalServices: services.length,
-            catalogUrl,
+            mode: 'metadata',
+            servicePath: cleanPath,
+            fetchedUrl: candidateUrl,
+            entityTypes,
+            totalEntityTypes: entityTypes.length,
+            rawSizeBytes: xml.length,
           });
         }
-      } catch {
-        // Try next path
-        continue;
+
+        lastError = `HTTP ${response.status}`;
+      } catch (err: any) {
+        // The reason goes to the server log only; the caller gets a fixed
+        // sentence.
+        logger.warn('odata metadata candidate failed', {
+          route: 'api/fetch-odata-metadata',
+          error: errMessage(err),
+        });
+        lastError = 'the request did not complete';
       }
     }
 
-    // Catalog not accessible — return helpful message
-    return NextResponse.json({
-      status: 'partial',
-      mode: 'catalog',
-      message: 'Service catalog endpoint not accessible. This is common when the Communication Arrangement does not include IWFND_CATALOGSERVICE. You can still fetch metadata for specific services by providing a service name (e.g. "API_BUSINESS_PARTNER").',
-      services: [],
-      totalServices: 0,
-      suggestedServices: [
-        { title: 'Business Partner', path: 'API_BUSINESS_PARTNER', serviceUrl: '' },
-        { title: 'Sales Order', path: 'API_SALES_ORDER_SRV', serviceUrl: '' },
-        { title: 'Purchase Order', path: 'API_PURCHASEORDER_PROCESS_SRV', serviceUrl: '' },
-        { title: 'Product Master', path: 'API_PRODUCT_SRV', serviceUrl: '' },
-        { title: 'Cost Center', path: 'API_COSTCENTER_SRV', serviceUrl: '' },
-        { title: 'Journal Entry', path: 'API_JOURNALENTRYITEMBASIC_SRV', serviceUrl: '' },
-        { title: 'Material Document', path: 'API_MATERIAL_DOCUMENT_SRV', serviceUrl: '' },
-        { title: 'GL Account', path: 'API_GLACCOUNTINCHARTOFACCOUNTS_SRV', serviceUrl: '' },
-      ],
-    });
+    return NextResponse.json(
+      {
+        status: 'failed',
+        message: `Could not fetch $metadata for "${cleanPath}". Last error: ${lastError}. Verify the service name exists on your tenant.`,
+        triedUrls: urlCandidates,
+      },
+      { status: 404 }
+    );
   } catch (error: any) {
     if (error instanceof QuotaError) {
       return NextResponse.json(
