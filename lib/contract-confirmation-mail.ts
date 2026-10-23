@@ -25,6 +25,8 @@ export async function sendContractConfirmationMail(input: {
   language: TermsLanguage;
   firstName?: string | null;
   acceptedAt?: string;
+  /** When an amendment takes effect (Terms 10.2); the mail names the day. */
+  effectiveAt?: string;
   addendum?: ByokAddendumAcceptance;
 }): Promise<void> {
   if (!input.to) return;
@@ -44,6 +46,7 @@ export async function sendContractConfirmationMail(input: {
       firstName: input.firstName ?? null,
       ...accepted,
       acceptedAt: input.acceptedAt ?? new Date().toISOString(),
+      effectiveAt: input.effectiveAt ?? null,
     });
     await sendTransactionalMail({
       to: input.to,

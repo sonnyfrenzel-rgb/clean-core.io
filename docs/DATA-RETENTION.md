@@ -44,6 +44,7 @@ Two sub-processors receive data in transit for the features that require them �
 | `email_sends/{campaign}__{uid}` | Bulk-mail outbox: recipient address, uid, send state per campaign | `uid` | Life of account | ✅ query delete |
 | `email_events/{messageId}` | Delivery record per sent mail: recipient address, subject, kind, message id, delivery status | `uid` where the sender passed one (since 2026-10-02 also on the operator's signup notification, whose subject names the account); recipient address in `to` | The open value `mailDeliveryRecordRetention` (**90 days**) after sending, privacy policy section 6: every record written since 3.0.21 carries `expiresAt` (`lib/email-events.ts`), and `expiresAt` drives the proof-log TTL policy. Records written before carry none; the erasure sets one, the rest need a one-off backfill (open, owner) | ❌ kept until their date, **pseudonymised**: `to` becomes the keyed hash, uid, subject and provider text go (by uid and by address). The operator's signup notification about the account is deleted (by uid, and by its subject for records without one) |
 | `email_suppressions/{keyed hash}` | Opt-out list for community mail: since 3.0.21 the document id is the keyed hash of the address (`hmac1_…`, `lib/pseudonym.ts`) and the entry holds list, source and time, **no address** (`app/api/unsubscribe/route.ts`). Older entries (`{sha256(address)}`, address in clear) are read as well (`scripts/send-survey.ts`) and replaced on erasure | the keyed hash (document id) | Without time limit (privacy policy sections 2 and 5); lifted when the account switches community mail on again | ❌ kept as the keyed hash only; a clear-text entry is replaced by a keyed one (`lib/proof-log-erasure.ts`) |
+| `invitation_suppressions/{keyed hash}` | Opt-out list for invitations to a project or a portfolio (C10/C12, since 3.0.21): the document id is the keyed hash of the address (`hmac1_…`, `lib/invitation-suppression.ts`); the entry holds list, source and time, **no address** (`app/api/unsubscribe/invitations/route.ts`). Both invitation routes refuse an address on it | the keyed hash (document id) | Without time limit (privacy policy sections 5, 6 and 8) | ❌ kept as the keyed hash only; the erasure does not touch it |
 | `usage_reports/{id}` | Weekly admin report snapshot. **Since 2026-09-30 figures only** — counts, analyses per newly activated account, failed mails per kind; no name, address, uid or recipient (`usageReportSnapshot`, `lib/usage-report.ts`). Older snapshots listed accounts by name and address | none (figures); older snapshots: address inside the lists | Kept for the trend | ✅ the account's entries are removed from older snapshots, by address; everybody else's stay (see note) |
 | `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ rows kept; the actor's address is replaced by a pseudonym |
 | `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 under `RATE_LIMIT_PEPPER` of the route-scoped key (`<route>:<uid and/or ip>`, e.g. `gemini:<uid>:<ip>`), so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
@@ -78,10 +79,11 @@ outside this database; no erasure reaches them.
 **`email_suppressions` note:** until 3.0.21 the opt-out was removed on erasure
 (owner decision 30.09.2026). The legal texts of Fassung 1.1 say otherwise — the
 keyed hash stays on the list without time limit "so that we do not mail you again"
-— and the erasure follows them now. **The invitation opt-out list the texts also
-name (privacy policy sections 5 and 8, C7) does not exist yet**: invitation mails
-carry no unsubscribe link and invitation delivery records have no six-month date.
-That is open product work, not a register entry.
+— and the erasure follows them now. The invitation opt-out list the texts also
+name (privacy policy sections 5 and 8, C7) exists since 3.0.21 as
+`invitation_suppressions` (above): both invitation mails carry an unsubscribe link.
+**Invitation delivery records still have no six-month date** — open product work,
+not a register entry.
 
 ## The proof log (3.0.21, acceptance tests T05/T06)
 

@@ -53,22 +53,32 @@ export const CONSENT_TEXTS = {
   /** C2 — amendment dialog at the next sign-in (Terms 10.2). The change list comes from `lib/terms-changes.ts`. */
   amendment: {
     lead: {
-      de: 'Die Nutzungsbedingungen ändern sich zum {Datum} (Fassung {Fassung}). Was sich ändert und warum:',
-      en: 'The Terms of Service change on {Datum} (version {Fassung}). What changes and why:',
+      de: 'Die Nutzungsbedingungen ändern sich zum {{termsEffectiveDate}} (Fassung {Fassung}). Was sich ändert und warum:',
+      en: 'The Terms of Service change on {{termsEffectiveDate}} (version {Fassung}). What changes and why:',
     },
     afterList: {
-      de: 'Vollständiger Wortlaut: clean-core.io/terms/de. Sie können die Änderung jetzt annehmen oder zurückstellen; bis zum {Datum} gilt für Sie die bisherige Fassung weiter (Ziffer 10.3).',
-      en: 'Full wording: clean-core.io/terms. You can accept the change now or set it aside; until {Datum} the previous version continues to apply to you (section 10.3).',
+      de: 'Vollständiger Wortlaut: clean-core.io/terms/de. Sie können die Änderung schon jetzt annehmen; wirksam wird sie für Sie erst am {{termsEffectiveDate}}. Bis dahin gilt die bisherige Fassung, und nehmen Sie nicht an, gilt sie auch danach weiter (Ziffer 10.3).',
+      en: 'Full wording: clean-core.io/terms. You can accept the change now; it takes effect for you only on {{termsEffectiveDate}}. Until then the previous version applies, and if you do not accept, it continues to apply after that date as well (section 10.3).',
+    },
+    /** After the effective date: an acceptance then applies from the moment it is given (Terms 10.2). */
+    afterListPastDate: {
+      de: 'Vollständiger Wortlaut: clean-core.io/terms/de. Die Änderung ist seit dem {{termsEffectiveDate}} wirksam. Nehmen Sie sie an, gilt sie für Sie ab Ihrer Annahme; nehmen Sie nicht an, gilt für Sie die bisherige Fassung weiter (Ziffer 10.3).',
+      en: 'Full wording: clean-core.io/terms. The change has been in effect since {{termsEffectiveDate}}. If you accept it, it applies to you from your acceptance; if you do not accept, the previous version continues to apply to you (section 10.3).',
     },
     checkbox: {
+      de: 'Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) mit Wirkung zum {{termsEffectiveDate}} an.',
+      en: 'I accept the Terms of Service in version {Fassung} (English version) with effect from {{termsEffectiveDate}}.',
+    },
+    /** After the effective date there is no later date to name. */
+    checkboxPastDate: {
       de: 'Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) an.',
       en: 'I accept the Terms of Service in version {Fassung} (English version).',
     },
     accept: { de: 'Annehmen', en: 'Accept' },
     later: { de: 'Später entscheiden', en: 'Decide later' },
     notice: {
-      de: 'Nach der Annahme erhalten Sie eine Bestätigung mit dem vollständigen Wortlaut per E-Mail.',
-      en: 'After acceptance you will receive a confirmation with the full wording by e-mail.',
+      de: 'Nach der Annahme erhalten Sie eine Bestätigung mit dem vollständigen Wortlaut und dem Wirksamkeitstag per E-Mail.',
+      en: 'After acceptance you will receive a confirmation with the full wording and the effective date by e-mail.',
     },
   },
 
@@ -85,8 +95,8 @@ export const CONSENT_TEXTS = {
         en: 'Outside the EU: We call Anthropic with the data region "us"; your request is processed only in the United States, and data at rest is kept in the United States according to Anthropic. The transfer to the United States is made by Anthropic Ireland, Limited as your processor; Anthropic is not certified under the EU-U.S. Data Privacy Framework.',
       },
       {
-        de: 'Ihr Vertrag mit Anthropic: Anthropic bietet seine API nur zur geschäftlichen Nutzung an. Hinterlegen Sie nur den Schlüssel eines Geschäftskontos, das bei Anthropic Ireland, Limited geführt wird.',
-        en: 'Your contract with Anthropic: Anthropic offers its API for business use only. Store only the key of a business account held with Anthropic Ireland, Limited.',
+        de: 'Ihr Vertrag mit Anthropic: Anthropic bietet seine API nur zur geschäftlichen Nutzung an. Hinterlegen Sie nur den Schlüssel eines Geschäftskontos mit Rechnungsadresse im EWR, in der Schweiz oder im Vereinigten Königreich – Sie finden sie in Ihrem Anthropic-Konto unter den Rechnungsangaben.',
+        en: 'Your contract with Anthropic: Anthropic offers its API for business use only. Store only the key of a business account with a billing address in the EEA, Switzerland or the United Kingdom — you find it in your Anthropic account under the billing details.',
       },
       {
         de: 'Modell: Die Plattform ruft {{claudeModelId}} auf; jeder Schritt und die Modellquittung nennen es.',
@@ -118,8 +128,8 @@ export const CONSENT_TEXTS = {
       en: 'Automatic steps on my key (default: off)',
     },
     fieldText: {
-      de: 'Anthropic-API-Schlüssel – Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit Anthropic; wir berechnen und erstatten sie nicht. Wir rufen Anthropic mit der Datenregion „us“ auf (Aufschlag 10 % auf Anthropics Standardpreis, den Sie tragen). Voraussetzung: ein Geschäftskonto bei Anthropic Ireland, Limited.',
-      en: 'Anthropic API key — Charges of the model provider arise in your own contractual relationship with Anthropic; we neither bill nor reimburse them. We call Anthropic with the data region "us" (10 % surcharge on Anthropic\'s standard price, which you bear). Requirement: a business account with Anthropic Ireland, Limited.',
+      de: 'Anthropic-API-Schlüssel – Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit Anthropic; wir berechnen und erstatten sie nicht. Wir rufen Anthropic mit der Datenregion „us“ auf (Aufschlag 10 % auf Anthropics Standardpreis, den Sie tragen). Voraussetzung: ein Geschäftskonto mit Rechnungsadresse im EWR, in der Schweiz oder im Vereinigten Königreich (Vertragspartnerin: Anthropic Ireland, Limited).',
+      en: 'Anthropic API key — Charges of the model provider arise in your own contractual relationship with Anthropic; we neither bill nor reimburse them. We call Anthropic with the data region "us" (10 % surcharge on Anthropic\'s standard price, which you bear). Requirement: a business account with a billing address in the EEA, Switzerland or the UK (contracting party: Anthropic Ireland, Limited).',
     },
     modelDisplay: { de: 'Aufgerufenes Modell: {Modell}', en: 'Model called: {Modell}' },
     checkbox: {
@@ -199,8 +209,44 @@ export const CONSENT_TEXTS = {
       en: 'Your contract confirmation — {Dokument} (English version)',
     },
     body: {
-      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDer vollständige Wortlaut steht unten in dieser E-Mail{{t03ConfirmationMail}}. Es ist derselbe Text, aus dem der Hashwert gebildet wurde; er bleibt mit diesem Hashwert unter {Adresse} veröffentlicht.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io\n\n— Vollständiger Wortlaut —\n{Wortlaut}',
-      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nThe full wording follows below in this e-mail{{t03ConfirmationMail}}. It is the same text from which the digest was computed; it remains published with that digest at {Adresse}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time and digest of your acceptance in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io\n\n— Full wording —\n{Wortlaut}',
+      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.{Wirksamkeit}\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDer vollständige Wortlaut steht unten in dieser E-Mail{{t03ConfirmationMail}}. Es ist derselbe Text, aus dem der Hashwert gebildet wurde; er bleibt mit diesem Hashwert unter {Adresse} veröffentlicht.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io\n\n— Vollständiger Wortlaut —\n{Wortlaut}',
+      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).{Wirksamkeit}\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nThe full wording follows below in this e-mail{{t03ConfirmationMail}}. It is the same text from which the digest was computed; it remains published with that digest at {Adresse}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time and digest of your acceptance in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io\n\n— Full wording —\n{Wortlaut}',
+    },
+
+    /**
+     * `{Wirksamkeit}` in the body after an amendment (Terms 10.2, G13/G14): the
+     * day it takes effect when accepted early, else that it applies at once.
+     * Empty for a sign-up and for the Additional Agreement.
+     */
+    effectiveOn: {
+      de: ' Die Änderung wird für Sie am {Wirksamkeitstag} wirksam; bis dahin gilt für Sie die bisherige Fassung (Ziffer 10.2).',
+      en: ' The amendment takes effect for you on {Wirksamkeitstag}; until then the previous version applies to you (section 10.2).',
+    },
+    effectiveNow: {
+      de: ' Die Änderung gilt für Sie ab Ihrer Annahme (Ziffer 10.2).',
+      en: ' The amendment applies to you from your acceptance (section 10.2).',
+    },
+  },
+
+  /**
+   * C12 — the invitation mail for a portfolio overview (Art. 14 GDPR) and its
+   * unsubscribe (owner decision 23.10.2026: a portfolio invitation opens the
+   * overview only — no project, no source code). Built by
+   * `lib/portfolio/invitation-email.ts`; the mail goes out in English like the
+   * project invitation (C10), the German text is the registry's.
+   */
+  portfolioInvitation: {
+    scope: {
+      de: 'Sie erhalten nur Lesezugriff auf die Übersicht des Portfolios – Kennzahlen über die darin aufgeführten Projekte: ihre Namen, Scores, Clean-Core-Stufen und Gruppen und die verwendeten SAP-Objekte. Kein Projekt und kein Quellcode wird dabei geöffnet.',
+      en: 'You get read access to the portfolio overview only — figures across the listed projects: their names, scores, clean core levels and groups, and the SAP objects they use. No project and no source code is opened.',
+    },
+    about: {
+      de: 'Clean-Core.io ist ein unentgeltliches Community-Werkzeug zur Analyse von SAP-ABAP-Code.',
+      en: 'Clean-Core.io is a free community tool for analysing SAP ABAP code.',
+    },
+    unsubscribed: {
+      de: 'Abgemeldet. An diese Adresse geht keine Einladung zu einem Projekt oder Portfolio mehr. Wir behalten dafür nur einen schlüsselbasierten Hashwert der Adresse auf einer Sperrliste.',
+      en: 'Unsubscribed. No further invitation to a project or portfolio goes to this address. To honour that, we keep only a keyed hash of the address on a suppression list.',
     },
   },
 
@@ -248,8 +294,8 @@ export const CONSENT_TEXTS = {
   accountDeletion: {
     title: { de: 'Konto endgültig löschen', en: 'Delete account permanently' },
     text: {
-      de: 'Das Löschen Ihres Kontos kündigt Ihren Vertrag mit sofortiger Wirkung (Ziffer 2.3) und beendet eine bestehende Zusatzvereinbarung zu eigenen Modellschlüsseln.\n\nSofort gelöscht werden: Ihr Profil, alle Projekte und der darin enthaltene Quellcode, Analysen und signierte Läufe, Ihr eigener Modellschlüssel, Ihre S/4HANA-Verbindungsdaten, Ihr zweiter Faktor, Support-Anfragen, Umfrageantworten, Ihre Motivation und Ihre Anmeldung. Kopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus.\n\nWas die Löschung nicht erreicht: das Sicherheits-Protokoll administrativer Handlungen an Ihrem Konto (24 Monate); bereits versandte E-Mails (unser Mailanbieter Resend löscht Mailinhalte nach 30 Tagen); was ein Modellanbieter nach seinen Bedingungen aufbewahrt hat; und Nachweise, nicht Daten: Im Nachweisprotokoll ersetzen wir Ihre Adresse durch einen schlüsselbasierten Hashwert und behalten — ohne Namen, Adresse, Code, Prompts, Schlüssel oder IP-Adresse — (1) welche Fassungen der Nutzungsbedingungen und gegebenenfalls der Zusatzvereinbarung Sie wann in welcher Sprache angenommen haben (mit dem Hashwert des Wortlauts) und das heutige Datum als Vertragsende, bis zum 31.12.{Jahr + 3}; (2) den Eintrag „Konto gelöscht am {Datum}“, drei Jahre; (3) Zustellnachweise unserer Mails an Sie (Art, Zeitpunkt, Message-ID, Status — kein Inhalt), 30 bis 90 Tage; (4) falls Sie Community-Mail oder Einladungen abbestellt haben, den Hashwert Ihrer Adresse auf der Sperrliste, unbefristet, damit wir Sie nicht erneut anschreiben. Jeder Eintrag trägt sein eigenes Löschdatum und wird automatisch gelöscht. Einzelheiten: Datenschutzerklärung, Abschnitte 5 und 6.{{proofLog}}\n\nExportieren Sie vorher, was Sie behalten möchten.',
-      en: 'Deleting your account terminates your contract with immediate effect (section 2.3) and ends any Additional Agreement on Own Model Keys.\n\nDeleted immediately: your profile, all projects and the source code in them, analyses and signed runs, your own model key, your S/4HANA connection data, your second factor, support requests, survey answers, your motivation note and your sign-in. Copies in encrypted backups age out within 30 days.\n\nWhat deletion does not reach: the security audit record of administrative actions on your account (24 months); e-mails already sent (our mail provider Resend deletes mail content after 30 days); what a model provider has kept under its own terms; and proofs, not data: in the proof log we replace your address with a keyed hash and keep — without name, address, code, prompts, key or IP address — (1) which versions of the Terms of Service and, if applicable, the Additional Agreement you accepted, when and in which language (with the digest of the wording), and today\'s date as the end of the contract, until 31 December {Jahr + 3}; (2) the line "account deleted on {Datum}", three years; (3) delivery records of our mails to you (type, time, message id, status — no content), 30 to 90 days; (4) if you opted out of community mail or invitations, the hash of your address on the suppression list, without end, so that we do not mail you again. Every row carries its own deletion date and is deleted automatically. Details: Privacy Policy, sections 5 and 6.{{proofLog}}\n\nExport what you wish to keep first.',
+      de: 'Das Löschen Ihres Kontos kündigt Ihren Vertrag mit sofortiger Wirkung (Ziffer 2.3) und beendet eine bestehende Zusatzvereinbarung zu eigenen Modellschlüsseln.\n\nSofort gelöscht werden: Ihr Profil, alle Projekte und der darin enthaltene Quellcode, Analysen und signierte Läufe, Ihr eigener Modellschlüssel, Ihre S/4HANA-Verbindungsdaten, Ihr zweiter Faktor, Support-Anfragen, Umfrageantworten, Ihre Motivation und Ihre Anmeldung. Kopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus.\n\nWas die Löschung nicht erreicht: das Sicherheits-Protokoll administrativer Handlungen an Ihrem Konto (24 Monate); bereits versandte E-Mails (den Inhalt der Mail bewahrt unser Mailanbieter Resend nach seinen Aufbewahrungsregeln auf, derzeit {{resendRetentionDays}} nach dem Versand); was ein Modellanbieter nach seinen Bedingungen aufbewahrt hat; und Nachweise, nicht Daten: Im Nachweisprotokoll ersetzen wir Ihre Adresse durch einen schlüsselbasierten Hashwert und behalten — ohne Namen, Adresse, Code, Prompts, Schlüssel oder IP-Adresse — (1) welche Fassungen der Nutzungsbedingungen und gegebenenfalls der Zusatzvereinbarung Sie wann in welcher Sprache angenommen haben (mit dem Hashwert des Wortlauts) und das heutige Datum als Vertragsende, bis zum 31.12.{Jahr + 3}; (2) den Eintrag „Konto gelöscht am {Datum}“, drei Jahre; (3) Zustellnachweise unserer Mails an Sie (Art, Zeitpunkt, Message-ID, Status — kein Inhalt), 30 bis 90 Tage; (4) falls Sie Community-Mail oder Einladungen abbestellt haben, den Hashwert Ihrer Adresse auf der Sperrliste, unbefristet, damit wir Sie nicht erneut anschreiben. Jeder Eintrag trägt sein eigenes Löschdatum und wird automatisch gelöscht. Einzelheiten: Datenschutzerklärung, Abschnitte 5 und 6.{{proofLog}}\n\nExportieren Sie vorher, was Sie behalten möchten.',
+      en: 'Deleting your account terminates your contract with immediate effect (section 2.3) and ends any Additional Agreement on Own Model Keys.\n\nDeleted immediately: your profile, all projects and the source code in them, analyses and signed runs, your own model key, your S/4HANA connection data, your second factor, support requests, survey answers, your motivation note and your sign-in. Copies in encrypted backups age out within 30 days.\n\nWhat deletion does not reach: the security audit record of administrative actions on your account (24 months); e-mails already sent (our mail provider Resend keeps the content of the mail under its retention rules, currently {{resendRetentionDays}} after sending); what a model provider has kept under its own terms; and proofs, not data: in the proof log we replace your address with a keyed hash and keep — without name, address, code, prompts, key or IP address — (1) which versions of the Terms of Service and, if applicable, the Additional Agreement you accepted, when and in which language (with the digest of the wording), and today\'s date as the end of the contract, until 31 December {Jahr + 3}; (2) the line "account deleted on {Datum}", three years; (3) delivery records of our mails to you (type, time, message id, status — no content), 30 to 90 days; (4) if you opted out of community mail or invitations, the hash of your address on the suppression list, without end, so that we do not mail you again. Every row carries its own deletion date and is deleted automatically. Details: Privacy Policy, sections 5 and 6.{{proofLog}}\n\nExport what you wish to keep first.',
     },
     checkbox: {
       de: 'Ich habe verstanden, dass meine Projekte und mein Quellcode unwiderruflich gelöscht werden.',
@@ -263,8 +309,8 @@ export const CONSENT_TEXTS = {
   communityMail: {
     switchLabel: { de: 'Community-Mail und Umfragen', en: 'Community mail and surveys' },
     belowSwitch: {
-      de: 'Aus. Wenn Sie einschalten, senden wir Ihnen gelegentlich Umfragen dazu, was wir als Nächstes bauen sollen, und Community-Neuigkeiten an {E-Mail} — sonst nichts. Das ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO); Sie können sie jederzeit mit Wirkung für die Zukunft widerrufen, mit diesem Schalter oder über den Abmeldelink in jeder dieser Mails (Art. 7 Abs. 3 DSGVO). Ohne diese Einwilligung nutzen wir Ihre Kontodaten nur, um den Dienst bereitzustellen. Wir speichern, wann Sie zuletzt ein- und ausgeschaltet haben. Schalten Sie aus, kommt ein schlüsselbasierter Hashwert Ihrer Adresse auf eine Sperrliste, die auch nach dem Löschen Ihres Kontos bleibt, damit wir Sie nicht erneut anschreiben.',
-      en: 'Off. If you switch this on, we occasionally send surveys about what we should build next and community updates to {E-Mail} — nothing else. This is your consent (Art. 6(1)(a) GDPR); you can withdraw it at any time with effect for the future, with this switch or with the unsubscribe link in every such mail (Art. 7(3) GDPR). Without this consent we use your account data only to provide the service. We store when you last switched it on and off. If you switch it off, a keyed hash of your address goes on a suppression list that remains after your account is deleted, so that we do not mail you again.',
+      de: 'Aus. Wenn Sie einschalten, senden wir Ihnen gelegentlich Umfragen dazu, was wir als Nächstes bauen sollen, und Community-Neuigkeiten an {E-Mail} — sonst nichts. Das ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO); Sie können sie jederzeit mit Wirkung für die Zukunft widerrufen, mit diesem Schalter oder über den Abmeldelink in jeder dieser Mails (Art. 7 Abs. 3 DSGVO). Ob Sie einschalten, hat keinen Einfluss auf Ihren Zugang, Ihr Kontingent oder eine Funktion. Ohne diese Einwilligung nutzen wir Ihre Kontodaten nur, um den Dienst bereitzustellen. Wir speichern, wann Sie zuletzt ein- und ausgeschaltet haben. Schalten Sie aus, kommt ein schlüsselbasierter Hashwert Ihrer Adresse auf eine Sperrliste, die auch nach dem Löschen Ihres Kontos bleibt, damit wir Sie nicht erneut anschreiben.',
+      en: 'Off. If you switch this on, we occasionally send surveys about what we should build next and community updates to {E-Mail} — nothing else. This is your consent (Art. 6(1)(a) GDPR); you can withdraw it at any time with effect for the future, with this switch or with the unsubscribe link in every such mail (Art. 7(3) GDPR). Whether you switch this on has no effect on your access, your quota or any function. Without this consent we use your account data only to provide the service. We store when you last switched it on and off. If you switch it off, a keyed hash of your address goes on a suppression list that remains after your account is deleted, so that we do not mail you again.',
     },
     statusOn: {
       de: 'Eingeschaltet am {Datum}. Sie können jederzeit widerrufen.',

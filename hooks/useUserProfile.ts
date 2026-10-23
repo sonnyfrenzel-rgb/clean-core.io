@@ -142,6 +142,31 @@ export async function finishRegistration(user: User, input: FinishRegistrationIn
   }
 }
 
+/**
+ * The uids this page load has already reported (`POST /api/account/signed-in`).
+ * Module-level, because every component using this hook subscribes on its own.
+ */
+const reportedSignIns = new Set<string>();
+
+/**
+ * Asks the server to clear the profile picture address from the account's
+ * Firebase Authentication record (`lib/profile-picture.ts`). Only for an
+ * account signed in with Google, once per page load. It looks at which
+ * provider signed in, never at the picture; best effort, nothing waits on it.
+ */
+function reportGoogleSignIn(user: User): void {
+  if (reportedSignIns.has(user.uid)) return;
+  if (!user.providerData.some((p) => p.providerId === 'google.com')) return;
+  reportedSignIns.add(user.uid);
+  void user
+    .getIdToken()
+    .then((token) => fetch('/api/account/signed-in', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }))
+    .catch(() => {
+      // Asked again at the next page load.
+      reportedSignIns.delete(user.uid);
+    });
+}
+
 export function useUserProfile() {
   const auth = getAuth();
   const db = getDb();
@@ -189,6 +214,10 @@ export function useUserProfile() {
         setLoading(false);
         return;
       }
+
+      // Privacy policy section 2, Variante B: after a Google sign-in the server
+      // removes the picture address Google sent from the Auth record.
+      reportGoogleSignIn(user);
 
       const userDocRef = doc(db, 'users', user.uid);
       

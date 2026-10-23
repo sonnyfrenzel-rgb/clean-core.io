@@ -68,6 +68,10 @@ export async function POST(req: NextRequest) {
       // T02: the language version ticked in the dialog (C2) — the person's
       // choice of contract language, which the digest is then derived from.
       termsLanguage: body?.termsLanguage,
+      // Terms 10.2 (G13): an amendment accepted before its announced day takes
+      // effect on that day; until then the version accepted before applies.
+      occasion,
+      previousVersion: typeof profile.termsVersionAccepted === 'string' ? profile.termsVersionAccepted : null,
     });
 
     // C5 (Terms 10.2 and 1.3, T03): the confirmation of the acceptance, in the
@@ -78,9 +82,17 @@ export async function POST(req: NextRequest) {
       occasion,
       language: recorded.termsLanguage,
       firstName: typeof profile.firstName === 'string' ? profile.firstName : null,
+      acceptedAt: recorded.acceptedAt,
+      effectiveAt: recorded.effectiveAt,
     });
 
-    return NextResponse.json({ ok: true, termsVersion: TERMS_VERSION, termsLanguage: recorded.termsLanguage });
+    return NextResponse.json({
+      ok: true,
+      termsVersion: TERMS_VERSION,
+      termsLanguage: recorded.termsLanguage,
+      acceptedAt: recorded.acceptedAt,
+      effectiveAt: recorded.effectiveAt,
+    });
   } catch (err: unknown) {
     // The reason goes to the server log; the caller gets a fixed sentence.
     logger.error('consent record failed', {

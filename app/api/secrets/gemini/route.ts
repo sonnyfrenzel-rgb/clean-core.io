@@ -32,6 +32,7 @@ import {
   termsAllowAddendum,
 } from '@/lib/byok-addendum';
 import { sendAgreementAcceptedMail, sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
+import { termsVersionInEffectFor } from '@/lib/terms-effective';
 import { OWN_KEY_TEST_FAILED_CODE, OWN_KEY_TEST_FAILED_MESSAGE, testOwnModelKey } from '@/lib/own-key-test';
 import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '@/lib/gemini-test-stub';
 
@@ -102,10 +103,15 @@ export async function POST(req: NextRequest) {
     // Anthropic key until it accepts the current Terms.
     if (addendumRequired(provider)) {
       const profile = (await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get()).data() || {};
-      if (!termsAllowAddendum(profile.termsVersionAccepted)) {
+      // The version in effect, not merely the one accepted (Terms 10.2, G13):
+      // an amendment accepted before its announced day does not yet apply.
+      if (!termsAllowAddendum(termsVersionInEffectFor(profile))) {
+        const acceptedEarly = termsAllowAddendum(profile.termsVersionAccepted);
         return NextResponse.json(
           {
-            error: `An Anthropic key can be stored only once your account has accepted the Terms of Service ${BYOK_MIN_TERMS_LABEL} or later. Accept the current Terms first.`,
+            error: acceptedEarly
+              ? `Your acceptance of the Terms of Service ${BYOK_MIN_TERMS_LABEL} takes effect on the announced day; an Anthropic key can be stored from then on.`
+              : `An Anthropic key can be stored only once your account has accepted the Terms of Service ${BYOK_MIN_TERMS_LABEL} or later. Accept the current Terms first.`,
             code: ADDENDUM_TERMS_REQUIRED_CODE,
           },
           { status: 409 },

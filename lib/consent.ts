@@ -2,6 +2,8 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { TERMS_VERSION } from '@/lib/constants';
 import { archivedTermsSha256For, isTermsLanguage, type TermsLanguage } from '@/lib/terms-versions';
 import { PROOF_LOG_RETENTION } from '@/lib/proof-log';
+import { acceptanceEffectiveAt, type ConsentOccasion } from '@/lib/terms-effective';
+import { TERMS_EFFECTIVE_DATE_ISO } from '@/lib/legal/open-values';
 
 /**
  * Server-authoritative Terms/Privacy consent (finding V14).
@@ -45,6 +47,22 @@ export interface RecordConsentInput {
    * the dialogs offered before Terms v2.3.0.
    */
   termsLanguage?: unknown;
+  /**
+   * Sign-up or the acceptance of an amendment (Terms 10.2). An amendment
+   * accepted before its announced day takes effect only on that day
+   * (`lib/terms-effective.ts`); omitted, the acceptance is a sign-up.
+   */
+  occasion?: ConsentOccasion;
+  /**
+   * The version the account accepted before, read by the caller from the
+   * profile — it stays the version in effect until an early acceptance takes
+   * effect. Ignored for a sign-up.
+   */
+  previousVersion?: string | null;
+  /** The server's clock; a spec passes a fixed time. */
+  now?: Date;
+  /** The announced effective day (`TERMS_EFFECTIVE_DATE_ISO` unless a spec passes another). */
+  effectiveDateIso?: string | null;
 }
 
 /** The language version an acceptance request names, or English. */
@@ -87,6 +105,10 @@ export interface RecordedConsent {
   termsLanguage: TermsLanguage;
   /** SHA-256 of the archived wording of that language version, or null. */
   digest: string | null;
+  /** When the acceptance was given (the server's clock), ISO. */
+  acceptedAt: string;
+  /** When it takes effect, ISO — later than `acceptedAt` only for an amendment accepted before its announced day. */
+  effectiveAt: string;
 }
 
 /** The two Firestore calls a consent makes — what a spec stands in for. */
@@ -105,7 +127,7 @@ export interface ConsentDeps {
  * pass the input alone.
  */
 export async function recordConsent(
-  { uid, email, source, locale, termsLanguage }: RecordConsentInput,
+  { uid, email, source, locale, termsLanguage, occasion = 'sign-up', previousVersion = null, now = new Date(), effectiveDateIso = TERMS_EFFECTIVE_DATE_ISO }: RecordConsentInput,
   deps?: ConsentDeps,
 ): Promise<RecordedConsent> {
   const { db, FieldValue } = deps ?? (await getAdminDb());
@@ -116,6 +138,13 @@ export async function recordConsent(
   // archived text — see the note above on why null and not a stand-in.
   const language = acceptedTermsLanguageOf(termsLanguage);
   const contentSha256 = archivedTermsSha256For(TERMS_VERSION, language);
+
+  // Terms 10.2 (G13): the time of acceptance and the day it takes effect are
+  // two facts and are kept as two. Until that day the version accepted before
+  // stays in effect for the account (`termsVersionInEffectFor`).
+  const effectiveAt = acceptanceEffectiveAt(occasion, now, effectiveDateIso);
+  const pending = effectiveAt.getTime() > now.getTime();
+  const previous = pending && previousVersion && previousVersion !== TERMS_VERSION ? previousVersion : null;
 
   // One batch, so the record and the state enforcement reads commit together
   // or not at all. Two awaited writes could leave an acceptance on record that
@@ -136,7 +165,10 @@ export async function recordConsent(
     contentSha256,
     locale: typeof locale === 'string' ? locale.slice(0, 35) : null,
     source,
+    occasion,
     createdAt: FieldValue.serverTimestamp(),
+    acceptedAt: now,
+    effectiveAt,
     // The proof log (T05/T06): the record's own deletion date. Unknown while
     // the contract runs — it is set, with the keyed hash in place of the
     // address, when the contract ends (`lib/proof-log.ts`).
@@ -156,6 +188,10 @@ export async function recordConsent(
     termsVersionAccepted: TERMS_VERSION,
     termsLanguageAccepted: language,
     termsAcceptedAt: FieldValue.serverTimestamp(),
+    termsEffectiveAt: effectiveAt,
+    // The version that keeps applying until `termsEffectiveAt`; null once the
+    // accepted version is the one in effect.
+    termsVersionPrevious: previous,
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -167,5 +203,11 @@ export async function recordConsent(
     throw err;
   }
 
-  return { termsVersion: TERMS_VERSION, termsLanguage: language, digest: contentSha256 };
+  return {
+    termsVersion: TERMS_VERSION,
+    termsLanguage: language,
+    digest: contentSha256,
+    acceptedAt: now.toISOString(),
+    effectiveAt: effectiveAt.toISOString(),
+  };
 }

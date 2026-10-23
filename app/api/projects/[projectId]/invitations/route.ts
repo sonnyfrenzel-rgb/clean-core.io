@@ -36,6 +36,12 @@ import {
   type Invitation,
 } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
+import {
+  INVITATION_SUPPRESSED_CODE,
+  INVITATION_SUPPRESSED_MESSAGE,
+  invitationUnsubscribeUrl,
+  isInvitationSuppressed,
+} from '@/lib/invitation-suppression';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 import {
   openInvitationsAsOwner,
@@ -318,6 +324,14 @@ export async function POST(
     }
 
     const { db } = await getAdminDb();
+
+    // C10 (privacy policy section 8): an address that used the unsubscribe
+    // link of an invitation gets no invitation again — of a project or a
+    // portfolio; the list is shared (`lib/invitation-suppression.ts`).
+    if (await isInvitationSuppressed(db, email)) {
+      return NextResponse.json({ error: INVITATION_SUPPRESSED_MESSAGE, code: INVITATION_SUPPRESSED_CODE }, { status: 409 });
+    }
+
     const invitedAt = new Date();
     const invitation: Invitation = {
       id: crypto.randomBytes(24).toString('base64url'),
@@ -395,6 +409,7 @@ export async function POST(
           recipient: escapeHtml(email),
           link,
           expires: new Date(invitation.expiresAt).toUTCString().slice(5, 16),
+          unsubscribeUrl: invitationUnsubscribeUrl(email),
         }),
         'Clean-Core.io — invitation',
       ),

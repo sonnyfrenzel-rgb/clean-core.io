@@ -22,9 +22,11 @@ import { CONTACT_EMAIL } from '@/lib/constants';
  * (max-width, margin, padding) and `word-break` on the one visible link, so a
  * long URL stays inside a 320px screen.
  *
- * The survey is the one mail allowed a second link: its unsubscribe URL, in
- * the footer, because a bulk mail owes the reader a way out in the body and
- * not only in a header their client may not show.
+ * The survey is allowed a second link: its unsubscribe URL, in the footer,
+ * because a bulk mail owes the reader a way out in the body and not only in a
+ * header their client may not show. So are the two invitation mails (C10 for a
+ * project, C12 for a portfolio): their unsubscribe link puts the address on
+ * the invitation suppression list (`lib/invitation-suppression.ts`).
  *
  * Every string handed in is inserted verbatim: paragraphs are trusted markup
  * written in this repository (`<strong>` and entities are fine; `<a>` is not —
@@ -57,7 +59,7 @@ export interface UserMailInput {
   signature?: string;
   /** Small print: why this address got the mail, legal notes. No links. */
   footer: string[];
-  /** Bulk mail only (the survey): the unsubscribe URL, shown in the footer. */
+  /** The survey and the invitation mails: the unsubscribe URL, shown in the footer. */
   unsubscribeUrl?: string | null;
 }
 

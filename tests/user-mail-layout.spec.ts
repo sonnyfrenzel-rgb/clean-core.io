@@ -77,8 +77,9 @@ for (const { type, mail } of built) {
 for (const { type, mail } of userMails) {
   test(`${type}: plain layout, exactly one link shown as its URL, no button`, () => {
     expect(mail.html).toContain('data-mail-layout="plain"');
-    // The survey's unsubscribe URL is the one allowed extra, in the footer.
-    const expected = type === 'survey' ? 2 : 1;
+    // An unsubscribe URL is the one allowed extra, in the footer: the survey's,
+    // and the invitation mails' (C10/C12, the invitation suppression list).
+    const expected = ['survey', 'invitation', 'portfolio-invitation'].includes(type) ? 2 : 1;
     expect(htmlLinkCount(mail.html), 'number of links').toBe(expected);
     for (const m of mail.html.matchAll(/<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
       expect(m[2].trim(), 'a link hides its URL behind a label').toBe(m[1]);

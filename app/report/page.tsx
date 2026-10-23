@@ -12,7 +12,7 @@ import { legalDocumentBlocks } from '@/lib/legal/documents';
  */
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'Reporting Illegal Content | Clean-Core.io',
+  title: 'Report Illegal Content | Clean-Core.io',
   description:
     'How to report content on Clean-Core.io you consider illegal: what a report should contain, where to send it, and what happens next.',
   alternates: {
@@ -23,7 +23,7 @@ export const metadata: Metadata = withTwitterCard({
     },
   },
   openGraph: {
-    title: 'Reporting Illegal Content | Clean-Core.io',
+    title: 'Report Illegal Content | Clean-Core.io',
     description: 'What a report of illegal content should contain, where to send it, and what happens next.',
     url: 'https://clean-core.io/report',
     type: 'website',
@@ -34,7 +34,7 @@ export default function ReportPage() {
   return (
     <LegalPage
       lang="en"
-      title="Reporting Illegal Content"
+      title="Report Illegal Content"
       blocks={legalDocumentBlocks('report', 'en')}
       switchHref="/report/de"
       switchDataAttr="data-report-language-switch"

@@ -71,7 +71,11 @@ test.describe('C2 — the amendment dialog', () => {
   });
 
   test('the statement names the version and the language', () => {
-    expect(CONSENT_TEXTS.amendment.checkbox.en).toBe('I accept the Terms of Service in version {Fassung} (English version).');
-    expect(CONSENT_TEXTS.amendment.checkbox.de).toBe('Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) an.');
+    // G14 (Fassung 1.1, 23.10.2026): the statement names the day it takes effect.
+    expect(CONSENT_TEXTS.amendment.checkbox.en).toBe('I accept the Terms of Service in version {Fassung} (English version) with effect from {{termsEffectiveDate}}.');
+    expect(CONSENT_TEXTS.amendment.checkbox.de).toBe('Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) mit Wirkung zum {{termsEffectiveDate}} an.');
+    // After that day there is no later day to name.
+    expect(CONSENT_TEXTS.amendment.checkboxPastDate.en).toBe('I accept the Terms of Service in version {Fassung} (English version).');
+    expect(CONSENT_TEXTS.amendment.checkboxPastDate.de).toBe('Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) an.');
   });
 });

@@ -13,6 +13,7 @@ import { CONTACT_EMAIL, TERMS_VERSION, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
 import { recordEmailSent } from '@/lib/email-events';
 import { resendFailureSummary } from '@/lib/transactional-mail';
+import { removeProfilePictureAddress } from '@/lib/profile-picture';
 
 /**
  * POST /api/account/register
@@ -42,6 +43,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
     const uid = decodedToken.uid;
+
+    // Privacy policy section 2, Variante B (owner decision 23.10.2026): the
+    // picture address Google sent leaves the Auth record right after sign-up.
+    // Best effort, before anything else can fail.
+    await removeProfilePictureAddress(decodedToken);
 
     try {
       await assertRateLimit(`account-register:${uid}:${getClientIp(request)}`, 5, 60 * 60 * 1000);
