@@ -2,8 +2,8 @@
   "key": "abap-cheat-sheets",
   "source": "https://github.com/SAP-samples/abap-cheat-sheets",
   "branch": "main",
-  "commit": "d43eb13c4c7c17599f5709a0314bca257b283137",
-  "syncedAt": "2026-10-13",
+  "commit": "7955c9146066ccd61171e6b5a81b511decad980a",
+  "syncedAt": "2026-10-26",
   "licence": {
     "spdx": "Apache-2.0",
     "github": "Apache-2.0",
@@ -16,8 +16,8 @@
   "files": [
     {
       "path": "01_Internal_Tables.md",
-      "sha256": "2320e222bb4f200f932b28b3248ff128538a46f5add4b195e1395483012eae25",
-      "size": 416018
+      "sha256": "e0fa38038977602f27a3a778fc52af1655e5451032db5a20a16b617599affc54",
+      "size": 460170
     },
     {
       "path": "02_Structures.md",
@@ -26,8 +26,8 @@
     },
     {
       "path": "03_ABAP_SQL.md",
-      "sha256": "f00525b714784c1b679353c4936b43073bd56a24234add4f47249a3d9ba92208",
-      "size": 172375
+      "sha256": "77bb85aaea69c7bd26cc06df54850e0e790b7a9db66f6676a2b3c80aa0c32b59",
+      "size": 173485
     },
     {
       "path": "04_ABAP_Object_Orientation.md",
@@ -41,8 +41,8 @@
     },
     {
       "path": "06_Dynamic_Programming.md",
-      "sha256": "9596df1cefd6106aa3631c6ee2ff7fe2141e730cf97367ec3135c566a9c09cfa",
-      "size": 414548
+      "sha256": "34b83b99fc48b9d5023d5db680f5e117103e9b48698d2eb1eaf868bfe361d9d4",
+      "size": 416392
     },
     {
       "path": "07_String_Processing.md",
@@ -91,8 +91,8 @@
     },
     {
       "path": "16_Data_Types_and_Objects.md",
-      "sha256": "692e94f0a7eb8eaa6cde4884ca61104add8c4c6eabc5467eef32e68f3917f1e1",
-      "size": 134405
+      "sha256": "ce5051510046681202f7c4894c1c8ec38bdfb8b6067c33e924064f44828516c2",
+      "size": 134496
     },
     {
       "path": "17_SAP_LUW.md",
@@ -111,8 +111,8 @@
     },
     {
       "path": "20_Selection_Screens_Lists.md",
-      "sha256": "52780acd140ce7a65f9d8f2851c82ecf8ca577928775ee83c8044e1880315ef4",
-      "size": 211064
+      "sha256": "660a85871d85b501db53d436451de66861edc43a431c06251f3bbbdf601347b9",
+      "size": 211059
     },
     {
       "path": "21_XML_JSON.md",
@@ -196,7 +196,7 @@
     },
     {
       "path": "37_Logical_Expressions_and_Functions.md",
-      "sha256": "38ad09b68c2681244c9b7fd0a1ea2f992e1117cac95035b61239bf9bcb159470",
+      "sha256": "0e2267e3d43347f51b3ad56490b72a440b75a1654c3ee7794933f8166cd52d5d",
       "size": 36158
     },
     {
@@ -1106,7 +1106,7 @@
       "heading": "Internal Tables",
       "level": 1,
       "anchor": "internal-tables",
-      "hash": "35905f1a4ccfa6fac99ee878e18830e8e246019bc45b2084094ab7602ea7f760"
+      "hash": "f94dececd33426a4869bbf514ef04d0c7bf34b902be84cd9c49e18704e853522"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1323,7 +1323,7 @@
       "heading": "Accessing Single Table Lines via Table Expressions",
       "level": 2,
       "anchor": "accessing-single-table-lines-via-table-expressions",
-      "hash": "acc901e21daf1186635ccd5492b30a6339157a9f83ce53fe75b26b44999d19f1"
+      "hash": "3b03c29c87a4720fe777a5d05f3e323c1ca869eb5c9bd1e9643b05e64a17fcc5"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1463,7 +1463,7 @@
       "heading": "Operations with Internal Tables Using ABAP SQL SELECT Statements",
       "level": 2,
       "anchor": "operations-with-internal-tables-using-abap-sql-select-statements",
-      "hash": "1a86765c15d4ebd06cdea7db7ad4c94469fc5b8f74c896b012855d4e28f2a409"
+      "hash": "51e7f9a3b43622d873f60ae561ee93dbcfbae3504573fa4faa442c7dd9d78308"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1477,7 +1477,7 @@
       "heading": "SELECT Queries with Internal Tables as Data Sources",
       "level": 3,
       "anchor": "select-queries-with-internal-tables-as-data-sources",
-      "hash": "a1ce15047d3abbc74e8dac3a3f107f2b5e8ba8fba943b114748d0d94fc40483f"
+      "hash": "3c41d3c2004ed1e4e3ee2a2a62396543e37db86a845ba6eebf3125e9fbed611c"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1498,7 +1498,7 @@
       "heading": "Excursions",
       "level": 2,
       "anchor": "excursions",
-      "hash": "09704e7d504c1d49e984f1a04eaaf9743fc2f76735296b234fec357e46202318"
+      "hash": "e849d3495f96a94b3750389261eab54b1ae4dcd1dbf98baeb2ade30f4b726279"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1554,7 +1554,7 @@
       "heading": "Exploring Read Access Performance with Internal Tables",
       "level": 3,
       "anchor": "exploring-read-access-performance-with-internal-tables",
-      "hash": "4479e557ea742fb236294902fbf155cae00e39fd05064869ce9fdfd95686bb53"
+      "hash": "f0053600ea33d09bb80be51aec7861c2e4886efb05c2be3e14be9d343b8d3090"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1862,7 +1862,7 @@
       "heading": "ABAP SQL",
       "level": 1,
       "anchor": "abap-sql",
-      "hash": "aecd0c4f8b4c8573dbfdcd7437d0823df43a2252d3debff98bcb8db690db45a5"
+      "hash": "7f511001ab6530e7f0567ec6341eeaf0e7a6d333845d15f512be3496e3c51bf9"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -1883,7 +1883,7 @@
       "heading": "Read Operations Using SELECT",
       "level": 2,
       "anchor": "read-operations-using-select",
-      "hash": "f6a2a94b51ef912c6484f0326b5f6c552d3d4247d8b7f7967a2b7299731b5b03"
+      "hash": "17e867489536fa2a0d9e838049a3bcf6caebdaf5e364cb736cfa759960100912"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -1925,14 +1925,7 @@
       "heading": "Specifying Clauses to Order, Group and Set Conditions for the Result Set",
       "level": 3,
       "anchor": "specifying-clauses-to-order-group-and-set-conditions-for-the-result-set",
-      "hash": "d5e1ac21446529cdc9dba2042aa5406b4b66fec69027a4abbe4c161258ae0561"
-    },
-    {
-      "file": "03_ABAP_SQL.md",
-      "heading": "Selecting Data by Evaluating the Content of Other Tables",
-      "level": 3,
-      "anchor": "selecting-data-by-evaluating-the-content-of-other-tables",
-      "hash": "28943d82f0ac0e481fa864ff5a15a5363fbbbf58f8ef617d2767d58bfcdb3ee0"
+      "hash": "9fedcaebd73b6e142068d203781e172a3aeff3fa8ff913342e68eeb83d9e77c6"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -1940,6 +1933,13 @@
       "level": 3,
       "anchor": "combining-data-of-multiple-data-sources",
       "hash": "631e178f8593b4a2c9f296f9bda453ba91a88e996b66f2f50fe0661ee5e686df"
+    },
+    {
+      "file": "03_ABAP_SQL.md",
+      "heading": "Selecting Data From a Source by Evaluating the Content of an Internal Table",
+      "level": 3,
+      "anchor": "selecting-data-from-a-source-by-evaluating-the-content-of-an-internal-table",
+      "hash": "0992e65d0f7a002408b6a0349642410ba13df9a955ff4478e125377d911370cb"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -2079,14 +2079,14 @@
       "heading": "Create, Update, and Delete Operations",
       "level": 2,
       "anchor": "create-update-and-delete-operations",
-      "hash": "5266796a61c86cd182ea422cfbcf519e4595f905971911699c944e9eae562618"
+      "hash": "bf7cb6986e9dbf1918284e47dfe1f816652adc09272919f016847ac062066726"
     },
     {
       "file": "03_ABAP_SQL.md",
       "heading": "INSERT",
       "level": 3,
       "anchor": "insert",
-      "hash": "7db160cba671d7447f49ca1d2cdc38609d8c803d61d4d78690939555f9c3c20d"
+      "hash": "ad06ba5525f3f472c7255f8fd383918c91abafe93621f0c37b34fb32cfa312ee"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -2730,7 +2730,7 @@
       "heading": "Dynamic Programming",
       "level": 1,
       "anchor": "dynamic-programming",
-      "hash": "f5d2d703ceed4ed8b5ea96e2c50fd13c5018a6048081dc2f26ce425b67f0b1b3"
+      "hash": "7976cdc78678906ba37b2b6cb70a71db5cb11af73110b5821d45f1f44a47b990"
     },
     {
       "file": "06_Dynamic_Programming.md",
@@ -2863,7 +2863,7 @@
       "heading": "Dynamic ABAP Statements",
       "level": 2,
       "anchor": "dynamic-abap-statements",
-      "hash": "22f7cb4eabf4e914f3b11e40be2a2c95a4224f08789b93b640ebe6aa4820473d"
+      "hash": "714a9ebe750d7ee9572b92c315d90e043f9c55edb31eb7ee2c3d0b50085a72ba"
     },
     {
       "file": "06_Dynamic_Programming.md",
@@ -2940,7 +2940,7 @@
       "heading": "Dynamically Calling Transformations",
       "level": 3,
       "anchor": "dynamically-calling-transformations",
-      "hash": "54afcf04e0d9d901df4896f2cc18c093110dc531405e3e3b5e3f1bb7b6a5cf27"
+      "hash": "d38b1f3228dd7dc0cd8a00a18da8318a1756e4f618bc5b82bd0d6b47f9ab7499"
     },
     {
       "file": "06_Dynamic_Programming.md",
@@ -4487,7 +4487,7 @@
       "heading": "Data Types and Data Objects",
       "level": 1,
       "anchor": "data-types-and-data-objects",
-      "hash": "a95029c6b3a9c7f8023e7976d95fa4ee419c012baca202dc9bbfae1047687500"
+      "hash": "e00f73d1ad13da3c29d2e2587c33f3ae8e3193a01f69d4984284be4af6b7e73b"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -4498,10 +4498,10 @@
     },
     {
       "file": "16_Data_Types_and_Objects.md",
-      "heading": "Data Types and Objects: Definition",
+      "heading": "Data Types and Data Objects: Definition",
       "level": 2,
-      "anchor": "data-types-and-objects-definition",
-      "hash": "831df2c5037d628f81868a1f40ecab84252332a8d1828310417a10836b89ec6a"
+      "anchor": "data-types-and-data-objects-definition",
+      "hash": "ff35c955c3803a6b14daf33463f8ec5d90f3404a5cb6fbd1083b2ef24082d7b1"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -4620,14 +4620,14 @@
       "heading": "ABAP Enumerated Types and Objects",
       "level": 2,
       "anchor": "abap-enumerated-types-and-objects",
-      "hash": "f06ab3a43edb751f0ff52f2e709a862be1369fe85a1612e3834083b673a743e8"
+      "hash": "e9f7d9c54da051948fd6520965f2473f9ce52f1a4e03e1b55df7fbf02fc733cf"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
       "heading": "Notes in a Nutshell",
       "level": 2,
       "anchor": "notes-in-a-nutshell",
-      "hash": "458a365cfffc6c4cf772e00e357f3b28cc952dee244caf8fc811c9b7ff531e18"
+      "hash": "17f55c8047af413aca2912c95c0167d8a4276b303ed5b8f09ada755d545cca13"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -4638,17 +4638,17 @@
     },
     {
       "file": "16_Data_Types_and_Objects.md",
-      "heading": "Terms Related to Data Types and Objects",
+      "heading": "Terms Related to Data Types and Data Objects",
       "level": 3,
-      "anchor": "terms-related-to-data-types-and-objects",
-      "hash": "023de896c9766ac69afc7d314da0d1a2502fb6d8f9c25ec054c4d6c49560dedd"
+      "anchor": "terms-related-to-data-types-and-data-objects",
+      "hash": "37edcfac0adb2073ba423a0839ea3a2fb7630b3e6c82b93c9680c314fba7932c"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
-      "heading": "Additions for Creating Data Types and Objects",
+      "heading": "Additions for Creating Data Types and Data Objects",
       "level": 3,
-      "anchor": "additions-for-creating-data-types-and-objects",
-      "hash": "fb22feca787175ec2ac104fb81bb60e1fd3dbccbc9fa992fa8fdbe59b8081111"
+      "anchor": "additions-for-creating-data-types-and-data-objects",
+      "hash": "9acba04e96f24e68e4797f975f03242321d624b11ae25e6f9e1e8cab246c6e8e"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -4662,14 +4662,14 @@
       "heading": "Excursions",
       "level": 2,
       "anchor": "excursions",
-      "hash": "9e343b502b07b3d8a05969bf6696eb2cd11e7e446462dae0c8ef86d76d904f9e"
+      "hash": "c88125633d8999a38ac03ed544f19cf8c3e8b325c54e007b04811fee4e05f724"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
-      "heading": "Getting Type Information and Creating Types/Data Objects at Runtime",
+      "heading": "Getting Type Information, Creating Types and Data Objects at Runtime",
       "level": 3,
-      "anchor": "getting-type-information-and-creating-typesdata-objects-at-runtime",
-      "hash": "003da1f0d97ef4ae7174194919861b4ba9be25905573f9fbe3da488273337793"
+      "anchor": "getting-type-information-creating-types-and-data-objects-at-runtime",
+      "hash": "404bc27841ea51e82b69783acbe714a993a338d39ce147c2661fb7b3148ea15f"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -4991,7 +4991,7 @@
       "heading": "Selection Screens and Classic Lists",
       "level": 1,
       "anchor": "selection-screens-and-classic-lists",
-      "hash": "3e42a378dc1eb7b57af6cdec81e08dced6e5a2fad19ff8622faadb1a1b1b92a7"
+      "hash": "21d3b61602d02d7d2d2b96e5e771094838e9a357790fc0752313449b33ea006f"
     },
     {
       "file": "20_Selection_Screens_Lists.md",
@@ -5019,7 +5019,7 @@
       "heading": "ABAP Statements for Selection Screens",
       "level": 2,
       "anchor": "abap-statements-for-selection-screens",
-      "hash": "1650dbbd83657d466270a008769eab0bf1d9a21cd04931e0c621013c689e7b51"
+      "hash": "94ea944da846eb70bb3cb2daeaaadaa246a934c81d58af85b6e7b34a11503653"
     },
     {
       "file": "20_Selection_Screens_Lists.md",
@@ -5040,7 +5040,7 @@
       "heading": "SELECTION-SCREEN",
       "level": 3,
       "anchor": "selection-screen",
-      "hash": "8f32ca7365e64a6b3d07e2a7363ef38e5e285d2ade64a1fa0607c7ee3831f0bf"
+      "hash": "3c9cad415207a8a54a241820fd86e1cc9eb099510a7ddb99297d495dbaef1251"
     },
     {
       "file": "20_Selection_Screens_Lists.md",
@@ -5054,7 +5054,7 @@
       "heading": "Adapting the Selection Screen Layout",
       "level": 4,
       "anchor": "adapting-the-selection-screen-layout",
-      "hash": "a75f3de6ea7a11cc0ff8aa5df427c624fdd355eeb5da110f194baf05e47b7b8c"
+      "hash": "d9050b7ef9c4c918861e07dc817b45e1c44e2aca80e45eb3276255e0dd721b0a"
     },
     {
       "file": "20_Selection_Screens_Lists.md",
@@ -7273,7 +7273,7 @@
       "heading": "Logical Expressions and Functions",
       "level": 1,
       "anchor": "logical-expressions-and-functions",
-      "hash": "1a70e873072b5b6065eccd65bfa5a8d4c2e65c1c68ffb1205a296beef2b88fb7"
+      "hash": "48fa01c477195826c76bcb90b27ea205a70c78832c3d68fafeec1826ae3666ec"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
@@ -7287,14 +7287,14 @@
       "heading": "Comparison Expressions with Comparison Operators",
       "level": 2,
       "anchor": "comparison-expressions-with-comparison-operators",
-      "hash": "d02a2dbbe605df0d634e7fea946caf5c7125824093c2857a017a4ba36d0e8af4"
+      "hash": "167e045427ed2e1355f568ffbd72687f933dad318e29500e3957251fdb1af0d4"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
       "heading": "General Comparison Operators",
       "level": 3,
       "anchor": "general-comparison-operators",
-      "hash": "d003ae572b7de7cc23ec90c9acaaaf563f0e7f2773df4068005428952c84016f"
+      "hash": "68b97e9f74c7a4565e5a60e5a5fdc010f55d83342c6bfaf52e2b0bdba4f83348"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
