@@ -1,8 +1,8 @@
 {
   "source": "https://github.com/SAP/architecture-center",
   "branch": "dev",
-  "commit": "341f32d0e1dc19ec128395fe536eb2dd7298e1c3",
-  "syncedAt": "2026-10-17",
+  "commit": "943aa280bd3f4547bf7aae0c877d8ccf95b08980",
+  "syncedAt": "2026-10-26",
   "architectures": [
     {
       "id": "RA0001",
@@ -92,7 +92,7 @@
       "id": "RA0013",
       "slug": "e1732d",
       "title": "Enterprise Data Strategy with SAP Business Data Cloud",
-      "lastUpdate": "2026-05-12",
+      "lastUpdate": "2026-10-21",
       "archived": false
     },
     {
@@ -106,7 +106,7 @@
       "id": "RA0015",
       "slug": "b3c3ac",
       "title": "Business-to-Government Integration Reference Architecture",
-      "lastUpdate": "2024-08-01",
+      "lastUpdate": "2026-10-21",
       "archived": true
     },
     {
@@ -126,8 +126,8 @@
     {
       "id": "RA0018",
       "slug": "b86487",
-      "title": "Integrate and Extend with SAP Build Process Automation",
-      "lastUpdate": "2025-05-14",
+      "title": "Integrate and extend with SAP Build Process Automation",
+      "lastUpdate": "2026-10-21",
       "archived": true
     },
     {
