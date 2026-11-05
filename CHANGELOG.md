@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v3.0.20] — 2026-10-22
 
+### Fixed — hotfix 05 November 2026
+
+- **The assistant says it is an AI system.** A permanent notice at the input of the assistant names the
+  generative model behind the answers and says they are drafts, not reviewed advice (Art. 50(1) AI Act). Not in
+  the demo, where no model is called.
+
 ### Changed — the Business view for business readers (owner decisions 21 October 2026)
 
 The first insights are for understanding only: they explain, they ask for no decision. Engine-version gated

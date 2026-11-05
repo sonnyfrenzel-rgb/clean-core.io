@@ -30,6 +30,8 @@ import { screenSensitiveText, sensitiveTextNote } from '@/lib/sensitive-text';
 import { cleanModelText } from '@/lib/model-text';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { PROVIDER_LABEL } from '@/lib/model-providers';
+import { aiAssistantNotice } from '@/lib/ai-assistant-notice';
 import { BTP_FIRST } from '@/lib/sap-naming';
 import { isDemoPath, DEMO_ASSISTANT_NOTICE } from '@/lib/demo-marks';
 
@@ -256,6 +258,10 @@ export default function GlossaryChatbot() {
 
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
   const inDemo = isDemoPath(pathname);
+  // Art. 50(1) AI Act (hotfix 05.11.2026, legal review L3/B8): the notice that
+  // the reader is talking to an AI system. Every call of this panel goes to
+  // Gemini — an own Claude key is not offered on this release.
+  const assistantNotice = aiAssistantNotice(PROVIDER_LABEL.gemini, PRODUCT_GEMINI_MODEL);
 
   const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
   const caseContextRef = useRef<Promise<CaseContext> | null>(null);
@@ -892,6 +898,17 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               </span>
             ))}
           </div>
+
+          {/* Art. 50(1) AI Act — permanently visible at the input, never folded
+              away; not in the demo, where no model is called. */}
+          {!inDemo ? (
+            <p
+              data-chatbot-ai-notice=""
+              className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-medium text-cc-ink-muted"
+            >
+              {assistantNotice}
+            </p>
+          ) : null}
 
           {/* Message input */}
           <form
