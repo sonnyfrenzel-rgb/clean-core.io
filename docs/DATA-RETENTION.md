@@ -10,6 +10,8 @@ Production data lives in **Google Cloud Firestore**, project `cleancore-491216`,
 
 The non-production databases have not moved yet: dev (`…030e1ee1…`) is still in **us-west1**, a leftover from the original prototype provisioning that also applied to production until the migration on 2026-08-20; so is the database of the retired test lane (`…39b46c45…`), which no service has used since `clean-core-test` was deleted on 2026-08-31 (checked with `gcloud firestore databases list` on 2026-10-02). They hold test data only; migrating them is tracked in `docs/BACKLOG.md`.
 
+**Old databases (owner, 2026-11-05).** The former production database `ai-studio-e57d33e3-…` in us-west1 — the source of the 2026-08-20 migration — was **deleted on 2026-11-05**: no service used it any more, and it had no backups. Its entry in the rules deploy target `firebase.rules-all-dbs.json` was removed in the same change. Three leftovers are **scheduled for deletion by the owner**: `ai-studio-d80950ff-…` and `ai-studio-39b46c45-…` (both us-west1, one document each, unused) and the empty `clean-core-prod` (europe-west1). Until they are deleted they stay deploy targets of the rules (`clean-core-prod` is not one), so the rules they serve cannot drift.
+
 Two sub-processors receive data in transit for the features that require them — the **Google Gemini API** (your ABAP source, for analysis and transformation) and **Resend** (email address, for transactional mail) — and may process it outside the EU under their own terms; neither is used as a persistent store.
 
 ## Collection registry

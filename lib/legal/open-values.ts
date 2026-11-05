@@ -612,6 +612,15 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'Owner confirmation 23.10.2026: Identity Platform is enabled on the production project — TOTP multi-factor sign-in runs through it, which plain Firebase Authentication does not offer.',
     true,
   ),
+  check(
+    'noFirebaseOutsideGoogleCloud',
+    'Kein Firebase-Dienst außerhalb von Google Cloud',
+    'no Firebase service outside Google Cloud',
+    'Bestätigen Sie, dass die Plattform keinen Firebase-Dienst außerhalb von Google Cloud nutzt (kein Firebase Hosting, Cloud Messaging, Analytics, App Check, Remote Config, Storage, Functions, Realtime Database), sodass für alle genutzten Dienste einheitlich das Cloud Data Processing Addendum gilt? Bitte dabei die Anmerkung zu firebaseapp.com und zu den beiden von Firebase Authentication selbst versandten Mails lesen.',
+    'Confirm that the Platform uses no Firebase service outside Google Cloud (no Firebase Hosting, Cloud Messaging, Analytics, App Check, Remote Config, Storage, Functions, Realtime Database), so that the Cloud Data Processing Addendum applies uniformly to every service used? Please read the note on firebaseapp.com and on the two mails Firebase Authentication sends itself.',
+    'DSE 4 (Auftragsverarbeiter); Trust (Processors)',
+    "Code search on dev (683ee9ac), 05.11.2026, after the legal review of that day: holds for the code. The browser imports only firebase/app, firebase/auth and firebase/firestore, the server only firebase-admin/app, firebase-admin/auth and firebase-admin/firestore (app/, lib/, components/, hooks/, scripts/, middleware.ts); no getAnalytics, getMessaging, initializeAppCheck, getRemoteConfig, getStorage, getFunctions, getPerformance, getDatabase or firebase/ai anywhere. firebase.json holds Firestore rules and the emulators only — no hosting, functions or storage target; the app runs on Cloud Run. Three points for the owner: (1) firebase-config.json still carries storageBucket and messagingSenderId — inert configuration fields, no service is initialised with them; (2) the Google sign-in popup and the Auth helper frame are served from the authDomain cleancore-491216.firebaseapp.com (firebase-config.json; lib/csp-report-only.ts:58) - pages Firebase Authentication serves on its reserved path, no deployed Hosting site; whether that is Firebase Hosting in the contractual sense is for the owner to confirm; (3) the client SDK's sendEmailVerification (app/(app)/settings/page.tsx:513) and sendPasswordResetEmail (components/LandingModals.tsx:592) make Firebase Authentication send those two mails itself, not Resend - part of Firebase Authentication / Identity Platform, but privacy section 2 lists 'confirming an address' among the Resend mails.",
+  ),
 ];
 
 const BY_KEY = new Map(OPEN_VALUES.map((v) => [v.key, v]));

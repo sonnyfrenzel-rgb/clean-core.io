@@ -238,8 +238,8 @@ export const CONSENT_TEXTS = {
    */
   portfolioInvitation: {
     scope: {
-      de: 'Sie erhalten nur Lesezugriff auf die Übersicht des Portfolios – Kennzahlen über die Projekte, die beim Versand dieser Einladung darin aufgeführt sind: ihre Namen, Scores, Clean-Core-Stufen und Gruppen und die verwendeten SAP-Objekte. Ein Projekt, das die einladende Person später hinzufügt, wird für Sie erst sichtbar, wenn sie es gesondert freigibt. Kein Projekt und kein Quellcode wird dabei geöffnet.',
-      en: 'You get read access to the portfolio overview only — figures across the projects listed when this invitation was sent: their names, scores, clean core levels and groups, and the SAP objects they use. A project the person who invited you adds later becomes visible to you only once they share it separately. No project and no source code is opened.',
+      de: 'Sie erhalten nur Lesezugriff auf die Übersicht des Portfolios – Kennzahlen über die Projekte, die beim Versand dieser Einladung darin aufgeführt sind: ihre Namen, Scores, Clean-Core-Stufen und Gruppen, die Arten der Befunde und die verwendeten SAP-Objekte. Ein Projekt, das die einladende Person später hinzufügt, wird für Sie erst sichtbar, wenn sie es gesondert freigibt. Kein Projekt und kein Quellcode wird dabei geöffnet.',
+      en: 'You get read access to the portfolio overview only — figures across the projects listed when this invitation was sent: their names, scores, clean core levels and groups, the kinds of findings and the SAP objects they use. A project the person who invited you adds later becomes visible to you only once they share it separately. No project and no source code is opened.',
     },
     about: {
       de: 'Clean-Core.io ist ein unentgeltliches Community-Werkzeug zur Analyse von SAP-ABAP-Code.',

@@ -510,11 +510,13 @@ test.describe('exports', () => {
     program('b', { analysed: false, score: null }),
   ]);
 
-  test('CSV: one row per program, every cell guarded against formulas', () => {
+  test('CSV: the note first, then one row per program, every cell guarded against formulas', () => {
     const csv = portfolioCsv(view);
     const lines = csv.trim().split('\r\n');
-    expect(lines).toHaveLength(3);
-    expect(lines[0]).toBe(PROGRAM_COLUMNS.map((c) => `"${c}"`).join(','));
+    // Legal review of 05.11.2026: the file itself says it is not signed and not evidence.
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toMatch(/^"A read-only overview .*Not signed, not an audit pack and not evidence/);
+    expect(lines[1]).toBe(PROGRAM_COLUMNS.map((c) => `"${c}"`).join(','));
     expect(csv).toContain(`"'=HYPERLINK(""http://evil"")"`);
   });
 
@@ -524,7 +526,8 @@ test.describe('exports', () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buffer as ArrayBuffer);
     expect(wb.worksheets.map((w) => w.name)).toEqual(['Overview', 'Programs', 'Recurring SAP objects', 'Kinds of finding', 'Not determined']);
-    expect(wb.description).toMatch(/Not signed, not an audit pack/);
+    expect(wb.description).toMatch(/Not signed, not an audit pack and not evidence/);
+    expect(String(wb.getWorksheet('Overview')!.getRow(4).getCell(1).value)).toMatch(/not evidence/);
     const programs = wb.getWorksheet('Programs')!;
     expect(String(programs.getRow(2).getCell(1).value)).toBe(`'=HYPERLINK("http://evil")`);
     const pkg = JSON.parse(read('package.json'));

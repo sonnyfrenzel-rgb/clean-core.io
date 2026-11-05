@@ -176,6 +176,12 @@ export default function BatchRun({
 
         {open ? null : (
           <>
+            {/* The request of privacy policy section 2, before anything is chosen (legal review of 05.11.2026). */}
+            <div data-portfolio-clean-notice="">
+              <CcMessageStrip state="warning" headline={wt('portfolio.cleanTitle')}>
+                {wt('portfolio.cleanLead')}
+              </CcMessageStrip>
+            </div>
             <div
               data-portfolio-drop=""
               onDragOver={(e) => e.preventDefault()}

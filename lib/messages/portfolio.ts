@@ -22,6 +22,10 @@ export const PORTFOLIO_MESSAGES = {
   'portfolio.batchTitle': 'Batch run',
   'portfolio.batchLead':
     'Drop a ZIP, an abapGit export or several files. Each program with its includes becomes its own project. Only the engine runs — no model is called, nothing is sent to a model, and no free run is used.',
+  // Legal review of 05.11.2026: the request in privacy policy section 2, repeated where many programs go up at once.
+  'portfolio.cleanTitle': 'Remove personal data before you upload',
+  'portfolio.cleanLead':
+    'Please do not upload personal data. ABAP often carries it without anyone meaning to: a developer’s user id, a name in a comment, a real customer number, a test record from production. Strip those from every program before you upload — in a whole repository also from code you did not write. Each program becomes a project of its own, and nothing in this upload removes personal data for you.',
   'portfolio.drop': 'Drop a ZIP or files here',
   'portfolio.choose': 'Choose files',
   'portfolio.reading': 'Reading the files…',
@@ -248,7 +252,7 @@ export function portfolioNotDeterminedLabel(key: PortfolioNotDeterminedKey): str
 
 /** The sentence an export and the print carry, so a copy says what it is. */
 export const PORTFOLIO_EXPORT_NOTE =
-  'A read-only overview computed from each project’s signed run. Not signed, not an audit pack, and no portfolio score: the score is a grade per program.';
+  'A read-only overview computed from each project’s signed run. Not signed, not an audit pack and not evidence — the signed run of each project is. No portfolio score: the score is a grade per program.';
 
 /** The bucket's name on the overview. */
 export function portfolioBucketLabel(bucket: 'retire' | 'keep' | 'rebuild' | 'no-catalogued-path' | 'not-assigned'): string {
