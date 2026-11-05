@@ -27,7 +27,7 @@
  * Pure.
  */
 
-import { authorshipOfRecord, storedAiModelRecord, type AiAuthorship } from './ai-marking';
+import { aiOriginMarksIn, aiOriginOf, authorshipOfRecord, storedAiModelRecord, type AiAuthorship, type AiOrigin } from './ai-marking';
 import { packageDigest, testSuiteBasisOf } from './test-suite-basis';
 
 export type AiSource = 'code' | 'tests' | 'analysis' | 'design' | 'sop' | 'documentation';
@@ -140,6 +140,48 @@ function filesWithFilledRegions(files: ReadonlyArray<{ path: string; content: st
     }
   }
   return out;
+}
+
+/**
+ * Who wrote a deliverable the dashboard downloads (3.0.21, T08): the analysis report, the design, the code and the
+ * test suite their sources' model; the process documentation the naming stage's model when it prints a business
+ * name or lane (marked where it stands, call not recorded) or a model's legacy blueprint; the legacy slide deck a
+ * model's whose call was never recorded. Null for what no model wrote — the source, the test status, an engine
+ * documentation without names — and for a test list stored as JSON, which has no comment to carry a header.
+ */
+export function dashboardDeliverableAuthorship(
+  id: string,
+  content: string,
+  facts: AiAuthorshipFacts,
+  opts: { testsAreSuite: boolean; documentationFromEngine: boolean },
+): AiAuthorship | null {
+  switch (id) {
+    case 'analysis':
+      return facts.analysis;
+    case 'design':
+      return facts.design;
+    case 'code':
+      return facts.code;
+    case 'tests':
+      return opts.testsAreSuite ? facts.tests : null;
+    case 'docs':
+      return opts.documentationFromEngine ? (aiOriginMarksIn(content).length > 0 ? UNKNOWN : null) : UNKNOWN;
+    case 'presentation':
+      return UNKNOWN;
+    default:
+      return null;
+  }
+}
+
+/**
+ * The origin of one row of the test-case list (3.0.21, T08): a case the engine built (`origin: 'engine'`) has none;
+ * every other case is a scenario the Testing stage's model wrote, marked with the list's authorship — what the
+ * Excel export prints per row in its Origin, AI provider and AI model columns.
+ */
+export function testCaseOrigin(tc: unknown, cases: AiAuthorship | null): AiOrigin | null {
+  if (!cases) return null;
+  if (tc && typeof tc === 'object' && (tc as { origin?: unknown }).origin === 'engine') return null;
+  return aiOriginOf(cases);
 }
 
 /**

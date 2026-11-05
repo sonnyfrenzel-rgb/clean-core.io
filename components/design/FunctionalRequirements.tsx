@@ -301,7 +301,15 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
     });
   }, [set, search, priority, step, wordingMap]);
 
-  const meta = () => ({ projectName, fileName, date: today(), wording: wordingMap });
+  // 3.0.21 (T08): every sentence the wording model proposed is marked where it stands, with the provider and model
+  // the stored record took from its verified receipt ("not-recorded" without one).
+  const meta = () => ({
+    projectName,
+    fileName,
+    date: today(),
+    wording: wordingMap,
+    ai: record?.origin ? { provider: record.origin.provider, modelId: record.origin.modelId } : null,
+  });
 
   const copyAll = async () => {
     if (!set) return;

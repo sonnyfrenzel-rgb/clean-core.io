@@ -78,6 +78,35 @@ gcloud run services update clean-core --region=europe-west1 --project=cleancore-
 
 With all three set for Anthropic, the step, the key routes and Settings show C11 word for word ("Calls to Anthropic have been suspended since {date}: {reason}. …", `lib/provider-suspension.ts`). Without a valid date or reason — or for Gemini, for which C11 has no wording — they show the generic sentence of `providerSuspendedMessage` (`lib/model-providers.ts`), which still says that nothing was sent and no other provider or key was used. Set the date and the reason together with the switch. The deploy merges its own variables into the service (`deploy-cloudrun`, default strategy) and does not touch these three. To lift the switch-off: `--remove-env-vars=MODEL_PROVIDERS_SUSPENDED,MODEL_PROVIDERS_SUSPENDED_AT,MODEL_PROVIDERS_SUSPENDED_REASON`.
 
+## Acceptance T08: AI marking per format (Art. 50(2) AI Act, due 02.12.2026)
+
+The legal review of 05.11.2026 confirmed the approach (a header comment per file a model wrote or co-wrote, a metadata field per export, the offline verifier as the detection path) and requires T08 to pass "including mixed artefacts". In a mixed file every model-written element carries its origin with provider and model, and nothing the engine wrote carries one. Four spellings of one fact (`lib/ai-marking.ts`):
+
+| Format | Per-element mark | File level |
+|---|---|---|
+| Markdown | `<!-- cc:origin value="ai" ai_provider="…" ai_model="…" -->` … `<!-- /cc:origin -->` | header comment `<!-- Generated with AI assistance (…) … -->` |
+| HTML | `data-origin="ai" data-ai-provider="…" data-ai-model="…"` on the element | header comment and `<meta name="ai-generated">` |
+| Word (.docx) | a content control (`w:sdt`) titled "AI-generated (…)", tag `cc:origin=ai;ai_provider=…;ai_model=…`, locked against deletion | core property *Description* (`dc:description`) |
+| BPMN | `<cc:origin value="ai" …/>` in the element's `extensionElements` (no download writes model names today: owner decision) | header comment and `cc:aiMarking` |
+| Excel (test cases) | columns *Origin*, *AI provider*, *AI model* per row | workbook *Description* |
+
+"not-recorded" in place of provider and model means a model wrote the element but its call was not recorded per project (design proposals, naming-stage names, decision proposals); that is the honest state, not a defect.
+
+Use a project with a signed run, a business layer (SOP + RACI), a saved naming, at least one accepted wording proposal for a functional requirement, a solution design with NFR proposals, and a requirements specification with an open decision that has a proposal. For each row: export, open, check.
+
+1. **Functional requirements** (Design → Functional requirements → *Download .md* and *Download .docx*). Markdown in a text editor: the worded requirement's overview cell and its bold statement sit inside a `cc:origin` pair naming the wording model; requirements without a proposal have none; the line "AI-generated. Engine wording: …" stays outside. Word: click the worded sentence — a frame titled "AI-generated (Google Gemini …)" appears (Developer tab → *Properties* shows the tag); an engine requirement has no frame. *File → Info → Properties* shows the statement.
+2. **Non-functional requirements and the specification** (Design → Non-functional requirements → *.md*, *.docx*, *Specification* *.md*/*.docx*; and *Copy as text* pasted into Word). Only the proposal cell of section 4 / D is marked (not-recorded); the category and the names column are not. In the specification the worded functional sentences carry the wording model, the proposals not-recorded.
+3. **Requirements specification** (Requirements workspace → Export → Word, Markdown, Confluence). In section 7 only the part after "Open · " — "AI-generated: …" — is marked; the answer is not. Confluence page in a browser: *Inspect* the cell, the proposal is a `<span data-origin="ai" …>`.
+4. **Process description** (Documentation → Export → Word, Markdown, Confluence). The glance proposal (analysis model), the proposed RACI (SOP model; an owner-edited RACI is unmarked), a step's proposal line, and every business name of the naming stage (step table, step summary, step heading — only the name, not the number) are marked. Word: the RACI table is one frame. "Main path: …" is a sentence of names and is not marked per name (known limit).
+5. **Analysis report** (Analyze → Export) and **documentation page**: unchanged since 3.0.21 — the narrative parts carry `data-origin`, nothing after "Detailed Technical Assessment".
+6. **Delivery package** (Delivery → download the package and the audit pack). Open `docs/process-documentation.md`: with a saved naming it now starts with the header comment (not recorded) and every business name and proposed lane sits in a `cc:origin` pair; `docs/business-documentation.md` marks each SOP sentence (its basis in brackets stays outside), each exception, the RACI and old control rows with the SOP model. `manifest.json` names `docs/process-documentation.md` with `"ai": "documentation"`. Then run `node scripts/verify-pack.mjs <pack.zip> --package <package.zip>`: an `element` line per mixed file says how many elements which model wrote, and the verdict is "The package comes from the signed run". On https://clean-core.io/verify-pack the same list appears under "Which model took part".
+7. **Business documentation download** (Delivery → Business documentation → *Export Markdown*): header comment plus the per-element pairs of 6.
+8. **Test cases in Excel** (Testing → Export to Excel): the summary sheet's *Origin*/*AI provider*/*AI model* columns are filled for the model's scenarios and empty for the engine's cases; each scenario sheet has an "Origin" row.
+9. **Dashboard downloads** (Dashboard → a project → *Download* on analysis, design, code, test suite, documentation, slide deck): each model-written file starts with the header comment; the original source and the test status do not.
+10. **Negative check**: a project with no model text (engine-only documentation, no wording, no proposals) exports every format above without any `cc:origin`, `data-origin`, content control or header.
+
+Record the result per row; only formats that pass may be named on the trust page.
+
 ## Secret rotation
 
 Rotate on a defined cadence and after any suspected exposure: `AUDIT_SIGNING_KEY`, `AUDIT_SIGNING_PRIVATE_KEY` (move the old public key into `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` so earlier packs keep verifying), `GEMINI_API_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `S4_ENCRYPTION_KEY`, `BYOK_ENCRYPTION_KEY` (versioned: add a new version to the key ring in `lib/byok-key.ts`, then retire the old one), `RATE_LIMIT_PEPPER` (resets the current windows), `PILOT_APPROVAL_SECRET`, the Firebase service account. `MFA_BACKUP_CODE_PEPPER` is retired with the backup codes: no code reads it and, since 02.10.2026, the deploy no longer passes it. Rotating `AUDIT_SIGNING_KEY` invalidates prior HMAC signatures — there is no key history for it yet (treat old packs as `integrity-only`); see `docs/INCIDENT-RESPONSE.md` R1.

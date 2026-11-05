@@ -30,6 +30,8 @@ import { saveAs } from '@/lib/fileSaver';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
+import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
+import { aiMarkingStatement, withAiMarking } from '@/lib/ai-marking';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import PageAnchorBar from '@/components/PageAnchorBar';
@@ -476,7 +478,11 @@ export default function DeliveryPage() {
       // 3.0.18 item 13 (QM-07, FI-F02): the design names the objects this package delivers, read from its files.
       if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode, packageFiles: source.kind === 'package' ? source.files.map((f) => f.path) : null }));
       if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
-      if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation));
+      // 3.0.21 (T08): each element the SOP model wrote is marked where it stands, with the layer's recorded model.
+      if (project.businessDocumentation) {
+        const sop = aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation(project.documentation) }).sop;
+        docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation, { ai: sop }));
+      }
       // developer-guidelines.md is written below, once the engine's findings are read (lib/developer-guidelines.ts).
 
       // The linter of the ABAP route. The Node route's CI comes from the templates.
@@ -1093,9 +1099,13 @@ export default function DeliveryPage() {
                       disabled={handoverBlocked}
                       onClick={() => {
                         if (handoverBlocked) return;
-                        const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '', project.documentation)], { type: "text/markdown;charset=utf-8" });
+                        // 3.0.21 (T08): the SOP model's elements marked where they stand, and the file's header comment.
+                        const sop = aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation(project.documentation) }).sop;
+                        const markdown = formatBusinessDocsToMarkdown(project.businessDocumentation || '', project.documentation, { ai: sop });
                         const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-                        saveAs(blob, `${fileName}_BusinessDocumentation.md`);
+                        const name = `${fileName}_BusinessDocumentation.md`;
+                        const blob = new Blob([sop ? withAiMarking(name, markdown, aiMarkingStatement(sop, APP_VERSION)) : markdown], { type: "text/markdown;charset=utf-8" });
+                        saveAs(blob, name);
                       }}
                       data-stage-output="businessDocumentation"
                       icon={<Download size={16} aria-hidden="true" />}

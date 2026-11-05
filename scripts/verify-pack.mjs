@@ -566,6 +566,30 @@ function markingOf(text) {
   }
   return null;
 }
+/**
+ * Every per-element origin mark in a text — `aiOriginMarksIn` of lib/ai-marking.ts: the Markdown comment pair,
+ * the HTML data-* attributes, BPMN's cc:origin and Word's content-control tag — grouped by provider and model.
+ */
+const XML_ENTITY = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'" };
+const unescapeXml = (v) => v.replace(/&(?:amp|lt|gt|quot|#39|apos);/g, (e) => XML_ENTITY[e] ?? e);
+function originMarksIn(text) {
+  const patterns = [
+    /(?:<!-- cc:origin|<cc:origin) value="ai" ai_provider="([^"]*)" ai_model="([^"]*)"/g,
+    /data-origin="ai" data-ai-provider="([^"]*)" data-ai-model="([^"]*)"/g,
+    /<w:tag w:val="cc:origin=ai;ai_provider=([^;"]*);ai_model=([^"]*)"\s*\/>/g,
+  ];
+  const out = [];
+  for (const re of patterns) {
+    for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      const provider = unescapeXml(m[1]);
+      const model = unescapeXml(m[2]);
+      const row = out.find((r) => r.provider === provider && r.model === model);
+      if (row) row.count += 1;
+      else out.push({ provider, model, count: 1 });
+    }
+  }
+  return out;
+}
 const strOrNull = (v) => (typeof v === 'string' && v !== '' ? v : null);
 const sha256OfBytes = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
@@ -630,6 +654,7 @@ async function checkDelivery(JSZip, path, signed) {
   // 1. Contents.
   let ok = true;
   const text = new Map();
+  const whole = new Map();
   for (const row of rows) {
     const entry = zip.file(String(row.path ?? ''));
     if (!entry) {
@@ -643,6 +668,7 @@ async function checkDelivery(JSZip, path, signed) {
       ok = false;
     }
     text.set(String(row.path), content.subarray(0, 4096).toString('utf8'));
+    whole.set(String(row.path), content.toString('utf8'));
   }
   const listed = new Set(rows.map((r) => String(r.path ?? '')));
   for (const e of Object.values(zip.files)) {
@@ -686,6 +712,19 @@ async function checkDelivery(JSZip, path, signed) {
         console.log(`${c.bad('origin')}    ${shown(row.path)}  ${c.dim('its ai field and the statement that names it disagree')}`);
         marksOk = false;
       }
+    }
+  }
+
+  // Per element: a file that mixes the engine's parts with a model's marks each model-written element where it stands.
+  for (const [f, content] of whole) {
+    const marks = originMarksIn(content);
+    if (!marks.length) continue;
+    const words = marks.map((m) => `${m.count} by ${m.provider === 'not-recorded' ? 'a model not recorded' : `${m.provider} ${m.model}`}`).join(', ');
+    if (sourceOf.has(f)) {
+      console.log(`${c.dim('element')}   ${shown(f)}  ${c.dim(`model-written elements marked where they stand: ${shown(words, 300)}`)}`);
+    } else {
+      console.log(`${c.bad('element')}   ${shown(f)}  ${c.dim('marks model-written elements, but the manifest names it as written by no model')}`);
+      marksOk = false;
     }
   }
 

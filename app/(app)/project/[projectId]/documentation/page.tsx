@@ -44,9 +44,9 @@ import { useProcessDocument } from '@/hooks/useProcessDocument';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import { processDocumentFileName } from '@/lib/process-document';
-import { documentOutline, processDocumentBlocks } from '@/lib/process-document-outline';
+import { documentOutline, processDocumentBlocks, stepSummaryModelNames } from '@/lib/process-document-outline';
 import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
-import { aiMarkingStatement, withAiMarkings } from '@/lib/ai-marking';
+import { aiMarkingStatement, UNRECORDED_AI, withAiMarkings } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 import {
   BUSINESS_LAYER_CEILING_MS,
@@ -1188,10 +1188,12 @@ export default function DocumentationPage() {
   const exportStatements = (built: NonNullable<typeof processDocument.document>, layer: unknown): string[] => {
     const ai = exportAuthorship();
     const proposal = documentOutline(built, { projectName: project?.name, openQuestions: openQuestionsOfProject }).glance.proposal;
-    return [
+    // 3.0.21 (T08): and the naming stage's when the file prints a business name — its call is not recorded per project.
+    return [...new Set([
       layer && ai.sop ? aiMarkingStatement(ai.sop, ai.appVersion) : null,
       proposal && ai.analysis ? aiMarkingStatement(ai.analysis, ai.appVersion) : null,
-    ].filter((s): s is string => s !== null);
+      stepSummaryModelNames(built).some(Boolean) ? aiMarkingStatement(UNRECORDED_AI, ai.appVersion) : null,
+    ].filter((s): s is string => s !== null))];
   };
 
   /** The process description as Markdown or Word — the same document, the same order (`processDocumentBlocks`). */

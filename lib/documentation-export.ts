@@ -39,6 +39,8 @@ import {
   STEP_SUMMARY_HEAD,
   sharedQuestionLead,
   stepSummaryRows,
+  stepSummaryModelNames,
+  STEP_SUMMARY_NAME_COLUMN,
   appendixLead,
   figureText,
   longTables,
@@ -197,14 +199,17 @@ export function buildEngineConfluenceHtml(
     aiOriginHtmlAttributes(step.proposal?.origin === 'narrative' ? proposalWho : UNRECORDED_AI);
   const proposal = (text: string, anchors: PdText['anchors'], engineWord: string) =>
     `<p class="card accent-information"${aiOriginHtmlAttributes(proposalWho)}><span class="tag tone-information">${esc(AI_GENERATED_LABEL)}</span> ${esc(text)}${anchors.length ? ` <small>${lines(anchors)}</small>` : ''}<br><small>${esc(engineWord)}</small></p>`;
-  const table = (head: string[], rows: string[][], muted: number[] = []) =>
+  // A step's business name is the naming stage's — a model's whose call is not recorded per project (3.0.21, T08).
+  const namingAttributes = aiOriginHtmlAttributes(UNRECORDED_AI);
+  /** `modelCell`: per row, the column a model wrote (a business name), or null. */
+  const table = (head: string[], rows: string[][], muted: number[] = [], modelCell: ReadonlyArray<number | null> = []) =>
     `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
-      .map((row) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}>${esc(cell)}</td>`).join('')}</tr>`)
+      .map((row, ri) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}${modelCell[ri] === i ? namingAttributes : ''}>${esc(cell)}</td>`).join('')}</tr>`)
       .join('')}</tbody></table>`;
   // Owner review 10.10.2026: a question on several rows of a table is said once, above it.
   const tableOf = (t: PdTable | null, whole = false) => (t
     ? `${(t.shared ?? []).map((q) => `<p class="meta" data-doc-shared-question="${esc(q.action)}">${esc(sharedQuestionLead(q, t.rows.length) + ':')} <a href="#oq-${esc(q.action)}">${esc(q.title)}</a></p>`).join('')}<table><thead><tr>${[...t.head, SOURCE_COLUMN].map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${(whole ? t.rows : t.rows.slice(0, t.first))
-      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c) => `<td>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
+      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c, i) => `<td${r.aiCell === i ? namingAttributes : ''}>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
       .join('')}</tbody></table>${t.note ? `<p class="meta">${esc(t.note)}</p>` : ''}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
     : '');
   const empty = (key: keyof typeof EMPTY_SECTION) => `<p class="muted">${esc(EMPTY_SECTION[key])}</p>`;
@@ -329,7 +334,7 @@ export function buildEngineConfluenceHtml(
   const a = document.appendix;
   const stepDetailsSection = document.overview.path.map((entry) => entry.kind === 'gate'
     ? `<p class="note">${esc(gateSentence(entry))}</p>`
-    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry, o.whoActs).map((l) => `<li${l === stepProposalLine(entry) ? stepProposalAttributes(entry) : ''}>${esc(l)}</li>`).join('')}</ul>`).join('');
+    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. `)}${entry.businessName ? `<span${namingAttributes}>` : ''}${esc(stepName(entry))}${entry.businessName ? '</span>' : ''}</h4><ul>${stepDetailLines(entry, o.whoActs).map((l) => `<li${l === stepProposalLine(entry) ? stepProposalAttributes(entry) : ''}>${esc(l)}</li>`).join('')}</ul>`).join('');
   const long = longTables(o);
   const completeSection = long.length
     ? `<h3>${esc(COMPLETE_TABLES)}</h3>${long.map((t) => `<h4>${esc(`${t.caption} (${t.rows.length})`)}</h4>${tableOf(t, true)}`).join('')}`
@@ -337,7 +342,7 @@ export function buildEngineConfluenceHtml(
   const appendixSection = `<div class="appendix">${h2('appendix')}
     <p><em>${esc(appendixLead(a))}</em></p>
     <h3>${esc('A.1 Step details')}</h3>
-    ${table(STEP_SUMMARY_HEAD, stepSummaryRows(document, o.whoActs), [3])}
+    ${table(STEP_SUMMARY_HEAD, stepSummaryRows(document, o.whoActs), [3], stepSummaryModelNames(document).map((named) => (named ? STEP_SUMMARY_NAME_COLUMN : null)))}
     ${stepDetailsSection}
     ${completeSection}
     <h3>${esc('A.3 Wording as read from the code')}</h3>
@@ -356,10 +361,12 @@ export function buildEngineConfluenceHtml(
   // Roadmap 3.0.17 (AI Act Art. 50(2)): the statement of every model that wrote text on this page — the business
   // layer's, and the analysis model's for the glance proposal — as the header comment and as metadata.
   const aiVersion = options?.ai?.appVersion ?? '';
-  const aiStatements = [
+  // 3.0.21: and the naming stage's, when the page prints a business name — its call is not recorded per project.
+  const aiStatements = [...new Set([
     parsedBusinessDoc && options?.ai?.sop ? aiMarkingStatement(options.ai.sop, aiVersion) : null,
     g.proposal && options?.ai?.analysis ? aiMarkingStatement(options.ai.analysis, aiVersion) : null,
-  ].filter((s): s is string => s !== null);
+    options?.ai && stepSummaryModelNames(document).some(Boolean) ? aiMarkingStatement(UNRECORDED_AI, aiVersion) : null,
+  ].filter((s): s is string => s !== null))];
   // Both are assembled by `lib/ai-marking.ts`, which writes the statement on one line with no comment terminator and
   // escapes it for the attribute (fed hostile names in tests/ai-marking.spec.ts).
   // One comment line and one meta element per statement: a page with the text of two models names both.

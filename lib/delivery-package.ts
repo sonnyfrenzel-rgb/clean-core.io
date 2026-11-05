@@ -73,7 +73,7 @@ import { capAuthorizationIn, capAuthorizationWords } from './transformation/cap-
 import { RAP_SAVE_NOT_WIRED, rapNoInputIn, rapNoInputWords, rapSaverUnwired, rapUnresolvedTypesIn, rapUnresolvedTypesWords } from './transformation/rap-save';
 
 import { TARGET_EDITION_NAMES } from './sap-naming';
-import { AI_MARKING_BASIS, aiMarkingField, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
+import { AI_MARKING_BASIS, aiMarkingField, aiOriginMarksIn, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
 import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
 import { KEY_USER_STEPS_PATH } from './key-user-route';
 
@@ -2101,6 +2101,9 @@ export interface PackageAiGeneration {
 function aiSourceOf(e: BundleEntry, facts: DeliveryFacts, filled: ReadonlySet<string> | null): AiSource | null {
   if (e.ai) return e.ai;
   const origin = originOf(e, facts);
+  // 3.0.21 (T08): the engine's process documentation is co-written once it prints a business name or lane of the
+  // naming stage — each marked where it stands (`processDocumentationToMarkdown`), so the file names the model too.
+  if (origin === 'engine' && namesFromNamingStage(e)) return 'documentation';
   if (origin === 'template' || origin === 'engine') return null;
   if (origin === 'model-text') {
     if (e.path === 'docs/business-analysis.md') return 'analysis';
@@ -2112,6 +2115,11 @@ function aiSourceOf(e: BundleEntry, facts: DeliveryFacts, filled: ReadonlySet<st
   // the model only when its trace names a body the model filled in it (`modelFilledFiles`).
   if (facts.generation?.path === 'engine-led' && filled) return filled.has(e.path) ? 'code' : null;
   return 'code';
+}
+
+/** True for the engine's process documentation when it carries a model-written element (a naming-stage name or lane). */
+function namesFromNamingStage(e: BundleEntry): boolean {
+  return /^docs\/process-[\w-]+\.md$/.test(e.path) && aiOriginMarksIn(e.content).length > 0;
 }
 
 /** A finding's line moved down by the one header line, in the files that got one. */
@@ -2129,7 +2137,12 @@ export function markModelWrittenFiles(
   entries: readonly BundleEntry[],
   facts: DeliveryFacts,
 ): { entries: BundleEntry[]; facts: DeliveryFacts; field: PackageAiGeneration | null } {
-  const authorship = facts.ai ?? UNRECORDED_AUTHORSHIP;
+  const read = facts.ai ?? UNRECORDED_AUTHORSHIP;
+  // The naming stage's call is not recorded per project: an engine documentation that prints its names is marked
+  // "provider and model not recorded" under the documentation source.
+  const authorship: AiAuthorshipFacts = read.documentation === null && entries.some(namesFromNamingStage)
+    ? { ...read, documentation: UNRECORDED_AUTHORSHIP.documentation }
+    : read;
   const filled = facts.generation?.path === 'engine-led' ? modelFilledFiles(entries) : null;
   const bySource = new Map<AiSource, { files: string[]; withoutHeader: string[] }>();
   const headed = new Set<string>();

@@ -74,7 +74,7 @@ import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 import CounterChecks from '@/components/testing/CounterChecks';
-import { aiAuthorshipFactsOf, testCasesAuthorshipOf } from '@/lib/ai-authorship';
+import { aiAuthorshipFactsOf, testCaseOrigin, testCasesAuthorshipOf } from '@/lib/ai-authorship';
 import { aiMarkingStatement } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
@@ -309,12 +309,14 @@ export default function TestingSandboxPage() {
    * Excel export as its description — null when no model wrote what they hold (`lib/ai-authorship.ts`).
    */
   const aiStatements = useMemo(() => {
-    if (!project) return { suite: null, cases: null };
+    if (!project) return { suite: null, cases: null, casesAuthorship: null };
     const tests = aiAuthorshipFactsOf(project, { documentationFromEngine: true }).tests;
     const cases = testCasesAuthorshipOf(project);
     return {
       suite: tests ? aiMarkingStatement(tests, APP_VERSION) : null,
       cases: cases ? aiMarkingStatement(cases, APP_VERSION) : null,
+      // 3.0.21 (T08): who wrote the scenarios, for the per-row origin of the Excel export.
+      casesAuthorship: cases,
     };
   }, [project]);
   const { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying: genRetrying, progress: genProgress } = useTestGeneration(projectId as string, project, setProject, originFindings);
@@ -955,15 +957,23 @@ export default function TestingSandboxPage() {
         { header: 'ID', key: 'ID', width: 15 },
         { header: 'Name', key: 'Name', width: 35 },
         { header: 'Priority', key: 'Priority', width: 15 },
-        { header: 'Status', key: 'Status', width: 15 }
+        { header: 'Status', key: 'Status', width: 15 },
+        // 3.0.21 (T08): a scenario the model wrote says so in its row; a case the engine built leaves these empty.
+        { header: 'Origin', key: 'Origin', width: 12 },
+        { header: 'AI provider', key: 'AIProvider', width: 18 },
+        { header: 'AI model', key: 'AIModel', width: 24 }
       ];
       
       testCases.forEach(tc => {
+        const origin = testCaseOrigin(tc, aiStatements.casesAuthorship);
         wsSummary.addRow({
           ID: renderSafeValue(tc.id) || 'N/A',
           Name: renderSafeValue(tc.name) || 'Untitled',
           Priority: renderSafeValue(tc.priority) || 'Medium',
-          Status: 'Pending'
+          Status: 'Pending',
+          Origin: origin ? origin.origin : '',
+          AIProvider: origin ? origin.provider : '',
+          AIModel: origin ? origin.model : ''
         });
       });
 
@@ -975,6 +985,8 @@ export default function TestingSandboxPage() {
         wsDetail.addRow(["Test Case ID", safeId]);
         wsDetail.addRow(["Test Case Name", renderSafeValue(tc.name) || 'Untitled']);
         wsDetail.addRow(["Priority", renderSafeValue(tc.priority) || 'Medium']);
+        const origin = testCaseOrigin(tc, aiStatements.casesAuthorship);
+        if (origin) wsDetail.addRow(["Origin", `AI-generated · provider ${origin.provider} · model ${origin.model}`]);
         wsDetail.addRow(["", ""]);
         wsDetail.addRow(["Description", renderSafeValue(tc.description) || '']);
         wsDetail.addRow(["Preconditions", renderSafeValue(tc.preconditions) || '']);
