@@ -12,7 +12,11 @@
  *   2. **Markings.** Every file a statement of `aiGeneration` names carries
  *      that statement as its header comment (unless its format has no comments
  *      and the manifest says so in `withoutHeader`); from manifest version 2
- *      every row of `files` names the same source in its `ai` field.
+ *      every row of `files` names the same source in its `ai` field. A file that mixes the engine's parts with a
+ *      model's marks each model-written element where it stands (the cc:origin comment pair in Markdown,
+ *      `data-origin` in HTML, `cc:origin` in BPMN, a tagged content control in Word — `aiOriginMarksIn`); the
+ *      check lists those per file, with provider and model, and fails a file that carries such marks while no
+ *      statement names it as model-written.
  *   3. **The signed run** (only with a verified audit pack): the package names
  *      the pack's run, its source digest is the one the pack signed in
  *      `01-input-fingerprint.json`, and where both name the analysis
@@ -32,7 +36,7 @@
 
 import JSZip from 'jszip';
 import { PACK_LIMITS, archiveEntryLimitDefect, duplicateEntryNames, readEntryBounded, type VerifyResult } from './audit-pack-verify';
-import { aiMarkingOf } from './ai-marking';
+import { aiMarkingOf, aiOriginMarksIn } from './ai-marking';
 
 /** `DELIVERY_MANIFEST_FORMAT` of `lib/delivery-package.ts` — repeated, so the verification page need not load the package builder. */
 export const DELIVERY_FORMAT = 'clean-core-delivery-manifest';
@@ -61,6 +65,25 @@ export interface DeliveryModelRow {
   files: string[];
 }
 
+/** The model-written elements one file marks where they stand, counted per provider and model. */
+export interface DeliveryElementOrigins {
+  path: string;
+  /** The source the manifest names for the file, or null when none does. */
+  source: string | null;
+  marks: Array<{ provider: string; model: string; count: number }>;
+}
+
+/** Per-element marks grouped by provider and model, in order of first appearance. */
+export function groupOriginMarks(text: string): DeliveryElementOrigins['marks'] {
+  const out: DeliveryElementOrigins['marks'] = [];
+  for (const m of aiOriginMarksIn(text)) {
+    const row = out.find((r) => r.provider === m.provider && r.model === m.model);
+    if (row) row.count += 1;
+    else out.push({ provider: m.provider, model: m.model, count: 1 });
+  }
+  return out;
+}
+
 export interface DeliveryCheck {
   /** False when the archive's manifest is not a delivery manifest at all. */
   isDeliveryPackage: boolean;
@@ -75,6 +98,10 @@ export interface DeliveryCheck {
   headerMismatch: string[];
   /** Version 2: files whose `ai` field disagrees with the statement that names them. */
   sourceMismatch: string[];
+  /** Files that mark model-written elements where they stand, with provider and model per mark. */
+  elements: DeliveryElementOrigins[];
+  /** Files that mark model-written elements although no statement of the manifest names them. */
+  unstatedElements: string[];
   run: { id: string | null; sourceSha256: string | null; matchesSignedRun: boolean };
   /** Every model-written source and the files it wrote; empty when no model wrote a file of the package. */
   models: DeliveryModelRow[];
@@ -140,7 +167,7 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
   const budget = { remaining: PACK_LIMITS.totalBytes };
   const problems: string[] = [];
   const empty: DeliveryCheck = {
-    isDeliveryPackage: false, version: null, files: 0, missing: [], altered: [], unlisted: [], duplicates: [], headerMismatch: [], sourceMismatch: [],
+    isDeliveryPackage: false, version: null, files: 0, missing: [], altered: [], unlisted: [], duplicates: [], headerMismatch: [], sourceMismatch: [], elements: [], unstatedElements: [],
     run: { id: null, sourceSha256: null, matchesSignedRun: false }, models: [], against: null, verdict: 'failed', problems,
   };
   const manifestEntry = zip.file('manifest.json');
@@ -166,6 +193,7 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
   const missing: string[] = [];
   const altered: string[] = [];
   const text = new Map<string, string>();
+  const whole = new Map<string, string>();
   for (const row of rows) {
     const path = String(row.path ?? '');
     const entry = zip.file(path);
@@ -176,6 +204,7 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
     const content = await readEntryBounded(entry, budget);
     if ((await sha256Hex(content)) !== row.sha256) altered.push(path);
     text.set(path, new TextDecoder().decode(content.subarray(0, 4096)));
+    whole.set(path, new TextDecoder().decode(content));
   }
   const listed = new Set(rows.map((r) => String(r.path ?? '')));
   const unlisted = Object.values(zip.files).filter((e) => !e.dir && e.name !== 'manifest.json' && !listed.has(e.name)).map((e) => e.name).sort();
@@ -209,6 +238,18 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
     }
   }
 
+  // Per element: what each file marks where it stands, and that the manifest names every such file as model-written.
+  const elements: DeliveryElementOrigins[] = [];
+  const unstatedElements: string[] = [];
+  for (const [path, content] of whole) {
+    const marks = groupOriginMarks(content);
+    if (!marks.length) continue;
+    const source = sourceOf.get(path) ?? null;
+    elements.push({ path, source, marks });
+    if (source === null) unstatedElements.push(path);
+  }
+  if (unstatedElements.length) problems.push(`Files mark model-written elements, but the manifest names them as written by no model: ${unstatedElements.join(', ')}.`);
+
   // 3. The signed run.
   const runRow = (manifest.run ?? {}) as Record<string, unknown>;
   const sourceRow = (manifest.source ?? {}) as Record<string, unknown>;
@@ -232,7 +273,7 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
   }
 
   const contentsOk = missing.length === 0 && altered.length === 0 && unlisted.length === 0 && duplicates.length === 0 && names.counted;
-  const markingsOk = headerMismatch.length === 0 && sourceMismatch.length === 0;
+  const markingsOk = headerMismatch.length === 0 && sourceMismatch.length === 0 && unstatedElements.length === 0;
   const runOk = against !== null && against.runMatches && against.sourceMatches && against.narrativeMatches !== false;
   const verdict: DeliveryCheck['verdict'] = !contentsOk || !markingsOk || (against !== null && !runOk && against.packAuthentic)
     ? 'failed'
@@ -241,7 +282,7 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
       : 'consistent';
   return {
     isDeliveryPackage: true, version, files: rows.length, missing, altered, unlisted, duplicates, headerMismatch, sourceMismatch,
-    run, models, against, verdict, problems,
+    elements, unstatedElements, run, models, against, verdict, problems,
   };
 }
 

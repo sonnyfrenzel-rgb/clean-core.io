@@ -25,6 +25,10 @@ import { signInLinkFor } from '@/lib/return-path';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
+import { aiAuthorshipFactsOf, dashboardDeliverableAuthorship } from '@/lib/ai-authorship';
+import { aiMarkingStatement, withAiMarking } from '@/lib/ai-marking';
+import { isEngineDocumentation } from '@/lib/process-documentation';
+import { APP_VERSION } from '@/lib/version';
 import { workflowSteps, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
 import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
 import { projectContinueHref, projectOpenHref, projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
@@ -935,6 +939,19 @@ function ProjectDeliverables({
     stale: item.isExport ? stale.sourceChanged : Boolean(STALE_BY_ID[item.id]),
   }));
 
+  // 3.0.21 (T08, AI Act Art. 50(2)): a downloaded deliverable a model wrote or co-wrote carries the statement as its
+  // header comment, in the file's own syntax (`lib/ai-marking.ts`); the source, the test status and an engine
+  // documentation without business names carry none. The viewer shows the content as stored.
+  const aiFacts = aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation(project.documentation) });
+  const markedForDownload = (item: (typeof allItems)[number], fileName: string): string => {
+    if (item.isExport || typeof item.content !== 'string') return item.content;
+    const who = dashboardDeliverableAuthorship(item.id, item.content, aiFacts, {
+      testsAreSuite: Boolean(project.testSuite?.code),
+      documentationFromEngine: isEngineDocumentation(project.documentation),
+    });
+    return who ? withAiMarking(fileName, item.content, aiMarkingStatement(who, APP_VERSION)) : item.content;
+  };
+
   return (
     <div id={`project-deliverables-${project.id}`} className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
       {allItems.length === 0 ? (
@@ -967,7 +984,10 @@ function ProjectDeliverables({
                 <CcButton
                   variant="ghost"
                   icon={<Download size={16} aria-hidden={true} />}
-                  onClick={() => void onDownload(item.content, `${project.name.replace(/\s+/g, '_')}_${item.id}${item.stale ? '_STALE' : ''}${item.ext}`, item.type === 'html' ? 'text/html' : item.type === 'code' ? 'text/javascript' : 'text/plain')}
+                  onClick={() => {
+                    const fileName = `${project.name.replace(/\s+/g, '_')}_${item.id}${item.stale ? '_STALE' : ''}${item.ext}`;
+                    void onDownload(markedForDownload(item, fileName), fileName, item.type === 'html' ? 'text/html' : item.type === 'code' ? 'text/javascript' : 'text/plain');
+                  }}
                   aria-label={`Download ${item.title}${item.stale ? ' (stale)' : ''}`}
                 >
                   {item.type === 'code' ? 'Code' : 'Download'}

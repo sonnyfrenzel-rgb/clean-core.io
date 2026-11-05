@@ -90,6 +90,11 @@ export interface PdRow {
   question?: { action: string; title: string };
   /** An anchor a row can be linked to — `oq-<action>` for a group of the open questions. */
   id?: string;
+  /**
+   * 3.0.21 (T08): the index in `cells` of the one cell a model wrote — a step's business name from the naming
+   * stage. Every file marks that cell with its origin; absent on a row the engine wrote whole.
+   */
+  aiCell?: number;
 }
 
 export interface PdTable {
@@ -235,7 +240,7 @@ export interface PdOutlineMeta {
    * stands — the analysis model's proposals (`analysis`) and the business layer's RACI (`sop`). Null or absent: the
    * text is model-written all the same and is marked with provider and model "not recorded".
    */
-  ai?: { analysis?: DocBlockAi | null; sop?: DocBlockAi | null };
+  ai?: { analysis?: DocBlockAi | null; sop?: DocBlockAi | null; naming?: DocBlockAi | null };
 }
 
 const UNRECORDED_BLOCK_AI: DocBlockAi = { provider: null, modelId: null };
@@ -244,6 +249,20 @@ const UNRECORDED_BLOCK_AI: DocBlockAi = { provider: null, modelId: null };
 function proposalAi(p: PdProposal, meta: PdOutlineMeta): DocBlockAi {
   return p.origin === 'narrative' ? (meta.ai?.analysis ?? UNRECORDED_BLOCK_AI) : UNRECORDED_BLOCK_AI;
 }
+
+/** Who wrote the business names: the naming stage's model, whose call is not recorded per project. */
+const namingAi = (meta: PdOutlineMeta): DocBlockAi => meta.ai?.naming ?? UNRECORDED_BLOCK_AI;
+
+/**
+ * Per row of `stepSummaryRows`, whether its name (column 1) is the naming stage's business name — a model's,
+ * marked where it stands (3.0.21, T08).
+ */
+export function stepSummaryModelNames(doc: ProcessDocument): boolean[] {
+  return doc.overview.path.filter((e): e is PdStep => e.kind === 'step').map((s) => s.businessName !== null && s.businessName !== '');
+}
+
+/** Column of `stepSummaryRows` that holds the step's name. */
+export const STEP_SUMMARY_NAME_COLUMN = 1;
 
 /** The RACI as a table of a file: a heading, its provenance in one line, steps × roles. */
 export interface PdRaciTable {
@@ -634,6 +653,8 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
           ],
           tech: entry.technicalName,
           anchors: entry.anchors,
+          // The business name is the naming stage's: a model wrote that cell.
+          ...(entry.businessName ? { aiCell: 1 } : {}),
         },
   );
 
@@ -844,9 +865,13 @@ export function requirementQuestionRows(doc: ProcessDocument): string[][] {
 export type PdBlock = DocBlock;
 
 /** A table of the outline as a block: the plain columns, then the source column. `whole` prints every row. */
-function tableBlock(t: PdTable, whole = true): PdBlock {
+function tableBlock(t: PdTable, whole = true, ai: DocBlockAi = UNRECORDED_BLOCK_AI): PdBlock {
   const rows = whole ? t.rows : t.rows.slice(0, t.first);
-  return { k: 'table', head: [...t.head, SOURCE_COLUMN], rows: rows.map((r) => [...r.cells, sourceText(r)]), muted: [t.head.length] };
+  const block: PdBlock = { k: 'table', head: [...t.head, SOURCE_COLUMN], rows: rows.map((r) => [...r.cells, sourceText(r)]), muted: [t.head.length] };
+  // 3.0.21 (T08): a row's business name is the naming model's, marked in its cell.
+  return rows.some((r) => r.aiCell !== undefined)
+    ? { ...block, cellAi: rows.map((r) => (r.aiCell !== undefined ? { col: r.aiCell, ai } : null)) }
+    : block;
 }
 
 /**
@@ -867,7 +892,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   const add = (t: PdTable | null) => {
     if (!t) return;
     shared(t);
-    b.push(tableBlock(t, false));
+    b.push(tableBlock(t, false, namingAi(meta)));
     if (t.rows.length > t.first) b.push({ k: 'p', em: true, text: moreRowsLine(t) });
   };
   const textItems = (items: readonly PdText[]) =>
@@ -914,7 +939,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   }
   b.push({ k: 'h', level: 3, text: o.tables.steps.caption });
   if (o.whoActsLine) b.push({ k: 'p', em: true, text: o.whoActsLine });
-  b.push(tableBlock(o.tables.steps));
+  b.push(tableBlock(o.tables.steps, true, namingAi(meta)));
 
   for (const key of ['rules', 'exceptions', 'outputs'] as const) {
     h2(key);
@@ -962,13 +987,26 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   b.push({ k: 'p', em: true, text: appendixLead(doc.appendix) });
   b.push({ k: 'h', level: 3, text: 'A.1 Step details' });
   // Owner review 10.10.2026: the compact summary first, then each step's details.
-  b.push({ k: 'table', head: STEP_SUMMARY_HEAD, rows: stepSummaryRows(doc, o.whoActs), muted: [3] });
+  const modelNames = stepSummaryModelNames(doc);
+  b.push({
+    k: 'table',
+    head: STEP_SUMMARY_HEAD,
+    rows: stepSummaryRows(doc, o.whoActs),
+    muted: [3],
+    ...(modelNames.some(Boolean) ? { cellAi: modelNames.map((named) => (named ? { col: STEP_SUMMARY_NAME_COLUMN, ai: namingAi(meta) } : null)) } : {}),
+  });
   for (const entry of doc.overview.path) {
     if (entry.kind === 'gate') {
       b.push({ k: 'p', em: true, text: gateSentence(entry) });
       continue;
     }
-    b.push({ k: 'h', level: 4, text: `${stepRef(entry)}. ${stepName(entry)}` });
+    // The number is the engine's; a business name after it is the naming model's.
+    b.push({
+      k: 'h',
+      level: 4,
+      text: `${stepRef(entry)}. ${stepName(entry)}`,
+      ...(entry.businessName ? { span: { from: `${stepRef(entry)}. `.length, ai: namingAi(meta) } } : {}),
+    });
     const items = stepDetailLines(entry, o.whoActs);
     const proposed = stepProposalLine(entry);
     b.push({

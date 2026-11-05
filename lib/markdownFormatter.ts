@@ -452,6 +452,6 @@ export function formatPresentationToMarkdown(rawJson: string): string {
  * the stored process documentation, for the names and order of a layer stored
  * before its rows carried them.
  */
-export function formatBusinessDocsToMarkdown(rawJson: string, documentation?: string | null): string {
-  return businessSopMarkdown(rawJson, documentation ?? null);
+export function formatBusinessDocsToMarkdown(rawJson: string, documentation?: string | null, opts: Parameters<typeof businessSopMarkdown>[2] = {}): string {
+  return businessSopMarkdown(rawJson, documentation ?? null, opts);
 }

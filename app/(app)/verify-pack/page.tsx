@@ -377,7 +377,7 @@ export default function VerifyPackPage() {
                     <ul className="m-0 list-none space-y-1 p-0 text-[12px]" data-verify-delivery-checks="">
                       <li>
                         {delivery.check.files} files listed · {delivery.check.missing.length} missing · {delivery.check.altered.length} altered ·{' '}
-                        {delivery.check.unlisted.length} unlisted · {delivery.check.headerMismatch.length + delivery.check.sourceMismatch.length} marking mismatches
+                        {delivery.check.unlisted.length} unlisted · {delivery.check.headerMismatch.length + delivery.check.sourceMismatch.length + delivery.check.unstatedElements.length} marking mismatches
                       </li>
                       <li className="break-all font-cc-mono text-cc-ink-muted">
                         Run {delivery.check.run.id ?? '—'} · source {delivery.check.run.sourceSha256 ?? '—'}
@@ -398,6 +398,20 @@ export default function VerifyPackPage() {
                         </ul>
                       ) : (
                         <p className="m-0 text-[12px] text-cc-ink-muted">The manifest names no file a model wrote.</p>
+                      )}
+                      {delivery.check.elements.length > 0 && (
+                        <ul className="m-0 mt-2 list-none space-y-1 p-0 text-[12px]" data-verify-delivery-elements="">
+                          {delivery.check.elements.map((e) => (
+                            <li key={e.path}>
+                              <span className="break-all font-cc-mono text-cc-ink">{e.path}</span>{' '}
+                              <span className="text-cc-ink-muted">
+                                — marks{' '}
+                                {e.marks.map((m) => `${m.count} model-written element(s) by ${m.provider === 'not-recorded' ? 'a model not recorded' : `${m.provider} ${m.model}`}`).join(', ')}{' '}
+                                where they stand
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                   )}

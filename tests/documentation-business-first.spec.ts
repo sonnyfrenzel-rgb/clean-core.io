@@ -411,7 +411,8 @@ CALL FUNCTION lv_fm.
       for (const line of sentences) {
         expect(line, line).toMatch(/\((?:Reconstructed, L\d+|AI-generated(?:, cites L\d+)?|Proposal — not in the program(?:: [^)]+)?|Not determined)\)$|^- Not determined/);
       }
-      expect(md).toContain('cross-checked against company ledger control totals. (Proposal — not in the program: no ledger reconciliation in the code)');
+      // 3.0.21 (T08): the sentence is the model's, inside its cc:origin pair; the basis after it is the engine's.
+      expect(md).toContain('cross-checked against company ledger control totals.<!-- /cc:origin --> (Proposal — not in the program: no ledger reconciliation in the code)');
       expect(md).toContain('## Who is responsible (RACI) — Proposal — not in the program');
       expect(md).toContain('## What the program does not do');
     }

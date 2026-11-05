@@ -220,14 +220,16 @@ export function withAiMarkings(path: string, content: string, statements: readon
 /**
  * The second level of the marking (3.0.21, acceptance test T08): in an artefact
  * that mixes the engine's parts with a model's, every model-written element is
- * marked where it stands — not only the file. Three spellings of one fact:
+ * marked where it stands — not only the file. Four spellings of one fact:
  *
  * - BPMN: `<cc:origin value="ai" ai_provider="…" ai_model="…"/>` in the
  *   element's `extensionElements` (`lib/bpmn/export.ts`);
  * - HTML: `data-origin="ai" data-ai-provider="…" data-ai-model="…"` on the
  *   element that holds the model's text;
  * - Markdown: a `<!-- cc:origin … -->` comment before the model's section and
- *   a `<!-- /cc:origin -->` after it.
+ *   a `<!-- /cc:origin -->` after it (inline, inside a table cell or a list item, where the element is one);
+ * - Word: a content control (`w:sdt`) tagged `cc:origin=ai;ai_provider=…;ai_model=…` around the element
+ *   (`aiOriginDocxTag`, written by `lib/requirements-export.ts`).
  *
  * Deterministic parts carry no mark: absence is the engine's. Provider and
  * model are the recorded ones, else {@link AI_ORIGIN_NOT_RECORDED} — never a
@@ -281,6 +283,55 @@ export function aiOriginMarkdownOpen(a: Pick<AiAuthorship, 'provider' | 'modelId
 
 /** The comment a model-written Markdown section closes with. */
 export const AI_ORIGIN_MARKDOWN_CLOSE = '<!-- /cc:origin -->';
+
+/**
+ * Word (3.0.21, T08 "including mixed artefacts"; the legal review of 05.11.2026): a model-written element is a
+ * content control (`w:sdt`) whose tag carries the origin — `cc:origin=ai;ai_provider=…;ai_model=…` — and whose
+ * title (`w:alias`) says it in words, `AI-generated (Google Gemini gemini-2.5-pro)`. Word keeps a content control
+ * and its tag through ordinary editing of the text inside it; the control is locked against deletion
+ * (`sdtLocked`), its contents stay editable. Values plain, unescaped: the writer escapes them for XML.
+ */
+export const AI_ORIGIN_DOCX_TAG_PREFIX = 'cc:origin=ai';
+
+export function aiOriginDocxTag(a: Pick<AiAuthorship, 'provider' | 'modelId'>): string {
+  const o = aiOriginOf(a);
+  return `${AI_ORIGIN_DOCX_TAG_PREFIX};ai_provider=${o.provider.replace(/;/g, ',')};ai_model=${o.model.replace(/;/g, ',')}`;
+}
+
+/** The title of a model-written content control in Word — what a reader sees on its frame. */
+export function aiOriginDocxAlias(a: Pick<AiAuthorship, 'provider' | 'modelId'>): string {
+  return plain(`AI-generated (${aiModelWords(a)})`);
+}
+
+/** One per-element origin mark found in a file, in any of the four spellings. */
+export interface AiOriginMark {
+  provider: string;
+  model: string;
+}
+
+const XML_ENTITY: Readonly<Record<string, string>> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'" };
+const unescapeXml = (v: string) => v.replace(/&(?:amp|lt|gt|quot|#39|apos);/g, (e) => XML_ENTITY[e] ?? e);
+
+/**
+ * Every per-element origin mark in a text — the Markdown comment, the HTML `data-*` attributes, BPMN's
+ * `cc:origin` element and Word's content-control tag — in order of appearance. What the tests and the offline
+ * verifier read (`scripts/verify-pack.mjs` repeats it without a build).
+ */
+export function aiOriginMarksIn(text: string): AiOriginMark[] {
+  const found: Array<{ at: number; mark: AiOriginMark }> = [];
+  const patterns: RegExp[] = [
+    // Markdown comment and BPMN element: value="ai" ai_provider="…" ai_model="…"
+    /(?:<!-- cc:origin|<cc:origin) value="ai" ai_provider="([^"]*)" ai_model="([^"]*)"/g,
+    // HTML attributes
+    /data-origin="ai" data-ai-provider="([^"]*)" data-ai-model="([^"]*)"/g,
+    // Word content-control tag
+    /<w:tag w:val="cc:origin=ai;ai_provider=([^;"]*);ai_model=([^"]*)"\s*\/>/g,
+  ];
+  for (const re of patterns) {
+    for (let m = re.exec(text); m !== null; m = re.exec(text)) found.push({ at: m.index, mark: { provider: unescapeXml(m[1]), model: unescapeXml(m[2]) } });
+  }
+  return found.sort((a, b) => a.at - b.at).map((f) => f.mark);
+}
 
 /* ------------------------------------------------------------ comment syntax */
 

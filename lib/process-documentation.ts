@@ -6,6 +6,7 @@ import { abapWords, programSummary, readProgramSummaryFacts, type ProgramSummary
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
 import { readingPath, type PathItem } from '@/lib/process-documentation-path';
+import { AI_ORIGIN_MARKDOWN_CLOSE, aiOriginMarkdownOpen, UNRECORDED_AI } from '@/lib/ai-marking';
 
 /**
  * The process documentation of stage 4 — roadmap 3.0.5, Weg C (Sonny, 24.09.2026).
@@ -409,8 +410,13 @@ const heading = (level: 2 | 3, anchor: string, title: string): string[] => [`<a 
  * (`lib/abap/business-statement-kind.ts`). Every statement carries its lines
  * and its provenance; nothing the engine read is dropped.
  */
-export function processDocumentationToMarkdown(doc: ProcessDocumentation): string {
+export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: { originMarks?: boolean } = {}): string {
   const A = PROCESS_DOCUMENTATION_ANCHORS;
+  // 3.0.21 (T08): a business name or lane from the naming stage is a model's, marked where it stands with the
+  // cc:origin comment pair (its call is not recorded per project). A prompt that reads the file as context passes
+  // `originMarks: false` and gets the text it got before.
+  const marks = opts.originMarks !== false;
+  const named = (text: string): string => (marks ? `${aiOriginMarkdownOpen(UNRECORDED_AI)}${text}${AI_ORIGIN_MARKDOWN_CLOSE}` : text);
   const facts = readCapabilityFacts(doc.facts);
   const view = businessStatementView(doc.statements);
   const byKind = (kind: StatementGroup['kind']) => view.groups.filter((g) => g.kind === kind);
@@ -472,7 +478,8 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     if (own) said.add(sentence.id);
     const does = own ? ` — ${sentence.text}` : '';
     const proposal = step.businessName ? ' (name: AI-generated)' : '';
-    return `**${docStepName(step)}**${proposal}${note}${lockedNote(step)}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
+    const name = step.businessName ? named(`**${docStepName(step)}**${proposal}`) : `**${docStepName(step)}**`;
+    return `${name}${note}${lockedNote(step)}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
   };
   // Roadmap 3.0.13 (SD review CR-A1): a routine a constant gate always stops is
   // said to be locked wherever the main path lists it.
@@ -626,7 +633,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     out.push('', 'Proposed by the naming stage (AI-generated):', '');
     for (const lane of doc.proposedLanes) {
       const evidence = lane.anchor ? rangeWords(lane.anchor) : `${NOT_DETERMINED_LABEL} — ${lane.undetermined?.reason ?? ''}`;
-      out.push(`- ${lane.name}${lane.authorityObject ? ` (${lane.authorityObject})` : ''} — ${evidence}`);
+      out.push(`- ${named(lane.name)}${lane.authorityObject ? ` (${lane.authorityObject})` : ''} — ${evidence}`);
     }
   }
   out.push('');
@@ -652,9 +659,9 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   out.push('| :--- | :--- | :--- | :--- | :--- | :--- |');
   for (const step of doc.steps) {
     const name = step.businessName
-      ? `${step.businessName} (${step.technicalName}) — AI-generated`
+      ? `${named(step.businessName)} (${step.technicalName}) — AI-generated`
       : step.technicalName;
-    const lane = step.lane ? `${step.lane} — AI-generated` : '';
+    const lane = step.lane ? `${named(step.lane)} — AI-generated` : '';
     const next = step.next
       .map((flow) => (flow.condition ? `${flow.to} [${flow.condition}]` : flow.to))
       .join(', ');
@@ -667,7 +674,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     out.push('### A.2 What the elements do', '');
     for (const step of withSentence) {
       const sentence = statementById.get(step.statementId as string)!;
-      out.push(`- **${step.businessName ?? step.technicalName}** (${step.id}): ${sentence.text} — ${anchorsWords(sentence.anchors)}`);
+      out.push(`- ${step.businessName ? named(`**${step.businessName}**`) : `**${step.technicalName}**`} (${step.id}): ${sentence.text} — ${anchorsWords(sentence.anchors)}`);
     }
     out.push('');
   }
