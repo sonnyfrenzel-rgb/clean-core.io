@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { PUBLIC_SHELL_ROUTES, SIGNED_IN_SHELL_ROUTES, isPublicShellPath } from '../lib/shell-routes';
 
 /**
  * Privacy policy section 7 says the public pages contact nobody but
@@ -13,8 +14,16 @@ import path from 'node:path';
  * Source half (no server): no public page reaches a Firebase module through a
  * static import; the landing's dialogs mount only when asked or when a redirect
  * is pending; a redirect result is asked for only behind that mark, and the mark
- * is set before any redirect leaves. The rendered half, which records every
- * request a signed-out visit makes, is tests/public-no-third-party-requests.spec.ts.
+ * is set before any redirect leaves.
+ *
+ * The public pages inside the signed-in shell (`app/(app)/`: About, Knowledge,
+ * the demo …) do import Firebase — the shell serves the product too — so for
+ * them the rule is on the calls, not the imports: every page of the shell is
+ * classified in lib/shell-routes.ts, the shell starts Auth only behind
+ * hooks/useAuthWanted.ts, and every other `getAuth()` / `getDb()` a public
+ * page's code can reach is in a reviewed list below, with the reason it does
+ * not run on load. The rendered half, which records every request a signed-out
+ * visit makes, is tests/public-no-third-party-requests.spec.ts.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -191,8 +200,12 @@ test('the one Auth instance keeps the signed-in hint in step with Firebase', () 
   // instance, so the hint the public headers read cannot outlive a session by
   // more than the one SDK load that removes it (lib/auth-hint.ts).
   const src = read('lib/firebase-app.ts');
-  expect(src).toContain("import { setSignedInHint } from './auth-hint';");
+  expect(src).toContain("import { markAuthStarted, setSignedInHint } from './auth-hint';");
   expect(src).toMatch(/onAuthStateChanged\(authInstance, \(user\) => setSignedInHint\(Boolean\(user\)\)\);/);
+  // The shell's public pages use a started Auth without the hint (a browser that keeps no storage).
+  expect(src).toMatch(/authInstance = firebaseGetAuth\(getFirebaseApps\(\)\);\s*markAuthStarted\(\);/);
+  // The non-starting read hands out the instance and never creates it.
+  expect(src).toMatch(/export function getAuthIfStarted\(\): Auth \| null \{\s*return authInstance;\s*\}/);
   // Nothing else writes the hint.
   const writers: string[] = [];
   const walk = (dir: string) => {
@@ -239,4 +252,191 @@ test('every redirect sign-in sets the pending mark before it leaves', () => {
   };
   for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
   expect(offenders).toEqual([]);
+});
+
+/* ------------------------------------------------------------------------ */
+/* The public pages inside the signed-in shell, app/(app)/                    */
+/* ------------------------------------------------------------------------ */
+
+const SHELL = 'app/(app)';
+
+/** Every page of the shell, as its route in folder form (`/demo/[stage]`) and its file — read from the files. */
+function shellPages(): { route: string; file: string }[] {
+  const out: { route: string; file: string }[] = [];
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(rel);
+      else if (entry.name === 'page.tsx') {
+        const folder = rel.slice(SHELL.length, -'/page.tsx'.length);
+        // A route group `(name)` is not part of the address.
+        const route = folder.split('/').filter((segment) => !/^\(.*\)$/.test(segment)).join('/') || '/';
+        out.push({ route, file: rel });
+      }
+    }
+  };
+  walk(SHELL);
+  return out.sort((a, b) => a.route.localeCompare(b.route));
+}
+
+/** The files Next renders for a page of the shell: the page and every layout on its folder path below app/(app)/, the shell's own included. */
+function shellLoadFiles(pageFile: string): string[] {
+  const files = [pageFile];
+  let dir = path.posix.dirname(pageFile);
+  for (;;) {
+    for (const name of ['layout.tsx', 'template.tsx', 'loading.tsx', 'error.tsx']) {
+      const rel = `${dir}/${name}`;
+      if (fs.existsSync(path.join(ROOT, rel))) files.push(rel);
+    }
+    if (dir === SHELL) break;
+    dir = path.posix.dirname(dir);
+  }
+  return files;
+}
+
+/** Every source file reachable from `entries` through static imports, stopping at the Firebase modules themselves. */
+function reachable(entries: string[]): Set<string> {
+  const seen = new Set<string>();
+  const stack = [...entries];
+  while (stack.length) {
+    const rel = stack.pop()!;
+    if (seen.has(rel)) continue;
+    seen.add(rel);
+    if (!/\.(tsx?|jsx?|mjs)$/.test(rel)) continue;
+    for (const spec of staticImports(read(rel))) {
+      const next = resolve(rel, spec);
+      if (next && !FORBIDDEN_FILES.has(next)) stack.push(next);
+    }
+  }
+  return seen;
+}
+
+/** Calls that start the Auth SDK or Firestore. `getAuthIfStarted()` is the read that starts nothing. */
+const STARTING_CALL = /\bget(Auth|Db)\(/;
+
+/**
+ * Without block and whole-line comments. A string that names a call (a note in
+ * lib/legal/open-values.ts, say) still counts: a false alarm here is a review,
+ * a missed call is a request to Google — so write such notes without the
+ * parentheses.
+ */
+const withoutComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+const GATED = 'behind useAuthWanted() (hooks/useAuthWanted.ts): no Auth on a public page without the signed-in hint';
+const CLICK_ONLY = 'only in a handler the reader starts (a click, a save) — never on load';
+const DEMO_AFTER_GATE =
+  'reached through the demo workspace, which renders it only once a profile exists (components/demo/DemoWorkspaceShell.tsx, `if (profileLoading || !enabled)`) — a visitor without the hint is sent to sign in first';
+
+/**
+ * Every file a public page of the shell can reach that calls `getAuth()` or
+ * `getDb()`, and why the call does not run when a visitor without the hint
+ * opens the page. A new entry needs the same review: a call on load would
+ * contact Google on mobile browsers and Safari. Prefer `getAuthIfStarted()`
+ * for a read of who is signed in (lib/firebase-app.ts).
+ */
+const REVIEWED_SHELL_CALLS: Record<string, string> = {
+  'app/(app)/layout.tsx': `${GATED}; "Sign out" is ${CLICK_ONLY}`,
+  'hooks/useUserProfile.ts': `${GATED}; createProfile/updateProfile are ${CLICK_ONLY}`,
+  'components/UserOnboarding.tsx': GATED,
+  'components/TermsReacceptGate.tsx': `${CLICK_ONLY}; the render reads getAuthIfStarted()`,
+  'components/design/FunctionalRequirements.tsx': `asks only with a project id (the demo has none), otherwise ${CLICK_ONLY}`,
+  'components/requirements/RequirementsWorkspace.tsx': `asks only outside demo mode, with a project id, otherwise ${CLICK_ONLY}`,
+  'hooks/useSpecAutosave.ts': `saves on an edit outside the demo — ${CLICK_ONLY}`,
+  'lib/process-states-client.ts': 'read by useProcessStates only with a project id; the demo passes none (hooks/useOpenQuestions.ts)',
+  'lib/project-loader.ts': `the assistant loads a project only inside /project/<id> (components/GlossaryChatbot.tsx); otherwise ${DEMO_AFTER_GATE}`,
+  'lib/project-artefacts-client.ts': 'reached through lib/project-loader.ts only, see there',
+  'components/workspace/BusinessRulesEditor.tsx': DEMO_AFTER_GATE,
+  'components/workspace/FitCheckPanel.tsx': DEMO_AFTER_GATE,
+  'components/workspace/ItAnswers.tsx': DEMO_AFTER_GATE,
+  'components/workspace/ItRail.tsx': DEMO_AFTER_GATE,
+  'components/workspace/SteeringOnePager.tsx': DEMO_AFTER_GATE,
+  'components/workspace/TargetChange.tsx': DEMO_AFTER_GATE,
+  'hooks/useProjectEvidence.ts': DEMO_AFTER_GATE,
+  'lib/engine-run.ts': DEMO_AFTER_GATE,
+  'lib/process-naming-client.ts': DEMO_AFTER_GATE,
+  'lib/process-revisions-client.ts': DEMO_AFTER_GATE,
+  'lib/project-command-client.ts': DEMO_AFTER_GATE,
+};
+
+test.describe('the public pages of the signed-in shell start Auth only behind the hint', () => {
+  test('every page of the shell is classified once, and every classified route is a page', () => {
+    const pages = shellPages();
+    // A guard that finds nothing must prove it can find something.
+    expect(pages.map((p) => p.route)).toEqual(expect.arrayContaining(['/knowledge', '/demo/[stage]', '/project/[projectId]/analyze']));
+    const routes = new Set(pages.map((p) => p.route));
+    const unclassified = pages.filter((p) => !PUBLIC_SHELL_ROUTES.includes(p.route) && !SIGNED_IN_SHELL_ROUTES.includes(p.route));
+    expect(unclassified.map((p) => p.file), 'a page of the shell in neither list of lib/shell-routes.ts').toEqual([]);
+    const both = PUBLIC_SHELL_ROUTES.filter((route) => SIGNED_IN_SHELL_ROUTES.includes(route));
+    expect(both, 'a route in both lists of lib/shell-routes.ts').toEqual([]);
+    const stale = [...PUBLIC_SHELL_ROUTES, ...SIGNED_IN_SHELL_ROUTES].filter((route) => !routes.has(route));
+    expect(stale, 'a route in lib/shell-routes.ts without a page').toEqual([]);
+  });
+
+  test('a pathname is matched to its route the way usePathname() reports it', () => {
+    for (const pathname of ['/knowledge', '/knowledge/', '/about', '/demo', '/demo/analyze', '/demo/design/requirements', '/demo/workspace', '/verify-pack', '/admin/design-system/first-render']) {
+      expect(isPublicShellPath(pathname), pathname).toBe(true);
+    }
+    for (const pathname of ['/', '/dashboard', '/settings', '/project/abc', '/project/abc/analyze', '/admin', '/admin/workspace', '/admin/design-system', '/invitation/a/b', '/portfolio/shared/x', '/knowledgebase', '/demo/a/b/c']) {
+      expect(isPublicShellPath(pathname), pathname).toBe(false);
+    }
+  });
+
+  test('the shell asks Firebase on a public page only behind useAuthWanted()', () => {
+    const gate = read('hooks/useAuthWanted.ts');
+    // A page that needs an account starts Auth as before; a public one waits for the hint or a started Auth.
+    expect(gate).toMatch(/if \(!isPublicShellPath\(pathname \?\? '\/'\)\) return true;/);
+    expect(gate).toMatch(/const clientSnapshot = \(\): Known => \(hasSignedInHint\(\) \|\| isAuthStarted\(\) \? 'yes' : 'no'\);/);
+    // The server cannot read the browser's storage: the hydrating render is "not known yet".
+    expect(gate).toMatch(/const serverSnapshot = \(\): Known \| null => null;/);
+    expect(firebaseChains('hooks/useAuthWanted.ts')).toEqual([]);
+    expect(firebaseChains('lib/shell-routes.ts')).toEqual([]);
+
+    const layout = withoutComments(read('app/(app)/layout.tsx'));
+    expect(layout).toContain('const authWanted = useAuthWanted();');
+    expect(layout.split('onAuthStateChanged(').length - 1).toBe(1);
+    expect(layout).toMatch(/useEffect\(\(\) => \{\s*if \(!authWanted\) return;\s*let uid[^;]*;\s*return onAuthStateChanged\(getAuth\(\),/);
+    // Signed out without asking: the "Sign in" link, not a placeholder.
+    expect(layout).toContain('const signedIn = authWanted === false ? false : authWanted === undefined ? undefined : firebaseSignedIn;');
+
+    const profile = read('hooks/useUserProfile.ts');
+    expect(profile).toContain('const auth = authWanted ? getAuth() : null;');
+    expect(profile).toContain('const db = authWanted ? getDb() : null;');
+    expect(profile).toMatch(/useEffect\(\(\) => \{\s*if \(authWanted === undefined\) return;\s*if \(!auth \|\| !db\) \{\s*setLoading\(false\);/);
+    expect(profile).toContain('}, [authWanted, auth, db]);');
+
+    expect(read('components/UserOnboarding.tsx')).toContain('const auth = authWanted ? getAuth() : null;');
+  });
+
+  test('who is signed in is read without starting Auth where it runs on load', () => {
+    // The assistant (mounted on every page of the shell), the Terms gate's render and the demo workspace's lookups.
+    expect(read('lib/gemini.ts')).toContain('const user = getAuthIfStarted()?.currentUser;');
+    const model = read('hooks/useModelAvailability.ts');
+    expect(model).toContain('const user = getAuthIfStarted()?.currentUser ?? null;');
+    expect(model).toContain('if (!getAuthIfStarted()?.currentUser && left > 0) {');
+    expect(read('components/TermsReacceptGate.tsx')).toContain('const declined = declinedInThisSignIn(declinedMark, getAuthIfStarted()?.currentUser ?? null);');
+    expect(read('hooks/useFunctionModuleAnswers.ts')).toContain('const token = await getAuthIfStarted()?.currentUser?.getIdToken();');
+    expect(read('hooks/useAbcdCatalogLookup.ts')).toContain('const token = await getAuthIfStarted()?.currentUser?.getIdToken();');
+  });
+
+  test('every Auth or Firestore call a public page of the shell can reach is reviewed', () => {
+    expect(STARTING_CALL.test(withoutComments('const auth = getAuth();'))).toBe(true);
+    expect(STARTING_CALL.test(withoutComments('const db = getDb();'))).toBe(true);
+    expect(STARTING_CALL.test(withoutComments('// getDb()\n/* getAuth() */'))).toBe(false);
+    expect(STARTING_CALL.test(withoutComments('const user = getAuthIfStarted()?.currentUser;'))).toBe(false);
+    const publicPages = shellPages().filter((p) => PUBLIC_SHELL_ROUTES.includes(p.route));
+    expect(publicPages.length).toBe(PUBLIC_SHELL_ROUTES.length);
+    const callers = new Set<string>();
+    const unreviewed: string[] = [];
+    for (const page of publicPages) {
+      for (const rel of reachable(shellLoadFiles(page.file))) {
+        if (!/\.tsx?$/.test(rel) || !STARTING_CALL.test(withoutComments(read(rel)))) continue;
+        callers.add(rel);
+        if (!(rel in REVIEWED_SHELL_CALLS)) unreviewed.push(`${page.route}: ${rel}`);
+      }
+    }
+    expect([...new Set(unreviewed)], 'a getAuth()/getDb() call a public page can reach, not reviewed in this spec').toEqual([]);
+    // A reviewed file that no public page reaches any more, or that no longer calls, leaves the list.
+    const stale = Object.keys(REVIEWED_SHELL_CALLS).filter((rel) => !callers.has(rel));
+    expect(stale, 'a reviewed entry that is no longer reached or no longer calls').toEqual([]);
+  });
 });

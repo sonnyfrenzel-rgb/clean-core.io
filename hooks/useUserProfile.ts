@@ -3,6 +3,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/fires
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { User } from 'firebase/auth';
 import { COMMUNITY_QUOTA } from '@/lib/constants';
+import { useAuthWanted } from './useAuthWanted';
 
 export interface UserProfile {
   firstName: string;
@@ -168,17 +169,26 @@ function reportGoogleSignIn(user: User): void {
 }
 
 export function useUserProfile() {
-  const auth = getAuth();
-  const db = getDb();
+  // Privacy policy section 7: on a public page of the shell, a visitor without
+  // the signed-in hint gets no Auth SDK at all (hooks/useAuthWanted.ts) — the
+  // profile is simply absent, as it is for anyone signed out. `undefined` is
+  // the hydrating render of a public page: still loading, nothing started.
+  const authWanted = useAuthWanted();
+  const auth = authWanted ? getAuth() : null;
+  const db = authWanted ? getDb() : null;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authWanted === undefined) return;
     if (!auth || !db) {
       setLoading(false);
       return;
     }
+    // A public page that reported "signed out" without asking and then saw the
+    // hint arrive (a sign-in in another tab) asks now, and is loading again.
+    setLoading(true);
     // The profile listener from the previous signed-in user, so it can be torn
     // down when the user changes.
     //
@@ -264,7 +274,7 @@ export function useUserProfile() {
       releaseProfile();
       unsubscribeAuth();
     };
-  }, [auth, db]);
+  }, [authWanted, auth, db]);
 
   /**
    * Creates the profile and finishes registration in one step.
@@ -313,7 +323,7 @@ export function useUserProfile() {
     // retry into the same wall. Skip the write when the document is already
     // there and go straight on to the activation call.
     try {
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = doc(db ?? getDb(), 'users', user.uid);
       const existing = await getDoc(userDocRef);
       if (!existing.exists()) {
         await setDoc(userDocRef, newProfile);
@@ -324,7 +334,7 @@ export function useUserProfile() {
 
     try {
       // We also store a registration request
-      const regRef = doc(db, 'registration_requests', user.uid);
+      const regRef = doc(db ?? getDb(), 'registration_requests', user.uid);
       const existingReq = await getDoc(regRef);
       if (!existingReq.exists()) {
         await setDoc(regRef, {
@@ -354,7 +364,7 @@ export function useUserProfile() {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!auth || !auth.currentUser) return;
     try {
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      const userDocRef = doc(db ?? getDb(), 'users', auth.currentUser.uid);
       await setDoc(userDocRef, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);

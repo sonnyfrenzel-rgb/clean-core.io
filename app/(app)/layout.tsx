@@ -19,6 +19,7 @@ import CcTag from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
 import { PHASES } from '@/lib/workflow-steps';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuthWanted } from '@/hooks/useAuthWanted';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
@@ -125,18 +126,31 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    * "Settings & Profile" and "Sign Out", which read as a pseudo account (owner
    * report 21.10.2026).
    */
-  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  const [firebaseSignedIn, setFirebaseSignedIn] = useState<boolean | undefined>(undefined);
+
+  /**
+   * Privacy policy section 7: on a public page of this shell (About, Knowledge,
+   * the demo …, lib/shell-routes.ts) a visitor without the first-party
+   * signed-in hint gets the "Sign in" link without the Auth SDK being started —
+   * starting it contacts Google on mobile browsers and Safari. With the hint,
+   * on a page that needs an account, or once this page has started Auth, the
+   * shell asks Firebase as before (hooks/useAuthWanted.ts). While a public page
+   * hydrates the answer is not known yet, and neither control is shown.
+   */
+  const authWanted = useAuthWanted();
+  const signedIn = authWanted === false ? false : authWanted === undefined ? undefined : firebaseSignedIn;
 
   // A project name announced for one account is not shown to the next one.
   useEffect(() => {
+    if (!authWanted) return;
     let uid: string | null | undefined;
     return onAuthStateChanged(getAuth(), (user) => {
       const next = user?.uid ?? null;
-      setSignedIn(next !== null);
+      setFirebaseSignedIn(next !== null);
       if (uid !== undefined && next !== uid) forgetShellProject();
       uid = next;
     });
-  }, []);
+  }, [authWanted]);
 
   const handleLogout = async () => {
     try {

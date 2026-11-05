@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getAuth } from '@/lib/firebase';
+import { getAuthIfStarted } from '@/lib/firebase';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
 import { isModelKeyProvider, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
 
@@ -63,7 +63,7 @@ export function useModelAvailability(): ModelAvailability {
 
   const load = useCallback(async () => {
     try {
-      const user = getAuth().currentUser;
+      const user = getAuthIfStarted()?.currentUser ?? null;
       if (!user) {
         setLoading(false);
         return;
@@ -110,7 +110,7 @@ export function useModelAvailability(): ModelAvailability {
     // user, so it retries briefly rather than racing sign-in.
     const attempt = async (left: number) => {
       if (cancelled) return;
-      if (!getAuth().currentUser && left > 0) {
+      if (!getAuthIfStarted()?.currentUser && left > 0) {
         setTimeout(() => attempt(left - 1), 500);
         return;
       }

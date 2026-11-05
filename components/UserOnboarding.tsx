@@ -5,6 +5,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Check } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuthWanted } from '@/hooks/useAuthWanted';
 import { getAuth } from '@/lib/firebase';
 import LegalOverlay from '@/app/components/LegalOverlay';
 import CcDialog from '@/components/cc/Dialog';
@@ -69,7 +70,11 @@ function ConsentLine({
 
 export default function UserOnboarding() {
   const { profile, loading, createProfile } = useUserProfile();
-  const auth = getAuth();
+  // No Auth SDK on a public page for a visitor without the signed-in hint
+  // (hooks/useAuthWanted.ts, privacy policy section 7): nobody there can be a
+  // new account waiting for its name and agreements.
+  const authWanted = useAuthWanted();
+  const auth = authWanted ? getAuth() : null;
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [motivation, setMotivation] = useState('');

@@ -1,4 +1,4 @@
-import { getAuth } from '@/lib/firebase';
+import { getAuthIfStarted } from '@/lib/firebase';
 import type { ModelCallStage } from '@/lib/model-call-stage';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -105,9 +105,12 @@ export async function callGeminiWithReceipt(
   let idToken: string | undefined;
 
   try {
-    const auth = getAuth();
-    if (auth.currentUser) {
-      idToken = await auth.currentUser.getIdToken();
+    // Without starting Auth: the assistant asks from the public pages too, where
+    // a visitor without the signed-in hint gets no Auth SDK (privacy policy
+    // section 7, lib/firebase-app.ts). Signed in, the shell has started it.
+    const user = getAuthIfStarted()?.currentUser;
+    if (user) {
+      idToken = await user.getIdToken();
     }
   } catch (err) {
     console.warn('Firebase Auth context not available in callGemini:', err);

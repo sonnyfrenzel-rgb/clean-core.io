@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, ExternalLink } from 'lucide-react';
-import { getAuth } from '@/lib/firebase';
+import { getAuth, getAuthIfStarted } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
@@ -203,8 +203,11 @@ export default function TermsReacceptGate() {
   // regardless of what storage holds.
   const [declinedMark, setDeclinedMark] = useState<string | null>(readDeclined);
   // A decline counts only for the sign-in it was made in: a sign-out and a new
-  // sign-in in the same tab asks again.
-  const declined = declinedInThisSignIn(declinedMark, typeof window === 'undefined' ? null : getAuth().currentUser);
+  // sign-in in the same tab asks again. Read without starting Auth: this gate is
+  // mounted on the public pages of the shell too, where a visitor without the
+  // signed-in hint gets no Auth SDK (privacy policy section 7); with a profile,
+  // Auth is running already (hooks/useUserProfile.ts).
+  const declined = declinedInThisSignIn(declinedMark, getAuthIfStarted()?.currentUser ?? null);
 
   const setDeclined = (value: boolean) => {
     const mark = value ? currentMark() : null;
