@@ -1,7 +1,7 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator, onAuthStateChanged } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
-import { setSignedInHint } from './auth-hint';
+import { markAuthStarted, setSignedInHint } from './auth-hint';
 
 /**
  * The Firebase app and Auth instance, without Firestore.
@@ -33,6 +33,7 @@ export function getAuth(): Auth {
     }
     if (!authInstance) {
         authInstance = firebaseGetAuth(getFirebaseApps());
+        markAuthStarted();
         if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
             const host = '127.0.0.1';
             console.log(`[FIREBASE] Connecting Auth to emulator on ${host}:9099...`);
@@ -49,5 +50,22 @@ export function getAuth(): Auth {
         // sign-out in another tab — moves it with Firebase's own answer.
         onAuthStateChanged(authInstance, (user) => setSignedInHint(Boolean(user)));
     }
+    return authInstance;
+}
+
+/**
+ * The Auth instance if this page has started it, and `null` otherwise —
+ * without starting it.
+ *
+ * For code that only asks "who is signed in, if anyone" and runs on public
+ * pages too (the assistant's model call, its key check, the Terms gate's
+ * render): `getAuth().currentUser` would start the SDK just to read a user who
+ * cannot be there yet — a freshly started Auth reports `null` until it has read
+ * its storage — and starting it contacts Google on mobile browsers and Safari
+ * (privacy policy section 7, lib/auth-hint.ts). Wherever someone is signed in,
+ * the shell has started Auth already (hooks/useUserProfile.ts), so the answer
+ * is the same as `getAuth().currentUser`.
+ */
+export function getAuthIfStarted(): Auth | null {
     return authInstance;
 }

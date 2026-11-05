@@ -74,6 +74,26 @@ export function setSignedInHint(signedIn: boolean): void {
   }
 }
 
+/**
+ * Whether this page has started the Auth SDK already (lib/firebase-app.ts sets
+ * it when it creates the one Auth instance). Once it runs, asking it again
+ * costs nothing more: a public page that finds it started — a sign-in in the
+ * landing's dialog, then a client-side step to /knowledge — uses it, with or
+ * without the hint (a browser that refuses storage never keeps the hint).
+ * Module state, not storage: it lasts as long as this page's JavaScript.
+ */
+let authStarted = false;
+
+/** Called from lib/firebase-app.ts only, when the Auth instance is created. */
+export function markAuthStarted(): void {
+  authStarted = true;
+}
+
+/** Whether the Auth SDK has been started in this page's JavaScript. */
+export function isAuthStarted(): boolean {
+  return authStarted;
+}
+
 /** Call immediately before `signInWithRedirect`. */
 export function markRedirectPending(): void {
   try {

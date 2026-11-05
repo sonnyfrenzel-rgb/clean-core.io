@@ -1,4 +1,7 @@
 import { test, expect, devices, type Browser } from './helpers/test';
+import { PUBLIC_SHELL_ROUTES } from '../lib/shell-routes';
+import { PHASES } from '../lib/workflow-steps';
+import { SIGNED_IN_HINT_KEY } from '../lib/auth-hint';
 
 /**
  * Privacy policy section 7: the public pages contact nobody but clean-core.io
@@ -18,11 +21,27 @@ import { test, expect, devices, type Browser } from './helpers/test';
  * mount its dialogs on idle (2 s), so a deferred load is caught as well.
  *
  * Covered: the landing (also with a legal dialog open, which shares the
- * component with sign-in) and the public pages outside the signed-in shell.
- * Not covered yet: the public pages that render inside `app/(app)/layout.tsx`
- * (About, Knowledge, Trust, How it works …) — that shell initialises Auth on
- * every page, and is a separate step (see `noRequestWithoutSignIn`).
+ * component with sign-in), the public pages outside the signed-in shell, and
+ * every public page inside it (`app/(app)/layout.tsx`: About, Knowledge, Trust,
+ * the demo …) — read from lib/shell-routes.ts, so a new public page of the
+ * shell is captured without an edit here. `/demo/workspace` needs an account
+ * and sends a visitor without the hint to the sign-in dialog; it has a test of
+ * its own below.
  */
+
+/** A route of lib/shell-routes.ts as addresses to visit: a dynamic segment becomes every value the page renders. */
+function shellAddresses(route: string): string[] {
+  if (route === '/demo/[stage]') return PHASES.map((phase) => `/demo/${phase.key}`);
+  // Only Design has a requirements page (app/(app)/demo/[stage]/requirements/page.tsx).
+  if (route === '/demo/[stage]/requirements') return ['/demo/design/requirements'];
+  if (route.includes('[')) throw new Error(`no addresses known for ${route} — add them here`);
+  return [route];
+}
+
+/** Sends a visitor without the hint to sign in, which starts Auth by design; see its own test. */
+const SIGN_IN_FIRST = new Set(['/demo/workspace']);
+
+const SHELL_PAGES = PUBLIC_SHELL_ROUTES.filter((route) => !SIGN_IN_FIRST.has(route)).flatMap(shellAddresses);
 
 const PAGES = [
   '/',
@@ -40,6 +59,10 @@ const PAGES = [
   '/catalog',
   '/reference-analysis',
   '/whitepaper',
+  ...SHELL_PAGES,
+  // Deep links into the shell: a query and a fragment change nothing.
+  '/knowledge?q=clean-core#levels',
+  '/how-to#first-run',
 ];
 
 /** A device's context options; the browser type is the suite's (Chromium), only the device is emulated. */
@@ -101,5 +124,66 @@ test.describe('a signed-out visit contacts only its own origin', () => {
     // proves nothing.
     const foreign = await foreignRequests(browser, 'iphone', '/?auth=signin', baseURL ?? 'http://localhost:3000');
     expect(foreign.length, 'the sign-in dialog initialised Auth without a request').toBeGreaterThan(0);
+  });
+
+  test('the demo workspace sends a visitor without the hint to sign in, and asks nobody on the way', async ({ browser, baseURL }) => {
+    // It needs an account (components/demo/DemoWorkspaceShell.tsx). Without the
+    // hint the shell reports "signed out" without starting Auth, and the page
+    // moves on to the sign-in dialog — which starts Auth by design, so only
+    // the requests made while the address is still the demo's count here.
+    const base = baseURL ?? 'http://localhost:3000';
+    const context = await browser.newContext({ ...PROFILES.iphone, baseURL: base });
+    const own = new URL(base).origin;
+    const foreign: string[] = [];
+    try {
+      const page = await context.newPage();
+      context.on('request', (request) => {
+        const target = request.url();
+        if (/^(data|blob|about):/.test(target)) return;
+        if (new URL(target).origin === own) return;
+        if (new URL(page.url()).pathname === '/demo/workspace') foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
+      });
+      await page.goto('/demo/workspace', { waitUntil: 'load' });
+      await expect.poll(() => new URL(page.url()).searchParams.get('auth'), { timeout: 20000 }).toBe('signin');
+      expect(new URL(page.url()).searchParams.get('next')).toBe('/demo/workspace');
+    } finally {
+      await context.close();
+    }
+    expect(foreign, '/demo/workspace asked someone other than its own origin before it sent the visitor to sign in').toEqual([]);
+  });
+
+  test('a stale signed-in hint costs one Auth start, which removes it', async ({ browser, baseURL }) => {
+    // The hint says "an account was signed in here", but there is no session:
+    // the shell starts Auth once, Firebase answers "nobody", and the hint goes
+    // (lib/firebase-app.ts) — the next visit asks nobody again.
+    const base = baseURL ?? 'http://localhost:3000';
+    const context = await browser.newContext({ ...PROFILES.iphone, baseURL: base });
+    const own = new URL(base).origin;
+    let counting = false;
+    const foreign: string[] = [];
+    context.on('request', (request) => {
+      const target = request.url();
+      if (!counting || /^(data|blob|about):/.test(target)) return;
+      if (new URL(target).origin !== own) foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
+    });
+    try {
+      const page = await context.newPage();
+      await page.goto('/knowledge', { waitUntil: 'load' });
+      await page.evaluate((key) => window.localStorage.setItem(key, '1'), SIGNED_IN_HINT_KEY);
+      await page.reload({ waitUntil: 'load' });
+      await expect
+        .poll(() => page.evaluate((key) => window.localStorage.getItem(key), SIGNED_IN_HINT_KEY), { timeout: 20000 })
+        .toBeNull();
+      // The shell shows the signed-out control once Firebase has answered.
+      await expect(page.locator('[data-shell-sign-in]')).toBeVisible();
+      counting = true;
+      await page.reload({ waitUntil: 'load' });
+      await page.waitForLoadState('networkidle').catch(() => undefined);
+      await page.waitForTimeout(3000);
+      await expect(page.locator('[data-shell-sign-in]')).toBeVisible();
+    } finally {
+      await context.close();
+    }
+    expect(foreign, 'the visit after the stale hint was removed asked someone other than its own origin').toEqual([]);
   });
 });

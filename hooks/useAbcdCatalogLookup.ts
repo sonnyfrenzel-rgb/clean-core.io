@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getAuth } from '@/lib/firebase';
+import { getAuthIfStarted } from '@/lib/firebase';
 import { gradeKey, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
 import type { CatalogLookupTarget } from '@/lib/assessment-target';
 
@@ -111,7 +111,9 @@ export function useAbcdCatalogLookup(
 
     const attempt = async (retriesLeft: number) => {
       if (cancelled) return;
-      const token = await getAuth().currentUser?.getIdToken();
+      // Without starting Auth: the demo workspace runs this before it knows
+      // whether anyone is signed in (privacy policy section 7, lib/firebase-app.ts).
+      const token = await getAuthIfStarted()?.currentUser?.getIdToken();
       if (!token) {
         // The auth listener elsewhere may still be initializing; that is not
         // the same as "not signed in", so this retries briefly before giving up.
