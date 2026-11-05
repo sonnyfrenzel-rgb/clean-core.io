@@ -43,6 +43,7 @@ import {
   isInvitationSuppressed,
 } from '@/lib/invitation-suppression';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
+import { recordInvitationSent, type InvitationRecordDb } from '@/lib/invitation-delivery-record';
 import {
   openInvitationsAsOwner,
   readOpenInvitations,
@@ -401,6 +402,10 @@ export async function POST(
       to: email,
       subject: INVITATION_EMAIL_SUBJECT,
       label: 'invitation',
+      // The six-month delivery record with the keyed hash of the address
+      // (privacy policy sections 6 and 8), not an `email_events` record.
+      deliveryRecord: (messageId) =>
+        recordInvitationSent(db as unknown as InvitationRecordDb, { messageId, recipient: email, inviterUid: gate.uid, kind: 'project' }),
       html: wrapEmailDocument(
         buildInvitationEmail({
           // The profile name is the inviting account's own free text: repeated

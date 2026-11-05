@@ -8,7 +8,7 @@ import type { Auth } from 'firebase-admin/auth';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
-import { accountLogRef, deleteUserDataAndAccount } from '../lib/firebase-admin';
+import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
 import { accountHashOf } from '../lib/pseudonym';
 import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject, legacyAdminSignupSubject } from '../lib/admin-signup-email';
@@ -187,26 +187,33 @@ test('a refused step keeps the profile and the sign-in, and names what is still 
   }
 });
 
-test('the erasure keeps the security journal rows and replaces the address in them with a pseudonym (PRV-01)', async () => {
+test('the erasure keeps the security log rows and names the account in them by the keyed hash only (legal review of 05.11.2026)', async () => {
   const db = adminDb();
   const uid = `erasure-audit-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
   const email = `${uid}@cleancore-test.io`;
-  const rows = [db.collection('audit_events').doc(), db.collection('audit_events').doc(), db.collection('audit_events').doc()];
+  const rows = [db.collection('audit_events').doc(), db.collection('audit_events').doc(), db.collection('audit_events').doc(), db.collection('audit_events').doc()];
   try {
     await seedOwnedData(uid, email);
     await rows[0].set({ actorUid: uid, actorEmail: email, action: 'BYOK_SAVE', targetUid: uid, timestamp: new Date() });
     await rows[1].set({ actorUid: uid, action: 'BYOK_DELETE', targetUid: uid, timestamp: new Date() });
     await rows[2].set({ actorUid: `${uid}-admin`, actorEmail: 'admin@cleancore-test.io', action: 'APPROVE_USER', targetUid: uid, timestamp: new Date() });
+    await rows[3].set({ actorUid: 'script:mfa-reset', actorEmail: 'operator@cleancore-test.io', action: 'mfa.reset', targetUid: uid, targetEmail: email, timestamp: new Date() });
 
     await deleteUserDataAndAccount(uid, { db, auth: recordingAuth().client });
 
+    const hash = accountHashOf(email);
     const own = (await rows[0].get()).data()!;
-    expect(own.actorUid, 'the row lost who acted').toBe(uid);
+    expect(own.actorUid, 'the row still names the erased uid').toBe(hash);
+    expect(own.targetUid).toBe(hash);
     expect(own.action).toBe('BYOK_SAVE');
-    expect(own.actorEmail, 'the erased account\'s address survived in the journal').toBe(accountLogRef(uid));
+    expect(own.actorEmail, 'the erased account\'s address survived in the log').toBeUndefined();
+    expect((await rows[1].get()).data()).toMatchObject({ actorUid: hash, targetUid: hash, action: 'BYOK_DELETE' });
     expect((await rows[1].get()).data()!.actorEmail, 'a row without an address gained one').toBeUndefined();
-    // Another account's row about this one is not this account's to rewrite.
-    expect((await rows[2].get()).data()!.actorEmail).toBe('admin@cleancore-test.io');
+    // The administrator who acted on the account stays named; only the account is pseudonymised.
+    expect((await rows[2].get()).data()).toMatchObject({ actorUid: `${uid}-admin`, actorEmail: 'admin@cleancore-test.io', targetUid: hash });
+    const reset = (await rows[3].get()).data()!;
+    expect(reset).toMatchObject({ actorEmail: 'operator@cleancore-test.io', targetUid: hash });
+    expect(reset.targetEmail, 'the subject\'s address survived in the log').toBeUndefined();
   } finally {
     await Promise.all(rows.map((r) => r.delete().catch(() => {})));
     await cleanUp(uid, email);
