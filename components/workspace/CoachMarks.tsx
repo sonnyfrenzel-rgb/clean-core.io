@@ -257,7 +257,7 @@ export default function CoachMarkNote({
           data-coach-form="inline"
           role="note"
           aria-label={mark.title}
-          className="relative flex max-w-3xl flex-col gap-2 rounded-cc-card bg-cc-surface-dark px-4 py-3 text-cc-on-dark shadow-cc-dialog sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+          className="relative flex max-w-5xl flex-col gap-2 rounded-cc-card bg-cc-surface-dark px-4 py-2 text-cc-on-dark shadow-cc-dialog sm:flex-row sm:items-center sm:justify-between sm:gap-4"
         >
           <span aria-hidden={true} className="absolute -bottom-1 left-6 h-3 w-3 rotate-45 bg-cc-surface-dark" />
           <div className="min-w-0">
@@ -267,7 +267,7 @@ export default function CoachMarkNote({
                 {mark.title}
               </b>
             </p>
-            <p className="m-0 mt-0.5 text-[13px] leading-snug font-medium">{mark.body}</p>
+            <p className="m-0 text-[13px] leading-snug font-medium">{mark.body}</p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-3">
             <CcButton onClick={() => onDismiss(mark.id)} data-coach-mark-dismiss={mark.id}>
