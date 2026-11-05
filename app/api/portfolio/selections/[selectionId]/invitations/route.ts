@@ -23,6 +23,7 @@ import {
 } from '@/lib/portfolio/invitation-email';
 import { createSelectionInvitation, SELECTION_INVITATIONS, selectionSharing } from '@/lib/portfolio/selection-invitations';
 import { SELECTION_COLLECTION } from '@/lib/portfolio/selection-store';
+import { recordInvitationSent, type InvitationRecordDb } from '@/lib/invitation-delivery-record';
 
 /**
  * Inviting one address to read a named selection — roadmap 3.0.21 (4).
@@ -92,6 +93,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
       to: invitation.email,
       subject: PORTFOLIO_INVITATION_SUBJECT,
       label: 'portfolio invitation',
+      // The six-month delivery record with the keyed hash of the address
+      // (privacy policy sections 6 and 8), not an `email_events` record.
+      deliveryRecord: (messageId) =>
+        recordInvitationSent(gate.db as unknown as InvitationRecordDb, {
+          messageId,
+          recipient: invitation.email,
+          inviterUid: gate.uid,
+          kind: 'portfolio',
+        }),
       html: wrapEmailDocument(
         buildPortfolioInvitationEmail({
           // The inviting account's own free text: repeated once, plain,

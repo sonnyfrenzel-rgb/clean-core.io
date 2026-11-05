@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { mailDeliveryRecordExpiry } from '@/lib/proof-log';
+import { RANK, TERMINAL_NEGATIVE } from '@/lib/mail-status';
+import { recordInvitationEvent } from '@/lib/invitation-delivery-record';
 
 /**
  * What happened to a message after Resend accepted it.
@@ -25,20 +27,8 @@ export type EmailEventType =
   | 'email.opened'
   | 'email.clicked';
 
-/**
- * Ordered worst-to-best is deliberate: a message that bounces after a delivery
- * event has still bounced, and the summary must not be overwritten by a later
- * `opened` from a scanner. Only a strictly higher rank replaces the current one,
- * except for the terminal negatives, which always win.
- */
-const RANK: Record<string, number> = {
-  'email.sent': 1,
-  'email.delivery_delayed': 2,
-  'email.delivered': 3,
-  'email.opened': 4,
-  'email.clicked': 5,
-};
-const TERMINAL_NEGATIVE = new Set(['email.bounced', 'email.complained']);
+// The ranking of statuses (worst to best, terminal negatives always win) is
+// shared with the invitation delivery records: `lib/mail-status.ts`.
 
 export interface EmailEventInput {
   /** Resend's message id — the join key between the send and everything after. */
@@ -116,6 +106,11 @@ export function verifyResendSignature(opts: {
  */
 export async function recordEmailEvent(input: EmailEventInput, eventId: string): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
+  // An invitation mail has its own delivery record, which holds the keyed
+  // hash of the address and never the address, the subject or the provider's
+  // text (privacy policy sections 6 and 8). Its events go there and nowhere
+  // else — `email_events` would keep the address in clear.
+  if (await recordInvitationEvent(db, input, eventId)) return;
   const ref = db.collection('email_events').doc(input.messageId);
 
   await db.runTransaction(async (tx: any) => {

@@ -42,11 +42,12 @@ Two sub-processors receive data in transit for the features that require them �
 | `survey_campaigns/{campaign}` | Campaign metadata: name, send and close dates, invitation count — no address | none | Kept for the campaign record | — (no personal data) |
 | `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
 | `email_sends/{campaign}__{uid}` | Bulk-mail outbox: recipient address, uid, send state per campaign | `uid` | Life of account | ✅ query delete |
-| `email_events/{messageId}` | Delivery record per sent mail: recipient address, subject, kind, message id, delivery status | `uid` where the sender passed one (since 2026-10-02 also on the operator's signup notification, whose subject names the account); recipient address in `to` | The open value `mailDeliveryRecordRetention` (**90 days**) after sending, privacy policy section 6: every record written since 3.0.21 carries `expiresAt` (`lib/email-events.ts`), and `expiresAt` drives the proof-log TTL policy. Records written before carry none; the erasure sets one, the rest need a one-off backfill (open, owner) | ❌ kept until their date, **pseudonymised**: `to` becomes the keyed hash, uid, subject and provider text go (by uid and by address). The operator's signup notification about the account is deleted (by uid, and by its subject for records without one) |
+| `email_events/{messageId}` | Delivery record per sent mail except the invitations (those are `invitation_delivery_records`, below, since 3.0.21): recipient address, subject, kind, message id, delivery status | `uid` where the sender passed one (since 2026-10-02 also on the operator's signup notification, whose subject names the account); recipient address in `to` | The open value `mailDeliveryRecordRetention` (**90 days**) after sending, privacy policy section 6: every record written since 3.0.21 carries `expiresAt` (`lib/email-events.ts`), and `expiresAt` drives the proof-log TTL policy. Records written before carry none; the erasure sets one, the rest need a one-off backfill (open, owner) | ❌ kept until their date, **pseudonymised**: `to` becomes the keyed hash, uid, subject and provider text go (by uid and by address). The operator's signup notification about the account is deleted (by uid, and by its subject for records without one) |
+| `invitation_delivery_records/{messageId}` | Delivery record of each project and portfolio invitation mail (privacy policy sections 6 and 8, § 11 UWG; since 3.0.21): the keyed hash of the invited address (`recipientHash`, HMAC-SHA256 under `PSEUDONYM_PEPPER`), the inviting account (`inviterUid`), the kind (project or portfolio), the sending time, the provider's message id and the delivery status with its time — **no address, no subject, no provider text** (`lib/invitation-delivery-record.ts`; written by both invitation routes through `sendTransactionalMail`'s `deliveryRecord`, status from `POST /api/webhooks/resend`). Without `PSEUDONYM_PEPPER` no record is written (critical log line); the invitation still goes out | `inviterUid`; after the inviter's erasure `inviterHash` | Six calendar months after sending: every record carries `expiresAt`, and `expiresAt` drives the proof-log TTL policy | ❌ kept until its date: the inviter's uid becomes the keyed hash of its address (`lib/proof-log-erasure.ts`); without the pepper deleted. The invited person's record holds only the hash already |
 | `email_suppressions/{keyed hash}` | Opt-out list for community mail: since 3.0.21 the document id is the keyed hash of the address (`hmac1_…`, `lib/pseudonym.ts`) and the entry holds list, source and time, **no address** (`app/api/unsubscribe/route.ts`). Older entries (`{sha256(address)}`, address in clear) are read as well (`scripts/send-survey.ts`) and replaced on erasure | the keyed hash (document id) | Without time limit (privacy policy sections 2 and 5); lifted when the account switches community mail on again | ❌ kept as the keyed hash only; a clear-text entry is replaced by a keyed one (`lib/proof-log-erasure.ts`) |
 | `invitation_suppressions/{keyed hash}` | Opt-out list for invitations to a project or a portfolio (C10/C12, since 3.0.21): the document id is the keyed hash of the address (`hmac1_…`, `lib/invitation-suppression.ts`); the entry holds list, source and time, **no address** (`app/api/unsubscribe/invitations/route.ts`). Both invitation routes refuse an address on it | the keyed hash (document id) | Without time limit (privacy policy sections 5, 6 and 8) | ❌ kept as the keyed hash only; the erasure does not touch it |
 | `usage_reports/{id}` | Weekly admin report snapshot. **Since 2026-09-30 figures only** — counts, analyses per newly activated account, failed mails per kind; no name, address, uid or recipient (`usageReportSnapshot`, `lib/usage-report.ts`). Older snapshots listed accounts by name and address | none (figures); older snapshots: address inside the lists | Kept for the trend | ✅ the account's entries are removed from older snapshots, by address; everybody else's stay (see note) |
-| `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ rows kept; the actor's address is replaced by a pseudonym |
+| `audit_events/{id}` | Security log of administrative and self-service actions (see note): actor uid, action, subject uid or object id, time; the acting administrator's address on administrative rows only | `actorUid`, `targetUid` | **24 months** from the recorded action, then deleted (see note) | ❌ rows kept, **pseudonymised**: where the erased account is actor or subject its uid becomes the keyed hash and no address of it stays; another administrator's uid and address stay (`lib/audit-pseudonymisation.ts`) |
 | `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 under `RATE_LIMIT_PEPPER` of the route-scoped key (`<route>:<uid and/or ip>`, e.g. `gemini:<uid>:<ip>`), so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
 | `platform_model_budget/{YYYY-MM-DD}` | The community model key's call count for one UTC day, the cap in force and when the breaker opened (`lib/platform-model-budget.ts`) — no account, no content | — | Each document carries `expiresAt` (three days after its day) for a Firestore TTL policy; the policy is created by hand (`gcloud firestore fields ttls update expiresAt --collection-group=platform_model_budget --enable-ttl --database=clean-core-eu --project=cleancore-491216`) and was **not yet in place** on 2026-10-22 | ❌ no personal data |
 | `model_receipt_uses/{jti}` | The first use of a model receipt by a store that checks it without its text: project id, artefact name, time (`lib/model-receipt-uses.ts`) — no account, no content | — | Each document carries `expiresAt` (two days after the receipt was issued) for a Firestore TTL policy, created by hand like the one above (`--collection-group=model_receipt_uses`); **not yet in place** on 2026-10-22 | ❌ no personal data |
@@ -82,8 +83,14 @@ keyed hash stays on the list without time limit "so that we do not mail you agai
 — and the erasure follows them now. The invitation opt-out list the texts also
 name (privacy policy sections 5 and 8, C7) exists since 3.0.21 as
 `invitation_suppressions` (above): both invitation mails carry an unsubscribe link.
-**Invitation delivery records still have no six-month date** — open product work,
-not a register entry.
+The six-month invitation delivery record the texts name (sections 6 and 8) exists
+since 3.0.21 as `invitation_delivery_records` (above). It is a collection of its own
+rather than a kind of `email_events` record because `email_events` keeps the address
+in clear — written at sending and again by every webhook event — together with the
+subject and the provider's text, for 90 days; an invitation's record must hold the
+keyed hash only and run six months, and one collection with two shapes would leave
+that to whichever writer came last. Invitation mails sent before this change have an
+`email_events` record of the old shape, which runs out after its 90 days.
 
 ## The proof log (3.0.21, acceptance tests T05/T06)
 
@@ -94,20 +101,22 @@ routine deletes what has expired, and after the contract ends a keyed hash of th
 address stands where account and address stood.
 
 - **Records:** `consent_events`, `byok_agreement_events` (append-only, Admin SDK only),
-  the deletion notes in `erasure_notes`, and the pseudonymised delivery records in
-  `email_events` and opt-outs in `email_suppressions`.
-- **Deletion date:** `expiresAt` on every record (`lib/proof-log.ts`): null while the
-  contract runs (the date depends on the end), then 31 December of the third calendar
-  year after the end; three years for a deletion note; 90 days after sending for a
-  delivery record.
+  the deletion notes in `erasure_notes`, the pseudonymised delivery records in
+  `email_events`, the invitation delivery records in `invitation_delivery_records`
+  and opt-outs in `email_suppressions`.
+- **Deletion date:** `expiresAt` on every record (`lib/proof-log.ts`,
+  `lib/invitation-delivery-record.ts`): null while the contract runs (the date depends
+  on the end), then 31 December of the third calendar year after the end; three years
+  for a deletion note; 90 days after sending for a delivery record; six calendar months
+  after sending for an invitation delivery record.
 - **The nightly routine is Firestore TTL.** A TTL policy on `expiresAt` makes Firestore
-  delete each document once that time has passed, typically within 24 hours. The four
+  delete each document once that time has passed, typically within 24 hours. The five
   policies are created by hand, like the others in this file, and `npm run
   retention:verify` checks each one (the rows above that say "drives the proof-log TTL
   policy"):
 
   ```bash
-  for c in consent_events byok_agreement_events erasure_notes email_events; do
+  for c in consent_events byok_agreement_events erasure_notes email_events invitation_delivery_records; do
     gcloud firestore fields ttls update expiresAt --collection-group=$c --enable-ttl \
       --database=clean-core-eu --project=cleancore-491216
   done
@@ -120,10 +129,19 @@ address stands where account and address stood.
   Without the secret an erasure deletes the proof records instead of keeping them with
   the address, and logs a critical line (`lib/firebase-admin.ts`).
 - **Tests:** `tests/proof-log-3021.spec.ts` (server-free: periods, pseudonymisation,
-  idempotence, opt-outs, the missing-pepper path); `tests/account-erasure.spec.ts` and
+  idempotence, opt-outs, the missing-pepper path), `tests/invitation-delivery-record.spec.ts`
+  (server-free: the invitation record, its status, its erasure); `tests/account-erasure.spec.ts` and
   `tests/hardening-v220-cf.spec.ts` against the emulator.
 
-**`audit_events` note:** deliberately excluded from erasure to preserve a tamper-evident record of privileged actions (approvals, deletions). Contains actor uid and action type — a legitimate-interest legal basis for security accountability. Since 3.0.21 the actor's e-mail address is recorded only for administrative actions (granting or withdrawing administrator rights, approving or revoking an account, granting or withdrawing tenant access, deleting an account, the runner self-test; `auditRowNamesActorEmail` in `lib/firebase-admin.ts`). Self-service actions — an account saving or deleting its own model key, its project commands, revoking readers, withdrawing invitations, adopting a repair draft — are recorded by uid alone. When an account is erased, every row it acted in keeps its uid and action, and its `actorEmail` is replaced by the account's pseudonym (`acct_` + the first 16 hex characters of the SHA-256 of the uid). Rows written before 3.0.21 for self-service actions still carry an address until that account is erased or the row ages out. Reviewed for minimization; no analysis content stored.
+**`audit_events` note:** kept through an erasure, pseudonymised, to preserve a tamper-evident record of who did what (legitimate interest, Art. 6(1)(f) GDPR; Art. 17(3)(e) GDPR). What a row holds, as the code writes it today:
+
+- **Administrative actions** — granting or withdrawing administrator rights, approving (reinstating) or revoking (restricting) an account, granting or withdrawing the S/4HANA functions and deciding a tenant-access request, blocking an own model key or deleting it after the agreement ended in text form, deleting an account, removing a second factor (`scripts/mfa-reset.ts`), the runner self-test: the administrator's uid **and address** (`actorEmail`), the action, the affected account's uid (`targetUid`) and the time; the second-factor removal also the affected address (`targetEmail`), the number of factors removed and the operator's reason. The set is `PRIVILEGED_AUDIT_ACTIONS` in `lib/audit-pseudonymisation.ts`.
+- **Self-service actions** — an account saving or deleting its own model key (a failed attempt and a failed key test too) or switching its automatic steps, its project commands (`app/api/projects/[projectId]/commands/route.ts`), withdrawing a reader (the reader's uid as subject) or an open invitation (the invitation id), adopting a repair draft: the account's uid, the action (with the project id where there is one), the subject and the time — **no address** since 3.0.21. Not recorded: signing in, sending or accepting an invitation, changing the profile, enrolling a second factor, deleting the own account.
+- **Maintenance scripts** (`scripts/purge-audit-events.ts`, `scripts/pseudonymise-audit-events.ts`, the v2.3 quota migration) write rows naming no person.
+
+**After an account is erased** (`deleteUserDataAndAccount`, `lib/firebase-admin.ts`), every row in which it is the actor or the subject keeps its action and time; its uid is replaced by the keyed hash the proof log names it by (HMAC-SHA256 under `PSEUDONYM_PEPPER` of its address, else of `uid:<uid>`; `erasedAccountPseudonym`), and its address (`actorEmail`, `targetEmail`) is removed (`auditRowErasureUpdate`). Another administrator's uid and address in the same row stay — they attribute a privileged act on the account to whoever made it. An administrator's deletion of an account writes its own row after the cascade, naming the account by the same hash. Without `PSEUDONYM_PEPPER` the rows naming the account are deleted instead (critical log line), as the proof records are. Until this change the erasure replaced only `actorEmail` with an unkeyed `acct_…` value and kept the uid.
+
+**Legacy rows** — self-service rows written before 3.0.21 carry the account's address; rows of accounts erased before this change carry their uid and the `acct_…` placeholder. **`scripts/pseudonymise-audit-events.ts`** converts them with the same rule: dry run by default (counts only — no uid, no address, no document id), `--apply` rewrites, `--database <id>` (default `FIRESTORE_DB_ID`, i.e. `clean-core-eu`); it needs the deployment's `PSEUDONYM_PEPPER`, refuses to run in CI, stops when none of the accounts the log names exists (wrong target), treats an account as existing when it has a sign-in or a profile, and a second run changes nothing. **Whether and when it runs against production is the owner's decision; it has not been run.** Until it is, those legacy rows are as described.
 
 The period is **24 months from the recorded action**, decided by the owner on **2026-09-18**. Until that decision this row said only "retained", which is not a retention period: Art. 13(2)(a) GDPR asks for the storage duration or, where none can be given, the criteria used to determine it, and a legal review flagged the omission. Twenty-four months covers two annual security reviews, so a privileged action stays traceable across both of them, while the administrator identities the record names do not outlive the reason for holding them.
 

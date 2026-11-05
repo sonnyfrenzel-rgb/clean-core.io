@@ -10,6 +10,7 @@ import {
   pseudonymisedProofFields,
   type ContractEnding,
 } from '@/lib/proof-log';
+import { INVITATION_DELIVERY_RECORDS, pseudonymisedInviterFields } from '@/lib/invitation-delivery-record';
 
 /**
  * What an account erasure keeps, and how (privacy policy section 5, Terms 1.3,
@@ -24,7 +25,8 @@ import {
  * 3. the deletion note "account (hash) deleted on [date]", three years;
  * 4. the delivery records of mails to the account, pseudonymised the same way,
  *    until their own period ends (the operator's notification about the new
- *    account is deleted, as its mail is from the operator's mailbox);
+ *    account is deleted, as its mail is from the operator's mailbox), and the
+ *    delivery records of invitations it sent, with the inviter as the hash;
  * 5. an opt-out of community mail, as the keyed hash only, without end.
  *
  * Everything else the cascade in `lib/firebase-admin.ts` deletes. This module
@@ -129,6 +131,14 @@ export async function retainProofsOfErasedAccount(
     pseudonymised++;
     const sentAt = asDate(data.sentAt) ?? asDate(data.updatedAt);
     writes.push((b) => b.update(row.ref, pseudonymisedDeliveryFields({ accountHash, sentAt, now: input.endedAt }, del())));
+  }
+
+  // 4b. The delivery records of invitations the account sent (privacy policy
+  //     sections 6 and 8): they hold the recipient's keyed hash already and
+  //     stay for their six months; the inviter becomes the account's hash.
+  for (const row of (await db.collection(INVITATION_DELIVERY_RECORDS).where('inviterUid', '==', input.uid).get()).docs) {
+    pseudonymised++;
+    writes.push((b) => b.update(row.ref, pseudonymisedInviterFields(accountHash, del())));
   }
 
   // 5. The opt-out list: one keyed entry per address that opted out; the

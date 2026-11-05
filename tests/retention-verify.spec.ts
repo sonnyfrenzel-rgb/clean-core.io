@@ -67,7 +67,7 @@ const RAW_TTLS = [
     ttlConfig: { state: 'ACTIVE' },
   },
   // The proof-log policies (3.0.21, T05/T06).
-  ...['consent_events', 'byok_agreement_events', 'erasure_notes', 'email_events'].map((c) => ({
+  ...['consent_events', 'byok_agreement_events', 'erasure_notes', 'email_events', 'invitation_delivery_records'].map((c) => ({
     indexConfig: { usesAncestorConfig: true },
     name: `projects/example-project/databases/example-db/collectionGroups/${c}/fields/expiresAt`,
     ttlConfig: { state: 'ACTIVE' },
@@ -118,7 +118,7 @@ test.describe('the expected values come out of the document', () => {
     expect(c.ceilingDays, 'the ceiling the privacy policy quotes to users').toBe(30);
     expect(c.pitrWindowDays).toBe(7);
     expect(c.ttl).toEqual({ collectionGroup: 'rate_limits', field: 'expiresAt' });
-    expect(c.ttlRows.map((r) => r.collectionGroup).sort()).toEqual(['byok_agreement_events', 'consent_events', 'email_events', 'erasure_notes']);
+    expect(c.ttlRows.map((r) => r.collectionGroup).sort()).toEqual(['byok_agreement_events', 'consent_events', 'email_events', 'erasure_notes', 'invitation_delivery_records']);
     expect(c.logBuckets).toEqual({ defaultDays: 30, requiredDays: 400 });
   });
 

@@ -126,7 +126,7 @@ test.describe('every proof record carries its own deletion date (T05/T06)', () =
 
   test('the TTL policies that delete them are in the register, and the verifier checks each', () => {
     const register = read('docs/DATA-RETENTION.md');
-    for (const c of ['consent_events', 'byok_agreement_events', 'erasure_notes', 'email_events']) {
+    for (const c of ['consent_events', 'byok_agreement_events', 'erasure_notes', 'email_events', 'invitation_delivery_records']) {
       const row = register.split('\n').find((l) => l.startsWith(`| \`${c}/`));
       expect(row, `${c} has no row in docs/DATA-RETENTION.md`).toBeDefined();
       expect(row!, `${c}: no TTL claim the verifier reads`).toContain('`expiresAt` drives the proof-log TTL policy');

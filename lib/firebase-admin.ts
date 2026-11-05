@@ -19,6 +19,8 @@ import { quotaSpentSentence } from './run-quota-rule';
 import { isRecentLogin } from './recent-login';
 import { retainProofsOfErasedAccount, type ProofLogDb } from './proof-log-erasure';
 import { PROOF_LOG_RETENTION, PseudonymPepperMissingError, type ContractEnding } from './proof-log';
+import { auditRowErasureUpdate, auditRowNamesActorEmail, erasedAccountPseudonym } from './audit-pseudonymisation';
+import { INVITATION_DELIVERY_RECORDS } from './invitation-delivery-record';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -1170,6 +1172,7 @@ export async function deleteUserDataAndAccount(
       await deleteCollectionByUid('consent_events');
       await deleteCollectionByUid(BYOK_AGREEMENT_EVENTS);
       await deleteCollectionByUid('email_events', 'uid');
+      await deleteCollectionByUid(INVITATION_DELIVERY_RECORDS, 'inviterUid');
       for (const address of new Set(proofAddresses)) {
         const rows = await db.collection('email_events').where('to', 'array-contains', address).get();
         await commitInChunks(db, rows.docs.map((row: ErasableDoc) => (batch: WriteBatch) => batch.delete(row.ref as DocumentReference)));
@@ -1179,24 +1182,41 @@ export async function deleteUserDataAndAccount(
     }
   });
 
-  //     The security journal keeps its rows for the retention period
-  //     (`docs/DATA-RETENTION.md`), but not the address of an erased account
-  //     (PRV-01): every row this account acted in has its `actorEmail`
-  //     replaced by the account's pseudonym (`accountLogRef`). The uid stays,
-  //     so the rows still tell apart who did what; nothing in them names a
-  //     person any more once the profile is gone.
+  //     The security log keeps its rows for the retention period
+  //     (`docs/DATA-RETENTION.md`), pseudonymised (legal review of 05.11.2026):
+  //     every row in which this account is the actor or the subject keeps its
+  //     action and time, its uid is replaced by the keyed hash the proof log
+  //     names the account by, and no address of it stays
+  //     (`auditRowErasureUpdate`, `lib/audit-pseudonymisation.ts`). Another
+  //     administrator's uid and address in the same row stay — they attribute
+  //     a privileged act on this account to whoever made it.
+  //
+  //     Without `PSEUDONYM_PEPPER` no keyed hash can be made; the rows naming
+  //     the account are then deleted, as the proof records are above, rather
+  //     than kept with its uid.
   await tryDelete('audit_events', async () => {
-    const pseudonym = accountLogRef(uid);
-    const rows = await db.collection('audit_events').where('actorUid', '==', uid).get();
-    const toUpdate = rows.docs.filter((row: ErasableDoc) => {
-      const email = row.data()?.actorEmail;
-      return typeof email === 'string' && email !== pseudonym;
-    });
-    for (let i = 0; i < toUpdate.length; i += 400) {
-      const batch = db.batch();
-      toUpdate.slice(i, i + 400).forEach((row: ErasableDoc) => batch.update(row.ref, { actorEmail: pseudonym }));
-      await batch.commit();
+    const named = new Map<unknown, ErasableDoc>();
+    for (const field of ['actorUid', 'targetUid']) {
+      for (const row of (await db.collection('audit_events').where(field, '==', uid).get()).docs) named.set(row.ref, row);
     }
+    let pseudonym: string | null = null;
+    try {
+      pseudonym = erasedAccountPseudonym(uid, proofAddresses);
+    } catch (e) {
+      if (!(e instanceof PseudonymPepperMissingError)) throw e;
+      logger.critical('account erasure: PSEUDONYM_PEPPER is not set — security log rows of the account deleted instead of pseudonymised', { code: e.code });
+    }
+    const writes: Array<(batch: WriteBatch) => void> = [];
+    for (const row of named.values()) {
+      const ref = row.ref as DocumentReference;
+      if (pseudonym === null) {
+        writes.push((batch) => batch.delete(ref));
+        continue;
+      }
+      const update = auditRowErasureUpdate(row.data() || {}, uid, pseudonym, FieldValue.delete());
+      if (update) writes.push((batch) => batch.update(ref, update));
+    }
+    await commitInChunks(db, writes);
   });
 
   //     The operator's signup notification about this account, written before
@@ -1543,21 +1563,13 @@ export async function auditActorEmail(db: any, actorUid: string): Promise<string
 }
 
 /**
- * The administrative actions whose row names the acting administrator's
- * address (PRV-01). The journal exists for privileged actions
- * (`docs/DATA-RETENTION.md`); an account acting on its own key, projects or
- * readers is recorded by its uid alone, which is enough to tell who did what
- * and keeps an address out of a record kept for 24 months.
+ * Whether a row for `action` records the actor's address (PRV-01): only the
+ * administrative actions do; an account acting on its own key, projects or
+ * readers is recorded by its uid alone. The set and the erasure rule live in
+ * `lib/audit-pseudonymisation.ts` (pure, shared with the legacy backfill).
+ * Re-exported for the tests.
  */
-const PRIVILEGED_AUDIT_ACTIONS: ReadonlySet<string> = new Set([
-  'GRANT_ADMIN', 'REVOKE_ADMIN', 'APPROVE_USER', 'REVOKE_USER', 'GRANT_S4', 'REVOKE_S4',
-  'GRANT_S4_LINK', 'REJECT_S4_LINK', 'DELETE_USER_CASCADE',
-]);
-
-/** Whether a row for `action` records the actor's address. Exported for the tests. */
-export function auditRowNamesActorEmail(action: string): boolean {
-  return PRIVILEGED_AUDIT_ACTIONS.has(action) || action.startsWith('RUNNER_SELFTEST:');
-}
+export { auditRowNamesActorEmail };
 
 /** The `audit_events` row for one action, ready for `add()` or for a batch. */
 async function auditEventRecord(db: any, actorUid: string, action: string, targetUid: string) {
@@ -1764,8 +1776,26 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
   // GDPR Art. 17: run the SAME full erasure cascade as self-service deletion.
   // Previously this only removed registration_requests + users, which orphaned
   // projects, immutable runs, BYOK/S4 secrets, MFA data and the Firebase Auth account.
+  // The address is read before the cascade removes the profile, so the row
+  // written after it names the erased account by the same keyed hash the
+  // cascade put into its other rows — not by the uid it just pseudonymised
+  // everywhere else (legal review of 05.11.2026). Without the pepper the row
+  // names no account at all.
+  let address: string | null = null;
+  try {
+    const stored = ((await db.collection('users').doc(targetUid).get()).data() || {}).email;
+    address = typeof stored === 'string' && stored.trim() ? stored : null;
+  } catch {
+    /* named by the hash of the uid */
+  }
   await deleteUserDataAndAccount(targetUid);
-  await logAuditEvent(db, adminUid, 'DELETE_USER_CASCADE', targetUid);
+  let subject = 'erased-account';
+  try {
+    subject = erasedAccountPseudonym(targetUid, [address]);
+  } catch (e) {
+    if (!(e instanceof PseudonymPepperMissingError)) throw e;
+  }
+  await logAuditEvent(db, adminUid, 'DELETE_USER_CASCADE', subject);
 }
 
 /**
