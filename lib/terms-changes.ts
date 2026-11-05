@@ -63,6 +63,27 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
           'allow it. The platform reads only service metadata and a CSRF token from it (section 8).',
       },
       {
+        lead: 'What you may upload, and what the model receives.',
+        text:
+          'Your confirmation that you may upload and have processed what you submit expressly covers whole ' +
+          'repositories, including third-party code in them such as add-ons or copied SAP standard code, and ' +
+          'outputs of your SAP system you import, such as ATC results or usage data. The model provider receives ' +
+          'your code unmasked; the masking applies only to what the platform puts out (section 8).',
+      },
+      {
+        lead: 'Imported results stay beside the analysis.',
+        text:
+          'ATC results and usage data you import are shown beside the findings of the analysis, are not equated ' +
+          'with them and never flow into the signed run (section 4.1).',
+      },
+      {
+        lead: 'Bulk upload and portfolio need your own key.',
+        text:
+          'Uploading many programs at once and the portfolio are available only to an account with its own ' +
+          'model key whose last check succeeded. Reading a portfolio you were invited to needs no key, and you ' +
+          'can remove a selection, a share or a bulk-upload record at any time (section 1.5).',
+      },
+      {
         lead: 'A record of what you accepted.',
         text:
           'We record which version you accepted, in which language and when, with the SHA-256 digest of its ' +
@@ -74,8 +95,9 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
         text:
           'Sections 2.2, 3 and 4.1 describe the voluntary, one-person operation and what the platform delivers: ' +
           'results the engine computes without a model, and drafts a model writes — marked as AI-generated. ' +
-          'If code must not leave the platform, switch the model steps off in the settings, the automatic ones ' +
-          'included (section 5.4).',
+          'On the platform key, two steps start by themselves when a project is opened; you switch them off in ' +
+          'the settings. If code must not leave the platform, switch all model steps off there, the automatic ' +
+          'ones included — the assistant has no switch and still answers on a model when you ask it (section 5.4).',
       },
       {
         lead: '',
@@ -84,7 +106,7 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
           'proof log and how long each record is kept, a shorter notice to the operator about new accounts ' +
           'that no longer carries your name, address or motivation, the address of your Google profile picture ' +
           'removed from your sign-in record, reports of illegal content, ATC imports without personal fields, ' +
-          'and sharing a portfolio overview.',
+          'sharing a portfolio overview, and what a bulk upload and a portfolio keep and how they are deleted.',
       },
     ],
   },

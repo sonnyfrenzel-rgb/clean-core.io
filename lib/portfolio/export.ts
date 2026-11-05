@@ -67,9 +67,21 @@ export function programRow(p: ProgramFacts): (string | number)[] {
   ];
 }
 
-/** The programs table as RFC 4180 CSV, every cell formula-guarded, CRLF line ends. */
+/**
+ * The programs table as RFC 4180 CSV, every cell formula-guarded, CRLF line ends.
+ *
+ * The first line is `PORTFOLIO_EXPORT_NOTE` in one cell, so the file itself
+ * says that it is not signed, not an audit pack and not evidence (legal review
+ * of 05.11.2026; privacy policy section 3) — a CSV has no metadata field the
+ * workbook's `description` could stand in for. The column heads follow on the
+ * second line.
+ */
 export function portfolioCsv(view: PortfolioView): string {
-  const lines = [PROGRAM_COLUMNS.map(csvCell).join(','), ...view.programs.map((p) => programRow(p).map(csvCell).join(','))];
+  const lines = [
+    csvCell(PORTFOLIO_EXPORT_NOTE),
+    PROGRAM_COLUMNS.map(csvCell).join(','),
+    ...view.programs.map((p) => programRow(p).map(csvCell).join(',')),
+  ];
   return `${lines.join('\r\n')}\r\n`;
 }
 
