@@ -69,3 +69,23 @@ test('a log helper that is an arm\'s only step says its sentence, or what it doe
   expect(now).not.toContain('Add log');
   expect(now.some((n) => /^Note: customer missing/i.test(n) || n === 'Note in the run log'), now.join(' | ')).toBe(true);
 });
+
+test('a row the engine draws as the yes of an arm goes into the result list, said by what the row is or as "the row"', () => {
+  const src = [
+    'REPORT zt_collect.',
+    'DATA: gt_out TYPE STANDARD TABLE OF vbak, ls_vbak TYPE vbak.',
+    'PARAMETERS p_limit TYPE p DECIMALS 2.',
+    'START-OF-SELECTION.',
+    '  SELECT * FROM vbak INTO ls_vbak UP TO 10 ROWS.',
+    '    IF ls_vbak-netwr > p_limit.',
+    '      APPEND ls_vbak TO gt_out.',
+    '    ENDIF.',
+    '  ENDSELECT.',
+    '  LOOP AT gt_out INTO ls_vbak.',
+    "    WRITE / ls_vbak-vbeln.",
+    '  ENDLOOP.',
+  ].join('\n');
+  const now = names(src, NEW);
+  expect(now.some((n) => /^Add the .* to the list$/.test(n)), now.join(' | ')).toBe(false);
+  expect(now.some((n) => /^Put the (?:sales order|row) in the result list$/.test(n)), now.join(' | ')).toBe(true);
+});

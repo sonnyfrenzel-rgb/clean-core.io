@@ -634,6 +634,21 @@ function itemOf(identifier: string, ctx?: PlainContext): string {
   return lcFirst(singularOf(humaniseStem(stem, ctx)));
 }
 
+/**
+ * 3.5.0: what one row of an internal table is, only where something says it — the glossary, the dictionary, the
+ * customer's texts, the table it is filled from, or a German name read in full. Null where only the name made into
+ * words would say it ("meld", "esc").
+ */
+function knownItemOf(identifier: string, ctx: PlainContext): string | null {
+  const stem = stemOf(identifier);
+  const term = fieldTermOf(stem, ctx);
+  if (term && !RETURN_STEM.test(stem)) return lcFirst(term.singular);
+  const fromSource = sourceTermOf(identifier, ctx);
+  if (fromSource) return lcFirst(fromSource.singular);
+  const german = germanItem(stem, ctx);
+  return german ? lcFirst(singularOf(german)) : null;
+}
+
 /** One row of a German-named table in English ("output line"); `null` when it cannot be read; '' when not German. */
 function germanItem(stem: string, ctx?: PlainContext): string | null {
   const german = translateGermanWords(stem.split(/[_\s]+/), 'item', ctx?.reads350 ? FIELD_SOURCES_350 : FIELD_SOURCES);
@@ -2122,6 +2137,12 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         // labelled with the table's name by the skeleton; as a routine name it
         // read "Gt stock" in the Business view. It is a change to the program's
         // own working list, and the label says so — never a write to SAP data.
+        // 3.5.0: a row the engine draws as the yes of an arm that draws nothing else (`collectStep`) goes into the
+        // program's result: said so, by what the row is where the code says it, else as "the row".
+        if (c.reads350 && node.detail?.internalTable === true && node.detail?.collects === true) {
+          const known = knownItemOf(node.label, c);
+          return fit(known ? `Put the ${known} in the result list` : 'Put the row in the result list');
+        }
         if (node.detail?.internalTable === true) {
           const item = itemOf(node.label, c);
           const op = detailString(node, 'operation').toUpperCase();
