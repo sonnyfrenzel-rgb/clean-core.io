@@ -155,12 +155,17 @@ export function useProcessMap(
     let cancelled = false;
 
     const build = async () => {
-      const [naming, reader, mapper, client] = await Promise.all([
+      const [naming, reader, mapper, client, customer] = await Promise.all([
         import('@/lib/process-naming'),
         import('@/lib/bpmn/reading-exports-client'),
         import('@/lib/process-map'),
         import('@/lib/process-naming-client'),
+        import('@/lib/customer-texts-client'),
       ]);
+      if (cancelled) return;
+      // 3.5.0 (H5b): the project's own dictionary texts, when its upload had an abapGit package — read by the
+      // Business view from engine 3.5.0 on; null (and the map as before) without them or when they cannot be read.
+      const customerTexts = await customer.fetchCustomerTexts(projectId);
       if (cancelled) return;
 
       // Plain names for the reader, the technical file beside it for the
@@ -169,7 +174,7 @@ export function useProcessMap(
       // a 2,000-line program takes seconds, and on the page's thread that was
       // Chrome's "Page not responding" (owner, 12.10.2026: the CO project froze
       // the Documentation tool). Until it answers the map is `loading`.
-      const reading = reader.readingExportsOffThread(source, { processName: processName || fileName, sourceFileName: fileName });
+      const reading = reader.readingExportsOffThread(source, { processName: processName || fileName, sourceFileName: fileName, ...(customerTexts ? { customerTexts } : {}) });
       // Not left unhandled while the naming is fetched; awaited below.
       reading.catch(() => undefined);
 

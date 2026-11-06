@@ -35,6 +35,7 @@ import { extractDataCoupling } from './abap/code-assessment';
 import { APP_VERSION } from './version';
 import { readStatements } from './abap/statement-reader';
 import { countSourceLines } from '@/lib/source-lines';
+import type { CustomerTexts } from './abap/customer-texts';
 import {
   INCLUDE_CLOSE_MARK,
   INCLUDE_OPEN_MARK,
@@ -119,6 +120,11 @@ export interface OwnCodeFile {
   sources: OwnCodeSource[];
   /** Found while reading the file itself. */
   issues: OwnCodeIssue[];
+  /**
+   * 3.5.0 (H5b): the customer's dictionary texts read from the abapGit XML files of a ZIP (`lib/abap/customer-texts.ts`).
+   * Stored with the project after it is created; absent without any.
+   */
+  customerTexts?: CustomerTexts | null;
 }
 
 /** A row after the files have been compared with each other. */

@@ -20,6 +20,7 @@ import {
 } from './german-terms';
 import { engineReads350Apply } from './engine-reads-350-gate';
 import { authorCommentsOf, type AuthorComment } from './author-comments';
+import { CUSTOMER_TEXT_LABEL, isCustomerTexts, type CustomerTexts } from './customer-texts';
 import {
   NAMING_ABBREVIATIONS,
   SAP_FIELD_VALUES,
@@ -113,12 +114,21 @@ export interface PlainContext {
   readonly sources?: ReadonlyMap<string, string>;
   /** Database tables the source selects from, lower case. */
   readonly selected?: ReadonlySet<string>;
+  /**
+   * 3.5.0 (H5b, owner decision 06.11.2026): the customer's own dictionary texts from the uploaded abapGit package —
+   * the first source of words for this project. Absent without an upload that had them, and for an older engine.
+   */
+  readonly customer?: CustomerTexts;
+  /** 3.5.0: the customer texts a label was just built from, code → text — read and cleared by `plainLabels`. */
+  readonly customerUsed?: Map<string, string>;
 }
 
 /** What `plainContext` and `plainLabels` read besides the source. */
 export interface PlainOptions {
   /** The engine the wording is read for (`engineVersionOfProject`); this release when absent. */
   engineVersion?: string | null;
+  /** 3.5.0 (H5b): the project's customer texts (`lib/abap/customer-texts.ts`); read only from that engine on. */
+  customerTexts?: CustomerTexts | null;
 }
 
 const EMPTY_CONTEXT: PlainContext = Object.freeze({
@@ -257,8 +267,9 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
         }
       }
     }
+    const customer = reads350 && isCustomerTexts(options.customerTexts) ? options.customerTexts : undefined;
     return reads350
-      ? { lines, statements, selections, constants, types, tables, flags, reads350, sources, selected }
+      ? { lines, statements, selections, constants, types, tables, flags, reads350, sources, selected, ...(customer ? { customer, customerUsed: new Map<string, string>() } : {}) }
       : { lines, statements, selections, constants, types, tables, flags };
   } catch {
     return EMPTY_CONTEXT;
@@ -352,7 +363,17 @@ function stemOf(identifier: string): string {
  */
 function fieldTermOf(key: string, ctx: PlainContext | undefined): PlainTerm | undefined {
   const k = key.toLowerCase();
+  const customer = customerWord(ctx, 'fields', k);
+  if (customer) return { singular: customer, plural: customer };
   return own(FIELD_TERMS_EN, k) ?? (ctx?.reads350 ? own(SAP_FIELDS, k) : undefined);
+}
+
+/** 3.5.0 (H5b): the customer's own text for a field, a table or a selection field, noted as used. */
+function customerWord(ctx: PlainContext | undefined, kind: 'fields' | 'tables' | 'selections', key: string): string | undefined {
+  const texts = ctx?.customer?.[kind];
+  const text = texts ? own(texts, key.toLowerCase()) : undefined;
+  if (text) ctx?.customerUsed?.set(key.toUpperCase(), text);
+  return text;
 }
 
 /** A key of one of the tables — never an inherited one (`constructor`, `toString`). */
@@ -456,6 +477,8 @@ const PLAIN_WORD_KEYS = new Set(['where', 'form', 'case', 'func', 'rows', 'keys'
  */
 function tableTermOf(name: string, ctx?: PlainContext, dbTable = false): PlainTerm | null {
   const key = name.trim().toLowerCase();
+  const customer = dbTable || ctx?.selected?.has(key) ? customerWord(ctx, 'tables', key) : undefined;
+  if (customer) return { singular: customer, plural: customer };
   const base = own(TABLE_TERMS_EN, key);
   if (base || !ctx?.reads350) return base ?? null;
   const sap = own(SAP_TABLES, key);
@@ -529,6 +552,7 @@ function singularPhrase(phrase: string): string {
 /** 3.5.0: a table the label names by the words of its customer name (`customTableTerm`) — its code then stays beside it. */
 function isCustomTableWord(name: string, ctx: PlainContext | undefined): boolean {
   const key = name.trim().toLowerCase();
+  if (ctx?.customer && own(ctx.customer.tables, key)) return true;
   return !!ctx?.reads350 && !own(TABLE_TERMS_EN, key) && !own(SAP_TABLES, key) && customTableTerm(key) !== null;
 }
 
@@ -668,6 +692,9 @@ function fieldWord(identifier: string, ctx: PlainContext | undefined, short: boo
     const constant = c.constants.get(lower);
     if (constant !== undefined && constant.trim() && constant.length <= 12) return constant;
     const selection = c.selections.get(lower);
+    // 3.5.0 (H5b): the program's own selection text says what someone enters here.
+    const selectionText = selection ? customerWord(c, 'selections', lower) : undefined;
+    if (selectionText) return selectionText;
     if (selection?.ref) {
       const field = selection.ref.split('-').pop() ?? '';
       const term = fieldTermOf(field, c);
@@ -1170,6 +1197,12 @@ function valueMeaning(left: string, value: string, ctx: PlainContext): string | 
   const selection = ctx.selections.get(lower);
   const field = selection?.ref ? (selection.ref.split('-').pop() ?? '') : stemOf(lower);
   const key = field.toLowerCase();
+  const customerValues = ctx.customer ? own(ctx.customer.values, key) : undefined;
+  const customerValue = customerValues ? own(customerValues, value.trim().toUpperCase()) : undefined;
+  if (customerValue) {
+    ctx.customerUsed?.set(`${key.toUpperCase()} = ${value.trim().toUpperCase()}`, customerValue);
+    return customerValue;
+  }
   const values = own(FIELD_VALUE_TERMS_EN, key) ?? (ctx.reads350 ? own(SAP_FIELD_VALUES, key) : undefined);
   return values ? (own(values, value.trim().toUpperCase()) ?? null) : null;
 }
@@ -2644,6 +2677,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
 
   for (const node of skeletonNodes) {
     let label: string;
+    ctx.customerUsed?.clear();
     try {
       if (isDecision(node)) {
         label = plans.get(node.id)?.question ?? 'Condition met?';
@@ -2667,6 +2701,8 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     } catch {
       technique.set(node.id, '');
     }
+    // 3.5.0 (H5b): the customer's own words the label was built from, each marked as theirs.
+    const usedCustomer = ctx.customerUsed && node.kind !== 'parallel-gateway' ? [...ctx.customerUsed] : [];
     // 3.5.0 (H4): the author's comment at the statement, or above the routine the element opens.
     if (commentReader && !/^(?:parallel-gateway|start|end)$/.test(node.kind)) {
       try {
@@ -2690,6 +2726,10 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
         const note = unstatedCheckNote((conditions.length ? conditions : [stripCondition(node.label)]).flatMap((c) => unstatedFieldsOf(c, ctx)));
         if (note) details.set(node.id, note);
       } catch { /* no note */ }
+    }
+    if (usedCustomer.length) {
+      const said = `${CUSTOMER_TEXT_LABEL}: ${usedCustomer.map(([code, text]) => `${code} “${text}”`).join('; ')}.`;
+      details.set(node.id, [details.get(node.id), said].filter(Boolean).join(' '));
     }
   }
 

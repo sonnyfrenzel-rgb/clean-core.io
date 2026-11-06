@@ -1,4 +1,5 @@
 import type { ProcessNamingRecord } from '../process-naming';
+import type { CustomerTexts } from '../abap/customer-texts';
 
 /**
  * The options that make a reading (a subset of `BpmnExportOptions`, kept here so this module imports nothing at run
@@ -10,6 +11,8 @@ export interface ReadingOptions {
   exporterVersion?: string;
   /** The project's stored business names, for a download (3.0.21, `BpmnExportOptions.naming`). The map passes none. */
   naming?: ProcessNamingRecord | null;
+  /** 3.5.0 (H5b): the project's customer texts (`BpmnExportOptions.customerTexts`). */
+  customerTexts?: CustomerTexts | null;
 }
 
 /**
@@ -26,6 +29,8 @@ export function readingExportsKey(source: string, options: ReadingOptions): stri
   const base = [options.processName, options.sourceFileName ?? null, options.exporterVersion ?? null, source];
   // A naming changes the plain file; without one the key is what it was.
   const naming = options.naming;
+  // Customer texts change the plain file too; without them the key is what it was.
+  if (options.customerTexts) base.push(JSON.stringify(options.customerTexts));
   if (!naming) return JSON.stringify(base);
   return JSON.stringify([...base, [naming.digest, naming.namedAt, naming.origin?.textSha256 ?? null, naming.origin?.provider ?? null, naming.origin?.modelId ?? null]]);
 }

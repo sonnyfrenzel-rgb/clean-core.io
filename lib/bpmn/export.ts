@@ -1,3 +1,4 @@
+import type { CustomerTexts } from '../abap/customer-texts';
 import { buildProcessSkeleton, skeletonReadFor, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
 import { buildProcessFacts } from '../abap/process-facts';
 import type { ProvenanceValue } from '../provenance';
@@ -66,6 +67,12 @@ export interface BpmnExportOptions {
   names?: 'plain' | 'technical';
   /** The ABAP source — lets plain names read declarations and message texts. */
   source?: string;
+  /**
+   * 3.5.0 (H5b, owner decision 06.11.2026): the project's own dictionary texts from its abapGit upload
+   * (`GET /api/projects/{id}/customer-texts`) — the first source of words for the plain file, each marked
+   * "Customer text" in the element's documentation. Read only from engine 3.5.0 on.
+   */
+  customerTexts?: CustomerTexts | null;
   /** Layout direction. Default left to right. */
   direction?: Direction;
   /** Most columns in one row before a band continues below (`LayoutOptions.wrap`). */
@@ -145,7 +152,7 @@ export interface BpmnExport {
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
   const version = options.exporterVersion ?? APP_VERSION;
   const model = buildExportModel(skeleton, options.names === 'plain'
-    ? businessLevelOf(skeleton, options.source, version)
+    ? businessLevelOf(skeleton, options.source, version, options.customerTexts)
     : { businessLevel: engineReads3021Apply(version) });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;
@@ -252,9 +259,15 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
  * down (`ENGINE_READS_350_FROM`). One function, so the file, the workspace map and the readability measure
  * (`tests/helpers/business-readability.ts`) read the same thing.
  */
-export function businessLevelOf(skeleton: ProcessSkeleton, source: string | undefined, engineVersion: string): ExportModelOptions {
+export function businessLevelOf(
+  skeleton: ProcessSkeleton,
+  source: string | undefined,
+  engineVersion: string,
+  /** 3.5.0 (H5b): the project's customer texts — the first source of words, read only from that engine on. */
+  customerTexts?: CustomerTexts | null,
+): ExportModelOptions {
   return {
-    labels: plainLabels(skeleton, source, { engineVersion }),
+    labels: plainLabels(skeleton, source, { engineVersion, ...(customerTexts ? { customerTexts } : {}) }),
     businessLevel: engineReads3021Apply(engineVersion),
     foldTechnique: engineReads350Apply(engineVersion),
   };
