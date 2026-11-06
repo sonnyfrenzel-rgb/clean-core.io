@@ -61,7 +61,15 @@ test.describe('A10 — one automatic step on opening a project while names are p
       };
       walk(dir);
     }
-    expect(senders.sort()).toEqual(['hooks/useAutoProcessNaming.ts', 'hooks/usePlainWording.ts']);
+    // Since 06.11.2026 the two tools that start on opening (C14: Transformation, Documentation)
+    // mark that start as well, so an own key without "Automatic steps" refuses it
+    // (tests/auto-steps-tools-on-open-3021.spec.ts).
+    expect(senders.sort()).toEqual([
+      'app/(app)/project/[projectId]/documentation/page.tsx',
+      'app/(app)/project/[projectId]/transformation/page.tsx',
+      'hooks/useAutoProcessNaming.ts',
+      'hooks/usePlainWording.ts',
+    ]);
     expect(read('lib/process-naming.ts')).toContain('if (NAMING_WITHOUT_FACTS_PAUSED && !input.withFacts) return false;');
   });
 
@@ -149,13 +157,15 @@ test.describe('A10 — one automatic step on opening a project while names are p
     // "This switch does not cover them" stays true: the switch writes names and sentences only.
     expect(AUTO_STEPS_SWITCH_STAGES).toEqual(['naming', 'statements']);
     // What the sentence describes: both tools start a model call from an effect on open,
-    // gated by their own stage switch, never by the account's "Automatic steps".
+    // gated by their own stage switch. Since 06.11.2026 that start is marked automatic and,
+    // on an own key, also waits for "Automatic steps" (tests/auto-steps-tools-on-open-3021.spec.ts);
+    // on the platform key, where this notice shows, it still runs by itself.
     const transformation = read('app/(app)/project/[projectId]/transformation/page.tsx');
-    expect(transformation).toContain('const timer = setTimeout(() => generateTransformation(), 0);');
+    expect(transformation).toContain('const timer = setTimeout(() => generateTransformation(true), 0);');
     expect(transformation).toContain("modelAvailability.enabled('transformation')");
     const documentation = read('app/(app)/project/[projectId]/documentation/page.tsx');
     expect(documentation).toMatch(/&& !businessDocumentation\.trim\(\)[\s\S]{0,300}modelAvailability\.enabled\('documentation'\)/);
-    expect(documentation).toContain('void generateBusinessDocumentation();');
+    expect(documentation).toContain('void writeBusinessLayer(true);');
     // On the page, below the switch and above the Settings line.
     const notice = read('components/AutoStepsNotice.tsx');
     expect(notice).toContain('consentText(t.toolsOnOpen');

@@ -148,8 +148,17 @@ export async function readGenerationWindow(): Promise<GenerationWindow | null> {
  *
  * `onReceipt` (roadmap 3.0.17, AI Act Art. 50(2)) is handed the receipt of every call that answered, so the page
  * can send the last one with the package: the server records provider and model of the generation from it.
+ *
+ * `automatic` (roadmap 3.0.21, owner decision B6): the generation was started by the page on opening, not by a click.
+ * Every fill and repair call is then sent as `trigger: 'automatic'`, which the proxy refuses on an own key whose
+ * "Automatic steps" are off.
  */
-export function leasedFillModel(lease: LeaseReference, modelName: string = PRODUCT_GEMINI_MODEL, onReceipt?: (receipt: ModelReceipt) => void): FillModel {
+export function leasedFillModel(
+  lease: LeaseReference,
+  modelName: string = PRODUCT_GEMINI_MODEL,
+  onReceipt?: (receipt: ModelReceipt) => void,
+  automatic: boolean = false,
+): FillModel {
   // A refusal comes back as `GeminiCallError` with `status` and `code`, which
   // the orchestrator reads (`modelErrorKind`) to retry, stop or give up a unit.
   // A repair of gate errors is marked (`meta.gateRepair`), so the server may count it against the lease's
@@ -160,5 +169,6 @@ export function leasedFillModel(lease: LeaseReference, modelName: string = PRODU
       responseShape: 'transformation-fill',
       ...(meta?.gateRepair ? { gateRepair: true } : {}),
       ...(onReceipt ? { onReceipt } : {}),
+      ...(automatic ? { automatic: true } : {}),
     });
 }
