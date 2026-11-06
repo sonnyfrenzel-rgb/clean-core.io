@@ -604,6 +604,8 @@ const DOMINANT_ORDER: SkeletonNodeKind[] = [
 const FLAG_ASSIGNMENT = /^((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)\s*=\s*('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+|[\w/]+=>[\w/]+|[\w/]+)\s*\.?$/;
 /** The built-in constants a flag is set to. Any other bare name must be a `CONSTANTS` of this source. */
 const BUILT_IN_FLAG_VALUES = new Set(['ABAP_TRUE', 'ABAP_FALSE', 'ABAP_UNDEFINED', 'SPACE']);
+/** Engine 3.0.22 (`buildsWhileDeciding`): the blocks that decide or iterate around an append. */
+const DECIDING_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select']);
 /** Engine 3.0.22 (`buildsWhileDeciding`): the statements that add rows to an internal table. */
 const BUILDS_TABLE = /^(?:APPEND\b[\s\S]*\bTO\b|COLLECT\b[\s\S]*\bINTO\b|INSERT\b[\s\S]*\bINTO\s+TABLE\b)/i;
 
@@ -1670,19 +1672,21 @@ class SkeletonBuilder {
    * qualify and appends the new rents was folded into its caller as a technical helper, with every decision in
    * it. §5.8 folds a routine *without an effect of its own*; building the result set by decisions is one.
    * Kept narrow on purpose: a routine that only appends one row (`add_message`, `add_issue`) decides nothing
-   * and stays a helper — the rule needs a branch or a loop of the routine's own around the append.
+   * and stays a helper — the rule needs the append to stand **inside** a branch or a loop of the routine's own.
+   * A log helper that appends its line and then counts warnings by level (`add_log`) appends beside its branch,
+   * not in it, and stays a helper too.
    */
   private buildsWhileDeciding(block: Block): boolean {
     const [from, to] = bodyRange(block);
-    let builds = false;
-    for (let i = from; i <= to && !builds; i++) {
+    for (let i = from; i <= to; i++) {
       const statement = this.statements[i];
-      if (statement.nativeSql) continue;
-      builds = BUILDS_TABLE.test(maskLiterals(statement.text));
+      if (statement.nativeSql || !BUILDS_TABLE.test(maskLiterals(statement.text))) continue;
+      // The row is added under a decision or per iteration of this routine: an append beside a branch (a log
+      // helper that appends its line and then counts warnings) builds nothing by deciding.
+      const around = this.structure.enclosing[i] ?? [];
+      if (around.some((outer) => outer.openIndex > block.openIndex && DECIDING_BLOCKS.has(outer.kind))) return true;
     }
-    if (!builds) return false;
-    return this.structure.blocks.some((inner) => inner.openIndex > block.openIndex && inner.closeIndex < block.closeIndex
-      && ['if', 'case', 'loop', 'do', 'while', 'select'].includes(inner.kind));
+    return false;
   }
 
   /**
@@ -4372,13 +4376,22 @@ class SkeletonBuilder {
     for (const node of this.nodes) {
       if (node.kind === 'sub-process' && node.expandsTo) planes.add(node.expandsTo);
     }
+    // Engine 3.0.22 — the loop levels too (decided 27.09.2026, the follow-up ADR-054 named): the body of a
+    // multi-instance `LOOP AT` is a plane of its own exactly as a routine is, and it begins where the iteration
+    // begins, at a start event on the `LOOP` line. A body that draws nothing has no plane and gets none.
+    if (this.reads3022) {
+      for (const node of this.nodes) {
+        if (node.kind === 'loop' && node.detail?.multiInstance === true && node.expandsTo) planes.add(node.expandsTo);
+      }
+    }
     for (const region of this.regions) {
-      if (region.kind !== 'sub-process' || region.multiInstance || !planes.has(region.key)) continue;
-      if (!region.anchor || !/^(?:form|method):/.test(region.key)) continue;
+      if (region.kind !== 'sub-process' || !planes.has(region.key)) continue;
+      if (region.multiInstance && !this.reads3022) continue;
+      if (!region.anchor || !/^(?:form|method|loop):/.test(region.key)) continue;
       const end = this.nodes.find((n) => n.id === region.endNodeId);
       const first = this.nodes.findIndex((n) => n.region === region.key);
       const start = this.addNode('start', region.label, region.anchor, region, end?.container ?? region.label, {
-        detail: { subProcess: true },
+        detail: { subProcess: true, ...(region.multiInstance ? { loopLevel: true } : {}) },
       });
       // `addNode` appends; the start goes before the first node of its region,
       // so the file lists a plane in the order it is read.

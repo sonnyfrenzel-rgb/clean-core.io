@@ -125,7 +125,7 @@ const RENTS = [
   'START-OF-SELECTION.', //                                                      2
   "  SELECT * FROM zcontract INTO TABLE gt_contracts WHERE active = 'X'.", //    3
   '  PERFORM compute_rents.', //                                                 4
-  '  PERFORM add_note.', //                                                      5
+  "  PERFORM add_note USING 'I'.", //                                            5
   "  CALL FUNCTION 'Z_POST_RENTS' TABLES it_rents = gt_rents.", //               6
   'FORM compute_rents.', //                                                      7
   '  LOOP AT gt_contracts INTO gs_contract.', //                                 8
@@ -136,10 +136,13 @@ const RENTS = [
   '    APPEND gs_rent TO gt_rents.', //                                          13
   '  ENDLOOP.', //                                                               14
   'ENDFORM.', //                                                                 15
-  'FORM add_note.', //                                                           16
+  'FORM add_note USING pv_level TYPE c.', //                                     16
   "  gs_note-text = 'run finished'.", //                                         17
   '  APPEND gs_note TO gt_notes.', //                                            18
-  'ENDFORM.', //                                                                 19
+  "  IF pv_level = 'W'.", //                                                    19
+  '    ADD 1 TO gv_warnings.', //                                                20
+  '  ENDIF.', //                                                                 21
+  'ENDFORM.', //                                                                 22
 ].join('\n');
 
 test('a routine that builds a table while it decides or iterates is a step, not a technical helper', () => {
@@ -150,7 +153,8 @@ test('a routine that builds a table while it decides or iterates is a step, not 
   // Its decisions are drawn on its own level.
   expect(skeleton.nodes.some((n) => n.kind === 'gateway' && n.anchor?.lineStart === 9)).toBe(true);
   expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).not.toContain('COMPUTE_RENTS');
-  // A routine that only appends one row decides nothing: still folded into its caller.
+  // A routine that appends its one row beside a branch (a log helper counting warnings) builds nothing by
+  // deciding: still folded into its caller.
   expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 5)).toBe(false);
   expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toContain('ADD_NOTE');
 });
@@ -160,4 +164,39 @@ test('an older engine keeps such a routine folded into its caller', () => {
   expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 4)).toBe(false);
   expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 9)).toBe(false);
   expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toContain('COMPUTE_RENTS');
+});
+
+const ORDERS = [
+  'REPORT zloop_level.', //                                                      1
+  'START-OF-SELECTION.', //                                                      2
+  '  SELECT * FROM vbak INTO TABLE gt_orders UP TO 50 ROWS.', //                 3
+  '  LOOP AT gt_orders INTO gs_order.', //                                       4
+  "    IF gs_order-lifsk = 'Z1'.", //                                            5
+  "      CALL FUNCTION 'Z_RELEASE_BLOCK' EXPORTING iv_vbeln = gs_order-vbeln.", // 6
+  '    ENDIF.', //                                                               7
+  '  ENDLOOP.', //                                                               8
+  '  LOOP AT gt_orders INTO gs_order.', //                                       9
+  '    gv_sum = gv_sum + gs_order-netwr.', //                                    10
+  '  ENDLOOP.', //                                                               11
+].join('\n');
+
+test('a loop level begins at a start event of its own on the LOOP line', () => {
+  const skeleton = buildProcessSkeleton(ORDERS, NEW);
+  const loop = skeleton.nodes.find((n) => n.kind === 'loop' && n.anchor?.lineStart === 4)!;
+  const region = skeleton.regions.find((r) => r.key === loop.expandsTo)!;
+  const start = skeleton.nodes.find((n) => n.kind === 'start' && n.region === region.key)!;
+  expect(start.anchor?.lineStart).toBe(4);
+  expect(start.detail).toMatchObject({ subProcess: true, loopLevel: true });
+  expect(region.entryNodeId).toBe(start.id);
+  const first = skeleton.nodes.find((n) => n.kind === 'gateway' && n.anchor?.lineStart === 5)!;
+  expect(skeleton.edges.some((e) => e.from === start.id && e.to === first.id)).toBe(true);
+  // A body that draws nothing has no plane, so no start either; and no loop start counts as a process start.
+  expect(skeleton.nodes.filter((n) => n.kind === 'start' && n.anchor?.lineStart === 9)).toHaveLength(0);
+  expect(skeleton.nodes.filter((n) => n.kind === 'start' && n.detail?.subProcess !== true)).toHaveLength(1);
+});
+
+test('an older engine draws the loop level without a start', () => {
+  const skeleton = buildProcessSkeleton(ORDERS, OLD);
+  const loop = skeleton.nodes.find((n) => n.kind === 'loop' && n.anchor?.lineStart === 4)!;
+  expect(skeleton.nodes.some((n) => n.kind === 'start' && n.region === loop.expandsTo)).toBe(false);
 });
