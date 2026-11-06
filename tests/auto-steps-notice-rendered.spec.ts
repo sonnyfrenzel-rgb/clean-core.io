@@ -98,6 +98,9 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     await expect(notice.locator('[data-auto-steps-notice-lead]')).toHaveText(
       'When you open a project, one step — plain business sentences — is written automatically by an AI model (Google Gemini). The code it needs goes to Google for that. If your code must not leave the platform, switch this off now:',
     );
+    await expect(notice.locator('[data-auto-steps-notice-tools]')).toHaveText(
+      'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
+    );
     await expect(notice.locator('[data-auto-steps-notice-after]')).toHaveText('You can change this any time in Settings under “Where the AI model is used”.');
     // Above the source, and it covers nothing: the drop zone stays clickable.
     const n = (await notice.boundingBox())!;

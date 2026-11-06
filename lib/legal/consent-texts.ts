@@ -416,6 +416,19 @@ export const CONSENT_TEXTS = {
       de: 'Ausgeschaltet: Beim Öffnen eines Projekts ruft die Plattform von selbst kein KI-Modell auf.',
       en: 'Switched off: opening a project calls no AI model by itself.',
     },
+    /**
+     * Owner decision 06.11.2026: the two tools that call the model when they
+     * are opened are named too. Transformation starts the first generation by
+     * itself when no code is on record and no tip is open; Documentation
+     * starts its business layer by itself when none is on record. Both follow
+     * their own stage switches ("Transformed code", "Documentation and
+     * business blueprint"), not this notice's switch, which writes `naming`
+     * and `statements` only (`AUTO_STEPS_SWITCH_STAGES`).
+     */
+    toolsOnOpen: {
+      de: 'Auch Transformation und Documentation können das Modell beim Öffnen von selbst aufrufen, solange dort noch kein KI-Ergebnis vorliegt. Dieser Schalter erfasst sie nicht; Sie schalten sie in den Einstellungen unter „Where the AI model is used“ mit „Transformed code“ und „Documentation and business blueprint“ ab.',
+      en: 'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
+    },
     dismiss: { de: 'Verstanden', en: 'Got it' },
   },
 } as const satisfies Record<string, Record<string, Bi | readonly Bi[]>>;
