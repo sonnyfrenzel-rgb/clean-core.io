@@ -12,6 +12,7 @@ import { collection, query, where, onSnapshot, orderBy, serverTimestamp, getDocs
 import { createWithinCeiling } from '@/lib/write-ceiling';
 import { Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, FileText, FileCode2, Download, Copy, Eye, BookOpen, ShieldAlert, Clock, HelpCircle, UserPlus, Play } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import ContentBlockNotice from '@/components/ContentBlockNotice';
 import {
   OWN_KEY_ACTION,
   OWN_KEY_HREF,
@@ -591,6 +592,8 @@ export default function Dashboard() {
             ) : null}
           </div>
         </div>
+
+        <ContentBlockNotice profile={profile} />
 
         {exhausted ? (
           <CcMessageStrip
