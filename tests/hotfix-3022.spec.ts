@@ -24,6 +24,7 @@ import { effortProposalFor, proposeEffort, type CostOption, type OptionKind } fr
 import { effortDerivation } from '../lib/economics-help';
 import { takeOverPatch, type OptionProposals } from '../components/tco/OptionComparison';
 import { countSourceLines } from '../lib/source-lines';
+import { aiAuthorshipFactsOf, markedTransformationDraft, withProjectExportAiGeneration } from '../lib/ai-authorship';
 
 /**
  * Hotfix 3.0.22 (docs/design/analyze-business-first-plan.md §4.0, HF-a to HF-e), from a full run of owner example A
@@ -379,5 +380,35 @@ test.describe('HF-e: each option its own effort, one count and one line count', 
     const handover = fs.readFileSync(path.join(__dirname, '..', 'lib', 'handover.ts'), 'utf8');
     expect(handover).not.toContain('— no decision recorded yet`');
     expect(handover).toContain('Design target confirmed');
+  });
+});
+
+test.describe('raw JSON project exports carry the AI-marking field like every other export', () => {
+  test('one marking per model-written source, none where no model wrote anything', () => {
+    const project = {
+      generatedCode: JSON.stringify([{ path: 'src/x.clas.abap', content: 'CLASS x.' }]),
+      generationBinding: { path: 'engine-led', model: { receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-x', byok: false, generatedAt: '2026-11-06T10:00:00.000Z', appVersion: 'v3.0.21' } },
+      analysis: '# narrative',
+      auditMetadata: { modelCard: { modelParticipation: 'none' } },
+    };
+    const facts = aiAuthorshipFactsOf(project, { documentationFromEngine: true });
+    const marked = withProjectExportAiGeneration({ name: 'P' }, facts, 'v3.0.22') as { aiGeneration?: { basis: string; note: string; sources: Record<string, { statement: string; model: string | null }> } };
+    expect(Object.keys(marked.aiGeneration!.sources)).toEqual(['code']);
+    expect(marked.aiGeneration!.sources.code).toMatchObject({ model: 'gemini-x', provider: 'google-gemini', keyOwner: 'platform', generatedOn: '2026-11-06', basis: 'EU AI Act, Article 50(2)' });
+    expect(marked.aiGeneration!.sources.code.statement).toMatch(/^Generated with AI assistance \(.+ gemini-x\) by Clean-Core\.io v3\.0\.21, 2026-11-06$/);
+    expect(marked.aiGeneration!.note).toContain('generatedCode');
+    expect(Object.keys(marked)[0]).toBe('aiGeneration');
+    const none = withProjectExportAiGeneration({ name: 'Q' }, aiAuthorshipFactsOf({ legacyCode: 'REPORT z.' } as never, { documentationFromEngine: true }), 'v3.0.22');
+    expect(none).toEqual({ name: 'Q' });
+  });
+
+  test('the Transformation draft says it is model-written; the three download sites use the markings', () => {
+    const draft = JSON.parse(markedTransformationDraft(JSON.stringify([{ path: 'a', content: 'b' }]), null, 'v3.0.22'));
+    expect(draft.aiGeneration.statement).toBe('Generated with AI assistance (provider and model not recorded) by Clean-Core.io v3.0.22, date not recorded');
+    expect(draft.files).toEqual([{ path: 'a', content: 'b' }]);
+    const read = (...p: string[]) => fs.readFileSync(path.join(__dirname, '..', ...p), 'utf8');
+    expect(read('app', '(app)', 'dashboard', 'page.tsx')).toMatch(/withProjectExportAiGeneration\(exportData,[\s\S]*JSON\.stringify\(marked, null, 2\)/);
+    expect(read('components', 'workspace', 'WorkspaceListReport.tsx')).toMatch(/withProjectExportAiGeneration\(data,[\s\S]*JSON\.stringify\(marked, null, 2\)/);
+    expect(read('app', '(app)', 'project', '[projectId]', 'transformation', 'page.tsx')).toContain('new Blob([markedTransformationDraft(unsavedDraft, null, APP_VERSION)]');
   });
 });

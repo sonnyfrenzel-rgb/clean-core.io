@@ -80,6 +80,9 @@ import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
 import YourTurnCard, { yourTurnItems } from './YourTurnCard';
+import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
+import { isEngineDocumentation } from '@/lib/process-documentation';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * "My workspace" — the one list of projects, `DESIGN.md` §2.2, mockup s7.
@@ -501,7 +504,9 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       const { id: _id, userId: _userId, ...data } = project as ListedProject & { userId?: string };
       void _id;
       void _userId;
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      // Hotfix 3.0.22: the metadata field of every model-written source, as every other export carries it (AI Act Art. 50(2)).
+      const marked = withProjectExportAiGeneration(data, aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation((project as { documentation?: unknown }).documentation) }), APP_VERSION);
+      const blob = new Blob([JSON.stringify(marked, null, 2)], { type: 'application/json' });
       await saveAs(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
     },
     [projects],
