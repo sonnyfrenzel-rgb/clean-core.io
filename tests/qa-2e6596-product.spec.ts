@@ -80,7 +80,7 @@ test.describe('0019c1b57d65, rendered — the Testing page labels a session verd
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true }, keyAvailable: true, keySource: 'community' }),
+        body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true }, keyAvailable: true, keySource: 'community', autoSteps: true }),
       }),
     );
     await page.route('**/api/run-tests', (route) =>

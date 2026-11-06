@@ -103,7 +103,7 @@ test.describe('the Documentation stage on opening', () => {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(on
-        ? { stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community' }
+        ? { stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community', autoSteps: true }
         : { stages: {}, keyAvailable: false, keySource: null }),
     }));
   }

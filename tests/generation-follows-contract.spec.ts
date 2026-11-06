@@ -458,13 +458,15 @@ test('the prompt is built from the inputs the token covers, not from what the pa
   // c42de15e9c75: the prompt used to take legacyCode, design and analysis from
   // load-time state, so a design replaced since then was invisible to any check.
   const body = generationBody();
-  expect(body).toContain('const generateTransformation = useCallback(async () => {');
+  // Its one parameter says how it was started, never what it generates from
+  // (3.0.21, B6: the start on opening is sent as automatic).
+  expect(body).toContain('const generateTransformation = useCallback(async (automatic: boolean = false) => {');
   expect(body).toContain('const generationToken = generation.token;');
   expect(body).toContain('const { legacyCode, solutionDesign: design, analysis } = generation.inputs;');
   expect(body.indexOf('generation.inputs')).toBeLessThan(firstModelCall(body));
   expect(body).toContain('generationToken,');
   const src = readFileSync(PAGE, 'utf8');
-  expect(src).not.toMatch(/generateTransformation\([^)]/);
+  expect(src).not.toMatch(/generateTransformation\((?!true\))[^)]/);
 });
 
 test('the store compares the token, then writes all four fields in the transaction', () => {

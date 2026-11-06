@@ -9,6 +9,7 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
 import { BookOpenText, Download, FileCode2, FileText, Printer, RefreshCw, Rocket, Workflow } from 'lucide-react';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { askModeOf } from '@/lib/auto-steps';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
@@ -335,7 +336,8 @@ export default function DocumentationPage() {
    */
   const sopInputs = useRef<{ steps: ProcessStepRef[]; facts: CapabilityFacts | null; path: string[] | null; refs: Map<string, string> }>({ steps: [], facts: null, path: null, refs: new Map() });
 
-  async function runBusinessGeneration(onPart?: () => void): Promise<void> {
+  /** `automatic`: the page started it by itself on opening (3.0.21, B6) — every part is sent as automatic. */
+  async function runBusinessGeneration(automatic: boolean, onPart?: () => void): Promise<void> {
     const replacing = replaceLayer.current;
     replaceLayer.current = null;
     if (!project || !projectId) return;
@@ -420,6 +422,7 @@ export default function DocumentationPage() {
                 onReceipt: (receipt) => {
                   layerReceipt.current = { key: answersKey, receipt };
                 },
+                ...(automatic ? { automatic: true } : {}),
               },
             );
           } catch (err) {
@@ -538,7 +541,14 @@ export default function DocumentationPage() {
     }
   }
 
-  const generateBusinessDocumentation = useCallback(async () => {
+  /**
+   * `automatic` (3.0.21, owner decision B6): true only for the layer this page
+   * writes by itself on opening; its model calls are then sent as
+   * `trigger: 'automatic'`, which the proxy refuses on an own key whose
+   * "Automatic steps" are off. Every button calls `generateBusinessDocumentation`
+   * below, which never passes it.
+   */
+  const writeBusinessLayer = useCallback(async (automatic: boolean) => {
     if (!project || !projectId) return;
     const leaseId = Array.isArray(projectId) ? projectId[0] : projectId;
     // No double call: a generation of this project already running in this
@@ -552,10 +562,12 @@ export default function DocumentationPage() {
     }
     setOtherTabWriting(false);
     // A layer written in parts renews the lease before every part, so a long generation is not taken for a closed tab.
-    const run = runBusinessGeneration(() => renewBusinessLayerLease(leaseId, tab));
+    const run = runBusinessGeneration(automatic, () => renewBusinessLayerLease(leaseId, tab));
     await trackBusinessLayer(leaseId, run).finally(() => releaseBusinessLayerLease(leaseId, tab));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, project, documentation, engineDoc]);
+  /** The click — every button that writes the layer. Never automatic. */
+  const generateBusinessDocumentation = useCallback(() => writeBusinessLayer(false), [writeBusinessLayer]);
 
 
   /**
@@ -862,19 +874,26 @@ export default function DocumentationPage() {
     void generateDocumentation();
   }, [project, isOwner, signedSource, signedDigest, processMap.model, isGeneratingDoc, documentation, generateDocumentation]);
 
+  // 3.0.21 (owner decision B6): with the account's own key and "Automatic
+  // steps" off, the layer is not written by itself — the owner writes it with
+  // the offer's button, and the progress card says why it waits (`askModeOf`).
+  // With the platform key it is written by itself as before, sent as automatic.
   const businessAutoReady = Boolean(
     project && isOwner && engineDoc && signedDigest && engineDoc.sourceSha256 === signedDigest
     && !businessDocumentation.trim() && !isGeneratingBusinessDoc && !isGeneratingDoc
     && modelAvailability.known && !modelAvailability.loading && modelAvailability.enabled('documentation')
     && generationBlockers(project, 'documentation').length === 0,
   );
+  const businessAutoMode = askModeOf({ wanted: businessAutoReady, autoAllowed: modelAvailability.autoSteps });
   useEffect(() => {
     if (!businessAutoReady || !project) return;
+    // Own key, "Automatic steps" off: nothing by itself — the offer's button writes it.
+    if (businessAutoMode !== 'auto') return;
     const key = `${project.activeRunId ?? ''}|${sha256Hex(documentation)}`;
     if (autoBusinessFor.current === key) return;
     autoBusinessFor.current = key;
-    void generateBusinessDocumentation();
-  }, [businessAutoReady, project, documentation, generateBusinessDocumentation]);
+    void writeBusinessLayer(true);
+  }, [businessAutoReady, businessAutoMode, project, documentation, writeBusinessLayer]);
 
   // A generation this page started before it was mounted again (leaving the
   // stage and coming back): show it as running and pick up what it stored.
@@ -1299,7 +1318,10 @@ export default function DocumentationPage() {
             ? wt('doc.otherTab')
             : progressBlockers.length > 0
               ? progressBlockers.join(' ')
-              : null;
+              // Own key, "Automatic steps" off (B6): not "starting the model call" — it waits for the button.
+              : businessAutoMode === 'click'
+                ? wt('autoSteps.onClickNote')
+                : null;
   const progress = documentationProgress({
     loading,
     loadError: loadError || null,
@@ -1536,6 +1558,9 @@ export default function DocumentationPage() {
           >
             {wt('doc.businessGenerate')}
           </CcButton>
+          {businessAutoMode === 'click' ? (
+            <span data-business-layer-on-click="" className="text-[12px] font-medium text-cc-ink-muted">{wt('autoSteps.onClickNote')}</span>
+          ) : null}
         </div>
       )}
       {/* Why the button waits, in words — never a button that does nothing. */}
