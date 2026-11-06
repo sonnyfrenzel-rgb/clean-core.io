@@ -1,5 +1,6 @@
 'use client';
 
+import { countSourceLines } from '@/lib/source-lines';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { storeArtefact } from '@/lib/project-artefacts-client';
@@ -1292,7 +1293,7 @@ export default function DocumentationPage() {
     loading,
     loadError: loadError || null,
     signedSource: Boolean(signedSource),
-    runFact: signedSource ? `${signedSource.source.split('\n').length} lines of ${signedSource.fileName}, signed by the active run.` : null,
+    runFact: signedSource ? `${countSourceLines(signedSource.source)} lines of ${signedSource.fileName}, signed by the active run.` : null,
     map: { status: processMap.status, reason: processMap.reason, fact: engineDoc?.overview ?? null },
     description: {
       writing: isGeneratingDoc,

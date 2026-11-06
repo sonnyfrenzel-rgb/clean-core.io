@@ -34,6 +34,7 @@ import {
   COMPARISON_KIND,
   BASELINE_KINDS,
   COST_ASSUMPTIONS_VERSION,
+  effortProposalFor,
   emptyCostAssumptions,
   formatAmount,
   formatAmountRange,
@@ -432,7 +433,7 @@ export interface OptionProposals {
 /** Which parts of one option a proposal could still fill — nothing typed in them yet. */
 export function pendingParts(option: CostOption, proposals: OptionProposals): { effort: boolean; baseline: boolean } {
   return {
-    effort: effortProvenance(option, proposals.effort) === 'proposal',
+    effort: effortProvenance(option, effortProposalFor(proposals.effort, option.kind)) === 'proposal',
     baseline: baselineProvenance(option, proposals.baseline) === 'proposal',
   };
 }
@@ -453,9 +454,11 @@ export function pendingProposals(options: CostOption[], proposals: OptionProposa
 export function takeOverPatch(option: CostOption, proposals: OptionProposals): Partial<CostOption> {
   const parts = pendingParts(option, proposals);
   const patch: Partial<CostOption> = {};
-  if (parts.effort && proposals.effort) {
-    patch.oneOff = proposals.effort.oneOff;
-    patch.perRelease = proposals.effort.perRelease;
+  // Hotfix 3.0.22 (HF-e): each option takes its own proposal — Retire has no running effort, Keep no one-off effort.
+  const effort = effortProposalFor(proposals.effort, option.kind);
+  if (parts.effort && effort) {
+    patch.oneOff = effort.oneOff;
+    patch.perRelease = effort.perRelease;
     patch.effortSource = 'proposal-confirmed';
   }
   if (parts.baseline && proposals.baseline) {
@@ -681,7 +684,8 @@ export default function OptionComparison({
           const isKeyUser = option.kind === 'keyuser';
           const needsBaseline = BASELINE_KINDS.has(option.kind);
           const groups = optionGroups(cost, option);
-          const state = effortProvenance(option, proposal);
+          const ownProposal = effortProposalFor(proposal, option.kind);
+          const state = effortProvenance(option, ownProposal);
           const baselineState = baselineProvenance(option, baselineProposal);
           const parts = pendingParts(option, proposals);
           // While a proposal is on offer, the groups it covers are what the button fills.
@@ -704,7 +708,7 @@ export default function OptionComparison({
           const isEditing = editing.has(option.id);
           const panelId = `cost-option-fields-${option.id}`;
           const deferral = deferralWords(option.upgradeDelay);
-          const effortDerived = proposal && typeof loc === 'number' && (state === 'proposal' || state === 'from-proposal');
+          const effortDerived = ownProposal && typeof loc === 'number' && (state === 'proposal' || state === 'from-proposal');
           const baselineDerived =
             baselineProposal && typeof loc === 'number' && (baselineState === 'proposal' || baselineState === 'from-proposal');
           return (
@@ -725,8 +729,8 @@ export default function OptionComparison({
 
                 <dl className="m-0 flex flex-col gap-3">
                   <CardValue label="Effort" chip={<EffortChip state={state} />} data={{ 'data-cost-option-effort': option.id }}>
-                    {state === 'proposal' && proposal ? (
-                      <span>{proposalWords(proposal)}</span>
+                    {state === 'proposal' && ownProposal ? (
+                      <span>{proposalWords(ownProposal)}</span>
                     ) : option.oneOff || option.perRelease ? (
                       <span className="flex flex-col">
                         <span>{option.oneOff ? oneOffWords(option.oneOff) : 'One-off effort: not entered'}</span>
@@ -741,7 +745,7 @@ export default function OptionComparison({
                   {effortDerived && basis ? (
                     <Derivation
                       title="How is this proposed?"
-                      lines={effortDerivation(loc as number, proposal)}
+                      lines={effortDerivation(loc as number, ownProposal)}
                       basis={basis}
                       data={`effort-${option.id}`}
                     />

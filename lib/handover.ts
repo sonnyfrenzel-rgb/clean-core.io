@@ -919,7 +919,8 @@ export function handoverGroups(
         ? group('decision', {
             title: target ?? route ?? 'Target design drafted',
             sub: target
-              ? `Confirmed${str(project.approvedBy) ? ` by ${project.approvedBy}` : ''} — no decision recorded yet`
+              ? // Hotfix 3.0.22 (HF-e): what was confirmed (the design's target) apart from the decision still open.
+                `Design target confirmed${str(project.approvedBy) ? ` by ${project.approvedBy}` : ''} — the decision (keep, rebuild, retire …) is not recorded yet`
               : 'Recommended, not confirmed',
             provenance: design.provenance,
             provenanceNote: target ? design.provenanceNote : null,

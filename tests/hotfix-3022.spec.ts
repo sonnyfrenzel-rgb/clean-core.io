@@ -20,6 +20,10 @@ import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { programSummary } from '../lib/program-summary-text';
 import { EMPTY_SECTION } from '../lib/process-document';
+import { effortProposalFor, proposeEffort, type CostOption, type OptionKind } from '../lib/cost-assumptions';
+import { effortDerivation } from '../lib/economics-help';
+import { takeOverPatch, type OptionProposals } from '../components/tco/OptionComparison';
+import { countSourceLines } from '../lib/source-lines';
 
 /**
  * Hotfix 3.0.22 (docs/design/analyze-business-first-plan.md §4.0, HF-a to HF-e), from a full run of owner example A
@@ -338,5 +342,42 @@ test.describe('HF-d: no text asserts an absence the engine did not check', () =>
     expect(EMPTY_SECTION.systems).toBe('It reads no table by name and calls no function module, transaction or other program by name.');
     expect(EMPTY_SECTION.controls).toMatch(/^None of the controls the engine reads: no AUTHORITY-CHECK/);
     for (const s of Object.values(EMPTY_SECTION)) expect(s).not.toMatch(/holds no control|calls nothing by name/);
+  });
+});
+
+test.describe('HF-e: each option its own effort, one count and one line count', () => {
+  const option = (kind: OptionKind): CostOption => ({ id: kind, kind, label: kind, oneOff: null, perRelease: null, maintenanceBaselinePerYear: null, upgradeDelay: null, effortSource: 'stated' });
+
+  test('Rebuild, Move to SAP standard and Retire no longer share one proposal; Retire has no running effort, Keep no one-off', () => {
+    const base = proposeEffort(936)!;
+    const of = (kind: OptionKind) => effortProposalFor(base, kind)!;
+    expect(of('rebuild')).toBe(base);
+    expect(of('retire').perRelease).toEqual({ devDays: 0, testDays: 0 });
+    expect(of('retire').oneOff.high.devDays).toBeLessThan(of('rebuild').oneOff.low.devDays);
+    expect(of('keep').oneOff).toEqual({ low: { devDays: 0, testDays: 0 }, high: { devDays: 0, testDays: 0 } });
+    expect(of('keep').perRelease).toEqual(base.perRelease);
+    expect(of('standard').perRelease.devDays).toBe(0);
+    expect(new Set(['rebuild', 'standard', 'retire', 'keep'].map((k) => JSON.stringify([of(k as OptionKind).oneOff, of(k as OptionKind).perRelease]))).size).toBe(4);
+    // The derivation the card shows is the option's own.
+    expect(effortDerivation(936, of('retire')).find((l) => l.key === 'release-dev')!.result).toMatch(/^0 days$/);
+  });
+
+  test('taking the proposals over writes each option its own figures', () => {
+    const proposals: OptionProposals = { effort: proposeEffort(936), baseline: null };
+    const retire = takeOverPatch(option('retire'), proposals);
+    const rebuild = takeOverPatch(option('rebuild'), proposals);
+    expect(retire.perRelease).toEqual({ devDays: 0, testDays: 0 });
+    expect(rebuild.perRelease).toEqual(proposeEffort(936)!.perRelease);
+    expect(retire.oneOff).not.toEqual(rebuild.oneOff);
+  });
+
+  test('Documentation counts the source’s lines as every other tool does; Delivery names what was confirmed', () => {
+    const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
+    expect(page).toContain('${countSourceLines(signedSource.source)} lines of');
+    expect(page).not.toMatch(/source\.split\('\\n'\)\.length\} lines/);
+    expect(countSourceLines('a\nb\n')).toBe(2);
+    const handover = fs.readFileSync(path.join(__dirname, '..', 'lib', 'handover.ts'), 'utf8');
+    expect(handover).not.toContain('— no decision recorded yet`');
+    expect(handover).toContain('Design target confirmed');
   });
 });
