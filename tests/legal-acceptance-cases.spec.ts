@@ -68,7 +68,7 @@ const CASES: Case[] = [
   {
     id: 'T08 AI marking and the manifest of the delivery package',
     key: 'aiMarkingManifest',
-    promises: [/can be established with the offline verifier|lässt sich mit dem Offline-Prüfer feststellen/],
+    promises: [/can be established with the offline verifier against the delivery package's manifest|lässt sich mit dem Offline-Prüfer gegen das Manifest des Lieferpakets feststellen/],
   },
 ];
 
