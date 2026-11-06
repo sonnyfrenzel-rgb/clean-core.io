@@ -121,9 +121,6 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
             {consentText(t.switchedOff, 'en')}
           </p>
         ) : null}
-        <p className="m-0" data-auto-steps-notice-tools="">
-          {consentText(t.toolsOnOpen, 'en')}
-        </p>
         <p className="m-0 text-cc-ink-muted" data-auto-steps-notice-after="">
           {consentText(t.after, 'en')}
         </p>
