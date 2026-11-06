@@ -182,7 +182,8 @@ function tokens(paras: string[]): string[] {
 export function wordDiff(oldParas: string[], newParas: string[]): { old: DiffToken[][]; new: DiffToken[][] } {
   const a = tokens(oldParas);
   const b = tokens(newParas);
-  const key = (t: string) => normaliseWording(t);
+  // A comma that only joined the lines of the address block into one is not a changed word.
+  const key = (t: string) => normaliseWording(t).replace(/,$/, '');
   const n = a.length;
   const m = b.length;
   const width = m + 1;
