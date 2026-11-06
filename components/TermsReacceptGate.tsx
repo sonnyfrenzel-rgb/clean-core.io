@@ -17,6 +17,7 @@ import CcCheckbox from '@/components/cc/Checkbox';
 import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
 import { TERMS_LABEL } from '@/lib/legal/documents';
 import { ContractLanguageChoice } from '@/components/legal/SignupConsent';
+import SaveWordingActions from '@/components/legal/SaveWordingActions';
 import type { TermsLanguage } from '@/lib/terms-versions';
 import { announcedEffectiveDate, effectiveDateAhead } from '@/lib/terms-effective';
 
@@ -381,6 +382,8 @@ export default function TermsReacceptGate() {
       </div>
 
       <TermsInline key={lang} lang={lang} />
+      {/* Save or print the offered wording (§ 312i Abs. 1 S. 1 Nr. 4 BGB). */}
+      <SaveWordingActions key={`save-${lang}`} documents={['terms']} lang={lang} />
 
       <div className="mt-4" data-terms-gate-checkbox="" data-terms-gate-language={lang}>
         <CcCheckbox checked={ticked} onChange={setTicked} label={<span lang={lang}>{fill(ahead ? consentText(C2.checkbox, lang) : consentText(C2.checkboxPastDate, lang))}</span>} />
