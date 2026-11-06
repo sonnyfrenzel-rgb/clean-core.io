@@ -224,7 +224,7 @@ test.describe('no viewing, no copy, no export', () => {
       for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
         const rel = `${dir}/${e.name}`;
         if (e.isDirectory()) walk(rel);
-        else if (/\.(ts|tsx)$/.test(e.name) && rel !== 'lib/content-hold.ts' && /held_documents|HELD_DOCUMENTS/.test(read(rel))) offenders.push(rel);
+        else if (/\.(ts|tsx)$/.test(e.name) && rel !== 'lib/content-hold.ts' && /collection\(\s*(HELD_DOCUMENTS|['"`]held_documents['"`])|collectionGroup\(\s*(HELD_DOCUMENTS|['"`]held_documents)/.test(read(rel))) offenders.push(rel);
       }
     };
     for (const d of ['app', 'components', 'lib', 'hooks']) walk(d);

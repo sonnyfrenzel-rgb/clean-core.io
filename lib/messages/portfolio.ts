@@ -107,7 +107,7 @@ export const PORTFOLIO_MESSAGES = {
 
   'portfolio.shareTitle': 'Share this selection',
   'portfolio.shareScope':
-    'They can read this overview: program names, scores, levels, buckets and the SAP objects used. Not the source code — each project is shared on its own.',
+    'What they will see: for every project in this selection, its name, its score, its clean core levels and groups, the kinds of findings, the names of the SAP objects it uses — your own Z and Y objects included, whose names can say more than you mean to share — and the names of includes that were not uploaded. Not the source code and not the projects themselves — each project is shared on its own.',
   'portfolio.shareLimits': 'Reading only. You can withdraw the invitation at any time.',
   'portfolio.shareEmail': 'Their e-mail address',
   'portfolio.shareSend': 'Send the invitation',

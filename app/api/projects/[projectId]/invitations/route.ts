@@ -414,6 +414,7 @@ export async function POST(
           recipient: escapeHtml(email),
           link,
           expires: new Date(invitation.expiresAt).toUTCString().slice(5, 16),
+          expiresAt: invitation.expiresAt,
           unsubscribeUrl: invitationUnsubscribeUrl(email),
         }),
         'Clean-Core.io — invitation',

@@ -240,7 +240,9 @@ test.describe('the invitation mail does not lend its sender line to a free-text 
     expect(html).toContain('<strong>You have been invited to read a project on Clean-Core.io.</strong>');
     expect(html).toContain('whose holder entered the name Sonny Frenzel. Clean-Core.io has not checked that name.');
     expect(html, 'the name is in bold again').not.toMatch(/<strong[^>]*>[^<]*Sonny Frenzel/);
-    expect(html.split('Sonny Frenzel').length - 1, 'the name is repeated more than once').toBe(1);
+    // Once per language version (legal texts Fassung 1.1: the mail is German and English).
+    expect(html).toContain('dessen Inhaber den Namen Sonny Frenzel eingetragen hat. Clean-Core.io hat diesen Namen nicht geprüft.');
+    expect(html.split('Sonny Frenzel').length - 1, 'the name is repeated more than once per language').toBe(2);
   });
 
   test('without a usable name the mail names nobody', () => {
