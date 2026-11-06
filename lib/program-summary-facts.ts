@@ -2,7 +2,7 @@ import { readCallGraph, type CallGraphReport } from '@/lib/abap/call-graph';
 import { readTableDependencies, type TableDependencyReport } from '@/lib/abap/table-dependencies';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
-import { humaniseField, plainContext, type PlainContext } from '@/lib/abap/plain-language';
+import { businessCallWord, businessTableTerm, humaniseField, plainContext, type PlainContext } from '@/lib/abap/plain-language';
 import { FUNCTION_TERMS_EN, TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { capabilityPresence } from '@/lib/documentation-capabilities';
@@ -11,6 +11,7 @@ import { maskLiterals, readStatements, type AbapStatement } from '@/lib/abap/sta
 import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@/lib/abap/constant-gates';
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
+import { readProgramShape } from '@/lib/abap/program-shape';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
 import { engineReads3022Apply } from '@/lib/abap/engine-reads-3022-gate';
@@ -59,8 +60,11 @@ const CHANGING_VERB = /^(?:Post|Create|Change|Delete|Cancel|Reverse|Release|Star
 
 const lcFirst = (text: string): string => (/^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text);
 
-function objectOf(name: string, line: number): SummaryObject {
-  const term = TABLE_TERMS_EN[name.toLowerCase()];
+function objectOf(name: string, line: number, engineVersion?: string | null): SummaryObject {
+  // 3.0.22 (H5): the dictionary and a customer table's own words too (`businessTableTerm`); the glossary alone before.
+  const term = engineVersion !== undefined && engineReads3022Apply(engineVersion)
+    ? businessTableTerm(name, { engineVersion })
+    : TABLE_TERMS_EN[name.toLowerCase()];
   const word = term ? lcFirst(term.plural) : null;
   const kind: SummaryObject['kind'] = SETTINGS_TABLE.test(name)
     ? 'setting'
@@ -190,7 +194,8 @@ function fixedListsOf(calls: CallGraphReport, ctx: PlainContext): SummaryFixedLi
   return out.sort((a, b) => a.lineStart - b.lineStart);
 }
 
-function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi'): string | null {
+function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi', engineVersion?: string | null): string | null {
+  if (engineVersion !== undefined && engineReads3022Apply(engineVersion)) return businessCallWord(name, kind === 'transaction' ? 'transaction' : 'function', { engineVersion });
   const word = kind === 'transaction' ? TRANSACTION_TERMS_EN[name] : FUNCTION_TERMS_EN[name];
   return word ?? null;
 }
@@ -491,8 +496,8 @@ function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | n
  * program that names no table reads by calling (`BAPI_PO_GETDETAIL1`), and
  * "reads no table by name" told a business reader nothing.
  */
-function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[], wider: boolean): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
-  const domain = readProgramDomain(text, { wider });
+function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[], wider: boolean, german = false): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
+  const domain = readProgramDomain(text, { wider, german });
   const seen = new Set(actions.map((a) => a.name));
   const dataCalls: NonNullable<ProgramSummaryFacts['dataCalls']> = [];
   for (const f of calls.functionModules) {
@@ -504,6 +509,12 @@ function purposeFacts(text: string, calls: CallGraphReport, actions: readonly Su
     dataCalls.push({ name, word, line: f.lineStart });
   }
   return { domain: domain ? { text: domain.text, lines: domain.lines } : null, dataCalls };
+}
+
+/** 3.0.22 (H8): the program's shape, when the constructs give it one. */
+function shapeFacts(text: string): Pick<ProgramSummaryFacts, 'shape'> {
+  const shape = readProgramShape(text);
+  return shape ? { shape: { text: shape.text, lines: shape.lines, kind: shape.kind } } : {};
 }
 
 /** The header's rule candidates, counted; nothing when the header states none. */
@@ -580,7 +591,9 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   // passes is not something the program reads; it is named apart, with the gate.
   // Read as this engine reads it (3.0.18): the summary takes no engine version.
   const gates = readConstantGates(text, { engineReads: true });
-  const allReads = capability.reads.map((r) => objectOf(r.name, r.line));
+  const reads3022 = engineReads3022Apply(engineVersion);
+  const v3022 = reads3022 ? engineVersion : undefined;
+  const allReads = capability.reads.map((r) => objectOf(r.name, r.line, v3022));
   const lockedRead = (o: { line: number }) => gates.unreachable.length > 0 && isUnreachableLine(gates, o.line);
   const reads = allReads.filter((o) => !lockedRead(o));
   const lockedReads = allReads.filter(lockedRead);
@@ -595,7 +608,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     ...calls.databaseWrites.map((d) => ({ name: d.table, line: d.lineStart })),
   ].filter((w) => !command.onCommand(w.line)).map((w) => w.name.toUpperCase()));
   const writes = capability.writes.map((w) => (
-    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line), onCommand: true } : objectOf(w.name, w.line)
+    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line, v3022), onCommand: true } : objectOf(w.name, w.line, v3022)
   ));
 
   // What it changes in SAP, in business verbs: the posting calls and the
@@ -621,11 +634,11 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   };
   for (const f of calls.functionModules) {
     if (!f.name) continue;
-    addAction(f.name.toUpperCase(), sentenceWordOf(f.name.toUpperCase(), f.bapi ? 'bapi' : 'function'), f.lineStart, f.bapi ? 'interface' : 'function');
+    addAction(f.name.toUpperCase(), sentenceWordOf(f.name.toUpperCase(), f.bapi ? 'bapi' : 'function', v3022), f.lineStart, f.bapi ? 'interface' : 'function');
   }
   for (const t of calls.transactions) {
     if (!t.code) continue;
-    addAction(t.code.toUpperCase(), sentenceWordOf(t.code.toUpperCase(), 'transaction'), t.lineStart, t.batchInput ? 'simulated-entry' : 'transaction');
+    addAction(t.code.toUpperCase(), sentenceWordOf(t.code.toUpperCase(), 'transaction', v3022), t.lineStart, t.batchInput ? 'simulated-entry' : 'transaction');
   }
 
   const callNames = calls.functionModules.filter((f) => f.name).map((f) => ({ name: (f.name as string).toUpperCase(), line: f.lineStart }));
@@ -658,7 +671,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       commits: capability.commits.length + capability.updateTask.length,
       displayTransactions: calls.transactions
         .filter((t) => t.code && !t.batchInput && !actions.some((a) => a.name === t.code?.toUpperCase()))
-        .map((t) => ({ name: (t.code as string).toUpperCase(), word: TRANSACTION_TERMS_EN[(t.code as string).toUpperCase()] ?? null, line: t.lineStart })),
+        .map((t) => ({ name: (t.code as string).toUpperCase(), word: sentenceWordOf((t.code as string).toUpperCase(), 'transaction', v3022), line: t.lineStart })),
       dynamic: (capability.dynamicWrites ?? []).length + (capability.dynamicCalls ?? []).length,
     },
     outputs: {
@@ -704,9 +717,11 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       : {}),
     ...demoFacts(text, ruleSet, readers.engineVersion),
     // Roadmap 3.0.20 — present only from that engine, so earlier facts stay what they were.
-    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021) : {}),
+    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021, reads3022) : {}),
     // Roadmap 3.0.21 — the purpose the names support stands whenever it exists; present only from that engine.
     ...(reads3021 ? { purposeAlways: true as const } : {}),
+    // 3.0.22 (H8) — present only from that engine and only for a program of one of the shapes `readProgramShape` knows.
+    ...(reads3022 ? shapeFacts(text) : {}),
     ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };

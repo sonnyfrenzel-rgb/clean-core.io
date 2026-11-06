@@ -231,7 +231,10 @@ test('In short: batch input is a change, said by its transaction; a started repo
     businessInShort(programSummary(programSummaryFactsOf(src, { engineVersion: engine })), { codes: false }).map((l) => l.text).join(' ');
   expect(said(bdc, OLD)).toMatch(/does not post or change data/);
   expect(said(bdc, NEW)).not.toMatch(/does not post or change data/);
-  expect(said(bdc, NEW)).toMatch(/transaction IW31 with prepared entries/);
+  // H5: IW31 is in the dictionary ("Create maintenance order"), so the change is said by its word.
+  expect(said(bdc, NEW)).toMatch(/^Creates maintenance orders in SAP/);
+  // A transaction no one has a word for is said by how it is made.
+  expect(said(bdc.replace("'IW31'", "'ZT01'"), NEW)).toMatch(/transaction ZT01 with prepared entries/);
 
   const submit = [
     'REPORT zt_submit.',

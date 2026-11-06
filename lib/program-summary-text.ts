@@ -163,7 +163,19 @@ export interface ProgramSummaryFacts {
    * check that opened on "Records entries in a custom table in SAP". Absent in facts read by an earlier engine.
    */
   purposeAlways?: true;
+  /**
+   * 3.0.22 (concept "Business-Lesbarkeit" H8): what kind of program the constructs make it — a BAdI, an exit, an output
+   * program, an inbound IDoc function, a BW extractor (`lib/abap/program-shape.ts`) — the purpose line when the names
+   * support none (`domain`). Absent in facts read by an earlier engine and for a plain report.
+   */
+  shape?: { text: string; lines: number[]; kind?: string } | null;
 }
+
+/** 3.0.22 (H8): what the purpose line calls a program of a shape (`ProgramShape.kind`). */
+const SHAPE_NOUN: Readonly<Record<string, string>> = Object.freeze({
+  badi: 'enhancement', 'customer-exit': 'enhancement', 'user-exit': 'enhancement', 'output-program': 'output program',
+  'idoc-inbound': 'function', 'bw-extractor': 'extractor',
+});
 
 export type SummaryBasis = 'reconstructed' | 'not-determined' | 'confirmed';
 export type SummarySlotKey = 'purpose' | 'trigger' | 'reads' | 'changes' | 'result' | 'rules' | 'limits' | 'level';
@@ -414,7 +426,9 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     : business.length
       ? plural(business.length, 'table')
       : null;
-  const noun = f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report';
+  // 3.0.22 (H8): an enhancement or an output program is not called a report.
+  const shaped = f.shape?.kind ? SHAPE_NOUN[f.shape.kind] : undefined;
+  const noun = shaped ?? (f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report');
   const readOnly = f.changes.state === 'none' ? 'read-only ' : '';
   // A program whose every change waits for a user's command is a display program
   // first — a cockpit: what it shows is its purpose, the changes follow in their
@@ -671,8 +685,10 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   // report that reads no table by name …"), the purpose the program's names support stands before it.
   const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
   // Roadmap 3.0.21: from that engine it stands whenever the names support one (`purposeAlways`).
-  const aim: SummaryLine[] = f.domain && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
-    ? [{ key: 'purpose', text: f.domain.text, anchors: anchorsOf(f.domain.lines), basis: 'reconstructed', aim: true }]
+  // 3.0.22 (H8): without a purpose from the names, the program's shape says who calls it and when.
+  const named = f.domain ?? f.shape ?? null;
+  const aim: SummaryLine[] = named && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
+    ? [{ key: 'purpose', text: named.text, anchors: anchorsOf(named.lines), basis: 'reconstructed', aim: true }]
     : [];
   const lines: SummaryLine[] = [...aim, purpose];
   const list = bestFixedList(f.fixedLists);

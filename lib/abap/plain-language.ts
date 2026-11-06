@@ -461,6 +461,31 @@ function tableTermOf(name: string, ctx?: PlainContext, dbTable = false): PlainTe
   return dbTable || ctx.selected?.has(key) ? customTableTerm(key) : null;
 }
 
+/**
+ * 3.0.22 (H5/H8): a database table's business object as the Business view of `engineVersion` words it — the glossary,
+ * then the dictionary and a customer table's own words. For callers outside the process map ("In short"). Null before
+ * 3.0.22 for anything the glossary does not know.
+ */
+export function businessTableTerm(name: string, options: PlainOptions = {}): PlainTerm | null {
+  const reads3022 = engineReads3022Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
+  return tableTermOf(name, reads3022 ? { ...EMPTY_CONTEXT, reads3022: true } : EMPTY_CONTEXT, true);
+}
+
+/** 3.0.22: whether `businessTableTerm` names a customer table by the words of its own name (its code then stays beside it). */
+export function isCustomTableWorded(name: string, options: PlainOptions = {}): boolean {
+  const reads3022 = engineReads3022Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
+  return reads3022 && isCustomTableWord(name, { ...EMPTY_CONTEXT, reads3022: true });
+}
+
+/** 3.0.22: a function module's or transaction's business word, the glossary first, then the dictionary. */
+export function businessCallWord(name: string, kind: 'function' | 'transaction', options: PlainOptions = {}): string | null {
+  const key = name.trim().toUpperCase();
+  const base = kind === 'transaction' ? own(TRANSACTION_TERMS_EN, key) : own(FUNCTION_TERMS_EN, key);
+  if (base) return base;
+  if (!engineReads3022Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion)) return null;
+  return (kind === 'transaction' ? own(SAP_TRANSACTIONS, key) : own(SAP_FUNCTIONS, key)) ?? null;
+}
+
 /** The application prefixes of a customer table's name (`ZSD_`, `ZMM_`, `YFI_`): they say where it belongs, not what it holds. */
 const MODULE_PREFIX = new Set(['sd', 'mm', 'fi', 'co', 'pp', 'pm', 'qm', 'wm', 'hr', 'ps', 'ca', 'bc', 'cs', 'le', 'im', 're',
   'tr', 'fm', 'ehs', 'gts', 'ewm', 'tm', 'crm', 'srm', 'bw', 'if', 'int', 'ic', 'mdg', 'pa', 'py', 'pt', 'om', 'tv', 'aa', 'gl',

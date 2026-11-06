@@ -297,7 +297,7 @@ export const SAP_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
   BAPI_INSPLOT_SETUSAGEDECISION: 'Record usage decision', BAPI_INSPLOT_GETDETAIL: 'Read inspection lot',
   BAPI_QUALNOT_CREATE: 'Create quality notification', BAPI_SERVICENOTIFICAT_CREATE: 'Create service notification',
   STATUS_READ: 'Read object status', STATUS_CHANGE_EXTERN: 'Set user status', L_TO_CREATE_SINGLE: 'Create transfer order',
-  L_TO_CONFIRM: 'Confirm transfer order', L_TO_CREATE_DN: 'Create transfer order for delivery', WS_DELIVERY_UPDATE: 'Update delivery',
+  L_TO_CONFIRM: 'Confirm transfer order', L_TO_CREATE_DN: 'Create transfer order', WS_DELIVERY_UPDATE: 'Update delivery',
   BAPI_SHIPMENT_CREATE: 'Create shipment', NAST_PROTOCOL_UPDATE: 'Add a message to the output log',
   IDOC_INPUT_ORDERS: 'Process incoming sales order IDoc', EDI_DOCUMENT_OPEN_FOR_EDIT: 'Open IDoc for editing',
 });
