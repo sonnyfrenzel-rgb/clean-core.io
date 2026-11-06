@@ -407,6 +407,11 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       tier: 'pilot', status: 'approved', isAdmin: true,
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
+      // The automatic steps that run when a project opens (plain wording under
+      // 'statements', business names) are not a view switch, but they can land
+      // after the measurement starts and read as one. Off for this fixture, so
+      // what is measured is the switch alone.
+      modelStages: { statements: false, naming: false },
     });
     await adminDb.doc(`projects/${PROJECT_UI}`).set({
       name: 'View switch fixture', userId: uidUi,
