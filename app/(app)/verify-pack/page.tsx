@@ -343,8 +343,8 @@ export default function VerifyPackPage() {
           <CcCard level={2} title="Delivery package">
             <div data-verify-delivery="">
               <p className="m-0 text-[13px] font-medium text-cc-ink-muted">
-                Check a delivery package against this pack&apos;s run: every file against its manifest, the AI marking of every
-                file a model wrote, and the run and source the pack signed.
+                Check a delivery package against its manifest: every file, the AI marking of every file a model wrote,
+                and whether the manifest names the run and source this pack signed. The package itself is not signed.
               </p>
               <input
                 ref={packageInputRef}
@@ -386,7 +386,7 @@ export default function VerifyPackPage() {
                   )}
                   {delivery.check?.isDeliveryPackage && (
                     <div data-verify-delivery-models="">
-                      <h3 className="m-0 mb-1 cc-text-label text-cc-ink-muted">Which model took part</h3>
+                      <h3 className="m-0 mb-1 cc-text-label text-cc-ink-muted">Which model took part, as stated by the system</h3>
                       {delivery.check.models.length > 0 ? (
                         <ul className="m-0 list-none space-y-1 p-0 text-[12px]">
                           {delivery.check.models.map((m) => (
@@ -406,7 +406,7 @@ export default function VerifyPackPage() {
                               <span className="break-all font-cc-mono text-cc-ink">{e.path}</span>{' '}
                               <span className="text-cc-ink-muted">
                                 — marks{' '}
-                                {e.marks.map((m) => `${m.count} model-written element(s) by ${m.provider === 'not-recorded' ? 'a model not recorded' : `${m.provider} ${m.model}`}`).join(', ')}{' '}
+                                {e.marks.map((m) => `${m.count} model-written element(s) by ${m.provider === 'not-recorded' ? 'a model not recorded' : `${m.provider} ${m.model} (as stated by the system)`}`).join(', ')}{' '}
                                 where they stand
                               </span>
                             </li>

@@ -719,7 +719,7 @@ async function checkDelivery(JSZip, path, signed) {
   for (const [f, content] of whole) {
     const marks = originMarksIn(content);
     if (!marks.length) continue;
-    const words = marks.map((m) => `${m.count} by ${m.provider === 'not-recorded' ? 'a model not recorded' : `${m.provider} ${m.model}`}`).join(', ');
+    const words = marks.map((m) => `${m.count} by ${m.provider === 'not-recorded' ? 'a model not recorded' : `${m.provider} ${m.model} (as stated by the system)`}`).join(', ');
     if (sourceOf.has(f)) {
       console.log(`${c.dim('element')}   ${shown(f)}  ${c.dim(`model-written elements marked where they stand: ${shown(words, 300)}`)}`);
     } else {

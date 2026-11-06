@@ -961,7 +961,7 @@ export default function TestingSandboxPage() {
         // 3.0.21 (T08): a scenario the model wrote says so in its row; a case the engine built leaves these empty.
         { header: 'Origin', key: 'Origin', width: 12 },
         { header: 'AI provider', key: 'AIProvider', width: 18 },
-        { header: 'AI model', key: 'AIModel', width: 24 }
+        { header: 'AI model (as stated by the system)', key: 'AIModel', width: 34 }
       ];
       
       testCases.forEach(tc => {
