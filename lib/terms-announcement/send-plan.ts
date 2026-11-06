@@ -191,7 +191,7 @@ export function sendWindowRefusal(now: Date, lateOk: boolean, day: string = NOTI
 /* ------------------------------------------------------------------ stale version ids */
 
 /**
- * Version ids the notice must never name: the draft id v2.3.0 carried before
+ * Version ids the notice must never name: the draft id the amended Terms carried before
  * the release date fixed it (2026-11-09). A notice that still names it links a
  * draft address and states a version id no consent record carries.
  */
