@@ -154,17 +154,22 @@ test('an internal table is named after where its rows come from — or as the co
   expect(mapOf(src, OLD).nodes.map((n) => n.name)).toContain('Any mels?');
 });
 
-test('a dictionary field the glossary does not know is said as the code it is', () => {
+test('a dictionary field is said by its dictionary word and "set", never as "Field PROFL given?"; a field no one has a word for stays its code', () => {
   const src = [
     'REPORT zt_field.',
-    'TYPES: BEGIN OF ty_mat, profl TYPE c LENGTH 3, END OF ty_mat.',
+    'TYPES: BEGIN OF ty_mat, profl TYPE c LENGTH 3, zzqx TYPE c LENGTH 1, END OF ty_mat.',
     'DATA ls_mat TYPE ty_mat.',
     'START-OF-SELECTION.',
     '  IF ls_mat-profl IS NOT INITIAL.',
     "    WRITE / 'dangerous'.",
     '  ENDIF.',
+    '  IF ls_mat-zzqx IS NOT INITIAL.',
+    "    WRITE / 'other'.",
+    '  ENDIF.',
   ].join('\n');
-  expect(gateways(mapOf(src, NEW))).toContain('Field PROFL given?');
+  // Owner decision 06.11.2026 (H5): the dictionary's word (`lib/abap/sap-dictionary.ts`), asked with "set".
+  expect(gateways(mapOf(src, NEW))).toContain('Dangerous goods profile set?');
+  expect(gateways(mapOf(src, NEW))).toContain('Field ZZQX set?');
   expect(gateways(mapOf(src, OLD))).toContain('Profl given?');
 });
 

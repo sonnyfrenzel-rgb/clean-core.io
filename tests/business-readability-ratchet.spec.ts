@@ -21,6 +21,13 @@ import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
  *   tasks       146/145 raw 4, empty 4, technical 6, dup 9   raw 4, empty 4, technical 6, dup 8
  *   gateways    48    positive 36, empty 3, raw 1           positive 47, empty 2, raw 1
  *   in short    30    untrue 0                              untrue 0
+ *
+ * H5, the dictionary (`lib/abap/sap-dictionary.ts`, owner decision 06.11.2026), measured with its words in the lexicon:
+ *
+ *   surface     before H5             after H5
+ *   gateways    raw 1                 raw 0
+ *   rules       raw 7                 raw 6
+ *   questions   raw 9                 raw 5
  */
 
 const ENGINE = ENGINE_READS_3022_FROM;
@@ -52,7 +59,7 @@ test.describe('Business readability of the seven examples — never worse (engin
     expect(g.n).toBeGreaterThan(40);
     expect(g.positive, 'positively asked').toBeGreaterThanOrEqual(47);
     expect(g.empty, 'placeholders ("Which case applies?")').toBeLessThanOrEqual(2);
-    expect(g.raw, 'raw identifiers').toBeLessThanOrEqual(1);
+    expect(g.raw, 'raw identifiers').toBeLessThanOrEqual(0);
   });
 
   test('ends, story, In short: no raw identifier, nothing untrue about changes', () => {
@@ -66,8 +73,8 @@ test.describe('Business readability of the seven examples — never worse (engin
 
   test('rule titles and the questions for the business: no more raw identifiers than today', () => {
     const r = examples();
-    expect(r.rules.raw).toBeLessThanOrEqual(8);
-    expect(r.questions.raw).toBeLessThanOrEqual(9);
+    expect(r.rules.raw).toBeLessThanOrEqual(6);
+    expect(r.questions.raw).toBeLessThanOrEqual(5);
   });
 
   test('size: no level grows', () => {

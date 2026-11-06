@@ -18,6 +18,15 @@ import {
   type WordSources,
 } from './german-terms';
 import { engineReads3022Apply } from './engine-reads-3022-gate';
+import {
+  NAMING_ABBREVIATIONS,
+  SAP_FIELD_VALUES,
+  SAP_FIELDS,
+  SAP_FUNCTIONS,
+  SAP_TABLES,
+  SAP_TRANSACTIONS,
+  dictionaryWords,
+} from './sap-dictionary';
 import { APP_VERSION } from '../version';
 
 /**
@@ -334,20 +343,34 @@ function stemOf(identifier: string): string {
   return stripped || name;
 }
 
+/**
+ * 3.0.22 (H5): a field's business word — the glossary every engine reads first, then the dictionary of 3.0.22
+ * (`sap-dictionary.ts`). An older engine reads the glossary alone.
+ */
+function fieldTermOf(key: string, ctx: PlainContext | undefined): PlainTerm | undefined {
+  const k = key.toLowerCase();
+  return own(FIELD_TERMS_EN, k) ?? (ctx?.reads3022 ? own(SAP_FIELDS, k) : undefined);
+}
+
+/** A key of one of the tables — never an inherited one (`constructor`, `toString`). */
+function own<T>(table: Readonly<Record<string, T>>, key: string): T | undefined {
+  return Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined;
+}
+
 /** Word-by-word English for an identifier stem without a glossary entry. */
-function humaniseStem(stem: string): string {
+function humaniseStem(stem: string, ctx?: PlainContext): string {
   const key = stem.toLowerCase();
-  const hit = FIELD_TERMS_EN[key];
+  const hit = fieldTermOf(key, ctx);
   if (hit) return hit.singular;
   // A German name (`ausgabe`, `lieferdatum`) in English — or, when it cannot be
   // read in full, the name as the source writes it, never a half translation.
-  const german = translateGermanWords(key.split(/[_\s]+/), 'field', FIELD_SOURCES);
+  const german = translateGermanWords(key.split(/[_\s]+/), 'field', ctx?.reads3022 ? FIELD_SOURCES_3022 : FIELD_SOURCES);
   if (isUntranslatable(german)) return stem.toUpperCase();
   if (german) return german.english;
   const words = key.split(/[_\s]+/).filter(Boolean).map((w) => {
-    const abbreviation = STEM_ABBREVIATIONS[w];
+    const abbreviation = own(STEM_ABBREVIATIONS, w) ?? (ctx?.reads3022 ? own(NAMING_ABBREVIATIONS, w) : undefined);
     if (abbreviation) return abbreviation;
-    const term = FIELD_TERMS_EN[w];
+    const term = fieldTermOf(w, ctx);
     if (term && w.length >= 4 && !PLAIN_WORD_KEYS.has(w)
       && term.singular.toLowerCase().replace(/s$/, '') !== w.replace(/s$/, '')) {
       return lcFirst(term.singular);
@@ -368,6 +391,8 @@ function englishGlossaryWords(): Set<string> {
   for (const t of Object.values(TABLE_TERMS_EN)) add(`${t.singular} ${t.plural}`);
   for (const v of [...Object.values(STEM_ABBREVIATIONS), ...Object.values(ROUTINE_ABBREVIATIONS),
     ...Object.values(FUNCTION_TERMS_EN), ...Object.values(TRANSACTION_TERMS_EN), ...Object.values(EVENT_TERMS_EN)]) add(v);
+  // Read only by `isFieldCode` and `customTableTerm`, both of 3.0.22: the dictionary's words are English words too.
+  for (const v of dictionaryWords()) add(v);
   glossaryWords = words;
   return words;
 }
@@ -380,26 +405,103 @@ function englishGlossaryWords(): Set<string> {
 function isFieldCode(field: string): boolean {
   const f = field.toLowerCase();
   if (!/^[a-z][a-z0-9]{3,5}$/.test(f)) return false;
-  if (FIELD_TERMS_EN[f] || STEM_ABBREVIATIONS[f] || englishGlossaryWords().has(f) || englishGlossaryWords().has(f.replace(/s$/, ''))) return false;
+  if (own(FIELD_TERMS_EN, f) || own(STEM_ABBREVIATIONS, f) || englishGlossaryWords().has(f) || englishGlossaryWords().has(f.replace(/s$/, ''))) return false;
   const german = translateGermanWords([f], 'field', FIELD_SOURCES);
   return !german || isUntranslatable(german);
 }
 
+/**
+ * 3.0.22 (H5, owner decision 06.11.2026): a dictionary field — said by its word, never as "Field PROFL" — whose
+ * purpose the code does not state. The decision that tests it carries the note `UNSTATED_CHECK`.
+ */
+function isDictionaryField(field: string, ctx: PlainContext): boolean {
+  const f = field.toLowerCase();
+  return !!ctx.reads3022 && !own(FIELD_TERMS_EN, f) && !!own(SAP_FIELDS, f);
+}
+
 /** A word of a name the glossary knows (`kunnr` → "customer number"). */
 function knownWord(word: string): string | null {
-  const term = FIELD_TERMS_EN[word];
+  const term = own(FIELD_TERMS_EN, word);
+  return term && word.length >= 4 && !PLAIN_WORD_KEYS.has(word) ? lcFirst(term.singular) : null;
+}
+
+/** 3.0.22: the same, with the dictionary (`sap-dictionary.ts`). */
+function knownWord3022(word: string): string | null {
+  const base = knownWord(word);
+  if (base) return base;
+  const term = own(SAP_FIELDS, word);
   return term && word.length >= 4 && !PLAIN_WORD_KEYS.has(word) ? lcFirst(term.singular) : null;
 }
 
 /** What the German translation may lean on, for variable names and for routine names. */
 const FIELD_SOURCES: WordSources = { abbreviations: STEM_ABBREVIATIONS, acronyms: ACRONYMS, known: knownWord };
 const ROUTINE_SOURCES: WordSources = { abbreviations: ROUTINE_ABBREVIATIONS, acronyms: ACRONYMS, known: knownWord };
+/** 3.0.22: the sources with the dictionary and the larger German vocabulary (`german-terms.ts`, `reads3022`). */
+const FIELD_SOURCES_3022: WordSources = {
+  abbreviations: { ...STEM_ABBREVIATIONS, ...NAMING_ABBREVIATIONS, ...STEM_ABBREVIATIONS }, acronyms: ACRONYMS, known: knownWord3022, reads3022: true,
+};
+/** 3.0.22: the words of a customer table's name — German and SAP field words, no abbreviation of a variable name. */
+const TABLE_SOURCES_3022: WordSources = { acronyms: ACRONYMS, known: knownWord3022, reads3022: true };
+const ROUTINE_SOURCES_3022: WordSources = { abbreviations: ROUTINE_ABBREVIATIONS, acronyms: ACRONYMS, known: knownWord3022, reads3022: true };
 
 /** Glossary keys that are ordinary English words — not expanded inside a compound stem. */
 const PLAIN_WORD_KEYS = new Set(['where', 'form', 'case', 'func', 'rows', 'keys', 'text', 'type', 'name', 'land']);
 
-function tableTermOf(name: string): PlainTerm | null {
-  return TABLE_TERMS_EN[name.trim().toLowerCase()] ?? null;
+/**
+ * A database table's business object. `dbTable`: the caller knows the name is a database table (a `SELECT`, a write);
+ * otherwise a customer table's own words (`customTableTerm`) are read only for a table the source selects from.
+ */
+function tableTermOf(name: string, ctx?: PlainContext, dbTable = false): PlainTerm | null {
+  const key = name.trim().toLowerCase();
+  const base = own(TABLE_TERMS_EN, key);
+  if (base || !ctx?.reads3022) return base ?? null;
+  const sap = own(SAP_TABLES, key);
+  if (sap) return sap;
+  return dbTable || ctx.selected?.has(key) ? customTableTerm(key) : null;
+}
+
+/** The application prefixes of a customer table's name (`ZSD_`, `ZMM_`, `YFI_`): they say where it belongs, not what it holds. */
+const MODULE_PREFIX = new Set(['sd', 'mm', 'fi', 'co', 'pp', 'pm', 'qm', 'wm', 'hr', 'ps', 'ca', 'bc', 'cs', 'le', 'im', 're',
+  'tr', 'fm', 'ehs', 'gts', 'ewm', 'tm', 'crm', 'srm', 'bw', 'if', 'int', 'ic', 'mdg', 'pa', 'py', 'pt', 'om', 'tv', 'aa', 'gl',
+  'ap', 'ar', 'cm', 'ml', 'pi', 'ecc', 'cc']);
+
+/**
+ * 3.0.22 (H5): a customer table (`ZFI_ABGRENZ`, `ZSD_PRICE_STRAT`) in the words its own name is made of — only when
+ * every word of it is a word the engine knows (German through `german-terms.ts`, English through the glossary and the
+ * dictionary). Its prefix (`Z`, `ZSD_`) says where it belongs and is dropped. Null where one word is not known: the
+ * table is then said as the code it is. The code stays beside the words wherever the table is read (`readName`).
+ */
+function customTableTerm(key: string): PlainTerm | null {
+  if (!/^[zy]/.test(key) || key.includes('/')) return null;
+  const words = key.split('_').filter(Boolean);
+  const head = words[0].slice(1);
+  // `ZSD_…`, `Z_…`, and a customer's own short prefix (`ZFT_`, `ZPOS_`) when more words follow.
+  if (MODULE_PREFIX.has(head) || head === '' || (head.length <= 3 && words.length > 1)) words.shift();
+  else words[0] = head;
+  // Every word at least three letters: a two-letter part (`BG`, `RR`) is an abbreviation no one has written down.
+  if (!words.length || words.some((w) => w.length < 3 || /\d/.test(w))) return null;
+  const german = translateGermanWords(words, 'item', TABLE_SOURCES_3022);
+  if (isUntranslatable(german)) return null;
+  let singular: string;
+  if (german) singular = singularPhrase(german.english.toLowerCase());
+  else {
+    const english = englishGlossaryWords();
+    if (words.some((w) => !english.has(w))) return null;
+    singular = singularPhrase(words.join(' '));
+  }
+  if (!singular.trim()) return null;
+  return { singular: sentenceCase(singular), plural: sentenceCase(pluralOf(singular)) };
+}
+
+/** The singular of a phrase: its last word, unless that word does not inflect ("status", "data"). */
+function singularPhrase(phrase: string): string {
+  return /(?:status|data|analysis|ss|us)$/.test(phrase) ? phrase : singularOf(phrase);
+}
+
+/** 3.0.22: a table the label names by the words of its customer name (`customTableTerm`) — its code then stays beside it. */
+function isCustomTableWord(name: string, ctx: PlainContext | undefined): boolean {
+  const key = name.trim().toLowerCase();
+  return !!ctx?.reads3022 && !own(TABLE_TERMS_EN, key) && !own(SAP_TABLES, key) && customTableTerm(key) !== null;
 }
 
 function isInternalTable(identifier: string, ctx: PlainContext): boolean {
@@ -448,7 +550,7 @@ function sourceTermOf(identifier: string, ctx: PlainContext | undefined): PlainT
   const stem = stemOf(identifier);
   if (RETURN_STEM.test(stem)) return SAP_MESSAGE;
   const source = ctx.sources?.get(base);
-  return tableTermOf(stem) ?? (source ? tableTermOf(source) : null);
+  return tableTermOf(stem, ctx) ?? (source ? tableTermOf(source, ctx, true) : null);
 }
 
 /**
@@ -467,22 +569,22 @@ function sourceCodeOf(identifier: string, ctx: PlainContext | undefined): string
 /** What one entry of an internal table is called: `gt_orders` → "order". */
 function itemOf(identifier: string, ctx?: PlainContext): string {
   const stem = stemOf(identifier);
-  const term = FIELD_TERMS_EN[stem];
+  const term = fieldTermOf(stem, ctx);
   if (term && !RETURN_STEM.test(stem)) return lcFirst(term.singular);
   const fromSource = sourceTermOf(identifier, ctx);
   if (fromSource) return lcFirst(fromSource.singular);
   if (term) return lcFirst(term.singular);
-  const german = germanItem(stem);
+  const german = germanItem(stem, ctx);
   const code = sourceCodeOf(identifier, ctx);
   if (code && !german) return `entry of ${code}`;
   if (german === null) return `entry of ${technicalName(identifier)}`;
   if (german) return lcFirst(singularOf(german));
-  return lcFirst(singularOf(humaniseStem(stem)));
+  return lcFirst(singularOf(humaniseStem(stem, ctx)));
 }
 
 /** One row of a German-named table in English ("output line"); `null` when it cannot be read; '' when not German. */
-function germanItem(stem: string): string | null {
-  const german = translateGermanWords(stem.split(/[_\s]+/), 'item', FIELD_SOURCES);
+function germanItem(stem: string, ctx?: PlainContext): string | null {
+  const german = translateGermanWords(stem.split(/[_\s]+/), 'item', ctx?.reads3022 ? FIELD_SOURCES_3022 : FIELD_SOURCES);
   if (isUntranslatable(german)) return null;
   return german ? german.english : '';
 }
@@ -495,17 +597,17 @@ function technicalName(identifier: string): string {
 /** What several entries are called: `gt_orders` → "orders", `lt_kunnr` → "customer numbers". */
 function itemsOf(identifier: string, ctx?: PlainContext): string {
   const stem = stemOf(identifier);
-  const term = FIELD_TERMS_EN[stem];
+  const term = fieldTermOf(stem, ctx);
   if (term && !RETURN_STEM.test(stem)) return lcFirst(term.plural);
   const fromSource = sourceTermOf(identifier, ctx);
   if (fromSource) return lcFirst(fromSource.plural);
   if (term) return lcFirst(term.plural);
-  const german = germanItem(stem);
+  const german = germanItem(stem, ctx);
   const code = sourceCodeOf(identifier, ctx);
   if (code && !german) return `entries of ${code}`;
   if (german === null) return `entries in ${technicalName(identifier)}`;
   if (german) return lcFirst(pluralOf(german));
-  return lcFirst(pluralOf(humaniseStem(stem)));
+  return lcFirst(pluralOf(humaniseStem(stem, ctx)));
 }
 
 /**
@@ -534,38 +636,41 @@ function fieldWord(identifier: string, ctx: PlainContext | undefined, short: boo
     const lower = cleanIdentifier(raw);
     if (lower === 'abap_true') return 'Yes';
     if (lower === 'abap_false' || lower === 'space') return 'No';
-    if (lower.startsWith('sy-')) return SY_TERMS[lower] ?? humaniseStem(lower.slice(3));
+    if (lower.startsWith('sy-')) return SY_TERMS[lower] ?? humaniseStem(lower.slice(3), c);
     const constant = c.constants.get(lower);
     if (constant !== undefined && constant.trim() && constant.length <= 12) return constant;
     const selection = c.selections.get(lower);
     if (selection?.ref) {
       const field = selection.ref.split('-').pop() ?? '';
-      const term = FIELD_TERMS_EN[field];
+      const term = fieldTermOf(field, c);
       if (term) return termWord(term, short);
     }
     const parts = lower.split(/->|=>|-|~/).filter(Boolean);
     if (parts.length > 1) {
       const field = parts[parts.length - 1];
-      const term = FIELD_TERMS_EN[field];
+      const term = fieldTermOf(field, c);
       if (term) return termWord(term, short);
       const owner = parts[parts.length - 2];
       const ownerType = c.types.get(owner) ?? owner.replace(IDENTIFIER_PREFIX, '');
-      const table = tableTermOf(ownerType);
+      const table = tableTermOf(ownerType, c);
       if (table && !field.includes('_') && field.length <= 10) {
         return `${field.toUpperCase()} of ${lcFirst(table.singular)}`;
       }
       // 3.0.22: a dictionary field the glossary does not know is said as the code it is — "field PROFL" — never as
       // a word made up from it ("Profl"). The engine cannot know what the customer uses it for, and says so.
       if (c.reads3022 && isFieldCode(field)) return `Field ${field.toUpperCase()}`;
-      return humaniseStem(field.replace(IDENTIFIER_PREFIX, '') || field);
+      return humaniseStem(field.replace(IDENTIFIER_PREFIX, '') || field, c);
     }
-    const stemTerm = FIELD_TERMS_EN[stemOf(lower)];
+    const stemTerm = fieldTermOf(stemOf(lower), c);
     if (stemTerm) return termWord(stemTerm, short);
     // 3.0.22: a variable typed on a dictionary field (`lv_profl TYPE mara-profl`) — the same: the field's code.
     const typedOn = c.types.get(lower) ?? '';
     const typedField = /^[\w/]+-([\w]+)$/.exec(typedOn)?.[1];
     if (c.reads3022 && typedField && typedField === stemOf(lower) && isFieldCode(typedField)) return `Field ${typedField.toUpperCase()}`;
-    return humaniseStem(stemOf(lower));
+    // 3.0.22: typed on a field the dictionary knows (`lv_x TYPE mara-profl`) — the field's word.
+    const typedTerm = c.reads3022 && typedField ? own(SAP_FIELDS, typedField) : undefined;
+    if (typedTerm) return termWord(typedTerm, short);
+    return humaniseStem(stemOf(lower), c);
   } catch {
     return String(identifier ?? '');
   }
@@ -575,15 +680,15 @@ function fieldWord(identifier: string, ctx: PlainContext | undefined, short: boo
  * A routine, function module or event name as words: `READ_REQUISITION` →
  * "Read requisition", `CHANGE_SALES_ORDER_BDC` → "Change sales order by simulated entry".
  */
-export function humaniseRoutine(name: string): string {
-  return routineWords(name, true);
+export function humaniseRoutine(name: string, ctx?: PlainContext): string {
+  return routineWords(name, true, ctx);
 }
 
 /**
  * `withOriginal`: a translated German name carries its original in
  * parentheses — for a step. Inside a condition ("Check not set?") it does not.
  */
-function routineWords(name: string, withOriginal: boolean): string {
+function routineWords(name: string, withOriginal: boolean, ctx?: PlainContext): string {
   try {
     let words = String(name ?? '').trim().toLowerCase()
       .replace(/^\/\w+\//, '')
@@ -595,7 +700,7 @@ function routineWords(name: string, withOriginal: boolean): string {
     // A German name in English, the original in parentheses: `DATEN_LESEN` →
     // "Read data (Daten lesen)". One that cannot be read in full is shown as
     // the source writes it.
-    const german = translateGermanWords(words, 'routine', ROUTINE_SOURCES);
+    const german = translateGermanWords(words, 'routine', ctx?.reads3022 ? ROUTINE_SOURCES_3022 : ROUTINE_SOURCES);
     if (isUntranslatable(german)) return String(name).trim().toUpperCase();
     if (german) {
       const english = withoutTechnique(german.english);
@@ -992,7 +1097,7 @@ function subrcPhrase(setter: Setter, success: boolean, short: boolean, ctx?: Pla
   switch (setter.kind) {
     case 'sap-error': return success ? 'SAP reported an error' : 'No error from SAP';
     case 'select': {
-      const term = tableTermOf(setter.table);
+      const term = tableTermOf(setter.table, ctx, true);
       if (!term || short) return success ? 'Found' : 'Nothing found';
       const word = setter.single ? term.singular : term.plural;
       return success ? `${word} found` : `No ${lcFirst(word)} found`;
@@ -1036,8 +1141,9 @@ function valueMeaning(left: string, value: string, ctx: PlainContext): string | 
   const lower = cleanIdentifier(left);
   const selection = ctx.selections.get(lower);
   const field = selection?.ref ? (selection.ref.split('-').pop() ?? '') : stemOf(lower);
-  const values = FIELD_VALUE_TERMS_EN[field.toLowerCase()];
-  return values ? (values[value.trim().toUpperCase()] ?? null) : null;
+  const key = field.toLowerCase();
+  const values = own(FIELD_VALUE_TERMS_EN, key) ?? (ctx.reads3022 ? own(SAP_FIELD_VALUES, key) : undefined);
+  return values ? (own(values, value.trim().toUpperCase()) ?? null) : null;
 }
 
 /** `ls_ref-kunnr` → "reference": the structure a component belongs to, in words; null for a plain variable. */
@@ -1051,11 +1157,11 @@ function ownerWord(operand: string): string | null {
 }
 
 /** `sy-subrc` in a business rule: what the step before it did, in a sentence. */
-function ruleSubrcPhrase(setter: Setter, success: boolean): string {
+function ruleSubrcPhrase(setter: Setter, success: boolean, ctx?: PlainContext): string {
   switch (setter.kind) {
     case 'sap-error': return success ? 'SAP reported an error' : 'SAP reported no error';
     case 'select': {
-      if (tableTermOf(setter.table)) return subrcPhrase(setter, success, false);
+      if (tableTermOf(setter.table, ctx, true)) return subrcPhrase(setter, success, false, ctx);
       return success ? 'The previous read found an entry' : 'The previous read found nothing';
     }
     case 'read-table':
@@ -1095,9 +1201,59 @@ interface AtomText {
 const TRUE_VALUES = new Set(['abap_true', "'x'", '`x`']);
 const FALSE_VALUES = new Set(['abap_false', 'space', "''", "' '", '``', '` `']);
 
-function isParticiple(identifier: string): boolean {
-  const words = humaniseStem(stemOf(identifier)).toLowerCase();
-  return /ed$/.test(words) || STATE_WORDS.has(words);
+function isParticiple(identifier: string, ctx?: PlainContext): boolean {
+  const words = humaniseStem(stemOf(identifier), ctx).toLowerCase();
+  if (/ed$/.test(words) || STATE_WORDS.has(words)) return true;
+  // 3.0.22: a name that ends in a state ("batch input session open") reads as that state.
+  return !!ctx?.reads3022 && / /.test(words) && STATE_WORDS.has(words.split(' ').pop() ?? '');
+}
+
+/**
+ * 3.0.22 (owner decision 06.11.2026): the SAP field an operand reads when the glossary every engine reads has no word
+ * for it — a dictionary field (`is_mat-profl`, "dangerous goods profile") or a field code the engine cannot word at all
+ * (`ls_x-zzflag`). Its upper-case code, or null. A selection field, a system field and an internal table are not one.
+ */
+function unstatedFieldOf(operand: string, ctx: PlainContext): string | null {
+  if (!ctx.reads3022) return null;
+  const lower = cleanIdentifier(operand);
+  if (!/^[\w/<>~-]+$/.test(lower) || lower.startsWith('sy-') || ctx.selections.has(lower)) return null;
+  const parts = lower.split(/->|=>|-|~/).filter(Boolean);
+  const field = parts.length > 1 ? parts[parts.length - 1] : /^[\w/]+-([\w]+)$/.exec(ctx.types.get(lower) ?? '')?.[1];
+  if (!field || own(FIELD_TERMS_EN, field)) return null;
+  return isDictionaryField(field, ctx) || isFieldCode(field) ? field.toUpperCase() : null;
+}
+
+/** The note an unknown check carries (owner decision 06.11.2026), with the fields it reads. */
+export function unstatedCheckNote(fields: readonly string[]): string {
+  const list = [...new Set(fields)];
+  return list.length ? `The code does not say what this check means (field${list.length > 1 ? 's' : ''} ${list.join(', ')}).` : '';
+}
+
+/**
+ * 3.0.22: the fields of a condition whose meaning the code does not state — a field tested for being set or empty, or
+ * compared with a value SAP does not define for every system. A comparison with a value of a fixed SAP domain
+ * ("Overall status C (completely processed)") says what it means and is not listed.
+ */
+function unstatedFieldsOf(condition: string, ctx: PlainContext): string[] {
+  if (!ctx.reads3022) return [];
+  const parsed = parseCondition(condition);
+  if (!parsed) return [];
+  const out: string[] = [];
+  const walk = (c: Cond) => {
+    if (c.k !== 'cmp') {
+      c.parts.forEach(walk);
+      return;
+    }
+    for (const side of [c.left, c.right]) {
+      const code = side ? unstatedFieldOf(side, ctx) : null;
+      if (!code) continue;
+      const literal = /^['`]/.test(c.right.trim()) ? unquote(c.right) : null;
+      if (side === c.left && literal !== null && valueMeaning(c.left, literal, ctx)) continue;
+      out.push(code);
+    }
+  };
+  walk(parsed);
+  return out;
 }
 
 function valueText(operand: string, env: Env): { text: string; literal: boolean } {
@@ -1165,7 +1321,7 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
     }
     if (success !== null) {
       const setter = setterBefore(env.ctx, env.line);
-      const phrase = env.rule ? ruleSubrcPhrase(setter, success) : subrcPhrase(setter, success, env.short, env.ctx);
+      const phrase = env.rule ? ruleSubrcPhrase(setter, success, env.ctx) : subrcPhrase(setter, success, env.short, env.ctx);
       const question = setter.kind === 'sap-error' && success && !env.rule ? 'Did SAP report an error?' : undefined;
       return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase, ...(question ? { question } : {}) };
     }
@@ -1204,7 +1360,7 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
     else if (FALSE_VALUES.has(raw) || FALSE_VALUES.has(rightLower)) flag = c.op !== '=';
   }
   if (flag !== null) {
-    const participle = !selection && isParticiple(left);
+    const participle = !selection && isParticiple(left, env.ctx);
     const setWord = selection ? 'selected' : 'set';
     if (flag) {
       const full = participle ? subject : `${subject} ${setWord}`;
@@ -1227,6 +1383,20 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
         arm: empty ? 'Empty' : 'Present',
         question: `Any ${items}?`,
         inverted: empty,
+      };
+    }
+    // 3.0.22 (owner decision 06.11.2026): an SAP field is set or not set — "Dangerous goods profile set?", never
+    // "Field PROFL given?". "Given" stays for what someone entered.
+    if (!env.rule && !selection && unstatedFieldOf(left, env.ctx)) {
+      return {
+        key,
+        subject,
+        full: empty ? `${subject} not set` : `${subject} set`,
+        pred: empty ? 'not set' : 'set',
+        arm: empty ? 'Not set' : 'Set',
+        question: `${subject} set?`,
+        inverted: empty,
+        sharedPred: empty ? 'not set' : 'set',
       };
     }
     if (env.rule) {
@@ -1304,6 +1474,12 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
   if (!value.literal && value.text.toLowerCase() === subject.toLowerCase()) {
     const ownerLeft = ownerWord(left);
     const ownerRight = ownerWord(c.right);
+    // 3.0.22: where the owners do not fit a label, the two values are said to differ — or to be the same.
+    if (env.ctx.reads3022 && env.short && !env.rule && (c.op === '<>' || c.op === '=')) {
+      const many = sentenceCase(pluralOf(lcFirst(subject)));
+      const phrase = c.op === '<>' ? `${many} differ` : `Same ${lcFirst(subject)}`;
+      return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase };
+    }
     if (ownerLeft && ownerRight && ownerLeft !== ownerRight) {
       const pred = opWords(c.op, `that of the ${ownerRight}`, false);
       const named = `${subject} of the ${ownerLeft}`;
@@ -1379,7 +1555,10 @@ function render(c: Cond, env: Env): Rendered {
     if (sameKey) {
       const subject = atoms[0].subject;
       const flatCmp = flat as Extract<Cond, { k: 'cmp' }>[];
-      if (joiner === 'or' && flatCmp.every((p) => p.op === '=') && atoms.every((a) => a.value !== undefined)) {
+      const range = env.ctx.reads3022 && flatCmp.length === 2 ? rangeOf(flatCmp, joiner, env) : null;
+      if (range) {
+        full = `${subject} ${range}`;
+      } else if (joiner === 'or' && flatCmp.every((p) => p.op === '=') && atoms.every((a) => a.value !== undefined)) {
         full = `${subject} ${joinList(atoms.map((a) => a.value ?? ''), 'or')}`;
       } else if (joiner === 'and' && flatCmp.every((p) => p.op === '<>') && atoms.every((a) => a.value !== undefined)) {
         full = `${subject} not ${joinList(atoms.map((a) => a.value ?? ''), 'or')}`;
@@ -1397,6 +1576,23 @@ function render(c: Cond, env: Env): Rendered {
     full = parts.map((p, i) => (i === 0 ? p : lcFirst(p))).join(` ${joiner} `);
   }
   return { full, question: `${full}?`, inverted: false };
+}
+
+/**
+ * 3.0.22: two bounds on one field as one range — `x < a OR x > b` is "outside a to b", `x >= a AND x <= b` is "between
+ * a and b". Exactly what the code compares; null for anything else.
+ */
+function rangeOf(parts: ReadonlyArray<Extract<Cond, { k: 'cmp' }>>, joiner: 'and' | 'or', env: Env): string | null {
+  const low = (op: CmpOp) => op === '<' || op === '<=';
+  const high = (op: CmpOp) => op === '>' || op === '>=';
+  const [a, b] = parts;
+  const lowPart = low(a.op) ? a : low(b.op) ? b : null;
+  const highPart = high(a.op) ? a : high(b.op) ? b : null;
+  if (!lowPart || !highPart || lowPart === highPart) return null;
+  const lo = valueText(lowPart.right, env).text;
+  const hi = valueText(highPart.right, env).text;
+  if (joiner === 'or') return `outside ${lo} to ${hi}`;
+  return `between ${hi} and ${lo}`;
 }
 
 /**
@@ -1690,18 +1886,25 @@ function eventName(label: string): string {
  * the interface, not the work. Anything else is its humanised name, never a
  * meaning the name does not carry; the module name stays the technical name.
  */
-function functionName(name: string, dynamic: boolean): string {
+function functionName(name: string, dynamic: boolean, ctx?: PlainContext): string {
   if (dynamic) return 'Run a step chosen at runtime';
   const upper = name.trim().toUpperCase();
   const bare = upper.replace(/^\/[^/]+\//, '');
-  const known = FUNCTION_TERMS_EN[upper] ?? FUNCTION_TERMS_EN[bare];
+  const known = own(FUNCTION_TERMS_EN, upper) ?? own(FUNCTION_TERMS_EN, bare)
+    ?? (ctx?.reads3022 ? own(SAP_FUNCTIONS, upper) ?? own(SAP_FUNCTIONS, bare) : undefined);
   if (known) return known;
+  // 3.0.22 (H5): the application log (`BAL_*`) is the run's log, by what the module family does.
+  if (ctx?.reads3022 && /^BAL_/.test(bare)) {
+    if (/^BAL_DSP_/.test(bare)) return 'Show the run log';
+    if (/^BAL_DB_(?:LOAD|SEARCH)|_READ$|_GET/.test(bare)) return 'Read the run log';
+    return 'Write the run log';
+  }
   if (/^REUSE_ALV_/.test(bare)) return /DISPLAY/.test(bare) ? 'Show the result list' : 'Prepare the result list';
   if (/^ENQUEUE_/.test(bare)) return 'Lock data for editing';
   if (/^DEQUEUE_/.test(bare)) return 'Release the lock';
   if (/^F4IF_/.test(bare)) return 'Offer input help';
-  if (/^BAPI_./.test(bare)) return humaniseRoutine(bare.slice(5)) || upper;
-  return humaniseRoutine(upper.replace(/^[ZY]_/, '')) || upper;
+  if (/^BAPI_./.test(bare)) return humaniseRoutine(bare.slice(5), ctx) || upper;
+  return humaniseRoutine(upper.replace(/^[ZY]_/, ''), ctx) || upper;
 }
 
 /**
@@ -1726,14 +1929,18 @@ function printsList(node: SkeletonNode, ctx: PlainContext): boolean {
   return false;
 }
 
-function readName(node: SkeletonNode): string {
+function readName(node: SkeletonNode, ctx?: PlainContext): string {
   const tables = Array.isArray(node.detail?.tables) ? (node.detail?.tables as string[]) : [node.label];
   const single = node.detail?.single === true;
-  const first = tableTermOf(tables[0] ?? '');
+  const first = tableTermOf(tables[0] ?? '', ctx, true);
   if (!first) return `Read ${tables[0] ?? node.label}`;
   const word = (term: PlainTerm) => lcFirst(single ? term.singular : term.plural);
+  // 3.0.22 (H5): a customer table said in the words of its own name keeps its code beside them.
+  if (tables.length === 1 && isCustomTableWord(tables[0], ctx)) {
+    return firstFitting([`Read ${word(first)} (${tables[0].toUpperCase()})`, `Read ${word(first)}`]);
+  }
   if (tables.length === 1) return `Read ${word(first)}`;
-  const second = tableTermOf(tables[1] ?? '');
+  const second = tableTermOf(tables[1] ?? '', ctx, true);
   if (tables.length === 2 && second) {
     const both = `Read ${word(first)} and ${word(second)}`;
     if (both.length <= 40) return both;
@@ -1747,9 +1954,10 @@ function writeName(node: SkeletonNode, ctx: PlainContext): string {
     ?? 'Save';
   const target = node.label;
   if (isInternalTable(target, ctx) || /^(?:GT|LT|IT|ET|CT|MT)_/i.test(target)) {
-    return `Update ${lcFirst(humaniseStem(stemOf(target)))} list`;
+    return `Update ${lcFirst(humaniseStem(stemOf(target), ctx))} list`;
   }
-  const term = tableTermOf(target);
+  const term = tableTermOf(target, ctx, true);
+  if (term && isCustomTableWord(target, ctx)) return firstFitting([`${verb} ${lcFirst(term.singular)} (${target.toUpperCase()})`, `${verb} ${lcFirst(term.singular)}`]);
   if (term) return `${verb} ${lcFirst(term.singular)}`;
   return `${verb} entry in ${target.toUpperCase()}`;
 }
@@ -1788,22 +1996,22 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
       if (isMultiInstance(node)) return fit(`For each ${itemOf(node.label, c)}`);
       return loopQuestion(node, c);
     }
-    if (isCallSite(node)) return fit(humaniseRoutine(node.label));
+    if (isCallSite(node)) return fit(humaniseRoutine(node.label, c));
     switch (node.kind) {
       case 'read':
-        return fit(readName(node));
+        return fit(readName(node, c));
       case 'write':
         return fit(writeName(node, c));
       case 'service-task':
       case 'send-task':
-        return fit(functionName(node.label, node.detail?.dynamic === true));
+        return fit(functionName(node.label, node.detail?.dynamic === true, c));
       case 'user-task': {
         if (detailString(node, 'message')) return 'Show message';
         // `CALL SCREEN 9000`: a person enters data on a screen of the program.
         if (/^\d+$/.test(node.label) || /^CALL\s+SCREEN\b/i.test(statementAt(c, line)?.text ?? '')) {
           return fit(`Enter data on screen ${node.label.toUpperCase()}`);
         }
-        return fit(functionName(node.label, node.detail?.dynamic === true));
+        return fit(functionName(node.label, node.detail?.dynamic === true, c));
       }
       case 'output': {
         const target = detailString(node, 'target');
@@ -1817,12 +2025,12 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
           if (label === 'DELETE') return 'Delete a file on the server';
           return 'Write a file on the server';
         }
-        return fit(functionName(node.label, node.detail?.dynamic === true));
+        return fit(functionName(node.label, node.detail?.dynamic === true, c));
       }
       case 'transaction': {
         if (node.detail?.dynamic === true) return 'Run a transaction chosen at runtime';
         const code = node.label.toUpperCase();
-        const known = TRANSACTION_TERMS_EN[code];
+        const known = own(TRANSACTION_TERMS_EN, code) ?? (c.reads3022 ? own(SAP_TRANSACTIONS, code) : undefined);
         // `CALL TRANSACTION … USING`: the program types into the transaction's
         // screens itself — batch input, a simulated entry.
         if (node.detail?.batchInput === true) {
@@ -1835,7 +2043,7 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
       case 'call-activity': {
         const text = statementAt(c, line)?.text ?? '';
         if (/^LEAVE\s+TO\s+TRANSACTION\b/i.test(text) || node.detail?.returns === false && !/^SUBMIT\b/i.test(text)) {
-          const known = TRANSACTION_TERMS_EN[node.label.toUpperCase()];
+          const known = own(TRANSACTION_TERMS_EN, node.label.toUpperCase()) ?? (c.reads3022 ? own(SAP_TRANSACTIONS, node.label.toUpperCase()) : undefined);
           return fit(known ? `Go to: ${lcFirst(known)}` : `Go to transaction ${node.label.toUpperCase()}`);
         }
         // `SUBMIT`: another report runs — printed when it goes to the spool,
@@ -1860,15 +2068,15 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
           if (op === 'INSERT' || op === 'APPEND') return fit(`Add the ${item} to the list`);
           return fit(`Update the ${item} in the list`);
         }
-        return fit(humaniseRoutine(node.label) || 'Step');
+        return fit(humaniseRoutine(node.label, c) || 'Step');
       }
       case 'call-opaque': {
         if (/^PERFORM$/i.test(node.label)) return 'Call routine';
         const name = node.label.replace(/\(.*$/, '').split(/->|=>/).pop() ?? node.label;
-        return fit(humaniseRoutine(name) || 'Call');
+        return fit(humaniseRoutine(name, c) || 'Call');
       }
       default:
-        return fit(humaniseRoutine(node.label) || 'Step');
+        return fit(humaniseRoutine(node.label, c) || 'Step');
     }
   } catch {
     return fit(humaniseRoutine(node?.label ?? '') || 'Step');
@@ -2051,6 +2259,12 @@ export interface PlainLabels {
    * no such technique — the documentation then keeps the technical name.
    */
   technique(nodeId: string): string;
+  /**
+   * 3.0.22: what a reader should know beside the label, in the engine's words — for an unknown check "The code does
+   * not say what this check means (field PROFL)." (owner decision 06.11.2026). '' when there is nothing to add, and
+   * always '' for an older engine.
+   */
+  detail?(nodeId: string): string;
 }
 
 function normalise(condition: string): string {
@@ -2136,6 +2350,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
   const nodes = new Map<string, string>();
   const technical = new Map<string, string>();
   const technique = new Map<string, string>();
+  const details = new Map<string, string>();
   const byId = new Map<string, SkeletonNode>();
   const outs = new Map<string, SkeletonEdge[]>();
   const ins = new Map<string, SkeletonEdge[]>();
@@ -2360,6 +2575,16 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     } catch {
       technique.set(node.id, '');
     }
+    // 3.0.22: an unknown check says so beside its label (owner decision 06.11.2026).
+    if (ctx.reads3022 && node.kind === 'gateway' && node.detail?.branchKind !== 'case') {
+      try {
+        const conditions = detailString(node, 'source') === 'CHECK'
+          ? [detailString(node, 'condition') || stripCondition(node.label)]
+          : conditionsOf(node);
+        const note = unstatedCheckNote((conditions.length ? conditions : [stripCondition(node.label)]).flatMap((c) => unstatedFieldsOf(c, ctx)));
+        if (note) details.set(node.id, note);
+      } catch { /* no note */ }
+    }
   }
 
   return {
@@ -2386,6 +2611,9 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     },
     technique(nodeId: string): string {
       return technique.get(nodeId) ?? '';
+    },
+    detail(nodeId: string): string {
+      return details.get(nodeId) ?? '';
     },
   };
 }

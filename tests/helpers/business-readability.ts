@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildProcessSkeleton } from '../../lib/abap/process-skeleton';
 import { FIELD_TERMS_EN, TABLE_TERMS_EN, FUNCTION_TERMS_EN, TRANSACTION_TERMS_EN } from '../../lib/abap/plain-glossary';
+import { dictionaryWords } from '../../lib/abap/sap-dictionary';
 import { buildExportModel, type ExportContainer, type ExportNode } from '../../lib/bpmn/model';
 import { businessLevelOf } from '../../lib/bpmn/export';
 import { buildProcessFacts } from '../../lib/abap/process-facts';
@@ -66,6 +67,8 @@ export function englishLexicon(): Set<string> {
   for (const t of Object.values(TABLE_TERMS_EN)) add(`${t.singular} ${t.plural}`);
   for (const t of Object.values(FUNCTION_TERMS_EN)) add(t);
   for (const t of Object.values(TRANSACTION_TERMS_EN)) add(t);
+  // The dictionary of 3.0.22 (`sap-dictionary.ts`) is English, curated by hand, like the glossary.
+  for (const t of dictionaryWords()) add(t);
   LEXICON = words;
   return words;
 }

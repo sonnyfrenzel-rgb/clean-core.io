@@ -115,6 +115,11 @@ export interface ExportNode {
    * Only with plain labels; the element's documentation says it under the name (owner, 11.10.2026).
    */
   technique?: string;
+  /**
+   * 3.0.22: what the reader should know beside the name, in the engine's words (`PlainLabels.detail`) — an unknown
+   * check says that the code does not state what it means (owner decision 06.11.2026). In the documentation only.
+   */
+  detail?: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
   error: boolean;
@@ -617,6 +622,7 @@ class ModelBuilder {
         name: plain !== undefined && (plain || tagOf(source) === 'parallelGateway') ? plain : technicalName,
         technicalName,
         ...(this.labels ? { technique: this.labels.technique(source.id) } : {}),
+        ...(this.labels?.detail?.(source.id) ? { detail: this.labels.detail(source.id) } : {}),
         source,
         error: source.kind === 'end-error' || source.kind === 'error-boundary',
         incoming: [],

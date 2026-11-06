@@ -1,6 +1,7 @@
 import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
 import { humaniseRoutine, messageWordsAt, plainContext, plainLabels } from './abap/plain-language';
 import { TABLE_TERMS_EN } from './abap/plain-glossary';
+import { SAP_TABLES } from './abap/sap-dictionary';
 import { ENGINE_READS_3022_FROM } from './abap/engine-reads-3022-gate';
 
 /**
@@ -12,7 +13,8 @@ import { ENGINE_READS_3022_FROM } from './abap/engine-reads-3022-gate';
  *
  *   - `engine` — the deterministic plain label of 3.0.22 (`plain-language.ts`), which already carries an internal
  *     table's source, the result check of a BAPI, a positive question, a stop's own message text;
- *   - `table` — a database table the step reads or writes, with its glossary word (`plain-glossary.ts`);
+ *   - `table` — a database table the step reads or writes, with its glossary word (`plain-glossary.ts`, from H5 also
+ *     the dictionary `sap-dictionary.ts`);
  *   - `message` — the program's own words on a `MESSAGE` at the node, quoted;
  *   - `part` — the routine the node stands in, in words.
  *
@@ -58,7 +60,7 @@ export function namingFactsOf(skeleton: ProcessSkeleton, source: string): Naming
     const label = labels.nodes.get(node.id) ?? '';
     if (label && label.toLowerCase() !== node.label.toLowerCase()) facts.push({ id: id(), kind: 'engine', text: label });
     for (const table of tablesOf(node)) {
-      const term = TABLE_TERMS_EN[table.toLowerCase()];
+      const term = TABLE_TERMS_EN[table.toLowerCase()] ?? SAP_TABLES[table.toLowerCase()];
       if (term) facts.push({ id: id(), kind: 'table', text: `${table.toUpperCase()} = ${term.singular}` });
     }
     if (node.kind === 'end-error' || node.kind === 'user-task') {
