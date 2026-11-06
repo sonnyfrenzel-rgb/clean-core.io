@@ -15,6 +15,9 @@ import {
   type ModelStage,
 } from './model-stages';
 import type { ProvenanceValue } from './provenance';
+import { NAMING_WITH_FACTS, namingFactsOf, uncoveredWords, type NamingFacts } from './naming-facts';
+import { engineReads3022Apply } from './abap/engine-reads-3022-gate';
+import { APP_VERSION } from './version';
 
 /**
  * Business names for the process skeleton — roadmap 2.4.
@@ -125,6 +128,13 @@ export interface NamingContext {
    * statements, and `nd-12-0` then names something else.
    */
   digest: string;
+  /**
+   * From engine 3.0.22 (`lib/naming-facts.ts`, concept "Business-Lesbarkeit" H7/H6): what the engine proved about each
+   * node, with ids. With them the prompt hands the facts to the model, the answer cites the ids it used, and a name
+   * with a content word no fact covers is dropped (`not-in-facts`). Absent: the naming of every engine before.
+   * Not part of the digest — a naming still applies to the reading it was made for.
+   */
+  facts?: NamingFacts;
 }
 
 /**
@@ -181,8 +191,19 @@ export function namingContextFrom(facts: ProcessFacts): NamingContext {
   return { skeleton, authorityChecks, digest: digestOf(skeleton, authorityChecks) };
 }
 
-export function namingContextOf(source: string): NamingContext {
-  return namingContextFrom(buildProcessFacts(source));
+export function namingContextOf(
+  source: string,
+  /** `facts`: hand the engine's facts to the model — `NAMING_WITH_FACTS` unless a measurement says otherwise. */
+  options: { engineVersion?: string | null; facts?: boolean } = {},
+): NamingContext {
+  const context = namingContextFrom(buildProcessFacts(source));
+  if (!(options.facts ?? NAMING_WITH_FACTS)) return context;
+  if (!engineReads3022Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion)) return context;
+  try {
+    return { ...context, facts: namingFactsOf(context.skeleton, source) };
+  } catch {
+    return context;
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -213,7 +234,7 @@ function clip(text: string, max: number): string {
  * `validateNamingAnswer`, which does not care what the model was told.
  */
 export function buildNamingPrompt(context: NamingContext): string {
-  const { skeleton } = context;
+  const { skeleton, facts } = context;
   const lines: string[] = [
     'You propose business names for a process that was reconstructed from ABAP source code without a model.',
     '',
@@ -237,6 +258,18 @@ export function buildNamingPrompt(context: NamingContext): string {
     '',
     'Nodes, as "id | kind | technical name as the code writes it", grouped by the part of the program they belong to:',
   ];
+  // 3.0.22 (H7): the engine's facts per node, and names built from them only.
+  if (facts) {
+    const at = lines.indexOf('Rules:');
+    lines.splice(at - 2, 1, '{"names":[{"id":"<node id>","name":"<business name>","facts":["<fact id>"]}],"lanes":[{"name":"<role>","authorityCheck":"<check id or null>","nodes":["<node id>"]}]}');
+    lines.splice(lines.indexOf('Rules:') + 1, 0,
+      '- Build each name from the facts listed with its node, and give the ids of the facts you used in "facts". A fact marked engine is what the code proves the node does; say it as a business reader would, in a natural sentence fragment.',
+      '- Every business word of a name (an object, a role, a purpose) must come from the facts of its node, its technical name or its conditions. Do not add knowledge of SAP or of the business that is not there. A name with a word not covered is discarded and the wording of the engine is shown instead.',
+      '- Keep codes such as table names, field codes and message numbers out of a name unless no fact gives a word for them.',
+      '- Do not repeat the engine fact word for word: say it as a process owner would. Keep its form: a gateway is a question that ends with "?" ("Authorized?" becomes "Is the user authorized?"), an end says the outcome ("Stop: no batch found" becomes "Stops: no batch found"), a start says what sets the part off. Keep its meaning exactly, including every "not" and every value.');
+    const at2 = lines.findIndex((l) => l.startsWith('Nodes, as'));
+    lines[at2] = 'Nodes, as "id | kind | technical name as the code writes it | conditions | facts", grouped by the part of the program they belong to:';
+  }
 
   const order = new Map(skeleton.regions.map((r, i) => [r.key, i]));
   const byRegion = new Map<string, typeof skeleton.nodes>();
@@ -260,7 +293,9 @@ export function buildNamingPrompt(context: NamingContext): string {
         ),
       ].slice(0, MAX_CONDITIONS_PER_NODE);
       const tail = conditions.length ? ` | conditions: ${conditions.join(' ; ')}` : '';
-      lines.push(`${node.id} | ${node.kind} | ${node.label}${tail}`);
+      const own = facts?.get(node.id) ?? [];
+      const said = own.length ? ` | facts: ${own.map((f) => `[${f.id}] ${f.kind}: ${clip(f.text, MAX_CONDITION_LENGTH)}`).join(' ; ')}` : '';
+      lines.push(`${node.id} | ${node.kind} | ${node.label}${tail}${said}`);
     }
   }
 
@@ -309,6 +344,10 @@ export type NamingRejection =
    * field such as a price unit with a value (external MM review of 22.10.2026, point 6).
    */
   | 'count-not-in-code'
+  /** 3.0.22 (H6): a content word of the name that no fact of its node, its token or its conditions covers. */
+  | 'not-in-facts'
+  /** 3.0.22 (H7): a name that cites no fact of its node, or a fact of another node. */
+  | 'facts-not-cited'
   /** A lane named as a position, a person or a unit of an organisation. */
   | 'lane-organisational'
   /** Two lanes with the same name — both dropped. */
@@ -428,19 +467,22 @@ function validateNames(
   raw: unknown,
   nodes: Map<string, ProcessSkeleton['nodes'][number]>,
   tally: Tally,
+  context?: NamingContext,
 ): AcceptedName[] {
+  const facts = context?.facts;
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
     tally.bump('malformed-entry');
     return [];
   }
 
-  const wellFormed: Array<{ id: string; name: string }> = [];
+  const wellFormed: Array<{ id: string; name: string; cited: string[] }> = [];
   for (const entry of raw) {
     if (!isPlainObject(entry)) { tally.bump('malformed-entry'); continue; }
-    if (Object.keys(entry).some((k) => k !== 'id' && k !== 'name')) { tally.bump('unexpected-field'); continue; }
+    if (Object.keys(entry).some((k) => k !== 'id' && k !== 'name' && !(facts && k === 'facts'))) { tally.bump('unexpected-field'); continue; }
     if (typeof entry.id !== 'string' || typeof entry.name !== 'string') { tally.bump('malformed-entry'); continue; }
-    wellFormed.push({ id: entry.id, name: entry.name });
+    if (entry.facts !== undefined && (!Array.isArray(entry.facts) || entry.facts.some((f) => typeof f !== 'string'))) { tally.bump('malformed-entry'); continue; }
+    wellFormed.push({ id: entry.id, name: entry.name, cited: Array.isArray(entry.facts) ? (entry.facts as string[]) : [] });
   }
 
   const perId = new Map<string, number>();
@@ -458,9 +500,22 @@ function validateNames(
     const name = entry.name.trim();
     if (name.toLowerCase() === node.label.trim().toLowerCase()) { tally.bump('same-as-technical'); continue; }
     if (claimsCountNotInCode(name, node.label)) { tally.bump('count-not-in-code'); continue; }
+    if (facts && context) {
+      const own = facts.get(node.id) ?? [];
+      const ids = new Set(own.map((f) => f.id));
+      if (own.length && (!entry.cited.length || entry.cited.some((f) => !ids.has(f)))) { tally.bump('facts-not-cited'); continue; }
+      if (uncoveredWords(name, evidenceOf(context, node, own.map((f) => f.text))).length) { tally.bump('not-in-facts'); continue; }
+    }
     accepted.push({ id: node.id, technicalName: node.label, name });
   }
   return accepted;
+}
+
+/** What a name may draw on (H6): the node's facts, its token, its conditions and the routine it stands in. */
+function evidenceOf(context: NamingContext, node: ProcessSkeleton['nodes'][number], facts: readonly string[]): string[] {
+  const conditions = context.skeleton.edges.filter((e) => e.from === node.id && e.condition).map((e) => e.condition);
+  const region = context.skeleton.regions.find((r) => r.key === node.region)?.label ?? '';
+  return [...facts, node.label, ...conditions, region];
 }
 
 /** Words of a name that say a count of things. */
@@ -588,7 +643,7 @@ export function validateNamingAnswer(context: NamingContext, answer: unknown): V
 
   const nodes = new Map(context.skeleton.nodes.map((n) => [n.id, n]));
   const checks = new Map(context.authorityChecks.map((c) => [c.ref, c]));
-  const names = validateNames(parsed.names, nodes, tally);
+  const names = validateNames(parsed.names, nodes, tally, context);
   const lanes = validateLanes(parsed.lanes, nodes, checks, tally);
   return { names, lanes, discarded: tally.result() };
 }

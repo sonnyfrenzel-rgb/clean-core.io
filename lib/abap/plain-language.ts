@@ -1924,6 +1924,15 @@ function englishText(text: string): string {
   return translateGermanText(text, FIELD_SOURCES)?.english ?? text;
 }
 
+/**
+ * The program's own words on a `MESSAGE` at a line — its literal text or its `WITH` text — for the naming stage's
+ * facts (3.0.22, `lib/naming-facts.ts`). Empty when the line holds no message with a literal.
+ */
+export function messageWordsAt(ctx: PlainContext, line: number | undefined): string[] {
+  const m = messageAt(ctx, line);
+  return [m.text, m.withText].filter((t): t is string => typeof t === 'string' && t.trim().length > 0);
+}
+
 /** German at a glance: an umlaut, or one of the words no English text carries. */
 const GERMAN_HINT = /[äöüßÄÖÜ]|\b(?:nicht|kein|keine|keinen|keiner|f(?:ue|ü)r|der|die|das|ist|sind|nur|und|oder|bitte|vorhanden|gefunden|fehlt|wurde|wurden|werden|mit|zum|zur|bei|auf|ung(?:ue|ü)ltig|fehler|konnte|nicht)\b/i;
 

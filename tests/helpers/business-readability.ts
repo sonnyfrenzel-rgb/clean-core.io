@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildProcessSkeleton } from '../../lib/abap/process-skeleton';
-import { plainLabels } from '../../lib/abap/plain-language';
 import { FIELD_TERMS_EN, TABLE_TERMS_EN, FUNCTION_TERMS_EN, TRANSACTION_TERMS_EN } from '../../lib/abap/plain-glossary';
 import { buildExportModel, type ExportContainer, type ExportNode } from '../../lib/bpmn/model';
 import { businessLevelOf } from '../../lib/bpmn/export';
@@ -207,7 +206,6 @@ export function readBusiness(source: string, file: string, engineVersion: string
   const levels: BusinessReadingOut['levels'] = [];
   for (const c of model.containers) {
     const level = levelOf.get(c.id) ?? 0;
-    const byId = new Map(c.nodes.map((n) => [n.id, n]));
     const flows = new Map(c.flows.map((f) => [f.id, f]));
     let steps = 0;
     for (const n of c.nodes) {
@@ -222,7 +220,6 @@ export function readBusiness(source: string, file: string, engineVersion: string
       } else if (n.tag === 'endEvent' && n.name !== 'Done') {
         ends.push(item);
       }
-      void byId;
     }
     levels.push({ container: c.id, level, steps });
   }
