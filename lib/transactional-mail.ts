@@ -39,7 +39,7 @@ export interface OutgoingMail {
   uid?: string;
   /**
    * Writes the delivery record itself instead of `recordEmailSent`, for a
-   * mail whose record must not hold the address in clear — the invitations
+   * mail with a record of its own — the invitations
    * (`lib/invitation-delivery-record.ts`, privacy policy sections 6 and 8).
    */
   deliveryRecord?: (messageId: string) => Promise<unknown>;
@@ -118,8 +118,8 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
   // the join key to the delivery record.
   console.log(`[Email] Sent ${msg.label}. id=${messageId ?? 'unknown'}`);
   if (messageId && msg.deliveryRecord) {
-    // The caller's own record (an invitation: keyed hash, no address), and
-    // only that one — `email_events` would keep the address in clear.
+    // The caller's own record (an invitation: keyed hash, no address, six
+    // months), and only that one — not an `email_events` record as well.
     await msg.deliveryRecord(messageId).catch((err) =>
       console.error(`[Email] Could not record sent event for ${msg.label}:`, err),
     );

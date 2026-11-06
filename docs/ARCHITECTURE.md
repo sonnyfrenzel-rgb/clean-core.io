@@ -371,8 +371,9 @@ exists: `team@` and `system@clean-core.io` are sending identities, not mailboxes
 at the provider, so a reply to either bounced while the welcome mail was asking
 the reader to reply.
 
-`email_events` is server-only in `firestore.rules` — the documents carry
-recipient addresses. Which is why the verdict does not stay there: the welcome
+`email_events` is server-only in `firestore.rules`, and since 3.0.21 it holds
+the recipient address and the subject only as keyed hashes
+(`lib/email-event-hashing.ts`). Which is why the verdict does not stay there: the welcome
 mail's send record keeps the `uid`, and a delivery event mirrors its status onto
 `registration_requests/{uid}`, where the admin console already reads. An account
 created and never used now looks different from one whose first-run guide sat in

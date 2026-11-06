@@ -41,3 +41,20 @@ export function accountHashOf(email: string, env: Record<string, string | undefi
   if (!pseudonymPepperConfigured(env)) throw new PseudonymPepperMissingError();
   return 'hmac1_' + createHmac('sha256', env[PSEUDONYM_PEPPER_ENV] as string).update(normaliseAddress(email)).digest('hex');
 }
+
+/**
+ * The keyed hash of a mail's subject line, as the delivery record of a mail
+ * keeps it (`email_events.subjectHash`, privacy policy sections 2 and 6): a
+ * subject can name a person, so the record holds this and never the line.
+ *
+ * Domain-separated from `accountHashOf` by a fixed prefix inside the HMAC, so
+ * an address and a subject that happen to read alike never hash alike. Not
+ * normalised: a subject is compared as it was sent. With the pepper the
+ * operator can still answer "was a mail with this subject sent?" — the one
+ * question the record keeps it for (finding the operator's signup
+ * notification about an erased account, `lib/firebase-admin.ts`).
+ */
+export function subjectHashOf(subject: string, env: Record<string, string | undefined> = process.env): string {
+  if (!pseudonymPepperConfigured(env)) throw new PseudonymPepperMissingError();
+  return 'hmac1_' + createHmac('sha256', env[PSEUDONYM_PEPPER_ENV] as string).update(`mail-subject\u0000${subject}`).digest('hex');
+}

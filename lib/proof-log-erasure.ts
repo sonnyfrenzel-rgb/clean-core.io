@@ -119,8 +119,13 @@ export async function retainProofsOfErasedAccount(
   // 4. The delivery records, by uid and by address.
   const deliveries = new Map<unknown, Doc>();
   for (const row of (await db.collection('email_events').where('uid', '==', input.uid).get()).docs) deliveries.set(row.ref, row);
-  for (const address of new Set([...input.addresses.filter(Boolean), ...addresses])) {
-    for (const row of (await db.collection('email_events').where('to', 'array-contains', address).get()).docs) deliveries.set(row.ref, row);
+  //    Since 3.0.21 a record holds the keyed hash of the address in `to`; one
+  //    written before holds the address itself until the owner's one-off
+  //    rewrite (`scripts/hash-email-events.ts`) or its 90 days end.
+  const keys = new Set<string>([...input.addresses.filter(Boolean), ...addresses]);
+  for (const address of addresses) keys.add(accountHashOf(address, env));
+  for (const key of keys) {
+    for (const row of (await db.collection('email_events').where('to', 'array-contains', key).get()).docs) deliveries.set(row.ref, row);
   }
   for (const row of deliveries.values()) {
     const data = row.data() || {};

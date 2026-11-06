@@ -256,12 +256,16 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
       const to: string[] = Array.isArray(m.to) ? m.to : m.to ? [m.to] : [];
       return {
         to: to[0] || '',
+        // Since 3.0.21 the record keeps the address as its keyed hash only, so
+        // the send marks a test recipient itself; the address rule still
+        // catches a record written before.
+        test: m.testRecipient === true,
         kind: (m.kind || 'mail') as string,
         status: (m.status || 'email.sent') as string,
         sentAt: toDate(m.sentAt),
       };
     })
-    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !isTestAccount(m.to));
+    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !m.test && !isTestAccount(m.to));
 
   const countBy = (status: string) => mail.filter((m) => m.status === status).length;
   const delivery: DeliveryMetrics = {
