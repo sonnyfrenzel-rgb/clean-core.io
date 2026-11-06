@@ -558,7 +558,8 @@ class ModelBuilder {
     }
     return this.skeleton.lanes.map((lane) => ({
       id: lane.id,
-      name: lane.name,
+      // 3.0.22 (H9): an authorization lane by what it protects (`PlainLabels.lane`); the skeleton's token otherwise.
+      name: this.labels?.lane?.(lane) || lane.name,
       kind: lane.kind,
       source: lane,
       flowNodeRefs: refs.get(lane.id) ?? [],

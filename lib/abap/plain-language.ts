@@ -26,6 +26,7 @@ import {
   SAP_FUNCTIONS,
   SAP_TABLES,
   SAP_TRANSACTIONS,
+  SAP_AUTHORIZATION_OBJECTS,
   dictionaryWords,
 } from './sap-dictionary';
 import { APP_VERSION } from '../version';
@@ -2297,6 +2298,12 @@ export interface PlainLabels {
    * one, and always null for an older engine.
    */
   comment?(nodeId: string): AuthorComment | null;
+  /**
+   * 3.0.22 (H9): a lane's name for a business reader — an authorization check by what it protects, with its object
+   * ("Authorization for purchase requisitions by purchasing group (M_BANF_EKG)"). '' keeps the skeleton's name; always
+   * '' for an older engine.
+   */
+  lane?(lane: { kind: string; name: string }): string;
 }
 
 function normalise(condition: string): string {
@@ -2665,6 +2672,12 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     },
     comment(nodeId: string): AuthorComment | null {
       return comments.get(nodeId) ?? null;
+    },
+    lane(lane: { kind: string; name: string }): string {
+      if (!ctx.reads3022 || lane.kind !== 'authority') return '';
+      const token = lane.name.trim().toUpperCase();
+      const word = own(SAP_AUTHORIZATION_OBJECTS, token);
+      return word ? `Authorization for ${lcFirst(word)} (${token})` : '';
     },
   };
 }

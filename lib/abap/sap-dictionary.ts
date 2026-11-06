@@ -336,7 +336,7 @@ export const SAP_AUTHORIZATION_OBJECTS: Readonly<Record<string, string>> = Objec
   F_KNA1_BUK: 'Customer master by company code', F_LFA1_BUK: 'Supplier master by company code', F_REGU_BUK: 'Payment runs by company code',
   K_CSKS: 'Cost centers', K_ORDER: 'Internal orders', P_ORGIN: 'HR master data', P_PERNR: 'HR master data by personnel number',
   PLOG: 'Organizational management', I_IWERK: 'Maintenance by planning plant', C_AFKO_AWK: 'Production orders by plant',
-  Q_INSPLOT: 'Inspection lots', S_TCODE: 'Transaction start', S_PROGRAM: 'Program start', S_TABU_DIS: 'Table maintenance',
+  Q_INSPLOT: 'Inspection lots', S_TCODE: 'Starting a transaction', S_PROGRAM: 'Starting a program', S_TABU_DIS: 'Table maintenance',
   S_BTCH_JOB: 'Background jobs', S_RFC: 'Remote calls', S_GUI: 'File transfer to the PC', S_DATASET: 'Files on the server',
 });
 
