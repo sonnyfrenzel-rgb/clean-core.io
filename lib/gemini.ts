@@ -60,6 +60,12 @@ export interface CallOptions {
    * Sent as `trigger: 'automatic'`; the proxy refuses it on an own key whose "Automatic steps" are off.
    */
   automatic?: boolean;
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 3): the narrative of the first run after "Create project"
+   * (`hooks/useStartRun.ts`). Sent as `trigger: 'start'`; the proxy refuses it while the account's main
+   * switch "Automatic AI steps" is off (`lib/auto-model-steps.ts`), so that run is signed without a model call.
+   */
+  startRun?: boolean;
 }
 
 export interface GeminiResult {
@@ -131,7 +137,7 @@ export async function callGeminiWithReceipt(
       ...(options?.responseShape ? { responseShape: options.responseShape } : {}),
       ...(options?.lease ? { lease: { projectId: options.lease.projectId, leaseId: options.lease.leaseId } } : {}),
       ...(options?.lease && options.gateRepair ? { gateRepair: true } : {}),
-      ...(options?.automatic ? { trigger: 'automatic' } : {}),
+      ...(options?.automatic ? { trigger: 'automatic' } : options?.startRun ? { trigger: 'start' } : {}),
       // No `userId` and no `idToken` in the body. The route has never read
       // either — `app/api/gemini/route.ts:106` derives the identity from
       // `verifyRequestAuth(request)` and the handler destructures only the four

@@ -33,6 +33,9 @@ interface Row {
   deletedAt: string | null;
   retainUntil: string | null;
   due: boolean;
+  /** B7 — when the TTL fallback deletes the held documents, and whether it has. */
+  ttlFallbackAt: string | null;
+  ttlState: 'none' | 'set' | 'deleted-by-ttl';
 }
 
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : '—');
@@ -135,8 +138,14 @@ export default function ContentHoldPanel() {
                   {day(r.policeInformedAt)} · authority {r.authorityDecision ? `${r.authorityDecision.outcome} ${day(r.authorityDecision.at)}` : '—'} · keep until {day(r.retainUntil)}
                   {r.releasedAt ? ` · released ${day(r.releasedAt)}` : ''}
                   {r.deletedAt ? ` · deleted ${day(r.deletedAt)}` : ''}
+                  {r.status === 'blocked' && r.ttlFallbackAt ? ` · TTL fallback ${day(r.ttlFallbackAt)}` : ''}
                 </p>
-                {r.due ? (
+                {r.ttlState === 'deleted-by-ttl' ? (
+                  <p className="m-0 mt-1 font-semibold" data-content-hold-ttl-deleted="">
+                    Deleted by TTL fallback: no held document is left after {day(r.ttlFallbackAt)}. Close the hold with “Delete the content”.
+                  </p>
+                ) : null}
+                {r.due && r.ttlState !== 'deleted-by-ttl' ? (
                   <CcMessageStrip state="warning">Due: delete the held content now.</CcMessageStrip>
                 ) : null}
                 {r.status === 'blocked' ? (

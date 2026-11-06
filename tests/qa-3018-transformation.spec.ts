@@ -119,14 +119,15 @@ test.describe('no model call without a lease once the engine planned the run (5e
 });
 
 test.describe('a refused contract blocks the start (c7b3dd5d1ead, a6314b4a1a6d)', () => {
-  test('the plan read says the refusal and keeps Generate and the automatic start closed', () => {
+  test('the plan read says the refusal and keeps Generate closed', () => {
     const src = code(PAGE);
     const plan = src.slice(src.indexOf('if (!planWanted) return;'));
     const refusal = plan.slice(plan.indexOf('if (!decision.ok) {'), plan.indexOf('if (!generation) {'));
     expect(refusal).toContain('setContractRefusal(decision);');
     expect(src).toContain('const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;');
-    // The automatic start reads canStart.
-    expect(src).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canStart \|\|/);
+    // There is no automatic start since the legal review of 06.11.2026 (item 1); every start reads canStart.
+    expect(src).not.toContain('autoStarted');
+    expect(src).toMatch(/const startGeneration = \(\) => \{\s*if \(!canStart\) return;/);
   });
 });
 

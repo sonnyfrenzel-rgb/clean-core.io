@@ -73,6 +73,7 @@ import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeout
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
 import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
+import { AUTO_MODEL_STEPS_OFF_CODE, autoModelStepsOffMessage, autoModelStepsOn } from '@/lib/auto-model-steps';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -442,6 +443,8 @@ export async function POST(request: NextRequest) {
     // model — so `GEMINI_MODEL` reaches the callers that name the constant.
     const model = resolveRequestedModel(requestedModel, productModel());
     const automatic = trigger === 'automatic';
+    // The narrative of the first run after "Create project" (`hooks/useStartRun.ts`).
+    const startNarrative = trigger === 'start';
 
     // Roadmap 1.2 — the per-stage switch, enforced on the server.
     //
@@ -471,6 +474,16 @@ export async function POST(request: NextRequest) {
           { status: 403 },
         );
       }
+    }
+
+    // Legal review 06.11.2026 (3.0.21, item 2) — the account's one main switch
+    // "Automatic AI steps" (`lib/auto-model-steps.ts`): with it off, no call the
+    // product starts by itself goes out, on any key — the platform key
+    // included — and neither does the narrative of the first run. Refused
+    // before any key is loaded, so nothing is sent. The per-stage switch above
+    // and the own key's "Automatic steps" below apply on top of it.
+    if ((automatic || startNarrative) && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {
+      return NextResponse.json({ error: autoModelStepsOffMessage(), code: AUTO_MODEL_STEPS_OFF_CODE }, { status: 403 });
     }
 
     // A lease is bought for the Transformation stage and spends on nothing else.

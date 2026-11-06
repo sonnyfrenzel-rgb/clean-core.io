@@ -23,6 +23,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_SEEN } from '@/lib/auto-steps-notice';
+import { AUTO_MODEL_STEPS_FIELD, autoModelStepsOn, automaticStepsAllowed } from '@/lib/auto-model-steps';
 
 /**
  * The per-stage model switch, and whether there is a key to switch on.
@@ -84,6 +85,12 @@ interface StageAnswer {
    * below; `lib/auto-steps-notice.ts`).
    */
   autoStepsNoticeSeen: boolean;
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 2) — the account's main switch
+   * "Automatic AI steps" (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`):
+   * on unless switched off. `autoSteps` above is false whenever it is off.
+   */
+  autoModelSteps: boolean;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -91,9 +98,10 @@ const UNREADABLE = Symbol('byok-key-unreadable');
 async function answerFor(uid: string): Promise<StageAnswer> {
   const { db } = await getAdminDb();
   const snap = await db.collection('users').doc(uid).get();
-  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown; autoStepsNoticeAt?: unknown }) : null;
+  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown; autoStepsNoticeAt?: unknown; autoModelSteps?: unknown }) : null;
   const stages = modelStagesOf(profile);
   const autoStepsNoticeSeen = profile?.[AUTO_STEPS_NOTICE_FIELD] != null;
+  const autoModelSteps = autoModelStepsOn(profile);
   const answers: StageAnswer['answers'] = {};
   for (const stage of MODEL_STAGES) {
     const a = profile?.modelAnswers?.[stage];
@@ -108,7 +116,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen };
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoModelSteps };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
@@ -117,11 +125,12 @@ async function answerFor(uid: string): Promise<StageAnswer> {
   const provider = ownKey ? ownKey.provider : keySource === 'community' ? PLATFORM_PROVIDER : null;
   // A switched-off provider is no available key: `/api/gemini` refuses it.
   const suspendedProvider = provider && suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider) ? provider : null;
-  const autoSteps = keySource === 'community' || (ownKey !== null && ownKey.autoSteps);
+  // The main switch first, on every key; on an own key that key's "Automatic steps" as well.
+  const autoSteps = automaticStepsAllowed({ mainSwitch: autoModelSteps, keySource, ownKeyAutoSteps: ownKey !== null && ownKey.autoSteps });
 
   const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
 
-  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen };
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps };
 }
 
 export async function GET(req: NextRequest) {
@@ -192,9 +201,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `autoStepsNotice must be '${AUTO_STEPS_NOTICE_SEEN}'.` }, { status: 400 });
     }
     const noticeSeen = notice === AUTO_STEPS_NOTICE_SEEN;
-    if (noticeSeen && requested === undefined) {
+    // The main switch "Automatic AI steps" (3.0.21, legal review 06.11.2026): true or false, alone or beside the others.
+    const mainSwitch = (body as { autoModelSteps?: unknown } | null)?.autoModelSteps;
+    if (mainSwitch !== undefined && typeof mainSwitch !== 'boolean') {
+      return NextResponse.json({ error: 'autoModelSteps must be true or false.' }, { status: 400 });
+    }
+    if ((noticeSeen || mainSwitch !== undefined) && requested === undefined) {
       const { db, FieldValue } = await getAdminDb();
-      await updateExistingProfile(uid, { [AUTO_STEPS_NOTICE_FIELD]: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { db });
+      const only: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+      if (noticeSeen) only[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
+      if (typeof mainSwitch === 'boolean') only[AUTO_MODEL_STEPS_FIELD] = mainSwitch;
+      await updateExistingProfile(uid, only, { db });
       return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
     }
     if (!requested || typeof requested !== 'object' || Array.isArray(requested)) {
@@ -224,6 +241,7 @@ export async function POST(req: NextRequest) {
     const fields: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
     for (const [stage, on] of Object.entries(update)) fields[`modelStages.${stage}`] = on;
     if (noticeSeen) fields[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
+    if (typeof mainSwitch === 'boolean') fields[AUTO_MODEL_STEPS_FIELD] = mainSwitch;
     await updateExistingProfile(uid, fields, { db });
 
     return NextResponse.json({ ok: true, ...(await answerFor(uid)) });

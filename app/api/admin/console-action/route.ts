@@ -14,6 +14,7 @@ import {
 import { sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { processAllPendingWithdrawals } from '@/lib/withdrawal-queue-store';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,6 +37,15 @@ export async function POST(req: NextRequest) {
     // 3. Parse request body
     const body = await req.json();
     const { uid, action } = body;
+
+    // Legal review 06.11.2026 (B8): withdrawal receipts that could not be sent —
+    // tried again now; a receipt that goes out, or the seventh day without one,
+    // ends in the deletion of that account (`lib/withdrawal-queue.ts`). Not
+    // about one account, so no uid; the answer is counts only, never an address.
+    if (action === 'withdrawal-receipts') {
+      const counts = await processAllPendingWithdrawals();
+      return NextResponse.json({ success: true, counts });
+    }
 
     if (!uid || !action) {
       return NextResponse.json({ error: 'Missing required parameters: uid, action.' }, { status: 400 });

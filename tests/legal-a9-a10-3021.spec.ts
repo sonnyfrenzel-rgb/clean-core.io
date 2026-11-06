@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import {
   AUTO_STEPS_NOTICE_FIELD,
-  AUTO_STEPS_SWITCH_STAGES,
   automaticStagesInThisBuild,
   autoStepsNoticeValues,
   autoStepsNoticeWanted,
@@ -61,12 +60,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
       };
       walk(dir);
     }
-    // Since 06.11.2026 the two tools that start on opening (C14: Transformation, Documentation)
-    // mark that start as well, so an own key without "Automatic steps" refuses it
-    // (tests/auto-steps-tools-on-open-3021.spec.ts).
+    // Since the legal review of 06.11.2026 (item 1) Transformation and Documentation start
+    // only on a click, on every key, and mark nothing (tests/auto-steps-tools-on-open-3021.spec.ts).
     expect(senders.sort()).toEqual([
-      'app/(app)/project/[projectId]/documentation/page.tsx',
-      'app/(app)/project/[projectId]/transformation/page.tsx',
       'hooks/useAutoProcessNaming.ts',
       'hooks/usePlainWording.ts',
     ]);
@@ -89,21 +85,23 @@ test.describe('A10 — one automatic step on opening a project while names are p
 
   test('the server says the same: on an own key the automatic flag needs "Automatic steps"', () => {
     const route = read('app/api/model-stages/route.ts');
-    expect(route).toContain("const autoSteps = keySource === 'community' || (ownKey !== null && ownKey.autoSteps);");
+    // Since 06.11.2026 (item 2) the main switch comes first, on every key (tests/auto-model-steps-3021.spec.ts).
+    expect(route).toContain('const autoSteps = automaticStepsAllowed({ mainSwitch: autoModelSteps, keySource, ownKeyAutoSteps: ownKey !== null && ownKey.autoSteps });');
     expect(read('app/api/gemini/route.ts')).toContain('if (automatic && ownKey && !ownKey.autoSteps) {');
   });
 
-  test('the switch writes the per-account stages Settings writes, and records the notice as answered', () => {
-    expect(autoStepsSwitchBody(false)).toEqual({ stages: { naming: false, statements: false }, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchBody(true)).toEqual({ stages: { naming: true, statements: true }, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchOn(ALL_ON)).toBe(true);
-    expect(autoStepsSwitchOn(off('statements'))).toBe(false);
+  test('the switch writes the main switch Settings shows, and records the notice as answered', () => {
+    // Since 06.11.2026 (item 2): one stored setting, `users/{uid}.autoModelSteps` (tests/auto-model-steps-3021.spec.ts).
+    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen' });
+    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen' });
+    expect(autoStepsSwitchOn({ autoModelSteps: true })).toBe(true);
+    expect(autoStepsSwitchOn({ autoModelSteps: false })).toBe(false);
   });
 
   test('the route writes the notice field through the Admin SDK only; no rules change', () => {
     const route = read('app/api/model-stages/route.ts');
     expect(route).toContain('const noticeSeen = notice === AUTO_STEPS_NOTICE_SEEN;');
-    expect(route).toContain('[AUTO_STEPS_NOTICE_FIELD]: FieldValue.serverTimestamp()');
+    expect(route).toContain('if (noticeSeen) only[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();');
     expect(route).toContain('if (noticeSeen) fields[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();');
     expect(route).toContain('const autoStepsNoticeSeen = profile?.[AUTO_STEPS_NOTICE_FIELD] != null;');
     expect(AUTO_STEPS_NOTICE_FIELD).toBe('autoStepsNoticeAt');
@@ -143,34 +141,21 @@ test.describe('A10 — one automatic step on opening a project while names are p
     expect(read('components/ModelStagesCard.tsx')).toContain('title="Where the AI model is used"');
   });
 
-  test('C14 names the two tools that call the model when opened (owner decision 06.11.2026)', () => {
-    const t = CONSENT_TEXTS.autoStepsNotice;
-    expect(consentText(t.toolsOnOpen, 'en')).toBe(
-      'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
-    );
-    expect(consentText(t.toolsOnOpen, 'de')).toBe(
-      'Auch Transformation und Documentation können das Modell beim Öffnen von selbst aufrufen, solange dort noch kein KI-Ergebnis vorliegt. Dieser Schalter erfasst sie nicht; Sie schalten sie in den Einstellungen unter „Where the AI model is used“ mit „Transformed code“ und „Documentation and business blueprint“ ab.',
-    );
-    // The switch labels it names are the ones Settings shows.
-    expect(MODEL_STAGE_LABELS.transformation).toBe('Transformed code');
-    expect(MODEL_STAGE_LABELS.documentation).toBe('Documentation and business blueprint');
-    // "This switch does not cover them" stays true: the switch writes names and sentences only.
-    expect(AUTO_STEPS_SWITCH_STAGES).toEqual(['naming', 'statements']);
-    // What the sentence describes: both tools start a model call from an effect on open,
-    // gated by their own stage switch. Since 06.11.2026 that start is marked automatic and,
-    // on an own key, also waits for "Automatic steps" (tests/auto-steps-tools-on-open-3021.spec.ts);
-    // on the platform key, where this notice shows, it still runs by itself.
+  test('C14 no longer needs to name the two tools: since 06.11.2026 they start on a click only', () => {
+    // Legal review 06.11.2026, item 1: Transformation and Documentation never call the model on
+    // opening, on any key (tests/auto-steps-tools-on-open-3021.spec.ts); the sentence about them
+    // is removed from C14 by the legal-text change. The notice shows it only while the text has it.
     const transformation = read('app/(app)/project/[projectId]/transformation/page.tsx');
-    expect(transformation).toContain('const timer = setTimeout(() => generateTransformation(true), 0);');
-    expect(transformation).toContain("modelAvailability.enabled('transformation')");
+    expect(transformation).not.toContain('generateTransformation(true)');
     const documentation = read('app/(app)/project/[projectId]/documentation/page.tsx');
-    expect(documentation).toMatch(/&& !businessDocumentation\.trim\(\)[\s\S]{0,300}modelAvailability\.enabled\('documentation'\)/);
-    expect(documentation).toContain('void writeBusinessLayer(true);');
-    // On the page, below the switch and above the Settings line.
+    expect(documentation).not.toContain('writeBusinessLayer(true)');
     const notice = read('components/AutoStepsNotice.tsx');
-    expect(notice).toContain('consentText(t.toolsOnOpen');
+    expect(notice).toContain('{toolsOnOpen ? (');
     expect(notice.indexOf('data-auto-steps-notice-tools')).toBeGreaterThan(notice.indexOf('<CcSwitch'));
     expect(notice.indexOf('data-auto-steps-notice-tools')).toBeLessThan(notice.indexOf('data-auto-steps-notice-after'));
+    // The switch labels Settings shows stay as they are.
+    expect(MODEL_STAGE_LABELS.transformation).toBe('Transformed code');
+    expect(MODEL_STAGE_LABELS.documentation).toBe('Documentation and business blueprint');
   });
 
   test('privacy 3, Terms 5.4 and the Trust page say one automatic step, and that names are paused', () => {

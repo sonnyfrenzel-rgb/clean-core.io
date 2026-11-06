@@ -244,11 +244,12 @@ test.describe('automatic model steps with an own key are a switch, off by defaul
     expect(route).toContain("const automatic = trigger === 'automatic';");
     expect(route).toMatch(/if \(automatic && ownKey && !ownKey\.autoSteps\) \{\s*return NextResponse\.json\(\{ error: autoStepsOffMessage\(PROVIDER_LABEL\[ownKey\.provider\]\), code: AUTO_STEPS_OFF_CODE \}, \{ status: 403 \}\);/);
     expect(AUTO_STEPS_OFF_CODE).toBe('own-key-auto-steps-off');
-    expect(read('lib/gemini.ts')).toContain("...(options?.automatic ? { trigger: 'automatic' } : {}),");
+    expect(read('lib/gemini.ts')).toContain("...(options?.automatic ? { trigger: 'automatic' } : options?.startRun ? { trigger: 'start' } : {}),");
     expect(read('hooks/usePlainWording.ts')).toContain('client.requestPlainWording(projectId, scope, digest, items, { automatic: true })');
     expect(read('hooks/useAutoProcessNaming.ts')).toContain('ask(projectId, source, true);');
     // The availability answer carries the switch; the screens read it.
-    expect(read('app/api/model-stages/route.ts')).toContain("const autoSteps = keySource === 'community' || (ownKey !== null && ownKey.autoSteps);");
+    // Since 06.11.2026 the account's main switch comes first, on every key (tests/auto-model-steps-3021.spec.ts).
+    expect(read('app/api/model-stages/route.ts')).toContain('const autoSteps = automaticStepsAllowed({ mainSwitch: autoModelSteps, keySource, ownKeyAutoSteps: ownKey !== null && ownKey.autoSteps });');
   });
 
   test('every automatic step reads the switch, and offers a click instead', () => {

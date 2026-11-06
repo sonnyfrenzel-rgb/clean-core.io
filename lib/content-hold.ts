@@ -44,6 +44,22 @@
  *   `HOLD_RECORD_KEEP_MONTHS` after the release or deletion (`expiresAt`, a
  *   Firestore TTL the owner creates — docs/DATA-RETENTION.md).
  *
+ * - **The TTL fallback** (legal review 06.11.2026, B7). Deletion stays the
+ *   operator's act; should it not happen, Firestore deletes the held documents
+ *   by itself about `HOLD_TTL_FALLBACK_DAYS` after the latest day they may be
+ *   kept (`holdTtlFallbackAt`: 90 days after the police notice, or the later
+ *   day the authority asked for, plus 7). Each held document carries that time
+ *   as `expiresAt` beside the document it holds — the content itself sits
+ *   unchanged under `heldDocument` (`HELD_FORMAT`), so a field of the content
+ *   that happens to be called `expiresAt` (an invitation's) is neither
+ *   overwritten nor taken for the deletion time. It is set when the police
+ *   notice is recorded and moved when the authority asks for longer, each
+ *   time with an entry `ttl-fallback-set` in the evidence log. It works once
+ *   the owner has created the TTL policy (`--collection-group=held_documents`,
+ *   field `expiresAt`); until then nothing is deleted by it. The console
+ *   shows a hold whose documents are gone after that time as "deleted by TTL
+ *   fallback" (`ttlState`).
+ *
  * Admin SDK only; every function takes the database handle, so the specs run
  * it against a stand-in.
  */
@@ -56,13 +72,19 @@ export const HELD_DOCUMENTS = 'held_documents';
 export const HOLD_RETENTION_DAYS = 90;
 /** The hold record (no content) is kept this many months after release or deletion. */
 export const HOLD_RECORD_KEEP_MONTHS = 6;
+/** The TTL fallback deletes the held documents this many days after the latest day they may be kept. */
+export const HOLD_TTL_FALLBACK_DAYS = 7;
+/** The layout of a held document since B7: `{ heldFormat, heldDocument, expiresAt }`. */
+export const HELD_FORMAT = 2;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BATCH = 400;
 
 export type HoldStatus = 'blocked' | 'released' | 'deleted';
 export type AuthorityOutcome = 'secured' | 'not-needed';
-export type HoldEventKind = 'blocked' | 'police-informed' | 'authority-decision' | 'retention-extended' | 'released' | 'deleted';
+export type HoldEventKind = 'blocked' | 'police-informed' | 'authority-decision' | 'retention-extended' | 'ttl-fallback-set' | 'released' | 'deleted';
+/** The TTL fallback of a hold, as the console shows it. */
+export type HoldTtlState = 'none' | 'set' | 'deleted-by-ttl';
 
 export interface HoldEvent {
   kind: HoldEventKind;
@@ -89,6 +111,10 @@ export interface ContentHold {
   extendedUntil: string | null;
   releasedAt: string | null;
   deletedAt: string | null;
+  /** B7 — when Firestore deletes the held documents by itself, if the operator has not; null while none is set. */
+  ttlFallbackAt: string | null;
+  /** B7 — none set, set, or the documents are gone after that time (`listContentHolds` looks). */
+  ttlState: HoldTtlState;
   events: HoldEvent[];
 }
 
@@ -132,6 +158,17 @@ export function holdRetainUntil(h: Pick<ContentHold, 'criminalSuspicion' | 'poli
   const base = Date.parse(h.policeInformedAt) + HOLD_RETENTION_DAYS * DAY_MS;
   const ext = h.extendedUntil ? Date.parse(h.extendedUntil) : NaN;
   return new Date(Number.isFinite(ext) && ext > base ? ext : base).toISOString();
+}
+
+/** B7 — when the TTL fallback deletes the held documents: `HOLD_TTL_FALLBACK_DAYS` after `holdRetainUntil`; null without one. */
+export function holdTtlFallbackAt(h: Pick<ContentHold, 'criminalSuspicion' | 'policeInformedAt' | 'extendedUntil'>): string | null {
+  const until = holdRetainUntil(h);
+  return until ? new Date(Date.parse(until) + HOLD_TTL_FALLBACK_DAYS * DAY_MS).toISOString() : null;
+}
+
+/** A held document as stored: the document it holds, in either layout. */
+export function heldContentOf(stored: Record<string, any>): Record<string, any> {
+  return stored && stored.heldFormat === HELD_FORMAT && stored.heldDocument && typeof stored.heldDocument === 'object' ? stored.heldDocument : stored;
 }
 
 /** Whether the operator may delete the held content now — and why not, when not. */
@@ -183,6 +220,8 @@ export function holdOfStored(id: string, d: Record<string, any>): ContentHold {
     extendedUntil: s(d.extendedUntil),
     releasedAt: s(d.releasedAt),
     deletedAt: s(d.deletedAt),
+    ttlFallbackAt: s(d.ttlFallbackAt),
+    ttlState: s(d.ttlFallbackAt) ? 'set' : 'none',
     events: Array.isArray(d.events) ? (d.events as HoldEvent[]) : [],
   };
 }
@@ -244,6 +283,7 @@ export async function blockProjectContent(db: Db, FieldValue: FieldValueT, admin
     extendedUntil: null,
     releasedAt: null,
     deletedAt: null,
+    ttlFallbackAt: null,
     expiresAt: null,
     events: [{ kind: 'blocked', at, recordedAt: at, by: adminUid, detail: csam ? 'csam-suspicion' : criminal ? 'criminal-suspicion' : 'no-suspicion' }],
   };
@@ -259,7 +299,8 @@ export async function blockProjectContent(db: Db, FieldValue: FieldValueT, admin
     const batch = db.batch();
     for (const snap of snaps) {
       if (!snap.exists) continue;
-      batch.set(held.doc(heldDocumentId(snap.ref.path)), snap.data());
+      // The content unchanged under `heldDocument`; `expiresAt` beside it is the TTL fallback's, null until set (B7).
+      batch.set(held.doc(heldDocumentId(snap.ref.path)), { heldFormat: HELD_FORMAT, heldDocument: snap.data(), expiresAt: null });
       written += 1;
     }
     await batch.commit();
@@ -290,14 +331,33 @@ function event(kind: HoldEventKind, at: string, by: string, detail?: string): Ho
   return { kind, at, recordedAt: new Date().toISOString(), by, ...(detail ? { detail } : {}) };
 }
 
-/** The day the law-enforcement authority was informed — starts the 90 days. */
+/**
+ * B7 — writes the TTL fallback's time onto every held document (by id, no
+ * content read) and onto the record, with an entry in the evidence log.
+ */
+async function setTtlFallback(db: Db, FieldValue: FieldValueT, ref: any, adminUid: string, fallbackAt: string): Promise<void> {
+  const held = ref.collection(HELD_DOCUMENTS);
+  const refs = (await held.select().get()).docs.map((d: any) => d.ref);
+  const when = new Date(fallbackAt);
+  for (let i = 0; i < refs.length; i += BATCH) {
+    const batch = db.batch();
+    for (const r of refs.slice(i, i + BATCH)) batch.update(r, { expiresAt: when });
+    await batch.commit();
+  }
+  await ref.update({ ttlFallbackAt: fallbackAt, events: FieldValue.arrayUnion(event('ttl-fallback-set', new Date().toISOString(), adminUid, fallbackAt.slice(0, 10))) });
+}
+
+/** The day the law-enforcement authority was informed — starts the 90 days, and sets the TTL fallback (B7). */
 export async function recordPoliceInformed(db: Db, FieldValue: FieldValueT, adminUid: string, holdId: string, when: unknown): Promise<ContentHold> {
   const { ref, hold } = await readHold(db, holdId);
   if (hold.status !== 'blocked') throw new ContentHoldRefusal('This content is no longer held.', 409, 'content-hold-closed');
   if (!hold.criminalSuspicion) throw new ContentHoldRefusal('This hold records no suspected offence.', 409, 'content-hold-no-suspicion');
   const at = isoOf(when) ?? new Date().toISOString();
   await ref.update({ policeInformedAt: at, events: FieldValue.arrayUnion(event('police-informed', at, adminUid)) });
-  return { ...hold, policeInformedAt: at };
+  const next = { ...hold, policeInformedAt: at };
+  const fallbackAt = holdTtlFallbackAt(next);
+  if (fallbackAt) await setTtlFallback(db, FieldValue, ref, adminUid, fallbackAt);
+  return { ...next, ttlFallbackAt: fallbackAt, ttlState: fallbackAt ? 'set' : 'none' };
 }
 
 /** The authority decided whether to secure the content, or said it does not need it. */
@@ -318,7 +378,11 @@ export async function extendHoldRetention(db: Db, FieldValue: FieldValueT, admin
   if (!iso) throw new ContentHoldRefusal('Give the day the authority asked for.', 400, 'content-hold-date');
   if (hold.status !== 'blocked' || !hold.policeInformedAt) throw new ContentHoldRefusal('Only held content the authority was informed about can be kept longer.', 409, 'content-hold-closed');
   await ref.update({ extendedUntil: iso, events: FieldValue.arrayUnion(event('retention-extended', new Date().toISOString(), adminUid, iso.slice(0, 10))) });
-  return { ...hold, extendedUntil: iso };
+  // The TTL fallback moves with the longer period (B7).
+  const next = { ...hold, extendedUntil: iso };
+  const fallbackAt = holdTtlFallbackAt(next);
+  if (fallbackAt && fallbackAt !== hold.ttlFallbackAt) await setTtlFallback(db, FieldValue, ref, adminUid, fallbackAt);
+  return { ...next, ttlFallbackAt: fallbackAt, ttlState: fallbackAt ? 'set' : 'none' };
 }
 
 /** Deletes the held content; the record stays, without content, for its own period. */
@@ -353,7 +417,7 @@ export async function releaseHeldContent(db: Db, FieldValue: FieldValueT, adminU
   const docs = (await held.get()).docs;
   for (let i = 0; i < docs.length; i += BATCH) {
     const batch = db.batch();
-    for (const d of docs.slice(i, i + BATCH)) batch.set(db.doc(heldDocumentPath(d.id)), d.data());
+    for (const d of docs.slice(i, i + BATCH)) batch.set(db.doc(heldDocumentPath(d.id)), heldContentOf(d.data()));
     await batch.commit();
   }
   await db.recursiveDelete(held);
@@ -369,10 +433,49 @@ export async function releaseHeldContent(db: Db, FieldValue: FieldValueT, adminU
   return { ...hold, status: 'released', releasedAt: at };
 }
 
-/** The hold records for the admin console — never the held documents. */
-export async function listContentHolds(db: Db): Promise<ContentHold[]> {
+/**
+ * The hold records for the admin console — never the held documents. A held
+ * item past its TTL fallback is looked at by id only (`select()`, `limit(1)`):
+ * none left means the fallback deleted them (B7, `deleted-by-ttl`).
+ */
+export async function listContentHolds(db: Db, nowMs: number = Date.now()): Promise<ContentHold[]> {
   const snap = await db.collection(CONTENT_HOLD_COLLECTION).orderBy('blockedAt', 'desc').limit(200).get();
-  return snap.docs.map((d: any) => holdOfStored(d.id, d.data() || {}));
+  const holds: ContentHold[] = snap.docs.map((d: any) => holdOfStored(d.id, d.data() || {}));
+  for (const h of holds) {
+    if (h.status !== 'blocked' || !h.ttlFallbackAt || nowMs < Date.parse(h.ttlFallbackAt)) continue;
+    const left = await db.collection(CONTENT_HOLD_COLLECTION).doc(h.id).collection(HELD_DOCUMENTS).select().limit(1).get();
+    if (left.empty) h.ttlState = 'deleted-by-ttl';
+  }
+  return holds;
+}
+
+/* ------------------------------------------- never back from a copy (B3) */
+
+/**
+ * B3 of the legal review of 06.11.2026: held content must not come back from a
+ * copy — a backup restored into another database, the old database of the
+ * August move — through any path of this repository. The product has no
+ * restore of a project or a revision from a backup; the one path that copies
+ * documents between databases is `scripts/firestore-delta-sync.ts`, and it
+ * asks these two questions before every document.
+ *
+ * The project ids a hold names that are not released: blocked, being moved, or
+ * deleted. Their project must never be written from a copy.
+ */
+export function unreleasedHeldProjectIds(holds: Array<{ projectId?: unknown; status?: unknown }>): Set<string> {
+  const ids = new Set<string>();
+  for (const h of holds) {
+    if (typeof h.projectId === 'string' && h.projectId && h.status !== 'released') ids.add(h.projectId);
+  }
+  return ids;
+}
+
+/** Whether a document path (relative to the database root) must not be written from a copy. */
+export function pathBlockedFromCopy(path: string, heldProjectIds: ReadonlySet<string>): boolean {
+  const [collection, id] = path.split('/');
+  // The holds themselves never come from a copy: a copy can hold content the operator has since deleted.
+  if (collection === CONTENT_HOLD_COLLECTION) return true;
+  return collection === 'projects' && typeof id === 'string' && heldProjectIds.has(id);
 }
 
 /* ------------------------------------------------- what the account sees */

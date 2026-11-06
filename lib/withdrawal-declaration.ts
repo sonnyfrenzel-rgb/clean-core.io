@@ -2,6 +2,7 @@ import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
 import { PROOF_LOG_RETENTION, type ContractEnding } from '@/lib/proof-log';
 import type { MailOutcome } from '@/lib/transactional-mail';
 import type { TermsLanguage } from '@/lib/terms-versions';
+import { queuedReceipt, type QueuedReceipt } from '@/lib/withdrawal-queue';
 
 /**
  * The withdrawal path — C13, Terms section 13, A6 of 3.0.21 (§ 356a BGB as a
@@ -13,6 +14,9 @@ import type { TermsLanguage } from '@/lib/terms-versions';
  *    and recorded in the proof log (`consent_events`, kind
  *    `withdrawal-declared`): the declaration word for word, the contract, the
  *    contract language and the time;
+ * 1a. the withdrawal is effective with that (legal review 06.11.2026, B8): the
+ *    account is blocked at once — no use, no model call, no mail but the
+ *    receipt (`deps.block`);
  * 2. the receipt goes by e-mail at once, to the token's verified address, in
  *    the contract language: the declaration, the name, the contract and the
  *    time of receipt (`lib/withdrawal-receipt-email.ts`);
@@ -26,9 +30,12 @@ import type { TermsLanguage } from '@/lib/terms-versions';
  * account and address and their own deletion date (`lib/proof-log-erasure.ts`).
  * No name is written into them — the proof log keeps none (privacy section 5).
  *
- * A receipt that does not go out stops the path before the deletion: the
- * declaration stays on record, the account stays, and the person is told and
- * can confirm again. Nothing is retried in the background.
+ * A receipt that does not go out (B8, legal review 06.11.2026) does not undo
+ * anything: the withdrawal stays effective and the account blocked, the
+ * receipt goes into the queue with automatic retries (`lib/withdrawal-queue.ts`),
+ * and the account is deleted after it is sent — at the latest seven days after
+ * the declaration, with a note in the proof log. The person is never asked to
+ * try again (`withdrawalReceiptPendingMessage`, `lib/messages/model-consent.ts`).
  *
  * Pure apart from its `deps`, so a spec drives it without a database.
  */
@@ -49,6 +56,10 @@ export interface WithdrawalDeps {
   readProfile(uid: string): Promise<WithdrawalProfile>;
   /** Appends one proof-log row (`consent_events`). */
   record(row: Record<string, unknown>): Promise<void>;
+  /** Blocks the account at once: the profile marked disabled and withdrawn, the sessions ended. */
+  block(uid: string, receivedAt: Date): Promise<void>;
+  /** Puts a receipt that did not go out into the queue (`withdrawal_receipt_queue/{uid}`). */
+  enqueue(entry: QueuedReceipt): Promise<void>;
   send(input: { to: string; uid: string; language: TermsLanguage; name: string; receivedAt: string }): Promise<MailOutcome>;
   erase(uid: string, ending: ContractEnding): Promise<void>;
 }
@@ -56,7 +67,8 @@ export interface WithdrawalDeps {
 export type WithdrawalResult =
   | { ok: true; receivedAt: string; receiptSentAt: string }
   | { ok: false; code: 'no-address' }
-  | { ok: false; code: 'receipt-not-sent'; receivedAt: string };
+  /** Effective and blocked; the receipt waits in the queue, the deletion follows it. */
+  | { ok: false; code: 'receipt-queued'; receivedAt: string };
 
 /** The proof-log row of the received declaration. */
 export function declarationRecord(input: { uid: string; email: string; language: TermsLanguage; receivedAt: Date }): Record<string, unknown> {
@@ -109,13 +121,20 @@ export async function receiveWithdrawalDeclaration(
   const profile = await deps.readProfile(input.uid);
   await deps.record(declarationRecord({ uid: input.uid, email, language: profile.language, receivedAt }));
 
+  // 1a. Effective on submission: blocked before anything else happens.
+  await deps.block(input.uid, receivedAt);
+
   // 2. The receipt, at once.
   const outcome = await deps.send({ to: email, uid: input.uid, language: profile.language, name: profile.name, receivedAt: receivedAt.toISOString() });
 
   // 3. Sent (or not), and when.
   const at = deps.now();
   await deps.record(receiptRecord({ uid: input.uid, email, receivedAt, at, outcome }));
-  if (!outcome.delivered) return { ok: false, code: 'receipt-not-sent', receivedAt: receivedAt.toISOString() };
+  if (!outcome.delivered) {
+    // Into the queue, retried automatically; the deletion follows the receipt, or the deadline.
+    await deps.enqueue(queuedReceipt({ uid: input.uid, email, language: profile.language, receivedAt, at, reason: outcome.reason }));
+    return { ok: false, code: 'receipt-queued', receivedAt: receivedAt.toISOString() };
+  }
 
   // 4. Then the deletion.
   await deps.erase(input.uid, WITHDRAWAL_ENDING);

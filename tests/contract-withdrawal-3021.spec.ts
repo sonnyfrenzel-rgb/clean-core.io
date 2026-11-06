@@ -106,8 +106,11 @@ test.describe('the withdrawal function', () => {
     const declare = src.indexOf('await receiveWithdrawalDeclaration(');
     expect(stepUp).toBeGreaterThan(0);
     expect(declare).toBeGreaterThan(stepUp);
-    expect(src).toContain('erase: (uid, ending) => deleteUserDataAndAccount(uid, { ending })');
-    expect(src).toContain("db.collection('consent_events').doc().create(");
+    // The deps live beside the queue since B8 (legal review 06.11.2026): lib/withdrawal-queue-store.ts.
+    expect(src).toContain('withdrawalDeps(),');
+    const store = read('lib/withdrawal-queue-store.ts');
+    expect(store).toContain('erase: (uid, ending) => deleteUserDataAndAccount(uid, { ending })');
+    expect(store).toContain("db.collection('consent_events').doc().create(");
     // The address comes from the verified token; no body is read.
     expect(src).not.toMatch(/req\.json\(|request\.json\(/);
     expect(read('app/api/account/delete/route.ts')).not.toContain('sendWithdrawalReceiptMail');
@@ -173,6 +176,7 @@ test.describe('the withdrawal path, in order', () => {
     const rows: Record<string, unknown>[] = [];
     const sent: Parameters<WithdrawalDeps['send']>[0][] = [];
     let erased: { uid: string; ending: string } | null = null;
+    const queued: Parameters<WithdrawalDeps['enqueue']>[0][] = [];
     const clock = [T0, T1];
     const deps: WithdrawalDeps = {
       now: () => clock.shift() ?? T1,
@@ -190,15 +194,23 @@ test.describe('the withdrawal path, in order', () => {
         steps.push('erase');
         erased = { uid, ending };
       },
+      block: async () => {
+        steps.push('block');
+      },
+      enqueue: async (entry) => {
+        steps.push('enqueue');
+        queued.push(entry);
+      },
     };
-    return { deps, steps, rows, sent, erased: () => erased };
+    return { deps, steps, rows, sent, queued, erased: () => erased };
   }
 
-  test('declaration recorded, receipt sent, its sending recorded with the time, then the deletion', async () => {
+  test('declaration recorded, account blocked, receipt sent, its sending recorded with the time, then the deletion', async () => {
     const h = harness({ delivered: true, mocked: false, messageId: 'msg-1' });
     const out = await receiveWithdrawalDeclaration({ uid: UID, email: EMAIL }, h.deps);
     expect(out).toEqual({ ok: true, receivedAt: T0.toISOString(), receiptSentAt: T1.toISOString() });
-    expect(h.steps).toEqual([`record:${WITHDRAWAL_DECLARED_KIND}`, 'send', `record:${WITHDRAWAL_RECEIPT_KIND}`, 'erase']);
+    // Effective on submission (B8, legal review 06.11.2026): blocked before the receipt goes out.
+    expect(h.steps).toEqual([`record:${WITHDRAWAL_DECLARED_KIND}`, 'block', 'send', `record:${WITHDRAWAL_RECEIPT_KIND}`, 'erase']);
 
     const [declared, receipt] = h.rows;
     expect(declared).toMatchObject({
@@ -220,13 +232,17 @@ test.describe('the withdrawal path, in order', () => {
     expect(WITHDRAWAL_ENDING).toBe('withdrawal-function');
   });
 
-  test('a receipt that does not go out stops before the deletion, with the declaration and the failure on record', async () => {
+  test('B8: a receipt that does not go out leaves the withdrawal effective and the account blocked; the receipt is queued, nothing is deleted yet', async () => {
     const h = harness({ delivered: false, reason: 'rejected', detail: 'x' }, 'en');
     const out = await receiveWithdrawalDeclaration({ uid: UID, email: EMAIL }, h.deps);
-    expect(out).toEqual({ ok: false, code: 'receipt-not-sent', receivedAt: T0.toISOString() });
-    expect(h.steps).toEqual([`record:${WITHDRAWAL_DECLARED_KIND}`, 'send', `record:${WITHDRAWAL_RECEIPT_KIND}`]);
+    expect(out).toEqual({ ok: false, code: 'receipt-queued', receivedAt: T0.toISOString() });
+    expect(h.steps).toEqual([`record:${WITHDRAWAL_DECLARED_KIND}`, 'block', 'send', `record:${WITHDRAWAL_RECEIPT_KIND}`, 'enqueue']);
     expect(h.rows[1]).toMatchObject({ status: 'not-sent', receiptSentAt: null, reason: 'rejected' });
     expect(h.erased()).toBeNull();
+    expect(h.queued).toHaveLength(1);
+    expect(h.queued[0]).toMatchObject({ uid: UID, email: EMAIL, language: 'en', receivedAt: T0.toISOString(), attempts: 1, lastReason: 'rejected' });
+    // At the latest seven days after the declaration.
+    expect(h.queued[0].deadlineAt).toBe(new Date(T0.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString());
   });
 
   test('without an address nothing is recorded, sent or deleted', async () => {
@@ -240,7 +256,8 @@ test.describe('the withdrawal path, in order', () => {
     await receiveWithdrawalDeclaration({ uid: UID, email: EMAIL }, h.deps);
     // Keyed by `userId` in `consent_events`, as `retainProofsOfErasedAccount` selects them.
     expect(PROOF_LOG_COLLECTIONS).toContain('consent_events');
-    expect(read('app/api/account/withdraw/route.ts')).toContain("collection('consent_events')");
+    expect(read('lib/withdrawal-queue-store.ts')).toContain("collection('consent_events')");
+    expect(read('app/api/account/withdraw/route.ts')).toContain('withdrawalDeps(),');
     const DEL = Symbol('delete');
     const fields = pseudonymisedProofFields({ accountHash: 'h', endedAt: T1, ending: WITHDRAWAL_ENDING }, DEL);
     for (const row of h.rows) {

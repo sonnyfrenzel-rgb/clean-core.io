@@ -55,6 +55,7 @@ import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/c
 import CcTag from '@/components/cc/Tag';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
+import { withdrawalReceiptPendingMessage } from '@/lib/messages/model-consent';
 
 /**
  * "My workspace" — the dashboard every account sees (block D, D.22a).
@@ -370,6 +371,19 @@ export default function Dashboard() {
       <div className="cc mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-6 sm:px-6">
         <CcSkeleton shape="header" label="workspace" />
         <CcSkeleton shape="table" label="projects" count={3} />
+      </div>
+    );
+  }
+
+  // B8 (legal review 06.11.2026): a withdrawal received and effective whose
+  // receipt is still queued — the account is blocked and is deleted after the
+  // receipt goes out. Said as it is, never as a suspension and never "try again".
+  const withdrawal = (profile as { withdrawal?: { state?: unknown; receivedAt?: unknown } } | null)?.withdrawal;
+  if (withdrawal?.state === 'receipt-pending' && typeof withdrawal.receivedAt === 'string') {
+    return (
+      <div className="cc mx-auto flex max-w-2xl flex-col items-center px-4 pt-16 text-center md:pt-24" data-dashboard-withdrawal-pending="">
+        <p className="m-0 mb-3 cc-text-body text-cc-ink">{withdrawalReceiptPendingMessage(withdrawal.receivedAt, 'en')}</p>
+        <p lang="de" className="m-0 cc-text-meta text-cc-ink-muted">{withdrawalReceiptPendingMessage(withdrawal.receivedAt, 'de')}</p>
       </div>
     );
   }

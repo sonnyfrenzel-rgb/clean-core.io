@@ -149,15 +149,22 @@ export async function finishRegistration(user: User, input: FinishRegistrationIn
  */
 const reportedSignIns = new Set<string>();
 
+/** The profile says a withdrawal is effective and its receipt still pending (`lib/withdrawal-queue.ts`). */
+function withdrawalReceiptPending(data: unknown): boolean {
+  const w = data && typeof data === 'object' ? (data as { withdrawal?: { state?: unknown } }).withdrawal : undefined;
+  return w?.state === 'receipt-pending';
+}
+
 /**
  * Asks the server to clear the profile picture address from the account's
  * Firebase Authentication record (`lib/profile-picture.ts`). Only for an
  * account signed in with Google, once per page load. It looks at which
  * provider signed in, never at the picture; best effort, nothing waits on it.
  */
-function reportGoogleSignIn(user: User): void {
+function reportGoogleSignIn(user: User, withdrawalPending = false): void {
   if (reportedSignIns.has(user.uid)) return;
-  if (!user.providerData.some((p) => p.providerId === 'google.com')) return;
+  // Legal review 06.11.2026 (B8): with a withdrawal receipt pending, every provider reports — the route tries it again.
+  if (!withdrawalPending && !user.providerData.some((p) => p.providerId === 'google.com')) return;
   reportedSignIns.add(user.uid);
   void user
     .getIdToken()
@@ -244,6 +251,7 @@ export function useUserProfile() {
           // (firestore.rules) and never change it, so a limit the operator raised is shown as raised.
           setProfile(docSnap.data() as UserProfile);
           setLoading(false);
+          if (withdrawalReceiptPending(docSnap.data())) reportGoogleSignIn(user, true);
         }
       }).catch((err) => {
         console.error('Immediate getDoc profile fetch error:', err);

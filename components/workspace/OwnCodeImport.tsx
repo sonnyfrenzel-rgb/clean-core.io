@@ -40,6 +40,7 @@ import {
 } from '@/lib/workspace-messages';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import AutoStepsNotice from '@/components/AutoStepsNotice';
+import { startDialogNotice } from '@/lib/start-dialog-notice';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
 import TargetEditionChoice, { targetEditionTitle, type TargetEdition } from '@/components/TargetEditionChoice';
@@ -212,7 +213,11 @@ export default function OwnCodeImport() {
   // analysis stage is on and a key is available, asks the model for the
   // narrative of that same run (owner decision 03.10.2026). What it costs is the
   // run's, said here before the click, with whether the model is called.
-  const startCallsModel = model.enabled('analyze');
+  // Legal review 06.11.2026 (item 3): the main switch "Automatic AI steps" off
+  // means no narrative and no model call for that first run (`hooks/useStartRun.ts`).
+  const startCallsModel = model.enabled('analyze') && model.autoModelSteps;
+  // The notice at the button: the consent text `startDialog` once it exists, until then the current sentence.
+  const startNotice = startDialogNotice({ provider: model.provider, fallback: ownCodeStartNext(startCallsModel, targetEditionTitle(edition)) });
   const cost = describeRunCost({ profile, metered: true, callsModel: startCallsModel });
   const trimmedName = name.trim();
   const nameMissing = trimmedName.length === 0;
@@ -648,11 +653,7 @@ export default function OwnCodeImport() {
               <p className="m-0 text-[12px] font-medium text-cc-ink-muted">
                 {assembly.rows.length > 0 ? ownCodeSourceSummary(assembly.rows.length, 0) : wt('ownCode.addSource')}
               </p>
-            ) : (
-              <p className="m-0 text-[12px] font-medium text-cc-ink-muted">
-                <span data-own-code-start-next="">{ownCodeStartNext(startCallsModel, targetEditionTitle(edition))}</span>
-              </p>
-            )}
+            ) : null}
           </div>
           <span data-own-code-cost="" className="text-[12px] font-medium text-cc-ink">
             {cost.quota} · {cost.modelCall}
@@ -670,11 +671,18 @@ export default function OwnCodeImport() {
               busy={busy}
               disabled={startDisabled}
               onClick={() => void start()}
+              aria-describedby={ready && !hintsPending ? 'own-code-start-notice' : undefined}
               data-own-code-start=""
             >
               {wt('ownCode.start')}
             </CcButton>
           </div>
+          {/* The notice directly at the button (legal review 06.11.2026, item 3): what the first run sends, and where. */}
+          {ready && !hintsPending && !assembly.blocked && !assembly.tooLarge && attentionRows.length === 0 ? (
+            <p id="own-code-start-notice" className="m-0 text-[12px] font-medium text-cc-ink-muted lg:max-w-xs" data-own-code-start-notice={startNotice.fromConsentText ? 'consent-text' : 'current'}>
+              <span data-own-code-start-next="">{startNotice.text}</span>
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

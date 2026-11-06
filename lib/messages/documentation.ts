@@ -58,6 +58,8 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.businessOfferLead':
     'Who does what at each step, who is accountable, and the controls — proposed by a language model from the process documentation read from your code. The steps and their lines stay the code reading.',
   'doc.businessGenerate': 'Generate the business SOP & RACI',
+  // Nothing writes the layer on opening (legal review 06.11.2026, 3.0.21, item 1): the progress card says it waits.
+  'doc.businessWaitsForClick': 'Not written yet. It is written when you click Generate draft below; nothing is sent before.',
   'doc.businessBlockedTitle': 'Not yet possible',
   'doc.businessNeedsDocumentation':
     'The business layer is written from the process documentation, and none is saved yet. Read it from the code first; that takes no model call.',

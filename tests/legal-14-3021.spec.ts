@@ -197,7 +197,8 @@ test.describe('G10 — the profile picture address is removed after a Google sig
     expect(signedIn).toContain('const decoded = await verifyRequestAuth(req);');
     expect(signedIn).toContain('await removeProfilePictureAddress(decoded);');
     const hook = read('hooks/useUserProfile.ts');
-    expect(hook).toContain("if (!user.providerData.some((p) => p.providerId === 'google.com')) return;");
+    // B8 (06.11.2026): a pending withdrawal receipt reports for every provider; otherwise Google only.
+    expect(hook).toContain("if (!withdrawalPending && !user.providerData.some((p) => p.providerId === 'google.com')) return;");
     expect(hook).toContain("fetch('/api/account/signed-in'");
     expect(hook).toContain('reportGoogleSignIn(user);');
   });
