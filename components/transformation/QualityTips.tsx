@@ -155,7 +155,8 @@ export default function QualityTips({
             onClick={onGenerate}
             data-generate-now=""
           >
-            {generateLabel ?? (regenerate ? wt('transformation.regenerateNow') : wt('transformation.generateNow'))}
+            {/* The label names the provider (legal review 06.11.2026) and is long: it wraps on a phone. */}
+            <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel ?? (regenerate ? wt('transformation.regenerateNow') : wt('transformation.generateNow'))}</span>
           </CcButton>
           {tips.some((t) => t.key === 'rules') ? (
             <span className="text-[13px] font-medium text-cc-ink-muted">{wt('transformation.generateNote')}</span>

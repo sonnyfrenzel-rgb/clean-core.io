@@ -1522,7 +1522,8 @@ export default function DocumentationPage() {
             icon={<Rocket size={16} aria-hidden={true} />}
             data-generate-business-layer
           >
-            {generateDraftLabel(modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null)}
+            {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
+            <span className="min-w-0 text-left leading-snug whitespace-normal">{generateDraftLabel(modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null)}</span>
           </CcButton>
         </div>
       )}

@@ -2249,7 +2249,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
               data-generate-code=""
             >
-              {generateLabel}
+              {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
+              <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel}</span>
             </CcButton>
             <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
               Copy Code

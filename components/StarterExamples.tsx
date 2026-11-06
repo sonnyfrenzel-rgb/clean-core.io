@@ -106,9 +106,11 @@ export default function StarterExamples({
   const [kind, setKind] = useState<'' | 'example' | 'snippet'>('');
   const costId = useId();
   // Whether the start asks the model for the narrative (owner decision
-  // 03.10.2026): the account's analysis stage and a key, said before the click.
+  // 03.10.2026): the account's analysis stage and a key, said before the click —
+  // and the main switch "All automatic AI steps", without which the first run
+  // asks no model (legal review 06.11.2026, N2; `hooks/useStartRun.ts`).
   const model = useModelAvailability();
-  const startCallsModel = model.enabled('analyze');
+  const startCallsModel = model.enabled('analyze') && model.autoModelSteps;
 
   const limit = account?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK;
   const atLimit = quotaExhausted(account);

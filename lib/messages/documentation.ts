@@ -363,7 +363,7 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
  * the one `/api/model-stages` reports.
  */
 export function docProposalsCostLine(model: string, byok: boolean): string {
-  return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation writes the SOP and RACI once when none is on record; the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+  return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation calls no model: the SOP and RACI are written on “Generate draft”, the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
 }
 
 /** Roadmap 3.0.13 — the end of the progress card when a stage stopped. */
