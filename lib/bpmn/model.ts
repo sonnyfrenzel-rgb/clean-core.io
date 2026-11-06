@@ -502,9 +502,14 @@ class ModelBuilder {
     }
 
     const root = this.container('process', 'process');
+    // Engine 3.5.0: the business reading leaves out an entry that draws nothing between start and end
+    // (`SkeletonRegion.drawsNothing`) — unless that would leave no process at all. The technical reading draws it.
+    const hideEmpty = this.businessLevel && !!this.labels
+      && this.skeleton.entries.some((key) => this.regionByKey.get(key) && !this.regionByKey.get(key)?.drawsNothing);
     for (const key of this.skeleton.entries) {
       const region = this.regionByKey.get(key);
       if (!region) continue;
+      if (hideEmpty && region.drawsNothing) continue;
       this.instantiated.add(key);
       this.instantiate(region, root, '', [key]);
     }

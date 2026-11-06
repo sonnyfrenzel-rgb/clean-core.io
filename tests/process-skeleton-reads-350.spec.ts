@@ -9,6 +9,7 @@ import { test, expect } from '@playwright/test';
 import { buildProcessSkeleton, skeletonReadFor } from '../lib/abap/process-skeleton';
 import { buildProcessFacts } from '../lib/abap/process-facts';
 import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
+import { buildReadingExports } from '../lib/bpmn/export';
 
 const NEW = { engineVersion: ENGINE_READS_350_FROM };
 /** A hotfix on dev/main after 3.0.21 (owner decision 06.11.2026): no new reading. */
@@ -309,4 +310,46 @@ test('a collected row does not change whether its routine is folded to one step'
     .nodes.find((n) => n.anchor?.lineStart === 4);
   expect(routine(ENGINE_READS_350_FROM)).toBe(`${withoutRow?.kind}${withoutRow?.collapsed ? ' (folded)' : ''}`);
   expect(buildProcessSkeleton(REPORT_LINES, OLD).nodes.some((n) => n.anchor?.lineStart === 11)).toBe(false);
+});
+
+const BADI = [
+  'CLASS zcl_im_check DEFINITION PUBLIC.', //                                     1
+  '  PUBLIC SECTION.', //                                                         2
+  '    INTERFACES zif_ex_check.', //                                              3
+  'ENDCLASS.', //                                                                 4
+  'CLASS zcl_im_check IMPLEMENTATION.', //                                        5
+  '  METHOD zif_ex_check~open.', //                                               6
+  '  ENDMETHOD.', //                                                              7
+  '  METHOD zif_ex_check~check.', //                                              8
+  '    IF is_item-menge > 100.', //                                               9
+  "      CALL FUNCTION 'Z_ASK_BUYER'.", //                                        10
+  '    ENDIF.', //                                                                11
+  '  ENDMETHOD.', //                                                              12
+  '  METHOD zif_ex_check~close.', //                                              13
+  '  ENDMETHOD.', //                                                              14
+  'ENDCLASS.', //                                                                 15
+].join('\n');
+
+test('an entry that draws nothing between start and end is left out of the business reading, not out of the technical one', () => {
+  const skeleton = buildProcessSkeleton(BADI, NEW);
+  const empty = skeleton.regions.filter((r) => r.drawsNothing).map((r) => r.anchor?.lineStart);
+  expect(empty).toEqual([6, 13]);
+  // The skeleton keeps them and their anchors.
+  expect(skeleton.nodes.filter((n) => n.kind === 'start' && [6, 13].includes(n.anchor?.lineStart ?? 0))).toHaveLength(2);
+  const { bpmn, technical } = buildReadingExports(BADI, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_350_FROM });
+  const starts = (xml: string) => (xml.match(/<bpmn:startEvent /g) ?? []).length;
+  expect(starts(technical.xml)).toBe(3);
+  expect(starts(bpmn.xml)).toBe(1);
+  // An older run's business reading keeps all three.
+  const old = buildReadingExports(BADI, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: OLD.engineVersion });
+  expect(starts(old.bpmn.xml)).toBe(3);
+  expect(buildProcessSkeleton(BADI, OLD).regions.some((r) => r.drawsNothing)).toBe(false);
+});
+
+test('a source whose every entry is empty still shows them, and a reporting event block is never left out', () => {
+  const allEmpty = BADI.replace("    IF is_item-menge > 100.\n      CALL FUNCTION 'Z_ASK_BUYER'.\n    ENDIF.\n", '');
+  const { bpmn } = buildReadingExports(allEmpty, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_350_FROM });
+  expect((bpmn.xml.match(/<bpmn:startEvent /g) ?? []).length).toBe(3);
+  const report = ['REPORT zempty_event.', 'INITIALIZATION.', 'START-OF-SELECTION.', "  CALL FUNCTION 'Z_RUN'."].join('\n');
+  expect(buildProcessSkeleton(report, NEW).regions.some((r) => r.drawsNothing)).toBe(false);
 });

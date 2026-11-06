@@ -264,6 +264,13 @@ export interface SkeletonRegion {
    * keeps `collapseSmallRegions` from dissolving the marker back into one step.
    */
   multiInstance?: boolean;
+  /**
+   * Engine 3.5.0 (`markEmptyEntries`): an entry that draws nothing between its start and its end — an empty BAdI
+   * method, a screen module that only sets its status. The business reading leaves it out (`lib/bpmn/model.ts`);
+   * the technical reading and every anchor keep it. Never set on a reporting event block, which hands over to
+   * the next one.
+   */
+  drawsNothing?: boolean;
 }
 
 export type FormEffect =
@@ -1362,6 +1369,7 @@ class SkeletonBuilder {
     // Roadmap 3.0.7, once every node and end is settled: a reporting event
     // block that ends normally hands over to the next one.
     this.chainReportEvents();
+    if (this.reads350) this.markEmptyEntries();
     this.noteUnreachableSteps();
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
@@ -4498,6 +4506,29 @@ class SkeletonBuilder {
    * turned into the one step it does, a business-rule task, a technical helper
    * (no region at all) and the body of a multi-instance `LOOP AT` get none.
    */
+  /**
+   * Engine 3.5.0 — an entry process that draws nothing between its start and its end says nothing to a business
+   * reader: eight empty methods of a BAdI interface were eight maps "Start → Done". Marked here
+   * (`SkeletonRegion.drawsNothing`), left out by the business reading only. A reporting event block is never
+   * marked: it hands the run over to the next one (`chainReportEvents`), and leaving it out would cut that chain.
+   */
+  private markEmptyEntries(): void {
+    const kinds = new Map<string, Set<string>>();
+    for (const node of this.nodes) {
+      const own = kinds.get(node.region);
+      if (own) own.add(node.kind);
+      else kinds.set(node.region, new Set([node.kind]));
+    }
+    for (const region of this.regions) {
+      if (region.kind !== 'entry') continue;
+      const start = this.nodes.find((n) => n.id === region.entryNodeId);
+      const origin = start?.detail?.origin;
+      if (origin === 'event' || origin === 'implicit') continue;
+      const own = kinds.get(region.key) ?? new Set<string>();
+      if ([...own].every((kind) => kind === 'start' || kind === 'end')) region.drawsNothing = true;
+    }
+  }
+
   private addSubProcessStarts(): void {
     const planes = new Set<string>();
     for (const node of this.nodes) {
