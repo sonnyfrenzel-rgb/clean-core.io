@@ -604,6 +604,8 @@ const DOMINANT_ORDER: SkeletonNodeKind[] = [
 const FLAG_ASSIGNMENT = /^((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)\s*=\s*('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+|[\w/]+=>[\w/]+|[\w/]+)\s*\.?$/;
 /** The built-in constants a flag is set to. Any other bare name must be a `CONSTANTS` of this source. */
 const BUILT_IN_FLAG_VALUES = new Set(['ABAP_TRUE', 'ABAP_FALSE', 'ABAP_UNDEFINED', 'SPACE']);
+/** Engine 3.0.22 (`buildsWhileDeciding`): the statements that add rows to an internal table. */
+const BUILDS_TABLE = /^(?:APPEND\b[\s\S]*\bTO\b|COLLECT\b[\s\S]*\bINTO\b|INSERT\b[\s\S]*\bINTO\s+TABLE\b)/i;
 
 function snippet(text: string): string {
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
@@ -1655,7 +1657,32 @@ class SkeletonBuilder {
       if (this.methodCallsIn(statement).some((call) => call.standalone && !call.key)) out.add('call');
     }
     if (out.size === 0 && this.classifiesFromLiterals(block)) out.add('business-rule');
+    if (out.size === 0 && this.reads3022 && this.buildsWhileDeciding(block)) out.add('compute');
     return out;
+  }
+
+  /**
+   * Engine 3.0.22 — a routine that builds a table while it decides or iterates is a calculation.
+   *
+   * Since 3.0.7 a routine that changes an internal table (`MODIFY gt_out …`, `DELETE lt_rows WHERE …`) is a step
+   * of the process (`compute`), but the commonest way to build one — `APPEND … TO`, `COLLECT … INTO`,
+   * `INSERT … INTO TABLE` — counted for nothing, so a routine that walks the contracts, decides which ones
+   * qualify and appends the new rents was folded into its caller as a technical helper, with every decision in
+   * it. §5.8 folds a routine *without an effect of its own*; building the result set by decisions is one.
+   * Kept narrow on purpose: a routine that only appends one row (`add_message`, `add_issue`) decides nothing
+   * and stays a helper — the rule needs a branch or a loop of the routine's own around the append.
+   */
+  private buildsWhileDeciding(block: Block): boolean {
+    const [from, to] = bodyRange(block);
+    let builds = false;
+    for (let i = from; i <= to && !builds; i++) {
+      const statement = this.statements[i];
+      if (statement.nativeSql) continue;
+      builds = BUILDS_TABLE.test(maskLiterals(statement.text));
+    }
+    if (!builds) return false;
+    return this.structure.blocks.some((inner) => inner.openIndex > block.openIndex && inner.closeIndex < block.closeIndex
+      && ['if', 'case', 'loop', 'do', 'while', 'select'].includes(inner.kind));
   }
 
   /**

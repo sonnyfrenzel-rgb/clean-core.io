@@ -119,3 +119,45 @@ test('a skeleton read for this release is rebuilt for the engine of an older run
   expect(older).not.toBe(current);
   expect(JSON.stringify(older)).toBe(JSON.stringify(buildProcessSkeleton(APPROVAL, OLD)));
 });
+
+const RENTS = [
+  'REPORT zbuild_table.', //                                                     1
+  'START-OF-SELECTION.', //                                                      2
+  "  SELECT * FROM zcontract INTO TABLE gt_contracts WHERE active = 'X'.", //    3
+  '  PERFORM compute_rents.', //                                                 4
+  '  PERFORM add_note.', //                                                      5
+  "  CALL FUNCTION 'Z_POST_RENTS' TABLES it_rents = gt_rents.", //               6
+  'FORM compute_rents.', //                                                      7
+  '  LOOP AT gt_contracts INTO gs_contract.', //                                 8
+  '    IF gs_contract-index_rent = abap_false.', //                              9
+  '      CONTINUE.', //                                                          10
+  '    ENDIF.', //                                                               11
+  '    gs_rent-new = gs_contract-rent * gv_factor.', //                          12
+  '    APPEND gs_rent TO gt_rents.', //                                          13
+  '  ENDLOOP.', //                                                               14
+  'ENDFORM.', //                                                                 15
+  'FORM add_note.', //                                                           16
+  "  gs_note-text = 'run finished'.", //                                         17
+  '  APPEND gs_note TO gt_notes.', //                                            18
+  'ENDFORM.', //                                                                 19
+].join('\n');
+
+test('a routine that builds a table while it decides or iterates is a step, not a technical helper', () => {
+  const skeleton = buildProcessSkeleton(RENTS, NEW);
+  const call = skeleton.nodes.find((n) => n.anchor?.lineStart === 4)!;
+  expect(call.kind).toBe('sub-process');
+  expect(call.detail?.effects).toEqual(['compute']);
+  // Its decisions are drawn on its own level.
+  expect(skeleton.nodes.some((n) => n.kind === 'gateway' && n.anchor?.lineStart === 9)).toBe(true);
+  expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).not.toContain('COMPUTE_RENTS');
+  // A routine that only appends one row decides nothing: still folded into its caller.
+  expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 5)).toBe(false);
+  expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toContain('ADD_NOTE');
+});
+
+test('an older engine keeps such a routine folded into its caller', () => {
+  const skeleton = buildProcessSkeleton(RENTS, OLD);
+  expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 4)).toBe(false);
+  expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 9)).toBe(false);
+  expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toContain('COMPUTE_RENTS');
+});
