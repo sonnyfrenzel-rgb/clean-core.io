@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from './helpers/test';
 import { namingContextOf } from '../lib/process-naming';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
@@ -41,4 +43,27 @@ test('where 3.1.0 draws another map, its digest differs — so a naming is never
   const old = namingContextOf(SRC, { engineVersion: '3.0.21' });
   const now = namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM });
   expect(now.digest).not.toBe(old.digest);
+});
+
+/** Every place that builds the naming context for a stored project reads it for the project's engine (source guard). */
+test('the live map, the automatic naming and the naming route read the naming context for the project\'s engine', () => {
+  const read = (p: string) => fs.readFileSync(path.join(__dirname, '..', ...p.split('/')), 'utf8');
+  const map = read('hooks/useProcessMap.ts');
+  expect(map).toMatch(/namingContextOf\(source, engineVersion \? \{ engineVersion \} : \{\}\)/);
+  expect(map).toMatch(/exporterVersion: engineVersion/);
+  expect(read('hooks/useAutoProcessNaming.ts')).toMatch(/namingContextOf\(src, engineVersion \? \{ engineVersion \} : \{\}\)/);
+  const route = read('app/api/projects/[projectId]/process-naming/route.ts');
+  expect(route).toMatch(/engineVersion: engineVersionOfProject\(project\)/);
+  expect(route).toMatch(/namingContextOf\(gate\.legacyCode, gate\.engineVersion \? \{ engineVersion: gate\.engineVersion \} : \{\}\)/);
+  const workspace = read('components/workspace/WorkspaceProcess.tsx');
+  expect(workspace.match(/engineVersion: engineVersionOfProject\(project\)/g)?.length).toBe(2);
+  expect(read('app/(app)/project/[projectId]/documentation/page.tsx')).toMatch(/modelAvailability,\s+\{ engineVersion: engineVersionOfProject\(project\) \},/);
+});
+
+test('an old project\'s stored naming keeps applying: the context of its engine has the digest the naming was made with', () => {
+  // What the 3.0.21 route stored is the digest of the 3.0.21 map; the live map of that project now reads that map.
+  const stored = namingContextOf(SRC, { engineVersion: '3.0.21' }).digest;
+  const live = namingContextOf(SRC, { engineVersion: '3.0.21' });
+  expect(live.digest).toBe(stored);
+  expect(namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM }).digest).not.toBe(stored);
 });

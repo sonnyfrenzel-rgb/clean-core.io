@@ -586,6 +586,7 @@ export default function DocumentationPage() {
     signedSource,
     project?.name || '',
     modelAvailability,
+    { engineVersion: engineVersionOfProject(project) },
   );
 
   /**
