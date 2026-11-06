@@ -15,6 +15,9 @@ import {
   SAP_TRANSACTIONS,
 } from '../lib/abap/sap-dictionary';
 import { FIELD_TERMS_EN, TABLE_TERMS_EN } from '../lib/abap/plain-glossary';
+import { buildProcessFacts } from '../lib/abap/process-facts';
+import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
+import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 
 /**
  * The dictionary of the Business view (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026:
@@ -90,6 +93,25 @@ test('a value of a fixed SAP domain carries its meaning; a check on a field whos
   expect(xml).not.toContain('(field GBSTK)');
   const old = buildBpmnExport(buildProcessSkeleton(src), { processName: 't', sourceFileName: 't.abap', source: src, names: 'plain', exporterVersion: OLD }).xml;
   expect(old).not.toContain('The code does not say what this check means');
+});
+
+test('a rule on a constant is titled with the dictionary word of its name, not the name made into a word', () => {
+  const src = [
+    'REPORT zt_rule.',
+    "CONSTANTS c_gewei TYPE c LENGTH 3 VALUE 'KG'.",
+    'DATA ls_lips TYPE lips.',
+    'START-OF-SELECTION.',
+    '  SELECT SINGLE * FROM lips INTO ls_lips WHERE gewei = c_gewei.',
+    "  WRITE / ls_lips-vbeln.",
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(src);
+  const facts = buildProcessFacts(src);
+  const titles = (engine: string) => {
+    const ruleSet = deriveBusinessRulesFrom(src, facts, skeleton, engine);
+    return explainBusinessRules(src, ruleSet, facts, engine).rules.map((r) => r.headline ?? '');
+  };
+  expect(titles(NEW).some((t) => /^Only weight unit KG$/i.test(t))).toBe(true);
+  expect(titles(OLD).some((t) => /^Only gewei KG$/i.test(t))).toBe(true);
 });
 
 test('a customer table is said in the words of its own name, with its code beside them, only when every word is known', () => {

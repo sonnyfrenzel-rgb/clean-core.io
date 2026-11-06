@@ -351,6 +351,7 @@ export const NAMING_ABBREVIATIONS: Readonly<Record<string, string>> = Object.fre
   notif: 'notification', cert: 'certificate', appl: 'application', ctr: 'counter', recv: 'received', req: 'request',
   resp: 'response', conf: 'confirmation', ord: 'order', inv: 'invoice', deliv: 'delivery', matl: 'material',
   plnt: 'plant', uom: 'unit of measure', val: 'value', toler: 'tolerance', lfd: 'running', akt: 'current',
+  purch: 'purchasing', org: 'organization', mgr: 'manager', dept: 'department', amnt: 'amount', cntry: 'country',
 });
 
 /** The words of this dictionary, for a check that asks whether a word is English (`englishGlossaryWords`). */

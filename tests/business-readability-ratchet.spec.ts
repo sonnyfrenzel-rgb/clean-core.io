@@ -28,6 +28,10 @@ import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
  *   gateways    raw 1                 raw 0
  *   rules       raw 7                 raw 6
  *   questions   raw 9                 raw 5
+ *
+ * Rule titles and questions with the dictionary too (a constant's name: "Weight unit G", not "Gewei G"):
+ *
+ *   rules       raw 6 -> 5            questions   raw 5 -> 4
  */
 
 const ENGINE = ENGINE_READS_3022_FROM;
@@ -73,8 +77,8 @@ test.describe('Business readability of the seven examples — never worse (engin
 
   test('rule titles and the questions for the business: no more raw identifiers than today', () => {
     const r = examples();
-    expect(r.rules.raw).toBeLessThanOrEqual(6);
-    expect(r.questions.raw).toBeLessThanOrEqual(5);
+    expect(r.rules.raw).toBeLessThanOrEqual(5);
+    expect(r.questions.raw).toBeLessThanOrEqual(4);
   });
 
   test('size: no level grows', () => {

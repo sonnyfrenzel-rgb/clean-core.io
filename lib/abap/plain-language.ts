@@ -1852,7 +1852,7 @@ export function ruleToSentence(
   try {
     const c = contextOf(ctx);
     if (input.constant) {
-      const subject = humaniseStem(stemOf(input.constant.name));
+      const subject = humaniseStem(stemOf(input.constant.name), c);
       const value = unquote(input.constant.value);
       return fit(`Only ${lcFirst(subject)} ${value} is processed`);
     }

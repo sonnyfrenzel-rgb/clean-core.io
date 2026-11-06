@@ -282,7 +282,8 @@ function fieldStem(subject: string | null | undefined): string {
 /** The business words for a subject. A constant is named by its own name, never by its value. */
 function subjectWords(p: RuleParameter | undefined, ctx: PlainContext): string {
   if (!p?.subject) return 'the value';
-  if (operatorOf(p) === 'VALUE') return lcFirst(humaniseField(p.subject)) || 'the value';
+  // A constant's name, not its value; from 3.0.22 with the dictionary (`sap-dictionary.ts`): "Weight unit", not "Gewei".
+  if (operatorOf(p) === 'VALUE') return lcFirst(humaniseField(p.subject, ctx.reads3022 ? { ...ctx, constants: new Map() } : undefined)) || 'the value';
   return lcFirst(humaniseField(p.subject, ctx)) || 'the value';
 }
 
