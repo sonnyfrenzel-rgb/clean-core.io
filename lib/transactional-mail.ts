@@ -54,6 +54,11 @@ export interface OutgoingMail {
    * delivered twice. Must not contain the address.
    */
   idempotencyKey?: string;
+  /**
+   * Files attached to the mail (Resend `attachments`, content base64). The
+   * Terms notice carries the full changed wording this way, so the body stays small.
+   */
+  attachments?: ReadonlyArray<{ filename: string; content: string; contentType: string }>;
 }
 
 export type MailOutcome =
@@ -115,6 +120,15 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
         // HTML-only is a long-standing spam signal. Generated from the same
         // markup so it cannot drift from what the reader sees.
         text: msg.text ?? htmlToText(msg.html),
+        ...(msg.attachments?.length
+          ? {
+              attachments: msg.attachments.map((a) => ({
+                filename: a.filename,
+                content: Buffer.from(a.content, 'utf8').toString('base64'),
+                content_type: a.contentType,
+              })),
+            }
+          : {}),
       }),
     });
   } catch (err) {

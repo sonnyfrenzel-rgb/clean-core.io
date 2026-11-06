@@ -93,6 +93,7 @@ function writeSample(dir: string, c: TermsChanges, mail: TermsAnnouncementMail |
   if (mail) {
     fs.writeFileSync(path.join(dir, 'notice.html'), mail.html, 'utf8');
     fs.writeFileSync(path.join(dir, 'notice.txt'), mail.text, 'utf8');
+    for (const a of mail.attachments) fs.writeFileSync(path.join(dir, a.filename), a.content, 'utf8');
   }
   const summary = {
     from: c.from,
@@ -101,11 +102,20 @@ function writeSample(dir: string, c: TermsChanges, mail: TermsAnnouncementMail |
     changes: c.changes.map((ch) => ({ id: ch.id, kind: ch.kind, reason: ch.reason })),
     missingReasons: c.missingReasons,
     openMarkers: c.openMarkers,
-    mail: mail ? { subject: mail.subject, sha256: mail.sha256, htmlBytes: Buffer.byteLength(mail.html), textBytes: Buffer.byteLength(mail.text), paths: mail.paths } : null,
+    mail: mail
+      ? {
+          subject: mail.subject,
+          sha256: mail.sha256,
+          htmlBytes: Buffer.byteLength(mail.html),
+          textBytes: Buffer.byteLength(mail.text),
+          attachments: mail.attachments.map((a) => ({ filename: a.filename, bytes: Buffer.byteLength(a.content), sha256: a.sha256 })),
+          paths: mail.paths,
+        }
+      : null,
     ...extra,
   };
   fs.writeFileSync(path.join(dir, 'notice.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
-  console.log(`sample    : ${path.relative(process.cwd(), dir)}${path.sep}notice.{html,txt,json}`);
+  console.log(`sample    : ${path.relative(process.cwd(), dir)}${path.sep} (notice.html, notice.txt, notice.json${mail ? `, ${mail.attachments.map((a) => a.filename).join(', ')}` : ''})`);
 }
 
 async function checkPublished(paths: Record<'de' | 'en', string>): Promise<string[]> {
@@ -143,6 +153,7 @@ async function main() {
   if (mail) {
     console.log(`subject   : ${mail.subject}`);
     console.log(`mail      : html ${Buffer.byteLength(mail.html)} bytes, text ${Buffer.byteLength(mail.text)} bytes, sha256 ${mail.sha256.slice(0, 16)}…`);
+    for (const a of mail.attachments) console.log(`attachment: ${a.filename} ${Buffer.byteLength(a.content)} bytes, sha256 ${a.sha256.slice(0, 16)}…`);
     if (Buffer.byteLength(mail.html) > 102_000) console.log('note      : the HTML part is larger than 102 kB; Gmail shows the rest behind "View entire message".');
   }
   const outDir = path.resolve(args.out ?? path.join('tmp', 'terms-announcement', changes.to.version));
@@ -164,6 +175,7 @@ async function main() {
   console.log(`database  : ${EMULATOR ? 'EMULATOR' : 'production'} (${users.size} profiles)`);
   console.log(`recipients: ${plan.recipients.length}`);
   console.log(`skipped   : ${JSON.stringify(plan.skipped)}`);
+  console.log(`suspended : ${plan.suspendedIncluded} among the recipients (they still hold a contract)`);
   console.log(`by version: ${JSON.stringify(plan.byAcceptedVersion)}`);
   if (plan.skipped.unresolved) console.log(`unresolved: ${plan.skipped.unresolved} notice(s) in state "sending" — check the Resend log before anything else`);
   const thisRun = Math.min(plan.recipients.length, args.limit);
@@ -191,6 +203,7 @@ async function main() {
     effectiveDate: effective,
     changesDigest: changes.digest,
     mailSha256: mail.sha256,
+    attachments: mail.attachments.map((a) => ({ filename: a.filename, sha256: a.sha256 })),
     subject: mail.subject,
   };
   const field = (...rest: string[]) => new FieldPath(NOTICE_FIELD, changes.to.version, ...rest);
@@ -217,6 +230,7 @@ async function main() {
       subject: mail.subject,
       html: mail.html,
       text: mail.text,
+      attachments: mail.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })),
       label: 'terms-announcement',
       uid: r.uid,
       idempotencyKey: noticeIdempotencyKey(changes.to.version, r.uid),

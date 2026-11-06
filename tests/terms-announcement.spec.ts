@@ -18,7 +18,7 @@ import {
   wordDiff,
 } from '../lib/terms-announcement/changes';
 import { CHANGE_REASONS } from '../lib/terms-announcement/reasons';
-import { buildTermsAnnouncementMail, clauseLabel, versionPath } from '../lib/terms-announcement/mail';
+import { buildTermsAnnouncementMail, clauseLabel, clauseList } from '../lib/terms-announcement/mail';
 import {
   MAX_PER_RUN,
   NOTICE_FIELD,
@@ -43,7 +43,7 @@ import { USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '../lib/constants';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const changes = currentTermsChanges();
-const PREVIEW_DAY = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-21';
+const PREVIEW_DAY = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22';
 
 test.describe('the generator: every changed clause, from the texts as they are', () => {
   test('it compares the version in force (archived, digest checked) with the live source of the announced one', () => {
@@ -135,62 +135,85 @@ test.describe('the generator: every changed clause, from the texts as they are',
   });
 });
 
-test.describe('the mail: German first, the changed text in full, the choice under 10.2 and 10.3', () => {
+test.describe('the mail: a short body that is the notice, the full changed text as its attachment', () => {
   const mail = buildTermsAnnouncementMail({ changes, effectiveDateIso: PREVIEW_DAY, baseUrl: 'https://clean-core.io' });
+  const en = mail.text.indexOf('ENGLISH VERSION');
+  const dePart = mail.text.slice(0, en);
+  const enPart = mail.text.slice(en);
+  const [html, txt] = mail.attachments;
 
-  test('the effective day, in both languages, in the subject and the text', () => {
-    const [y, m, d] = PREVIEW_DAY.split('-');
-    void y;
-    const de = `${Number(d)}. `;
-    expect(mail.subject).toContain(de);
-    if (PREVIEW_DAY === '2026-12-21') {
-      expect(mail.subject).toBe('Änderung der Nutzungsbedingungen zum 21. Dezember 2026 / Changes to the Terms of Service on 21 December 2026');
-      expect(mail.text).toContain('21. Dezember 2026');
-      expect(mail.text).toContain('21 December 2026');
+  test('the effective day, in both languages, in the subject and the body', () => {
+    if (PREVIEW_DAY === '2026-12-22') {
+      expect(mail.subject).toBe('Änderung der Nutzungsbedingungen zum 22. Dezember 2026 / Changes to the Terms of Service on 22 December 2026');
+      expect(dePart).toContain('Wirksam ab: 22. Dezember 2026.');
+      expect(enPart).toContain('Effective from: 22 December 2026.');
     }
-    expect(Number(m)).toBeGreaterThan(0);
     expect(mail.subject).not.toMatch(/!/);
   });
 
-  test('German comes first, then English; both name 10.2 (accept, effective on the day) and 10.3 (keep the old version)', () => {
-    const en = mail.text.indexOf('ENGLISH VERSION');
-    expect(en).toBeGreaterThan(mail.text.indexOf('DIE GEÄNDERTEN BESTIMMUNGEN'));
-    const de = mail.text.slice(0, en);
-    const enPart = mail.text.slice(en);
-    expect(de).toContain('Schweigen und Weiternutzung gelten nicht als Annahme (Ziffer 10.2)');
-    expect(de).toContain('Ziffer 10.3');
-    expect(enPart).toContain('Silence and continued use are not acceptance (section 10.2)');
-    expect(enPart).toContain('section 10.3');
-    expect(mail.paths).toEqual({ de: versionPath(TERMS_LABEL, 'de'), en: versionPath(TERMS_LABEL, 'en') });
-    expect(mail.text).toContain(`clean-core.io/terms/${TERMS_LABEL}/de`);
-    expect(mail.text).toContain(`clean-core.io/terms/${TERMS_LABEL} (`);
+  test('German first, then English; each says it is the notice under 10.1 and gives the choice under 10.2 and 10.3', () => {
+    expect(en).toBeGreaterThan(0);
+    expect(mail.text.startsWith('Liebe Clean-Core.io Community,')).toBe(true);
+    expect(enPart).toContain('Dear Clean-Core.io community,');
+    expect(dePart).toContain('MITTEILUNG NACH ZIFFER 10.1');
+    expect(enPart).toContain('NOTICE UNDER SECTION 10.1');
+    expect(dePart).toContain('Schweigen und Weiternutzung gelten nicht als Annahme');
+    expect(dePart).toContain('(Ziffer 10.2)');
+    expect(dePart).toContain('(Ziffer 10.3)');
+    expect(enPart).toContain('Silence and continued use are not acceptance');
+    expect(enPart).toContain('(section 10.3)');
+    expect(mail.paths).toEqual({ de: `/terms/versions/${TERMS_VERSION}/de`, en: `/terms/versions/${TERMS_VERSION}/en` });
+    expect(mail.text).toContain(`clean-core.io/terms/versions/${TERMS_VERSION}/de`);
   });
 
-  test('every changed clause is in both parts with its full new wording and its reason; the English part marks the changes', () => {
-    const en = mail.text.indexOf('ENGLISH VERSION');
-    const de = mail.text.slice(0, en);
-    const enPart = mail.text.slice(en);
-    for (const c of changes.changes) {
-      expect(de, c.id).toContain(clauseLabel(c, 'de'));
-      expect(enPart, c.id).toContain(clauseLabel(c, 'en'));
-      expect(de).toContain(c.reason!.de);
-      expect(enPart).toContain(c.reason!.en);
-      for (const p of c.newParas.de) expect(de, `${c.id} German wording`).toContain(p);
+  test('"what you get" comes first, apart from the notice, and says planned', () => {
+    expect(dePart.indexOf('Was Sie bekommen (nicht Teil der Mitteilung):')).toBeLessThan(dePart.indexOf('MITTEILUNG NACH ZIFFER 10.1'));
+    expect(enPart.indexOf('What you get (not part of the notice):')).toBeLessThan(enPart.indexOf('NOTICE UNDER SECTION 10.1'));
+    expect(dePart).toMatch(/geplant: Sie nutzen Ihren eigenen Claude-Schlüssel/);
+    expect(enPart).toMatch(/planned: use your own Claude key \(Anthropic\) beside Gemini/);
+  });
+
+  test('every changed clause is named in the body with its reason letters; the editorial ones grouped', () => {
+    for (const lang of ['de', 'en'] as const) {
+      const lines = clauseList(changes.changes, lang).join('\n');
+      const part = lang === 'de' ? dePart : enPart;
+      for (const line of clauseList(changes.changes, lang)) expect(part).toContain(line);
+      for (const c of changes.changes) {
+        const name = c.id.endsWith(':heading') ? (lang === 'de' ? `Überschrift ${c.section}` : `heading ${c.section}`) : /^\d/.test(c.id) ? c.id : clauseLabel(c, lang);
+        expect(lines, `${c.id}/${lang}`).toContain(name);
+      }
     }
-    expect(enPart).toMatch(/\{\+[^+]+\+\}/);
-    expect(enPart).toMatch(/\[-[^\]]+-\]/);
-    expect(mail.html).toContain('<ins>');
-    expect(mail.html).toContain('<del>');
+    expect(dePart).toContain('Der Anhang ist Teil dieser Mitteilung');
+    expect(enPart).toContain('The attachment is part of this notice');
   });
 
-  test('the product block is apart from the notice and says "planned"', () => {
-    expect(mail.text).toContain('Zur Information, nicht Teil der Mitteilung');
-    expect(mail.text).toContain('For information, not part of the notice');
-    expect(mail.text).toMatch(/Geplant ab dem [^:]+: ein eigener Claude-Schlüssel/);
-    expect(mail.text).toMatch(/Planned for the coming weeks: a new, simpler Analyze/);
+  test('the attachment holds every changed clause in full, both languages, with the reasons and the marked changes', () => {
+    expect(html.filename).toBe(`aenderungen-nutzungsbedingungen-${TERMS_LABEL}.html`);
+    expect(txt.filename).toBe(`aenderungen-nutzungsbedingungen-${TERMS_LABEL}.txt`);
+    const t = txt.content;
+    const enAt = t.indexOf('ENGLISH VERSION: THE CHANGED PROVISIONS');
+    expect(enAt).toBeGreaterThan(0);
+    for (const c of changes.changes) {
+      for (const p of c.newParas.de) expect(t.slice(0, enAt), `${c.id} German wording`).toContain(p);
+      expect(t).toContain(c.reason!.de);
+      expect(t).toContain(c.reason!.en);
+    }
+    expect(t.slice(enAt)).toMatch(/\{\+[^+]+\+\}/);
+    expect(t.slice(enAt)).toMatch(/\[-[^\]]+-\]/);
+    expect(html.content).toContain('<ins>');
+    expect(html.content).toContain('<del>');
+    expect(html.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  test('one mail for everybody: no address, no name, one link, the mail policy of every user mail', () => {
+  test('no dash in anything the mail says in its own words; only the quoted Terms keep theirs', () => {
+    for (const [name, s] of [['subject', mail.subject], ['body html', mail.html], ['body text', mail.text], ['attachment', mail.attachmentOwnText]] as const) {
+      expect(s.match(/[—–]/g), `${name} carries a dash`).toBeNull();
+    }
+  });
+
+  test('short: the body is well under 30 kB, the same for everybody, one link, the mail policy of every user mail', () => {
+    expect(Buffer.byteLength(mail.html)).toBeLessThan(30_000);
+    expect(Buffer.byteLength(mail.text)).toBeLessThan(30_000);
     expect(mail.html).not.toMatch(/@(?!clean-core\.io)[a-z0-9.-]+\.[a-z]{2,}/i);
     expect(htmlLinkCount(mail.html)).toBe(1);
     const warnings = mailPolicyWarnings(
@@ -221,14 +244,14 @@ test.describe('the send script: dry run by default, a send only with the confirm
     expect(sendRefusal(parseAnnouncementArgs(['--send', '--confirm=30']), 30)).toBeNull();
   });
 
-  test('six weeks: the last day to send for 21 December 2026 is 9 November 2026 (Berlin)', () => {
-    expect(lastNoticeDay('2026-12-21')).toBe('2026-11-09');
-    expect(deadlineRefusal('2026-12-21', new Date('2026-11-09T22:30:00Z'))).toBeNull(); // 23:30 in Berlin
-    expect(deadlineRefusal('2026-12-21', new Date('2026-11-09T23:30:00Z'))).toMatch(/too late/); // 00:30 on the 10th
+  test('six weeks: the last day to send for 22 December 2026 is 10 November 2026 (Berlin)', () => {
+    expect(lastNoticeDay('2026-12-22')).toBe('2026-11-10');
+    expect(deadlineRefusal('2026-12-22', new Date('2026-11-10T22:30:00Z'))).toBeNull(); // 23:30 in Berlin
+    expect(deadlineRefusal('2026-12-22', new Date('2026-11-10T23:30:00Z'))).toMatch(/too late/); // 00:30 on the 11th
     expect(deadlineRefusal(null, new Date())).toMatch(/not set/);
   });
 
-  test('recipients: every account with a contract, whatever its mail setting; never CI, deleted, suspended, pending, or twice', () => {
+  test('recipients: every account with a contract, whatever its mail setting; suspended included; never CI, deleted, without a contract, or twice', () => {
     const v = TERMS_VERSION;
     const rows = [
       { uid: 'a', data: { email: 'Ada@Example.com', status: 'approved', termsVersionAccepted: '2026-10-03' } },
@@ -238,6 +261,7 @@ test.describe('the send script: dry run by default, a send only with the confirm
       { uid: 'e', data: { email: 'e@example.com', status: 'approved', disabled: true } },
       { uid: 'f', data: { email: 'f@example.com', status: 'suspended' } },
       { uid: 'g', data: { email: 'g@example.com', status: 'pending' } },
+      { uid: 'n', data: { email: 'n@example.com', status: 'pending', transformationsLimit: 0 } },
       { uid: 'h', data: { email: 'h@example.com', status: 'approved', termsVersionAccepted: v } },
       { uid: 'i', data: { email: 'i@example.com', status: 'approved', [NOTICE_FIELD]: { [v]: { state: 'sent' } } } },
       { uid: 'j', data: { email: 'j@example.com', status: 'approved', [NOTICE_FIELD]: { [v]: { state: 'sending' } } } },
@@ -246,18 +270,18 @@ test.describe('the send script: dry run by default, a send only with the confirm
       { uid: 'm', data: { status: 'approved' } },
     ];
     const plan = planRecipients(rows, v);
-    expect(plan.recipients.map((r) => r.uid).sort()).toEqual(['a', 'b', 'k']);
+    expect(plan.recipients.map((r) => r.uid).sort()).toEqual(['a', 'b', 'e', 'f', 'k', 'n']);
     expect(plan.skipped).toEqual({
       noEmail: 1,
       testAccount: 1,
-      deleted: 2,
-      suspended: 1,
+      deleted: 1,
       notActive: 1,
       alreadyAccepted: 1,
       alreadyNotified: 2,
       unresolved: 1,
     });
-    expect(plan.byAcceptedVersion).toEqual({ '2026-10-03': 1, none: 2 });
+    expect(plan.suspendedIncluded).toBe(3);
+    expect(plan.byAcceptedVersion).toEqual({ '2026-10-03': 1, none: 5 });
   });
 
   test('a log names an account by a hash, never by its address; the idempotency key holds no address', () => {

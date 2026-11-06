@@ -396,7 +396,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
   ),
   // Terms 10.1: the notice of an amendment of the Terms, German and English in
   // one mail, generated from the live texts at render time. Its own text part:
-  // the markings of the changes ([- -] / {+ +}) are what htmlToText would drop.
+  // written for itself; the full changed wording travels as an attachment.
   {
     type: 'terms-announcement',
     audience: 'nutzer',
@@ -406,7 +406,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       // Before the effective day is set, the seed renders the day the notice proposes (owner, 06.11.2026).
       const m = buildTermsAnnouncementMail({
         changes: currentTermsChanges(),
-        effectiveDateIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-21',
+        effectiveDateIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22',
         baseUrl: 'https://clean-core.io',
       });
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: m.subject, html: m.html, text: m.text };
@@ -716,8 +716,6 @@ export const LINK_EXCEPTIONS: Record<string, { hosts: string[]; why: string; quo
   'contract-confirmation-de': C5_WORDING_QUOTES,
   'amendment-confirmation': C5_WORDING_QUOTES,
   'amendment-confirmation-de': C5_WORDING_QUOTES,
-  // The notice under Terms 10.1 carries the changed clauses in full, 5.2 among them.
-  'terms-announcement': C5_WORDING_QUOTES,
 };
 
 // Emoji and their building blocks: pictographs, variation selector 16, keycaps,

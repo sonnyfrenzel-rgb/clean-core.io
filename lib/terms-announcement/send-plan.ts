@@ -114,7 +114,6 @@ export type SkipReason =
   | 'noEmail'
   | 'testAccount'
   | 'deleted'
-  | 'suspended'
   | 'notActive'
   | 'alreadyAccepted'
   | 'alreadyNotified'
@@ -123,6 +122,8 @@ export type SkipReason =
 export interface RecipientPlan {
   recipients: Recipient[];
   skipped: Record<SkipReason, number>;
+  /** Suspended accounts among the recipients: they still hold a contract (owner, 06.11.2026). */
+  suspendedIncluded: number;
   /** How many eligible accounts hold which accepted version ("none" for no record). */
   byAcceptedVersion: Record<string, number>;
 }
@@ -141,9 +142,8 @@ export function noticeRecord(data: Record<string, unknown>, version: string): { 
  * Every account with a contract, whatever its community-mail setting: this is
  * the contractual notice of Terms 10.1, not community mail, so neither the
  * opt-in nor the community suppression list applies. Left out: no address, CI
- * accounts (`lib/test-accounts.ts`), deleted, disabled or suspended accounts,
- * accounts that never became active (`pending`: no contract was concluded,
- * Terms 1.2), accounts that already accepted the target version, and accounts
+ * accounts (`lib/test-accounts.ts`), deleted accounts, accounts that never
+ * became active (`pending`: no contract was concluded, Terms 1.2), accounts that already accepted the target version, and accounts
  * whose notice is recorded — `sent`, or `sending` (asked of the provider and
  * never confirmed: a person checks the provider log; never sent twice).
  */
@@ -152,7 +152,6 @@ export function planRecipients(rows: readonly ProfileRow[], targetVersion: strin
     noEmail: 0,
     testAccount: 0,
     deleted: 0,
-    suspended: 0,
     notActive: 0,
     alreadyAccepted: 0,
     alreadyNotified: 0,
@@ -161,14 +160,18 @@ export function planRecipients(rows: readonly ProfileRow[], targetVersion: strin
   const recipients: Recipient[] = [];
   const byAcceptedVersion: Record<string, number> = {};
   const seen = new Set<string>();
+  let suspendedIncluded = 0;
   for (const { uid, data } of rows) {
     const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
     if (!email || !email.includes('@')) { skipped.noEmail++; continue; }
     if (isTestAccount(email)) { skipped.testAccount++; continue; }
     const status = typeof data.status === 'string' ? data.status : 'pending';
-    if (status === 'deleted' || data.disabled === true) { skipped.deleted++; continue; }
-    if (status === 'suspended') { skipped.suspended++; continue; }
-    if (status !== 'approved') { skipped.notActive++; continue; }
+    if (status === 'deleted') { skipped.deleted++; continue; }
+    // A suspended account still holds a contract and gets the notice (owner, 06.11.2026):
+    // status 'suspended', a disabled sign-in, or the pre-v2.4.2 revocation that wrote
+    // 'pending' with the limit zeroed (`activateAccount`, lib/firebase-admin.ts).
+    const suspended = status === 'suspended' || data.disabled === true || (status === 'pending' && data.transformationsLimit === 0);
+    if (status !== 'approved' && !suspended) { skipped.notActive++; continue; }
     const accepted = typeof data.termsVersionAccepted === 'string' && data.termsVersionAccepted ? data.termsVersionAccepted : null;
     if (accepted === targetVersion) { skipped.alreadyAccepted++; continue; }
     const rec = noticeRecord(data, targetVersion);
@@ -178,12 +181,13 @@ export function planRecipients(rows: readonly ProfileRow[], targetVersion: strin
     if (seen.has(email)) { skipped.alreadyNotified++; continue; }
     seen.add(email);
     recipients.push({ uid, email, accepted });
+    if (suspended) suspendedIncluded++;
     const k = accepted ?? 'none';
     byAcceptedVersion[k] = (byAcceptedVersion[k] ?? 0) + 1;
   }
   // A stable order that is not the address: runs of at most MAX_PER_RUN continue where the last stopped.
   recipients.sort((a, b) => logRef(a.uid).localeCompare(logRef(b.uid)));
-  return { recipients, skipped, byAcceptedVersion };
+  return { recipients, skipped, suspendedIncluded, byAcceptedVersion };
 }
 
 /* ------------------------------------------------------------------ the log */
