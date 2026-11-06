@@ -39,6 +39,7 @@ import { ANSWERS_READING, NO_BUSINESS_QUESTIONS, businessAnswersOf, type Busines
 import { recordRuleChoices } from '@/lib/rule-record-client';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { usePlainWording } from '@/hooks/usePlainWording';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import AskOnClick from '@/components/workspace/AskOnClick';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
@@ -185,6 +186,7 @@ function QuestionCard({ state, explained, rules, owner, busy, onRecord, onCancel
     >
       <div className="flex min-w-0 flex-col gap-1">
         <Said sentence={question.statement} say={say} mark="statement" strong={true} />
+        {question.customerText ? <span data-customer-text="" className="text-[11px] font-medium text-cc-ink-muted">{question.customerText}</span> : null}
         <p data-question-ask="" className="m-0 text-[15px] leading-snug font-bold text-cc-ink">
           {question.ask}
         </p>
@@ -408,6 +410,7 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
                     ) : (
                       <li key={s.question.id} data-question-done={s.question.id} data-question-answer={s.answer ?? 'none'} className="flex min-w-0 flex-col gap-1 border-t border-cc-line pt-2">
                         <Said sentence={s.question.statement} say={say} mark="statement" />
+                        {s.question.customerText ? <span data-customer-text="" className="text-[11px] font-medium text-cc-ink-muted">{s.question.customerText}</span> : null}
                         <span className="flex flex-wrap items-center gap-2">
                           <CcProvenanceChip value={s.answer === 'unsure' ? 'not-determined' : 'confirmed'} note={entries[s.question.ruleIds[0]]?.account.name} />
                           <span className="text-[12px] font-semibold text-cc-ink">{s.answer ? wt(ANSWER_LABEL[s.answer]) : ''}</span>
@@ -496,14 +499,16 @@ export default function RuleQuestions({
   const { outcome, reload } = useProcessStates(projectId, source.trim().length > 0);
   const view = outcome?.ok ? outcome.view : null;
   const entries = useMemo(() => ruleEntries(view), [view]);
+  // 3.1.0 (H5b): the project's customer texts — a question that says one is marked.
+  const customerTexts = useCustomerTexts(projectId);
   const explanation = useMemo(() => {
     if (!reading || !source) return null;
     try {
-      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion);
+      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion, customerTexts);
     } catch {
       return null;
     }
-  }, [reading, source, engineVersion]);
+  }, [reading, source, engineVersion, customerTexts]);
   const rules = useMemo(() => (reading ? editorRules(reading.ruleSet, plainWordingFor(source, reading.skeleton)) : []), [reading, source]);
   const availability = useModelAvailability();
   const sentences = useMemo(() => (explanation ? rulePlainSentences(explanation) : null), [explanation]);

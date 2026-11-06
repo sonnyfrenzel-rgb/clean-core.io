@@ -493,7 +493,8 @@ function tableTermOf(name: string, ctx?: PlainContext, dbTable = false): PlainTe
  */
 export function businessTableTerm(name: string, options: PlainOptions = {}): PlainTerm | null {
   const reads310 = engineReads310Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
-  return tableTermOf(name, reads310 ? { ...EMPTY_CONTEXT, reads310: true } : EMPTY_CONTEXT, true);
+  const customer = reads310 && isCustomerTexts(options.customerTexts) ? { customer: options.customerTexts } : {};
+  return tableTermOf(name, reads310 ? { ...EMPTY_CONTEXT, reads310: true, ...customer } : EMPTY_CONTEXT, true);
 }
 
 /** 3.1.0: whether `businessTableTerm` names a customer table by the words of its own name (its code then stays beside it). */

@@ -282,7 +282,8 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     const build = fs.readFileSync(path.join(process.cwd(), 'lib/process-document-build.ts'), 'utf8');
     expect(build).toMatch(/readDemoSwitches\(source, input\.engineVersion\)/);
     const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/project/[projectId]/documentation/page.tsx'), 'utf8');
-    expect(page).toMatch(/useProcessDocument\([\s\S]{0,400}?engineVersionOfProject\(project\),\s*\)/);
+    // 3.1.0 (H5b): the project's customer texts may follow the engine version.
+    expect(page).toMatch(/useProcessDocument\([\s\S]{0,400}?engineVersionOfProject\(project\),\s*(?:customerTexts,\s*)?\)/);
   });
 });
 

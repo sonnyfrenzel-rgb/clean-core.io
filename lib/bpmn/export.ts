@@ -323,7 +323,7 @@ export function aiNamesOfNaming(
  */
 export function buildReadingExports(
   source: string,
-  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion' | 'naming'>,
+  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion' | 'naming' | 'customerTexts'>,
 ): { bpmn: BpmnExport; technical: BpmnExport } {
   // The same source and options always give the same reading, and laying out a
   // large program takes seconds: the map, the process summary and every tool of

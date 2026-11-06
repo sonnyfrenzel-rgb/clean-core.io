@@ -12,6 +12,7 @@ import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
 import { readProgramShape } from '@/lib/abap/program-shape';
+import { emptyCustomerTexts, isCustomerTexts, type CustomerTexts } from '@/lib/abap/customer-texts';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
 import { engineReads310Apply } from '@/lib/abap/engine-reads-310-gate';
@@ -60,10 +61,10 @@ const CHANGING_VERB = /^(?:Post|Create|Change|Delete|Cancel|Reverse|Release|Star
 
 const lcFirst = (text: string): string => (/^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text);
 
-function objectOf(name: string, line: number, engineVersion?: string | null): SummaryObject {
+function objectOf(name: string, line: number, engineVersion?: string | null, customerTexts?: CustomerTexts | null): SummaryObject {
   // 3.1.0 (H5): the dictionary and a customer table's own words too (`businessTableTerm`); the glossary alone before.
   const term = engineVersion !== undefined && engineReads310Apply(engineVersion)
-    ? businessTableTerm(name, { engineVersion })
+    ? businessTableTerm(name, { engineVersion, ...(customerTexts ? { customerTexts } : {}) })
     : TABLE_TERMS_EN[name.toLowerCase()];
   const word = term ? lcFirst(term.plural) : null;
   const kind: SummaryObject['kind'] = SETTINGS_TABLE.test(name)
@@ -464,6 +465,11 @@ export interface ProgramSummaryReaders {
    * names support (`domain`) and the functions it reads its data through (`dataCalls`).
    */
   engineVersion?: string | null;
+  /**
+   * 3.1.0 (H5b): the project's customer texts — the first source of words for tables and inputs. The words used are
+   * kept in the facts (`customerWords`) so every line that says one is marked. Read only from engine 3.1.0 on.
+   */
+  customerTexts?: CustomerTexts | null;
 }
 
 /**
@@ -511,6 +517,13 @@ function purposeFacts(text: string, calls: CallGraphReport, actions: readonly Su
   return { domain: domain ? { text: domain.text, lines: domain.lines } : null, dataCalls };
 }
 
+/** 3.1.0 (H5b): the part of the customer's texts the summary can say — its tables and its selection fields. */
+function customerWordsOf(texts: CustomerTexts, tables: readonly string[], selections: readonly string[]): CustomerTexts {
+  const pick = (from: Record<string, string>, keys: readonly string[]) =>
+    Object.fromEntries(keys.map((k) => k.toLowerCase()).filter((k) => Object.prototype.hasOwnProperty.call(from, k)).map((k) => [k, from[k]]));
+  return { ...emptyCustomerTexts(), tables: pick(texts.tables, tables), selections: pick(texts.selections, selections) };
+}
+
 /** 3.1.0 (H8): the program's shape, when the constructs give it one. */
 function shapeFacts(text: string): Pick<ProgramSummaryFacts, 'shape'> {
   const shape = readProgramShape(text);
@@ -556,7 +569,9 @@ function reachedChangesOf(text: string, calls: CallGraphReport): { unworded: Non
 
 export function programSummaryFactsOf(source: string, readers: ProgramSummaryReaders = {}): ProgramSummaryFacts {
   const text = String(source ?? '').replace(/\r\n?/g, '\n');
-  const ctx = plainContext(text);
+  const texts310 = engineReads310Apply(readers.engineVersion === undefined ? APP_VERSION : readers.engineVersion) && isCustomerTexts(readers.customerTexts) ? readers.customerTexts : null;
+  // 3.1.0 (H5b): with customer texts the context is read for the engine (the selection texts name the inputs).
+  const ctx = texts310 ? plainContext(text, { engineVersion: readers.engineVersion, customerTexts: texts310 }) : plainContext(text);
   const calls = readers.calls ?? readCallGraph(text);
   const tables = readers.tables ?? readTableDependencies(text);
   const skeleton = readers.skeleton ?? buildProcessSkeleton(text, { engineVersion: readers.engineVersion });
@@ -593,7 +608,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const gates = readConstantGates(text, { engineReads: true });
   const reads310 = engineReads310Apply(engineVersion);
   const v310 = reads310 ? engineVersion : undefined;
-  const allReads = capability.reads.map((r) => objectOf(r.name, r.line, v310));
+  const allReads = capability.reads.map((r) => objectOf(r.name, r.line, v310, texts310));
   const lockedRead = (o: { line: number }) => gates.unreachable.length > 0 && isUnreachableLine(gates, o.line);
   const reads = allReads.filter((o) => !lockedRead(o));
   const lockedReads = allReads.filter(lockedRead);
@@ -608,7 +623,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     ...calls.databaseWrites.map((d) => ({ name: d.table, line: d.lineStart })),
   ].filter((w) => !command.onCommand(w.line)).map((w) => w.name.toUpperCase()));
   const writes = capability.writes.map((w) => (
-    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line, v310), onCommand: true } : objectOf(w.name, w.line, v310)
+    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line, v310, texts310), onCommand: true } : objectOf(w.name, w.line, v310, texts310)
   ));
 
   // What it changes in SAP, in business verbs: the posting calls and the
@@ -722,6 +737,8 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     ...(reads3021 ? { purposeAlways: true as const } : {}),
     // 3.1.0 (H8) — present only from that engine and only for a program of one of the shapes `readProgramShape` knows.
     ...(reads310 ? shapeFacts(text) : {}),
+    // 3.1.0 (H5b) — the customer's words the facts use, so each line that says one carries its provenance.
+    ...(texts310 ? { customerWords: customerWordsOf(texts310, [...capability.reads, ...capability.writes].map((o) => o.name), [...ctx.selections.keys()]) } : {}),
     ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };

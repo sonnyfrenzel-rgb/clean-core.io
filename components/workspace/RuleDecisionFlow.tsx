@@ -42,6 +42,7 @@ import { publishProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries, type EditorRule } from '@/lib/rules-editor';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { usePlainWording } from '@/hooks/usePlainWording';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import AskOnClick from './AskOnClick';
 import { ARCHITECTURE_OPTIONS_ID, architectureChoice, architectureOptions, technicalKeepChoices } from '@/lib/rule-questions';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -211,6 +212,7 @@ function RuleCard({ rule, explanation: e, entry, owner, busy, error, onRecord, s
           <span data-rule-title="" className="text-[14px] font-bold break-words text-cc-ink">
             {title}
           </span>
+          {e.customerText ? <span data-customer-text="" className="text-[11px] font-medium text-cc-ink-muted">{e.customerText}</span> : null}
           <span className="flex flex-wrap items-center gap-2">
             <code className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{rule.id}</code>
             <CcTag>{e.basket.kind === 'undetermined' ? wt('questions.undeterminedTag') : e.technical || e.basket.kind === 'technical' ? wt('rules.technicalNote') : wt(IMPACT_WORD[e.impact.level])}</CcTag>
@@ -409,13 +411,15 @@ export default function RuleDecisionFlow({
   plainWording,
   withArchitectureOptions = false,
 }: RuleDecisionFlowProps) {
+  // 3.1.0 (H5b): the project's customer texts — a title that says one is marked.
+  const customerTexts = useCustomerTexts(projectId);
   const explanation = useMemo(() => {
     try {
-      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion);
+      return explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion, customerTexts);
     } catch {
       return null;
     }
-  }, [source, reading, engineVersion]);
+  }, [source, reading, engineVersion, customerTexts]);
   const entries = useMemo(() => ruleEntries(view), [view]);
   const flow = useMemo(() => (explanation ? ruleFlow(explanation, entries) : null), [explanation, entries]);
   const options = useMemo(() => (explanation && withArchitectureOptions ? architectureOptions(explanation, entries) : []), [explanation, entries, withArchitectureOptions]);

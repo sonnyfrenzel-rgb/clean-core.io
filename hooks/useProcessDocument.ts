@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { sha256Hex } from '@/lib/artefact-digest';
 import type { ProcessMapModel } from '@/lib/process-map';
+import type { CustomerTexts } from '@/lib/abap/customer-texts';
 import type { ProcessDocument } from '@/lib/process-document';
 
 /**
@@ -36,12 +37,14 @@ export function useProcessDocument(
   proposals: readonly ProcessDocumentProposal[] | null,
   /** The engine the active run was made with: a demo switch is read as that engine reads it. */
   engineVersion: string | null = null,
+  /** 3.1.0 (H5b): the project's customer texts (`useCustomerTexts`). */
+  customerTexts: CustomerTexts | null = null,
 ): ProcessDocumentState {
   const key = useMemo(() => {
     if (!source || !model) return '';
-    const extra = sha256Hex(`${narrative ?? ''}|${JSON.stringify(proposals ?? [])}|${engineVersion ?? ''}`);
+    const extra = sha256Hex(`${narrative ?? ''}|${JSON.stringify(proposals ?? [])}|${engineVersion ?? ''}|${customerTexts ? JSON.stringify(customerTexts) : ''}`);
     return `${sha256Hex(source)}|${model.xml.length}|${model.elements.length}|${model.naming.named}|${extra}`;
-  }, [source, model, narrative, proposals, engineVersion]);
+  }, [source, model, narrative, proposals, engineVersion, customerTexts]);
   const [held, setHeld] = useState<{ key: string; value: ProcessDocumentState }>({
     key: '',
     value: { document: null, status: 'idle' },
@@ -53,7 +56,7 @@ export function useProcessDocument(
     import('@/lib/process-document-build')
       .then((builder) => {
         if (cancelled) return;
-        const document = builder.buildProcessDocument({ source, map: model, narrative, proposals, engineVersion });
+        const document = builder.buildProcessDocument({ source, map: model, narrative, proposals, engineVersion, customerTexts });
         setHeld({ key, value: { document, status: 'ready' } });
       })
       .catch((err) => {
@@ -63,7 +66,7 @@ export function useProcessDocument(
     return () => {
       cancelled = true;
     };
-  }, [source, model, narrative, proposals, engineVersion, key]);
+  }, [source, model, narrative, proposals, engineVersion, customerTexts, key]);
 
   if (!key) return { document: null, status: 'idle' };
   return held.key === key ? held.value : { document: null, status: 'loading' };

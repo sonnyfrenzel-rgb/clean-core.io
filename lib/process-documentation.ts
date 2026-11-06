@@ -98,6 +98,8 @@ export interface DocFlow {
 export interface DocStep {
   /** The BPMN element id — the same id the `.bpmn` export and the map use. */
   id: string;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the step's plain name says a customer text; absent otherwise. */
+  customerText?: string;
   /** "Decision", "Service step" — `kindWord` of the map. */
   kind: string;
   /** The token the skeleton read out of the source. Always there. */

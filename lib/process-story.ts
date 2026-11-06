@@ -44,6 +44,8 @@ import { anchorLabel } from './first-look';
 import { readDemoSwitches } from './abap/demo-switches';
 import { engineReads3020Apply } from './abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from './abap/engine-reads-3021-gate';
+import { engineReads310Apply } from './abap/engine-reads-310-gate';
+import { customerTextProvenance, type CustomerTexts } from './abap/customer-texts';
 import { armAroundLine, branchReadingOf, decisionArmsAt, plainValues, rawFieldsOf, type BranchReading } from './abap/branch-messages';
 import { APP_VERSION } from './version';
 import {
@@ -69,6 +71,8 @@ export interface StoryStep {
   anchor: string | null;
   /** The skeleton node the step starts at. */
   nodeId: string;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the step says a customer text; absent otherwise. */
+  customerText?: string;
   /**
    * From engine 3.0.20: the technical checks and stops of the step — counted,
    * never listed (`lib/first-look-plain.ts`). Absent before.
@@ -149,8 +153,11 @@ export function processStory(
    * once, without its message code.
    */
   engineVersion: string | null = APP_VERSION,
+  /** 3.1.0 (H5b): the project's customer texts — the first source of words, each step that says one marked. */
+  customerTexts?: CustomerTexts | null,
 ): ProcessStory {
-  const labels = plainLabels(skeleton, source, { engineVersion });
+  const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
+  const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
   const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
     ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion))
     : null;
@@ -459,11 +466,15 @@ export function processStory(
   }
 
   return {
-    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid }) => ({
-      text, within, checks, stops, anchor, nodeId,
-      ...(technical !== undefined ? { technical } : {}),
-      ...(plain && unsaid !== undefined ? { unsaid } : {}),
-    })),
+    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid }) => {
+      const customerText = texts ? customerTextProvenance([text, within ?? '', ...checks, ...stops].join(' | '), texts) : '';
+      return {
+        text, within, checks, stops, anchor, nodeId,
+        ...(technical !== undefined ? { technical } : {}),
+        ...(plain && unsaid !== undefined ? { unsaid } : {}),
+        ...(customerText ? { customerText } : {}),
+      };
+    }),
     proposedNames: proposed,
     ...(reading ? { testData } : {}),
   };

@@ -152,6 +152,44 @@ export function readCustomerTexts(files: ReadonlyArray<{ name: string; text: str
   return count ? out : null;
 }
 
+/**
+ * The provenance a sentence or a label carries when it says a customer text (owner decision 06.11.2026):
+ * `Customer text: ZSD_MINMENGE “Minimum quantities per customer group”`. '' when it says none. Matched on the words
+ * themselves, case-insensitive, so it holds for every surface that phrases business text — a step, a line of
+ * "In short", a rule title, a question — whichever way the sentence was built.
+ */
+export function customerTextProvenance(sentence: string, texts: CustomerTexts | null | undefined): string {
+  if (!texts || !sentence) return '';
+  const said = sentence.toLowerCase();
+  // Every text once, under its shortest code (a field before the data element it is typed on), longest text first: a
+  // text said inside a longer one ("customer group" in "… per customer group") is that one's, not a second source.
+  const byText = new Map<string, string>();
+  const original = new Map<string, string>();
+  const offer = (code: string, text: string) => {
+    const t = text.trim();
+    if (t.length < 4) return;
+    const key = t.toLowerCase();
+    const had = byText.get(key);
+    if (!had || code.length < had.length) byText.set(key, code);
+    if (!original.has(key)) original.set(key, t);
+  };
+  for (const [k, t] of Object.entries(texts.tables)) offer(k.toUpperCase(), t);
+  for (const [k, t] of Object.entries(texts.fields)) offer(k.toUpperCase(), t);
+  for (const [k, t] of Object.entries(texts.selections)) offer(k.toUpperCase(), t);
+  for (const [k, values] of Object.entries(texts.values)) for (const [v, t] of Object.entries(values)) offer(`${k.toUpperCase()} = ${v}`, t);
+  const taken: Array<[number, number]> = [];
+  const used: Array<{ at: number; said: string }> = [];
+  for (const [key, code] of [...byText].sort((a, b) => b[0].length - a[0].length)) {
+    let from = said.indexOf(key);
+    while (from >= 0 && taken.some(([s, e]) => from < e && from + key.length > s)) from = said.indexOf(key, from + 1);
+    if (from < 0) continue;
+    taken.push([from, from + key.length]);
+    used.push({ at: from, said: `${code} “${original.get(key) ?? key}”` });
+  }
+  used.sort((a, b) => a.at - b.at);
+  return used.length ? `${CUSTOMER_TEXT_LABEL}: ${used.slice(0, 4).map((u) => u.said).join('; ')}.` : '';
+}
+
 /** Whether a stored or posted value is customer texts this build reads — the shape, the bounds, strings only. */
 export function isCustomerTexts(value: unknown): value is CustomerTexts {
   if (!value || typeof value !== 'object') return false;

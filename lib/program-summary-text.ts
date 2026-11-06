@@ -32,6 +32,8 @@
  * component, renders it as well as the server-side exports.
  */
 
+import { customerTextProvenance, type CustomerTexts } from './abap/customer-texts';
+
 export const PROGRAM_SUMMARY_FACTS_VERSION = 1;
 
 export interface SummaryObject {
@@ -169,6 +171,8 @@ export interface ProgramSummaryFacts {
    * support none (`domain`). Absent in facts read by an earlier engine and for a plain report.
    */
   shape?: { text: string; lines: number[]; kind?: string } | null;
+  /** 3.1.0 (H5b): the customer's texts the facts use (tables, selection fields); absent without any. */
+  customerWords?: CustomerTexts;
 }
 
 /** 3.1.0 (H8): what the purpose line calls a program of a shape (`ProgramShape.kind`). */
@@ -188,6 +192,8 @@ export interface SummaryLine {
   basis: SummaryBasis;
   /** Roadmap 3.0.20: the purpose as the program's names say it — a `purpose` line before the one on what it reads and changes. */
   aim?: true;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the line says a customer text; absent otherwise. */
+  customerText?: string;
 }
 
 export interface ProgramSummary {
@@ -403,7 +409,10 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     const custom = flow.writes.filter((o) => o.kind === 'custom');
     const parts = [
       changed.words.length ? `changes ${joinAnd(changed.words)}` : '',
-      custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
+      // 3.1.0 (H5b): one custom table the customer's own dictionary names is said by that name, with its code.
+      custom.length === 1 && custom[0].word && f.customerWords?.tables[custom[0].name.toLowerCase()]
+        ? `records ${custom[0].word} (${custom[0].name})`
+        : custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
     ].filter(Boolean);
     // 3.1.0: a change with no business word is said by how it is made — never as "changes data" alone.
     if (!parts.length && f.changes.unworded?.length) {
@@ -716,7 +725,14 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   const level: SummaryLine = c
     ? { key: 'level', text: `Confirmed by the business${c.by ? ` (${c.by}${c.on ? `, ${c.on}` : ''})` : ''}.`, anchors: [], basis: 'confirmed' }
     : { key: 'level', text: LEVEL_RECONSTRUCTED, anchors: [], basis: 'reconstructed' };
-  return { program: f.program, lines, level };
+  // 3.1.0 (H5b): a line that says a customer text carries its provenance.
+  const marked = f.customerWords
+    ? lines.map((l) => {
+      const customerText = customerTextProvenance(l.text, f.customerWords);
+      return customerText ? { ...l, customerText } : l;
+    })
+    : lines;
+  return { program: f.program, lines: marked, level };
 }
 
 /* -------------------------------------------------------------- renderings */
