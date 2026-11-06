@@ -7,7 +7,7 @@ import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { getAdminDb, loadOwnModelKey, saveOwnModelKey, deleteOwnModelKey } from '../lib/firebase-admin';
 import { OWN_KEY_MISSING_CODE, OWN_KEY_REJECTED_CODE, BYOK_KEY_VERSION, sealByokSecret } from '../lib/byok-key';
-import { OWN_CLAUDE_MODEL, RECEIPT_PROVIDER_ID } from '../lib/model-providers';
+import { ANTHROPIC_OWN_KEY_OFFERED, OWN_CLAUDE_MODEL, PROVIDER_NOT_ENABLED_CODE, RECEIPT_PROVIDER_ID } from '../lib/model-providers';
 import { POST as geminiPOST } from '../app/api/gemini/route';
 
 /**
@@ -120,7 +120,21 @@ test('an Anthropic key is stored with its provider, replaces a Gemini key, and o
   await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'anthropic', apiKey: CLAUDE_KEY, autoSteps: false });
 });
 
+// The one switch (`ANTHROPIC_OWN_KEY_OFFERED`, off in 3.0.21): with it off a
+// stored Anthropic key is refused before any provider contact and the platform
+// key is not used; the two tests after it are the switched-on paths and run
+// again by themselves once the switch is turned on.
+test('with the switch off, the proxy refuses a call on a stored Anthropic key — no Anthropic call, no platform key', async () => {
+  test.skip(ANTHROPIC_OWN_KEY_OFFERED, 'the own Claude key is switched on');
+  const { result: res, anthropicCalls, googleCalls } = await withProviders(() => claudeAnswer('never'), () => post({ prompt: 'Design this.', stage: 'design' }));
+  expect(res.status).toBe(503);
+  expect((await res.json()).code).toBe(PROVIDER_NOT_ENABLED_CODE);
+  expect(anthropicCalls).toEqual([]);
+  expect(googleCalls, 'the platform key was used for an account with an own key').toEqual([]);
+});
+
 test('the proxy sends a call of an account with an own Claude key to Anthropic, never to Google, and receipts it so', async () => {
+  test.skip(!ANTHROPIC_OWN_KEY_OFFERED, 'the own Claude key is switched off (lib/model-providers.ts)');
   const { result: res, anthropicCalls, googleCalls } = await withProviders(() => claudeAnswer('A design.'), () => post({ prompt: 'Design this.', stage: 'design' }));
   expect(res.status, await res.clone().text()).toBe(200);
   const body = await res.json();
@@ -138,6 +152,7 @@ test('the proxy sends a call of an account with an own Claude key to Anthropic, 
 });
 
 test('Anthropic refusing the own key stops the step with its code — no retry on the platform key', async () => {
+  test.skip(!ANTHROPIC_OWN_KEY_OFFERED, 'the own Claude key is switched off (lib/model-providers.ts)');
   const { result: res, anthropicCalls, googleCalls } = await withProviders(
     () => new Response(JSON.stringify({ error: { type: 'authentication_error' } }), { status: 401 }),
     () => post({ prompt: 'Design this.', stage: 'design' }),

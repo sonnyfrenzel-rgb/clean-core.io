@@ -62,8 +62,11 @@ test.describe('privacy section 3: bulk upload and portfolio', () => {
 
 test.describe('privacy section 8 and C12: what the portfolio overview shows', () => {
   test('the overview shows the projects; no invitation opens one', () => {
-    expect(PRIVACY_DE).toContain('Die Übersicht zeigt die Projekte, die beim Versand im Portfolio sind:');
-    expect(PRIVACY_EN).toContain('The overview shows the projects that are in the portfolio when you send it:');
+    // Fassung 1.1 (owner decision 06.11.2026): the set is fixed at sending, the figures are current.
+    expect(PRIVACY_DE).toContain('Welche Projekte die Übersicht zeigt, legt der Stand beim Versand der Einladung fest:');
+    expect(PRIVACY_EN).toContain('Which projects the overview shows is fixed by the state when the invitation is sent:');
+    expect(PRIVACY_DE).toContain('Die Kennzahlen dieser Projekte berechnen wir bei jedem Aufruf aus ihrem aktuellen Stand; nichts in der Übersicht ist signiert.');
+    expect(PRIVACY_EN).toContain('We compute the figures of these projects from their current state each time the overview is opened; nothing in the overview is signed.');
     expect(PRIVACY_DE).not.toContain('Die Einladung öffnet die Projekte');
     expect(PRIVACY_EN).not.toContain('The invitation opens the projects');
   });

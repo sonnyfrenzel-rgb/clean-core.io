@@ -148,6 +148,11 @@ export default function SharePanel({ selectionId, names }: { selectionId: string
                 </li>
               ))}
             </ul>
+            {/* Legal texts Fassung 1.1 (privacy policy section 8): releasing is
+                sharing, so the reader's view is said here too, object names included. */}
+            <p className="m-0 mb-2 text-[12px] font-medium text-cc-ink-muted" data-portfolio-share-release-scope="">
+              {wt('portfolio.shareScope')}
+            </p>
             <CcButton density="compact" busy={busy} disabled={busy} onClick={() => void release()} data-portfolio-share-release="">
               {wt('portfolio.shareRelease')}
             </CcButton>

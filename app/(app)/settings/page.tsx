@@ -37,7 +37,7 @@ import { ByokAddendumAcceptance, OwnKeyAutoSteps, OwnKeyNotices, OwnKeyProviderS
 import { BYOK_ADDENDUM_VERSION, addendumRequired, type ByokAddendumLanguage } from '@/lib/byok-addendum';
 import { ownKeyCounts } from '@/lib/run-quota-rule';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { KEY_PLACEHOLDER, PROVIDER_LABEL, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
+import { KEY_PLACEHOLDER, PROVIDER_LABEL, offeredKeyProviders, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
 import CommunityMailCard from '@/components/CommunityMailCard';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -194,7 +194,11 @@ export default function SettingsPage() {
   const savedProvider: ModelKeyProvider | null =
     savedKeyProvider === null || savedKeyProvider === 'unknown' ? null : savedKeyProvider;
   const [chosenProvider, setChosenProvider] = useState<ModelKeyProvider | null>(null);
-  const keyProvider: ModelKeyProvider = chosenProvider ?? savedProvider ?? 'gemini';
+  // A new key is only ever of an offered provider: a saved key of one that is
+  // not enabled (an Anthropic key stored on dev before Fassung 1.1) is still
+  // shown as saved, but the form does not preselect it for a save.
+  const keyProvider: ModelKeyProvider =
+    chosenProvider ?? (savedProvider && offeredKeyProviders().includes(savedProvider) ? savedProvider : 'gemini');
   // The provider the last successful key test spoke to (the route says which).
   const [testedProvider, setTestedProvider] = useState<ModelKeyProvider>('gemini');
   const [geminiKey, setGeminiKey] = useState('');
@@ -1462,7 +1466,7 @@ export default function SettingsPage() {
           meta={profile?.byokConfigured ? <StateWord state="success">{savedProvider ? `${PROVIDER_LABEL[savedProvider]} key saved` : 'Key saved'}</StateWord> : undefined}
         >
           <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-            With your own Google Gemini or Anthropic API key, the limit of {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
+            With your own model key, the limit of {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
           </p>
 
           <form onSubmit={handleSaveKey} className="space-y-4 text-cc-ink">
@@ -1902,7 +1906,7 @@ export default function SettingsPage() {
         }
       >
         <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-          Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions is kept for 24 months, and copies in encrypted backups age out within 30 days; the privacy policy lists what deletion does not reach.
+          Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions on your account and of the actions you took yourself is kept for 24 months from each action, with a keyed hash in place of your account identifier and no address of your account; copies in encrypted backups age out within 30 days; the privacy policy lists what else deletion does not reach.
         </p>
 
         {isDeletingAccount ? (
@@ -2189,8 +2193,8 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <p className="m-0">
             This deletes your account, your projects with their uploaded source code, and your saved keys from the
-            live systems (GDPR Art. 17). Type your e-mail address to confirm. The security audit record (24 months)
-            and encrypted backups (up to 30 days) outlive the deletion.
+            live systems (GDPR Art. 17). Type your e-mail address to confirm. The security audit record (24 months, pseudonymised),
+            encrypted backups (up to 30 days) and content blocked after a report (until its period ends) outlive the deletion.
           </p>
           <SettingsInput
             label="Your account e-mail address"

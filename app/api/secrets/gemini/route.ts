@@ -17,9 +17,11 @@ import { ByokKeyUnavailableError } from '@/lib/byok-key';
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 import {
   MODEL_PROVIDERS_SUSPENDED_ENV,
+  PROVIDER_NOT_ENABLED_CODE,
   PROVIDER_SUSPENDED_CODE,
   isModelKeyProvider,
   offeredKeyProviders,
+  providerUnavailableReason,
   suspendedProvidersOf,
 } from '@/lib/model-providers';
 import {
@@ -77,8 +79,14 @@ export async function POST(req: NextRequest) {
     // 3.0.15: the provider the key belongs to. Absent means Gemini — the only
     // provider a key could belong to before, and what every older client sends.
     const provider = requestedProvider === undefined ? 'gemini' : requestedProvider;
-    if (!isModelKeyProvider(provider) || !offeredKeyProviders().includes(provider)) {
+    if (!isModelKeyProvider(provider)) {
       return NextResponse.json({ error: 'Unknown or unavailable key provider.', code: 'byok-provider-unknown' }, { status: 400 });
+    }
+    // Legal texts Fassung 1.1: a known provider that is not enabled yet (the
+    // own Anthropic key, until its functions have passed acceptance) takes no
+    // key — refused before anything is tested, stored or recorded.
+    if (!offeredKeyProviders().includes(provider)) {
+      return NextResponse.json({ error: providerUnavailableReason(provider), code: PROVIDER_NOT_ENABLED_CODE }, { status: 409 });
     }
     // 3.0.21 (T01): a provider the operator has switched off takes no new key.
     if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {

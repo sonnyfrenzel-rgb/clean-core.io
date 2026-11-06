@@ -110,6 +110,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
           recipient: escapeHtml(invitation.email),
           link: `${APP_BASE_URL}${portfolioInvitationLinkPath(invitation.selectionId, invitation.id)}`,
           expires: new Date(invitation.expiresAt).toUTCString().slice(5, 16),
+          expiresAt: invitation.expiresAt,
           unsubscribeUrl: invitationUnsubscribeUrl(invitation.email),
         }),
         'Clean-Core.io — invitation',

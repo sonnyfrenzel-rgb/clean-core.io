@@ -6,6 +6,10 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   ALLOWED_CLAUDE_MODELS,
+  ANTHROPIC_OWN_KEY_OFFERED,
+  ANTHROPIC_OWN_KEY_STATUS,
+  PROVIDER_NOT_ENABLED_CODE,
+  ownKeyCallRefusal,
   MODEL_KEY_PROVIDERS,
   OWN_CLAUDE_MODEL,
   OWN_CLAUDE_MODEL_NAME,
@@ -17,6 +21,7 @@ import {
   offeredKeyProviders,
   ownKeyProviderOf,
   providerLabelOfReceiptId,
+  providerUnavailableReason,
   stageAnswerNeedsWrite,
   storedKeyProviderOf,
   type StageAnswerRecord,
@@ -344,19 +349,73 @@ test.describe('Settings', () => {
     expect(html).toContain('data-own-key-provider="anthropic"');
     expect(html).toContain('Provider of your key');
     expect(html).toContain('Google Gemini (saved)');
-    expect(html.match(/type="radio"/g)).toHaveLength(offeredKeyProviders().length);
-    // Anthropic is offered only once the owner's privacy policy, terms and DPA name it (ANTHROPIC_OWN_KEY_OFFERED).
+    // Every provider is listed; one not offered is there but cannot be chosen.
+    expect(html.match(/type="radio"/g)).toHaveLength(MODEL_KEY_PROVIDERS.length);
+    expect(html).toContain('Anthropic Claude');
     if (offeredKeyProviders().includes('anthropic')) {
-      expect(html).toContain('Anthropic Claude');
       // The model by the name a reader reads, not its API id — a raw id in a
       // sentence is a machine string (tests/machine-strings-guard.spec.ts).
       expect(html).toContain(OWN_CLAUDE_MODEL_NAME);
       expect(html).not.toContain(OWN_CLAUDE_MODEL);
       expect(html).toMatch(/value="anthropic"[^>]*checked=""|checked=""[^>]*value="anthropic"/);
     } else {
-      expect(html).not.toContain('Anthropic Claude');
+      // Legal texts Fassung 1.1: not selectable, not merely hidden, and the status beside it.
+      const radio = /<input[^>]*value="anthropic"[^>]*>/.exec(html)?.[0] ?? '';
+      expect(radio).toContain('disabled=""');
+      expect(html).toContain('data-own-key-provider-status="anthropic"');
+      expect(html).toContain(ANTHROPIC_OWN_KEY_STATUS);
+      const gemini = /<input[^>]*value="gemini"[^>]*>/.exec(html)?.[0] ?? '';
+      expect(gemini).not.toContain('disabled=""');
     }
     expect(html).toMatch(/no step of this account uses the platform key/);
+  });
+
+  test('one switch decides selectable, storable, testable and callable — both positions', () => {
+    // Off (3.0.21): only Gemini; a call on an Anthropic key is refused with the status sentence.
+    expect(offeredKeyProviders(false)).toEqual(['gemini']);
+    expect(providerUnavailableReason('anthropic', false)).toContain(ANTHROPIC_OWN_KEY_STATUS);
+    expect(ownKeyCallRefusal('anthropic', false)).toContain(PROVIDER_NOT_ENABLED_CODE);
+    expect(ownKeyCallRefusal('gemini', false)).toBeNull();
+    // On (the Christmas switch): the existing paths answer as before 3.0.21's switch.
+    expect(offeredKeyProviders(true)).toEqual(['gemini', 'anthropic']);
+    expect(providerUnavailableReason('anthropic', true)).toBeNull();
+    expect(ownKeyCallRefusal('anthropic', true)).toBeNull();
+    // The product reads the switch's value and nothing else.
+    expect(offeredKeyProviders()).toEqual(offeredKeyProviders(ANTHROPIC_OWN_KEY_OFFERED));
+    expect(ANTHROPIC_OWN_KEY_OFFERED).toBe(false);
+    const src = read('lib/model-providers.ts');
+    expect(src.match(/export const ANTHROPIC_OWN_KEY_OFFERED = (true|false);/g), 'exactly one switch').toHaveLength(1);
+    for (const rel of ['app/api/gemini/route.ts', 'app/api/secrets/gemini/route.ts', 'app/api/secrets/gemini/test/route.ts', 'components/settings/OwnKeyProviderChoice.tsx']) {
+      expect(read(rel), `${rel} must not pass its own switch value`).not.toMatch(/(offeredKeyProviders|ownKeyCallRefusal|providerUnavailableReason)\([^)]*(true|false)\)/);
+    }
+  });
+
+  test('while the own Anthropic key is not enabled, the save and the test route refuse it before anything else', () => {
+    expect(offeredKeyProviders()).not.toContain('anthropic');
+    expect(providerUnavailableReason('anthropic')).toContain(ANTHROPIC_OWN_KEY_STATUS);
+    expect(providerUnavailableReason('gemini')).toBeNull();
+    for (const [rel, work] of [
+      ['app/api/secrets/gemini/route.ts', 'await testOwnModelKey('],
+      ['app/api/secrets/gemini/test/route.ts', 'await testOwnModelKey('],
+    ] as const) {
+      const route = read(rel);
+      const refusal = route.indexOf('code: PROVIDER_NOT_ENABLED_CODE');
+      expect(refusal, `${rel} refuses a provider that is not enabled`).toBeGreaterThan(0);
+      expect(route.slice(route.lastIndexOf('if (', refusal), refusal)).toContain('!offeredKeyProviders().includes(');
+      expect(refusal, `${rel} refuses before the key reaches the provider`).toBeLessThan(route.indexOf(work));
+    }
+    // The proxy asks the same switch before any provider contact, and never falls back.
+    const proxy = read('app/api/gemini/route.ts');
+    const gate = proxy.indexOf('ownKey ? ownKeyCallRefusal(ownKey.provider) : null');
+    expect(gate, 'the proxy asks the switch').toBeGreaterThan(0);
+    expect(gate).toBeLessThan(proxy.indexOf('callClaudeMessages('));
+    expect(proxy.slice(gate, gate + 400)).toContain('code: PROVIDER_NOT_ENABLED_CODE');
+    // A stored Anthropic key is not sent to the Models API by the test route either.
+    const testRoute = read('app/api/secrets/gemini/test/route.ts');
+    expect(testRoute.indexOf('ownKeyCallRefusal(provider)')).toBeGreaterThan(0);
+    expect(testRoute.indexOf('ownKeyCallRefusal(provider)')).toBeLessThan(testRoute.indexOf('await testOwnModelKey('));
+    // The page never preselects a provider that is not offered for a new key.
+    expect(read('app/(app)/settings/page.tsx')).toContain('offeredKeyProviders().includes(savedProvider) ? savedProvider : \'gemini\'');
   });
 
   test('the page renders the choice in the key card and sends the provider with save and test', () => {
