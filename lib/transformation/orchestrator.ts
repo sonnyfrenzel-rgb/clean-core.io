@@ -240,7 +240,8 @@ export function modelErrorKind(err: unknown, signal?: AbortSignal): ModelErrorKi
   if (code === 'lease-busy') return 'busy';
   if (status === 429) return 'retry-rate';
   const message = typeof e.message === 'string' ? e.message : '';
-  if (status === 503 || status === 500 || /\b(429|503)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|fetch failed|network/i.test(message)) return 'retry-transient';
+  // `model-network` (hotfix 3.0.22): a timed-out or broken connection, retried as the "Network error" it replaced was.
+  if (code === 'model-network' || status === 503 || status === 500 || /\b(429|503)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|fetch failed|network/i.test(message)) return 'retry-transient';
   return 'fatal';
 }
 

@@ -41,6 +41,55 @@ export function modelTimeoutMessage(ms: number = MODEL_CALL_DEADLINE_MS): string
   return `The model did not answer within ${Math.round(ms / 1000)} seconds, so the call was stopped. Nothing from it was used — try again.`;
 }
 
+/** The code of the route's answer when the connection to the provider failed or timed out (hotfix 3.0.22, HF-c). */
+export const MODEL_NETWORK_CODE = 'model-network';
+
+/** Codes and names of the thrown value and its causes, outermost first: `fetch failed` → `UND_ERR_HEADERS_TIMEOUT`. */
+export function errorCodes(error: unknown): string[] {
+  const out: string[] = [];
+  let e: unknown = error;
+  for (let depth = 0; e && typeof e === 'object' && depth < 4; depth++) {
+    const x = e as { code?: unknown; name?: unknown; cause?: unknown };
+    if (typeof x.code === 'string' && /^[A-Za-z0-9_]{1,40}$/.test(x.code)) out.push(x.code);
+    if (typeof x.name === 'string' && /^[A-Za-z0-9_]{1,40}$/.test(x.name)) out.push(x.name);
+    e = x.cause;
+  }
+  return out;
+}
+
+const TIMEOUT_CODES = /^(?:UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT|UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT|HeadersTimeoutError|BodyTimeoutError|ConnectTimeoutError|TimeoutError)$/;
+const NETWORK_CODES = /^(?:ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|EPIPE|ENETUNREACH|EHOSTUNREACH|UND_ERR_SOCKET|UND_ERR_CLOSED|SocketError)$/;
+
+/**
+ * What a failed provider call was, in words a user can act on (hotfix 3.0.22, HF-c). Owner example A's second Testing
+ * attempt ended after 304 s with "Network error … This may be due to regional restrictions": every error whose message
+ * held "fetch" got that sentence, though the call had waited for the answer and given up. Null when the error is not a
+ * connection failure (`fetch failed`, or one of the codes above, on it or its causes): the route then answers as
+ * before. Codes only — never the error's text, which can carry the prompt.
+ */
+export function providerConnectionFailure(error: unknown, elapsedMs?: number): { kind: 'timeout' | 'network'; code: string | null; message: string } | null {
+  const codes = errorCodes(error);
+  const text = error instanceof Error ? error.message : '';
+  const after = typeof elapsedMs === 'number' && elapsedMs >= 1000 ? ` after ${Math.round(elapsedMs / 1000)} seconds` : '';
+  const timeout = codes.find((c) => TIMEOUT_CODES.test(c));
+  if (timeout) {
+    return {
+      kind: 'timeout',
+      code: timeout,
+      message: `The connection to the model provider timed out${after} while waiting for its answer (${timeout}), so the call was stopped. Nothing from it was used — try again.`,
+    };
+  }
+  const network = codes.find((c) => NETWORK_CODES.test(c));
+  if (network || /\bfetch\b/i.test(text)) {
+    return {
+      kind: 'network',
+      code: network ?? null,
+      message: `The connection to the model provider failed${after}${network ? ` (${network})` : ''}: no answer was received. Nothing from it was used — try again.`,
+    };
+  }
+  return null;
+}
+
 export interface ModelDeadline {
   /** Aborts when the deadline passes or when `outer` aborts, whichever comes first. */
   signal: AbortSignal;

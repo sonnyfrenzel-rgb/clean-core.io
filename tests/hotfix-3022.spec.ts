@@ -8,6 +8,12 @@ import { candidateFiles, prepareEngineLed } from '../lib/transformation/engine-l
 import { readEngineFacts } from '../lib/transformation';
 import { FILL_COMPACT_CONDITION_MAX_CHARS, LEASED_PROMPT_MAX_CHARS, bundleFills, compactFillUnitOf, fillPrompt } from '../lib/transformation/fill-prompt';
 import type { FillRequestUnit } from '../lib/transformation/types';
+import fs from 'node:fs';
+import path from 'node:path';
+import { checkAbapTestClass, shortenLongAbapMethodNames } from '../lib/testing-abap-unit';
+import { abapMethodMatches } from '../lib/abap-unit-method';
+import { MODEL_NETWORK_CODE, providerConnectionFailure } from '../lib/model-deadline';
+import { modelErrorKind } from '../lib/transformation/orchestrator';
 
 /**
  * Hotfix 3.0.22 (docs/design/analyze-business-first-plan.md §4.0, HF-a to HF-e), from a full run of owner example A
@@ -192,5 +198,79 @@ test.describe('HF-b: a unit over the cap with its rules by title and no context 
     expect(c.guards.map(({ id, line, values, placement }) => ({ id, line, values, placement }))).toEqual(unit.guards.map(({ id, line, values, placement }) => ({ id, line, values, placement })));
     expect(c.rules.map((r) => [r.id, r.decision])).toEqual(unit.rules.map((r) => [r.id, r.decision]));
     expect(c.abap).toEqual(unit.abap);
+  });
+});
+
+test.describe('HF-c: Testing — names shortened, never a failed attempt; a failed call says what it was', () => {
+  const suite = [
+    'CLASS ltcl_test DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.',
+    '  PRIVATE SECTION.',
+    '    METHODS tc_01_submit_request_from_draft_ok FOR TESTING.',
+    '    METHODS tc_02_submit_request_from_draft_no FOR TESTING.',
+    '    METHODS tc_03_short FOR TESTING.',
+    'ENDCLASS.',
+    'CLASS ltcl_test IMPLEMENTATION.',
+    '  METHOD tc_01_submit_request_from_draft_ok.',
+    "    \" tc_01_submit_request_from_draft_ok stays in this comment",
+    "    cl_abap_unit_assert=>assert_true( act = abap_true msg = 'tc_02_submit_request_from_draft_no' ).",
+    '  ENDMETHOD.',
+    '  METHOD tc_02_submit_request_from_draft_no.',
+    '    me->tc_03_short( ).',
+    '  ENDMETHOD.',
+    '  METHOD tc_03_short.',
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+  ].join('\n');
+
+  test('every name over 30 characters is cut to 30, unique, everywhere it is used — comments and literals untouched', () => {
+    const before = checkAbapTestClass(suite, []);
+    expect(before.problems.filter((p) => p.kind === 'name-too-long').map((p) => p.name)).toEqual(['tc_01_submit_request_from_draft_ok', 'tc_02_submit_request_from_draft_no']);
+    const short = shortenLongAbapMethodNames(suite);
+    expect(short.renamed).toEqual([
+      { from: 'tc_01_submit_request_from_draft_ok', to: 'tc_01_submit_request_from_draf' },
+      { from: 'tc_02_submit_request_from_draft_no', to: 'tc_02_submit_request_from_draf' },
+    ]);
+    const after = checkAbapTestClass(short.code, []);
+    expect(after.problems.filter((p) => p.kind === 'name-too-long')).toEqual([]);
+    expect(short.code).toContain('METHOD tc_01_submit_request_from_draf.');
+    expect(short.code).toContain('" tc_01_submit_request_from_draft_ok stays in this comment');
+    expect(short.code).toContain("msg = 'tc_02_submit_request_from_draft_no'");
+    expect(short.code.split('\n')[0]).toMatch(/^" Clean-Core\.io: 2 method names longer than 30 characters shortened: /);
+    // The scenario a method stands for still matches it by its prefix.
+    expect(abapMethodMatches('tc_01_submit_request_from_draf', 'TC_01')).toBe(true);
+    expect(shortenLongAbapMethodNames(short.code.split('\n').slice(1).join('\n')).renamed).toEqual([]);
+  });
+
+  test('a collision gets a numbered name; the same input always gives the same names', () => {
+    const twins = suite.replace(/tc_02_submit_request_from_draft_no/g, 'tc_01_submit_request_from_draft_no');
+    const a = shortenLongAbapMethodNames(twins);
+    expect(a.renamed.map((r) => r.to)).toEqual(['tc_01_submit_request_from_draf', 'tc_01_submit_request_from_dr_2']);
+    expect(a.renamed.every((r) => r.to.length <= 30)).toBe(true);
+    expect(shortenLongAbapMethodNames(twins)).toEqual(a);
+  });
+
+  test('the Testing hook shortens before it checks, and stores the shortened code', () => {
+    const hook = fs.readFileSync(path.join(__dirname, '..', 'hooks', 'useTestGeneration.ts'), 'utf8');
+    expect(hook.indexOf('shortenLongAbapMethodNames(')).toBeGreaterThan(0);
+    expect(hook.indexOf('shortenLongAbapMethodNames(')).toBeLessThan(hook.indexOf('checkAbapTestClass(seamed.code'));
+    expect(hook).toContain('short.renamed.length > 0');
+  });
+
+  test('a call that waited past undici’s header timeout is a timeout, not a network or regional problem', () => {
+    const headers = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('Headers Timeout Error'), { name: 'HeadersTimeoutError', code: 'UND_ERR_HEADERS_TIMEOUT' }) });
+    const t = providerConnectionFailure(headers, 304_000)!;
+    expect(t).toMatchObject({ kind: 'timeout', code: 'UND_ERR_HEADERS_TIMEOUT' });
+    expect(t.message).toBe('The connection to the model provider timed out after 304 seconds while waiting for its answer (UND_ERR_HEADERS_TIMEOUT), so the call was stopped. Nothing from it was used — try again.');
+    const dns = providerConnectionFailure(Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } }), 120)!;
+    expect(dns).toMatchObject({ kind: 'network', code: 'ENOTFOUND' });
+    expect(dns.message).toBe('The connection to the model provider failed (ENOTFOUND): no answer was received. Nothing from it was used — try again.');
+    expect(providerConnectionFailure(new TypeError('fetch failed'))).toMatchObject({ kind: 'network', code: null });
+    expect(providerConnectionFailure(new Error('400 INVALID_ARGUMENT'))).toBeNull();
+    for (const f of [t, dns]) expect(f.message).not.toMatch(/regional/i);
+    // The orchestrator asks such a call once more, as it asked the "Network error" it replaces.
+    expect(modelErrorKind(Object.assign(new Error(t.message), { status: 504, code: MODEL_NETWORK_CODE }))).toBe('retry-transient');
+    const route = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'gemini', 'route.ts'), 'utf8');
+    expect(route).not.toContain('regional restrictions');
+    expect(route).toContain('providerConnectionFailure(error, Date.now() - arrivedAt)');
   });
 });

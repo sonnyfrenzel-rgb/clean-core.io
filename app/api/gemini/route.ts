@@ -69,7 +69,7 @@ import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@
 import { LEASED_PROMPT_MAX_CHARS, isGateRepairPrompt } from '@/lib/transformation/fill-prompt';
 import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
-import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
+import { MODEL_CALL_DEADLINE_MS, MODEL_NETWORK_CODE, MODEL_TIMEOUT_CODE, errorCodes, modelDeadline, modelTimeoutMessage, providerConnectionFailure, type ModelDeadline } from '@/lib/model-deadline';
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
 import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
@@ -869,7 +869,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : String(error);
     // Not the message: a provider error can carry the refused prompt back, and
     // the log would then hold the customer's source (providerErrorShape).
-    logger.error('gemini route failed', { route: 'api/gemini', error: providerErrorShape(error), network: message.includes('fetch') });
+    logger.error('gemini route failed', { route: 'api/gemini', error: providerErrorShape(error), network: message.includes('fetch'), codes: errorCodes(error), elapsedMs: Date.now() - arrivedAt });
 
     // 3.0.15 — the provider refused the account's own key. Said as such, with a
     // code, and never retried with the platform key: the owner of this account
@@ -881,14 +881,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (message.includes('fetch')) {
-      return NextResponse.json(
-        {
-          error:
-            'Network error when calling the model provider. This may be due to regional restrictions.',
-        },
-        { status: 502 },
-      );
+    // Hotfix 3.0.22 (HF-c): the true cause — a timeout or a failed connection, with its code — not the old guess at a
+    // regional block for every error whose message held "fetch".
+    const connection = providerConnectionFailure(error, Date.now() - arrivedAt);
+    if (connection) {
+      return NextResponse.json({ error: connection.message, code: MODEL_NETWORK_CODE }, { status: connection.kind === 'timeout' ? 504 : 502 });
     }
 
     // The cause is in the log line above and nowhere else. It used to be the
