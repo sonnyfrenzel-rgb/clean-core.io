@@ -141,6 +141,7 @@ async function holdModel(page: Page) {
         stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true },
         keyAvailable: true,
         keySource: 'community',
+        autoSteps: true,
       }),
     }),
   );

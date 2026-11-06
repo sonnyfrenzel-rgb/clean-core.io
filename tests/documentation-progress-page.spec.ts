@@ -95,7 +95,7 @@ test.describe('the Documentation tool says what it is doing', () => {
     await page.route('**/api/model-stages', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community' }),
+      body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community', autoSteps: true }),
     }));
   }
 

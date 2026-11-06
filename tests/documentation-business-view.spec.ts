@@ -355,7 +355,7 @@ test.describe('the Documentation stage in a browser', () => {
     await page.route('**/api/model-stages', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ stages: { documentation: true }, keyAvailable: true, keySource: 'community' }),
+      body: JSON.stringify({ stages: { documentation: true }, keyAvailable: true, keySource: 'community', autoSteps: true }),
     }));
     let calls = 0;
     await page.route('**/api/gemini', (route) => { calls += 1; return route.abort(); });
@@ -421,7 +421,7 @@ test.describe('the Documentation stage in a browser', () => {
     await page.route('**/api/model-stages', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ stages: { documentation: true }, keyAvailable: true, keySource: 'community' }),
+      body: JSON.stringify({ stages: { documentation: true }, keyAvailable: true, keySource: 'community', autoSteps: true }),
     }));
     let calls = 0;
     await page.route('**/api/gemini', (route) => { calls += 1; return route.abort(); });
