@@ -81,12 +81,12 @@ export const LEGAL_RELEASE_DATE_ISO: string | null = null;
  * amendment accepted before it takes effect only on it (Terms 10.2,
  * `lib/terms-effective.ts`).
  *
- * 21 December 2026, entered on the owner's instruction of 06.11.2026: the
- * notice (`scripts/send-terms-announcement.ts`) goes out on 9 November 2026,
- * which is the last day it may — the script refuses later. Unconfirmed until
+ * 22 December 2026, entered on the owner's instruction of 06.11.2026: the
+ * notice (`scripts/send-terms-announcement.ts`) goes out on 9 November 2026;
+ * the script refuses after 10 November, six weeks before the day. Unconfirmed until
  * the owner checks it (`termsEffectiveDate` below), so the release gate stays red.
  */
-export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-21';
+export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-22';
 
 const MONTHS_DE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -371,7 +371,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     isFact: true,
     usedIn: 'C2 (Änderungsdialog); C5 (Bestätigungsmail nach einer Änderung); Terms 10.2',
     enteredFrom:
-      'owner instruction relayed 06.11.2026: the announcement mail (scripts/send-terms-announcement.ts) goes out on 09.11.2026, the amended Terms take effect six weeks later, on 21.12.2026',
+      'owner instruction relayed 06.11.2026: the announcement mail (scripts/send-terms-announcement.ts) goes out on 09.11.2026, the amended Terms take effect on 22.12.2026 (owner decision 06.11.2026)',
   },
 
   // --- Confirmations: the sentence is published as written; the owner confirms it holds ---
