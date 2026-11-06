@@ -195,7 +195,8 @@ function anchorOf(n: ExportNode): string {
 
 /** Everything the Business view shows about a program, read as the engine `engineVersion` reads it. */
 export function readBusiness(source: string, file: string, engineVersion: string): BusinessReadingOut {
-  const skeleton = buildProcessSkeleton(source);
+  // The map of the engine read for (3.5.0 draws flag steps, calculations and loop starts the released one does not).
+  const skeleton = buildProcessSkeleton(source, { engineVersion });
   const model = buildExportModel(skeleton, businessLevelOf(skeleton, source, engineVersion));
   const levelOf = new Map<string, number>([[model.root.id, 0]]);
   const walk = (c: ExportContainer, depth: number) => {

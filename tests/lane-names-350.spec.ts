@@ -23,7 +23,7 @@ const SRC = [
 ].join('\n');
 
 const lanes = (engine: string) => {
-  const skeleton = buildProcessSkeleton(SRC);
+  const skeleton = buildProcessSkeleton(SRC, { engineVersion: engine });
   return buildExportModel(skeleton, businessLevelOf(skeleton, SRC, engine)).lanes.map((l) => l.name);
 };
 
@@ -32,6 +32,6 @@ test('an authorization lane says what it protects, with its object; a customer o
   expect(now).toContain('Authorization for purchase requisitions by purchasing group (M_BANF_EKG)');
   expect(now).toContain('Z_OWN_OBJ');
   expect(lanes('3.0.21')).toContain('M_BANF_EKG');
-  const xml = buildBpmnExport(buildProcessSkeleton(SRC), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: ENGINE_READS_350_FROM }).xml;
+  const xml = buildBpmnExport(buildProcessSkeleton(SRC, { engineVersion: ENGINE_READS_350_FROM }), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: ENGINE_READS_350_FROM }).xml;
   expect(xml).toContain('name="Authorization for purchase requisitions by purchasing group (M_BANF_EKG)"');
 });

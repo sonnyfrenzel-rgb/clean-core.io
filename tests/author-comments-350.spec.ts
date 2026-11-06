@@ -33,7 +33,7 @@ const SRC = [
 ].join('\n');
 
 function modelOf(engine: string) {
-  const skeleton = buildProcessSkeleton(SRC);
+  const skeleton = buildProcessSkeleton(SRC, { engineVersion: engine });
   return buildExportModel(skeleton, businessLevelOf(skeleton, SRC, engine)).containers.flatMap((c) => c.nodes);
 }
 
@@ -45,7 +45,7 @@ test('a comment beside a check or above a statement is quoted word for word, tag
   const read = nodes.find((n) => /^Read /.test(n.name))!;
   expect(read.comment).toBe(`${AUTHOR_COMMENT_LABEL} (line 6): “Positionen fuer die Gefahrgutermittlung”`);
   expect(nodes.every((n) => !n.name.includes('Gefahrgut') && !n.name.includes('Aendern'))).toBe(true);
-  const xml = buildBpmnExport(buildProcessSkeleton(SRC), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: NEW }).xml;
+  const xml = buildBpmnExport(buildProcessSkeleton(SRC, { engineVersion: NEW }), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: NEW }).xml;
   expect(xml).toContain(`${AUTHOR_COMMENT_LABEL} (line 5): “nur Aendern (VL02N)”`);
 });
 
@@ -63,6 +63,6 @@ test('the naming stage gets the comment as a fact of its own kind; an engine bef
   const facts = [...namingFactsOf(buildProcessSkeleton(SRC), SRC).values()].flat();
   expect(facts.some((f) => f.kind === 'comment' && f.text.includes('nur Aendern (VL02N)'))).toBe(true);
   expect(modelOf(OLD).every((n) => n.comment === undefined)).toBe(true);
-  const old = buildBpmnExport(buildProcessSkeleton(SRC), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: OLD }).xml;
+  const old = buildBpmnExport(buildProcessSkeleton(SRC, { engineVersion: OLD }), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: OLD }).xml;
   expect(old).not.toContain(AUTHOR_COMMENT_LABEL);
 });

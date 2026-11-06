@@ -12,6 +12,7 @@ import {
   type PlainTerm,
 } from './plain-glossary';
 import {
+  hasGermanWord,
   isUntranslatable,
   translateGermanText,
   translateGermanWords,
@@ -2095,6 +2096,14 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
           if (op === 'INSERT' || op === 'APPEND') return fit(`Add the ${item} to the list`);
           return fit(`Update the ${item} in the list`);
         }
+        // 3.5.0: the steps the engine draws for an arm that would otherwise draw nothing (`process-skeleton.ts`).
+        if (c.reads350 && node.detail?.flagStep === true) return fit(flagStepName(node, c));
+        if (c.reads350 && node.detail?.helperCall === true) {
+          const said = programTextOf(node);
+          if (said) return firstFitting([`Note: ${lcFirst(said)}`, `Note: ${lcFirst(shortText(said, 5))}`]);
+          // A log helper without a sentence of its own: what it does, not its name ("Add log").
+          if (/(?:^|[_:])(?:log|logs|protokoll|applog)(?:[_:]|$)/i.test(String(node.detail?.routine ?? node.label))) return 'Note in the run log';
+        }
         return fit(humaniseRoutine(node.label, c) || 'Step');
       }
       case 'call-opaque': {
@@ -2108,6 +2117,48 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
   } catch {
     return fit(humaniseRoutine(node?.label ?? '') || 'Step');
   }
+}
+
+/**
+ * 3.5.0: the program's own sentence an engine step carries (`detail.programTexts`, written next to the step in the
+ * same arm) in English where every word is known, as written otherwise — '' when there is none or it is German the
+ * engine cannot put into English (the element's detail keeps the statement).
+ */
+function programTextOf(node: SkeletonNode): string {
+  const texts = Array.isArray(node.detail?.programTexts) ? (node.detail?.programTexts as unknown[]).filter((t): t is string => typeof t === 'string') : [];
+  for (const t of texts) {
+    if (!t.trim()) continue;
+    const english = translateGermanText(t, FIELD_SOURCES_350)?.english;
+    // German the engine cannot put into English stays out of the label (owner decision E2); the detail keeps it.
+    if (!english && (germanUntranslated(t) || hasGermanWord(t, FIELD_SOURCES_350))) continue;
+    return (english ?? t).replace(/\s+/g, ' ').trim().replace(/[.:;,]+$/, '');
+  }
+  return '';
+}
+
+/**
+ * 3.5.0: a flag step — an arm that only sets a field a later decision reads (`gv_approved = abap_true`). Its own
+ * sentence first ("Approved without limit check (central warehouse)"); else what it sets: "Mark as approved",
+ * "Set emergency", "Result status: no quote", "Set status to C (completely processed)". Never the assignment as code.
+ */
+function flagStepName(node: SkeletonNode, ctx: PlainContext): string {
+  const m = /^([\w/<>~-]+(?:->[\w]+)?)\s*=\s*(.+?)\.?$/.exec(node.label.trim());
+  const said = programTextOf(node);
+  if (!m) return said ? sentenceCase(said) : humaniseRoutine(node.label, ctx) || 'Step';
+  const [, field, rawValue] = m;
+  const value = rawValue.trim();
+  const subject = humaniseField(field, ctx);
+  const literal = /^['`]/.test(value) ? unquote(value) : null;
+  // The program's sentence is the value set into the field itself: the field and the sentence.
+  if (said && literal !== null && englishText(literal).replace(/[.:;,]+$/, '').trim() === said) return firstFitting([`${subject}: ${lcFirst(said)}`, sentenceCase(said)]);
+  if (said) return sentenceCase(said);
+  const lower = value.toLowerCase();
+  const participle = isParticiple(field, ctx);
+  if (TRUE_VALUES.has(lower)) return participle ? `Mark as ${lcFirst(subject)}` : `Set ${lcFirst(subject)}`;
+  if (FALSE_VALUES.has(lower)) return participle ? `Mark as not ${lcFirst(subject)}` : `Clear ${lcFirst(subject)}`;
+  const shown = literal ?? (/^-?\d+(?:\.\d+)?$/.test(value) ? value : (ctx.constants.get(value.toLowerCase()) ?? humaniseField(value, ctx)));
+  const meaning = literal !== null ? valueMeaning(field, literal, ctx) : null;
+  return firstFitting([`Set ${lcFirst(subject)} to ${shown}${meaning ? ` (${meaning})` : ''}`, `Set ${lcFirst(subject)} to ${shown}`]);
 }
 
 function boundaryName(node: SkeletonNode, ctx: PlainContext): string {

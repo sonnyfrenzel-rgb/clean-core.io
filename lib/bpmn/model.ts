@@ -451,6 +451,8 @@ export function buildExportModel(skeleton: ProcessSkeleton, options: ExportModel
 
 /** The SAP technique a business step does not need to see (`ExportModelOptions.foldTechnique`), by the code's name. */
 const TECHNIQUE_CALL = /^(?:ENQUEUE_|DEQUEUE_|BAL_|REUSE_ALV_FIELDCATALOG|LVC_FIELDCATALOG)/i;
+/** 3.5.0: a helper routine that writes the program's log, by its name (`ADD_LOG`, `LOG_MESSAGE`, `PROTOKOLL_SCHREIBEN`). */
+const LOG_HELPER = /(?:^|[_:])(?:log|logs|protokoll|applog|msg_add|add_msg)(?:[_:]|$)/i;
 
 /** At least this many guard checks in a row are drawn as one step at the business level. */
 export const GUARD_CHAIN_MIN = 2;
@@ -862,7 +864,10 @@ class ModelBuilder {
 
   /** See `ExportModelOptions.foldTechnique`. */
   private foldTechniqueSteps(into: ExportContainer, band: ExportBand, local: Map<string, ExportNode>): void {
-    const isTechnique = (n: ExportNode) => TECHNIQUE_CALL.test(n.technicalName.replace(/^\/\w+\//, ''));
+    // 3.5.0: the call of a technical helper the engine draws as an arm's outcome (`detail.helperCall`) is technique too
+    // when it writes a log (`PERFORM add_log`) — folded where it stands in a straight run; an arm's only step stays.
+    const isTechnique = (n: ExportNode) => TECHNIQUE_CALL.test(n.technicalName.replace(/^\/\w+\//, ''))
+      || (n.source.detail?.helperCall === true && LOG_HELPER.test(String(n.source.detail?.routine ?? n.technicalName)));
     const plain = (n: ExportNode) => ACTIVITY_TAGS.has(n.tag) && !n.inner && n.tag !== 'subProcess' && !n.attachedTo
       && !guardOf(n) && !into.nodes.some((b) => b.attachedTo === n.id);
     // The same words as `anchorText` in layout.ts, which imports this file.

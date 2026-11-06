@@ -711,6 +711,15 @@ function gerund(verbWord: string): string {
   return [ing, ...tail].join(' ');
 }
 
+/** 3.5.0: does a text hold a word this vocabulary reads as German (`ohne`, `Prüfung`, `nachverarbeitet` is not one)? */
+export function hasGermanWord(text: string, sources: WordSources = {}): boolean {
+  try {
+    return String(text ?? '').split(/[\s,.;:!?()'"/-]+/).filter(Boolean).some((w) => classify(w, sources)?.kind === 'de');
+  } catch {
+    return false;
+  }
+}
+
 /**
  * A short German text (a `MESSAGE` literal) in English, word by word: "Keine
  * Daten gefunden" → "No data found", "Bitte Werk eingeben" → "Please enter

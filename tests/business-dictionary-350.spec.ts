@@ -29,7 +29,7 @@ const NEW = ENGINE_READS_350_FROM;
 const OLD = '3.0.21';
 
 function names(source: string, engine: string): string[] {
-  const skeleton = buildProcessSkeleton(source);
+  const skeleton = buildProcessSkeleton(source, { engineVersion: engine });
   return buildExportModel(skeleton, businessLevelOf(skeleton, source, engine)).containers.flatMap((c) => c.nodes).map((n) => n.name);
 }
 
@@ -89,11 +89,11 @@ test('a value of a fixed SAP domain carries its meaning; a check on a field whos
     '  ENDIF.',
   ].join('\n');
   expect(names(src, NEW)).toContain('Overall status C (completely processed)?');
-  const xml = buildBpmnExport(buildProcessSkeleton(src), { processName: 't', sourceFileName: 't.abap', source: src, names: 'plain', exporterVersion: NEW }).xml;
+  const xml = buildBpmnExport(buildProcessSkeleton(src, { engineVersion: NEW }), { processName: 't', sourceFileName: 't.abap', source: src, names: 'plain', exporterVersion: NEW }).xml;
   expect(xml).toContain('The code does not say what this check means (field PROFL).');
   // A domain value says what it means: no such note on the status check.
   expect(xml).not.toContain('(field GBSTK)');
-  const old = buildBpmnExport(buildProcessSkeleton(src), { processName: 't', sourceFileName: 't.abap', source: src, names: 'plain', exporterVersion: OLD }).xml;
+  const old = buildBpmnExport(buildProcessSkeleton(src, { engineVersion: OLD }), { processName: 't', sourceFileName: 't.abap', source: src, names: 'plain', exporterVersion: OLD }).xml;
   expect(old).not.toContain('The code does not say what this check means');
 });
 

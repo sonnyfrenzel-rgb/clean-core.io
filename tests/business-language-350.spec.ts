@@ -18,7 +18,7 @@ const NEW = ENGINE_READS_350_FROM;
 const OLD = '3.0.21';
 
 function mapOf(source: string, engine: string) {
-  const skeleton = buildProcessSkeleton(source);
+  const skeleton = buildProcessSkeleton(source, { engineVersion: engine });
   const model = buildExportModel(skeleton, businessLevelOf(skeleton, source, engine));
   const nodes = model.containers.flatMap((c) => c.nodes);
   const flows = model.containers.flatMap((c) => c.flows);
