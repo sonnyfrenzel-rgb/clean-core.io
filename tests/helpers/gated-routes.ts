@@ -55,6 +55,8 @@ export const GATED_ROUTES: GatedRoute[] = [
   // that matters most — a refusal there has to hold or the spec's own account
   // disappears, which is exactly the failure it would report.
   { file: 'app/api/account/delete/route.ts', method: 'POST', path: () => '/api/account/delete', body: { confirm: 'DELETE' } },
+  // A6 of 3.0.21: the withdrawal path ends in the same deletion, behind the same factor.
+  { file: 'app/api/account/withdraw/route.ts', method: 'POST', path: () => '/api/account/withdraw' },
   // JIRA_INTEGRATION_ENABLED is off, so this answers 404 before the gate. The
   // day it is switched on, 403 is what it must answer, and both are accepted
   // here so that neither state is a surprise.

@@ -38,8 +38,13 @@ export {
   pseudonymPepperConfigured,
 } from '@/lib/pseudonym';
 
-/** How a contract ended, as the proof log records it (privacy section 5). */
-export type ContractEnding = 'account-deletion' | 'termination-by-operator';
+/**
+ * How a contract ended, as the proof log records it (privacy section 5).
+ * `withdrawal-function`: the declaration with "Withdraw from / end the
+ * contract" (C13, Terms 13), which ends in the deletion of the account
+ * (`lib/withdrawal-declaration.ts`).
+ */
+export type ContractEnding = 'account-deletion' | 'termination-by-operator' | 'withdrawal-function';
 
 /** The rule an acceptance record is kept under while the contract runs. */
 export const PROOF_LOG_RETENTION = 'until-end-of-third-calendar-year-after-contract-end';

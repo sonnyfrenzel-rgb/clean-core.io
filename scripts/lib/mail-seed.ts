@@ -420,7 +420,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
           buildWithdrawalReceiptMail({
             language,
             recipient: escapeHtml(ctx.recipient.address),
-            firstName: escapeHtml(SEED_NAME.split(' ')[0]),
+            name: escapeHtml(SEED_NAME),
             receivedAt: ctx.now.toISOString(),
           }),
           subject,
