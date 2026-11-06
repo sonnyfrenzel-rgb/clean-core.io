@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import { buildNamingPrompt, namingContextOf, validateNamingAnswer } from '../lib/process-naming';
-import { uncoveredWords } from '../lib/naming-facts';
+import { formChanged, uncoveredWords } from '../lib/naming-facts';
 
 /**
  * The naming stage with the engine's facts and the checker (concept "Business-Lesbarkeit" H7/H6, owner decision of
@@ -63,4 +63,24 @@ test('the checker: verbs and function words are free, a business noun is not', (
   expect(uncoveredWords('Check whether the user is authorized', ['Authorized?'])).toEqual(['user']);
   expect(uncoveredWords('Read the purchase requisitions', ['EBAN = Purchase requisition'])).toEqual([]);
   expect(uncoveredWords('Notify the cost center owner', ['Send mail'])).toEqual(['cost', 'center', 'owner']);
+});
+
+test('H6: a name that changes the kind of statement is dropped — a lost question, a "not" turned, a normal end as a stop', () => {
+  const ctx = namingContextOf(SRC, { engineVersion: '3.0.22', facts: true });
+  const say = (id: string, name: string) => {
+    const facts = ctx.facts!.get(id)!.map((f) => f.id);
+    return validateNamingAnswer(ctx, JSON.stringify({ names: [{ id, name, facts }], lanes: [] }));
+  };
+  const gateway = ctx.skeleton.nodes.find((n) => (ctx.facts!.get(n.id) ?? []).some((f) => f.kind === 'engine' && f.text === 'Authorized?'))!;
+  expect(say(gateway.id, 'Is this authorized?').names).toHaveLength(1);
+  expect(say(gateway.id, 'Is this not authorized?').discarded.byRule['form-changed']).toBe(1);
+  expect(say(gateway.id, 'This is authorized').discarded.byRule['form-changed']).toBe(1);
+  expect(formChanged('Stops: done', 'end', 'Done')).toBe(true);
+  expect(formChanged('Stops: no batch found', 'end-error', 'Stop: no batch found (E024)')).toBe(false);
+  expect(formChanged('Is the country not DE and no route?', 'gateway', 'Country DE or route given?')).toBe(true);
+});
+
+test('the switch: from 3.0.22 the product hands the facts to the naming stage', () => {
+  expect(namingContextOf(SRC, { engineVersion: '3.0.22' }).facts).toBeDefined();
+  expect(namingContextOf(SRC, { engineVersion: '3.0.21' }).facts).toBeUndefined();
 });

@@ -32,7 +32,7 @@ import { ENGINE_READS_3022_FROM } from './abap/engine-reads-3022-gate';
  * Whether the product's naming stage gets the facts. Decided by the measurement run of 06.11.2026
  * (`tests/prozess-benchmark/naming-messung.ts`, 30 LEARN cases): see the commit that set it.
  */
-export const NAMING_WITH_FACTS: boolean = false;
+export const NAMING_WITH_FACTS: boolean = true;
 
 export type NamingFactKind = 'engine' | 'table' | 'message' | 'part';
 
@@ -121,3 +121,23 @@ export function uncoveredWords(name: string, evidence: readonly string[]): strin
   }
   return [...new Set(words(name))].filter((w) => !FREE.has(w) && !VERBS.has(w) && !have.has(w) && !have.has(stem(w)));
 }
+
+/** Negation in a text: "not", "no", "none", "never", "n't", "nothing", "without", "missing". */
+const NEGATION = /\b(?:not|no|none|never|nothing|without|missing)\b|n't\b/i;
+
+/**
+ * 3.0.22 (H6, measured 06.11.2026): a name that changes what kind of thing a node says — a normal end called a stop,
+ * a decision that no longer asks, a "not" gained or lost against the engine's own label. The measurement run found
+ * these where the model rephrased ("Stops: done" for a normal end); they are wrong, not merely invented, and dropped.
+ * `kind` is the skeleton node kind; `engine` the engine's plain label of the node ('' without one).
+ */
+export function formChanged(name: string, kind: string, engine: string): boolean {
+  const n = name.trim();
+  if ((kind === 'end' && !/^(?:Stopped|Rejected|Ends early)/.test(engine)) || kind === 'error-boundary' || kind === 'start') {
+    if (/\bstop(?:s|ped)?\b|\babort|\bcancel|\breject/i.test(n) && !/\bstop|\breject/i.test(engine)) return true;
+  }
+  if ((kind === 'gateway' || kind === 'loop') && engine.endsWith('?') && !n.endsWith('?')) return true;
+  if (engine && NEGATION.test(n) !== NEGATION.test(engine)) return true;
+  return false;
+}
+

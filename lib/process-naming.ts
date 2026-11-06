@@ -15,7 +15,7 @@ import {
   type ModelStage,
 } from './model-stages';
 import type { ProvenanceValue } from './provenance';
-import { NAMING_WITH_FACTS, namingFactsOf, uncoveredWords, type NamingFacts } from './naming-facts';
+import { NAMING_WITH_FACTS, formChanged, namingFactsOf, uncoveredWords, type NamingFacts } from './naming-facts';
 import { engineReads3022Apply } from './abap/engine-reads-3022-gate';
 import { APP_VERSION } from './version';
 
@@ -348,6 +348,8 @@ export type NamingRejection =
   | 'not-in-facts'
   /** 3.0.22 (H7): a name that cites no fact of its node, or a fact of another node. */
   | 'facts-not-cited'
+  /** 3.0.22 (H6): a name that changes the kind of statement — a normal end as a stop, a question no longer asked, a "not" gained or lost. */
+  | 'form-changed'
   /** A lane named as a position, a person or a unit of an organisation. */
   | 'lane-organisational'
   /** Two lanes with the same name — both dropped. */
@@ -505,6 +507,8 @@ function validateNames(
       const ids = new Set(own.map((f) => f.id));
       if (own.length && (!entry.cited.length || entry.cited.some((f) => !ids.has(f)))) { tally.bump('facts-not-cited'); continue; }
       if (uncoveredWords(name, evidenceOf(context, node, own.map((f) => f.text))).length) { tally.bump('not-in-facts'); continue; }
+      const engine = own.find((f) => f.kind === 'engine')?.text ?? '';
+      if (formChanged(name, node.kind, engine)) { tally.bump('form-changed'); continue; }
     }
     accepted.push({ id: node.id, technicalName: node.label, name });
   }
