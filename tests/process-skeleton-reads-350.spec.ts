@@ -262,3 +262,51 @@ test('the gate: 3.0.21 and every 3.0.x hotfix read as before, 3.5.0 and later re
   for (const version of ['3.5.0', '3.5.1', '3.6.0']) expect(steps(version), version).toBe(1);
   expect(steps('')).toBe(0);
 });
+
+const REPORT_LINES = [
+  'REPORT zarm_collect.', //                                                      1
+  'START-OF-SELECTION.', //                                                       2
+  '  SELECT * FROM zacct INTO TABLE gt_accounts.', //                              3
+  '  PERFORM compare.', //                                                        4
+  "  CALL FUNCTION 'Z_PRINT_REPORT' TABLES it_lines = gt_report.", //             5
+  'FORM compare.', //                                                             6
+  '  DATA lt_seen TYPE STANDARD TABLE OF zacct.', //                              7
+  '  LOOP AT gt_accounts INTO gs_account.', //                                    8
+  '    IF gs_account-diff > p_tolerance.', //                                     9
+  '      gs_line-account = gs_account-account.', //                               10
+  '      APPEND gs_line TO gt_report.', //                                        11
+  '    ENDIF.', //                                                                12
+  '    IF gs_account-blocked = abap_true.', //                                    13
+  '      APPEND gs_account TO lt_seen.', //                                       14
+  '    ENDIF.', //                                                                15
+  '    IF gs_account-diff < 0.', //                                               16
+  "      APPEND VALUE #( msgty = 'W' msgno = '010' ) TO gt_msg.", //               17
+  '    ENDIF.', //                                                                18
+  '  ENDLOOP.', //                                                                19
+  "  CALL FUNCTION 'Z_SAVE_SEEN' TABLES it_seen = lt_seen.", //                   20
+  'ENDFORM.', //                                                                  21
+].join('\n');
+
+test('a row put into a result table is the yes of an arm that draws nothing else', () => {
+  const skeleton = buildProcessSkeleton(REPORT_LINES, NEW);
+  const step = skeleton.nodes.find((n) => n.anchor?.lineStart === 11)!;
+  expect(step.kind).toBe('task');
+  expect(step.label).toBe('GT_REPORT');
+  expect(step.detail).toMatchObject({ operation: 'APPEND', internalTable: true, collects: true });
+  const gateway = skeleton.nodes.find((n) => n.kind === 'gateway' && n.anchor?.lineStart === 9)!;
+  expect(skeleton.edges.some((e) => e.from === gateway.id && e.to === step.id && e.kind === 'conditional')).toBe(true);
+  // Not a table the routine declares for itself, and not a message row for a log.
+  for (const line of [14, 17]) expect(skeleton.nodes.some((n) => n.anchor?.lineStart === line), `line ${line}`).toBe(false);
+});
+
+test('a collected row does not change whether its routine is folded to one step', () => {
+  const routine = (engineVersion: string) => {
+    const skeleton = buildProcessSkeleton(REPORT_LINES, { engineVersion });
+    const call = skeleton.nodes.find((n) => n.anchor?.lineStart === 4);
+    return call ? `${call.kind}${call.collapsed ? ' (folded)' : ''}` : 'none';
+  };
+  const withoutRow = buildProcessSkeleton(REPORT_LINES.replace('      APPEND gs_line TO gt_report.', '      CLEAR gs_line.'), NEW)
+    .nodes.find((n) => n.anchor?.lineStart === 4);
+  expect(routine(ENGINE_READS_350_FROM)).toBe(`${withoutRow?.kind}${withoutRow?.collapsed ? ' (folded)' : ''}`);
+  expect(buildProcessSkeleton(REPORT_LINES, OLD).nodes.some((n) => n.anchor?.lineStart === 11)).toBe(false);
+});
