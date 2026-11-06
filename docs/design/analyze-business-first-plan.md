@@ -2,8 +2,8 @@
 
 as of 06.11.2026 · owner acceptance the same day ("a clear step towards business and towards reducing the app's
 complexity") · read only: nothing in the product changed, nothing committed · release cut revised the same day:
-one release to users, v3.5.0 on 22.12.2026, built in three milestones on one release branch, ahead of every other
-roadmap topic (owner decisions 06.11.2026, §4).
+three releases to users, v3.1.0, v3.2.0 and v3.5.0 (22.12.2026), ahead of every other roadmap topic (owner decisions
+06.11.2026, §4).
 
 ## 0. Basis and method
 
@@ -45,7 +45,7 @@ roadmap topic (owner decisions 06.11.2026, §4).
 | v4.1 (3) = N9 | "Hide" is remembered per project in the browser only, no server field; a quiet link below the endings brings the card back (state 9b). |
 | Layout | Nothing covers anything; fully responsive. Look and feel = today's app. |
 | AI Act Art. 50 | A per-element AI mark, only where a model wrote the text. |
-| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild is **one release to users, the Christmas release v3.5.0, ahead of every other roadmap topic**, built on one release branch `next` in three internal milestones (M1 23.11, M2 07.12, M3 = release candidate 16.12.2026); `dev` stays on the 3.0.21 line with hotfixes, and users see nothing of 3.5 before 22.12.2026, when `next` goes to `main` with own Claude keys switched on. The rule "one roadmap item per release" is deliberately overridden for it. The video and the post on 22.12.2026 present "v3.5" (§4). |
+| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild ships **piece by piece on `main` as three normal releases, ahead of every other roadmap topic**: v3.1.0 (~23.11), v3.2.0 (~07.12) and the Christmas release v3.5.0 (22.12.2026, with own Claude keys switched on); hotfixes in between are 3.0.22, 3.0.23, …. The rule "one roadmap item per release" is deliberately overridden for these three. `dev` first, `main` only on Sonny's go. The video and the post on 22.12.2026 present "v3.5" (§4). |
 
 **Reading of "builds up in about 20 s"** (an interpretation, taken from the accepted mockup, states 1–3): the map stands
 at once with engine names; the summary, the text blocks and the names arrive in place over about 20 s; names may take
@@ -125,7 +125,7 @@ N9 and the two v4.1 adjustments.
 
 | No. | Question | Recommendation | Needed before |
 |---|---|---|---|
-| **P1** | `docs/ROADMAP.md` held five rows at 3.0.22 (quality "before every other 3.0.22 row", the seven tools, help and waiting, Documentation baskets, tests as evidence). The seven-tools row also asks for `NextStepCard` "Open Design" on Analyze (item 2) and the score fold (item 6), which v4 replaces. | **Closed 06.11.2026 (owner):** the rebuild is v3.5.0, built in milestones M1–M3 on the release branch; the five rows moved unchanged to 3.5.1 (`docs/ROADMAP.md` §7). There is no user release 3.0.22: the engine gate of AB-1 (`ENGINE_READS_3022_FROM = '3.0.22'` on the naming branch) is set to `'3.5.0'` when it lands on `next` (§4.0, versions). Still to note when 3.5.1 starts: items (2) and (6) of the seven-tools row do not apply to Analyze any more; its frame item (1) is compatible. | — |
+| **P1** | `docs/ROADMAP.md` held five rows at 3.0.22 (quality "before every other 3.0.22 row", the seven tools, help and waiting, Documentation baskets, tests as evidence). The seven-tools row also asks for `NextStepCard` "Open Design" on Analyze (item 2) and the score fold (item 6), which v4 replaces. | **Closed 06.11.2026 (owner):** the rebuild is v3.1.0, v3.2.0 and v3.5.0; the five rows moved unchanged to 3.5.1 (`docs/ROADMAP.md` §7). The engine gate of AB-1 (`ENGINE_READS_3022_FROM = '3.0.22'` on the naming branch) becomes `'3.1.0'`, name and value, when it lands (§4). Still to note when 3.5.1 starts: items (2) and (6) of the seven-tools row do not apply to Analyze any more; its frame item (1) is compatible. | — |
 | **O3** | What becomes of `/project/[id]`? | AB-2 sends Business to Analyze. AB-11 dissolves the page once IT and Management live in Analyze: the project crumb and "Back to project workspace" then name Analyze. Decide in AB-11 with screenshots, not now. | AB-11 |
 | **P5** | Where do the workspace's record parts go: the decision with Confirm (`DecisionCard`), the target edition (`TargetChange`), read access (`AccessList`), the revision stand, the steering one-pager? v4 shows none of them. | Decision record and one-pager → Management of Analyze, under "Next steps", as today's card, folded (assumption: no new component). Target edition → IT. Read access → "Invite a colleague to read" opens today's list in a dialog. Revision stand → the Analyze header, as on the workspace. Nothing is deleted before its new place is shown. | AB-10 |
 | **O1** | When does the walk-through count as done? | The last station was shown once, or the soft-gate note was dismissed. Browser only (`cc.analyze.walked.<projectId>`), like `cc.workspace.firstLook.seen` (`lib/first-look.ts:81`). No server field, no phase change. | AB-4 |
@@ -141,7 +141,7 @@ N9 and the two v4.1 adjustments.
 | **N6** | The rules chart needs rules by kind (check, limit, approval, exception); today they are grouped by topic (`RuleTopic`, `lib/abap/business-rule-set-explain.ts:56`). | A new deterministic classification beside `RuleTopic`, display only, never in the signed payload. Until it exists, show two charts. **Release cut 06.11.2026:** AB-8 is later; the three releases ship two charts. | AB-8 (later) |
 | **N7** | The third branch at "Emergency, at most 50,000.00?" (plant 1000) | **Checked on `dev`** with `buildProcessSkeleton` on `public/starter-examples/Z_MM_PO_APPROVAL.abap`: the gateway at line 325 has three arms — the emergency branch, `gv_skip_limit = abap_false`, and a **default** arm straight to the next gateway ("Approved?", line 336). The `ELSE` body (`gv_approved = abap_true`, lines 333–334) is drawn as no step, and the plant-1000 origin sits elsewhere (lines 95–96). So the map shows the way but not the fact. Recommendation: a default arm whose body only sets a flag gets a label from that assignment ("approved without approver"). An engine change: behind a gate, measured on the benchmark. | AB-7 (engine part) |
 | **N8** | Editing in full screen saves a revision. Still "analysis"? | Yes, behind "Edit", with the sentence "The reconstructed as-is process (revision 1) stays unchanged whatever you save." | AB-5 |
-| **P2** | Old projects: a naming stored before 3.5.0 stays stored but is not applied (`lib/process-naming.ts:710`). Ask the model again? | Once, on the first owner visit after the release, under the same rules as a new project (platform key; own key only with the 3.0.21 switch). Never for an invited reader. | AB-3 |
+| **P2** | Old projects: a naming stored before 3.1.0 stays stored but is not applied (`lib/process-naming.ts:710`). Ask the model again? | Once, on the first owner visit after the release, under the same rules as a new project (platform key; own key only with the 3.0.21 switch). Never for an invited reader. | AB-3 |
 | **P3** | Full-screen editing on a phone: the mockup shows it, `DESIGN.md` §5.7 says modelling by touch is not offered (`ProcessMap.tsx:256`). | Keep §5.7: on a phone "Edit" is disabled with one sentence why. | AB-5 |
 | **P4** | The model summary (`AnchoredNarrative`) and the "Start Analysis" narrative path on today's Analyze page | The narrative stops being a page block. If it is written, its checked sentences feed the text around the map; the upload and start path for a project without a run stays as it is. | AB-9 |
 | **P6** | "About 30 minutes for this program" in the Re-design ending is illustrative. | Show a figure only if it is computed from the open business questions (`lib/rule-questions.ts`); otherwise say "one decision per business rule, N rules". | AB-4 |
@@ -220,209 +220,98 @@ produces yet.
 
 ---
 
-## 4. Three releases, 3.0.22 – 3.5.0
+## 4. Three releases to users: v3.1.0, v3.2.0, v3.5.0
 
-**Owner decision 06.11.2026:** the rebuild has clear priority, at most three releases, every other roadmap topic
-moves behind it (`docs/ROADMAP.md` §7 and §9, rows from 3.5.1 on). The rule "one roadmap item per release" is
-deliberately overridden for these three releases only; `dev` first and `main` only on Sonny's go still hold.
+**Owner decisions 06.11.2026 (final, after a release-branch variant was considered and reversed the same day):** the
+rebuild has clear priority and every other roadmap topic moves behind it (`docs/ROADMAP.md` §7 and §9, rows from 3.5.1
+on). It ships to users **piece by piece on `main`, as normal `dev` → `main` releases**, so existing users benefit
+earlier. The rule "one roadmap item per release" is deliberately overridden for these three releases; `dev` first and
+`main` only on Sonny's go still hold. There is no release branch and no preview service.
 
-**Owner dates 06.11.2026:** 3.0.21 on `main` and the announcement mail for the new terms on **09.11.2026**; the terms
-take effect and own Claude keys work from **22.12.2026** (corrected from 21.12: the six-week period runs to the end of 21.12); on 22.12 one communication — a click-through video of the
-finished 3.5.0 and a LinkedIn post presenting "v3.5" (`docs/ROADMAP.md` §7). Milestones on the release branch `next`:
-**M1 by 23.11**, **M2 by 07.12**, **M3 (the release candidate) by 16.12**; `next` goes to `main` on **22.12** together
-with the key switch; 17.–21.12 is the buffer for QA, the recording and the owner's approval.
-
-**Owner decision 06.11.2026, the Christmas release is v3.5.0:** the third rebuild release (called 3.0.24 until then)
-becomes **3.5.0**, and since the same day it is the **only** release of the rebuild to users (§4.0). It carries the whole new UX, including the complete home page v2.1 (AB-14a, AB-14b and AB-14c —
-none of it may move past Christmas), and own Claude keys switched on. **Key switch, revised with the branch
-strategy:** on `next` the switch is **on from M1**, because `next` only reaches the owner through the private preview
-(§4.0). The 22.12 cut-over checks the gate (terms in effect, T01/T03/T08 accepted); only if the gate fails does the
-cut-over commit set it to `false` before the merge. One deploy, one CHANGELOG entry for v3.5.0. If `next` cannot go to
-`main` on 22.12, the switch goes alone: a one-line commit on `dev` (3.0.21 line), QA round, `main` — the date the terms
-promise holds either way.
-
-The packages AB-0 … AB-13 keep their numbers (they are what §2 and §3 refer to); this section groups them:
-
-| Milestone on `next` | Target | Packages | What the owner sees on the preview afterwards |
+| Release | Target on `main` | Packages | What a user sees afterwards |
 |---|---|---|---|
-| **M1** (was 3.0.22) | 23.11.2026 | AB-0, AB-1, AB-2, AB-3, **AB-14a** | A project opens in Analyze, Business: the map is the page, engine names at once, checked AI names swap in with a status line. Today's text blocks and next-step card stand below the map until M2. IT and Management still have today's pages. A new account lands on the home page v2's first view with the start built in. |
-| **M2** (was 3.0.23) | 07.12.2026 | AB-4, AB-5, AB-6, AB-7 (charts; the N7 engine label is out), **AB-14b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The home page list for returning accounts: every project, the new status words, four columns, tabs; the Continue card's data is stored, not yet shown. |
-| **M3 = v3.5.0 release candidate** | 16.12.2026 on `next`; `main` 22.12.2026 | AB-9, AB-10, AB-11, AB-12, **AB-14c** | IT and Management each on one page in Analyze; `/project/[id]` redirects; demo, capture screens, landing pictures and the docs follow. The home page's "Continue where you left off" card with its map miniature and "In short". |
-| later | — | AB-8 (third chart, N6), AB-13 (PDF with the tour texts, O11) | — |
+| **v3.1.0** | ~23.11.2026 | AB-0, AB-1, AB-2, AB-3, **AB-14a** | A project opens in Analyze, Business: the map is the page, engine names at once, checked AI names swap in with a status line. Today's text blocks and next-step card stand below the map until v3.2.0. IT and Management still have today's pages. A new account lands on the home page's new first view with the start built in. |
+| **v3.2.0** | ~07.12.2026 | AB-4, AB-5, AB-6, AB-7 (two charts; the N7 engine label is out), **AB-14b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The project list for returning accounts: every project, the new status words, four columns, tabs; the Continue card's data is stored, not yet shown. |
+| **v3.5.0** — the Christmas release | 22.12.2026 | AB-9, AB-10, AB-11 (complete, no cut), AB-12, **AB-14c**, the key switch | IT and Management each on one page in Analyze; the workspace page dissolved completely (redirects, and the old views, layers and coach marks removed); the Continue card; demo, capture screens, landing pictures and the docs; own Claude keys switched on. The video and the LinkedIn post present "v3.5". |
+| later | — | AB-8 (third chart, N6), AB-13 (PDF with the tour texts, O11), the N7 engine label | — |
 
-**Why this cut.** M1 carries everything the new page stands on: the names (AB-1) are the prerequisite of the swap
+- **Hotfixes in between** stay on the patch line: v3.0.22, v3.0.23, … before v3.1.0, then v3.1.1 … (the version
+  format is `vX.Y.Z` everywhere: `package.json`, `version-drift-guard`, `version-dates-guard`, `parseEngineVersion`).
+- **Engine gate:** every new engine reading of the rebuild is gated from **`'3.1.0'`**, the first release that carries
+  it. The naming branch's gate (`ENGINE_READS_3022_FROM = '3.0.22'`, set to `'3.5.0'` in an interim draft of this plan)
+  is changed to `'3.1.0'` — name and value — by the engine/readability agents when it lands; a run signed by a 3.0.22
+  hotfix then never counts as carrying the new readings. `engineVersionAtLeast` (`lib/score-rule.ts`) compares part
+  by part, so every older gate keeps applying.
+- **Each release has its own intake on `main`:** the push to `main` runs the security audit (delta since the last
+  audited release) and, since each is a new minor version, the QA full review (`scripts/qa/lib/full.mjs`); the UX
+  review is started by hand after each release (`gh workflow run ux-review.yml --ref main -f mode=delta`). Each intake
+  is triaged before the next release goes to `main`.
+- **Own Claude keys:** `ANTHROPIC_OWN_KEY_OFFERED` may be switched on on `dev` earlier — in practice only the owner uses
+  `dev`. On `main` it is switched on with v3.5.0 on 22.12.2026, after the terms v2.3.0 take effect (the six-week period
+  from the announcement mail of 09.11.2026 runs to the end of 21.12) and T01, T03 and T08 are accepted. Because `dev`
+  then carries the switch on while `main` must not before 22.12, the switch is **its own commit**: v3.1.0 and v3.2.0 go
+  to `main` with it off (the release commit sets it off if `dev` has it on), and v3.5.0's release commit turns it on —
+  or, if the gate fails on 22.12, leaves it off and v3.5.0 ships without it. If v3.5.0 itself slips, the switch goes
+  to `main` alone on 22.12 as a one-line release (a patch on the v3.2 line).
+
+**Why this cut.** v3.1.0 carries everything the new page stands on: the names (AB-1) are the prerequisite of the swap
 (AB-3), and the swap has no place to happen until the map is the page (AB-2); moving the entry and retiring the
-build-up in one release means the old first-look build-up never has to work against the new page. M2 is
+build-up in one release means the old first-look build-up never has to work against the new page. v3.2.0 is
 everything that lives on the Business page and needs nothing from IT or Management; the tour must exist inline before
-full screen gets its tour column (AB-4 before AB-5 inside the milestone). M3 is the second wide address change
+full screen gets its tour column (AB-4 before AB-5 inside the release). v3.5.0 is the second wide address change
 (IT/Management, the dissolving workspace page) and the pictures, which must show the finished product and therefore
 come last. AB-8 is out because N6 needs a new deterministic classification that the dates do not hold; the charts are
 two. AB-13 stays later: it is not trivial (an export path with station texts).
 
-**No broken intermediate state, even on the preview.** Users never see a milestone; still, every milestone is a
-working product the owner can use. After M1 nothing is gone: today's `BusinessOpening` blocks (in short,
-how it runs, who, what the code gives away) and `BusinessNextStep` stand below the map, and "Walk me through it" starts
-today's tour layer, until M2 replaces each in place. IT and Management live in two places (workspace and Analyze)
-between M1 and M3 on the preview; both work, and nothing new is built on the workspace copies.
+**No broken intermediate state for users.** Each release is a complete product. After v3.1.0 nothing a user had is
+gone: today's `BusinessOpening` blocks (in short, how it runs, who, what the code gives away) and `BusinessNextStep`
+stand below the map, and "Walk me through it" starts today's tour layer, until v3.2.0 replaces each in place. IT and
+Management live in two places (workspace and Analyze) from v3.1.0 to v3.5.0; both work, the release notes say so, and
+nothing new is built on the workspace copies.
 
-**Is it realistic?** (revised 06.11.2026 with the branch strategy and "no cut on the workspace page") M1 has ten
-working days (10.–23.11) for the widest change of the plan (AB-2: about 100 specs change an address) plus the swap. M2
-(ten working days) is realistic with AB-8 out and the N7 engine label out. M3 has seven working days (08.–16.12) and
-must now carry AB-9, AB-10, the **complete** AB-11 (redirects **and** the removal of the workspace shell's views,
-layers and coach marks — owner decision 06.11.2026, no cut), AB-12 and the Continue card. Two things help: milestones
-are not releases, so M1 and M2 save the `main` push, the owner's release go, the security audit and the full QA review
-of a minor version (about a day each); and every package can start early on a sub-branch of `next`. **Honest
-reading: 16.12 for M3 is not realistic in series; it is realistic only if AB-9, AB-10 and AB-11 each start on their own
-sub-branch on 24.11** (AB-11's redirect map and its tests against every address the code writes can be built while M2
-is in progress; the shell removal goes last, after AB-9/AB-10 are merged). The probable date for a green release
-candidate is **18.12 (Friday)**; then 21.12 (Monday) carries the recording and both approvals, and the buffer is gone.
-**Mitigations that remain:** AB-8, AB-13 and the N7 engine label stay out; rename (H-O8) only if decided by 24.11;
-feature freeze on `next` on 16.12 (fixes only after it); the cut-over runbook rehearsed on the preview on 17.12; and a
-decided fallback: if the release candidate is not green by **21.12, 12:00**, the owner decides between moving the
-cut-over and going on 22.12 with the key switch alone on the 3.0.21 line — the communication then waits for 3.5.0.
+**Do the dates hold?** (re-checked 06.11.2026, after the reversal) Honestly: v3.1.0 and v3.2.0 are tight but
+possible; **v3.5.0 on 22.12 is at risk**.
+- **v3.1.0 (~23.11):** ten working days (10.–23.11) for the widest change of the plan (AB-2: about 100 specs change an
+  address) plus the swap, and now a full release on top: the prod-build gate, up to three QA rounds, the owner's go,
+  then the security audit and the QA full review on `main` to triage. Realistic only if 3.0.21 reaches `main` on 09.11
+  without a hotfix (no v3.1.0 commit may reach `dev` before that; earlier work happens on worktree branches) and
+  AB-14a runs on the second track. A slip of two or three days is likely.
+- **v3.2.0 (~07.12):** realistic with AB-8 and the N7 label out and AB-14b on the second track with its O9 row source
+  done by 30.11; the release overhead again costs one to two days. Its slip moves v3.5.0's start.
+- **v3.5.0 (22.12):** about nine working days (08.–18.12) for AB-9, AB-10, the **complete** AB-11 (owner decision: no
+  cut), AB-12 and the Continue card, then 21.12 for the recording and both approvals. In series it does not fit;
+  it fits only if AB-9, AB-10 and AB-11 start on worktree branches on 24.11 (AB-11 with its redirect map and the tests
+  against every address the code writes; the shell removal last) and merge into `dev` right after v3.2.0 is on
+  `main`. A release overhead twice before Christmas costs about three working days the branch variant would have
+  saved.
+- **Mitigations that remain:** AB-8, AB-13 and the N7 label stay out; rename (H-O8) only if decided by 24.11; feature
+  freeze on `dev` for v3.5.0 on 16.12 (fixes only after it); H-O5–H-O7 decided by 24.11 so the Continue card's data
+  ships in v3.2.0; and a decided fallback: if v3.5.0 is not green on `dev` by **21.12, 12:00**, the owner decides
+  between moving v3.5.0 and switching the Claude key alone on 22.12 — the video and the post then wait for v3.5.0
+  rather than show an unfinished product.
 
-**With the home page v2 (AB-14, added 06.11.2026) the dates hold only with a second track.** AB-14 touches the home
-page's files (`WorkspaceListReport`, `YourTurnCard`, `lib/workspace-rows.ts`, `lib/project-progress.ts`, the app
-shell), which no Analyze package writes, so it can be built on its own branch in parallel and merged into each release.
-Built in series on top of the Analyze packages, it does not fit: M2 would carry five packages, one of them the
-data change of O9. Honest reading: M1 holds (AB-14a is small and additive); M2 holds only if AB-14b runs on
-the second track from 10.11 and its O9 row source is done by 30.11; 3.5.0 already had no slack, and since 06.11.2026
-AB-14c may not move past Christmas (v3.5.0 carries the complete home page). **Re-plan for AB-14c:** everything it
-needs that is data moves forward into M2 — the "In short" sentence written server-side when a run is created
-(H-O6), the pure miniature from the stored skeleton (H-O7), and "last opened" kept in the browser (H-O5) — so 3.5.0
-only wires the card from data that exists. This needs H-O5, H-O6 and H-O7 decided by 24.11.2026. M3's date is
-discussed under "Is it realistic?" above: no cut on the workspace page, sub-branches from 24.11, probable 18.12.
+**The home page (AB-14) on a second track.** AB-14 touches the home page's files (`WorkspaceListReport`,
+`YourTurnCard`, `lib/workspace-rows.ts`, `lib/project-progress.ts`, the app shell), which no Analyze package writes,
+so it is built on its own worktree branch in parallel and merged into `dev` for each release. AB-14c may not move past
+Christmas; everything it needs that is data is built in v3.2.0 (the "In short" sentence written server-side when a run
+is created, H-O6; the pure miniature from the stored skeleton, H-O7; "last opened" kept in the browser, H-O5), so
+v3.5.0 only wires the card. This needs H-O5, H-O6 and H-O7 decided by 24.11.2026.
 
-### 4.0 One release branch, a private preview, and the cut-over on 22.12.2026
+**Every release, the same frame.**
 
-**Owner decision 06.11.2026:** everything after 3.0.21 is built on **one release branch**; `dev` stays on the 3.0.21
-line (plus hotfixes) until the cut-over, and users see nothing of 3.5 before 22.12.2026. The milestones M1–M3 are
-milestones on that branch, not releases. There are no user releases 3.0.22 or 3.0.23.
-
-- **Name: `next`** (not `release` or `release/…`): `release` is the lane retired on 2026-08-31, and `deploy.yml` stops
-  on it on purpose (`env-ctx`, case `release)`, exit 1); a `release/3.5` name would read like that lane and match
-  nothing in the triggers. `next` maps one-to-one to a service `clean-core-next`. It branches from `dev` once 3.0.21 is
-  on `main` (09.11.2026); work before that happens on worktree branches and is merged into `next` on its first day.
-- **Sub-branches:** packages that run in parallel (AB-14 on the second track; AB-9, AB-10, AB-11 from 24.11) live on
-  `next-<package>` branches cut from `next` and merge back into `next` by merge commit. Only `next` deploys.
-- **Versions.** `lib/version.ts` and `package.json` on `next` say `v3.5.0` from M1 on, with a CHANGELOG entry
-  `[v3.5.0]` "release candidate on the release branch"; its date is set to 22.12.2026 in the cut-over commit.
-  **Every engine gate created on `next` is set to `'3.5.0'`**, including the naming branch's `ENGINE_READS_3022_FROM`
-  (renamed with it): no user ever ran a 3.0.22 engine, and a hotfix on `dev` must never cross a gate it does not carry.
-  **Hotfix numbering on the 3.0.21 line — recommended, owner to confirm.** The owner's name for them is "3.0.21.x";
-  as a version string a four-part number breaks things, checked 06.11.2026:
-  - `package.json` must hold a valid semver version, and `3.0.21.1` is not one (npm refuses it);
-  - `version-drift-guard` requires `APP_VERSION` to match `^v\d+\.\d+\.\d+$` and `package.json` to equal it;
-  - `version-dates-guard` and the CHANGELOG convention (`[vX.Y.Z]`) would need the fourth part too;
-  - `parseEngineVersion` (`lib/score-rule.ts`) reads three parts and would read `3.0.21.1` as `3.0.21` — harmless for
-    the gates, but a run's stamp would no longer name its build; the QA full-scope minor check
-    (`scripts/qa/lib/full.mjs`, first two parts) would be unaffected.
-  **Recommended:** hotfixes are **v3.0.22, v3.0.23, …** on `dev`/`main` ("3.0.21.x" stays the spoken name of the
-  line), and the release branch goes straight to **v3.5.0** and never uses those numbers. It is safe because every
-  engine gate of the 3.5 work says `'3.5.0'`: a run signed by a 3.0.22 hotfix is never read as carrying 3.5 readings.
-  The four-part alternative needs the two guards, the CHANGELOG convention and the parser changed, and a semver
-  prerelease form (`3.0.21-1`) would sort *below* 3.0.21 — both worse.
-- **Merging hotfixes in:** after every hotfix on `main`, and at least every Monday, `dev` is merged into `next` (a
-  merge commit, never a rebase of `next`); conflicts in `lib/version.ts`, `package.json` and `CHANGELOG.md` keep 3.5.0
-  and add the hotfix's entry below it; the merge is its own push with its own CI run. `dev` never receives a commit
-  from `next` before the cut-over.
-
-**CI (`deploy.yml`; a workflow change for Sonny's go, not made here):**
-1. add `next` to `on.push.branches`;
-2. in `env-ctx` a case `next)`: `service=clean-core-next`, `db_id=clean-core-next`, `app_url=http://localhost:8080`
-   (see the preview below), `max_instances=2`, `dev_limits_off=true`;
-3. for that service, deploy with `--no-allow-unauthenticated` instead of `--allow-unauthenticated` (the deploy step's
-   `flags` today allow everyone);
-4. nothing else: the `validate` gate (lint, build, the six Playwright shards on the emulator) runs on `next` as it
-   does on `dev`, and `deploy` waits for it.
-
-**QA (`qa-review.yml`; a workflow change, not made here):** add `next` to the push branches and to the delta job's
-condition (today `github.ref_name == 'dev'`); the smoke job stays `dev` only, since the preview is private (a smoke
-check through an identity token is possible later). Check one thing in `scripts/qa/review.mjs` first: the delta starts
-from the last pushed report's checkpoint; if that report can be a `dev` push, its checkpoint is not an ancestor of
-`next`, and the delta falls back to "everything not yet on `main`" — the whole 3.5 work, far over the $1 cap. The
-previous report must be taken from the same branch. The QA review loop of `docs/QA-REVIEW-LOOP.md` then runs after
-every push to `next` as it does for `dev`. **UX review:** by hand on the branch, `gh workflow run ux-review.yml --ref
-next -f mode=delta`, at M2 and M3. **Security audit:** it runs only on `main`, so on 22.12 it would meet the whole 3.5
-delta at once; run it by hand against `next` at M3 (the workflow has `workflow_dispatch`; check that it accepts a
-non-`main` ref) so its findings are in before the cut-over.
-
-**The private preview `clean-core-next` (the owner runs the GCP steps):**
-1. a Firestore database `clean-core-next` in `europe-west1` (its own database, not dev's: `dev`'s users and data stay
-   on 3.0.21, and 3.5 writes new fields such as the stored "In short");
-2. `firestore.rules` from `next` deployed to that database only — never `npm run deploy:rules` from `next`, because
-   `firebase.rules-all-dbs.json` would put the 3.5 rules on production; add `clean-core-next` to that list at the
-   cut-over at the earliest;
-3. the Cloud Run service `clean-core-next` in `europe-west1`, created by the first deploy, private
-   (`--no-allow-unauthenticated`), with the same runtime service account as dev and the same GitHub secrets (no new
-   secret is needed; `CC_DEV_LIMITS_OFF=true`);
-4. access only for the owner: `roles/run.invoker` on the service for his Google account, and the app opened through
-   `gcloud run services proxy clean-core-next --region=europe-west1 --port=8080` at `http://localhost:8080` —
-   `localhost` is an authorised Firebase Auth domain by default, so sign-in works without a public hostname; mail links
-   from the preview point at `localhost` and work only on that machine, which is acceptable for an owner-only preview;
-5. Firebase Auth is per project, so the owner signs in with his normal account; accounts and projects of the
-   preview live in `clean-core-next` only.
-The preview is emulator-free: it runs the production build against real Firebase, like `dev`. The own-Claude-key
-switch is on there from M1 (only the owner uses it).
-
-**Owner-run setup, outline** (the script itself goes to `scratch/` later; project `cleancore-491216`, region
-`europe-west1`; nothing here is run by an agent):
-
-```bash
-# 1. Database for the preview (its own, never dev's or production's)
-gcloud firestore databases create --database=clean-core-next --location=europe-west1 --project=cleancore-491216
-# 2. Rules from the `next` branch to that database only (not `npm run deploy:rules`)
-npx firebase-tools deploy --only firestore:rules --project=cleancore-491216   # with a one-off config naming only clean-core-next
-# 3. The service is created by the first deploy from `next` (deploy.yml, case `next)`, flags --no-allow-unauthenticated);
-#    afterwards make sure no public access exists and give the owner the invoker role
-gcloud run services remove-iam-policy-binding clean-core-next --region=europe-west1   --member=allUsers --role=roles/run.invoker --project=cleancore-491216      # only if it was ever added
-gcloud run services add-iam-policy-binding clean-core-next --region=europe-west1   --member=user:<owner's Google account> --role=roles/run.invoker --project=cleancore-491216
-# 4. Secrets: none new. deploy.yml passes the same GitHub secrets as for dev (GEMINI_API_KEY, RESEND_*, S4_*,
-#    BYOK_ENCRYPTION_KEY, AUDIT_SIGNING_*, peppers, PILOT_APPROVAL_SECRET) as env vars, plus CC_DEV_LIMITS_OFF=true.
-# 5. Domain mapping: none. The owner opens the preview through the proxy:
-gcloud run services proxy clean-core-next --region=europe-west1 --port=8080 --project=cleancore-491216
-#    -> http://localhost:8080 (an authorised Firebase Auth domain by default)
-# 6. After the cut-over: delete or keep
-gcloud run services delete clean-core-next --region=europe-west1 --project=cleancore-491216
-gcloud firestore databases delete --database=clean-core-next --project=cleancore-491216
-```
-
-**How `deploy.yml` deploys the branch** (the change for the owner's go, listed above under CI): `next` in the push
-triggers; `env-ctx` case `next)` with `service=clean-core-next`, `db_id=clean-core-next`,
-`app_url=http://localhost:8080`, `max_instances=2`, `dev_limits_off=true`; the deploy step's `flags` take
-`--no-allow-unauthenticated` for this service instead of `--allow-unauthenticated`; the runner URLs stay empty (no
-test runs on the preview: fail closed) unless the owner wants them. `validate` gates the deploy as on `dev`.
-
-**Cut-over on 22.12.2026 (rehearsed on the preview on 17.12):**
-1. Gate: the terms v2.3.0 are in effect; T01, T03 and T08 accepted; the release candidate green on `next` (CI, last
-   QA round clean, security audit triaged, the owner's look at every state).
-2. Merge the latest `dev` into `next`; CI green.
-3. Cut-over commit on `next`: the CHANGELOG `[v3.5.0]` dated 22.12.2026 and the three dates in `lib/version.ts`;
-   the key switch stays on — set to `false` here only if the gate in step 1 failed for T01/T03/T08.
-4. If `firestore.rules` changed on `next`: the owner deploys them to the production database (additive changes
-   first, before the deploy).
-5. Merge `next` into `main` (merge commit) and push: the pipeline deploys `clean-core`; the QA full review (new minor)
-   and the security audit run on `main`.
-6. Bring `dev` to `main` (fast-forward); from now on `dev` is the 3.5 line again and `next` is closed.
-7. The owner checks production; then the video and the post are published (`docs/ROADMAP.md` §7).
-8. Afterwards: `CLAUDE.md` (deploy table, release routine) and `docs/ARCHITECTURE.md` describe the branch only if it
-   stays; the preview service and database are deleted or kept by the owner's choice.
-
-**Every milestone, the same frame.**
-
-- **Commits on `next`:** one reviewable commit per step listed under the milestone, each building and green on its own;
-  three pushes per milestone at most (the commit groups named below), each followed by `gh run watch` and the QA review
+- **Commits on `dev`:** one reviewable commit per step listed under the release, each building and green on its own;
+  three pushes per release at most (the commit groups named below), each followed by `gh run watch` and the QA review
   loop (at most three rounds). A spec that changes only an address is its own commit, apart from behaviour changes, so
   a reviewer can see that no assertion was weakened.
 - **CI and shards:** every commit that adds a rendered spec regenerates `tests/shard-plan.json`
   (`scripts/test/shard-plan.mjs`); `grep -rl <moved file> tests/` before every push; the layout guard is split per
   viewport group.
-- **Before a milestone is marked done (and before the cut-over):** a production build with `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true` set for the build,
+- **Before the push to `main`:** a production build with `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true` set for the build,
   `npm start`, emulators with `--project=cleancore-491216`; the rendered specs listed under the release plus whatever
-  `scripts/test/affected-rendered.mjs` adds; then the whole suite once, quietly; push only on exit code 0. CI runs the
-  same on every push to `next`.
+  `scripts/test/affected-rendered.mjs` adds; then the whole suite once, quietly; push only on exit code 0.
 - **[look] and Sonny's go:** the screenshots of every touched state at the six viewports go to Sonny beside the
-  mockup's states on the preview; a milestone is done only after a clean QA round and his look.
+  mockup's states; `main` only after a clean QA round and his go. After `main`: the security, QA-full and UX intakes
+  are triaged before the next release goes out.
 
 Notation: **Files** = the write set. **Specs** = add / change / retire. **Done when** = acceptance. Every package
 also: runs `grep -rl <moved file> tests/` before pushing (CLAUDE.md gotcha), moves the demo with the real page (O10),
@@ -433,7 +322,7 @@ Shared acceptance, referred to as **[look]**: screenshots at 1920 × 1080, 1440 
 number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0 focus-out, 0 sideways page overflow,
 0 script errors for those states; the copy guard green.
 
-### 4.1 Milestone M1 (was 3.0.22) — Analyze opens business first, names from the code's facts (target 23.11.2026)
+### 4.1 Release v3.1.0 — Analyze opens business first, names from the code's facts (target ~23.11.2026)
 
 - **Scope:** AB-0, AB-1, AB-2, AB-3 below, and AB-14a (the home page's first view for a new account, built on the
   second track).
@@ -442,8 +331,8 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   copy, overlap helper, layout guard report-only, copy guard). **(b)** `AnalyzeBusiness` rendered for `?view=business`
   on the Analyze route while the workspace is still the entry; then the entry points and the redirect; then the
   address-only spec changes in their own commit; then the hub/analysis-ready retirement; then the demo. **(c)** the name
-  swap and status line, the build-up retired; the layout guard to fail for states 1, 2, 3, 7, 17, 18; `v3.5.0` on `next`.
-- **Rendered specs on the production build before M1 is done:** `analyze-business-first`, `analyze-layout-guard` (states
+  swap and status line, the build-up retired; the layout guard to fail for states 1, 2, 3, 7, 17, 18; version bump to v3.1.0.
+- **Rendered specs on the production build before `main`:** `analyze-business-first`, `analyze-layout-guard` (states
   1, 2, 3, 7, 17, 18), `analyze-naming-swap`, `example-opens-workspace`, `example-start-no-page-error`,
   `own-code-import`, `own-code-import-page`, `starter-examples`, `workspace-start`, `workspace-start-model`,
   `finished-project-process`, `first-look-map`, `first-look-naming-wait`, `workspace-business`,
@@ -453,7 +342,7 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 - **Acceptance:** each package's "Done when" below; [look] for states 1, 2, 3, 7, 17, 18 and the phone; a project
   signed by 3.0.21 keeps its picture; nothing that a user had before is missing (the interim blocks stand below the
   map).
-- **Risk:** high, the highest of the three milestones (AB-2). Interim on the preview: IT and Management in two places.
+- **Risk:** high, the highest of the three releases (AB-2). Interim for users: IT and Management in two places until v3.5.0.
 
 #### AB-0 — measurement and guard harness (test and docs only, P11) · S
 
@@ -474,7 +363,7 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 #### AB-1 — Names and labels from the code's facts · M
 
 - **Scope:** merge the branch onto `dev`; names come back only with facts; engine labels read as business language
-  from engine 3.5.0 (the branch's `3.0.22` gate set to `'3.5.0'`, §4.0).
+  from engine 3.1.0 (the branch's `3.0.22` gate becomes `'3.1.0'`, §4).
 - **Files:** the branch's 17 files; `lib/process-naming.ts` (`NAMING_ASKED_IN_THIS_BUILD` from the facts switch; the route already stamps
   `madeFrom: 'engine-facts'` for a facts context, route.ts:331), `components/workspace/WorkspaceProcess.tsx` (pass `withFacts`); `tests/shard-plan.json` (regenerate, the one conflict); `lib/version.ts` at release.
 - **Specs:** add `naming-facts-3022`, `business-language-3022`, `business-readability-ratchet` (from the branch);
@@ -496,7 +385,7 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   with the engine sentence, the invitation bar ("Walk me through it" starts today's tour layer until AB-4; "I'll look
   around myself"), the map tool row above the map (Map \| Steps, zoom, fit, "Full screen" — today's full screen), the
   status line and the legend below, code on click in a side panel. Entry points go to Analyze; `/project/[id]` in
-  Business redirects. IT and Management of Analyze keep today's page until AB-9/AB-10. **Interim until M2**
+  Business redirects. IT and Management of Analyze keep today's page until AB-9/AB-10. **Interim until v3.2.0**
   (release cut of 06.11.2026, so nothing a user had goes missing): today's `BusinessOpening` blocks and
   `BusinessNextStep` are rendered unchanged below the map; AB-6 and AB-4 replace them in place.
 - **Files:** `app/(app)/project/[projectId]/analyze/page.tsx` (view switch: Business renders the new component; the
@@ -547,7 +436,7 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 - **Risk:** medium. Timing in CI (production build is faster than `next dev`); motion on a canvas of 60+ elements
   (state 18) — measure frame time on the large example before release.
 
-### 4.2 Milestone M2 (was 3.0.23) — the Business page is complete (target 07.12.2026)
+### 4.2 Release v3.2.0 — the Business page is complete (target ~07.12.2026)
 
 - **Scope:** AB-4, AB-5, AB-6, AB-7 below, and AB-14b (the home page list, second track). The inline tour with the two endings, "What you can do next" and the soft
   gate; full screen with navigation, "Edit" and the tour; the checked text around the map; **two** charts. AB-8 (the
@@ -557,16 +446,16 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   "What you can do next" replacing `BusinessNextStep` and `ProcessTourEntry`; the tool-bar soft hint and the "Next"
   tag rule; the demo walk-through. **(b)** `AroundTheMap` replacing the interim `BusinessOpening` blocks; the
   full-screen bar, "Edit" and the tour column. **(c)** the two charts; the N7 label behind its own engine gate if
-  measured; the layout guard to fail for the new states. Address-only spec changes stay their own commits.
-- **Rendered specs on the production build before M2 is done:** `analyze-tour-inline`, `analyze-endings`,
+  measured; the layout guard to fail for the new states; version bump to v3.2.0 with the Claude key switch off on `main`. Address-only spec changes stay their own commits.
+- **Rendered specs on the production build before `main`:** `analyze-tour-inline`, `analyze-endings`,
   `analyze-fullscreen`, `analyze-layout-guard` (states 4, 5, 6, 8, 9, 9b, 10, 14, 15, 16, 17), `analyze-business-first`,
   `process-tour`, `process-tour-3021`, `process-tour-screens`, `demo-walk-3020`, `demo-tour`, `workspace-toolbar`,
   `next-step`, `start-run-next-step-rendered`, `process-map-draft-identity`, `process-revisions-base`,
   `workspace-revision-stand`, `process-map-phone-fit`, `first-look-plain`, `first-look-findings`,
-  `workflow-style-guard`, `mobile-responsive`, plus the M1 list once more (it is the same page).
+  `workflow-style-guard`, `mobile-responsive`, plus the v3.1.0 list once more (it is the same page).
 - **Acceptance:** each package's "Done when"; [look] for states 4, 5, 6, 8, 9, 9b, 10, 14, 15, 16, 17 at the six
   viewports, including `full-phone-09` (the collapsed card) and the 1280/1024 tour (focus-out 0); Sonny reads the text
-  around the map on every starter example before M2 is done (AB-6 risk); the chart sums match the map on every example.
+  around the map on every starter example before `main` (AB-6 risk); the chart sums match the map on every example.
 - **Risk:** medium. Four packages on one page: the tour card narrows the map, and full screen shares the editor with
   Documentation.
 
@@ -657,26 +546,23 @@ dates do not hold. Until it ships, Business shows two charts.*
 - **Done when:** [look] for 9; every rule has a kind or "other", never a guess.
 - **Risk:** low.
 
-### 4.3 Milestone M3 = the v3.5.0 release candidate — IT and Management on one page, the workspace page dissolves (on `next` 16.12, to `main` 22.12.2026)
+### 4.3 Release v3.5.0, the Christmas release — IT and Management on one page, the workspace page dissolves (on `main` 22.12.2026)
 
 - **Scope:** AB-9, AB-10, the **complete** AB-11 (no cut, owner decision 06.11.2026), AB-12 below and AB-14c (the
-  Continue card, on data built in M2); the key switch is already on on `next` (§4.0). Nothing of it moves past Christmas. After it the product is
+  Continue card, on data built in v3.2.0); the release commit switches own Claude keys on (§4). Nothing of it moves past Christmas. After it the product is
   the one the 22.12.2026 video shows as "v3.5".
-- **Version:** `v3.5.0` on `next` since M1 (§4.0); the CHANGELOG entry is dated 22.12 in the cut-over commit; on
-  `main` the step is 3.0.21 (or its last hotfix) to 3.5.0. The engine gates compare numerically
-  part by part (`engineVersionAtLeast`, `lib/score-rule.ts`), so every gate "from 3.0.x" applies at 3.5.0; a gate added
-  in this release is named for 3.5.0. The jump is a new minor version, so the QA agent reviews the whole code base on
-  the push to `main` (`scripts/qa/lib/full.mjs`, cap $3).
-- **How it fits seven working days:** AB-9, AB-10 and AB-11 are built in parallel on `next-` sub-branches from
-  24.11.2026 (AB-9/AB-10 touch the IT and Management branches of `analyze/page.tsx`, which M2 does not; AB-11 starts
-  with its redirect map and tests, and removes the shell last) and merged into `next` from 08.12; AB-12 follows. Parallel agents run only server-free specs; one quiet production-build run
-  at the end.
+- **Version:** v3.2.x → v3.5.0. Engine readings added in this release are gated from `'3.5.0'`; every older gate keeps
+  applying (`engineVersionAtLeast` compares part by part). A new minor version, so the QA full review runs on `main`.
+- **How it fits:** AB-9, AB-10 and AB-11 are built in parallel on worktree branches from 24.11.2026 (AB-9/AB-10 touch
+  the IT and Management branches of `analyze/page.tsx`, which v3.2.0 does not; AB-11 starts with its redirect map and
+  tests and removes the shell last) and merged into `dev` once v3.2.0 is on `main`; AB-12 follows. Parallel agents run
+  only server-free specs; one quiet production-build run at the end. Feature freeze on `dev` on 16.12.
 - **Commit groups (three pushes):** **(a)** the merge of the IT branch (AB-9) and of the Management branch (AB-10),
   each with its address-only spec changes as separate commits. **(b)** AB-11: one redirect function for every address
   `/project/[id]` ever wrote, tested against each; the workspace shell's views, layers and coach marks retired; the
   docs (`CLAUDE.md` with Sonny's go, `docs/ARCHITECTURE.md` §2, `DESIGN.md` §2.3/§5, the ADRs of §2.2). **(c)** AB-12:
-  demo tour texts, capture screens, landing pictures, the UX agent's screen list.
-- **Rendered specs on the production build before the cut-over:** `analyze-it-one-page`, `analyze-management-one-page`,
+  demo tour texts, capture screens, landing pictures, the UX agent's screen list; version bump to v3.5.0; the key switch on (its own commit, only after the 22.12 gate).
+- **Rendered specs on the production build before `main`:** `analyze-it-one-page`, `analyze-management-one-page`,
   `analyze-layout-guard` (states 11, 12, 13 and every earlier state), `score-hero`, `analyze-one-place`,
   `analyze-answer-first`, `analyze-polish-rendered`, `analyze-findings-focus`, `management-overview`,
   `management-answers`, `management-decision-hero`, `management-decision-options`, `management-executive`,
@@ -689,8 +575,8 @@ dates do not hold. Until it ships, Business shows two charts.*
   walk-through with the demo and every starter example; the landing pictures seen by Sonny before `main`; every deep
   link a stage, a mail or a bookmark writes lands on its content.
 - **Risk:** high: the second wide address change, the complete removal of the workspace shell, the 2,261-line Analyze
-  page and the Continue card, in the shortest window, with no cut allowed. Probable green release candidate 18.12;
-  fallback at 21.12, 12:00 as in §4 ("Is it realistic?"). The key switch does not wait for 3.5.0.
+  page and the Continue card, in the shortest window, with no cut allowed. Probable green on `dev` 18.12; fallback at
+  21.12, 12:00 as in §4 ("Do the dates hold?"). The key switch does not wait for v3.5.0.
 
 #### AB-9 — IT on one page, code first · L
 
@@ -782,12 +668,12 @@ dates do not hold. Until it ships, Business shows two charts.*
 | No. | Question | Recommendation | Needed before |
 |---|---|---|---|
 | H-O4 | The small six-segment bar for re-design (the owner rejected a seven-segment bar with five looks on 02.10.2026) | Try it: two looks, no legend, only on a started re-design; if it fails, the sentence "2 of 6 steps done" stands alone. | AB-14b |
-| H-O5 | What "Continue" shows | Last opened, remembered in the browser only (no field, no rules change); on a new device the last changed project. | 24.11.2026 (AB-14c data in M2) |
-| H-O6 | The source for "In short" on the home page | Written server-side (Admin SDK) onto the project when the run is created; no client field, so no rules change; without it the card has no "In short". | 24.11.2026 (AB-14c data in M2) |
-| H-O7 | The map miniature | Only on the one Continue card, computed from the stored process skeleton; no miniature per row. | 24.11.2026 (AB-14c data in M2) |
+| H-O5 | What "Continue" shows | Last opened, remembered in the browser only (no field, no rules change); on a new device the last changed project. | 24.11.2026 (AB-14c data in v3.2.0) |
+| H-O6 | The source for "In short" on the home page | Written server-side (Admin SDK) onto the project when the run is created; no client field, so no rules change; without it the card has no "In short". | 24.11.2026 (AB-14c data in v3.2.0) |
+| H-O7 | The map miniature | Only on the one Continue card, computed from the stored process skeleton; no miniature per row. | 24.11.2026 (AB-14c data in v3.2.0) |
 | H-O8 | Rename | A server route instead of a `firestore.rules` change (rules are deployed by hand). | AB-14b, else later |
 
-##### AB-14a — M1 · The first view for a new account (mockup v2.1) · S–M
+##### AB-14a — v3.1.0 · The first view for a new account (mockup v2.1) · S–M
 
 - **Mockup:** v2.1 of the same file, accepted by the owner on 06.11.2026 ("build it exactly like this"); state 1 at
   the six viewports, 0 overlaps, 0 clipping.
@@ -833,7 +719,7 @@ dates do not hold. Until it ships, Business shows two charts.*
   most only land there. The example list moves the start of six examples onto the home page: the quota spec must show
   that only the first start of each is free.
 
-##### AB-14b — M2 · The list for returning accounts · M–L
+##### AB-14b — v3.2.0 · The list for returning accounts · M–L
 
 - **Prerequisite first (H-O9):** a lean row source so every project is listed, not the newest 25
   (`WorkspaceListReport.tsx:211`, `limit(25)`); search, filters and sort over all; no source code in the rows.
@@ -862,26 +748,26 @@ dates do not hold. Until it ships, Business shows two charts.*
   projects finds each by search; nothing the old page offered is gone (preservation register).
 - **Risk:** medium to high; the row source is a data change, and the status words reach every text guard.
 
-##### AB-14c — M2 (data) and M3 (card) · "Continue where you left off" · S–M
+##### AB-14c — v3.2.0 (data) and v3.5.0 (card) · "Continue where you left off" · S–M
 
 *Re-planned 06.11.2026: v3.5.0 carries the complete home page, so this part may not move past Christmas. Its data
-moves forward into M2; M3 only wires the card.*
+moves forward into v3.2.0; v3.5.0 only wires the card.*
 
 - **Scope:** the Continue card of state 2: the last project (H-O5), its status and next step, "In short" from a
   server-written sentence (H-O6), the map miniature computed from the stored skeleton (H-O7), "Open the process map"
   (secondary, H-O13).
-- **In M2 (with AB-14b, no visible change):** the "In short" sentence written via Admin SDK when a run is created
+- **In v3.2.0 (with AB-14b, no visible change):** the "In short" sentence written via Admin SDK when a run is created
   (never part of the signed payload); `lib/process-miniature.ts` (pure); the "last opened" key in the browser. Projects
-  created before 3.5.0 have no stored sentence: the card computes it once server-side on the owner's first visit, or
+  created before 3.2.0 have no stored sentence: the card computes it once server-side on the owner's first visit, or
   shows no "In short" — decided with H-O6.
-- **In M3:** `components/workspace/ContinueCard.tsx` (new) on that data.
+- **In v3.5.0:** `components/workspace/ContinueCard.tsx` (new) on that data.
 - **Files:** `app/api/runs/create/route.ts`, `lib/process-miniature.ts` (new, pure), `components/workspace/ContinueCard.tsx`
   (new), `components/workspace/WorkspaceListReport.tsx`.
 - **Specs:** add `home-continue.spec.ts` (server-free: the miniature has the skeleton's element count; rendered: the
-  card names the last opened project); assert `run-integrity-guard` and `audit-pack-signed-input` unchanged (M2).
+  card names the last opened project); assert `run-integrity-guard` and `audit-pack-signed-input` unchanged (v3.2.0).
 - **Needs before 24.11.2026:** H-O5, H-O6 and H-O7 decided.
 - **Done when:** [look] for state 2 and 7 at the six viewports; the card's figures equal the project's.
-- **Risk:** low to medium once the data is in M2; if H-O6 is not decided by 24.11, the card ships in 3.5.0 without
+- **Risk:** low to medium once the data is in v3.2.0; if H-O6 is not decided by 24.11, the card ships in 3.5.0 without
   "In short" rather than late.
 
 #### AB-13 — later · Download with the tour texts (O11) · S
@@ -892,7 +778,7 @@ moves forward into M2; M3 only wires the card.*
 
 | Who / what | What happens | How it is held |
 |---|---|---|
-| **Existing projects** | Open in Analyze, Business, from AB-2. Their map is drawn from their signed run by the engine version that signed it (gates `ENGINE_READS_3021_FROM`, and the branch's gate set to `'3.5.0'`): an older project keeps its labels. A naming stored before 3.5.0 is not applied; one facts naming is asked on the first owner visit (P2). A project without a run shows the start (ADR-072) in the map's place, as `WorkspaceProcess` does today. | `analyze-business-first`, `legacy-projects`, `legacy-projects-page` |
+| **Existing projects** | Open in Analyze, Business, from AB-2. Their map is drawn from their signed run by the engine version that signed it (gates `ENGINE_READS_3021_FROM`, and the new readings' gate `'3.1.0'`): an older project keeps its labels. A naming stored before 3.1.0 is not applied; one facts naming is asked on the first owner visit (P2). A project without a run shows the start (ADR-072) in the map's place, as `WorkspaceProcess` does today. | `analyze-business-first`, `legacy-projects`, `legacy-projects-page` |
 | **Return visits** | No arrival animation: names are stored, the page opens in the done state (state 17) — endings, the card or its link, the map. `cc.workspace.firstLook.seen` keeps meaning "no arrival"; new keys `cc.analyze.walked.<id>`, `cc.analyze.nextHidden.<id>`. Clearing the browser shows the invitation again — nothing else changes. | `workspace-reopen` (rewritten), `analyze-endings` |
 | **Invited readers** | Read only: the map, the tour, the text, IT and Management; no "Edit", no model call, the endings per P8. Access stays as the Firestore rules decide (`loadProjectAndHydrate`). No rules change expected (assumption: AB-1 to AB-11 write no new client field). | `analyze-reader.spec.ts` (new, AB-2); `project-readers`, `project-access-matrix`, `firestore-rules-readers`, `invitation-rendered` unchanged and green |
 | **The demo** | Moves in every package on the same components (O10); `/demo/workspace` redirects to the demo's Analyze in AB-11 at the latest. | `demo-shared-boundary`, `demo-project`, `demo-tour` |
@@ -925,9 +811,9 @@ moves forward into M2; M3 only wires the card.*
 
 | Risk | Where | Answer |
 |---|---|---|
-| The naming swap is smaller than in the mockup (65.9 % named, half of them the engine label again) | AB-1, AB-3 | The status line says how many kept their technical name; engine labels improve with 3.5.0. Do not lower the checker to get more swaps. |
+| The naming swap is smaller than in the mockup (65.9 % named, half of them the engine label again) | AB-1, AB-3 | The status line says how many kept their technical name; engine labels improve with 3.1.0. Do not lower the checker to get more swaps. |
 | Model cost and latency on the platform key: naming, purpose and plain wording per new project | AB-1, AB-3, AB-6 | One call per stage per project; own key only with the 3.0.21 switch; the 45 s ceiling ends the wait, not the call (assumption: the call is cancelled or its late answer ignored — decide in AB-3). |
-| Two homes for IT and Management between AB-2 and AB-10 | AB-2 | Only on the private preview, M1 to M3 (about four weeks); users never see it; no new feature on the workspace IT/Management in that time. |
+| Two homes for IT and Management between AB-2 and AB-10 | AB-2 | Accept from v3.1.0 to v3.5.0 (about four weeks); say it in the release notes; no new feature on the workspace IT/Management in that time. |
 | Spec churn: 48 specs read the first-look hooks or `?first=1`, 54 read `view=it\|management` | AB-2, AB-11 | Change addresses first, rewrite behaviour second; no guard removed without a replacement shown red on a broken copy (the principle of the quality row, item 4 — moved from 3.0.22 to 3.5.1, applied here already). |
 | The dates (23.11, 07.12, 16.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 22.12 communication waits for 3.5.0, the Claude key switch does not. |
 | Legibility at overview zoom (ADR-025; `MIN_SCALE = 0.8`, `components/process-map/bpmn-view.ts:48`) | AB-2, AB-4 | Scroll instead of shrinking (N2); tour floor 83 %. |
