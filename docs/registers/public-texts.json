@@ -1646,6 +1646,27 @@
       }
     },
     {
+      "path": "docs/design/analyze-business-first-plan.md",
+      "kind": "plan",
+      "purpose": "Build plan for the Analyze business-first rebuild along the accepted mockup v4.1 and the home page mockup v2: target picture, owner decisions, engine prerequisites, work packages AB-0 to AB-14 in the releases 3.0.22 to 3.0.24, migration, tests and risks",
+      "audience": "Sonny, agents",
+      "saysToday": "Plan of 06.11.2026 with the owner's decisions and release cut; nothing built yet.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The binding plan of the open roadmap steps 3.0.22 to 3.0.24; it is archived once they are built.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ROADMAP.md"
+      ],
+      "measured": {
+        "lines": 765
+      }
+    },
+    {
       "path": "docs/drafts/README-3.0.md",
       "kind": "draft",
       "purpose": "Draft of the README for 3.0 (preparation 3.0.8)",
