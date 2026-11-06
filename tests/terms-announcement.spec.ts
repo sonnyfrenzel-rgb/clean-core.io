@@ -169,22 +169,26 @@ test.describe('the mail: a short body that is the notice, the full changed text 
   test('"what you get" comes first, apart from the notice, and says planned', () => {
     expect(dePart.indexOf('Was Sie bekommen (nicht Teil der Mitteilung):')).toBeLessThan(dePart.indexOf('MITTEILUNG NACH ZIFFER 10.1'));
     expect(enPart.indexOf('What you get (not part of the notice):')).toBeLessThan(enPart.indexOf('NOTICE UNDER SECTION 10.1'));
-    expect(dePart).toMatch(/geplant: Sie nutzen Ihren eigenen Claude-Schlüssel/);
-    expect(enPart).toMatch(/planned: use your own Claude key \(Anthropic\) beside Gemini/);
+    expect(dePart).toMatch(/Version 3\.5, geplant zum /);
+    expect(dePart).toContain('Ihr eigener Claude-Schlüssel (Anthropic) neben Gemini.');
+    expect(enPart).toMatch(/Version 3\.5, planned for /);
+    expect(enPart).toContain('Your own Claude key (Anthropic) beside Gemini.');
   });
 
-  test('every changed clause is named in the body with its reason letters; the editorial ones grouped', () => {
+  test('the attachment lists every changed clause with its reason letters, the editorial ones grouped; the body says it is part of the notice', () => {
     for (const lang of ['de', 'en'] as const) {
       const lines = clauseList(changes.changes, lang).join('\n');
-      const part = lang === 'de' ? dePart : enPart;
-      for (const line of clauseList(changes.changes, lang)) expect(part).toContain(line);
+      for (const line of clauseList(changes.changes, lang)) {
+        expect(txt.content, `${lang}: ${line}`).toContain(line);
+        expect(mail.text, 'the clause list moved to the attachment').not.toContain(line);
+      }
       for (const c of changes.changes) {
         const name = c.id.endsWith(':heading') ? (lang === 'de' ? `Überschrift ${c.section}` : `heading ${c.section}`) : /^\d/.test(c.id) ? c.id : clauseLabel(c, lang);
         expect(lines, `${c.id}/${lang}`).toContain(name);
       }
     }
-    expect(dePart).toContain('Der Anhang ist Teil dieser Mitteilung');
-    expect(enPart).toContain('The attachment is part of this notice');
+    expect(dePart).toContain('Alle geänderten Bestimmungen, ihre Gründe nach Ziffer 10.4 und den markierten Wortlaut finden Sie im Anhang; er ist Teil dieser Mitteilung.');
+    expect(enPart).toContain('You find all changed provisions, their reasons under section 10.4 and the marked wording in the attachment; it is part of this notice.');
   });
 
   test('the attachment holds every changed clause in full, both languages, with the reasons and the marked changes', () => {

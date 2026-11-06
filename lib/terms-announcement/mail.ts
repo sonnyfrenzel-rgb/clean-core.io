@@ -13,9 +13,9 @@ import { LINE_BREAK, type DiffToken, type TermsChange, type TermsChanges } from 
  * - **in text form, to the account's address**: the send script;
  * - **at least six weeks ahead**: the date in the subject and the body; the
  *   script refuses to send later than six weeks before it;
- * - **a clear indication of the provisions that change**: every changed clause
- *   named in the body, with its reason letter and a short reason;
- * - **the reason**: in short in the body, in full in the attachment;
+ * - **a clear indication of the provisions that change** and **the reason**:
+ *   the list of changed clauses with their 10.4 letters and a short reason, and
+ *   the full reasons, in the attachment;
  * - **the amended text**: in the attachment, which the body declares part of
  *   the notice: every changed clause in full, German and English, the English
  *   part with the word diff against the previous wording (Terms v2.2.0 exists
@@ -131,7 +131,6 @@ interface Body {
   choice: string[];
   summaryLead: string;
   summary: string[];
-  listLead: string;
   attachmentLine: string;
   fullText: string;
 }
@@ -148,9 +147,10 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
       intro: `wir ändern die Nutzungsbedingungen von Clean-Core.io. Die neue Fassung ${to} soll für Ihr Konto am ${day} wirksam werden.`,
       getLead: 'Was Sie bekommen (nicht Teil der Mitteilung):',
       get: [
-        `Ab dem ${day}, geplant: Sie nutzen Ihren eigenen Claude-Schlüssel (Anthropic) neben Gemini.`,
-        'In den nächsten Wochen, geplant: Analyze beginnt mit dem Geschäftsprozess. Ihr Z-Programm als lesbare Prozesslandkarte mit Zeilenbezug, eine geführte Tour, und die Sicht für IT und Management auf je einer Seite.',
-        'Geplant: eine klarere Startseite.',
+        `Version 3.5, geplant zum ${day}: eine deutlich einfachere Oberfläche.`,
+        'Analyze beginnt mit dem Geschäftsprozess: Sie sehen in klarer Sprache, was Ihr Z-Programm fachlich tut, mit Zeilenbezug. Für Process Owner und Product Owner, nicht nur für Entwickler.',
+        'Ihr eigener Claude-Schlüssel (Anthropic) neben Gemini.',
+        'Eine aufgeräumte Startseite.',
       ],
       noticeLead: 'Mitteilung nach Ziffer 10.1 der Nutzungsbedingungen',
       effective: `Wirksam ab: ${day}.`,
@@ -166,8 +166,7 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
         'Kein gesetzliches Widerrufsrecht, weil die Nutzung kostenlos ist. Kündigen können Sie weiterhin jederzeit ohne Frist (13, 2.3).',
         'Batch-Upload und Portfolio nur mit eigenem, geprüftem Modellschlüssel (1.5).',
       ],
-      listLead: 'Alle geänderten Bestimmungen, mit Grund nach Ziffer 10.4 (a bis e):',
-      attachmentLine: `Der Anhang ist Teil dieser Mitteilung (${files.join(' und ')}). Er enthält den geänderten Wortlaut jeder Bestimmung, die markierten Änderungen und die ausführlichen Gründe, deutsch und englisch. Die bisherige Fassung ${from} gibt es nur auf Englisch.`,
+      attachmentLine: `Alle geänderten Bestimmungen, ihre Gründe nach Ziffer 10.4 und den markierten Wortlaut finden Sie im Anhang; er ist Teil dieser Mitteilung. Er liegt deutsch und englisch bei, als ${files.join(' und als ')}. Die bisherige Fassung ${from} gibt es nur auf Englisch.`,
       fullText: `Die neue Fassung im vollen Wortlaut: ${deUrl} (deutsch) und ${enUrl} (englisch).`,
     };
   }
@@ -175,9 +174,10 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
     intro: `we are changing the Clean-Core.io Terms of Service. The new version ${to} is proposed to take effect for your account on ${day}.`,
     getLead: 'What you get (not part of the notice):',
     get: [
-      `From ${day}, planned: use your own Claude key (Anthropic) beside Gemini.`,
-      'Coming in the next weeks, planned: Analyze starts with the business process. Your Z program as a readable process map with line references, a guided tour, and IT and management views on one page each.',
-      'Planned: a clearer start page.',
+      `Version 3.5, planned for ${day}: a much simpler interface.`,
+      'Analyze starts with the business process: you see in plain language what your Z program does for the business, with line references. For process owners and product owners, not only for developers.',
+      'Your own Claude key (Anthropic) beside Gemini.',
+      'A tidier start page.',
     ],
     noticeLead: 'Notice under section 10.1 of the Terms of Service',
     effective: `Effective from: ${day}.`,
@@ -193,14 +193,13 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
       'No statutory right of withdrawal, because the use is free. You can still end the contract at any time without notice (13, 2.3).',
       'Bulk upload and portfolio only with your own tested model key (1.5).',
     ],
-    listLead: 'All changed provisions, with the reason under section 10.4 (a to e):',
-    attachmentLine: `The attachment is part of this notice (${files.join(' and ')}). It contains the changed wording of every provision, the marked changes and the full reasons, in German and English.`,
+    attachmentLine: `You find all changed provisions, their reasons under section 10.4 and the marked wording in the attachment; it is part of this notice. It comes in German and English, as ${files.join(' and as ')}.`,
     fullText: `The new version in full: ${enUrl} (English) and ${deUrl} (German).`,
   };
 }
 
 /** Every sentence of the body in one language, for the text part and the no-dash check. */
-function bodyLines(b: Body, list: string[]): string[] {
+function bodyLines(b: Body): string[] {
   return [
     b.intro,
     `${b.getLead}\n${bulletLines(b.get)}`,
@@ -208,7 +207,6 @@ function bodyLines(b: Body, list: string[]): string[] {
     b.effective,
     ...b.choice,
     `${b.summaryLead}\n${bulletLines(b.summary)}`,
-    `${b.listLead}\n${bulletLines(list)}`,
     b.attachmentLine,
     b.fullText,
   ];
@@ -224,14 +222,13 @@ function bulletsHtml(items: string[]): string {
   return items.map((b) => `${BULLET}${escapeHtml(b)}`).join('<br>');
 }
 
-function bodyHtml(b: Body, list: string[]): string[] {
+function bodyHtml(b: Body): string[] {
   return [
     escapeHtml(b.intro),
     `<strong>${escapeHtml(b.getLead)}</strong><br>${bulletsHtml(b.get)}`,
     `<strong>${escapeHtml(b.noticeLead)}</strong><br>${escapeHtml(b.effective)}`,
     ...b.choice.map(escapeHtml),
     `<strong>${escapeHtml(b.summaryLead)}</strong><br>${bulletsHtml(b.summary)}`,
-    `<strong>${escapeHtml(b.listLead)}</strong><br>${bulletsHtml(list)}`,
     escapeHtml(b.attachmentLine),
     escapeHtml(b.fullText),
   ];
@@ -319,6 +316,10 @@ function attachmentBlocks(i: TermsAnnouncementInput): Block[] {
       `Teil der Mitteilung nach Ziffer 10.1 / part of the notice under section 10.1. Bisherige Fassung / previous version: ${from.label} (${from.version}). ` +
         `Neue Fassung / new version: ${to.label} (${to.version}). Wirksam ab / effective from: ${de} / ${en}. Prüfsumme der Änderungsliste / digest of the list of changes: ${digest}.`,
     ),
+    own('h2', 'Die geänderten Bestimmungen und ihre Gründe nach Ziffer 10.4 (a bis e)'),
+    ...clauseList(changes, 'de').map((l) => own('p', l)),
+    own('h2', 'The changed provisions and their reasons under section 10.4 (a to e)'),
+    ...clauseList(changes, 'en').map((l) => own('p', l)),
     own('h2', 'Deutsche Fassung: der neue Wortlaut jeder geänderten Bestimmung'),
     own(
       'p',
@@ -361,6 +362,9 @@ function attachmentText(blocks: Block[]): string {
 
 /* ------------------------------------------------------------------ the mail */
 
+/** Signed with the full name at the end of each language part (owner, 06.11.2026). */
+const SIGNATURE = 'Felix Frenzel';
+
 const FOOTER = [
   'Sie erhalten diese Mitteilung, weil Sie ein Konto auf Clean-Core.io haben. Sie ist die Mitteilung einer Vertragsänderung nach Ziffer 10.1, keine Werbung, und geht deshalb auch an Konten ohne Community-Mails.',
   'You receive this notice because you have an account on Clean-Core.io. It is the notice of an amendment of the contract under section 10.1, not marketing, and therefore also goes to accounts without community mail.',
@@ -379,8 +383,6 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
   const files = attachments.map((a) => a.filename);
   const de = body('de', input, files);
   const en = body('en', input, files);
-  const listDe = clauseList(input.changes.changes, 'de');
-  const listEn = clauseList(input.changes.changes, 'en');
   const paths = { de: versionPath(input.changes.to.version, 'de'), en: versionPath(input.changes.to.version, 'en') };
   const linkUrl = `${input.baseUrl}${paths.de}`;
 
@@ -389,13 +391,14 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
       greeting: 'Liebe Clean-Core.io Community,',
       paragraphs: [
         '<em>English version below.</em>',
-        ...bodyHtml(de, listDe),
+        ...bodyHtml(de),
+        SIGNATURE,
         '<strong>English version</strong>',
         'Dear Clean-Core.io community,',
-        ...bodyHtml(en, listEn),
+        ...bodyHtml(en),
       ],
       link: { lead: 'Die neue Fassung / The new version:', url: linkUrl },
-      signature: 'Felix',
+      signature: SIGNATURE,
       footer: FOOTER,
     }),
     subject,
@@ -405,12 +408,13 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
     [
       'Liebe Clean-Core.io Community,',
       '(English version below.)',
-      ...bodyLines(de, listDe),
+      ...bodyLines(de),
+      SIGNATURE,
       'ENGLISH VERSION',
       'Dear Clean-Core.io community,',
-      ...bodyLines(en, listEn),
+      ...bodyLines(en),
       `Die neue Fassung / The new version:\n${linkUrl}`,
-      'Felix',
+      SIGNATURE,
       ...FOOTER,
       `Impressum / Imprint: ${MAIL_IMPRINT_HTML.replace('&szlig;', 'ß')}`,
     ].join('\n\n') + '\n';

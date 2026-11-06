@@ -98,7 +98,7 @@ for (const { type, mail } of userMails) {
     // The link comes after the body, not in it: nothing but the sign-off and
     // the small print follows it.
     const first = mail.html.search(/<a\s/i);
-    expect(mail.html.slice(first)).toMatch(/Regards,<br>The Clean-Core\.io Team|<p[^>]*>Felix<\/p>/);
+    expect(mail.html.slice(first)).toMatch(/Regards,<br>The Clean-Core\.io Team|<p[^>]*>Felix(?: Frenzel)?<\/p>/);
   });
 
   test(`${type}: fits a 320px screen`, async ({ page }) => {
