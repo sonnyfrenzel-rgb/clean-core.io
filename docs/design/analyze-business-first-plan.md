@@ -45,7 +45,7 @@ three releases to users, v3.1.0, v3.2.0 and v3.5.0 (22.12.2026), ahead of every 
 | v4.1 (3) = N9 | "Hide" is remembered per project in the browser only, no server field; a quiet link below the endings brings the card back (state 9b). |
 | Layout | Nothing covers anything; fully responsive. Look and feel = today's app. |
 | AI Act Art. 50 | A per-element AI mark, only where a model wrote the text. |
-| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild ships **piece by piece on `main` as three normal releases, ahead of every other roadmap topic**: v3.1.0 (~23.11), v3.2.0 (~07.12) and the Christmas release v3.5.0 (22.12.2026, with own Claude keys switched on); hotfixes in between are 3.0.22, 3.0.23, …. The rule "one roadmap item per release" is deliberately overridden for these three. `dev` first, `main` only on Sonny's go. The video and the post on 22.12.2026 present "v3.5" (§4). |
+| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild ships **piece by piece on `main` as three normal releases, ahead of every other roadmap topic**: v3.1.0 (~27.11), v3.2.0 (~09.12) and the Christmas release v3.5.0 (22.12.2026, with own Claude keys switched on); hotfixes in between are 3.0.22, 3.0.23, …. The rule "one roadmap item per release" is deliberately overridden for these three. `dev` first, `main` only on Sonny's go. The video and the post on 22.12.2026 present "v3.5" (§4). |
 
 **Reading of "builds up in about 20 s"** (an interpretation, taken from the accepted mockup, states 1–3): the map stands
 at once with engine names; the summary, the text blocks and the names arrive in place over about 20 s; names may take
@@ -230,8 +230,8 @@ earlier. The rule "one roadmap item per release" is deliberately overridden for 
 
 | Release | Target on `main` | Packages | What a user sees afterwards |
 |---|---|---|---|
-| **v3.1.0** | ~23.11.2026 | AB-0, AB-1, AB-2, AB-3, **AB-14a** | A project opens in Analyze, Business: the map is the page, engine names at once, checked AI names swap in with a status line. Today's text blocks and next-step card stand below the map until v3.2.0. IT and Management still have today's pages. A new account lands on the home page's new first view with the start built in. |
-| **v3.2.0** | ~07.12.2026 | AB-4, AB-5, AB-6, AB-7 (two charts; the N7 engine label is out), **AB-14b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The project list for returning accounts: every project, the new status words, four columns, tabs; the Continue card's data is stored, not yet shown. |
+| **v3.1.0** | ~27.11.2026 (was ~23.11; §4.0) | AB-0, AB-1, AB-2, AB-3, **AB-14a**, **AB-15a** | A project opens in Analyze, Business: the map is the page, engine names at once, checked AI names swap in with a status line. Today's text blocks and next-step card stand below the map until v3.2.0. IT and Management still have today's pages. A new account lands on the home page's new first view with the start built in. An object-oriented program shows its status workflow as the process, technical methods folded. |
+| **v3.2.0** | ~09.12.2026 (was ~07.12) | AB-4, AB-5, AB-6, AB-7 (two charts; the N7 engine label is out), **AB-14b**, **AB-15b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The project list for returning accounts: every project, the new status words, four columns, tabs; the Continue card's data is stored, not yet shown. Interface calls resolved to the program's own implementations. |
 | **v3.5.0** — the Christmas release | 22.12.2026 | AB-9, AB-10, AB-11 (complete, no cut), AB-12, **AB-14c**, the key switch | IT and Management each on one page in Analyze; the workspace page dissolved completely (redirects, and the old views, layers and coach marks removed); the Continue card; demo, capture screens, landing pictures and the docs; own Claude keys switched on. The video and the LinkedIn post present "v3.5". |
 | later | — | AB-8 (third chart, N6), AB-13 (PDF with the tour texts, O11), the N7 engine label | — |
 
@@ -271,14 +271,14 @@ nothing new is built on the workspace copies.
 
 **Do the dates hold?** (re-checked 06.11.2026, after the reversal) Honestly: v3.1.0 and v3.2.0 are tight but
 possible; **v3.5.0 on 22.12 is at risk**.
-- **v3.1.0 (~23.11):** ten working days (10.–23.11) for the widest change of the plan (AB-2: about 100 specs change an
+- **v3.1.0 (~27.11 since the OO decision, §4.0):** about ten working days (16.–27.11, after the hotfix week) for the widest change of the plan (AB-2: about 100 specs change an
   address) plus the swap, and now a full release on top: the prod-build gate, up to three QA rounds, the owner's go,
   then the security audit and the QA full review on `main` to triage. Realistic only if 3.0.21 reaches `main` on 09.11
   without a hotfix (no v3.1.0 commit may reach `dev` before that; earlier work happens on worktree branches) and
   AB-14a runs on the second track. A slip of two or three days is likely.
-- **v3.2.0 (~07.12):** realistic with AB-8 and the N7 label out and AB-14b on the second track with its O9 row source
+- **v3.2.0 (~09.12 since the OO decision):** realistic with AB-8 and the N7 label out and AB-14b on the second track with its O9 row source
   done by 30.11; the release overhead again costs one to two days. Its slip moves v3.5.0's start.
-- **v3.5.0 (22.12):** about nine working days (08.–18.12) for AB-9, AB-10, the **complete** AB-11 (owner decision: no
+- **v3.5.0 (22.12):** about seven working days (10.–18.12) for AB-9, AB-10, the **complete** AB-11 (owner decision: no
   cut), AB-12 and the Continue card, then 21.12 for the recording and both approvals. In series it does not fit;
   it fits only if AB-9, AB-10 and AB-11 start on worktree branches on 24.11 (AB-11 with its redirect map and the tests
   against every address the code writes; the shell removal last) and merge into `dev` right after v3.2.0 is on
@@ -296,6 +296,47 @@ so it is built on its own worktree branch in parallel and merged into `dev` for 
 Christmas; everything it needs that is data is built in v3.2.0 (the "In short" sentence written server-side when a run
 is created, H-O6; the pure miniature from the stored skeleton, H-O7; "last opened" kept in the browser, H-O5), so
 v3.5.0 only wires the card. This needs H-O5, H-O6 and H-O7 decided by 24.11.2026.
+
+### 4.0 Before v3.1.0: hotfix 3.0.22 from an owner example, and object orientation
+
+**Source:** a full end-to-end run on 06.11.2026 of an owner example — a 936-line object-oriented program (a local
+interface, local classes, a status workflow DRAFT → SUBMITTED → APPROVED → APPLIED with role checks), production build,
+real model. The program and the report stay in the gitignored `scratch/owner-examples/` and never enter the repository;
+the public files name it "owner example A". **Owner decision 06.11.2026: "we are far too weak on object orientation."**
+
+**Hotfix 3.0.22 (user-visible, right after 3.0.21 is on `main`, target ~13.11.2026; small and concrete):**
+
+| No. | Defect (observed on owner example A) | Fix |
+|---|---|---|
+| HF-a | The engine-built Transformation frame of an OO program references the original's local types (a local interface, a local service class) that the generated class does not have: 3 of 4 abaplint errors, code not activatable — while the tool bar says "Transformation done". | The frame carries or replaces every local type it references; the tool bar never says "done" while the activation check fails (state from the check, not from "files written"). |
+| HF-b | A fill prompt over the ceiling (`LEASED_PROMPT_MAX_CHARS`, 28,000 characters, `lib/transformation/fill-prompt.ts`) is skipped: the core dispatch routine (32,532 characters) stays a stub. | Split an over-long unit into parts that fit, instead of skipping it; a unit that still cannot be split says so by name. |
+| HF-c | Testing: a generated test method name over 30 characters fails the whole first attempt; a model call past 300 s shows "Network error … regional restrictions" (`app/api/gemini/route.ts:884–891` maps every `fetch` error to that text). | Shorten method names deterministically (unique, ≤ 30); report the true cause of a failed call (timeout, network, provider); check whether the 300 s is Node `fetch`'s (undici) header timeout and set it to the step's ceiling — a hypothesis from the run, to be verified first. |
+| HF-d | Wrong statements: Documentation says "no approval, release or override workflow", Analyze says "a read-only report … prints a list" — the program is an approval workflow with role checks. | A text never asserts an absence the engine cannot prove: "the code shows no …" only where the engine read the whole program and found none; otherwise the sentence is left out. Measured on the starter examples and owner example A. |
+| HF-e | Economics gives Rebuild, Move to SAP standard and Retire identical effort (Retire with running effort); counts disagree across tools (5 questions vs "25 open rules", 41 vs 43 rules, 937 vs 936 lines); Delivery says "Confirmed by … — no decision recorded yet". | Per-option effort from that option's own facts (Retire has no running effort); one count source per figure across Design, Transformation, Documentation and Testing, and one line count; Delivery names what was confirmed (the design) apart from the decision. |
+
+- **Commits:** one per row, each with its spec (server-free where possible: the frame's types, the split, the name
+  shortener, the error mapping, the absence rule, the per-option effort, the shared counts).
+- **Acceptance:** owner example A end to end again on a production build: the package activates in abaplint, no
+  stub for the dispatch routine, Testing passes on the first attempt or says why, no false absence, counts agree; the
+  starter examples unchanged where they were right.
+- **Release:** a normal `dev` → `main` hotfix with its QA rounds and the owner's go. No v3.1.0 commit reaches `dev`
+  before 3.0.22 is on `main`; v3.1.0 work waits on worktree branches until then.
+- **Risk:** medium; HF-b and HF-d touch shared paths (fill prompts, every summary text). Two parallel tracks (the hotfix
+  and the v3.1.0 UI) do not share files.
+
+**Object orientation as a core theme of v3.1.0 (AB-15).** Today the Business view of an OO program shows method names
+("Constructor", "Execute", "Show", an interface method by its technical name) and buries the real process three to four levels deep under
+"Execute › Dispatch"; the main line reads only "Run starts → Run". AB-15 (below, after AB-14) makes the engine read OO
+programs as business processes. **Cut, recommended:** the state machine and the collapse of technical methods in v3.1.0
+(AB-15a); resolving interface calls to the program's own implementations in v3.2.0 (AB-15b), building on the
+experiment branch `worktree-agent-a72177d7ea222fe15` (class-hierarchy candidates behind an off-by-default switch).
+
+**What it does to the dates (honest).** v3.1.0 was already tight at ~23.11. The hotfix takes the week after 09.11 on
+`dev`, and AB-15a is engine work behind a gate with a benchmark measurement, touching the same files as AB-1
+(`lib/abap/plain-language.ts`, `lib/bpmn/model.ts`), so it can only start once AB-1 is merged. **~23.11 does not hold;
+~27.11 does with the cut above.** v3.2.0 moves to ~09.12 (AB-15b plus two days' knock-on). v3.5.0 stays 22.12, with the
+buffer now one working day (18.→21.12) and the fallback of §4 unchanged. If 23.11 is to hold anyway, the only cut is
+all of AB-15 in v3.2.0 — against the owner's "core theme of v3.1".
 
 **Every release, the same frame.**
 
@@ -322,10 +363,10 @@ Shared acceptance, referred to as **[look]**: screenshots at 1920 × 1080, 1440 
 number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0 focus-out, 0 sideways page overflow,
 0 script errors for those states; the copy guard green.
 
-### 4.1 Release v3.1.0 — Analyze opens business first, names from the code's facts (target ~23.11.2026)
+### 4.1 Release v3.1.0 — Analyze opens business first, names from the code's facts, OO as a process (target ~27.11.2026)
 
-- **Scope:** AB-0, AB-1, AB-2, AB-3 below, and AB-14a (the home page's first view for a new account, built on the
-  second track).
+- **Scope:** AB-0, AB-1, AB-2, AB-3 below, AB-14a (the home page's first view for a new account, built on the
+  second track) and AB-15a (status workflows as the process, after AB-1 is merged).
 - **Commit groups (three pushes):** **(a)** the merge of `worktree-agent-a0d2bc8b7d821f2d8` with `tests/shard-plan.json`
   regenerated (the one conflict); the `withFacts` wiring and `NAMING_ASKED_IN_THIS_BUILD`; the AB-0 harness (mockup
   copy, overlap helper, layout guard report-only, copy guard). **(b)** `AnalyzeBusiness` rendered for `?view=business`
@@ -436,9 +477,9 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 - **Risk:** medium. Timing in CI (production build is faster than `next dev`); motion on a canvas of 60+ elements
   (state 18) — measure frame time on the large example before release.
 
-### 4.2 Release v3.2.0 — the Business page is complete (target ~07.12.2026)
+### 4.2 Release v3.2.0 — the Business page is complete (target ~09.12.2026)
 
-- **Scope:** AB-4, AB-5, AB-6, AB-7 below, and AB-14b (the home page list, second track). The inline tour with the two endings, "What you can do next" and the soft
+- **Scope:** AB-4, AB-5, AB-6, AB-7 below, AB-14b (the home page list, second track) and AB-15b (interface calls). The inline tour with the two endings, "What you can do next" and the soft
   gate; full screen with navigation, "Edit" and the tour; the checked text around the map; **two** charts. AB-8 (the
   third chart, N6) is not in it. The N7 engine label (AB-7, engine part) is out of v3.5.0 (a mitigation kept on 06.11.2026);
   the charts do not depend on it.
@@ -770,6 +811,50 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 - **Risk:** low to medium once the data is in v3.2.0; if H-O6 is not decided by 24.11, the card ships in 3.5.0 without
   "In short" rather than late.
 
+#### AB-15 — Object-oriented programs read as business processes (owner decision 06.11.2026) · L in two parts
+
+- **Why:** owner example A (§4.0): the process sits three to four levels deep under method names; the RACI of
+  Documentation assigns roles to "Show" and "Execute".
+- **Engine gate:** every new reading gated from `'3.1.0'` (AB-15a) and `'3.2.0'` (AB-15b); a project of an older engine
+  keeps its picture.
+- **Standing acceptance cases:** the owner's examples in `scratch/owner-examples/` (gitignored; never in the
+  repository) are run end to end before each of the three releases; the 300-case benchmark is measured on LEARN only,
+  the holdout untouched.
+
+##### AB-15a — v3.1.0 · Status workflows as the process, technical methods folded · M–L
+
+- **Scope:** read classes, interfaces, methods, local classes and events as the program's structure, not its process;
+  surface a **state machine** — a status field with its transitions (constants such as DRAFT/SUBMITTED/APPROVED/
+  APPLIED, the checks that guard each transition, the role checks) — as the first level of the business map, each
+  transition with its line anchors; **collapse technical methods** (constructor, getters/setters, show/display/output,
+  small helpers) into the step that calls them, every folded line kept on the element that carries it (as
+  `foldTechnique` does for locks and list set-up); the main line names the workflow, not "Run".
+- **Files:** `lib/abap/process-skeleton.ts`, `lib/bpmn/model.ts`, `lib/abap/plain-language.ts`, a new pure
+  `lib/abap/state-machine.ts`, the engine gate in `lib/abap/` (gated from `'3.1.0'`).
+- **Specs:** add `engine-state-machine.spec.ts` and `engine-method-collapse.spec.ts` (server-free, minimal ABAP written
+  fresh per pattern: a status workflow with role checks; a constructor/getter/show cluster; an event handler), assert
+  that rule ids, the signed payload and the audit pack do not change; change `business-readability-ratchet` (it may
+  only go down).
+- **Done when:** owner example A's Business view shows the approval workflow on the first level in business words with
+  line anchors, no method name as a step label; the starter examples' maps unchanged or better (looked at); the
+  benchmark's W3 class improves on LEARN and W1+W2 does not drop.
+- **Risk:** medium–high: a wrong state machine is worse than none — only a status field with at least two transitions
+  the engine can read counts; otherwise today's reading stays.
+
+##### AB-15b — v3.2.0 · Interface calls resolved to the program's own implementations · M
+
+- **Scope:** an interface method call (a reference `TYPE REF TO` a local interface) is resolved to the
+  implementation the program itself defines (local classes that implement the interface, `INHERITING FROM`,
+  redefinitions); a call with more than one candidate shows each as an alternative, never a guess. Starts from the
+  experiment branch `worktree-agent-a72177d7ea222fe15` (`lib/abap/class-hierarchy.ts`, off by default, byte-identical
+  on LEARN while off); which of its modes ships is decided by the measurement.
+- **Files:** `lib/abap/class-hierarchy.ts` (from the branch), `lib/abap/process-skeleton.ts`, the gate (`'3.2.0'`).
+- **Specs:** the branch's specs; add `engine-interface-resolution.spec.ts` (server-free, fresh minimal ABAP).
+- **Done when:** owner example A's interface calls land on their implementations; W3 improves on LEARN with no loss
+  elsewhere.
+- **Risk:** medium; a candidate set that is too wide floods the map — hence alternatives only up to a small number,
+  otherwise "one of N implementations".
+
 #### AB-13 — later · Download with the tour texts (O11) · S
 
 ---
@@ -815,7 +900,7 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 | Model cost and latency on the platform key: naming, purpose and plain wording per new project | AB-1, AB-3, AB-6 | One call per stage per project; own key only with the 3.0.21 switch; the 45 s ceiling ends the wait, not the call (assumption: the call is cancelled or its late answer ignored — decide in AB-3). |
 | Two homes for IT and Management between AB-2 and AB-10 | AB-2 | Accept from v3.1.0 to v3.5.0 (about four weeks); say it in the release notes; no new feature on the workspace IT/Management in that time. |
 | Spec churn: 48 specs read the first-look hooks or `?first=1`, 54 read `view=it\|management` | AB-2, AB-11 | Change addresses first, rewrite behaviour second; no guard removed without a replacement shown red on a broken copy (the principle of the quality row, item 4 — moved from 3.0.22 to 3.5.1, applied here already). |
-| The dates (23.11, 07.12, 16.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 22.12 communication waits for 3.5.0, the Claude key switch does not. |
+| The dates (27.11, 09.12, 22.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 22.12 communication waits for 3.5.0, the Claude key switch does not. |
 | Legibility at overview zoom (ADR-025; `MIN_SCALE = 0.8`, `components/process-map/bpmn-view.ts:48`) | AB-2, AB-4 | Scroll instead of shrinking (N2); tour floor 83 %. |
 | Overlap regressions on narrow widths | every package | `analyze-layout-guard` fails the build for the touched states. |
 | The Analyze page (2,261 lines) | AB-2, AB-9 | Split per view into components first; behaviour second. |
