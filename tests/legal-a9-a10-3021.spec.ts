@@ -3,13 +3,14 @@ import fs from 'fs';
 import path from 'path';
 import {
   AUTO_STEPS_NOTICE_FIELD,
+  AUTO_STEPS_SWITCH_STAGES,
   automaticStagesInThisBuild,
   autoStepsNoticeValues,
   autoStepsNoticeWanted,
   autoStepsSwitchBody,
   autoStepsSwitchOn,
 } from '../lib/auto-steps-notice';
-import { modelStagesOf } from '../lib/model-stages';
+import { MODEL_STAGE_LABELS, modelStagesOf } from '../lib/model-stages';
 import { NAMING_WITHOUT_FACTS_PAUSED } from '../lib/process-naming';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { PRIVACY_DE } from '../lib/legal/texts/privacy.de';
@@ -132,6 +133,34 @@ test.describe('A10 — one automatic step on opening a project while names are p
     expect(consentText(t.after, 'en')).toBe('You can change this any time in Settings under “Where the AI model is used”.');
     expect(consentText(t.after, 'de')).toContain('„Where the AI model is used“');
     expect(read('components/ModelStagesCard.tsx')).toContain('title="Where the AI model is used"');
+  });
+
+  test('C14 names the two tools that call the model when opened (owner decision 06.11.2026)', () => {
+    const t = CONSENT_TEXTS.autoStepsNotice;
+    expect(consentText(t.toolsOnOpen, 'en')).toBe(
+      'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
+    );
+    expect(consentText(t.toolsOnOpen, 'de')).toBe(
+      'Auch Transformation und Documentation können das Modell beim Öffnen von selbst aufrufen, solange dort noch kein KI-Ergebnis vorliegt. Dieser Schalter erfasst sie nicht; Sie schalten sie in den Einstellungen unter „Where the AI model is used“ mit „Transformed code“ und „Documentation and business blueprint“ ab.',
+    );
+    // The switch labels it names are the ones Settings shows.
+    expect(MODEL_STAGE_LABELS.transformation).toBe('Transformed code');
+    expect(MODEL_STAGE_LABELS.documentation).toBe('Documentation and business blueprint');
+    // "This switch does not cover them" stays true: the switch writes names and sentences only.
+    expect(AUTO_STEPS_SWITCH_STAGES).toEqual(['naming', 'statements']);
+    // What the sentence describes: both tools start a model call from an effect on open,
+    // gated by their own stage switch, never by the account's "Automatic steps".
+    const transformation = read('app/(app)/project/[projectId]/transformation/page.tsx');
+    expect(transformation).toContain('const timer = setTimeout(() => generateTransformation(), 0);');
+    expect(transformation).toContain("modelAvailability.enabled('transformation')");
+    const documentation = read('app/(app)/project/[projectId]/documentation/page.tsx');
+    expect(documentation).toMatch(/&& !businessDocumentation\.trim\(\)[\s\S]{0,300}modelAvailability\.enabled\('documentation'\)/);
+    expect(documentation).toContain('void generateBusinessDocumentation();');
+    // On the page, below the switch and above the Settings line.
+    const notice = read('components/AutoStepsNotice.tsx');
+    expect(notice).toContain('consentText(t.toolsOnOpen');
+    expect(notice.indexOf('data-auto-steps-notice-tools')).toBeGreaterThan(notice.indexOf('<CcSwitch'));
+    expect(notice.indexOf('data-auto-steps-notice-tools')).toBeLessThan(notice.indexOf('data-auto-steps-notice-after'));
   });
 
   test('privacy 3, Terms 5.4 and the Trust page say one automatic step, and that names are paused', () => {
