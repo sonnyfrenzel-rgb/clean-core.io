@@ -72,7 +72,7 @@ export interface OpenValue {
  * sets it. It is the effective date of Terms v2.3.0 and ZV-BYOK-1.0 and the
  * "Stand" of the privacy policy.
  */
-export const LEGAL_RELEASE_DATE_ISO: string | null = null;
+export const LEGAL_RELEASE_DATE_ISO: string | null = '2026-11-09';
 
 /**
  * The day the amended Terms (v2.3.0) take effect for an existing account, ISO
@@ -81,10 +81,13 @@ export const LEGAL_RELEASE_DATE_ISO: string | null = null;
  * amendment accepted before it takes effect only on it (Terms 10.2,
  * `lib/terms-effective.ts`).
  *
- * 22 December 2026, entered on the owner's instruction of 06.11.2026: the
- * notice (`scripts/send-terms-announcement.ts`) goes out on 9 November 2026;
- * the script refuses after 10 November, six weeks before the day. Unconfirmed until
- * the owner checks it (`termsEffectiveDate` below), so the release gate stays red.
+ * 22 December 2026, confirmed by the owner on 06.11.2026 (`termsEffectiveDate`
+ * below): the notice (`scripts/send-terms-announcement.ts`) goes out on
+ * 9 November 2026, the last day of receipt for this day (the day of receipt
+ * does not count, so the six weeks run 10 November to 21 December;
+ * `lastNoticeDay`). The script refuses on any later day; if the notice cannot go
+ * out on 9 November, this constant moves to the next day (2026-12-23) before
+ * sending. Mail, attachment and the in-app dialog all read it.
  */
 export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-22';
 
@@ -139,7 +142,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     value: LEGAL_RELEASE_DATE_ISO
       ? { de: formatLegalDate(LEGAL_RELEASE_DATE_ISO, 'de'), en: formatLegalDate(LEGAL_RELEASE_DATE_ISO, 'en') }
       : null,
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: true,
     usedIn: 'DSE Kopf; Terms Kopf; ZV Kopf; Trust Kopf; C1',
   },
@@ -368,7 +371,7 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     value: TERMS_EFFECTIVE_DATE_ISO
       ? { de: formatLegalDate(TERMS_EFFECTIVE_DATE_ISO, 'de'), en: formatLegalDate(TERMS_EFFECTIVE_DATE_ISO, 'en') }
       : null,
-    ownerConfirmed: false,
+    ownerConfirmed: true,
     isFact: true,
     usedIn: 'C2 (Änderungsdialog); C5 (Bestätigungsmail nach einer Änderung); Terms 10.2',
     enteredFrom:

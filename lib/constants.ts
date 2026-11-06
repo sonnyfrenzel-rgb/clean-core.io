@@ -57,14 +57,15 @@ export const COMMUNITY_QUOTA = 5;
  * the accepted version is provable. Kept in sync with the effective date on /terms.
  */
 /*
- * Terms v2.3.0 (Fassung 1.1 of the legal texts, 3.0.21). The id is provisional: it is
- * the effective date, and that date is an open value the owner sets on the
- * release day (`LEGAL_RELEASE_DATE_ISO`, `lib/legal/open-values.ts`). When it is
- * set, this id moves to it and `scripts/legal/archive-terms.ts` re-writes the
- * archive under it — before publication, so no published version is edited.
+ * Terms v2.3.0 (Fassung 1.1 of the legal texts, 3.0.21). The id is the release
+ * date, 9 November 2026, which the owner confirmed on 06.11.2026
+ * (`LEGAL_RELEASE_DATE_ISO`, `lib/legal/open-values.ts`). Until then it carried
+ * the provisional id 2026-10-23, which was never published on main; the archive
+ * was re-written under the new id by `scripts/legal/archive-terms.ts`, and the
+ * draft address /terms/versions/2026-10-23 redirects to it (next.config.mjs).
  * `tests/legal-texts-release-gate.spec.ts` holds the two together.
  */
-export const TERMS_VERSION = '2026-10-23';
+export const TERMS_VERSION = '2026-11-09';
 
 /**
  * The versions under which the platform may still be used.
@@ -87,7 +88,7 @@ export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // v2.3.0, Fassung 1.1 (3.0.21): German and English contract versions, the
   // own Anthropic key under the Additional Agreement, no right of withdrawal
   // (section 13), the proof log.
-  '2026-10-23',
+  '2026-11-09',
   // v2.2.0 stays in force: section 10.3 of the Terms an account accepted lets it
   // carry on under them if it declines Terms v2.3.0, and ending that takes 30 days'
   // notice in text form — so the dialogue asks and takes "not now" for an answer.

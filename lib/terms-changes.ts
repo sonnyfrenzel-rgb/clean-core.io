@@ -13,7 +13,7 @@ import { archivedTerms } from '@/lib/terms-versions';
 export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray<{ lead: string; text: string }> }> = [
   {
     // v2.3.0, Fassung 1.1 of the legal texts (3.0.21).
-    version: '2026-10-23',
+    version: '2026-11-09',
     items: [
       {
         lead: 'German or English.',

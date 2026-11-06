@@ -43,7 +43,7 @@ export interface ContractConfirmationInput {
   recipient: string;
   /** The first name on the profile, raw, or null. */
   firstName: string | null;
-  /** The version identifier the record names: "2026-10-23" for the Terms, "ZV-BYOK-1.0" for the agreement. */
+  /** The version identifier the record names: "2026-11-09" for the Terms, "ZV-BYOK-1.0" for the agreement. */
   versionId: string;
   /** What the document calls itself, e.g. "Terms v2.3.0"; the agreement's id again. */
   versionLabel: string;

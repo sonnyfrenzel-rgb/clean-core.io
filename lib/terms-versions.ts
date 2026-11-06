@@ -117,14 +117,16 @@ export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
   {
     // v2.3.0, Fassung 1.1 of the legal texts (3.0.21): German and English, the
     // own Anthropic key under the Additional Agreement, no right of withdrawal.
-    // Not yet published. The id and the effective date wait for the release
-    // date (open value `releaseDate`); until it is set, the files are
-    // regenerated from the source by `scripts/legal/archive-terms.ts` and this
-    // entry re-pointed — which is no edit of a published version.
-    version: '2026-10-23',
+    // The id and the effective date are the release date (open value
+    // `releaseDate`, 9 November 2026, confirmed by the owner on 06.11.2026).
+    // Until then the entry carried the provisional id 2026-10-23, which was
+    // never published on main; the files were regenerated from the source by
+    // `scripts/legal/archive-terms.ts` under the new id and this entry
+    // re-pointed, which is no edit of a published version.
+    version: '2026-11-09',
     label: 'v2.3.0',
-    effectiveOn: '[open: release date]',
-    file: 'docs/terms/2026-10-23.md',
+    effectiveOn: '9 November 2026',
+    file: 'docs/terms/2026-11-09.md',
     sha256: '2b1b16eeee2bb469435deea29956c2b14783ed051717d54a8663281ae354a113',
     source: {
       file: 'lib/legal/texts/terms.en.ts',
@@ -139,8 +141,8 @@ export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
     translations: [
       {
         lang: 'de',
-        effectiveOn: '[offen: Datum der Freigabe]',
-        file: 'docs/terms/2026-10-23.de.md',
+        effectiveOn: '9. November 2026',
+        file: 'docs/terms/2026-11-09.de.md',
         sha256: '3f8f61cbe4bdf39c6a3888f47d20f947a443c6def80ca6d6381c2ac7738e9149',
       },
     ],
