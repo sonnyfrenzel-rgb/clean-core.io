@@ -11,7 +11,7 @@ import {
   Trash2, Loader2,
   Save, ShieldCheck, Key,
   ArrowLeft, Copy, Smartphone, X, ArrowRight, Globe,
-  BookOpen, ExternalLink, HelpCircle
+  BookOpen, ExternalLink, HelpCircle, FileX
 } from 'lucide-react';
 import { serverTimestamp } from 'firebase/firestore';
 import { createWithinCeiling } from '@/lib/write-ceiling';
@@ -57,7 +57,7 @@ import type { SemanticState } from '@/lib/provenance';
 import { cn } from '@/lib/utils';
 import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_HREF, QUOTA_NAME, runsLeftLabel } from '@/lib/run-quota-rule';
 import { signInLinkFor } from '@/lib/return-path';
-import { END_CONTRACT_ID, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE } from '@/lib/contract-withdrawal';
+import { END_CONTRACT_CONFIRM_LABEL, END_CONTRACT_ID, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE, quotedDeclaration } from '@/lib/contract-withdrawal';
 import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
 
 /** A quiet block inside a card — a note, an explanation, the strength meter. */
@@ -237,16 +237,26 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('');
   const [accountErased, setAccountErased] = useState(false);
 
-  // C13 (Terms section 13): "Withdraw from / end the contract" in the footer
-  // links to `/settings#end-contract`, which brings the Danger Zone into view
-  // with the deletion confirmation open — the declaration is that deletion.
-  // Nothing is sent before the confirmation's own checks pass.
+  // C13 (Terms section 13; A6 of 3.0.21): the withdrawal path, its own form
+  // beside the generic deletion. It shows name, account address and contract;
+  // the binding button is "Confirm withdrawal · Widerruf bestätigen".
+  const [showWithdrawal, setShowWithdrawal] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawMfaCode, setWithdrawMfaCode] = useState('');
+  const [withdrawPassword, setWithdrawPassword] = useState('');
+  const [withdrawCodeError, setWithdrawCodeError] = useState('');
+  const [withdrawPasswordError, setWithdrawPasswordError] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
+
+  // "Withdraw from / end the contract" in the footer links to
+  // `/settings#end-contract`, which brings the withdrawal entry into view with
+  // the withdrawal form open. Nothing is sent before the form is confirmed.
   useEffect(() => {
     if (loading || !profile) return;
     if (window.location.hash.slice(1) !== END_CONTRACT_ID) return;
     const frame = window.requestAnimationFrame(() => {
       document.getElementById(END_CONTRACT_ID)?.scrollIntoView({ block: 'start' });
-      setShowDeleteAccount(true);
+      setShowWithdrawal(true);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [loading, profile]);
@@ -1148,6 +1158,84 @@ export default function SettingsPage() {
     }
   };
 
+  // C13 — the withdrawal path (Terms section 13; A6 of 3.0.21).
+
+  const openWithdrawal = () => {
+    setWithdrawMfaCode('');
+    setWithdrawPassword('');
+    setWithdrawCodeError('');
+    setWithdrawPasswordError('');
+    setWithdrawError('');
+    setShowWithdrawal(true);
+  };
+
+  const cancelWithdrawal = () => {
+    setShowWithdrawal(false);
+    setWithdrawMfaCode('');
+    setWithdrawPassword('');
+  };
+
+  /**
+   * The declaration. The form shows name, account address and contract and
+   * asks nothing else — with a second factor enrolled, the code (and for a
+   * password account the password) the server's step-up needs, because the
+   * path ends in the deletion. `/api/account/withdraw` records the
+   * declaration, sends the receipt, records that, and then deletes the account.
+   */
+  const handleWithdraw = async () => {
+    if (isWithdrawing) return;
+    setWithdrawCodeError('');
+    setWithdrawPasswordError('');
+    setWithdrawError('');
+
+    const mfaCode = withdrawMfaCode.replace(/\s+/g, '');
+    if (profile?.mfaEnabled && !mfaCode) {
+      setWithdrawCodeError('The authenticator code is required. Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+    if (profile?.mfaEnabled && profile?.authMethod === 'password' && !withdrawPassword) {
+      setWithdrawPasswordError('Enter your password to confirm.');
+      return;
+    }
+
+    setShowWithdrawal(false);
+    setIsWithdrawing(true);
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('No authenticated user found.');
+
+      if (profile?.mfaEnabled) {
+        const pw = profile?.authMethod === 'password' ? withdrawPassword : '';
+        await reauthenticateWithFactor(currentUser, pw, mfaCode);
+      }
+
+      const token = await currentUser.getIdToken(true);
+      const res = await fetch('/api/account/withdraw', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'The withdrawal could not be completed.');
+      }
+
+      // As after the erasure: set before the sign-out, so the empty profile is
+      // not read as "no profile" and sent to the dashboard.
+      setAccountErased(true);
+      await auth.signOut();
+      router.push('/');
+    } catch (error: unknown) {
+      const e = error as { code?: unknown; name?: unknown; message?: unknown } | null;
+      console.error('Withdrawal failed:', e?.code || e?.name || 'error');
+      setWithdrawError(typeof e?.message === 'string' && e.message ? e.message : 'The withdrawal could not be completed.');
+    } finally {
+      setWithdrawMfaCode('');
+      setWithdrawPassword('');
+      setIsWithdrawing(false);
+    }
+  };
+
   const getTierInfo = (tier: string = 'pilot', hasCustomKey: boolean = false) => {
     const ownKeyName = `your own ${PROVIDER_LABEL[savedProvider ?? 'gemini']} key`;
     if (hasCustomKey && (tier === 'pilot' || tier === 'pilot_byok')) {
@@ -1893,11 +1981,53 @@ export default function SettingsPage() {
         </div>
       </CcCard>
 
+      {/* C13 — the voluntary withdrawal / termination function (Terms
+          section 13; A6 of 3.0.21): its own card and its own form, not the
+          deletion below, so it reads as a withdrawal throughout. The button
+          is the card's one action and wears `secondary`, which stands out
+          from the ghost buttons of the Danger Zone. */}
+      <CcCard
+        level={2}
+        id={END_CONTRACT_ID}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <FileX size={16} className="text-cc-brand-strong" aria-hidden={true} />
+            {END_CONTRACT_LABEL}
+          </span>
+        }
+      >
+        <div data-settings-end-contract="">
+          {isWithdrawing ? (
+            <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-6 text-center">
+              <Loader2 className="motion-safe:animate-spin text-cc-brand-strong" size={32} aria-hidden={true} />
+              <p className="m-0 cc-text-h3 text-cc-ink">Receiving your withdrawal...</p>
+              <p className="m-0 max-w-sm cc-text-cell text-cc-ink-muted">We send the receipt to your e-mail address, then delete your account.</p>
+            </div>
+          ) : (
+            <>
+              {withdrawError && (
+                <div className="mb-4">
+                  <CcMessageStrip state="error" announce>
+                    {withdrawError}
+                  </CcMessageStrip>
+                </div>
+              )}
+              <p className="m-0 mb-1 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
+              <p lang="de" className="m-0 mb-3 cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.de}</p>
+              <CcButton variant="secondary" onClick={openWithdrawal} icon={<FileX size={16} aria-hidden={true} />} data-settings-end-contract-button="">
+                {END_CONTRACT_LABEL}
+              </CcButton>
+              {/* The German label under the button: one line of button text fits a phone (mobile-responsive). */}
+              <p lang="de" className="m-0 mt-1 cc-text-meta font-semibold text-cc-ink">{END_CONTRACT_LABEL_DE}</p>
+            </>
+          )}
+        </div>
+      </CcCard>
+
       {/* Danger Zone — the name the privacy policy and the account mails
           send readers to ("Settings → Danger Zone"). */}
       <CcCard
         level={2}
-        id={END_CONTRACT_ID}
         title={
           <span className="inline-flex items-center gap-2">
             <AlertCircle size={16} className="text-cc-error" aria-hidden={true} />
@@ -1925,17 +2055,6 @@ export default function SettingsPage() {
             <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} icon={<Trash2 size={16} aria-hidden={true} />}>
               Delete my account
             </CcButton>
-            {/* C13 — the voluntary withdrawal / termination function (Terms
-                section 13): the same deletion confirmation, labelled as what
-                it also is; the receipt follows by e-mail. */}
-            <div className={INSET} data-settings-end-contract="">
-              <p className="m-0 mb-3 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
-              <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} data-settings-end-contract-button="">
-                {END_CONTRACT_LABEL}
-              </CcButton>
-              {/* The German label under the button: one line of button text fits a phone (mobile-responsive). */}
-              <p lang="de" className="m-0 mt-1 cc-text-meta text-cc-ink-muted">{END_CONTRACT_LABEL_DE}</p>
-            </div>
           </div>
         )}
       </CcCard>
@@ -2231,6 +2350,79 @@ export default function SettingsPage() {
                   autoComplete="current-password"
                   valueState={deletePasswordError ? 'error' : undefined}
                   message={deletePasswordError || undefined}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </CcMessageBox>
+
+      {/* C13 — the withdrawal form (Terms section 13; A6 of 3.0.21). It shows
+          the declaration, the name, the account address and the contract for
+          the person to check; the binding button says what it does:
+          "Confirm withdrawal · Widerruf bestätigen". */}
+      <CcMessageBox
+        open={showWithdrawal}
+        title={`${CONSENT_TEXTS.withdrawal.formTitle.en} · ${CONSENT_TEXTS.withdrawal.formTitle.de}`}
+        confirmLabel={END_CONTRACT_CONFIRM_LABEL}
+        cancelLabel={`${CONSENT_TEXTS.withdrawal.cancel.en} · ${CONSENT_TEXTS.withdrawal.cancel.de}`}
+        onConfirm={handleWithdraw}
+        onCancel={cancelWithdrawal}
+      >
+        {/* Scrolls inside the box on a short screen, so the button below stays reachable. */}
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto" data-withdrawal-form="">
+          <p className="m-0">
+            {CONSENT_TEXTS.withdrawal.formLead.en}{' '}
+            <span lang="de" className="text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formLead.de}</span>
+          </p>
+          <dl className={cn(INSET, 'm-0 grid gap-3')}>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formDeclaration.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formDeclaration.de}</span></dt>
+              <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-declaration="">{quotedDeclaration('en')}</dd>
+              <dd lang="de" className="m-0 mt-0.5 text-cc-ink-muted">{quotedDeclaration('de')}</dd>
+            </div>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formName.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formName.de}</span></dt>
+              <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-name="">{`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim() || '–'}</dd>
+            </div>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formEmail.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formEmail.de}</span></dt>
+              <dd className="m-0 mt-1 break-all text-cc-ink" data-withdrawal-email="">{profile?.email}</dd>
+            </div>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formContract.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formContract.de}</span></dt>
+              <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-contract="">{CONSENT_TEXTS.withdrawal.contract.en}</dd>
+              <dd lang="de" className="m-0 mt-0.5 text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.contract.de}</dd>
+            </div>
+          </dl>
+          <p className="m-0">{CONSENT_TEXTS.withdrawal.formEffect.en}</p>
+          <p lang="de" className="m-0 text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formEffect.de}</p>
+          {profile?.mfaEnabled && (
+            <>
+              <p className="m-0">
+                To confirm it is you, enter the 6-digit code from your authenticator app.
+              </p>
+              <SettingsInput
+                label="Code from your authenticator app"
+                required
+                value={withdrawMfaCode}
+                onChange={setWithdrawMfaCode}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                mono
+                valueState={withdrawCodeError ? 'error' : undefined}
+                message={withdrawCodeError || undefined}
+              />
+              {profile?.authMethod === 'password' && (
+                <SettingsInput
+                  label="Enter your password to confirm"
+                  type="password"
+                  required
+                  value={withdrawPassword}
+                  onChange={setWithdrawPassword}
+                  autoComplete="current-password"
+                  valueState={withdrawPasswordError ? 'error' : undefined}
+                  message={withdrawPasswordError || undefined}
                 />
               )}
             </>

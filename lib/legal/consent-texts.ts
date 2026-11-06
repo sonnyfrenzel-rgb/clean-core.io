@@ -340,18 +340,51 @@ export const CONSENT_TEXTS = {
 
   /**
    * C13 — the voluntary withdrawal / termination function (owner decision
-   * 23.10.2026 after the lawyer's feedback, § 356a BGB as a safeguard; Terms
-   * section 13). The entry in Settings and in the signed-in footer leads to the
-   * deletion confirmation (C7); once the declaration is received — before the
-   * erasure, so its delivery record is pseudonymised with the account's — a
-   * receipt goes by e-mail, best effort and without resend (`lib/withdrawal-receipt-mail.ts`), in the
-   * language of the accepted Terms.
+   * 23.10.2026, § 356a BGB as a safeguard; Terms section 13; A6 of 3.0.21).
+   * The entry in Settings and in the signed-in footer opens a withdrawal form
+   * of its own (not the deletion confirmation C7): it shows the name, the
+   * account address and the contract, and the button "Confirm withdrawal" /
+   * "Widerruf bestätigen" sends the declaration to
+   * `app/api/account/withdraw/route.ts`. Once it is received, the declaration
+   * and then the receipt mail are recorded in the proof log, the receipt goes
+   * by e-mail at once — before the erasure, so its delivery record is
+   * pseudonymised with the account's — in the language of the accepted Terms
+   * (`lib/withdrawal-declaration.ts`), and only then the account is deleted.
+   * The interface is English: the form shows the English text with the German
+   * beside it, as the label does.
    */
   withdrawal: {
     label: { de: 'Vertrag widerrufen / beenden', en: 'Withdraw from / end the contract' },
     settingsLead: {
-      de: 'Sie können den Vertrag über die Nutzung von Clean-Core.io jederzeit widerrufen oder beenden. Ihre Erklärung geben Sie ab, indem Sie Ihr Konto löschen; den Eingang bestätigen wir Ihnen per E-Mail. Diese Funktion bieten wir freiwillig an (Nutzungsbedingungen, Ziffer 13).',
-      en: 'You can withdraw from or end the contract on the use of Clean-Core.io at any time. You make the declaration by deleting your account; we confirm its receipt by e-mail. We offer this function voluntarily (Terms of Service, section 13).',
+      de: 'Sie können den Vertrag über die Nutzung von Clean-Core.io jederzeit widerrufen oder beenden. Die Schaltfläche unten öffnet das Formular: Es zeigt Ihren Namen, Ihre Konto-Adresse und den Vertrag, und Sie bestätigen mit „Widerruf bestätigen“. Den Eingang bestätigen wir Ihnen sofort per E-Mail; danach wird Ihr Konto gelöscht, und der Vertrag endet. Diese Funktion bieten wir freiwillig an (Nutzungsbedingungen, Ziffer 13).',
+      en: 'You can withdraw from or end the contract for the use of Clean-Core.io at any time. The button below opens the form: it shows your name, your account address and the contract, and you confirm with "Confirm withdrawal". We confirm receipt by e-mail at once; then your account is deleted and the contract ends. We offer this function voluntarily (Terms of Service, section 13).',
+    },
+    /** The contract the declaration concerns, as the form and the receipt name it. */
+    contract: { de: 'Vertrag über die Nutzung von Clean-Core.io', en: 'Contract for the use of Clean-Core.io' },
+    /** The declaration itself — what the form shows and the receipt repeats word for word. */
+    declaration: {
+      de: 'Hiermit widerrufe bzw. beende ich den Vertrag über die Nutzung von Clean-Core.io.',
+      en: 'I hereby withdraw from / end the contract for the use of Clean-Core.io.',
+    },
+    formTitle: { de: 'Vertrag widerrufen / beenden', en: 'Withdraw from / end the contract' },
+    formLead: {
+      de: 'Bitte prüfen Sie die Angaben und bestätigen Sie Ihre Erklärung.',
+      en: 'Please check the details and confirm your declaration.',
+    },
+    formDeclaration: { de: 'Ihre Erklärung', en: 'Your declaration' },
+    formName: { de: 'Name', en: 'Name' },
+    formEmail: { de: 'E-Mail-Adresse des Kontos', en: 'Account e-mail address' },
+    formContract: { de: 'Vertrag', en: 'Contract' },
+    formEffect: {
+      de: 'Mit der Bestätigung geht Ihre Erklärung bei uns ein. Wir senden Ihnen sofort eine Eingangsbestätigung an die Adresse oben und löschen danach Ihr Konto mit allen Projekten und dem hochgeladenen Quellcode; damit endet der Vertrag. Was die Löschung nicht erreicht, steht in der Datenschutzerklärung, Abschnitte 5 und 6. Exportieren Sie vorher, was Sie behalten möchten.',
+      en: 'When you confirm, your declaration reaches us. We send you a receipt at once to the address above and then delete your account with all projects and the uploaded source code; with that the contract ends. What the deletion does not reach is set out in the Privacy Policy, sections 5 and 6. Export what you wish to keep first.',
+    },
+    confirm: { de: 'Widerruf bestätigen', en: 'Confirm withdrawal' },
+    cancel: { de: 'Abbrechen', en: 'Cancel' },
+    /** The receipt could not be sent: nothing was deleted, the declaration is on record. */
+    receiptNotSent: {
+      de: 'Ihre Erklärung ist eingegangen und vermerkt, aber die Eingangsbestätigung per E-Mail ließ sich nicht senden. Ihr Konto ist deshalb noch nicht gelöscht. Bitte versuchen Sie es in einigen Minuten erneut oder schreiben Sie an info@clean-core.io.',
+      en: 'Your declaration has been received and recorded, but the receipt could not be sent by e-mail. Your account has therefore not been deleted yet. Please try again in a few minutes or write to info@clean-core.io.',
     },
     receiptSubject: {
       de: 'Clean-Core.io — Eingang Ihrer Erklärung: Vertrag widerrufen / beenden',
@@ -359,8 +392,11 @@ export const CONSENT_TEXTS = {
     },
     receiptReceived: {
       de: 'Wir haben Ihre Erklärung erhalten, den Vertrag über die Nutzung von Clean-Core.io zu widerrufen bzw. zu beenden.',
-      en: 'We have received your declaration to withdraw from or end the contract on the use of Clean-Core.io.',
+      en: 'We have received your declaration to withdraw from or end the contract for the use of Clean-Core.io.',
     },
+    receiptDeclaration: { de: 'Ihre Erklärung', en: 'Your declaration' },
+    receiptName: { de: 'Name', en: 'Name' },
+    receiptContract: { de: 'Vertrag', en: 'Contract' },
     receiptAt: { de: 'Eingegangen am', en: 'Received at' },
     receiptEffect: {
       de: 'Wir löschen Ihr Konto jetzt; damit endet der Vertrag (Nutzungsbedingungen, Ziffern 2.3 und 13), und eine Zusatzvereinbarung zu eigenen Modellschlüsseln endet mit ihm. Schlägt die Löschung fehl, sagen Ihnen das die Einstellungen, und Sie können sie wiederholen. Was die Löschung nicht erreicht, steht in der Datenschutzerklärung, Abschnitte 5 und 6.',
