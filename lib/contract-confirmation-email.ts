@@ -15,12 +15,14 @@ import { byokAddendumSha256 } from '@/lib/byok-addendum';
  *
  * One template for the three occasions the texts name: after sign-up, after
  * accepting an amendment of the Terms, and after accepting the Additional
- * Agreement with an Anthropic key. It names the version, the language version,
- * the time, the SHA-256 of the wording and the place of acceptance, and it
- * carries **the full wording** — the archived text whose digest the record
- * holds, character for character (`tests/legal-gaps-3021.spec.ts` takes the
- * wording back out of the HTML and hashes it), plus one link to where that
- * version stays published.
+ * Agreement with an Anthropic key — the agreements accepted separately are
+ * confirmed the same way (Terms 1.3). It names the version, the language
+ * version, the time, the SHA-256 of the wording and the place of acceptance,
+ * and carries one link to the wording of exactly that version in exactly that
+ * language, at an address bound to both that stays reachable
+ * (`publishedWordingPath`; the pages serve the archived bytes the digest is
+ * taken over). It carries nothing more than Terms 1.3 promises: not the
+ * wording itself (legal texts Fassung 1.1, 1.3).
  *
  * The mail speaks the language version accepted: a German acceptance gets the
  * German C5 text and the German wording. Best effort and no resend (legal
@@ -46,8 +48,6 @@ export interface ContractConfirmationInput {
   versionLabel: string;
   /** SHA-256 of the archived wording of that language version. */
   sha256: string;
-  /** The archived wording itself (LF line endings), as hashed. */
-  wording: string;
   /** ISO time of the acceptance as the server recorded it. */
   acceptedAt: string;
   /**
@@ -78,20 +78,26 @@ const BASIS: Record<ConfirmationOccasion, Bi> = {
 };
 
 const LINK_LEAD: Bi = {
-  de: 'Diese Fassung bleibt mit ihrem Hashwert veröffentlicht unter:',
-  en: 'This version stays published with its digest at:',
+  de: 'Der Wortlaut dieser Fassung, dauerhaft unter dieser Adresse:',
+  en: 'The wording of this version, permanently at this address:',
 };
-
-const WORDING_MARK: Bi = { de: '— Vollständiger Wortlaut —', en: '— Full wording —' };
 
 function isAddendum(occasion: ConfirmationOccasion): boolean {
   return occasion === 'byok-addendum';
 }
 
-/** Where the accepted version stays published (without the scheme, as the texts write it). */
+/**
+ * Where the accepted version stays published, bound to the version and the
+ * language (Terms 1.3: "a link to the wording of the accepted version, which
+ * remains permanently available at that address"). Without the scheme, as the
+ * texts write it. The pages behind both serve the archived file, never the
+ * current source: `app/terms/versions/[version]/{en,de}` and
+ * `app/terms/byok-addendum/versions/[id]/[lang]`.
+ */
 export function publishedWordingPath(occasion: ConfirmationOccasion, versionId: string, language: LegalLang): string {
-  if (isAddendum(occasion)) return language === 'de' ? '/terms/byok-addendum/de' : '/terms/byok-addendum';
-  return `/terms/versions/${versionId}${language === 'de' ? '/de' : ''}`;
+  const id = encodeURIComponent(versionId);
+  if (isAddendum(occasion)) return `/terms/byok-addendum/versions/${id}/${language}`;
+  return `/terms/versions/${id}/${language}`;
 }
 
 export function contractConfirmationSubject(input: Pick<ContractConfirmationInput, 'occasion' | 'language' | 'versionLabel'>): string {
@@ -104,26 +110,6 @@ function timeOf(iso: string): { date: string; time: string } {
   if (Number.isNaN(d.getTime())) throw new Error(`not an ISO time: ${iso}`);
   const isoDate = d.toISOString().slice(0, 10);
   return { date: isoDate, time: d.toISOString().slice(11, 16) };
-}
-
-/**
- * The wording as mail paragraphs: one paragraph per blank-line-separated chunk
- * of the archived file, its lines joined with `<br>`, every character escaped
- * and nothing dropped — so taking the text back out of the HTML gives the file.
- */
-export function wordingParagraphs(wording: string): string[] {
-  const body = wording.replace(/\r\n/g, '\n').replace(/\n$/, '');
-  return body.split('\n\n').map((chunk) => `<span style="overflow-wrap: anywhere;">${chunk.split('\n').map(escapeHtml).join('<br>')}</span>`);
-}
-
-/** The inverse of `wordingParagraphs`, for the spec: the wording back out of the mail. */
-export function wordingFromParagraphs(paragraphs: string[]): string {
-  const unescape = (s: string) =>
-    s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'").replace(/&amp;/g, '&');
-  return `${paragraphs
-    .map((p) => p.replace(/^<span style="overflow-wrap: anywhere;">/, '').replace(/<\/span>$/, ''))
-    .map((p) => p.split('<br>').map(unescape).join('\n'))
-    .join('\n\n')}\n`;
 }
 
 /**
@@ -172,10 +158,7 @@ export function buildContractConfirmationMail(input: ContractConfirmationInput):
     .replace('{Adresse}', `clean-core.io${path}`)
     .replace('{Grundlage}', BASIS[input.occasion][lang]);
 
-  const mark = WORDING_MARK[lang];
-  const at = filled.indexOf(mark);
-  if (at < 0) throw new Error('C5: the wording marker is missing');
-  const head = filled.slice(0, at).trim().split('\n\n');
+  const head = filled.trim().split('\n\n');
   const greetingLine = head.shift() ?? '';
   // "Hallo ," when there is no name on the profile reads as a slip.
   const greeting = escapeHtml(greetingLine.replace(/ ,$/, ','));
@@ -184,7 +167,7 @@ export function buildContractConfirmationMail(input: ContractConfirmationInput):
 
   const html = buildUserMail({
     greeting,
-    paragraphs: [...paragraphs, `<strong>${escapeHtml(mark)}</strong>`, ...wordingParagraphs(input.wording)],
+    paragraphs,
     link: { lead: LINK_LEAD[lang], url: `${APP_BASE_URL}${path}` },
     signature: 'Felix',
     footer: [
@@ -198,7 +181,12 @@ export function buildContractConfirmationMail(input: ContractConfirmationInput):
 
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
 
-/** The wording and digest of what an occasion accepted, or null when it is not archived. */
+/**
+ * The wording and digest of what an occasion accepted, or null when it is not
+ * archived — or when the wording rendered from the source no longer hashes to
+ * the archived digest: then the page behind the link would not show the words
+ * the digest names, and no confirmation goes out.
+ */
 export function acceptedWording(
   occasion: ConfirmationOccasion,
   language: LegalLang,

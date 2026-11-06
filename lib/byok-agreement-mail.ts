@@ -18,7 +18,7 @@ import { logger, providerErrorShape } from '@/lib/logger';
  */
 /**
  * The acceptance is confirmed with the contract confirmation C5, in the
- * language version accepted, with its digest and the full wording (T03).
+ * language version accepted, with its digest and a link to its wording (T03).
  */
 export async function sendAgreementAcceptedMail(
   to: string | null | undefined,

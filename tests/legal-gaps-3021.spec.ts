@@ -13,7 +13,6 @@ import {
   acceptedWording,
   buildContractConfirmationMail,
   publishedWordingPath,
-  wordingFromParagraphs,
   type ConfirmationOccasion,
 } from '../lib/contract-confirmation-email';
 import { providerSuspendedNotice, suspensionDetailsOf } from '../lib/provider-suspension';
@@ -165,7 +164,7 @@ test.describe('T03 — the contract confirmation C5', () => {
     ['byok-addendum', 'de'],
   ];
   for (const [occasion, language] of cases) {
-    test(`${occasion} (${language}): version, language, time, digest, the full wording and one link`, () => {
+    test(`${occasion} (${language}): version, language, time, digest and one link to the wording of that version and language`, () => {
       const accepted = acceptedWording(occasion, language, 'ZV-BYOK-1.0');
       expect(accepted, 'the rendered wording no longer matches its archived digest').not.toBeNull();
       const { subject, html } = buildContractConfirmationMail({
@@ -183,16 +182,19 @@ test.describe('T03 — the contract confirmation C5', () => {
       expect(html).toContain(language === 'de' ? 'Hallo Ada,' : 'Hello Ada,');
       expect(html).not.toMatch(/\{[A-Z][a-zA-Z -]*\}|\{\{/);
       expect(html).not.toContain('den/die');
-      // The full wording, character for character: taken back out of the mail it hashes to the digest.
-      const spans = [...html.matchAll(/<p style="margin: 0 0 16px 0;">(<span style="overflow-wrap: anywhere;">[\s\S]*?<\/span>)<\/p>/g)].map((m) => m[1]);
-      const mark = language === 'de' ? '— Vollständiger Wortlaut —' : '— Full wording —';
-      const after = html.slice(html.indexOf(mark));
-      const wordingSpans = spans.filter((s) => after.includes(s));
-      expect(sha256(wordingFromParagraphs(wordingSpans))).toBe(accepted!.sha256);
-      // One link, to where that version stays published.
+      // Terms 1.3 (Fassung 1.1): a link to the wording, not the wording — the mail says nothing more.
+      expect(html).not.toMatch(/Vollständiger Wortlaut|Full wording|vollständige Wortlaut|full wording/);
+      expect(html).not.toContain(accepted!.wording.split('\n\n')[1].slice(0, 60));
+      // One link, to where exactly that version in exactly that language stays published.
       const links = [...html.matchAll(/<a\s[^>]*href="([^"]*)"/g)].map((m) => m[1]);
       expect(links).toHaveLength(1);
-      expect(links[0].endsWith(publishedWordingPath(occasion, accepted!.versionId, language))).toBe(true);
+      const wanted = publishedWordingPath(occasion, accepted!.versionId, language);
+      expect(links[0].endsWith(wanted)).toBe(true);
+      expect(wanted).toBe(
+        occasion === 'byok-addendum' ? `/terms/byok-addendum/versions/ZV-BYOK-1.0/${language}` : `/terms/versions/${accepted!.versionId}/${language}`,
+      );
+      // The address is named in the body as well, as the link's text says where it leads.
+      expect(html).toContain(`clean-core.io${wanted}`);
     });
   }
 

@@ -6,7 +6,7 @@ import type { ByokAgreementEnding } from '@/lib/byok-addendum';
  * The confirmation of the end of the Additional Agreement on Own Model Keys
  * (roadmap 3.0.21; legal review E14/E24, acceptance T03). The acceptance is
  * confirmed by the contract confirmation C5 (`lib/contract-confirmation-email.ts`),
- * in the language version accepted and with the full wording. A record
+ * in the language version accepted and with a link to its wording. A record
  * for both sides, not a condition of anything — a mail that does not go out
  * changes nothing about the key or the agreement, and there is deliberately no
  * resend and no "delivery failed" notice (E25 struck both).
