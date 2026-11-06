@@ -14,6 +14,12 @@ import { checkAbapTestClass, shortenLongAbapMethodNames } from '../lib/testing-a
 import { abapMethodMatches } from '../lib/abap-unit-method';
 import { MODEL_NETWORK_CODE, providerConnectionFailure } from '../lib/model-deadline';
 import { modelErrorKind } from '../lib/transformation/orchestrator';
+import { absentClaims, capabilityPresence } from '../lib/documentation-capabilities';
+import { capabilityFactsOf } from '../lib/documentation-facts';
+import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
+import { programSummaryFactsOf } from '../lib/program-summary-facts';
+import { programSummary } from '../lib/program-summary-text';
+import { EMPTY_SECTION } from '../lib/process-document';
 
 /**
  * Hotfix 3.0.22 (docs/design/analyze-business-first-plan.md §4.0, HF-a to HF-e), from a full run of owner example A
@@ -272,5 +278,65 @@ test.describe('HF-c: Testing — names shortened, never a failed attempt; a fail
     const route = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'gemini', 'route.ts'), 'utf8');
     expect(route).not.toContain('regional restrictions');
     expect(route).toContain('providerConnectionFailure(error, Date.now() - arrivedAt)');
+  });
+});
+
+test.describe('HF-d: no text asserts an absence the engine did not check', () => {
+  const approvalShape = [
+    'REPORT zccio_approval_shape.',
+    'PARAMETERS p_action TYPE string DEFAULT `APPROVE`.',
+    'DATA gv_state TYPE string VALUE `SUBMITTED`.',
+    'DATA gv_approver TYPE string.',
+    'START-OF-SELECTION.',
+    '  CASE p_action.',
+    "    WHEN 'APPROVE'.",
+    "      gv_state = 'APPROVED'.",
+    '      gv_approver = sy-uname.',
+    "    WHEN 'APPLY'.",
+    "      IF gv_state <> 'APPROVED'.",
+    "        MESSAGE 'Not approved' TYPE 'E'.",
+    '      ENDIF.',
+    '  ENDCASE.',
+    '  WRITE / gv_state.',
+  ].join('\n');
+  const plainShape = ['REPORT zccio_plain_shape.', 'PARAMETERS p_n TYPE i DEFAULT 3.', 'DATA gv_sum TYPE i.', 'START-OF-SELECTION.', '  gv_sum = p_n * 2.', '  " approval is not a word of this code', '  WRITE / gv_sum.'].join('\n');
+
+  test('an approval the program writes in its own code keeps "no approval" unsaid, and a sentence about it is no false claim', () => {
+    const facts = capabilityFactsOf(approvalShape, buildProcessSkeleton(approvalShape));
+    // The program's name, the parameter's default, the approver and the state: first line per name.
+    expect(facts.ownApproval?.map((o) => `${o.name}@${o.line}`)).toEqual(['ZCCIO_APPROVAL_SHAPE@1', 'APPROVE@2', 'GV_APPROVER@4', 'APPROVED@8']);
+    const approval = capabilityPresence(facts).approval;
+    expect(approval.present).toBe(false);
+    expect(approval.determined).toBe(false);
+    expect(absentClaims('The reviewer approves the request before it is applied.', facts)).toEqual([]);
+  });
+
+  test('where the engine did read the whole program and found none, it says what it read — not more', () => {
+    const facts = capabilityFactsOf(plainShape, buildProcessSkeleton(plainShape));
+    expect(facts.ownApproval).toEqual([]);
+    const approval = capabilityPresence(facts).approval;
+    expect(approval.determined).toBe(true);
+    expect(approval.absent).toBe('No SAP workflow or release function is called; its own code approves or overrides nothing.');
+    expect(absentClaims('The manager approves each exception.', facts).map((c) => c.capability)).toEqual(['approval']);
+    // Facts stored before 3.0.22 never read the program's own code for it: their sentence stops at the calls.
+    const { ownApproval: _unread, ...stored } = facts;
+    void _unread;
+    expect(capabilityPresence(stored).approval.absent).toBe('No SAP workflow or release function is called.');
+    for (const s of Object.values(capabilityPresence(facts))) expect(s.absent).not.toMatch(/no approval, release or override workflow/);
+  });
+
+  test('a program that approves in its own code is not called "read-only"; one that does not still is', () => {
+    const approving = programSummary(programSummaryFactsOf(approvalShape));
+    const purpose = approving.lines.find((l) => l.key === 'purpose')!.text;
+    expect(purpose).not.toMatch(/read-only/);
+    expect(approving.lines.map((l) => l.text).join(' ')).toContain('It does not post or change data in SAP');
+    const plain = programSummary(programSummaryFactsOf(plainShape));
+    expect(plain.lines.find((l) => l.key === 'purpose')!.text).toMatch(/^A read-only report/);
+  });
+
+  test('an empty section says only what the engine reads: never "holds no control" or "calls nothing by name"', () => {
+    expect(EMPTY_SECTION.systems).toBe('It reads no table by name and calls no function module, transaction or other program by name.');
+    expect(EMPTY_SECTION.controls).toMatch(/^None of the controls the engine reads: no AUTHORITY-CHECK/);
+    for (const s of Object.values(EMPTY_SECTION)) expect(s).not.toMatch(/holds no control|calls nothing by name/);
   });
 });

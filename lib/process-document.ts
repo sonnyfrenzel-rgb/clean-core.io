@@ -101,8 +101,10 @@ export const EMPTY_SECTION: Readonly<Record<'trigger' | 'rules' | 'exceptions' |
   outputs: 'No change of data and no output in the code an entry point reaches.',
   data: 'It reads no table by name.',
   integrations: 'No function module, transaction or other program is called by name.',
-  controls: 'No authorization check, no record of its own and no explicit save or undo.',
-  systems: 'It reads no table by name, calls nothing by name and holds no control.',
+  // Hotfix 3.0.22 (HF-d): only what the engine reads as a control (process-document-build.ts, CONTROL_SIGNALS).
+  // A role check the program writes in its own code (owner example A) is not one of these, so "no control" was not proven.
+  controls: 'None of the controls the engine reads: no AUTHORITY-CHECK, no change documents, no record table of its own, no application log, no explicit COMMIT or ROLLBACK.',
+  systems: 'It reads no table by name and calls no function module, transaction or other program by name.',
   questions: 'No question is left open.',
 };
 

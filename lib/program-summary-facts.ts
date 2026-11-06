@@ -619,6 +619,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     version: PROGRAM_SUMMARY_FACTS_VERSION,
     program,
     kind,
+    ownApproval: capability.ownApproval?.[0]?.line ?? null,
     reads,
     writes,
     changes: {

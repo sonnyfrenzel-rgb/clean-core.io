@@ -106,6 +106,29 @@ export function capabilityFactsOf(
     })),
     ...calls.performs.filter((p) => p.dynamic).map((p) => ({ name: operand(p.text, /\bPERFORM\s+(\([^)]*\)|\S+)/i, 'a routine named at run time'), line: p.lineStart })),
   ].sort((a, b) => a.line - b.line);
+  // Hotfix 3.0.22 (HF-d): an approval the program handles in its own code — a value or a name that approves or
+  // overrides (`'APPROVED'`, `approve`, `lv_approver`, `'RELEASED'`), outside comments. First line per name. Not
+  // "rejected": a rejected sales item is no approval.
+  const ownApproval = first(
+    lines.flatMap((text, i) => {
+      if (/^\s*\*/.test(text)) return [];
+      // The line up to its `"` comment — a `"` inside a literal is text, not a comment.
+      let quote: string | null = null;
+      let end = text.length;
+      for (let k = 0; k < text.length; k++) {
+        const ch = text[k];
+        if (quote) {
+          if (ch === quote) quote = null;
+        } else if (ch === "'" || ch === '`') quote = ch;
+        else if (ch === '"') {
+          end = k;
+          break;
+        }
+      }
+      const code = text.slice(0, end);
+      return [...code.matchAll(/\b[\w]*(?:APPROV|OVERRID)[\w]*\b|'RELEASED?'/gi)].map((m) => ({ name: m[0].replace(/'/g, ''), line: i + 1 }));
+    }),
+  );
   return {
     version: CAPABILITY_FACTS_VERSION,
     reads,
@@ -119,5 +142,6 @@ export function capabilityFactsOf(
     dynamicCalls,
     dynamicReads,
     possibleReads,
+    ownApproval,
   };
 }
