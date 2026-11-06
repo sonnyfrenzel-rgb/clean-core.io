@@ -10,6 +10,8 @@ import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
 import { localDataObjectsOf } from './table-dependencies';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
+import { engineReads3022Apply } from './engine-reads-3022-gate';
+import { APP_VERSION } from '../version';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -595,6 +597,14 @@ const DOMINANT_ORDER: SkeletonNodeKind[] = [
  * Small readers over one statement.
  * ------------------------------------------------------------------ */
 
+/**
+ * Engine 3.0.22 (`flagStep`): `field = value` where the value is one literal, a number or one name — `abap_true`,
+ * `space`, a constant. A computed value (`a + b`, a call, a constructor) is a calculation, not a flag.
+ */
+const FLAG_ASSIGNMENT = /^((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)\s*=\s*('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+|[\w/]+=>[\w/]+|[\w/]+)\s*\.?$/;
+/** The built-in constants a flag is set to. Any other bare name must be a `CONSTANTS` of this source. */
+const BUILT_IN_FLAG_VALUES = new Set(['ABAP_TRUE', 'ABAP_FALSE', 'ABAP_UNDEFINED', 'SPACE']);
+
 function snippet(text: string): string {
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
@@ -943,8 +953,17 @@ function functionTaskKind(name: string | undefined): SkeletonNodeKind {
  * The build.
  * ------------------------------------------------------------------ */
 
-export function buildProcessSkeleton(source: string): ProcessSkeleton {
-  return buildProcessSkeletonFrom(buildProcessFacts(source));
+/**
+ * What a build reads for. `engineVersion` is the engine of the run the map is drawn for
+ * (`engineVersionOfProject`); absent, this release. From `ENGINE_READS_3022_FROM` the walk draws what
+ * the older engines left out (`Reads3022`); a run of an older engine keeps exactly the map it had.
+ */
+export interface SkeletonBuildOptions {
+  engineVersion?: string | null;
+}
+
+export function buildProcessSkeleton(source: string, options: SkeletonBuildOptions = {}): ProcessSkeleton {
+  return buildProcessSkeletonFrom(buildProcessFacts(source), options);
 }
 
 /**
@@ -954,13 +973,42 @@ export function buildProcessSkeleton(source: string): ProcessSkeleton {
  * of the source, or the gateway and the task drawn from the same `IF` carry two
  * different line numbers (`process-facts.ts`).
  */
-export function buildProcessSkeletonFrom(facts: ProcessFacts): ProcessSkeleton {
-  return new SkeletonBuilder(
+export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonBuildOptions = {}): ProcessSkeleton {
+  const reads3022 = readsOf(options.engineVersion);
+  const skeleton = new SkeletonBuilder(
     facts.statements,
     facts.structure,
     facts.control,
     facts.calls,
+    reads3022,
   ).build();
+  readFor.set(skeleton, reads3022);
+  return skeleton;
+}
+
+/** Which gated readings a build for `engineVersion` carries; absent, this release's. */
+function readsOf(engineVersion: string | null | undefined): boolean {
+  return engineReads3022Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
+}
+
+/** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
+const readFor = new WeakMap<ProcessSkeleton, boolean>();
+
+/**
+ * `skeleton` when it is the map the engine `engineVersion` draws for these facts, otherwise that map, built.
+ *
+ * For a caller that holds a skeleton read for this release (`readProcess`, a naming context) and has to answer for
+ * the engine of a signed run: the rules, the story and the map of a run of an older engine are read off the map that
+ * engine drew, never off a newer one. A skeleton not built here is taken as it is.
+ */
+export function skeletonReadFor(
+  skeleton: ProcessSkeleton,
+  facts: ProcessFacts | (() => ProcessFacts),
+  engineVersion: string | null | undefined,
+): ProcessSkeleton {
+  const drawn = readFor.get(skeleton);
+  if (drawn === undefined || drawn === readsOf(engineVersion)) return skeleton;
+  return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
 }
 
 interface Exit {
@@ -1238,12 +1286,22 @@ class SkeletonBuilder {
   private resultWriteCache = new Map<number, Set<number>>();
   /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
   private regionLast = new Map<string, number>();
+  /** Engine 3.0.22: the decisions reading each field, by upper-cased field — `decisionsReading`. */
+  private flagReaderCache = new Map<string, Array<{ index: number; line: number }>>();
+  private constantsCache: Set<string> | null = null;
 
   constructor(
     private statements: AbapStatement[],
     private structure: BlockStructure,
     private control: ControlFlowReport,
     private calls: CallGraphReport,
+    /**
+     * Engine 3.0.22 (`ENGINE_READS_3022_FROM`): the readings of the process-quality step — an arm that only sets
+     * a flag a later decision reads is a step (`flagStep`), a routine that builds a table while it decides or
+     * iterates is a calculation and not a helper (`buildsWhileDeciding`), and a loop level begins at a start
+     * event of its own (`addSubProcessStarts`). False for a run of an older engine, whose map stays as it was.
+     */
+    private reads3022 = false,
   ) {}
 
   build(): ProcessSkeleton {
@@ -3289,16 +3347,116 @@ class SkeletonBuilder {
       const bodyTo = (next ? next.headerIndex : block.closeIndex) - 1;
       const isDefault = arm.kind === 'else' || arm.kind === 'when-others';
       if (isDefault) hasDefault = true;
-      const armExits = this.walkRange(bodyFrom, bodyTo, ctx, [{
+      const armEntry: Exit = {
         from: gateway.id,
         condition: arm.condition,
         kind: isDefault ? 'default' : 'conditional',
-      }]);
+      };
+      const before = this.nodes.length;
+      let armExits = this.walkRange(bodyFrom, bodyTo, ctx, [armEntry]);
+      // Engine 3.0.22: an arm that drew nothing but sets a flag a later decision reads is that decision's
+      // outcome, not an empty way past the gateway.
+      if (this.reads3022 && !table && this.nodes.length === before && armExits.length === 1 && armExits[0].from === gateway.id) {
+        const step = this.flagStep(bodyFrom, bodyTo, block, ctx);
+        if (step) {
+          this.connect(armExits, step.id);
+          armExits = [{ from: step.id, condition: '', kind: 'sequence' }];
+        }
+      }
       exits.push(...armExits);
     }
     // No ELSE and no WHEN OTHERS: the gateway itself is the way past it.
     if (!hasDefault) exits.push({ from: gateway.id, condition: '', kind: 'default' });
     return exits;
+  }
+
+  /**
+   * Engine 3.0.22 — an arm that only sets a flag is the outcome of its decision.
+   *
+   * `ELSE. gv_approved = abap_true. ENDIF. … IF gv_approved = abap_true. PERFORM create_order.` The arm draws
+   * nothing — an assignment is no element of §5.8 — so the map showed the third way out of the decision as an
+   * empty flow, and a reader could not see that this way *approves*. What the arm does is decide the later
+   * question in advance. So where an arm draws nothing at all and one of its statements sets a field to a
+   * value (a literal, a constant, `abap_true`) that the condition of **another** decision of this source reads,
+   * that assignment is a step of its own: a task on the assignment's line, labelled with the statement as
+   * written (rule 6), the field and its value in `detail`, and the program's own words assigned in the same
+   * arm (`gv_message = '…'`) beside them, so a view can say the outcome in the program's text.
+   *
+   * Not for a field no decision reads (a message text alone stays an assignment), not for an arm that draws
+   * anything (its steps already say what it does), and not for a decision table — arms that each set the same
+   * field are drawn as one classification (`readDecisionTable`).
+   */
+  private flagStep(from: number, to: number, block: Block, ctx: WalkContext): SkeletonNode | null {
+    const flags: Array<{ field: string; value: string; statement: AbapStatement }> = [];
+    const texts: string[] = [];
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (!statement || statement.nativeSql) continue;
+      const m = FLAG_ASSIGNMENT.exec(statement.text.trim());
+      if (!m) continue;
+      const [, field, value] = m;
+      // A copy of another variable (`lv_eur = iv_amount`) carries a value along; it does not settle a question.
+      if (/^[\w/]+$/.test(value) && !/^-?\d+$/.test(value) && !BUILT_IN_FLAG_VALUES.has(value.toUpperCase())
+        && !this.constantNames().has(value.toUpperCase())) continue;
+      if (value.startsWith("'") || value.startsWith('`')) {
+        const text = value.slice(1, -1).replace(/''/g, "'").trim();
+        if (/[A-Za-z]{2}/.test(text) && text.includes(' ')) texts.push(text);
+      }
+      if (this.decisionsReading(field, block).length) flags.push({ field, value, statement });
+    }
+    if (!flags.length) return null;
+    const first = flags[0];
+    const readAt = this.decisionsReading(first.field, block);
+    return this.addNode('task', snippet(first.statement.text), anchorOf(first.statement), ctx.region, ctx.container, {
+      detail: {
+        flagStep: true,
+        flag: first.field.toUpperCase(),
+        value: first.value,
+        ...(flags.length > 1 ? { flags: flags.map((f) => f.field.toUpperCase()) } : {}),
+        readAtLines: readAt.map((line) => String(line)),
+        ...(texts.length ? { programTexts: texts } : {}),
+      },
+    });
+  }
+
+  /** Names this source declares with `CONSTANTS`, upper-cased — read once. */
+  private constantNames(): Set<string> {
+    if (this.constantsCache) return this.constantsCache;
+    const out = new Set<string>();
+    for (const statement of this.statements) {
+      if (statement.keyword !== 'CONSTANTS') continue;
+      const name = /^CONSTANTS\s*:?\s*(?:BEGIN\s+OF\s+)?([\w/]+)/i.exec(statement.text)?.[1];
+      if (name) out.add(name.toUpperCase());
+    }
+    this.constantsCache = out;
+    return out;
+  }
+
+  /** The lines of the decisions outside `own` whose condition, selector or `CHECK` reads `field`. */
+  private decisionsReading(field: string, own: Block): number[] {
+    const key = field.toUpperCase();
+    const cached = this.flagReaderCache.get(key);
+    const all = cached ?? this.computeDecisionsReading(key);
+    if (!cached) this.flagReaderCache.set(key, all);
+    return all.filter((r) => r.index < own.openIndex || r.index > own.closeIndex).map((r) => r.line);
+  }
+
+  private computeDecisionsReading(key: string): Array<{ index: number; line: number }> {
+    const escaped = key.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+    const reads = new RegExp(`(?<![\\w/<>-])${escaped}(?![\\w/-])`, 'i');
+    const out: Array<{ index: number; line: number }> = [];
+    for (const branch of this.control.branches) {
+      const words = [branch.selector ?? '', ...branch.arms.map((arm) => arm.condition)];
+      if (words.some((w) => reads.test(maskLiterals(w)))) {
+        out.push({ index: branch.openIndex, line: this.statements[branch.openIndex]?.lineStart ?? 0 });
+      }
+    }
+    for (const statement of this.statements) {
+      if ((statement.keyword === 'CHECK' || statement.keyword === 'WHILE') && reads.test(maskLiterals(statement.text))) {
+        out.push({ index: statement.index, line: statement.lineStart });
+      }
+    }
+    return out;
   }
 
   /**

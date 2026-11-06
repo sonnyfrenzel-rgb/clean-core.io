@@ -36,7 +36,15 @@ const benchmarkIds = readdirSync(join(KORPUS_ROOT, 'cases'))
   .filter((name) => /^BM-\d{3}$/.test(name) && existsSync(join(KORPUS_ROOT, 'cases', name, 'expected.json')))
   .sort();
 const ONLY = process.env.BM_RANGE?.split('-').map(Number);
-const ids = ONLY ? benchmarkIds.filter((id) => Number(id.slice(3)) >= ONLY[0] && Number(id.slice(3)) <= ONLY[1]) : benchmarkIds;
+// BM_SPLIT=learn: only the learning halves of split.json (waves 1+2 and wave 3) are read and measured.
+// The test halves are never opened then — not their source, not their expected answer.
+const SPLIT = process.env.BM_SPLIT;
+if (SPLIT && SPLIT !== 'learn') throw new Error(`BM_SPLIT=${SPLIT}: only "learn" is supported`);
+const split = SPLIT ? (JSON.parse(readFileSync(join(KORPUS_ROOT, 'split.json'), 'utf8')) as { learn: string[]; w3_learn: string[] }) : null;
+const learn = split ? new Set<string>([...split.learn, ...split.w3_learn]) : null;
+const ids = (ONLY ? benchmarkIds.filter((id) => Number(id.slice(3)) >= ONLY[0] && Number(id.slice(3)) <= ONLY[1]) : benchmarkIds).filter(
+  (id) => !learn || learn.has(id),
+);
 if (ids.length > 0) {
   writeFileSync(
     manifestPath,

@@ -346,7 +346,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const tables = readTableDependencies(source);
   const allSites = objectSites(tables, calls);
   const sites = sitesByElement(map, nav, allSites, calls);
-  const skeleton: ProcessSkeleton = buildProcessSkeleton(source);
+  const skeleton: ProcessSkeleton = buildProcessSkeleton(source, { engineVersion: input.engineVersion });
   let ruleSet: BusinessRuleSet | null = null;
   try {
     ruleSet = deriveBusinessRules(source, input.engineVersion);

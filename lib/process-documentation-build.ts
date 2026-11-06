@@ -103,7 +103,7 @@ function cleanName(name: string | null): string | null {
 
 export function buildProcessDocumentation(input: ProcessDocumentationInput): ProcessDocumentation {
   const { source, map } = input;
-  const skeleton = input.skeleton ?? buildProcessSkeleton(source);
+  const skeleton = input.skeleton ?? buildProcessSkeleton(source, { engineVersion: input.engineVersion });
 
   const sentences = buildBusinessStatements(source);
   const statements: DocStatement[] = sentences.map((sentence) => ({

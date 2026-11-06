@@ -1,4 +1,5 @@
-import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
+import { buildProcessSkeleton, skeletonReadFor, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
+import { buildProcessFacts } from '../abap/process-facts';
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
 import { engineReads3021Apply } from '../abap/engine-reads-3021-gate';
@@ -263,11 +264,14 @@ export function businessLevelOf(skeleton: ProcessSkeleton, source: string | unde
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
   const { naming, ...rest } = options;
   // The technical file is the engine's alone (owner decision 23.10.2026): a naming applies to the plain file only.
-  if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source), { source, ...rest });
-  // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once.
+  const engine = { engineVersion: rest.exporterVersion ?? APP_VERSION };
+  if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source, engine), { source, ...rest });
+  // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once —
+  // unless the run's engine draws another map than this release (`skeletonReadFor`).
   const context = namingContextOf(source);
   const aiNames = aiNamesOfNaming(context, naming);
-  return buildBpmnExport(context.skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
+  const skeleton = skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engine.engineVersion);
+  return buildBpmnExport(skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
 }
 
 /** Who wrote a stored naming, as the receipt the server verified says — nothing more, nothing assumed. */
@@ -318,8 +322,11 @@ export function buildReadingExports(
   const { naming, ...base } = options;
   // A stored naming (a download, 3.0.21) puts the model's names on the plain file, marked; the technical file is the
   // code's own tokens and stays so.
+  const engineVersion = options.exporterVersion ?? APP_VERSION;
   const context = naming ? namingContextOf(source) : null;
-  const skeleton = context?.skeleton ?? buildProcessSkeleton(source);
+  const skeleton = context
+    ? skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engineVersion)
+    : buildProcessSkeleton(source, { engineVersion });
   const aiNames = context ? aiNamesOfNaming(context, naming) : undefined;
   const out = {
     bpmn: buildBpmnExport(skeleton, { ...base, source, names: 'plain', wrap: READING_WRAP, ...(aiNames ? { aiNames } : {}) }),
@@ -371,7 +378,7 @@ export function buildPhoneReadingXml(
     if (w <= fit) return undefined;
     return w <= 2 * fit ? PHONE_WRAP : PHONE_MIN_WRAP;
   };
-  const skeleton = buildProcessSkeleton(source);
+  const skeleton = buildProcessSkeleton(source, { engineVersion: options.exporterVersion ?? APP_VERSION });
   const build = (wrapOf: (key: string) => number | undefined) =>
     buildBpmnExport(skeleton, {
       ...options,

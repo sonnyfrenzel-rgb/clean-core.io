@@ -44,7 +44,7 @@
  */
 
 import { buildProcessFacts } from './abap/process-facts';
-import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
+import { skeletonReadFor, type ProcessSkeleton, type SkeletonNode } from './abap/process-skeleton';
 import { deriveBusinessRulesFrom, type BusinessRuleSet } from './abap/business-rule-set';
 import { readTableDependencies, type TableDependency } from './abap/table-dependencies';
 import {
@@ -267,7 +267,7 @@ export function readProcess(source: string): ProcessReading {
  * are read for (3.0.20) — the project's (`engineVersionOfProject`), or this one for a source no run has signed.
  */
 export function readRules(source: string, process: ProcessReading, engineVersion: string | null = APP_VERSION): BusinessRuleSet {
-  return deriveBusinessRulesFrom(source, process.facts, process.skeleton, engineVersion);
+  return deriveBusinessRulesFrom(source, process.facts, skeletonReadFor(process.skeleton, process.facts, engineVersion), engineVersion);
 }
 
 export interface SourceReading {
