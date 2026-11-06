@@ -417,7 +417,7 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     if (fromTarget) written(fromTarget);
     const own = /^(?:MULTIPLY|DIVIDE|CLEAR|FREE|CONDENSE|SHIFT|TRANSLATE|OVERLAY)\s+([\w/]+(?:-[\w/]+)*)/i.exec(text)?.[1];
     if (own) written(own);
-    // From 3.0.21 (QA review of 114a811d045d): IMPORT … FROM MEMORY/DATABASE/SHARED BUFFER writes every name it
+    // From 3.0.21: IMPORT … FROM MEMORY/DATABASE/SHARED BUFFER writes every name it
     // lists — `IMPORT lv_case FROM MEMORY ID 'X'`, `IMPORT p = lv_case FROM …` — so the copy is no longer the switch.
     if (reads3021) {
       const imported = /^IMPORT\s+([\s\S]*?)\s+FROM\b/i.exec(text)?.[1];
