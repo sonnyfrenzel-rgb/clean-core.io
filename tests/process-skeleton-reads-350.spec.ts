@@ -9,6 +9,7 @@ import { test, expect } from '@playwright/test';
 import { buildProcessSkeleton, skeletonReadFor } from '../lib/abap/process-skeleton';
 import { buildProcessFacts } from '../lib/abap/process-facts';
 import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
+import { buildReadingExports } from '../lib/bpmn/export';
 
 const NEW = { engineVersion: ENGINE_READS_350_FROM };
 /** A hotfix on dev/main after 3.0.21 (owner decision 06.11.2026): no new reading. */
@@ -261,4 +262,94 @@ test('the gate: 3.0.21 and every 3.0.x hotfix read as before, 3.5.0 and later re
   for (const version of ['3.0.21', '3.0.22', '3.0.23', '3.0.99', '3.4.9']) expect(steps(version), version).toBe(0);
   for (const version of ['3.5.0', '3.5.1', '3.6.0']) expect(steps(version), version).toBe(1);
   expect(steps('')).toBe(0);
+});
+
+const REPORT_LINES = [
+  'REPORT zarm_collect.', //                                                      1
+  'START-OF-SELECTION.', //                                                       2
+  '  SELECT * FROM zacct INTO TABLE gt_accounts.', //                              3
+  '  PERFORM compare.', //                                                        4
+  "  CALL FUNCTION 'Z_PRINT_REPORT' TABLES it_lines = gt_report.", //             5
+  'FORM compare.', //                                                             6
+  '  DATA lt_seen TYPE STANDARD TABLE OF zacct.', //                              7
+  '  LOOP AT gt_accounts INTO gs_account.', //                                    8
+  '    IF gs_account-diff > p_tolerance.', //                                     9
+  '      gs_line-account = gs_account-account.', //                               10
+  '      APPEND gs_line TO gt_report.', //                                        11
+  '    ENDIF.', //                                                                12
+  '    IF gs_account-blocked = abap_true.', //                                    13
+  '      APPEND gs_account TO lt_seen.', //                                       14
+  '    ENDIF.', //                                                                15
+  '    IF gs_account-diff < 0.', //                                               16
+  "      APPEND VALUE #( msgty = 'W' msgno = '010' ) TO gt_msg.", //               17
+  '    ENDIF.', //                                                                18
+  '  ENDLOOP.', //                                                                19
+  "  CALL FUNCTION 'Z_SAVE_SEEN' TABLES it_seen = lt_seen.", //                   20
+  'ENDFORM.', //                                                                  21
+].join('\n');
+
+test('a row put into a result table is the yes of an arm that draws nothing else', () => {
+  const skeleton = buildProcessSkeleton(REPORT_LINES, NEW);
+  const step = skeleton.nodes.find((n) => n.anchor?.lineStart === 11)!;
+  expect(step.kind).toBe('task');
+  expect(step.label).toBe('GT_REPORT');
+  expect(step.detail).toMatchObject({ operation: 'APPEND', internalTable: true, collects: true });
+  const gateway = skeleton.nodes.find((n) => n.kind === 'gateway' && n.anchor?.lineStart === 9)!;
+  expect(skeleton.edges.some((e) => e.from === gateway.id && e.to === step.id && e.kind === 'conditional')).toBe(true);
+  // Not a table the routine declares for itself, and not a message row for a log.
+  for (const line of [14, 17]) expect(skeleton.nodes.some((n) => n.anchor?.lineStart === line), `line ${line}`).toBe(false);
+});
+
+test('a collected row does not change whether its routine is folded to one step', () => {
+  const routine = (engineVersion: string) => {
+    const skeleton = buildProcessSkeleton(REPORT_LINES, { engineVersion });
+    const call = skeleton.nodes.find((n) => n.anchor?.lineStart === 4);
+    return call ? `${call.kind}${call.collapsed ? ' (folded)' : ''}` : 'none';
+  };
+  const withoutRow = buildProcessSkeleton(REPORT_LINES.replace('      APPEND gs_line TO gt_report.', '      CLEAR gs_line.'), NEW)
+    .nodes.find((n) => n.anchor?.lineStart === 4);
+  expect(routine(ENGINE_READS_350_FROM)).toBe(`${withoutRow?.kind}${withoutRow?.collapsed ? ' (folded)' : ''}`);
+  expect(buildProcessSkeleton(REPORT_LINES, OLD).nodes.some((n) => n.anchor?.lineStart === 11)).toBe(false);
+});
+
+const BADI = [
+  'CLASS zcl_im_check DEFINITION PUBLIC.', //                                     1
+  '  PUBLIC SECTION.', //                                                         2
+  '    INTERFACES zif_ex_check.', //                                              3
+  'ENDCLASS.', //                                                                 4
+  'CLASS zcl_im_check IMPLEMENTATION.', //                                        5
+  '  METHOD zif_ex_check~open.', //                                               6
+  '  ENDMETHOD.', //                                                              7
+  '  METHOD zif_ex_check~check.', //                                              8
+  '    IF is_item-menge > 100.', //                                               9
+  "      CALL FUNCTION 'Z_ASK_BUYER'.", //                                        10
+  '    ENDIF.', //                                                                11
+  '  ENDMETHOD.', //                                                              12
+  '  METHOD zif_ex_check~close.', //                                              13
+  '  ENDMETHOD.', //                                                              14
+  'ENDCLASS.', //                                                                 15
+].join('\n');
+
+test('an entry that draws nothing between start and end is left out of the business reading, not out of the technical one', () => {
+  const skeleton = buildProcessSkeleton(BADI, NEW);
+  const empty = skeleton.regions.filter((r) => r.drawsNothing).map((r) => r.anchor?.lineStart);
+  expect(empty).toEqual([6, 13]);
+  // The skeleton keeps them and their anchors.
+  expect(skeleton.nodes.filter((n) => n.kind === 'start' && [6, 13].includes(n.anchor?.lineStart ?? 0))).toHaveLength(2);
+  const { bpmn, technical } = buildReadingExports(BADI, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_350_FROM });
+  const starts = (xml: string) => (xml.match(/<bpmn:startEvent /g) ?? []).length;
+  expect(starts(technical.xml)).toBe(3);
+  expect(starts(bpmn.xml)).toBe(1);
+  // An older run's business reading keeps all three.
+  const old = buildReadingExports(BADI, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: OLD.engineVersion });
+  expect(starts(old.bpmn.xml)).toBe(3);
+  expect(buildProcessSkeleton(BADI, OLD).regions.some((r) => r.drawsNothing)).toBe(false);
+});
+
+test('a source whose every entry is empty still shows them, and a reporting event block is never left out', () => {
+  const allEmpty = BADI.replace("    IF is_item-menge > 100.\n      CALL FUNCTION 'Z_ASK_BUYER'.\n    ENDIF.\n", '');
+  const { bpmn } = buildReadingExports(allEmpty, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_350_FROM });
+  expect((bpmn.xml.match(/<bpmn:startEvent /g) ?? []).length).toBe(3);
+  const report = ['REPORT zempty_event.', 'INITIALIZATION.', 'START-OF-SELECTION.', "  CALL FUNCTION 'Z_RUN'."].join('\n');
+  expect(buildProcessSkeleton(report, NEW).regions.some((r) => r.drawsNothing)).toBe(false);
 });

@@ -264,6 +264,13 @@ export interface SkeletonRegion {
    * keeps `collapseSmallRegions` from dissolving the marker back into one step.
    */
   multiInstance?: boolean;
+  /**
+   * Engine 3.5.0 (`markEmptyEntries`): an entry that draws nothing between its start and its end — an empty BAdI
+   * method, a screen module that only sets its status. The business reading leaves it out (`lib/bpmn/model.ts`);
+   * the technical reading and every anchor keep it. Never set on a reporting event block, which hands over to
+   * the next one.
+   */
+  drawsNothing?: boolean;
 }
 
 export type FormEffect =
@@ -608,6 +615,10 @@ const BUILT_IN_FLAG_VALUES = new Set(['ABAP_TRUE', 'ABAP_FALSE', 'ABAP_UNDEFINED
 const DECIDING_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select']);
 /** Engine 3.5.0 (`buildsWhileDeciding`): the statements that add rows to an internal table. */
 const BUILDS_TABLE = /^(?:APPEND\b[\s\S]*\bTO\b|COLLECT\b[\s\S]*\bINTO\b|INSERT\b[\s\S]*\bINTO\s+TABLE\b)/i;
+/** Engine 3.5.0 (`collectStep`): a row built with the fields of a message (BAPIRET2, BAL, SYMSG). */
+const MESSAGE_ROW = /\b(?:MSGTY|MSGNO|MSGID|MSGV1)\s*=|\bTYPE\s*=[\s\S]*\bMESSAGE\s*=|\bMESSAGE\s*=[\s\S]*\bTYPE\s*=/i;
+/** Engine 3.5.0 (`collectStep`): the table such a statement adds its row to. */
+const COLLECT_TARGET = /\b(?:TO|INTO\s+TABLE|INTO)\s+((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)(?:\[\])?\s*(?:\.|$|\s(?:SORTED|REFERENCE|ASSIGNING)\b)/i;
 
 function snippet(text: string): string {
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
@@ -1358,6 +1369,7 @@ class SkeletonBuilder {
     // Roadmap 3.0.7, once every node and end is settled: a reporting event
     // block that ends normally hands over to the next one.
     this.chainReportEvents();
+    if (this.reads350) this.markEmptyEntries();
     this.noteUnreachableSteps();
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
@@ -3423,7 +3435,8 @@ class SkeletonBuilder {
       const untouched = this.edges.length === edgesBefore && exits.length === 1 && exits[0].from === entry.from
         && exits[0].kind === entry.kind && exits[0].condition === entry.condition;
       if (!untouched) return exits;
-      const step = this.helperStep(from, to, block, ctx) ?? this.flagStep(from, to, block, ctx);
+      const step = this.helperStep(from, to, block, ctx) ?? this.collectStep(from, to, block, ctx)
+        ?? this.flagStep(from, to, block, ctx);
       if (!step) return exits;
       this.connect(exits, step.id);
       return [{ from: step.id, condition: '', kind: 'sequence' }];
@@ -3475,6 +3488,52 @@ class SkeletonBuilder {
       });
     }
     return null;
+  }
+
+  /**
+   * Engine 3.5.0 (`armOutcome`): the first row added, directly in this arm, to an internal table —
+   * `IF deviation > tolerance. … APPEND gs_line TO gt_report. ENDIF.` The decision is "does this row belong in the
+   * result?", and the append is its yes. Drawn as the plain step a change to an internal table already is since
+   * 3.0.7 (`MODIFY gt_out …`): a task named after the table, `detail.operation`, `internalTable` and `collects`.
+   *
+   * Only a table that outlives the routine: a global one, or a parameter the routine hands back. A table the
+   * routine declares for itself (`DATA lt_keys …`) is scaffolding for the routine's next step, which says what
+   * it does with it.
+   */
+  private collectStep(from: number, to: number, block: Block, ctx: WalkContext): SkeletonNode | null {
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (!statement || statement.nativeSql) continue;
+      const around = this.structure.enclosing[i] ?? [];
+      if (around[around.length - 1] !== block) continue;
+      const bare = maskLiterals(statement.text);
+      if (!BUILDS_TABLE.test(bare)) continue;
+      const table = COLLECT_TARGET.exec(bare)?.[1];
+      if (!table || table.startsWith('<')) continue;
+      // A message row (`msgty`, `msgno`, `type` with `message`) goes into a log, not into the result.
+      if (MESSAGE_ROW.test(bare)) continue;
+      const routine = [...around].reverse().find((b) => b.kind === 'form' || b.kind === 'method');
+      if (routine && this.declaresLocally(routine, table)) continue;
+      return this.addNode('task', table.toUpperCase(),
+        anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${table}(?:\\[\\])?\\.?$`, 'i'))),
+        ctx.region, ctx.container, {
+          detail: { operation: statement.keyword, internalTable: true, collects: true },
+        });
+    }
+    return null;
+  }
+
+  /** Does this routine declare `name` itself (`DATA name`, `DATA: …, name`, `DATA(name)`, `FIELD-SYMBOLS`)? */
+  private declaresLocally(routine: Block, name: string): boolean {
+    const key = name.toUpperCase().replace(/-.*$/, '');
+    const word = new RegExp(`(?:^|[\\s:,(])${key.replace(/[/]/g, '\\/')}(?=[\\s).,]|$)`, 'i');
+    for (let i = routine.openIndex + 1; i < routine.closeIndex; i++) {
+      const statement = this.statements[i];
+      if (!statement) continue;
+      if ((statement.keyword === 'DATA' || statement.keyword === 'STATICS') && word.test(statement.text.split(/\s+TYPE\s|\s+LIKE\s/i)[0])) return true;
+      if (new RegExp(`\\bDATA\\(\\s*${key.replace(/[/]/g, '\\/')}\\s*\\)`, 'i').test(statement.text)) return true;
+    }
+    return false;
   }
 
   /**
@@ -4447,6 +4506,29 @@ class SkeletonBuilder {
    * turned into the one step it does, a business-rule task, a technical helper
    * (no region at all) and the body of a multi-instance `LOOP AT` get none.
    */
+  /**
+   * Engine 3.5.0 — an entry process that draws nothing between its start and its end says nothing to a business
+   * reader: eight empty methods of a BAdI interface were eight maps "Start → Done". Marked here
+   * (`SkeletonRegion.drawsNothing`), left out by the business reading only. A reporting event block is never
+   * marked: it hands the run over to the next one (`chainReportEvents`), and leaving it out would cut that chain.
+   */
+  private markEmptyEntries(): void {
+    const kinds = new Map<string, Set<string>>();
+    for (const node of this.nodes) {
+      const own = kinds.get(node.region);
+      if (own) own.add(node.kind);
+      else kinds.set(node.region, new Set([node.kind]));
+    }
+    for (const region of this.regions) {
+      if (region.kind !== 'entry') continue;
+      const start = this.nodes.find((n) => n.id === region.entryNodeId);
+      const origin = start?.detail?.origin;
+      if (origin === 'event' || origin === 'implicit') continue;
+      const own = kinds.get(region.key) ?? new Set<string>();
+      if ([...own].every((kind) => kind === 'start' || kind === 'end')) region.drawsNothing = true;
+    }
+  }
+
   private addSubProcessStarts(): void {
     const planes = new Set<string>();
     for (const node of this.nodes) {
@@ -4833,7 +4915,9 @@ class SkeletonBuilder {
         // it takes the place the flow to the normal end had, and counting it
         // would turn a small routine into a phase because it has two exits.
         const inner = (inRegion.get(region.key) ?? [])
-          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true);
+          // Engine 3.5.0: a row put into the result (`collectStep`) is the yes of a decision, not an element that
+          // makes a routine one step or a phase — the routine folds, or not, exactly as before it was drawn.
+          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true && n.detail?.collects !== true);
         const callers = callersOf.get(region.key) ?? [];
         if (!callers.length) continue;
         // Roadmap 2.17 (b): a routine that iterates a business table is a phase,
