@@ -11,6 +11,8 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import { publicButton } from '@/components/landing/public-button';
 import { formatNumber } from '@/lib/format';
 import { CONTACT_EMAIL } from '@/lib/constants';
+import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
+import { COMMUNITY_QUOTA_FALLBACK } from '@/lib/run-quota-rule';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { BTP_FIRST } from '@/lib/sap-naming';
 
@@ -167,7 +169,7 @@ export default function FirstRunPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { icon: CheckCircle2, t: 'What you need', d: 'An account. That is all — no approval to wait for, no system connection, no credentials, no data.' },
-          { icon: FileCode2, t: 'What it costs', d: 'Nothing for a starter example the first time you run it. Any other analysis uses one of your five analysis runs when it completes. The six stages after it are included.' },
+          { icon: FileCode2, t: 'Free', d: `${consentText(CONSENT_TEXTS.startRun.free, 'en').replace('{Anzahl}', String(COMMUNITY_QUOTA_FALLBACK))} A starter example does not count the first time you run it, and the six stages after the analysis are included.` },
           { icon: Clock, t: 'How long', d: 'About fifteen minutes end to end, most of it spent reading the output rather than waiting.' },
         ].map((c) => (
           <div key={c.t} className="bg-cc-surface border border-cc-line rounded-2xl p-5">

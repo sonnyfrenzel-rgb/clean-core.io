@@ -10,7 +10,8 @@ import {
 } from '../lib/auto-model-steps';
 import { autoStepsSwitchBody, autoStepsSwitchOn } from '../lib/auto-steps-notice';
 import { startCallsModel } from '../lib/start-run-model';
-import { startDialogNotice, startDialogTextOf } from '../lib/start-dialog-notice';
+import { runModelCallNotice } from '../lib/legal/run-notice';
+import { describeRunCost } from '../lib/run-cost';
 import { modelStagesOf, type ModelStage } from '../lib/model-stages';
 
 /**
@@ -77,7 +78,7 @@ test.describe('the server holds it', () => {
   test('/api/gemini refuses a marked call while the main switch is off — before any key is loaded, on every key', () => {
     const route = read('app/api/gemini/route.ts');
     expect(route).toContain("const startNarrative = trigger === 'start';");
-    const guard = "if ((automatic || startNarrative) && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {";
+    const guard = "if ((automatic || startNarrative || stage === 'glossary') && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {";
     expect(route).toContain(guard);
     expect(route).toContain('return NextResponse.json({ error: autoModelStepsOffMessage(), code: AUTO_MODEL_STEPS_OFF_CODE }, { status: 403 });');
     // Before the key is loaded, and not tied to an own key.
@@ -196,12 +197,18 @@ test.describe('N2 — the first run', () => {
     expect(read('components/workspace/TargetChange.tsx')).not.toContain('firstRun');
   });
 
-  test('the notice stands directly at "Create project": the consent text startDialog once it exists, the current sentence until then', () => {
-    expect(startDialogTextOf({})).toBeNull();
-    expect(startDialogNotice({ provider: 'gemini', fallback: 'current', registry: {} })).toEqual({ text: 'current', fromConsentText: false });
-    const registry = { startDialog: { de: 'Code geht an {Anbieter} ({Modell}).', en: 'Code goes to {Anbieter} ({Modell}).' } };
-    expect(startDialogNotice({ provider: 'anthropic', fallback: 'x', registry })).toEqual({ text: 'Code goes to Anthropic (Anthropic Claude).', fromConsentText: true });
-    expect(startDialogNotice({ provider: 'gemini', fallback: 'x', registry: { startDialog: { notice: registry.startDialog } } }).text).toBe('Code goes to Google (Google Gemini).');
+  test('the notice stands directly at "Create project": the consent text startRun.modelCall with the key\'s provider, or noModelCall', () => {
+    expect(runModelCallNotice({ callsModel: true, provider: 'anthropic', lang: 'en' })).toBe('Calls the AI model (Anthropic). Your code is sent to Anthropic for this.');
+    expect(runModelCallNotice({ callsModel: false, provider: 'gemini', lang: 'en' })).toBe('Calls no AI model. Your code does not leave the platform.');
+    // The run dialogs say the same through the cost line, and nothing there speaks of costs.
+    const cost = describeRunCost({ profile: { tier: 'pilot', transformationsUsed: 1, transformationsLimit: 5 }, metered: true, callsModel: true, provider: 'gemini' });
+    expect(cost.modelCall).toBe('Calls the AI model (Google). Your code is sent to Google for this.');
+    expect(cost.quota).toBe('Free. This run uses one of your 5 analyses; 3 left after it.');
+    expect(describeRunCost({ profile: { tier: 'enterprise' }, metered: true, callsModel: false }).quota).not.toMatch(/cost/i);
+    for (const rel of ['components/workspace/WorkspaceProcess.tsx', 'components/workspace/NewProject.tsx', 'components/workspace/TargetChange.tsx', 'components/workspace/WorkspaceListReport.tsx']) {
+      expect(read(rel), rel).toMatch(/provider: (availability|model|modelAvailability)\.known \? (availability|model|modelAvailability)\.provider : undefined/);
+    }
+    expect(read('app/(app)/first-run/page.tsx')).not.toContain('What it costs');
     const page = read('components/workspace/OwnCodeImport.tsx');
     expect(page).toContain("const startCallsModel = model.enabled('analyze') && model.autoModelSteps;");
     // Inside the footer, right after the button, and named by it.
@@ -209,5 +216,22 @@ test.describe('N2 — the first run', () => {
     expect(footer.indexOf('id="own-code-start-notice"')).toBeGreaterThan(-1);
     expect(footer.indexOf('id="own-code-start-notice"')).toBeLessThan(footer.indexOf('</div>\n      </div>\n    </div>'));
     expect(page).toContain("aria-describedby={ready && !hintsPending ? 'own-code-start-notice' : undefined}");
+    expect(page).toContain("const startNotice = runModelCallNotice({ callsModel: startCallsModel, provider: model.provider, lang: 'en' });");
+  });
+});
+
+test.describe('Terms 5.4 — with the main switch off the assistant calls no model either', () => {
+  test('the panel is shown disabled with one sentence, and the proxy refuses the glossary stage', () => {
+    const bot = read('components/GlossaryChatbot.tsx');
+    expect(bot).toContain('const assistantOff = !inDemo && keyInfo.known && !keyInfo.autoModelSteps;');
+    expect(bot).toContain('if (assistantOff) return;');
+    expect(bot).toContain('disabled={loading || assistantOff || !inputValue.trim()}');
+    expect(bot).toContain('{assistantOffNote()}');
+    expect(read('app/api/gemini/route.ts')).toContain("if ((automatic || startNarrative || stage === 'glossary') && !autoModelStepsOn(");
+  });
+
+  test('Settings shows the one main switch under its consent label', () => {
+    const card = read('components/ModelStagesCard.tsx');
+    expect(card).toContain("label={consentText(CONSENT_TEXTS.autoStepsNotice.switchLabel, 'en')}");
   });
 });

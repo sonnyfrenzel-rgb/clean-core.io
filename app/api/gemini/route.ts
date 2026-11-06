@@ -482,7 +482,9 @@ export async function POST(request: NextRequest) {
     // included — and neither does the narrative of the first run. Refused
     // before any key is loaded, so nothing is sent. The per-stage switch above
     // and the own key's "Automatic steps" below apply on top of it.
-    if ((automatic || startNarrative) && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {
+    // Terms 5.4 (legal review 06.11.2026): the assistant (`glossary`) is covered as well — with the
+    // switch off the platform calls no model for the account from it.
+    if ((automatic || startNarrative || stage === 'glossary') && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {
       return NextResponse.json({ error: autoModelStepsOffMessage(), code: AUTO_MODEL_STEPS_OFF_CODE }, { status: 403 });
     }
 

@@ -32,6 +32,7 @@ import { provenance, type ProvenanceValue } from '@/lib/provenance';
 import { aiAssistantNotice } from '@/lib/ai-assistant-notice';
 import { OWN_CLAUDE_MODEL, PROVIDER_LABEL } from '@/lib/model-providers';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { assistantOffNote } from '@/lib/messages/model-consent';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP_FIRST } from '@/lib/sap-naming';
 import { isDemoPath, DEMO_ASSISTANT_NOTICE } from '@/lib/demo-marks';
@@ -486,6 +487,9 @@ export default function GlossaryChatbot() {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || loading) return;
+    // Legal review 06.11.2026 (Terms 5.4): with "All automatic AI steps" off the
+    // assistant calls no model for this account; the proxy refuses it as well.
+    if (assistantOff) return;
 
     const userMessage: Message = {
       sender: 'user',
@@ -635,6 +639,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
    */
   const keyInfo = useModelAvailability();
   const noticeProvider = keyInfo.known && keyInfo.provider ? keyInfo.provider : 'gemini';
+  /** The account's main switch "All automatic AI steps" is off: the assistant is shown disabled, with the reason. */
+  const assistantOff = !inDemo && keyInfo.known && !keyInfo.autoModelSteps;
   const assistantNotice = aiAssistantNotice(
     PROVIDER_LABEL[noticeProvider],
     noticeProvider === 'anthropic' ? OWN_CLAUDE_MODEL : PRODUCT_GEMINI_MODEL,
@@ -903,7 +909,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                 <CcButton
                   variant="ghost"
                   onClick={() => handleSend(chip)}
-                  disabled={loading}
+                  disabled={loading || assistantOff}
                 >
                   {chip}
                 </CcButton>
@@ -919,6 +925,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-medium text-cc-ink-muted"
             >
               {assistantNotice}
+            </p>
+          ) : null}
+          {assistantOff ? (
+            <p
+              data-chatbot-off=""
+              role="status"
+              className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-semibold text-cc-ink"
+            >
+              {assistantOffNote()}
             </p>
           ) : null}
 
@@ -947,7 +962,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     placeholder={projectId ? 'Ask about this case…' : 'Ask about Clean-Core.io or clean core…'}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || assistantOff}
                     className={className}
                   />
                 )}
@@ -956,7 +971,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <CcButton
               type="submit"
               variant="primary"
-              disabled={loading || !inputValue.trim()}
+              disabled={loading || assistantOff || !inputValue.trim()}
               icon={<Send size={16} aria-hidden />}
             >
               Send

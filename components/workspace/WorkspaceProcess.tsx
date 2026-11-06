@@ -468,7 +468,7 @@ export default function WorkspaceProcess({
         project?.fromExample === true && STARTER_EXAMPLES.some((e) => e.name === project?.name) ? project?.name : undefined;
       // The start calls the model when the account's analysis stage is on and a
       // key is available (owner decision 03.10.2026) — said here before the click.
-      const cost = describeRunCost({ profile, metered: true, callsModel: startRun.callsModel, starterExample: exampleName });
+      const cost = describeRunCost({ profile, metered: true, callsModel: startRun.callsModel, starterExample: exampleName, provider: availability.known ? availability.provider : undefined });
       return (
         <section
           data-workspace-process={startRun.phase === 'running' ? 'signing' : startRun.phase === 'failed' ? 'sign-failed' : 'unsigned'}

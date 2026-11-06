@@ -398,8 +398,9 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
   const setSearch = useCallback((search: string) => setFilter((f) => ({ ...f, search })), []);
 
   const costFor = useCallback(
-    (callsModel: boolean): RunCost => describeRunCost({ profile, metered: true, callsModel }),
-    [profile],
+    (callsModel: boolean): RunCost =>
+      describeRunCost({ profile, metered: true, callsModel, provider: modelAvailability.known ? modelAvailability.provider : undefined }),
+    [profile, modelAvailability.known, modelAvailability.provider],
   );
 
   const start = useCallback(

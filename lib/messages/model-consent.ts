@@ -50,6 +50,18 @@ export function autoModelStepsHelp(lang: UiLanguage = UI_LANGUAGE): string {
   return 'Off: the platform calls no AI model by itself, on any key, the platform key included, and the first run of a new project is signed without the model narrative. Steps you click, and the single switches below, stay as they are.';
 }
 
+/**
+ * Terms 5.4 (legal review 06.11.2026): with "All automatic AI steps" off the
+ * platform calls no model for the account — the assistant included. Shown in
+ * its panel, which stays visible but disabled.
+ */
+export function assistantOffNote(lang: UiLanguage = UI_LANGUAGE): string {
+  if (lang === 'de') {
+    return 'Der Assistent ist aus: Für Ihr Konto sind alle automatischen KI-Schritte ausgeschaltet, deshalb ruft er kein Modell auf. Sie schalten sie in den Einstellungen unter „Where the AI model is used“ wieder ein.';
+  }
+  return 'The assistant is off: all automatic AI steps are switched off for this account, so it calls no model. You can switch them back on in Settings under “Where the AI model is used”.';
+}
+
 /* ------------------------------------------------------------------ B8 */
 
 /** `{Datum}` and `{Uhrzeit}` of a time of receipt, in Berlin time, as the receipt states it. */

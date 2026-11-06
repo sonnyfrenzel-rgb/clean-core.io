@@ -82,11 +82,11 @@ test.describe('what a target change does, said before the click', () => {
   test('the cost: free for an example, free as re-analysis for own code', () => {
     const profile = { tier: 'pilot', transformationsUsed: 2, transformationsLimit: 5, starterExamplesUsed: { Z_X: true } };
     expect(describeRunCost({ profile, metered: true, callsModel: false, starterExample: 'Z_X', targetChange: true }).quota).toBe(
-      'Free — changing the target of an example',
+      'Free. This run does not count against your analyses.',
     );
     expect(describeRunCost({ profile, metered: true, callsModel: false, sameSourceAgain: true }).quota).toMatch(/^Free/);
     // Without the target change, a further start of an example costs a run, as before.
-    expect(describeRunCost({ profile, metered: true, callsModel: false, starterExample: 'Z_X' }).quota).toMatch(/^Uses 1/);
+    expect(describeRunCost({ profile, metered: true, callsModel: false, starterExample: 'Z_X' }).quota).toMatch(/^Free\. This run uses one of your 5 analyses/);
   });
 });
 
@@ -226,7 +226,7 @@ test.describe('changing the target in the IT view', () => {
     // Step 2 — what the change does, before the click.
     await expect(page.locator('[data-target-change-next-target]')).toHaveText('Public Edition');
     await expect(page.locator('[data-target-change-moves]')).toContainText('SAP Cloud ERP Private 2023 FPS03 → Public Edition', { timeout: 60000 });
-    await expect(page.locator('[data-target-change-cost]')).toContainText('Free — changing the target of an example');
+    await expect(page.locator('[data-target-change-cost]')).toContainText('Free. This run does not count against your analyses.');
     // The confirmation waits for the account's model answer: analysis stage off, so no model call.
     await expect(page.locator('[data-target-change-confirm]')).toBeEnabled({ timeout: 30000 });
     await expect(page.locator('[data-target-change-cost]')).toContainText('No model call');

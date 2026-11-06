@@ -50,9 +50,11 @@ test.describe('public copy claims no more than the product does', () => {
     expect(s).not.toContain('Every verdict traceable to SAP&rsquo;s own object data');
   });
 
-  test('First run: the cost card knows the starter-example exemption', () => {
+  test('First run: the card says free and knows the starter-example exemption', () => {
     const s = read('app/(app)/first-run/page.tsx');
-    const card = slice(s, "t: 'What it costs'", 300);
+    // Legal review 06.11.2026: nothing before a run says it "costs" anything (CONSENT_TEXTS.startRun.free).
+    expect(s).not.toContain("t: 'What it costs'");
+    const card = slice(s, "t: 'Free'", 300);
     expect(card).toContain('starter example');
   });
 
