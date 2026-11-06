@@ -1613,7 +1613,7 @@
         "tests/process-documentation.spec.ts",
         "tests/process-editor-pro.spec.ts",
         "tests/process-naming-auto.spec.ts",
-        "tests/process-skeleton-reads-3022.spec.ts",
+        "tests/process-skeleton-reads-350.spec.ts",
         "tests/process-states-route.spec.ts",
         "tests/project-access-matrix.spec.ts",
         "tests/project-access-routes.spec.ts",

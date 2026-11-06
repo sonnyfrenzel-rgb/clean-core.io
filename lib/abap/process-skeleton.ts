@@ -10,7 +10,7 @@ import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
 import { localDataObjectsOf } from './table-dependencies';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
-import { engineReads3022Apply } from './engine-reads-3022-gate';
+import { engineReads350Apply } from './engine-reads-350-gate';
 import { APP_VERSION } from '../version';
 import {
   hasOnlyTechnicalConditions,
@@ -598,15 +598,15 @@ const DOMINANT_ORDER: SkeletonNodeKind[] = [
  * ------------------------------------------------------------------ */
 
 /**
- * Engine 3.0.22 (`flagStep`): `field = value` where the value is one literal, a number or one name — `abap_true`,
+ * Engine 3.5.0 (`flagStep`): `field = value` where the value is one literal, a number or one name — `abap_true`,
  * `space`, a constant. A computed value (`a + b`, a call, a constructor) is a calculation, not a flag.
  */
 const FLAG_ASSIGNMENT = /^((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)\s*=\s*('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+|[\w/]+=>[\w/]+|[\w/]+)\s*\.?$/;
 /** The built-in constants a flag is set to. Any other bare name must be a `CONSTANTS` of this source. */
 const BUILT_IN_FLAG_VALUES = new Set(['ABAP_TRUE', 'ABAP_FALSE', 'ABAP_UNDEFINED', 'SPACE']);
-/** Engine 3.0.22 (`buildsWhileDeciding`): the blocks that decide or iterate around an append. */
+/** Engine 3.5.0 (`buildsWhileDeciding`): the blocks that decide or iterate around an append. */
 const DECIDING_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select']);
-/** Engine 3.0.22 (`buildsWhileDeciding`): the statements that add rows to an internal table. */
+/** Engine 3.5.0 (`buildsWhileDeciding`): the statements that add rows to an internal table. */
 const BUILDS_TABLE = /^(?:APPEND\b[\s\S]*\bTO\b|COLLECT\b[\s\S]*\bINTO\b|INSERT\b[\s\S]*\bINTO\s+TABLE\b)/i;
 
 function snippet(text: string): string {
@@ -959,8 +959,8 @@ function functionTaskKind(name: string | undefined): SkeletonNodeKind {
 
 /**
  * What a build reads for. `engineVersion` is the engine of the run the map is drawn for
- * (`engineVersionOfProject`); absent, this release. From `ENGINE_READS_3022_FROM` the walk draws what
- * the older engines left out (`Reads3022`); a run of an older engine keeps exactly the map it had.
+ * (`engineVersionOfProject`); absent, this release. From `ENGINE_READS_350_FROM` the walk draws what
+ * the older engines left out (`reads350`); a run of an older engine keeps exactly the map it had.
  */
 export interface SkeletonBuildOptions {
   engineVersion?: string | null;
@@ -978,21 +978,21 @@ export function buildProcessSkeleton(source: string, options: SkeletonBuildOptio
  * different line numbers (`process-facts.ts`).
  */
 export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonBuildOptions = {}): ProcessSkeleton {
-  const reads3022 = readsOf(options.engineVersion);
+  const reads350 = readsOf(options.engineVersion);
   const skeleton = new SkeletonBuilder(
     facts.statements,
     facts.structure,
     facts.control,
     facts.calls,
-    reads3022,
+    reads350,
   ).build();
-  readFor.set(skeleton, reads3022);
+  readFor.set(skeleton, reads350);
   return skeleton;
 }
 
 /** Which gated readings a build for `engineVersion` carries; absent, this release's. */
 function readsOf(engineVersion: string | null | undefined): boolean {
-  return engineReads3022Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
+  return engineReads350Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
 }
 
 /** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
@@ -1290,7 +1290,7 @@ class SkeletonBuilder {
   private resultWriteCache = new Map<number, Set<number>>();
   /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
   private regionLast = new Map<string, number>();
-  /** Engine 3.0.22: the decisions reading each field, by upper-cased field — `decisionsReading`. */
+  /** Engine 3.5.0: the decisions reading each field, by upper-cased field — `decisionsReading`. */
   private flagReaderCache = new Map<string, Array<{ index: number; line: number }>>();
   private constantsCache: Set<string> | null = null;
 
@@ -1300,12 +1300,12 @@ class SkeletonBuilder {
     private control: ControlFlowReport,
     private calls: CallGraphReport,
     /**
-     * Engine 3.0.22 (`ENGINE_READS_3022_FROM`): the readings of the process-quality step — an arm that only sets
+     * Engine 3.5.0 (`ENGINE_READS_350_FROM`): the readings of the process-quality step — an arm that only sets
      * a flag a later decision reads is a step (`flagStep`), a routine that builds a table while it decides or
      * iterates is a calculation and not a helper (`buildsWhileDeciding`), and a loop level begins at a start
      * event of its own (`addSubProcessStarts`). False for a run of an older engine, whose map stays as it was.
      */
-    private reads3022 = false,
+    private reads350 = false,
   ) {}
 
   build(): ProcessSkeleton {
@@ -1659,12 +1659,12 @@ class SkeletonBuilder {
       if (this.methodCallsIn(statement).some((call) => call.standalone && !call.key)) out.add('call');
     }
     if (out.size === 0 && this.classifiesFromLiterals(block)) out.add('business-rule');
-    if (out.size === 0 && this.reads3022 && this.buildsWhileDeciding(block)) out.add('compute');
+    if (out.size === 0 && this.reads350 && this.buildsWhileDeciding(block)) out.add('compute');
     return out;
   }
 
   /**
-   * Engine 3.0.22 — a routine that builds a table while it decides or iterates is a calculation.
+   * Engine 3.5.0 — a routine that builds a table while it decides or iterates is a calculation.
    *
    * Since 3.0.7 a routine that changes an internal table (`MODIFY gt_out …`, `DELETE lt_rows WHERE …`) is a step
    * of the process (`compute`), but the commonest way to build one — `APPEND … TO`, `COLLECT … INTO`,
@@ -3386,7 +3386,7 @@ class SkeletonBuilder {
       const before = this.nodes.length;
       const edgesBefore = this.edges.length;
       let armExits = this.walkRange(bodyFrom, bodyTo, ctx, [armEntry]);
-      if (this.reads3022 && !table) armExits = this.armOutcome(armEntry, armExits, before, edgesBefore, bodyFrom, bodyTo, block, ctx);
+      if (this.reads350 && !table) armExits = this.armOutcome(armEntry, armExits, before, edgesBefore, bodyFrom, bodyTo, block, ctx);
       exits.push(...armExits);
     }
     // No ELSE and no WHEN OTHERS: the gateway itself is the way past it.
@@ -3395,7 +3395,7 @@ class SkeletonBuilder {
   }
 
   /**
-   * Engine 3.0.22 — what an arm that drew no step does is the outcome of its decision.
+   * Engine 3.5.0 — what an arm that drew no step does is the outcome of its decision.
    *
    * Two shapes, and nothing else is touched:
    *
@@ -3442,7 +3442,7 @@ class SkeletonBuilder {
   }
 
   /**
-   * Engine 3.0.22 (`armOutcome`): the first call, standing directly in this arm, of a routine folded as a
+   * Engine 3.5.0 (`armOutcome`): the first call, standing directly in this arm, of a routine folded as a
    * technical helper — drawn as one task, named after the routine as the call writes it (rule 6), with the
    * routine's range as the secondary anchor and the program's own sentences the call passes in `detail`.
    */
@@ -3478,7 +3478,7 @@ class SkeletonBuilder {
   }
 
   /**
-   * Engine 3.0.22 — an arm that only sets a flag is the outcome of its decision.
+   * Engine 3.5.0 — an arm that only sets a flag is the outcome of its decision.
    *
    * `ELSE. gv_approved = abap_true. ENDIF. … IF gv_approved = abap_true. PERFORM create_order.` The arm draws
    * nothing — an assignment is no element of §5.8 — so the map showed the third way out of the decision as an
@@ -4452,17 +4452,17 @@ class SkeletonBuilder {
     for (const node of this.nodes) {
       if (node.kind === 'sub-process' && node.expandsTo) planes.add(node.expandsTo);
     }
-    // Engine 3.0.22 — the loop levels too (decided 27.09.2026, the follow-up ADR-054 named): the body of a
+    // Engine 3.5.0 — the loop levels too (decided 27.09.2026, the follow-up ADR-054 named): the body of a
     // multi-instance `LOOP AT` is a plane of its own exactly as a routine is, and it begins where the iteration
     // begins, at a start event on the `LOOP` line. A body that draws nothing has no plane and gets none.
-    if (this.reads3022) {
+    if (this.reads350) {
       for (const node of this.nodes) {
         if (node.kind === 'loop' && node.detail?.multiInstance === true && node.expandsTo) planes.add(node.expandsTo);
       }
     }
     for (const region of this.regions) {
       if (region.kind !== 'sub-process' || !planes.has(region.key)) continue;
-      if (region.multiInstance && !this.reads3022) continue;
+      if (region.multiInstance && !this.reads350) continue;
       if (!region.anchor || !/^(?:form|method|loop):/.test(region.key)) continue;
       const end = this.nodes.find((n) => n.id === region.endNodeId);
       const first = this.nodes.findIndex((n) => n.region === region.key);

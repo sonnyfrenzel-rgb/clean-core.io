@@ -1,17 +1,18 @@
 /**
- * The process-quality readings of engine 3.0.22 (`ENGINE_READS_3022_FROM`), each behind the version gate: a run
- * of an older engine draws exactly the map it drew before. Every source here is written for this spec; none is a
- * benchmark case.
+ * The process-quality readings of engine 3.5.0 (`ENGINE_READS_350_FROM`), each behind the version gate: a run
+ * of an older engine (3.0.21, and every 3.0.x hotfix after it) draws exactly the map it drew before. Every source
+ * here is written for this spec; none is a benchmark case.
  *
  * Serverless: a pure function over text.
  */
 import { test, expect } from '@playwright/test';
 import { buildProcessSkeleton, skeletonReadFor } from '../lib/abap/process-skeleton';
 import { buildProcessFacts } from '../lib/abap/process-facts';
-import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
+import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
 
-const NEW = { engineVersion: ENGINE_READS_3022_FROM };
-const OLD = { engineVersion: '3.0.21' };
+const NEW = { engineVersion: ENGINE_READS_350_FROM };
+/** A hotfix on dev/main after 3.0.21 (owner decision 06.11.2026): no new reading. */
+const OLD = { engineVersion: '3.0.22' };
 
 const APPROVAL = [
   'REPORT zflag_outcome.', //                                                    1
@@ -114,8 +115,8 @@ test('a constant of the source is a flag value; a decision table stays one class
 test('a skeleton read for this release is rebuilt for the engine of an older run, and reused for its own', () => {
   const facts = buildProcessFacts(APPROVAL);
   const current = buildProcessSkeleton(APPROVAL, NEW);
-  expect(skeletonReadFor(current, facts, ENGINE_READS_3022_FROM)).toBe(current);
-  const older = skeletonReadFor(current, facts, '3.0.21');
+  expect(skeletonReadFor(current, facts, ENGINE_READS_350_FROM)).toBe(current);
+  const older = skeletonReadFor(current, facts, '3.0.22');
   expect(older).not.toBe(current);
   expect(JSON.stringify(older)).toBe(JSON.stringify(buildProcessSkeleton(APPROVAL, OLD)));
 });
@@ -250,4 +251,14 @@ test('a call of a technical helper is the outcome of an arm that draws no step o
 test('an older engine leaves the helper folded, and both ways out of the decision run to the same step', () => {
   const skeleton = buildProcessSkeleton(CHECKS, OLD);
   for (const line of [8, 11]) expect(skeleton.nodes.some((n) => n.anchor?.lineStart === line)).toBe(false);
+});
+
+test('the gate: 3.0.21 and every 3.0.x hotfix read as before, 3.5.0 and later read the new way', () => {
+  const steps = (engineVersion: string) => {
+    const skeleton = buildProcessSkeleton(APPROVAL, { engineVersion });
+    return skeleton.nodes.filter((n) => n.detail?.flagStep === true).length;
+  };
+  for (const version of ['3.0.21', '3.0.22', '3.0.23', '3.0.99', '3.4.9']) expect(steps(version), version).toBe(0);
+  for (const version of ['3.5.0', '3.5.1', '3.6.0']) expect(steps(version), version).toBe(1);
+  expect(steps('')).toBe(0);
 });
