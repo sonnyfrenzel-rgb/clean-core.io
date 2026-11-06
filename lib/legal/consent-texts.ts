@@ -18,6 +18,8 @@ import type { LegalLang } from './open-values';
  *   build against. C8 (AI marking) and C10 (invitation mail) live with their
  *   features. C13 (the voluntary withdrawal function): Settings, the signed-in
  *   footer of the app shell and the receipt mail `lib/withdrawal-receipt-email.ts`.
+ *   C14 (the one-time notice before the first automatic model call):
+ *   `components/AutoStepsNotice.tsx` on the own-code upload.
  *
  * Removed against the draft, as the review (E14, E26, E27) says: the re-send
  * and the in-app display on a failed delivery of the confirmation mail, the
@@ -384,6 +386,36 @@ export const CONSENT_TEXTS = {
       { de: 'Anthropics Angaben zur Datenregion treffen nicht mehr zu', en: "Anthropic's statements on the data region no longer hold" },
       { de: 'eine verbindliche Entscheidung verlangt es', en: 'a binding decision requires it' },
     ],
+  },
+
+  /**
+   * C14 — one-time notice before the first automatic model call (3.0.21, A10):
+   * shown once, at the first upload of own code, before the first project is
+   * opened, with the switch inside it (`components/AutoStepsNotice.tsx`, rule
+   * `lib/auto-steps-notice.ts`). Written for the one automatic step there is
+   * while business names are paused (`NAMING_WITHOUT_FACTS_PAUSED`).
+   * `{Modell}` is the model's provider label, `{Anbieter}` the company the
+   * code goes to — both from the key the step would run on.
+   */
+  autoStepsNotice: {
+    title: {
+      de: 'Vor Ihrem ersten Projekt: automatische KI-Schritte',
+      en: 'Before your first project: automatic AI steps',
+    },
+    lead: {
+      de: 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+      en: 'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+    },
+    switchLabel: { de: 'Automatische KI-Schritte', en: 'Automatic AI steps' },
+    after: {
+      de: 'Sie können das jederzeit in den Einstellungen unter „Where the AI model is used“ ändern.',
+      en: 'You can change this any time in Settings under “Where the AI model is used”.',
+    },
+    switchedOff: {
+      de: 'Ausgeschaltet: Beim Öffnen eines Projekts ruft die Plattform von selbst kein KI-Modell auf.',
+      en: 'Switched off: opening a project calls no AI model by itself.',
+    },
+    dismiss: { de: 'Verstanden', en: 'Got it' },
   },
 } as const satisfies Record<string, Record<string, Bi | readonly Bi[]>>;
 

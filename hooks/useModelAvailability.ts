@@ -42,6 +42,8 @@ export interface ModelAvailability {
   suspendedProvider: ModelKeyProvider | null;
   /** The notice the server words for a switched-off provider (C11 where it applies). */
   suspendedNotice: string | null;
+  /** 3.0.21 (A10) — the one-time notice before the first automatic model call was answered or closed. True until known, so nothing shows on a guess. */
+  autoStepsNoticeSeen: boolean;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -60,6 +62,7 @@ export function useModelAvailability(): ModelAvailability {
   const [autoSteps, setAutoSteps] = useState(false);
   const [suspendedProvider, setSuspendedProvider] = useState<ModelKeyProvider | null>(null);
   const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
+  const [autoStepsNoticeSeen, setAutoStepsNoticeSeen] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -83,6 +86,7 @@ export function useModelAvailability(): ModelAvailability {
         autoSteps?: unknown;
         suspendedProvider?: unknown;
         suspendedNotice?: unknown;
+        autoStepsNoticeSeen?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -96,6 +100,8 @@ export function useModelAvailability(): ModelAvailability {
       setAutoSteps(data.autoSteps === true);
       setSuspendedProvider(isModelKeyProvider(data.suspendedProvider) ? data.suspendedProvider : null);
       setSuspendedNotice(typeof data.suspendedNotice === 'string' ? data.suspendedNotice.slice(0, 600) : null);
+      // Absent (an older server) reads as seen: the notice never shows on a guess.
+      setAutoStepsNoticeSeen(data.autoStepsNoticeSeen !== false);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -130,7 +136,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };
