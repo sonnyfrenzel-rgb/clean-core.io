@@ -2,7 +2,7 @@
 
 as of 06.11.2026 · owner acceptance the same day ("a clear step towards business and towards reducing the app's
 complexity") · read only: nothing in the product changed, nothing committed · release cut revised the same day:
-three releases, 3.0.22 – 3.0.24, ahead of every other roadmap topic (owner decision 06.11.2026, §4).
+three releases, 3.0.22 – 3.5.0, ahead of every other roadmap topic (owner decision 06.11.2026, §4).
 
 ## 0. Basis and method
 
@@ -44,7 +44,7 @@ three releases, 3.0.22 – 3.0.24, ahead of every other roadmap topic (owner dec
 | v4.1 (3) = N9 | "Hide" is remembered per project in the browser only, no server field; a quiet link below the endings brings the card back (state 9b). |
 | Layout | Nothing covers anything; fully responsive. Look and feel = today's app. |
 | AI Act Art. 50 | A per-element AI mark, only where a model wrote the text. |
-| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild is **three releases, 3.0.22 – 3.0.24, ahead of every other roadmap topic**; for these three the rule "one roadmap item per release" is deliberately overridden. `dev` first, `main` only on Sonny's go. Targets 23.11, 07.12, 16.12.2026; the video and the post on 22.12.2026 show the finished 3.0.24 (§4). |
+| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild is **three releases, 3.0.22 – 3.5.0, ahead of every other roadmap topic**; for these three the rule "one roadmap item per release" is deliberately overridden. `dev` first, `main` only on Sonny's go. Targets 23.11 and 07.12.2026; the third release is the Christmas release **v3.5.0** (owner decision 06.11.2026), on `dev` by 16.12 and on `main` on 22.12.2026 with own Claude keys switched on; the video and the post on 22.12.2026 present "v3.5" (§4). |
 
 **Reading of "builds up in about 20 s"** (an interpretation, taken from the accepted mockup, states 1–3): the map stands
 at once with engine names; the summary, the text blocks and the names arrive in place over about 20 s; names may take
@@ -124,7 +124,7 @@ N9 and the two v4.1 adjustments.
 
 | No. | Question | Recommendation | Needed before |
 |---|---|---|---|
-| **P1** | `docs/ROADMAP.md` held five rows at 3.0.22 (quality "before every other 3.0.22 row", the seven tools, help and waiting, Documentation baskets, tests as evidence). The seven-tools row also asks for `NextStepCard` "Open Design" on Analyze (item 2) and the score fold (item 6), which v4 replaces. | **Closed 06.11.2026 (owner):** the rebuild is 3.0.22 – 3.0.24; the five rows moved unchanged to 3.0.25 (`docs/ROADMAP.md` §7). The engine gate keeps its name `ENGINE_READS_3022_FROM` (AB-1 ships in 3.0.22). Still to note when 3.0.25 starts: items (2) and (6) of the seven-tools row do not apply to Analyze any more; its frame item (1) is compatible. | — |
+| **P1** | `docs/ROADMAP.md` held five rows at 3.0.22 (quality "before every other 3.0.22 row", the seven tools, help and waiting, Documentation baskets, tests as evidence). The seven-tools row also asks for `NextStepCard` "Open Design" on Analyze (item 2) and the score fold (item 6), which v4 replaces. | **Closed 06.11.2026 (owner):** the rebuild is 3.0.22 – 3.5.0; the five rows moved unchanged to 3.0.25 (`docs/ROADMAP.md` §7). The engine gate keeps its name `ENGINE_READS_3022_FROM` (AB-1 ships in 3.0.22). Still to note when 3.0.25 starts: items (2) and (6) of the seven-tools row do not apply to Analyze any more; its frame item (1) is compatible. | — |
 | **O3** | What becomes of `/project/[id]`? | AB-2 sends Business to Analyze. AB-11 dissolves the page once IT and Management live in Analyze: the project crumb and "Back to project workspace" then name Analyze. Decide in AB-11 with screenshots, not now. | AB-11 |
 | **P5** | Where do the workspace's record parts go: the decision with Confirm (`DecisionCard`), the target edition (`TargetChange`), read access (`AccessList`), the revision stand, the steering one-pager? v4 shows none of them. | Decision record and one-pager → Management of Analyze, under "Next steps", as today's card, folded (assumption: no new component). Target edition → IT. Read access → "Invite a colleague to read" opens today's list in a dialog. Revision stand → the Analyze header, as on the workspace. Nothing is deleted before its new place is shown. | AB-10 |
 | **O1** | When does the walk-through count as done? | The last station was shown once, or the soft-gate note was dismissed. Browser only (`cc.analyze.walked.<projectId>`), like `cc.workspace.firstLook.seen` (`lib/first-look.ts:81`). No server field, no phase change. | AB-4 |
@@ -219,7 +219,7 @@ produces yet.
 
 ---
 
-## 4. Three releases, 3.0.22 – 3.0.24
+## 4. Three releases, 3.0.22 – 3.5.0
 
 **Owner decision 06.11.2026:** the rebuild has clear priority, at most three releases, every other roadmap topic
 moves behind it (`docs/ROADMAP.md` §7 and §9, rows from 3.0.25 on). The rule "one roadmap item per release" is
@@ -227,23 +227,35 @@ deliberately overridden for these three releases only; `dev` first and `main` on
 
 **Owner dates 06.11.2026:** 3.0.21 on `main` and the announcement mail for the new terms on **09.11.2026**; the terms
 take effect and own Claude keys work from **22.12.2026** (corrected from 21.12: the six-week period runs to the end of 21.12); on 22.12 one communication — a click-through video of the
-finished 3.0.24 and a LinkedIn post (`docs/ROADMAP.md` §7). Targets: 3.0.22 on `main` by **23.11**, 3.0.23 by
-**07.12**, 3.0.24 by **16.12**; 17.–21.12 is the buffer for the recording and the owner's approval.
+finished 3.5.0 and a LinkedIn post presenting "v3.5" (`docs/ROADMAP.md` §7). Targets: 3.0.22 on `main` by **23.11**,
+3.0.23 by **07.12**; 3.5.0 built and on `dev` by **16.12**, on `main` on **22.12** together with the key switch;
+17.–21.12 is the buffer for QA, the recording and the owner's approval.
+
+**Owner decision 06.11.2026, the Christmas release is v3.5.0:** the third rebuild release (called 3.0.24 until then)
+becomes **3.5.0**. It carries the whole new UX, including the complete home page v2.1 (AB-14a, AB-14b and AB-14c —
+none of it may move past Christmas), and own Claude keys switched on. **Recommendation on the key switch: a separate
+commit on top of 3.5.0, released on the same day as part of v3.5.0** — not built into the release from the start.
+Reasons: (1) `dev` is publicly reachable, and with the switch in the release from 16.12 own Claude keys would be
+offered there six days before the terms take effect; (2) the switch depends on facts outside the code (the terms in
+effect, T01/T03/T08 accepted) that are only certain on 22.12, and a separate one-line commit can be applied, or
+held back, without touching or re-testing the release; (3) it can be reverted alone; (4) if 3.5.0 itself slips, the
+switch can still go to `main` on 22.12 on its own, which keeps the date the terms promise. On 22.12: the switch commit on
+`dev`, its QA round, then `main` with 3.5.0 and the switch together, one deploy, one CHANGELOG entry for v3.5.0.
 
 The packages AB-0 … AB-13 keep their numbers (they are what §2 and §3 refer to); this section groups them:
 
 | Release | Target on `main` | Packages | What a user sees afterwards |
 |---|---|---|---|
 | **3.0.22** | 23.11.2026 | AB-0, AB-1, AB-2, AB-3, **AB-14a** | A project opens in Analyze, Business: the map is the page, engine names at once, checked AI names swap in with a status line. Today's text blocks and next-step card stand below the map until 3.0.23. IT and Management still have today's pages. A new account lands on the home page v2's first view with the start built in. |
-| **3.0.23** | 07.12.2026 | AB-4, AB-5, AB-6, AB-7 (charts; the N7 engine label only if measured in time), **AB-14b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The home page list for returning accounts: every project, the new status words, four columns, tabs. |
-| **3.0.24** | 16.12.2026 | AB-9, AB-10, AB-11, AB-12, **AB-14c** | IT and Management each on one page in Analyze; `/project/[id]` redirects; demo, capture screens, landing pictures and the docs follow. The home page's "Continue where you left off" card with its map miniature and "In short". |
+| **3.0.23** | 07.12.2026 | AB-4, AB-5, AB-6, AB-7 (charts; the N7 engine label only if measured in time), **AB-14b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The home page list for returning accounts: every project, the new status words, four columns, tabs; the Continue card's data is stored, not yet shown. |
+| **3.5.0** | on `dev` 16.12, on `main` 22.12.2026 | AB-9, AB-10, AB-11, AB-12, **AB-14c** | IT and Management each on one page in Analyze; `/project/[id]` redirects; demo, capture screens, landing pictures and the docs follow. The home page's "Continue where you left off" card with its map miniature and "In short". |
 | later | — | AB-8 (third chart, N6), AB-13 (PDF with the tour texts, O11) | — |
 
 **Why this cut.** 3.0.22 carries everything the new page stands on: the names (AB-1) are the prerequisite of the swap
 (AB-3), and the swap has no place to happen until the map is the page (AB-2); moving the entry and retiring the
 build-up in one release means the old first-look build-up never has to work against the new page. 3.0.23 is
 everything that lives on the Business page and needs nothing from IT or Management; the tour must exist inline before
-full screen gets its tour column (AB-4 before AB-5 inside the release). 3.0.24 is the second wide address change
+full screen gets its tour column (AB-4 before AB-5 inside the release). 3.5.0 is the second wide address change
 (IT/Management, the dissolving workspace page) and the pictures, which must show the finished product and therefore
 come last. AB-8 is out because N6 needs a new deterministic classification that the dates do not hold; the charts are
 two. AB-13 stays later: it is not trivial (an export path with station texts).
@@ -251,25 +263,32 @@ two. AB-13 stays later: it is not trivial (an export path with station texts).
 **No broken intermediate state.** After 3.0.22 nothing a user had is gone: today's `BusinessOpening` blocks (in short,
 how it runs, who, what the code gives away) and `BusinessNextStep` stand below the map, and "Walk me through it" starts
 today's tour layer, until 3.0.23 replaces each in place. IT and Management live in two places (workspace and Analyze)
-between 3.0.22 and 3.0.24; both work, the release notes say so, and nothing new is built on the workspace copies.
+between 3.0.22 and 3.5.0; both work, the release notes say so, and nothing new is built on the workspace copies.
 
 **Is it realistic?** Honestly: tight, and only with the cuts above. 3.0.22 has ten working days (10.–23.11) for the
 widest change of the plan (AB-2: about 100 specs change an address) plus the swap; it holds if 3.0.21 reaches `main`
 on 09.11 without a hotfix, because **no 3.0.22 commit may reach `dev` before 3.0.21 is on `main`** (it would ship with
 3.0.21). Work before 09.11 happens on a branch. 3.0.23 (ten working days) is realistic with AB-8 out and the N7
-engine label allowed to slip to later. 3.0.24 (seven working days, 08.–16.12) is the tightest: it is realistic only if
+engine label allowed to slip to later. 3.5.0 (seven working days, 08.–16.12) is the tightest: it is realistic only if
 AB-9 and AB-10 are built in parallel on branches from 24.11 (they touch the IT and Management branches of
 `analyze/page.tsx`, which 3.0.23 does not) and merged on 08.12. If a release slips, the next target moves with it and
-the 22.12 communication waits for 3.0.24 rather than show the old UX; the Claude key switch on 22.12 does not wait.
+the 22.12 communication waits for 3.5.0 rather than show the old UX; the Claude key switch on 22.12 does not wait.
 
 **With the home page v2 (AB-14, added 06.11.2026) the dates hold only with a second track.** AB-14 touches the home
 page's files (`WorkspaceListReport`, `YourTurnCard`, `lib/workspace-rows.ts`, `lib/project-progress.ts`, the app
 shell), which no Analyze package writes, so it can be built on its own branch in parallel and merged into each release.
 Built in series on top of the Analyze packages, it does not fit: 3.0.23 would carry five packages, one of them the
 data change of O9. Honest reading: 3.0.22 holds (AB-14a is small and additive); 3.0.23 holds only if AB-14b runs on
-the second track from 10.11 and its O9 row source is done by 30.11; 3.0.24 already had no slack, and AB-14c is the
-first thing to drop to after 22.12 if it is late. The 22.12 video does not depend on AB-14b/c: it goes through the
-tools, and the home page it may show for a few seconds is the new-account view of 3.0.22.
+the second track from 10.11 and its O9 row source is done by 30.11; 3.5.0 already had no slack, and since 06.11.2026
+AB-14c may not move past Christmas (v3.5.0 carries the complete home page). **Re-plan for AB-14c:** everything it
+needs that is data moves forward into 3.0.23 — the "In short" sentence written server-side when a run is created
+(H-O6), the pure miniature from the stored skeleton (H-O7), and "last opened" kept in the browser (H-O5) — so 3.5.0
+only wires the card from data that exists. This needs H-O5, H-O6 and H-O7 decided by 24.11.2026. **Honest reading for
+16.12:** at risk. 3.5.0 now has AB-9, AB-10, AB-11, AB-12 and the card, none of which may slip, in seven working days.
+**The cut I would make instead:** AB-11 ships as the redirect only (every address lands on its content); the removal
+of the workspace shell's dead views, layers and coach marks, which no user sees, follows after Christmas; the N7 engine
+label stays out. If that is still not enough by 11.12, the dev date moves to 18.12 and the buffer shrinks to the
+recording; the 22.12 date for `main` holds, and the communication waits rather than show the old UX.
 
 **Every release, the same frame.**
 
@@ -520,10 +539,16 @@ dates do not hold. Until it ships, Business shows two charts.*
 - **Done when:** [look] for 9; every rule has a kind or "other", never a guess.
 - **Risk:** low.
 
-### 4.3 Release 3.0.24 — IT and Management on one page, the workspace page dissolves (target 16.12.2026)
+### 4.3 Release 3.5.0 — the Christmas release: IT and Management on one page, the workspace page dissolves (on `dev` 16.12, on `main` 22.12.2026)
 
-- **Scope:** AB-9, AB-10, AB-11, AB-12 below, and AB-14c (the Continue card) if it is ready; it is the first part to
-  move after 22.12 if not. After it the product is the one the 22.12.2026 video shows.
+- **Scope:** AB-9, AB-10, AB-11, AB-12 below and AB-14c (the Continue card, on data built in 3.0.23); then, on
+  22.12, the key-switch commit (see §4, recommendation). Nothing of it moves past Christmas. After it the product is
+  the one the 22.12.2026 video shows as "v3.5".
+- **Version:** `lib/version.ts` and `package.json` go from 3.0.23 to 3.5.0, with a CHANGELOG entry `[v3.5.0]`
+  ("release candidate on dev" from 16.12, dated 22.12 when it reaches `main`). The engine gates compare numerically
+  part by part (`engineVersionAtLeast`, `lib/score-rule.ts`), so every gate "from 3.0.x" applies at 3.5.0; a gate added
+  in this release is named for 3.5.0. The jump is a new minor version, so the QA agent reviews the whole code base on
+  the push to `main` (`scripts/qa/lib/full.mjs`, cap $3).
 - **How it fits seven working days:** AB-9 and AB-10 are built in parallel on two branches from 24.11.2026 (they touch
   the IT and Management branches of `analyze/page.tsx`, which 3.0.23 does not) and rebased onto `dev` once 3.0.23 is on
   `main`; AB-11 and AB-12 follow on `dev`. Parallel agents run only server-free specs; one quiet production-build run
@@ -545,8 +570,10 @@ dates do not hold. Until it ships, Business shows two charts.*
 - **Acceptance:** each package's "Done when"; [look] for 11, 12, 13 and a final pass over all 19 states; Sonny's
   walk-through with the demo and every starter example; the landing pictures seen by Sonny before `main`; every deep
   link a stage, a mail or a bookmark writes lands on its content.
-- **Risk:** medium–high: the second wide address change and the 2,261-line Analyze page, in the shortest window. If
-  3.0.24 is not on `main` by 18.12.2026, the 22.12 communication waits for it (`docs/ROADMAP.md` §7).
+- **Risk:** high since 06.11.2026: the second wide address change, the 2,261-line Analyze page and the Continue card,
+  in the shortest window, with nothing allowed to slip. The cut if needed: AB-11 as the redirect only, the dead
+  workspace code after Christmas (§4). If 3.5.0 is not on `dev` and green by 18.12.2026, the 22.12 communication waits
+  for it (`docs/ROADMAP.md` §7); the key switch does not.
 
 #### AB-9 — IT on one page, code first · L
 
@@ -609,8 +636,8 @@ dates do not hold. Until it ships, Business shows two charts.*
 
 #### AB-14 — Home page v2, "My workspace" (owner acceptance of mockup v2, 06.11.2026) · M–L in three parts
 
-- **Mockup:** `scratch/mockups-0511/home-mockup/home-mockup.html` (v2; 12 states × 6 viewports in `screens/`, overlap
-  check 0 in all 72). Like the Analyze mockup (P10) it is copied unchanged into `docs/roadmap/` with AB-0, as
+- **Mockup:** `scratch/mockups-0511/home-mockup/home-mockup.html` (v2.1 since 06.11.2026; 12 states × 6 viewports in
+  `screens/`, overlap check 0 in all 72). Like the Analyze mockup (P10) it is copied unchanged into `docs/roadmap/` with AB-0, as
   `docs/roadmap/home-mockup-v2.html` together with its local font file; its report is German and stays out of the repo.
   State numbers below are the mockup's (1 new account … 12 runs used up).
 - **Why it belongs to the rebuild:** a project now opens in Analyze and First insights is part of Analyze, so the home
@@ -629,42 +656,65 @@ dates do not hold. Until it ships, Business shows two charts.*
 | H-O11 | For a new account the start is built into the page: dropping or choosing a file opens today's start with the file preset; edition and cost are asked as today. |
 | H-O12 | The run-dialog sentence on the model call goes to legal review; until then today's wording stays. |
 | H-O13 | "New analysis" is the only filled button; "Open the process map" is secondary. |
-| H-O14 | The name "My workspace" stays for 3.0.x. |
-| — | The empty gap bottom-left in the desktop new-account state (mockup `1440x900-01`, between "What the analysis alone gives you" and the demo line) is closed in the build: both columns end together without stretching the start. |
+| H-O14 | The name "My workspace" stays, through v3.5.0. |
+| H-O15 | On the new-account view the only green button is "Start this example" on the recommended example; "Choose a file" is secondary (mockup v2.1, accepted 06.11.2026). "New analysis" stays the only filled button for returning accounts (H-O13). |
+| — | The empty gap bottom-left in the desktop new-account state of v2 is closed: in v2.1 the demo line fills it, and both columns end together. |
 
 **Still open, with the mockup agent's recommendation**
 
 | No. | Question | Recommendation | Needed before |
 |---|---|---|---|
 | H-O4 | The small six-segment bar for re-design (the owner rejected a seven-segment bar with five looks on 02.10.2026) | Try it: two looks, no legend, only on a started re-design; if it fails, the sentence "2 of 6 steps done" stands alone. | AB-14b |
-| H-O5 | What "Continue" shows | Last opened, remembered in the browser only (no field, no rules change); on a new device the last changed project. | AB-14c |
-| H-O6 | The source for "In short" on the home page | Written server-side (Admin SDK) onto the project when the run is created; no client field, so no rules change; without it the card has no "In short". | AB-14c |
-| H-O7 | The map miniature | Only on the one Continue card, computed from the stored process skeleton; no miniature per row. | AB-14c |
+| H-O5 | What "Continue" shows | Last opened, remembered in the browser only (no field, no rules change); on a new device the last changed project. | 24.11.2026 (AB-14c data in 3.0.23) |
+| H-O6 | The source for "In short" on the home page | Written server-side (Admin SDK) onto the project when the run is created; no client field, so no rules change; without it the card has no "In short". | 24.11.2026 (AB-14c data in 3.0.23) |
+| H-O7 | The map miniature | Only on the one Continue card, computed from the stored process skeleton; no miniature per row. | 24.11.2026 (AB-14c data in 3.0.23) |
 | H-O8 | Rename | A server route instead of a `firestore.rules` change (rules are deployed by hand). | AB-14b, else later |
 
-##### AB-14a — 3.0.22 · The first view for a new account · S–M
+##### AB-14a — 3.0.22 · The first view for a new account (mockup v2.1) · S–M
 
-- **Scope:** mockup state 1: "Welcome, …", the heading, the drop area with "Choose a file" (the one filled button) and
-  "Paste the code", "Try the example" with one starter example, the live map excerpt (H-O1), the three points of "What
-  the analysis alone gives you", the quiet demo line; the start built in (H-O11); the gap closed; the duration sentence
-  only after the H-O2 measurement. "New analysis" opens the start, not First insights; every way into a project lands
-  in Analyze (with AB-2). Phone order: introduction, start, map, points (mockup §5).
+- **Mockup:** v2.1 of the same file, accepted by the owner on 06.11.2026 ("build it exactly like this"); state 1 at
+  the six viewports, 0 overlaps, 0 clipping.
+- **Scope:** mockup state 1, v2.1:
+  - "Welcome, …", the heading, and two plain sentences on what the product does (reads the ABAP, shows it as a
+    business process, what it touches in SAP and how far it is from clean core; on request it helps re-design it).
+  - A quiet path strip with the seven tools in one line: Analyze alone and outlined under "A complete result on its
+    own", tools 2–7 dashed under "Optional, if you want to re-design it"; at 768 px and below Analyze above a 3 × 2
+    grid, on a phone two columns below the start.
+  - One start area with two ways side by side. **(a) "Try an example"** ("Free the first time", the rule of
+    `starterExampleIsFree` in `lib/run-quota-rule.ts`): `Z_MM_PO_APPROVAL` recommended, with the page's only green
+    button "Start this example" (H-O15); the other six shipped examples from `lib/starter-examples.ts` as a compact
+    list with name, lines and one line of purpose, folded behind "6 more examples" on a phone. **(b) "Analyse your
+    own program"** ("5 free analysis runs", worded as `QUOTA_NAME` and `quotaSpentSentence`): drop area, "Choose a
+    file" (secondary), "Paste the code", the cost-and-model sentence, and a smaller live slice of the demo map (4
+    elements) as "What you get" (H-O1).
+  - The demo line fills the former gap bottom-left (on a phone it stands below the strip).
+  - Removed against v2: "What the analysis alone gives you" (the strip says it) and the duration sentence, which
+    stays out until H-O2 is measured.
+  - The start built in (H-O11); "New analysis" opens the start, not First insights; every way into a project lands in
+    Analyze (with AB-2).
 - **Files:** `components/workspace/WorkspaceListReport.tsx` (a branch for an account without projects),
-  `components/workspace/HomeFirstView.tsx` (new), `components/process-map/` (a cut-off read-only render of the demo
-  map, no new renderer), `components/StarterExamples.tsx` (one example for the new account; the gallery stays at the
-  start of an analysis), `components/MyWorkspaceSwitch.tsx`, `lib/messages/workspace.ts`, `app/(app)/first-run/page.tsx`
-  (steps 2 and 3 describe the old gallery).
-- **Specs:** add `home-first-view.spec.ts` (rendered: a fresh account sees one filled button, the excerpt's labels and
-  line numbers equal the demo map's first elements, no hand-written name; source half: the excerpt imports the Analyze
-  renderer); change `workspace-list-report`, `starter-examples`, `starter-examples-view`, `starter-example-quota`,
-  `example-catalog`, `example-opens-workspace`, `example-start-no-page-error`, `workspace-start`,
-  `workspace-start-model`, `start-release-choice`, `target-edition-choice`, `registration-flow-guard`,
-  `claims-honesty-guard` (first-run against the header), `machine-strings-guard`, `mobile-responsive`,
-  `capture-screens` (state only, landing pictures in AB-12).
-- **Done when:** [look] for state 1 at the six viewports against `screens/*-01-new-account.png`; overlap guard 0; the
-  bottom-left gap is gone at 1440 × 900; a new account reaches a signed run from the page with no detour.
+  `components/workspace/HomeFirstView.tsx` (new), `components/workspace/ToolPathStrip.tsx` (new; the tool names and
+  order from `lib/workflow-steps.ts`, never written twice), `components/process-map/` (a cut-off read-only render of
+  the demo map, no new renderer), `components/StarterExamples.tsx` (the compact list and the recommended example; the
+  gallery stays at the start of an analysis), `lib/starter-examples.ts` (read only), `components/MyWorkspaceSwitch.tsx`,
+  `lib/messages/workspace.ts`, `app/(app)/first-run/page.tsx` (steps 2 and 3 describe the old gallery).
+- **Specs:** add `home-first-view.spec.ts` (rendered: a fresh account sees exactly one filled button, "Start this
+  example"; all seven shipped examples, their line counts equal the files'; the map slice's labels and line numbers
+  equal the demo map's first elements, no hand-written name; the strip's order equals `lib/workflow-steps.ts`; no
+  duration claim; source half: the slice imports the Analyze renderer); change `workspace-list-report`,
+  `starter-examples`, `starter-examples-view`, `starter-example-quota`, `example-catalog`, `example-opens-workspace`,
+  `example-start-no-page-error`, `workspace-start`, `workspace-start-model`, `start-release-choice`,
+  `target-edition-choice`, `registration-flow-guard`, `claims-honesty-guard` (first-run against the header),
+  `machine-strings-guard`, `mobile-responsive`, `capture-screens` (state only, landing pictures in AB-12).
+- **Done when:** [look] for state 1 at the six viewports against `screens/*-01-new-account.png` of v2.1, including the
+  phone with both ways in the first screen; overlap guard 0; no empty area bottom-left at 1440 × 900; a new account
+  reaches a signed run from either way with no detour.
+- **Size, re-checked for v2.1:** stays S–M. The strip and the example list are new presentation over existing sources
+  (`workflow-steps`, `starter-examples`, the quota sentences); no new data, no route, no rules change. It grows by one
+  small component and one more rendered assertion block, not by a part.
 - **Risk:** low to medium; additive for accounts without projects; 57 spec files name `/dashboard` (grep, 06.11.2026),
-  most only land there.
+  most only land there. The example list moves the start of six examples onto the home page: the quota spec must show
+  that only the first start of each is free.
 
 ##### AB-14b — 3.0.23 · The list for returning accounts · M–L
 
@@ -695,17 +745,27 @@ dates do not hold. Until it ships, Business shows two charts.*
   projects finds each by search; nothing the old page offered is gone (preservation register).
 - **Risk:** medium to high; the row source is a data change, and the status words reach every text guard.
 
-##### AB-14c — 3.0.24 · "Continue where you left off" · S–M
+##### AB-14c — 3.0.23 (data) and 3.5.0 (card) · "Continue where you left off" · S–M
+
+*Re-planned 06.11.2026: v3.5.0 carries the complete home page, so this part may not move past Christmas. Its data
+moves forward into 3.0.23; 3.5.0 only wires the card.*
 
 - **Scope:** the Continue card of state 2: the last project (H-O5), its status and next step, "In short" from a
   server-written sentence (H-O6), the map miniature computed from the stored skeleton (H-O7), "Open the process map"
-  (secondary, H-O13). Needs data the product does not hold today; without H-O6 the card ships without "In short".
-- **Files:** `components/workspace/ContinueCard.tsx` (new), `app/api/runs/create/route.ts` (the "In short" sentence via
-  Admin SDK, if H-O6 is accepted; never part of the signed payload), `lib/process-miniature.ts` (new, pure).
+  (secondary, H-O13).
+- **In 3.0.23 (with AB-14b, no visible change):** the "In short" sentence written via Admin SDK when a run is created
+  (never part of the signed payload); `lib/process-miniature.ts` (pure); the "last opened" key in the browser. Projects
+  created before 3.0.23 have no stored sentence: the card computes it once server-side on the owner's first visit, or
+  shows no "In short" — decided with H-O6.
+- **In 3.5.0:** `components/workspace/ContinueCard.tsx` (new) on that data.
+- **Files:** `app/api/runs/create/route.ts`, `lib/process-miniature.ts` (new, pure), `components/workspace/ContinueCard.tsx`
+  (new), `components/workspace/WorkspaceListReport.tsx`.
 - **Specs:** add `home-continue.spec.ts` (server-free: the miniature has the skeleton's element count; rendered: the
-  card names the last opened project); assert `run-integrity-guard` and `audit-pack-signed-input` unchanged.
+  card names the last opened project); assert `run-integrity-guard` and `audit-pack-signed-input` unchanged (3.0.23).
+- **Needs before 24.11.2026:** H-O5, H-O6 and H-O7 decided.
 - **Done when:** [look] for state 2 and 7 at the six viewports; the card's figures equal the project's.
-- **Risk:** low to medium; the first part to move after 22.12 if 3.0.24 is late.
+- **Risk:** low to medium once the data is in 3.0.23; if H-O6 is not decided by 24.11, the card ships in 3.5.0 without
+  "In short" rather than late.
 
 #### AB-13 — later · Download with the tour texts (O11) · S
 
@@ -750,9 +810,9 @@ dates do not hold. Until it ships, Business shows two charts.*
 |---|---|---|
 | The naming swap is smaller than in the mockup (65.9 % named, half of them the engine label again) | AB-1, AB-3 | The status line says how many kept their technical name; engine labels improve with 3.0.22. Do not lower the checker to get more swaps. |
 | Model cost and latency on the platform key: naming, purpose and plain wording per new project | AB-1, AB-3, AB-6 | One call per stage per project; own key only with the 3.0.21 switch; the 45 s ceiling ends the wait, not the call (assumption: the call is cancelled or its late answer ignored — decide in AB-3). |
-| Two homes for IT and Management between AB-2 and AB-10 | AB-2 | Accept from 3.0.22 to 3.0.24 (about four weeks); say it in the release notes; no new feature on the workspace IT/Management in that time. |
+| Two homes for IT and Management between AB-2 and AB-10 | AB-2 | Accept from 3.0.22 to 3.5.0 (about four weeks); say it in the release notes; no new feature on the workspace IT/Management in that time. |
 | Spec churn: 48 specs read the first-look hooks or `?first=1`, 54 read `view=it\|management` | AB-2, AB-11 | Change addresses first, rewrite behaviour second; no guard removed without a replacement shown red on a broken copy (the principle of the quality row, item 4 — moved from 3.0.22 to 3.0.25, applied here already). |
-| The dates (23.11, 07.12, 16.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 22.12 communication waits for 3.0.24, the Claude key switch does not. |
+| The dates (23.11, 07.12, 16.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 22.12 communication waits for 3.5.0, the Claude key switch does not. |
 | Legibility at overview zoom (ADR-025; `MIN_SCALE = 0.8`, `components/process-map/bpmn-view.ts:48`) | AB-2, AB-4 | Scroll instead of shrinking (N2); tour floor 83 %. |
 | Overlap regressions on narrow widths | every package | `analyze-layout-guard` fails the build for the touched states. |
 | The Analyze page (2,261 lines) | AB-2, AB-9 | Split per view into components first; behaviour second. |
