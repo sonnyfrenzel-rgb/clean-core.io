@@ -44,6 +44,12 @@ export interface ModelAvailability {
   suspendedNotice: string | null;
   /** 3.0.21 (A10) — the one-time notice before the first automatic model call was answered or closed. True until known, so nothing shows on a guess. */
   autoStepsNoticeSeen: boolean;
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 2) — the account's main switch "Automatic AI steps"
+   * (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`). True until known; `autoSteps` is false
+   * whenever it is off, on every key.
+   */
+  autoModelSteps: boolean;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -63,6 +69,7 @@ export function useModelAvailability(): ModelAvailability {
   const [suspendedProvider, setSuspendedProvider] = useState<ModelKeyProvider | null>(null);
   const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
   const [autoStepsNoticeSeen, setAutoStepsNoticeSeen] = useState(true);
+  const [autoModelSteps, setAutoModelSteps] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -87,6 +94,7 @@ export function useModelAvailability(): ModelAvailability {
         suspendedProvider?: unknown;
         suspendedNotice?: unknown;
         autoStepsNoticeSeen?: unknown;
+        autoModelSteps?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -102,6 +110,8 @@ export function useModelAvailability(): ModelAvailability {
       setSuspendedNotice(typeof data.suspendedNotice === 'string' ? data.suspendedNotice.slice(0, 600) : null);
       // Absent (an older server) reads as seen: the notice never shows on a guess.
       setAutoStepsNoticeSeen(data.autoStepsNoticeSeen !== false);
+      // Absent (an older server) reads as on, as the stored field does.
+      setAutoModelSteps(data.autoModelSteps !== false);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -136,7 +146,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

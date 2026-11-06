@@ -44,7 +44,8 @@ test('the catalogue still has every mail, and the user mails are the ones expect
   // 3.0.21 (C13): the receipt of a declaration to withdraw from / end the
   // contract, in English and German.
   // Terms 10.1: the notice of an amendment of the Terms (scripts/send-terms-announcement.ts).
-  expect(built).toHaveLength(25);
+  // The community mail on what is planned next (legal statement 17e, M1).
+  expect(built).toHaveLength(26);
   expect(userMails.map((b) => b.type).sort()).toEqual(
     [
       'address-confirmation',
@@ -53,6 +54,7 @@ test('the catalogue still has every mail, and the user mails are the ones expect
       'byok-agreement-accepted',
       'byok-agreement-accepted-de',
       'byok-agreement-ended',
+      'community-update',
       'contract-confirmation',
       'contract-confirmation-de',
       'invitation',
@@ -85,7 +87,7 @@ for (const { type, mail } of userMails) {
     expect(mail.html).toContain('data-mail-layout="plain"');
     // An unsubscribe URL is the one allowed extra, in the footer: the survey's,
     // and the invitation mails' (C10/C12, the invitation suppression list).
-    const expected = ['survey', 'invitation', 'portfolio-invitation'].includes(type) ? 2 : 1;
+    const expected = ['survey', 'invitation', 'portfolio-invitation', 'community-update'].includes(type) ? 2 : 1;
     expect(htmlLinkCount(mail.html), 'number of links').toBe(expected);
     for (const m of mail.html.matchAll(/<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
       expect(m[2].trim(), 'a link hides its URL behind a label').toBe(m[1]);

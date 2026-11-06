@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { removeProfilePictureAddress } from '@/lib/profile-picture';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { processOwnPendingWithdrawal } from '@/lib/withdrawal-queue-store';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/account/signed-in
@@ -16,6 +18,12 @@ import { assertRateLimit } from '@/lib/rate-limit';
  *
  * Acts only on the caller's own account, takes no body, and answers the same
  * `{ ok: true }` whether or not there was anything to remove.
+ *
+ * Legal review 06.11.2026 (B8): a sign-in is also one of the two moments a
+ * withdrawal receipt that could not be sent is tried again
+ * (`lib/withdrawal-queue.ts`) — the shell calls this route for every provider
+ * while the profile says a receipt is pending. A receipt that goes out ends in
+ * the deletion of the account, as does the seventh day without one.
  */
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,5 +38,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many requests. Please wait and try again.' }, { status });
   }
   await removeProfilePictureAddress(decoded);
+  try {
+    await processOwnPendingWithdrawal(decoded.uid);
+  } catch (err: unknown) {
+    // Kept in the queue; the next sign-in or the operator tries again. Never the address.
+    logger.error('withdrawal receipt retry failed', { route: 'api/account/signed-in', error: errMessage(err) });
+  }
   return NextResponse.json({ ok: true });
 }

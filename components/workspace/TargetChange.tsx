@@ -190,6 +190,8 @@ function TargetChangeDialog({
     callsModel,
     starterExample: exampleName,
     targetChange: !sourceMoved && !!exampleName,
+    // The consent text `startRun.modelCall` names who receives the code (legal review 06.11.2026).
+    provider: model.known ? model.provider : undefined,
     sameSourceAgain: !sourceMoved && !exampleName,
   });
 

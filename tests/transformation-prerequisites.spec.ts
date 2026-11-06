@@ -127,7 +127,7 @@ for (const width of [1280, 390] as const) {
       await openStage(page, account);
       await shot(page, `owner-state-${width}`);
       await expectReason(page, 'design', /No solution design yet/, /Open Design/, new RegExp(`/project/${account.projectId}/design$`));
-      await expect(page.locator('[data-generate-code]')).toHaveText(/Generate code/);
+      await expect(page.locator('[data-generate-code]')).toHaveText(/Generate draft \(sends code to /);
     });
 
     test('no design, narrative present: the reason and "Open Design"', async ({ page }) => {

@@ -59,6 +59,7 @@ import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_HREF, QUOTA_NAME, runsLeftLabel } fro
 import { signInLinkFor } from '@/lib/return-path';
 import { END_CONTRACT_CONFIRM_LABEL, END_CONTRACT_ID, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE, quotedDeclaration } from '@/lib/contract-withdrawal';
 import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
+import { withdrawalReceiptPendingMessage } from '@/lib/messages/model-consent';
 
 /** A quiet block inside a card — a note, an explanation, the strength meter. */
 const INSET = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-4';
@@ -247,6 +248,8 @@ export default function SettingsPage() {
   const [withdrawCodeError, setWithdrawCodeError] = useState('');
   const [withdrawPasswordError, setWithdrawPasswordError] = useState('');
   const [withdrawError, setWithdrawError] = useState('');
+  // B8 (legal review 06.11.2026): received and effective, the receipt queued — when it was received.
+  const [withdrawReceivedAt, setWithdrawReceivedAt] = useState<string | null>(null);
 
   // "Withdraw from / end the contract" in the footer links to
   // `/settings#end-contract`, which brings the withdrawal entry into view with
@@ -1219,6 +1222,13 @@ export default function SettingsPage() {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || 'The withdrawal could not be completed.');
       }
+      // B8: effective and blocked, the receipt could not go out yet — it is queued and the
+      // deletion follows it. The person reads that, and is never asked to try again.
+      const answer = (await res.json().catch(() => ({}))) as { receiptPending?: unknown; receivedAt?: unknown };
+      if (answer.receiptPending === true) {
+        setWithdrawReceivedAt(typeof answer.receivedAt === 'string' ? answer.receivedAt : new Date().toISOString());
+        return;
+      }
 
       // As after the erasure: set before the sign-out, so the empty profile is
       // not read as "no profile" and sent to the dashboard.
@@ -1252,6 +1262,11 @@ export default function SettingsPage() {
   };
 
   const tierInfo = getTierInfo(profile?.tier, !!profile?.byokConfigured);
+  // B8: a withdrawal received in this visit, or one the profile says is effective with its receipt pending.
+  const profileWithdrawal = (profile as { withdrawal?: { state?: unknown; receivedAt?: unknown } } | null)?.withdrawal;
+  const pendingWithdrawalAt =
+    withdrawReceivedAt ??
+    (profileWithdrawal?.state === 'receipt-pending' && typeof profileWithdrawal.receivedAt === 'string' ? profileWithdrawal.receivedAt : null);
 
   return (
     <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-4 py-6 pb-20 sm:px-6">
@@ -1997,7 +2012,14 @@ export default function SettingsPage() {
         }
       >
         <div data-settings-end-contract="">
-          {isWithdrawing ? (
+          {pendingWithdrawalAt ? (
+            <div data-settings-withdrawal-pending="">
+              <CcMessageStrip state="information" announce>
+                <span className="block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'en')}</span>
+                <span lang="de" className="mt-1 block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'de')}</span>
+              </CcMessageStrip>
+            </div>
+          ) : isWithdrawing ? (
             <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-6 text-center">
               <Loader2 className="motion-safe:animate-spin text-cc-brand-strong" size={32} aria-hidden={true} />
               <p className="m-0 cc-text-h3 text-cc-ink">Receiving your withdrawal...</p>

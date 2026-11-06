@@ -13,6 +13,7 @@ import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { ContractLanguageChoice, PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import SaveWordingActions from '@/components/legal/SaveWordingActions';
 import type { TermsLanguage } from '@/lib/terms-versions';
 
 /** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
@@ -274,6 +275,8 @@ export default function UserOnboarding() {
             <ConsentLine checked={agreedTerms} onChange={setAgreedTerms}>
               <TermsConsentLabel lang={termsLanguage} onOpen={() => setShowTerms(true)} linkClassName={INLINE_LINK} />
             </ConsentLine>
+            {/* Save or print the offered wording (§ 312i Abs. 1 S. 1 Nr. 4 BGB). */}
+            <SaveWordingActions key={termsLanguage} documents={['terms']} lang={termsLanguage} />
             <p className="m-0 cc-text-cell text-cc-ink-muted" data-signup-notice="below" lang={termsLanguage}>{signupNoticeBelow(user.email, termsLanguage)}</p>
           </div>
 

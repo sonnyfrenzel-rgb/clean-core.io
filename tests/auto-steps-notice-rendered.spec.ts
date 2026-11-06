@@ -41,6 +41,7 @@ function answer(over: Record<string, unknown> = {}) {
     suspendedProvider: null,
     suspendedNotice: null,
     autoStepsNoticeSeen: false,
+    autoModelSteps: true,
     ...over,
   };
 }
@@ -52,12 +53,16 @@ async function modelStages(page: Page, initial: Record<string, unknown>) {
   await page.route('**/api/model-stages', async (route) => {
     const req = route.request();
     if (req.method() === 'POST') {
-      const body = (req.postDataJSON() ?? {}) as { stages?: Record<string, boolean>; autoStepsNotice?: string };
+      const body = (req.postDataJSON() ?? {}) as { stages?: Record<string, boolean>; autoStepsNotice?: string; autoModelSteps?: boolean };
       posts.push(body);
+      // The main switch (legal review 06.11.2026, item 2): off makes `autoSteps` false on every key, as the route answers.
+      const main = typeof body.autoModelSteps === 'boolean' ? body.autoModelSteps : (state.autoModelSteps as boolean);
       state = {
         ...state,
         stages: { ...(state.stages as Record<string, boolean>), ...(body.stages ?? {}) },
         autoStepsNoticeSeen: state.autoStepsNoticeSeen || body.autoStepsNotice === 'seen',
+        autoModelSteps: main,
+        autoSteps: main && state.keySource === 'community',
       };
       await route.fulfill({ json: { ok: true, ...state } });
       return;
@@ -98,10 +103,12 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     await expect(notice.locator('[data-auto-steps-notice-lead]')).toHaveText(
       'When you open a project, one step — plain business sentences — is written automatically by an AI model (Google Gemini). The code it needs goes to Google for that. If your code must not leave the platform, switch this off now:',
     );
-    await expect(notice.locator('[data-auto-steps-notice-tools]')).toHaveText(
-      'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
+    // Since the legal review of 06.11.2026 (N1/B2) Transformation and Documentation start on a click
+    // only, the sentence on them is gone, and the one switch covers every automatic call.
+    await expect(notice.locator('[data-auto-steps-notice-tools]')).toHaveCount(0);
+    await expect(notice.locator('[data-auto-steps-notice-after]')).toHaveText(
+      'This one switch covers every model call the platform starts without your click. You can change it any time in Settings under “Where the AI model is used”.',
     );
-    await expect(notice.locator('[data-auto-steps-notice-after]')).toHaveText('You can change this any time in Settings under “Where the AI model is used”.');
     // Above the source, and it covers nothing: the drop zone stays clickable.
     const n = (await notice.boundingBox())!;
     const drop = (await page.locator('[data-own-code-drop]').boundingBox())!;
@@ -113,7 +120,8 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     await sw.click();
     await expect(sw).toHaveAttribute('aria-checked', 'false');
     await expect(notice.locator('[data-auto-steps-notice-off]')).toBeVisible();
-    expect(posts).toEqual([{ stages: { naming: false, statements: false }, autoStepsNotice: 'seen' }]);
+    // One stored main switch since 06.11.2026 (item 2), not the per-stage switches.
+    expect(posts).toEqual([{ autoModelSteps: false, autoStepsNotice: 'seen' }]);
 
     // Stays until "Got it", then goes.
     await notice.locator('[data-auto-steps-notice-dismiss]').click();

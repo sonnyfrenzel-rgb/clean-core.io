@@ -84,7 +84,7 @@ import type { GenerationRefusal } from '@/lib/generation-direction';
 import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { askModeOf } from '@/lib/auto-steps';
+import { generateDraftLabel, providerCompanyOf, regenerateDraftLabel } from '@/lib/messages/model-consent';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP } from '@/lib/sap-naming';
 import { enterGenerationPhase, type GenerationPhase, type GenerationPhaseKey } from '@/lib/generation-progress';
@@ -927,8 +927,6 @@ export default function TransformationPage() {
     store: (files: ProjectFile[], tests: GeneratedTestSuite, record: unknown) => Promise<void>;
     basis: () => unknown[];
     startedAt: number;
-    /** The page started this generation by itself on opening (3.0.21, B6): every call is sent as automatic. */
-    automatic: boolean;
   }) => {
     const { legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, signal } = args;
     // Roadmap 3.0.12 (CO/FI/PP/SD reviews): the original's checks, packed
@@ -1111,7 +1109,6 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           onReceipt: (receipt) => {
             generationReceiptRef.current = receipt;
           },
-          ...(args.automatic ? { automatic: true } : {}),
         });
       } catch (callErr) {
         if (signal.aborted) throw callErr;
@@ -1254,13 +1251,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const slotsRef = useRef<ChainSlot[]>([]);
 
   /**
-   * `automatic` (3.0.21, owner decision B6): true only for the start this page
-   * makes by itself on opening. Every model call of that generation — the
-   * leased fills and the single call — is then sent as `trigger: 'automatic'`,
-   * so the proxy refuses it on an own key whose "Automatic steps" are off. A
-   * click never passes it.
+   * Legal review 06.11.2026 (3.0.21, item 1): a generation starts only on a
+   * click — *Generate draft*, *Generate now*, *Replace* or *Try again* — for
+   * every key, the platform key included. Nothing calls this on opening.
    */
-  const generateTransformation = useCallback(async (automatic: boolean = false) => {
+  const generateTransformation = useCallback(async () => {
     if (generationInFlight.current) return;
     generationInFlight.current = true;
     generationReceiptRef.current = null;
@@ -1584,7 +1579,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           bundleOptions: { track: prep.scaffold.track, program: prep.plan.program, context: platformKnowledge },
           model: leasedFillModel(leaseNow, undefined, (receipt) => {
             generationReceiptRef.current = receipt;
-          }, automatic),
+          }),
           guardBody: guardBodyOf(prep),
           normalizeBody: normalizeBodyOf(prep),
           repairBody: repairBodyOf(prep),
@@ -1643,7 +1638,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
       // ── The fallback: today's single call, with a visible note (§16.2) ──
       setGenPath('single-call');
-      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, engineVersion: engineVersionOfProject(projectRef.current), signal: controller.signal, store, basis: () => basisAtStart, startedAt, automatic });
+      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, engineVersion: engineVersionOfProject(projectRef.current), signal: controller.signal, store, basis: () => basisAtStart, startedAt });
     } catch (err) {
       failed = true;
       if (controller.signal.aborted || (err as { name?: string } | null)?.name === 'AbortError') {
@@ -1774,7 +1769,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const planPending = planWanted && (planView === undefined || planView?.state === 'reading');
   const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;
   /** Once a package exists the button replaces it, and says so. */
-  const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
+  // Legal review 06.11.2026 (3.0.21, item 1): the button names where the code goes — the provider of the key actually used.
+  const draftCompany = modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null;
+  const generateLabel = files.length > 0 ? regenerateDraftLabel(draftCompany) : generateDraftLabel(draftCompany);
   /** The first reason the code cannot be generated now, for the empty package card. */
   const whyNotGenerated = prerequisites[0]?.reason ?? keyUserEvidenceWait ?? (blockers.length > 0 ? blockers.join(' ') : modelOff);
   // Owner, 16.10.2026: what moved is said as it is — a decision confirmed after
@@ -1857,10 +1854,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const storedRecord = storedGenerationRecord(storedBinding);
 
   /**
-   * The first generation starts by itself only when no tip is open (owner,
-   * 12.10.2026; design §14.4): with every count read and nothing that would
-   * change what the generation uses, there is nothing to read first. Once per
-   * visit, never over a package on record, and only where the button could.
+   * The first generation no longer starts by itself (legal review 06.11.2026,
+   * 3.0.21, item 1): it used to start on opening when no tip was open (owner,
+   * 12.10.2026; design §14.4). Now it waits for *Generate draft* on every key,
+   * so opening the tool never sends code anywhere.
    */
   /**
    * The plan before the click (owner, 13.10.2026): the same contract read and
@@ -1928,28 +1925,6 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       controller.abort();
     };
   }, [planWanted, projectId, planNonce]);
-
-  const autoStarted = useRef(false);
-  // Never by itself while the decision warning shows: the reader decides to generate against it.
-  const nothingOpen = settled && tips.length === 0 && warning === null;
-  // ... and only once the plan is read and allows it (owner, 13.10.2026).
-  const planSettled = planView !== undefined && planView?.state !== 'reading';
-  // 3.0.21 (owner decision B6): with the account's own key and "Automatic
-  // steps" off, the first generation does not start by itself — the reader
-  // starts it with *Generate code*, and a note says why (`askModeOf`). With the
-  // platform key it starts by itself as before, sent as automatic.
-  const firstStartMode = askModeOf({
-    wanted: nothingOpen && canStart && planSettled && files.length === 0 && !modelAvailability.loading && !loading,
-    autoAllowed: modelAvailability.autoSteps,
-  });
-  useEffect(() => {
-    if (autoStarted.current || !nothingOpen || !canStart || !planSettled || files.length > 0 || modelAvailability.loading || loading) return;
-    // Own key, "Automatic steps" off: nothing by itself — *Generate code* starts it.
-    if (firstStartMode !== 'auto') return;
-    autoStarted.current = true;
-    const timer = setTimeout(() => generateTransformation(true), 0);
-    return () => clearTimeout(timer);
-  }, [nothingOpen, canStart, planSettled, files.length, modelAvailability.loading, loading, firstStartMode, generateTransformation]);
 
   /** The fills' time left — an estimate in words, from the calls that finished (owner, 13.10.2026). */
   const fillsEstimate =
@@ -2245,6 +2220,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           plan={planView === undefined ? (planWanted ? { state: 'reading' } : null) : planView}
           keySource={modelAvailability.keySource}
           onGenerate={startGeneration}
+          generateLabel={generateLabel}
           conceptSource={legacySource}
         />
   ) : null;
@@ -2348,12 +2324,6 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           the run: with a package on record it moves, folded, below the result
           (dev acceptance 14.10.2026 — after the run the result comes first). */}
       {showTips && !hasPackage ? tipsPanel : null}
-      {/* Own key, "Automatic steps" off (B6): the first generation waits for *Generate code*. */}
-      {firstStartMode === 'click' ? (
-        <p data-transformation-on-click="" className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-          {wt('autoSteps.onClickNote')}
-        </p>
-      ) : null}
 
 
       <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>

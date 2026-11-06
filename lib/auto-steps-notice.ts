@@ -8,11 +8,13 @@ import { NAMING_ASKED_IN_THIS_BUILD } from './process-naming';
  *
  * Shown once per account, at the first upload of own code and so before the
  * first own project is opened, with a switch inside it that turns the
- * automatic AI steps off. What it writes is what Settings writes — the
- * account's per-stage switches (`users/{uid}.modelStages`, through
- * `POST /api/model-stages`), "Business sentences" and "Business names" in the
- * card "Where the AI model is used" — so the notice and Settings can never say
- * two things. That it was shown is one server-written timestamp,
+ * automatic AI steps off. What it writes is what Settings writes — since the
+ * legal review of 06.11.2026 (item 2) the account's one main switch
+ * "Automatic AI steps" (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`,
+ * through `POST /api/model-stages`), shown at the top of the card "Where the
+ * AI model is used" — so the notice and Settings can never say two things.
+ * It stops every automatic call on every key; the per-stage switches stay
+ * beside it. That it was shown is one server-written timestamp,
  * `users/{uid}.autoStepsNoticeAt`, written by the same route: no field a
  * browser writes, so no `firestore.rules` change.
  *
@@ -36,20 +38,13 @@ export function automaticStagesInThisBuild(): ModelStage[] {
   return NAMING_ASKED_IN_THIS_BUILD ? ['naming', 'statements'] : ['statements'];
 }
 
-/**
- * The stages the switch writes. Off: every stage that can start by itself,
- * the paused names included, so a later build that asks for them again does
- * not start them for an account that said no. On: the same, back to the
- * default.
- */
-export const AUTO_STEPS_SWITCH_STAGES: readonly ModelStage[] = ['naming', 'statements'];
 
 export interface AutoStepsNoticeInput {
   /** `useModelAvailability().known` — nothing is shown on a guess. */
   known: boolean;
   /** A key the step could run on (platform or own, not suspended). */
   keyAvailable: boolean;
-  /** `useModelAvailability().autoSteps`: false with an own key whose "Automatic steps" are off. */
+  /** `useModelAvailability().autoSteps`: false with the main switch off, or an own key whose "Automatic steps" are off. */
   autoSteps: boolean;
   stages: Record<ModelStage, boolean>;
   /** The account answered or closed the notice before (`autoStepsNoticeSeen`). */
@@ -75,16 +70,14 @@ export function autoStepsNoticeWanted(input: AutoStepsNoticeInput): boolean {
   return automaticStepWouldRun(input);
 }
 
-/** The switch's position: on while any stage that can start by itself is on. */
-export function autoStepsSwitchOn(stages: Record<ModelStage, boolean>): boolean {
-  return automaticStagesInThisBuild().some((stage) => stages[stage] === true);
+/** The switch's position: the main switch (`useModelAvailability().autoModelSteps`). */
+export function autoStepsSwitchOn(model: { autoModelSteps: boolean }): boolean {
+  return model.autoModelSteps;
 }
 
-/** The body the switch posts: both stages to `on`, and the notice answered. */
-export function autoStepsSwitchBody(on: boolean): { stages: Partial<Record<ModelStage, boolean>>; autoStepsNotice: typeof AUTO_STEPS_NOTICE_SEEN } {
-  const stages: Partial<Record<ModelStage, boolean>> = {};
-  for (const stage of AUTO_STEPS_SWITCH_STAGES) stages[stage] = on;
-  return { stages, autoStepsNotice: AUTO_STEPS_NOTICE_SEEN };
+/** The body the switch posts: the main switch to `on`, and the notice answered. */
+export function autoStepsSwitchBody(on: boolean): { autoModelSteps: boolean; autoStepsNotice: typeof AUTO_STEPS_NOTICE_SEEN } {
+  return { autoModelSteps: on, autoStepsNotice: AUTO_STEPS_NOTICE_SEEN };
 }
 
 const COMPANY: Readonly<Record<ModelKeyProvider, string>> = { gemini: 'Google', anthropic: 'Anthropic' };

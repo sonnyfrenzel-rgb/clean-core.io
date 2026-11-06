@@ -3,14 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import {
   AUTO_STEPS_NOTICE_FIELD,
-  AUTO_STEPS_SWITCH_STAGES,
   automaticStagesInThisBuild,
   autoStepsNoticeValues,
   autoStepsNoticeWanted,
   autoStepsSwitchBody,
   autoStepsSwitchOn,
 } from '../lib/auto-steps-notice';
-import { MODEL_STAGE_LABELS, modelStagesOf } from '../lib/model-stages';
+import { modelStagesOf } from '../lib/model-stages';
 import { NAMING_WITHOUT_FACTS_PAUSED } from '../lib/process-naming';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { PRIVACY_DE } from '../lib/legal/texts/privacy.de';
@@ -61,12 +60,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
       };
       walk(dir);
     }
-    // Since 06.11.2026 the two tools that start on opening (C14: Transformation, Documentation)
-    // mark that start as well, so an own key without "Automatic steps" refuses it
-    // (tests/auto-steps-tools-on-open-3021.spec.ts).
+    // Since the legal review of 06.11.2026 (item 1) Transformation and Documentation start
+    // only on a click, on every key, and mark nothing (tests/auto-steps-tools-on-open-3021.spec.ts).
     expect(senders.sort()).toEqual([
-      'app/(app)/project/[projectId]/documentation/page.tsx',
-      'app/(app)/project/[projectId]/transformation/page.tsx',
       'hooks/useAutoProcessNaming.ts',
       'hooks/usePlainWording.ts',
     ]);
@@ -89,21 +85,23 @@ test.describe('A10 — one automatic step on opening a project while names are p
 
   test('the server says the same: on an own key the automatic flag needs "Automatic steps"', () => {
     const route = read('app/api/model-stages/route.ts');
-    expect(route).toContain("const autoSteps = keySource === 'community' || (ownKey !== null && ownKey.autoSteps);");
+    // Since 06.11.2026 (item 2) the main switch comes first, on every key (tests/auto-model-steps-3021.spec.ts).
+    expect(route).toContain('const autoSteps = automaticStepsAllowed({ mainSwitch: autoModelSteps, keySource, ownKeyAutoSteps: ownKey !== null && ownKey.autoSteps });');
     expect(read('app/api/gemini/route.ts')).toContain('if (automatic && ownKey && !ownKey.autoSteps) {');
   });
 
-  test('the switch writes the per-account stages Settings writes, and records the notice as answered', () => {
-    expect(autoStepsSwitchBody(false)).toEqual({ stages: { naming: false, statements: false }, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchBody(true)).toEqual({ stages: { naming: true, statements: true }, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchOn(ALL_ON)).toBe(true);
-    expect(autoStepsSwitchOn(off('statements'))).toBe(false);
+  test('the switch writes the main switch Settings shows, and records the notice as answered', () => {
+    // Since 06.11.2026 (item 2): one stored setting, `users/{uid}.autoModelSteps` (tests/auto-model-steps-3021.spec.ts).
+    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen' });
+    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen' });
+    expect(autoStepsSwitchOn({ autoModelSteps: true })).toBe(true);
+    expect(autoStepsSwitchOn({ autoModelSteps: false })).toBe(false);
   });
 
   test('the route writes the notice field through the Admin SDK only; no rules change', () => {
     const route = read('app/api/model-stages/route.ts');
     expect(route).toContain('const noticeSeen = notice === AUTO_STEPS_NOTICE_SEEN;');
-    expect(route).toContain('[AUTO_STEPS_NOTICE_FIELD]: FieldValue.serverTimestamp()');
+    expect(route).toContain('if (noticeSeen) only[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();');
     expect(route).toContain('if (noticeSeen) fields[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();');
     expect(route).toContain('const autoStepsNoticeSeen = profile?.[AUTO_STEPS_NOTICE_FIELD] != null;');
     expect(AUTO_STEPS_NOTICE_FIELD).toBe('autoStepsNoticeAt');
@@ -137,40 +135,26 @@ test.describe('A10 — one automatic step on opening a project while names are p
       'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell (Google Gemini). Dafür geht der benötigte Code an Google. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
     );
     expect(autoStepsNoticeValues('anthropic')).toEqual({ model: 'Anthropic Claude', company: 'Anthropic' });
-    expect(consentText(t.switchLabel, 'en')).toBe('Automatic AI steps');
-    expect(consentText(t.after, 'en')).toBe('You can change this any time in Settings under “Where the AI model is used”.');
+    // One switch for every automatic call (legal review N1/B2, 06.11.2026).
+    expect(consentText(t.switchLabel, 'en')).toBe('All automatic AI steps');
+    expect(consentText(t.switchLabel, 'de')).toBe('Alle automatischen KI-Schritte');
+    expect(consentText(t.after, 'en')).toBe(
+      'This one switch covers every model call the platform starts without your click. You can change it any time in Settings under “Where the AI model is used”.',
+    );
     expect(consentText(t.after, 'de')).toContain('„Where the AI model is used“');
     expect(read('components/ModelStagesCard.tsx')).toContain('title="Where the AI model is used"');
   });
 
-  test('C14 names the two tools that call the model when opened (owner decision 06.11.2026)', () => {
-    const t = CONSENT_TEXTS.autoStepsNotice;
-    expect(consentText(t.toolsOnOpen, 'en')).toBe(
-      'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
-    );
-    expect(consentText(t.toolsOnOpen, 'de')).toBe(
-      'Auch Transformation und Documentation können das Modell beim Öffnen von selbst aufrufen, solange dort noch kein KI-Ergebnis vorliegt. Dieser Schalter erfasst sie nicht; Sie schalten sie in den Einstellungen unter „Where the AI model is used“ mit „Transformed code“ und „Documentation and business blueprint“ ab.',
-    );
-    // The switch labels it names are the ones Settings shows.
-    expect(MODEL_STAGE_LABELS.transformation).toBe('Transformed code');
-    expect(MODEL_STAGE_LABELS.documentation).toBe('Documentation and business blueprint');
-    // "This switch does not cover them" stays true: the switch writes names and sentences only.
-    expect(AUTO_STEPS_SWITCH_STAGES).toEqual(['naming', 'statements']);
-    // What the sentence describes: both tools start a model call from an effect on open,
-    // gated by their own stage switch. Since 06.11.2026 that start is marked automatic and,
-    // on an own key, also waits for "Automatic steps" (tests/auto-steps-tools-on-open-3021.spec.ts);
-    // on the platform key, where this notice shows, it still runs by itself.
-    const transformation = read('app/(app)/project/[projectId]/transformation/page.tsx');
-    expect(transformation).toContain('const timer = setTimeout(() => generateTransformation(true), 0);');
-    expect(transformation).toContain("modelAvailability.enabled('transformation')");
-    const documentation = read('app/(app)/project/[projectId]/documentation/page.tsx');
-    expect(documentation).toMatch(/&& !businessDocumentation\.trim\(\)[\s\S]{0,300}modelAvailability\.enabled\('documentation'\)/);
-    expect(documentation).toContain('void writeBusinessLayer(true);');
-    // On the page, below the switch and above the Settings line.
+  test('C14 no longer names Transformation and Documentation: both start on a click only (legal review N1/B2, 06.11.2026)', () => {
+    const t = CONSENT_TEXTS.autoStepsNotice as Record<string, unknown>;
+    expect(t.toolsOnOpen).toBeUndefined();
     const notice = read('components/AutoStepsNotice.tsx');
-    expect(notice).toContain('consentText(t.toolsOnOpen');
-    expect(notice.indexOf('data-auto-steps-notice-tools')).toBeGreaterThan(notice.indexOf('<CcSwitch'));
-    expect(notice.indexOf('data-auto-steps-notice-tools')).toBeLessThan(notice.indexOf('data-auto-steps-notice-after'));
+    expect(notice).not.toContain('toolsOnOpen');
+    expect(notice).not.toContain('data-auto-steps-notice-tools');
+    expect(JSON.stringify(CONSENT_TEXTS.autoStepsNotice)).not.toMatch(/Transformation|Documentation/);
+    // What makes it true: neither tool calls the model on opening (tests/auto-steps-tools-on-open-3021.spec.ts).
+    expect(read('app/(app)/project/[projectId]/transformation/page.tsx')).not.toContain('generateTransformation(true)');
+    expect(read('app/(app)/project/[projectId]/documentation/page.tsx')).not.toContain('writeBusinessLayer(true)');
   });
 
   test('privacy 3, Terms 5.4 and the Trust page say one automatic step, and that names are paused', () => {
@@ -180,8 +164,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
     expect(PRIVACY_EN).toContain('Business names, which we also started ourselves, are paused');
     expect(PRIVACY_DE).toContain('weisen wir Sie einmal darauf hin, mit einem Schalter');
     expect(PRIVACY_EN).toContain('we point this out once, with a switch');
-    expect(TERMS_DE).toContain('startet die Plattform beim Öffnen eines Projekts einen Schritt von selbst');
-    expect(TERMS_EN).toContain('the Platform starts one step by itself when a project is opened');
+    // Terms 5.4 names no count and no tool since the legal review of 06.11.2026 (N1/B2).
+    expect(TERMS_DE).toContain('Einige modellgestützte Schritte startet die Plattform ohne Ihren Klick; welche das sind, beschreibt die Datenschutzerklärung (Abschnitt 3)');
+    expect(TERMS_EN).toContain('Some model-supported steps are started by the Platform without your click; the Privacy Policy (section 3) describes which');
     expect(TRUST_EN).toContain('One stage — plain-language wording — starts by itself');
     for (const text of [PRIVACY_DE, PRIVACY_EN, TERMS_DE, TERMS_EN, TRUST_EN]) {
       expect(text).not.toMatch(/Zwei starten wir|Two we start|zwei Schritte von selbst|two steps by itself|Two stages — plain/);
@@ -193,9 +178,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
 
 test.describe('A9 — Terms 1.3: a link to the accepted wording, bound to version and language', () => {
   const DE_13 =
-    'Nach der Registrierung erhalten Sie an Ihre Kontoadresse eine Bestätigung per E-Mail mit der Versionskennung, der Sprache, dem SHA-256-Hashwert des Wortlauts, dem Annahmezeitpunkt und einem Link auf den Wortlaut der angenommenen Fassung, der unter dieser Adresse dauerhaft abrufbar bleibt; sie umfasst auch die gesondert angenommenen Vereinbarungen. Die Bestätigung dient dem Nachweis für beide Seiten und ist keine Voraussetzung des Vertragsschlusses';
+    'Nach der Registrierung erhalten Sie an Ihre Kontoadresse eine Bestätigung per E-Mail mit der Versionskennung, der Sprache, dem SHA-256-Hashwert des Wortlauts, dem Annahmezeitpunkt und einem Link auf den Wortlaut der angenommenen Fassung, der unter dieser Adresse abrufbar bleibt, mindestens so lange, wie der Nachweis Ihrer Annahme aufbewahrt wird; sie umfasst auch die gesondert angenommenen Vereinbarungen. Die Bestätigung dient dem Nachweis für beide Seiten und ist keine Voraussetzung des Vertragsschlusses';
   const EN_13 =
-    'After you sign up, you receive a confirmation by e-mail to your account address containing the version identifier, the language, the SHA-256 digest of the wording, the time of your acceptance and a link to the wording of the accepted version, which remains permanently available at that address; it also includes any agreements you accepted separately. The confirmation serves as a record for both sides and is not a condition of the conclusion of the contract';
+    'After you sign up, you receive a confirmation by e-mail to your account address containing the version identifier, the language, the SHA-256 digest of the wording, the time of your acceptance and a link to the wording of the accepted version, which remains available at that address at least for as long as the record of your acceptance is kept; it also includes any agreements you accepted separately. The confirmation serves as a record for both sides and is not a condition of the conclusion of the contract';
 
   test('1.3 has the new wording in both languages, under its heading, and in the archived files', () => {
     expect(TERMS_DE).toContain(`**1.3** Speicherung des Vertragstextes, Nachweis und Vertragsbestätigung.`);
@@ -243,7 +228,28 @@ test.describe('A9 — Terms 1.3: a link to the accepted wording, bound to versio
       expect(json, group).not.toMatch(promises);
       expect(json, group).not.toMatch(/\{Wortlaut\}|Vollständiger Wortlaut —|Full wording —/);
     }
-    expect(BYOK_ADDENDUM_DE).toContain('einem Link auf ihren Wortlaut, der unter dieser Adresse dauerhaft abrufbar bleibt');
-    expect(BYOK_ADDENDUM_EN).toContain('a link to its wording, which remains permanently available at that address');
+    // Legal statements of 06.11.2026 (B1, M5): no "permanently available" anywhere; the contract texts bind the
+    // address to the record of acceptance, with the wording on request if the Platform closes earlier, and the
+    // confirmation mail (C5) says the same from the reader's side.
+    expect(BYOK_ADDENDUM_DE).toContain('Der Wortlaut bleibt unter dieser Adresse abrufbar, mindestens so lange, wie der Nachweis Ihrer Annahme aufbewahrt wird; stellt der Betreiber den Betrieb der Plattform vorher ein, sendet er ihn Ihnen bis dahin auf Anfrage zu');
+    expect(BYOK_ADDENDUM_EN).toContain('The wording remains available at that address at least for as long as the record of your acceptance is kept; should the operator discontinue the Platform before then, it will send the wording to you on request until that time');
+    expect(TERMS_DE).toContain('Stellt der Betreiber den Betrieb der Plattform vorher ein, sendet er Ihnen den Wortlaut einer von Ihnen angenommenen Fassung bis dahin auf Anfrage zu.');
+    expect(consentText(CONSENT_TEXTS.confirmationMail.body, 'de')).toContain(
+      'Den Wortlaut der angenommenen Fassung finden Sie unter {Adresse}, zusammen mit dem Hashwert, der aus ihm gebildet wurde. Er bleibt dort abrufbar, solange wir die Plattform betreiben; stellen wir den Betrieb ein, senden wir ihn Ihnen auf Anfrage zu',
+    );
+    expect(consentText(CONSENT_TEXTS.confirmationMail.body, 'en')).toContain(
+      'You will find the wording of the version you accepted at {Adresse}, together with the hash value calculated from it. It remains available there for as long as we operate the Platform; should we discontinue it, we will send it to you on request',
+    );
+    for (const [name, text] of [
+      ['terms.de', TERMS_DE],
+      ['terms.en', TERMS_EN],
+      ['ZV de', BYOK_ADDENDUM_DE],
+      ['ZV en', BYOK_ADDENDUM_EN],
+      ['privacy.de', PRIVACY_DE],
+      ['privacy.en', PRIVACY_EN],
+      ['consent', JSON.stringify(CONSENT_TEXTS)],
+    ] as const) {
+      expect(text, name).not.toMatch(/dauerhaft abrufbar|permanently available/);
+    }
   });
 });

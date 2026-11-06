@@ -95,9 +95,9 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
         text:
           'Sections 2.2, 3 and 4.1 describe the voluntary, one-person operation and what the platform delivers: ' +
           'results the engine computes without a model, and drafts a model writes — marked as AI-generated. ' +
-          'On the platform key, two steps start by themselves when a project is opened; you switch them off in ' +
-          'the settings. If code must not leave the platform, switch all model steps off there, the automatic ' +
-          'ones included — the assistant has no switch and still answers on a model when you ask it (section 5.4).',
+          'Some model steps start without your click; the Privacy Policy says which, and one switch in the ' +
+          'settings turns them all off. If code must not leave the platform, switch the model steps off; the ' +
+          'platform then calls no model for your account (section 5.4).',
       },
       {
         lead: '',

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mfaRefusal, verifyRequestAuth, deleteUserDataAndAccount, assertMfaStepUp, getAdminDb } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertMfaStepUp } from '@/lib/firebase-admin';
 import { isRecentLogin } from '@/lib/recent-login';
-import { acceptedTermsLanguageOf } from '@/lib/consent';
-import { sendWithdrawalReceiptMail } from '@/lib/withdrawal-receipt-mail';
-import { receiveWithdrawalDeclaration, type WithdrawalDeps } from '@/lib/withdrawal-declaration';
-import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
+import { receiveWithdrawalDeclaration } from '@/lib/withdrawal-declaration';
+import { withdrawalDeps } from '@/lib/withdrawal-queue-store';
+import { withdrawalReceiptPendingMessage } from '@/lib/messages/model-consent';
 
 /**
  * POST /api/account/withdraw — the voluntary withdrawal / termination function
@@ -15,9 +14,12 @@ import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
  * The same sign-in checks as the erasure, because the path ends in it: a
  * recent sign-in and, with a second factor, a step-up. Then
  * `receiveWithdrawalDeclaration`: the declaration is recorded in the proof log,
+ * the account is blocked at once (the withdrawal is effective on submission),
  * the receipt goes by e-mail at once, its sending is recorded with the time,
- * and only then is the account deleted. A receipt that did not go out stops
- * before the deletion (503, `receipt-not-sent`).
+ * and only then is the account deleted. A receipt that did not go out (B8,
+ * legal review 06.11.2026) goes into the queue with automatic retries
+ * (`lib/withdrawal-queue.ts`) and the deletion follows it: answered 202,
+ * `receipt-queued`, with the sentence the person reads — never "try again".
  *
  * The address is the verified token's, never a value out of a request body;
  * the route reads no body.
@@ -25,33 +27,6 @@ import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
 
 const RECENT_LOGIN_MESSAGE =
   'Security restriction: confirming the withdrawal requires a recent sign-in, because your account is deleted with it. Please sign out, sign back in, and confirm the withdrawal again.';
-
-function routeDeps(): WithdrawalDeps {
-  return {
-    now: () => new Date(),
-    readProfile: async (uid) => {
-      try {
-        const { db } = await getAdminDb();
-        const profile = ((await db.collection('users').doc(uid).get()).data() ?? {}) as {
-          termsLanguageAccepted?: unknown;
-          firstName?: unknown;
-          lastName?: unknown;
-        };
-        const name = [profile.firstName, profile.lastName].filter((p): p is string => typeof p === 'string').join(' ').trim();
-        return { language: acceptedTermsLanguageOf(profile.termsLanguageAccepted), name };
-      } catch {
-        // The receipt goes out in English, unnamed.
-        return { language: acceptedTermsLanguageOf(undefined), name: '' };
-      }
-    },
-    record: async (row) => {
-      const { db, FieldValue } = await getAdminDb();
-      await db.collection('consent_events').doc().create({ ...row, createdAt: FieldValue.serverTimestamp() });
-    },
-    send: (input) => sendWithdrawalReceiptMail(input),
-    erase: (uid, ending) => deleteUserDataAndAccount(uid, { ending }),
-  };
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -76,15 +51,24 @@ export async function POST(req: NextRequest) {
 
     const result = await receiveWithdrawalDeclaration(
       { uid: decodedToken.uid, email: typeof decodedToken.email === 'string' ? decodedToken.email : null },
-      routeDeps(),
+      withdrawalDeps(),
     );
     if (!result.ok && result.code === 'no-address') {
       return NextResponse.json({ error: 'This account has no e-mail address to send the receipt to. Please write to info@clean-core.io.', code: 'no-address' }, { status: 400 });
     }
     if (!result.ok) {
+      // Effective and blocked; the receipt is queued and the deletion follows it. Not an error for the person.
       return NextResponse.json(
-        { error: CONSENT_TEXTS.withdrawal.receiptNotSent.en, code: 'receipt-not-sent', receivedAt: result.receivedAt },
-        { status: 503 },
+        {
+          success: true,
+          effective: true,
+          receiptPending: true,
+          code: 'receipt-queued',
+          receivedAt: result.receivedAt,
+          message: withdrawalReceiptPendingMessage(result.receivedAt, 'en'),
+          messageDe: withdrawalReceiptPendingMessage(result.receivedAt, 'de'),
+        },
+        { status: 202 },
       );
     }
     return NextResponse.json({ success: true, receivedAt: result.receivedAt, receiptSentAt: result.receiptSentAt });

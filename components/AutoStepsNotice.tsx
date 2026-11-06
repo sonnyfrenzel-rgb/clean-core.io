@@ -26,7 +26,7 @@ import CcButton from '@/components/cc/Button';
  * page, not a dialog — nothing is covered, and the upload stays usable while
  * it is there.
  *
- * The switch writes the account's per-stage switches at once (a switch acts
+ * The switch writes the account's main switch "Automatic AI steps" at once (a switch acts
  * when flipped, `components/cc/Switch.tsx`) and records the notice as
  * answered; "Got it" keeps the default and records it too. Either way it does
  * not come back for the account. After the switch was used the strip stays
@@ -89,7 +89,7 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
 
   const t = CONSENT_TEXTS.autoStepsNotice;
   const { model: modelLabel, company } = autoStepsNoticeValues(model.provider);
-  const on = autoStepsSwitchOn(model.stages);
+  const on = autoStepsSwitchOn(model);
 
   return (
     <section data-auto-steps-notice={on ? 'on' : 'off'} aria-label={consentText(t.title, 'en')}>
@@ -121,9 +121,6 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
             {consentText(t.switchedOff, 'en')}
           </p>
         ) : null}
-        <p className="m-0" data-auto-steps-notice-tools="">
-          {consentText(t.toolsOnOpen, 'en')}
-        </p>
         <p className="m-0 text-cc-ink-muted" data-auto-steps-notice-after="">
           {consentText(t.after, 'en')}
         </p>

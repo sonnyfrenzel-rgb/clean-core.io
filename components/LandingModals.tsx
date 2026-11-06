@@ -51,6 +51,7 @@ import CcCheckbox from '@/components/cc/Checkbox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import dynamic from 'next/dynamic';
 import { ContractLanguageChoice, PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import SaveWordingActions from '@/components/legal/SaveWordingActions';
 import type { TermsLanguage } from '@/lib/terms-versions';
 
 /** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
@@ -1054,6 +1055,8 @@ export default function LandingModals() {
                   required
                   label={<TermsConsentLabel lang={termsLanguage} onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
                 />
+                {/* Save or print the offered wording (§ 312i Abs. 1 S. 1 Nr. 4 BGB). */}
+                <SaveWordingActions key={termsLanguage} documents={['terms']} lang={termsLanguage} />
                 <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below" lang={termsLanguage}>{signupNoticeBelow(email.trim() || null, termsLanguage)}</p>
               </div>
 

@@ -6,6 +6,7 @@ import { declaredTargetOf } from '@/lib/assessment-target';
 import { signEngineRun, START_NARRATIVE_CEILING_MS } from '@/lib/engine-run';
 import { missingFrom, writeStartNarrative, type StartNarrative, type StartNarrativeMissing } from '@/lib/start-narrative';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { startCallsModel } from '@/lib/start-run-model';
 import { ownCodeFileName } from '@/lib/own-code-handoff';
 import { clearStartRelease, startReleaseFor } from '@/lib/start-release-handoff';
 import { sourceFileName } from '@/lib/source-file-name';
@@ -44,6 +45,14 @@ import type { Project } from '@/lib/types';
  * signed with the engine's reading alone and `narrativeMissing` says why. Each
  * start sends exactly one request to `/api/runs/create`. Model off, or no key:
  * the engine-only run, as before, with no model call.
+ *
+ * **The main switch** (legal review 06.11.2026, 3.0.21, item 3): with the
+ * account's "Automatic AI steps" off (`lib/auto-model-steps.ts`), or the
+ * analysis stage off, the first run asks no model at all — not even to be
+ * refused — and is signed with the engine's complete reading. The model
+ * answer must be known for the narrative to be asked: a failed or missing
+ * answer is read as "no model", never as a guess that it is on. The proxy
+ * holds the same rule (`trigger: 'start'`).
  */
 
 export type StartRunPhase = 'none' | 'ready' | 'running' | 'signed' | 'failed';
@@ -102,10 +111,10 @@ export function useStartRun({
   /** The wait for the narrative in flight, and why it was ended, if it was. */
   const waitRef = useRef<{ controller: AbortController; ended: 'timeout' | 'continued' | null } | null>(null);
   const model = useModelAvailability();
-  // The same answer the start screens read. Optimistic while it is unknown, as
-  // everywhere: the proxy decides every call, and a refusal ends in the
-  // engine-only run with its reason.
-  const callsModel = model.enabled('analyze');
+  // The same answer the start screens read — but never optimistic here: the
+  // narrative is asked only when the answer is in and says the analysis stage,
+  // a key and the main switch are all on (legal review 06.11.2026, item 3).
+  const callsModel = startCallsModel(model);
   const onSignedRef = useRef(onSigned);
   useEffect(() => {
     onSignedRef.current = onSigned;
@@ -153,7 +162,7 @@ export function useStartRun({
             // Raced against the abort: a request the browser does not cancel
             // (the evidence read) must not hold the start past the ceiling.
             narrative = await Promise.race([
-              writeStartNarrative({ projectId, source, fileName, deployment, targetProfile, signal: controller.signal }),
+              writeStartNarrative({ projectId, source, fileName, deployment, targetProfile, signal: controller.signal, firstRun: true }),
               new Promise<never>((_, reject) => {
                 controller.signal.addEventListener('abort', () => reject(new DOMException('ended', 'AbortError')), { once: true });
               }),

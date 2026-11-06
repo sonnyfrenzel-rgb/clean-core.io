@@ -4,6 +4,12 @@ import path from 'path';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { signupNoticeBelow } from '../components/legal/SignupConsent';
 import { renderOpenValue } from '../lib/legal/open-values';
+import { createHash } from 'crypto';
+import { wordingFile } from '../lib/legal/wording-file';
+import { runFreeNotice, runModelCallNotice } from '../lib/legal/run-notice';
+import { archivedTermsSha256For } from '../lib/terms-versions';
+import { archivedAddendumSha256 } from '../lib/legal/byok-addendum-versions';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Where the product shows the consent texts of Fassung 1.1 (3.0.21), it shows
@@ -77,5 +83,48 @@ test.describe('C2 — the amendment dialog', () => {
     // After that day there is no later day to name.
     expect(CONSENT_TEXTS.amendment.checkboxPastDate.en).toBe('I accept the Terms of Service in version {Fassung} (English version).');
     expect(CONSENT_TEXTS.amendment.checkboxPastDate.de).toBe('Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) an.');
+  });
+});
+
+test.describe('C1 and C2 — save or print the offered wording (§ 312i Abs. 1 S. 1 Nr. 4 BGB, 06.11.2026)', () => {
+  for (const rel of ['components/UserOnboarding.tsx', 'components/LandingModals.tsx', 'components/TermsReacceptGate.tsx']) {
+    test(`${rel} offers "Save as file" and "Print" for the Terms, in the contract language`, () => {
+      expect(read(rel)).toMatch(/<SaveWordingActions key=\{.+?\} documents=\{\['terms'\]\} lang=\{(termsLanguage|lang)\} \/>/);
+    });
+  }
+
+  test('the file is the archived wording, so its SHA-256 is the digest the record and the mail name', () => {
+    const sha = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
+    for (const lang of ['de', 'en'] as const) {
+      const t = wordingFile('terms', lang);
+      expect(t.filename).toBe(`clean-core-${lang === 'de' ? 'nutzungsbedingungen' : 'terms-of-service'}-v2.3.0-${lang}.txt`);
+      expect(sha(t.text)).toBe(archivedTermsSha256For(TERMS_VERSION, lang));
+      expect(sha(wordingFile('byok-addendum', lang).text)).toBe(archivedAddendumSha256('ZV-BYOK-1.0', lang));
+    }
+    expect(consentText(CONSENT_TEXTS.saveWording.save, 'de')).toBe('Als Datei speichern');
+    expect(consentText(CONSENT_TEXTS.saveWording.save, 'en')).toBe('Save as file');
+    const comp = read('components/legal/SaveWordingActions.tsx');
+    expect(comp).toContain("await import('@/lib/legal/wording-file')");
+    expect(comp).toContain('w.print()');
+  });
+});
+
+test.describe('B5/N2 — the sentence at the button that starts a run of own code', () => {
+  test('it names the company of the key the run uses, and says the run is free, without a dash', () => {
+    expect(runModelCallNotice({ callsModel: true, provider: null, lang: 'de' })).toBe('Ruft das KI-Modell auf (Google). Dafür geht Ihr Code an Google.');
+    expect(runModelCallNotice({ callsModel: true, provider: 'anthropic', lang: 'en' })).toBe('Calls the AI model (Anthropic). Your code is sent to Anthropic for this.');
+    expect(runModelCallNotice({ callsModel: false, provider: 'gemini', lang: 'en' })).toBe('Calls no AI model. Your code does not leave the platform.');
+    expect(runFreeNotice({ kind: 'platform-key', limit: 5, remainingAfter: 4 }, 'de')).toBe('Kostenlos. Dieser Lauf verbraucht eine Ihrer 5 Analysen; danach bleiben 4.');
+    expect(runFreeNotice({ kind: 'own-key' }, 'en')).toBe("Free. With your own key the run does not count against your analyses; only your provider's usage fees apply, on your own account.");
+    expect(consentText(CONSENT_TEXTS.startRun.free, 'de')).toBe(
+      'Kostenlos. Ein Lauf verbraucht eine Ihrer {Anzahl} Analysen; mit eigenem Schlüssel fallen nur die Nutzungsentgelte Ihres Anbieters an.',
+    );
+    for (const v of Object.values(CONSENT_TEXTS.startRun)) {
+      for (const lang of ['de', 'en'] as const) {
+        const s = consentText(v, lang);
+        expect(s).not.toMatch(/[—–]/);
+        expect(s).not.toMatch(/\bKosten\b|\bcosts?\b/i);
+      }
+    }
   });
 });
