@@ -86,6 +86,23 @@ export const CONSENT_TEXTS = {
       de: 'Nach der Annahme erhalten Sie eine Bestätigung per E-Mail mit dem Wirksamkeitstag und einem Link auf den Wortlaut der angenommenen Fassung.',
       en: 'After acceptance you will receive a confirmation by e-mail with the effective date and a link to the wording of the accepted version.',
     },
+    /**
+     * Dialog = notice (final review of the notice, 06.11.2026): the dialog carries what
+     * the notice under section 10.1 carries. The list after this lead and the file are
+     * the notice's own (`lib/terms-announcement/notice-file.ts`), not written here.
+     */
+    noticeListLead: {
+      de: 'Die geänderten Bestimmungen und ihre Gründe nach Ziffer 10.4, wirksam ab {{termsEffectiveDate}}:',
+      en: 'The changed provisions and their reasons under section 10.4, effective from {{termsEffectiveDate}}:',
+    },
+    noticeFile: {
+      de: 'Die Mitteilung nach Ziffer 10.1 mit dem vollständigen geänderten Wortlaut, deutsch und englisch, als Datei:',
+      en: 'The notice under section 10.1 with the full changed wording, in German and English, as a file:',
+    },
+    notRequired: {
+      de: 'Sie müssen nicht annehmen; ohne Annahme gilt die bisherige Fassung weiter.',
+      en: 'You do not have to accept; without acceptance the previous version continues to apply.',
+    },
   },
 
   /** C3 — dialog "Store your own Anthropic key", acceptance of the Additional Agreement. */

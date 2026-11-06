@@ -6,6 +6,9 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION, TERMS_VERSIONS_IN_FORCE } from '../lib/constants';
 import { adminSetDoc, adminGetDoc, adminSetEmailVerified } from './helpers/admin-seed';
+import { currentNotice } from '../lib/terms-announcement/notice-file';
+import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
+import { formatLegalDate } from '../lib/legal/open-values';
 
 /**
  * The way out of the Terms gate, executed.
@@ -322,6 +325,31 @@ test('an account on the previous published version is asked, and keeps working',
     'release day would have locked out every existing account — the previous version is still in force',
   ).toHaveAttribute('data-terms-gate-mode', 'banner');
   await expect(gate.locator('[data-terms-gate-decline]')).toBeVisible();
+
+  // Dialog = notice (final review of the notice, 06.11.2026): the changed provisions with
+  // their reasons under 10.4, the effective day, the notice's own attachment, and that
+  // nobody has to accept. The list and the file come from the mail's builder.
+  const notice = currentNotice(path.resolve(__dirname, '..'));
+  expect(notice, 'no effective day is set, so there is no notice to show').not.toBeNull();
+  const block = gate.locator('[data-terms-gate-notice]');
+  await expect(block).toHaveAttribute('data-terms-gate-notice', 'ready', { timeout: 30000 });
+  await expect(block.locator('[data-terms-gate-notice-clauses] li')).toHaveText(notice!.summary.clauses.en);
+  await expect(block).toContainText(consentText(CONSENT_TEXTS.amendment.noticeListLead, 'en'));
+  await expect(block).toContainText(formatLegalDate(notice!.summary.effectiveDateIso, 'en'));
+  await expect(block.locator('[data-terms-gate-not-required]')).toHaveText(
+    'You do not have to accept; without acceptance the previous version continues to apply.',
+  );
+  const fileLink = block.locator('[data-terms-gate-notice-file]');
+  await expect(fileLink).toHaveText(notice!.attachment.filename);
+  const served = await request.get((await fileLink.getAttribute('href'))!);
+  expect(served.status()).toBe(200);
+  expect(await served.text(), 'the dialog offers a file that is not the attachment of the notice').toBe(notice!.attachment.content);
+  // In German, the same: the German list and the German sentence.
+  await gate.getByRole('radio', { name: 'Deutsch' }).click();
+  await expect(block.locator('[data-terms-gate-notice-clauses] li')).toHaveText(notice!.summary.clauses.de);
+  await expect(block.locator('[data-terms-gate-not-required]')).toHaveText(
+    'Sie müssen nicht annehmen; ohne Annahme gilt die bisherige Fassung weiter.',
+  );
 
   // And the product is usable behind it, which is what § 10.3 promises.
   await page.locator('h1, h2').first().click({ timeout: 15000 });

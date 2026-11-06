@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Download, ExternalLink } from 'lucide-react';
 import { getAuth, getAuthIfStarted } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -20,6 +20,8 @@ import { ContractLanguageChoice } from '@/components/legal/SignupConsent';
 import SaveWordingActions from '@/components/legal/SaveWordingActions';
 import type { TermsLanguage } from '@/lib/terms-versions';
 import { announcedEffectiveDate, effectiveDateAhead } from '@/lib/terms-effective';
+import { NOTICE_FILE_PATH, NOTICE_SUMMARY_PATH } from '@/lib/terms-announcement/notice-paths';
+import type { NoticeSummary } from '@/lib/terms-announcement/notice-file';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -185,6 +187,67 @@ function TermsInline({ lang }: { lang: TermsLanguage }) {
           )}
         </div>
       </CcDisclosure>
+    </div>
+  );
+}
+
+/**
+ * Dialog = notice (final review of the notice, 06.11.2026): the dialog carries
+ * what the notice under Terms 10.1 carries. The list of changed provisions with
+ * their reasons under 10.4, the effective day and the attachment itself come
+ * from the notice's own builder (`app/terms/notice/`, prerendered from
+ * `lib/terms-announcement/notice-file.ts`), so the two cannot differ.
+ */
+function NoticeInDialog({ lang, mayDecline }: { lang: TermsLanguage; mayDecline: boolean }) {
+  const C2 = CONSENT_TEXTS.amendment;
+  const [summary, setSummary] = useState<NoticeSummary | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    fetch(NOTICE_SUMMARY_PATH, { credentials: 'same-origin' })
+      .then((res) => (res.ok ? (res.json() as Promise<NoticeSummary>) : Promise.reject(new Error(String(res.status)))))
+      .then((s) => live && setSummary(s), () => live && setFailed(true));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return (
+    <div data-terms-gate-notice={summary ? 'ready' : failed ? 'failed' : 'loading'} lang={lang} className="mt-3 space-y-2 cc-text-cell text-cc-ink-muted">
+      <p className="m-0 font-semibold text-cc-ink">{consentText(C2.noticeListLead, lang)}</p>
+      {summary ? (
+        <ul data-terms-gate-notice-clauses="" className="m-0 list-disc space-y-1 pl-5">
+          {summary.clauses[lang].map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      ) : failed ? (
+        <p className="m-0">
+          {lang === 'de'
+            ? 'Die Liste konnte hier nicht geladen werden; sie steht in der Datei unten.'
+            : 'The list could not be loaded here; it is in the file below.'}
+        </p>
+      ) : (
+        <p className="m-0" aria-live="polite">{lang === 'de' ? 'Die Liste wird geladen…' : 'Loading the list…'}</p>
+      )}
+      <p className="m-0">
+        {consentText(C2.noticeFile, lang)}{' '}
+        <a
+          href={summary?.file.href ?? NOTICE_FILE_PATH}
+          download={summary?.file.filename ?? true}
+          data-terms-gate-notice-file=""
+          className="inline-flex items-center gap-1 text-cc-ink underline underline-offset-2 hover:text-cc-information [overflow-wrap:anywhere]"
+        >
+          <Download size={12} aria-hidden={true} />
+          {summary?.file.filename ?? (lang === 'de' ? 'Mitteilung herunterladen' : 'Download the notice')}
+        </a>
+      </p>
+      {mayDecline && (
+        <p className="m-0 font-semibold text-cc-ink" data-terms-gate-not-required="">
+          {consentText(C2.notRequired, lang)}
+        </p>
+      )}
     </div>
   );
 }
@@ -363,6 +426,8 @@ export default function TermsReacceptGate() {
           )),
         )}
       </div>
+
+      {!noAcceptance && <NoticeInDialog lang={lang} mayDecline={mayDecline} />}
 
       {(mayDecline || !noAcceptance) && (
         <p className="mt-3 mb-0 cc-text-cell text-cc-ink-muted" data-terms-gate-after-list="" lang={lang}>
