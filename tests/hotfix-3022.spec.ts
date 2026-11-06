@@ -6,6 +6,8 @@ import { abaplintPackageCheck } from '../lib/transformation/abaplint-check';
 import { localObjectTypes } from '../lib/transformation/rap-contract';
 import { candidateFiles, prepareEngineLed } from '../lib/transformation/engine-led';
 import { readEngineFacts } from '../lib/transformation';
+import { FILL_COMPACT_CONDITION_MAX_CHARS, LEASED_PROMPT_MAX_CHARS, bundleFills, compactFillUnitOf, fillPrompt } from '../lib/transformation/fill-prompt';
+import type { FillRequestUnit } from '../lib/transformation/types';
 
 /**
  * Hotfix 3.0.22 (docs/design/analyze-business-first-plan.md §4.0, HF-a to HF-e), from a full run of owner example A
@@ -131,5 +133,64 @@ test.describe('HF-a: the frame of an object-oriented program names only types th
     expect(broken.badge).toBe('Generated · not activatable');
     expect(broken.detail).toMatch(/not activatable/);
     expect(step(project(false)).state).toBe('done');
+  });
+});
+
+test.describe('HF-b: a unit over the cap with its rules by title and no context still travels, compacted', () => {
+  const abap = (lines: number) => Array.from({ length: lines }, (_, i) => `${String(i + 1).padStart(4, '0')}   ${'x'.repeat(80)}`).join('\n');
+  const big = (lines: number, guards: number): FillRequestUnit => ({
+    unitId: 'U25',
+    function: { name: 'dispatch', file: 'src/zcl_x_logic.clas.abap', signature: 'METHOD dispatch.', returns: 'rs_result' },
+    abap: { ranges: [{ lineStart: 1, lineEnd: lines, routine: 'DISPATCH' }], text: abap(lines) },
+    rules: Array.from({ length: 15 }, (_, i) => ({
+      id: `BR-${String(i + 1).padStart(3, '0')}`,
+      decision: i === 0 ? ('change' as const) : ('open' as const),
+      text: `In DISPATCH, the code tests is_command-action = 'STEP_${i}'. If it holds, the code of this branch runs and the request moves on.`,
+      ...(i === 0 ? { proposal: 'At most 50 patches, read from configuration � the owner�s decision, never cut.' } : {}),
+    })),
+    guards: Array.from({ length: guards }, (_, i) => ({
+      id: `G-${String(700 + i * 3).padStart(4, '0')}`,
+      rule: `BR-${String((i % 15) + 1).padStart(3, '0')}`,
+      helper: `guard_BR_${i}`,
+      condition: `ls_req-version <> is_command-expected_version AND ls_req-state <> 'APPLIED' AND lv_case_${i} IS INITIAL`,
+      effect: 'raise lcx_rejected with the code of this check, as the original raises it',
+      line: 700 + i * 3,
+      placement: 'body' as const,
+      values: ['lsReq', 'isCommand'],
+    })),
+    facts: { decimals: [] },
+    available: { helpers: [], callees: [] },
+  });
+  const context = Array.from({ length: 40 }, (_, i) => `- platform fact ${i}: ${'k'.repeat(50)}`).join('\n');
+
+  test('first the code-draft rules by title and the context, then the rules� and checks� text by their start � never the ABAP', () => {
+    const unit = big(150, 30);
+    const brief = fillPrompt({ schema: 'cc.fill.v1', track: 'rap', program: 'ZX', context: '', rules: 'See CODE-DRAFT RULES in the header.', units: [unit], repair: null }, { briefRules: true });
+    // The case of owner example A: over the cap even with the rules by title and no context at all.
+    expect(brief.length).toBeGreaterThan(LEASED_PROMPT_MAX_CHARS);
+    const [b] = bundleFills([unit], { track: 'rap', program: 'ZX', context });
+    expect(b.prompt.length).toBeLessThanOrEqual(LEASED_PROMPT_MAX_CHARS);
+    expect(b.trimmed.map((t) => t.what)).toEqual(['rules', 'context', 'guards']);
+    const sent = b.request.units[0];
+    expect(sent.abap.text).toBe(unit.abap.text);
+    expect(sent.guards.map((g) => g.id)).toEqual(unit.guards.map((g) => g.id));
+    expect(sent.guards.every((g) => g.condition.length <= FILL_COMPACT_CONDITION_MAX_CHARS)).toBe(true);
+    // The owner's change travels with its proposal whole.
+    expect(sent.rules[0]).toMatchObject({ decision: 'change', proposal: unit.rules[0].proposal });
+    expect(b.prompt).toBe(fillPrompt(b.request, { briefRules: true }));
+  });
+
+  test('a unit too large even compacted is still sent over the cap with its whole ABAP, so the orchestrator names it', () => {
+    const [b] = bundleFills([big(400, 18)], { track: 'rap', program: 'ZX', context });
+    expect(b.prompt.length).toBeGreaterThan(LEASED_PROMPT_MAX_CHARS);
+    expect(b.request.units[0].abap.text).toBe(big(400, 18).abap.text);
+  });
+
+  test('compacting keeps every id, line, value and decision', () => {
+    const unit = big(10, 3);
+    const c = compactFillUnitOf(unit);
+    expect(c.guards.map(({ id, line, values, placement }) => ({ id, line, values, placement }))).toEqual(unit.guards.map(({ id, line, values, placement }) => ({ id, line, values, placement })));
+    expect(c.rules.map((r) => [r.id, r.decision])).toEqual(unit.rules.map((r) => [r.id, r.decision]));
+    expect(c.abap).toEqual(unit.abap);
   });
 });

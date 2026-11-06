@@ -1271,7 +1271,8 @@ const lineSpan = (r: { lineStart: number; lineEnd: number }) => (r.lineStart ===
 function promptOverCapReason(u: Unit, est: FillPromptEstimate, facts: EngineFacts): string {
   const what = `${u.guards.length} check${u.guards.length === 1 ? '' : 's'} and ${u.rules.length} rule${u.rules.length === 1 ? '' : 's'}`;
   const need = `its fill prompt is estimated at about ${est.chars.toLocaleString('en-US')} characters with the whole platform context (${est.least.toLocaleString('en-US')} without it), above the ${LEASED_PROMPT_MAX_CHARS.toLocaleString('en-US')} one fill call may carry`;
-  const tail = 'The call gives up the rules\' text and context lines first; if it still does not fit, this function is not sent and stays a stub.';
+  // Hotfix 3.0.22 (HF-b): `bundleFills` gives up one more thing before the function: the rules' and checks' text by their start.
+  const tail = 'The call gives up the code-draft rules\' text and context lines first, then the business rules\' and checks\' text beyond their start; if it still does not fit, this function is not sent and stays a stub.';
   if (u.kind === 'orchestrator') return `The main path carries ${what}; ${need}. The main path is not split into parts. ${tail}`;
   const range = u.abap[0];
   const formLine = u.part ? range.lineStart - 1 : range.lineStart;
