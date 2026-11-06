@@ -47,7 +47,7 @@ export interface TermsAnnouncementMail {
   sha256: string;
 }
 
-/** Fixed address of a published version: /terms/v2.3.0 and /terms/v2.3.0/de. */
+/** Fixed address of a published version, by its label: /terms/<label> and /terms/<label>/de. */
 export function versionPath(label: string, lang: LegalLang): string {
   return `/terms/${label}${lang === 'de' ? '/de' : ''}`;
 }
@@ -107,7 +107,7 @@ interface Cover {
 
 function cover(lang: LegalLang, i: TermsAnnouncementInput): Cover {
   const day = formatLegalDate(i.effectiveDateIso, lang);
-  const from = i.changes.from.label || 'v2.2.0';
+  const from = i.changes.from.label;
   const to = i.changes.to.label;
   const host = i.baseUrl.replace(/^https?:\/\//, '');
   const deUrl = `${host}${versionPath(to, 'de')}`;

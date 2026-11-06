@@ -22,7 +22,7 @@ import { CHANGE_REASONS, type ChangeReason } from './reasons';
  *
  * Unit of comparison: a numbered clause ("5.2" with every unnumbered paragraph
  * that follows it), or, in a section without numbers, the section. Where the
- * numbering itself changed — v2.2.0 section 1 and 5 had none, v2.3.0 has 1.1–1.6
+ * numbering itself changed — Terms v2.2.0 section 1 and 5 had none, Terms v2.3.0 has 1.1–1.6
  * and 5.1–5.4 — the section is compared as one, because a clause-by-clause
  * pairing would claim a correspondence nobody drew.
  *
@@ -45,7 +45,7 @@ export interface TermsChange {
   kind: ChangeKind;
   /** Section heading of the new version (old for a removed section), per language. */
   heading: Record<LegalLang, string>;
-  /** Old wording, paragraphs. Only English exists for the versions before v2.3.0. */
+  /** Old wording, paragraphs. Only English exists for the versions before Terms v2.3.0. */
   oldParas: string[];
   /** New wording, paragraphs, per language. Empty for a removed clause. */
   newParas: Record<LegalLang, string[]>;
@@ -219,8 +219,8 @@ export function wordDiff(oldParas: string[], newParas: string[]): { old: DiffTok
 
 /**
  * The version the notice compares against: the newest archived version that is
- * not the one being announced. Before v2.3.0 that is v2.2.0, archived in
- * English only (the German contract version is new with v2.3.0, section 1.4).
+ * not the one being announced. Before Terms v2.3.0 that is Terms v2.2.0, archived in
+ * English only (the German contract version is new with Terms v2.3.0, section 1.4).
  */
 export function versionInForce(target: string = TERMS_VERSION): ArchivedTermsVersion {
   const entry = ARCHIVED_TERMS_VERSIONS.find((v) => v.version !== target);
