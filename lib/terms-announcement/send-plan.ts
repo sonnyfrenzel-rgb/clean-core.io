@@ -10,7 +10,7 @@ import { isTestAccount } from '@/lib/test-accounts';
 /** Never more mails in one run than this: production shares the Resend daily quota. */
 export const MAX_PER_RUN = 40;
 
-/** Terms 10.1: the notice reaches the account at least six weeks before the day. */
+/** Terms 10.1: the notice reaches the account at least six weeks before the day (receipt day not counted, `lastNoticeDay`). */
 export const NOTICE_WEEKS = 6;
 
 /** The profile field (a map keyed by Terms version id) that records a sent notice. Written by the Admin SDK only. */
@@ -103,13 +103,38 @@ export function berlinDay(now: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
-/** The last day a notice may go out for an effective day: six weeks before it. */
-export function lastNoticeDay(effectiveDateIso: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(effectiveDateIso);
-  if (!m) throw new Error(`not an ISO date: ${effectiveDateIso}`);
+/** An ISO day moved by whole days. */
+export function addDays(iso: string, days: number): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) throw new Error(`not an ISO date: ${iso}`);
   const day = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  day.setUTCDate(day.getUTCDate() - NOTICE_WEEKS * 7);
+  day.setUTCDate(day.getUTCDate() + days);
   return day.toISOString().slice(0, 10);
+}
+
+/**
+ * The last day a notice may be received for an effective day.
+ *
+ * Six weeks (Terms 10.1), counted the way BGB section 187(1) and 188(2) count
+ * them: the day the notice is received does not count, so the period starts on
+ * the day after it, and the Terms take effect on the day after the period
+ * ends. The last day of receipt is therefore the effective day minus 43 days:
+ * for 22 December 2026 it is Monday 9 November 2026 (period 10 November to
+ * 21 December). A notice on 10 November is one day short for 22 December.
+ */
+export function lastNoticeDay(effectiveDateIso: string): string {
+  return addDays(effectiveDateIso, -(NOTICE_WEEKS * 7 + 1));
+}
+
+/**
+ * What to do when the notice cannot go out in time: move the effective day.
+ * Mail, attachment and the in-app dialog all read TERMS_EFFECTIVE_DATE_ISO.
+ */
+export function deadlineFallback(effectiveDateIso: string): string {
+  return (
+    `If the notice cannot go out on ${lastNoticeDay(effectiveDateIso)}, set TERMS_EFFECTIVE_DATE_ISO to the next day ` +
+    `(e.g. ${addDays(effectiveDateIso, 1)}) before sending; mail, attachment and dialog all read that constant.`
+  );
 }
 
 /** Why no notice may go out today for this effective day, or null. */
@@ -118,7 +143,10 @@ export function deadlineRefusal(effectiveDateIso: string | null, now: Date): str
   const last = lastNoticeDay(effectiveDateIso);
   const today = berlinDay(now);
   if (today > last) {
-    return `today (${today}, Berlin) is later than ${last}, six weeks before the effective day ${effectiveDateIso} — a notice now would be too late under Terms 10.1`;
+    return (
+      `today (${today}, Berlin) is later than ${last}, the last day a notice can be received six weeks before the effective day ` +
+      `${effectiveDateIso} (Terms 10.1; the day of receipt does not count), so a notice now would be too late. ${deadlineFallback(effectiveDateIso)}`
+    );
   }
   return null;
 }
@@ -158,6 +186,29 @@ export function sendWindowRefusal(now: Date, lateOk: boolean, day: string = NOTI
   const at = berlinMinute(now);
   if (at < `${day} ${cutoff}`) return null;
   return `it is ${at} in Berlin, past ${cutoff} on ${day}: a real send does not start now without --late-ok`;
+}
+
+/* ------------------------------------------------------------------ stale version ids */
+
+/**
+ * Version ids the notice must never name: the draft id v2.3.0 carried before
+ * the release date fixed it (2026-11-09). A notice that still names it links a
+ * draft address and states a version id no consent record carries.
+ */
+export const STALE_TERMS_VERSION_IDS: readonly string[] = ['2026-10-23'];
+
+/** Why the rendered notice may not go out because it names a stale version id, or null. */
+export function staleVersionRefusal(
+  parts: { html: string; text: string; attachments: readonly { filename: string; content: string }[] },
+  stale: readonly string[] = STALE_TERMS_VERSION_IDS,
+): string | null {
+  const where: string[] = [];
+  for (const id of stale) {
+    if (parts.html.includes(id)) where.push(`mail HTML (${id})`);
+    if (parts.text.includes(id)) where.push(`mail text (${id})`);
+    for (const a of parts.attachments) if (a.filename.includes(id) || a.content.includes(id)) where.push(`${a.filename} (${id})`);
+  }
+  return where.length ? `stale version id in the notice: ${where.join(', ')}` : null;
 }
 
 /* ------------------------------------------------------------------ the test send */
