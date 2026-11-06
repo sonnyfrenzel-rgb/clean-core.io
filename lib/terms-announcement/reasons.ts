@@ -93,11 +93,11 @@ export const CHANGE_REASONS: Readonly<Record<string, ChangeReason>> = {
     },
     de:
       'Bisher fehlte, wie der Vertrag zustande kommt, wie Eingaben korrigiert werden, dass der Vertragstext gespeichert und die Annahme mit Hashwert nachgewiesen wird, und in welcher Sprache der Vertrag gilt (1.2 bis 1.4). ' +
-      'Die Bestätigungsmail enthält einen Link auf den Wortlaut der angenommenen Fassung unter einer festen Adresse je Fassung und Sprache; er bleibt dort abrufbar, solange der Betreiber die Plattform betreibt, und danach auf Anfrage (1.3). Neu ist die deutsche Vertragsfassung (1.4). ' +
+      'Die Bestätigungsmail enthält einen Link auf den Wortlaut der angenommenen Fassung unter einer festen Adresse je Fassung und Sprache; er bleibt dort abrufbar, mindestens so lange, wie der Nachweis Ihrer Annahme aufbewahrt wird (1.3). Neu ist die deutsche Vertragsfassung (1.4). ' +
       '1.5 beschreibt das Produkt, dass Batch-Upload und Portfolio, neu in 3.0.21, einen eigenen geprüften Modellschlüssel brauchen, und was gilt, wenn der Schlüssel nicht mehr als geprüft gilt: Eingeladene behalten die Übersicht, Sie können eine Auswahl nur noch löschen, und Ihre Projekte bleiben einzeln zugänglich. Das Mindestalter (1.6) ist unverändert.',
     en:
       'What was missing: how the contract is concluded, how entries can be corrected, that the contract text is stored and the acceptance is recorded with its digest, and which language governs (1.2 to 1.4). ' +
-      'The confirmation mail carries a link to the wording of the accepted version at a fixed address per version and language; it remains available there for as long as the operator operates the Platform, and on request after that (1.3). The German contract version is new (1.4). ' +
+      'The confirmation mail carries a link to the wording of the accepted version at a fixed address per version and language; it remains available there at least for as long as the record of your acceptance is kept (1.3). The German contract version is new (1.4). ' +
       '1.5 describes the product, that bulk upload and portfolio, new in 3.0.21, need an own tested model key, and what applies once the key no longer counts as tested: invited readers keep the overview, you can only delete a selection, and your projects stay individually accessible. The minimum age (1.6) is unchanged.',
   },
   '2.1': {
@@ -109,8 +109,8 @@ export const CHANGE_REASONS: Readonly<Record<string, ChangeReason>> = {
   '2.2': {
     letters: ['d'],
     short: { de: 'Betrieb durch eine Person als Leistungsbeschreibung', en: 'operation by one person as part of the service description' },
-    de: 'Beschreibt den Betrieb durch eine Person ohne Bereitschaftsdienst als Leistungsbeschreibung, statt eine Verfügbarkeit nur auszuschließen (Verbraucherrecht für digitale Produkte, §§ 327 ff. BGB, offener Punkt der Rechtsprüfung).',
-    en: 'Describes the operation by one person without on-call service as part of the service description, instead of only excluding availability (consumer law for digital products, §§ 327 ff. BGB, an open point of the legal review).',
+    de: 'Beschreibt den Betrieb durch eine Person ohne Bereitschaftsdienst als Leistungsbeschreibung, statt eine Verfügbarkeit nur auszuschließen (Verbraucherrecht für digitale Produkte, §§ 327 ff. BGB).',
+    en: 'Describes the operation by one person without on-call service as part of the service description, instead of only excluding availability (consumer law for digital products, §§ 327 ff. BGB).',
   },
   '2.3': {
     letters: ['d', 'e'],
@@ -145,24 +145,24 @@ export const CHANGE_REASONS: Readonly<Record<string, ChangeReason>> = {
   '4.2': {
     letters: ['d', 'e'],
     short: { de: 'Verbraucher: keine Abweichung ohne gesonderte Zustimmung (§ 327h BGB)', en: 'consumers: no deviation without separate agreement (§ 327h BGB)' },
-    de: 'Für Verbraucher gilt eine Abweichung von den objektiven Anforderungen nur mit gesonderter Zustimmung, die der Betreiber nicht einholt; die Klausel gilt dann nicht (§ 327h BGB). Das klärt einen offenen Punkt der Rechtsprüfung zugunsten der Verbraucher.',
-    en: 'For consumers, a deviation from the objective requirements applies only with a separate agreement, which the operator does not obtain; the clause then does not apply (§ 327h BGB). This settles an open point of the legal review in favour of consumers.',
+    de: 'Für Verbraucher gilt eine Abweichung von den objektiven Anforderungen nur mit gesonderter Zustimmung, die der Betreiber nicht einholt; die Klausel gilt dann nicht (§ 327h BGB). Das klärt die Frage zugunsten der Verbraucher.',
+    en: 'For consumers, a deviation from the objective requirements applies only with a separate agreement, which the operator does not obtain; the clause then does not apply (§ 327h BGB). This settles the question in favour of consumers.',
   },
   '4.3': { letters: ['e'], ...EDITORIAL },
   '5': {
     letters: ['b', 'c', 'd'],
     short: {
-      de: 'eigener Claude-Schlüssel (freigeschaltet erst nach Abnahme), Gemini-Bedingungen vom 28.04.2026, Rollen und Verantwortung, ein Schalter für alle automatischen Schritte',
-      en: 'own Claude key (enabled only after acceptance), Gemini terms of 28.04.2026, roles and responsibility, one switch for all automatic steps',
+      de: 'eigener Claude-Schlüssel (freigeschaltet erst nach Abnahme), Gemini-Bedingungen vom 28.04.2026, Rollen und Verantwortung, ein automatischer Schritt',
+      en: 'own Claude key (enabled only after acceptance), Gemini terms of 28.04.2026, roles and responsibility, one automatic step',
     },
     de:
       'Neu ist der eigene Anthropic-Schlüssel (Claude) unter einer gesonderten Zusatzvereinbarung; Anfragen darauf werden in den USA verarbeitet. Er wird erst freigeschaltet, wenn die nötigen Funktionen abgenommen sind; bis dahin kann kein Anthropic-Schlüssel gespeichert werden. ' +
       'Für einen eigenen Gemini-Schlüssel gelten die Gemini-API-Bedingungen von Google vom 28.04.2026 (ein aktives Cloud-Billing-Konto ist nötig). ' +
-      'Ergänzt sind, wer datenschutzrechtlich wofür verantwortlich ist, eine vorsorgliche Regelung zur gemeinsamen Verantwortlichkeit, dass kein Aufruf auf den Plattform-Schlüssel ausweicht, und dass einige Schritte ohne Ihren Klick starten: Welche das sind, sagt die Datenschutzerklärung, und ein Schalter in den Einstellungen schaltet sie alle aus.',
+      'Ergänzt sind, wer datenschutzrechtlich wofür verantwortlich ist, eine vorsorgliche Regelung zur gemeinsamen Verantwortlichkeit, dass kein Aufruf auf den Plattform-Schlüssel ausweicht, und dass ein Schritt ohne Ihren Klick startet, den ein Schalter in den Einstellungen ausschaltet.',
     en:
       'New: your own Anthropic key (Claude), under a separate Additional Agreement; requests on it are processed in the United States. It is enabled only once the functions it requires have passed acceptance; until then no Anthropic key can be stored. ' +
       "For an own Gemini key, Google's Gemini API terms of 28 April 2026 apply (an active Cloud Billing account is required). " +
-      'Added: who is responsible for what under data-protection law, a precautionary joint-controllership clause, that no call falls back to the platform key, and that some steps start without your click: the Privacy Policy says which, and one switch in the settings turns them all off.',
+      'Added: who is responsible for what under data-protection law, a precautionary joint-controllership clause, that no call falls back to the platform key, and that one step starts without your click, which a switch in the settings turns off.',
   },
   '6': {
     letters: ['c'],
@@ -225,9 +225,9 @@ export const CHANGE_REASONS: Readonly<Record<string, ChangeReason>> = {
   },
   '10.5': {
     letters: ['d', 'e'],
-    short: { de: 'jede Fassung bleibt mit Hashwert veröffentlicht, solange die Plattform betrieben wird', en: 'every version stays published with its digest while the Platform is operated' },
-    de: 'Jede Fassung bleibt mit dem SHA-256-Hashwert ihres Wortlauts veröffentlicht, solange der Betreiber die Plattform betreibt; stellt er den Betrieb ein, sendet er Ihnen den Wortlaut einer angenommenen Fassung auf Anfrage zu, solange ein Nachweis ihrer Annahme aufbewahrt wird.',
-    en: 'Every version stays published with the SHA-256 digest of its wording for as long as the operator operates the Platform; should the operator discontinue it, it sends you the wording of a version you accepted on request, for as long as a record of its acceptance is kept.',
+    short: { de: 'jede Fassung bleibt mit Hashwert veröffentlicht', en: 'every version stays published with its digest' },
+    de: 'Jede Fassung bleibt mit dem SHA-256-Hashwert ihres Wortlauts veröffentlicht, mindestens so lange, wie ein Nachweis ihrer Annahme aufbewahrt wird; stellt der Betreiber den Betrieb vorher ein, sendet er Ihnen den Wortlaut auf Anfrage zu.',
+    en: 'Every version stays published with the SHA-256 digest of its wording at least for as long as a record of its acceptance is kept; should the operator discontinue the Platform before then, it sends you the wording on request.',
   },
   '11': {
     letters: ['d', 'e'],
