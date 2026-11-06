@@ -219,7 +219,7 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
     const sources = new Map<string, string>();
     const selected = new Set<string>();
     for (const statement of statements) {
-      if (reads350) readSource(statement.text, sources, selected);
+      if (reads350) readSelectSource(statement.text, sources, selected);
       const m = DECLARATION.exec(statement.text);
       if (!m) continue;
       const keyword = m[1].toUpperCase();
@@ -269,7 +269,7 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
  * gt_auftr` (or `APPENDING`, `CORRESPONDING FIELDS OF`, `@DATA(…)`) makes `gt_auftr` rows of VBAK. A join records
  * the table it reads, never a source.
  */
-function readSource(text: string, sources: Map<string, string>, selected: Set<string>): void {
+function readSelectSource(text: string, sources: Map<string, string>, selected: Set<string>): void {
   if (!/^SELECT\b/i.test(text)) return;
   const from = /\bFROM\s+([\w/]+)/i.exec(text)?.[1]?.toLowerCase();
   if (!from) return;
