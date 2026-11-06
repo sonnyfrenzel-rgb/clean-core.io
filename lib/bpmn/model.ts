@@ -117,11 +117,11 @@ export interface ExportNode {
    */
   technique?: string;
   /**
-   * 3.0.22: what the reader should know beside the name, in the engine's words (`PlainLabels.detail`) — an unknown
+   * 3.5.0: what the reader should know beside the name, in the engine's words (`PlainLabels.detail`) — an unknown
    * check says that the code does not state what it means (owner decision 06.11.2026). In the documentation only.
    */
   detail?: string;
-  /** 3.0.22 (H4): the author's comment at the element, quoted with its tag and line (`quotedComment`). Documentation only. */
+  /** 3.5.0 (H4): the author's comment at the element, quoted with its tag and line (`quotedComment`). Documentation only. */
   comment?: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
@@ -146,7 +146,7 @@ export interface ExportNode {
    */
   anchorLabel?: string;
   /**
-   * The steps folded into this one at the business level (3.0.22, `ExportModelOptions.foldTechnique`): a lock, its
+   * The steps folded into this one at the business level (3.5.0, `ExportModelOptions.foldTechnique`): a lock, its
    * release, a list's set-up, or a step of the same name right after it — each with its own name, its code and its
    * lines. The element's anchor (`anchorLabel`) carries every one of their lines; the documentation names them.
    */
@@ -429,7 +429,7 @@ export interface ExportModelOptions {
    */
   businessLevel?: boolean;
   /**
-   * Technique one level down (concept "Business-Lesbarkeit", from engine 3.0.22 — `ENGINE_READS_3022_FROM`). With
+   * Technique one level down (concept "Business-Lesbarkeit", from engine 3.5.0 — `ENGINE_READS_350_FROM`). With
    * plain labels, two things on a straight run of plain steps (one way in, one way out, no condition between them):
    *
    *   - **a technical step is folded into the step beside it** — a lock (`ENQUEUE_*`), its release (`DEQUEUE_*`),
@@ -558,7 +558,7 @@ class ModelBuilder {
     }
     return this.skeleton.lanes.map((lane) => ({
       id: lane.id,
-      // 3.0.22 (H9): an authorization lane by what it protects (`PlainLabels.lane`); the skeleton's token otherwise.
+      // 3.5.0 (H9): an authorization lane by what it protects (`PlainLabels.lane`); the skeleton's token otherwise.
       name: this.labels?.lane?.(lane) || lane.name,
       kind: lane.kind,
       source: lane,

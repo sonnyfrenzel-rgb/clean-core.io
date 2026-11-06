@@ -2,7 +2,7 @@ import type { PlainTerm } from './plain-glossary';
 
 /**
  * The dictionary of the Business view (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026) — read from
- * engine 3.0.22 (`ENGINE_READS_3022_FROM`) only, on top of `plain-glossary.ts`, which every engine reads and which
+ * engine 3.5.0 (`ENGINE_READS_350_FROM`) only, on top of `plain-glossary.ts`, which every engine reads and which
  * this module never overrides.
  *
  * Where each word comes from is part of the entry (`source`):

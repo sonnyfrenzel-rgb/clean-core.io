@@ -16,7 +16,7 @@ import {
 } from './model-stages';
 import type { ProvenanceValue } from './provenance';
 import { NAMING_WITH_FACTS, formChanged, namingFactsOf, uncoveredWords, type NamingFacts } from './naming-facts';
-import { engineReads3022Apply } from './abap/engine-reads-3022-gate';
+import { engineReads350Apply } from './abap/engine-reads-350-gate';
 import { APP_VERSION } from './version';
 
 /**
@@ -129,7 +129,7 @@ export interface NamingContext {
    */
   digest: string;
   /**
-   * From engine 3.0.22 (`lib/naming-facts.ts`, concept "Business-Lesbarkeit" H7/H6): what the engine proved about each
+   * From engine 3.5.0 (`lib/naming-facts.ts`, concept "Business-Lesbarkeit" H7/H6): what the engine proved about each
    * node, with ids. With them the prompt hands the facts to the model, the answer cites the ids it used, and a name
    * with a content word no fact covers is dropped (`not-in-facts`). Absent: the naming of every engine before.
    * Not part of the digest — a naming still applies to the reading it was made for.
@@ -198,7 +198,7 @@ export function namingContextOf(
 ): NamingContext {
   const context = namingContextFrom(buildProcessFacts(source));
   if (!(options.facts ?? NAMING_WITH_FACTS)) return context;
-  if (!engineReads3022Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion)) return context;
+  if (!engineReads350Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion)) return context;
   try {
     return { ...context, facts: namingFactsOf(context.skeleton, source) };
   } catch {
@@ -258,7 +258,7 @@ export function buildNamingPrompt(context: NamingContext): string {
     '',
     'Nodes, as "id | kind | technical name as the code writes it", grouped by the part of the program they belong to:',
   ];
-  // 3.0.22 (H7): the engine's facts per node, and names built from them only.
+  // 3.5.0 (H7): the engine's facts per node, and names built from them only.
   if (facts) {
     const at = lines.indexOf('Rules:');
     lines.splice(at - 2, 1, '{"names":[{"id":"<node id>","name":"<business name>","facts":["<fact id>"]}],"lanes":[{"name":"<role>","authorityCheck":"<check id or null>","nodes":["<node id>"]}]}');
@@ -344,11 +344,11 @@ export type NamingRejection =
    * field such as a price unit with a value (external MM review of 22.10.2026, point 6).
    */
   | 'count-not-in-code'
-  /** 3.0.22 (H6): a content word of the name that no fact of its node, its token or its conditions covers. */
+  /** 3.5.0 (H6): a content word of the name that no fact of its node, its token or its conditions covers. */
   | 'not-in-facts'
-  /** 3.0.22 (H7): a name that cites no fact of its node, or a fact of another node. */
+  /** 3.5.0 (H7): a name that cites no fact of its node, or a fact of another node. */
   | 'facts-not-cited'
-  /** 3.0.22 (H6): a name that changes the kind of statement — a normal end as a stop, a question no longer asked, a "not" gained or lost. */
+  /** 3.5.0 (H6): a name that changes the kind of statement — a normal end as a stop, a question no longer asked, a "not" gained or lost. */
   | 'form-changed'
   /** A lane named as a position, a person or a unit of an organisation. */
   | 'lane-organisational'

@@ -1,6 +1,6 @@
 /**
  * The author's comments next to the code, as a tagged source of meaning (concept "Business-Lesbarkeit" H4, owner
- * decisions E2 and 06.11.2026) — read for engine 3.0.22 (`ENGINE_READS_3022_FROM`) by `plain-language.ts`.
+ * decisions E2 and 06.11.2026) — read for engine 3.5.0 (`ENGINE_READS_350_FROM`) by `plain-language.ts`.
  *
  * A comment is the developer's word, not the engine's: it can be old, wrong or about the line it once stood next to.
  * So it is never the label of an element and never an engine statement. It is quoted word for word — German stays

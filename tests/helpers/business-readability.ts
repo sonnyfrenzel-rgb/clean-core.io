@@ -67,7 +67,7 @@ export function englishLexicon(): Set<string> {
   for (const t of Object.values(TABLE_TERMS_EN)) add(`${t.singular} ${t.plural}`);
   for (const t of Object.values(FUNCTION_TERMS_EN)) add(t);
   for (const t of Object.values(TRANSACTION_TERMS_EN)) add(t);
-  // The dictionary of 3.0.22 (`sap-dictionary.ts`) is English, curated by hand, like the glossary.
+  // The dictionary of 3.5.0 (`sap-dictionary.ts`) is English, curated by hand, like the glossary.
   for (const t of dictionaryWords()) add(t);
   LEXICON = words;
   return words;

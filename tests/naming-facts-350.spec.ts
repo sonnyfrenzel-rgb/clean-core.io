@@ -22,14 +22,14 @@ const SRC = [
   '  ENDIF.',
 ].join('\n');
 
-test('before 3.0.22 the context carries no facts and the prompt is the one of 3.0.21', () => {
+test('before 3.5.0 the context carries no facts and the prompt is the one of 3.0.21', () => {
   const old = namingContextOf(SRC, { engineVersion: '3.0.21', facts: true });
   expect(old.facts).toBeUndefined();
   expect(buildNamingPrompt(old)).not.toMatch(/facts/);
 });
 
-test('from 3.0.22 every node gets the engine\'s facts with ids, and the prompt hands them over', () => {
-  const ctx = namingContextOf(SRC, { engineVersion: '3.0.22', facts: true });
+test('from 3.5.0 every node gets the engine\'s facts with ids, and the prompt hands them over', () => {
+  const ctx = namingContextOf(SRC, { engineVersion: '3.5.0', facts: true });
   expect(ctx.facts).toBeDefined();
   const all = [...ctx.facts!.values()].flat();
   expect(all.some((f) => f.kind === 'engine' && f.text === 'Authorized?')).toBe(true);
@@ -45,7 +45,7 @@ test('from 3.0.22 every node gets the engine\'s facts with ids, and the prompt h
 });
 
 test('H6: a name with a word no fact covers is dropped and counted; a covered one stands', () => {
-  const ctx = namingContextOf(SRC, { engineVersion: '3.0.22', facts: true });
+  const ctx = namingContextOf(SRC, { engineVersion: '3.5.0', facts: true });
   const gateway = ctx.skeleton.nodes.find((n) => [...(ctx.facts!.get(n.id) ?? [])].some((f) => f.text === 'Any notifications?'))!;
   const fact = ctx.facts!.get(gateway.id)![0].id;
   const answer = (name: string, facts: string[] = [fact]) => JSON.stringify({ names: [{ id: gateway.id, name, facts }], lanes: [] });
@@ -66,7 +66,7 @@ test('the checker: verbs and function words are free, a business noun is not', (
 });
 
 test('H6: a name that changes the kind of statement is dropped — a lost question, a "not" turned, a normal end as a stop', () => {
-  const ctx = namingContextOf(SRC, { engineVersion: '3.0.22', facts: true });
+  const ctx = namingContextOf(SRC, { engineVersion: '3.5.0', facts: true });
   const say = (id: string, name: string) => {
     const facts = ctx.facts!.get(id)!.map((f) => f.id);
     return validateNamingAnswer(ctx, JSON.stringify({ names: [{ id, name, facts }], lanes: [] }));
@@ -80,7 +80,7 @@ test('H6: a name that changes the kind of statement is dropped — a lost questi
   expect(formChanged('Is the country not DE and no route?', 'gateway', 'Country DE or route given?')).toBe(true);
 });
 
-test('the switch: from 3.0.22 the product hands the facts to the naming stage', () => {
-  expect(namingContextOf(SRC, { engineVersion: '3.0.22' }).facts).toBeDefined();
+test('the switch: from 3.5.0 the product hands the facts to the naming stage', () => {
+  expect(namingContextOf(SRC, { engineVersion: '3.5.0' }).facts).toBeDefined();
   expect(namingContextOf(SRC, { engineVersion: '3.0.21' }).facts).toBeUndefined();
 });

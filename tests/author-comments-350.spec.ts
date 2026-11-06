@@ -2,7 +2,7 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
-import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
+import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
 import { AUTHOR_COMMENT_LABEL, authorCommentsOf } from '../lib/abap/author-comments';
 import { namingFactsOf } from '../lib/naming-facts';
 
@@ -11,7 +11,7 @@ import { namingFactsOf } from '../lib/naming-facts';
  * `lib/abap/author-comments.ts`. Minimal programs written for this spec; none is taken from the process benchmark.
  */
 
-const NEW = ENGINE_READS_3022_FROM;
+const NEW = ENGINE_READS_350_FROM;
 const OLD = '3.0.21';
 
 const SRC = [
@@ -59,7 +59,7 @@ test('commented-out code, the editor\'s routine frame and a change marker are no
   expect(authorCommentsOf('  x = 1.  " Test Mueller 2019 - bitte drinlassen\n').at(1)).toBeNull();
 });
 
-test('the naming stage gets the comment as a fact of its own kind; an engine before 3.0.22 quotes nothing', () => {
+test('the naming stage gets the comment as a fact of its own kind; an engine before 3.5.0 quotes nothing', () => {
   const facts = [...namingFactsOf(buildProcessSkeleton(SRC), SRC).values()].flat();
   expect(facts.some((f) => f.kind === 'comment' && f.text.includes('nur Aendern (VL02N)'))).toBe(true);
   expect(modelOf(OLD).every((n) => n.comment === undefined)).toBe(true);

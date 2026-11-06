@@ -2,7 +2,7 @@ import { expect, test } from './helpers/test';
 import { readProgramShape } from '../lib/abap/program-shape';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary } from '../lib/program-summary-text';
-import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
+import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
 
 /**
  * "In short" by the program's shape and in German names (concept "Business-Lesbarkeit" H8): `lib/abap/program-shape.ts`,
@@ -10,7 +10,7 @@ import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
  * spec; none is taken from the process benchmark.
  */
 
-const NEW = ENGINE_READS_3022_FROM;
+const NEW = ENGINE_READS_350_FROM;
 const OLD = '3.0.21';
 
 const inShort = (src: string, engine: string) => businessInShort(programSummary(programSummaryFactsOf(src, { engineVersion: engine })), { codes: false }).map((l) => l.text);
@@ -33,7 +33,7 @@ test('an output program, an inbound IDoc function and a BW extractor are said by
   expect(readProgramShape(['REPORT zt_plain.', 'START-OF-SELECTION.', "  WRITE / 'x'."].join('\n'))).toBeNull();
 });
 
-test('"In short" opens with the shape from 3.0.22 and calls an enhancement no report; 3.0.21 reads as before', () => {
+test('"In short" opens with the shape from 3.5.0 and calls an enhancement no report; 3.0.21 reads as before', () => {
   const src = ['FORM userexit_save_document_prepare.', '  DATA ls_vbak TYPE vbak.', '  SELECT SINGLE * FROM vbak INTO ls_vbak WHERE vbeln = space.', 'ENDFORM.'].join('\n');
   const now = inShort(src, NEW);
   expect(now[0]).toBe('An enhancement SAP calls during its own processing (user exit USEREXIT_SAVE_DOCUMENT_PREPARE).');

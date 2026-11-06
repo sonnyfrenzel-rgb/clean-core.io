@@ -2,7 +2,7 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
-import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
+import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
 
 /**
  * Lanes named for a business reader (concept "Business-Lesbarkeit" H9): an authorization lane says what the check
@@ -28,10 +28,10 @@ const lanes = (engine: string) => {
 };
 
 test('an authorization lane says what it protects, with its object; a customer object keeps its code; 3.0.21 keeps the token', () => {
-  const now = lanes(ENGINE_READS_3022_FROM);
+  const now = lanes(ENGINE_READS_350_FROM);
   expect(now).toContain('Authorization for purchase requisitions by purchasing group (M_BANF_EKG)');
   expect(now).toContain('Z_OWN_OBJ');
   expect(lanes('3.0.21')).toContain('M_BANF_EKG');
-  const xml = buildBpmnExport(buildProcessSkeleton(SRC), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: ENGINE_READS_3022_FROM }).xml;
+  const xml = buildBpmnExport(buildProcessSkeleton(SRC), { processName: 't', sourceFileName: 't.abap', source: SRC, names: 'plain', exporterVersion: ENGINE_READS_350_FROM }).xml;
   expect(xml).toContain('name="Authorization for purchase requisitions by purchasing group (M_BANF_EKG)"');
 });

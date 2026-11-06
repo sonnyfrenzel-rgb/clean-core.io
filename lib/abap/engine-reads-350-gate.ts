@@ -26,11 +26,15 @@ import { engineVersionAtLeast } from '../score-rule';
  * (`engineVersionOfProject`). The readings go live when `APP_VERSION` (`lib/version.ts`) reaches this version. Same
  * pattern as `ENGINE_READS_3021_FROM`.
  *
+ * Owner decision 06.11.2026: there is no user release 3.0.22. Everything after 3.0.21 is built on the release branch
+ * `next` and ships as v3.5.0; hotfixes on dev/main may be 3.0.22, 3.0.23 … and must keep the 3.0.21 reading. So the
+ * gate is 3.5.0 — a run signed by a 3.0.x hotfix is never read as carrying these readings.
+ *
  * Pure: no imports beyond the version comparison.
  */
-export const ENGINE_READS_3022_FROM = '3.0.22';
+export const ENGINE_READS_350_FROM = '3.5.0';
 
-/** True when a run of this engine version carries the 3.0.22 readings. A missing or unreadable version does not. */
-export function engineReads3022Apply(engineVersion: string | null | undefined): boolean {
-  return engineVersionAtLeast(engineVersion, ENGINE_READS_3022_FROM);
+/** True when a run of this engine version carries the 3.5.0 readings. A missing or unreadable version does not. */
+export function engineReads350Apply(engineVersion: string | null | undefined): boolean {
+  return engineVersionAtLeast(engineVersion, ENGINE_READS_350_FROM);
 }

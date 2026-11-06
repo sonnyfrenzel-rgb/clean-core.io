@@ -81,7 +81,7 @@ const WIDER_VERBS: ReadonlyArray<[string, readonly string[]]> = [
 const NOUN_PHRASE = /^covers the /;
 
 /**
- * 3.0.22 (concept "Business-Lesbarkeit" H8): the same purpose words in German, the language most customer programs are
+ * 3.5.0 (concept "Business-Lesbarkeit" H8): the same purpose words in German, the language most customer programs are
  * named in (`ZMM_RECHNUNGSPRUEFUNG`, `ZSD_LIEFERUNG_KONTROLLE`). Same rule: the verb from the program's name only.
  */
 const GERMAN_VERBS: ReadonlyArray<[string, readonly string[]]> = [
@@ -94,7 +94,7 @@ const GERMAN_VERBS: ReadonlyArray<[string, readonly string[]]> = [
   ['covers the approval of', ['GENEHMIGUNG', 'FREIGABE']],
 ];
 
-/** 3.0.22: German name tokens of the business objects (`DOMAIN_OBJECTS`), by the same words. */
+/** 3.5.0: German name tokens of the business objects (`DOMAIN_OBJECTS`), by the same words. */
 const GERMAN_OBJECTS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   invoices: ['RECHNUNG', 'RECHNUNGEN'],
   'purchase orders': ['BESTELLUNG', 'BESTELLUNGEN'],
@@ -145,7 +145,7 @@ function joinAnd(items: readonly string[]): string {
 export interface ProgramDomainOptions {
   /** From engine 3.0.21: the wider purpose words (`WIDER_VERBS`). The callers gate it; off by default. */
   wider?: boolean;
-  /** From engine 3.0.22: the German purpose words (`GERMAN_VERBS`, `GERMAN_OBJECTS`). The callers gate it; off by default. */
+  /** From engine 3.5.0: the German purpose words (`GERMAN_VERBS`, `GERMAN_OBJECTS`). The callers gate it; off by default. */
   german?: boolean;
 }
 

@@ -99,11 +99,11 @@ export interface ProgramSummaryFacts {
     /** Places that name the table or function they change only at run time. */
     dynamic: number;
     /**
-     * From engine 3.0.22: what a run reaches that changes data and has no business word of its own — a transaction run
+     * From engine 3.5.0: what a run reaches that changes data and has no business word of its own — a transaction run
      * with prepared entries (batch input), a posting call, `MODIFY ENTITIES` (`reachable-writes.ts`). Absent before.
      */
     unworded?: Array<{ kind: 'batch-input' | 'posting-call' | 'entity-modify'; object: string; line: number }>;
-    /** From engine 3.0.22: the reports it starts (`SUBMIT`), whose changes this code does not show. Absent before. */
+    /** From engine 3.5.0: the reports it starts (`SUBMIT`), whose changes this code does not show. Absent before. */
     submits?: Array<{ name: string; line: number }>;
   };
   outputs: {
@@ -164,14 +164,14 @@ export interface ProgramSummaryFacts {
    */
   purposeAlways?: true;
   /**
-   * 3.0.22 (concept "Business-Lesbarkeit" H8): what kind of program the constructs make it — a BAdI, an exit, an output
+   * 3.5.0 (concept "Business-Lesbarkeit" H8): what kind of program the constructs make it — a BAdI, an exit, an output
    * program, an inbound IDoc function, a BW extractor (`lib/abap/program-shape.ts`) — the purpose line when the names
    * support none (`domain`). Absent in facts read by an earlier engine and for a plain report.
    */
   shape?: { text: string; lines: number[]; kind?: string } | null;
 }
 
-/** 3.0.22 (H8): what the purpose line calls a program of a shape (`ProgramShape.kind`). */
+/** 3.5.0 (H8): what the purpose line calls a program of a shape (`ProgramShape.kind`). */
 const SHAPE_NOUN: Readonly<Record<string, string>> = Object.freeze({
   badi: 'enhancement', 'customer-exit': 'enhancement', 'user-exit': 'enhancement', 'output-program': 'output program',
   'idoc-inbound': 'function', 'bw-extractor': 'extractor',
@@ -405,7 +405,7 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
       changed.words.length ? `changes ${joinAnd(changed.words)}` : '',
       custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
     ].filter(Boolean);
-    // 3.0.22: a change with no business word is said by how it is made — never as "changes data" alone.
+    // 3.5.0: a change with no business word is said by how it is made — never as "changes data" alone.
     if (!parts.length && f.changes.unworded?.length) {
       const batch = [...new Set(f.changes.unworded.filter((u) => u.kind === 'batch-input').map((u) => u.object))];
       const posting = [...new Set(f.changes.unworded.filter((u) => u.kind !== 'batch-input').map((u) => u.object))];
@@ -426,7 +426,7 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     : business.length
       ? plural(business.length, 'table')
       : null;
-  // 3.0.22 (H8): an enhancement or an output program is not called a report.
+  // 3.5.0 (H8): an enhancement or an output program is not called a report.
   const shaped = f.shape?.kind ? SHAPE_NOUN[f.shape.kind] : undefined;
   const noun = shaped ?? (f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report');
   const readOnly = f.changes.state === 'none' ? 'read-only ' : '';
@@ -477,7 +477,7 @@ function shownAs(f: ProgramSummaryFacts): string {
 }
 
 function changesLine(f: ProgramSummaryFacts): SummaryLine {
-  // 3.0.22: a report it starts — what that report changes is not in this code, and the line says so.
+  // 3.5.0: a report it starts — what that report changes is not in this code, and the line says so.
   if (f.changes.state === 'not-determined' && f.changes.submits?.length) {
     const names = f.changes.submits.map((x) => x.name);
     return {
@@ -487,7 +487,7 @@ function changesLine(f: ProgramSummaryFacts): SummaryLine {
       basis: 'not-determined',
     };
   }
-  // 3.0.22: a change with no business word — said by how it is made, and that the transaction decides what changes.
+  // 3.5.0: a change with no business word — said by how it is made, and that the transaction decides what changes.
   const unworded = f.changes.unworded ?? [];
   if (f.changes.state === 'changes' && unworded.length && f.changes.actions.length === 0 && f.writes.length === 0) {
     const batch = [...new Set(unworded.filter((u) => u.kind === 'batch-input').map((u) => u.object))];
@@ -685,7 +685,7 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   // report that reads no table by name …"), the purpose the program's names support stands before it.
   const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
   // Roadmap 3.0.21: from that engine it stands whenever the names support one (`purposeAlways`).
-  // 3.0.22 (H8): without a purpose from the names, the program's shape says who calls it and when.
+  // 3.5.0 (H8): without a purpose from the names, the program's shape says who calls it and when.
   const named = f.domain ?? f.shape ?? null;
   const aim: SummaryLine[] = named && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
     ? [{ key: 'purpose', text: named.text, anchors: anchorsOf(named.lines), basis: 'reconstructed', aim: true }]

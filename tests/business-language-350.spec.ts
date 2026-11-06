@@ -3,18 +3,18 @@ import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { plainLabels } from '../lib/abap/plain-language';
 import { buildExportModel, type ExportNode } from '../lib/bpmn/model';
 import { businessLevelOf } from '../lib/bpmn/export';
-import { ENGINE_READS_3022_FROM, engineReads3022Apply } from '../lib/abap/engine-reads-3022-gate';
+import { ENGINE_READS_350_FROM, engineReads350Apply } from '../lib/abap/engine-reads-350-gate';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary } from '../lib/program-summary-text';
 
 /**
- * The Business view in business language, from engine 3.0.22 (concept "Business-Lesbarkeit" of 05.11.2026, owner
- * decisions E1–E4 of 06.11.2026; `lib/abap/engine-reads-3022-gate.ts`). Every idiom the engine now words has its own
+ * The Business view in business language, from engine 3.5.0 (concept "Business-Lesbarkeit" of 05.11.2026, owner
+ * decisions E1–E4 of 06.11.2026; `lib/abap/engine-reads-350-gate.ts`). Every idiom the engine now words has its own
  * minimal program here, written for this spec — none is taken from the process benchmark. Each also shows that the
- * engine before 3.0.22 keeps its picture.
+ * engine before 3.5.0 keeps its picture.
  */
 
-const NEW = ENGINE_READS_3022_FROM;
+const NEW = ENGINE_READS_350_FROM;
 const OLD = '3.0.21';
 
 function mapOf(source: string, engine: string) {
@@ -32,11 +32,16 @@ function mapOf(source: string, engine: string) {
 
 const gateways = (m: ReturnType<typeof mapOf>) => m.nodes.filter((n) => n.tag === 'exclusiveGateway').map((n) => n.name);
 
-test('the gate: 3.0.22 and later read in business language, 3.0.21 and a missing version do not', () => {
-  expect(engineReads3022Apply('3.0.22')).toBe(true);
-  expect(engineReads3022Apply('v3.1.0')).toBe(true);
-  expect(engineReads3022Apply('3.0.21')).toBe(false);
-  expect(engineReads3022Apply(null)).toBe(false);
+test('the gate: 3.5.0 and later read in business language; 3.0.21, a 3.0.22 hotfix and a missing version do not', () => {
+  expect(engineReads350Apply('3.5.0')).toBe(true);
+  expect(engineReads350Apply('v3.5.0')).toBe(true);
+  expect(engineReads350Apply('3.6.0')).toBe(true);
+  // Owner decision 06.11.2026: 3.0.22, 3.0.23 … are hotfixes of the released line and keep its reading.
+  expect(engineReads350Apply('3.0.22')).toBe(false);
+  expect(engineReads350Apply('v3.0.23')).toBe(false);
+  expect(engineReads350Apply('v3.1.0')).toBe(false);
+  expect(engineReads350Apply('3.0.21')).toBe(false);
+  expect(engineReads350Apply(null)).toBe(false);
 });
 
 test('E1: a negated question is asked the positive way round, and each branch still goes where the code sends it', () => {

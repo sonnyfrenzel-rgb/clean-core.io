@@ -2,7 +2,7 @@ import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '.
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
 import { engineReads3021Apply } from '../abap/engine-reads-3021-gate';
-import { engineReads3022Apply } from '../abap/engine-reads-3022-gate';
+import { engineReads350Apply } from '../abap/engine-reads-350-gate';
 import { anchorText, flowText, layoutModel, NOTE_W, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
@@ -247,15 +247,15 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
 
 /**
  * The model options of the plain reading — the map a business reader sees — as the engine `engineVersion` draws it:
- * plain labels, from 3.0.21 the business level, from 3.0.22 the labels in business language and technique one level
- * down (`ENGINE_READS_3022_FROM`). One function, so the file, the workspace map and the readability measure
+ * plain labels, from 3.0.21 the business level, from 3.5.0 the labels in business language and technique one level
+ * down (`ENGINE_READS_350_FROM`). One function, so the file, the workspace map and the readability measure
  * (`tests/helpers/business-readability.ts`) read the same thing.
  */
 export function businessLevelOf(skeleton: ProcessSkeleton, source: string | undefined, engineVersion: string): ExportModelOptions {
   return {
     labels: plainLabels(skeleton, source, { engineVersion }),
     businessLevel: engineReads3021Apply(engineVersion),
-    foldTechnique: engineReads3022Apply(engineVersion),
+    foldTechnique: engineReads350Apply(engineVersion),
   };
 }
 
@@ -672,7 +672,7 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
   if (node.fallback) extra.fallback = node.fallback;
   if (node.name !== node.technicalName) extra.technicalName = node.technicalName;
   if (node.fact) extra.fact = node.fact;
-  // 3.0.22: the steps folded into this one, each with its code and its lines — in the trace and in the documentation.
+  // 3.5.0: the steps folded into this one, each with its code and its lines — in the trace and in the documentation.
   if (node.folded?.length) extra.folded = node.folded.map((f) => `${f.technicalName}${f.anchor ? ` ${f.anchor}` : ''}`).join('; ');
   const anchor = anchorText(node.source.anchor);
   const foldedText = node.folded?.length

@@ -4,7 +4,7 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
-import { ENGINE_READS_3022_FROM } from '../lib/abap/engine-reads-3022-gate';
+import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
 import {
   DICTIONARY_SOURCES,
   NAMING_ABBREVIATIONS,
@@ -22,10 +22,10 @@ import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 /**
  * The dictionary of the Business view (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026:
  * `lib/abap/sap-dictionary.ts`). Every program here is a minimal one written for this spec — none is taken from the
- * process benchmark. Each shows that an engine before 3.0.22 keeps its picture.
+ * process benchmark. Each shows that an engine before 3.5.0 keeps its picture.
  */
 
-const NEW = ENGINE_READS_3022_FROM;
+const NEW = ENGINE_READS_350_FROM;
 const OLD = '3.0.21';
 
 function names(source: string, engine: string): string[] {
@@ -71,6 +71,8 @@ test('a standard table, a function module and a transaction the glossary does no
   const before = names(src, OLD);
   expect(before).toContain('Read REGUV');
   expect(before).toContain('Alm notif create');
+  // A 3.0.22 hotfix keeps the released reading (owner decision 06.11.2026).
+  expect(names(src, '3.0.22')).toContain('Read REGUV');
 });
 
 test('a value of a fixed SAP domain carries its meaning; a check on a field whose purpose the code does not state says so in its documentation', () => {

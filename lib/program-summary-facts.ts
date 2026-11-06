@@ -14,7 +14,7 @@ import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
 import { readProgramShape } from '@/lib/abap/program-shape';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
-import { engineReads3022Apply } from '@/lib/abap/engine-reads-3022-gate';
+import { engineReads350Apply } from '@/lib/abap/engine-reads-350-gate';
 import { reachableWrites } from '@/lib/abap/reachable-writes';
 import { APP_VERSION } from '@/lib/version';
 import { headerRuleRange } from '@/lib/abap/header-rules';
@@ -61,8 +61,8 @@ const CHANGING_VERB = /^(?:Post|Create|Change|Delete|Cancel|Reverse|Release|Star
 const lcFirst = (text: string): string => (/^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text);
 
 function objectOf(name: string, line: number, engineVersion?: string | null): SummaryObject {
-  // 3.0.22 (H5): the dictionary and a customer table's own words too (`businessTableTerm`); the glossary alone before.
-  const term = engineVersion !== undefined && engineReads3022Apply(engineVersion)
+  // 3.5.0 (H5): the dictionary and a customer table's own words too (`businessTableTerm`); the glossary alone before.
+  const term = engineVersion !== undefined && engineReads350Apply(engineVersion)
     ? businessTableTerm(name, { engineVersion })
     : TABLE_TERMS_EN[name.toLowerCase()];
   const word = term ? lcFirst(term.plural) : null;
@@ -195,7 +195,7 @@ function fixedListsOf(calls: CallGraphReport, ctx: PlainContext): SummaryFixedLi
 }
 
 function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi', engineVersion?: string | null): string | null {
-  if (engineVersion !== undefined && engineReads3022Apply(engineVersion)) return businessCallWord(name, kind === 'transaction' ? 'transaction' : 'function', { engineVersion });
+  if (engineVersion !== undefined && engineReads350Apply(engineVersion)) return businessCallWord(name, kind === 'transaction' ? 'transaction' : 'function', { engineVersion });
   const word = kind === 'transaction' ? TRANSACTION_TERMS_EN[name] : FUNCTION_TERMS_EN[name];
   return word ?? null;
 }
@@ -511,7 +511,7 @@ function purposeFacts(text: string, calls: CallGraphReport, actions: readonly Su
   return { domain: domain ? { text: domain.text, lines: domain.lines } : null, dataCalls };
 }
 
-/** 3.0.22 (H8): the program's shape, when the constructs give it one. */
+/** 3.5.0 (H8): the program's shape, when the constructs give it one. */
 function shapeFacts(text: string): Pick<ProgramSummaryFacts, 'shape'> {
   const shape = readProgramShape(text);
   return shape ? { shape: { text: shape.text, lines: shape.lines, kind: shape.kind } } : {};
@@ -533,7 +533,7 @@ function headerRuleFacts(ruleSet: Pick<BusinessRuleSet, 'headerRules'> | null): 
 }
 
 /**
- * 3.0.22: the changes a run reaches that the capability reading has no business word for — batch input, a posting
+ * 3.5.0: the changes a run reaches that the capability reading has no business word for — batch input, a posting
  * call, `MODIFY ENTITIES` (`reachableWrites`) — and the reports it starts (`SUBMIT`), outside lines a constant gate
  * locks away. Table writes are left to the capability reading, which words them.
  */
@@ -573,7 +573,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   }
   const capability = capabilityFactsOf(text, skeleton, { calls, tables });
   const presence = capabilityPresence(capability);
-  const changesOf3022 = engineReads3022Apply(engineVersion) ? reachedChangesOf(text, calls) : null;
+  const changesOf350 = engineReads350Apply(engineVersion) ? reachedChangesOf(text, calls) : null;
 
   const head = /^\s*(REPORT|PROGRAM|FUNCTION-POOL|CLASS-POOL|FUNCTION|CLASS)\s+([\w/]+)/im.exec(text);
   const keyword = head?.[1].toUpperCase() ?? null;
@@ -591,9 +591,9 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   // passes is not something the program reads; it is named apart, with the gate.
   // Read as this engine reads it (3.0.18): the summary takes no engine version.
   const gates = readConstantGates(text, { engineReads: true });
-  const reads3022 = engineReads3022Apply(engineVersion);
-  const v3022 = reads3022 ? engineVersion : undefined;
-  const allReads = capability.reads.map((r) => objectOf(r.name, r.line, v3022));
+  const reads350 = engineReads350Apply(engineVersion);
+  const v350 = reads350 ? engineVersion : undefined;
+  const allReads = capability.reads.map((r) => objectOf(r.name, r.line, v350));
   const lockedRead = (o: { line: number }) => gates.unreachable.length > 0 && isUnreachableLine(gates, o.line);
   const reads = allReads.filter((o) => !lockedRead(o));
   const lockedReads = allReads.filter(lockedRead);
@@ -608,7 +608,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     ...calls.databaseWrites.map((d) => ({ name: d.table, line: d.lineStart })),
   ].filter((w) => !command.onCommand(w.line)).map((w) => w.name.toUpperCase()));
   const writes = capability.writes.map((w) => (
-    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line, v3022), onCommand: true } : objectOf(w.name, w.line, v3022)
+    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line, v350), onCommand: true } : objectOf(w.name, w.line, v350)
   ));
 
   // What it changes in SAP, in business verbs: the posting calls and the
@@ -634,11 +634,11 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   };
   for (const f of calls.functionModules) {
     if (!f.name) continue;
-    addAction(f.name.toUpperCase(), sentenceWordOf(f.name.toUpperCase(), f.bapi ? 'bapi' : 'function', v3022), f.lineStart, f.bapi ? 'interface' : 'function');
+    addAction(f.name.toUpperCase(), sentenceWordOf(f.name.toUpperCase(), f.bapi ? 'bapi' : 'function', v350), f.lineStart, f.bapi ? 'interface' : 'function');
   }
   for (const t of calls.transactions) {
     if (!t.code) continue;
-    addAction(t.code.toUpperCase(), sentenceWordOf(t.code.toUpperCase(), 'transaction', v3022), t.lineStart, t.batchInput ? 'simulated-entry' : 'transaction');
+    addAction(t.code.toUpperCase(), sentenceWordOf(t.code.toUpperCase(), 'transaction', v350), t.lineStart, t.batchInput ? 'simulated-entry' : 'transaction');
   }
 
   const callNames = calls.functionModules.filter((f) => f.name).map((f) => ({ name: (f.name as string).toUpperCase(), line: f.lineStart }));
@@ -660,18 +660,18 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     reads,
     writes,
     changes: {
-      // 3.0.22: what a run reaches decides too — batch input or a posting call is a change, and a report it starts
+      // 3.5.0: what a run reaches decides too — batch input or a posting call is a change, and a report it starts
       // is a change this code does not show (`reachedChangesOf`).
-      state: posting.present || (changesOf3022?.unworded.length ?? 0) > 0
+      state: posting.present || (changesOf350?.unworded.length ?? 0) > 0
         ? 'changes'
-        : (changesOf3022?.submits.length ?? 0) > 0 ? 'not-determined' : posting.determined ? 'none' : 'not-determined',
-      ...(changesOf3022?.unworded.length ? { unworded: changesOf3022.unworded } : {}),
-      ...(changesOf3022?.submits.length && !posting.present ? { submits: changesOf3022.submits } : {}),
+        : (changesOf350?.submits.length ?? 0) > 0 ? 'not-determined' : posting.determined ? 'none' : 'not-determined',
+      ...(changesOf350?.unworded.length ? { unworded: changesOf350.unworded } : {}),
+      ...(changesOf350?.submits.length && !posting.present ? { submits: changesOf350.submits } : {}),
       actions,
       commits: capability.commits.length + capability.updateTask.length,
       displayTransactions: calls.transactions
         .filter((t) => t.code && !t.batchInput && !actions.some((a) => a.name === t.code?.toUpperCase()))
-        .map((t) => ({ name: (t.code as string).toUpperCase(), word: sentenceWordOf((t.code as string).toUpperCase(), 'transaction', v3022), line: t.lineStart })),
+        .map((t) => ({ name: (t.code as string).toUpperCase(), word: sentenceWordOf((t.code as string).toUpperCase(), 'transaction', v350), line: t.lineStart })),
       dynamic: (capability.dynamicWrites ?? []).length + (capability.dynamicCalls ?? []).length,
     },
     outputs: {
@@ -717,11 +717,11 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       : {}),
     ...demoFacts(text, ruleSet, readers.engineVersion),
     // Roadmap 3.0.20 — present only from that engine, so earlier facts stay what they were.
-    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021, reads3022) : {}),
+    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021, reads350) : {}),
     // Roadmap 3.0.21 — the purpose the names support stands whenever it exists; present only from that engine.
     ...(reads3021 ? { purposeAlways: true as const } : {}),
-    // 3.0.22 (H8) — present only from that engine and only for a program of one of the shapes `readProgramShape` knows.
-    ...(reads3022 ? shapeFacts(text) : {}),
+    // 3.5.0 (H8) — present only from that engine and only for a program of one of the shapes `readProgramShape` knows.
+    ...(reads350 ? shapeFacts(text) : {}),
     ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };
