@@ -153,7 +153,7 @@ test.describe('an Anthropic key is stored only with the Additional Agreement acc
     expect(read('lib/firebase-admin.ts')).toContain('if (data.blockedAt) throw new OwnModelKeyBlockedError();');
   });
 
-  test('the confirmation mails carry version, language version, digest and time, the full wording, and one link to it', () => {
+  test('the confirmation mails carry version, language version, digest and time, and one link to the wording of that version and language', () => {
     // Since T03 (3.0.21) the acceptance is confirmed with C5 in the language accepted.
     const accepted = acceptedWording('byok-addendum', 'de', 'ZV-BYOK-1.0')!;
     const { html, subject } = buildContractConfirmationMail({
@@ -169,7 +169,7 @@ test.describe('an Anthropic key is stored only with the Additional Agreement acc
     expect(html).toContain('Sprache: Deutsch');
     expect(html).toContain(archivedAddendumSha256('ZV-BYOK-1.0', 'de')!);
     expect(html).toContain('22. Oktober 2026 um 10:00 (UTC)');
-    expect(html).toContain('/terms/byok-addendum/de');
+    expect(html).toContain('/terms/byok-addendum/versions/ZV-BYOK-1.0/de');
     expect(html.match(/<a /g)).toHaveLength(1);
     expect(buildAgreementEndedMail({ recipient: 'a@example.org', ending: 'text-form', endedAt: 'x' })).toContain('text form');
   });

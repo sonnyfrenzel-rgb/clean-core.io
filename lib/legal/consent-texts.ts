@@ -18,6 +18,8 @@ import type { LegalLang } from './open-values';
  *   build against. C8 (AI marking) and C10 (invitation mail) live with their
  *   features. C13 (the voluntary withdrawal function): Settings, the signed-in
  *   footer of the app shell and the receipt mail `lib/withdrawal-receipt-email.ts`.
+ *   C14 (the one-time notice before the first automatic model call):
+ *   `components/AutoStepsNotice.tsx` on the own-code upload.
  *
  * Removed against the draft, as the review (E14, E26, E27) says: the re-send
  * and the in-app display on a failed delivery of the confirmation mail, the
@@ -33,8 +35,8 @@ export const CONSENT_TEXTS = {
   /** C1 — sign-up dialog, acceptance of the Terms of Service. */
   signup: {
     noticeAbove: {
-      de: 'Bitte lesen Sie beide Texte. Mit dem Klick unten schließen Sie einen Vertrag über die unentgeltliche Nutzung von Clean-Core.io; den vollständigen Wortlaut der Nutzungsbedingungen erhalten Sie anschließend per E-Mail.',
-      en: 'Please read both texts. By clicking below you conclude a contract on the free use of Clean-Core.io; you will receive the full wording of the Terms by e-mail afterwards.',
+      de: 'Bitte lesen Sie beide Texte. Mit dem Klick unten schließen Sie einen Vertrag über die unentgeltliche Nutzung von Clean-Core.io; eine Bestätigung mit einem Link auf den Wortlaut der angenommenen Fassung erhalten Sie anschließend per E-Mail.',
+      en: 'Please read both texts. By clicking below you conclude a contract on the free use of Clean-Core.io; you will receive a confirmation by e-mail afterwards with a link to the wording of the version you accepted.',
     },
     privacyCheckbox: {
       de: 'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
@@ -45,8 +47,8 @@ export const CONSENT_TEXTS = {
       en: 'I accept the Clean-Core.io Terms of Service and Community Guidelines (version v2.3.0, English version, wording: clean-core.io/terms).',
     },
     noticeBelow: {
-      de: 'Mit „Create my workspace“ geben Sie Ihr Angebot ab; Ihr Konto wird sofort freigeschaltet. Vertragssprache ist Deutsch; maßgeblich ist die deutsche Fassung v2.3.0, auch wenn Sie die Oberfläche später auf Englisch stellen. Sie erhalten eine Vertragsbestätigung an {E-Mail} mit dem vollständigen Wortlaut und dem Annahmezeitpunkt. Umfragen und Community-Mail erhalten Sie nur, wenn Sie sie später in den Einstellungen einschalten.',
-      en: 'By clicking "Create my workspace" you make your offer; your account is activated immediately. The contract language is English; the English version v2.3.0 governs, even if you later switch the interface to German. You will receive a contract confirmation at {E-Mail} containing the full wording and the time of acceptance. You receive surveys and community mail only if you switch them on later in the settings.',
+      de: 'Mit „Create my workspace“ geben Sie Ihr Angebot ab; Ihr Konto wird sofort freigeschaltet. Vertragssprache ist Deutsch; maßgeblich ist die deutsche Fassung v2.3.0, auch wenn Sie die Oberfläche später auf Englisch stellen. Sie erhalten eine Vertragsbestätigung an {E-Mail} mit dem Annahmezeitpunkt und einem Link auf den Wortlaut der angenommenen Fassung. Umfragen und Community-Mail erhalten Sie nur, wenn Sie sie später in den Einstellungen einschalten.',
+      en: 'By clicking "Create my workspace" you make your offer; your account is activated immediately. The contract language is English; the English version v2.3.0 governs, even if you later switch the interface to German. You will receive a contract confirmation at {E-Mail} containing the time of acceptance and a link to the wording of the accepted version. You receive surveys and community mail only if you switch them on later in the settings.',
     },
     button: { de: 'Create my workspace', en: 'Create my workspace' },
   },
@@ -78,8 +80,8 @@ export const CONSENT_TEXTS = {
     accept: { de: 'Annehmen', en: 'Accept' },
     later: { de: 'Später entscheiden', en: 'Decide later' },
     notice: {
-      de: 'Nach der Annahme erhalten Sie eine Bestätigung mit dem vollständigen Wortlaut und dem Wirksamkeitstag per E-Mail.',
-      en: 'After acceptance you will receive a confirmation with the full wording and the effective date by e-mail.',
+      de: 'Nach der Annahme erhalten Sie eine Bestätigung per E-Mail mit dem Wirksamkeitstag und einem Link auf den Wortlaut der angenommenen Fassung.',
+      en: 'After acceptance you will receive a confirmation by e-mail with the effective date and a link to the wording of the accepted version.',
     },
   },
 
@@ -120,8 +122,8 @@ export const CONSENT_TEXTS = {
         en: 'Ending: You end the agreement at any time with "Delete key and end agreement" in the settings (two-factor sign-in required) or with a message to info@clean-core.io; the platform key then applies again. Your account and projects remain.',
       },
       {
-        de: 'Nachweis: Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme fest und senden Ihnen den vollständigen Wortlaut per E-Mail.',
-        en: 'Record: We record version, language, time and digest of your acceptance and send you the full wording by e-mail.',
+        de: 'Nachweis: Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme fest und senden Ihnen eine Bestätigung per E-Mail mit einem Link auf den Wortlaut der angenommenen Fassung.',
+        en: 'Record: We record version, language, time and digest of your acceptance and send you a confirmation by e-mail with a link to the wording of the accepted version.',
       },
     ],
     autoStepsSwitch: {
@@ -210,8 +212,8 @@ export const CONSENT_TEXTS = {
       en: 'Your contract confirmation — {Dokument} (English version)',
     },
     body: {
-      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.{Wirksamkeit}\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDer vollständige Wortlaut steht unten in dieser E-Mail{{t03ConfirmationMail}}. Es ist derselbe Text, aus dem der Hashwert gebildet wurde; er bleibt mit diesem Hashwert unter {Adresse} veröffentlicht.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io\n\n— Vollständiger Wortlaut —\n{Wortlaut}',
-      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).{Wirksamkeit}\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nThe full wording follows below in this e-mail{{t03ConfirmationMail}}. It is the same text from which the digest was computed; it remains published with that digest at {Adresse}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time and digest of your acceptance in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io\n\n— Full wording —\n{Wortlaut}',
+      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.{Wirksamkeit}\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDen Wortlaut der angenommenen Fassung finden Sie unter {Adresse}; er bleibt unter dieser Adresse dauerhaft abrufbar, mit dem Hashwert, der aus ihm gebildet wurde{{t03ConfirmationMail}}.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io',
+      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).{Wirksamkeit}\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nThe wording of the accepted version is at {Adresse}; it remains permanently available at that address, with the digest computed from it{{t03ConfirmationMail}}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time and digest of your acceptance in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io',
     },
 
     /**
@@ -384,6 +386,36 @@ export const CONSENT_TEXTS = {
       { de: 'Anthropics Angaben zur Datenregion treffen nicht mehr zu', en: "Anthropic's statements on the data region no longer hold" },
       { de: 'eine verbindliche Entscheidung verlangt es', en: 'a binding decision requires it' },
     ],
+  },
+
+  /**
+   * C14 — one-time notice before the first automatic model call (3.0.21, A10):
+   * shown once, at the first upload of own code, before the first project is
+   * opened, with the switch inside it (`components/AutoStepsNotice.tsx`, rule
+   * `lib/auto-steps-notice.ts`). Written for the one automatic step there is
+   * while business names are paused (`NAMING_WITHOUT_FACTS_PAUSED`).
+   * `{Modell}` is the model's provider label, `{Anbieter}` the company the
+   * code goes to — both from the key the step would run on.
+   */
+  autoStepsNotice: {
+    title: {
+      de: 'Vor Ihrem ersten Projekt: automatische KI-Schritte',
+      en: 'Before your first project: automatic AI steps',
+    },
+    lead: {
+      de: 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+      en: 'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+    },
+    switchLabel: { de: 'Automatische KI-Schritte', en: 'Automatic AI steps' },
+    after: {
+      de: 'Sie können das jederzeit in den Einstellungen unter „Where the AI model is used“ ändern.',
+      en: 'You can change this any time in Settings under “Where the AI model is used”.',
+    },
+    switchedOff: {
+      de: 'Ausgeschaltet: Beim Öffnen eines Projekts ruft die Plattform von selbst kein KI-Modell auf.',
+      en: 'Switched off: opening a project calls no AI model by itself.',
+    },
+    dismiss: { de: 'Verstanden', en: 'Got it' },
   },
 } as const satisfies Record<string, Record<string, Bi | readonly Bi[]>>;
 

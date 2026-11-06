@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Could not record your consent. Please try again.' }, { status: 500 });
       }
       // C5 (Terms 1.3, T03): the contract confirmation, in the language version
-      // accepted, with its digest and the full wording — to the verified
+      // accepted, with its digest and a link to its wording — to the verified
       // address only, best effort, no resend.
       await sendContractConfirmationMail({
         to: rawEmail,

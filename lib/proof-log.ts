@@ -148,6 +148,8 @@ export function pseudonymisedDeliveryFields(
     to: [input.accountHash],
     uid: del,
     subject: del,
+    subjectHash: del,
+    testRecipient: del,
     lastDetail: del,
     timeline: del,
     expiresAt: mailDeliveryRecordExpiry(input.sentAt ?? input.now),

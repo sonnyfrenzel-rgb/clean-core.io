@@ -49,6 +49,11 @@ test('a bounce keeps its reason when a scanner opens the mail afterwards', async
   expect(after?.lastEventAt).toBe('2026-09-16T08:00:00.000Z');
   // The losing event is still in the record — it just does not relabel the verdict.
   expect((after?.timeline as Array<{ type: string }>).map((e) => e.type)).toContain('email.opened');
+  // The record keeps the address and the subject as keyed hashes only (privacy policy sections 2 and 6).
+  expect(JSON.stringify(after?.to)).not.toContain('someone@example.com');
+  expect(after?.to?.[0]).toMatch(/^hmac1_[0-9a-f]{64}$/);
+  expect(after?.subject).toBeUndefined();
+  expect(after?.subjectHash).toMatch(/^hmac1_[0-9a-f]{64}$/);
 
   const row = await request(uid);
   expect(row?.welcomeMailStatus, 'the admin console shows the same verdict').toBe('email.bounced');

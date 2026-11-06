@@ -19,6 +19,7 @@ import { quotaSpentSentence } from './run-quota-rule';
 import { isRecentLogin } from './recent-login';
 import { retainProofsOfErasedAccount, type ProofLogDb } from './proof-log-erasure';
 import { PROOF_LOG_RETENTION, PseudonymPepperMissingError, type ContractEnding } from './proof-log';
+import { pseudonymPepperConfigured, subjectHashOf } from './pseudonym';
 import { auditRowErasureUpdate, auditRowNamesActorEmail, erasedAccountPseudonym } from './audit-pseudonymisation';
 import { INVITATION_DELIVERY_RECORDS } from './invitation-delivery-record';
 // Types only — erased at compile time, so the modules themselves still load
@@ -1224,14 +1225,21 @@ export async function deleteUserDataAndAccount(
   //     the name the registration record kept. Only that kind of record is
   //     touched; another account registered under the identical name loses its
   //     notification record too, which names nobody but that name.
+  //     Since 3.0.21 the record holds the keyed hash of the subject, not the
+  //     subject (`lib/email-events.ts`); one written before holds the subject
+  //     until the owner's one-off rewrite (`scripts/hash-email-events.ts`).
   if (signupName) {
-    const q = db.collection('email_events').where('subject', '==', legacyAdminSignupSubject(signupName));
+    const subject = legacyAdminSignupSubject(signupName);
+    const queries = [db.collection('email_events').where('subject', '==', subject)];
+    if (pseudonymPepperConfigured()) queries.push(db.collection('email_events').where('subjectHash', '==', subjectHashOf(subject)));
     await tryDelete('email_events', async () => {
-      const snapshot = await q.get();
-      const refs = snapshot.docs
-        .filter((eventDoc: ErasableDoc) => (eventDoc.data() || {}).kind === ADMIN_SIGNUP_MAIL_KIND)
-        .map((eventDoc: ErasableDoc) => eventDoc.ref);
-      await commitInChunks(db, refs.map((ref: unknown) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
+      const refs = new Map<string, unknown>();
+      for (const q of queries) {
+        for (const eventDoc of (await q.get()).docs as ErasableDoc[]) {
+          if ((eventDoc.data() || {}).kind === ADMIN_SIGNUP_MAIL_KIND) refs.set((eventDoc.ref as DocumentReference).path, eventDoc.ref);
+        }
+      }
+      await commitInChunks(db, [...refs.values()].map((ref: unknown) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
     });
   }
 

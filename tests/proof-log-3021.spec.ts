@@ -190,6 +190,18 @@ test.describe('an erasure keeps proofs, not data (privacy section 5, Terms 1.3, 
     expect(col('email_events').get('m4')).toMatchObject({ to: ['other@example.org'], uid: 'someone' });
   });
 
+  test('a delivery record of the hashed shape (3.0.21) is found by the keyed hash and loses its subject hash', async () => {
+    const { db, col } = seeded();
+    const hash = accountHashOf(EMAIL, ENV);
+    // Written since 3.0.21 without a uid (a send that passed none): only the hash names the account.
+    col('email_events').set('m5', { messageId: 'm5', to: [hash], uid: null, subjectHash: 'hmac1_subject', kind: 'tenant approval', status: 'email.delivered', sentAt: new Date('2026-10-02T10:00:00Z') });
+    await retainProofsOfErasedAccount(db, () => DELETE, { uid: UID, addresses: [EMAIL], endedAt: ENDED, ending: 'account-deletion', env: ENV });
+    const m5 = col('email_events').get('m5')!;
+    expect(m5).toMatchObject({ to: [hash], kind: 'tenant approval', status: 'email.delivered' });
+    expect(m5.subjectHash, 'the erasure kept the subject hash').toBeUndefined();
+    expect((m5.expiresAt as Date).toISOString()).toBe('2026-12-31T10:00:00.000Z');
+  });
+
   test('an opt-out stays as the keyed hash only; the clear-text entry goes, somebody else\'s stays', async () => {
     const { db, col } = seeded();
     await retainProofsOfErasedAccount(db, () => DELETE, { uid: UID, addresses: [EMAIL], endedAt: ENDED, ending: 'account-deletion', env: ENV });

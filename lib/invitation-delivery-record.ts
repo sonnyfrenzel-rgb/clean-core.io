@@ -16,13 +16,12 @@ import { PORTFOLIO_INVITATION_SUBJECT } from './portfolio/invitation-email';
  *     inviterUid, sentAt, status, statusAt, seenEventIds, retention, expiresAt
  *
  * **Its own collection, not `email_events`.** A delivery record in
- * `email_events` keeps the recipient's address in clear in `to` — written at
- * sending (`recordEmailSent`) and again by every webhook event
- * (`recordEmailEvent`) — plus the subject and the provider's bounce text, which
- * can quote the address; the admin console and the weekly report read it that
- * way, and its period is the open value `mailDeliveryRecordRetention` (90
- * days). An invitation goes to a person who gave us nothing, so its record
- * holds the keyed hash and never the address, and it is kept six months. Two
+ * `email_events` (since 3.0.21 also with the keyed hashes of the address and
+ * the subject only, `lib/email-event-hashing.ts`) carries the account's uid
+ * and the provider's diagnostic, and its period is the open value
+ * `mailDeliveryRecordRetention` (90 days). An invitation goes to a person who
+ * gave us nothing, so its record holds the keyed hash of the address, the
+ * inviting account and the status, and it is kept six months. Two
  * different shapes and periods under one collection would leave the guarantee
  * to whichever writer came last; a separate collection holds it by
  * construction — the same reasoning as `invitation_suppressions`

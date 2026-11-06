@@ -39,6 +39,7 @@ import {
   ownCodeTooLarge,
 } from '@/lib/workspace-messages';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
+import AutoStepsNotice from '@/components/AutoStepsNotice';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
 import TargetEditionChoice, { targetEditionTitle, type TargetEdition } from '@/components/TargetEditionChoice';
@@ -322,6 +323,10 @@ export default function OwnCodeImport() {
             <CcRequiredNote />
           </span>
         </div>
+
+        {/* C14 (3.0.21, A10): once per account, before the first own project —
+            what runs by itself on opening it, with the switch to turn it off. */}
+        <AutoStepsNotice model={model} />
 
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-w-0 flex-col gap-4">

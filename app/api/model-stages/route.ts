@@ -22,6 +22,7 @@ import {
 import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
+import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_SEEN } from '@/lib/auto-steps-notice';
 
 /**
  * The per-stage model switch, and whether there is a key to switch on.
@@ -77,6 +78,12 @@ interface StageAnswer {
   suspendedProvider: ModelKeyProvider | null;
   /** What the screens say then: C11 with date and reason where it applies (`lib/provider-suspension.ts`). */
   suspendedNotice: string | null;
+  /**
+   * 3.0.21 (A10) — the one-time notice before the first automatic model call
+   * was answered or closed (`users/{uid}.autoStepsNoticeAt`, written only
+   * below; `lib/auto-steps-notice.ts`).
+   */
+  autoStepsNoticeSeen: boolean;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -84,8 +91,9 @@ const UNREADABLE = Symbol('byok-key-unreadable');
 async function answerFor(uid: string): Promise<StageAnswer> {
   const { db } = await getAdminDb();
   const snap = await db.collection('users').doc(uid).get();
-  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown }) : null;
+  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown; autoStepsNoticeAt?: unknown }) : null;
   const stages = modelStagesOf(profile);
+  const autoStepsNoticeSeen = profile?.[AUTO_STEPS_NOTICE_FIELD] != null;
   const answers: StageAnswer['answers'] = {};
   for (const stage of MODEL_STAGES) {
     const a = profile?.modelAnswers?.[stage];
@@ -100,7 +108,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null };
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
@@ -113,7 +121,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
 
   const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
 
-  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice };
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen };
 }
 
 export async function GET(req: NextRequest) {
@@ -150,6 +158,10 @@ export async function GET(req: NextRequest) {
  * stages move. An unknown key is a 400 rather than a silent no-op: a settings
  * screen that misspells a stage would otherwise report success and change
  * nothing, which is the kind of failure nobody finds for months.
+ *
+ * 3.0.21 (A10): `autoStepsNotice: 'seen'`, alone or beside `stages`, records
+ * that the one-time notice before the first automatic model call was answered
+ * or closed (`users/{uid}.autoStepsNoticeAt`), so it does not come back.
  */
 export async function POST(req: NextRequest) {
   let uid = '';
@@ -175,6 +187,16 @@ export async function POST(req: NextRequest) {
     // `null` is valid JSON and has no properties: read through `?.`, so it is the
     // 400 below and not a TypeError answered as 500.
     const requested = (body as { stages?: unknown } | null)?.stages;
+    const notice = (body as { autoStepsNotice?: unknown } | null)?.autoStepsNotice;
+    if (notice !== undefined && notice !== AUTO_STEPS_NOTICE_SEEN) {
+      return NextResponse.json({ error: `autoStepsNotice must be '${AUTO_STEPS_NOTICE_SEEN}'.` }, { status: 400 });
+    }
+    const noticeSeen = notice === AUTO_STEPS_NOTICE_SEEN;
+    if (noticeSeen && requested === undefined) {
+      const { db, FieldValue } = await getAdminDb();
+      await updateExistingProfile(uid, { [AUTO_STEPS_NOTICE_FIELD]: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { db });
+      return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
+    }
     if (!requested || typeof requested !== 'object' || Array.isArray(requested)) {
       return NextResponse.json(
         { error: `Missing required field: stages. Expected an object keyed by ${MODEL_STAGES.join(', ')}.` },
@@ -201,6 +223,7 @@ export async function POST(req: NextRequest) {
     // `modelStages`, but an account erased in the meantime is not recreated.
     const fields: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
     for (const [stage, on] of Object.entries(update)) fields[`modelStages.${stage}`] = on;
+    if (noticeSeen) fields[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
     await updateExistingProfile(uid, fields, { db });
 
     return NextResponse.json({ ok: true, ...(await answerFor(uid)) });

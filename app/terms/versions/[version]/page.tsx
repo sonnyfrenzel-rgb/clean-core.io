@@ -10,6 +10,7 @@ import {
   type ArchivedTermsVersion,
   type TermsBlock,
 } from '@/lib/terms-versions';
+import { TERMS_VERSION } from '@/lib/constants';
 
 /**
  * One superseded version of the Terms, in full.
@@ -50,9 +51,12 @@ export async function generateMetadata({
   const { version } = await params;
   const entry = archivedTerms(version);
   if (!entry) return { title: 'Archived Terms of Service | Clean-Core.io' };
+  const current = entry.version === TERMS_VERSION;
   return {
-    title: `Terms of Service ${entry.label} (superseded) | Clean-Core.io`,
-    description: `The Terms of Service and Community Guidelines of Clean-Core.io as they stood from ${entry.effectiveOn}. This version has been superseded; the current Terms are at clean-core.io/terms.`,
+    title: `Terms of Service ${entry.label} (${current ? 'archived wording' : 'superseded'}) | Clean-Core.io`,
+    description: current
+      ? `The archived wording of the Terms of Service and Community Guidelines of Clean-Core.io ${entry.label}, the version in force.`
+      : `The Terms of Service and Community Guidelines of Clean-Core.io as they stood from ${entry.effectiveOn}. This version has been superseded; the current Terms are at clean-core.io/terms.`,
     alternates: { canonical: `https://clean-core.io/terms/versions/${entry.version}` },
     robots: { index: false, follow: true },
   };
@@ -116,17 +120,34 @@ export default async function ArchivedTermsPage({
           <span className="text-cc-ink-muted font-medium text-2xl md:text-3xl">{entry.label}, archived</span>
         </h1>
 
-        <div className="p-4 bg-cc-warning-bg border border-cc-warning-border rounded-2xl mb-10">
-          <p className="text-sm text-cc-warning">
-            <strong>This version is no longer current.</strong> It is reproduced here unchanged because it
-            was in force from {entry.effectiveOn}, and because an account that accepted it is entitled to
-            see the words it accepted. The Terms in force today are at{' '}
-            <Link href="/terms" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">
-              clean-core.io/terms
-            </Link>
-            .
-          </p>
-        </div>
+        {/* The confirmation mail links here for the version just accepted
+            (Terms 1.3), so this page is also the address of the version in
+            force — and must not call it superseded then. */}
+        {entry.version === TERMS_VERSION ? (
+          <div className="p-4 bg-cc-brand-surface border border-cc-line rounded-2xl mb-10" data-archived-current>
+            <p className="text-sm text-cc-ink-muted">
+              <strong>This is the version in force.</strong> This address shows its archived wording unchanged and
+              stays reachable after a later version replaces it. The same Terms, with the list of every published
+              version, are at{' '}
+              <Link href="/terms" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">
+                clean-core.io/terms
+              </Link>
+              .
+            </p>
+          </div>
+        ) : (
+          <div className="p-4 bg-cc-warning-bg border border-cc-warning-border rounded-2xl mb-10">
+            <p className="text-sm text-cc-warning">
+              <strong>This version is no longer current.</strong> It is reproduced here unchanged because it
+              was in force from {entry.effectiveOn}, and because an account that accepted it is entitled to
+              see the words it accepted. The Terms in force today are at{' '}
+              <Link href="/terms" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">
+                clean-core.io/terms
+              </Link>
+              .
+            </p>
+          </div>
+        )}
 
         <dl className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           <div>

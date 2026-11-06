@@ -16,6 +16,7 @@ import {
   parseArchivedTerms,
 } from '../lib/terms-versions';
 import { ConsentProfileMissingError, recordConsent } from '../lib/consent';
+import { ARCHIVED_BYOK_ADDENDUM_VERSIONS } from '../lib/legal/byok-addendum-versions';
 
 /**
  * The archive of Terms versions, and the three promises it has to keep.
@@ -395,6 +396,33 @@ test.describe('a reader opening /terms finds the archive', () => {
         ).toContain(normalise(wanted));
       }
     }
+  });
+
+  // Terms 1.3 (Fassung 1.1): the confirmation mail links to the wording of the
+  // accepted version at an address bound to version and language.
+  test('the addresses the confirmation mail links to answer with the archived wording and its digest', async ({ page }) => {
+    const pages: Array<{ url: string; file: string; sha256: string }> = [];
+    for (const entry of ARCHIVED_TERMS_VERSIONS) {
+      pages.push({ url: `/terms/versions/${entry.version}/en`, file: entry.file, sha256: entry.sha256 });
+      for (const t of entry.translations ?? []) pages.push({ url: `/terms/versions/${entry.version}/${t.lang}`, file: t.file, sha256: t.sha256 });
+    }
+    for (const v of ARCHIVED_BYOK_ADDENDUM_VERSIONS) {
+      for (const f of v.files) pages.push({ url: `/terms/byok-addendum/versions/${v.id}/${f.lang}`, file: f.file, sha256: f.sha256 });
+    }
+    for (const p of pages) {
+      const response = await page.goto(p.url, { waitUntil: 'domcontentloaded' });
+      expect(response?.status(), `${p.url} did not answer`).toBe(200);
+      await expect(page.locator('[data-archived-sha256]'), p.url).toHaveText(p.sha256);
+      const article = normalise(await page.locator('[data-archived-text]').innerText());
+      for (const block of parseArchivedTerms(read(p.file))) {
+        const wanted = block.kind === 'heading' ? block.text : block.kind === 'list' ? block.items.join(' ') : block.lines.join(' ');
+        expect(article, `${p.url} does not show: "${wanted.slice(0, 80)}…"`).toContain(normalise(wanted));
+      }
+    }
+    // The version in force is not called superseded on its own address.
+    await page.goto(`/terms/versions/${TERMS_VERSION}/en`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-archived-current]')).toBeVisible();
+    await expect(page.locator('main')).not.toContainText('This version is no longer current.');
   });
 });
 
