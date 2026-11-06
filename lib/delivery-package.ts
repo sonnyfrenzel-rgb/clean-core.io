@@ -73,7 +73,7 @@ import { capAuthorizationIn, capAuthorizationWords } from './transformation/cap-
 import { RAP_SAVE_NOT_WIRED, rapNoInputIn, rapNoInputWords, rapSaverUnwired, rapUnresolvedTypesIn, rapUnresolvedTypesWords } from './transformation/rap-save';
 
 import { TARGET_EDITION_NAMES } from './sap-naming';
-import { AI_MARKING_BASIS, aiMarkingField, aiOriginMarksIn, aiMarkingStatement, commentSyntaxOf, hasAiMarking, withAiMarking, type AiMarkingField } from './ai-marking';
+import { AI_MARKING_BASIS, AI_ORIGIN_MARKDOWN_CLOSE, aiMarkingField, aiOriginMarkdownOpen, aiOriginMarksIn, aiMarkingStatement, commentSyntaxOf, hasAiMarking, UNRECORDED_AI, withAiMarking, type AiAuthorship, type AiMarkingField } from './ai-marking';
 import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
 import { KEY_USER_STEPS_PATH } from './key-user-route';
 
@@ -958,7 +958,14 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
-      ? { kind: 'documentation', status: 'implemented', note: 'Read by the engine from the signed source; business names and lanes are AI-generated where marked.' }
+      ? {
+          kind: 'documentation',
+          status: 'implemented',
+          // 3.0.21: AI-generated names and lanes are named only when the file marks one.
+          note: aiOriginMarksIn(e.content).length > 0
+            ? 'Read by the engine from the signed source; business names and lanes are AI-generated where marked.'
+            : 'Read by the engine from the signed source, without a model.',
+        }
       : { kind: 'documentation', status: 'proposed', note: 'Written by a language model — review material.' };
   }
   if (p.startsWith('docs/')) return { kind: 'documentation', status: 'proposed', note: 'Review material, not approved.' };
@@ -1862,11 +1869,27 @@ export function buildCostRevision(facts: DeliveryFacts): string {
   return `${lines.join('\n').trimEnd()}\n`;
 }
 
+/**
+ * Who wrote the design's comparison the decision record shows (3.0.21, T08): the design's authorship, else — a
+ * comparison read from a design no text record names — model-written all the same, call not recorded.
+ */
+function decisionDesignAuthorship(facts: DeliveryFacts): AiAuthorship {
+  return facts.ai?.design ?? UNRECORDED_AI;
+}
+
 export function buildDecisionRecord(facts: DeliveryFacts): string {
   const d = facts.decision;
   const lines: string[] = [];
+  // 3.0.21 (T08): the design's comparison in the weighing is model text — the one model-written element of this file,
+  // marked where it stands with the design's authorship (its call is not recorded per project: "not-recorded").
+  const designProposals = Boolean(d.weighing?.rows.some((r) => r.proposal));
   lines.push(`# ${facts.projectName} — decision record and score derivation`, '');
-  lines.push('Written by Clean-Core.io from the records of the project, without a model. Not signed — the signed record is the audit pack.', '');
+  lines.push(
+    designProposals
+      ? "Written by Clean-Core.io from the records of the project, without a model — except the design's comparison in the weighing, which is model text and marked where it stands. Not signed — the signed record is the audit pack."
+      : 'Written by Clean-Core.io from the records of the project, without a model. Not signed — the signed record is the audit pack.',
+    '',
+  );
 
   lines.push('## Target decision', '');
   lines.push(decisionLine(d), '');
@@ -1895,10 +1918,12 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
   // readings, and the design's comparison beside them as a proposal.
   if (d.weighing) {
     const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+    const designWho = decisionDesignAuthorship(facts);
+    const proposalCell = (s: string) => `${aiOriginMarkdownOpen(designWho)}${cell(s)}${AI_ORIGIN_MARKDOWN_CLOSE}`;
     lines.push('### The weighing', '');
     lines.push("The engine's reading of each option, from the signed run — no figure is filled in that Economics does not hold. The design's comparison is model text and stands beside it as a proposal.", '');
     lines.push("| Option | Engine's reading | Why | Design's comparison (proposal) |", '|---|---|---|---|');
-    for (const r of d.weighing.rows) lines.push(`| ${r.label} | ${r.reading} | ${cell(r.why)} | ${r.proposal ? cell(r.proposal) : '—'} |`);
+    for (const r of d.weighing.rows) lines.push(`| ${r.label} | ${r.reading} | ${cell(r.why)} | ${r.proposal ? proposalCell(r.proposal) : '—'} |`);
     lines.push('');
   }
   if (d.bindings.length) {
@@ -2100,6 +2125,7 @@ export interface PackageAiGeneration {
 /** Which model-written source a file comes from, or null for a file no model wrote. */
 function aiSourceOf(e: BundleEntry, facts: DeliveryFacts, filled: ReadonlySet<string> | null): AiSource | null {
   if (e.ai) return e.ai;
+  if (designInDecisionRecord(e)) return 'design';
   const origin = originOf(e, facts);
   // 3.0.21 (T08): the engine's process documentation is co-written once it prints a business name or lane of the
   // naming stage — each marked where it stands (`processDocumentationToMarkdown`), so the file names the model too.
@@ -2122,6 +2148,11 @@ function namesFromNamingStage(e: BundleEntry): boolean {
   return /^docs\/process-[\w-]+\.md$/.test(e.path) && aiOriginMarksIn(e.content).length > 0;
 }
 
+/** True for the decision record when its weighing shows the design's comparison (a model-written element per cell). */
+function designInDecisionRecord(e: BundleEntry): boolean {
+  return e.path === 'docs/decision.md' && aiOriginMarksIn(e.content).length > 0;
+}
+
 /** A finding's line moved down by the one header line, in the files that got one. */
 function shiftedLines<T extends { path: string; line: number }>(findings: readonly T[], marked: ReadonlySet<string>): T[] {
   return findings.map((f) => (marked.has(f.path) && f.line > 0 ? { ...f, line: f.line + 1 } : f));
@@ -2140,9 +2171,14 @@ export function markModelWrittenFiles(
   const read = facts.ai ?? UNRECORDED_AUTHORSHIP;
   // The naming stage's call is not recorded per project: an engine documentation that prints its names is marked
   // "provider and model not recorded" under the documentation source.
-  const authorship: AiAuthorshipFacts = read.documentation === null && entries.some(namesFromNamingStage)
+  const withNames: AiAuthorshipFacts = read.documentation === null && entries.some(namesFromNamingStage)
     ? { ...read, documentation: UNRECORDED_AUTHORSHIP.documentation }
     : read;
+  // 3.0.21 (T08): the decision record's weighing carries the design's comparison, marked per cell with the design's
+  // authorship or "not-recorded" (`buildDecisionRecord`); the file names the same source.
+  const authorship: AiAuthorshipFacts = withNames.design === null && entries.some(designInDecisionRecord)
+    ? { ...withNames, design: UNRECORDED_AI }
+    : withNames;
   const filled = facts.generation?.path === 'engine-led' ? modelFilledFiles(entries) : null;
   const bySource = new Map<AiSource, { files: string[]; withoutHeader: string[] }>();
   const headed = new Set<string>();
@@ -2240,8 +2276,10 @@ export function finishDeliveryPackage(input: {
   // Roadmap 3.0.17 (AI Act Art. 50(2)): every file a model wrote or co-wrote carries the statement as its header
   // comment — before anything below reads the files, so every line number the package states is a line of the file
   // as it ships.
-  const ai = markModelWrittenFiles(entries, facts);
-  entries = ai.entries;
+  // 3.0.21 (T08): the decision record goes through the same marking — its weighing may carry the design's comparison.
+  const ai = markModelWrittenFiles([...entries, { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' }], facts);
+  const decision: BundleEntry = ai.entries.find((e) => e.path === 'docs/decision.md')!;
+  entries = ai.entries.filter((e) => e.path !== 'docs/decision.md');
   facts = ai.facts;
   // 3.0.18 item 13 (QM-09): the register reads which unit carries which rule from the package's own trace.
   facts = { ...facts, rules: withImplementationTrace(facts.rules, ruleTraceRecordOf(entries.find((e) => e.path === 'traceability.json')?.content)) };
@@ -2262,7 +2300,6 @@ export function finishDeliveryPackage(input: {
     : read;
   const capabilities = packageCapabilities(reading, facts);
 
-  const decision: BundleEntry = { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' };
   // The cost revision the decision names travels with it (CO review F17).
   const costRevision: BundleEntry[] = facts.decision.costRevision
     ? [{ path: COST_REVISION_PATH, content: buildCostRevision(facts), origin: 'engine' }]

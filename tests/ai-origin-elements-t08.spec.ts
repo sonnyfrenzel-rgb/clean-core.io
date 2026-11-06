@@ -294,6 +294,25 @@ test.describe('the delivery package\'s Markdown files mark the naming and SOP mo
     expect(processDocumentationToMarkdown(namedDocumentation(), { originMarks: false })).not.toContain('cc:origin');
   });
 
+  test('the provenance legends call names and lanes AI-generated only when the file shows one (names paused in 3.0.21)', () => {
+    const plain = processDocumentationToMarkdown(engineDocumentationOf(source));
+    expect(plain).not.toContain('Business names and lanes are AI-generated');
+    expect(plain).not.toContain('Business names from the naming stage are AI-generated');
+    expect(plain).toContain('Provenance: Reconstructed.');
+    expect(plain).not.toContain('The one exception is marked where it appears');
+    expect(plain).toContain('> Read by the engine out of the whole source the signed run analysed.');
+    const named = processDocumentationToMarkdown(namedDocumentation());
+    expect(named).toContain('The one exception is marked where it appears: business names and lanes from the naming stage are AI-generated.');
+    expect(named).toContain('Provenance: Reconstructed, unless a column says otherwise. Business names and lanes are AI-generated.');
+    expect(named).toContain('Business names from the naming stage are AI-generated.');
+    // A lane alone, no business name: the table's legend names it, the main path's does not.
+    const laneOnly = engineDocumentationOf(source);
+    laneOnly.steps[0].lane = 'Purchasing';
+    const laneMd = processDocumentationToMarkdown(laneOnly);
+    expect(laneMd).toContain('Business names and lanes are AI-generated.');
+    expect(laneMd).not.toContain('Business names from the naming stage are AI-generated');
+  });
+
   test('business-documentation.md: statements, exceptions and the RACI marked with the SOP model; the engine\'s lists not', () => {
     const doc = engineDocumentationOf(source);
     const md = businessSopMarkdown(JSON.stringify(businessLayerFor(doc)), doc, { ai: CLAUDE });
@@ -311,10 +330,10 @@ test.describe('the delivery package\'s Markdown files mark the naming and SOP mo
   /* ---------------------------------------------- the offline verifier */
 
   const LEGACY = 'REPORT zai.\nWRITE / 1.\n';
-  function project(): HandoverProject {
+  function project(solutionDesign = '# Design'): HandoverProject {
     return {
       id: 'p-ai', name: 'AI marking', userId: 'owner', legacyCode: LEGACY, activeRunId: 'run-ai',
-      extensibilityRoute: 'Side-by-Side (SAP BTP)', solutionDesign: '# Design', analysis: JSON.stringify({ summary: 'x' }),
+      extensibilityRoute: 'Side-by-Side (SAP BTP)', solutionDesign, analysis: JSON.stringify({ summary: 'x' }),
       generatedCode: JSON.stringify([{ path: 'srv/service.ts', content: "export const x = 1;\n" }]),
       generationBinding: { generatedAt: '2026-10-20T10:00:00.000Z', model: { receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-test', byok: false, generatedAt: '2026-10-20T10:00:00.000Z', appVersion: 'v3.0.21' } },
       businessDocumentation: '{}',
@@ -323,8 +342,8 @@ test.describe('the delivery package\'s Markdown files mark the naming and SOP mo
     } as unknown as HandoverProject;
   }
 
-  async function packageWith(edit?: (files: Array<{ path: string; content: string }>) => void) {
-    const p = project();
+  async function packageWith(edit?: (files: Array<{ path: string; content: string }>) => void, solutionDesign?: string) {
+    const p = project(solutionDesign);
     const facts = deliveryFactsOf(p, {
       phases: workflowSteps(p), rules: ruleFactsOf(null as never), score: scoreFactsOf(p, null),
       generatedAt: '2026-10-20T12:00:00.000Z', appVersion: 'v3.0.21', referenceSection: '', documentationFromEngine: true,
@@ -368,6 +387,63 @@ test.describe('the delivery package\'s Markdown files mark the naming and SOP mo
     expect(out.out).toContain('model-written elements marked where they stand');
     expect(out.out).toContain('by anthropic claude-test');
     expect(out.status, out.out).toBe(2);
+  });
+
+  /** A design whose option comparison the decision record's weighing shows as the design's proposal (model text). */
+  const DESIGN_WITH_COMPARISON = JSON.stringify({
+    architectureOverview: { approachDescription: 'CAP.', nodeFramework: 'SAP CAP', runtimePlatform: 'SAP BTP' },
+    optionComparison: {
+      options: [
+        { option: 'standard', fitGap: 'No SAP standard process covers | the reconciliation.' },
+        { option: 'keyuser', fitGap: 'Key-user extensibility is not feasible: the logic comprises 496 executable statements.' },
+        { option: 'rap', fitGap: 'An in-app RAP object would fit the posting logic.' },
+        { option: 'cap', fitGap: 'A side-by-side CAP service decouples the report.' },
+      ],
+      recommended: 'cap',
+      decisionReason: 'The report reads only released APIs.',
+    },
+  });
+
+  test('decision.md: each cell of the design\'s comparison in the pair, header, manifest row "design", both verifiers list it', async () => {
+    const pkg = await packageWith(undefined, DESIGN_WITH_COMPARISON);
+    const decision = pkg.files.find((f) => f.path === 'docs/decision.md')!;
+    const marked = markdownMarked(decision.content);
+    expect(marked.length).toBeGreaterThanOrEqual(3);
+    expect(marked.some((m) => m.includes('A side-by-side CAP service decouples the report.'))).toBe(true);
+    // The pipe inside a proposal stays escaped inside the pair, so the table keeps its four columns.
+    expect(marked.some((m) => m.includes('covers \\| the reconciliation'))).toBe(true);
+    for (const m of aiOriginMarksIn(decision.content)) expect(m).toEqual(UNRECORDED_MARK);
+    expect(decision.content.split('<!-- cc:origin ').length).toBe(decision.content.split(AI_ORIGIN_MARKDOWN_CLOSE).length);
+    // The engine's reading and its "why" stay outside every pair.
+    for (const m of marked) expect(m).not.toMatch(/Speaks for it|Speaks against it|The engine routes/);
+    expect(aiMarkingOf(decision.content)).toMatch(/^Generated with AI assistance \(provider and model not recorded\) by Clean-Core\.io v3\.0\.21, /);
+    expect(decision.content).toContain("except the design's comparison in the weighing, which is model text");
+    expect(pkg.manifest.files.find((f: { path: string }) => f.path === 'docs/decision.md').ai).toBe('design');
+    const design = pkg.manifest.aiGeneration.statements.find((st: { source: string }) => st.source === 'design');
+    expect(design.files).toContain('docs/decision.md');
+    expect(design.statement).toBe(aiMarkingOf(decision.content));
+    const check = await checkDeliveryPackage(new Uint8Array(pkg.buf));
+    expect(check.verdict, check.problems.join(' | ')).toBe('consistent');
+    expect(check.unstatedElements).toEqual([]);
+    expect(check.headerMismatch).toEqual([]);
+    const row = check.elements.find((e) => e.path === 'docs/decision.md')!;
+    expect(row.source).toBe('design');
+    expect(row.marks).toEqual([{ ...UNRECORDED_MARK, count: marked.length }]);
+    const out = cli(pkg.path);
+    expect(out.out).toMatch(/element.*docs\/decision\.md/);
+    expect(out.out).not.toContain('marks model-written elements, but the manifest names it as written by no model');
+    expect(out.status, out.out).toBe(2);
+  });
+
+  test('decision.md without a design comparison is the engine\'s alone: no pair, no header, manifest row null', async () => {
+    const pkg = await packageWith();
+    const decision = pkg.files.find((f) => f.path === 'docs/decision.md')!;
+    expect(decision.content).not.toContain('cc:origin');
+    expect(aiMarkingOf(decision.content)).toBeNull();
+    expect(decision.content).toContain('Written by Clean-Core.io from the records of the project, without a model. Not signed');
+    expect(pkg.manifest.files.find((f: { path: string }) => f.path === 'docs/decision.md').ai).toBeNull();
+    const check = await checkDeliveryPackage(new Uint8Array(pkg.buf));
+    expect(check.elements.find((e) => e.path === 'docs/decision.md')).toBeUndefined();
   });
 
   test('a file that marks model-written elements while the manifest names no model for it fails both verifiers', async () => {
