@@ -2,6 +2,7 @@ import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
 import { humaniseRoutine, messageWordsAt, plainContext, plainLabels } from './abap/plain-language';
 import { TABLE_TERMS_EN } from './abap/plain-glossary';
 import { SAP_TABLES } from './abap/sap-dictionary';
+import { quotedComment } from './abap/author-comments';
 import { ENGINE_READS_3022_FROM } from './abap/engine-reads-3022-gate';
 
 /**
@@ -16,7 +17,9 @@ import { ENGINE_READS_3022_FROM } from './abap/engine-reads-3022-gate';
  *   - `table` — a database table the step reads or writes, with its glossary word (`plain-glossary.ts`, from H5 also
  *     the dictionary `sap-dictionary.ts`);
  *   - `message` — the program's own words on a `MESSAGE` at the node, quoted;
- *   - `part` — the routine the node stands in, in words.
+ *   - `part` — the routine the node stands in, in words;
+ *   - `comment` — 3.0.22 (H4): the author's comment at the node, quoted with its tag and line (`author-comments.ts`).
+ *     A name may lean on it; the name stays AI-generated, the comment stays the author's word.
  *
  * No new source of words: every fact is a part of the source the stage already had, or the glossary the engine
  * already ships (privacy text §3: "the source code or the parts of it the stage needs").
@@ -36,7 +39,7 @@ import { ENGINE_READS_3022_FROM } from './abap/engine-reads-3022-gate';
  */
 export const NAMING_WITH_FACTS: boolean = true;
 
-export type NamingFactKind = 'engine' | 'table' | 'message' | 'part';
+export type NamingFactKind = 'engine' | 'table' | 'message' | 'part' | 'comment';
 
 export interface NamingFact {
   /** `f<n>`, unique across one context. The model cites a fact by this and nothing else. */
@@ -71,6 +74,8 @@ export function namingFactsOf(skeleton: ProcessSkeleton, source: string): Naming
       const part = humaniseRoutine(region);
       if (part && part.toLowerCase() !== region.toLowerCase()) facts.push({ id: id(), kind: 'part', text: part });
     }
+    const comment = labels.comment?.(node.id);
+    if (comment) facts.push({ id: id(), kind: 'comment', text: quotedComment(comment) });
     out.set(node.id, facts);
   }
   return out;

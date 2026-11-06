@@ -681,7 +681,7 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
   const children: XmlElement[] = [
     // A plain name says what the step is; the documentation keeps what the code wrote.
     ...(node.name !== node.technicalName || foldedText
-      ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}${foldedText}${node.detail ? ` ${node.detail}` : ''}`)]
+      ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}${foldedText}${node.detail ? ` ${node.detail}` : ''}${node.comment ? ` ${node.comment}` : ''}`)]
       : []),
     el('bpmn:extensionElements', [], [
       nodeTrace(node.source, options.sourceFileName, extra),

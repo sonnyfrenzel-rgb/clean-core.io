@@ -8,6 +8,7 @@ import type {
 import { ncName } from './xml';
 import type { PlainLabels } from '../abap/plain-language';
 import { TABLE_TERMS_EN } from '../abap/plain-glossary';
+import { quotedComment } from '../abap/author-comments';
 
 /**
  * Skeleton → BPMN elements — roadmap 2.6, the half that decides *what* is drawn.
@@ -120,6 +121,8 @@ export interface ExportNode {
    * check says that the code does not state what it means (owner decision 06.11.2026). In the documentation only.
    */
   detail?: string;
+  /** 3.0.22 (H4): the author's comment at the element, quoted with its tag and line (`quotedComment`). Documentation only. */
+  comment?: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
   error: boolean;
@@ -623,6 +626,7 @@ class ModelBuilder {
         technicalName,
         ...(this.labels ? { technique: this.labels.technique(source.id) } : {}),
         ...(this.labels?.detail?.(source.id) ? { detail: this.labels.detail(source.id) } : {}),
+        ...(this.labels?.comment?.(source.id) ? { comment: quotedComment(this.labels.comment(source.id)!) } : {}),
         source,
         error: source.kind === 'end-error' || source.kind === 'error-boundary',
         incoming: [],

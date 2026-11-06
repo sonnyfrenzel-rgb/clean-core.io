@@ -18,6 +18,7 @@ import {
   type WordSources,
 } from './german-terms';
 import { engineReads3022Apply } from './engine-reads-3022-gate';
+import { authorCommentsOf, type AuthorComment } from './author-comments';
 import {
   NAMING_ABBREVIATIONS,
   SAP_FIELD_VALUES,
@@ -2265,6 +2266,12 @@ export interface PlainLabels {
    * always '' for an older engine.
    */
   detail?(nodeId: string): string;
+  /**
+   * 3.0.22 (H4, owner decision E2): the author's comment at the element's statement — or, for a routine, above its
+   * definition — word for word, for the documentation under the tag "Author's comment". Never the label. Null without
+   * one, and always null for an older engine.
+   */
+  comment?(nodeId: string): AuthorComment | null;
 }
 
 function normalise(condition: string): string {
@@ -2351,6 +2358,8 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
   const technical = new Map<string, string>();
   const technique = new Map<string, string>();
   const details = new Map<string, string>();
+  const comments = new Map<string, AuthorComment>();
+  const commentReader = ctx.reads3022 ? authorCommentsOf(source ?? '') : null;
   const byId = new Map<string, SkeletonNode>();
   const outs = new Map<string, SkeletonEdge[]>();
   const ins = new Map<string, SkeletonEdge[]>();
@@ -2575,6 +2584,20 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     } catch {
       technique.set(node.id, '');
     }
+    // 3.0.22 (H4): the author's comment at the statement, or above the routine the element opens.
+    if (commentReader && !/^(?:parallel-gateway|start|end)$/.test(node.kind)) {
+      try {
+        const stmt = statementAt(ctx, lineOf(node));
+        let comment = stmt ? commentReader.at(stmt.line, stmt.endLine) : null;
+        const routine = /^(?:form|method):(.+)$/i.exec(node.expandsTo ?? '')?.[1];
+        if (!comment && routine) {
+          const name = routine.split(/=>|~|\./).pop()?.toLowerCase() ?? '';
+          const def = ctx.statements.find((s) => new RegExp(`^(?:FORM|METHOD)\\s+${name.replace(/[^\w/]/g, '')}\\b`, 'i').test(s.text));
+          if (def) comment = commentReader.at(def.line, def.line);
+        }
+        if (comment) comments.set(node.id, comment);
+      } catch { /* no comment */ }
+    }
     // 3.0.22: an unknown check says so beside its label (owner decision 06.11.2026).
     if (ctx.reads3022 && node.kind === 'gateway' && node.detail?.branchKind !== 'case') {
       try {
@@ -2614,6 +2637,9 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     },
     detail(nodeId: string): string {
       return details.get(nodeId) ?? '';
+    },
+    comment(nodeId: string): AuthorComment | null {
+      return comments.get(nodeId) ?? null;
     },
   };
 }
