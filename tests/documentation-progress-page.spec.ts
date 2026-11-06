@@ -16,10 +16,13 @@ import { businessLayerFor, engineDocumentationOf, fixtureSource, FIXTURE_FILE } 
  * On the page, signed in, with a model answer that is a stub and takes its time
  * — never a real call:
  *
- *   - from the first moment the card is there and something in it runs; the
- *     stages become active in their order, the model stage says what it
- *     expects before it is done, and its elapsed time moves while it waits;
- *     the card ends "written", and the call names its answer shape;
+ *   - opening reads the run, the process and the description and calls no
+ *     model: the card ends there and says the layer waits for "Generate draft"
+ *     (3.0.21, legal review 06.11.2026, item 1);
+ *   - after that click the stages become active in their order, the model
+ *     stage says what it expects before it is done, and its elapsed time moves
+ *     while it waits; the card ends "written", and the call names its answer
+ *     shape;
  *   - a stopped call ends the card with its reason and *Try again*, and the
  *     retry writes it;
  *   - a program too large for one answer is written in parts — one call per
@@ -92,10 +95,11 @@ test.describe('the Documentation tool says what it is doing', () => {
   });
 
   async function modelOn(page: Page) {
+    // As the route answers on the platform key: its provider is PLATFORM_PROVIDER, Gemini.
     await page.route('**/api/model-stages', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community', autoSteps: true }),
+      body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community', provider: 'gemini', autoSteps: true }),
     }));
   }
 
@@ -103,6 +107,29 @@ test.describe('the Documentation tool says what it is doing', () => {
   const stagesOf = (page: Page) => page.locator('[data-doc-stage]').evaluateAll(
     (els) => els.map((e) => [e.getAttribute('data-doc-stage'), e.getAttribute('data-stage-state')] as [string, string]),
   );
+  /** The card's end and its stages read in one go, so a sample never pairs an end with the stages of another render. */
+  const snapshotOf = (page: Page) => page.locator('[data-doc-progress]').evaluate((card) => ({
+    end: card.getAttribute('data-doc-progress-end'),
+    states: [...card.querySelectorAll('[data-doc-stage]')].map((e) => [e.getAttribute('data-doc-stage'), e.getAttribute('data-stage-state')] as [string, string]),
+  }));
+
+  /**
+   * Opening calls no model (3.0.21, item 1): the engine stages end, the business layer
+   * waits for the click and nothing has gone to the model. Then the click on
+   * "Generate draft (sends code to …)" starts it.
+   */
+  async function openThenGenerate(page: Page, projectId: string, modelCalls: () => number) {
+    await page.goto(`/project/${projectId}/documentation`, { waitUntil: 'domcontentloaded' });
+    const card = page.locator('[data-doc-progress]');
+    await expect(card).toHaveAttribute('data-doc-progress-end', 'nothing', { timeout: 120000 });
+    expect(await stagesOf(page)).toEqual([['run', 'done'], ['process', 'done'], ['description', 'done'], ['business', 'skipped'], ['storing', 'skipped']]);
+    await expect(card).toContainText('It is written when you click Generate draft below; nothing is sent before.');
+    const button = page.locator('[data-generate-business-layer]');
+    await expect(button).toHaveText('Generate draft (sends code to Google)');
+    await expect(button).toBeEnabled({ timeout: 60000 });
+    expect(modelCalls(), 'opening called the model').toBe(0);
+    await button.click();
+  }
 
   test('with a slow model: the stages run in order, the elapsed time moves, and the card ends written', async ({ page }) => {
     test.setTimeout(300 * 1000);
@@ -115,13 +142,14 @@ test.describe('the Documentation tool says what it is doing', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${SLOW}/documentation`, { waitUntil: 'domcontentloaded' });
+    await openThenGenerate(page, SLOW, () => bodies.length);
 
-    // From the first moment: the card is there, and something in it runs.
+    // From the click: the card is there with every stage, and something in it runs.
     const card = page.locator('[data-doc-progress]');
     await expect(card).toBeVisible({ timeout: 60000 });
     expect(await stagesOf(page)).toHaveLength(DOC_STAGE_ORDER.length);
     expect((await stagesOf(page)).map(([k]) => k)).toEqual([...DOC_STAGE_ORDER]);
+    await expect(card).toHaveAttribute('data-doc-progress-end', 'running', { timeout: 10000 });
 
     // Sample the card until it ends: every stage that ran became active in the order of the card,
     // no stage was ever done after a later one was active, and the card never stood still with nothing running.
@@ -130,8 +158,7 @@ test.describe('the Documentation tool says what it is doing', () => {
     let sawExpected = false;
     const deadline = Date.now() + 180_000;
     for (;;) {
-      const end = await card.getAttribute('data-doc-progress-end');
-      const states = await stagesOf(page);
+      const { end, states } = await snapshotOf(page);
       if (end === 'running') expect(states.some(([, s]) => s === 'active'), `nothing runs: ${JSON.stringify(states)}`).toBe(true);
       for (const [key, state] of states) if (state === 'active' && !activeOrder.includes(key)) activeOrder.push(key);
       const firstOpen = states.findIndex(([, s]) => s !== 'done');
@@ -144,9 +171,10 @@ test.describe('the Documentation tool says what it is doing', () => {
       expect(Date.now(), 'the card did not end').toBeLessThan(deadline);
       await page.waitForTimeout(250);
     }
-    expect(activeOrder.length).toBeGreaterThan(1);
     expect(activeOrder).toEqual(DOC_STAGE_ORDER.filter((k) => activeOrder.includes(k)));
-    expect(activeOrder).toContain('business');
+    // After the click only the model and the store run: the engine stages ended on opening.
+    expect(activeOrder[0]).toBe('business');
+    expect(activeOrder.every((k) => k === 'business' || k === 'storing'), activeOrder.join(', ')).toBe(true);
     expect(sawExpected, 'the expected time was not said while the model wrote').toBe(true);
     expect(businessTimes.size, `the elapsed time did not move: ${[...businessTimes].join(', ')}`).toBeGreaterThan(2);
 
@@ -174,7 +202,7 @@ test.describe('the Documentation tool says what it is doing', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${STOP}/documentation`, { waitUntil: 'domcontentloaded' });
+    await openThenGenerate(page, STOP, () => calls);
 
     const card = page.locator('[data-doc-progress]');
     await expect(card).toHaveAttribute('data-doc-progress-end', 'failed', { timeout: 120000 });
@@ -208,7 +236,7 @@ test.describe('the Documentation tool says what it is doing', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PARTS}/documentation`, { waitUntil: 'domcontentloaded' });
+    await openThenGenerate(page, PARTS, () => prompts.length);
 
     const card = page.locator('[data-doc-progress]');
     await expect(page.locator('[data-doc-parts] [data-doc-part]')).toHaveCount(2, { timeout: 120000 });

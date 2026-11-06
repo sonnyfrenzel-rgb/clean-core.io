@@ -13,6 +13,11 @@ import { startCallsModel } from '../lib/start-run-model';
 import { runModelCallNotice } from '../lib/legal/run-notice';
 import { describeRunCost } from '../lib/run-cost';
 import { modelStagesOf, type ModelStage } from '../lib/model-stages';
+// Static on purpose, as in qa-full-v306.spec.ts: a run-time `await import('../lib/gemini')`
+// loads the module outside Playwright's tsconfig path mapping on the Linux runner, and its
+// `@/lib/firebase` import fails with "Cannot find module" (CI run 42267572937, shard 4).
+// The stand-in `fetch` below is read at call time, not at load.
+import { callGeminiWithReceipt } from '../lib/gemini';
 
 /**
  * Release 3.0.21, legal review of 06.11.2026, items 2 and 3.
@@ -32,7 +37,9 @@ import { modelStagesOf, type ModelStage } from '../lib/model-stages';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+// Line endings normalised: the guards below match multi-line markup, and a Windows
+// checkout with core.autocrlf has CRLF where the runner has LF.
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
 const ALL_ON = modelStagesOf(null);
 const off = (...stages: ModelStage[]) => ({ ...ALL_ON, ...Object.fromEntries(stages.map((s) => [s, false])) }) as Record<ModelStage, boolean>;
 
@@ -185,7 +192,6 @@ test.describe('N2 — the first run', () => {
       bodies.push(JSON.parse(String(init?.body ?? '{}')));
       return new Response(JSON.stringify({ text: '{}', receipt: null }), { status: 200 });
     }) as typeof fetch;
-    const { callGeminiWithReceipt } = await import('../lib/gemini');
     await callGeminiWithReceipt('p', undefined, true, 'analyze', undefined, { startRun: true });
     await callGeminiWithReceipt('p', undefined, true, 'analyze');
     await callGeminiWithReceipt('p', undefined, true, 'statements', undefined, { automatic: true });

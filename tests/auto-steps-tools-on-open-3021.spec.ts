@@ -91,9 +91,10 @@ test.describe('Transformation', () => {
     const src = code(TRANSFORMATION);
     expect(src).toContain('const draftCompany = modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null;');
     expect(src).toContain('const generateLabel = files.length > 0 ? regenerateDraftLabel(draftCompany) : generateDraftLabel(draftCompany);');
-    expect(src).toMatch(/onClick=\{startGeneration\}[\s\S]{0,400}data-generate-code=""\s*>\s*\{generateLabel\}/);
+    // The label sits alone in a wrapping span (e5c78bd1): the provider makes it long, and on a phone it wraps.
+    expect(src).toMatch(/onClick=\{startGeneration\}[\s\S]{0,400}data-generate-code=""\s*>\s*<span className="min-w-0 text-left leading-snug whitespace-normal">\{generateLabel\}<\/span>\s*<\/CcButton>/);
     expect(src).toMatch(/<QualityTips[\s\S]*?onGenerate=\{startGeneration\}\s*generateLabel=\{generateLabel\}/);
-    expect(read('components/transformation/QualityTips.tsx')).toContain("{generateLabel ?? (regenerate ? wt('transformation.regenerateNow') : wt('transformation.generateNow'))}");
+    expect(code('components/transformation/QualityTips.tsx')).toMatch(/data-generate-now=""\s*>\s*<span className="min-w-0 text-left leading-snug whitespace-normal">\{generateLabel \?\? \(regenerate \? wt\('transformation\.regenerateNow'\) : wt\('transformation\.generateNow'\)\)\}<\/span>\s*<\/CcButton>/);
   });
 });
 
@@ -117,7 +118,7 @@ test.describe('Documentation', () => {
 
   test('the offer\'s button says "Generate draft (sends code to …)", and the progress card names the wait', () => {
     const src = code(DOCUMENTATION);
-    expect(src).toContain('{generateDraftLabel(modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null)}');
+    expect(src).toMatch(/data-generate-business-layer\s*>\s*<span className="min-w-0 text-left leading-snug whitespace-normal">\{generateDraftLabel\(modelAvailability\.known \? providerCompanyOf\(modelAvailability\.provider\) : null\)\}<\/span>\s*<\/CcButton>/);
     const absence = src.slice(src.indexOf('const businessAbsence = !project'), src.indexOf('const progress = documentationProgress('));
     expect(absence).toContain(": wt('doc.businessWaitsForClick');");
     expect(read('lib/messages/documentation.ts')).toContain("'doc.businessWaitsForClick':");
