@@ -131,8 +131,17 @@ test.describe('B — blocklists, invitation mails, ATC import, Terms 1.5', () =>
   });
 
   test('Terms 1.5: an own key that no longer counts as tested closes the owner\'s side, readers keep reading', () => {
-    expect(TERMS_DE).toContain('bleibt für die eingeladenen Personen lesbar; gesperrt sind dann neue Massen-Uploads');
-    expect(TERMS_EN).toContain('stays readable for the people you invited; blocked then are new bulk uploads');
+    // B6 of the legal review of 06.11.2026: readers keep the overview, the owner can only delete, his projects stay open.
+    expect(TERMS_DE).toContain('die eingeladenen Personen behalten die Übersicht eines geteilten Portfolios und lesen sie weiter. Sie selbst können eine Auswahl dann nur noch löschen');
+    expect(TERMS_DE).toContain('Ihre Projekte, auch die aus einem Massen-Upload, bleiben einzeln zugänglich');
+    expect(TERMS_EN).toContain('the people you invited keep the overview of a shared portfolio and go on reading it. You yourself can then only delete a selection');
+    expect(TERMS_EN).toContain('Your projects, including those from a bulk upload, stay individually accessible');
+    // Deleting a selection and withdrawing a share need no key (mode 'manage'); no project route reads the portfolio gate.
+    expect(read('app/api/portfolio/selections/[selectionId]/route.ts')).toMatch(/DELETE[^]*?mode: 'manage'/);
+    expect(read('app/api/portfolio/selections/[selectionId]/invitations/[invitationId]/route.ts')).toContain("mode: 'manage'");
+    for (const rel of ['app/(app)/project/[projectId]/page.tsx', 'lib/project-loader.ts']) {
+      expect(read(rel), rel).not.toMatch(/readPortfolioAccess|portfolioAccessOf|PORTFOLIO_CLOSED_CODE/);
+    }
     // The code it describes: readers read without a key; every owner route but removal asks for a tested key.
     const view = read('app/api/portfolio/view/route.ts');
     expect(view).toMatch(/if \(role === 'owner'\) \{\s*const access = await readPortfolioAccess/);

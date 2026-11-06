@@ -103,9 +103,12 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     await expect(notice.locator('[data-auto-steps-notice-lead]')).toHaveText(
       'When you open a project, one step — plain business sentences — is written automatically by an AI model (Google Gemini). The code it needs goes to Google for that. If your code must not leave the platform, switch this off now:',
     );
-    // The sentence about Transformation and Documentation is gone with item 1 of the legal review of
-    // 06.11.2026 (both start on a click only); the notice shows it only while the consent text has it.
-    await expect(notice.locator('[data-auto-steps-notice-after]')).toHaveText('You can change this any time in Settings under “Where the AI model is used”.');
+    // Since the legal review of 06.11.2026 (N1/B2) Transformation and Documentation start on a click
+    // only, the sentence on them is gone, and the one switch covers every automatic call.
+    await expect(notice.locator('[data-auto-steps-notice-tools]')).toHaveCount(0);
+    await expect(notice.locator('[data-auto-steps-notice-after]')).toHaveText(
+      'This one switch covers every model call the platform starts without your click. You can change it any time in Settings under “Where the AI model is used”.',
+    );
     // Above the source, and it covers nothing: the drop zone stays clickable.
     const n = (await notice.boundingBox())!;
     const drop = (await page.locator('[data-own-code-drop]').boundingBox())!;

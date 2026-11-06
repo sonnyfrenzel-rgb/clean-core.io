@@ -106,20 +106,27 @@ test.describe('Terms 1.5, 4.1, 5.4 and 8', () => {
     expect(read('components/ModelStagesCard.tsx')).toContain('title="Where the AI model is used"');
     // The server refuses a switched-off stage before any key is loaded, whoever's key it is.
     expect(read('app/api/gemini/route.ts')).toMatch(/if \(!modelStageEnabled\([^]*?STAGE_DISABLED_CODE/);
-    for (const text of [PRIVACY_EN, TERMS_EN]) {
-      expect(text).toContain('“Where the AI model is used”');
-      expect(text).toContain('“Business names” and “Business sentences”');
-    }
-    for (const text of [PRIVACY_DE, TERMS_DE]) {
-      expect(text).toContain('„Where the AI model is used“');
-      expect(text).toContain('„Business names“ und „Business sentences“');
-    }
+    // Since the legal review of 06.11.2026 (N1/B2) Terms 5.4 names no switch; privacy 3 names the one
+    // switch for every automatic step and, beside it, the per-step switches.
+    expect(PRIVACY_EN).toContain('“Where the AI model is used”, with one switch');
+    expect(PRIVACY_EN).toContain('for example with “Business names” and “Business sentences”');
+    expect(PRIVACY_DE).toContain('„Where the AI model is used“ mit einem Schalter insgesamt aus');
+    expect(PRIVACY_DE).toContain('etwa mit „Business names“ und „Business sentences“');
+    expect(TERMS_DE).toContain('Sie können sie in den Einstellungen mit einem Schalter insgesamt ausschalten');
+    expect(TERMS_EN).toContain('you can switch them all off in the settings with one switch');
   });
 
-  test('5.4: the assistant, which has no switch, is named as the exception', () => {
-    expect(TERMS_DE).toContain('er hat keinen eigenen Schalter');
-    expect(TERMS_EN).toContain('it has no switch of its own');
-    expect(read('components/GlossaryChatbot.tsx')).toMatch(/callGemini\(decision\.prompt, PRODUCT_GEMINI_MODEL, false, 'glossary'\)/);
+  test('5.4: the owner wording of 06.11.2026 (N1/B2), with no count and no tool name', () => {
+    expect(TERMS_DE).toContain(
+      'Darf Code die Plattform nicht verlassen, schalten Sie die modellgestützten Schritte aus; dann ruft die Plattform für Ihr Konto kein Modell auf, und die deterministische Analyse steht vollständig zur Verfügung (Ziffer 4.1).',
+    );
+    expect(TERMS_EN).toContain(
+      'If code must not leave the Platform, switch the model-supported steps off; the Platform then calls no model for your account, and the deterministic analysis remains fully available (section 4.1).',
+    );
+    for (const text of [TERMS_DE, TERMS_EN]) {
+      const clause = text.slice(text.indexOf('**5.4**'), text.indexOf('## 6.'));
+      expect(clause).not.toMatch(/Assistent|assistant|Business names|Transformation|Documentation/);
+    }
   });
 
   test('8: repositories, third-party code and imported outputs; the model receives the code unmasked', () => {

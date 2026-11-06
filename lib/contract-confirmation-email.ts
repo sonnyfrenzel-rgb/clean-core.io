@@ -19,7 +19,8 @@ import { byokAddendumSha256 } from '@/lib/byok-addendum';
  * confirmed the same way (Terms 1.3). It names the version, the language
  * version, the time, the SHA-256 of the wording and the place of acceptance,
  * and carries one link to the wording of exactly that version in exactly that
- * language, at an address bound to both that stays reachable
+ * language, at an address bound to both that stays reachable while the
+ * Platform is operated
  * (`publishedWordingPath`; the pages serve the archived bytes the digest is
  * taken over). It carries nothing more than Terms 1.3 promises: not the
  * wording itself (legal texts Fassung 1.1, 1.3).
@@ -78,8 +79,8 @@ const BASIS: Record<ConfirmationOccasion, Bi> = {
 };
 
 const LINK_LEAD: Bi = {
-  de: 'Der Wortlaut dieser Fassung, dauerhaft unter dieser Adresse:',
-  en: 'The wording of this version, permanently at this address:',
+  de: 'Der Wortlaut dieser Fassung mit seinem Hashwert:',
+  en: 'The wording of this version with its hash value:',
 };
 
 function isAddendum(occasion: ConfirmationOccasion): boolean {
@@ -89,7 +90,8 @@ function isAddendum(occasion: ConfirmationOccasion): boolean {
 /**
  * Where the accepted version stays published, bound to the version and the
  * language (Terms 1.3: "a link to the wording of the accepted version, which
- * remains permanently available at that address"). Without the scheme, as the
+ * remains available at that address for as long as the operator operates the
+ * Platform"). Without the scheme, as the
  * texts write it. The pages behind both serve the archived file, never the
  * current source: `app/terms/versions/[version]/{en,de}` and
  * `app/terms/byok-addendum/versions/[id]/[lang]`.

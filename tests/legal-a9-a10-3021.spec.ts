@@ -9,7 +9,7 @@ import {
   autoStepsSwitchBody,
   autoStepsSwitchOn,
 } from '../lib/auto-steps-notice';
-import { MODEL_STAGE_LABELS, modelStagesOf } from '../lib/model-stages';
+import { modelStagesOf } from '../lib/model-stages';
 import { NAMING_WITHOUT_FACTS_PAUSED } from '../lib/process-naming';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { PRIVACY_DE } from '../lib/legal/texts/privacy.de';
@@ -135,27 +135,26 @@ test.describe('A10 — one automatic step on opening a project while names are p
       'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell (Google Gemini). Dafür geht der benötigte Code an Google. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
     );
     expect(autoStepsNoticeValues('anthropic')).toEqual({ model: 'Anthropic Claude', company: 'Anthropic' });
-    expect(consentText(t.switchLabel, 'en')).toBe('Automatic AI steps');
-    expect(consentText(t.after, 'en')).toBe('You can change this any time in Settings under “Where the AI model is used”.');
+    // One switch for every automatic call (legal review N1/B2, 06.11.2026).
+    expect(consentText(t.switchLabel, 'en')).toBe('All automatic AI steps');
+    expect(consentText(t.switchLabel, 'de')).toBe('Alle automatischen KI-Schritte');
+    expect(consentText(t.after, 'en')).toBe(
+      'This one switch covers every model call the platform starts without your click. You can change it any time in Settings under “Where the AI model is used”.',
+    );
     expect(consentText(t.after, 'de')).toContain('„Where the AI model is used“');
     expect(read('components/ModelStagesCard.tsx')).toContain('title="Where the AI model is used"');
   });
 
-  test('C14 no longer needs to name the two tools: since 06.11.2026 they start on a click only', () => {
-    // Legal review 06.11.2026, item 1: Transformation and Documentation never call the model on
-    // opening, on any key (tests/auto-steps-tools-on-open-3021.spec.ts); the sentence about them
-    // is removed from C14 by the legal-text change. The notice shows it only while the text has it.
-    const transformation = read('app/(app)/project/[projectId]/transformation/page.tsx');
-    expect(transformation).not.toContain('generateTransformation(true)');
-    const documentation = read('app/(app)/project/[projectId]/documentation/page.tsx');
-    expect(documentation).not.toContain('writeBusinessLayer(true)');
+  test('C14 no longer names Transformation and Documentation: both start on a click only (legal review N1/B2, 06.11.2026)', () => {
+    const t = CONSENT_TEXTS.autoStepsNotice as Record<string, unknown>;
+    expect(t.toolsOnOpen).toBeUndefined();
     const notice = read('components/AutoStepsNotice.tsx');
-    expect(notice).toContain('{toolsOnOpen ? (');
-    expect(notice.indexOf('data-auto-steps-notice-tools')).toBeGreaterThan(notice.indexOf('<CcSwitch'));
-    expect(notice.indexOf('data-auto-steps-notice-tools')).toBeLessThan(notice.indexOf('data-auto-steps-notice-after'));
-    // The switch labels Settings shows stay as they are.
-    expect(MODEL_STAGE_LABELS.transformation).toBe('Transformed code');
-    expect(MODEL_STAGE_LABELS.documentation).toBe('Documentation and business blueprint');
+    expect(notice).not.toContain('toolsOnOpen');
+    expect(notice).not.toContain('data-auto-steps-notice-tools');
+    expect(JSON.stringify(CONSENT_TEXTS.autoStepsNotice)).not.toMatch(/Transformation|Documentation/);
+    // What makes it true: neither tool calls the model on opening (tests/auto-steps-tools-on-open-3021.spec.ts).
+    expect(read('app/(app)/project/[projectId]/transformation/page.tsx')).not.toContain('generateTransformation(true)');
+    expect(read('app/(app)/project/[projectId]/documentation/page.tsx')).not.toContain('writeBusinessLayer(true)');
   });
 
   test('privacy 3, Terms 5.4 and the Trust page say one automatic step, and that names are paused', () => {
@@ -165,8 +164,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
     expect(PRIVACY_EN).toContain('Business names, which we also started ourselves, are paused');
     expect(PRIVACY_DE).toContain('weisen wir Sie einmal darauf hin, mit einem Schalter');
     expect(PRIVACY_EN).toContain('we point this out once, with a switch');
-    expect(TERMS_DE).toContain('startet die Plattform beim Öffnen eines Projekts einen Schritt von selbst');
-    expect(TERMS_EN).toContain('the Platform starts one step by itself when a project is opened');
+    // Terms 5.4 names no count and no tool since the legal review of 06.11.2026 (N1/B2).
+    expect(TERMS_DE).toContain('Einige modellgestützte Schritte startet die Plattform ohne Ihren Klick; welche das sind, beschreibt die Datenschutzerklärung (Abschnitt 3)');
+    expect(TERMS_EN).toContain('Some model-supported steps are started by the Platform without your click; the Privacy Policy (section 3) describes which');
     expect(TRUST_EN).toContain('One stage — plain-language wording — starts by itself');
     for (const text of [PRIVACY_DE, PRIVACY_EN, TERMS_DE, TERMS_EN, TRUST_EN]) {
       expect(text).not.toMatch(/Zwei starten wir|Two we start|zwei Schritte von selbst|two steps by itself|Two stages — plain/);
@@ -178,9 +178,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
 
 test.describe('A9 — Terms 1.3: a link to the accepted wording, bound to version and language', () => {
   const DE_13 =
-    'Nach der Registrierung erhalten Sie an Ihre Kontoadresse eine Bestätigung per E-Mail mit der Versionskennung, der Sprache, dem SHA-256-Hashwert des Wortlauts, dem Annahmezeitpunkt und einem Link auf den Wortlaut der angenommenen Fassung, der unter dieser Adresse dauerhaft abrufbar bleibt; sie umfasst auch die gesondert angenommenen Vereinbarungen. Die Bestätigung dient dem Nachweis für beide Seiten und ist keine Voraussetzung des Vertragsschlusses';
+    'Nach der Registrierung erhalten Sie an Ihre Kontoadresse eine Bestätigung per E-Mail mit der Versionskennung, der Sprache, dem SHA-256-Hashwert des Wortlauts, dem Annahmezeitpunkt und einem Link auf den Wortlaut der angenommenen Fassung, der unter dieser Adresse abrufbar bleibt, mindestens so lange, wie der Nachweis Ihrer Annahme aufbewahrt wird; sie umfasst auch die gesondert angenommenen Vereinbarungen. Die Bestätigung dient dem Nachweis für beide Seiten und ist keine Voraussetzung des Vertragsschlusses';
   const EN_13 =
-    'After you sign up, you receive a confirmation by e-mail to your account address containing the version identifier, the language, the SHA-256 digest of the wording, the time of your acceptance and a link to the wording of the accepted version, which remains permanently available at that address; it also includes any agreements you accepted separately. The confirmation serves as a record for both sides and is not a condition of the conclusion of the contract';
+    'After you sign up, you receive a confirmation by e-mail to your account address containing the version identifier, the language, the SHA-256 digest of the wording, the time of your acceptance and a link to the wording of the accepted version, which remains available at that address at least for as long as the record of your acceptance is kept; it also includes any agreements you accepted separately. The confirmation serves as a record for both sides and is not a condition of the conclusion of the contract';
 
   test('1.3 has the new wording in both languages, under its heading, and in the archived files', () => {
     expect(TERMS_DE).toContain(`**1.3** Speicherung des Vertragstextes, Nachweis und Vertragsbestätigung.`);
@@ -228,7 +228,28 @@ test.describe('A9 — Terms 1.3: a link to the accepted wording, bound to versio
       expect(json, group).not.toMatch(promises);
       expect(json, group).not.toMatch(/\{Wortlaut\}|Vollständiger Wortlaut —|Full wording —/);
     }
-    expect(BYOK_ADDENDUM_DE).toContain('einem Link auf ihren Wortlaut, der unter dieser Adresse dauerhaft abrufbar bleibt');
-    expect(BYOK_ADDENDUM_EN).toContain('a link to its wording, which remains permanently available at that address');
+    // Legal statements of 06.11.2026 (B1, M5): no "permanently available" anywhere; the contract texts bind the
+    // address to the record of acceptance, with the wording on request if the Platform closes earlier, and the
+    // confirmation mail (C5) says the same from the reader's side.
+    expect(BYOK_ADDENDUM_DE).toContain('Der Wortlaut bleibt unter dieser Adresse abrufbar, mindestens so lange, wie der Nachweis Ihrer Annahme aufbewahrt wird; stellt der Betreiber den Betrieb der Plattform vorher ein, sendet er ihn Ihnen bis dahin auf Anfrage zu');
+    expect(BYOK_ADDENDUM_EN).toContain('The wording remains available at that address at least for as long as the record of your acceptance is kept; should the operator discontinue the Platform before then, it will send the wording to you on request until that time');
+    expect(TERMS_DE).toContain('Stellt der Betreiber den Betrieb der Plattform vorher ein, sendet er Ihnen den Wortlaut einer von Ihnen angenommenen Fassung bis dahin auf Anfrage zu.');
+    expect(consentText(CONSENT_TEXTS.confirmationMail.body, 'de')).toContain(
+      'Den Wortlaut der angenommenen Fassung finden Sie unter {Adresse}, zusammen mit dem Hashwert, der aus ihm gebildet wurde. Er bleibt dort abrufbar, solange wir die Plattform betreiben; stellen wir den Betrieb ein, senden wir ihn Ihnen auf Anfrage zu',
+    );
+    expect(consentText(CONSENT_TEXTS.confirmationMail.body, 'en')).toContain(
+      'You will find the wording of the version you accepted at {Adresse}, together with the hash value calculated from it. It remains available there for as long as we operate the Platform; should we discontinue it, we will send it to you on request',
+    );
+    for (const [name, text] of [
+      ['terms.de', TERMS_DE],
+      ['terms.en', TERMS_EN],
+      ['ZV de', BYOK_ADDENDUM_DE],
+      ['ZV en', BYOK_ADDENDUM_EN],
+      ['privacy.de', PRIVACY_DE],
+      ['privacy.en', PRIVACY_EN],
+      ['consent', JSON.stringify(CONSENT_TEXTS)],
+    ] as const) {
+      expect(text, name).not.toMatch(/dauerhaft abrufbar|permanently available/);
+    }
   });
 });

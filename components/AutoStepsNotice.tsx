@@ -90,9 +90,6 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
   const t = CONSENT_TEXTS.autoStepsNotice;
   const { model: modelLabel, company } = autoStepsNoticeValues(model.provider);
   const on = autoStepsSwitchOn(model);
-  // C14's sentence about the two tools that started on opening: since 06.11.2026 they start
-  // only on a click, and the parallel text change removes it. Shown only while the text has it.
-  const toolsOnOpen = (t as { toolsOnOpen?: Parameters<typeof consentText>[0] }).toolsOnOpen;
 
   return (
     <section data-auto-steps-notice={on ? 'on' : 'off'} aria-label={consentText(t.title, 'en')}>
@@ -122,11 +119,6 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
         {!on ? (
           <p className="m-0 font-semibold" role="status" data-auto-steps-notice-off="">
             {consentText(t.switchedOff, 'en')}
-          </p>
-        ) : null}
-        {toolsOnOpen ? (
-          <p className="m-0" data-auto-steps-notice-tools="">
-            {consentText(toolsOnOpen, 'en')}
           </p>
         ) : null}
         <p className="m-0 text-cc-ink-muted" data-auto-steps-notice-after="">

@@ -20,6 +20,9 @@ import type { LegalLang } from './open-values';
  *   footer of the app shell and the receipt mail `lib/withdrawal-receipt-email.ts`.
  *   C14 (the one-time notice before the first automatic model call):
  *   `components/AutoStepsNotice.tsx` on the own-code upload.
+ *   `startRun` (B5/N2 of 06.11.2026): the sentences at the button that starts
+ *   a run of own code, for the start screen and the first run's "create
+ *   project" button. `saveWording`: the save/print actions of C1 and C2.
  *
  * Removed against the draft, as the review (E14, E26, E27) says: the re-send
  * and the in-app display on a failed delivery of the confirmation mail, the
@@ -106,8 +109,8 @@ export const CONSENT_TEXTS = {
         en: 'Model: The Platform calls {{claudeModelId}}; every stage and the model receipt name it.',
       },
       {
-        de: 'Kosten: Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit diesem; wir berechnen und erstatten sie nicht. Für die Datenregion „us“ berechnet Anthropic einen Aufschlag von 10 % auf seinen Standardpreis, den Sie tragen. Die Plattform setzt keine Kostengrenze; setzen Sie eine in Ihrem Anthropic-Konto. Das kostenlose Kontingent gilt mit eigenem Schlüssel nicht.',
-        en: 'Costs: Charges of the model provider arise in your own contractual relationship with that provider; we neither bill nor reimburse them. For the data region "us" Anthropic charges a 10 % surcharge on its standard price, which you bear. The Platform sets no cost limit; set one in your Anthropic account. The free quota does not apply with your own key.',
+        de: 'Nutzungsentgelte: Clean-Core.io ist kostenlos. Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit diesem; wir berechnen und erstatten sie nicht. Für die Datenregion „us“ berechnet Anthropic einen Aufschlag von 10 % auf seinen Standardpreis, den Sie tragen. Die Plattform setzt keine Kostengrenze; setzen Sie eine in Ihrem Anthropic-Konto. Das kostenlose Kontingent gilt mit eigenem Schlüssel nicht.',
+        en: 'Usage fees: Clean-Core.io is free. Charges of the model provider arise in your own contractual relationship with that provider; we neither bill nor reimburse them. For the data region "us" Anthropic charges a 10 % surcharge on its standard price, which you bear. The Platform sets no cost limit; set one in your Anthropic account. The free quota does not apply with your own key.',
       },
       {
         de: 'Kein Rückfall: Scheitert Ihr Schlüssel oder setzen wir Anthropic aus, hält der Schritt an. Kein Aufruf geht auf den Plattform-Schlüssel.',
@@ -122,8 +125,8 @@ export const CONSENT_TEXTS = {
         en: 'Ending: You end the agreement at any time with "Delete key and end agreement" in the settings (two-factor sign-in required) or with a message to info@clean-core.io; the platform key then applies again. Your account and projects remain.',
       },
       {
-        de: 'Nachweis: Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme fest und senden Ihnen eine Bestätigung per E-Mail mit einem Link auf den Wortlaut der angenommenen Fassung.',
-        en: 'Record: We record version, language, time and digest of your acceptance and send you a confirmation by e-mail with a link to the wording of the accepted version.',
+        de: 'Nachweis: Wir halten Fassung, Sprache, Zeitpunkt Ihrer Annahme und den Hashwert des angenommenen Wortlauts fest und senden Ihnen eine Bestätigung per E-Mail mit einem Link auf den Wortlaut der angenommenen Fassung.',
+        en: 'Record: We record version, language, time of your acceptance and the hash value of the accepted wording and send you a confirmation by e-mail with a link to the wording of the accepted version.',
       },
     ],
     autoStepsSwitch: {
@@ -168,8 +171,8 @@ export const CONSENT_TEXTS = {
         en: 'Recipient: Google processes your requests under your own Google account and its terms. Which Google entity is your contracting party depends on your billing address (Google\'s entity list: cloud.google.com/terms/google-entity). We are the controller for sending your request; Google is the recipient under your account.',
       },
       {
-        de: 'Kosten: Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit diesem; wir berechnen und erstatten sie nicht. Die Plattform setzt keine Kostengrenze; setzen Sie eine in Ihrem Google-Cloud-Projekt. Das kostenlose Kontingent gilt mit eigenem Schlüssel nicht.',
-        en: 'Costs: Charges of the model provider arise in your own contractual relationship with that provider; we neither bill nor reimburse them. The Platform sets no cost limit; set one in your Google Cloud project. The free quota does not apply with your own key.',
+        de: 'Nutzungsentgelte: Clean-Core.io ist kostenlos. Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit diesem; wir berechnen und erstatten sie nicht. Die Plattform setzt keine Kostengrenze; setzen Sie eine in Ihrem Google-Cloud-Projekt. Das kostenlose Kontingent gilt mit eigenem Schlüssel nicht.',
+        en: 'Usage fees: Clean-Core.io is free. Charges of the model provider arise in your own contractual relationship with that provider; we neither bill nor reimburse them. The Platform sets no cost limit; set one in your Google Cloud project. The free quota does not apply with your own key.',
       },
       {
         de: 'Kein Rückfall: Scheitert Ihr Schlüssel, hält der Schritt an. Kein Aufruf geht auf den Plattform-Schlüssel.',
@@ -212,8 +215,8 @@ export const CONSENT_TEXTS = {
       en: 'Your contract confirmation — {Dokument} (English version)',
     },
     body: {
-      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.{Wirksamkeit}\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDen Wortlaut der angenommenen Fassung finden Sie unter {Adresse}; er bleibt unter dieser Adresse dauerhaft abrufbar, mit dem Hashwert, der aus ihm gebildet wurde{{t03ConfirmationMail}}.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt und Hashwert Ihrer Annahme in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io',
-      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).{Wirksamkeit}\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nThe wording of the accepted version is at {Adresse}; it remains permanently available at that address, with the digest computed from it{{t03ConfirmationMail}}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time and digest of your acceptance in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io',
+      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.{Wirksamkeit}\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDen Wortlaut der angenommenen Fassung finden Sie unter {Adresse}, zusammen mit dem Hashwert, der aus ihm gebildet wurde. Er bleibt dort abrufbar, solange wir die Plattform betreiben; stellen wir den Betrieb ein, senden wir ihn Ihnen auf Anfrage zu{{t03ConfirmationMail}}.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt Ihrer Annahme und den Hashwert des angenommenen Wortlauts in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io',
+      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).{Wirksamkeit}\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nYou will find the wording of the version you accepted at {Adresse}, together with the hash value calculated from it. It remains available there for as long as we operate the Platform; should we discontinue it, we will send it to you on request{{t03ConfirmationMail}}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time of your acceptance and the hash value of the accepted wording in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io',
     },
 
     /**
@@ -443,29 +446,80 @@ export const CONSENT_TEXTS = {
       de: 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
       en: 'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
     },
-    switchLabel: { de: 'Automatische KI-Schritte', en: 'Automatic AI steps' },
+    switchLabel: { de: 'Alle automatischen KI-Schritte', en: 'All automatic AI steps' },
+    /** Owner decision 06.11.2026 (legal review N1/B2): one switch covers every call the Platform starts without a click. */
     after: {
-      de: 'Sie können das jederzeit in den Einstellungen unter „Where the AI model is used“ ändern.',
-      en: 'You can change this any time in Settings under “Where the AI model is used”.',
+      de: 'Dieser eine Schalter erfasst jeden Modellaufruf, den die Plattform ohne Ihren Klick startet. Sie können ihn jederzeit in den Einstellungen unter „Where the AI model is used“ ändern.',
+      en: 'This one switch covers every model call the platform starts without your click. You can change it any time in Settings under “Where the AI model is used”.',
     },
     switchedOff: {
-      de: 'Ausgeschaltet: Beim Öffnen eines Projekts ruft die Plattform von selbst kein KI-Modell auf.',
-      en: 'Switched off: opening a project calls no AI model by itself.',
+      de: 'Ausgeschaltet: Ohne Ihren Klick ruft die Plattform kein KI-Modell auf.',
+      en: 'Switched off: the platform calls no AI model without your click.',
     },
-    /**
-     * Owner decision 06.11.2026: the two tools that call the model when they
-     * are opened are named too. Transformation starts the first generation by
-     * itself when no code is on record and no tip is open; Documentation
-     * starts its business layer by itself when none is on record. Both follow
-     * their own stage switches ("Transformed code", "Documentation and
-     * business blueprint"), not this notice's switch, which writes `naming`
-     * and `statements` only (`AUTO_STEPS_SWITCH_STAGES`).
-     */
-    toolsOnOpen: {
-      de: 'Auch Transformation und Documentation können das Modell beim Öffnen von selbst aufrufen, solange dort noch kein KI-Ergebnis vorliegt. Dieser Schalter erfasst sie nicht; Sie schalten sie in den Einstellungen unter „Where the AI model is used“ mit „Transformed code“ und „Documentation and business blueprint“ ab.',
-      en: 'Transformation and Documentation can also call the model by themselves when you open them, as long as they hold no AI-written result yet. This switch does not cover them; you switch them off in Settings under “Where the AI model is used” with “Transformed code” and “Documentation and business blueprint”.',
-    },
+    // The sentence on Transformation and Documentation calling the model on
+    // opening is gone (legal review N1/B2, 06.11.2026): both tools start only
+    // on a click for every key, so the one switch covers every automatic call.
     dismiss: { de: 'Verstanden', en: 'Got it' },
+  },
+
+  /**
+   * B5 and N2 of the legal review of 06.11.2026 — the sentences that stand AT
+   * the button that starts a run of own code: the start screen and the
+   * "create project" button of the first run. `{Anbieter}` is the company of
+   * the key the run actually uses (`runNoticeValues`, `lib/legal/run-notice.ts`).
+   * Owner, 06.11.2026: Clean-Core.io is free; nothing before a run may speak
+   * of "costs". No dash in these texts.
+   */
+  startRun: {
+    /** The run calls the model: who receives the code. */
+    modelCall: {
+      de: 'Ruft das KI-Modell auf ({Anbieter}). Dafür geht Ihr Code an {Anbieter}.',
+      en: 'Calls the AI model ({Anbieter}). Your code is sent to {Anbieter} for this.',
+    },
+    /** The run calls no model (the analysis stage is off, or no key is available). */
+    noModelCall: {
+      de: 'Ruft kein KI-Modell auf. Ihr Code verlässt die Plattform nicht.',
+      en: 'Calls no AI model. Your code does not leave the platform.',
+    },
+    /** The general line, as the owner wrote it. `{Anzahl}` is the account's limit. */
+    free: {
+      de: 'Kostenlos. Ein Lauf verbraucht eine Ihrer {Anzahl} Analysen; mit eigenem Schlüssel fallen nur die Nutzungsentgelte Ihres Anbieters an.',
+      en: "Free. A run uses one of your {Anzahl} analyses; with your own key, only your provider's usage fees apply.",
+    },
+    /** On the platform key: the quota line. `{Rest}` is what is left after this run. */
+    freePlatformKey: {
+      de: 'Kostenlos. Dieser Lauf verbraucht eine Ihrer {Anzahl} Analysen; danach bleiben {Rest}.',
+      en: 'Free. This run uses one of your {Anzahl} analyses; {Rest} left after it.',
+    },
+    /** On an own key: no quota, only the provider's fees on the account's own contract. */
+    freeOwnKey: {
+      de: 'Kostenlos. Mit eigenem Schlüssel zählt der Lauf nicht gegen Ihre Analysen; es fallen nur die Nutzungsentgelte Ihres Anbieters an, auf Ihrem eigenen Konto.',
+      en: "Free. With your own key the run does not count against your analyses; only your provider's usage fees apply, on your own account.",
+    },
+    /** A run that is not counted (a shipped example the first time, the same source again). */
+    freeNotCounted: {
+      de: 'Kostenlos. Dieser Lauf zählt nicht gegen Ihre Analysen.',
+      en: 'Free. This run does not count against your analyses.',
+    },
+  },
+
+  /**
+   * C1 and C2: save or print the exact wording of the offered version
+   * (§ 312i Abs. 1 S. 1 Nr. 4 BGB; legal review of 06.11.2026). The file is the
+   * archived wording itself, so its SHA-256 is the hash value the record and
+   * the confirmation name (`components/legal/SaveWordingActions.tsx`).
+   */
+  saveWording: {
+    save: { de: 'Als Datei speichern', en: 'Save as file' },
+    print: { de: 'Drucken', en: 'Print' },
+    hint: {
+      de: 'Speichert den Wortlaut der angebotenen Fassung ({Dokument}) als Textdatei, Wort für Wort so, wie er archiviert ist; sein SHA-256-Hashwert ist der Wert, den Ihre Bestätigung nennt.',
+      en: 'Saves the wording of the version offered ({Dokument}) as a text file, word for word as it is archived; its SHA-256 hash value is the value your confirmation names.',
+    },
+    failed: {
+      de: 'Der Wortlaut ließ sich nicht laden. Sie finden ihn unter {Adresse}.',
+      en: 'The wording could not be loaded. You find it at {Adresse}.',
+    },
   },
 } as const satisfies Record<string, Record<string, Bi | readonly Bi[]>>;
 

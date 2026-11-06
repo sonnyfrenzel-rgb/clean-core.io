@@ -5,7 +5,8 @@ import ArchivedTermsPage, { generateMetadata as archivedMetadata, generateStatic
  * The English wording of an archived Terms version under an address that names
  * its language as well as its version — the link the contract confirmation
  * carries (Terms 1.3: "a link to the wording of the accepted version, which
- * remains permanently available at that address"; `publishedWordingPath` in
+ * remains available at that address for as long as the operator operates the
+ * Platform"; `publishedWordingPath` in
  * `lib/contract-confirmation-email.ts`). The German one is `../de`.
  *
  * The same page as `/terms/versions/<version>`, which stays the canonical
