@@ -559,7 +559,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const ctx = plainContext(text);
   const calls = readers.calls ?? readCallGraph(text);
   const tables = readers.tables ?? readTableDependencies(text);
-  const skeleton = readers.skeleton ?? buildProcessSkeleton(text);
+  const skeleton = readers.skeleton ?? buildProcessSkeleton(text, { engineVersion: readers.engineVersion });
   const engineVersion = readers.engineVersion === undefined ? APP_VERSION : readers.engineVersion;
   const reads3020 = engineReads3020Apply(engineVersion);
   const reads3021 = engineReads3021Apply(engineVersion);
