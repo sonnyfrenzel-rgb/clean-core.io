@@ -5,7 +5,7 @@ import { aiNamesOfNaming, buildBpmnExportFromSource, buildReadingExports, type B
 import { readingExportsKey } from '../lib/bpmn/reading-key';
 import { parseBpmn } from '../lib/process-map';
 import { aiMarkingOf } from '../lib/ai-marking';
-import { NAMING_FORMAT_VERSION, namingContextOf, type ProcessNamingRecord } from '../lib/process-naming';
+import { NAMING_FORMAT_VERSION, NAMING_MADE_FROM_FACTS, namingContextOf, type ProcessNamingRecord } from '../lib/process-naming';
 import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
@@ -15,6 +15,10 @@ import { pinnedExamplePath } from './helpers/starter-example-files';
  * BPMN file in which exactly those elements carry `cc:origin value="ai"` with the provider and model the stored
  * receipt names — read from the record, never written in the code. Without a record, or with one made for another
  * reading of the source, the file is byte for byte the engine's.
+ *
+ * 3.0.21 (owner decision 06.11.2026): business names are paused unless they were built from the engine's facts. A
+ * naming stored before (no `madeFrom`) is not applied, so the download is the engine's and marks nothing; the marking
+ * below is held with a record stored as built from the facts, which no route of this build writes.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -50,6 +54,11 @@ function record(provider: string, modelId: string, digest = context.digest): Pro
   };
 }
 
+/** The same, as stored for a reading with the engine's facts — the only naming applied while the naming is paused. */
+function factsRecord(provider: string, modelId: string, digest = context.digest): ProcessNamingRecord {
+  return { ...record(provider, modelId, digest), madeFrom: NAMING_MADE_FROM_FACTS };
+}
+
 const originsOf = (xml: string) => [...xml.matchAll(/<cc:origin value="ai" ai_provider="([^"]*)" ai_model="([^"]*)" ?\/>/g)].map((m) => [m[1], m[2]]);
 
 test.describe('BPMN download: model names marked from the stored receipt', () => {
@@ -64,26 +73,38 @@ test.describe('BPMN download: model names marked from the stored receipt', () =>
     expect(aiMarkingOf(engineOnly.xml)).toBeNull();
   });
 
+  test('3.0.21: a naming stored before, not built from the facts, marks nothing — the download is the engine\'s', () => {
+    const stored = record('anthropic', 'claude-receipt-model');
+    expect(aiNamesOfNaming(context, stored)).toBeUndefined();
+    const { xml } = buildBpmnExportFromSource(source, { ...plainOptions, naming: stored });
+    expect(xml).toBe(engineOnly.xml);
+    expect(xml).not.toContain('cc:origin');
+    expect(aiMarkingOf(xml)).toBeNull();
+    const reading = buildReadingExports(source, { ...options, naming: stored });
+    expect(reading.bpmn.xml).not.toContain('cc:origin');
+    expect(aiMarkingOf(reading.bpmn.xml)).toBeNull();
+  });
+
   test('with a receipt the named elements carry provider and model of the record, nothing else is marked', () => {
-    const { xml } = buildBpmnExportFromSource(source, { ...plainOptions, naming: record('anthropic', 'claude-receipt-model') });
+    const { xml } = buildBpmnExportFromSource(source, { ...plainOptions, naming: factsRecord('anthropic', 'claude-receipt-model') });
     expect(originsOf(xml)).toEqual([['anthropic', 'claude-receipt-model'], ['anthropic', 'claude-receipt-model']]);
     const elements = parseBpmn(xml).elements;
     for (const [i, t] of tasks.entries()) expect(elements.find((e) => e.id === t.id)?.name).toBe(NAMES[i]);
     expect(aiMarkingOf(xml)).toContain('claude-receipt-model');
     // The same file with another receipt names the other model: the name comes from the record, not from the code.
-    const other = buildBpmnExportFromSource(source, { ...plainOptions, naming: record('google-gemini', 'gemini-receipt-model') }).xml;
+    const other = buildBpmnExportFromSource(source, { ...plainOptions, naming: factsRecord('google-gemini', 'gemini-receipt-model') }).xml;
     expect(originsOf(other)).toEqual([['google-gemini', 'gemini-receipt-model'], ['google-gemini', 'gemini-receipt-model']]);
   });
 
   test('a naming made for another reading of the source marks nothing', () => {
-    const stale = record('anthropic', 'claude-receipt-model', 'nm1-another-reading');
+    const stale = factsRecord('anthropic', 'claude-receipt-model', 'nm1-another-reading');
     expect(aiNamesOfNaming(context, stale)).toBeUndefined();
     expect(buildBpmnExportFromSource(source, { ...plainOptions, naming: stale }).xml).toBe(engineOnly.xml);
   });
 
   test('the reading download (Documentation) marks the plain file; the technical file and the map stay the engine\'s', () => {
     const plain = buildReadingExports(source, options);
-    const named = buildReadingExports(source, { ...options, naming: record('anthropic', 'claude-receipt-model') });
+    const named = buildReadingExports(source, { ...options, naming: factsRecord('anthropic', 'claude-receipt-model') });
     expect(plain.bpmn.xml).not.toContain('cc:origin');
     expect(originsOf(named.bpmn.xml)).toHaveLength(2);
     expect(named.technical.xml).toBe(plain.technical.xml);
@@ -92,7 +113,7 @@ test.describe('BPMN download: model names marked from the stored receipt', () =>
   });
 
   test('the technical file ignores a naming: byte for byte the engine\'s, for a clean Signavio round trip', () => {
-    const withNaming = buildBpmnExportFromSource(source, { ...options, naming: record('anthropic', 'claude-receipt-model') });
+    const withNaming = buildBpmnExportFromSource(source, { ...options, naming: factsRecord('anthropic', 'claude-receipt-model') });
     expect(withNaming.xml).toBe(technicalOnly.xml);
     expect(technicalOnly.xml).not.toContain('cc:origin');
   });

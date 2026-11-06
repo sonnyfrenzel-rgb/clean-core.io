@@ -14,6 +14,7 @@ import {
 } from '@/lib/model-stages';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { PLATFORM_PROVIDER, PROVIDER_LABEL, answeredByLine } from '@/lib/model-providers';
+import { NAMING_ASKED_IN_THIS_BUILD, NAMING_PAUSED_REASON, NAMING_STAGE } from '@/lib/process-naming';
 
 /** Spelled out, because the sentence starts with it. */
 const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
@@ -42,6 +43,9 @@ const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
 export default function ModelStagesCard() {
   const model = useModelAvailability();
   const stages = offeredModelStages();
+  // 3.0.21: a stage that sends nothing in this build is not counted as sending a prompt.
+  const paused = (stage: ModelStage) => stage === NAMING_STAGE && !NAMING_ASKED_IN_THIS_BUILD;
+  const sending = stages.filter((stage) => !paused(stage)).length;
   const [saving, setSaving] = useState<ModelStage | null>(null);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<ModelStage | null>(null);
@@ -86,7 +90,7 @@ export default function ModelStagesCard() {
         }
       >
       <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-        {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to {PROVIDER_LABEL[model.provider ?? PLATFORM_PROVIDER]}
+        {COUNT_WORDS[sending] ?? sending} stages send a prompt to {PROVIDER_LABEL[model.provider ?? PLATFORM_PROVIDER]}
         {model.keySource === 'byok' ? ' on your own key' : model.keySource === 'community' ? ' on the platform key' : ''}. Switch any of them off and that stage says
         &ldquo;not generated&rdquo; instead of asking for a key. The Analyze stage&rsquo;s evidence — the findings, the
         extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed
@@ -122,6 +126,11 @@ export default function ModelStagesCard() {
                 valueState={saving === stage ? 'information' : saved === stage ? 'success' : undefined}
                 message={saving === stage ? 'Saving…' : saved === stage ? `Saved — ${on ? 'on' : 'off'}` : undefined}
               />
+              {paused(stage) && (
+                <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted" data-model-stage-paused={stage}>
+                  {NAMING_PAUSED_REASON}
+                </p>
+              )}
               {/* 3.0.15 — who answered this stage last: provider, model, whose key. */}
               {model.answers[stage] && (
                 <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted" data-model-stage-answered-by={stage}>

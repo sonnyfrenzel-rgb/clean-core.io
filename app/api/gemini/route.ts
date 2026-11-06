@@ -69,6 +69,7 @@ import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
+import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
 import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
 
 /**
@@ -500,6 +501,13 @@ export async function POST(request: NextRequest) {
         { error: 'The prompt must be a single string.' },
         { status: 400 },
       );
+    }
+
+    // 3.0.21 (owner decision 06.11.2026): business names are asked for only
+    // with the engine's facts in the prompt. A naming prompt without them is
+    // refused before any key is loaded, so no code goes to a model for it.
+    if (stage === NAMING_STAGE && !namingPromptAllowed(prompt)) {
+      return NextResponse.json({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE }, { status: 403 });
     }
 
     // F-07: Validate model against server-side allowlist

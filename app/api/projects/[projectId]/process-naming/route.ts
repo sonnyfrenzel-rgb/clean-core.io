@@ -16,9 +16,14 @@ import { verifyModelReceipt } from '@/lib/model-receipt';
 import {
   MAX_ANSWER_LENGTH,
   NAMING_FORMAT_VERSION,
+  NAMING_MADE_FROM_FACTS,
+  NAMING_PAUSED_CODE,
+  NAMING_PAUSED_REASON,
   NAMING_STAGE,
   isProcessNamingRecord,
+  namingContextHasFacts,
   namingContextOf,
+  namingPaused,
   validateNamingAnswer,
   type ProcessNamingRecord,
 } from '@/lib/process-naming';
@@ -33,6 +38,11 @@ const ANSWER_BODY_LIMITS = { maxBytes: MAX_ANSWER_LENGTH * 6 + 64 * 1024, timeou
  *
  *   GET  → `{ record }`, the stored naming or `null`.
  *   POST `{ digest, text, receipt }` → `{ record }`, the naming as validated.
+ *
+ * Since 3.0.21 the POST answers 403 `naming-paused` for a reading without the
+ * engine's facts (`NAMING_WITHOUT_FACTS_PAUSED` in `lib/process-naming.ts`) and
+ * stores nothing. The GET still returns a stored naming; `applyNaming` does not
+ * apply one that was not built from the facts.
  *
  * The model is not called here. `/api/gemini` is the only path from this
  * product to a model (`lib/model-receipt.ts`), so the browser asks it for the
@@ -218,6 +228,7 @@ export async function GET(
       discarded: data.discarded,
       origin: data.origin,
       namedAt: isoOf(data.namedAt),
+      ...(data.madeFrom === NAMING_MADE_FROM_FACTS ? { madeFrom: NAMING_MADE_FROM_FACTS } : {}),
     };
     // A document of another format version is not a naming this build can
     // apply. Saying "none" is true; handing it over as one is not.
@@ -256,6 +267,12 @@ export async function POST(
       return NextResponse.json({ error: 'This source is too large to name in one request.', code: 'too-large' }, { status: 413 });
     }
     const context = namingContextOf(gate.legacyCode);
+    // Paused (owner decision 06.11.2026): a naming not built from the engine's
+    // facts is not stored. 403 with its own code, as `/api/gemini` answers a
+    // switched-off stage; nothing is written, and a stored naming stays as it is.
+    if (namingPaused(context)) {
+      return NextResponse.json({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE }, { status: 403 });
+    }
     if (body.digest !== context.digest) {
       return NextResponse.json(
         {
@@ -311,6 +328,7 @@ export async function POST(
         textSha256: verdict.receipt.textSha256,
       },
       namedAt: new Date().toISOString(),
+      ...(namingContextHasFacts(context) ? { madeFrom: NAMING_MADE_FROM_FACTS } : {}),
     };
 
     const { db } = await getAdminDb();

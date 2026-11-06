@@ -50,6 +50,7 @@ import CcIconButton from '@/components/cc/IconButton';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { NAMING_ASKED_IN_THIS_BUILD, NAMING_PAUSED_REASON } from '@/lib/process-naming';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { cn } from '@/lib/utils';
 
@@ -563,7 +564,10 @@ export default function OwnCodeImport() {
               <div className="mt-3">
                 <CcCheckbox
                   label={wt('ownCode.namesSwitch')}
-                  help={namingAvailable ? wt('ownCode.namesSwitchHelp') : wt('ownCode.namesNoKey')}
+                  help={
+                    // 3.0.21: while the business names are paused the switch keeps its setting and says so in one sentence.
+                    !NAMING_ASKED_IN_THIS_BUILD ? NAMING_PAUSED_REASON : namingAvailable ? wt('ownCode.namesSwitchHelp') : wt('ownCode.namesNoKey')
+                  }
                   checked={namingOn}
                   disabled={!namingAvailable || namingSaving || !model.known}
                   onChange={(next) => void toggleNaming(next)}

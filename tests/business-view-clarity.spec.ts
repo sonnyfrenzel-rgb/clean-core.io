@@ -473,7 +473,7 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
   });
 
-  test('business names: no "Not generated" notice, no button, asked automatically only with a model, a stored name is AI-generated', async ({ page }) => {
+  test('business names: no "Not generated" notice, no button, never asked (paused in 3.0.21), a stored name is not applied', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
@@ -499,7 +499,9 @@ test.describe('the Business view on screen', () => {
     expect(namingAsks).toHaveLength(0);
     await page.unroute('**/api/model-stages');
 
-    // A model is available: the owner's page asks once by itself; refused, the plain names stand, no error.
+    // A model is available. Until 3.0.21 the owner's page asked once by itself; since the
+    // owner decision of 06.11.2026 business names are paused until they can be built from the
+    // code's facts, so nothing is asked, no click is offered, and the plain names stand.
     // `autoSteps: true` is what the route answers for the platform key (owner decision
     // 22.10.2026, B6: only an own key waits for the "Automatic steps" switch).
     await page.route('**/api/model-stages', (route) =>
@@ -507,15 +509,16 @@ test.describe('the Business view on screen', () => {
     );
     await open(page, ids.po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
-    await expect.poll(() => namingAsks.length, { timeout: 60_000 }).toBe(1);
+    // The ask used to go out within seconds of the map being ready; give it the same room.
+    await page.waitForTimeout(5_000);
+    expect(namingAsks, 'a paused naming was asked for').toHaveLength(0);
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-names-note]')).toHaveCount(0);
     await expect(page.locator('[data-process-map]')).not.toContainText('Not generated');
-    expect(namingAsks).toHaveLength(1);
-    namingAsks.length = 0;
 
-    // A stored naming (the fixture of a model answer, as the route stores it):
-    // the opening names the step by it and marks it as AI-generated.
+    // A stored naming (the fixture of a model answer, as the route stored it before 3.0.21):
+    // it stays stored but is not applied — the step keeps the engine's name and nothing is
+    // marked AI-generated.
     const context = namingContextOf(PO);
     const node = context.skeleton.nodes.find((n) => n.label === 'CHECK_AUTHORITY' && n.kind === 'sub-process')!;
     await adminSetDoc(`projects/${ids.po}/process_naming`, 'current', {
@@ -529,8 +532,11 @@ test.describe('the Business view on screen', () => {
     });
     await open(page, ids.po);
     const step = page.locator('[data-process-story-step="1"]');
-    await expect(step).toContainText('Check the buyer may approve', { timeout: 60_000 });
-    await expect(page.locator('[data-first-look-business] [data-provenance="proposed"]').first()).toBeVisible();
+    await expect(step).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    await expect(step).not.toContainText('Check the buyer may approve');
+    await expect(page.locator('[data-process-map]')).not.toContainText('Check the buyer may approve');
+    await expect(page.locator('[data-first-look-business] [data-provenance="proposed"]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
     // Named for this source already: nothing is asked again.
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });

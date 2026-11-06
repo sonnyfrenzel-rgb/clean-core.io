@@ -35,6 +35,10 @@ const ASKED = new Set<string>();
  * off for it (`autoAllowed` false), nothing is asked by itself — the hook hands
  * the page a click instead (`askNow`), once per project and source like the
  * automatic ask, and the call goes out only on that click.
+ *
+ * 3.0.21 (owner decision 06.11.2026): while `NAMING_WITHOUT_FACTS_PAUSED`
+ * holds, `shouldAskNaming` says no without the engine's facts, so the hook asks
+ * nothing and offers no click. No caller passes `withFacts` in this build.
  */
 export function useAutoProcessNaming(input: {
   projectId: string | null;
@@ -45,8 +49,10 @@ export function useAutoProcessNaming(input: {
   onStored?: () => void;
   /** May the names be asked for by itself — `useModelAvailability().autoSteps`. */
   autoAllowed: boolean;
+  /** The ask would hand the model the engine's facts (`shouldAskNaming`). Absent: nothing is asked while the naming is paused. */
+  withFacts?: boolean;
 }): { state: 'idle' | 'asking'; askNow: (() => void) | null } {
-  const { projectId, source, owner, availability, state, onStored, autoAllowed } = input;
+  const { projectId, source, owner, availability, state, onStored, autoAllowed, withFacts } = input;
   const [asking, setAsking] = useState(false);
   const [clickedFor, setClickedFor] = useState<string | null>(null);
   const modelEnabled = namingModelEnabled(availability);
@@ -89,7 +95,7 @@ export function useAutoProcessNaming(input: {
   );
 
   const digest = source ? sha256Hex(source) : null;
-  const mode = projectId && digest ? askModeOf({ wanted: shouldAskNaming({ owner, modelEnabled, state }), autoAllowed }) : null;
+  const mode = projectId && digest ? askModeOf({ wanted: shouldAskNaming({ owner, modelEnabled, state, withFacts }), autoAllowed }) : null;
 
   useEffect(() => {
     if (!projectId || !source || !digest || mode !== 'auto') return;

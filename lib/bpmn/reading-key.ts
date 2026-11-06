@@ -27,5 +27,5 @@ export function readingExportsKey(source: string, options: ReadingOptions): stri
   // A naming changes the plain file; without one the key is what it was.
   const naming = options.naming;
   if (!naming) return JSON.stringify(base);
-  return JSON.stringify([...base, [naming.digest, naming.namedAt, naming.origin?.textSha256 ?? null, naming.origin?.provider ?? null, naming.origin?.modelId ?? null]]);
+  return JSON.stringify([...base, [naming.digest, naming.namedAt, naming.origin?.textSha256 ?? null, naming.origin?.provider ?? null, naming.origin?.modelId ?? null, naming.madeFrom ?? null]]);
 }

@@ -6,6 +6,8 @@ import {
   namingContextOf,
   validateNamingAnswer,
   NAMING_FORMAT_VERSION,
+  NAMING_MADE_FROM_FACTS,
+  NAMING_PAUSED_REASON,
   type ProcessNamingRecord,
 } from '../lib/process-naming';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -175,7 +177,16 @@ test.describe('nothing the code does not give', () => {
       },
       namedAt: '2026-09-24T09:00:00.000Z',
     };
-    const doc = buildProcessDocumentation({ source, map: mapOf(source, 'Z_MM_PO_APPROVAL.abap', record) });
+    // 3.0.21 (owner decision 06.11.2026): a naming stored before, not built from the engine's facts, is not applied —
+    // no business name, no lane, no AI mark, and the documentation says the names are paused.
+    const paused = buildProcessDocumentation({ source, map: mapOf(source, 'Z_MM_PO_APPROVAL.abap', record) });
+    expect(paused.steps.every((s) => s.businessName === null && s.lane === null && s.namingProvenance === null)).toBe(true);
+    expect(paused.proposedLanes).toEqual([]);
+    expect(paused.naming.notice).toContain(NAMING_PAUSED_REASON);
+    expect(processDocumentationToMarkdown(paused)).not.toContain('cc:origin');
+
+    // The mechanism, held with a naming stored as built from the facts (no route of this build writes one).
+    const doc = buildProcessDocumentation({ source, map: mapOf(source, 'Z_MM_PO_APPROVAL.abap', { ...record, madeFrom: NAMING_MADE_FROM_FACTS }) });
 
     const named = doc.steps.filter((s) => s.businessName);
     expect(named).toHaveLength(1);
