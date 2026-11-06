@@ -13,6 +13,8 @@ import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
+import { engineReads3022Apply } from '@/lib/abap/engine-reads-3022-gate';
+import { reachableWrites } from '@/lib/abap/reachable-writes';
 import { APP_VERSION } from '@/lib/version';
 import { headerRuleRange } from '@/lib/abap/header-rules';
 import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
@@ -519,6 +521,28 @@ function headerRuleFacts(ruleSet: Pick<BusinessRuleSet, 'headerRules'> | null): 
   };
 }
 
+/**
+ * 3.0.22: the changes a run reaches that the capability reading has no business word for — batch input, a posting
+ * call, `MODIFY ENTITIES` (`reachableWrites`) — and the reports it starts (`SUBMIT`), outside lines a constant gate
+ * locks away. Table writes are left to the capability reading, which words them.
+ */
+function reachedChangesOf(text: string, calls: CallGraphReport): { unworded: NonNullable<ProgramSummaryFacts['changes']['unworded']>; submits: Array<{ name: string; line: number }> } {
+  try {
+    const statements = readStatements(text);
+    const unworded = reachableWrites({ source: text, statements, graph: calls })
+      .filter((w): w is typeof w & { kind: 'batch-input' | 'posting-call' | 'entity-modify' } => w.kind !== 'table-write')
+      .map((w) => ({ kind: w.kind, object: w.object, line: w.lineStart }));
+    const gates = readConstantGates(text, { engineReads: true });
+    const submits = statements
+      .filter((s) => /^SUBMIT\s+[\w/]+/i.test(s.text) && !isUnreachableLine(gates, s.lineStart))
+      .map((s) => ({ name: (/^SUBMIT\s+([\w/]+)/i.exec(s.text)?.[1] ?? '').toUpperCase(), line: s.lineStart }))
+      .filter((x, i, all) => x.name && all.findIndex((y) => y.name === x.name) === i);
+    return { unworded, submits };
+  } catch {
+    return { unworded: [], submits: [] };
+  }
+}
+
 export function programSummaryFactsOf(source: string, readers: ProgramSummaryReaders = {}): ProgramSummaryFacts {
   const text = String(source ?? '').replace(/\r\n?/g, '\n');
   const ctx = plainContext(text);
@@ -538,6 +562,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   }
   const capability = capabilityFactsOf(text, skeleton, { calls, tables });
   const presence = capabilityPresence(capability);
+  const changesOf3022 = engineReads3022Apply(engineVersion) ? reachedChangesOf(text, calls) : null;
 
   const head = /^\s*(REPORT|PROGRAM|FUNCTION-POOL|CLASS-POOL|FUNCTION|CLASS)\s+([\w/]+)/im.exec(text);
   const keyword = head?.[1].toUpperCase() ?? null;
@@ -622,7 +647,13 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     reads,
     writes,
     changes: {
-      state: posting.present ? 'changes' : posting.determined ? 'none' : 'not-determined',
+      // 3.0.22: what a run reaches decides too — batch input or a posting call is a change, and a report it starts
+      // is a change this code does not show (`reachedChangesOf`).
+      state: posting.present || (changesOf3022?.unworded.length ?? 0) > 0
+        ? 'changes'
+        : (changesOf3022?.submits.length ?? 0) > 0 ? 'not-determined' : posting.determined ? 'none' : 'not-determined',
+      ...(changesOf3022?.unworded.length ? { unworded: changesOf3022.unworded } : {}),
+      ...(changesOf3022?.submits.length && !posting.present ? { submits: changesOf3022.submits } : {}),
       actions,
       commits: capability.commits.length + capability.updateTask.length,
       displayTransactions: calls.transactions

@@ -17,6 +17,8 @@ import {
   translateGermanWords,
   type WordSources,
 } from './german-terms';
+import { engineReads3022Apply } from './engine-reads-3022-gate';
+import { APP_VERSION } from '../version';
 
 /**
  * Plain-language wording for the process map — deterministic, no model.
@@ -86,6 +88,25 @@ export interface PlainContext {
   readonly tables: ReadonlySet<string>;
   /** Names declared `TYPE abap_bool` / `AS CHECKBOX`. */
   readonly flags: ReadonlySet<string>;
+  /**
+   * From engine 3.0.22 (`ENGINE_READS_3022_FROM`): the business-language readings — positive questions, the result
+   * check of a BAPI, internal tables named after their source, a stop said by its message's own text. False (or
+   * absent) for an older engine, which keeps its picture.
+   */
+  readonly reads3022?: boolean;
+  /**
+   * Where an internal table's rows come from, by lower-case table name → lower-case database table: the table a
+   * `SELECT … INTO TABLE` fills it from, or the row type of `TYPE [STANDARD] TABLE OF <dbtab>`. Read for 3.0.22.
+   */
+  readonly sources?: ReadonlyMap<string, string>;
+  /** Database tables the source selects from, lower case. */
+  readonly selected?: ReadonlySet<string>;
+}
+
+/** What `plainContext` and `plainLabels` read besides the source. */
+export interface PlainOptions {
+  /** The engine the wording is read for (`engineVersionOfProject`); this release when absent. */
+  engineVersion?: string | null;
 }
 
 const EMPTY_CONTEXT: PlainContext = Object.freeze({
@@ -174,7 +195,7 @@ const DECLARATION = /^(PARAMETERS|PARAMETER|SELECT-OPTIONS|DATA|CLASS-DATA|STATI
  * Reads what the source declares: selection fields, constants, data types,
  * internal tables and flags. Pure — the source is the only input.
  */
-export function plainContext(source: string): PlainContext {
+export function plainContext(source: string, options: PlainOptions = {}): PlainContext {
   try {
     const lines = String(source ?? '').replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
     const statements = splitStatements(lines);
@@ -183,7 +204,11 @@ export function plainContext(source: string): PlainContext {
     const types = new Map<string, string>();
     const tables = new Set<string>();
     const flags = new Set<string>();
+    const reads3022 = engineReads3022Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
+    const sources = new Map<string, string>();
+    const selected = new Set<string>();
     for (const statement of statements) {
+      if (reads3022) readSource(statement.text, sources, selected);
       const m = DECLARATION.exec(statement.text);
       if (!m) continue;
       const keyword = m[1].toUpperCase();
@@ -210,6 +235,9 @@ export function plainContext(source: string): PlainContext {
           continue;
         }
         if (/\b(?:TABLE\s+OF|RANGE\s+OF)\b/i.test(rest)) tables.add(name);
+        // 3.0.22: the row type of a table typed on a database table — `TYPE STANDARD TABLE OF vbak`.
+        const row = /\bTABLE\s+OF\s+(?!REF\b)([\w/]+)/i.exec(rest)?.[1]?.toLowerCase();
+        if (reads3022 && row && !sources.has(name)) sources.set(name, row);
         const type = /\b(?:TYPE|LIKE)\s+(?:REF\s+TO\s+)?([\w/-]+)/i.exec(rest)?.[1]?.toLowerCase();
         if (type) {
           types.set(name, type);
@@ -217,10 +245,27 @@ export function plainContext(source: string): PlainContext {
         }
       }
     }
-    return { lines, statements, selections, constants, types, tables, flags };
+    return reads3022
+      ? { lines, statements, selections, constants, types, tables, flags, reads3022, sources, selected }
+      : { lines, statements, selections, constants, types, tables, flags };
   } catch {
     return EMPTY_CONTEXT;
   }
+}
+
+/**
+ * 3.0.22: what a `SELECT` says about where an internal table's rows come from. `SELECT … FROM vbak … INTO TABLE
+ * gt_auftr` (or `APPENDING`, `CORRESPONDING FIELDS OF`, `@DATA(…)`) makes `gt_auftr` rows of VBAK. A join records
+ * the table it reads, never a source.
+ */
+function readSource(text: string, sources: Map<string, string>, selected: Set<string>): void {
+  if (!/^SELECT\b/i.test(text)) return;
+  const from = /\bFROM\s+([\w/]+)/i.exec(text)?.[1]?.toLowerCase();
+  if (!from) return;
+  selected.add(from);
+  if (/\bJOIN\b/i.test(text)) return;
+  const into = /\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\s+@?(?:DATA\(\s*)?([\w<>/]+)/i.exec(text)?.[1]?.toLowerCase();
+  if (into && !sources.has(into)) sources.set(into, from);
 }
 
 function contextOf(ctx?: PlainContext): PlainContext {
@@ -312,6 +357,34 @@ function humaniseStem(stem: string): string {
   return sentenceCase(words.join(' ')) || stem;
 }
 
+let glossaryWords: Set<string> | null = null;
+
+/** Every English word the glossary uses — what a component name may be and still read as a word. */
+function englishGlossaryWords(): Set<string> {
+  if (glossaryWords) return glossaryWords;
+  const words = new Set<string>();
+  const add = (text: string) => { for (const w of text.toLowerCase().match(/[a-z]{3,}/g) ?? []) words.add(w); };
+  for (const t of Object.values(FIELD_TERMS_EN)) add(`${t.singular} ${t.plural}`);
+  for (const t of Object.values(TABLE_TERMS_EN)) add(`${t.singular} ${t.plural}`);
+  for (const v of [...Object.values(STEM_ABBREVIATIONS), ...Object.values(ROUTINE_ABBREVIATIONS),
+    ...Object.values(FUNCTION_TERMS_EN), ...Object.values(TRANSACTION_TERMS_EN), ...Object.values(EVENT_TERMS_EN)]) add(v);
+  glossaryWords = words;
+  return words;
+}
+
+/**
+ * 3.0.22: is a structure component (`is_delivery-gewei`) a dictionary field code rather than a word? Four to six
+ * letters or digits, the shape of SAP's field names; no glossary entry, no English word the glossary uses, no German
+ * word the engine can translate. `menge`, `price`, `status` are words; `gewei`, `profl`, `mmsta` are codes.
+ */
+function isFieldCode(field: string): boolean {
+  const f = field.toLowerCase();
+  if (!/^[a-z][a-z0-9]{3,5}$/.test(f)) return false;
+  if (FIELD_TERMS_EN[f] || STEM_ABBREVIATIONS[f] || englishGlossaryWords().has(f) || englishGlossaryWords().has(f.replace(/s$/, ''))) return false;
+  const german = translateGermanWords([f], 'field', FIELD_SOURCES);
+  return !german || isUntranslatable(german);
+}
+
 /** A word of a name the glossary knows (`kunnr` → "customer number"). */
 function knownWord(word: string): string | null {
   const term = FIELD_TERMS_EN[word];
@@ -357,12 +430,51 @@ function pluralOf(word: string): string {
   return `${word}s`;
 }
 
+/**
+ * 3.0.22: the return table of a BAPI by its usual names — `gt_return`, `lt_ret`, `et_bapiret2`, `lt_messages`.
+ * What it holds is the messages SAP returned, and that is what the label says.
+ */
+const RETURN_STEM = /^(?:return|returns|ret|rets|bapiret[12]?|bapireturn|messages|msgs|rettab|return_tab)$/;
+const SAP_MESSAGE: PlainTerm = Object.freeze({ singular: 'message from SAP', plural: 'messages from SAP' });
+
+/**
+ * 3.0.22: what the rows of an internal table are, from where they come — the table's own name when it is a database
+ * table the glossary knows (`gt_kna1`), the table a `SELECT` fills it from or its row type (`gt_auftr` from VBAK →
+ * "sales order"), the messages SAP returned. Null before 3.0.22 and where nothing says it.
+ */
+function sourceTermOf(identifier: string, ctx: PlainContext | undefined): PlainTerm | null {
+  if (!ctx?.reads3022) return null;
+  const base = cleanIdentifier(identifier).split(/->|=>|-|~/)[0];
+  const stem = stemOf(identifier);
+  if (RETURN_STEM.test(stem)) return SAP_MESSAGE;
+  const source = ctx.sources?.get(base);
+  return tableTermOf(stem) ?? (source ? tableTermOf(source) : null);
+}
+
+/**
+ * 3.0.22: the database table an internal table is named after or filled from, when the glossary has no word for it
+ * — said as the code it is ("entries of VBEP"), never as a plural made up from a table name ("vbeps").
+ */
+function sourceCodeOf(identifier: string, ctx: PlainContext | undefined): string | null {
+  if (!ctx?.reads3022) return null;
+  const base = cleanIdentifier(identifier).split(/->|=>|-|~/)[0];
+  const stem = stemOf(identifier);
+  if (ctx.selected?.has(stem)) return stem.toUpperCase();
+  const source = ctx.sources?.get(base);
+  return source && ctx.selected?.has(source) ? source.toUpperCase() : null;
+}
+
 /** What one entry of an internal table is called: `gt_orders` → "order". */
-function itemOf(identifier: string): string {
+function itemOf(identifier: string, ctx?: PlainContext): string {
   const stem = stemOf(identifier);
   const term = FIELD_TERMS_EN[stem];
+  if (term && !RETURN_STEM.test(stem)) return lcFirst(term.singular);
+  const fromSource = sourceTermOf(identifier, ctx);
+  if (fromSource) return lcFirst(fromSource.singular);
   if (term) return lcFirst(term.singular);
   const german = germanItem(stem);
+  const code = sourceCodeOf(identifier, ctx);
+  if (code && !german) return `entry of ${code}`;
   if (german === null) return `entry of ${technicalName(identifier)}`;
   if (german) return lcFirst(singularOf(german));
   return lcFirst(singularOf(humaniseStem(stem)));
@@ -381,11 +493,16 @@ function technicalName(identifier: string): string {
 }
 
 /** What several entries are called: `gt_orders` → "orders", `lt_kunnr` → "customer numbers". */
-function itemsOf(identifier: string): string {
+function itemsOf(identifier: string, ctx?: PlainContext): string {
   const stem = stemOf(identifier);
   const term = FIELD_TERMS_EN[stem];
+  if (term && !RETURN_STEM.test(stem)) return lcFirst(term.plural);
+  const fromSource = sourceTermOf(identifier, ctx);
+  if (fromSource) return lcFirst(fromSource.plural);
   if (term) return lcFirst(term.plural);
   const german = germanItem(stem);
+  const code = sourceCodeOf(identifier, ctx);
+  if (code && !german) return `entries of ${code}`;
   if (german === null) return `entries in ${technicalName(identifier)}`;
   if (german) return lcFirst(pluralOf(german));
   return lcFirst(pluralOf(humaniseStem(stem)));
@@ -437,10 +554,17 @@ function fieldWord(identifier: string, ctx: PlainContext | undefined, short: boo
       if (table && !field.includes('_') && field.length <= 10) {
         return `${field.toUpperCase()} of ${lcFirst(table.singular)}`;
       }
+      // 3.0.22: a dictionary field the glossary does not know is said as the code it is — "field PROFL" — never as
+      // a word made up from it ("Profl"). The engine cannot know what the customer uses it for, and says so.
+      if (c.reads3022 && isFieldCode(field)) return `Field ${field.toUpperCase()}`;
       return humaniseStem(field.replace(IDENTIFIER_PREFIX, '') || field);
     }
     const stemTerm = FIELD_TERMS_EN[stemOf(lower)];
     if (stemTerm) return termWord(stemTerm, short);
+    // 3.0.22: a variable typed on a dictionary field (`lv_profl TYPE mara-profl`) — the same: the field's code.
+    const typedOn = c.types.get(lower) ?? '';
+    const typedField = /^[\w/]+-([\w]+)$/.exec(typedOn)?.[1];
+    if (c.reads3022 && typedField && typedField === stemOf(lower) && isFieldCode(typedField)) return `Field ${typedField.toUpperCase()}`;
     return humaniseStem(stemOf(lower));
   } catch {
     return String(identifier ?? '');
@@ -795,6 +919,8 @@ function parseCondition(condition: string): Cond | null {
 type Setter =
   | { kind: 'select'; table: string; single: boolean }
   | { kind: 'read-table'; table: string }
+  /** 3.0.22: `READ TABLE gt_return … WITH KEY type = 'E'` — a search for an error message SAP returned. */
+  | { kind: 'sap-error' }
   | { kind: 'authority' | 'call' | 'open' | 'dataset' | 'write' | 'loop' | 'assign' | 'find' | 'unknown' };
 
 const BLOCK_START = /^(?:FORM|ENDFORM|METHOD|ENDMETHOD|MODULE|ENDMODULE|FUNCTION|ENDFUNCTION|START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|AT\s|LOAD-OF-PROGRAM|TOP-OF-PAGE)\b/i;
@@ -812,7 +938,11 @@ function setterBefore(ctx: PlainContext, line: number | undefined): Setter {
       return { kind: 'select', table, single };
     }
     if (/^READ\s+TABLE\b/i.test(text)) {
-      return { kind: 'read-table', table: /^READ\s+TABLE\s+([\w<>\-[\]/]+)/i.exec(text)?.[1] ?? '' };
+      const table = /^READ\s+TABLE\s+([\w<>\-[\]/]+)/i.exec(text)?.[1] ?? '';
+      if (ctx.reads3022 && isReturnTable(table, ctx) && /\bWITH\s+KEY\b[\s\S]*\b(?:type|msgty)\s*=\s*'[EA]'/i.test(text)) {
+        return { kind: 'sap-error' };
+      }
+      return { kind: 'read-table', table };
     }
     if (/^READ\s+DATASET\b/i.test(text)) return { kind: 'dataset' };
     if (/^AUTHORITY-CHECK\b/i.test(text)) return { kind: 'authority' };
@@ -826,9 +956,41 @@ function setterBefore(ctx: PlainContext, line: number | undefined): Setter {
   return { kind: 'unknown' };
 }
 
+/** 3.0.22: a table or structure that holds the messages a BAPI returned — by its name or its type (`BAPIRET2`). */
+function isReturnTable(identifier: string, ctx: PlainContext): boolean {
+  const lower = cleanIdentifier(identifier);
+  const base = lower.split(/->|=>|-|~/)[0];
+  if (RETURN_STEM.test(stemOf(base))) return true;
+  const type = ctx.types.get(base) ?? ctx.sources?.get(base) ?? '';
+  return /^bapiret|^bapireturn/.test(type);
+}
+
+/**
+ * 3.0.22: does a comparison ask whether SAP returned an error? `ls_return-type = 'E'`, `ls_ret-type CA 'EA'`,
+ * `line_exists( lt_return[ type = 'E' ] )` → true; their negations → false; anything else → null. Only on a table or
+ * structure the code names or types as a BAPI's return (`isReturnTable`), and only for the types E and A.
+ */
+function sapErrorCheck(c: Extract<Cond, { k: 'cmp' }>, ctx: PlainContext): boolean | null {
+  if (!ctx.reads3022) return null;
+  const left = c.left.trim();
+  const exists = /^line_exists\(\s*([\w<>/-]+)\s*\[\s*(?:type|msgty)\s*=\s*'([EA])'\s*\]\s*\)$/i.exec(left);
+  if (exists && isReturnTable(exists[1], ctx)) {
+    if (c.op === 'truthy') return true;
+    if (c.op === 'falsy') return false;
+    return null;
+  }
+  const field = /^([\w<>/]+)-(?:type|msgty)$/i.exec(left);
+  if (!field || !isReturnTable(field[1], ctx)) return null;
+  const value = unquote(c.right).toUpperCase();
+  if ((c.op === '=' || c.op === '<>') && /^[EA]$/.test(value)) return c.op === '=';
+  if ((c.op === 'CA' || c.op === 'NA') && /^[EAX]+$/.test(value) && /E/.test(value)) return c.op === 'CA';
+  return null;
+}
+
 /** "Found"/"Nothing found" and their kin, as specific as the setter allows. */
-function subrcPhrase(setter: Setter, success: boolean, short: boolean): string {
+function subrcPhrase(setter: Setter, success: boolean, short: boolean, ctx?: PlainContext): string {
   switch (setter.kind) {
+    case 'sap-error': return success ? 'SAP reported an error' : 'No error from SAP';
     case 'select': {
       const term = tableTermOf(setter.table);
       if (!term || short) return success ? 'Found' : 'Nothing found';
@@ -837,7 +999,7 @@ function subrcPhrase(setter: Setter, success: boolean, short: boolean): string {
     }
     case 'read-table': {
       if (short || !setter.table) return success ? 'Found' : 'Nothing found';
-      const item = itemOf(setter.table);
+      const item = itemOf(setter.table, ctx);
       return success ? `${sentenceCase(item)} found` : `No ${item} found`;
     }
     case 'authority': return success ? 'Authorized' : 'Not authorized';
@@ -891,6 +1053,7 @@ function ownerWord(operand: string): string | null {
 /** `sy-subrc` in a business rule: what the step before it did, in a sentence. */
 function ruleSubrcPhrase(setter: Setter, success: boolean): string {
   switch (setter.kind) {
+    case 'sap-error': return success ? 'SAP reported an error' : 'SAP reported no error';
     case 'select': {
       if (tableTermOf(setter.table)) return subrcPhrase(setter, success, false);
       return success ? 'The previous read found an entry' : 'The previous read found nothing';
@@ -968,7 +1131,7 @@ function humaniseOperand(operand: string, ctx: PlainContext, short = false): str
     if (/^line_exists$/i.test(fn)) return 'Entry exists';
     if (/^lines$/i.test(fn)) {
       const inner = /\(\s*([\w<>\-[\]]+)\s*\)/.exec(text)?.[1];
-      return inner ? `Number of ${itemsOf(inner)}` : 'Number of entries';
+      return inner ? `Number of ${itemsOf(inner, ctx)}` : 'Number of entries';
     }
     const name = fn.split(/->|=>/).pop() ?? fn;
     return routineWords(name, false) || 'Result';
@@ -1002,13 +1165,22 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
     }
     if (success !== null) {
       const setter = setterBefore(env.ctx, env.line);
-      const phrase = env.rule ? ruleSubrcPhrase(setter, success) : subrcPhrase(setter, success, env.short);
-      return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase };
+      const phrase = env.rule ? ruleSubrcPhrase(setter, success) : subrcPhrase(setter, success, env.short, env.ctx);
+      const question = setter.kind === 'sap-error' && success && !env.rule ? 'Did SAP report an error?' : undefined;
+      return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase, ...(question ? { question } : {}) };
     }
     const value = cleanIdentifier(c.right);
     const code = env.rule ? 'Return code of the previous step' : 'Return code';
     const phrase = c.op === '=' ? `${code} ${value}` : `${code} ${opWords(c.op, value)}`;
     return { key, subject: 'Return code', full: phrase, pred: lcFirst(phrase), arm: phrase };
+  }
+
+  // 3.0.22: the result check of a BAPI — whether SAP returned an error — said as that, not as a field test.
+  const sapError = sapErrorCheck(c, env.ctx);
+  if (sapError !== null) {
+    const phrase = sapError ? 'SAP reported an error' : (env.rule ? 'SAP reported no error' : 'No error from SAP');
+    const key2 = 'sap-error';
+    return { key: key2, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase, ...(sapError && !env.rule ? { question: 'Did SAP report an error?' } : {}) };
   }
 
   // `x MOD n = 0`
@@ -1046,7 +1218,7 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
   if (c.op === 'initial' || c.op === 'notinitial') {
     const empty = c.op === 'initial';
     if (table) {
-      const items = itemsOf(left);
+      const items = itemsOf(left, env.ctx);
       return {
         key,
         subject: sentenceCase(items),
@@ -1082,6 +1254,13 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
   if (c.op === 'truthy' || c.op === 'falsy') {
     const yes = c.op === 'truthy';
     if (/^line_exists\(/i.test(left)) {
+      // 3.0.22: what is looked up, in the list it is looked up in — "Sales order in the list?", not "Entry exists?".
+      const table = env.ctx.reads3022 ? /^line_exists\(\s*([\w<>/-]+)\s*\[/i.exec(left)?.[1] : undefined;
+      if (table) {
+        const item = sentenceCase(itemOf(table, env.ctx));
+        const phrase = yes ? `${item} in the list` : `${item} not in the list`;
+        return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase, question: `${item} in the list?`, inverted: !yes };
+      }
       const phrase = yes ? 'Entry exists' : 'No entry exists';
       return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase };
     }
@@ -1189,6 +1368,11 @@ function render(c: Cond, env: Env): Rendered {
   const atoms = flat.every((p) => p.k === 'cmp')
     ? flat.map((p) => atomText(p as Extract<Cond, { k: 'cmp' }>, env))
     : null;
+  // 3.0.22: parts that say the same thing are said once — `line_exists( … type = 'E' ) OR line_exists( … type = 'A' )`
+  // is one question whether SAP reported an error, not "Entry exists or entry exists".
+  if (env.ctx.reads3022 && atoms && atoms.length > 1 && atoms.every((a) => a.full === atoms[0].full)) {
+    return { full: atoms[0].full, question: atoms[0].question ?? `${atoms[0].full}?`, inverted: atoms[0].inverted === true };
+  }
   let full: string | null = null;
   if (atoms && atoms.length > 1) {
     const sameKey = atoms.every((a) => a.key === atoms[0].key) && atoms[0].key !== 'sy-subrc';
@@ -1341,14 +1525,25 @@ export function conditionToQuestion(condition: string, ctx?: PlainContext, line?
       for (const short of [false, true]) {
         const r = render(parsed, { ctx: c, line, short });
         if (r.question.length <= MAX_LABEL) {
+          const asked = c.reads3022 ? positiveQuestion(parsed, r, { ctx: c, line, short }) : r;
+          // `asked.inverted` says the question's Yes is where the condition it renders is false; after a turn the
+          // rendered condition is the negation, so the branch where the ABAP condition is TRUE swaps once more.
+          const turned = asked !== r;
+          const yesWhenTrue = turned ? asked.inverted : !asked.inverted;
           return {
-            question: r.question,
+            question: asked.question,
             yes: 'Yes',
             no: 'No',
-            trueBranch: r.inverted ? 'No' : 'Yes',
-            falseBranch: r.inverted ? 'Yes' : 'No',
+            trueBranch: yesWhenTrue ? 'Yes' : 'No',
+            falseBranch: yesWhenTrue ? 'No' : 'Yes',
           };
         }
+      }
+      // 3.0.22: a compound condition too long for a label is said by its first part and how many follow — never as
+      // the empty "Condition met?". The whole condition stays in the element's detail and in the IT view.
+      if (c.reads3022) {
+        const gist = gistQuestion(parsed, { ctx: c, line, short: true });
+        if (gist) return { question: gist, yes: 'Yes', no: 'No', trueBranch: 'Yes', falseBranch: 'No' };
       }
     }
     const literal = literalRendering(condition, c);
@@ -1357,6 +1552,38 @@ export function conditionToQuestion(condition: string, ctx?: PlainContext, line?
   } catch {
     return { ...NEUTRAL_QUESTION };
   }
+}
+
+/** Words that make a question negative: "Not authorized?", "No entries?", "Test run not selected?". */
+function negativeWords(text: string): number {
+  return (text.match(/\b(?:not|no|nothing|none|never)\b/gi) ?? []).length;
+}
+
+/**
+ * 3.0.22 (owner decision E1): a decision point asks the positive way round. "Not authorized?" becomes
+ * "Authorized?" — the condition's negation, rendered — when that reads with fewer negative words and still fits a
+ * label; the branches are swapped by the caller, so each still goes where the code sends it.
+ */
+function positiveQuestion(parsed: Cond, r: Rendered, env: Env): Rendered {
+  const before = negativeWords(r.question);
+  if (before === 0) return r;
+  const turned = render(negate(parsed), env);
+  if (turned.question.length > MAX_LABEL) return r;
+  return negativeWords(turned.question) < before ? turned : r;
+}
+
+/** 3.0.22: "Nothing found, or 1 more condition?" — a compound condition by its first part, for a label. */
+function gistQuestion(parsed: Cond, env: Env): string | null {
+  if (parsed.k === 'cmp') return null;
+  const flat: Cond[] = [];
+  for (const part of parsed.parts) {
+    if (part.k === parsed.k) flat.push(...part.parts);
+    else flat.push(part);
+  }
+  const first = sentenceCase(render(flat[0], env).full);
+  const more = flat.length - 1;
+  const question = `${first}, ${parsed.k} ${more} more condition${more === 1 ? '' : 's'}?`;
+  return question.length <= MAX_LABEL ? question : null;
 }
 
 /**
@@ -1558,7 +1785,7 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         break;
     }
     if (node.kind === 'loop') {
-      if (isMultiInstance(node)) return fit(`For each ${itemOf(node.label)}`);
+      if (isMultiInstance(node)) return fit(`For each ${itemOf(node.label, c)}`);
       return loopQuestion(node, c);
     }
     if (isCallSite(node)) return fit(humaniseRoutine(node.label));
@@ -1627,7 +1854,7 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         // read "Gt stock" in the Business view. It is a change to the program's
         // own working list, and the label says so — never a write to SAP data.
         if (node.detail?.internalTable === true) {
-          const item = itemOf(node.label);
+          const item = itemOf(node.label, c);
           const op = detailString(node, 'operation').toUpperCase();
           if (op === 'DELETE') return fit(`Remove the ${item} from the list`);
           if (op === 'INSERT' || op === 'APPEND') return fit(`Add the ${item} to the list`);
@@ -1675,11 +1902,11 @@ function gatewayQuestion(node: SkeletonNode, ctx: PlainContext): string {
 
 function loopQuestion(node: SkeletonNode, ctx: PlainContext): string {
   const over = detailString(node, 'over');
-  if (over) return fit(`More ${itemsOf(over)}?`);
+  if (over) return fit(`More ${itemsOf(over, ctx)}?`);
   const text = statementAt(ctx, node.anchor?.lineStart)?.text ?? '';
   if (/^WHILE\s/i.test(text)) return conditionToQuestion(text, ctx, node.anchor?.lineStart).question;
   if (/^LOOP\s+AT\s+([\w<>-]+)/i.test(text)) {
-    return fit(`More ${itemsOf(/^LOOP\s+AT\s+([\w<>-]+)/i.exec(text)?.[1] ?? '')}?`);
+    return fit(`More ${itemsOf(/^LOOP\s+AT\s+([\w<>-]+)/i.exec(text)?.[1] ?? '', ctx)}?`);
   }
   return 'Repeat?';
 }
@@ -1695,6 +1922,14 @@ interface MessageInfo {
 /** A German message text in English, when every word of it is known; else as written. */
 function englishText(text: string): string {
   return translateGermanText(text, FIELD_SOURCES)?.english ?? text;
+}
+
+/** German at a glance: an umlaut, or one of the words no English text carries. */
+const GERMAN_HINT = /[äöüßÄÖÜ]|\b(?:nicht|kein|keine|keinen|keiner|f(?:ue|ü)r|der|die|das|ist|sind|nur|und|oder|bitte|vorhanden|gefunden|fehlt|wurde|wurden|werden|mit|zum|zur|bei|auf|ung(?:ue|ü)ltig|fehler|konnte|nicht)\b/i;
+
+/** 3.0.22: a text in German the engine cannot put into English word for word. */
+function germanUntranslated(text: string): boolean {
+  return GERMAN_HINT.test(text) && translateGermanText(text, FIELD_SOURCES) === null;
 }
 
 function messageAt(ctx: PlainContext, line: number | undefined): MessageInfo {
@@ -1744,9 +1979,22 @@ export function outcomeName(
     };
     if (end.kind === 'end-error') {
       const message = messageAt(c, end.anchor?.lineStart);
-      if (message.text) return fit(`Stop: ${lcFirst(shortText(englishText(message.text)))}`);
+      // 3.0.22 (owner decision E2): a German text the engine cannot put into English stays out of the label; the
+      // element's detail keeps it word for word (`PlainLabels.technical`).
+      const germanText = c.reads3022 && !!message.text && germanUntranslated(message.text);
+      if (message.text && !germanText) return fit(`Stop: ${lcFirst(shortText(englishText(message.text)))}`);
       if (message.leaveProgram) return 'Program ends';
       const id = message.id ?? (/^[AEIWSX]\d{3}$/i.test(end.label) ? end.label.toUpperCase() : '');
+      // 3.0.22: the program's own words on the message (`MESSAGE e002 WITH 'No authorization for purchasing group'`)
+      // say why it stops better than a reading of the condition before it.
+      if (c.reads3022 && message.withText && !germanUntranslated(message.withText) && /\s/.test(message.withText.trim())) {
+        const said = lcFirst(englishText(message.withText).replace(/\s+/g, ' ').trim().replace(/[.:;,]+$/, ''));
+        return firstFitting([
+          `Stop: ${said}${id ? ` (${id})` : ''}`,
+          `Stop: ${said}`,
+          `Stop: ${lcFirst(shortText(said, 5))}${id ? ` (${id})` : ''}`,
+        ]);
+      }
       for (const short of [false, true]) {
         const phrase = phraseOf(short);
         if (!phrase || phrase === 'Condition met') continue;
@@ -1757,7 +2005,8 @@ export function outcomeName(
       }
       if (message.withText) return fit(`Stop: ${lcFirst(shortText(englishText(message.withText), 5))}${id ? ` (${id})` : ''}`);
       if (message.raised) return fit(`Stop: ${lcFirst(humaniseRoutine(message.raised.replace(/^[ZY]?CX_/i, '')))}`);
-      if (id) return `Error ${id}`;
+      if (germanText) return id ? `Stop with a message in German (${id})` : 'Stop with a message in German';
+      if (id) return c.reads3022 ? `Stop with an error message (${id})` : `Error ${id}`;
       return 'Stop: error';
     }
     if (end.detail?.early === true) {
@@ -1873,8 +2122,8 @@ function techniqueOf(node: SkeletonNode, ctx: PlainContext): string {
  * gets none, by BPMN convention), and every flow out of a decision gets the
  * name of its branch.
  */
-export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLabels {
-  const ctx = plainContext(source ?? '');
+export function plainLabels(skeleton: ProcessSkeleton, source?: string, options: PlainOptions = {}): PlainLabels {
+  const ctx = plainContext(source ?? '', options);
   const nodes = new Map<string, string>();
   const technical = new Map<string, string>();
   const technique = new Map<string, string>();
@@ -1949,6 +2198,19 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
       };
     }
     if (node.detail?.branchKind === 'case') {
+      // 3.0.22: `CASE sy-subrc` asks how the step before it ended, and its arms say so ("Found", "Return code 4").
+      if (ctx.reads3022 && cleanIdentifier(node.label) === 'sy-subrc') {
+        const setter = setterBefore(ctx, line);
+        return {
+          question: 'How did the previous step end?',
+          arm: (edge) => {
+            if (!edge.condition) return 'Other';
+            const values = splitCaseValues(edge.condition).map((v) => unquote(v));
+            if (values.length === 1 && values[0] === '0') return fit(subrcPhrase(setter, true, false, ctx));
+            return fit(`Return code ${joinList(values, 'or')}`);
+          },
+        };
+      }
       const subject = humaniseOperand(node.label, ctx);
       const command = subject === 'User command';
       return {
@@ -2008,8 +2270,13 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
     });
     const firstLeft = parseCondition(conditions[0]);
     const subject = sameField && firstLeft?.k === 'cmp' ? humaniseOperand(firstLeft.left, ctx) : '';
+    // 3.0.22: two cases on different subjects are asked by name — "Error set or test run not selected?" — where that
+    // fits a label; "Which case applies?" only where it does not.
+    const named = !sameField && ctx.reads3022 && conditions.length === 2
+      ? `${known.get(normalise(conditions[0]))} or ${lcFirst(known.get(normalise(conditions[1])) ?? '')}?`
+      : '';
     return {
-      question: sameField && subject ? fit(`${subject}?`) : 'Which case applies?',
+      question: sameField && subject ? fit(`${subject}?`) : named && named.length <= MAX_LABEL && !/…/.test(named) ? named : 'Which case applies?',
       arm: (edge) => {
         if (!edge.condition) return 'Otherwise';
         return known.get(normalise(edge.condition)) ?? phrase(edge.condition, node);
@@ -2075,7 +2342,10 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
     }
     if (!label && node.kind !== 'parallel-gateway') label = humaniseRoutine(node.label) || 'Step';
     nodes.set(node.id, node.kind === 'parallel-gateway' ? '' : fit(label));
-    technical.set(node.id, technicalOf(node));
+    // 3.0.22: a stop whose German text stays out of the label keeps it, word for word, in its detail.
+    const germanText = ctx.reads3022 && node.kind === 'end-error' ? messageAt(ctx, lineOf(node)).text : undefined;
+    const german = germanText && germanUntranslated(germanText) ? statementAt(ctx, lineOf(node))?.text : undefined;
+    technical.set(node.id, german ?? technicalOf(node));
     try {
       technique.set(node.id, techniqueOf(node, ctx));
     } catch {

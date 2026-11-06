@@ -1446,7 +1446,7 @@ export function explainBusinessRules(
 ): RuleSetExplanation {
   const reads3020 = engineReads3020Apply(engineVersion);
   const reads3021 = engineReads3021Apply(engineVersion);
-  const ctx = plainContext(source);
+  const ctx = plainContext(source, { engineVersion });
   const hasInclude = facts.statements.some((s) => s.keyword.toUpperCase() === 'INCLUDE' && !/^INCLUDE\s+(?:TYPE|STRUCTURE)\b/i.test(s.text));
   // The values the code tests one field against, across rules — for "handled by another rule".
   const siblings = new Map<string, string[]>();

@@ -150,7 +150,7 @@ export function processStory(
    */
   engineVersion: string | null = APP_VERSION,
 ): ProcessStory {
-  const labels = plainLabels(skeleton, source);
+  const labels = plainLabels(skeleton, source, { engineVersion });
   const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
     ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion))
     : null;
@@ -498,7 +498,7 @@ export function processChanges(
   /** From engine 3.0.20 a change to the result list says what each line is marked with (`listChangeAt`). */
   engineVersion: string | null = APP_VERSION,
 ): { changes: StoryChange[]; more: number } {
-  const labels = plainLabels(skeleton, source);
+  const labels = plainLabels(skeleton, source, { engineVersion });
   const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null) : null;
   const seen = new Set<string>();
   const all: StoryChange[] = [];

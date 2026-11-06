@@ -98,6 +98,13 @@ export interface ProgramSummaryFacts {
     displayTransactions: Array<{ name: string; word: string | null; line: number }>;
     /** Places that name the table or function they change only at run time. */
     dynamic: number;
+    /**
+     * From engine 3.0.22: what a run reaches that changes data and has no business word of its own — a transaction run
+     * with prepared entries (batch input), a posting call, `MODIFY ENTITIES` (`reachable-writes.ts`). Absent before.
+     */
+    unworded?: Array<{ kind: 'batch-input' | 'posting-call' | 'entity-modify'; object: string; line: number }>;
+    /** From engine 3.0.22: the reports it starts (`SUBMIT`), whose changes this code does not show. Absent before. */
+    submits?: Array<{ name: string; line: number }>;
   };
   outputs: {
     list: number | null;
@@ -386,6 +393,13 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
       changed.words.length ? `changes ${joinAnd(changed.words)}` : '',
       custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
     ].filter(Boolean);
+    // 3.0.22: a change with no business word is said by how it is made — never as "changes data" alone.
+    if (!parts.length && f.changes.unworded?.length) {
+      const batch = [...new Set(f.changes.unworded.filter((u) => u.kind === 'batch-input').map((u) => u.object))];
+      const posting = [...new Set(f.changes.unworded.filter((u) => u.kind !== 'batch-input').map((u) => u.object))];
+      if (batch.length) parts.push(`runs ${batch.length === 1 ? `transaction ${batch[0]}` : `transactions ${joinAnd(batch)}`} with prepared entries`);
+      if (posting.length) parts.push(`posts through ${joinAnd(posting)}`);
+    }
     const source = objectWords(business.filter((o) => !f.writes.some((w) => w.name === o.name)), 2).words;
     return {
       key: 'purpose',
@@ -449,6 +463,32 @@ function shownAs(f: ProgramSummaryFacts): string {
 }
 
 function changesLine(f: ProgramSummaryFacts): SummaryLine {
+  // 3.0.22: a report it starts — what that report changes is not in this code, and the line says so.
+  if (f.changes.state === 'not-determined' && f.changes.submits?.length) {
+    const names = f.changes.submits.map((x) => x.name);
+    return {
+      key: 'changes',
+      text: `It starts ${names.length === 1 ? `the report ${names[0]}` : `the reports ${joinAnd(names)}`}; what ${names.length === 1 ? 'that report changes' : 'those reports change'} in SAP is not visible in this code.`,
+      anchors: f.changes.submits.flatMap((x) => anchorOf(x.line)),
+      basis: 'not-determined',
+    };
+  }
+  // 3.0.22: a change with no business word — said by how it is made, and that the transaction decides what changes.
+  const unworded = f.changes.unworded ?? [];
+  if (f.changes.state === 'changes' && unworded.length && f.changes.actions.length === 0 && f.writes.length === 0) {
+    const batch = [...new Set(unworded.filter((u) => u.kind === 'batch-input').map((u) => u.object))];
+    const posting = [...new Set(unworded.filter((u) => u.kind !== 'batch-input').map((u) => u.object))];
+    const parts = [
+      ...(batch.length ? [`runs ${batch.length === 1 ? `transaction ${batch[0]}` : `transactions ${joinAnd(batch)}`} with prepared entries, so ${batch.length === 1 ? 'that transaction decides' : 'those transactions decide'} what is posted`] : []),
+      ...(posting.length ? [`calls ${joinAnd(posting)} to post data`] : []),
+    ];
+    return {
+      key: 'changes',
+      text: `It changes data in SAP: it ${joinAnd(parts)}.`,
+      anchors: unworded.flatMap((u) => anchorOf(u.line)),
+      basis: 'reconstructed',
+    };
+  }
   if (f.changes.state === 'not-determined') {
     return {
       key: 'changes',

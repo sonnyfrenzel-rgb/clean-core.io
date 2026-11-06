@@ -2,6 +2,7 @@ import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '.
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
 import { engineReads3021Apply } from '../abap/engine-reads-3021-gate';
+import { engineReads3022Apply } from '../abap/engine-reads-3022-gate';
 import { anchorText, flowText, layoutModel, NOTE_W, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
@@ -12,6 +13,7 @@ import {
   isMultiInstanceLoop,
   type ExportContainer,
   type ExportModel,
+  type ExportModelOptions,
   type ExportNode,
 } from './model';
 import { el, serialize, textEl, type XmlElement } from './xml';
@@ -140,10 +142,10 @@ export interface BpmnExport {
 
 /** The export API. `skeleton` is `buildProcessSkeleton(source)` of the source the signed run analysed. */
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
-  const model = buildExportModel(skeleton, {
-    labels: options.names === 'plain' ? plainLabels(skeleton, options.source) : undefined,
-    businessLevel: engineReads3021Apply(options.exporterVersion ?? APP_VERSION),
-  });
+  const version = options.exporterVersion ?? APP_VERSION;
+  const model = buildExportModel(skeleton, options.names === 'plain'
+    ? businessLevelOf(skeleton, options.source, version)
+    : { businessLevel: engineReads3021Apply(version) });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;
   // Before the layout, so a model-written name is measured as the name it is.
@@ -240,6 +242,20 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
       anchored,
       unanchored: nodes.length - anchored,
     },
+  };
+}
+
+/**
+ * The model options of the plain reading — the map a business reader sees — as the engine `engineVersion` draws it:
+ * plain labels, from 3.0.21 the business level, from 3.0.22 the labels in business language and technique one level
+ * down (`ENGINE_READS_3022_FROM`). One function, so the file, the workspace map and the readability measure
+ * (`tests/helpers/business-readability.ts`) read the same thing.
+ */
+export function businessLevelOf(skeleton: ProcessSkeleton, source: string | undefined, engineVersion: string): ExportModelOptions {
+  return {
+    labels: plainLabels(skeleton, source, { engineVersion }),
+    businessLevel: engineReads3021Apply(engineVersion),
+    foldTechnique: engineReads3022Apply(engineVersion),
   };
 }
 
@@ -656,11 +672,16 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
   if (node.fallback) extra.fallback = node.fallback;
   if (node.name !== node.technicalName) extra.technicalName = node.technicalName;
   if (node.fact) extra.fact = node.fact;
+  // 3.0.22: the steps folded into this one, each with its code and its lines — in the trace and in the documentation.
+  if (node.folded?.length) extra.folded = node.folded.map((f) => `${f.technicalName}${f.anchor ? ` ${f.anchor}` : ''}`).join('; ');
   const anchor = anchorText(node.source.anchor);
+  const foldedText = node.folded?.length
+    ? ` Also in this step: ${node.folded.map((f) => `${f.name} — ${f.technicalName}${f.anchor ? ` (${f.anchor.replace(/^L/, 'line ')})` : ''}`).join('; ')}.`
+    : '';
   const children: XmlElement[] = [
     // A plain name says what the step is; the documentation keeps what the code wrote.
-    ...(node.name !== node.technicalName
-      ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}`)]
+    ...(node.name !== node.technicalName || foldedText
+      ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}${foldedText}`)]
       : []),
     el('bpmn:extensionElements', [], [
       nodeTrace(node.source, options.sourceFileName, extra),
