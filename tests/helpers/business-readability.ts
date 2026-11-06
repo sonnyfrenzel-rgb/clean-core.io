@@ -67,7 +67,7 @@ export function englishLexicon(): Set<string> {
   for (const t of Object.values(TABLE_TERMS_EN)) add(`${t.singular} ${t.plural}`);
   for (const t of Object.values(FUNCTION_TERMS_EN)) add(t);
   for (const t of Object.values(TRANSACTION_TERMS_EN)) add(t);
-  // The dictionary of 3.5.0 (`sap-dictionary.ts`) is English, curated by hand, like the glossary.
+  // The dictionary of 3.1.0 (`sap-dictionary.ts`) is English, curated by hand, like the glossary.
   for (const t of dictionaryWords()) add(t);
   LEXICON = words;
   return words;
@@ -195,7 +195,7 @@ function anchorOf(n: ExportNode): string {
 
 /** Everything the Business view shows about a program, read as the engine `engineVersion` reads it. */
 export function readBusiness(source: string, file: string, engineVersion: string): BusinessReadingOut {
-  // The map of the engine read for (3.5.0 draws flag steps, calculations and loop starts the released one does not).
+  // The map of the engine read for (3.1.0 draws flag steps, calculations and loop starts the released one does not).
   const skeleton = buildProcessSkeleton(source, { engineVersion });
   const model = buildExportModel(skeleton, businessLevelOf(skeleton, source, engineVersion));
   const levelOf = new Map<string, number>([[model.root.id, 0]]);

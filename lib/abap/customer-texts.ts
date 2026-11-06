@@ -5,7 +5,7 @@
  * beside the sources (`zfoo.dtel.xml`, `ztab.tabl.xml`, `zdom.doma.xml`, `zprog.prog.xml`), which the import only
  * counted before.
  *
- * From engine 3.5.0 (`ENGINE_READS_350_FROM`) they are the first source of words for that project's Business view —
+ * From engine 3.1.0 (`ENGINE_READS_310_FROM`) they are the first source of words for that project's Business view —
  * before the glossary and the dictionary — and every word taken from them is marked "customer text"
  * (`CUSTOMER_TEXT_LABEL`). They are the customer's, not SAP's and not ours: they stay with the project
  * (`projects/{id}/customer_texts/current`, Admin SDK only, deleted with the project) and never enter the signed payload

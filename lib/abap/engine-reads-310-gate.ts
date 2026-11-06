@@ -1,7 +1,7 @@
 import { engineVersionAtLeast } from '../score-rule';
 
 /**
- * The one engine version gate of release 3.5.0 (built on the branch `next`). Two groups of readings live behind it.
+ * The one engine version gate of the rebuild's first release, v3.1.0. Two groups of readings live behind it.
  *
  * **1. The Business view in business language** — the version from which the Business view reads the code in business language (concept
  * "Business-Lesbarkeit" of 05.11.2026, owner decisions E1–E4 of 06.11.2026). Deterministic only — no model call, no
@@ -28,13 +28,13 @@ import { engineVersionAtLeast } from '../score-rule';
  * (`engineVersionOfProject`). The readings go live when `APP_VERSION` (`lib/version.ts`) reaches this version. Same
  * pattern as `ENGINE_READS_3021_FROM`.
  *
- * Owner decision 06.11.2026: there is no user release 3.0.22. Everything after 3.0.21 is built on the release branch
- * `next` and ships as v3.5.0; hotfixes on dev/main may be 3.0.22, 3.0.23 … and must keep the 3.0.21 reading. So the
- * gate is 3.5.0 — a run signed by a 3.0.x hotfix is never read as carrying these readings.
+ * Owner decisions 06.11.2026: there is no user release 3.0.22. The rebuild ships to users piece by piece on main —
+ * v3.1.0 first (about 23.11.2026), then v3.2.0, then v3.5.0 — and hotfixes in between are 3.0.22, 3.0.23 … and keep
+ * the 3.0.21 reading. So the gate is 3.1.0, the first release that carries these readings: a run signed by a 3.0.x
+ * hotfix is never read as carrying them.
  *
- * **2. The process map draws what a process owner misses first** — the version from which the process map draws what a process owner misses first (release 3.5.0, built on
- * the branch `next`; owner decision 06.11.2026: no user release 3.0.22, hotfixes on dev/main may still carry
- * 3.0.22, 3.0.23 … and must keep reading as before). Deterministic only, all in `lib/abap/process-skeleton.ts`:
+ * **2. The process map draws what a process owner misses first** — the version from which the process map draws what a process owner misses first (release 3.1.0;
+ * hotfixes on dev/main may still carry 3.0.22, 3.0.23 … and must keep reading as before). Deterministic only, all in `lib/abap/process-skeleton.ts`:
  *
  *   - **the outcome of an arm that draws no step** (`armOutcome`): the call of a technical helper in it
  *     (`PERFORM add_issue …`), failing that a flag a later decision reads (`gv_approved = abap_true`) — so a
@@ -51,9 +51,9 @@ import { engineVersionAtLeast } from '../score-rule';
  *
  * Pure: no imports beyond the version comparison.
  */
-export const ENGINE_READS_350_FROM = '3.5.0';
+export const ENGINE_READS_310_FROM = '3.1.0';
 
-/** True when a run of this engine version carries the 3.5.0 readings. A missing or unreadable version does not. */
-export function engineReads350Apply(engineVersion: string | null | undefined): boolean {
-  return engineVersionAtLeast(engineVersion, ENGINE_READS_350_FROM);
+/** True when a run of this engine version carries the 3.1.0 readings. A missing or unreadable version does not. */
+export function engineReads310Apply(engineVersion: string | null | undefined): boolean {
+  return engineVersionAtLeast(engineVersion, ENGINE_READS_310_FROM);
 }

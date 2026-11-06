@@ -3,7 +3,7 @@ import path from 'node:path';
 import { expect, test } from './helpers/test';
 import { measure, readBusiness, total, type Readability } from './helpers/business-readability';
 import { EXAMPLES_DIR } from './helpers/starter-example-files';
-import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 
 /**
  * The readability ratchet of the Business view over the seven examples the site offers (concept
@@ -15,9 +15,9 @@ import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
  * ceiling to the new count in the same commit; when a change makes it read worse, the change is wrong — or, where the
  * new wording is intended, the commit says which count moved and why.
  *
- * Baseline (engine 3.0.21, recorded 06.11.2026) beside the reading from 3.5.0:
+ * Baseline (engine 3.0.21, recorded 06.11.2026) beside the reading from 3.1.0:
  *
- *   surface     n     3.0.21                              3.5.0
+ *   surface     n     3.0.21                              3.1.0
  *   tasks       146/145 raw 4, empty 4, technical 6, dup 9   raw 4, empty 4, technical 6, dup 8
  *   gateways    48    positive 36, empty 3, raw 1           positive 47, empty 2, raw 1
  *   in short    30    untrue 0                              untrue 0
@@ -33,7 +33,7 @@ import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
  *
  *   rules       raw 6 -> 5            questions   raw 5 -> 4
  *
- * With the engine-quality readings of 3.5.0 merged (flag steps, helper calls, calculations, loop starts; the map is
+ * With the engine-quality readings of 3.1.0 merged (flag steps, helper calls, calculations, loop starts; the map is
  * now built for the engine read for), the examples draw 159 steps and 50 decision points instead of 145 and 48. The
  * new steps are phrased ("Approved without limit check (central warehouse)", "Mark as approved", "Note: could not
  * insert risk review task"); what moved, and why:
@@ -44,7 +44,7 @@ import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
  *   gateways positive 47 -> 49 of 50
  */
 
-const ENGINE = ENGINE_READS_350_FROM;
+const ENGINE = ENGINE_READS_310_FROM;
 
 let measured: Readability | null = null;
 function examples(): Readability {
@@ -57,7 +57,7 @@ function examples(): Readability {
   return measured;
 }
 
-test.describe('Business readability of the seven examples — never worse (engine 3.5.0)', () => {
+test.describe('Business readability of the seven examples — never worse (engine 3.1.0)', () => {
   test('BPMN steps: raw names, empty formulas, technique, duplicates', () => {
     const t = examples().tasks;
     expect(t.n).toBeGreaterThan(100);

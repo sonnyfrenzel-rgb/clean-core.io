@@ -4,7 +4,7 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
-import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 import {
   DICTIONARY_SOURCES,
   NAMING_ABBREVIATIONS,
@@ -22,10 +22,10 @@ import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 /**
  * The dictionary of the Business view (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026:
  * `lib/abap/sap-dictionary.ts`). Every program here is a minimal one written for this spec — none is taken from the
- * process benchmark. Each shows that an engine before 3.5.0 keeps its picture.
+ * process benchmark. Each shows that an engine before 3.1.0 keeps its picture.
  */
 
-const NEW = ENGINE_READS_350_FROM;
+const NEW = ENGINE_READS_310_FROM;
 const OLD = '3.0.21';
 
 function names(source: string, engine: string): string[] {

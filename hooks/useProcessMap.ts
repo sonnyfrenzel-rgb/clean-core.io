@@ -163,8 +163,8 @@ export function useProcessMap(
         import('@/lib/customer-texts-client'),
       ]);
       if (cancelled) return;
-      // 3.5.0 (H5b): the project's own dictionary texts, when its upload had an abapGit package — read by the
-      // Business view from engine 3.5.0 on; null (and the map as before) without them or when they cannot be read.
+      // 3.1.0 (H5b): the project's own dictionary texts, when its upload had an abapGit package — read by the
+      // Business view from engine 3.1.0 on; null (and the map as before) without them or when they cannot be read.
       const customerTexts = await customer.fetchCustomerTexts(projectId);
       if (cancelled) return;
 

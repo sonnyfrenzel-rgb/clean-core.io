@@ -295,12 +295,12 @@ const WORDS: Readonly<Record<string, Entry>> = Object.freeze({
 });
 
 /**
- * 3.5.0 (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026): more German words customer ABAP commonly uses
- * in names and texts — read only for engine 3.5.0 (`WordSources.reads350`), so an older engine keeps its picture.
+ * 3.1.0 (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026): more German words customer ABAP commonly uses
+ * in names and texts — read only for engine 3.1.0 (`WordSources.reads310`), so an older engine keeps its picture.
  * Ordinary German, chosen by business area, not from the gaps of any benchmark. Words that are also English words
  * (`charge`, `personal`, `provision`, `land`) stay out on purpose.
  */
-const WORDS_350: Readonly<Record<string, Entry>> = Object.freeze({
+const WORDS_310: Readonly<Record<string, Entry>> = Object.freeze({
   // verbs, with the imperative a routine name often uses
   erfragen: verb('ask for', 'erfragen'), abfragen: verb('query', 'abfragen'), fragen: verb('ask', 'fragen'),
   anpassen: verb('adjust', 'anpassen'), zusammenfuehren: verb('merge', 'zusammenführen'), abschliessen: verb('close', 'abschließen'),
@@ -353,8 +353,8 @@ const WORDS_350: Readonly<Record<string, Entry>> = Object.freeze({
   versendet: adj('sent', 'versendet'), bestaetigt: adj('confirmed', 'bestätigt'), ueberschritten: adj('exceeded', 'überschritten'),
 });
 
-/** 3.5.0: first parts of a compound the larger vocabulary reads (`Arbeits|zeit`, `Bar|betrag`). */
-const MODIFIERS_350: Readonly<Record<string, Entry>> = Object.freeze({
+/** 3.1.0: first parts of a compound the larger vocabulary reads (`Arbeits|zeit`, `Bar|betrag`). */
+const MODIFIERS_310: Readonly<Record<string, Entry>> = Object.freeze({
   arbeits: noun('working', 'Arbeits'), bar: noun('cash', 'Bar'), mindest: noun('minimum', 'Mindest'), hoechst: noun('maximum', 'Höchst'),
   reise: noun('travel', 'Reise'), zins: noun('interest', 'Zins'), mahn: noun('dunning', 'Mahn'), kredit: noun('credit', 'Kredit'),
   ersatz: noun('replacement', 'Ersatz'), wartungs: noun('maintenance', 'Wartungs'), qualitaets: noun('quality', 'Qualitäts'),
@@ -472,10 +472,10 @@ export interface WordSources {
   /** SAP field names and other words the caller already knows (`kunnr` → "customer number"). */
   known?: (word: string) => string | null;
   /**
-   * Read for engine 3.5.0 (`ENGINE_READS_350_FROM`): the larger vocabulary `WORDS_350` / `MODIFIERS_350` is read
+   * Read for engine 3.1.0 (`ENGINE_READS_310_FROM`): the larger vocabulary `WORDS_310` / `MODIFIERS_310` is read
    * too. An older engine reads the vocabulary it always read.
    */
-  reads350?: boolean;
+  reads310?: boolean;
 }
 
 /** A key of one of the tables — never an inherited one (`constructor`, `toString`). */
@@ -484,12 +484,12 @@ function own<T>(table: Readonly<Record<string, T>> | undefined, key: string): T 
 }
 
 function lookup(word: string, wide = false): Entry | null {
-  const hit = own(WORDS, word) ?? (wide ? own(WORDS_350, word) : undefined);
+  const hit = own(WORDS, word) ?? (wide ? own(WORDS_310, word) : undefined);
   if (hit) return hit;
   // An inflected adjective: offene, offenen, offener, letzte, erledigten …
   for (const ending of ['en', 'er', 'es', 'em', 'e']) {
     if (word.length > ending.length + 2 && word.endsWith(ending)) {
-      const stem = own(WORDS, word.slice(0, -ending.length)) ?? (wide ? own(WORDS_350, word.slice(0, -ending.length)) : undefined);
+      const stem = own(WORDS, word.slice(0, -ending.length)) ?? (wide ? own(WORDS_310, word.slice(0, -ending.length)) : undefined);
       if (stem?.pos === 'adj') return { ...stem, de: stem.de + ending, inflected: true };
     }
   }
@@ -499,7 +499,7 @@ function lookup(word: string, wide = false): Entry | null {
 /** `lieferdatum` → Liefer|datum; `buchungskreis` → listed; `feldkatalog` → Feld|katalog. */
 function compound(word: string, depth = 0, wide = false): Entry | null {
   if (depth > 2 || word.length < 6) return null;
-  const words = (key: string) => own(WORDS, key) ?? (wide ? own(WORDS_350, key) : undefined);
+  const words = (key: string) => own(WORDS, key) ?? (wide ? own(WORDS_310, key) : undefined);
   for (let cut = word.length - 3; cut >= 3; cut--) {
     const head = word.slice(cut);
     const headEntry = depth === 0 ? (words(head) ?? compound(head, depth + 1, wide)) : words(head) ?? null;
@@ -507,7 +507,7 @@ function compound(word: string, depth = 0, wide = false): Entry | null {
     for (const first of [word.slice(0, cut), word.slice(0, cut).replace(/s$/, '')]) {
       const linkS = first.length < cut;
       const listed = words(first);
-      const mod = own(MODIFIERS, first) ?? (wide ? own(MODIFIERS_350, first) : undefined) ?? (listed?.pos === 'noun' ? listed : null);
+      const mod = own(MODIFIERS, first) ?? (wide ? own(MODIFIERS_310, first) : undefined) ?? (listed?.pos === 'noun' ? listed : null);
       if (!mod || first.length < 3) continue;
       const modEn = mod === listed ? singularEnglish(mod.en) : mod.en;
       const headNoun = headEntry.pos === 'action' ? headEntry.noun ?? headEntry.en : headEntry.en;
@@ -532,7 +532,7 @@ function classify(raw: string, sources: WordSources): Token | null {
   const word = asciiGerman(raw);
   if (!word) return null;
   if (/^\d+$/.test(word)) return { kind: 'abbr', entry: noun(word, word), upper: true };
-  const german = lookup(word, sources.reads350 === true);
+  const german = lookup(word, sources.reads310 === true);
   if (german) return { kind: 'de', entry: german };
   const shared = own(SHARED, word);
   if (shared) return { kind: 'shared', entry: shared };
@@ -548,7 +548,7 @@ function classify(raw: string, sources: WordSources): Token | null {
   if (sources.acronyms?.has(word)) return { kind: 'abbr', entry: noun(word.toUpperCase(), word.toUpperCase()), upper: true };
   const known = sources.known?.(word);
   if (known) return { kind: 'abbr', entry: noun(known, word.toUpperCase()), upper: true };
-  const parts = compound(word, 0, sources.reads350 === true);
+  const parts = compound(word, 0, sources.reads310 === true);
   if (parts) return { kind: 'de', entry: parts };
   // A short token is an abbreviation (`FI`, `IC`, `VE`), written as it stands —
   // two letters, or a token with a digit. An unknown three-letter word may be
@@ -711,7 +711,7 @@ function gerund(verbWord: string): string {
   return [ing, ...tail].join(' ');
 }
 
-/** 3.5.0: does a text hold a word this vocabulary reads as German (`ohne`, `Prüfung`, `nachverarbeitet` is not one)? */
+/** 3.1.0: does a text hold a word this vocabulary reads as German (`ohne`, `Prüfung`, `nachverarbeitet` is not one)? */
 export function hasGermanWord(text: string, sources: WordSources = {}): boolean {
   try {
     return String(text ?? '').split(/[\s,.;:!?()'"/-]+/).filter(Boolean).some((w) => classify(w, sources)?.kind === 'de');

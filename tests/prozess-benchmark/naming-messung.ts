@@ -1,7 +1,7 @@
 /**
  * Measurement run for the naming stage with the engine's facts (concept "Business-Lesbarkeit" §5, "Modelltest für H7";
  * owner decision of 06.11.2026). Baseline naming (the prompt of 3.0.21) against naming with facts and the checker
- * (3.5.0, `lib/naming-facts.ts`), on LEARN cases only, with the model the naming stage uses.
+ * (3.1.0, `lib/naming-facts.ts`), on LEARN cases only, with the model the naming stage uses.
  *
  *   npx tsx tests/prozess-benchmark/naming-messung.ts --cases 30 --out <dir> [--budget 2]
  *
@@ -87,8 +87,8 @@ async function main() {
   for (const id of ids) {
     const source = caseSource(id);
     const base: NamingContext = namingContextOf(source, { engineVersion: '3.0.21', facts: false });
-    const withFacts: NamingContext = namingContextOf(source, { engineVersion: '3.5.0', facts: true });
-    const engine = plainLabels(withFacts.skeleton, source, { engineVersion: '3.5.0' });
+    const withFacts: NamingContext = namingContextOf(source, { engineVersion: '3.1.0', facts: true });
+    const engine = plainLabels(withFacts.skeleton, source, { engineVersion: '3.1.0' });
     const r0 = await call(buildNamingPrompt(base));
     const r1 = await call(buildNamingPrompt(withFacts));
     const v0 = validateNamingAnswer(base, r0.text);

@@ -400,7 +400,7 @@ export type SkeletonMutation = (skeleton: ProcessSkeleton, file: string) => Proc
 
 /**
  * KORPUS_ENGINE_VERSION: the engine version the skeleton is read for (`buildProcessSkeleton`'s gate); unset, this
- * release. A measurement of a gated reading sets it to the gate's version (3.5.0) before `APP_VERSION` reaches it.
+ * release. A measurement of a gated reading sets it to the gate's version (3.1.0) before `APP_VERSION` reaches it.
  */
 const ENGINE_VERSION = process.env.KORPUS_ENGINE_VERSION || undefined;
 

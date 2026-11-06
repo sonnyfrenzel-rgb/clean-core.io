@@ -1,5 +1,5 @@
 /**
- * The process-quality readings of engine 3.5.0 (`ENGINE_READS_350_FROM`), each behind the version gate: a run
+ * The process-quality readings of engine 3.1.0 (`ENGINE_READS_310_FROM`), each behind the version gate: a run
  * of an older engine (3.0.21, and every 3.0.x hotfix after it) draws exactly the map it drew before. Every source
  * here is written for this spec; none is a benchmark case.
  *
@@ -8,10 +8,10 @@
 import { test, expect } from '@playwright/test';
 import { buildProcessSkeleton, skeletonReadFor } from '../lib/abap/process-skeleton';
 import { buildProcessFacts } from '../lib/abap/process-facts';
-import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 import { buildReadingExports } from '../lib/bpmn/export';
 
-const NEW = { engineVersion: ENGINE_READS_350_FROM };
+const NEW = { engineVersion: ENGINE_READS_310_FROM };
 /** A hotfix on dev/main after 3.0.21 (owner decision 06.11.2026): no new reading. */
 const OLD = { engineVersion: '3.0.22' };
 
@@ -116,7 +116,7 @@ test('a constant of the source is a flag value; a decision table stays one class
 test('a skeleton read for this release is rebuilt for the engine of an older run, and reused for its own', () => {
   const facts = buildProcessFacts(APPROVAL);
   const current = buildProcessSkeleton(APPROVAL, NEW);
-  expect(skeletonReadFor(current, facts, ENGINE_READS_350_FROM)).toBe(current);
+  expect(skeletonReadFor(current, facts, ENGINE_READS_310_FROM)).toBe(current);
   const older = skeletonReadFor(current, facts, '3.0.22');
   expect(older).not.toBe(current);
   expect(JSON.stringify(older)).toBe(JSON.stringify(buildProcessSkeleton(APPROVAL, OLD)));
@@ -254,13 +254,13 @@ test('an older engine leaves the helper folded, and both ways out of the decisio
   for (const line of [8, 11]) expect(skeleton.nodes.some((n) => n.anchor?.lineStart === line)).toBe(false);
 });
 
-test('the gate: 3.0.21 and every 3.0.x hotfix read as before, 3.5.0 and later read the new way', () => {
+test('the gate: 3.0.21 and every 3.0.x hotfix read as before, 3.1.0 and later read the new way', () => {
   const steps = (engineVersion: string) => {
     const skeleton = buildProcessSkeleton(APPROVAL, { engineVersion });
     return skeleton.nodes.filter((n) => n.detail?.flagStep === true).length;
   };
-  for (const version of ['3.0.21', '3.0.22', '3.0.23', '3.0.99', '3.4.9']) expect(steps(version), version).toBe(0);
-  for (const version of ['3.5.0', '3.5.1', '3.6.0']) expect(steps(version), version).toBe(1);
+  for (const version of ['3.0.21', '3.0.22', '3.0.23', '3.0.99']) expect(steps(version), version).toBe(0);
+  for (const version of ['3.1.0', '3.2.0', '3.5.0', '3.6.0']) expect(steps(version), version).toBe(1);
   expect(steps('')).toBe(0);
 });
 
@@ -308,7 +308,7 @@ test('a collected row does not change whether its routine is folded to one step'
   };
   const withoutRow = buildProcessSkeleton(REPORT_LINES.replace('      APPEND gs_line TO gt_report.', '      CLEAR gs_line.'), NEW)
     .nodes.find((n) => n.anchor?.lineStart === 4);
-  expect(routine(ENGINE_READS_350_FROM)).toBe(`${withoutRow?.kind}${withoutRow?.collapsed ? ' (folded)' : ''}`);
+  expect(routine(ENGINE_READS_310_FROM)).toBe(`${withoutRow?.kind}${withoutRow?.collapsed ? ' (folded)' : ''}`);
   expect(buildProcessSkeleton(REPORT_LINES, OLD).nodes.some((n) => n.anchor?.lineStart === 11)).toBe(false);
 });
 
@@ -336,7 +336,7 @@ test('an entry that draws nothing between start and end is left out of the busin
   expect(empty).toEqual([6, 13]);
   // The skeleton keeps them and their anchors.
   expect(skeleton.nodes.filter((n) => n.kind === 'start' && [6, 13].includes(n.anchor?.lineStart ?? 0))).toHaveLength(2);
-  const { bpmn, technical } = buildReadingExports(BADI, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_350_FROM });
+  const { bpmn, technical } = buildReadingExports(BADI, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_310_FROM });
   const starts = (xml: string) => (xml.match(/<bpmn:startEvent /g) ?? []).length;
   expect(starts(technical.xml)).toBe(3);
   expect(starts(bpmn.xml)).toBe(1);
@@ -348,7 +348,7 @@ test('an entry that draws nothing between start and end is left out of the busin
 
 test('a source whose every entry is empty still shows them, and a reporting event block is never left out', () => {
   const allEmpty = BADI.replace("    IF is_item-menge > 100.\n      CALL FUNCTION 'Z_ASK_BUYER'.\n    ENDIF.\n", '');
-  const { bpmn } = buildReadingExports(allEmpty, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_350_FROM });
+  const { bpmn } = buildReadingExports(allEmpty, { processName: 'BAdI', sourceFileName: 'x.abap', exporterVersion: ENGINE_READS_310_FROM });
   expect((bpmn.xml.match(/<bpmn:startEvent /g) ?? []).length).toBe(3);
   const report = ['REPORT zempty_event.', 'INITIALIZATION.', 'START-OF-SELECTION.', "  CALL FUNCTION 'Z_RUN'."].join('\n');
   expect(buildProcessSkeleton(report, NEW).regions.some((r) => r.drawsNothing)).toBe(false);

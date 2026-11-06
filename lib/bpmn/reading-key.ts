@@ -11,7 +11,7 @@ export interface ReadingOptions {
   exporterVersion?: string;
   /** The project's stored business names, for a download (3.0.21, `BpmnExportOptions.naming`). The map passes none. */
   naming?: ProcessNamingRecord | null;
-  /** 3.5.0 (H5b): the project's customer texts (`BpmnExportOptions.customerTexts`). */
+  /** 3.1.0 (H5b): the project's customer texts (`BpmnExportOptions.customerTexts`). */
   customerTexts?: CustomerTexts | null;
 }
 

@@ -3,7 +3,7 @@ import { humaniseRoutine, messageWordsAt, plainContext, plainLabels } from './ab
 import { TABLE_TERMS_EN } from './abap/plain-glossary';
 import { SAP_TABLES } from './abap/sap-dictionary';
 import { quotedComment } from './abap/author-comments';
-import { ENGINE_READS_350_FROM } from './abap/engine-reads-350-gate';
+import { ENGINE_READS_310_FROM } from './abap/engine-reads-310-gate';
 
 /**
  * The facts the naming stage may build a business name from (concept "Business-Lesbarkeit" H7 and H6, owner decision
@@ -12,13 +12,13 @@ import { ENGINE_READS_350_FROM } from './abap/engine-reads-350-gate';
  * The naming model used to see a node's technical token and its conditions, and nothing the engine had proved about
  * it — so it guessed, or copied the token. Here every node gets the engine's own evidence, each with an id:
  *
- *   - `engine` — the deterministic plain label of 3.5.0 (`plain-language.ts`), which already carries an internal
+ *   - `engine` — the deterministic plain label of 3.1.0 (`plain-language.ts`), which already carries an internal
  *     table's source, the result check of a BAPI, a positive question, a stop's own message text;
  *   - `table` — a database table the step reads or writes, with its glossary word (`plain-glossary.ts`, from H5 also
  *     the dictionary `sap-dictionary.ts`);
  *   - `message` — the program's own words on a `MESSAGE` at the node, quoted;
  *   - `part` — the routine the node stands in, in words;
- *   - `comment` — 3.5.0 (H4): the author's comment at the node, quoted with its tag and line (`author-comments.ts`).
+ *   - `comment` — 3.1.0 (H4): the author's comment at the node, quoted with its tag and line (`author-comments.ts`).
  *     A name may lean on it; the name stays AI-generated, the comment stays the author's word.
  *
  * No new source of words: every fact is a part of the source the stage already had, or the glossary the engine
@@ -52,8 +52,8 @@ export type NamingFacts = ReadonlyMap<string, readonly NamingFact[]>;
 
 /** Facts of every node of a skeleton. */
 export function namingFactsOf(skeleton: ProcessSkeleton, source: string): NamingFacts {
-  const labels = plainLabels(skeleton, source, { engineVersion: ENGINE_READS_350_FROM });
-  const ctx = plainContext(source, { engineVersion: ENGINE_READS_350_FROM });
+  const labels = plainLabels(skeleton, source, { engineVersion: ENGINE_READS_310_FROM });
+  const ctx = plainContext(source, { engineVersion: ENGINE_READS_310_FROM });
   const regionLabel = new Map(skeleton.regions.map((r) => [r.key, r.label]));
   const out = new Map<string, NamingFact[]>();
   let n = 0;
@@ -133,7 +133,7 @@ export function uncoveredWords(name: string, evidence: readonly string[]): strin
 const NEGATION = /\b(?:not|no|none|never|nothing|without|missing)\b|n't\b/i;
 
 /**
- * 3.5.0 (H6, measured 06.11.2026): a name that changes what kind of thing a node says — a normal end called a stop,
+ * 3.1.0 (H6, measured 06.11.2026): a name that changes what kind of thing a node says — a normal end called a stop,
  * a decision that no longer asks, a "not" gained or lost against the engine's own label. The measurement run found
  * these where the model rephrased ("Stops: done" for a normal end); they are wrong, not merely invented, and dropped.
  * `kind` is the skeleton node kind; `engine` the engine's plain label of the node ('' without one).

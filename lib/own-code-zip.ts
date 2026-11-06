@@ -65,7 +65,7 @@ function readEntryBounded(file: JSZip.JSZipObject, budget: { remaining: number }
   });
 }
 
-/** 3.5.0 (H5b): the abapGit object types that carry the customer's texts (`readCustomerTexts`). */
+/** 3.1.0 (H5b): the abapGit object types that carry the customer's texts (`readCustomerTexts`). */
 const CUSTOMER_TEXT_TYPES = /\.(?:dtel|tabl|view|doma|prog|fugr|clas)\.xml$/i;
 
 /** Archive housekeeping that is nobody's source: macOS forks, dot files. */
@@ -112,7 +112,7 @@ export async function readZipSources(
     if (!isSourceName(entry.name)) {
       if (isAbapGitMetadata(entry.name)) {
         abapGitMetadata += 1;
-        // 3.5.0 (H5b): the descriptions the customer's dictionary gives its objects — read, within the same budget.
+        // 3.1.0 (H5b): the descriptions the customer's dictionary gives its objects — read, within the same budget.
         if (CUSTOMER_TEXT_TYPES.test(entry.name)) {
           try {
             const xml = await readEntryBounded(entry, budget);

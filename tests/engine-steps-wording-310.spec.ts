@@ -2,15 +2,15 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { businessLevelOf } from '../lib/bpmn/export';
-import { ENGINE_READS_350_FROM } from '../lib/abap/engine-reads-350-gate';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 
 /**
- * The steps the engine draws from 3.5.0 for an arm that would otherwise draw nothing (`process-skeleton.ts`: a flag a
+ * The steps the engine draws from 3.1.0 for an arm that would otherwise draw nothing (`process-skeleton.ts`: a flag a
  * later decision reads, the call of a technical helper), said as business steps — never the assignment as code.
  * Minimal programs written for this spec.
  */
 
-const NEW = ENGINE_READS_350_FROM;
+const NEW = ENGINE_READS_310_FROM;
 
 function names(source: string, engine: string): string[] {
   const skeleton = buildProcessSkeleton(source, { engineVersion: engine });

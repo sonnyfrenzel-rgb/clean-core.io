@@ -239,7 +239,7 @@ export default function OwnCodeImport() {
         setBusy(false);
         return;
       }
-      // 3.5.0 (H5b): the customer's dictionary texts of an abapGit upload stay with the project — best effort: without
+      // 3.1.0 (H5b): the customer's dictionary texts of an abapGit upload stay with the project — best effort: without
       // them the Business view reads as it does for a source without a package.
       const customerTexts = mergeCustomerTexts(files.map((f) => f.customerTexts));
       if (customerTexts && !(await storeCustomerTexts(docRef.id, customerTexts))) {

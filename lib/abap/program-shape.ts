@@ -2,7 +2,7 @@ import { readStatements } from './statement-reader';
 
 /**
  * What kind of program a source is, read off the constructs SAP gives that kind (concept "Business-Lesbarkeit" H8) —
- * from engine 3.5.0 the purpose line of "In short" when the program's names support none (`program-domain.ts`).
+ * from engine 3.1.0 the purpose line of "In short" when the program's names support none (`program-domain.ts`).
  *
  * The concept measured that names carry a purpose for 6 of 7 examples but 4 of 150 benchmark programs: customer
  * programs are named in German or in codes. The constructs do not depend on the language. Each shape says only what

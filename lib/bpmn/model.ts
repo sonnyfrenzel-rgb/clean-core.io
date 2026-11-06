@@ -117,11 +117,11 @@ export interface ExportNode {
    */
   technique?: string;
   /**
-   * 3.5.0: what the reader should know beside the name, in the engine's words (`PlainLabels.detail`) — an unknown
+   * 3.1.0: what the reader should know beside the name, in the engine's words (`PlainLabels.detail`) — an unknown
    * check says that the code does not state what it means (owner decision 06.11.2026). In the documentation only.
    */
   detail?: string;
-  /** 3.5.0 (H4): the author's comment at the element, quoted with its tag and line (`quotedComment`). Documentation only. */
+  /** 3.1.0 (H4): the author's comment at the element, quoted with its tag and line (`quotedComment`). Documentation only. */
   comment?: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
@@ -146,7 +146,7 @@ export interface ExportNode {
    */
   anchorLabel?: string;
   /**
-   * The steps folded into this one at the business level (3.5.0, `ExportModelOptions.foldTechnique`): a lock, its
+   * The steps folded into this one at the business level (3.1.0, `ExportModelOptions.foldTechnique`): a lock, its
    * release, a list's set-up, or a step of the same name right after it — each with its own name, its code and its
    * lines. The element's anchor (`anchorLabel`) carries every one of their lines; the documentation names them.
    */
@@ -429,7 +429,7 @@ export interface ExportModelOptions {
    */
   businessLevel?: boolean;
   /**
-   * Technique one level down (concept "Business-Lesbarkeit", from engine 3.5.0 — `ENGINE_READS_350_FROM`). With
+   * Technique one level down (concept "Business-Lesbarkeit", from engine 3.1.0 — `ENGINE_READS_310_FROM`). With
    * plain labels, two things on a straight run of plain steps (one way in, one way out, no condition between them):
    *
    *   - **a technical step is folded into the step beside it** — a lock (`ENQUEUE_*`), its release (`DEQUEUE_*`),
@@ -451,7 +451,7 @@ export function buildExportModel(skeleton: ProcessSkeleton, options: ExportModel
 
 /** The SAP technique a business step does not need to see (`ExportModelOptions.foldTechnique`), by the code's name. */
 const TECHNIQUE_CALL = /^(?:ENQUEUE_|DEQUEUE_|BAL_|REUSE_ALV_FIELDCATALOG|LVC_FIELDCATALOG)/i;
-/** 3.5.0: a helper routine that writes the program's log, by its name (`ADD_LOG`, `LOG_MESSAGE`, `PROTOKOLL_SCHREIBEN`). */
+/** 3.1.0: a helper routine that writes the program's log, by its name (`ADD_LOG`, `LOG_MESSAGE`, `PROTOKOLL_SCHREIBEN`). */
 const LOG_HELPER = /(?:^|[_:])(?:log|logs|protokoll|applog|msg_add|add_msg)(?:[_:]|$)/i;
 
 /** At least this many guard checks in a row are drawn as one step at the business level. */
@@ -512,7 +512,7 @@ class ModelBuilder {
     }
 
     const root = this.container('process', 'process');
-    // Engine 3.5.0: the business reading leaves out an entry that draws nothing between start and end
+    // Engine 3.1.0: the business reading leaves out an entry that draws nothing between start and end
     // (`SkeletonRegion.drawsNothing`) — unless that would leave no process at all. The technical reading draws it.
     const hideEmpty = this.businessLevel && !!this.labels
       && this.skeleton.entries.some((key) => this.regionByKey.get(key) && !this.regionByKey.get(key)?.drawsNothing);
@@ -565,7 +565,7 @@ class ModelBuilder {
     }
     return this.skeleton.lanes.map((lane) => ({
       id: lane.id,
-      // 3.5.0 (H9): an authorization lane by what it protects (`PlainLabels.lane`); the skeleton's token otherwise.
+      // 3.1.0 (H9): an authorization lane by what it protects (`PlainLabels.lane`); the skeleton's token otherwise.
       name: this.labels?.lane?.(lane) || lane.name,
       kind: lane.kind,
       source: lane,
@@ -869,7 +869,7 @@ class ModelBuilder {
 
   /** See `ExportModelOptions.foldTechnique`. */
   private foldTechniqueSteps(into: ExportContainer, band: ExportBand, local: Map<string, ExportNode>): void {
-    // 3.5.0: the call of a technical helper the engine draws as an arm's outcome (`detail.helperCall`) is technique too
+    // 3.1.0: the call of a technical helper the engine draws as an arm's outcome (`detail.helperCall`) is technique too
     // when it writes a log (`PERFORM add_log`) — folded where it stands in a straight run; an arm's only step stays.
     const isTechnique = (n: ExportNode) => TECHNIQUE_CALL.test(n.technicalName.replace(/^\/\w+\//, ''))
       || (n.source.detail?.helperCall === true && LOG_HELPER.test(String(n.source.detail?.routine ?? n.technicalName)));

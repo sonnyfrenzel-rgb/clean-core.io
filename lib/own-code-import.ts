@@ -121,7 +121,7 @@ export interface OwnCodeFile {
   /** Found while reading the file itself. */
   issues: OwnCodeIssue[];
   /**
-   * 3.5.0 (H5b): the customer's dictionary texts read from the abapGit XML files of a ZIP (`lib/abap/customer-texts.ts`).
+   * 3.1.0 (H5b): the customer's dictionary texts read from the abapGit XML files of a ZIP (`lib/abap/customer-texts.ts`).
    * Stored with the project after it is created; absent without any.
    */
   customerTexts?: CustomerTexts | null;
