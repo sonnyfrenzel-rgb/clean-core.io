@@ -1,5 +1,5 @@
 {
-  "//": "Multi-database Firestore rules deploy target. Used ONLY by `npm run deploy:rules` (firebase deploy --config this-file). Kept separate from firebase.json because the array/multi-db form breaks the local emulator's default-database rules enforcement used by the test suite. Deploy rules to every database the app uses so they never drift again. Add every new database here. clean-core-eu is production since the 2026-08-20 migration out of us-west1; its retired source, ai-studio-e57d33e3, was deleted on 2026-11-05 and left this list (docs/DATA-RETENTION.md). Remove a database here when it is deleted, so the deploy and rules:verify never address a database that no longer exists.",
+  "//": "Multi-database Firestore rules deploy target. Used ONLY by `npm run deploy:rules` (firebase deploy --config this-file). Kept separate from firebase.json because the array/multi-db form breaks the local emulator's default-database rules enforcement used by the test suite. Deploy rules to every database the app uses so they never drift again. Add every new database here. clean-core-eu is production since the 2026-08-20 migration out of us-west1; its retired source, ai-studio-e57d33e3, was deleted on 2026-11-05, the unused ai-studio-d80950ff and ai-studio-39b46c45 on 2026-11-06, and all three left this list (docs/DATA-RETENTION.md). Remove a database here when it is deleted, so the deploy and rules:verify never address a database that no longer exists.",
   "firestore": [
     {
       "database": "(default)",
@@ -10,15 +10,7 @@
       "rules": "firestore.rules"
     },
     {
-      "database": "ai-studio-39b46c45-cda0-481e-9847-19682e979043",
-      "rules": "firestore.rules"
-    },
-    {
       "database": "ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360",
-      "rules": "firestore.rules"
-    },
-    {
-      "database": "ai-studio-d80950ff-29db-4c7a-a202-688b019c1bf9",
       "rules": "firestore.rules"
     }
   ]
