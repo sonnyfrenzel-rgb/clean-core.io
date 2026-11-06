@@ -66,6 +66,7 @@ import { buildWithdrawalReceiptMail, withdrawalReceiptSubject } from '../../lib/
 import { acceptedWording, buildContractConfirmationMail, type ConfirmationOccasion } from '../../lib/contract-confirmation-email';
 import { currentTermsChanges } from '../../lib/terms-announcement/changes';
 import { buildTermsAnnouncementMail } from '../../lib/terms-announcement/mail';
+import { buildCommunityUpdateMail } from '../../lib/terms-announcement/community-update';
 import { TERMS_EFFECTIVE_DATE_ISO } from '../../lib/legal/open-values';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
@@ -410,6 +411,35 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         baseUrl: 'https://clean-core.io',
       });
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: m.subject, html: m.html, text: m.text };
+    },
+  },
+  // The community mail on what is planned next (legal statement 17e, M1): the
+  // block the notice no longer carries, to opted-in accounts only, with the
+  // unsubscribe link in the body and the RFC 8058 header like the survey.
+  {
+    type: 'community-update',
+    audience: 'nutzer',
+    source: 'scripts/send-community-update.ts',
+    template: 'lib/terms-announcement/community-update.ts',
+    build: (ctx) => {
+      const unsubscribe = unsubscribeUrls('https://clean-core.io', unsignedToken('unsub', ctx));
+      const m = buildCommunityUpdateMail({
+        plannedDayIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22',
+        consentedOnIso: ctx.now.toISOString().slice(0, 10),
+        unsubscribeUrl: unsubscribe.page,
+        baseUrl: 'https://clean-core.io',
+      });
+      return {
+        from: USER_MAIL_FROM,
+        replyTo: USER_MAIL_REPLY_TO,
+        subject: m.subject,
+        html: m.html,
+        text: m.text,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribe.oneClick}>, <mailto:${USER_MAIL_REPLY_TO}?subject=Unsubscribe>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      };
     },
   },
   {

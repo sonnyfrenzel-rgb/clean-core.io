@@ -29,14 +29,41 @@ export interface AnnouncementArgs {
   out: string | null;
   /** `--sample-only`: render the mail from the texts; no database, no network. */
   sampleOnly: boolean;
+  /** `--late-ok`: start a real send after the cut-off of the send day (`sendWindowRefusal`). */
+  lateOk: boolean;
+  /** `--test-to <file>` / `--test-to=<file>`: the test send to the seed mailboxes (`testSendPlan`). */
+  testTo: string | null;
+  /** `--allow-placeholders`: a test send may go out while the texts still carry an open-value marker. */
+  allowPlaceholders: boolean;
 }
 
 export class AnnouncementArgsError extends Error {}
 
 export function parseAnnouncementArgs(argv: readonly string[]): AnnouncementArgs {
-  const args: AnnouncementArgs = { dryRun: true, confirm: null, limit: MAX_PER_RUN, out: null, sampleOnly: false };
-  for (const a of argv) {
+  const args: AnnouncementArgs = {
+    dryRun: true,
+    confirm: null,
+    limit: MAX_PER_RUN,
+    out: null,
+    sampleOnly: false,
+    lateOk: false,
+    testTo: null,
+    allowPlaceholders: false,
+  };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
     if (a === '--send') args.dryRun = false;
+    else if (a === '--late-ok') args.lateOk = true;
+    else if (a === '--allow-placeholders') args.allowPlaceholders = true;
+    else if (a === '--test-to') {
+      const file = argv[i + 1];
+      if (!file || file.startsWith('--')) throw new AnnouncementArgsError('--test-to needs a recipient file');
+      args.testTo = file;
+      i++;
+    } else if (a.startsWith('--test-to=')) {
+      args.testTo = a.slice('--test-to='.length);
+      if (!args.testTo) throw new AnnouncementArgsError('--test-to needs a recipient file');
+    }
     else if (a === '--dry-run') args.dryRun = true;
     else if (a === '--sample-only') args.sampleOnly = true;
     else if (a.startsWith('--confirm=')) {
@@ -94,6 +121,103 @@ export function deadlineRefusal(effectiveDateIso: string | null, now: Date): str
     return `today (${today}, Berlin) is later than ${last}, six weeks before the effective day ${effectiveDateIso} — a notice now would be too late under Terms 10.1`;
   }
   return null;
+}
+
+/**
+ * The day the notice goes out and the hour by which a real send must have
+ * started (owner, 06.11.2026: on 09.11 by early afternoon). After that a real
+ * send refuses to start unless `--late-ok` is given; the dry run and the test
+ * send are not affected.
+ */
+export const NOTICE_SEND_DAY = '2026-11-09';
+export const NOTICE_SEND_CUTOFF = '14:00';
+
+/** Berlin wall-clock time of a moment, `YYYY-MM-DD HH:MM`. */
+export function berlinMinute(now: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;
+}
+
+/** The reminder every run prints. */
+export function sendWindowReminder(): string {
+  return `the notice goes out on ${NOTICE_SEND_DAY} by ${NOTICE_SEND_CUTOFF} (Berlin); a real send after that needs --late-ok`;
+}
+
+/** Why a real send may not start now, or null. Later than the cut-off of the send day, or any later day, refuses. */
+export function sendWindowRefusal(now: Date, lateOk: boolean, day: string = NOTICE_SEND_DAY, cutoff: string = NOTICE_SEND_CUTOFF): string | null {
+  if (lateOk) return null;
+  const at = berlinMinute(now);
+  if (at < `${day} ${cutoff}`) return null;
+  return `it is ${at} in Berlin, past ${cutoff} on ${day}: a real send does not start now without --late-ok`;
+}
+
+/* ------------------------------------------------------------------ the test send */
+
+/** Every test mail carries this in front of its subject. */
+export const TEST_SUBJECT_PREFIX = '[TEST] ';
+
+/** At most this many mails per test run: the Resend daily quota is shared with production. */
+export const MAX_TEST_MAILS = 10;
+
+export function testSubject(subject: string): string {
+  return `${TEST_SUBJECT_PREFIX}${subject}`;
+}
+
+/** The mails a test send makes for each recipient: the notice with its attachment, and the community mail. */
+export const TEST_MAIL_KINDS = ['notice', 'community-update'] as const;
+export type TestMailKind = (typeof TEST_MAIL_KINDS)[number];
+
+export interface TestSendPlanEntry<R extends { label: string }> {
+  recipient: R;
+  kind: TestMailKind;
+}
+
+/**
+ * What a test send would send, or why it may not. `--confirm` is the number of
+ * mails the dry run printed. Never more than MAX_TEST_MAILS; open-value
+ * markers stop it unless `--allow-placeholders`. Nothing here reads or writes
+ * an account: a test send records no proof.
+ */
+export function testSendPlan<R extends { label: string }>(
+  recipients: readonly R[],
+  args: Pick<AnnouncementArgs, 'dryRun' | 'confirm' | 'allowPlaceholders'>,
+  openMarkers: readonly string[],
+): { mails: TestSendPlanEntry<R>[]; refusal: string | null } {
+  const mails = recipients.flatMap((recipient) => TEST_MAIL_KINDS.map((kind) => ({ recipient, kind })));
+  let refusal: string | null = null;
+  if (mails.length > MAX_TEST_MAILS) refusal = `${mails.length} test mails, at most ${MAX_TEST_MAILS} per run: shorten the recipient file`;
+  else if (args.dryRun) refusal = 'dry run';
+  else if (openMarkers.length && !args.allowPlaceholders) refusal = `open values still in the wording (${openMarkers.join(' ')}); add --allow-placeholders to test anyway`;
+  else if (args.confirm === null) refusal = `--send needs --confirm=<mail count>; the dry run counts ${mails.length}`;
+  else if (args.confirm !== mails.length) refusal = `--confirm=${args.confirm} does not match the ${mails.length} test mails`;
+  return { mails, refusal };
+}
+
+/* ------------------------------------------------------------------ the send log */
+
+/**
+ * One line of the local send log (JSON Lines, beside the sample): the proof
+ * of when each notice went out and the provider's message id, per account.
+ * The uid and its `acct_` hash, never the address.
+ */
+export function sendLogLine(entry: { uid: string; sentAt: Date; messageId: string | null; version: string; mailSha256: string }): string {
+  return `${JSON.stringify({
+    account: logRef(entry.uid),
+    uid: entry.uid,
+    version: entry.version,
+    sentAt: entry.sentAt.toISOString(),
+    messageId: entry.messageId,
+    mailSha256: entry.mailSha256,
+  })}\n`;
 }
 
 /* ------------------------------------------------------------------ recipients */

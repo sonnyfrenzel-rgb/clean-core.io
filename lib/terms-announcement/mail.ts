@@ -22,8 +22,11 @@ import { LINE_BREAK, type DiffToken, type TermsChange, type TermsChanges } from 
  *   in English only, so a German word diff against it would compare two
  *   languages).
  *
- * Short on purpose (owner decisions 06.11.2026): a two-line intro, a separate
- * "what you get" block that is not part of the notice, then the notice. No
+ * Short on purpose (owner decisions and legal statements of 06.11.2026): a
+ * two-line intro, then the notice; what is planned next goes in a separate
+ * community mail (`./community-update.ts`), not here. The body names every
+ * changed clause in one generated sentence (`changedClausesSentence`); the
+ * attachment, one text file, carries the wording, the marks and the reasons. No
  * dash in any text written here (owner, 06.11.2026); only the quoted wording of
  * the Terms keeps its own punctuation. One mail for everybody: no name, no
  * address, so one digest per part proves what every recipient got.
@@ -51,7 +54,7 @@ export interface TermsAnnouncementMail {
   html: string;
   /** The text part, written for itself. */
   text: string;
-  /** The full changed wording: an HTML file and its plain-text twin. */
+  /** The full changed wording: one plain-text file, German and English. */
   attachments: NoticeAttachment[];
   /** Everything the attachment says in its own words, without the quoted wording of the Terms (for the no-dash check). */
   attachmentOwnText: string;
@@ -120,38 +123,80 @@ export function clauseList(changes: TermsChange[], lang: LegalLang): string[] {
   return lines;
 }
 
+/**
+ * The one sentence of the body that names every changed clause (legal
+ * statement 17e, M3), generated from the change list so it cannot drift:
+ * "Geändert sind: Einleitung, Impressum, Ziffer 1 (mit Überschrift), 2.1 bis
+ * 2.5, 3, Überschrift von 4, 4.1 bis 4.3, …, 13 (mit Überschrift) und Kontakt."
+ * Three or more consecutive subclauses of a section become a range.
+ */
+export function changedClausesSentence(changes: TermsChange[], lang: LegalLang): string {
+  const de = lang === 'de';
+  const ids = new Set(changes.map((c) => c.id));
+  const sections: string[] = [];
+  for (const c of changes) if (!sections.includes(c.section)) sections.push(c.section);
+  const items: string[] = [];
+  let firstNumber = true;
+  const numbered = (s: string) => {
+    if (!firstNumber) return s;
+    firstNumber = false;
+    return `${de ? 'Ziffer' : 'section'} ${s}`;
+  };
+  for (const s of sections) {
+    if (s === 'preamble') { items.push(de ? 'Einleitung' : 'the introduction'); continue; }
+    if (s === 'provider') { items.push(de ? 'Impressum' : 'the imprint'); continue; }
+    if (s === 'contact') { items.push(de ? 'Kontakt' : 'Contact'); continue; }
+    const heading = ids.has(`${s}:heading`);
+    const whole = ids.has(s);
+    if (whole) items.push(numbered(heading ? `${s} (${de ? 'mit Überschrift' : 'with heading'})` : s));
+    else if (heading) {
+      items.push(de ? `Überschrift von ${s}` : `the heading of ${s}`);
+      firstNumber = false;
+    }
+    const subs = changes
+      .filter((c) => c.section === s && c.id.startsWith(`${s}.`))
+      .map((c) => Number(c.id.slice(s.length + 1)))
+      .filter((n) => Number.isInteger(n))
+      .sort((a, b) => a - b);
+    let i = 0;
+    while (i < subs.length) {
+      let j = i;
+      while (j + 1 < subs.length && subs[j + 1] === subs[j] + 1) j++;
+      if (j - i >= 2) items.push(numbered(`${s}.${subs[i]} ${de ? 'bis' : 'to'} ${s}.${subs[j]}`));
+      else for (let k = i; k <= j; k++) items.push(numbered(`${s}.${subs[k]}`));
+      i = j + 1;
+    }
+  }
+  const list = items.length > 1 ? `${items.slice(0, -1).join(', ')} ${de ? 'und' : 'and'} ${items[items.length - 1]}` : items.join('');
+  return `${de ? 'Geändert sind' : 'Changed are'}: ${list}.`;
+}
+
 /* ------------------------------------------------------------------ the body */
 
 interface Body {
   intro: string;
-  getLead: string;
-  get: string[];
   noticeLead: string;
   effective: string;
   choice: string[];
   summaryLead: string;
   summary: string[];
+  /** Every changed clause, one sentence (M3). */
+  changed: string;
   attachmentLine: string;
   fullText: string;
 }
 
-function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body {
+function body(lang: LegalLang, i: TermsAnnouncementInput, file: string): Body {
   const day = formatLegalDate(i.effectiveDateIso, lang);
   const from = i.changes.from.label;
   const to = i.changes.to.label;
   const host = i.baseUrl.replace(/^https?:\/\//, '');
   const deUrl = `${host}${versionPath(i.changes.to.version, 'de')}`;
   const enUrl = `${host}${versionPath(i.changes.to.version, 'en')}`;
+  const changed = changedClausesSentence(i.changes.changes, lang);
   if (lang === 'de') {
     return {
       intro: `wir ändern die Nutzungsbedingungen von Clean-Core.io. Die neue Fassung ${to} soll für Ihr Konto am ${day} wirksam werden.`,
-      getLead: 'Was Sie bekommen (nicht Teil der Mitteilung):',
-      get: [
-        `Version 3.5, geplant zum ${day}: eine deutlich einfachere Oberfläche.`,
-        'Analyze beginnt mit dem Geschäftsprozess: Sie sehen in klarer Sprache, was Ihr Z-Programm fachlich tut, mit Zeilenbezug. Für Process Owner und Product Owner, nicht nur für Entwickler.',
-        'Ihr eigener Claude-Schlüssel (Anthropic) neben Gemini.',
-        'Eine aufgeräumte Startseite.',
-      ],
       noticeLead: 'Mitteilung nach Ziffer 10.1 der Nutzungsbedingungen',
       effective: `Wirksam ab: ${day}.`,
       choice: [
@@ -160,25 +205,19 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
       ],
       summaryLead: 'Was Sie im Alltag merken:',
       summary: [
-        'Eigener Claude-Schlüssel (Anthropic) neben Gemini, über eine gesonderte Zusatzvereinbarung. Anfragen darauf werden in den USA verarbeitet (5.2, 5.3).',
-        'Automatische KI-Schritte: Mit dem Plattform-Schlüssel startet ein Schritt von selbst. Sie schalten ihn in den Einstellungen ab. Mit eigenem Schlüssel läuft er nur, wenn Sie ihn einschalten (5.4).',
+        'Eigener Claude-Schlüssel (Anthropic) neben Gemini, über eine gesonderte Zusatzvereinbarung; wir schalten ihn frei, sobald die dafür nötigen Funktionen abgenommen sind. Anfragen darauf werden in den USA verarbeitet (5.2, 5.3).',
+        'Automatische KI-Schritte: Einige Schritte startet die Plattform ohne Ihren Klick. Ein Schalter in den Einstellungen schaltet sie alle aus (5.4).',
         'Was ein Modell schreibt, ist als KI-generiert gekennzeichnet (4.1).',
-        'Kein gesetzliches Widerrufsrecht, weil die Nutzung kostenlos ist. Kündigen können Sie weiterhin jederzeit ohne Frist (13, 2.3).',
+        'Kein gesetzliches Widerrufsrecht: Die Nutzung ist unentgeltlich, und wir verarbeiten Ihre Daten nur, um die Plattform bereitzustellen. Sie können den Vertrag weiterhin jederzeit ohne Frist beenden; dafür gibt es die Funktion „Vertrag widerrufen / beenden“ in den Einstellungen (13, 2.3).',
         'Batch-Upload und Portfolio nur mit eigenem, geprüftem Modellschlüssel (1.5).',
       ],
-      attachmentLine: `Alle geänderten Bestimmungen, ihre Gründe nach Ziffer 10.4 und den markierten Wortlaut finden Sie im Anhang; er ist Teil dieser Mitteilung. Er liegt deutsch und englisch bei, als ${files.join(' und als ')}. Die bisherige Fassung ${from} gibt es nur auf Englisch.`,
+      changed,
+      attachmentLine: `Alle geänderten Bestimmungen, ihre Gründe nach Ziffer 10.4 und den markierten Wortlaut finden Sie im Anhang; er ist Teil dieser Mitteilung. Er liegt deutsch und englisch bei, als Textdatei ${file}. Die bisherige Fassung ${from} gibt es nur auf Englisch.`,
       fullText: `Die neue Fassung im vollen Wortlaut: ${deUrl} (deutsch) und ${enUrl} (englisch).`,
     };
   }
   return {
     intro: `we are changing the Clean-Core.io Terms of Service. The new version ${to} is proposed to take effect for your account on ${day}.`,
-    getLead: 'What you get (not part of the notice):',
-    get: [
-      `Version 3.5, planned for ${day}: a much simpler interface.`,
-      'Analyze starts with the business process: you see in plain language what your Z program does for the business, with line references. For process owners and product owners, not only for developers.',
-      'Your own Claude key (Anthropic) beside Gemini.',
-      'A tidier start page.',
-    ],
     noticeLead: 'Notice under section 10.1 of the Terms of Service',
     effective: `Effective from: ${day}.`,
     choice: [
@@ -187,13 +226,14 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
     ],
     summaryLead: 'What you will notice:',
     summary: [
-      'Your own Claude key (Anthropic) beside Gemini, under a separate Additional Agreement. Requests on it are processed in the United States (5.2, 5.3).',
-      'Automatic AI steps: on the platform key one step starts by itself. You switch it off in Settings. With your own key it runs only if you switch it on (5.4).',
+      'Your own Claude key (Anthropic) beside Gemini, under a separate Additional Agreement; we enable it once the functions it requires have passed acceptance. Requests on it are processed in the United States (5.2, 5.3).',
+      'Automatic AI steps: the Platform starts some steps without your click. One switch in Settings turns them all off (5.4).',
       'What a model writes is marked as AI-generated (4.1).',
-      'No statutory right of withdrawal, because the use is free. You can still end the contract at any time without notice (13, 2.3).',
+      'No statutory right of withdrawal: the use is free of charge, and we process your data only to provide the Platform. You can still end the contract at any time without notice; the function “Withdraw from / end the contract” in Settings does this (13, 2.3).',
       'Bulk upload and portfolio only with your own tested model key (1.5).',
     ],
-    attachmentLine: `You find all changed provisions, their reasons under section 10.4 and the marked wording in the attachment; it is part of this notice. It comes in German and English, as ${files.join(' and as ')}.`,
+    changed,
+    attachmentLine: `You find all changed provisions, their reasons under section 10.4 and the marked wording in the attachment; it is part of this notice. It comes in German and English, as the text file ${file}.`,
     fullText: `The new version in full: ${enUrl} (English) and ${deUrl} (German).`,
   };
 }
@@ -202,11 +242,11 @@ function body(lang: LegalLang, i: TermsAnnouncementInput, files: string[]): Body
 function bodyLines(b: Body): string[] {
   return [
     b.intro,
-    `${b.getLead}\n${bulletLines(b.get)}`,
     b.noticeLead.toUpperCase(),
     b.effective,
     ...b.choice,
     `${b.summaryLead}\n${bulletLines(b.summary)}`,
+    b.changed,
     b.attachmentLine,
     b.fullText,
   ];
@@ -225,10 +265,10 @@ function bulletsHtml(items: string[]): string {
 function bodyHtml(b: Body): string[] {
   return [
     escapeHtml(b.intro),
-    `<strong>${escapeHtml(b.getLead)}</strong><br>${bulletsHtml(b.get)}`,
     `<strong>${escapeHtml(b.noticeLead)}</strong><br>${escapeHtml(b.effective)}`,
     ...b.choice.map(escapeHtml),
     `<strong>${escapeHtml(b.summaryLead)}</strong><br>${bulletsHtml(b.summary)}`,
+    escapeHtml(b.changed),
     escapeHtml(b.attachmentLine),
     escapeHtml(b.fullText),
   ];
@@ -331,31 +371,6 @@ function attachmentBlocks(i: TermsAnnouncementInput): Block[] {
   ];
 }
 
-const TAG: Record<Block['kind'], string> = { h1: 'h1', h2: 'h2', h3: 'h3', p: 'p', label: 'p' };
-
-function attachmentHtml(blocks: Block[], title: string): string {
-  const inner = blocks
-    .map((b) => (b.kind === 'label' ? `<p><em>${b.html}</em></p>` : `<${TAG[b.kind]}>${b.html}</${TAG[b.kind]}>`))
-    .join('\n');
-  return `<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)}</title>
-<style>
-body { font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.5; color: #1f2937; max-width: 760px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 20px; } h2 { font-size: 17px; margin-top: 32px; } h3 { font-size: 15px; margin: 24px 0 4px; }
-del { color: #991b1b; text-decoration: line-through; } ins { color: #166534; text-decoration: underline; }
-</style>
-</head>
-<body>
-${inner}
-</body>
-</html>
-`;
-}
-
 function attachmentText(blocks: Block[]): string {
   return `${blocks.map((b) => (b.kind === 'h1' || b.kind === 'h2' ? b.text.toUpperCase() : b.text)).join('\n\n')}\n`;
 }
@@ -374,15 +389,15 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
   const subject = announcementSubject(input.effectiveDateIso);
   const base = attachmentBaseName(input.changes.to.label);
   const blocks = attachmentBlocks(input);
-  const htmlFile = attachmentHtml(blocks, subject);
   const textFile = attachmentText(blocks);
+  // One attachment, the text file (legal review of 06.11.2026): it carries the full
+  // wording, the marked changes ([- -] removed, {+ +} added) and the reasons. The
+  // HTML twin it had showed the same marks in colour and added nothing, so it is gone.
   const attachments: NoticeAttachment[] = [
-    { filename: `${base}.html`, contentType: 'text/html; charset=utf-8', content: htmlFile, sha256: sha256(htmlFile) },
     { filename: `${base}.txt`, contentType: 'text/plain; charset=utf-8', content: textFile, sha256: sha256(textFile) },
   ];
-  const files = attachments.map((a) => a.filename);
-  const de = body('de', input, files);
-  const en = body('en', input, files);
+  const de = body('de', input, attachments[0].filename);
+  const en = body('en', input, attachments[0].filename);
   const paths = { de: versionPath(input.changes.to.version, 'de'), en: versionPath(input.changes.to.version, 'en') };
   const linkUrl = `${input.baseUrl}${paths.de}`;
 
