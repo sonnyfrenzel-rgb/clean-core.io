@@ -6,6 +6,7 @@ import {
   NOT_DETERMINED_LABEL,
   anchorsWords,
   commitWaitWords,
+  processDocumentationDisclaimer,
   rangeWords,
   stepEvidence,
   type ProcessDocumentation,
@@ -110,7 +111,7 @@ export default function ProcessDocumentationView({
         <p className="mt-2 text-sm text-cc-ink">{doc.overview}</p>
         <p data-doc-traceability className="mt-1 text-sm text-cc-ink">{doc.traceability.sentence}</p>
         {doc.naming.notice && <p className="mt-1 text-sm text-cc-ink-muted">{doc.naming.notice}</p>}
-        <p className="mt-4 text-xs text-cc-ink-muted max-w-3xl">{doc.disclaimer}</p>
+        <p className="mt-4 text-xs text-cc-ink-muted max-w-3xl">{processDocumentationDisclaimer(doc)}</p>
       </section>
 
       {/* Owner 02.10.2026: a list of more than five rows starts folded with
