@@ -83,7 +83,11 @@ outside this database; no erasure reaches them.
 **`email_suppressions` note:** until 3.0.21 the opt-out was removed on erasure
 (owner decision 30.09.2026). The legal texts of Fassung 1.1 say otherwise — the
 keyed hash stays on the list "so that we do not mail you again" (since the legal texts Fassung 1.1: as long as such mail is sent, or until the person asks for the entry to be removed)
-— and the erasure follows them now. The invitation opt-out list the texts also
+— and the erasure follows them now. A request to remove an entry from either
+suppression list (`email_suppressions`, `invitation_suppressions`) is handled and
+confirmed to the person within one month of receipt (Art. 12(3) GDPR; privacy
+policy sections 2, 5 and 8). There is no self-service path: the operator deletes
+the document whose id is the keyed hash of the address given, and replies. The invitation opt-out list the texts also
 name (privacy policy sections 5 and 8, C7) exists since 3.0.21 as
 `invitation_suppressions` (above): both invitation mails carry an unsubscribe link.
 The six-month invitation delivery record the texts name (sections 6 and 8) exists
