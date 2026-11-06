@@ -256,8 +256,12 @@ export const PLAN_VERSION = 2;
  * amount as `abap.curr`), and an integer amount is noted as the currency's smallest unit, not the amount
  * (`amountElements`). From engine 3.0.21 the architecture reads what a run reaches (`architecture.ts`). Nothing
  * signed changes (§12.3).
+ * 24 (hotfix 3.0.22, HF-a, owner example A: `TYPE REF TO lif_store` and `TYPE REF TO lcl_change_service` in the frame,
+ * three of four abaplint errors): RAP — a declaration the engine writes that refers to one of the original's own
+ * classes or interfaces refers to the logic class instead, which carries their methods; a local exception class
+ * becomes its nearest global ancestor (`localObjectTypes`, rap-contract.ts). Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 23;
+export const SCAFFOLD_VERSION = 24;
 
 /* -------------------------------------------------------------- budgets */
 

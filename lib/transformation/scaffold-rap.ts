@@ -577,11 +577,16 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const reservedNames = new Set(['run', 'run_with_state', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'not_filled', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
   // The SAP tables the access layer reads or writes: ABAP Cloud has no type of them, the class declares a row type each.
   const sapTables = access.points.filter((p) => !p.customer && (p.kind === 'read' || p.kind === 'write')).map((p) => p.object.toLowerCase());
-  const contract = readRapContract(facts, reservedNames, { sapTables });
+  const contract = readRapContract(facts, reservedNames, { sapTables, selfClass: logic });
   const sapRowOf = new Map(contract.sapRows.map((r) => [r.table, r]));
   /** A comment line before a declaration whose type the original names in a way ABAP Cloud does not permit. */
   const notReleased = (name: string, was: string | undefined, indent = '    '): string[] =>
-    was ? [`${indent}" ${name}: the original types it by ${was}, which ABAP Cloud does not release - ${sapRowOf.get(was)?.rowType ?? 'a built-in type'} instead.`] : [];
+    // Hotfix 3.0.22: a reference to one of the original's own classes or interfaces names the class that now carries it.
+    was && /^REF TO /.test(was)
+      ? [`${indent}" ${name}: the original types it ${was}, its own class or interface - one class here, so the reference names the class that carries it.`]
+      : was
+        ? [`${indent}" ${name}: the original types it by ${was}, which ABAP Cloud does not release - ${sapRowOf.get(was)?.rowType ?? 'a built-in type'} instead.`]
+        : [];
   const attributeNames = new Set([...contract.globals.map((g) => g.name), ...contract.classAttributes.map((g) => g.name), ...contract.selection.map((f) => f.name), ...contract.constantNames]);
   const takenMethod = new Set<string>([...attributeNames, 'run', 'run_with_state', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages']);
   const methodOf = new Map<string, string>();
