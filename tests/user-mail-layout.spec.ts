@@ -43,7 +43,8 @@ test('the catalogue still has every mail, and the user mails are the ones expect
   // and after the Additional Agreement, each in English and German.
   // 3.0.21 (C13): the receipt of a declaration to withdraw from / end the
   // contract, in English and German.
-  expect(built).toHaveLength(24);
+  // Terms 10.1: the notice of an amendment of the Terms (scripts/send-terms-announcement.ts).
+  expect(built).toHaveLength(25);
   expect(userMails.map((b) => b.type).sort()).toEqual(
     [
       'address-confirmation',
@@ -61,6 +62,7 @@ test('the catalogue still has every mail, and the user mails are the ones expect
       'tenant-approval',
       'tenant-pending',
       'tenant-revoke',
+      'terms-announcement',
       'welcome',
       'welcome-approval',
       'withdrawal-receipt',
