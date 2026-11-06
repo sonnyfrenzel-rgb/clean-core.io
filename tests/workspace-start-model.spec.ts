@@ -212,8 +212,10 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     await expect(later).toHaveCount(1);
     await expect(later).toHaveAttribute('href', new RegExp(`/project/${projectId}/analyze`));
     // Writing it later is a second run of the example: its free first run is spent.
-    await expect(note.locator('[data-start-narrative-later-cost]')).toContainText('Uses 1 of your 5 free analysis runs');
-    await expect(note.locator('[data-start-narrative-later-cost]')).toContainText('Calls the model');
+    // In the consent text `startRun.freePlatformKey`, never a word about costs (legal review 06.11.2026).
+    await expect(note.locator('[data-start-narrative-later-cost]')).toHaveText(
+      'Analyze runs the analysis again with the model and signs a new run: Free. This run uses one of your 5 analyses; 4 left after it. · Calls the model.',
+    );
 
     expect(seen.runs).toHaveLength(1);
     const { run } = await signedRun(projectId);

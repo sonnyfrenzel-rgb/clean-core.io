@@ -235,8 +235,10 @@ test.describe('own code: after the run, the workspace', () => {
     const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
     if (await ack.count()) await ack.check();
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
-    // Said before the click: the run's cost and that no model is called.
-    await expect(page.locator('[data-own-code-cost]')).toContainText('No model call');
+    // Said before the click, in the consent texts `startRun.*` (legal review
+    // 06.11.2026): that the run is free, and that no model is called.
+    const notice = page.locator('[data-own-code-cost]');
+    await expect(notice).toHaveText('Free. This run uses one of your 5 analyses; 4 left after it. · Calls no AI model. Your code does not leave the platform.');
     const gemini: string[] = [];
     page.on('request', (req) => {
       if (req.url().includes('/api/gemini')) gemini.push(req.url());

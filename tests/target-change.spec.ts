@@ -229,7 +229,9 @@ test.describe('changing the target in the IT view', () => {
     await expect(page.locator('[data-target-change-cost]')).toContainText('Free. This run does not count against your analyses.');
     // The confirmation waits for the account's model answer: analysis stage off, so no model call.
     await expect(page.locator('[data-target-change-confirm]')).toBeEnabled({ timeout: 30000 });
-    await expect(page.locator('[data-target-change-cost]')).toContainText('No model call');
+    await expect(page.locator('[data-target-change-cost]')).toHaveText(
+      'Free. This run does not count against your analyses. · Calls no AI model. Your code does not leave the platform.',
+    );
 
     fs.mkdirSync(SHOTS, { recursive: true });
     await dialog.screenshot({ path: path.join(SHOTS, 'dialog-desktop.png') });

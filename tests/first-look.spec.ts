@@ -709,11 +709,13 @@ test.describe('"New project" explains before it starts', () => {
       ),
     ).toEqual([STARTER_BADGE_FREE]);
 
-    // Own code: the quota sentence out of `lib/run-cost.ts`, with the number.
+    // Own code: the quota sentence out of `lib/run-cost.ts`, with the number —
+    // the consent text `startRun.freePlatformKey`, never a word about costs
+    // (legal review 06.11.2026).
     await page.click('[data-start-choice="own-code"]');
-    await expect(page.locator('[data-new-project-quota="own-code"]')).toContainText(
-      'Uses 1 of your 5 free analysis runs',
-    );
+    const quota = page.locator('[data-new-project-quota="own-code"]');
+    await expect(quota).toContainText('Free. This run uses one of your 5 analyses;');
+    await expect(quota).not.toContainText(/cost/i);
     await expect(page.locator('[data-new-project-start="own-code"]')).toContainText(
       'Continue to upload',
     );
