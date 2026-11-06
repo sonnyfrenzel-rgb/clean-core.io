@@ -1138,6 +1138,24 @@
       }
     },
     {
+      "path": "docs/EMERGENCY-ACCESS.md",
+      "kind": "runbook",
+      "purpose": "Emergency access by the operator: when it is allowed, how it is logged, what is never done",
+      "audience": "Operations, owner",
+      "saysToday": "Runbook for the open value emergencyAccessLogging (06.11.2026).",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Active runbook behind privacy section 8 and ZV 10.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 70
+      }
+    },
+    {
       "path": "docs/OPERATIONS.md",
       "kind": "runbook",
       "purpose": "Operations and monitoring (Cloud Run, health, backups, rules)",
@@ -2318,7 +2336,7 @@
         "terms": "check"
       },
       "measured": {
-        "lines": 74
+        "lines": 70
       },
       "executed": "2026-10-02"
     },
