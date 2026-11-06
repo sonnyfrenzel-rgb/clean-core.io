@@ -43,6 +43,22 @@ export interface OutgoingMail {
    * (`lib/invitation-delivery-record.ts`, privacy policy sections 6 and 8).
    */
   deliveryRecord?: (messageId: string) => Promise<unknown>;
+  /**
+   * The text part, when the caller writes its own — the Terms notice marks its
+   * changes in the text part, and `htmlToText` would drop the markings.
+   * Absent, the text part is generated from the HTML as before.
+   */
+  text?: string;
+  /**
+   * Resend's `Idempotency-Key`: a retry of a bulk send with the same key is not
+   * delivered twice. Must not contain the address.
+   */
+  idempotencyKey?: string;
+  /**
+   * Files attached to the mail (Resend `attachments`, content base64). The
+   * Terms notice carries the full changed wording this way, so the body stays small.
+   */
+  attachments?: ReadonlyArray<{ filename: string; content: string; contentType: string }>;
 }
 
 export type MailOutcome =
@@ -88,7 +104,11 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
   try {
     res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        ...(msg.idempotencyKey ? { 'Idempotency-Key': msg.idempotencyKey } : {}),
+      },
       body: JSON.stringify({
         from: msg.from || DEFAULT_FROM,
         to: msg.to,
@@ -99,7 +119,16 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
         html: msg.html,
         // HTML-only is a long-standing spam signal. Generated from the same
         // markup so it cannot drift from what the reader sees.
-        text: htmlToText(msg.html),
+        text: msg.text ?? htmlToText(msg.html),
+        ...(msg.attachments?.length
+          ? {
+              attachments: msg.attachments.map((a) => ({
+                filename: a.filename,
+                content: Buffer.from(a.content, 'utf8').toString('base64'),
+                content_type: a.contentType,
+              })),
+            }
+          : {}),
       }),
     });
   } catch (err) {

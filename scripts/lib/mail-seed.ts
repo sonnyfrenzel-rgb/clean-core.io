@@ -64,6 +64,9 @@ import { buildPortfolioInvitationEmail, PORTFOLIO_INVITATION_SUBJECT, portfolioI
 import { BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
 import { buildWithdrawalReceiptMail, withdrawalReceiptSubject } from '../../lib/withdrawal-receipt-email';
 import { acceptedWording, buildContractConfirmationMail, type ConfirmationOccasion } from '../../lib/contract-confirmation-email';
+import { currentTermsChanges } from '../../lib/terms-announcement/changes';
+import { buildTermsAnnouncementMail } from '../../lib/terms-announcement/mail';
+import { TERMS_EFFECTIVE_DATE_ISO } from '../../lib/legal/open-values';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
 import { summarise, type SurveyResponse } from '../../lib/survey/store';
@@ -391,6 +394,24 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       },
     }),
   ),
+  // Terms 10.1: the notice of an amendment of the Terms, German and English in
+  // one mail, generated from the live texts at render time. Its own text part:
+  // written for itself; the full changed wording travels as an attachment.
+  {
+    type: 'terms-announcement',
+    audience: 'nutzer',
+    source: 'scripts/send-terms-announcement.ts',
+    template: 'lib/terms-announcement/mail.ts',
+    build: () => {
+      // Before the effective day is set, the seed renders the day the notice proposes (owner, 06.11.2026).
+      const m = buildTermsAnnouncementMail({
+        changes: currentTermsChanges(),
+        effectiveDateIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22',
+        baseUrl: 'https://clean-core.io',
+      });
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: m.subject, html: m.html, text: m.text };
+    },
+  },
   {
     type: 'byok-agreement-ended',
     audience: 'nutzer',
