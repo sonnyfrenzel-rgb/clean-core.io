@@ -97,7 +97,8 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
           'results the engine computes without a model, and drafts a model writes — marked as AI-generated. ' +
           'Some model steps start without your click; the Privacy Policy says which, and one switch in the ' +
           'settings turns them all off. If code must not leave the platform, switch the model steps off; the ' +
-          'platform then calls no model for your account (section 5.4).',
+          'platform then calls no model for your account unless you start a step yourself or ask the assistant a ' +
+          'question (section 5.4).',
       },
       {
         lead: '',

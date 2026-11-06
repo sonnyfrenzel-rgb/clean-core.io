@@ -116,16 +116,20 @@ test.describe('Terms 1.5, 4.1, 5.4 and 8', () => {
     expect(TERMS_EN).toContain('you can switch them all off in the settings with one switch');
   });
 
-  test('5.4: the owner wording of 06.11.2026 (N1/B2), with no count and no tool name', () => {
+  // Final review of the notice, 06.11.2026: the last sentence of 5.4 names the two ways a model is
+  // still called with the steps switched off, a step the reader starts and a question to the assistant.
+  test('5.4: the owner wording of 06.11.2026 (N1/B2, final review), with no count and no tool name', () => {
     expect(TERMS_DE).toContain(
-      'Darf Code die Plattform nicht verlassen, schalten Sie die modellgestützten Schritte aus; dann ruft die Plattform für Ihr Konto kein Modell auf, und die deterministische Analyse steht vollständig zur Verfügung (Ziffer 4.1).',
+      'Darf Code die Plattform nicht verlassen, schalten Sie die modellgestützten Schritte aus; dann ruft die Plattform für Ihr Konto kein Modell auf, solange Sie nicht selbst einen Schritt starten oder dem Assistenten eine Frage stellen, und die deterministische Analyse steht vollständig zur Verfügung (Ziffer 4.1).',
     );
     expect(TERMS_EN).toContain(
-      'If code must not leave the Platform, switch the model-supported steps off; the Platform then calls no model for your account, and the deterministic analysis remains fully available (section 4.1).',
+      'If code must not leave the Platform, switch the model-supported steps off; the Platform then calls no model for your account unless you start a step yourself or ask the assistant a question, and the deterministic analysis remains fully available (section 4.1).',
     );
     for (const text of [TERMS_DE, TERMS_EN]) {
       const clause = text.slice(text.indexOf('**5.4**'), text.indexOf('## 6.'));
-      expect(clause).not.toMatch(/Assistent|assistant|Business names|Transformation|Documentation/);
+      expect(clause).not.toMatch(/Business names|Transformation|Documentation/);
+      // The assistant is named once, in the sentence above, and nowhere else in 5.4.
+      expect(clause.match(/Assistent|assistant/g)?.length).toBe(1);
     }
   });
 
