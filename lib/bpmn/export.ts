@@ -268,7 +268,7 @@ export function buildBpmnExportFromSource(source: string, options: BpmnExportOpt
   if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source, engine), { source, ...rest });
   // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once —
   // unless the run's engine draws another map than this release (`skeletonReadFor`).
-  const context = namingContextOf(source);
+  const context = namingContextOf(source, engine);
   const aiNames = aiNamesOfNaming(context, naming);
   const skeleton = skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engine.engineVersion);
   return buildBpmnExport(skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
@@ -323,7 +323,7 @@ export function buildReadingExports(
   // A stored naming (a download, 3.0.21) puts the model's names on the plain file, marked; the technical file is the
   // code's own tokens and stays so.
   const engineVersion = options.exporterVersion ?? APP_VERSION;
-  const context = naming ? namingContextOf(source) : null;
+  const context = naming ? namingContextOf(source, { engineVersion }) : null;
   const skeleton = context
     ? skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engineVersion)
     : buildProcessSkeleton(source, { engineVersion });

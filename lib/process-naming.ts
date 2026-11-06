@@ -172,9 +172,13 @@ function digestOf(skeleton: ProcessSkeleton, checks: NamingAuthorityCheck[]): st
   return `nm1-${cyrb53(canonical, 0)}${cyrb53(canonical, 1)}`;
 }
 
-/** The context for one reading of the source. Facts are read once (`process-facts.ts`). */
-export function namingContextFrom(facts: ProcessFacts): NamingContext {
-  const skeleton = buildProcessSkeletonFrom(facts);
+/**
+ * The context for one reading of the source. Facts are read once (`process-facts.ts`). `engineVersion`: the engine the
+ * map is drawn for — the run's (`engineVersionOfProject`), so a naming stored for an older engine's map keeps its
+ * digest after a release draws a different one; this release when absent.
+ */
+export function namingContextFrom(facts: ProcessFacts, engineVersion?: string | null): NamingContext {
+  const skeleton = buildProcessSkeletonFrom(facts, engineVersion === undefined ? {} : { engineVersion });
   // A check in a routine nothing reaches is not evidence for a role in this
   // process — the routine is not in the process at all (§5.8).
   const unreached = new Set(skeleton.notDrawn.unreached.map((r) => r.name));
@@ -196,7 +200,7 @@ export function namingContextOf(
   /** `facts`: hand the engine's facts to the model — `NAMING_WITH_FACTS` unless a measurement says otherwise. */
   options: { engineVersion?: string | null; facts?: boolean } = {},
 ): NamingContext {
-  const context = namingContextFrom(buildProcessFacts(source));
+  const context = namingContextFrom(buildProcessFacts(source), options.engineVersion);
   if (!(options.facts ?? NAMING_WITH_FACTS)) return context;
   if (!engineReads350Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion)) return context;
   try {
