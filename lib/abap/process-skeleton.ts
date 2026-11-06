@@ -3384,21 +3384,97 @@ class SkeletonBuilder {
         kind: isDefault ? 'default' : 'conditional',
       };
       const before = this.nodes.length;
+      const edgesBefore = this.edges.length;
       let armExits = this.walkRange(bodyFrom, bodyTo, ctx, [armEntry]);
-      // Engine 3.0.22: an arm that drew nothing but sets a flag a later decision reads is that decision's
-      // outcome, not an empty way past the gateway.
-      if (this.reads3022 && !table && this.nodes.length === before && armExits.length === 1 && armExits[0].from === gateway.id) {
-        const step = this.flagStep(bodyFrom, bodyTo, block, ctx);
-        if (step) {
-          this.connect(armExits, step.id);
-          armExits = [{ from: step.id, condition: '', kind: 'sequence' }];
-        }
-      }
+      if (this.reads3022 && !table) armExits = this.armOutcome(armEntry, armExits, before, edgesBefore, bodyFrom, bodyTo, block, ctx);
       exits.push(...armExits);
     }
     // No ELSE and no WHEN OTHERS: the gateway itself is the way past it.
     if (!hasDefault) exits.push({ from: gateway.id, condition: '', kind: 'default' });
     return exits;
+  }
+
+  /**
+   * Engine 3.0.22 — what an arm that drew no step does is the outcome of its decision.
+   *
+   * Two shapes, and nothing else is touched:
+   *
+   * - **The arm drew nothing.** Its way out is still the way in. A call of a technical helper in it
+   *   (`helperStep`: `PERFORM add_issue USING … 'Postal code has the wrong length'`) is what the arm does —
+   *   without it both ways out of "Postal code length wrong?" ran to the same next step and the decision looked
+   *   as if it decided nothing. Failing that, a flag a later decision reads (`flagStep`).
+   * - **The arm drew only its own end** (`PERFORM add_message USING 'E' …. RETURN.`): the helper call goes
+   *   between the decision and that end, so the stop says what it recorded on the way out.
+   *
+   * A `CONTINUE`, `EXIT` or `CHECK` in the arm changes its way out, and such an arm is left as it is.
+   */
+  private armOutcome(
+    entry: Exit,
+    exits: Exit[],
+    nodesBefore: number,
+    edgesBefore: number,
+    from: number,
+    to: number,
+    block: Block,
+    ctx: WalkContext,
+  ): Exit[] {
+    const drawn = this.nodes.slice(nodesBefore);
+    if (drawn.length === 0) {
+      const untouched = this.edges.length === edgesBefore && exits.length === 1 && exits[0].from === entry.from
+        && exits[0].kind === entry.kind && exits[0].condition === entry.condition;
+      if (!untouched) return exits;
+      const step = this.helperStep(from, to, block, ctx) ?? this.flagStep(from, to, block, ctx);
+      if (!step) return exits;
+      this.connect(exits, step.id);
+      return [{ from: step.id, condition: '', kind: 'sequence' }];
+    }
+    if (drawn.length !== 1 || (drawn[0].kind !== 'end' && drawn[0].kind !== 'end-error')) return exits;
+    const into = this.edges.slice(edgesBefore).filter((e) => e.to === drawn[0].id);
+    if (into.length !== 1 || into[0].from !== entry.from || this.edges.length !== edgesBefore + 1) return exits;
+    const step = this.helperStep(from, to, block, ctx);
+    if (!step) return exits;
+    // The step was appended after the end; it goes before it, so the file lists the arm in reading order.
+    this.nodes.pop();
+    this.nodes.splice(nodesBefore, 0, step);
+    into[0].to = step.id;
+    this.edges.push({ from: step.id, to: drawn[0].id, kind: 'sequence', condition: '' });
+    return exits;
+  }
+
+  /**
+   * Engine 3.0.22 (`armOutcome`): the first call, standing directly in this arm, of a routine folded as a
+   * technical helper — drawn as one task, named after the routine as the call writes it (rule 6), with the
+   * routine's range as the secondary anchor and the program's own sentences the call passes in `detail`.
+   */
+  private helperStep(from: number, to: number, block: Block, ctx: WalkContext): SkeletonNode | null {
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (!statement || statement.nativeSql) continue;
+      const around = this.structure.enclosing[i] ?? [];
+      if (around[around.length - 1] !== block) continue;
+      let key: string | null = null;
+      let label = '';
+      let token = 1;
+      if (statement.keyword === 'PERFORM') {
+        const call = this.calls.performs.find((p) => p.lineStart === statement.lineStart && p.text === statement.text);
+        if (call?.target && !call.program && this.helpers.has(call.target)) { key = call.target; label = call.target; }
+      } else {
+        const call = this.methodCallsIn(statement).find((c) => c.standalone && c.key && this.helpers.has(c.key));
+        if (call?.key) { key = call.key; label = call.label; token = this.callToken(statement, call); }
+      }
+      if (!key) continue;
+      const routine = this.routineBlocks.get(key);
+      const texts = [...statement.text.matchAll(/'((?:[^']|'')*)'|`((?:[^`]|``)*)`/g)]
+        .map((m) => (m[1] ?? m[2] ?? '').replace(/''/g, "'").trim())
+        .filter((text) => /[A-Za-z]{2}/.test(text) && text.includes(' '));
+      return this.addNode('task', label, {
+        ...anchorOf(statement, token),
+        ...(routine ? { secondary: { lineStart: routine.lineStart, lineEnd: routine.lineEnd, reason: 'routine-definition' as const } } : {}),
+      }, ctx.region, ctx.container, {
+        detail: { helperCall: true, routine: key, ...(texts.length ? { programTexts: texts } : {}) },
+      });
+    }
+    return null;
   }
 
   /**

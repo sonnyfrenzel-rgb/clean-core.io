@@ -200,3 +200,54 @@ test('an older engine draws the loop level without a start', () => {
   const loop = skeleton.nodes.find((n) => n.kind === 'loop' && n.anchor?.lineStart === 4)!;
   expect(skeleton.nodes.some((n) => n.kind === 'start' && n.region === loop.expandsTo)).toBe(false);
 });
+
+const CHECKS = [
+  'REPORT zarm_helper.', //                                                      1
+  'START-OF-SELECTION.', //                                                      2
+  '  PERFORM check_customer.', //                                                3
+  "  CALL FUNCTION 'Z_SHOW_ISSUES' TABLES it_issues = gt_issues.", //           4
+  'FORM check_customer.', //                                                     5
+  "  SELECT SINGLE * FROM t005 INTO gs_t005 WHERE land1 = p_land1.", //          6
+  '  IF gs_t005-xegld = abap_true AND p_stceg IS INITIAL.', //                   7
+  "    PERFORM add_issue USING 'E' 'VAT number missing in the EU'.", //         8
+  '  ENDIF.', //                                                                 9
+  '  IF strlen( p_pstlz ) <> gs_t005-lnplz.', //                                 10
+  "    PERFORM add_issue USING 'E' 'Postal code has the wrong length'.", //     11
+  '    RETURN.', //                                                              12
+  '  ENDIF.', //                                                                 13
+  '  IF p_kunnr IS INITIAL.', //                                                 14
+  "    PERFORM add_issue USING 'W' 'No customer number yet'.", //               15
+  "    CALL FUNCTION 'Z_NEXT_NUMBER' IMPORTING ev_kunnr = p_kunnr.", //          16
+  '  ENDIF.', //                                                                 17
+  "  CALL FUNCTION 'Z_SAVE_CUSTOMER' EXPORTING iv_kunnr = p_kunnr.", //          18
+  'ENDFORM.', //                                                                 19
+  'FORM add_issue USING pv_type TYPE c pv_text TYPE c.', //                      20
+  '  gs_issue-type = pv_type.', //                                               21
+  '  gs_issue-text = pv_text.', //                                               22
+  '  APPEND gs_issue TO gt_issues.', //                                          23
+  'ENDFORM.', //                                                                 24
+].join('\n');
+
+test('a call of a technical helper is the outcome of an arm that draws no step of its own', () => {
+  const skeleton = buildProcessSkeleton(CHECKS, NEW);
+  const step = skeleton.nodes.find((n) => n.anchor?.lineStart === 8)!;
+  expect(step.kind).toBe('task');
+  expect(step.label).toBe('ADD_ISSUE');
+  expect(step.detail).toMatchObject({ helperCall: true, routine: 'ADD_ISSUE', programTexts: ['VAT number missing in the EU'] });
+  expect(step.anchor?.secondary).toMatchObject({ lineStart: 20, lineEnd: 24, reason: 'routine-definition' });
+  const gateway = skeleton.nodes.find((n) => n.kind === 'gateway' && n.anchor?.lineStart === 7)!;
+  expect(skeleton.edges.some((e) => e.from === gateway.id && e.to === step.id && e.kind === 'conditional')).toBe(true);
+  // Before an early end: the decision leads to the helper's step, and the step to the end.
+  const before = skeleton.nodes.find((n) => n.anchor?.lineStart === 11)!;
+  const end = skeleton.nodes.find((n) => n.kind === 'end' && n.anchor?.lineStart === 12)!;
+  expect(before.detail?.helperCall).toBe(true);
+  expect(skeleton.edges.some((e) => e.from === before.id && e.to === end.id)).toBe(true);
+  // An arm with a step of its own says what it does through that step: no helper step beside it.
+  expect(skeleton.nodes.some((n) => n.anchor?.lineStart === 15)).toBe(false);
+  expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toContain('ADD_ISSUE');
+});
+
+test('an older engine leaves the helper folded, and both ways out of the decision run to the same step', () => {
+  const skeleton = buildProcessSkeleton(CHECKS, OLD);
+  for (const line of [8, 11]) expect(skeleton.nodes.some((n) => n.anchor?.lineStart === line)).toBe(false);
+});
