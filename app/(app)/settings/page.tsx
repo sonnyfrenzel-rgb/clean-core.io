@@ -2379,7 +2379,7 @@ export default function SettingsPage() {
             <div>
               <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formDeclaration.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formDeclaration.de}</span></dt>
               <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-declaration="">{quotedDeclaration('en')}</dd>
-              <dd lang="de" className="m-0 mt-0.5 text-cc-ink-muted">{quotedDeclaration('de')}</dd>
+              <dd lang="de" className="m-0 mt-1 text-cc-ink-muted">{quotedDeclaration('de')}</dd>
             </div>
             <div>
               <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formName.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formName.de}</span></dt>
@@ -2392,7 +2392,7 @@ export default function SettingsPage() {
             <div>
               <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formContract.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formContract.de}</span></dt>
               <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-contract="">{CONSENT_TEXTS.withdrawal.contract.en}</dd>
-              <dd lang="de" className="m-0 mt-0.5 text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.contract.de}</dd>
+              <dd lang="de" className="m-0 mt-1 text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.contract.de}</dd>
             </div>
           </dl>
           <p className="m-0">{CONSENT_TEXTS.withdrawal.formEffect.en}</p>
