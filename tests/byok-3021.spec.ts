@@ -49,10 +49,10 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 // ── the own Claude key, unlocked ─────────────────────────────────────────────
 
-test.describe('the own Claude key is offered, on a current model, in the data region "us"', () => {
-  test('Settings and the save route offer Anthropic beside Gemini', () => {
-    expect(ANTHROPIC_OWN_KEY_OFFERED).toBe(true);
-    expect(offeredKeyProviders()).toEqual(['gemini', 'anthropic']);
+test.describe('the own Claude key, on a current model, in the data region "us"', () => {
+  test('until its functions have passed acceptance, Settings and the save route do not offer Anthropic (Fassung 1.1)', () => {
+    expect(ANTHROPIC_OWN_KEY_OFFERED).toBe(false);
+    expect(offeredKeyProviders()).toEqual(['gemini']);
     // Claude 4.6 or newer: the data region needs it (legal review B7).
     expect(OWN_CLAUDE_MODEL).toBe('claude-sonnet-5-5');
   });

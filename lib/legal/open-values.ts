@@ -569,10 +569,10 @@ export const OPEN_VALUES: readonly OpenValue[] = [
     'anthropicGoLive',
     'Anthropic-Schlüssel erst mit diesen Texten freischalten',
     'enable Anthropic keys only with these texts',
-    'Wird der eigene Anthropic-Schlüssel (ANTHROPIC_OWN_KEY_OFFERED) genau mit der Veröffentlichung dieser Fassung und der Zusatzvereinbarung freigeschaltet — nicht vorher?',
-    'Is the own Anthropic key (ANTHROPIC_OWN_KEY_OFFERED) enabled exactly with the publication of this version and of the Additional Agreement — not before?',
+    'Bleibt der eigene Anthropic-Schlüssel (ANTHROPIC_OWN_KEY_OFFERED) abgeschaltet, bis die geänderten Nutzungsbedingungen wirksam sind und T01, T03 und T08 abgenommen sind — und wird beim Einschalten der Statussatz in DSE 2, Ziffer 5.2 und auf der Trust-Seite ersetzt?',
+    'Does the own Anthropic key (ANTHROPIC_OWN_KEY_OFFERED) stay switched off until the amended Terms are in effect and T01, T03 and T08 have passed — and is the status sentence in DSE 2, section 5.2 and on the Trust page replaced when it is switched on?',
     'DSE 2; Terms 5.2',
-    "Verified against dev on 23.10.2026: operator step. ANTHROPIC_OWN_KEY_OFFERED is a hard-coded true (lib/model-providers.ts:45), so every build, dev included, offers Anthropic keys; the only tie to publication is this release gate on main. Either make the gate a required check before the production deploy or set the flag false until the release day.",
+    "06.11.2026 (owner decision: Claude BYOK ships in 3.0.21 switched off, enabled later): ANTHROPIC_OWN_KEY_OFFERED in lib/model-providers.ts is now false and is the one switch - Settings shows Anthropic as not selectable with the status sentence (components/settings/OwnKeyProviderChoice.tsx), the save and test routes refuse an Anthropic key (app/api/secrets/gemini/route.ts, app/api/secrets/gemini/test/route.ts, code byok-provider-not-enabled), and the proxy refuses a call on an Anthropic key stored before, without falling back (app/api/gemini/route.ts, ownKeyCallRefusal). DSE 2, Terms 5.2 and the Trust page carry the status sentence. Turning it on: set the constant to true, and in the same change replace the status sentence in those three texts (a new Terms version if v2.3.0 is published by then); before that, TERMS_EFFECTIVE_DATE_ISO must have passed and T01 (providerSwitchOff), T03 (t03AdditionalAgreementAcceptance) and T08 (aiMarkingManifest) must be confirmed. Tests: tests/byok-claude.spec.ts (both positions, server-free), tests/byok-claude-routes.spec.ts (emulator; the switched-on proxy paths skip while off).",
   ),
   check(
     's4NoRecordRead',

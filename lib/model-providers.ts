@@ -32,21 +32,63 @@ export function isModelKeyProvider(value: unknown): value is ModelKeyProvider {
 export const PLATFORM_PROVIDER: ModelKeyProvider = 'gemini';
 
 /**
- * Whether an own Claude key is offered in Settings and accepted by the save
- * route. One switch for both, so the page and the route cannot disagree.
- * The owner turns it off here should the privacy texts for Anthropic as a
- * recipient not be live when this reaches production.
+ * **The one switch for the own Claude key** — whether an Anthropic key is
+ * selectable in Settings, storable by the save route, testable by the key test
+ * and callable by the proxy (`/api/gemini`). Every one of them reads it through
+ * `offeredKeyProviders()` / `ownKeyCallRefusal()`, so they cannot disagree, and
+ * turning the feature on is this one line.
  *
- * On since 3.0.21 (owner 22.10.2026: "claude in 3.0.21 freischalten als BYOK
- * feature"), together with the legal texts 1.0 and the Additional Agreement on
- * Own Model Keys: an Anthropic key is stored only with that agreement accepted
- * (`lib/byok-addendum.ts`), for a business account (its clause 9).
+ * **Off in 3.0.21** (owner decision 06.11.2026): the Claude BYOK code and the
+ * Anthropic passages of the legal texts ship, but the key is enabled only once
+ * the amended Terms are in effect for accounts (`TERMS_EFFECTIVE_DATE_ISO`) and
+ * acceptance tests T01, T03 and T08 have passed (open values `providerSwitchOff`,
+ * `t03AdditionalAgreementAcceptance`, `aiMarkingManifest` and the check
+ * `anthropicGoLive` in `lib/legal/open-values.ts`). Until then the privacy policy
+ * (section 2), the Terms (5.2) and the Trust page say that no Anthropic key can
+ * be stored, Settings shows the Anthropic option as not selectable with
+ * `ANTHROPIC_OWN_KEY_STATUS`, the save and test routes refuse it, and the proxy
+ * refuses a call on an Anthropic key stored before (dev) — all with
+ * `PROVIDER_NOT_ENABLED_CODE`, never falling back to the platform key. When it
+ * is turned on, an Anthropic key is stored only with the Additional Agreement on
+ * Own Model Keys accepted (`lib/byok-addendum.ts`), for a business account (its
+ * clause 9), and the status sentence in those texts is replaced with it.
  */
-export const ANTHROPIC_OWN_KEY_OFFERED = true;
+export const ANTHROPIC_OWN_KEY_OFFERED = false;
 
-/** The providers a save may name today. */
-export function offeredKeyProviders(): ModelKeyProvider[] {
-  return MODEL_KEY_PROVIDERS.filter((p) => p !== 'anthropic' || ANTHROPIC_OWN_KEY_OFFERED);
+/**
+ * The providers a save, a key test and a call may use today. `anthropicOffered`
+ * exists for the specs that prove both positions of the switch; every caller in
+ * the product passes nothing.
+ */
+export function offeredKeyProviders(anthropicOffered: boolean = ANTHROPIC_OWN_KEY_OFFERED): ModelKeyProvider[] {
+  return MODEL_KEY_PROVIDERS.filter((p) => p !== 'anthropic' || anthropicOffered);
+}
+
+/**
+ * Why a model call on an own key of `provider` is refused by the switch above,
+ * or null when it may go out. The proxy asks this before any provider contact;
+ * a refusal never falls back to the platform key.
+ */
+export function ownKeyCallRefusal(provider: ModelKeyProvider, anthropicOffered: boolean = ANTHROPIC_OWN_KEY_OFFERED): string | null {
+  if (offeredKeyProviders(anthropicOffered).includes(provider)) return null;
+  return `Calls on an own ${PROVIDER_LABEL[provider]} key are not enabled yet (${PROVIDER_NOT_ENABLED_CODE}). Nothing was sent, and the platform key was not used instead. ${provider === 'anthropic' ? ANTHROPIC_OWN_KEY_STATUS : ''}`.trim();
+}
+
+/** The code a save or a key test carries when it names a provider that is not enabled yet. */
+export const PROVIDER_NOT_ENABLED_CODE = 'byok-provider-not-enabled';
+
+/**
+ * What Settings and a refused save say while the own Anthropic key is not
+ * enabled — the English mirror of the status sentence in the privacy policy
+ * (section 2), the Terms (5.2) and the Trust page.
+ */
+export const ANTHROPIC_OWN_KEY_STATUS =
+  'We will enable own Anthropic keys once the functions they require have passed acceptance; until then no Anthropic key can be stored, and the settings show the current status.';
+
+/** Why a provider cannot be chosen now, or null when it can. */
+export function providerUnavailableReason(provider: ModelKeyProvider, anthropicOffered: boolean = ANTHROPIC_OWN_KEY_OFFERED): string | null {
+  if (offeredKeyProviders(anthropicOffered).includes(provider)) return null;
+  return provider === 'anthropic' ? `Not available yet. ${ANTHROPIC_OWN_KEY_STATUS}` : 'Not available.';
 }
 
 /**

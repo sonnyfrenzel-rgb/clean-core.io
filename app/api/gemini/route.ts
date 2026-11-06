@@ -20,9 +20,11 @@ import {
   OWN_CLAUDE_MODEL,
   PLATFORM_PROVIDER,
   PROVIDER_LABEL,
+  PROVIDER_NOT_ENABLED_CODE,
   PROVIDER_SUSPENDED_CODE,
   RECEIPT_PROVIDER_ID,
   autoStepsOffMessage,
+  ownKeyCallRefusal,
   stageAnswerNeedsWrite,
   suspendedProvidersOf,
   type KeyOwner,
@@ -576,6 +578,14 @@ export async function POST(request: NextRequest) {
     // another provider, not the platform key. The step stops with the reason.
     if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
       return NextResponse.json({ error: providerSuspendedNotice(provider, suspensionDetailsOf(process.env)), code: PROVIDER_SUSPENDED_CODE }, { status: 503 });
+    }
+    // Legal texts Fassung 1.1 — the one switch for the own Claude key
+    // (`ANTHROPIC_OWN_KEY_OFFERED`): an own key of a provider that is not enabled
+    // (an Anthropic key stored on dev before) is not called, and nothing is
+    // called in its place. The step stops with the reason.
+    const notEnabled = ownKey ? ownKeyCallRefusal(ownKey.provider) : null;
+    if (notEnabled) {
+      return NextResponse.json({ error: notEnabled, code: PROVIDER_NOT_ENABLED_CODE }, { status: 503 });
     }
     // 3.0.21 (owner decision B6) — a step the product starts by itself when the
     // owner opens a project (`trigger: 'automatic'`) runs on an own key only

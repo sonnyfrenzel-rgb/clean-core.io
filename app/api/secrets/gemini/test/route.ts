@@ -18,9 +18,12 @@ import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key'
 import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 import {
   MODEL_PROVIDERS_SUSPENDED_ENV,
+  PROVIDER_NOT_ENABLED_CODE,
   PROVIDER_SUSPENDED_CODE,
   isModelKeyProvider,
   offeredKeyProviders,
+  ownKeyCallRefusal,
+  providerUnavailableReason,
   suspendedProvidersOf,
   type ModelKeyProvider,
 } from '@/lib/model-providers';
@@ -76,8 +79,12 @@ export async function POST(req: NextRequest) {
     const requested = (body as { provider?: unknown } | null)?.provider;
     let provider: ModelKeyProvider = 'gemini';
     if (requested !== undefined) {
-      if (!isModelKeyProvider(requested) || !offeredKeyProviders().includes(requested)) {
+      if (!isModelKeyProvider(requested)) {
         return NextResponse.json({ error: 'Unknown or unavailable key provider.', code: 'byok-provider-unknown' }, { status: 400 });
+      }
+      // Legal texts Fassung 1.1: a provider that is not enabled yet is not tested either.
+      if (!offeredKeyProviders().includes(requested)) {
+        return NextResponse.json({ error: providerUnavailableReason(requested), code: PROVIDER_NOT_ENABLED_CODE }, { status: 409 });
       }
       provider = requested;
     }
@@ -101,6 +108,11 @@ export async function POST(req: NextRequest) {
       }
       apiKey = saved.apiKey;
       provider = saved.provider;
+      // The same switch for a key stored before it was turned off (dev): not sent to the provider.
+      const notEnabled = ownKeyCallRefusal(provider);
+      if (notEnabled) {
+        return NextResponse.json({ error: notEnabled, code: PROVIDER_NOT_ENABLED_CODE }, { status: 409 });
+      }
     }
 
     // 3.0.21 (T01): a provider the operator has switched off is not asked.
