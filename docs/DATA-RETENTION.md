@@ -141,7 +141,7 @@ address stands where account and address stood.
   done
   ```
 
-  **Not yet in place on 2026-10-23** — until they are, nothing is deleted on its date.
+  **In place since 2026-11-09** (created on clean-core-eu by the commands above; `npm run retention:verify` checks them).
 - **Keyed hash:** HMAC-SHA256 under `PSEUDONYM_PEPPER` (a repository secret the deploy
   passes to Cloud Run; at least 32 characters). It must never be rotated without
   re-keying: a new pepper makes every kept hash unmatchable, and with it the proof.

@@ -54,7 +54,7 @@ import { USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '../lib/constants';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const changes = currentTermsChanges();
-const PREVIEW_DAY = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22';
+const PREVIEW_DAY = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23';
 
 test.describe('the generator: every changed clause, from the texts as they are', () => {
   test('it compares the version in force (archived, digest checked) with the live source of the announced one', () => {
@@ -154,10 +154,10 @@ test.describe('the mail: a short body that is the notice, the full changed text 
   const [txt] = mail.attachments;
 
   test('the effective day, in both languages, in the subject and the body', () => {
-    if (PREVIEW_DAY === '2026-12-22') {
-      expect(mail.subject).toBe('Änderung der Nutzungsbedingungen zum 22. Dezember 2026 / Changes to the Terms of Service on 22 December 2026');
-      expect(dePart).toContain('Wirksam ab: 22. Dezember 2026.');
-      expect(enPart).toContain('Effective from: 22 December 2026.');
+    if (PREVIEW_DAY === '2026-12-23') {
+      expect(mail.subject).toBe('Änderung der Nutzungsbedingungen zum 23. Dezember 2026 / Changes to the Terms of Service on 23 December 2026');
+      expect(dePart).toContain('Wirksam ab: 23. Dezember 2026.');
+      expect(enPart).toContain('Effective from: 23 December 2026.');
     }
     expect(mail.subject).not.toMatch(/!/);
   });
@@ -305,12 +305,12 @@ test.describe('the send script: dry run by default, a send only with the confirm
     expect(sendRefusal(parseAnnouncementArgs(['--send', '--confirm=30']), 30)).toBeNull();
   });
 
-  test('the send day: a real send does not start after 14:00 Berlin on 09.11 without --late-ok', () => {
-    expect(NOTICE_SEND_DAY).toBe('2026-11-09');
-    expect(sendWindowRefusal(new Date('2026-11-09T12:59:00Z'), false)).toBeNull(); // 13:59 in Berlin
-    expect(sendWindowRefusal(new Date('2026-11-09T13:00:00Z'), false)).toMatch(/past 14:00 on 2026-11-09/); // 14:00
-    expect(sendWindowRefusal(new Date('2026-11-10T08:00:00Z'), false)).toMatch(/--late-ok/);
-    expect(sendWindowRefusal(new Date('2026-11-10T08:00:00Z'), true)).toBeNull();
+  test('the send day: a real send does not start after 14:00 Berlin on 10.11 without --late-ok', () => {
+    expect(NOTICE_SEND_DAY).toBe('2026-11-10');
+    expect(sendWindowRefusal(new Date('2026-11-10T12:59:00Z'), false)).toBeNull(); // 13:59 in Berlin
+    expect(sendWindowRefusal(new Date('2026-11-10T13:00:00Z'), false)).toMatch(/past 14:00 on 2026-11-10/); // 14:00
+    expect(sendWindowRefusal(new Date('2026-11-11T08:00:00Z'), false)).toMatch(/--late-ok/);
+    expect(sendWindowRefusal(new Date('2026-11-11T08:00:00Z'), true)).toBeNull();
     expect(parseAnnouncementArgs(['--late-ok']).lateOk).toBe(true);
     const src = read('scripts/send-terms-announcement.ts');
     expect(src).toContain('sendWindowRefusal(new Date(), args.lateOk)');

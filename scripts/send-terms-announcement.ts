@@ -12,7 +12,7 @@
  *   npx tsx scripts/send-terms-announcement.ts --send --confirm=<count>
  *       sends to at most 40 recipients (`--limit=<n>` for fewer), then stops;
  *       run the dry run again for the next batch and confirm its new count.
- *       On 09.11.2026 after 14:00 Berlin (or any later day) a real send does not
+ *       On 10.11.2026 after 14:00 Berlin (or any later day) a real send does not
  *       start without `--late-ok`; every run prints the reminder.
  *   npx tsx scripts/send-terms-announcement.ts --test-to scratch/<file> [--send --confirm=<mails>] [--allow-placeholders]
  *       TEST SEND to the seed mailboxes: one "<label> <address>" per line, #
@@ -32,7 +32,7 @@
  * changed clause without a reason; an "[open: …]" marker still in the new
  * wording; German and English clause lists that differ; TERMS_EFFECTIVE_DATE_ISO
  * not set, or today later than the last day of receipt six weeks before it
- * (`lastNoticeDay`: the effective day minus 43 days, 9 November for 22
+ * (`lastNoticeDay`: the effective day minus 43 days, 10 November for 23
  * December); a stale version id (`staleVersionRefusal`); a version page that does
  * not answer 200; no RESEND_API_KEY outside the emulator.
  *

@@ -19,7 +19,7 @@ import CcTag from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
 import { PHASES } from '@/lib/workflow-steps';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useAuthWanted } from '@/hooks/useAuthWanted';
+import { useAccountPage, useAuthWanted } from '@/hooks/useAuthWanted';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
@@ -139,6 +139,18 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    */
   const authWanted = useAuthWanted();
   const signedIn = authWanted === false ? false : authWanted === undefined ? undefined : firebaseSignedIn;
+
+  /**
+   * A page that needs an account (lib/shell-routes.ts), opened without the
+   * signed-in hint: the page is not rendered — it would start Auth itself — and
+   * the reader goes to the sign-in dialog, which brings them back afterwards
+   * (signInLinkFor). Network capture 09.11.2026, privacy policy section 7.
+   */
+  const accountPage = useAccountPage();
+  const holdAccountPage = accountPage && authWanted !== true;
+  useEffect(() => {
+    if (accountPage && authWanted === false) router.replace(signInLinkFor(pathname ?? '/'));
+  }, [accountPage, authWanted, pathname, router]);
 
   // A project name announced for one account is not shown to the next one.
   useEffect(() => {
@@ -479,7 +491,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       >
         {/* A tab left open across a deploy says so when it comes back into view, and waits for the reader's click (roadmap 3.0.21 (8)). */}
         <NewVersionWatcher />
-        {children}
+        {holdAccountPage ? null : children}
       </main>
       {/* The legal links of every page in this shell live here, in one of
           the two branches below — never behind the login. This shell also wraps

@@ -252,7 +252,8 @@ test.describe('(8) a tab left open across a deploy says so when it comes back, a
     // The only reload is the button's.
     expect(watcher.match(/window\.location\.reload\(\)/g)).toHaveLength(1);
     expect(watcher).toMatch(/onClick=\{\(\) => window\.location\.reload\(\)\}/);
-    expect(read('app/(app)/layout.tsx')).toMatch(/<NewVersionWatcher \/>\s*\n\s*\{children\}/);
+    // Since 09.11.2026 a page that needs an account is held back while the reader has no signed-in hint.
+    expect(read('app/(app)/layout.tsx')).toMatch(/<NewVersionWatcher \/>\s*\n\s*\{holdAccountPage \? null : children\}/);
   });
 
   test('the automatic reload after a missing chunk waits while the reader types', () => {

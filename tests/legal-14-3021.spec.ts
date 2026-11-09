@@ -149,9 +149,9 @@ test.describe('G13/G14 — acceptance time and effective date are two facts', ()
     expect(later, 'Decide later is styled differently from Accept').toBe(accept);
     expect(CONSENT_TEXTS.amendment.afterList.de).toContain('wirksam wird sie für Sie erst am {{termsEffectiveDate}}');
     expect(CONSENT_TEXTS.amendment.checkbox.en).toContain('with effect from {{termsEffectiveDate}}');
-    // Set (22.12.2026, entered on the owner's instruction), the day renders in both languages.
-    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'en')).toContain('with effect from 22 December 2026');
-    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'de')).toContain('mit Wirkung zum 22. Dezember 2026');
+    // Set (23.12.2026, owner decision 09.11.2026), the day renders in both languages.
+    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'en')).toContain('with effect from 23 December 2026');
+    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'de')).toContain('mit Wirkung zum 23. Dezember 2026');
     expect(consentText(CONSENT_TEXTS.amendment.notice, 'de')).toContain('dem Wirksamkeitstag');
   });
 
@@ -164,12 +164,11 @@ test.describe('G13/G14 — acceptance time and effective date are two facts', ()
   test('the effective date is an open value, a fact, entered on the owner\'s instruction and confirmed by him', () => {
     const v = openValue('termsEffectiveDate');
     expect(v.isFact).toBe(true);
-    // Entered from the owner's instruction (announcement 09.11.2026, effective 22.12.2026)
-    // and confirmed by him on 06.11.2026.
+    // Owner decision 09.11.2026: announcement 10.11.2026, effective 23.12.2026 (09.11 was missed).
     expect(v.ownerConfirmed).toBe(true);
-    expect(v.enteredFrom).toMatch(/09\.11\.2026.*22\.12\.2026/);
-    expect(v.value).toEqual({ de: '22. Dezember 2026', en: '22 December 2026' });
-    expect(read('lib/legal/open-values.ts')).toContain("export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-22';");
+    expect(v.enteredFrom).toMatch(/10\.11\.2026.*23\.12\.2026/);
+    expect(v.value).toEqual({ de: '23. Dezember 2026', en: '23 December 2026' });
+    expect(read('lib/legal/open-values.ts')).toContain("export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-23';");
   });
 });
 

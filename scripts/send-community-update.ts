@@ -75,7 +75,7 @@ async function main() {
     console.error('This script has no test or sample mode: scripts/send-terms-announcement.ts --test-to or --sample-only renders and test-sends this mail too.');
     process.exit(2);
   }
-  const plannedDay = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22';
+  const plannedDay = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23';
   process.env.PILOT_APPROVAL_SECRET = readEnv('PILOT_APPROVAL_SECRET');
   readEnv('PSEUDONYM_PEPPER', false);
 

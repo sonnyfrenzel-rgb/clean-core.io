@@ -154,7 +154,8 @@ test.describe('processors: one name for Google Cloud data-processing terms', () 
     }
     const v = openValue('noFirebaseOutsideGoogleCloud');
     expect(v.kind).toBe('check');
-    expect(v.ownerConfirmed).toBe(false);
+    // Confirmed by the owner on 09.11.2026 after a second code search (the next test is that search).
+    expect(v.ownerConfirmed).toBe(true);
   });
 
   test('the code uses no Firebase service beyond app, auth and Firestore', () => {

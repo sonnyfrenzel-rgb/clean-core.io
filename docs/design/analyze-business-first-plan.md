@@ -2,7 +2,7 @@
 
 as of 06.11.2026 · owner acceptance the same day ("a clear step towards business and towards reducing the app's
 complexity") · read only: nothing in the product changed, nothing committed · release cut revised the same day:
-three releases to users, v3.1.0, v3.2.0 and v3.5.0 (22.12.2026), ahead of every other roadmap topic (owner decisions
+three releases to users, v3.1.0, v3.2.0 and v3.5.0 (23.12.2026; was 22.12, moved by the owner on 09.11.2026), ahead of every other roadmap topic (owner decisions
 06.11.2026, §4).
 
 ## 0. Basis and method
@@ -45,7 +45,7 @@ three releases to users, v3.1.0, v3.2.0 and v3.5.0 (22.12.2026), ahead of every 
 | v4.1 (3) = N9 | "Hide" is remembered per project in the browser only, no server field; a quiet link below the endings brings the card back (state 9b). |
 | Layout | Nothing covers anything; fully responsive. Look and feel = today's app. |
 | AI Act Art. 50 | A per-element AI mark, only where a model wrote the text. |
-| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild ships **piece by piece on `main` as three normal releases, ahead of every other roadmap topic**: v3.1.0 (~27.11), v3.2.0 (~09.12) and the Christmas release v3.5.0 (22.12.2026, with own Claude keys switched on); hotfixes in between are 3.0.22, 3.0.23, …. The rule "one roadmap item per release" is deliberately overridden for these three. `dev` first, `main` only on Sonny's go. The video and the post on 22.12.2026 present "v3.5" (§4). |
+| Releases | 3.0.21 goes live before 02.12.2026 (on `main` 09.11.2026) and carries none of this. The rebuild ships **piece by piece on `main` as three normal releases, ahead of every other roadmap topic**: v3.1.0 (~27.11), v3.2.0 (~09.12) and the Christmas release v3.5.0 (23.12.2026, with own Claude keys switched on); hotfixes in between are 3.0.22, 3.0.23, …. The rule "one roadmap item per release" is deliberately overridden for these three. `dev` first, `main` only on Sonny's go. The video and the post on 23.12.2026 present "v3.5" (§4). |
 
 **Reading of "builds up in about 20 s"** (an interpretation, taken from the accepted mockup, states 1–3): the map stands
 at once with engine names; the summary, the text blocks and the names arrive in place over about 20 s; names may take
@@ -232,7 +232,7 @@ earlier. The rule "one roadmap item per release" is deliberately overridden for 
 |---|---|---|---|
 | **v3.1.0** | ~27.11.2026 (was ~23.11; §4.0) | AB-0, AB-1, AB-2, AB-3, **AB-14a**, **AB-15a** | A project opens in Analyze, Business: the map is the page, engine names at once, checked AI names swap in with a status line. Today's text blocks and next-step card stand below the map until v3.2.0. IT and Management still have today's pages. A new account lands on the home page's new first view with the start built in. An object-oriented program shows its status workflow as the process, technical methods folded. |
 | **v3.2.0** | ~09.12.2026 (was ~07.12) | AB-4, AB-5, AB-6, AB-7 (two charts; the N7 engine label is out), **AB-14b**, **AB-15b** | The inline tour, the two endings, "What you can do next", the soft gate, full screen with Edit and tour, the checked text around the map, two charts. Business is finished. The project list for returning accounts: every project, the new status words, four columns, tabs; the Continue card's data is stored, not yet shown. Interface calls resolved to the program's own implementations. |
-| **v3.5.0** — the Christmas release | 22.12.2026 | AB-9, AB-10, AB-11 (complete, no cut), AB-12, **AB-14c**, the key switch | IT and Management each on one page in Analyze; the workspace page dissolved completely (redirects, and the old views, layers and coach marks removed); the Continue card; demo, capture screens, landing pictures and the docs; own Claude keys switched on. The video and the LinkedIn post present "v3.5". |
+| **v3.5.0** — the Christmas release | 23.12.2026 | AB-9, AB-10, AB-11 (complete, no cut), AB-12, **AB-14c**, the key switch | IT and Management each on one page in Analyze; the workspace page dissolved completely (redirects, and the old views, layers and coach marks removed); the Continue card; demo, capture screens, landing pictures and the docs; own Claude keys switched on. The video and the LinkedIn post present "v3.5". |
 | later | — | AB-8 (third chart, N6), AB-13 (PDF with the tour texts, O11), the N7 engine label | — |
 
 - **Hotfixes in between** stay on the patch line: v3.0.22, v3.0.23, … before v3.1.0, then v3.1.1 … (the version
@@ -247,12 +247,12 @@ earlier. The rule "one roadmap item per release" is deliberately overridden for 
   review is started by hand after each release (`gh workflow run ux-review.yml --ref main -f mode=delta`). Each intake
   is triaged before the next release goes to `main`.
 - **Own Claude keys:** `ANTHROPIC_OWN_KEY_OFFERED` may be switched on on `dev` earlier — in practice only the owner uses
-  `dev`. On `main` it is switched on with v3.5.0 on 22.12.2026, after the terms v2.3.0 take effect (the six-week period
-  from the announcement mail of 09.11.2026 runs to the end of 21.12) and T01, T03 and T08 are accepted. Because `dev`
-  then carries the switch on while `main` must not before 22.12, the switch is **its own commit**: v3.1.0 and v3.2.0 go
+  `dev`. On `main` it is switched on with v3.5.0 on 23.12.2026, after the terms v2.3.0 take effect (the six-week period
+  from the announcement mail of 10.11.2026 runs to the end of 22.12; owner decision 09.11.2026) and T01, T03 and T08 are accepted. Because `dev`
+  then carries the switch on while `main` must not before 23.12, the switch is **its own commit**: v3.1.0 and v3.2.0 go
   to `main` with it off (the release commit sets it off if `dev` has it on), and v3.5.0's release commit turns it on —
-  or, if the gate fails on 22.12, leaves it off and v3.5.0 ships without it. If v3.5.0 itself slips, the switch goes
-  to `main` alone on 22.12 as a one-line release (a patch on the v3.2 line).
+  or, if the gate fails on 23.12, leaves it off and v3.5.0 ships without it. If v3.5.0 itself slips, the switch goes
+  to `main` alone on 23.12 as a one-line release (a patch on the v3.2 line).
 
 **Why this cut.** v3.1.0 carries everything the new page stands on: the names (AB-1) are the prerequisite of the swap
 (AB-3), and the swap has no place to happen until the map is the page (AB-2); moving the entry and retiring the
@@ -270,7 +270,7 @@ Management live in two places (workspace and Analyze) from v3.1.0 to v3.5.0; bot
 nothing new is built on the workspace copies.
 
 **Do the dates hold?** (re-checked 06.11.2026, after the reversal) Honestly: v3.1.0 and v3.2.0 are tight but
-possible; **v3.5.0 on 22.12 is at risk**.
+possible; **v3.5.0 on 23.12 is at risk**.
 - **v3.1.0 (~27.11 since the OO decision, §4.0):** about ten working days (16.–27.11, after the hotfix week) for the widest change of the plan (AB-2: about 100 specs change an
   address) plus the swap, and now a full release on top: the prod-build gate, up to three QA rounds, the owner's go,
   then the security audit and the QA full review on `main` to triage. Realistic only if 3.0.21 reaches `main` on 09.11
@@ -278,7 +278,7 @@ possible; **v3.5.0 on 22.12 is at risk**.
   AB-14a runs on the second track. A slip of two or three days is likely.
 - **v3.2.0 (~09.12 since the OO decision):** realistic with AB-8 and the N7 label out and AB-14b on the second track with its O9 row source
   done by 30.11; the release overhead again costs one to two days. Its slip moves v3.5.0's start.
-- **v3.5.0 (22.12):** about seven working days (10.–18.12) for AB-9, AB-10, the **complete** AB-11 (owner decision: no
+- **v3.5.0 (23.12):** about seven working days (10.–18.12) for AB-9, AB-10, the **complete** AB-11 (owner decision: no
   cut), AB-12 and the Continue card, then 21.12 for the recording and both approvals. In series it does not fit;
   it fits only if AB-9, AB-10 and AB-11 start on worktree branches on 24.11 (AB-11 with its redirect map and the tests
   against every address the code writes; the shell removal last) and merge into `dev` right after v3.2.0 is on
@@ -286,8 +286,8 @@ possible; **v3.5.0 on 22.12 is at risk**.
   saved.
 - **Mitigations that remain:** AB-8, AB-13 and the N7 label stay out; rename (H-O8) only if decided by 24.11; feature
   freeze on `dev` for v3.5.0 on 16.12 (fixes only after it); H-O5–H-O7 decided by 24.11 so the Continue card's data
-  ships in v3.2.0; and a decided fallback: if v3.5.0 is not green on `dev` by **21.12, 12:00**, the owner decides
-  between moving v3.5.0 and switching the Claude key alone on 22.12 — the video and the post then wait for v3.5.0
+  ships in v3.2.0; and a decided fallback: if v3.5.0 is not green on `dev` by **22.12, 12:00**, the owner decides
+  between moving v3.5.0 and switching the Claude key alone on 23.12 — the video and the post then wait for v3.5.0
   rather than show an unfinished product.
 
 **The home page (AB-14) on a second track.** AB-14 touches the home page's files (`WorkspaceListReport`,
@@ -334,7 +334,7 @@ experiment branch `worktree-agent-a72177d7ea222fe15` (class-hierarchy candidates
 **What it does to the dates (honest).** v3.1.0 was already tight at ~23.11. The hotfix takes the week after 09.11 on
 `dev`, and AB-15a is engine work behind a gate with a benchmark measurement, touching the same files as AB-1
 (`lib/abap/plain-language.ts`, `lib/bpmn/model.ts`), so it can only start once AB-1 is merged. **~23.11 does not hold;
-~27.11 does with the cut above.** v3.2.0 moves to ~09.12 (AB-15b plus two days' knock-on). v3.5.0 stays 22.12, with the
+~27.11 does with the cut above.** v3.2.0 moves to ~09.12 (AB-15b plus two days' knock-on). v3.5.0 stays 23.12 (moved from 22.12 on 09.11.2026), with the
 buffer now one working day (18.→21.12) and the fallback of §4 unchanged. If 23.11 is to hold anyway, the only cut is
 all of AB-15 in v3.2.0 — against the owner's "core theme of v3.1".
 
@@ -587,11 +587,11 @@ dates do not hold. Until it ships, Business shows two charts.*
 - **Done when:** [look] for 9; every rule has a kind or "other", never a guess.
 - **Risk:** low.
 
-### 4.3 Release v3.5.0, the Christmas release — IT and Management on one page, the workspace page dissolves (on `main` 22.12.2026)
+### 4.3 Release v3.5.0, the Christmas release — IT and Management on one page, the workspace page dissolves (on `main` 23.12.2026)
 
 - **Scope:** AB-9, AB-10, the **complete** AB-11 (no cut, owner decision 06.11.2026), AB-12 below and AB-14c (the
   Continue card, on data built in v3.2.0); the release commit switches own Claude keys on (§4). Nothing of it moves past Christmas. After it the product is
-  the one the 22.12.2026 video shows as "v3.5".
+  the one the 23.12.2026 video shows as "v3.5".
 - **Version:** v3.2.x → v3.5.0. Engine readings added in this release are gated from `'3.5.0'`; every older gate keeps
   applying (`engineVersionAtLeast` compares part by part). A new minor version, so the QA full review runs on `main`.
 - **How it fits:** AB-9, AB-10 and AB-11 are built in parallel on worktree branches from 24.11.2026 (AB-9/AB-10 touch
@@ -602,7 +602,7 @@ dates do not hold. Until it ships, Business shows two charts.*
   each with its address-only spec changes as separate commits. **(b)** AB-11: one redirect function for every address
   `/project/[id]` ever wrote, tested against each; the workspace shell's views, layers and coach marks retired; the
   docs (`CLAUDE.md` with Sonny's go, `docs/ARCHITECTURE.md` §2, `DESIGN.md` §2.3/§5, the ADRs of §2.2). **(c)** AB-12:
-  demo tour texts, capture screens, landing pictures, the UX agent's screen list; version bump to v3.5.0; the key switch on (its own commit, only after the 22.12 gate).
+  demo tour texts, capture screens, landing pictures, the UX agent's screen list; version bump to v3.5.0; the key switch on (its own commit, only after the 23.12 gate).
 - **Rendered specs on the production build before `main`:** `analyze-it-one-page`, `analyze-management-one-page`,
   `analyze-layout-guard` (states 11, 12, 13 and every earlier state), `score-hero`, `analyze-one-place`,
   `analyze-answer-first`, `analyze-polish-rendered`, `analyze-findings-focus`, `management-overview`,
@@ -900,7 +900,7 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 | Model cost and latency on the platform key: naming, purpose and plain wording per new project | AB-1, AB-3, AB-6 | One call per stage per project; own key only with the 3.0.21 switch; the 45 s ceiling ends the wait, not the call (assumption: the call is cancelled or its late answer ignored — decide in AB-3). |
 | Two homes for IT and Management between AB-2 and AB-10 | AB-2 | Accept from v3.1.0 to v3.5.0 (about four weeks); say it in the release notes; no new feature on the workspace IT/Management in that time. |
 | Spec churn: 48 specs read the first-look hooks or `?first=1`, 54 read `view=it\|management` | AB-2, AB-11 | Change addresses first, rewrite behaviour second; no guard removed without a replacement shown red on a broken copy (the principle of the quality row, item 4 — moved from 3.0.22 to 3.5.1, applied here already). |
-| The dates (27.11, 09.12, 22.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 22.12 communication waits for 3.5.0, the Claude key switch does not. |
+| The dates (27.11, 09.12, 23.12.2026) slip | every release | Cut lines agreed beforehand: AB-8 and AB-13 are already out; the N7 engine label goes next; AB-11 may ship as the redirect alone with the dead workspace code removed in the following release. A release slips rather than ship a broken intermediate state; the 23.12 communication waits for 3.5.0, the Claude key switch does not. |
 | Legibility at overview zoom (ADR-025; `MIN_SCALE = 0.8`, `components/process-map/bpmn-view.ts:48`) | AB-2, AB-4 | Scroll instead of shrinking (N2); tour floor 83 %. |
 | Overlap regressions on narrow widths | every package | `analyze-layout-guard` fails the build for the touched states. |
 | The Analyze page (2,261 lines) | AB-2, AB-9 | Split per view into components first; behaviour second. |

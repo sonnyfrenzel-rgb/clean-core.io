@@ -383,8 +383,10 @@ test.describe('the public pages of the signed-in shell start Auth only behind th
 
   test('the shell asks Firebase on a public page only behind useAuthWanted()', () => {
     const gate = read('hooks/useAuthWanted.ts');
-    // A page that needs an account starts Auth as before; a public one waits for the hint or a started Auth.
-    expect(gate).toMatch(/if \(!isPublicShellPath\(pathname \?\? '\/'\)\) return true;/);
+    // Since 09.11.2026 every page of the shell waits for the hint or a started Auth — a page that needs an
+    // account no longer starts Auth on load (network capture 09.11.2026: /dashboard signed out contacted Google on Safari).
+    expect(gate).not.toMatch(/return true;/);
+    expect(gate).toMatch(/export function useAccountPage\(\): boolean \{\s*const pathname = usePathname\(\);\s*return !isPublicShellPath\(pathname \?\? '\/'\);/);
     expect(gate).toMatch(/const clientSnapshot = \(\): Known => \(hasSignedInHint\(\) \|\| isAuthStarted\(\) \? 'yes' : 'no'\);/);
     // The server cannot read the browser's storage: the hydrating render is "not known yet".
     expect(gate).toMatch(/const serverSnapshot = \(\): Known \| null => null;/);
@@ -397,6 +399,10 @@ test.describe('the public pages of the signed-in shell start Auth only behind th
     expect(layout).toMatch(/useEffect\(\(\) => \{\s*if \(!authWanted\) return;\s*let uid[^;]*;\s*return onAuthStateChanged\(getAuth\(\),/);
     // Signed out without asking: the "Sign in" link, not a placeholder.
     expect(layout).toContain('const signedIn = authWanted === false ? false : authWanted === undefined ? undefined : firebaseSignedIn;');
+    // A page that needs an account, without the hint: not rendered, and the reader goes to sign in and back.
+    expect(layout).toContain('const holdAccountPage = accountPage && authWanted !== true;');
+    expect(layout).toContain("if (accountPage && authWanted === false) router.replace(signInLinkFor(pathname ?? '/'));");
+    expect(layout).toContain('{holdAccountPage ? null : children}');
 
     const profile = read('hooks/useUserProfile.ts');
     expect(profile).toContain('const auth = authWanted ? getAuth() : null;');

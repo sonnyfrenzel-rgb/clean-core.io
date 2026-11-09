@@ -119,8 +119,8 @@ export function addDays(iso: string, days: number): string {
  * them: the day the notice is received does not count, so the period starts on
  * the day after it, and the Terms take effect on the day after the period
  * ends. The last day of receipt is therefore the effective day minus 43 days:
- * for 22 December 2026 it is Monday 9 November 2026 (period 10 November to
- * 21 December). A notice on 10 November is one day short for 22 December.
+ * for 23 December 2026 it is Tuesday 10 November 2026 (period 11 November to
+ * 22 December). A notice on 11 November is one day short for 23 December.
  */
 export function lastNoticeDay(effectiveDateIso: string): string {
   return addDays(effectiveDateIso, -(NOTICE_WEEKS * 7 + 1));
@@ -153,11 +153,11 @@ export function deadlineRefusal(effectiveDateIso: string | null, now: Date): str
 
 /**
  * The day the notice goes out and the hour by which a real send must have
- * started (owner, 06.11.2026: on 09.11 by early afternoon). After that a real
+ * started (owner, 06.11.2026: by early afternoon; the day moved from 09.11 to 10.11 on 09.11.2026 when 09.11 was missed). After that a real
  * send refuses to start unless `--late-ok` is given; the dry run and the test
  * send are not affected.
  */
-export const NOTICE_SEND_DAY = '2026-11-09';
+export const NOTICE_SEND_DAY = '2026-11-10';
 export const NOTICE_SEND_CUTOFF = '14:00';
 
 /** Berlin wall-clock time of a moment, `YYYY-MM-DD HH:MM`. */
