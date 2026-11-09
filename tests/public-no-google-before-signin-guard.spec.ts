@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PUBLIC_SHELL_ROUTES, SIGNED_IN_SHELL_ROUTES, isPublicShellPath } from '../lib/shell-routes';
+import { OWN_SIGNED_OUT_VIEW_ROUTES, PUBLIC_SHELL_ROUTES, SIGNED_IN_SHELL_ROUTES, isPublicShellPath } from '../lib/shell-routes';
 
 /**
  * Privacy policy section 7 says the public pages contact nobody but
@@ -386,7 +386,16 @@ test.describe('the public pages of the signed-in shell start Auth only behind th
     // Since 09.11.2026 every page of the shell waits for the hint or a started Auth — a page that needs an
     // account no longer starts Auth on load (network capture 09.11.2026: /dashboard signed out contacted Google on Safari).
     expect(gate).not.toMatch(/return true;/);
-    expect(gate).toMatch(/export function useAccountPage\(\): boolean \{\s*const pathname = usePathname\(\);\s*return !isPublicShellPath\(pathname \?\? '\/'\);/);
+    expect(gate).toMatch(/export function useAccountPage\(\): boolean \{\s*const pathname = usePathname\(\);[^}]*return !isPublicShellPath\(pathname \?\? '\/'\) && !hasOwnSignedOutView\(pathname \?\? '\/'\);/);
+    // The two invitation links show their own signed-out state and start Auth only behind the hint.
+    expect(OWN_SIGNED_OUT_VIEW_ROUTES).toEqual(['/invitation/[projectId]/[invitationId]', '/portfolio/invitation/[selectionId]/[invitationId]']);
+    for (const route of OWN_SIGNED_OUT_VIEW_ROUTES) expect(SIGNED_IN_SHELL_ROUTES).toContain(route);
+    for (const file of ['app/(app)/invitation/[projectId]/[invitationId]/page.tsx', 'components/portfolio/PortfolioInvitation.tsx']) {
+      const src = withoutComments(read(file));
+      expect(src, file).toContain('const authWanted = useAuthWanted();');
+      expect(src, file).toContain('const user = authWanted === false ? null : authUser;');
+      expect(src, file).toMatch(/useEffect\(\(\) => \{\s*if \(!authWanted\) return;\s*(const auth = getAuth\(\);|return onAuthStateChanged\(getAuth\(\),)/);
+    }
     expect(gate).toMatch(/const clientSnapshot = \(\): Known => \(hasSignedInHint\(\) \|\| isAuthStarted\(\) \? 'yes' : 'no'\);/);
     // The server cannot read the browser's storage: the hydrating render is "not known yet".
     expect(gate).toMatch(/const serverSnapshot = \(\): Known \| null => null;/);

@@ -3429,6 +3429,25 @@
       }
     },
     {
+      "path": "docs/legal/network-capture-2026-11-09-dev-before-fix.md",
+      "kind": "report",
+      "purpose": "Release-day network capture of the dev service (3.0.21, 2793847d) for privacy policy section 7, made by scripts/legal/network-capture.ts, before the fix for pages that need an account",
+      "audience": "Sonny, legal review",
+      "saysToday": "As of 09.11.2026, v3.0.21 on dev before the fix: steps 1-8 contact only the first party in every engine and store nothing; from step 9 (sign-in dialog) and on steps 10-11 (account pages opened signed out) WebKit contacts apis.google.com, the project's firebaseapp.com and www.googleapis.com.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Dated measurement report and the evidence for the fix of 09.11.2026; the capture after the fix is its own dated file.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [],
+      "measured": {
+        "lines": 150
+      }
+    },
+    {
       "path": "docs/legal/network-capture-2026-11-06.md",
       "kind": "report",
       "purpose": "Network capture of the public production site for privacy policy section 7 (no third party before sign-in), made by scripts/legal/network-capture.ts",

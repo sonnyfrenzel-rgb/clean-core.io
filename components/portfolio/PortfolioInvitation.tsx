@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { ArrowRight, Mail } from 'lucide-react';
 import { getAuth } from '@/lib/firebase';
+import { useAuthWanted } from '@/hooks/useAuthWanted';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -21,22 +22,26 @@ import { wt } from '@/lib/workspace-messages';
  * sends the reader to sign-in and back here.
  */
 export default function PortfolioInvitation({ selectionId, invitationId }: { selectionId: string; invitationId: string }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [checked, setChecked] = useState(false);
+  // Privacy policy section 7: without the signed-in hint the page shows its
+  // signed-out state without starting Auth (hooks/useAuthWanted.ts). Network capture 09.11.2026.
+  const authWanted = useAuthWanted();
+  const [authUser, setUser] = useState<User | null>(null);
+  const [authChecked, setChecked] = useState(false);
+  const user = authWanted === false ? null : authUser;
+  const checked = authWanted === false ? true : authChecked;
   const [preview, setPreview] = useState<{ for: string; invitedBy: string; expiresAt: string } | null>(null);
   const [accepted, setAccepted] = useState<{ for: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const key = user ? `${user.uid}|${selectionId}|${invitationId}` : null;
 
-  useEffect(
-    () =>
-      onAuthStateChanged(getAuth(), (u) => {
-        setUser(u);
-        setChecked(true);
-      }),
-    [],
-  );
+  useEffect(() => {
+    if (!authWanted) return;
+    return onAuthStateChanged(getAuth(), (u) => {
+      setUser(u);
+      setChecked(true);
+    });
+  }, [authWanted]);
 
   useEffect(() => {
     if (!user) return;

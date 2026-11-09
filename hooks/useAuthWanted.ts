@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { hasSignedInHint, isAuthStarted, SIGNED_IN_HINT_EVENT, SIGNED_IN_HINT_KEY } from '@/lib/auth-hint';
-import { isPublicShellPath } from '@/lib/shell-routes';
+import { hasOwnSignedOutView, isPublicShellPath } from '@/lib/shell-routes';
 
 /**
  * Whether this page of the signed-in shell may start the Firebase Auth SDK.
@@ -64,5 +64,6 @@ export function useAuthWanted(): boolean | undefined {
  */
 export function useAccountPage(): boolean {
   const pathname = usePathname();
-  return !isPublicShellPath(pathname ?? '/');
+  // An invitation link shows its own signed-out state (lib/shell-routes.ts) and is not sent away.
+  return !isPublicShellPath(pathname ?? '/') && !hasOwnSignedOutView(pathname ?? '/');
 }

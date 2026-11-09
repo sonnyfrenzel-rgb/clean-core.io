@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { getAuth } from '@/lib/firebase';
+import { useAuthWanted } from '@/hooks/useAuthWanted';
 import { ArrowRight, Loader2, Lock, Mail } from 'lucide-react';
 import { signInLinkFor, signUpLinkFor } from '@/lib/return-path';
 import CcButton from '@/components/cc/Button';
@@ -39,8 +40,14 @@ export default function InvitationPage() {
   const here = invitationLinkPath(projectId, invitationId);
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  // Privacy policy section 7: without the signed-in hint the page shows its
+  // signed-out state without starting Auth (hooks/useAuthWanted.ts); the sign-in
+  // and sign-up links lead on from there. Network capture 09.11.2026.
+  const authWanted = useAuthWanted();
+  const [authUser, setUser] = useState<User | null>(null);
+  const [authChecking, setCheckingAuth] = useState(true);
+  const user = authWanted === false ? null : authUser;
+  const checkingAuth = authWanted === false ? false : authChecking;
   const [busy, setBusy] = useState(false);
   // Set once the server has accepted: the page is on its way to the project.
   const [opening, setOpening] = useState(false);
@@ -78,13 +85,14 @@ export default function InvitationPage() {
   }, [user, projectId, invitationId]);
 
   useEffect(() => {
+    if (!authWanted) return;
     const auth = getAuth();
     const stop = onAuthStateChanged(auth, (current) => {
       setUser(current);
       setCheckingAuth(false);
     });
     return () => stop();
-  }, []);
+  }, [authWanted]);
 
   const accept = useCallback(async () => {
     if (!user) return;
