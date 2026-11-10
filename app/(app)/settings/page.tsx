@@ -11,7 +11,7 @@ import {
   Trash2, Loader2,
   Save, ShieldCheck, Key,
   ArrowLeft, Copy, Smartphone, X, ArrowRight, Globe,
-  BookOpen, ExternalLink, HelpCircle
+  BookOpen, ExternalLink, HelpCircle, FileX
 } from 'lucide-react';
 import { serverTimestamp } from 'firebase/firestore';
 import { createWithinCeiling } from '@/lib/write-ceiling';
@@ -33,7 +33,11 @@ import {
 import ModelStagesCard from '@/components/ModelStagesCard';
 import { byokAllowed } from '@/lib/byok-eligibility';
 import OwnKeyProviderChoice from '@/components/settings/OwnKeyProviderChoice';
-import { KEY_PLACEHOLDER, PROVIDER_LABEL, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
+import { ByokAddendumAcceptance, OwnKeyAutoSteps, OwnKeyNotices, OwnKeyProviderSuspended, OwnKeyUntested } from '@/components/settings/OwnKeyTerms';
+import { BYOK_ADDENDUM_VERSION, addendumRequired, type ByokAddendumLanguage } from '@/lib/byok-addendum';
+import { ownKeyCounts } from '@/lib/run-quota-rule';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { KEY_PLACEHOLDER, PROVIDER_LABEL, offeredKeyProviders, ownKeyProviderOf, type ModelKeyProvider } from '@/lib/model-providers';
 import CommunityMailCard from '@/components/CommunityMailCard';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -51,11 +55,19 @@ import CcDateText from '@/components/cc/DateText';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { SemanticState } from '@/lib/provenance';
 import { cn } from '@/lib/utils';
+import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_HREF, QUOTA_NAME, runsLeftLabel } from '@/lib/run-quota-rule';
+import { signInLinkFor } from '@/lib/return-path';
+import { END_CONTRACT_CONFIRM_LABEL, END_CONTRACT_ID, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE, quotedDeclaration } from '@/lib/contract-withdrawal';
+import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
+import { withdrawalReceiptPendingMessage } from '@/lib/messages/model-consent';
 
 /** A quiet block inside a card — a note, an explanation, the strength meter. */
 const INSET = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-4';
+/** The two cards a link can name (roadmap 3.0.21 (3)): the own key, and the two-factor it needs. */
+const OWN_KEY_ID = OWN_KEY_HREF.slice(OWN_KEY_HREF.indexOf('#') + 1);
+const SIGN_IN_SECURITY_ID = 'sign-in-security';
 /** A link in running text. */
-const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
+const TEXT_LINK ='font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
 
 /**
  * A state in words with its dot — the shape of `CcObjectStatus` (§2.4, "Status
@@ -155,6 +167,16 @@ export default function SettingsPage() {
   // Who may bring their own key: one list, shared with the routes that store and
   // test it (lib/byok-eligibility.ts, roadmap 3.0.13 c).
   const isPilotTier = byokAllowed(profile);
+  // `/settings#own-key` arrives before the cards exist (they wait for the
+  // profile), so the browser's own jump finds nothing: bring the named card into
+  // view once the page has drawn it (roadmap 3.0.21 (3)).
+  useEffect(() => {
+    if (loading) return;
+    const id = window.location.hash.slice(1);
+    if (id !== OWN_KEY_ID && id !== SIGN_IN_SECURITY_ID) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading]);
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -173,7 +195,11 @@ export default function SettingsPage() {
   const savedProvider: ModelKeyProvider | null =
     savedKeyProvider === null || savedKeyProvider === 'unknown' ? null : savedKeyProvider;
   const [chosenProvider, setChosenProvider] = useState<ModelKeyProvider | null>(null);
-  const keyProvider: ModelKeyProvider = chosenProvider ?? savedProvider ?? 'gemini';
+  // A new key is only ever of an offered provider: a saved key of one that is
+  // not enabled (an Anthropic key stored on dev before Fassung 1.1) is still
+  // shown as saved, but the form does not preselect it for a save.
+  const keyProvider: ModelKeyProvider =
+    chosenProvider ?? (savedProvider && offeredKeyProviders().includes(savedProvider) ? savedProvider : 'gemini');
   // The provider the last successful key test spoke to (the route says which).
   const [testedProvider, setTestedProvider] = useState<ModelKeyProvider>('gemini');
   const [geminiKey, setGeminiKey] = useState('');
@@ -188,6 +214,14 @@ export default function SettingsPage() {
   // after a refused save or removal (DESIGN.md §2.6).
   const [confirmDeleteKey, setConfirmDeleteKey] = useState(false);
   const [keyError, setKeyError] = useState('');
+  // 3.0.21 — the Additional Agreement on Own Model Keys (an Anthropic key is
+  // stored only with it accepted), the automatic-steps switch per key, and the
+  // operator's per-provider switch-off (`lib/byok-addendum.ts`).
+  const [addendumAccepted, setAddendumAccepted] = useState(false);
+  const [addendumLanguage, setAddendumLanguage] = useState<ByokAddendumLanguage>('en');
+  const [autoStepsBusy, setAutoStepsBusy] = useState(false);
+  const keyAvailability = useModelAvailability();
+  const ownKeyTested = ownKeyCounts(profile);
 
   // GDPR Account Deletion
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -203,6 +237,32 @@ export default function SettingsPage() {
   const [deletePasswordError, setDeletePasswordError] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [accountErased, setAccountErased] = useState(false);
+
+  // C13 (Terms section 13; A6 of 3.0.21): the withdrawal path, its own form
+  // beside the generic deletion. It shows name, account address and contract;
+  // the binding button is "Confirm withdrawal · Widerruf bestätigen".
+  const [showWithdrawal, setShowWithdrawal] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawMfaCode, setWithdrawMfaCode] = useState('');
+  const [withdrawPassword, setWithdrawPassword] = useState('');
+  const [withdrawCodeError, setWithdrawCodeError] = useState('');
+  const [withdrawPasswordError, setWithdrawPasswordError] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
+  // B8 (legal review 06.11.2026): received and effective, the receipt queued — when it was received.
+  const [withdrawReceivedAt, setWithdrawReceivedAt] = useState<string | null>(null);
+
+  // "Withdraw from / end the contract" in the footer links to
+  // `/settings#end-contract`, which brings the withdrawal entry into view with
+  // the withdrawal form open. Nothing is sent before the form is confirmed.
+  useEffect(() => {
+    if (loading || !profile) return;
+    if (window.location.hash.slice(1) !== END_CONTRACT_ID) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(END_CONTRACT_ID)?.scrollIntoView({ block: 'start' });
+      setShowWithdrawal(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, profile]);
 
   // BYOT (Bring Your Own Tenant) States
   const [byotMotivation, setByotMotivation] = useState('');
@@ -705,6 +765,7 @@ export default function SettingsPage() {
   const handleSaveKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !isPilotTier || !geminiKey.trim()) return;
+    if (addendumRequired(keyProvider) && !addendumAccepted) return;
     setKeyError('');
     setIsSavingKey(true);
     try {
@@ -716,7 +777,12 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ apiKey: geminiKey.trim(), provider: keyProvider }),
+        body: JSON.stringify({
+          apiKey: geminiKey.trim(),
+          provider: keyProvider,
+          // The acceptance in the language version the reader ticked (E26), sent only for an Anthropic key.
+          ...(addendumRequired(keyProvider) ? { addendum: { version: BYOK_ADDENDUM_VERSION, language: addendumLanguage, accepted: addendumAccepted } } : {}),
+        }),
       });
 
       if (!res.ok) {
@@ -726,6 +792,8 @@ export default function SettingsPage() {
 
       setKeySaved(true);
       setGeminiKey('');
+      setAddendumAccepted(false);
+      void keyAvailability.refresh();
       // The profile now names the saved provider; the choice follows it again.
       setChosenProvider(null);
       setValidationStatus('idle'); // Reset test connection banner after saving
@@ -769,6 +837,8 @@ export default function SettingsPage() {
       }
 
       const tested = (await res.json().catch(() => ({}))) as { provider?: unknown };
+      // A passed test of the stored key makes it count (3.0.21); the profile follows.
+      void keyAvailability.refresh();
       setTestedProvider(tested.provider === 'anthropic' ? 'anthropic' : 'gemini');
       setValidationStatus('success');
     } catch (error) {
@@ -777,6 +847,29 @@ export default function SettingsPage() {
       setValidationError(error instanceof Error ? error.message : 'Invalid API key or network error.');
     } finally {
       setIsValidatingKey(false);
+    }
+  };
+
+  // 3.0.21 (owner decision B6) — "Automatic steps on my key", per stored key.
+  const handleAutoSteps = async (on: boolean) => {
+    setKeyError('');
+    setAutoStepsBusy(true);
+    try {
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/secrets/gemini/auto-steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ on }),
+      });
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({ error: 'The switch could not be saved.' }));
+        throw new Error(errorBody.error || 'The switch could not be saved.');
+      }
+      void keyAvailability.refresh();
+    } catch (error) {
+      setKeyError(error instanceof Error ? error.message : 'The switch could not be saved.');
+    } finally {
+      setAutoStepsBusy(false);
     }
   };
 
@@ -1068,22 +1161,112 @@ export default function SettingsPage() {
     }
   };
 
+  // C13 — the withdrawal path (Terms section 13; A6 of 3.0.21).
+
+  const openWithdrawal = () => {
+    setWithdrawMfaCode('');
+    setWithdrawPassword('');
+    setWithdrawCodeError('');
+    setWithdrawPasswordError('');
+    setWithdrawError('');
+    setShowWithdrawal(true);
+  };
+
+  const cancelWithdrawal = () => {
+    setShowWithdrawal(false);
+    setWithdrawMfaCode('');
+    setWithdrawPassword('');
+  };
+
+  /**
+   * The declaration. The form shows name, account address and contract and
+   * asks nothing else — with a second factor enrolled, the code (and for a
+   * password account the password) the server's step-up needs, because the
+   * path ends in the deletion. `/api/account/withdraw` records the
+   * declaration, sends the receipt, records that, and then deletes the account.
+   */
+  const handleWithdraw = async () => {
+    if (isWithdrawing) return;
+    setWithdrawCodeError('');
+    setWithdrawPasswordError('');
+    setWithdrawError('');
+
+    const mfaCode = withdrawMfaCode.replace(/\s+/g, '');
+    if (profile?.mfaEnabled && !mfaCode) {
+      setWithdrawCodeError('The authenticator code is required. Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+    if (profile?.mfaEnabled && profile?.authMethod === 'password' && !withdrawPassword) {
+      setWithdrawPasswordError('Enter your password to confirm.');
+      return;
+    }
+
+    setShowWithdrawal(false);
+    setIsWithdrawing(true);
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('No authenticated user found.');
+
+      if (profile?.mfaEnabled) {
+        const pw = profile?.authMethod === 'password' ? withdrawPassword : '';
+        await reauthenticateWithFactor(currentUser, pw, mfaCode);
+      }
+
+      const token = await currentUser.getIdToken(true);
+      const res = await fetch('/api/account/withdraw', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'The withdrawal could not be completed.');
+      }
+      // B8: effective and blocked, the receipt could not go out yet — it is queued and the
+      // deletion follows it. The person reads that, and is never asked to try again.
+      const answer = (await res.json().catch(() => ({}))) as { receiptPending?: unknown; receivedAt?: unknown };
+      if (answer.receiptPending === true) {
+        setWithdrawReceivedAt(typeof answer.receivedAt === 'string' ? answer.receivedAt : new Date().toISOString());
+        return;
+      }
+
+      // As after the erasure: set before the sign-out, so the empty profile is
+      // not read as "no profile" and sent to the dashboard.
+      setAccountErased(true);
+      await auth.signOut();
+      router.push('/');
+    } catch (error: unknown) {
+      const e = error as { code?: unknown; name?: unknown; message?: unknown } | null;
+      console.error('Withdrawal failed:', e?.code || e?.name || 'error');
+      setWithdrawError(typeof e?.message === 'string' && e.message ? e.message : 'The withdrawal could not be completed.');
+    } finally {
+      setWithdrawMfaCode('');
+      setWithdrawPassword('');
+      setIsWithdrawing(false);
+    }
+  };
+
   const getTierInfo = (tier: string = 'pilot', hasCustomKey: boolean = false) => {
     const ownKeyName = `your own ${PROVIDER_LABEL[savedProvider ?? 'gemini']} key`;
     if (hasCustomKey && (tier === 'pilot' || tier === 'pilot_byok')) {
       return {
         label: `Free Community Edition, with ${ownKeyName}`,
-        text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use, so there is no limit on transformations.`,
+        text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use, so there is no limit on analysis runs.`,
       };
     }
 
     switch (tier) {
-      case 'pilot_byok': return { label: `Free Community Edition, with ${ownKeyName}`, text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use — no limit on transformations, every feature, always free.` };
-      default: return { label: 'Free Community Edition', text: `Every feature, with 5 free transformations.${isPilotTier ? ' Add your own model key below for unlimited runs.' : ''}` };
+      case 'pilot_byok': return { label: `Free Community Edition, with ${ownKeyName}`, text: `${ownKeyName[0].toUpperCase()}${ownKeyName.slice(1)} is in use — no limit on analysis runs, every feature, always free.` };
+      default: return { label: 'Free Community Edition', text: `Every feature, with ${profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs.${isPilotTier ? ' Add your own model key below for unlimited runs.' : ''}` };
     }
   };
 
   const tierInfo = getTierInfo(profile?.tier, !!profile?.byokConfigured);
+  // B8: a withdrawal received in this visit, or one the profile says is effective with its receipt pending.
+  const profileWithdrawal = (profile as { withdrawal?: { state?: unknown; receivedAt?: unknown } } | null)?.withdrawal;
+  const pendingWithdrawalAt =
+    withdrawReceivedAt ??
+    (profileWithdrawal?.state === 'receipt-pending' && typeof profileWithdrawal.receivedAt === 'string' ? profileWithdrawal.receivedAt : null);
 
   return (
     <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-4 py-6 pb-20 sm:px-6">
@@ -1150,18 +1333,18 @@ export default function SettingsPage() {
 
       {/* The plan and its quota — a sidebar until the single column (gap
           audit 3.0, §18). The "community status" card beside it repeated the
-          plan in other words and is folded in here. */}
-      <CcCard level={2} title="Plan and usage" meta={<StateWord state="success">Active</StateWord>}>
+          plan in other words and is folded in here. There are no plans, so
+          the card is named after what it counts — the quota's one name,
+          counted as left like the header (roadmap 3.0.21 (2)). */}
+      <CcCard level={2} title={QUOTA_NAME} meta={<StateWord state="success">Active</StateWord>}>
         <p className="m-0 cc-text-body text-cc-ink">{tierInfo.label}</p>
         <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{tierInfo.text}</p>
 
         <dl className="m-0 mt-4 space-y-2 border-t border-cc-line pt-4 cc-text-cell">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-cc-ink-muted">Transformations used</dt>
-            <dd className="m-0 font-semibold text-cc-ink">
-              {profile?.byokConfigured
-                ? `${profile?.transformationsUsed || 0} of unlimited (your own key)`
-                : `${profile?.transformationsUsed || 0} of ${profile?.transformationsLimit || 5}`}
+            <dt className="text-cc-ink-muted">{QUOTA_NAME}</dt>
+            <dd data-settings-quota="" className="m-0 font-semibold text-cc-ink">
+              {profile?.byokConfigured ? 'Unlimited (your own key)' : runsLeftLabel(profile)}
             </dd>
           </div>
           {profile?.accessUntil && (
@@ -1178,7 +1361,7 @@ export default function SettingsPage() {
         </p>
       </CcCard>
 
-      <CcCard level={2} title="Sign-in security">
+      <CcCard level={2} title="Sign-in security" id={SIGN_IN_SECURITY_ID}>
         <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
           Ask for a code from an authenticator app at every sign-in, and change your password.
         </p>
@@ -1382,10 +1565,11 @@ export default function SettingsPage() {
         <CcCard
           level={2}
           title="Your own model key (BYOK)"
+          id={OWN_KEY_ID}
           meta={profile?.byokConfigured ? <StateWord state="success">{savedProvider ? `${PROVIDER_LABEL[savedProvider]} key saved` : 'Key saved'}</StateWord> : undefined}
         >
           <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-            With your own Google Gemini or Anthropic API key, the limit of 5 free transformations no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
+            With your own model key, the limit of {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
           </p>
 
           <form onSubmit={handleSaveKey} className="space-y-4 text-cc-ink">
@@ -1398,6 +1582,8 @@ export default function SettingsPage() {
               }}
               disabled={isSavingKey || isDeletingKey}
             />
+
+            <OwnKeyNotices provider={keyProvider} />
 
             <SettingsInput
               label={`${PROVIDER_LABEL[keyProvider]} API key`}
@@ -1418,6 +1604,28 @@ export default function SettingsPage() {
               mono
               reveal={{ shown: showKey, onToggle: () => setShowKey(!showKey), label: 'Show API key' }}
             />
+
+            {addendumRequired(keyProvider) && geminiKey.trim() ? (
+              <ByokAddendumAcceptance
+                checked={addendumAccepted}
+                language={addendumLanguage}
+                onChange={setAddendumAccepted}
+                onLanguage={setAddendumLanguage}
+                disabled={isSavingKey}
+              />
+            ) : null}
+
+            {keyAvailability.suspendedProvider ? <OwnKeyProviderSuspended provider={keyAvailability.suspendedProvider} notice={keyAvailability.suspendedNotice} /> : null}
+            {profile?.byokConfigured && !ownKeyTested ? <OwnKeyUntested /> : null}
+            {profile?.byokConfigured && savedProvider ? (
+              <OwnKeyAutoSteps
+                provider={savedProvider}
+                checked={profile.byokAutoSteps === true}
+                tested={ownKeyTested}
+                busy={autoStepsBusy}
+                onChange={(on) => void handleAutoSteps(on)}
+              />
+            ) : null}
 
             {validationStatus === 'success' && (
               <CcMessageStrip state="success" headline="The key works" announce>
@@ -1452,7 +1660,7 @@ export default function SettingsPage() {
                 type="submit"
                 variant="primary"
                 busy={isSavingKey}
-                disabled={!geminiKey.trim()}
+                disabled={!geminiKey.trim() || (addendumRequired(keyProvider) && !addendumAccepted)}
                 icon={keySaved ? <CheckCircle2 size={16} aria-hidden={true} /> : undefined}
               >
                 {isSavingKey ? 'Saving the key...' : keySaved ? 'Key saved' : 'Save the key'}
@@ -1466,7 +1674,7 @@ export default function SettingsPage() {
                   busy={isDeletingKey}
                   icon={<Trash2 size={16} aria-hidden={true} />}
                 >
-                  Remove the key
+                  {savedProvider === 'anthropic' ? 'Delete key and end agreement' : 'Remove the key'}
                 </CcButton>
               )}
             </div>
@@ -1474,8 +1682,11 @@ export default function SettingsPage() {
                 own-key routes require an enrolled factor (lib/mfa-gate.ts,
                 byokRequiresEnrolment). */}
             <p className="m-0 cc-text-cell text-cc-ink-muted">
-              Saving, testing or removing your own key needs two-factor authentication on this account —
-              set it up under Sign-in security first.
+              Saving, testing or removing your own key needs two-factor authentication on this account —{' '}
+              <a href={`#${SIGN_IN_SECURITY_ID}`} data-own-key-mfa-link="" className={TEXT_LINK}>
+                set it up under Sign-in security
+              </a>{' '}
+              first.
             </p>
           </form>
         </CcCard>
@@ -1785,6 +1996,56 @@ export default function SettingsPage() {
         </div>
       </CcCard>
 
+      {/* C13 — the voluntary withdrawal / termination function (Terms
+          section 13; A6 of 3.0.21): its own card and its own form, not the
+          deletion below, so it reads as a withdrawal throughout. The button
+          is the card's one action and wears `secondary`, which stands out
+          from the ghost buttons of the Danger Zone. */}
+      <CcCard
+        level={2}
+        id={END_CONTRACT_ID}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <FileX size={16} className="text-cc-brand-strong" aria-hidden={true} />
+            {END_CONTRACT_LABEL}
+          </span>
+        }
+      >
+        <div data-settings-end-contract="">
+          {pendingWithdrawalAt ? (
+            <div data-settings-withdrawal-pending="">
+              <CcMessageStrip state="information" announce>
+                <span className="block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'en')}</span>
+                <span lang="de" className="mt-1 block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'de')}</span>
+              </CcMessageStrip>
+            </div>
+          ) : isWithdrawing ? (
+            <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-6 text-center">
+              <Loader2 className="motion-safe:animate-spin text-cc-brand-strong" size={32} aria-hidden={true} />
+              <p className="m-0 cc-text-h3 text-cc-ink">Receiving your withdrawal...</p>
+              <p className="m-0 max-w-sm cc-text-cell text-cc-ink-muted">We send the receipt to your e-mail address, then delete your account.</p>
+            </div>
+          ) : (
+            <>
+              {withdrawError && (
+                <div className="mb-4">
+                  <CcMessageStrip state="error" announce>
+                    {withdrawError}
+                  </CcMessageStrip>
+                </div>
+              )}
+              <p className="m-0 mb-1 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
+              <p lang="de" className="m-0 mb-3 cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.de}</p>
+              <CcButton variant="secondary" onClick={openWithdrawal} icon={<FileX size={16} aria-hidden={true} />} data-settings-end-contract-button="">
+                {END_CONTRACT_LABEL}
+              </CcButton>
+              {/* The German label under the button: one line of button text fits a phone (mobile-responsive). */}
+              <p lang="de" className="m-0 mt-1 cc-text-meta font-semibold text-cc-ink">{END_CONTRACT_LABEL_DE}</p>
+            </>
+          )}
+        </div>
+      </CcCard>
+
       {/* Danger Zone — the name the privacy policy and the account mails
           send readers to ("Settings → Danger Zone"). */}
       <CcCard
@@ -1797,7 +2058,7 @@ export default function SettingsPage() {
         }
       >
         <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-          Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions is kept for 24 months, and copies in encrypted backups age out within 30 days; the privacy policy lists what deletion does not reach.
+          Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions on your account and of the actions you took yourself is kept for 24 months from each action, with a keyed hash in place of your account identifier and no address of your account; copies in encrypted backups age out within 30 days; the privacy policy lists what else deletion does not reach.
         </p>
 
         {isDeletingAccount ? (
@@ -1874,7 +2135,8 @@ export default function SettingsPage() {
               <CcButton
                 variant="primary"
                 icon={<ArrowRight size={16} aria-hidden={true} />}
-                onClick={async () => { setShowMfaSetup(false); await signOut(getAuth()); router.push('/?auth=signin'); }}
+                // Back to the own key after the new sign-in, the step two-factor was turned on for (roadmap 3.0.21 (3)).
+                onClick={async () => { setShowMfaSetup(false); await signOut(getAuth()); router.push(signInLinkFor(isPilotTier ? OWN_KEY_HREF : '/settings')); }}
               >
                 Sign out and sign in again
               </CcButton>
@@ -2050,12 +2312,13 @@ export default function SettingsPage() {
       {/* Removing the own key: the confirmation `window.confirm` used to ask. */}
       <CcMessageBox
         open={confirmDeleteKey}
-        title="Remove your Gemini API key?"
-        confirmLabel="Remove API key"
+        title={savedProvider === 'anthropic' ? 'Delete your Anthropic key and end the agreement?' : `Remove your ${savedProvider ? PROVIDER_LABEL[savedProvider] : 'own'} API key?`}
+        confirmLabel={savedProvider === 'anthropic' ? 'Delete key and end agreement' : 'Remove API key'}
         onConfirm={handleDeleteKey}
         onCancel={() => setConfirmDeleteKey(false)}
       >
-        The key is deleted from our server, and you are back to the 5 free transformations.
+        {savedProvider === 'anthropic' ? 'This ends the Additional Agreement on Own Model Keys; no call goes to Anthropic after it, and you get a confirmation by e-mail. ' : null}
+        The key is deleted from our server, and you are back to the {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs.
       </CcMessageBox>
 
       {/* GDPR erasure — the three browser prompts as the fields of one
@@ -2071,8 +2334,8 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <p className="m-0">
             This deletes your account, your projects with their uploaded source code, and your saved keys from the
-            live systems (GDPR Art. 17). Type your e-mail address to confirm. The security audit record (24 months)
-            and encrypted backups (up to 30 days) outlive the deletion.
+            live systems (GDPR Art. 17). Type your e-mail address to confirm. The security audit record (24 months, pseudonymised),
+            encrypted backups (up to 30 days) and content blocked after a report (until its period ends) outlive the deletion.
           </p>
           <SettingsInput
             label="Your account e-mail address"
@@ -2109,6 +2372,79 @@ export default function SettingsPage() {
                   autoComplete="current-password"
                   valueState={deletePasswordError ? 'error' : undefined}
                   message={deletePasswordError || undefined}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </CcMessageBox>
+
+      {/* C13 — the withdrawal form (Terms section 13; A6 of 3.0.21). It shows
+          the declaration, the name, the account address and the contract for
+          the person to check; the binding button says what it does:
+          "Confirm withdrawal · Widerruf bestätigen". */}
+      <CcMessageBox
+        open={showWithdrawal}
+        title={`${CONSENT_TEXTS.withdrawal.formTitle.en} · ${CONSENT_TEXTS.withdrawal.formTitle.de}`}
+        confirmLabel={END_CONTRACT_CONFIRM_LABEL}
+        cancelLabel={`${CONSENT_TEXTS.withdrawal.cancel.en} · ${CONSENT_TEXTS.withdrawal.cancel.de}`}
+        onConfirm={handleWithdraw}
+        onCancel={cancelWithdrawal}
+      >
+        {/* Scrolls inside the box on a short screen, so the button below stays reachable. */}
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto" data-withdrawal-form="">
+          <p className="m-0">
+            {CONSENT_TEXTS.withdrawal.formLead.en}{' '}
+            <span lang="de" className="text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formLead.de}</span>
+          </p>
+          <dl className={cn(INSET, 'm-0 grid gap-3')}>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formDeclaration.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formDeclaration.de}</span></dt>
+              <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-declaration="">{quotedDeclaration('en')}</dd>
+              <dd lang="de" className="m-0 mt-1 text-cc-ink-muted">{quotedDeclaration('de')}</dd>
+            </div>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formName.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formName.de}</span></dt>
+              <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-name="">{`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim() || '–'}</dd>
+            </div>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formEmail.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formEmail.de}</span></dt>
+              <dd className="m-0 mt-1 break-all text-cc-ink" data-withdrawal-email="">{profile?.email}</dd>
+            </div>
+            <div>
+              <dt className="cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formContract.en} · <span lang="de">{CONSENT_TEXTS.withdrawal.formContract.de}</span></dt>
+              <dd className="m-0 mt-1 text-cc-ink" data-withdrawal-contract="">{CONSENT_TEXTS.withdrawal.contract.en}</dd>
+              <dd lang="de" className="m-0 mt-1 text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.contract.de}</dd>
+            </div>
+          </dl>
+          <p className="m-0">{CONSENT_TEXTS.withdrawal.formEffect.en}</p>
+          <p lang="de" className="m-0 text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.formEffect.de}</p>
+          {profile?.mfaEnabled && (
+            <>
+              <p className="m-0">
+                To confirm it is you, enter the 6-digit code from your authenticator app.
+              </p>
+              <SettingsInput
+                label="Code from your authenticator app"
+                required
+                value={withdrawMfaCode}
+                onChange={setWithdrawMfaCode}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                mono
+                valueState={withdrawCodeError ? 'error' : undefined}
+                message={withdrawCodeError || undefined}
+              />
+              {profile?.authMethod === 'password' && (
+                <SettingsInput
+                  label="Enter your password to confirm"
+                  type="password"
+                  required
+                  value={withdrawPassword}
+                  onChange={setWithdrawPassword}
+                  autoComplete="current-password"
+                  valueState={withdrawPasswordError ? 'error' : undefined}
+                  message={withdrawPasswordError || undefined}
                 />
               )}
             </>

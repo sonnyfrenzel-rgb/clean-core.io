@@ -107,7 +107,7 @@ export interface HandbookChapter {
   reads: HandbookObject[];
   writes: HandbookObject[];
   calls: HandbookObject[];
-  /** Lanes the naming stage proposed for elements of this chapter. A model proposal, never a fact. */
+  /** Lanes the naming stage proposed for elements of this chapter. An AI-generated draft, never a fact. */
   proposedRoles: string[];
 }
 

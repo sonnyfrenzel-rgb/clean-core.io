@@ -160,7 +160,8 @@ test.describe('the components cannot be overridden from outside', () => {
  * `aria-label="Search results"`). The parser sees all three, and does not
  * mistake a generic's `>` for the end of a tag.
  */
-const TEXT_SURFACES = ['components/workspace', 'components/process-map'];
+// Roadmap 3.0.21: the portfolio's components follow the same rule.
+const TEXT_SURFACES = ['components/workspace', 'components/process-map', 'components/portfolio'];
 const TEXT_SURFACE_FILES = ['components/demo/DemoWorkspaceShell.tsx', 'components/demo/DemoTourStop.tsx'];
 
 /** Attributes whose value a reader sees or hears. Identifiers, classes, roles and data hooks are not text. */
@@ -701,7 +702,12 @@ test.describe('and paint themselves consistently', () => {
     // The price, before the click, as two separate claims (§2.8).
     const quota = await page.locator('[data-cc-run-cost-quota]').first().textContent();
     const model = await page.locator('[data-cc-run-cost-model]').first().textContent();
-    expect(quota, 'the action does not say what it spends').toMatch(/free analysis runs|Not counted|already analysed|Gemini key/);
+    // The quota line is a consent text `startRun.free*` (legal review 06.11.2026),
+    // or the refusal when none is left — and nothing before a run speaks of costs.
+    expect(quota, 'the action does not say what it uses').toMatch(
+      /^(Free\. (This run uses one of your \d+ analyses; \d+ left after it\.|With your own key the run does not count against your analyses; only your provider's usage fees apply, on your own account\.|This run does not count against your analyses\.)|No free analysis runs left \(0 of \d+\) — add your own Gemini key to continue)$/,
+    );
+    expect(quota, 'a run notice speaks of costs (legal review 06.11.2026)').not.toMatch(/cost/i);
     expect(model, 'whether a model is called is a separate statement').toMatch(/model/i);
 
     // No invented percentage anywhere in the run indicator.

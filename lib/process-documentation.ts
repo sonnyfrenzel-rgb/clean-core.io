@@ -6,6 +6,7 @@ import { abapWords, programSummary, readProgramSummaryFacts, type ProgramSummary
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
 import { readingPath, type PathItem } from '@/lib/process-documentation-path';
+import { AI_ORIGIN_MARKDOWN_CLOSE, aiOriginMarkdownOpen, UNRECORDED_AI } from '@/lib/ai-marking';
 
 /**
  * The process documentation of stage 4 — roadmap 3.0.5, Weg C (Sonny, 24.09.2026).
@@ -56,7 +57,24 @@ export function commitWaitWords(andWait: boolean | null): string {
 export const PROCESS_DOCUMENTATION_DISCLAIMER =
   'Read by the engine out of the whole source the signed run analysed. No language model wrote its process structure '
   + 'or its statements. Every statement names the lines it was read from, or says that it is not determined and why. '
-  + 'The one exception is marked where it appears: business names and lanes from the naming stage are model proposals.';
+  + 'The one exception is marked where it appears: business names and lanes from the naming stage are AI-generated.';
+
+/** The disclaimer's last sentence: the naming stage's names and lanes. */
+const NAMING_EXCEPTION = ' The one exception is marked where it appears: business names and lanes from the naming stage are AI-generated.';
+
+/** True when the document shows a business name or lane of the naming stage — a model's element. */
+export function processDocumentationShowsNames(doc: Pick<ProcessDocumentation, 'steps' | 'proposedLanes'>): boolean {
+  return doc.steps.some((s) => !!s.businessName || !!s.lane) || doc.proposedLanes.length > 0;
+}
+
+/**
+ * The disclaimer as a rendering prints it (3.0.21): the sentence that calls names and lanes AI-generated only when
+ * the document shows one — with the naming paused, none does, and the sentence would claim a model element that
+ * is not there. The stored text is not changed.
+ */
+export function processDocumentationDisclaimer(doc: Pick<ProcessDocumentation, 'steps' | 'proposedLanes' | 'disclaimer'>): string {
+  return processDocumentationShowsNames(doc) ? doc.disclaimer : doc.disclaimer.replace(NAMING_EXCEPTION, '');
+}
 
 /**
  * What a document written before 3.0.5 is, in one sentence. It is shown, never
@@ -409,8 +427,15 @@ const heading = (level: 2 | 3, anchor: string, title: string): string[] => [`<a 
  * (`lib/abap/business-statement-kind.ts`). Every statement carries its lines
  * and its provenance; nothing the engine read is dropped.
  */
-export function processDocumentationToMarkdown(doc: ProcessDocumentation): string {
+export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: { originMarks?: boolean } = {}): string {
   const A = PROCESS_DOCUMENTATION_ANCHORS;
+  // 3.0.21 (T08): a business name or lane from the naming stage is a model's, marked where it stands with the
+  // cc:origin comment pair (its call is not recorded per project). A prompt that reads the file as context passes
+  // `originMarks: false` and gets the text it got before.
+  const marks = opts.originMarks !== false;
+  const named = (text: string): string => (marks ? `${aiOriginMarkdownOpen(UNRECORDED_AI)}${text}${AI_ORIGIN_MARKDOWN_CLOSE}` : text);
+  // A legend that calls the business names AI-generated stands only where a step carries one (3.0.21).
+  const namedSteps = doc.steps.some((s) => s.businessName);
   const facts = readCapabilityFacts(doc.facts);
   const view = businessStatementView(doc.statements);
   const byKind = (kind: StatementGroup['kind']) => view.groups.filter((g) => g.kind === kind);
@@ -443,7 +468,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
 
   out.push(`# Process documentation — ${doc.processName}`, '');
   out.push(`*\`${doc.fileName}\` · ${doc.lineCount} lines · SHA-256 \`${doc.sourceSha256.slice(0, 16)}…\` · Reconstructed from the code — to be confirmed by the business*`, '');
-  out.push(`> ${doc.disclaimer}`, '');
+  out.push(`> ${processDocumentationDisclaimer(doc)}`, '');
   out.push(`**Contents:** ${PROCESS_DOCUMENTATION_SECTIONS.map((s) => `[${s.title}](#${s.anchor})`).join(' · ')}`, '');
 
   /* ------------------------------------------------------ the business page */
@@ -462,7 +487,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
 
   /* ---------------------------------------------------------- 1. the process */
   out.push(...heading(2, A.process, PROCESS_DOCUMENTATION_SECTIONS[1].title));
-  out.push(`${doc.overview} The main path, in the order a run takes it: alternative paths stand side by side, a step that runs only under a condition is marked optional; every step with its lines. Provenance: Reconstructed. Business names from the naming stage are a Model proposal.`, '');
+  out.push(`${doc.overview} The main path, in the order a run takes it: alternative paths stand side by side, a step that runs only under a condition is marked optional; every step with its lines. Provenance: Reconstructed.${namedSteps ? ' Business names from the naming stage are AI-generated.' : ''}`, '');
   // A step says what it does only with a sentence of its own — a rule stands under the rules, and a sentence is said once.
   const said = new Set<string>();
   const stepLine = (step: DocStep, note = ''): string => {
@@ -471,8 +496,9 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     const own = !!sentence && (kind === 'step' || kind === 'data') && !said.has(sentence.id);
     if (own) said.add(sentence.id);
     const does = own ? ` — ${sentence.text}` : '';
-    const proposal = step.businessName ? ' (name: Model proposal)' : '';
-    return `**${docStepName(step)}**${proposal}${note}${lockedNote(step)}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
+    const proposal = step.businessName ? ' (name: AI-generated)' : '';
+    const name = step.businessName ? named(`**${docStepName(step)}**${proposal}`) : `**${docStepName(step)}**`;
+    return `${name}${note}${lockedNote(step)}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
   };
   // Roadmap 3.0.13 (SD review CR-A1): a routine a constant gate always stops is
   // said to be locked wherever the main path lists it.
@@ -623,10 +649,10 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     out.push(`- ${lane.name || '(program)'} — ${lane.kind}${lane.basis.length ? `, from ${lane.basis.join(', ')}` : ''} — ${rangeWords(lane.anchor)}`);
   }
   if (doc.proposedLanes.length > 0) {
-    out.push('', 'Proposed by the naming stage (Model proposal):', '');
+    out.push('', 'Proposed by the naming stage (AI-generated):', '');
     for (const lane of doc.proposedLanes) {
       const evidence = lane.anchor ? rangeWords(lane.anchor) : `${NOT_DETERMINED_LABEL} — ${lane.undetermined?.reason ?? ''}`;
-      out.push(`- ${lane.name}${lane.authorityObject ? ` (${lane.authorityObject})` : ''} — ${evidence}`);
+      out.push(`- ${named(lane.name)}${lane.authorityObject ? ` (${lane.authorityObject})` : ''} — ${evidence}`);
     }
   }
   out.push('');
@@ -647,14 +673,17 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   out.push(...heading(2, A.appendix, PROCESS_DOCUMENTATION_SECTIONS[6].title));
   out.push('*The complete reading, as the engine wrote it: every element of the map and every sentence, with its lines. The sections above are built from it.*', '');
   out.push(...heading(3, A.elements, 'A.1 The process, element by element'));
-  out.push('Provenance: Reconstructed, unless a column says otherwise. Business names and lanes are a Model proposal.', '');
+  // 3.0.21: the legend names AI-generated names and lanes only when the document shows one (names paused, none is).
+  out.push(processDocumentationShowsNames(doc)
+    ?'Provenance: Reconstructed, unless a column says otherwise. Business names and lanes are AI-generated.'
+    : 'Provenance: Reconstructed.', '');
   out.push('| Element | Kind | Name | Lane | Evidence | Next |');
   out.push('| :--- | :--- | :--- | :--- | :--- | :--- |');
   for (const step of doc.steps) {
     const name = step.businessName
-      ? `${step.businessName} (${step.technicalName}) — Model proposal`
+      ? `${named(step.businessName)} (${step.technicalName}) — AI-generated`
       : step.technicalName;
-    const lane = step.lane ? `${step.lane} — Model proposal` : '';
+    const lane = step.lane ? `${named(step.lane)} — AI-generated` : '';
     const next = step.next
       .map((flow) => (flow.condition ? `${flow.to} [${flow.condition}]` : flow.to))
       .join(', ');
@@ -667,7 +696,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     out.push('### A.2 What the elements do', '');
     for (const step of withSentence) {
       const sentence = statementById.get(step.statementId as string)!;
-      out.push(`- **${step.businessName ?? step.technicalName}** (${step.id}): ${sentence.text} — ${anchorsWords(sentence.anchors)}`);
+      out.push(`- ${step.businessName ? named(`**${step.businessName}**`) : `**${step.technicalName}**`} (${step.id}): ${sentence.text} — ${anchorsWords(sentence.anchors)}`);
     }
     out.push('');
   }

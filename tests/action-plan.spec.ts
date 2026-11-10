@@ -4,7 +4,7 @@ import path from 'path';
 import { modelActionPlan } from '../lib/action-plan';
 
 // QA 18c913d26e13: an empty plan from the model is no plan — the page must fall
-// back to its generic guidance and must not call that guidance a model proposal.
+// back to its generic guidance and must not call that guidance an AI-generated draft.
 test.describe('modelActionPlan', () => {
   test('an empty list is no plan', () => {
     expect(modelActionPlan([])).toBeNull();

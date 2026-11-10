@@ -7,7 +7,7 @@ import {
   unverifiedInputs,
   type UnverifiedInput,
 } from './input-manifest';
-import { coveringTestRunReceipt, executedPasses, testRunSubject } from './test-receipt';
+import { coveringTestRunReceipt, executedPasses, OWNER_EDITED_SUITE_NOTE, testRunSubject } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { PROFILE_INPUT_ID } from './assessment-profile';
 import { liveProfileDigest, recordedProfileOf } from './assessment-target';
@@ -331,6 +331,12 @@ export interface TestEvidence {
    * `Failures` badge on it alone reported an execution nobody recorded.
    */
   attestedFailures: number;
+  /**
+   * CA-INT-01: the covering receipt says the suite that ran is not the one the
+   * server recorded storing (`suiteOrigin: 'owner-edited'`). Every view that
+   * names the run says so; false without a receipt or on a receipt from before.
+   */
+  suiteEditedByOwner: boolean;
 }
 
 /**
@@ -364,6 +370,7 @@ export function testEvidence(project: Project | null): TestEvidence {
     withoutVerdict: cases.length - passed - failed - connectivity,
     attestedPasses: executedPasses(receipt, ids),
     attestedFailures: [...new Set(ids)].filter((id) => failedInReceipt.has(id)).length,
+    suiteEditedByOwner: receipt?.suiteOrigin === 'owner-edited',
   };
 }
 
@@ -1036,9 +1043,11 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       proven: true,
       mock: mockRun,
       badge: mockRun ? 'Passed · mock' : 'Passed',
-      detail: mockRun
-        ? `All ${plural(tests.total, 'test case')} returned a pass in a recorded sandbox run against mocks — not against an SAP system.`
-        : `All ${plural(tests.total, 'test case')} returned a pass in a recorded run.`,
+      detail:
+        (mockRun
+          ? `All ${plural(tests.total, 'test case')} returned a pass in a recorded sandbox run against mocks — not against an SAP system.`
+          : `All ${plural(tests.total, 'test case')} returned a pass in a recorded run.`) +
+        (tests.suiteEditedByOwner ? ` ${OWNER_EDITED_SUITE_NOTE}` : ''),
     });
   } else if (failure.state === 'current' && (executed === 0 || tests.passed === tests.total)) {
     // The run was tried and gave no result (owner report 11.10.2026): said as

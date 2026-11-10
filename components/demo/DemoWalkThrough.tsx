@@ -39,7 +39,7 @@ export default function DemoWalkThrough({
       .then(([g, t]) => {
         if (cancelled) return;
         const guide = g.buildWalkGuide(source, model, walkOrder(model, null));
-        setTour(t.buildProcessTour(guide, model, t.tourClosingOf(source, APP_VERSION)));
+        setTour(t.buildProcessTour(guide, model, t.tourReadingOf(source, APP_VERSION)));
       })
       .catch(() => {
         if (!cancelled) setFailed(true);

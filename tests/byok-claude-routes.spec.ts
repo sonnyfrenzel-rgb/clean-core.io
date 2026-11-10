@@ -7,7 +7,7 @@ import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { getAdminDb, loadOwnModelKey, saveOwnModelKey, deleteOwnModelKey } from '../lib/firebase-admin';
 import { OWN_KEY_MISSING_CODE, OWN_KEY_REJECTED_CODE, BYOK_KEY_VERSION, sealByokSecret } from '../lib/byok-key';
-import { OWN_CLAUDE_MODEL, RECEIPT_PROVIDER_ID } from '../lib/model-providers';
+import { ANTHROPIC_OWN_KEY_OFFERED, OWN_CLAUDE_MODEL, PROVIDER_NOT_ENABLED_CODE, RECEIPT_PROVIDER_ID } from '../lib/model-providers';
 import { POST as geminiPOST } from '../app/api/gemini/route';
 
 /**
@@ -102,25 +102,39 @@ test('a key saved before 3.0.15 — no provider on record or profile — reads a
   const sealed = sealByokSecret('AIza-byok-claude-bridge-0000', { uid, provider: 'gemini' });
   await (await secretRef('gemini')).set({ encryptedApiKey: sealed.encryptedApiKey, keyVersion: sealed.keyVersion, last4: '0000' });
   await db.collection('users').doc(uid).update({ byokConfigured: true, byokLast4: '0000' });
-  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'gemini', apiKey: 'AIza-byok-claude-bridge-0000' });
+  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'gemini', apiKey: 'AIza-byok-claude-bridge-0000', autoSteps: false });
   await deleteOwnModelKey(uid);
   await expect(loadOwnModelKey(uid)).resolves.toBeNull();
 });
 
 test('an Anthropic key is stored with its provider, replaces a Gemini key, and opens as Anthropic\'s', async () => {
-  await saveOwnModelKey(uid, 'AIza-byok-claude-replaced-1111', 'gemini');
+  await saveOwnModelKey(uid, 'AIza-byok-claude-replaced-1111', 'gemini', { tested: true });
   expect((await (await secretRef('gemini')).get()).exists).toBe(true);
-  await expect(saveOwnModelKey(uid, CLAUDE_KEY, 'anthropic')).resolves.toMatchObject({ byokConfigured: true, byokProvider: 'anthropic' });
+  await expect(saveOwnModelKey(uid, CLAUDE_KEY, 'anthropic', { tested: true, addendum: { version: 'ZV-BYOK-1.0', language: 'en' } })).resolves.toMatchObject({ byokConfigured: true, byokProvider: 'anthropic' });
   const record = (await (await secretRef('anthropic')).get()).data();
   expect(record).toMatchObject({ provider: 'anthropic', keyVersion: BYOK_KEY_VERSION });
   expect(JSON.stringify(record)).not.toContain(CLAUDE_KEY);
   expect((await (await secretRef('gemini')).get()).exists, 'two own keys are held at once').toBe(false);
   const profile = (await (await getAdminDb()).db.collection('users').doc(uid).get()).data();
   expect(profile).toMatchObject({ byokConfigured: true, byokProvider: 'anthropic' });
-  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'anthropic', apiKey: CLAUDE_KEY });
+  await expect(loadOwnModelKey(uid)).resolves.toEqual({ provider: 'anthropic', apiKey: CLAUDE_KEY, autoSteps: false });
+});
+
+// The one switch (`ANTHROPIC_OWN_KEY_OFFERED`, off in 3.0.21): with it off a
+// stored Anthropic key is refused before any provider contact and the platform
+// key is not used; the two tests after it are the switched-on paths and run
+// again by themselves once the switch is turned on.
+test('with the switch off, the proxy refuses a call on a stored Anthropic key — no Anthropic call, no platform key', async () => {
+  test.skip(ANTHROPIC_OWN_KEY_OFFERED, 'the own Claude key is switched on');
+  const { result: res, anthropicCalls, googleCalls } = await withProviders(() => claudeAnswer('never'), () => post({ prompt: 'Design this.', stage: 'design' }));
+  expect(res.status).toBe(503);
+  expect((await res.json()).code).toBe(PROVIDER_NOT_ENABLED_CODE);
+  expect(anthropicCalls).toEqual([]);
+  expect(googleCalls, 'the platform key was used for an account with an own key').toEqual([]);
 });
 
 test('the proxy sends a call of an account with an own Claude key to Anthropic, never to Google, and receipts it so', async () => {
+  test.skip(!ANTHROPIC_OWN_KEY_OFFERED, 'the own Claude key is switched off (lib/model-providers.ts)');
   const { result: res, anthropicCalls, googleCalls } = await withProviders(() => claudeAnswer('A design.'), () => post({ prompt: 'Design this.', stage: 'design' }));
   expect(res.status, await res.clone().text()).toBe(200);
   const body = await res.json();
@@ -138,6 +152,7 @@ test('the proxy sends a call of an account with an own Claude key to Anthropic, 
 });
 
 test('Anthropic refusing the own key stops the step with its code — no retry on the platform key', async () => {
+  test.skip(!ANTHROPIC_OWN_KEY_OFFERED, 'the own Claude key is switched off (lib/model-providers.ts)');
   const { result: res, anthropicCalls, googleCalls } = await withProviders(
     () => new Response(JSON.stringify({ error: { type: 'authentication_error' } }), { status: 401 }),
     () => post({ prompt: 'Design this.', stage: 'design' }),

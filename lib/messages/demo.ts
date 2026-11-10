@@ -35,9 +35,6 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.sourceLine': 'Source line',
   'demo.withdraw': 'Withdraw',
   'demo.confirm': 'Confirm',
-  'demo.standardFit': 'Standard fit',
-  'demo.standardFitLead':
-    "Successors named for objects this code uses, each with its source: SAP's catalog or Clean-Core.io's curated mapping.",
   'demo.evidence': 'source:',
   'demo.notStated': 'not stated',
   'demo.firstFiveOf': 'The first 5 of',

@@ -86,12 +86,19 @@ test.describe('(b) provider in the model receipt', () => {
     for (const r of [before, withStage]) {
       expect(verifyModelReceipt(r, { uid: 'golden-uid', text: 'golden narrative', key: KEY, now: IAT + 1000 }).ok).toBe(true);
     }
-    // And the same facts issued today, with the provider named, give the same MAC.
+    // And the same facts issued today carry the same claims, plus the one-time
+    // id every receipt has since 3.0.21 (CA-INT-02) — which is why its MAC is its
+    // own and no longer equal to the one above.
     const today = issueModelReceipt(
       { uid: 'golden-uid', text: 'golden narrative', provider: MODEL_PROVIDER_ID, modelId: 'gemini-3.8-flash', byok: false, issuedAt: IAT },
       KEY,
     );
-    expect(today.mac).toBe(before.mac);
+    const { mac: _todayMac, jti, ...todayClaims } = today;
+    const { mac: _beforeMac, ...beforeClaims } = before;
+    void _todayMac; void _beforeMac;
+    expect(todayClaims).toEqual(beforeClaims);
+    expect(jti).toMatch(/^[0-9a-f]{32}$/);
+    expect(verifyModelReceipt(today, { uid: 'golden-uid', text: 'golden narrative', key: KEY, now: IAT + 1000 }).ok).toBe(true);
   });
 
   test('the proxy names the provider at the call, and the module keeps no fallback', () => {

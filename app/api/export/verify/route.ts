@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { getSigningKeypair, verifyEd25519 } from '@/lib/audit-signing-keypair';
+import { parseCanonicalManifest } from '@/lib/audit-pack-canonical';
+import { manifestHmacValid } from '@/lib/pack-signature';
 
 /**
  * POST /api/export/verify
@@ -37,6 +39,20 @@ export async function POST(req: NextRequest) {
     if (canonicalManifest.length > 32768) {
       return NextResponse.json(
         { error: 'Canonical manifest exceeds maximum allowed size of 32KB.' },
+        { status: 400 },
+      );
+    }
+
+    // Only a canonical audit-pack manifest is checked (CA-INT-03). The
+    // signature is a statement about an audit pack; over a string no issuer
+    // could have written as a manifest, the endpoint has nothing to say, and
+    // a "valid" there would be read as an endorsement it is not.
+    if (parseCanonicalManifest(canonicalManifest) === null) {
+      return NextResponse.json(
+        {
+          error: 'canonicalManifest is not the canonical form of an audit-pack manifest.',
+          code: 'not-a-manifest',
+        },
         { status: 400 },
       );
     }
@@ -102,15 +118,9 @@ export async function POST(req: NextRequest) {
     }
 
     const manifestHash = crypto.createHash('sha256').update(canonicalManifest).digest('hex');
-    const expectedSignature = crypto
-      .createHmac('sha256', signingKey)
-      .update(manifestHash)
-      .digest('hex');
-
-    const valid = crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, 'hex'),
-      Buffer.from(signature, 'hex'),
-    );
+    // Under the key derived for pack manifests, or — for a pack issued before
+    // 3.0.21 — the legacy form (`lib/pack-signature.ts`).
+    const valid = manifestHmacValid(manifestHash, signature.toLowerCase(), signingKey);
 
     return NextResponse.json({ valid, manifestHash });
   } catch (error: any) {

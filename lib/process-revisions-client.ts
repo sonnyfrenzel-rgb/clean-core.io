@@ -43,10 +43,26 @@ async function authHeader(): Promise<Record<string, string>> {
  * when this throws.
  */
 export async function fetchProcessRevisions(projectId: string): Promise<ProcessRevisionSummary[]> {
-  const res = await fetch(processRevisionsPath(projectId), { headers: await authHeader() });
+  return (await fetchProcessRevisionPage(projectId)).revisions;
+}
+
+/**
+ * One page of the history, oldest first within the page. Without `before` it is
+ * the newest page; `nextBefore` is the cursor to the page before it, or null when
+ * the page reaches revision 1. Throws when it cannot be read, like the list.
+ */
+export async function fetchProcessRevisionPage(
+  projectId: string,
+  before?: number,
+): Promise<{ revisions: ProcessRevisionSummary[]; nextBefore: number | null }> {
+  const query = before === undefined ? '' : `?before=${encodeURIComponent(String(before))}`;
+  const res = await fetch(`${processRevisionsPath(projectId)}${query}`, { headers: await authHeader() });
   if (!res.ok) throw new Error(`The revision history could not be read (${res.status}).`);
-  const body = (await res.json()) as { revisions?: unknown };
-  return Array.isArray(body.revisions) ? body.revisions.filter(isProcessRevisionSummary) : [];
+  const body = (await res.json()) as { revisions?: unknown; nextBefore?: unknown };
+  return {
+    revisions: Array.isArray(body.revisions) ? body.revisions.filter(isProcessRevisionSummary) : [],
+    nextBefore: Number.isSafeInteger(body.nextBefore) ? (body.nextBefore as number) : null,
+  };
 }
 
 /** One revision with its BPMN, or null when there is no such revision. */

@@ -1,3 +1,4 @@
+import { revisionDocData } from '@/lib/process-revision-store';
 import type { DocumentReference, Query, Transaction } from 'firebase-admin/firestore';
 import type { getAdminDb } from '@/lib/firebase-admin';
 import { sha256Hex, signOffKey } from '@/lib/artefact-digest';
@@ -109,7 +110,7 @@ async function needFactsOf(
   const baselineRef: DocumentReference = projectRef.collection(PROCESS_REVISION_COLLECTION).doc('1');
   const baselineSnap = await (tx ? tx.get(baselineRef) : baselineRef.get());
   if (baselineSnap.exists) {
-    const baseline = baselineSnap.data() as Record<string, unknown>;
+    const baseline = revisionDocData(baselineSnap.data() as Record<string, unknown>);
     const record = { ...baseline, savedAt: isoOf(baseline.savedAt) ?? '' };
     if (
       isProcessRevisionRecord(record) &&

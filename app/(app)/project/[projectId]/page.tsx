@@ -18,6 +18,8 @@ import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import WorkspaceLoading from '@/components/workspace/WorkspaceLoading';
+import ProjectNoAccess from '@/components/ProjectNoAccess';
+import { getAuth } from '@/lib/firebase';
 import type { Project } from '@/lib/types';
 
 /**
@@ -47,8 +49,10 @@ function currentHash(): string {
  * signed-in account with roadmap 3.0.1 (ADR-061): every project opens here, and
  * the seven stages are its tools. What the reader may read is what it always
  * was — the Firestore rules decide, through `loadProjectAndHydrate`, and a
- * project that is not theirs answers `permission-denied`, which is a 404 here.
- * A visitor without an account has no profile and gets the 404 they got before.
+ * project that is not theirs answers `permission-denied`, which reads "This
+ * project does not exist or is not shared with this account" here. A visitor
+ * without an account goes to the sign-in and comes back (roadmap 3.0.21 (1),
+ * `components/ProjectFrame.tsx`).
  *
  * The view lives in `?view=` and nowhere else (ADR-018): it is a perspective,
  * not a grant, so it is kept in the URL and in browser history and never on the
@@ -230,18 +234,24 @@ export default function ProjectWorkspacePage() {
   // one there is no page here, and a skeleton would promise one.
   // A status for screen readers, not a skeleton: as an aria-hidden div the
   // gate read as a dead page (UX review of b88c77b, 3e936f9d57f8).
-  if (profileLoading) {
+  // Signed out, the project frame sends the reader to the sign-in and back
+  // (`components/ProjectFrame.tsx`, roadmap 3.0.21 (1)); until it has, this is
+  // the loading gate, never the 404 a perfectly good link used to get.
+  if (profileLoading || (!enabled && !getAuth().currentUser)) {
     return (
       <WorkspaceLoading />
     );
   }
 
+  // Signed in without a profile: there is no workspace to show.
   if (!enabled) {
     notFound();
   }
 
+  // A project this account may not read — one sentence and the way to My
+  // workspace, the same the frame shows (roadmap 3.0.21 (1)).
   if (state === 'missing') {
-    notFound();
+    return <ProjectNoAccess />;
   }
 
   if (state === 'failed') {

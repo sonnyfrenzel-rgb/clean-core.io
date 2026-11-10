@@ -20,7 +20,7 @@ that one is in the Git history.
 | Language markup | `<html lang="en">` in `app/layout.tsx`; individual German contents carry `lang="de"`; the German FAQ answer on the home page has been removed since 01.10.2026 (Sonny: "everything English"), its English version stands directly before it |
 | German pages | `/datenschutz/de` as a page of its own, indexable, with `hreflang` to the English one |
 | Product | English: home page, knowledge and catalog pages, workspace (Business, IT and Management view, six layers), the seven stages as tools, settings, mails |
-| Model output | English, fixed in the prompts; marked as *Model proposal* |
+| Model output | English, fixed in the prompts; marked as *AI-generated* |
 | Numbers, date, money | `Intl.NumberFormat('en')`; money arises only in Economics, with a currency code, as a simulation (ADR-022) |
 
 **Conclusion:** The scaffolding for text keys stands where 3.0 built anew. A German
@@ -51,7 +51,7 @@ English ("evidenced, not asserted").
 | **A. Public pages** | Home page (3.0.6), knowledge pages, Clean Core explained, How-to, Whitepaper | fully German, own URL | high (reach) |
 | **B. Legal texts** | Impressum, Datenschutz (German exists), terms of use | German version; in case of discrepancy the German one is authoritative | high |
 | **C. Workspace** | view switcher and its questions, layers, cards, "Next step", Message Strips, the seven stages as tools, settings | via the text keys | medium |
-| **D. Fixed lists** | provenance values (Proven, Confirmed, Reconstructed, Imported, Model proposal, Simulation, Demonstrated · mock, Stale, Not determined), Level A–D, the four buckets, object status | one German value per key, fixed once | high — they carry meaning |
+| **D. Fixed lists** | provenance values (Proven, Confirmed, Reconstructed, Imported, AI-generated, Simulation, Demonstrated · mock, Stale, Not determined), Level A–D, the four buckets, object status | one German value per key, fixed once | high — they carry meaning |
 | **E. Model output** | business names, plain-language sentence, documentation text | **generate** German, do not translate | medium |
 | **F. Mails** | Welcome, invitation to read access, approvals | German | low |
 | **G. Catalog and SEO** | object catalog, JSON-LD, metadata, sitemap | German variants with `hreflang` | medium |
@@ -112,7 +112,7 @@ Server components load on the server; client components only where they are inte
    parameter; human-readable fields are produced in German, the structure (keys, enums, object
    and API names, code) stays neutral.
 2. **Technical terms in English in the German text**, as an instruction in the prompt.
-3. **The chip states the provenance, not the text** (`DESIGN.md` §3.1): *Model proposal* remains the
+3. **The chip states the provenance, not the text** (`DESIGN.md` §3.1): *AI-generated* remains the
    marking; the clean-up in `lib/model-text.ts` gets the German list of stock phrases.
 
 **Trust chain untouched:** Model text is not part of the signed run. The output language
@@ -145,7 +145,7 @@ is approved.
 | the seven stages as tools | die sieben Stufen als Werkzeuge |
 | Level A–D | Level A–D (unverändert, SAPs Begriff) |
 | Proven · Confirmed · Reconstructed · Imported · Not determined | Belegt · Bestätigt · Rekonstruiert · Importiert · Nicht bestimmt |
-| Model proposal · Simulation · Stale | Modellvorschlag · Simulation · Veraltet |
+| AI-generated · Simulation · Stale | KI-generiert · Simulation · Veraltet |
 | a self-declaration, not a mandate | eine Selbstauskunft, kein Mandat |
 | read access by invitation | Einsicht per Einladung |
 | Retire · Keep · Rebuild · No catalogued path | to be fixed in the glossary before the interface is translated |

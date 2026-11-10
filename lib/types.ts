@@ -379,7 +379,13 @@ export interface AnalysisData {
   cleanCoreScore: number;
   summary: string;
   asIsContext: string;
-  standardFit: {
+  /**
+   * The model's guess at how much SAP standard covers, written by analyses
+   * before 3.0.21. No longer asked for and shown nowhere (owner decision
+   * 22.10.2026: functional fit to the SAP standard is not measured). Optional
+   * so a stored analysis that carries it still parses.
+   */
+  standardFit?: {
     potential: 'High' | 'Medium' | 'Low';
     targetStandardProcess: string;
     rationale: string;

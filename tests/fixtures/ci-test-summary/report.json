@@ -1,0 +1,111 @@
+{
+  "config": { "version": "1.61.1" },
+  "suites": [
+    {
+      "title": "owner-sources.spec.ts",
+      "file": "owner-sources.spec.ts",
+      "line": 0,
+      "column": 0,
+      "specs": [
+        {
+          "title": "the reference programs parse",
+          "ok": true,
+          "file": "owner-sources.spec.ts",
+          "line": 12,
+          "column": 5,
+          "tests": [
+            {
+              "projectName": "chromium",
+              "expectedStatus": "skipped",
+              "status": "skipped",
+              "annotations": [],
+              "results": [
+                {
+                  "retry": 0,
+                  "status": "skipped",
+                  "duration": 3,
+                  "annotations": [{ "type": "skip", "description": "CC_OWNER_SOURCES is not set" }]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "workspace.spec.ts",
+      "file": "workspace.spec.ts",
+      "line": 0,
+      "column": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "the tool bar",
+          "file": "workspace.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "opens | closes the panel",
+              "ok": true,
+              "file": "workspace.spec.ts",
+              "line": 20,
+              "column": 7,
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "expectedStatus": "passed",
+                  "status": "flaky",
+                  "annotations": [],
+                  "results": [
+                    {
+                      "retry": 0,
+                      "status": "failed",
+                      "duration": 30012,
+                      "error": { "message": "\u001b[31mTimeout 30000ms exceeded.\u001b[39m\nwaiting for getByRole('button')" }
+                    },
+                    { "retry": 1, "status": "passed", "duration": 4100 }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "the old drawer",
+              "ok": true,
+              "file": "workspace.spec.ts",
+              "line": 44,
+              "column": 7,
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "expectedStatus": "skipped",
+                  "status": "skipped",
+                  "annotations": [{ "type": "fixme" }],
+                  "results": [{ "retry": 0, "status": "skipped", "duration": 0 }]
+                }
+              ]
+            },
+            {
+              "title": "renders",
+              "ok": true,
+              "file": "workspace.spec.ts",
+              "line": 60,
+              "column": 7,
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "expectedStatus": "passed",
+                  "status": "expected",
+                  "annotations": [],
+                  "results": [{ "retry": 0, "status": "passed", "duration": 2500 }]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "stats": { "expected": 1, "skipped": 2, "unexpected": 0, "flaky": 1, "duration": 37000 }
+}

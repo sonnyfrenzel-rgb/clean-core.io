@@ -87,7 +87,7 @@ The **S/4HANA Live Tenant Bridge** (internally: BYOT — *Bring Your Own Tenant*
 | `app/api/test-s4-connection/route.ts` | API: Real HTTP connectivity test (389 lines) |
 | `app/api/run-tests/route.ts` | API: Node.js sandbox test runner |
 | `hooks/useTestExecution.ts` | Hook: Orchestrates test execution (Live vs. Mock) |
-| `hooks/useTestGeneration.ts` | Hook: test case generation via Gemini (a model proposal) |
+| `hooks/useTestGeneration.ts` | Hook: test case generation via Gemini (an AI-generated draft) |
 | `lib/types.ts` | TypeScript interfaces: `S4Config`, `Project` |
 
 ---
@@ -247,7 +247,7 @@ When no live tenant is configured:
 
 ### Node.js/CAP Projects
 
-Node.js projects use a real sandbox runner (`/api/run-tests`) that executes TypeScript code via `tsx --test`. The tests are unit tests proposed by the model (*Model proposal*) that validate the generated application code's internal logic. S/4HANA credentials are passed as environment variables but tests are designed to be isolated (no network calls).
+Node.js projects use a real sandbox runner (`/api/run-tests`) that executes TypeScript code via `tsx --test`. The tests are unit tests proposed by the model (*AI-generated*) that validate the generated application code's internal logic. S/4HANA credentials are passed as environment variables but tests are designed to be isolated (no network calls).
 
 ---
 

@@ -27,7 +27,7 @@ import {
  * sentences blind: Weg B (`lib/business-statement-prompt.ts`) meets the
  * business sense far more often (86.5 % "same" against 10.3 % for Weg A), and
  * invents more often (39 false statements against 11). So B supplies the
- * readable sentence, marked *Model proposal*; A's sentence stands beneath it
+ * readable sentence, marked *AI-generated*; A's sentence stands beneath it
  * as the evidence, marked *Reconstructed*; and where the code at B's anchors
  * says otherwise, `lib/statement-contradiction.ts` marks it.
  *

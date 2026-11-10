@@ -367,7 +367,7 @@ export interface BpmnEditorProps {
   label: string;
   /** Element id → what a reader calls it, for the elements the reconstruction knows. */
   labels: ReadonlyMap<string, string>;
-  /** Elements whose business name is a model proposal (roadmap 2.4). */
+  /** Elements whose business name is AI-generated (roadmap 2.4). */
   proposals?: ReadonlySet<string>;
   /** The lanes roadmap 2.4 proposed — the third hint rule reads them. */
   proposedLanes: readonly ProposedLane[];

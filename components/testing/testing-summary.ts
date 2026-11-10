@@ -1,4 +1,5 @@
 import { coveringTestRunReceipt, isTestRunReceipt } from '@/lib/test-receipt';
+import { resolveVerdicts } from '@/lib/test-verdicts';
 import { outsideCountsLine, outsideReading } from '@/lib/sap-test-results';
 import { CLOSED_NOT_VERIFIED, testingClosureReading, testRunFailureReading, type TestRunFailure } from '@/lib/testing-closure';
 
@@ -32,8 +33,12 @@ export function countVerdicts(statuses: ReadonlyArray<string | undefined>): RunC
 }
 
 export type LastRun =
-  /** A server receipt that still covers what is on the project. */
-  | { kind: 'recorded'; at: string; counts: RunCounts }
+  /**
+   * A server receipt that still covers what is on the project.
+   * `suiteEditedByOwner`: the suite that ran is not the one the server
+   * recorded storing (CA-INT-01, `OWNER_EDITED_SUITE_NOTE`).
+   */
+  | { kind: 'recorded'; at: string; counts: RunCounts; suiteEditedByOwner: boolean }
   /** Ran in this session, and no receipt covers it. */
   | { kind: 'session'; counts: RunCounts }
   /**
@@ -54,7 +59,13 @@ export function lastRun(
   const failure = testRunFailureReading(project);
   if (failure.state === 'current') return { kind: 'failed', at: failure.failure.at, failure: failure.failure };
   if (receipt) {
-    return { kind: 'recorded', at: receipt.executedAt, counts: countVerdicts(receipt.verdicts.map((v) => v.status)) };
+    return {
+      kind: 'recorded',
+      at: receipt.executedAt,
+      // One verdict per id, the worse of its reports (CA-INT-01), as everywhere else.
+      counts: countVerdicts([...resolveVerdicts(receipt.verdicts).values()].map((v) => v.status)),
+      suiteEditedByOwner: receipt.suiteOrigin === 'owner-edited',
+    };
   }
   if (sessionResults && sessionResults.length > 0) {
     return { kind: 'session', counts: countVerdicts(sessionResults.map((r) => r.status)) };
@@ -108,5 +119,5 @@ export function deliveryTestingTitle(
     return `Run failed: ${cases} ${kind} tests, the last run gave no result${run.failure.attempts > 1 ? ` (${run.failure.attempts} attempts)` : ''}`;
   }
   if (run.kind !== 'recorded') return `Test draft: ${cases} ${kind} tests, no run on record`;
-  return `${run.counts.passed} of ${cases} ${kind} tests passed`;
+  return `${run.counts.passed} of ${cases} ${kind} tests passed${run.suiteEditedByOwner ? ' — suite edited by the owner' : ''}`;
 }

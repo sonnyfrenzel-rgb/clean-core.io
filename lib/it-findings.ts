@@ -122,6 +122,12 @@ export interface ItFindingRow {
    * which `routeDrivers` reads as outbound — the rule every RFC had before.
    */
   rfcTarget?: RfcTarget;
+  /**
+   * True where no run reaches the finding — behind a constant gate or in a FORM nothing calls
+   * (`EvidenceFinding.unreachable`, `uncalled`). From engine 3.0.21 such a finding chooses no route
+   * (`routeDrivers`). Absent otherwise.
+   */
+  notReached?: true;
   /** The extensibility targets the router named for this finding. Possibly empty. */
   targetOptions: string[];
   /** `BR-nnn` of every derived rule whose own anchor covers `lineStart`. */
@@ -191,6 +197,12 @@ export interface ItUseRow {
   classificationView: string | null;
   /** Ids of the findings that stand on this object at these lines — empty when no detector raised one. */
   findingIds: string[];
+  /**
+   * SAP's application component of the object (`SD-SLS-SO`), as the
+   * Cloudification Repository records it; `null` for a customer object or one
+   * SAP records none for. Optional: an answer built before 3.0.21 has none.
+   */
+  appComponent?: string | null;
 }
 
 /* ------------------------------------------------------------------ chain */

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getAuth } from '@/lib/firebase';
+import { getAuthIfStarted } from '@/lib/firebase';
 import { assessCoverage } from '@/lib/abap/coverage';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { CatalogAnswerAt, CatalogAnswers } from '@/lib/open-questions';
@@ -63,7 +63,9 @@ export function useFunctionModuleAnswers(project: Project | null): CatalogAnswer
       // any other miss, rather than an unhandled rejection that leaves the
       // list loading for good.
       try {
-        const token = await getAuth().currentUser?.getIdToken();
+        // Without starting Auth: the demo workspace runs this before it knows
+        // whether anyone is signed in (privacy policy section 7, lib/firebase-app.ts).
+        const token = await getAuthIfStarted()?.currentUser?.getIdToken();
         if (!token) {
           if (retriesLeft > 0) setTimeout(() => void attempt(retriesLeft - 1), 500);
           else fail();

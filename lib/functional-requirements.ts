@@ -19,6 +19,9 @@ import {
   type PlainLabels,
 } from '@/lib/abap/plain-language';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { constantUsesOf } from '@/lib/abap/business-rule-set-explain';
+import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * Functional requirements, reconstructed from the code (owner
@@ -294,6 +297,8 @@ interface Ctx {
   objectsByStep: Map<string, RequirementObject[]>;
   /** Nodes a decision's requirement already names on one of its sides. */
   consumed: Set<string>;
+  /** From engine 3.0.21: a constant no condition tests is read for where it filters or sets (`constantUsesOf`). */
+  reads3021: boolean;
 }
 
 function anchorOf(ctx: Ctx, range: { lineStart: number; lineEnd: number } | null | undefined): RequirementAnchor | null {
@@ -511,6 +516,30 @@ function ruleDraft(ctx: Ctx, rule: BusinessRule): Draft | null {
     const statement = only
       ? `The system shall process only ${only[1]}.`
       : `The system shall keep the fixed value ${p?.literal ?? ''} for ${lcFirst(humaniseField(name, ctx.plain))}.`;
+    // 3.0.21 (owner decision 22.10.2026): where the constant filters what is read, the requirement says so with the
+    // lines, as the rule baskets do — Design and Documentation agree; "to be confirmed" only where nothing is found.
+    const filters = ctx.reads3021 && p?.subject ? constantUsesOf(ctx.facts.statements, p.subject, p.lineStart).filter((u) => u.kind === 'filter') : [];
+    if (filters.length > 0) {
+      const at = filters.slice(0, 4).map((u) => `L${u.lineStart}`).join(', ');
+      const filterAnchors = distinctAnchors(filters.slice(0, 8).map((u) => anchorOf(ctx, u)));
+      return {
+        statement,
+        rationale: `Preserves ${rule.id}, the constant ${rule.label} declared at ${firstLine} and read as a filter at ${at}.`,
+        basis: { kind: 'rule', ref: rule.id },
+        stepId: null,
+        anchors: distinctAnchors([...anchors, ...filterAnchors]),
+        acceptance: [
+          {
+            given: `a record with another ${only ? only[1].replace(/\s+\S+$/, '') : lcFirst(humaniseField(name, ctx.plain))} than ${p.literal}`,
+            when: 'the program runs',
+            then: `the record is not read, so it is not processed — the code reads only ${p.literal} (${at})`,
+          },
+        ],
+        priority: 'should',
+        priorityReason: `A value hard-coded in the program (${firstLine}) that decides which data is read (${at}).`,
+        objects: [],
+      };
+    }
     return {
       statement,
       rationale: `Preserves ${rule.id}, the constant ${rule.label} declared at ${firstLine}.`,
@@ -1172,7 +1201,7 @@ export function buildRequirementSet(input: RequirementInput): RequirementSet {
   }
   for (const s of steps) s.objects = objectsByStep.get(s.id) ?? [];
 
-  const ctx: Ctx = { source, facts, lines, plain, labels, skeleton, byId, outs, ins, stepOfRegion, steps, stepOfLine, objectsByStep, consumed: new Set() };
+  const ctx: Ctx = { source, facts, lines, plain, labels, skeleton, byId, outs, ins, stepOfRegion, steps, stepOfLine, objectsByStep, consumed: new Set(), reads3021: engineReads3021Apply(input.engineVersion === undefined ? APP_VERSION : input.engineVersion) };
 
   const drafts: Draft[] = [];
   const coveredGateways = new Set<string>();

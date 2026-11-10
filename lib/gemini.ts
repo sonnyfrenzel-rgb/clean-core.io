@@ -1,5 +1,5 @@
-import { getAuth } from '@/lib/firebase';
-import type { ModelStage } from '@/lib/model-stages';
+import { getAuthIfStarted } from '@/lib/firebase';
+import type { ModelCallStage } from '@/lib/model-call-stage';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import type { LeaseReference } from '@/lib/transformation/lease';
@@ -55,6 +55,17 @@ export interface CallOptions {
    * the proxy; a call without a receipt does not call it.
    */
   onReceipt?: (receipt: ModelReceipt) => void;
+  /**
+   * Roadmap 3.0.21 (owner decision B6): the product started this step by itself when the owner opened a project.
+   * Sent as `trigger: 'automatic'`; the proxy refuses it on an own key whose "Automatic steps" are off.
+   */
+  automatic?: boolean;
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 3): the narrative of the first run after "Create project"
+   * (`hooks/useStartRun.ts`). Sent as `trigger: 'start'`; the proxy refuses it while the account's main
+   * switch "Automatic AI steps" is off (`lib/auto-model-steps.ts`), so that run is signed without a model call.
+   */
+  startRun?: boolean;
 }
 
 export interface GeminiResult {
@@ -82,7 +93,8 @@ export async function callGeminiWithReceipt(
   prompt: string,
   modelName: string = PRODUCT_GEMINI_MODEL,
   jsonResponse: boolean = false,
-  stage?: ModelStage,
+  /** Required since 3.0.21 (SEC-01): the route refuses a call that names none. */
+  stage: ModelCallStage,
   /**
    * Roadmap 1.8 — lets a caller stop *waiting*. It does not stop the call: the
    * route below runs to completion on the server whatever this browser does,
@@ -99,9 +111,12 @@ export async function callGeminiWithReceipt(
   let idToken: string | undefined;
 
   try {
-    const auth = getAuth();
-    if (auth.currentUser) {
-      idToken = await auth.currentUser.getIdToken();
+    // Without starting Auth: the assistant asks from the public pages too, where
+    // a visitor without the signed-in hint gets no Auth SDK (privacy policy
+    // section 7, lib/firebase-app.ts). Signed in, the shell has started it.
+    const user = getAuthIfStarted()?.currentUser;
+    if (user) {
+      idToken = await user.getIdToken();
     }
   } catch (err) {
     console.warn('Firebase Auth context not available in callGemini:', err);
@@ -122,6 +137,7 @@ export async function callGeminiWithReceipt(
       ...(options?.responseShape ? { responseShape: options.responseShape } : {}),
       ...(options?.lease ? { lease: { projectId: options.lease.projectId, leaseId: options.lease.leaseId } } : {}),
       ...(options?.lease && options.gateRepair ? { gateRepair: true } : {}),
+      ...(options?.automatic ? { trigger: 'automatic' } : options?.startRun ? { trigger: 'start' } : {}),
       // No `userId` and no `idToken` in the body. The route has never read
       // either — `app/api/gemini/route.ts:106` derives the identity from
       // `verifyRequestAuth(request)` and the handler destructures only the four
@@ -154,7 +170,8 @@ export async function callGemini(
   prompt: string,
   modelName: string = PRODUCT_GEMINI_MODEL,
   jsonResponse: boolean = false,
-  stage?: ModelStage,
+  /** Required since 3.0.21 (SEC-01): the route refuses a call that names none. */
+  stage: ModelCallStage,
   signal?: AbortSignal,
   options?: CallOptions,
 ): Promise<string> {

@@ -143,6 +143,21 @@ export interface ModelReceiptClaims {
    * the canonical form of a claim set without the key is unchanged.
    */
   stage?: string;
+  /**
+   * SHA-256 of the prompt the route sent to the provider, lowercase hex
+   * (roadmap 3.0.21, CA-INT-02). Binds the receipt to the question as well as
+   * the answer: a store that can rebuild the prompt from inputs it holds can
+   * compare, and a receipt for one prompt cannot stand for another. Absent on
+   * receipts issued before, which verify as they were issued.
+   */
+  promptSha256?: string;
+  /**
+   * A random id, 32 lowercase hex digits (roadmap 3.0.21, CA-INT-02). A store
+   * that checks a receipt without its text (`verifyModelReceiptIssuer`)
+   * records the id on first use (`lib/model-receipt-uses.ts`), so one receipt
+   * marks one artefact and not every artefact its account stores for a day.
+   */
+  jti?: string;
 }
 
 export interface ModelReceipt extends ModelReceiptClaims {
@@ -178,6 +193,8 @@ export function issueModelReceipt(
     issuedAt?: number;
     /** The model stage the call was made under, when there is one. */
     stage?: string;
+    /** The prompt as sent to the provider; its SHA-256 goes into the receipt. */
+    prompt?: string;
   },
   key: string,
 ): ModelReceipt {
@@ -196,6 +213,8 @@ export function issueModelReceipt(
     byok: args.byok,
     iat: args.issuedAt ?? Date.now(),
     ...(typeof args.stage === 'string' ? { stage: args.stage } : {}),
+    ...(typeof args.prompt === 'string' ? { promptSha256: narrativeDigest(args.prompt) } : {}),
+    jti: crypto.randomBytes(16).toString('hex'),
   };
   return { ...claims, mac: macOf(claims, key) };
 }
@@ -274,7 +293,9 @@ function checkReceipt(
     typeof r.iat !== 'number' ||
     !Number.isFinite(r.iat) ||
     typeof r.mac !== 'string' ||
-    (r.stage !== undefined && typeof r.stage !== 'string')
+    (r.stage !== undefined && typeof r.stage !== 'string') ||
+    (r.promptSha256 !== undefined && !(typeof r.promptSha256 === 'string' && /^[0-9a-f]{64}$/.test(r.promptSha256))) ||
+    (r.jti !== undefined && !(typeof r.jti === 'string' && /^[0-9a-f]{32}$/.test(r.jti)))
   ) {
     return { ok: false, refusal: 'malformed' };
   }
@@ -292,6 +313,8 @@ function checkReceipt(
     byok: r.byok,
     iat: r.iat,
     ...(typeof r.stage === 'string' ? { stage: r.stage } : {}),
+    ...(typeof r.promptSha256 === 'string' ? { promptSha256: r.promptSha256 } : {}),
+    ...(typeof r.jti === 'string' ? { jti: r.jti } : {}),
   };
 
   if (!timingSafeEqualHex(macOf(claims, opts.key), r.mac)) return { ok: false, refusal: 'forged' };

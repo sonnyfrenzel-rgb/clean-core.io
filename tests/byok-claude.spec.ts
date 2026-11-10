@@ -6,8 +6,13 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   ALLOWED_CLAUDE_MODELS,
+  ANTHROPIC_OWN_KEY_OFFERED,
+  ANTHROPIC_OWN_KEY_STATUS,
+  PROVIDER_NOT_ENABLED_CODE,
+  ownKeyCallRefusal,
   MODEL_KEY_PROVIDERS,
   OWN_CLAUDE_MODEL,
+  OWN_CLAUDE_MODEL_NAME,
   PLATFORM_PROVIDER,
   PROVIDER_TERMS,
   RECEIPT_PROVIDER_ID,
@@ -16,6 +21,7 @@ import {
   offeredKeyProviders,
   ownKeyProviderOf,
   providerLabelOfReceiptId,
+  providerUnavailableReason,
   stageAnswerNeedsWrite,
   storedKeyProviderOf,
   type StageAnswerRecord,
@@ -169,10 +175,15 @@ test.describe('the Anthropic key test', () => {
   });
 
   test('the test route sends an Anthropic key to the Models API and a Gemini key as before', () => {
+    // 3.0.21: one key test for both routes (`lib/own-key-test.ts`): Anthropic's Models API, Gemini's models.get.
     const src = read('app/api/secrets/gemini/test/route.ts');
-    expect(src).toMatch(/if \(provider === 'anthropic'\) \{[\s\S]*?await testAnthropicKey\(apiKey\.trim\(\)\);/);
-    expect(src.indexOf('assertByokAllowed(')).toBeLessThan(src.indexOf('testAnthropicKey('));
-    expect(src.indexOf("assertByokRateLimit('test', decodedToken.uid)")).toBeLessThan(src.indexOf('testAnthropicKey('));
+    expect(src).toContain('await testOwnModelKey(provider, apiKey!, { stubbed });');
+    expect(src.indexOf('assertByokAllowed(')).toBeLessThan(src.indexOf('testOwnModelKey('));
+    expect(src.indexOf("assertByokRateLimit('test', decodedToken.uid)")).toBeLessThan(src.indexOf('testOwnModelKey('));
+    const one = read('lib/own-key-test.ts');
+    expect(one).toMatch(/if \(provider === 'anthropic'\) \{\s*await testAnthropicKey\(key\);/);
+    expect(one).toContain('ai.models.get({ model: PRODUCT_GEMINI_MODEL })');
+    expect(one).not.toContain('generateContent');
   });
 });
 
@@ -211,7 +222,8 @@ test.describe('the proxy routes by provider', () => {
     expect(json.system).toMatch(/JSON value only/);
     expect(json).not.toHaveProperty('output_config');
     const text = claudeRequestBody({ model: OWN_CLAUDE_MODEL, prompt: 'p', jsonResponse: false });
-    expect(Object.keys(text).sort()).toEqual(['max_tokens', 'messages', 'model']);
+    // 3.0.21: the data region travels on every call, plain text included.
+    expect(Object.keys(text).sort()).toEqual(['inference_geo', 'max_tokens', 'messages', 'model']);
   });
 
   test('the schema adaptation adds additionalProperties:false everywhere and drops what structured outputs refuse', () => {
@@ -275,8 +287,8 @@ test.describe('who answered is recorded', () => {
     const v = verifyModelReceipt(r, { uid: 'u', text: 't', key: KEY });
     expect(v.ok).toBe(true);
     expect(v.ok && v.receipt).toMatchObject({ provider: 'anthropic', modelId: OWN_CLAUDE_MODEL, byok: true });
-    // The claim set is unchanged: the same eight keys as a Gemini receipt with a stage.
-    expect(Object.keys(r).sort()).toEqual(['byok', 'iat', 'mac', 'modelId', 'provider', 'stage', 'textSha256', 'uid', 'v']);
+    // The claim set is the one a Gemini receipt with a stage has, with the one-time id of 3.0.21 (CA-INT-02).
+    expect(Object.keys(r).sort()).toEqual(['byok', 'iat', 'jti', 'mac', 'modelId', 'provider', 'stage', 'textSha256', 'uid', 'v']);
   });
 
   test('STATUS.md names the provider, model and key owner of the signed analysis', () => {
@@ -337,22 +349,79 @@ test.describe('Settings', () => {
     expect(html).toContain('data-own-key-provider="anthropic"');
     expect(html).toContain('Provider of your key');
     expect(html).toContain('Google Gemini (saved)');
-    expect(html.match(/type="radio"/g)).toHaveLength(offeredKeyProviders().length);
-    // Anthropic is offered only once the owner's privacy policy, terms and DPA name it (ANTHROPIC_OWN_KEY_OFFERED).
+    // Every provider is listed; one not offered is there but cannot be chosen.
+    expect(html.match(/type="radio"/g)).toHaveLength(MODEL_KEY_PROVIDERS.length);
+    expect(html).toContain('Anthropic Claude');
     if (offeredKeyProviders().includes('anthropic')) {
-      expect(html).toContain('Anthropic Claude');
-      expect(html).toContain(OWN_CLAUDE_MODEL);
+      // The model by the name a reader reads, not its API id — a raw id in a
+      // sentence is a machine string (tests/machine-strings-guard.spec.ts).
+      expect(html).toContain(OWN_CLAUDE_MODEL_NAME);
+      expect(html).not.toContain(OWN_CLAUDE_MODEL);
       expect(html).toMatch(/value="anthropic"[^>]*checked=""|checked=""[^>]*value="anthropic"/);
     } else {
-      expect(html).not.toContain('Anthropic Claude');
+      // Legal texts Fassung 1.1: not selectable, not merely hidden, and the status beside it.
+      const radio = /<input[^>]*value="anthropic"[^>]*>/.exec(html)?.[0] ?? '';
+      expect(radio).toContain('disabled=""');
+      expect(html).toContain('data-own-key-provider-status="anthropic"');
+      expect(html).toContain(ANTHROPIC_OWN_KEY_STATUS);
+      const gemini = /<input[^>]*value="gemini"[^>]*>/.exec(html)?.[0] ?? '';
+      expect(gemini).not.toContain('disabled=""');
     }
     expect(html).toMatch(/no step of this account uses the platform key/);
+  });
+
+  test('one switch decides selectable, storable, testable and callable — both positions', () => {
+    // Off (3.0.21): only Gemini; a call on an Anthropic key is refused with the status sentence.
+    expect(offeredKeyProviders(false)).toEqual(['gemini']);
+    expect(providerUnavailableReason('anthropic', false)).toContain(ANTHROPIC_OWN_KEY_STATUS);
+    expect(ownKeyCallRefusal('anthropic', false)).toContain(PROVIDER_NOT_ENABLED_CODE);
+    expect(ownKeyCallRefusal('gemini', false)).toBeNull();
+    // On (the Christmas switch): the existing paths answer as before 3.0.21's switch.
+    expect(offeredKeyProviders(true)).toEqual(['gemini', 'anthropic']);
+    expect(providerUnavailableReason('anthropic', true)).toBeNull();
+    expect(ownKeyCallRefusal('anthropic', true)).toBeNull();
+    // The product reads the switch's value and nothing else.
+    expect(offeredKeyProviders()).toEqual(offeredKeyProviders(ANTHROPIC_OWN_KEY_OFFERED));
+    expect(ANTHROPIC_OWN_KEY_OFFERED).toBe(false);
+    const src = read('lib/model-providers.ts');
+    expect(src.match(/export const ANTHROPIC_OWN_KEY_OFFERED = (true|false);/g), 'exactly one switch').toHaveLength(1);
+    for (const rel of ['app/api/gemini/route.ts', 'app/api/secrets/gemini/route.ts', 'app/api/secrets/gemini/test/route.ts', 'components/settings/OwnKeyProviderChoice.tsx']) {
+      expect(read(rel), `${rel} must not pass its own switch value`).not.toMatch(/(offeredKeyProviders|ownKeyCallRefusal|providerUnavailableReason)\([^)]*(true|false)\)/);
+    }
+  });
+
+  test('while the own Anthropic key is not enabled, the save and the test route refuse it before anything else', () => {
+    expect(offeredKeyProviders()).not.toContain('anthropic');
+    expect(providerUnavailableReason('anthropic')).toContain(ANTHROPIC_OWN_KEY_STATUS);
+    expect(providerUnavailableReason('gemini')).toBeNull();
+    for (const [rel, work] of [
+      ['app/api/secrets/gemini/route.ts', 'await testOwnModelKey('],
+      ['app/api/secrets/gemini/test/route.ts', 'await testOwnModelKey('],
+    ] as const) {
+      const route = read(rel);
+      const refusal = route.indexOf('code: PROVIDER_NOT_ENABLED_CODE');
+      expect(refusal, `${rel} refuses a provider that is not enabled`).toBeGreaterThan(0);
+      expect(route.slice(route.lastIndexOf('if (', refusal), refusal)).toContain('!offeredKeyProviders().includes(');
+      expect(refusal, `${rel} refuses before the key reaches the provider`).toBeLessThan(route.indexOf(work));
+    }
+    // The proxy asks the same switch before any provider contact, and never falls back.
+    const proxy = read('app/api/gemini/route.ts');
+    const gate = proxy.indexOf('ownKey ? ownKeyCallRefusal(ownKey.provider) : null');
+    expect(gate, 'the proxy asks the switch').toBeGreaterThan(0);
+    expect(gate).toBeLessThan(proxy.indexOf('callClaudeMessages('));
+    expect(proxy.slice(gate, gate + 400)).toContain('code: PROVIDER_NOT_ENABLED_CODE');
+    // A stored Anthropic key is not sent to the Models API by the test route either.
+    const testRoute = read('app/api/secrets/gemini/test/route.ts');
+    expect(testRoute.indexOf('ownKeyCallRefusal(provider)')).toBeGreaterThan(0);
+    expect(testRoute.indexOf('ownKeyCallRefusal(provider)')).toBeLessThan(testRoute.indexOf('await testOwnModelKey('));
+    // The page never preselects a provider that is not offered for a new key.
+    expect(read('app/(app)/settings/page.tsx')).toContain('offeredKeyProviders().includes(savedProvider) ? savedProvider : \'gemini\'');
   });
 
   test('the page renders the choice in the key card and sends the provider with save and test', () => {
     const page = read('app/(app)/settings/page.tsx');
     expect(page).toContain('<OwnKeyProviderChoice');
-    expect(page).toContain('body: JSON.stringify({ apiKey: geminiKey.trim(), provider: keyProvider }),');
+    expect(page).toMatch(/body: JSON\.stringify\(\{\s*apiKey: geminiKey\.trim\(\),\s*provider: keyProvider,/);
     expect(page).toContain('body: JSON.stringify(enteredKey ? { apiKey: enteredKey, provider: keyProvider } : {}),');
     // The save route checks the same list the choice is drawn from.
     const save = read('app/api/secrets/gemini/route.ts');
@@ -363,12 +432,20 @@ test.describe('Settings', () => {
 // ── the Trust page ──────────────────────────────────────────────────────────
 
 test('the Trust page says where code goes per provider, links the providers\' own terms, and names the engine-only path', () => {
-  const trust = read('app/(app)/trust/page.tsx');
-  expect(trust).toContain('title="Where your code goes"');
-  expect(trust).toContain('PROVIDER_TERMS.gemini.map(');
-  expect(trust).toContain('PROVIDER_TERMS.anthropic.map(');
-  expect(trust).toContain('data-trust-engine-only');
-  expect(trust).toMatch(/Code that may not leave:/);
+  // Since Fassung 1.1 of the legal texts (3.0.21) the trust page renders its
+  // words from lib/legal/texts/trust.en.ts — "Where your code goes" lists the
+  // engine-only path first, then our key, an own Gemini key, an own Anthropic
+  // key and other providers, each with the provider's own terms linked.
+  const trust = read('lib/legal/texts/trust.en.ts');
+  expect(read('app/(app)/trust/page.tsx')).toContain('TRUST_EN');
+  expect(trust).toContain('## Where your code goes');
+  expect(trust).toMatch(/\*\*No model — the engine only\.\*\*/);
+  expect(trust).toMatch(/This is the choice for code that must not reach any model provider/);
+  expect(trust).toMatch(/\*\*Your own Gemini key/);
+  expect(trust).toMatch(/\*\*Your own Anthropic key/);
+  expect(trust).toContain('https://ai.google.dev/gemini-api/terms');
+  expect(trust).toContain('https://www.anthropic.com/legal/commercial-terms');
+  expect(trust).toContain('https://www.anthropic.com/legal/privacy');
   for (const p of MODEL_KEY_PROVIDERS) {
     expect(PROVIDER_TERMS[p].length).toBeGreaterThan(0);
     for (const t of PROVIDER_TERMS[p]) expect(t.href).toMatch(/^https:\/\/(ai\.google\.dev|policies\.google\.com|www\.anthropic\.com)\//);

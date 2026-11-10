@@ -167,9 +167,12 @@ const NONCE_ROUTES: readonly RegExp[] = [
   // The requirements workspace under Design (ADR-078, 04.10.2026).
   /^\/project\/[^/]+\/design\/requirements\/?$/,
   /^\/invitation\/[^/]+\/[^/]+\/?$/,
+  // Portfolio sharing (3.0.21): the invitation and the shared overview are rendered per request.
+  /^\/portfolio\/invitation\/[^/]+\/[^/]+\/?$/,
+  /^\/portfolio\/shared\/[^/]+\/?$/,
   /^\/auth\/action\/?$/,
   /^\/survey\/[^/]+\/?$/,
-  /^\/unsubscribe\/?$/,
+  /^\/unsubscribe(\/invitations)?\/?$/,
   /^\/admin\/design-system\/first-render\/?$/,
 ];
 

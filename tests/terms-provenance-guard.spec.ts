@@ -34,7 +34,8 @@ function prose(src: string): string {
 }
 
 const PLACES = {
-  terms: 'app/terms/page.tsx',
+  // Since Fassung 1.1 (3.0.21) the Terms' words are in lib/legal/texts/terms.en.ts.
+  terms: 'lib/legal/texts/terms.en.ts',
   signup: 'components/LandingModals.tsx',
   onboarding: 'components/UserOnboarding.tsx',
 } as const;

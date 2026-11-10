@@ -4,14 +4,12 @@ import { useState, useEffect, useRef, FormEvent, KeyboardEvent, ClipboardEvent }
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   browserPopupRedirectResolver,
   GoogleAuthProvider, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  signOut,
   getMultiFactorResolver,
   TotpMultiFactorGenerator,
   type MultiFactorResolver,
@@ -19,7 +17,14 @@ import {
 // Auth only at the top: Firestore and the profile module are loaded by the one
 // handler that writes to Firestore — registration — so the start page does not
 // download the Firestore SDK for every visitor (docs/perf/REPORT.md).
+//
+// `getAuth()` is called where Auth is used — a submit, the session check of an
+// open sign-in step, a pending redirect — and never on render: initialising
+// Auth contacts Google on mobile browsers and Safari, and this component also
+// serves the legal dialogs (`?legal=`), which must not do that (privacy policy
+// section 7; lib/auth-hint.ts).
 import { getAuth } from '@/lib/firebase-app';
+import { clearRedirectPending, isRedirectPending } from '@/lib/auth-hint';
 import {
   ArrowRight,
   ShieldCheck,
@@ -44,16 +49,29 @@ import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import dynamic from 'next/dynamic';
+import { ContractLanguageChoice, PrivacyConsentLabel, TermsConsentLabel, signupNoticeAbove, signupNoticeBelow } from '@/components/legal/SignupConsent';
+import SaveWordingActions from '@/components/legal/SaveWordingActions';
+import type { TermsLanguage } from '@/lib/terms-versions';
+
+/** The full legal texts, fetched when a dialog opens (`components/legal/LegalOverlayBody.tsx`). */
+const LegalOverlayBody = dynamic(() => import('@/components/legal/LegalOverlayBody'), {
+  ssr: false,
+  loading: () => <p className="m-0 text-sm text-cc-ink-muted">Loading the text&hellip;</p>,
+});
 
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'mfa' | 'success';
 
 /** The dialog's title per step: the heading each screen used to draw itself. */
 const AUTH_TITLE: Record<AuthMode, string> = {
-  signin: 'Welcome Back',
-  signup: 'Create Account',
-  forgot: 'Reset Password',
-  success: 'Check your Inbox',
-  mfa: 'Two-Factor Auth',
+  // Every signed-out call to action opens this step, for a returning account
+  // and a new reader alike: a neutral title, not "Welcome Back" (roadmap 3.0.21
+  // (15)). Sentence case throughout the dialog.
+  signin: 'Sign in or create a free account',
+  signup: 'Create a free account',
+  forgot: 'Reset password',
+  success: 'Check your inbox',
+  mfa: 'Two-factor authentication',
 };
 
 /**
@@ -160,7 +178,6 @@ function GoogleMark() {
 }
 
 export default function LandingModals() {
-  const auth = getAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -194,6 +211,8 @@ export default function LandingModals() {
   const [lastName, setLastName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+  // The registration failed because the address has an account: the error then offers the two ways on.
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -201,6 +220,8 @@ export default function LandingModals() {
   const [motivation, setMotivation] = useState('');
   const [agreedGDPR, setAgreedGDPR] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  // T02: the contract language the ticks accept (Terms 1.4), not the interface language.
+  const [termsLanguage, setTermsLanguage] = useState<TermsLanguage>('en');
   const [showDatenschutz, setShowDatenschutz] = useState(false);
   const [showTermsOverlay, setShowTermsOverlay] = useState(false);
 
@@ -246,6 +267,7 @@ export default function LandingModals() {
   const interceptSecondFactor = (error: unknown): boolean => {
     const code = (error as { code?: string } | null)?.code;
     if (code !== 'auth/multi-factor-auth-required') return false;
+    const auth = getAuth();
     setMfaResolver(getMultiFactorResolver(auth, error as Parameters<typeof getMultiFactorResolver>[1]));
     setMfaCode(['', '', '', '', '', '']);
     setAuthError('');
@@ -275,9 +297,27 @@ export default function LandingModals() {
   // asks for the sign-in — the page reloaded after Google or the second factor
   // had finished but before it moved on (a reload, a discarded tab, a switch to
   // a new build). Asking again would read as a failed first attempt; the
-  // sign-in has happened, so go where it was going. Once, for the load itself:
-  // a sign-in made in this dialog navigates on its own.
+  // sign-in has happened, so go where it was going. When the sign-in step
+  // opens: a sign-in made in this dialog navigates on its own. Only then is
+  // Auth initialised — a legal dialog alone does not ask Firebase. This is
+  // also the way on for a returning reader whose browser holds a session but
+  // not yet the signed-in hint (lib/auth-hint.ts): the header offered "Get
+  // Free Access", the click opened this step, and the session is found here.
+  const signInStepOpen = authParam === 'signin' || authParam === 'mfa';
+
+  // Auth is initialised as soon as the access dialog is open, on any step, and
+  // not first on the click: on mobile browsers and Safari `signInWithPopup`
+  // has to wait for Google's sign-in frame before it may open the window, and
+  // a window opened after that wait is no longer the click's own and gets
+  // blocked. Initialising here gives the frame the time the reader spends in
+  // the dialog — the same head start the always-mounted dialog used to have.
+  const authDialogOpen = Boolean(authParam);
   useEffect(() => {
+    if (authDialogOpen) getAuth();
+  }, [authDialogOpen]);
+  useEffect(() => {
+    if (!signInStepOpen) return;
+    const auth = getAuth();
     if (!auth) return;
     let cancelled = false;
     void auth.authStateReady().then(() => {
@@ -291,10 +331,19 @@ export default function LandingModals() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [signInStepOpen]);
 
-  // Handle Google redirect result (fallback from signInWithPopup)
+  // Finish a Google redirect sign-in — only when one left this tab
+  // (`markRedirectPending()` runs right before `signInWithRedirect`,
+  // lib/auth-hint.ts). Asking on every visit initialised Auth for every
+  // visitor of the start page, which contacts Google on mobile browsers and
+  // Safari (privacy policy section 7). The mark is removed once Firebase has
+  // answered, with a result or an error.
+  const redirectChecked = useRef(false);
   useEffect(() => {
+    if (redirectChecked.current || !isRedirectPending()) return;
+    redirectChecked.current = true;
+    const auth = getAuth();
     if (!auth) return;
     // A redirect sign-in used to go straight to the dashboard without ever
     // consulting the profile, so an account with MFA enabled skipped the second
@@ -314,8 +363,9 @@ export default function LandingModals() {
         // A redirect that came back with an error used to end in the console
         // only, with the reader looking at an unchanged sign-in screen.
         setAuthError(googleSignInMessage(err?.code || '', err?.message));
-      });
-  }, [auth, router, afterSignIn]);
+      })
+      .finally(clearRedirectPending);
+  }, [router, afterSignIn]);
 
   const closeAuthModal = async () => {
     setMfaResolver(null);
@@ -338,6 +388,7 @@ export default function LandingModals() {
     setAuthNotice('');
     let signedIn = false;
     const provider = new GoogleAuthProvider();
+    const auth = getAuth();
     try {
       await signInWithPopup(auth, provider, browserPopupRedirectResolver);
       signedIn = true;
@@ -388,6 +439,7 @@ export default function LandingModals() {
     setAuthError('');
     setAuthNotice('');
     setIsSubmitting(true);
+    const auth = getAuth();
     try {
       // On an enrolled account this throws before any session exists and the
       // catch below turns it into the second-factor screen.
@@ -443,6 +495,7 @@ export default function LandingModals() {
         import(/* webpackExports: ["getDb"] */ '@/lib/firebase'),
         import(/* webpackExports: ["finishRegistration"] */ '@/hooks/useUserProfile'),
       ]);
+      const auth = getAuth();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const signedInUser = userCredential.user;
       
@@ -505,6 +558,7 @@ export default function LandingModals() {
           motivation: motivation.trim().slice(0, 2000),
           acceptedTerms: agreedTerms,
           acceptedPrivacy: agreedGDPR,
+          termsLanguage,
         });
       } catch (registerErr) {
         console.error('[Email Signup] account activation failed:', registerErr);
@@ -517,8 +571,9 @@ export default function LandingModals() {
     } catch (error: any) {
       console.error('Registration error:', error);
       let errorMsg = 'Error creating account. Please try again.';
+      setAlreadyRegistered(error.code === 'auth/email-already-in-use');
       if (error.code === 'auth/email-already-in-use') {
-        errorMsg = 'This email address is already registered.';
+        errorMsg = 'This email address is already registered. Sign in with it, or reset its password if you no longer know it.';
       } else if (error.code === 'auth/invalid-email') {
         errorMsg = 'Invalid email address.';
       } else if (error.code === 'auth/weak-password') {
@@ -533,6 +588,7 @@ export default function LandingModals() {
     e.preventDefault();
     setAuthError('');
     setIsSubmitting(true);
+    const auth = getAuth();
     try {
       await sendPasswordResetEmail(auth, email);
       setAuthMode('success');
@@ -734,7 +790,7 @@ export default function LandingModals() {
 
               <div className="flex flex-col">
                 <CcButton variant="ghost" density="cozy" onClick={closeAuthModal} icon={<ArrowLeft size={16} aria-hidden={true} />}>
-                  Back to Sign In
+                  Back to sign in
                 </CcButton>
               </div>
             </div>
@@ -772,7 +828,7 @@ export default function LandingModals() {
 
               <div className="flex flex-col gap-2">
                 <CcButton type="submit" variant="primary" density="cozy" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={16} aria-hidden={true} />
+                  {isSubmitting ? 'Sending…' : 'Send reset link'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
                 <CcButton
                   variant="ghost"
@@ -780,7 +836,7 @@ export default function LandingModals() {
                   onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
                   icon={<ArrowLeft size={16} aria-hidden={true} />}
                 >
-                  Back to Sign In
+                  Back to sign in
                 </CcButton>
               </div>
             </div>
@@ -799,7 +855,7 @@ export default function LandingModals() {
                 density="cozy"
                 onClick={() => { setAuthMode('signin'); setEmail(''); setAuthError(''); updateQueryParams('auth', 'signin'); }}
               >
-                Back to Sign In
+                Back to sign in
               </CcButton>
             </div>
           </div>
@@ -810,10 +866,10 @@ export default function LandingModals() {
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
+                onClick={() => { setAuthMode('signin'); setAuthError(''); setAlreadyRegistered(false); updateQueryParams('auth', 'signin'); }}
                 className={INLINE_LINK}
               >
-                Sign In
+                Sign in
               </button>
             </p>
 
@@ -974,49 +1030,39 @@ export default function LandingModals() {
                 </CcField>
               </div>
 
-              {/* Legal consent checkboxes (required for registration) */}
+              {/* Legal consent (required for registration) — C1 of the legal texts,
+                  Fassung 1.1, the same words as the onboarding dialog. */}
               <div className="space-y-2 border-t border-cc-line pt-3">
+                <ContractLanguageChoice
+                  value={termsLanguage}
+                  onChange={(l) => {
+                    setTermsLanguage(l);
+                    // A tick belongs to the wording it was given for.
+                    setAgreedGDPR(false);
+                    setAgreedTerms(false);
+                  }}
+                />
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="above" lang={termsLanguage}>{signupNoticeAbove(termsLanguage)}</p>
                 <CcCheckbox
                   checked={agreedGDPR}
                   onChange={setAgreedGDPR}
                   required
-                  label={
-                    <>
-                      I agree to the{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                        className={INLINE_LINK}
-                      >
-                        GDPR provisions and Privacy Policy
-                      </button>{' '}
-                      and understand this is a Free Community Edition.
-                    </>
-                  }
+                  label={<PrivacyConsentLabel lang={termsLanguage} onOpen={() => setShowDatenschutz(true)} linkClassName={INLINE_LINK} />}
                 />
                 <CcCheckbox
                   checked={agreedTerms}
                   onChange={setAgreedTerms}
                   required
-                  label={
-                    <>
-                      I accept the{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setShowTermsOverlay(true); }}
-                        className={INLINE_LINK}
-                      >
-                        Terms of Service and Guidelines
-                      </button>
-                      .
-                    </>
-                  }
+                  label={<TermsConsentLabel lang={termsLanguage} onOpen={() => setShowTermsOverlay(true)} linkClassName={INLINE_LINK} />}
                 />
+                {/* Save or print the offered wording (§ 312i Abs. 1 S. 1 Nr. 4 BGB). */}
+                <SaveWordingActions key={termsLanguage} documents={['terms']} lang={termsLanguage} />
+                <p className="m-0 text-xs leading-relaxed text-cc-ink-muted" data-signup-notice="below" lang={termsLanguage}>{signupNoticeBelow(email.trim() || null, termsLanguage)}</p>
               </div>
 
               {/* The disclaimer states the fact and drops the label (§3.1 has no
                   "powered by Generative AI" and no symbol for it). The fact is
-                  the one section 4.1 of Terms v2.2.0 states: findings,
+                  the one section 4.1 of Terms v2.3.0 states: findings,
                   route and score are the deterministic engine's, and only the
                   model steps are written by a language model — which an account
                   can switch off. Kept in step with the Terms
@@ -1028,7 +1074,37 @@ export default function LandingModals() {
                 before deployment. Liability: Terms, section 4.
               </CcMessageStrip>
 
-              {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
+              {authError && (
+                <div data-auth-error={alreadyRegistered ? 'already-registered' : ''}>
+                  <CcMessageStrip
+                    state="error"
+                    actions={
+                      // The address has an account already: the two ways on, with the
+                      // address carried over (roadmap 3.0.21 (15)) — not a dead end.
+                      alreadyRegistered ? (
+                        <>
+                          <CcButton
+                            variant="ghost"
+                            onClick={() => { setAuthMode('signin'); setAuthError(''); setAlreadyRegistered(false); updateQueryParams('auth', 'signin'); }}
+                            data-auth-signin-instead=""
+                          >
+                            Sign in instead
+                          </CcButton>
+                          <CcButton
+                            variant="ghost"
+                            onClick={() => { setAuthMode('forgot'); setAuthError(''); setAlreadyRegistered(false); updateQueryParams('auth', 'forgot'); }}
+                            data-auth-reset-instead=""
+                          >
+                            Reset password
+                          </CcButton>
+                        </>
+                      ) : undefined
+                    }
+                  >
+                    {authError}
+                  </CcMessageStrip>
+                </div>
+              )}
 
               <div className="flex flex-col gap-2">
                 <CcButton
@@ -1085,7 +1161,7 @@ export default function LandingModals() {
                 variant="secondary"
                 onClick={() => { setAuthMode('signup'); setAuthError(''); updateQueryParams('auth', 'signup'); }}
               >
-                Create Account
+                Create account
               </CcButton>
             </div>
 
@@ -1137,7 +1213,7 @@ export default function LandingModals() {
                     onClick={() => { setAuthMode('forgot'); setAuthError(''); updateQueryParams('auth', 'forgot'); }}
                     className={cn(INLINE_LINK, 'text-[12px]')}
                   >
-                    Forgot Password?
+                    Forgot password?
                   </button>
                 </p>
               </div>
@@ -1151,7 +1227,7 @@ export default function LandingModals() {
 
               <div className="flex flex-col">
                 <CcButton type="submit" variant="primary" density="cozy" disabled={isSubmitting}>
-                  {isSubmitting ? 'Signing In...' : 'Sign In'} <ArrowRight size={16} aria-hidden={true} />
+                  {isSubmitting ? 'Signing in…' : 'Sign in'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
               </div>
 
@@ -1234,165 +1310,17 @@ export default function LandingModals() {
         </div>
       </LegalOverlay>
 
-      <LegalOverlay isOpen={legalParam === 'privacy'} onClose={() => updateQueryParams('legal', null)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-cc-ink">
-          <div>
-            <h3 className={LEGAL_H3}>1. Privacy at a Glance</h3>
-            <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
-            </p>
-            <p className="text-xs text-cc-ink-muted">
-              <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>2. Data Collection & Processing Purposes</h3>
-            <p className="text-sm leading-relaxed mb-3">
-              We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
-              <li>
-                <strong>Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
-              </li>
-              <li>
-                <strong>Email and password (Firebase Auth):</strong> You can also register with an email address and a password instead of using Google. In that case we process the email address and the first and last name you enter. The password itself is handled by Firebase Authentication and is never visible to us.
-              </li>
-              <li>
-                <strong>Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database.
-              </li>
-              <li>
-                <strong>Bring Your Own Key (BYOK):</strong> If you configure your own Google Gemini API key in the settings, this key is encrypted and stored in our secure Firestore instance. It is used exclusively to forward your transformation requests directly via a secure backend proxy to the Gemini API, never exposing your key to the browser.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>3. Processing of Source Code & Project Assets</h3>
-            <p className="text-sm leading-relaxed">
-              The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
-            </p>
-            <p className="text-xs text-cc-ink-muted mt-2">
-              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Which of Google&apos;s data-use terms apply depends on the key that makes the request. The shared community key is a paid Gemini API key, so the paid Gemini API terms govern every request made with it: Google does not use your code to train its models. When you use your own key (BYOK), the terms of your own Google account apply — a key on Google&apos;s free tier is governed by Google&apos;s free-tier data-use terms, which differ.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>4. Cloud Node Hosting & Third-Party Services</h3>
-            <p className="text-sm leading-relaxed">
-              To provide this service, we rely on the following trusted cloud services:
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
-              <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
-              </li>
-              <li>
-                <strong>Google Gemini API:</strong> Generative AI models for the model-written parts of the service — the analysis narrative, business names and sentences for the process reconstructed from the code, the solution design, the code proposal, the documentation and the test suite — via secure stateless proxy layers. The findings, the route and the Clean Core Score are computed without a model.
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
-            <p className="text-sm leading-relaxed mb-2">
-              Since our platform is hosted in compliance with EU regulations, you have all rights under the General Data Protection Regulation (GDPR):
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
-              <li>Right of Access (Art. 15 GDPR)</li>
-              <li>Right to Rectification (Art. 16 GDPR)</li>
-              <li>Right to Erasure / "Right to be Forgotten" (Art. 17 GDPR)</li>
-              <li>Right to Restriction of Processing (Art. 18 GDPR)</li>
-              <li>Right to Data Portability (Art. 20 GDPR)</li>
-              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
-            </ul>
-            <p className="text-xs text-cc-ink-muted mt-2">
-              To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries, including every project and the source code in it. Residual copies in encrypted backups age out within 30 days, and the record of administrative actions on an account is kept for 24 months; the full privacy policy at clean-core.io/datenschutz says what else deletion does not reach. Alternatively, contact us at <strong>info@clean-core.io</strong>.
-            </p>
-          </div>
-        </div>
+      <LegalOverlay isOpen={legalParam === 'privacy'} onClose={() => updateQueryParams('legal', null)} title="Privacy Policy">
+        <LegalOverlayBody id="privacy" />
       </LegalOverlay>
 
-      {/* Signup-specific GDPR overlay */}
-      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-cc-ink">
-          <div>
-            <h3 className={LEGAL_H3}>1. Privacy at a Glance</h3>
-            <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
-            </p>
-            <p className="text-xs text-cc-ink-muted">
-              <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>2. Data Collection & Processing</h3>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
-              <li><strong>Google Authentication (Firebase Auth):</strong> Your name, email, and profile picture are used to authenticate your session.</li>
-              <li><strong>Email and password (Firebase Auth):</strong> If you register with an email address instead, we process that address and the name you enter; the password is handled by Firebase Authentication and is never visible to us.</li>
-              <li><strong>Firestore User Profiles:</strong> We store metadata about your usage (transformation count, system limits, name) in our secure database.</li>
-              <li><strong>BYOK (Bring Your Own Key):</strong> If configured, your Gemini API key is AES-256-GCM encrypted and never exposed to the browser.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>3. Source Code Processing</h3>
-            <p className="text-sm leading-relaxed">
-              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). For AI-driven modernization, source code is transmitted over encrypted channels to the Google Gemini API. We do not retain it outside your project, and we do not use it to train models; Google&apos;s handling of API data is governed by their applicable API terms.
-            </p>
-          </div>
-
-          <div>
-            <h3 className={LEGAL_H3}>4. Your GDPR Rights</h3>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
-              <li>Right of Access (Art. 15 GDPR)</li>
-              <li>Right to Rectification (Art. 16 GDPR)</li>
-              <li>Right to Erasure / &quot;Right to be Forgotten&quot; (Art. 17 GDPR)</li>
-              <li>Right to Data Portability (Art. 20 GDPR)</li>
-              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
-            </ul>
-            <p className="text-xs text-cc-ink-muted mt-2">
-              To exercise these rights, use account deletion in Profile Settings or contact <strong>info@clean-core.io</strong>.
-            </p>
-          </div>
-        </div>
+      {/* The texts the sign-up consent links to, in full. */}
+      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy">
+        <LegalOverlayBody id="privacy" lang={termsLanguage} />
       </LegalOverlay>
 
-      {/* Signup-specific Terms overlay */}
-      <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Guidelines">
-        <div className="space-y-6 text-cc-ink">
-          <CcMessageStrip state="information">
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>
-              This is a short summary. Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms ↗
-            </a>
-          </CcMessageStrip>
-          <div>
-            <h3 className={LEGAL_H3}>1. Scope and Purpose</h3>
-            <p className="text-sm leading-relaxed">
-              This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native). By participating, you help shape and improve this community utility.
-            </p>
-          </div>
-          <div>
-            <h3 className={LEGAL_H3}>2. Free Community Edition Usage</h3>
-            <CcMessageStrip state="warning">
-              Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code and evidence are drafts — review, test and approve them with qualified architects before any productive use.
-            </CcMessageStrip>
-          </div>
-          <div>
-            <h3 className={LEGAL_H3}>3. What is computed, and what is generated</h3>
-            <p className="text-sm leading-relaxed">
-              The findings, the route, the Clean Core Score, the clean core levels and the process reconstructed from your code are computed by a deterministic engine, without a language model. They are evidence, not a guarantee. Summaries, the solution design, generated code, documentation and test suites are written by a language model where you use those steps. All of it is a draft and must be verified by qualified software architects before deployment. Liability is set out in section 4 of the Terms.
-            </p>
-          </div>
-          <div>
-            <h3 className={LEGAL_H3}>4. Code of Conduct</h3>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
-              <li>Do not upload malicious software, illegal scripts, or IP-violating source code.</li>
-              <li>Maintain a respectful, professional tone in community spaces.</li>
-              <li>Report system issues to help refine the engine.</li>
-            </ul>
-          </div>
-        </div>
+            <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Community Guidelines">
+        <LegalOverlayBody id="terms" lang={termsLanguage} />
       </LegalOverlay>
     </>
   );

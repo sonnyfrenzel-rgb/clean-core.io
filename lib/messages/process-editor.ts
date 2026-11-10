@@ -69,7 +69,7 @@ export const PROCESS_EDITOR_MESSAGES = {
   'editor.renamedHere': 'Renamed in this draft. The line anchor stays.',
   'editor.drawnHere': 'Drawn in this draft — not in the code, no line anchor.',
   'editor.importedOutside': 'Added outside Clean-Core.io (imported file) — no line anchor.',
-  'editor.modelProposal': 'The business name is a model proposal, unchecked.',
+  'editor.modelProposal': 'The business name is AI-generated, unchecked.',
   'editor.anchor': 'Line anchor',
   'editor.noAnchor': 'No line anchor',
   'editor.typeChangedNote': 'The element type was changed; the line anchor and its provenance are kept.',

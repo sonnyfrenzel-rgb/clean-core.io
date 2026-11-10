@@ -5,10 +5,17 @@ import { initializeFirestore, doc, getDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { issueModelReceipt } from '../lib/model-receipt';
 import { STAGE_DISABLED_CODE } from '../lib/model-stages';
-import { applyNaming, namingContextOf, type ProcessNamingRecord } from '../lib/process-naming';
+import {
+  NAMING_FORMAT_VERSION,
+  NAMING_PAUSED_CODE,
+  NAMING_PAUSED_REASON,
+  applyNaming,
+  namingContextOf,
+  type ProcessNamingRecord,
+} from '../lib/process-naming';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -28,11 +35,20 @@ import { signInViaLanding } from './helpers/sign-in';
  *      the pieces that did not fit counted, not kept;
  *   2. an answer without a receipt that verifies for this text and this account
  *      is refused and stores nothing — a name typed by anyone must not wear the
- *      chip *Model proposal*;
+ *      chip *AI-generated*;
  *   3. an answer for another reading of the source is refused with 409;
  *   4. only the owner reads or writes the names, and no browser reads them
  *      straight out of Firestore;
  *   5. the `naming` stage is switched on its own, and the proxy refuses it.
+ *
+ * 3.0.21 (owner decision 06.11.2026): business names are paused for a reading
+ * without the engine's facts, which is every reading of this build. The route
+ * refuses every POST with 403 `naming-paused` — a verified receipt as much as a
+ * refused one — and writes nothing; a naming stored before is read back
+ * untouched and not applied. Claims 1–3 are therefore held as refusals here;
+ * the validation and the receipt check themselves stay in the route for a
+ * naming built from the facts, and their rules are held server-free in
+ * `tests/process-naming.spec.ts` and `tests/model-receipt.spec.ts`.
  */
 
 const STAMP = Date.now();
@@ -138,75 +154,64 @@ test('the server under test has the route', async ({ request }) => {
   expect((await res.json()).record, 'a project nobody named has no names').toBeNull();
 });
 
-test('an answer with a verified receipt is validated against the stored source, stored and read back', async ({ request }) => {
+/** A naming as the route stored it before 3.0.21 — no `madeFrom`: not built from the engine's facts. */
+const EARLIER: ProcessNamingRecord = {
+  formatVersion: NAMING_FORMAT_VERSION,
+  digest: CONTEXT.digest,
+  names: [{ id: DENIED, technicalName: 'IF sy-subrc <> 0', name: 'Access denied?' }],
+  lanes: [{ key: 'lane-1', name: 'Approver', authorityCheck: 'ac-1', nodes: [DENIED] }],
+  discarded: { total: 0, byRule: {} },
+  origin: {
+    source: 'model', receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-2.5-flash',
+    byok: false, issuedAt: Date.parse('2026-10-22T09:30:00.000Z'), textSha256: 'a'.repeat(64),
+  },
+  namedAt: '2026-10-22T09:30:05.000Z',
+};
+
+test('3.0.21: an answer with a verified receipt is refused with naming-paused and nothing is stored', async ({ request }) => {
   const receipt = issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey());
   const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: ANSWER, receipt } });
-  expect(res.status(), await res.text()).toBe(200);
-  const { record } = (await res.json()) as { record: ProcessNamingRecord };
+  expect(res.status(), await res.text()).toBe(403);
+  expect(await res.json()).toEqual({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE });
+  expect(await stored(request), 'a paused naming was stored').toBeNull();
+  expect(await adminGetDoc(`projects/${PROJECT_ID}/process_naming`, 'current')).toBeNull();
+});
 
-  expect(record.digest).toBe(CONTEXT.digest);
-  expect(record.names).toEqual([{ id: DENIED, technicalName: 'IF sy-subrc <> 0', name: 'Access denied?' }]);
-  expect(record.lanes).toEqual([{ key: 'lane-1', name: 'Approver', authorityCheck: 'ac-1', nodes: [DENIED] }]);
-  expect(record.discarded).toEqual({ total: 2, byRule: { 'unknown-node': 1, 'lane-organisational': 1 } });
-  // The model the receipt names, not a default — and no copy of the answer.
-  expect(record.origin).toEqual({
-    source: 'model', receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-2.5-flash',
-    byok: false, issuedAt: receipt.iat, textSha256: receipt.textSha256,
-  });
-  expect(JSON.stringify(record)).not.toContain('Approve by phone');
-  expect(JSON.stringify(record)).not.toContain('CFO');
-
+test('3.0.21: a naming stored before is read back untouched, and not applied', async ({ request }) => {
+  await adminSetDoc(`projects/${PROJECT_ID}/process_naming`, 'current', { ...EARLIER, requestedBy: uid });
   const again = await stored(request);
-  expect(again, 'what GET returns is not what POST stored').toEqual(record);
+  expect(again, 'the stored naming was changed or withheld').toEqual(EARLIER);
 
   const view = applyNaming(CONTEXT, again);
-  expect(view.state).toBe('named');
-  expect(view.lanes[0]).toMatchObject({ name: 'Approver', evidence: 'anchored', anchor: { lineStart: 6, lineEnd: 6 } });
+  expect(view.state).toBe('not-named');
+  expect(view.counts.named).toBe(0);
+  expect(view.lanes).toEqual([]);
+  expect(view.origin).toBeNull();
+  expect(view.nodes.every((n) => n.businessName === null && n.nameProvenance === null)).toBe(true);
+  expect(view.notice).toContain(NAMING_PAUSED_REASON);
 });
 
-test('without a receipt that verifies for this text and this account, nothing is stored', async ({ request }) => {
+test('3.0.21: every other answer is refused the same way, and the stored naming stays as it was', async ({ request }) => {
   const before = await stored(request);
-  expect(before, 'the previous test stored nothing to compare against').not.toBeNull();
+  expect(before, 'the previous test stored nothing to compare against').toEqual(EARLIER);
   const other = JSON.stringify({ names: [{ id: DENIED, name: 'Blocked for this buyer?' }] });
-
-  const cases: Array<[string, unknown, string]> = [
-    ['absent', undefined, other],
-    // A real receipt, over the answer of the previous test — not this one.
-    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other],
-    ['wrong-account', issueModelReceipt({ uid: otherUid, text: other, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other],
-    ['forged', issueModelReceipt({ uid, text: other, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, 'not-the-signing-key'), other],
-  ];
-  for (const [refusal, receipt, text] of cases) {
-    const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text, receipt } });
-    expect(res.status(), `${refusal}: ${await res.text()}`).toBe(422);
-    expect(await res.json()).toMatchObject({ code: 'receipt-refused', refusal });
-  }
-  expect(await stored(request), 'a refused answer replaced the stored names').toEqual(before);
-});
-
-test('a valid receipt from another stage is refused with wrong-stage (QA review of 8f9ea35a000e)', async ({ request }) => {
-  const before = await stored(request);
-  const text = JSON.stringify({ names: [{ id: DENIED, name: 'Blocked by another stage?' }] });
-  for (const stage of ['statements', 'documentation', undefined]) {
-    const receipt = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, ...(stage ? { stage } : {}) }, signingKey());
-    const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text, receipt } });
-    expect(res.status(), `${stage ?? 'no stage'}: ${await res.text()}`).toBe(422);
-    expect(await res.json()).toMatchObject({ code: 'receipt-refused', refusal: 'wrong-stage' });
-  }
-  expect(await stored(request), 'a receipt of another stage replaced the names').toEqual(before);
-});
-
-test('an answer for another reading of the source is refused with 409', async ({ request }) => {
-  const before = await stored(request);
   const elsewhere = namingContextOf(`${PROGRAM}\nFORM spare.\n  PERFORM release.\nENDFORM.`.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR gv_banfn.'));
   expect(elsewhere.digest).not.toBe(CONTEXT.digest);
-  const text = JSON.stringify({ names: [{ id: DENIED, name: 'Access denied?' }] });
-  const receipt = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey());
 
-  const res = await request.post(path, { headers: headers(), data: { digest: elsewhere.digest, text, receipt } });
-  expect(res.status(), await res.text()).toBe(409);
-  expect((await res.json()).code).toBe('source-moved');
-  expect(await stored(request)).toEqual(before);
+  const cases: Array<[string, unknown, string, string]> = [
+    ['absent receipt', undefined, other, CONTEXT.digest],
+    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other, CONTEXT.digest],
+    ['wrong-account', issueModelReceipt({ uid: otherUid, text: other, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other, CONTEXT.digest],
+    ['forged', issueModelReceipt({ uid, text: other, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, 'not-the-signing-key'), other, CONTEXT.digest],
+    ['another stage', issueModelReceipt({ uid, text: other, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'statements' }, signingKey()), other, CONTEXT.digest],
+    ['another reading', issueModelReceipt({ uid, text: other, provider: 'google-gemini', modelId: 'gemini-2.5-flash', byok: false, stage: 'naming' }, signingKey()), other, elsewhere.digest],
+  ];
+  for (const [label, receipt, text, digest] of cases) {
+    const res = await request.post(path, { headers: headers(), data: { digest, text, receipt } });
+    expect(res.status(), `${label}: ${await res.text()}`).toBe(403);
+    expect((await res.json()).code, label).toBe(NAMING_PAUSED_CODE);
+  }
+  expect(await stored(request), 'a refused answer replaced the stored names').toEqual(before);
 });
 
 test('only the owner reads or writes the names, and no browser reads them out of Firestore', async ({ request }) => {
@@ -256,7 +261,11 @@ test('the naming stage is switched on its own, and the proxy is what refuses it'
     headers: headers(),
     data: { prompt: 'Name these steps.', stage: 'naming', jsonResponse: true },
   });
-  expect((await again.json()).code, 'the stage stayed refused after being switched on').not.toBe(STAGE_DISABLED_CODE);
+  const againBody = await again.json();
+  expect(againBody.code, 'the stage stayed refused after being switched on').not.toBe(STAGE_DISABLED_CODE);
+  // 3.0.21: switched on, a naming prompt without the engine's facts is still refused — before any key is loaded.
+  expect(again.status()).toBe(403);
+  expect(againBody.code).toBe(NAMING_PAUSED_CODE);
 });
 
 test('a JSON body of null is a 400 with the reason, not a 500', async ({ request }) => {

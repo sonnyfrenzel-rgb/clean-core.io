@@ -22,6 +22,12 @@
  * written only when the source is provably newer by `updatedAt`; everything else
  * is a conflict, listed for a person to look at, and left as it is.
  *
+ * Held content (legal review 06.11.2026, B3) never comes back this way: a project
+ * the target holds after a report of illegal content — blocked or deleted — and
+ * the holds themselves are skipped, whatever the source has (`pathBlockedFromCopy`
+ * in `lib/content-hold.ts`). The source may be an old database or a restored
+ * backup; either can still hold what the target has removed.
+ *
  * Usage:
  *   npx tsx scripts/firestore-delta-sync.ts --source <db> --target <db>            # dry run
  *   npx tsx scripts/firestore-delta-sync.ts --source <db> --target <db> --apply
@@ -29,6 +35,7 @@
 
 import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getFirestore, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
+import { CONTENT_HOLD_COLLECTION, pathBlockedFromCopy, unreleasedHeldProjectIds } from '../lib/content-hold';
 
 const PROJECT_ID = 'cleancore-491216';
 
@@ -96,6 +103,8 @@ export function reconcile(existing: Record<string, unknown> | undefined, incomin
 }
 
 interface Plan {
+  /** Paths under a held project, or holds, left out (B3). */
+  heldSkipped: number;
   created: string[];
   updated: string[];
   conflicts: string[];
@@ -107,6 +116,7 @@ async function walk(
   srcDb: Firestore,
   tgtDb: Firestore,
   plan: Plan,
+  held: ReadonlySet<string>,
   parentSrc?: DocumentReference,
   parentTgt?: DocumentReference,
 ): Promise<void> {
@@ -118,6 +128,11 @@ async function walk(
     const snap = await col.get();
     for (const doc of snap.docs) {
       const tgtRef = parentTgt ? parentTgt.collection(col.id).doc(doc.id) : tgtDb.collection(col.id).doc(doc.id);
+      // B3: a held project and its subcollections, and the holds, are never written from a copy.
+      if (pathBlockedFromCopy(tgtRef.path, held)) {
+        plan.heldSkipped++;
+        continue;
+      }
       const existing = await tgtRef.get();
 
       switch (reconcile(existing.data(), doc.data())) {
@@ -136,7 +151,7 @@ async function walk(
           plan.unchanged++;
       }
 
-      await walk(srcDb, tgtDb, plan, doc.ref, tgtRef);
+      await walk(srcDb, tgtDb, plan, held, doc.ref, tgtRef);
     }
   }
 }
@@ -162,17 +177,20 @@ async function main() {
   const srcDb = getFirestore(app, SOURCE);
   const tgtDb = getFirestore(app, TARGET);
 
-  const plan: Plan = { created: [], updated: [], conflicts: [], unchanged: 0, onlyInTarget: [] };
+  const plan: Plan = { heldSkipped: 0, created: [], updated: [], conflicts: [], unchanged: 0, onlyInTarget: [] };
+  // B3: what the target holds, read from the target — never from the copy.
+  const held = unreleasedHeldProjectIds((await tgtDb.collection(CONTENT_HOLD_COLLECTION).get()).docs.map((d) => d.data()));
 
   console.log(`source: ${SOURCE}`);
   console.log(`target: ${TARGET}`);
   console.log(`mode  : ${APPLY ? 'APPLY' : 'dry run'}`);
   console.log('');
 
-  await walk(srcDb, tgtDb, plan);
+  await walk(srcDb, tgtDb, plan, held);
   await findTargetOnly(srcDb, tgtDb, plan);
 
   console.log(`identical      : ${plan.unchanged}`);
+  console.log(`held, skipped  : ${plan.heldSkipped}  (held content and holds never come from a copy)`);
   console.log(`to create      : ${plan.created.length}`);
   plan.created.forEach((p) => console.log(`    + ${p}`));
   console.log(`to update      : ${plan.updated.length}  (source provably newer)`);

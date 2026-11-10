@@ -1,6 +1,8 @@
+import { revisionDocData } from '@/lib/process-revision-store';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -124,7 +126,7 @@ async function openProject(
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -370,7 +372,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
       ),
     };
   }
-  const baseline = snap.data() as Record<string, unknown>;
+  const baseline = revisionDocData(snap.data() as Record<string, unknown>);
   const record = { ...baseline, savedAt: isoOf(baseline.savedAt) };
   if (!isProcessRevisionRecord(record)) {
     return {

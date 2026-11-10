@@ -37,8 +37,8 @@ and its limits](https://clean-core.io/how-it-works).
 ## What it does
 
 You bring one piece of custom ABAP. A deterministic engine reads it first; a language
-model only proposes names and wording afterwards, and every proposal is marked as a
-Model proposal.
+model only proposes names and wording afterwards, and every proposal is marked as
+AI-generated.
 
 - **The process, read from the code.** The engine reconstructs the business process the
   program implements and draws it as BPMN. Every element carries the line it came from
@@ -71,11 +71,11 @@ Model proposal.
   that produced it. The level is an orientation, not an ATC result, and is not part of
   the signed audit pack.
 - **Where each statement comes from.** Every statement carries one of nine provenance
-  values: Proven, Confirmed, Reconstructed, Imported, Model proposal, Simulation,
+  values: Proven, Confirmed, Reconstructed, Imported, AI-generated, Simulation,
   Demonstrated · mock, Stale, Not determined. *Confirmed* means the signed-in account
   confirmed it: a self-declaration, not a mandate.
 - **One chain of evidence.** Process → design → code draft → tests → handover. The
-  process carries line anchors; the design and the code draft are model proposals built
+  process carries line anchors; the design and the code draft are AI-generated drafts built
   on the signed run, and the code's plan names every finding at its line; on the CAP track the test
   scenarios run against the generated code in an isolated runner, against mocks, and the
   server records what ran on which code, and on the RAP track the ABAP Unit result is

@@ -104,7 +104,7 @@ async function seed(prefix: string): Promise<SeededProject> {
 
 async function keyAvailable(page: Page) {
   await page.route('**/api/model-stages', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keyAvailable: true, keySource: 'community' }) }),
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keyAvailable: true, keySource: 'community', provider: 'gemini', autoSteps: true }) }),
   );
 }
 
@@ -183,13 +183,16 @@ for (const width of [1280, 390] as const) {
       await expect(page.locator('[data-quality-tip="decision"]')).toContainText('Record the decision');
       // Enabled once the plan before the click is read (3.0.18 (2): Generate waits for it).
       await expect(page.locator('[data-generate-now]')).toBeEnabled({ timeout: 60_000 });
+      // It names where the code goes, the provider of the community key (legal review 06.11.2026).
+      await expect(page.locator('[data-generate-now]')).toHaveText('Generate draft (sends code to Google)');
       // Nothing on record weighs SAP standard: a warning above the tips, never a gate (owner, 12.10.2026).
       const warning = page.locator('[data-decision-warning="standard-fit-open"]');
-      await expect(warning).toContainText('Standard fit is not assessed yet — SAP standard may already cover this.');
+      // Since 22.10.2026 it leads to the decision in Management (owner decision).
+      await expect(warning).toContainText('SAP standard has not been weighed against a rebuild yet');
       await expect(warning.locator('[data-cc-message-strip="warning"]')).toBeVisible();
       await expect(warning.locator('[data-decision-warning-link]')).toHaveAttribute(
         'href',
-        new RegExp(`/project/${account.projectId}\\?view=it&origin=transformation\\.tips#standard$`),
+        new RegExp(`/project/${account.projectId}\\?view=management&origin=transformation\\.tips#decision-card$`),
       );
       await expect(page.locator('[data-generate-cost]')).toHaveText('No analysis run used · up to 48 model calls on the community key for this generation');
       // The chain: the phases before Transformation, never Economics.

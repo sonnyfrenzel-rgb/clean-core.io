@@ -344,7 +344,7 @@ export interface SkeletonLane {
    * saying they do would be a sentence the source does not contain.
    */
   nodeIds: string[];
-  /** 2.16: reconstructed from the code, never *Model proposal*, never confirmed. */
+  /** 2.16: reconstructed from the code, never *AI-generated*, never confirmed. */
   status: 'reconstructed';
 }
 

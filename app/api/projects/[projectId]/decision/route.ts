@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
-import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     try {
       await assertMfaSatisfied(req, decodedToken);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },

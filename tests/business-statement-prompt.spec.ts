@@ -194,7 +194,7 @@ test('path B is wired, and only through the proposal stage of 17.10: two importe
 });
 
 test('the prompt orders English sentences — owner decision 01.10.2026 ("alles Englisch")', () => {
-  // The model proposal stands above the engine's sentence in the product; both
+  // The AI-generated draft stands above the engine's sentence in the product; both
   // are product text, and product text is English. The style example is English
   // too, so the model is not shown a German sentence to imitate.
   const prompt = buildStatementPrompt(buildStatementContext([{ name: 'demo.abap', code: SOURCE }]));

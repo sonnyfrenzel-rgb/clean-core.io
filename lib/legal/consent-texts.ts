@@ -1,0 +1,558 @@
+import { resolveLegalSource } from './markup';
+import type { LegalLang } from './open-values';
+
+/**
+ * The consent, confirmation and ending texts of Fassung 1.1 (C1–C11 of the
+ * draft), German and English, as the product must show them.
+ *
+ * `{Name}` in single braces is a runtime value the screen or the mail fills in
+ * ({E-Mail}, {Datum}, {Modell}, …). `{{key}}` in double braces is an open value
+ * from `lib/legal/open-values.ts` and is resolved by `consentText()`.
+ *
+ * Where they are used in 3.0.21:
+ * - C1 (sign-up dialog): `components/UserOnboarding.tsx`
+ * - C2 (amendment dialog): `components/TermsReacceptGate.tsx`
+ * - C3, C4, C6, C9 (Settings: own key, ending the agreement, community mail),
+ *   C7 (deletion dialog), C5 (confirmation mail, acceptance test T03) and C11
+ *   (suspension notice, T01) are the texts the Settings / own-key packages
+ *   build against. C8 (AI marking) and C10 (invitation mail) live with their
+ *   features. C13 (the voluntary withdrawal function): Settings, the signed-in
+ *   footer of the app shell and the receipt mail `lib/withdrawal-receipt-email.ts`.
+ *   C14 (the one-time notice before the first automatic model call):
+ *   `components/AutoStepsNotice.tsx` on the own-code upload.
+ *   `startRun` (B5/N2 of 06.11.2026): the sentences at the button that starts
+ *   a run of own code, for the start screen and the first run's "create
+ *   project" button. `saveWording`: the save/print actions of C1 and C2.
+ *
+ * Removed against the draft, as the review (E14, E26, E27) says: the re-send
+ * and the in-app display on a failed delivery of the confirmation mail, the
+ * "Mir ist bekannt …" checkbox, the old consumer notice at the key field and
+ * the old "Tarif"/"Beenden" notices of C3/C4.
+ *
+ * `tests/legal-texts-release-gate.spec.ts` checks these strings like the pages.
+ */
+
+type Bi = { de: string; en: string };
+
+export const CONSENT_TEXTS = {
+  /** C1 — sign-up dialog, acceptance of the Terms of Service. */
+  signup: {
+    noticeAbove: {
+      de: 'Bitte lesen Sie beide Texte. Mit dem Klick unten schließen Sie einen Vertrag über die unentgeltliche Nutzung von Clean-Core.io; eine Bestätigung mit einem Link auf den Wortlaut der angenommenen Fassung erhalten Sie anschließend per E-Mail.',
+      en: 'Please read both texts. By clicking below you conclude a contract on the free use of Clean-Core.io; you will receive a confirmation by e-mail afterwards with a link to the wording of the version you accepted.',
+    },
+    privacyCheckbox: {
+      de: 'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
+      en: 'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
+    },
+    termsCheckbox: {
+      de: 'Ich nehme die Nutzungsbedingungen und Community-Richtlinien von Clean-Core.io (Fassung v2.3.0, deutsche Fassung, Wortlaut: clean-core.io/terms/de) an.',
+      en: 'I accept the Clean-Core.io Terms of Service and Community Guidelines (version v2.3.0, English version, wording: clean-core.io/terms).',
+    },
+    noticeBelow: {
+      de: 'Mit „Create my workspace“ geben Sie Ihr Angebot ab; Ihr Konto wird sofort freigeschaltet. Vertragssprache ist Deutsch; maßgeblich ist die deutsche Fassung v2.3.0, auch wenn Sie die Oberfläche später auf Englisch stellen. Sie erhalten eine Vertragsbestätigung an {E-Mail} mit dem Annahmezeitpunkt und einem Link auf den Wortlaut der angenommenen Fassung. Umfragen und Community-Mail erhalten Sie nur, wenn Sie sie später in den Einstellungen einschalten.',
+      en: 'By clicking "Create my workspace" you make your offer; your account is activated immediately. The contract language is English; the English version v2.3.0 governs, even if you later switch the interface to German. You will receive a contract confirmation at {E-Mail} containing the time of acceptance and a link to the wording of the accepted version. You receive surveys and community mail only if you switch them on later in the settings.',
+    },
+    button: { de: 'Create my workspace', en: 'Create my workspace' },
+  },
+
+  /** C2 — amendment dialog at the next sign-in (Terms 10.2). The change list comes from `lib/terms-changes.ts`. */
+  amendment: {
+    lead: {
+      de: 'Die Nutzungsbedingungen ändern sich zum {{termsEffectiveDate}} (Fassung {Fassung}). Was sich ändert und warum:',
+      en: 'The Terms of Service change on {{termsEffectiveDate}} (version {Fassung}). What changes and why:',
+    },
+    afterList: {
+      de: 'Vollständiger Wortlaut: clean-core.io/terms/de. Sie können die Änderung schon jetzt annehmen; wirksam wird sie für Sie erst am {{termsEffectiveDate}}. Bis dahin gilt die bisherige Fassung, und nehmen Sie nicht an, gilt sie auch danach weiter (Ziffer 10.3).',
+      en: 'Full wording: clean-core.io/terms. You can accept the change now; it takes effect for you only on {{termsEffectiveDate}}. Until then the previous version applies, and if you do not accept, it continues to apply after that date as well (section 10.3).',
+    },
+    /** After the effective date: an acceptance then applies from the moment it is given (Terms 10.2). */
+    afterListPastDate: {
+      de: 'Vollständiger Wortlaut: clean-core.io/terms/de. Die Änderung ist seit dem {{termsEffectiveDate}} wirksam. Nehmen Sie sie an, gilt sie für Sie ab Ihrer Annahme; nehmen Sie nicht an, gilt für Sie die bisherige Fassung weiter (Ziffer 10.3).',
+      en: 'Full wording: clean-core.io/terms. The change has been in effect since {{termsEffectiveDate}}. If you accept it, it applies to you from your acceptance; if you do not accept, the previous version continues to apply to you (section 10.3).',
+    },
+    checkbox: {
+      de: 'Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) mit Wirkung zum {{termsEffectiveDate}} an.',
+      en: 'I accept the Terms of Service in version {Fassung} (English version) with effect from {{termsEffectiveDate}}.',
+    },
+    /** After the effective date there is no later date to name. */
+    checkboxPastDate: {
+      de: 'Ich nehme die Nutzungsbedingungen in der Fassung {Fassung} (deutsche Fassung) an.',
+      en: 'I accept the Terms of Service in version {Fassung} (English version).',
+    },
+    accept: { de: 'Annehmen', en: 'Accept' },
+    later: { de: 'Später entscheiden', en: 'Decide later' },
+    notice: {
+      de: 'Nach der Annahme erhalten Sie eine Bestätigung per E-Mail mit dem Wirksamkeitstag und einem Link auf den Wortlaut der angenommenen Fassung.',
+      en: 'After acceptance you will receive a confirmation by e-mail with the effective date and a link to the wording of the accepted version.',
+    },
+    /**
+     * Dialog = notice (final review of the notice, 06.11.2026): the dialog carries what
+     * the notice under section 10.1 carries. The list after this lead and the file are
+     * the notice's own (`lib/terms-announcement/notice-file.ts`), not written here.
+     */
+    noticeListLead: {
+      de: 'Die geänderten Bestimmungen und ihre Gründe nach Ziffer 10.4, wirksam ab {{termsEffectiveDate}}:',
+      en: 'The changed provisions and their reasons under section 10.4, effective from {{termsEffectiveDate}}:',
+    },
+    noticeFile: {
+      de: 'Die Mitteilung nach Ziffer 10.1 mit dem vollständigen geänderten Wortlaut, deutsch und englisch, als Datei:',
+      en: 'The notice under section 10.1 with the full changed wording, in German and English, as a file:',
+    },
+    notRequired: {
+      de: 'Sie müssen nicht annehmen; ohne Annahme gilt die bisherige Fassung weiter.',
+      en: 'You do not have to accept; without acceptance the previous version continues to apply.',
+    },
+  },
+
+  /** C3 — dialog "Store your own Anthropic key", acceptance of the Additional Agreement. */
+  anthropicKey: {
+    title: { de: 'Eigenen Anthropic-Schlüssel hinterlegen', en: 'Store your own Anthropic key' },
+    notices: [
+      {
+        de: 'Empfänger: Mit diesem Schlüssel gehen Ihr Code, die Befunde und die Anweisungen des Schritts an Anthropic Ireland, Limited — unter Ihrem eigenen Vertrag mit Anthropic, nicht unter einem Vertrag mit uns. Voraussetzung ist, dass Ihr Anthropic-Konto bei Anthropic Ireland, Limited geführt wird (Rechnungsadresse im EWR, in der Schweiz oder im Vereinigten Königreich).',
+        en: 'Recipient: With this key your code, the findings and the step\'s instructions go to Anthropic Ireland, Limited — under your own contract with Anthropic, not under a contract with us. Your Anthropic account must be held with Anthropic Ireland, Limited (billing address in the EEA, Switzerland or the UK).',
+      },
+      {
+        de: 'Außerhalb der EU: Wir rufen Anthropic mit der Datenregion „us“ auf; Ihre Anfrage wird nur in den USA verarbeitet, und ruhende Daten liegen nach Anthropics Angaben in den USA. Die Übermittlung in die USA nimmt Anthropic Ireland, Limited als Ihr Auftragsverarbeiter vor; Anthropic ist nicht unter dem EU-U.S. Data Privacy Framework zertifiziert.',
+        en: 'Outside the EU: We call Anthropic with the data region "us"; your request is processed only in the United States, and data at rest is kept in the United States according to Anthropic. The transfer to the United States is made by Anthropic Ireland, Limited as your processor; Anthropic is not certified under the EU-U.S. Data Privacy Framework.',
+      },
+      {
+        de: 'Ihr Vertrag mit Anthropic: Anthropic bietet seine API nur zur geschäftlichen Nutzung an. Hinterlegen Sie nur den Schlüssel eines Geschäftskontos mit Rechnungsadresse im EWR, in der Schweiz oder im Vereinigten Königreich – Sie finden sie in Ihrem Anthropic-Konto unter den Rechnungsangaben.',
+        en: 'Your contract with Anthropic: Anthropic offers its API for business use only. Store only the key of a business account with a billing address in the EEA, Switzerland or the United Kingdom — you find it in your Anthropic account under the billing details.',
+      },
+      {
+        de: 'Modell: Die Plattform ruft {{claudeModelId}} auf; jeder Schritt und die Modellquittung nennen es.',
+        en: 'Model: The Platform calls {{claudeModelId}}; every stage and the model receipt name it.',
+      },
+      {
+        de: 'Nutzungsentgelte: Clean-Core.io ist kostenlos. Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit diesem; wir berechnen und erstatten sie nicht. Für die Datenregion „us“ berechnet Anthropic einen Aufschlag von 10 % auf seinen Standardpreis, den Sie tragen. Die Plattform setzt keine Kostengrenze; setzen Sie eine in Ihrem Anthropic-Konto. Das kostenlose Kontingent gilt mit eigenem Schlüssel nicht.',
+        en: 'Usage fees: Clean-Core.io is free. Charges of the model provider arise in your own contractual relationship with that provider; we neither bill nor reimburse them. For the data region "us" Anthropic charges a 10 % surcharge on its standard price, which you bear. The Platform sets no cost limit; set one in your Anthropic account. The free quota does not apply with your own key.',
+      },
+      {
+        de: 'Kein Rückfall: Scheitert Ihr Schlüssel oder setzen wir Anthropic aus, hält der Schritt an. Kein Aufruf geht auf den Plattform-Schlüssel.',
+        en: 'No fallback: If your key fails or we suspend Anthropic, the step stops. No call goes to the platform key.',
+      },
+      {
+        de: 'Automatische Schritte: Einige Schritte starten wir beim Öffnen eines Projekts selbst. Mit Ihrem Anthropic-Schlüssel laufen sie nur, wenn Sie das hier einschalten.',
+        en: 'Automatic steps: We start some steps ourselves when a project is opened. On your Anthropic key they run only if you switch this on here.',
+      },
+      {
+        de: 'Beenden: Sie beenden die Vereinbarung jederzeit mit „Schlüssel löschen und Vereinbarung beenden“ in den Einstellungen (Zwei-Faktor-Anmeldung erforderlich) oder mit einer Nachricht an info@clean-core.io; danach gilt wieder der Plattform-Schlüssel. Ihr Konto und Ihre Projekte bleiben.',
+        en: 'Ending: You end the agreement at any time with "Delete key and end agreement" in the settings (two-factor sign-in required) or with a message to info@clean-core.io; the platform key then applies again. Your account and projects remain.',
+      },
+      {
+        de: 'Nachweis: Wir halten Fassung, Sprache, Zeitpunkt Ihrer Annahme und den Hashwert des angenommenen Wortlauts fest und senden Ihnen eine Bestätigung per E-Mail mit einem Link auf den Wortlaut der angenommenen Fassung.',
+        en: 'Record: We record version, language, time of your acceptance and the hash value of the accepted wording and send you a confirmation by e-mail with a link to the wording of the accepted version.',
+      },
+    ],
+    autoStepsSwitch: {
+      de: 'Automatische Schritte mit meinem Schlüssel (Standard: aus)',
+      en: 'Automatic steps on my key (default: off)',
+    },
+    fieldText: {
+      de: 'Anthropic-API-Schlüssel – Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit Anthropic; wir berechnen und erstatten sie nicht. Wir rufen Anthropic mit der Datenregion „us“ auf (Aufschlag 10 % auf Anthropics Standardpreis, den Sie tragen). Voraussetzung: ein Geschäftskonto mit Rechnungsadresse im EWR, in der Schweiz oder im Vereinigten Königreich (Vertragspartnerin: Anthropic Ireland, Limited).',
+      en: 'Anthropic API key — Charges of the model provider arise in your own contractual relationship with Anthropic; we neither bill nor reimburse them. We call Anthropic with the data region "us" (10 % surcharge on Anthropic\'s standard price, which you bear). Requirement: a business account with a billing address in the EEA, Switzerland or the UK (contracting party: Anthropic Ireland, Limited).',
+    },
+    modelDisplay: { de: 'Aufgerufenes Modell: {Modell}', en: 'Model called: {Modell}' },
+    checkbox: {
+      de: 'Ich nehme die Zusatzvereinbarung zu eigenen Modellschlüsseln (ZV-BYOK-1.0, Anthropic; vollständiger Wortlaut: clean-core.io/terms/byok-addendum/de) an.',
+      en: 'I accept the Additional Agreement on Own Model Keys (ZV-BYOK-1.0, Anthropic; full wording: clean-core.io/terms/byok-addendum).',
+    },
+    save: { de: 'Speichern und Vereinbarung annehmen', en: 'Save and accept agreement' },
+    cancel: { de: 'Abbrechen (es wird nichts gespeichert)', en: 'Cancel (nothing is stored)' },
+    afterSave: {
+      de: 'Schlüssel gespeichert und getestet (Modellliste abgerufen, kein Code übermittelt). Die Zusatzvereinbarung ZV-BYOK-1.0 (deutsche Fassung) gilt ab jetzt; die Bestätigung mit dem Wortlaut geht an {E-Mail}.',
+      en: 'Key stored and tested (model list read, no code sent). The Additional Agreement ZV-BYOK-1.0 (English version) applies from now on; the confirmation with the wording goes to {E-Mail}.',
+    },
+    replacingGemini: {
+      de: 'Sie ersetzen Ihren Gemini-Schlüssel; er wird gelöscht.',
+      en: 'You are replacing your Gemini key; it will be deleted.',
+    },
+  },
+
+  /** C4 — dialog "Store your own Google Gemini key" (no Additional Agreement). */
+  geminiKey: {
+    title: { de: 'Eigenen Google-Gemini-Schlüssel hinterlegen', en: 'Store your own Google Gemini key' },
+    notices: [
+      {
+        de: 'Regeln: Für einen eigenen Gemini-Schlüssel gelten die Ziffern 5.2 bis 5.4 der Nutzungsbedingungen und die Datenschutzerklärung (Abschnitte 3 und 4). Eine Zusatzvereinbarung ist nicht nötig.',
+        en: 'Rules: Your own Gemini key is governed by sections 5.2 to 5.4 of the Terms of Service and the Privacy Policy (sections 3 and 4). No additional agreement is needed.',
+      },
+      {
+        de: 'Tarif: Verwenden Sie einen Schlüssel aus einem Google-Cloud-Projekt mit aktivem Cloud-Billing-Konto (kostenpflichtiger Tarif); nur dort nutzt Google Ihre Anfragen nicht zum Training, und eine befristete Protokollierung dient nur der Missbrauchserkennung und rechtlich vorgeschriebenen Offenlegungen. Für Nutzer im EWR, in der Schweiz und im Vereinigten Königreich wendet Google diese Regeln nach seinen Bedingungen (Stand 28.04.2026) auch auf das unentgeltliche Kontingent an; außerhalb dieser Regionen gelten ohne Billing-Konto Googles Free-Tier-Bedingungen (Nutzung zum Training, menschliche Prüfung).',
+        en: 'Tier: Use a key from a Google Cloud project with an active Cloud Billing account (paid tier); only there does Google not use your requests for training, and limited logging serves only abuse detection and legally required disclosures. For users in the EEA, Switzerland and the UK, Google applies these rules under its terms (as of 28 April 2026) to the unpaid quota as well; outside those regions, without a billing account, Google\'s free-tier terms apply (use for training, human review).',
+      },
+      {
+        de: 'Empfänger: Google verarbeitet Ihre Anfragen unter Ihrem eigenen Google-Konto und dessen Bedingungen. Welche Google-Gesellschaft Ihr Vertragspartner ist, richtet sich nach Ihrer Rechnungsadresse (Googles Entitätenübersicht: cloud.google.com/terms/google-entity). Wir sind Verantwortlicher für das Senden Ihrer Anfrage; Google ist Empfänger unter Ihrem Konto.',
+        en: 'Recipient: Google processes your requests under your own Google account and its terms. Which Google entity is your contracting party depends on your billing address (Google\'s entity list: cloud.google.com/terms/google-entity). We are the controller for sending your request; Google is the recipient under your account.',
+      },
+      {
+        de: 'Nutzungsentgelte: Clean-Core.io ist kostenlos. Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit diesem; wir berechnen und erstatten sie nicht. Die Plattform setzt keine Kostengrenze; setzen Sie eine in Ihrem Google-Cloud-Projekt. Das kostenlose Kontingent gilt mit eigenem Schlüssel nicht.',
+        en: 'Usage fees: Clean-Core.io is free. Charges of the model provider arise in your own contractual relationship with that provider; we neither bill nor reimburse them. The Platform sets no cost limit; set one in your Google Cloud project. The free quota does not apply with your own key.',
+      },
+      {
+        de: 'Kein Rückfall: Scheitert Ihr Schlüssel, hält der Schritt an. Kein Aufruf geht auf den Plattform-Schlüssel.',
+        en: 'No fallback: If your key fails, the step stops. No call goes to the platform key.',
+      },
+      {
+        de: 'Automatische Schritte: Einige Schritte starten wir beim Öffnen eines Projekts selbst. Mit Ihrem Gemini-Schlüssel laufen sie nur, wenn Sie das hier einschalten.',
+        en: 'Automatic steps: We start some steps ourselves when a project is opened. On your Gemini key they run only if you switch this on here.',
+      },
+      {
+        de: 'Löschen: Sie löschen den Schlüssel jederzeit in den Einstellungen (Zwei-Faktor-Anmeldung erforderlich); danach gilt wieder der Plattform-Schlüssel.',
+        en: 'Deleting: You delete the key at any time in the settings (two-factor sign-in required); the platform key then applies again.',
+      },
+    ],
+    autoStepsSwitch: {
+      de: 'Automatische Schritte mit meinem Schlüssel (Standard: aus)',
+      en: 'Automatic steps on my key (default: off)',
+    },
+    fieldText: {
+      de: 'Gemini-API-Schlüssel — Entgelte des Modellanbieters entstehen in Ihrem eigenen Vertragsverhältnis mit Google; wir berechnen und erstatten sie nicht. Das Google-Cloud-Projekt des Schlüssels muss ein aktives Cloud-Billing-Konto haben; sonst gelten Googles Free-Tier-Bedingungen (Nutzung zum Training, menschliche Prüfung). Ihr Google-Vertragspartner richtet sich nach Ihrer Rechnungsadresse (cloud.google.com/terms/google-entity).',
+      en: 'Gemini API key — Charges of the model provider arise in your own contractual relationship with Google; we neither bill nor reimburse them. The key\'s Google Cloud project must have an active Cloud Billing account; otherwise Google\'s free-tier terms apply (use for training, human review). Your Google contracting entity depends on your billing address (cloud.google.com/terms/google-entity).',
+    },
+    modelDisplay: { de: 'Aufgerufenes Modell: {Modell}', en: 'Model called: {Modell}' },
+    save: { de: 'Speichern', en: 'Save' },
+    cancel: { de: 'Abbrechen (es wird nichts gespeichert)', en: 'Cancel (nothing is stored)' },
+    afterSave: {
+      de: 'Schlüssel gespeichert und getestet (Modellliste abgerufen, kein Code übermittelt). Modellgestützte Schritte laufen ab jetzt über Ihren Gemini-Schlüssel.',
+      en: 'Key stored and tested (model list read, no code sent). Model-supported steps now run on your Gemini key.',
+    },
+    replacingAnthropic: {
+      de: 'Sie ersetzen Ihren Anthropic-Schlüssel. Damit endet die Zusatzvereinbarung ZV-BYOK-1.0, und Ihr Anthropic-Schlüssel wird gelöscht; Sie erhalten eine Bestätigung per E-Mail.',
+      en: 'You are replacing your Anthropic key. This ends the Additional Agreement ZV-BYOK-1.0 and deletes your Anthropic key; you will receive a confirmation by e-mail.',
+    },
+  },
+
+  /** C5 — contract confirmation mail (Terms 1.3, ZV 12, Terms 10.2). Acceptance test T03. */
+  confirmationMail: {
+    subject: {
+      de: 'Ihre Vertragsbestätigung — {Dokument} (deutsche Fassung)',
+      en: 'Your contract confirmation — {Dokument} (English version)',
+    },
+    body: {
+      de: 'Hallo {Vorname},\n\nhiermit bestätigen wir {Gegenstand}, den/die Sie am {Datum} um {Uhrzeit} (UTC) angenommen haben.{Wirksamkeit}\n\nAngenommene Fassung: {Fassung} · Sprache: Deutsch · SHA-256 des Wortlauts: {Hash} · Konto: {E-Mail} · Stelle der Annahme: {Stelle}\n\nDiese Sprachfassung ist für Sie maßgeblich; ein Wechsel der Oberflächensprache ändert daran nichts.\n\nDen Wortlaut der angenommenen Fassung finden Sie unter {Adresse}, zusammen mit dem Hashwert, der aus ihm gebildet wurde. Er bleibt dort abrufbar, solange wir die Plattform betreiben; stellen wir den Betrieb ein, senden wir ihn Ihnen auf Anfrage zu{{t03ConfirmationMail}}.\n\nDiese Bestätigung senden wir Ihnen nach {Grundlage}. Wir halten Fassung, Sprache, Zeitpunkt Ihrer Annahme und den Hashwert des angenommenen Wortlauts in einem Nachweisprotokoll fest — ohne den Inhalt dieser E-Mail — und bewahren diesen Nachweis nach der Datenschutzerklärung (Abschnitte 5 und 6) bis zum Ende des dritten Kalenderjahres nach dem Vertragsende auf.\n\nBitte bewahren Sie diese E-Mail auf.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io',
+      en: 'Hello {Vorname},\n\nThis confirms {Gegenstand}, which you accepted on {Datum} at {Uhrzeit} (UTC).{Wirksamkeit}\n\nAccepted version: {Fassung} · Language: English · SHA-256 of the wording: {Hash} · Account: {E-Mail} · Where accepted: {Stelle}\n\nThis language version governs for you; switching the interface language does not change that.\n\nYou will find the wording of the version you accepted at {Adresse}, together with the hash value calculated from it. It remains available there for as long as we operate the Platform; should we discontinue it, we will send it to you on request{{t03ConfirmationMail}}.\n\nWe send this confirmation under {Grundlage}. We record version, language, time of your acceptance and the hash value of the accepted wording in a proof log — without the content of this e-mail — and keep that record under the Privacy Policy (sections 5 and 6) until the end of the third calendar year after the contract ends.\n\nPlease keep this e-mail.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io',
+    },
+
+    /**
+     * `{Wirksamkeit}` in the body after an amendment (Terms 10.2, G13/G14): the
+     * day it takes effect when accepted early, else that it applies at once.
+     * Empty for a sign-up and for the Additional Agreement.
+     */
+    effectiveOn: {
+      de: ' Die Änderung wird für Sie am {Wirksamkeitstag} wirksam; bis dahin gilt für Sie die bisherige Fassung (Ziffer 10.2).',
+      en: ' The amendment takes effect for you on {Wirksamkeitstag}; until then the previous version applies to you (section 10.2).',
+    },
+    effectiveNow: {
+      de: ' Die Änderung gilt für Sie ab Ihrer Annahme (Ziffer 10.2).',
+      en: ' The amendment applies to you from your acceptance (section 10.2).',
+    },
+  },
+
+  /**
+   * C12 — the invitation mail for a portfolio overview (Art. 14 GDPR) and its
+   * unsubscribe (owner decision 23.10.2026: a portfolio invitation opens the
+   * overview only — no project, no source code). Built by
+   * `lib/portfolio/invitation-email.ts`; since Fassung 1.1 the mail is
+   * bilingual like the project invitation (C10) — German first while there is
+   * no per-account interface language — and uses both texts below.
+   */
+  portfolioInvitation: {
+    scope: {
+      de: 'Sie erhalten nur Lesezugriff auf die Übersicht des Portfolios – Kennzahlen über die Projekte, die beim Versand dieser Einladung darin aufgeführt sind: ihre Namen, Scores, Clean-Core-Stufen und Gruppen, die Arten der Befunde, die verwendeten SAP-Objekte mit ihren Namen (auch eigene Z- und Y-Objekte) und die Namen nicht mitgelieferter Includes. Ein Projekt, das die einladende Person später hinzufügt, wird für Sie erst sichtbar, wenn sie es gesondert freigibt. Kein Projekt und kein Quellcode wird dabei geöffnet.',
+      en: 'You get read access to the portfolio overview only — figures across the projects listed when this invitation was sent: their names, scores, clean core levels and groups, the kinds of findings, the SAP objects they use by name (including custom Z and Y objects) and the names of includes that were not uploaded. A project the person who invited you adds later becomes visible to you only once they share it separately. No project and no source code is opened.',
+    },
+    about: {
+      de: 'Clean-Core.io ist ein unentgeltliches Community-Werkzeug zur Analyse von SAP-ABAP-Code.',
+      en: 'Clean-Core.io is a free community tool for analysing SAP ABAP code.',
+    },
+    unsubscribed: {
+      de: 'Abgemeldet. An diese Adresse geht keine Einladung zu einem Projekt oder Portfolio mehr. Wir behalten dafür nur einen schlüsselbasierten Hashwert der Adresse auf einer Sperrliste, solange wir Einladungen versenden oder bis Sie verlangen, dass wir den Eintrag entfernen – eine Zeile an info@clean-core.io genügt.',
+      en: 'Unsubscribed. No further invitation to a project or portfolio goes to this address. To honour that, we keep only a keyed hash of the address on a suppression list, for as long as we send invitations or until you ask us to remove the entry — one line to info@clean-core.io is enough.',
+    },
+  },
+
+  /** C6 — ending the Additional Agreement / deleting the key. */
+  endAgreement: {
+    displayAnthropic: {
+      de: 'Eigener Schlüssel: Anthropic · Modell: {Modell} · Zusatzvereinbarung ZV-BYOK-1.0 (deutsche Fassung), angenommen am {Datum} · Wortlaut: clean-core.io/terms/byok-addendum/de',
+      en: 'Own key: Anthropic · Model: {Modell} · Additional Agreement ZV-BYOK-1.0 (English version), accepted on {Datum} · Wording: clean-core.io/terms/byok-addendum',
+    },
+    buttonAnthropic: { de: 'Schlüssel löschen und Vereinbarung beenden', en: 'Delete key and end agreement' },
+    displayGemini: {
+      de: 'Eigener Schlüssel: Google Gemini · Modell: {Modell} · Es gelten die Ziffern 5.2 bis 5.4 der Nutzungsbedingungen.',
+      en: 'Own key: Google Gemini · Model: {Modell} · Sections 5.2 to 5.4 of the Terms of Service apply.',
+    },
+    buttonGemini: { de: 'Schlüssel löschen', en: 'Delete key' },
+    dialogAnthropicTitle: {
+      de: 'Anthropic-Schlüssel löschen und Zusatzvereinbarung beenden',
+      en: 'Delete Anthropic key and end the Additional Agreement',
+    },
+    dialogAnthropicText: {
+      de: 'Damit beenden Sie die Zusatzvereinbarung ZV-BYOK-1.0 mit sofortiger Wirkung und löschen Ihren Anthropic-Schlüssel. Danach geht kein Aufruf mehr an Anthropic; modellgestützte Schritte laufen wieder über den Plattform-Schlüssel im Rahmen Ihres Kontingents, bis Sie einen anderen eigenen Schlüssel hinterlegen. Ihr Konto, Ihre Projekte und Ihr Nutzungsvertrag bleiben bestehen. Kopien des Schlüssels in verschlüsselten Sicherungen laufen binnen 30 Tagen aus. Was Anthropic bis jetzt erhalten hat, bewahrt es nach seinen Bedingungen auf. Zeitpunkt und Art der Beendigung halten wir im Nachweisprotokoll fest. Zur Bestätigung geben Sie den Code aus Ihrer Authenticator-App ein.',
+      en: 'This ends the Additional Agreement ZV-BYOK-1.0 with immediate effect and deletes your Anthropic key. After that no call goes to Anthropic; model-supported steps run again on the platform key within your quota until you store another own key. Your account, your projects and your contract on the use of the Platform remain in place. Copies of the key in encrypted backups age out within 30 days. What Anthropic has received so far it keeps under its own terms. We record the time and kind of ending in the proof log. To confirm, enter the code from your authenticator app.',
+    },
+    afterAnthropic: {
+      de: 'Ihr Anthropic-Schlüssel ist gelöscht; die Zusatzvereinbarung ist am {Datum} um {Uhrzeit} (UTC) beendet. Eine Bestätigung geht an {E-Mail}.',
+      en: 'Your Anthropic key has been deleted; the Additional Agreement ended on {Datum} at {Uhrzeit} (UTC). A confirmation goes to {E-Mail}.',
+    },
+    dialogGeminiTitle: { de: 'Gemini-Schlüssel löschen', en: 'Delete Gemini key' },
+    dialogGeminiText: {
+      de: 'Damit löschen Sie Ihren Gemini-Schlüssel. Danach laufen modellgestützte Schritte wieder über den Plattform-Schlüssel im Rahmen Ihres Kontingents. Kopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus. Zur Bestätigung geben Sie den Code aus Ihrer Authenticator-App ein.',
+      en: 'This deletes your Gemini key. Model-supported steps then run again on the platform key within your quota. Copies in encrypted backups age out within 30 days. To confirm, enter the code from your authenticator app.',
+    },
+    afterGemini: { de: 'Ihr Gemini-Schlüssel ist gelöscht.', en: 'Your Gemini key has been deleted.' },
+    mailSubject: {
+      de: 'Zusatzvereinbarung beendet — Anthropic-Schlüssel gelöscht — Clean-Core.io',
+      en: 'Additional Agreement ended — Anthropic key deleted — Clean-Core.io',
+    },
+    mailBody: {
+      de: 'Hallo {Vorname},\n\nIhre Zusatzvereinbarung zu eigenen Modellschlüsseln (ZV-BYOK-1.0, angenommen am {Datum der Annahme}) ist am {Datum} um {Uhrzeit} (UTC) beendet worden: {Grund}. Ihr Anthropic-Schlüssel ist gelöscht; es geht kein Aufruf mehr an Anthropic. Ihr Konto, Ihre Projekte und Ihr Nutzungsvertrag bleiben bestehen. Zeitpunkt und Art der Beendigung sind im Nachweisprotokoll festgehalten (Datenschutzerklärung, Abschnitte 5 und 6). Wir berechnen und erstatten keine Entgelte von Anthropic.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io',
+      en: 'Hello {Vorname},\n\nYour Additional Agreement on Own Model Keys (ZV-BYOK-1.0, accepted on {Datum der Annahme}) ended on {Datum} at {Uhrzeit} (UTC): {Grund}. Your Anthropic key has been deleted; no further call goes to Anthropic. Your account, your projects and your contract on the use of the Platform remain in place. The time and kind of ending are recorded in the proof log (Privacy Policy, sections 5 and 6). We neither bill nor reimburse any Anthropic charges.\n\nFelix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io',
+    },
+  },
+
+  /** C7 — deletion dialog ("Danger Zone"), notice on the proof log. */
+  accountDeletion: {
+    title: { de: 'Konto endgültig löschen', en: 'Delete account permanently' },
+    text: {
+      de: 'Das Löschen Ihres Kontos kündigt Ihren Vertrag mit sofortiger Wirkung (Ziffer 2.3) und beendet eine bestehende Zusatzvereinbarung zu eigenen Modellschlüsseln.\n\nSofort gelöscht werden: Ihr Profil, alle Projekte und der darin enthaltene Quellcode, Analysen und signierte Läufe, Ihr eigener Modellschlüssel, Ihre S/4HANA-Verbindungsdaten, Ihr zweiter Faktor, Support-Anfragen, Umfrageantworten, Ihre Motivation und Ihre Anmeldung. Kopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus.\n\nWas die Löschung nicht erreicht: das Sicherheits-Protokoll der administrativen Handlungen an Ihrem Konto und der Handlungen, die Sie selbst vorgenommen haben (24 Monate ab der Handlung, mit einem schlüsselbasierten Hashwert an der Stelle Ihrer Kontokennung und ohne Adresse Ihres Kontos); ein Inhalt Ihres Kontos, der nach einer Meldung rechtswidriger Inhalte gesperrt ist, bis seine Frist endet; bereits versandte E-Mails (den Inhalt der Mail bewahrt unser Mailanbieter Resend nach seinen Aufbewahrungsregeln auf, derzeit {{resendRetentionDays}} nach dem Versand); was ein Modellanbieter nach seinen Bedingungen aufbewahrt hat; und Nachweise, nicht Daten: Im Nachweisprotokoll ersetzen wir Ihre Adresse durch einen schlüsselbasierten Hashwert und behalten — ohne Namen, Adresse, Code, Prompts, Schlüssel oder IP-Adresse — (1) welche Fassungen der Nutzungsbedingungen und gegebenenfalls der Zusatzvereinbarung Sie wann in welcher Sprache angenommen haben (mit dem Hashwert des Wortlauts) und das heutige Datum als Vertragsende, bis zum 31.12.{Jahr + 3}; (2) den Eintrag „Konto gelöscht am {Datum}“, drei Jahre; (3) Zustellnachweise unserer Mails an Sie (Art, Zeitpunkt, Message-ID, Status — kein Inhalt), 30 bis 90 Tage; (4) falls Sie Community-Mail oder Einladungen abbestellt haben, den Hashwert Ihrer Adresse auf der Sperrliste, solange wir solche Mails versenden oder bis Sie verlangen, dass wir den Eintrag entfernen, damit wir Sie nicht erneut anschreiben. Jeder Eintrag trägt sein eigenes Löschdatum und wird automatisch gelöscht. Einzelheiten: Datenschutzerklärung, Abschnitte 5 und 6.{{proofLog}}\n\nExportieren Sie vorher, was Sie behalten möchten.',
+      en: 'Deleting your account terminates your contract with immediate effect (section 2.3) and ends any Additional Agreement on Own Model Keys.\n\nDeleted immediately: your profile, all projects and the source code in them, analyses and signed runs, your own model key, your S/4HANA connection data, your second factor, support requests, survey answers, your motivation note and your sign-in. Copies in encrypted backups age out within 30 days.\n\nWhat deletion does not reach: the security audit record of administrative actions on your account and of the actions you took yourself (24 months from the action, with a keyed hash in place of your account identifier and no address of your account); content of your account blocked after a report of illegal content, until its period ends; e-mails already sent (our mail provider Resend keeps the content of the mail under its retention rules, currently {{resendRetentionDays}} after sending); what a model provider has kept under its own terms; and proofs, not data: in the proof log we replace your address with a keyed hash and keep — without name, address, code, prompts, key or IP address — (1) which versions of the Terms of Service and, if applicable, the Additional Agreement you accepted, when and in which language (with the digest of the wording), and today\'s date as the end of the contract, until 31 December {Jahr + 3}; (2) the line "account deleted on {Datum}", three years; (3) delivery records of our mails to you (type, time, message id, status — no content), 30 to 90 days; (4) if you opted out of community mail or invitations, the hash of your address on the suppression list, for as long as we send such mail or until you ask us to remove the entry, so that we do not mail you again. Every row carries its own deletion date and is deleted automatically. Details: Privacy Policy, sections 5 and 6.{{proofLog}}\n\nExport what you wish to keep first.',
+    },
+    checkbox: {
+      de: 'Ich habe verstanden, dass meine Projekte und mein Quellcode unwiderruflich gelöscht werden.',
+      en: 'I understand that my projects and my source code will be deleted irrevocably.',
+    },
+    confirm: { de: 'Konto endgültig löschen', en: 'Delete account permanently' },
+    cancel: { de: 'Abbrechen', en: 'Cancel' },
+  },
+
+  /** C9 — opt-in for surveys and community mail; withdrawal (Art. 7(3) GDPR). */
+  communityMail: {
+    switchLabel: { de: 'Community-Mail und Umfragen', en: 'Community mail and surveys' },
+    belowSwitch: {
+      de: 'Aus. Wenn Sie einschalten, senden wir Ihnen gelegentlich Umfragen dazu, was wir als Nächstes bauen sollen, und Community-Neuigkeiten an {E-Mail} — sonst nichts. Das ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO); Sie können sie jederzeit mit Wirkung für die Zukunft widerrufen, mit diesem Schalter oder über den Abmeldelink in jeder dieser Mails (Art. 7 Abs. 3 DSGVO). Ob Sie einschalten, hat keinen Einfluss auf Ihren Zugang, Ihr Kontingent oder eine Funktion. Ohne diese Einwilligung nutzen wir Ihre Kontodaten nur, um den Dienst bereitzustellen. Wir speichern, wann Sie zuletzt ein- und ausgeschaltet haben. Schalten Sie aus, kommt ein schlüsselbasierter Hashwert Ihrer Adresse auf eine Sperrliste, die auch nach dem Löschen Ihres Kontos bleibt, damit wir Sie nicht erneut anschreiben – solange wir die Community-Mail versenden oder bis Sie verlangen, dass wir den Eintrag entfernen.',
+      en: 'Off. If you switch this on, we occasionally send surveys about what we should build next and community updates to {E-Mail} — nothing else. This is your consent (Art. 6(1)(a) GDPR); you can withdraw it at any time with effect for the future, with this switch or with the unsubscribe link in every such mail (Art. 7(3) GDPR). Whether you switch this on has no effect on your access, your quota or any function. Without this consent we use your account data only to provide the service. We store when you last switched it on and off. If you switch it off, a keyed hash of your address goes on a suppression list that remains after your account is deleted, so that we do not mail you again — for as long as we send community mail or until you ask us to remove the entry.',
+    },
+    statusOn: {
+      de: 'Eingeschaltet am {Datum}. Sie können jederzeit widerrufen.',
+      en: 'Switched on on {Datum}. You can withdraw at any time.',
+    },
+    statusOff: {
+      de: 'Ausgeschaltet am {Datum}. Sie erhalten keine Community-Mail und keine Umfragen mehr.',
+      en: 'Switched off on {Datum}. You will receive no more community mail or surveys.',
+    },
+    mailFooter: {
+      de: 'Sie erhalten diese E-Mail, weil Sie am {Datum} in Ihren Kontoeinstellungen „Community-Mail und Umfragen“ eingeschaltet haben. Abmelden (Einwilligung widerrufen): {Link} — ein Klick genügt, wir fragen nicht nach dem Grund. Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · info@clean-core.io',
+      en: 'You receive this e-mail because you switched on "Community mail and surveys" in your account settings on {Datum}. Unsubscribe (withdraw consent): {Link} — one click is enough, we do not ask why. Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany · info@clean-core.io',
+    },
+    unsubscribed: {
+      de: 'Abgemeldet. Ihre Einwilligung ist widerrufen; Sie erhalten keine Community-Mail und keine Umfragen mehr. Der Schalter in Ihren Kontoeinstellungen ist ausgeschaltet. Sie können ihn dort jederzeit wieder einschalten.',
+      en: 'Unsubscribed. Your consent is withdrawn; you will receive no more community mail or surveys. The switch in your account settings is off. You can switch it on again there at any time.',
+    },
+    surveyNotice: {
+      de: 'Mit Ihrer Antwort willigen Sie ein, dass wir sie mit Ihrem Konto speichern, damit sie einmal zählt (Art. 6 Abs. 1 lit. a DSGVO). Sie können das jederzeit widerrufen — eine Zeile an info@clean-core.io genügt, dann löschen wir Ihre Antwort.',
+      en: 'By answering you consent to our storing your answer with your account so that it counts once (Art. 6(1)(a) GDPR). You can withdraw at any time — one line to info@clean-core.io is enough, and we delete your answer.',
+    },
+  },
+
+  /**
+   * C13 — the voluntary withdrawal / termination function (owner decision
+   * 23.10.2026, § 356a BGB as a safeguard; Terms section 13; A6 of 3.0.21).
+   * The entry in Settings and in the signed-in footer opens a withdrawal form
+   * of its own (not the deletion confirmation C7): it shows the name, the
+   * account address and the contract, and the button "Confirm withdrawal" /
+   * "Widerruf bestätigen" sends the declaration to
+   * `app/api/account/withdraw/route.ts`. Once it is received, the declaration
+   * and then the receipt mail are recorded in the proof log, the receipt goes
+   * by e-mail at once — before the erasure, so its delivery record is
+   * pseudonymised with the account's — in the language of the accepted Terms
+   * (`lib/withdrawal-declaration.ts`), and only then the account is deleted.
+   * The interface is English: the form shows the English text with the German
+   * beside it, as the label does.
+   */
+  withdrawal: {
+    label: { de: 'Vertrag widerrufen / beenden', en: 'Withdraw from / end the contract' },
+    settingsLead: {
+      de: 'Sie können den Vertrag über die Nutzung von Clean-Core.io jederzeit widerrufen oder beenden. Die Schaltfläche unten öffnet das Formular: Es zeigt Ihren Namen, Ihre Konto-Adresse und den Vertrag, und Sie bestätigen mit „Widerruf bestätigen“. Den Eingang bestätigen wir Ihnen sofort per E-Mail; danach wird Ihr Konto gelöscht, und der Vertrag endet. Diese Funktion bieten wir freiwillig an (Nutzungsbedingungen, Ziffer 13).',
+      en: 'You can withdraw from or end the contract for the use of Clean-Core.io at any time. The button below opens the form: it shows your name, your account address and the contract, and you confirm with "Confirm withdrawal". We confirm receipt by e-mail at once; then your account is deleted and the contract ends. We offer this function voluntarily (Terms of Service, section 13).',
+    },
+    /** The contract the declaration concerns, as the form and the receipt name it. */
+    contract: { de: 'Vertrag über die Nutzung von Clean-Core.io', en: 'Contract for the use of Clean-Core.io' },
+    /** The declaration itself — what the form shows and the receipt repeats word for word. */
+    declaration: {
+      de: 'Hiermit widerrufe bzw. beende ich den Vertrag über die Nutzung von Clean-Core.io.',
+      en: 'I hereby withdraw from / end the contract for the use of Clean-Core.io.',
+    },
+    formTitle: { de: 'Vertrag widerrufen / beenden', en: 'Withdraw from / end the contract' },
+    formLead: {
+      de: 'Bitte prüfen Sie die Angaben und bestätigen Sie Ihre Erklärung.',
+      en: 'Please check the details and confirm your declaration.',
+    },
+    formDeclaration: { de: 'Ihre Erklärung', en: 'Your declaration' },
+    formName: { de: 'Name', en: 'Name' },
+    formEmail: { de: 'E-Mail-Adresse des Kontos', en: 'Account e-mail address' },
+    formContract: { de: 'Vertrag', en: 'Contract' },
+    formEffect: {
+      de: 'Mit der Bestätigung geht Ihre Erklärung bei uns ein. Wir senden Ihnen sofort eine Eingangsbestätigung an die Adresse oben und löschen danach Ihr Konto mit allen Projekten und dem hochgeladenen Quellcode; damit endet der Vertrag. Was die Löschung nicht erreicht, steht in der Datenschutzerklärung, Abschnitte 5 und 6. Exportieren Sie vorher, was Sie behalten möchten.',
+      en: 'When you confirm, your declaration reaches us. We send you a receipt at once to the address above and then delete your account with all projects and the uploaded source code; with that the contract ends. What the deletion does not reach is set out in the Privacy Policy, sections 5 and 6. Export what you wish to keep first.',
+    },
+    confirm: { de: 'Widerruf bestätigen', en: 'Confirm withdrawal' },
+    cancel: { de: 'Abbrechen', en: 'Cancel' },
+    /** The receipt could not be sent: nothing was deleted, the declaration is on record. */
+    receiptNotSent: {
+      de: 'Ihre Erklärung ist eingegangen und vermerkt, aber die Eingangsbestätigung per E-Mail ließ sich nicht senden. Ihr Konto ist deshalb noch nicht gelöscht. Bitte versuchen Sie es in einigen Minuten erneut oder schreiben Sie an info@clean-core.io.',
+      en: 'Your declaration has been received and recorded, but the receipt could not be sent by e-mail. Your account has therefore not been deleted yet. Please try again in a few minutes or write to info@clean-core.io.',
+    },
+    receiptSubject: {
+      de: 'Clean-Core.io — Eingang Ihrer Erklärung: Vertrag widerrufen / beenden',
+      en: 'Clean-Core.io — receipt of your declaration: withdraw from / end the contract',
+    },
+    receiptReceived: {
+      de: 'Wir haben Ihre Erklärung erhalten, den Vertrag über die Nutzung von Clean-Core.io zu widerrufen bzw. zu beenden.',
+      en: 'We have received your declaration to withdraw from or end the contract for the use of Clean-Core.io.',
+    },
+    receiptDeclaration: { de: 'Ihre Erklärung', en: 'Your declaration' },
+    receiptName: { de: 'Name', en: 'Name' },
+    receiptContract: { de: 'Vertrag', en: 'Contract' },
+    receiptAt: { de: 'Eingegangen am', en: 'Received at' },
+    receiptEffect: {
+      de: 'Wir löschen Ihr Konto jetzt; damit endet der Vertrag (Nutzungsbedingungen, Ziffern 2.3 und 13), und eine Zusatzvereinbarung zu eigenen Modellschlüsseln endet mit ihm. Schlägt die Löschung fehl, sagen Ihnen das die Einstellungen, und Sie können sie wiederholen. Was die Löschung nicht erreicht, steht in der Datenschutzerklärung, Abschnitte 5 und 6.',
+      en: 'We are deleting your account now; with that the contract ends (Terms of Service, sections 2.3 and 13), and an Additional Agreement on Own Model Keys ends with it. If the deletion does not go through, Settings tells you so and you can repeat it. What the deletion does not reach is set out in the Privacy Policy, sections 5 and 6.',
+    },
+    receiptLinkLead: { de: 'Die Nutzungsbedingungen:', en: 'The Terms of Service:' },
+    receiptFooter: {
+      de: 'Gesendet an {E-Mail}, weil diese Adresse zu dem Clean-Core.io-Konto gehört, das auf Ihre Erklärung hin gelöscht wird. Wir senden zu dieser Erklärung nur diese eine Mail.',
+      en: 'Sent to {E-Mail} because this address belongs to the Clean-Core.io account that is being deleted on your declaration. This is the only mail we send about this declaration.',
+    },
+  },
+
+  /** C11 — notice when Anthropic is suspended (ZV clause 6; acceptance test T01). */
+  anthropicSuspended: {
+    notice: {
+      de: 'Aufrufe an Anthropic sind seit dem {Datum} ausgesetzt: {Grund}. Ihr Schlüssel bleibt gespeichert; modellgestützte Schritte stehen nicht zur Verfügung, bis Sie den Schlüssel löschen oder die Grundlage wieder besteht. Wir weichen nicht auf einen anderen Anbieter aus (Zusatzvereinbarung, Ziffern 6 und 8). Die deterministische Analyse ist weiter nutzbar.',
+      en: 'Calls to Anthropic have been suspended since {Datum}: {Grund}. Your key stays stored; model-supported steps are unavailable until you delete the key or the basis is restored. We do not switch to another provider (Additional Agreement, clauses 6 and 8). The deterministic analysis remains available.',
+    },
+    reasons: [
+      {
+        de: 'Anthropic Ireland, Limited ist nicht mehr Vertragspartnerin für Kunden im EWR',
+        en: 'Anthropic Ireland, Limited is no longer the contracting entity for EEA customers',
+      },
+      { de: 'Anthropics Angaben zur Datenregion treffen nicht mehr zu', en: "Anthropic's statements on the data region no longer hold" },
+      { de: 'eine verbindliche Entscheidung verlangt es', en: 'a binding decision requires it' },
+    ],
+  },
+
+  /**
+   * C14 — one-time notice before the first automatic model call (3.0.21, A10):
+   * shown once, at the first upload of own code, before the first project is
+   * opened, with the switch inside it (`components/AutoStepsNotice.tsx`, rule
+   * `lib/auto-steps-notice.ts`). Written for the one automatic step there is
+   * while business names are paused (`NAMING_WITHOUT_FACTS_PAUSED`).
+   * `{Modell}` is the model's provider label, `{Anbieter}` the company the
+   * code goes to — both from the key the step would run on.
+   */
+  autoStepsNotice: {
+    title: {
+      de: 'Vor Ihrem ersten Projekt: automatische KI-Schritte',
+      en: 'Before your first project: automatic AI steps',
+    },
+    lead: {
+      de: 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+      en: 'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+    },
+    switchLabel: { de: 'Alle automatischen KI-Schritte', en: 'All automatic AI steps' },
+    /** Owner decision 06.11.2026 (legal review N1/B2): one switch covers every call the Platform starts without a click. */
+    after: {
+      de: 'Dieser eine Schalter erfasst jeden Modellaufruf, den die Plattform ohne Ihren Klick startet. Sie können ihn jederzeit in den Einstellungen unter „Where the AI model is used“ ändern.',
+      en: 'This one switch covers every model call the platform starts without your click. You can change it any time in Settings under “Where the AI model is used”.',
+    },
+    switchedOff: {
+      de: 'Ausgeschaltet: Ohne Ihren Klick ruft die Plattform kein KI-Modell auf.',
+      en: 'Switched off: the platform calls no AI model without your click.',
+    },
+    // The sentence on Transformation and Documentation calling the model on
+    // opening is gone (legal review N1/B2, 06.11.2026): both tools start only
+    // on a click for every key, so the one switch covers every automatic call.
+    dismiss: { de: 'Verstanden', en: 'Got it' },
+  },
+
+  /**
+   * B5 and N2 of the legal review of 06.11.2026 — the sentences that stand AT
+   * the button that starts a run of own code: the start screen and the
+   * "create project" button of the first run. `{Anbieter}` is the company of
+   * the key the run actually uses (`runNoticeValues`, `lib/legal/run-notice.ts`).
+   * Owner, 06.11.2026: Clean-Core.io is free; nothing before a run may speak
+   * of "costs". No dash in these texts.
+   */
+  startRun: {
+    /** The run calls the model: who receives the code. */
+    modelCall: {
+      de: 'Ruft das KI-Modell auf ({Anbieter}). Dafür geht Ihr Code an {Anbieter}.',
+      en: 'Calls the AI model ({Anbieter}). Your code is sent to {Anbieter} for this.',
+    },
+    /** The run calls no model (the analysis stage is off, or no key is available). */
+    noModelCall: {
+      de: 'Ruft kein KI-Modell auf. Ihr Code verlässt die Plattform nicht.',
+      en: 'Calls no AI model. Your code does not leave the platform.',
+    },
+    /** The general line, as the owner wrote it. `{Anzahl}` is the account's limit. */
+    free: {
+      de: 'Kostenlos. Ein Lauf verbraucht eine Ihrer {Anzahl} Analysen; mit eigenem Schlüssel fallen nur die Nutzungsentgelte Ihres Anbieters an.',
+      en: "Free. A run uses one of your {Anzahl} analyses; with your own key, only your provider's usage fees apply.",
+    },
+    /** On the platform key: the quota line. `{Rest}` is what is left after this run. */
+    freePlatformKey: {
+      de: 'Kostenlos. Dieser Lauf verbraucht eine Ihrer {Anzahl} Analysen; danach bleiben {Rest}.',
+      en: 'Free. This run uses one of your {Anzahl} analyses; {Rest} left after it.',
+    },
+    /** On an own key: no quota, only the provider's fees on the account's own contract. */
+    freeOwnKey: {
+      de: 'Kostenlos. Mit eigenem Schlüssel zählt der Lauf nicht gegen Ihre Analysen; es fallen nur die Nutzungsentgelte Ihres Anbieters an, auf Ihrem eigenen Konto.',
+      en: "Free. With your own key the run does not count against your analyses; only your provider's usage fees apply, on your own account.",
+    },
+    /** A run that is not counted (a shipped example the first time, the same source again). */
+    freeNotCounted: {
+      de: 'Kostenlos. Dieser Lauf zählt nicht gegen Ihre Analysen.',
+      en: 'Free. This run does not count against your analyses.',
+    },
+  },
+
+  /**
+   * C1 and C2: save or print the exact wording of the offered version
+   * (§ 312i Abs. 1 S. 1 Nr. 4 BGB; legal review of 06.11.2026). The file is the
+   * archived wording itself, so its SHA-256 is the hash value the record and
+   * the confirmation name (`components/legal/SaveWordingActions.tsx`).
+   */
+  saveWording: {
+    save: { de: 'Als Datei speichern', en: 'Save as file' },
+    print: { de: 'Drucken', en: 'Print' },
+    hint: {
+      de: 'Speichert den Wortlaut der angebotenen Fassung ({Dokument}) als Textdatei, Wort für Wort so, wie er archiviert ist; sein SHA-256-Hashwert ist der Wert, den Ihre Bestätigung nennt.',
+      en: 'Saves the wording of the version offered ({Dokument}) as a text file, word for word as it is archived; its SHA-256 hash value is the value your confirmation names.',
+    },
+    failed: {
+      de: 'Der Wortlaut ließ sich nicht laden. Sie finden ihn unter {Adresse}.',
+      en: 'The wording could not be loaded. You find it at {Adresse}.',
+    },
+  },
+} as const satisfies Record<string, Record<string, Bi | readonly Bi[]>>;
+
+/** One consent string in `lang`, with open values filled in. */
+export function consentText(text: Bi, lang: LegalLang): string {
+  return resolveLegalSource(text[lang], lang);
+}
+
+/** Every bilingual string of the registry — what the release gate reads. */
+export function allConsentStrings(): Array<{ path: string; text: Bi }> {
+  const out: Array<{ path: string; text: Bi }> = [];
+  for (const [group, entries] of Object.entries(CONSENT_TEXTS)) {
+    for (const [name, value] of Object.entries(entries)) {
+      if (Array.isArray(value)) value.forEach((v, i) => out.push({ path: `${group}.${name}[${i}]`, text: v as Bi }));
+      else out.push({ path: `${group}.${name}`, text: value as Bi });
+    }
+  }
+  return out;
+}

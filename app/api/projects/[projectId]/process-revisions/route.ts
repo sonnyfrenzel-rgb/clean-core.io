@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -14,9 +15,11 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
+import { revisionDocData, storedRevisionXml } from '@/lib/process-revision-store';
 import {
   PROCESS_REVISION_COLLECTION,
   PROCESS_REVISION_FORMAT_VERSION,
+  MAX_REVISION_XML,
   checkRevisionXml,
   isProcessRevisionRecord,
   readRevisionStats,
@@ -25,11 +28,17 @@ import {
   type RevisionAccount,
 } from '@/lib/process-revisions';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson } from '@/lib/url-validation';
+
+/** A drawing of at most MAX_REVISION_XML characters and its base revision, read under a bound before parsing. */
+const SAVE_BODY_LIMITS = { maxBytes: MAX_REVISION_XML * 6 + 16 * 1024, timeoutMs: 20_000 };
+import { parseRevisionCursor, readRevisionPage, type RevisionQuery } from '@/lib/process-revision-page';
 
 /**
  * The revisions of a project's process model — roadmap 3.2.
  *
- *   GET                 → `{ latest, revisions }`, the history without the BPMN.
+ *   GET [?before=n]     → `{ latest, revisions, nextBefore }`, one page of the history
+ *                         without the BPMN, newest page first (`lib/process-revision-page.ts`).
  *   GET ?revision=n     → `{ record }`, one revision with its BPMN, or 404.
  *   POST {}             → `{ record, created }`, revision 1, reconstructed if absent.
  *   POST { xml, baseRevision } → `{ record, created }`, the next revision.
@@ -114,7 +123,7 @@ async function openProject(
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -239,7 +248,8 @@ function summaryOf(data: Record<string, unknown>): ProcessRevisionSummary {
 }
 
 function recordOf(data: Record<string, unknown>): ProcessRevisionRecord {
-  return { ...summaryOf(data), xml: String(data.xml ?? '') };
+  const doc = revisionDocData(data);
+  return { ...summaryOf(doc), xml: String(doc.xml ?? '') };
 }
 
 type AdminDb = Awaited<ReturnType<typeof getAdminDb>>['db'];
@@ -461,8 +471,18 @@ async function ensureBaseline(
     xml,
   };
 
+  const stored = storedRevisionXml(xml);
+  if (!stored) {
+    return {
+      refusal: NextResponse.json(
+        { error: 'The process reconstructed from this program is too large to keep as a revision.', code: 'too-large' },
+        { status: 413 },
+      ),
+    };
+  }
+
   try {
-    await revisionsOf(db, gate.projectId).doc('1').create(record);
+    await revisionsOf(db, gate.projectId).doc('1').create({ ...record, ...stored });
     return { record, created: true };
   } catch (err: unknown) {
     // Two calls reconstructed at once. The one that lost reads the winner's
@@ -525,14 +545,23 @@ export async function GET(
         : NextResponse.json({ error: 'This revision was written in a shape this build cannot read.', code: 'format-version' }, { status: 409 });
     }
 
-    const snap = await revisionsOf(db, gate.projectId).orderBy('revision', 'asc').get();
-    const docs = snap.docs as Array<{ data: () => Record<string, unknown> }>;
-    const revisions = docs
-      .map((d): ProcessRevisionSummary => summaryOf(d.data()))
-      .filter((r: ProcessRevisionSummary) => r.formatVersion === PROCESS_REVISION_FORMAT_VERSION);
+    // The history in pages, summaries only: `lib/process-revision-page.ts`.
+    const before = parseRevisionCursor(req.nextUrl.searchParams.get('before'));
+    if (before === 'bad') {
+      return NextResponse.json({ error: 'before is a whole number from 2 upwards.', code: 'bad-request' }, { status: 400 });
+    }
+    const collection = revisionsOf(db, gate.projectId) as unknown as RevisionQuery;
+    const page = await readRevisionPage(collection, before);
+    const summaries = (docs: Array<Record<string, unknown>>) =>
+      docs
+        .map((d): ProcessRevisionSummary => summaryOf(d))
+        .filter((r: ProcessRevisionSummary) => r.formatVersion === PROCESS_REVISION_FORMAT_VERSION);
+    const revisions = summaries(page.docs);
+    const newest = before === null ? revisions : summaries((await readRevisionPage(collection, null, 1)).docs);
     return NextResponse.json({
-      latest: revisions.length ? revisions[revisions.length - 1].revision : null,
+      latest: newest.length ? newest[newest.length - 1].revision : null,
       revisions,
+      nextBefore: page.nextBefore,
     });
   } catch (err: unknown) {
     logger.error('process-revisions read failed', { route: 'api/projects/process-revisions', error: errMessage(err) });
@@ -548,7 +577,9 @@ export async function POST(
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    const body = (await req.json().catch(() => null)) as { xml?: unknown; baseRevision?: unknown } | null;
+    const read = await readBoundedRequestJson(req, SAVE_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { xml?: unknown; baseRevision?: unknown } | null;
     const { db } = await getAdminDb();
 
     // A model that is refused is refused before anything is written: checked
@@ -615,8 +646,16 @@ export async function POST(
       xml: checked.xml,
     };
 
+    const stored = storedRevisionXml(checked.xml);
+    if (!stored) {
+      return NextResponse.json(
+        { error: 'This model is too large to keep as a revision.', code: 'too-large' },
+        { status: 413 },
+      );
+    }
+
     try {
-      await revisionsOf(db, gate.projectId).doc(String(record.revision)).create(record);
+      await revisionsOf(db, gate.projectId).doc(String(record.revision)).create({ ...record, ...stored });
     } catch (err: unknown) {
       if (!isAlreadyExists(err)) throw err;
       // Somebody else got this number between the read and the write. Nothing

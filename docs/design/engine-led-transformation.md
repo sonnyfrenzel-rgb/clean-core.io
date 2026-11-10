@@ -614,8 +614,8 @@ So the calls of one generation run under a **lease**:
 - **Transformation UI**: the file tree groups `srv/steps/*` under their step titles in reading order;
   above a selected function's code a chip row shows `L500–L540` (links to Analyze's source column at
   those lines), the rule ids (link to the rule in the Business view) and the provenance of the body:
-  *Reconstructed* for engine-written files, *Model proposal* for filled bodies (DESIGN.md §4; a fill is
-  a model proposal, never *Proven*). A not-filled unit shows the *Not determined* chip with the reason.
+  *Reconstructed* for engine-written files, *AI-generated* for filled bodies (DESIGN.md §4; a fill is
+  an AI-generated draft, never *Proven*). A not-filled unit shows the *Not determined* chip with the reason.
 
 ### 12.2 Generation token and binding
 
@@ -772,7 +772,7 @@ what is different in factual terms:
 - **Each slot** shows: the tool name, a link back to it (opens in a new tab while a generation runs,
   labelled so; same tab before and after), its date or revision (run date, need revision, spec
   revision, decision date), its facts with the level chip — *Reconstructed* (engine), *Confirmed*
-  (your decision), *Model proposal* (model), *Imported* (SAP catalogs: successors, level A–D) — and,
+  (your decision), *AI-generated* (model), *Imported* (SAP catalogs: successors, level A–D) — and,
   when its input is **missing or stale**, a warning line in that slot with a link to fix it ("No rule
   decided yet — decide in the Business view", "Design is older than the latest run — update it").
 - **The work panel** (right column from L): the units in reading order, grouped by step; each row

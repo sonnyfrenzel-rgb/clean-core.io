@@ -141,7 +141,7 @@ test.describe('the stage, rendered', () => {
 
     await expectOnePlaceEach(page);
     // The model's summary says whose it is while it is closed.
-    await expect(page.locator('#analyze-summary')).toContainText('Model proposal');
+    await expect(page.locator('#analyze-summary')).toContainText('AI-generated');
 
     // The route explains its decision path one action deeper; there is no
     // switch, and the one next action is the decision in Management.
@@ -180,7 +180,7 @@ test.describe('the stage, rendered', () => {
     const trigger = plan.locator('[data-cc-disclosure-trigger]').first();
     await expect(trigger).toContainText('Business value and action plan');
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    await expect(plan).toContainText('Model proposal');
+    await expect(plan).toContainText('AI-generated');
     await trigger.click();
     await expect(plan.locator('[data-action-plan-origin]')).toBeVisible();
     await expect(plan).toContainText('Legacy Asset Value');

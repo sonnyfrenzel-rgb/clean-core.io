@@ -1,6 +1,9 @@
 import { getAdminDb } from '@/lib/firebase-admin';
 import { TERMS_VERSION } from '@/lib/constants';
-import { archivedTermsSha256 } from '@/lib/terms-versions';
+import { archivedTermsSha256For, isTermsLanguage, type TermsLanguage } from '@/lib/terms-versions';
+import { PROOF_LOG_RETENTION } from '@/lib/proof-log';
+import { acceptanceEffectiveAt, type ConsentOccasion } from '@/lib/terms-effective';
+import { TERMS_EFFECTIVE_DATE_ISO } from '@/lib/legal/open-values';
 
 /**
  * Server-authoritative Terms/Privacy consent (finding V14).
@@ -16,6 +19,15 @@ import { archivedTermsSha256 } from '@/lib/terms-versions';
  * Both writes go through the Admin SDK. The client can no longer produce either.
  */
 
+/** The account has no profile — erased, or never registered. Nothing was written. */
+export class ConsentProfileMissingError extends Error {
+  readonly code = 'profile-missing';
+  constructor() {
+    super('There is no account profile to record this consent for.');
+    this.name = 'ConsentProfileMissingError';
+  }
+}
+
 export interface RecordConsentInput {
   uid: string;
   /** Server-derived address; never taken from a request body. */
@@ -27,6 +39,35 @@ export interface RecordConsentInput {
    * so it is the one field here a caller may still supply.
    */
   locale?: string | null;
+  /**
+   * The language version of the Terms the person ticked and accepted (section
+   * 1.4 of Terms v2.3.0; acceptance test T02) — German or English. Not the interface
+   * locale: the dialog lets the reader choose the contract language, and that
+   * choice is what governs. Anything else records English, the only version
+   * the dialogs offered before Terms v2.3.0.
+   */
+  termsLanguage?: unknown;
+  /**
+   * Sign-up or the acceptance of an amendment (Terms 10.2). An amendment
+   * accepted before its announced day takes effect only on that day
+   * (`lib/terms-effective.ts`); omitted, the acceptance is a sign-up.
+   */
+  occasion?: ConsentOccasion;
+  /**
+   * The version the account accepted before, read by the caller from the
+   * profile — it stays the version in effect until an early acceptance takes
+   * effect. Ignored for a sign-up.
+   */
+  previousVersion?: string | null;
+  /** The server's clock; a spec passes a fixed time. */
+  now?: Date;
+  /** The announced effective day (`TERMS_EFFECTIVE_DATE_ISO` unless a spec passes another). */
+  effectiveDateIso?: string | null;
+}
+
+/** The language version an acceptance request names, or English. */
+export function acceptedTermsLanguageOf(value: unknown): TermsLanguage {
+  return isTermsLanguage(value) ? value : 'en';
 }
 
 /**
@@ -58,18 +99,52 @@ export interface RecordConsentInput {
  * wording is not pinned for this version", which is true and checkable.
  */
 
-export async function recordConsent({
-  uid,
-  email,
-  source,
-  locale,
-}: RecordConsentInput): Promise<{ termsVersion: string }> {
-  const { db, FieldValue } = await getAdminDb();
+/** What a recorded acceptance returns: what the record says, for the confirmation mail. */
+export interface RecordedConsent {
+  termsVersion: string;
+  termsLanguage: TermsLanguage;
+  /** SHA-256 of the archived wording of that language version, or null. */
+  digest: string | null;
+  /** When the acceptance was given (the server's clock), ISO. */
+  acceptedAt: string;
+  /** When it takes effect, ISO — later than `acceptedAt` only for an amendment accepted before its announced day. */
+  effectiveAt: string;
+}
 
-  // The wording of the version being accepted, as a digest. Null while that
-  // version has no archived text — see the note above on why null and not a
-  // stand-in.
-  const contentSha256 = archivedTermsSha256(TERMS_VERSION);
+/** The two Firestore calls a consent makes — what a spec stands in for. */
+interface ConsentBatch {
+  create(ref: unknown, data: Record<string, unknown>): unknown;
+  update(ref: unknown, data: Record<string, unknown>): unknown;
+  commit(): Promise<unknown>;
+}
+export interface ConsentDeps {
+  db: { batch(): ConsentBatch; collection(name: string): { doc(id?: string): unknown } };
+  FieldValue: { serverTimestamp(): unknown };
+}
+
+/**
+ * `deps` exists so a spec can watch the writes without a database; callers
+ * pass the input alone.
+ */
+export async function recordConsent(
+  { uid, email, source, locale, termsLanguage, occasion = 'sign-up', previousVersion = null, now = new Date(), effectiveDateIso = TERMS_EFFECTIVE_DATE_ISO }: RecordConsentInput,
+  deps?: ConsentDeps,
+): Promise<RecordedConsent> {
+  const { db, FieldValue } = deps ?? (await getAdminDb());
+
+  // T02: the language version accepted, and the digest of exactly that
+  // version's archived wording — the German file for a German acceptance,
+  // never the English digest for it. Null while that language version has no
+  // archived text — see the note above on why null and not a stand-in.
+  const language = acceptedTermsLanguageOf(termsLanguage);
+  const contentSha256 = archivedTermsSha256For(TERMS_VERSION, language);
+
+  // Terms 10.2 (G13): the time of acceptance and the day it takes effect are
+  // two facts and are kept as two. Until that day the version accepted before
+  // stays in effect for the account (`termsVersionInEffectFor`).
+  const effectiveAt = acceptanceEffectiveAt(occasion, now, effectiveDateIso);
+  const pending = effectiveAt.getTime() > now.getTime();
+  const previous = pending && previousVersion && previousVersion !== TERMS_VERSION ? previousVersion : null;
 
   // One batch, so the record and the state enforcement reads commit together
   // or not at all. Two awaited writes could leave an acceptance on record that
@@ -83,26 +158,56 @@ export async function recordConsent({
     uid,
     userId: uid,
     email,
+    kind: 'accepted',
     termsVersion: TERMS_VERSION,
     privacyVersion: TERMS_VERSION,
+    termsLanguage: language,
     contentSha256,
-    locale: typeof locale === 'string' ? locale : null,
+    locale: typeof locale === 'string' ? locale.slice(0, 35) : null,
     source,
+    occasion,
     createdAt: FieldValue.serverTimestamp(),
+    acceptedAt: now,
+    effectiveAt,
+    // The proof log (T05/T06): the record's own deletion date. Unknown while
+    // the contract runs — it is set, with the keyed hash in place of the
+    // address, when the contract ends (`lib/proof-log.ts`).
+    retention: PROOF_LOG_RETENTION,
+    expiresAt: null,
   });
 
   // 2) mirror the accepted version onto the profile (server timestamp).
-  batch.set(
-    db.collection('users').doc(uid),
-    {
-      termsVersionAccepted: TERMS_VERSION,
-      termsAcceptedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+  //
+  // An update, not a merge (L-01): it fails when the profile does not exist,
+  // and the batch with it, so the event above is not written either. An ID
+  // token stays valid for up to an hour after the account it names was erased,
+  // and a merge onto a missing document recreates it — a consent recorded with
+  // such a token brought a deleted account's profile back. A consent belongs to
+  // an account that exists.
+  batch.update(db.collection('users').doc(uid), {
+    termsVersionAccepted: TERMS_VERSION,
+    termsLanguageAccepted: language,
+    termsAcceptedAt: FieldValue.serverTimestamp(),
+    termsEffectiveAt: effectiveAt,
+    // The version that keeps applying until `termsEffectiveAt`; null once the
+    // accepted version is the one in effect.
+    termsVersionPrevious: previous,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
 
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (err: unknown) {
+    // gRPC NOT_FOUND: the profile is gone. Named, so a caller can say so.
+    if ((err as { code?: unknown } | null)?.code === 5) throw new ConsentProfileMissingError();
+    throw err;
+  }
 
-  return { termsVersion: TERMS_VERSION };
+  return {
+    termsVersion: TERMS_VERSION,
+    termsLanguage: language,
+    digest: contentSha256,
+    acceptedAt: now.toISOString(),
+    effectiveAt: effectiveAt.toISOString(),
+  };
 }

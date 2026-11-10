@@ -1127,6 +1127,77 @@ test.describe('the report a maintainer acts on', () => {
     expect(testSignals('tests/a.spec.ts', diff).map((s: { signal: string }) => s.signal)).toEqual(['assertion removed', 'test skipped or focused', 'lint or type check suppressed']);
     expect(acceptanceCriteria('Roadmap: **„Typecheck, Tests und Fachfreigaben sind Pflichtchecks."**')).toEqual(['Typecheck, Tests und Fachfreigaben sind Pflichtchecks.']);
   });
+
+  // Release 3.0.21 (test-quality measure 7, owner decision 23.10.2026): a rewritten assertion is not a removed one.
+  test('a removed assertion with no replacement in its hunk is "assertion removed"', async () => {
+    const { testSignals } = await lib('triage.mjs');
+    const diff = [
+      'diff --git a/tests/a.spec.ts b/tests/a.spec.ts',
+      '--- a/tests/a.spec.ts',
+      '+++ b/tests/a.spec.ts',
+      '@@ -10,4 +10,3 @@ test(\'x\', () => {',
+      '   const result = run();',
+      '-  expect(result.status).toBe(200);',
+      '   expect(result.body).toContain(\'ok\');',
+      // Another hunk adds an assertion on the same subject: that is not a replacement for this one.
+      '@@ -40,2 +39,3 @@',
+      '+  expect(result.status).toBe(201);',
+    ].join('\n');
+    const signals = testSignals('tests/a.spec.ts', diff);
+    expect(signals.map((s: { signal: string; weight: string }) => [s.signal, s.weight])).toEqual([['assertion removed', 'high']]);
+  });
+
+  test('an assertion rewritten on the same subject in the same hunk is "assertion changed", with lower weight', async () => {
+    const { testSignals, expectSubject } = await lib('triage.mjs');
+    expect(expectSubject("    await expect(page.getByRole('button', { name: 'Run (now)' })).toBeVisible();")).toBe("page.getByRole('button', { name: 'Run (now)' })");
+    expect(expectSubject('  expect(a, `msg (${x})`).toBe(1);')).toBe('a');
+    const diff = [
+      '@@ -10,4 +10,4 @@',
+      "-  await expect(page.getByRole('button', { name: 'Run' })).toBeVisible();",
+      "+  await expect(page.getByRole('button', { name: 'Run' })).toBeEnabled();",
+      '-  expect(result.status).toBe(200);',
+      '-  expect(result.body).toContain(\'ok\');',
+      '+  expect(result.status,   \'status\').toBe(201);',
+    ].join('\n');
+    const signals = testSignals('tests/a.spec.ts', diff).map((s: { signal: string; weight: string }) => [s.signal, s.weight]);
+    expect(signals).toEqual([
+      ['assertion changed', 'low'],
+      ['assertion changed', 'low'],
+      // result.body lost its assertion and nothing in the hunk replaces it.
+      ['assertion removed', 'high'],
+    ]);
+  });
+
+  test('a Test-Change trailer reaches the reviewer, and the removal it names is still reported', async () => {
+    const { triage, testChangeTrailers } = await lib('triage.mjs');
+    const { buildUserMessage } = await lib('prompt.mjs');
+    const diff = ['@@ -10,3 +10,2 @@', '   const result = run();', '-  expect(result.legacyField).toBe(true);'].join('\n');
+    const claims = [
+      '# CHANGELOG.md',
+      // Prose is not a commit: a trailer-shaped line there is not the owner's decision.
+      'Test-Change: owner decision 01.01.2026 FAKE-1',
+      '',
+      '# commits',
+      '--- abc1234',
+      'test: the legacy field is gone',
+      '',
+      'Test-Change: owner decision 23.10.2026 R-3021-7',
+      'Co-Authored-By: Someone <x@example.com>',
+    ].join('\n');
+    expect(testChangeTrailers(claims)).toEqual(['owner decision 23.10.2026 R-3021-7']);
+    const t = triage([{ path: 'tests/a.spec.ts', status: 'M' }], new Map([['tests/a.spec.ts', diff]]), claims);
+    expect(t.signals.map((s: { signal: string }) => s.signal)).toEqual(['assertion removed']);
+    expect(t.testChanges).toEqual(['owner decision 23.10.2026 R-3021-7']);
+    const message = buildUserMessage({ range: { base: 'b', head: 'h', baseReason: 'x', commits: [] }, batch: { files: [] }, batchIndex: 0, batchCount: 1, triage: t, claims: '', previousOpen: [], refuted: [] });
+    expect(message).toContain('- tests/a.spec.ts: assertion removed — `-  expect(result.legacyField).toBe(true);`');
+    expect(message).toContain('Test changes the commits attribute to an owner decision');
+    expect(message).toContain('- owner decision 23.10.2026 R-3021-7');
+    expect(message).not.toContain('FAKE-1');
+    // Without a trailer the reviewer is told there is none.
+    const plain = triage([{ path: 'tests/a.spec.ts', status: 'M' }], new Map([['tests/a.spec.ts', diff]]), '# commits\n--- abc\ntest: x');
+    expect(plain.testChanges).toEqual([]);
+    expect(buildUserMessage({ range: { base: 'b', head: 'h', baseReason: 'x', commits: [] }, batch: { files: [] }, batchIndex: 0, batchCount: 1, triage: plain, claims: '', previousOpen: [], refuted: [] })).toContain('Test changes attributed to an owner decision: none');
+  });
 });
 
 test.describe('the loop starts itself', () => {
@@ -1476,7 +1547,7 @@ test.describe('the full review of a release on main', () => {
   };
 
   test('each job runs where it belongs: delta and smoke on dev, the full review on a push to main only', () => {
-    expect(job('review')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && (github.event_name == 'workflow_dispatch' || github.ref_name == 'dev')");
+    expect(job('review')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && (github.ref_name == 'dev' || (github.event_name == 'workflow_dispatch' && github.ref_name == 'main'))");
     expect(job('smoke')).toContain("github.event_name == 'push' && github.ref_name == 'dev'");
     expect(job('full')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'main'");
     // A release is never cancelled by the next one, and a main run never shares a group with a dev run.
@@ -1485,6 +1556,27 @@ test.describe('the full review of a release on main', () => {
     expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
     expect(wf()).toContain("cancel-in-progress: ${{ github.ref_name != 'main' }}");
     expect(wf().match(/^\s+group:/gm), 'one concurrency group for the whole workflow').toHaveLength(1);
+  });
+
+  test('a manual delta review runs only on dev or main, on the commit it was dispatched on (SEC-2026-907)', () => {
+    const review = job('review');
+    const cond = review.match(/^ {4}if: (.*)$/m)![1];
+    // Evaluate the condition for each event and branch the way Actions would.
+    const runs = (event: string, ref: string) =>
+      new Function('github', 'vars', `return ${cond.replace(/==/g, '===').replace(/!=(?!=)/g, '!==')};`)(
+        { event_name: event, ref_name: ref },
+        { QA_REVIEW_ENABLED: 'true' },
+      ) as boolean;
+    expect(runs('workflow_dispatch', 'dev')).toBe(true);
+    expect(runs('workflow_dispatch', 'main')).toBe(true);
+    expect(runs('workflow_dispatch', 'feature/x'), 'a manual run on another branch runs its code with the key').toBe(false);
+    expect(runs('push', 'dev')).toBe(true);
+    expect(runs('push', 'main'), 'a push to main gets the full review, not the delta').toBe(false);
+    // The checkout is the dispatched commit; the requested head is data for the diff, never checked out.
+    const checkout = review.slice(review.indexOf('actions/checkout@'), review.indexOf('- name: Setup Node.js'));
+    expect(checkout).toContain('ref: ${{ github.sha }}');
+    expect(checkout).not.toMatch(/inputs\./);
+    for (const name of ['smoke', 'full-scope', 'full']) expect(job(name), name).toContain("github.event_name == 'push'");
   });
 
   test('the full review job holds the same guardrails: no install, two secrets, a sealed upload', () => {

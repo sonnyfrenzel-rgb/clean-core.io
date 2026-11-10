@@ -394,11 +394,12 @@ test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild
     expect(warn(recorded('rebuild · Rebuild side by side'))).toBeNull();
   });
 
-  test('nothing on record that weighs SAP standard: the standard-fit warning, to IT #standard and back', () => {
+  // To the Management decision since 22.10.2026 (owner decision): only the account's decision weighs the standard.
+  test('nothing on record that weighs SAP standard: the standard-fit warning, to the decision in Management and back', () => {
     const expected = {
       kind: 'standard-fit-open',
-      text: 'Standard fit is not assessed yet — SAP standard may already cover this.',
-      link: { label: 'Check standard fit', href: '/project/p1?view=it&origin=transformation.tips#standard' },
+      text: 'SAP standard has not been weighed against a rebuild yet — decide Keep, Rebuild, Move to SAP standard or Retire first.',
+      link: { label: 'Decide in Management', href: '/project/p1?view=management&origin=transformation.tips#decision-card' },
     };
     expect(warn(undefined)).toEqual(expected);
     expect(warn(recorded(null))).toEqual(expected);
@@ -453,15 +454,15 @@ test.describe('the page', () => {
   const PAGE = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
   const code = PAGE.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-  test('the load starts nothing; the first generation starts by itself only when no tip is open', () => {
+  test('the load starts nothing, and nothing starts the first generation by itself', () => {
     const load = code.slice(code.indexOf('const fetchProject = async'), code.indexOf('fetchProject();'));
     expect(load).not.toContain('generateTransformation(');
     // Owner, 12.10.2026: never by itself while the decision warning shows.
     expect(code).toMatch(/const warning = decisionWarning\(chainInputs\);/);
-    expect(code).toMatch(/const nothingOpen = settled && tips\.length === 0 && warning === null;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?warning=\{warning\}/);
-    // 13.10.2026: and only once the plan is read and the pre-flight check allows it.
-    expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canStart \|\| !planSettled \|\| files\.length > 0/);
+    // Legal review 06.11.2026 (item 1): the first generation waits for a click on every key.
+    expect(code).not.toContain('autoStarted');
+    expect(code).not.toMatch(/setTimeout\(\(\) => generateTransformation/);
     expect(code).toMatch(/const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?onGenerate=\{startGeneration\}/);
   });

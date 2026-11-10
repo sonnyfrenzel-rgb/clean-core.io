@@ -242,8 +242,22 @@ export const PLAN_VERSION = 2;
  * the original (`status TYPE c LENGTH ode`) is carried as `abap.char( 255 )` with a `@cc-type-unresolved` note naming
  * its declaration and line, and TRACE.md and STATUS.md list it, instead of leaving the entity silently (rap-save.ts).
  * Nothing signed changes (§12.3).
+ * 23 (3.0.21, the SD acceptance run of 3.0.20: a split part on Node never saw the routine's USING/CHANGING parameters
+ * and guessed where its input came from): Node — every part of a split routine with parameters takes the parent's
+ * `args` after `local` (`<fn>Part<n>(sel, st, local, args: <Fn>Args)`, the interface imported from the parent's file),
+ * and the parent hands its own `args` to each part; the stop flag and the locals hand-over stay. RAP has always done
+ * so. Also in 23 (owner decision 22.10.2026, the slice review): both tracks — a large METHOD of a local class is split
+ * like a large FORM, at its own top-level statements (`topStatements` read the method's block as one more enclosing
+ * level and never found one), with the same hand-over of the locals its parts read or write; a method that RETURNs a
+ * value is kept whole (`methodReturnsValue`, unit-plan.ts). Also in 23 (the external MM review of 22.10.2026): RAP — the
+ * query provider applies the request's filter and sort order to the rows the logic computed over the whole input, so
+ * a display filter never removes a competing document from what is computed (`QUERY_FILTER_AND_SORT`); the custom
+ * entity's amounts reference the row's currency key (`abap.cuky( 5 )`, `@Semantics.amount.currencyCode`, a packed
+ * amount as `abap.curr`), and an integer amount is noted as the currency's smallest unit, not the amount
+ * (`amountElements`). From engine 3.0.21 the architecture reads what a run reaches (`architecture.ts`). Nothing
+ * signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 22;
+export const SCAFFOLD_VERSION = 23;
 
 /* -------------------------------------------------------------- budgets */
 

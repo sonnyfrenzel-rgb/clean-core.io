@@ -180,6 +180,18 @@ test.describe('delivery page — QA full review of v2.20.0', () => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await signInViaLanding(page, EMAIL, PASSWORD);
+    // Since roadmap 3.0.21 (way in and way back, points 1 and 13) the project
+    // frame (`components/ProjectFrame.tsx`) answers first: one no-access
+    // sentence, and no stage under it.
+    await page.goto(`/project/${FOREIGN}/delivery`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-project-gate="no-access"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole('button', { name: 'Export Guide' })).toHaveCount(0);
+    // When the frame's access answer does not come, the page renders and its
+    // own read fails — that path still ends in the error, not in deliverables.
+    await page.route(
+      (url) => url.pathname.startsWith('/api/projects/') && url.searchParams.get('for') === 'access',
+      (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }),
+    );
     await page.goto(`/project/${FOREIGN}/delivery`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-delivery-load-failed]')).toBeVisible({ timeout: 60000 });
     await expect(page.getByRole('button', { name: 'Export Guide' })).toHaveCount(0);

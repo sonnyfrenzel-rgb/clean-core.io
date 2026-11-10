@@ -35,13 +35,15 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import StageFooter from '@/components/StageFooter';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import { designOpenQuestions, wt } from '@/lib/workspace-messages';
+import { designOpenQuestions, questionsPanelSummary, wt } from '@/lib/workspace-messages';
+import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import {
   ANSWERS_READING,
   businessAnswersDigest,
   businessAnswersMoved,
   businessAnswersPromptRule,
   businessAnswersSection,
+  designProposalShown,
   designWriteEnabled,
   designWriteGate,
   withBusinessAnswersBasis,
@@ -247,6 +249,10 @@ export default function DesignPage() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [nfrData, setNfrData] = useState<NFRData | null>(null);
   const [designError, setDesignError] = useState<string | null>(null);
+  // The project itself could not be read. Said above everything, not in the
+  // document tab: since the canvas-first page (3.0.21) that tab is not the one
+  // a reader sees first, and a failed read sat behind it unseen.
+  const [loadFailed, setLoadFailed] = useState(false);
   /**
    * When the solution design this page is writing was started, or `null`.
    * It is written on the owner's click only (owner decision 22.10.2026: the
@@ -286,6 +292,27 @@ export default function DesignPage() {
   useEffect(() => {
     businessAnswersRef.current = businessAnswers;
   }, [businessAnswers]);
+  /**
+   * "Skip questions" was clicked (owner decision 22.10.2026, ADR-106): the
+   * proposal shows without the answers. A view of this tab, nothing stored on
+   * the project — kept for the tab's session so a reload does not ask again.
+   */
+  const skipKey = `cc:design-skip-questions:${String(projectId)}`;
+  const [skipped, setSkipped] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && window.sessionStorage.getItem(skipKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const skipQuestions = useCallback(() => {
+    setSkipped(true);
+    try {
+      window.sessionStorage.setItem(skipKey, '1');
+    } catch {
+      /* the choice holds for this page view */
+    }
+  }, [skipKey]);
 
   /**
    * The design on record now, read again — what a page adopts when another
@@ -555,7 +582,8 @@ ${DESIGN_ANSWER_REMINDER}`;
               const kept: Record<string, string> = {};
               for (const key of Object.values(nfrLib.NFR_MODEL_KEY)) {
                 const value = (parsed as Record<string, unknown>)[key];
-                if (typeof value === 'string' && value.trim()) kept[key] = value.trim();
+                // firestore.rules holds each topic to 20,000 characters.
+                if (typeof value === 'string' && value.trim()) kept[key] = value.trim().slice(0, 20_000);
               }
               nfrForDesign = Object.keys(kept).length ? kept : null;
             }
@@ -667,7 +695,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         // forever: it used to reject here with nothing to
         // catch it, and `loading` stayed true.
         console.error('[Design] Project could not be loaded:', err);
-        setDesignError('Could not load the project. This is usually a permissions or connectivity issue — reload the page.');
+        setLoadFailed(true);
         setLoading(false);
         return;
       }
@@ -904,6 +932,11 @@ ${DESIGN_ANSWER_REMINDER}`;
   const onlyAnswersMoved = answersMoved && !stale.sourceChanged && !stale.design && !stale.signOff;
   // Step 1 is the questions: "Generate the design" waits until each has an answer.
   const writeGate = designWriteGate(businessAnswers);
+  // Owner decision 22.10.2026 (ADR-106, amending ADR-102's page order): the
+  // canvas first, the questions beside it, and the proposal — the target, the
+  // decision, the document with the option comparison — only once the
+  // questions are answered, skipped, or a design is already on record.
+  const proposalShown = designProposalShown({ gate: writeGate, skipped, hasDesign: Boolean(design) });
   // The sign-off is current when it was given for the code under review —
   // `stale.signOff` says when it was not (a source or profile change after it).
   // A design document older than the analysis is the document's state and is
@@ -911,6 +944,11 @@ ${DESIGN_ANSWER_REMINDER}`;
   // on as well, so "Confirm & Lock" landed on the server (Transformation ran
   // against the contract) while this page kept saying "Not confirmed".
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff;
+  // Owner decision 22.10.2026: the key-user limits only where key user is the
+  // option in question — the engine recommends it (the whole program reads as
+  // key user, as `signOffRecommendation` takes it) or the owner confirmed it;
+  // the comparison's own proposal is the third reason (`keyUserLimitsShown`).
+  const keyUserChosen = keyUserList?.scope === 'whole-program' || (signOffCurrent && project?.targetArchitecture === 'keyuser');
 
   const regenerate = () => {
     if (!isOwner) {
@@ -1051,6 +1089,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         nfrTopics={nfrTopics}
         banner={<LegacyRunBanner capabilities={caps} projectId={projectId as string} />}
         keyUser={keyUserList}
+        keyUserChosen={keyUserChosen}
       />
     );
   })() : null;
@@ -1173,8 +1212,8 @@ ${DESIGN_ANSWER_REMINDER}`;
         }
       >
         {project?.analysis
-          ? 'Written from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is a model proposal.'
-          : 'Written from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is a model proposal.'}
+          ? 'Written from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is AI-generated.'
+          : 'Written from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is AI-generated.'}
       </CcEmptyState>
     </div>
   );
@@ -1281,6 +1320,36 @@ ${DESIGN_ANSWER_REMINDER}`;
       ? `${editionWord} assumed · target not bound by the run`
       : 'Edition not determined · target not bound by the run';
 
+  // Owner decision 21.10.2026 — the new set-up of the business rules: the
+  // questions a business sets, a few at a time, before Transformation. Owner
+  // decision 22.10.2026 — the design is written on a click once they are
+  // answered (ADR-102), and they stand beside the canvas (ADR-106).
+  const questionsPanel = <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />;
+  const questionsSummary =
+    businessAnswers.state === 'ready' && businessAnswers.total > 0
+      ? questionsPanelSummary(businessAnswers.total - businessAnswers.open, businessAnswers.total)
+      : null;
+  // Once the proposal shows, the panel opens by itself while questions are
+  // open, or when the address names it (the Business view's open questions lead there).
+  const questionsOpenFirst =
+    (businessAnswers.state === 'ready' && businessAnswers.open > 0) ||
+    (typeof window !== 'undefined' && window.location.hash === `#${RULE_QUESTIONS_ID}`);
+  // What the canvas holds until then: calm, one sentence, one way past it.
+  const proposalPending = (
+    <div
+      data-design-pending-state={writeGate.kind}
+      className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface px-4 py-8 text-center"
+    >
+      <p className="m-0 text-[15px] font-bold text-cc-ink">
+        {writeGate.kind === 'reading' ? wt('design.readingQuestions') : wt('design.targetAfterQuestions')}
+      </p>
+      <p className="m-0 max-w-md text-[13px] font-medium text-cc-ink-muted">{wt('design.targetAfterQuestionsNote')}</p>
+      <CcButton variant="secondary" onClick={skipQuestions} data-design-skip-questions="">
+        {wt('design.skipQuestions')}
+      </CcButton>
+    </div>
+  );
+
   return (
     <StageFrame stage="design" className="min-h-screen">
       <StaleNotice title={onlyAnswersMoved ? wt('design.answersMovedTitle') : `Built for ${previousBasis(project)}`} reasons={staleNotes} />
@@ -1368,86 +1437,93 @@ A design merely older than the analysis is
         Where this code should run after the change, and the design that gets it there.
       </StageHeader>
 
-      {/* Owner decision 21.10.2026 — the new set-up of the business rules: the
-          questions a business sets, a few at a time, before Transformation.
-          Owner decision 22.10.2026 — step 1: the design below is written on a
-          click, once they are answered, and carries the answers. */}
-      <div className="mb-12">
-        <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />
-      </div>
-
-      <div className="mb-12">
-        <DesignCanvasStage
-          evidence={designEvidence}
-          model={canvasModel}
-          targetLine={targetLine}
-          targetKpi={targetKpi}
-          confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
-          storedRoute={storedRoute}
-          confirmed={
-            signOffCurrent
-              ? {
-                  label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
-                  by: project?.approvedBy ?? null,
-                  at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
-                }
-              : null
-          }
-          stale={designStale || stale.signOff}
-          hasDocument={Boolean(design)}
-          canSignOff={canSignOff}
-          signOffPanel={signOffPanel}
-          // "Confirm target" asks first and then confirms the recommendation
-          // the panel would (owner 02.10.2026); another target goes through
-          // the panel.
-          confirmTarget={
-            canSignOff
-              ? {
-                  label: architectureOptionLabel(recommendation) ?? recommendation,
-                  onConfirm: () => lockArchitecture(recommendation, ''),
-                  chooseOther: true,
-                }
-              : undefined
-          }
-          locked={project?.approvedByArchitect === true}
-          reader={Boolean(project) && !isOwner}
-          onRegenerate={askRegenerate}
-          regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
-          regenerating={generating}
-          legacyCode={project?.legacyCode || ''}
-          sections={docSections}
-          document={structuredDocument}
-          documentFallback={documentFallback}
-          documentNotice={
-            writingState || designErrorStrip ? (
-              <div className="flex flex-col gap-3">
-                {writingState}
-                {designErrorStrip}
-              </div>
-            ) : null
-          }
-          routingRationale={
-            caps.hasRoutingEvidence ? (
-              <SectionBoundary name="Routing Rationale">
-                <RoutingRationale
-                  extensibilityRoute={project?.extensibilityRoute}
-                  cleanCoreScore={project?.cleanCoreScore}
-                  s4Deployment={project?.s4Deployment}
-                  findings={findings}
-                  // The SAP reference row names the signed-off target, else the
-                  // recommendation the card names (roadmap 3.0.9).
-                  targetArchitecture={
-                    signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
-                      ? project.targetArchitecture
-                      : recommendation
+      {/* The canvas is the page's picture; the questions stand beside it (below
+          it on a phone) and the proposal waits for them (ADR-106). */}
+      {loadFailed ? (
+        <div className="mb-12" data-design-load-failed="">
+          <CcMessageStrip state="error" headline="Could not load the project." announce>
+            This is usually a permissions or connectivity issue — reload the page.
+          </CcMessageStrip>
+        </div>
+      ) : (
+        <div className="mb-12">
+          <DesignCanvasStage
+            evidence={designEvidence}
+            model={canvasModel}
+            targetLine={targetLine}
+            targetKpi={targetKpi}
+            confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
+            storedRoute={storedRoute}
+            confirmed={
+              signOffCurrent
+                ? {
+                    label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
+                    by: project?.approvedBy ?? null,
+                    at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
                   }
-                />
-              </SectionBoundary>
-            ) : null
-          }
-          view={view}
-        />
-      </div>
+                : null
+            }
+            stale={designStale || stale.signOff}
+            hasDocument={Boolean(design)}
+            canSignOff={canSignOff}
+            signOffPanel={signOffPanel}
+            // "Confirm target" asks first and then confirms the recommendation
+            // the panel would (owner 02.10.2026); another target goes through
+            // the panel.
+            confirmTarget={
+              canSignOff
+                ? {
+                    label: architectureOptionLabel(recommendation) ?? recommendation,
+                    onConfirm: () => lockArchitecture(recommendation, ''),
+                    chooseOther: true,
+                  }
+                : undefined
+            }
+            locked={project?.approvedByArchitect === true}
+            reader={Boolean(project) && !isOwner}
+            onRegenerate={askRegenerate}
+            regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
+            regenerating={generating}
+            legacyCode={project?.legacyCode || ''}
+            sections={docSections}
+            document={structuredDocument}
+            documentFallback={documentFallback}
+            documentNotice={
+              writingState || designErrorStrip ? (
+                <div className="flex flex-col gap-3">
+                  {writingState}
+                  {designErrorStrip}
+                </div>
+              ) : null
+            }
+            routingRationale={
+              caps.hasRoutingEvidence ? (
+                <SectionBoundary name="Routing Rationale">
+                  <RoutingRationale
+                    extensibilityRoute={project?.extensibilityRoute}
+                    cleanCoreScore={project?.cleanCoreScore}
+                    s4Deployment={project?.s4Deployment}
+                    findings={findings}
+                    // The SAP reference row names the signed-off target, else the
+                    // recommendation the card names (roadmap 3.0.9).
+                    targetArchitecture={
+                      signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
+                        ? project.targetArchitecture
+                        : recommendation
+                    }
+                  />
+                </SectionBoundary>
+              ) : null
+            }
+            view={view}
+            questions={questionsPanel}
+            questionsSummary={questionsSummary}
+            questionsOpenFirst={questionsOpenFirst}
+            proposalShown={proposalShown}
+            pending={proposalPending}
+          />
+        </div>
+      )}
 
       {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}
       {project?.legacyCode && conceptSuccessorsOf(project.legacyCode).length > 0 ? (

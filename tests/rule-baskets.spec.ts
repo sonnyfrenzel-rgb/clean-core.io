@@ -25,6 +25,7 @@ import {
   questionAnswerOf,
   questionChoices,
   questionFlow,
+  targetQuestionGroups,
   technicalKeepChoices,
 } from '../lib/rule-questions';
 import { rulePlainSentences } from '../lib/plain-wording';
@@ -56,9 +57,10 @@ const PO = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
 const GR = read('tests/fixtures/rule-baskets/zmm_gr_invoice_check.abap');
 const ACCOUNT = { uid: 'u1', name: 'Buyer A' };
 
-function explain(source: string) {
-  const reading = readSource(source);
-  return { ex: explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source)), reading };
+/** The explanation for the given engine; this release's engine when none is given. */
+function explain(source: string, engineVersion?: string) {
+  const reading = readSource(source, engineVersion);
+  return { ex: explainBusinessRules(source, reading.ruleSet, buildProcessFacts(source), engineVersion), reading };
 }
 
 const ruleId = (reading: ReturnType<typeof readSource>, label: RegExp): string => {
@@ -89,15 +91,21 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
   });
 
   test('the measured counts: fewer questions than rule rows, at most five shown on first open', () => {
-    const counts = [BIG, PO, GR].map((s) => {
-      const { ex } = explain(s);
+    const countsOf = (s: string, engineVersion?: string) => {
+      const { ex } = explain(s, engineVersion);
       return { rows: ex.rules.length, ...Object.fromEntries(Object.entries(ex.baskets).map(([k, v]) => [k, v.length])), questions: ex.questions.length, shown: questionFlow(ex, {}).shown.length };
-    });
+    };
+    // The PO demo is measured on the 3.0.20 engine, where its counts were taken; the 3.0.21 counts follow below.
+    const counts = [countsOf(BIG), countsOf(PO, '3.0.20'), countsOf(GR)];
     // The 1,000-line example: 30 rule rows before; 15 questions, 5 technical, 2 not determined. It has no demo
     // cases of its own, so its TEST*/DUMMY* customer reference is asked (owner decision 22.10.2026).
     expect(counts[0]).toEqual({ rows: 30, business: 23, technical: 5, undetermined: 2, questions: 15, shown: 5 });
     // The PO demo: 12 rows; 7 questions, 4 not determined (three constants nobody reads, one subject the code does not name).
     expect(counts[1]).toEqual({ rows: 12, business: 8, technical: 0, undetermined: 4, questions: 7, shown: 5 });
+    // Roadmap 3.0.21 "A constant the code filters with is not 'declared, not used'": from engine 3.0.21 the three
+    // constants (document type, release group, purchasing organisation) filter the reads and set the header, so they
+    // are asked; 11 business rules in 10 questions, 1 not determined (the subject the code does not name).
+    expect(countsOf(PO, '3.0.21')).toEqual({ rows: 12, business: 11, technical: 0, undetermined: 1, questions: 10, shown: 5 });
     // The goods receipt / invoice program: 9 rows (its 4 demo cases are apart already); 6 questions, 3 technical.
     expect(counts[2]).toEqual({ rows: 9, business: 6, technical: 3, undetermined: 0, questions: 6, shown: 5 });
     for (const c of counts) expect(c.shown).toBeLessThanOrEqual(QUESTION_BATCH);
@@ -399,13 +407,16 @@ async function renderQuestions(source: string, owner: boolean, entries: Record<s
 }
 
 test.describe('the questions in Design, rendered', () => {
-  test('the owner sees five questions, each in plain words with four answers; the rule id and the code only one fold down', async () => {
+  test('the owner sees the questions that change the target first and the others folded, each in plain words with four answers; the rule id and the code only one fold down', async () => {
     const html = await renderQuestions(BIG, true);
     const { ex } = explain(BIG);
     expect(html).toContain('data-rule-questions=""');
-    expect((html.match(/data-question="/g) ?? []).length).toBe(5);
+    // Owner decision 22.10.2026 (3.0.21): up to five that change the target, up to five without impact folded.
+    const groups = targetQuestionGroups(ex, {});
+    expect(groups.changing.length).toBe(5);
+    expect((html.match(/data-question="/g) ?? []).length).toBe(groups.changing.length + groups.quiet.length);
     expect(html).toContain(`0 of ${ex.questions.length} questions answered`);
-    expect(html).toContain('10 more questions after these');
+    expect(html).toContain(`${groups.later} more questions after these`);
     for (const answer of QUESTION_ANSWERS) expect(html).toContain(`data-question-pick="${answer}"`);
     for (const label of ['Yes, that’s right', 'No, it should be …', 'We don’t need it any more', 'I don’t know / someone else']) expect(html).toContain(label);
     expect(html).toContain('Accept all proposals');
@@ -481,8 +492,10 @@ test.describe('the places (source guards)', () => {
     expect(block).toContain('rules: null');
     expect(shell).not.toContain('<BusinessRulesEditor');
     const firstLook = read('components/workspace/FirstLook.tsx');
-    expect(firstLook).toContain('onDecideRules={onReviewRules}');
-    expect(firstLook).toMatch(/rulesLine=\{onReviewRules \|\| !rules \? undefined : <RuleBasketLine/);
+    // 3.0.21 (owner decisions 22.10.2026): the Business opening offers no rule action at all, the demo's
+    // included; the one quiet basket line stands everywhere, and in the demo it names no Design.
+    expect(firstLook).not.toContain('onDecideRules=');
+    expect(firstLook).toMatch(/<RuleBasketLine [^>]*designHref=\{onReviewRules \? null : undefined\}/);
     expect(firstLook).not.toMatch(/const decideRules\b/);
     expect(shell).toContain('businessNextStep({ point: nextStep, rules: null, owner })');
     const order = shell.slice(shell.indexOf('const BUSINESS_ORDER'), shell.indexOf('];', shell.indexOf('const BUSINESS_ORDER')));
@@ -490,11 +503,14 @@ test.describe('the places (source guards)', () => {
     expect(order.indexOf("'process'")).toBeLessThan(order.indexOf("'rules'"));
   });
 
-  test('the full register is in IT; the questions stand in Design before its canvas; open questions lead there', () => {
+  test('the full register is in IT; the questions stand in Design beside its canvas; open questions lead there', () => {
     expect(shell).toContain('rules={<ItRuleRegister');
     const design = read('app/(app)/project/[projectId]/design/page.tsx');
     expect(design.indexOf('<RuleQuestions')).toBeGreaterThan(-1);
-    expect(design.indexOf('<RuleQuestions')).toBeLessThan(design.indexOf('<DesignCanvasStage'));
+    // Owner decision 22.10.2026 (3.0.21, ADR-106): no longer above the canvas — handed to it as its side panel.
+    expect(design).toContain('const questionsPanel = <RuleQuestions ');
+    const canvas = design.slice(design.indexOf('<DesignCanvasStage'));
+    expect(canvas).toContain('questions={questionsPanel}');
     const oq = read('components/workspace/OpenQuestions.tsx');
     expect(oq).toMatch(/case 'confirm-rules':[\s\S]{0,200}path: 'design'[\s\S]{0,80}RULE_QUESTIONS_ID/);
   });

@@ -19,7 +19,7 @@ import { NOT_STATED, type DerivedFrom } from './scenario-detail';
  * Where a scenario says it comes from, and what the product found when it
  * checked that against the signed source (owner decision 03.10.2026, ADR-071).
  *
- * The statement stays the model's: the details keep "Model proposal" on the
+ * The statement stays the model's: the details keep "AI-generated" on the
  * scenario. What is shown as checked is only what `checkScenarioOrigin` checked
  * — the lines exist, a named rule, decision point or finding stands on them, a
  * quote stands on them. An anchored engine object carries "Reconstructed",
@@ -187,7 +187,7 @@ export function OriginDetails({
                     {anchor(m, m.id)}
                   </span>
                 ))}
-                <span className="cc-text-meta text-cc-ink-muted">anchored to the code; the scenario stays a model proposal.</span>
+                <span className="cc-text-meta text-cc-ink-muted">anchored to the code; the scenario stays AI-generated.</span>
               </span>
             ) : null}
             {reading.recheckedAfterChange ? (

@@ -58,7 +58,7 @@ export const PACK_LIMITS = {
  * trusted: it is the attacker's number, so the count is of bytes actually
  * produced.
  */
-function readEntryBounded(file: JSZip.JSZipObject, budget: { remaining: number }): Promise<Uint8Array> {
+export function readEntryBounded(file: JSZip.JSZipObject, budget: { remaining: number }): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const chunks: Uint8Array[] = [];
     let size = 0;

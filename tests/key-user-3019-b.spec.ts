@@ -397,7 +397,8 @@ test.describe('Design shows the fourth option with its limits; Analyze says Leve
     expect(page).toContain('keyUserOffered={!!keyUserList && keyUserList.steps.length > 0}');
     expect(page).toContain('keyUser: keyUser ? keyUserRouteBasis(keyUser) : null,');
     const comparison = read('components/design/OptionComparison.tsx');
-    expect(comparison).toContain('{keyUser ? <KeyUserLimits list={keyUser} /> : null}');
+    // Owner decision 22.10.2026 (3.0.21): the limits only where key user is the option in question.
+    expect(comparison).toContain('{keyUser && limitsShown ? <KeyUserLimits list={keyUser} /> : null}');
   });
 
   test('"Level A by construction" beside the score, only where the whole program is key user', () => {

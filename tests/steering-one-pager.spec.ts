@@ -326,7 +326,7 @@ test.describe('8.6 one-pager — every value comes from a workspace model', () =
     const page = steeringOnePager(full({ otherEdition: 'On Private Edition: 2 of 3 SAP objects have a path to SAP standard, 1 stands in the way.' }));
     expect(page.distance).toMatchObject({
       state: 'ready',
-      title: 'Distance to SAP standard on Public Edition',
+      title: 'What stands in the way of the SAP standard on Public Edition',
       percent: 33,
       sentence: '1 of 3 SAP objects this program uses has a path to SAP standard; 2 stand in the way.',
       other: 'On Private Edition: 2 of 3 SAP objects have a path to SAP standard, 1 stands in the way.',

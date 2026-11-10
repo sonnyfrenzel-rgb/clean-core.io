@@ -209,6 +209,9 @@ function api(request: APIRequestContext, account: Account) {
     storeGeneration: async (projectId: string, body: Record<string, unknown>) =>
       request.post(`/api/projects/${projectId}/contract`, { headers: await headers(), data: body }),
     runTests: async (projectId: string) => request.post('/api/run-tests', { headers: await headers(), data: { projectId } }),
+    // What "Generate scenarios" stores (`hooks/useTestGeneration.ts`, `storeArtefact`).
+    storeSuite: async (projectId: string, body: Record<string, unknown>) =>
+      request.post(`/api/projects/${projectId}/artefacts`, { headers: await headers(), data: { action: 'test-suite', ...body } }),
     standardFit: async (projectId: string) => request.get(`/api/projects/${projectId}/standard-fit`, { headers: await headers() }),
     pack: async (projectId: string) => request.post('/api/audit-pack/create', { headers: await headers(), data: { projectId } }),
     revokeReader: async (projectId: string, uid: string) =>
@@ -528,14 +531,10 @@ test.describe('G4 path 1 — standard adoption (CC-001: KNA1 list → SAP standa
     expect(c.fields.find((f) => f.key === 'rejected-alternatives')?.statement).toContain('Cover the requirement with SAP standard');
 
     // G3, "no standard fit from a legacy construct": the standard-fit layer
-    // claims no fit. For this case it holds no row at all — the report carries
-    // no business rule for a capability to be read from — and says nothing
-    // rather than something.
+    // that claimed none was removed with its route (owner decision 22.10.2026);
+    // nothing in the product answers a fit any more.
     const res = await a.standardFit(projectId);
-    expect(res.status(), await res.text()).toBe(200);
-    const { view } = (await res.json()) as { view: { rows: Array<{ fit: string | null }>; catalogConsulted: boolean } };
-    test.info().annotations.push({ type: 'standard-fit', description: `CC-001: ${view.rows.length} capability rows, catalogue consulted: ${view.catalogConsulted}` });
-    expect(view.rows.every((r) => r.fit === null), 'a catalogue hit was turned into a standard fit').toBe(true);
+    expect(res.status(), 'the removed standard-fit route answers again').toBe(404);
 
     // Nothing is decided yet, and the handover says so.
     const h = await handover(projectId);
@@ -759,7 +758,7 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
     const h = await handover(projectId);
     expect(h.project.generationBinding?.contractFingerprint).toBe(fresh.contract.fingerprint);
     expect(h.link('transformation').state).toBe('on-record');
-    expect(h.link('transformation').provenance, 'generated code is a model proposal, never proven').toBe('proposed');
+    expect(h.link('transformation').provenance, 'generated code is AI-generated, never proven').toBe('proposed');
   });
 
   test('documentation: the Documentation stage reads the process out of the signed source', async ({ page }) => {
@@ -777,9 +776,15 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
   test('testing: the suite runs in the sandbox runner; the receipt is "Demonstrated · mock" and never Proven', async ({ request }) => {
     test.setTimeout(240_000);
     const a = api(request, owner);
-    // "Generate scenarios" (Testing step 1, `hooks/useTestGeneration.ts`) writes the cases and the
-    // runnable suite as `testSuite.code` — the model's answer, here the fixture.
-    await updateDoc(doc(owner.db, 'projects', projectId), { testCases: CAP_CASES, testSuite: { code: CAP_SUITE.spec } });
+    // "Generate scenarios" (Testing step 1, `hooks/useTestGeneration.ts`) stores the cases and the
+    // runnable suite as `testSuite.code` — the model's answer, here the fixture — through
+    // POST /api/projects/{projectId}/artefacts (3.0.14); since SEC-2026-889/-890 (3.0.21) the
+    // rules refuse a browser write of `testCases` outright.
+    await expect(
+      updateDoc(doc(owner.db, 'projects', projectId), { testCases: CAP_CASES }),
+    ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
+    const suite = await a.storeSuite(projectId, { testCases: CAP_CASES, testSuite: { code: CAP_SUITE.spec } });
+    expect(suite.status(), await suite.text()).toBe(200);
 
     // Negative probe — the browser cannot write a receipt, least of all a live one.
     const { runId } = await stored(projectId);
@@ -789,8 +794,9 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
       }),
     ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
 
-    // Negative probe — verdicts the owner writes are self-reported, not a run.
-    await updateDoc(doc(owner.db, 'projects', projectId), { testCases: CAP_CASES.map((c) => ({ ...c, status: 'Passed' })) });
+    // Negative probe — verdicts the owner stores are self-reported, not a run.
+    const claimed = await a.storeSuite(projectId, { testCases: CAP_CASES.map((c) => ({ ...c, status: 'Passed' })), testSuite: { code: CAP_SUITE.spec } });
+    expect(claimed.status(), await claimed.text()).toBe(200);
     let h = await handover(projectId);
     expect(h.phase('testing').badge).toBe('Self-reported');
     expect(h.phase('testing').proven).toBe(false);

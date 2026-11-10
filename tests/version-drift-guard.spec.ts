@@ -13,6 +13,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { APP_VERSION } from '../lib/version';
+import { ARCHIVED_TERMS_VERSIONS } from '../lib/terms-versions';
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -52,6 +53,16 @@ const ALLOWLISTED_FILES = new Set([
 const DOCUMENT_VERSION_LINES: Record<string, RegExp> = {
   [path.resolve(ROOT, 'lib/terms-versions.ts')]: /^\s*(?:\/\*\*?|\*|\/\/)|^\s*label:\s*'v\d+\.\d+\.\d+',?\s*$/,
 };
+
+/**
+ * The legal texts and their pages (Fassung 1.1, 3.0.21) name the Terms by their
+ * document label — "Fassung v2.3.0", "at least version v2.3.0" — in German and
+ * English, in the text and in the consent strings. Such a string is exempt only
+ * where it is the label of an archived Terms version and only in these places;
+ * any other version string there, an app version above all, is still drift.
+ */
+const TERMS_LABELS = new Set(ARCHIVED_TERMS_VERSIONS.map((v) => v.label));
+const DOCUMENT_VERSION_DIRS = [path.resolve(ROOT, 'lib/legal'), path.resolve(ROOT, 'app/terms')];
 
 /**
  * Regex patterns in a line that indicate the version string is contextual
@@ -179,6 +190,9 @@ test.describe('Version Drift Guard', () => {
           while ((match = VERSION_PATTERN.exec(line)) !== null) {
             const foundVersion = match[0];
             
+            // A Terms label in the legal texts is a document version (see above).
+            if (TERMS_LABELS.has(foundVersion) && DOCUMENT_VERSION_DIRS.some((d) => filePath.startsWith(d + path.sep))) continue;
+
             // Only flag if it's NOT the current version
             if (foundVersion !== APP_VERSION) {
               staleFindings.push({

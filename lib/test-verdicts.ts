@@ -121,6 +121,33 @@ export type StoredVerdict = RunnerVerdict | 'Not run';
  * a whole file failing to load exits 0 in some configurations, and every case
  * in it was then reported as verified.
  */
+/**
+ * How little a verdict proves, for resolving one id reported more than once:
+ * a pass proves the most, a failure or an error the least. Unknown strings
+ * count as the least, so nothing unrecognised can win over a failure.
+ */
+const VERDICT_WEAKNESS: Record<string, number> = { Passed: 0, Skipped: 1, Todo: 2, 'Not run': 3, Error: 4, Failed: 5 };
+const weakness = (status: string) => VERDICT_WEAKNESS[status] ?? 6;
+
+/**
+ * One verdict per id, the worse of every report for it (CA-INT-01).
+ *
+ * The one rule for an id reported twice, used by `applyRunnerVerdicts` (what
+ * is stored and shown) and by `executedPasses` (what the phase contract counts
+ * as passed). They used to differ: storing kept the failure, counting took any
+ * pass — so a suite that reported an id once failed and once passed showed a
+ * failure and counted a pass. Now a pass counts only if nothing else was
+ * reported for that id.
+ */
+export function resolveVerdicts<R extends { id: string; status: string }>(results: readonly R[]): Map<string, R> {
+  const reported = new Map<string, R>();
+  for (const r of results) {
+    const earlier = reported.get(r.id);
+    if (!earlier || weakness(r.status) > weakness(earlier.status)) reported.set(r.id, r);
+  }
+  return reported;
+}
+
 export function applyRunnerVerdicts<T extends { id?: unknown }>(
   cases: readonly T[],
   results: readonly TestRunResult[],
@@ -128,11 +155,7 @@ export function applyRunnerVerdicts<T extends { id?: unknown }>(
 ): Array<T & { status: StoredVerdict; message: string }> {
   // One id reported twice is resolved towards the worse verdict rather than to
   // whichever came last, so a second, passing result cannot hide a failure.
-  const reported = new Map<string, TestRunResult>();
-  for (const r of results) {
-    const earlier = reported.get(r.id);
-    if (!earlier || (earlier.status !== 'Failed' && r.status === 'Failed')) reported.set(r.id, r);
-  }
+  const reported = resolveVerdicts(results);
   return cases.map((testCase) => {
     const hit = reported.get(String(testCase?.id ?? ''));
     if (hit) {

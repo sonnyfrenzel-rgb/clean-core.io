@@ -430,7 +430,7 @@ test.describe('an export names every model whose text it carries', () => {
     expect(withProposal.decisions.some((d) => d.proposal !== '')).toBe(true);
     const md = specMarkdown(withProposal, meta);
     expect(md.split('\n')[0]).toBe(`<!-- ${NFR_STATEMENT} -->`);
-    expect(md).toContain('Model proposal: For TBD-13');
+    expect(md).toContain('AI-generated: For TBD-13');
     const html = specConfluenceHtml(withProposal, meta);
     expect(html.split('\n').slice(0, 2)).toEqual(['<!doctype html>', expect.stringMatching(new RegExp(`^<!-- ${NFR_STATEMENT.replace(/[()]/g, '\\$&')} --><html`))]);
     expect(html).toContain(`<head><meta name="ai-generated" content="${NFR_STATEMENT}">`);

@@ -132,6 +132,7 @@ const ROUTE_SOURCES = {
   // the script only writes what this table names — and `sitemap-guard` went red.
   '/datenschutz/de': ['app/datenschutz/de/page.tsx'],
   '/terms': ['app/terms/page.tsx'],
+  '/report': ['app/report/page.tsx', 'lib/legal/texts/report.en.ts'],
   '/licenses': ['app/licenses/page.tsx'],
   // `CatalogAttribution` is the Apache-2.0 attribution and the trademark notice,
   // rendered at the foot of all four catalog routes.

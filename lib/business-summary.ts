@@ -18,7 +18,7 @@ import { BUSINESS_STEP_LEVEL } from '@/lib/business-steps';
  *     table the code writes) — for the headline and the callouts. Every callout
  *     carries the evidence it stands on: a line range, a rule id or a table
  *     name with its line. A fact without one is not turned into a callout;
- *   - the stored business layer (a model proposal: SOP, RACI, controls) — for
+ *   - the stored business layer (an AI-generated draft: SOP, RACI, controls) — for
  *     the step strip and the RACI matrix. Its steps are placed on the engine's
  *     process by element id; a step the process does not have stays visible and
  *     says so. A field the model left empty is `null` here and *Not determined*

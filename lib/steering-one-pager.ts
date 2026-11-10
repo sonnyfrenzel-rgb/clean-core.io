@@ -274,7 +274,7 @@ function distanceOf(fit: StandardFit, other: string | null): SteeringDistance {
   if (fit.state === 'ready') {
     return {
       state: 'ready',
-      title: `Distance to SAP standard on ${fit.platformLabel}`,
+      title: `What stands in the way of the SAP standard on ${fit.platformLabel}`,
       sentence:
         `${fit.fits} of ${fit.counted} SAP object${fit.counted === 1 ? '' : 's'} this program uses ${fit.fits === 1 ? 'has' : 'have'} a path to SAP standard; ` +
         `${fit.blocking} stand${fit.blocking === 1 ? 's' : ''} in the way.`,
@@ -283,8 +283,8 @@ function distanceOf(fit: StandardFit, other: string | null): SteeringDistance {
       other,
     };
   }
-  if (fit.state === 'none-used') return { state: 'none-used', title: 'Distance to SAP standard', sentence: fit.sentence };
-  return { state: 'not-determined', title: 'Distance to SAP standard', reason: fit.reason };
+  if (fit.state === 'none-used') return { state: 'none-used', title: 'What stands in the way of the SAP standard', sentence: fit.sentence };
+  return { state: 'not-determined', title: 'What stands in the way of the SAP standard', reason: fit.reason };
 }
 
 export const STEERING_FIGURES_MAX = 4;
@@ -297,7 +297,7 @@ function linksOf(src: SteeringSource) {
   const stage = (path: string) => (src.mode === 'demo' ? `/demo/${path}` : `${src.base}/${path}`);
   return {
     decision: { href: view('management', '#decision-options'), place: 'The decision' },
-    fit: { href: view('management', '#standard-fit'), place: 'Fit to standard' },
+    fit: { href: view('management', '#standard-fit'), place: 'What stands in the way of the SAP standard' },
     it: { href: view('it'), place: 'IT view' },
     business: { href: view('business'), place: 'Business view' },
     management: { href: view('management'), place: 'Management view' },

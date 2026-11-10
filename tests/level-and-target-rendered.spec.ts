@@ -169,8 +169,11 @@ test.describe('the own-code import asks for the target, and the signed run follo
     await expect(page.locator('[data-own-code-file]')).toHaveCount(1);
 
     const choice = page.locator('[data-cc-own-code] [data-target-edition-choice]');
-    // Asked, and visibly preselected — a one-click start still works.
+    // Visibly preselected, as one line — a one-click start still works
+    // (roadmap 3.0.21 (12)); "Change" opens the choice.
     await expect(choice).toHaveAttribute('data-target-edition', 'private');
+    await expect(choice.locator('[data-target-edition-line]')).toContainText('Assessed against SAP Cloud ERP Private');
+    await choice.locator('[data-target-edition-change]').click();
     await expect(choice.getByRole('radio', { checked: true })).toHaveValue('private');
     // A real choice: the radio group is reachable and named.
     await expect(choice.getByRole('radiogroup')).toHaveAccessibleName(/target system/i);
@@ -182,6 +185,10 @@ test.describe('the own-code import asks for the target, and the signed run follo
     const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
     if (await ack.count()) await ack.check();
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    // The footer names the edition chosen — it used to say Private whatever was
+    // chosen (roadmap 3.0.21 (12)).
+    await expect(page.locator('[data-own-code-start-next]')).toContainText('assessed against SAP S/4HANA Cloud Public Edition');
+    await expect(page.locator('[data-own-code-start-next]')).not.toContainText('SAP Cloud ERP Private');
     await page.click('[data-own-code-start]');
 
     await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });

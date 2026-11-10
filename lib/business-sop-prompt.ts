@@ -95,7 +95,7 @@ THIS IS PART ${part.index + 1} OF ${part.total}. The program is too large for on
  * written for (default: those of `doc`; a part passes its own).
  */
 export function businessSopPrompt(doc: ProcessDocumentation, part?: BusinessSopPart, steps?: readonly BusinessStep[]): string {
-  const context = processDocumentationToMarkdown(doc);
+  const context = processDocumentationToMarkdown(doc, { originMarks: false });
   const facts = readCapabilityFacts(doc.facts);
   const level = businessStepsBlock(steps ?? businessStepsOf(doc));
   return `Act as an Enterprise Business Process, SOP & Compliance expert writing for a BUSINESS audience — process owners, master-data stewards, compliance and internal audit. This is the BUSINESS layer of the documentation.

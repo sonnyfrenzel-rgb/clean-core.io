@@ -11,7 +11,7 @@ import { routeLabel } from '@/lib/sap-naming';
 import type { AnalysisData } from '@/lib/types';
 
 /**
- * "Business value and action plan · Model proposal" — on Economics since
+ * "Business value and action plan · AI-generated" — on Economics since
  * 02.10.2026 (owner decision on the Analyze clean-up). It used to be the last
  * fold of the Analyze stage, where it answered none of that stage's four
  * questions (how clean, what must change and where, which way, what is not
@@ -60,8 +60,8 @@ export default function BusinessValuePlan({
       valueDrivers: data.businessValueAnalysis?.valueDrivers ?? null,
     };
     const steps = plan ?? [
-      '1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.',
-      '2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.',
+      '1. Check each custom function against SAP standard in your own fit-to-standard workshop before anything is rebuilt.',
+      '2. Retire custom workarounds only after that check, a data migration assessment and business sign-off.',
       `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${shownRoute} architecture.`,
     ];
     body = (

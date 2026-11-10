@@ -6,6 +6,9 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION, TERMS_VERSIONS_IN_FORCE } from '../lib/constants';
 import { adminSetDoc, adminGetDoc, adminSetEmailVerified } from './helpers/admin-seed';
+import { currentNotice } from '../lib/terms-announcement/notice-file';
+import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
+import { formatLegalDate } from '../lib/legal/open-values';
 
 /**
  * The way out of the Terms gate, executed.
@@ -88,6 +91,9 @@ test('a stale acceptance is stopped, and accepting is recorded on the server', a
   const before = await adminGetDoc('users', uid);
   expect(before?.termsVersionAccepted, 'the fixture did not start stale').toBe(STALE);
 
+  // C2 of the legal texts (Fassung 1.1): Accept is enabled once the statement naming the version is ticked.
+  await expect(gate.locator('[data-terms-gate-accept]'), 'Accept was enabled before the statement was ticked').toBeDisabled();
+  await gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]').check();
   await gate.locator('[data-terms-gate-accept]').click();
   await expect(gate, 'the gate stayed up after accepting').toBeHidden({ timeout: 60000 });
 
@@ -173,9 +179,23 @@ test('the keyboard cannot leave the gate', async ({ page }) => {
     });
 
   expect(await insideGate(), 'focus did not start inside the dialog').toBe(true);
-  // On the one action that opens the product again — not on the layer, not on
-  // "Sign out instead".
-  await expect(gate.locator('[data-terms-gate-accept]'), 'the caret did not start on Accept').toBeFocused();
+  // On the first thing the gate asks (Fassung 1.1): the contract language
+  // (Terms 1.4) stands above the statement to tick, and a tick belongs to the
+  // wording it was given for, so the caret starts on the language choice — not
+  // on the layer, not on "Sign out instead", and not on Accept, which stays
+  // disabled until the statement (C2) is ticked.
+  await expect(
+    gate.locator('[data-contract-language] input[type="radio"]').first(),
+    'the caret did not start on the contract language',
+  ).toBeFocused();
+  // The statement to accept is the next stop the keyboard reaches by Tab.
+  const box = gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]');
+  let reached = false;
+  for (let i = 0; i < 10 && !reached; i++) {
+    await page.keyboard.press('Tab');
+    reached = await box.evaluate((el) => el === document.activeElement);
+  }
+  expect(reached, 'Tab never reached the statement to accept').toBe(true);
 
   // Forwards past the last control, and backwards past the first: both are the
   // moments a trap is missing.
@@ -241,6 +261,9 @@ test('an account with no recorded acceptance is led to accept, not shut out', as
   await expect(gate.locator('[data-terms-gate-decline]'), '"carry on under the Terms I accepted" offered to an account that accepted none').toHaveCount(0);
   await expect(gate.locator('[data-terms-gate-signout]')).toBeVisible();
 
+  // C2 of the legal texts (Fassung 1.1): Accept is enabled once the statement naming the version is ticked.
+  await expect(gate.locator('[data-terms-gate-accept]'), 'Accept was enabled before the statement was ticked').toBeDisabled();
+  await gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]').check();
   await gate.locator('[data-terms-gate-accept]').click();
   await expect(gate, 'the gate stayed up after accepting').toBeHidden({ timeout: 60000 });
   await expect.poll(async () => (await adminGetDoc('users', cred.user.uid))?.termsVersionAccepted, {
@@ -303,6 +326,31 @@ test('an account on the previous published version is asked, and keeps working',
   ).toHaveAttribute('data-terms-gate-mode', 'banner');
   await expect(gate.locator('[data-terms-gate-decline]')).toBeVisible();
 
+  // Dialog = notice (final review of the notice, 06.11.2026): the changed provisions with
+  // their reasons under 10.4, the effective day, the notice's own attachment, and that
+  // nobody has to accept. The list and the file come from the mail's builder.
+  const notice = currentNotice(path.resolve(__dirname, '..'));
+  expect(notice, 'no effective day is set, so there is no notice to show').not.toBeNull();
+  const block = gate.locator('[data-terms-gate-notice]');
+  await expect(block).toHaveAttribute('data-terms-gate-notice', 'ready', { timeout: 30000 });
+  await expect(block.locator('[data-terms-gate-notice-clauses] li')).toHaveText(notice!.summary.clauses.en);
+  await expect(block).toContainText(consentText(CONSENT_TEXTS.amendment.noticeListLead, 'en'));
+  await expect(block).toContainText(formatLegalDate(notice!.summary.effectiveDateIso, 'en'));
+  await expect(block.locator('[data-terms-gate-not-required]')).toHaveText(
+    'You do not have to accept; without acceptance the previous version continues to apply.',
+  );
+  const fileLink = block.locator('[data-terms-gate-notice-file]');
+  await expect(fileLink).toHaveText(notice!.attachment.filename);
+  const served = await request.get((await fileLink.getAttribute('href'))!);
+  expect(served.status()).toBe(200);
+  expect(await served.text(), 'the dialog offers a file that is not the attachment of the notice').toBe(notice!.attachment.content);
+  // In German, the same: the German list and the German sentence.
+  await gate.getByRole('radio', { name: 'Deutsch' }).click();
+  await expect(block.locator('[data-terms-gate-notice-clauses] li')).toHaveText(notice!.summary.clauses.de);
+  await expect(block.locator('[data-terms-gate-not-required]')).toHaveText(
+    'Sie müssen nicht annehmen; ohne Annahme gilt die bisherige Fassung weiter.',
+  );
+
   // And the product is usable behind it, which is what § 10.3 promises.
   await page.locator('h1, h2').first().click({ timeout: 15000 });
 
@@ -355,15 +403,18 @@ test('an account on the previous published version is asked, and keeps working',
   expect(persisted.local, 'the decline outlives the session — § 7 says it does not').toHaveLength(0);
 });
 
-test('with 3.0 only the current Terms version is in force', () => {
-  // Until 3.0 this asserted that the previous version stayed in force, so the
-  // release would not lock everybody out. With 3.0 that is reversed on purpose
-  // (Sonny, 30.09.2026): consent to the new version is required at sign-in, so
-  // the list holds the current version and nothing else. A version added back
-  // here is a decision to be written down in lib/constants.ts, not a drift.
+test('the current Terms version and v2.2.0 are in force, and nothing older', () => {
+  // With 3.0 the list held the current version alone (Sonny, 30.09.2026):
+  // consent to v2.2.0 was required at sign-in. Fassung 1.1 of the legal texts
+  // (3.0.21, a76a108e, in lib/constants.ts) keeps v2.2.0 (2026-10-03) in force
+  // beside v2.3.0: § 10.3 of the Terms those accounts accepted lets them carry
+  // on if they decline, and ending that takes 30 days' notice — so the dialog
+  // asks and takes "not now" for an answer. v2.1.0 and v2.0.0 stay ended; a
+  // version added back here is a decision to be written down in
+  // lib/constants.ts, not a drift.
   expect(TERMS_VERSIONS_IN_FORCE, 'the current version must always be in force').toContain(TERMS_VERSION);
   expect(
     TERMS_VERSIONS_IN_FORCE,
-    'an earlier Terms version is in force again — the 3.0 decision requires consent to the current one',
-  ).toEqual([TERMS_VERSION]);
+    'the Terms versions in force moved without a decision in lib/constants.ts',
+  ).toEqual([TERMS_VERSION, '2026-10-03']);
 });

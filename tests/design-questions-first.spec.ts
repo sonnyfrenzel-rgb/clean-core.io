@@ -8,7 +8,7 @@ import { readSource } from '../lib/first-look';
 import { buildProcessFacts } from '../lib/abap/process-facts';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 import { applyStateChoices, type StateChoiceInput, type StateEntry } from '../lib/process-states';
-import { acceptAllChoices, questionChoices, recommendedAnswerOf, type QuestionAnswer } from '../lib/rule-questions';
+import { acceptAllChoices, questionChoices, recommendedAnswerOf, targetQuestionGroups, type QuestionAnswer } from '../lib/rule-questions';
 import {
   ANSWERS_READING,
   BUSINESS_ANSWERS_PROMPT_RULE,
@@ -271,7 +271,9 @@ test.describe('3. the recommended answer in every row', () => {
       expect(card).toContain('Why recommended:');
       expect(card).not.toContain('aria-checked="true"');
     }
-    expect(cards.length).toBe(Math.min(ex.questions.length, 5));
+    // Owner decision 22.10.2026 (3.0.21): up to five that change the target, and up to five without impact, folded.
+    const groups = targetQuestionGroups(ex, {});
+    expect(cards.length).toBe(groups.changing.length + groups.quiet.length);
   });
 });
 

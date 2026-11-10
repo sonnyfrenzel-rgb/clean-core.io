@@ -35,6 +35,16 @@ import { extractDataCoupling } from './abap/code-assessment';
 import { APP_VERSION } from './version';
 import { readStatements } from './abap/statement-reader';
 import { countSourceLines } from '@/lib/source-lines';
+import {
+  INCLUDE_CLOSE_MARK,
+  INCLUDE_OPEN_MARK,
+  classifySource,
+  expandIncludeSources,
+  includeCycles,
+  includesNamed,
+  joinIncludeSources,
+  type IncludeSourceRole,
+} from './abap/include-resolution';
 
 /** `MAX_ANALYSED_SOURCE_BYTES` in `app/api/runs/create/route.ts`. */
 export const OWN_CODE_MAX_SOURCE_BYTES = 256 * 1024;
@@ -52,7 +62,7 @@ export const OWN_CODE_ZIP_LIMITS = {
 
 export const OWN_CODE_SOURCE_EXTENSIONS = ['.abap', '.txt'] as const;
 
-export type OwnCodeRole = 'program' | 'function-group' | 'class' | 'interface' | 'include';
+export type OwnCodeRole = IncludeSourceRole;
 
 /** One ABAP source read out of an uploaded file or out of a ZIP entry. */
 export interface OwnCodeSource {
@@ -82,6 +92,8 @@ export type OwnCodeIssue =
   | { kind: 'zip-limit' }
   | { kind: 'zip-empty' }
   | { kind: 'zip-skipped'; names: readonly string[] }
+  /** abapGit's object descriptions (`zfoo.prog.xml`, `package.devc.xml`) beside the sources — counted, not read. */
+  | { kind: 'zip-abapgit-metadata'; count: number }
   | { kind: 'second-program'; object: string; main: string }
   | { kind: 'not-referenced'; object: string }
   | { kind: 'missing-includes'; names: readonly string[] }
@@ -162,12 +174,6 @@ export function isZipName(name: string): boolean {
   return extensionOf(name) === '.zip';
 }
 
-function baseObjectName(file: string): string {
-  const base = file.split('/').pop() ?? file;
-  const dot = base.lastIndexOf('.');
-  return (dot < 0 ? base : base.slice(0, dot)).toUpperCase();
-}
-
 /**
  * Bytes to text. UTF-8 first, strictly; a file SAP GUI downloaded in the
  * Windows code page is not UTF-8 and is read as that instead, and the row says
@@ -183,21 +189,9 @@ export function decodeSource(bytes: Uint8Array): { text: string; encoding: 'utf-
   }
 }
 
-const HEADER: { role: OwnCodeRole; rx: RegExp }[] = [
-  { role: 'function-group', rx: /^\s*FUNCTION-POOL\s+([\w/]+)/im },
-  { role: 'program', rx: /^\s*(?:REPORT|PROGRAM)\s+([\w/]+)/im },
-  { role: 'class', rx: /^\s*CLASS\s+([\w/]+)\s+DEFINITION\b/im },
-  { role: 'interface', rx: /^\s*INTERFACE\s+([\w/]+)\s+PUBLIC\b/im },
-];
-
-/** What a source is, read from its first header statement; an include has none. */
-export function classifySource(text: string, file: string): { object: string; role: OwnCodeRole } {
-  for (const { role, rx } of HEADER) {
-    const name = rx.exec(text)?.[1];
-    if (name) return { object: name.toUpperCase(), role };
-  }
-  return { object: baseObjectName(file), role: 'include' };
-}
+// What a source is — read from its header, else from its file name, abapGit's
+// `zfoo_top.prog.abap` included — is decided in `lib/abap/include-resolution.ts`.
+export { classifySource };
 
 /**
  * Read one ABAP source from bytes. `issues` holds what refuses it (then
@@ -231,34 +225,10 @@ export function readSourceBytes(file: string, bytes: Uint8Array): { source: OwnC
 
 /* ------------------------------------------------------------- the includes */
 
-/**
- * An `INCLUDE` statement that stands alone on its line — the form SAP writes
- * and the only one replaced. `INCLUDE STRUCTURE` and `INCLUDE TYPE` are
- * dictionary statements, not program includes.
- */
-const INCLUDE_LINE = /^(\s*)INCLUDE\s+(?!STRUCTURE\b|TYPE\b)([\w/]+)(\s+IF\s+FOUND)?\s*\.\s*(?:".*)?$/i;
-
-function isCommentLine(line: string): boolean {
-  return line.startsWith('*') || /^\s*"/.test(line);
-}
-
-/** The includes a source names, upper-cased, in order, once each. */
-export function includesNamed(text: string): string[] {
-  const out: string[] = [];
-  for (const line of text.split(/\r?\n/)) {
-    if (isCommentLine(line)) continue;
-    const name = INCLUDE_LINE.exec(line)?.[2]?.toUpperCase();
-    if (name && !out.includes(name)) out.push(name);
-  }
-  return out;
-}
-
-export const INCLUDE_OPEN_MARK = '*>>> Clean-Core.io: include';
-export const INCLUDE_CLOSE_MARK = '*<<< Clean-Core.io: end of include';
-
-function newlineOf(text: string): string {
-  return text.includes('\r\n') ? '\r\n' : '\n';
-}
+// The join itself lives in `lib/abap/include-resolution.ts`, pure, so a batch
+// upload and the specs run the same one; these names stay where callers have
+// always found them.
+export { INCLUDE_OPEN_MARK, INCLUDE_CLOSE_MARK, includesNamed, includeCycles };
 
 /**
  * The main source with every include it names — and every include those name —
@@ -269,73 +239,8 @@ export function expandIncludes(
   main: OwnCodeSource,
   byName: ReadonlyMap<string, OwnCodeSource>,
 ): { text: string; used: string[]; missing: string[]; repeated: { in: string; name: string; line: number }[] } {
-  const used: string[] = [main.object];
-  const repeated: { in: string; name: string; line: number }[] = [];
-  const missing: string[] = [];
-  const nl = newlineOf(main.text);
-
-  const expand = (source: OwnCodeSource, stack: string[]): string => {
-    const lines = source.text.replace(/\r?\n$/, '').split(/\r?\n/);
-    const out: string[] = [];
-    lines.forEach((line, index) => {
-      const match = isCommentLine(line) ? null : INCLUDE_LINE.exec(line);
-      const name = match?.[2]?.toUpperCase();
-      const include = name ? byName.get(name) : undefined;
-      // A second INCLUDE of a text already put in place, which is also how a
-      // loop shows up from inside. Left as written and reported: the caller
-      // refuses the assembly, see `assembleOwnCode`.
-      if (name && include && (stack.includes(name) || used.includes(name))) {
-        repeated.push({ in: source.object, name, line: index + 1 });
-      }
-      if (!name || !include || stack.includes(name) || used.includes(name)) {
-        if (name && !include && !missing.includes(name)) missing.push(name);
-        out.push(line);
-        return;
-      }
-      used.push(name);
-      out.push(`*${line}`);
-      out.push(`${INCLUDE_OPEN_MARK} ${name} · ${include.file}`);
-      out.push(expand(include, [...stack, name]));
-      out.push(`${INCLUDE_CLOSE_MARK} ${name}`);
-    });
-    return out.join(nl);
-  };
-
-  return { text: expand(main, [main.object]), used, missing, repeated };
+  return expandIncludeSources(main, byName);
 }
-
-/**
- * Every loop among the uploaded sources' INCLUDE statements, each once, as a
- * chain that starts and ends with the same name (`A → B → A`). Looked for over
- * all sources, not only from the main program: a loop between two includes
- * nobody else names would otherwise slip through as "read after the program".
- */
-export function includeCycles(byName: ReadonlyMap<string, OwnCodeSource>): string[][] {
-  const cycles: string[][] = [];
-  const seen = new Set<string>();
-  const done = new Set<string>();
-  const visit = (name: string, path: string[]) => {
-    if (path.includes(name)) {
-      const chain = [...path.slice(path.indexOf(name)), name];
-      const key = [...chain.slice(0, -1)].sort().join('>');
-      if (!seen.has(key)) {
-        seen.add(key);
-        cycles.push(chain);
-      }
-      return;
-    }
-    if (done.has(name)) return;
-    const source = byName.get(name);
-    if (!source) return;
-    for (const next of includesNamed(source.text)) visit(next, [...path, name]);
-    done.add(name);
-  };
-  // In name order, not upload order: the cycle is reported on the file it
-  // starts from, and that must not depend on which file was dropped first.
-  for (const name of [...byName.keys()].sort()) visit(name, []);
-  return cycles;
-}
-
 /* ------------------------------------------------------------ all the files */
 
 function stateOf(issues: OwnCodeIssue[]): OwnCodeState {
@@ -434,8 +339,11 @@ export function assembleOwnCode(files: readonly OwnCodeFile[]): OwnCodeAssembly 
   let missing: string[] = [];
   const objects: string[] = [];
   if (main) {
-    const expanded = expandIncludes(main, byName);
-    missing = expanded.missing;
+    // Sources nobody names are still read — after the program, marked, so
+    // nothing the reader uploaded disappears without a word. A single source
+    // comes back untouched: its lines are the file's lines.
+    const joined = joinIncludeSources(main, byName, all.filter((s) => !headed.slice(1).includes(s)));
+    missing = joined.missing;
     // Loops and repeats stop the start rather than being resolved quietly.
     // SAP does not activate a program whose includes loop, and an include
     // named twice puts its FORMs and DATA in twice — a program the system
@@ -450,7 +358,7 @@ export function assembleOwnCode(files: readonly OwnCodeFile[]): OwnCodeAssembly 
     }
     const inCycle = new Set(cycles.flatMap((c) => c.slice(0, -1)));
     const repeats = new Map<string, number[]>();
-    for (const r of expanded.repeated) {
+    for (const r of joined.repeated) {
       if (inCycle.has(r.name) && inCycle.has(r.in)) continue;
       const key = `${r.in}|${r.name}`;
       repeats.set(key, [...(repeats.get(key) ?? []), r.line]);
@@ -459,20 +367,9 @@ export function assembleOwnCode(files: readonly OwnCodeFile[]): OwnCodeAssembly 
       const [owner, name] = key.split('|');
       ownerOf.get(owner)?.issues.push({ kind: 'include-repeated', name, lines });
     }
-    const parts = [expanded.text];
-    objects.push(...expanded.used);
-    // Sources nobody names are still read — after the program, marked, so
-    // nothing the reader uploaded disappears without a word.
-    const nl = newlineOf(main.text);
-    for (const s of all) {
-      if (objects.includes(s.object) || headed.slice(1).includes(s)) continue;
-      const row = ownerOf.get(s.object);
-      row?.issues.push({ kind: 'not-referenced', object: s.object });
-      objects.push(s.object);
-      parts.push([`${INCLUDE_OPEN_MARK} ${s.object} · ${s.file}`, s.text.replace(/\r?\n$/, ''), `${INCLUDE_CLOSE_MARK} ${s.object}`].join(nl));
-    }
-    // A single source, untouched: its lines are the file's lines.
-    source = parts.length === 1 && expanded.used.length === 1 ? main.text : parts.join(nl);
+    objects.push(...joined.used);
+    for (const object of joined.unreferenced) ownerOf.get(object)?.issues.push({ kind: 'not-referenced', object });
+    source = joined.source;
     if (missing.length > 0) {
       const row = ownerOf.get(main.object);
       row?.issues.push({ kind: 'missing-includes', names: missing });

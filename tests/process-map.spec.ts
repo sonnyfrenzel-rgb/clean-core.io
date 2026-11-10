@@ -354,7 +354,10 @@ test.describe('the map on the page, without a mouse', () => {
     // map is reachable from the keyboard, it is **one** stop, and every stop on
     // the way to it announces itself. A count of Tab presses was never the
     // claim; a reader who cannot name the control they have landed on is.
-    await page.locator('[data-cc-segmented] [data-cc-segment="on"]').focus();
+    // Since 3.0.21 every tool carries the view switch (Business, IT,
+    // Management) in its header, a segmented control of its own; the one
+    // above the map is the map/list switch.
+    await page.locator('[data-cc-segmented] [data-cc-segment="on"][id$="-map"]').focus();
     let firstFocused: string | null = null;
     const onTheWay: string[] = [];
     for (let press = 0; press < 25 && !firstFocused; press += 1) {

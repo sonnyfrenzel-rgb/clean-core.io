@@ -56,9 +56,14 @@ test.describe('who the free quota stops', () => {
     // The screen tells the user to add their own key and the server then stops
     // counting (reserveRunQuota: reason 'byok' / 'enterprise'); the dashboard's
     // own copy of the rule stopped exactly those users at project creation.
-    expect(quotaExhausted(at({ byokConfigured: true }))).toBe(false);
+    // 3.0.21: an own key counts only once it passed a test (`byokTestedAt`).
+    const tested = { byokConfigured: true, byokTestedAt: { seconds: 1 } };
+    expect(quotaExhausted(at(tested))).toBe(false);
     expect(quotaExhausted(at({ tier: 'enterprise' }))).toBe(false);
-    expect(runsAreSelfFunded(at({ byokConfigured: true }))).toBe(true);
+    expect(runsAreSelfFunded(at(tested))).toBe(true);
+    // Stored but never tested: the free-run limit still applies.
+    expect(runsAreSelfFunded(at({ byokConfigured: true }))).toBe(false);
+    expect(quotaExhausted(at({ byokConfigured: true }))).toBe(true);
     expect(runsAreSelfFunded(at({ tier: 'enterprise' }))).toBe(true);
     expect(runsAreSelfFunded(at())).toBe(false);
   });

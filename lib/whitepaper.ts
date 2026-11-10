@@ -116,7 +116,7 @@ export const FROM_LANDING = {
   views: [
     { key: 'business', name: 'Business', q: 'Do I still need this, and what changes for me?', a: 'Opens with one next step, then the process as numbered steps in plain words with their lines, what it decides and what it changes, and the business rules — the hard-coded ones too — unanswered first.' },
     { key: 'it', name: 'IT', q: 'What exactly, where to, and is it right?', a: 'Opens with the findings at their line, the successor named and who names it, and the chain from requirement to anchor, finding and target draft.' },
-    { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and fit to standard as one figure; costs only as a simulation.' },
+    { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and what stands in the way of the SAP standard as one figure; costs only as a simulation.' },
   ],
   /** The demo rule in three views — the landing's stage card. */
   viewExample: {
@@ -151,7 +151,7 @@ export const FROM_LANDING = {
     { key: 'source', t: 'Your ABAP source', d: 'Every statement keeps its program, include and line — that is what a line anchor points to. Includes that were not uploaded are named as not determined.', pv: 'reconstructed' as ProvenanceValue },
     { key: 'engine', t: 'Deterministic engine', d: 'Parses the code and finds the constructs, rules and SAP objects without a language model. The same file gives the same result.', pv: 'reconstructed' as ProvenanceValue },
     { key: 'imports', t: 'Your imports, optional', d: 'ATC results and usage data you upload. They are marked as imported, never as proven.', pv: 'imported' as ProvenanceValue },
-    { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as a model proposal until someone confirms them.', pv: 'proposed' as ProvenanceValue },
+    { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as AI-generated until someone confirms them.', pv: 'proposed' as ProvenanceValue },
   ],
 
   verifySteps: [

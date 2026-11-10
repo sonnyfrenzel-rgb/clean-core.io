@@ -55,6 +55,8 @@ export const GATED_ROUTES: GatedRoute[] = [
   // that matters most — a refusal there has to hold or the spec's own account
   // disappears, which is exactly the failure it would report.
   { file: 'app/api/account/delete/route.ts', method: 'POST', path: () => '/api/account/delete', body: { confirm: 'DELETE' } },
+  // A6 of 3.0.21: the withdrawal path ends in the same deletion, behind the same factor.
+  { file: 'app/api/account/withdraw/route.ts', method: 'POST', path: () => '/api/account/withdraw' },
   // JIRA_INTEGRATION_ENABLED is off, so this answers 404 before the gate. The
   // day it is switched on, 403 is what it must answer, and both are accepted
   // here so that neither state is a surprise.
@@ -151,9 +153,6 @@ export const GATED_ROUTES: GatedRoute[] = [
   // customer's code.
   { file: 'app/api/projects/[projectId]/evidence/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/evidence` },
   { file: 'app/api/projects/[projectId]/evidence/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/evidence`, body: { source: 'REPORT z.', s4Deployment: 'public' } },
-  // Roadmap 7.2, mockup s3 — the standard-fit table, derived on the server from
-  // the project's source and SAP's catalogue. A read of the customer's code.
-  { file: 'app/api/projects/[projectId]/standard-fit/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/standard-fit` },
   // Roadmap 8.3 — the architecture contract the generation follows (GET), and
   // the record of which contract a generated stand was computed against (POST).
   { file: 'app/api/projects/[projectId]/contract/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/contract` },
@@ -182,6 +181,13 @@ export const GATED_ROUTES: GatedRoute[] = [
   // My workspace — which projects were shared with this account (ids only).
   { file: 'app/api/shared-projects/route.ts', method: 'GET', path: () => '/api/shared-projects' },
   { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}/readers`, body: { uid: 'not-a-reader' } },
+  // Roadmap 3.0.21 — the automatic-steps switch of the account's own key (owner
+  // decision 22.10.2026, B6): it decides what the own key is spent on without a
+  // click, so it sits behind the factor like the other own-key routes.
+  { file: 'app/api/secrets/gemini/auto-steps/route.ts', method: 'POST', path: () => '/api/secrets/gemini/auto-steps', body: { on: false } },
+  // Roadmap 3.0.21 — the portfolio view of a shared selection: the gate answers
+  // before the selection is looked up, so an id that does not exist is enough.
+  { file: 'app/api/portfolio/view/route.ts', method: 'GET', path: () => '/api/portfolio/view?selection=not-a-selection' },
 ];
 
 /**

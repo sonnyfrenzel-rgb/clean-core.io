@@ -61,6 +61,7 @@ import {
   type TestingClosure,
 } from '@/lib/testing-closure';
 import type { TestingClosureBasis } from '@/lib/workflow-steps';
+import { ATC_FORMATS, ATC_RUN_DATE_SOURCES } from '@/lib/abap/atc-model';
 
 /* ------------------------------------------------------------------ fields */
 
@@ -226,6 +227,10 @@ const ATC_REPORT_KEYS = [
   'importedAt',
   'warnings',
   'retentionExpiresAt',
+  // 3.0.21: the file's shape and the date of the ATC run.
+  'format',
+  'runAt',
+  'runAtSource',
 ] as const;
 
 const ATC_SOURCES = ['atc'] as const;
@@ -244,6 +249,7 @@ const ATC_FINDING_KEYS = [
   'priority',
   'line',
   'exempted',
+  'include',
 ] as const;
 
 /**
@@ -319,6 +325,21 @@ export function normaliseAtcReport(
     return { ok: false, error: 'atcReport.importedAt must be an ISO date string.' };
   }
   if (!Array.isArray(value.warnings)) return { ok: false, error: 'atcReport.warnings must be a list.' };
+  // 3.0.21: closed vocabularies, and a run date that is a date and not in the future.
+  if (value.format !== undefined && !(typeof value.format === 'string' && (ATC_FORMATS as readonly string[]).includes(value.format))) {
+    return { ok: false, error: `atcReport.format must be one of ${ATC_FORMATS.join(', ')}.` };
+  }
+  if (value.runAt !== undefined) {
+    const at = typeof value.runAt === 'string' && value.runAt.length <= 40 ? Date.parse(value.runAt) : NaN;
+    if (!Number.isFinite(at) || at > Date.now() + 24 * 60 * 60 * 1000) {
+      return { ok: false, error: 'atcReport.runAt must be an ISO date that is not in the future.' };
+    }
+    if (typeof value.runAtSource !== 'string' || !(ATC_RUN_DATE_SOURCES as readonly string[]).includes(value.runAtSource)) {
+      return { ok: false, error: `atcReport.runAtSource must be one of ${ATC_RUN_DATE_SOURCES.join(', ')}.` };
+    }
+  } else if (value.runAtSource !== undefined) {
+    return { ok: false, error: 'atcReport.runAtSource needs atcReport.runAt.' };
+  }
   if (value.quarantined !== undefined) {
     if (!Array.isArray(value.quarantined)) return { ok: false, error: 'atcReport.quarantined must be a list.' };
     if (value.quarantined.length > ATC_REPORT_MAX_QUARANTINED) {

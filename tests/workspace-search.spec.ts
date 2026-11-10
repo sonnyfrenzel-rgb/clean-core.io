@@ -873,7 +873,8 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
     });
 
     await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+    // "Ask this case" stands in the IT view since 22.10.2026 (owner decision; DESIGN.md §5.3).
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-ask-this-case="answered"]');

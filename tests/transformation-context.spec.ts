@@ -369,6 +369,26 @@ test('the server reads the answers onto the engine\'s rules and stamps both revi
   expect(open.context.text).not.toMatch(/BR-\d+ (KEEP|CHANGE|DROP)/);
 });
 
+test('a rule answered "Move to SAP standard" is not rebuilt: the prompt says so and the scaffold does not carry it', () => {
+  const ids = deriveBusinessRules(SOURCE).rules.map((r) => r.id);
+  const keep = assembled({ basis: 'confirmations', revision: 2, entries: [answer(ids[0], 'keep', 2)] });
+  const standard = assembled({ basis: 'confirmations', revision: 2, entries: [{ ...answer(ids[0], 'keep', 2), answer: 'standard' }] });
+  // Recorded before 3.0.20 (5): a Keep whose note said so reads the same.
+  const older = assembled({ basis: 'confirmations', revision: 2, entries: [answer(ids[0], 'keep', 2, 'Move to SAP standard.')] });
+
+  expect(keep.context.text).toContain(`${ids[0]} KEEP`);
+  for (const a of [standard, older]) {
+    expect(a.context.text).toContain(`${ids[0]} STANDARD`);
+    expect(a.context.text).not.toContain(`${ids[0]} KEEP`);
+    expect(a.context.text).toContain('left to SAP standard by decision');
+    const d = a.stamp.decisions.find((x) => x.id === ids[0]);
+    expect(d?.answer, 'the scaffold would implement a rule left to SAP standard').toBe('drop');
+    expect(a.stamp.rules, 'the token does not see that the rule moved to the standard').not.toBe(keep.stamp.rules);
+  }
+  // A plain Keep hashes exactly as before this change.
+  expect(keep.stamp.decisions.find((x) => x.id === ids[0])?.answer).toBe('keep');
+});
+
 test('a changed rule decision or decision record changes the generation token', () => {
   const ids = deriveBusinessRules(SOURCE).rules.map((r) => r.id);
   const project = { legacyCode: SOURCE, solutionDesign: 'design', analysis: 'analysis' };

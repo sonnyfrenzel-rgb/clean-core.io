@@ -37,6 +37,28 @@ export interface OutgoingMail {
   from?: string;
   /** Recorded with the send so a later bounce can find the person again. */
   uid?: string;
+  /**
+   * Writes the delivery record itself instead of `recordEmailSent`, for a
+   * mail with a record of its own — the invitations
+   * (`lib/invitation-delivery-record.ts`, privacy policy sections 6 and 8).
+   */
+  deliveryRecord?: (messageId: string) => Promise<unknown>;
+  /**
+   * The text part, when the caller writes its own — the Terms notice marks its
+   * changes in the text part, and `htmlToText` would drop the markings.
+   * Absent, the text part is generated from the HTML as before.
+   */
+  text?: string;
+  /**
+   * Resend's `Idempotency-Key`: a retry of a bulk send with the same key is not
+   * delivered twice. Must not contain the address.
+   */
+  idempotencyKey?: string;
+  /**
+   * Files attached to the mail (Resend `attachments`, content base64). The
+   * Terms notice carries the full changed wording this way, so the body stays small.
+   */
+  attachments?: ReadonlyArray<{ filename: string; content: string; contentType: string }>;
 }
 
 export type MailOutcome =
@@ -82,7 +104,11 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
   try {
     res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        ...(msg.idempotencyKey ? { 'Idempotency-Key': msg.idempotencyKey } : {}),
+      },
       body: JSON.stringify({
         from: msg.from || DEFAULT_FROM,
         to: msg.to,
@@ -93,7 +119,16 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
         html: msg.html,
         // HTML-only is a long-standing spam signal. Generated from the same
         // markup so it cannot drift from what the reader sees.
-        text: htmlToText(msg.html),
+        text: msg.text ?? htmlToText(msg.html),
+        ...(msg.attachments?.length
+          ? {
+              attachments: msg.attachments.map((a) => ({
+                filename: a.filename,
+                content: Buffer.from(a.content, 'utf8').toString('base64'),
+                content_type: a.contentType,
+              })),
+            }
+          : {}),
       }),
     });
   } catch (err) {
@@ -111,7 +146,13 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
   // Label and message id only: the recipient is personal data and the id is
   // the join key to the delivery record.
   console.log(`[Email] Sent ${msg.label}. id=${messageId ?? 'unknown'}`);
-  if (messageId) {
+  if (messageId && msg.deliveryRecord) {
+    // The caller's own record (an invitation: keyed hash, no address, six
+    // months), and only that one — not an `email_events` record as well.
+    await msg.deliveryRecord(messageId).catch((err) =>
+      console.error(`[Email] Could not record sent event for ${msg.label}:`, err),
+    );
+  } else if (messageId) {
     // Best effort: the message is already away, and failing to write the join
     // key must not turn a delivered mail into an error for the caller.
     await recordEmailSent(messageId, msg.to, msg.subject, msg.label, msg.uid).catch((err) =>

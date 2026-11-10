@@ -25,6 +25,15 @@ const DEFAULT_TTL_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
 const PURPOSE = 'unsub';
 
+/**
+ * What a token unsubscribes from. `unsub` is community mail (the default, and
+ * every token minted before 3.0.21); `inv-unsub` is invitations to a project
+ * or a portfolio (C10/C12, `lib/invitation-suppression.ts`). The purpose sits
+ * inside the signed payload, so a token for one list never verifies for the
+ * other.
+ */
+export type UnsubscribePurpose = 'unsub' | 'inv-unsub';
+
 function getSecret(): string {
   const s = process.env.PILOT_APPROVAL_SECRET;
   if (!s || s.length < 16) {
@@ -53,9 +62,9 @@ export function suppressionId(email: string): string {
 }
 
 /** Create an unsubscribe token bound to one email address. */
-export function createUnsubscribeToken(email: string, ttlMs: number = DEFAULT_TTL_MS): string {
+export function createUnsubscribeToken(email: string, ttlMs: number = DEFAULT_TTL_MS, purpose: UnsubscribePurpose = PURPOSE): string {
   const exp = Date.now() + ttlMs;
-  const payload = `${PURPOSE}.${normaliseEmail(email)}.${exp}`;
+  const payload = `${purpose}.${normaliseEmail(email)}.${exp}`;
   const b64 = Buffer.from(payload).toString('base64url');
   return `${b64}.${sign(payload)}`;
 }
@@ -64,7 +73,7 @@ export function createUnsubscribeToken(email: string, ttlMs: number = DEFAULT_TT
  * Verify a token and return the address it was issued for.
  * Throws on a malformed token, a bad signature, the wrong purpose, or expiry.
  */
-export function verifyUnsubscribeToken(token: string): string {
+export function verifyUnsubscribeToken(token: string, expectedPurpose: UnsubscribePurpose = PURPOSE): string {
   const parts = (token || '').split('.');
   if (parts.length !== 2) throw new Error('Malformed unsubscribe link.');
 
@@ -94,7 +103,7 @@ export function verifyUnsubscribeToken(token: string): string {
   const email = payload.slice(firstDot + 1, lastDot);
   const expRaw = payload.slice(lastDot + 1);
 
-  if (purpose !== PURPOSE) throw new Error('Invalid unsubscribe link.');
+  if (purpose !== expectedPurpose) throw new Error('Invalid unsubscribe link.');
 
   const exp = Number(expRaw);
   if (!Number.isFinite(exp) || Date.now() > exp) {

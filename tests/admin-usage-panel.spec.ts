@@ -8,6 +8,7 @@ process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-a
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 const firebaseApp = initializeApp(firebaseConfig, 'admin-usage-panel');
 const firebaseAuth = getAuth(firebaseApp);
@@ -92,6 +93,10 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     await adminSetDoc('users', adminUid, {
       firstName: 'Admin', lastName: 'E2E', email: ADMIN_EMAIL,
       tier: 'enterprise', status: 'approved', isAdmin: true,
+      // The admin has accepted the Terms in force: without it the Terms dialog
+      // opens over the console, and since Fassung 1.1 (3.0.21) it carries a
+      // checkbox of its own (the C2 statement) beside the panel's CI toggle.
+      termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetCustomClaim(adminUid, { admin: true });
@@ -203,11 +208,12 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     const toggle = page.getByText(/Show \d+ CI test accounts?/);
     await expect(toggle).toBeVisible();
 
-    await page.getByRole('checkbox').check();
+    const ciToggle = page.getByRole('checkbox', { name: /Show \d+ CI test accounts?/ });
+    await ciToggle.check();
     await expect(page.locator(ROW, { hasText: 'Superduper E2E' }).first()).toBeVisible();
     await expect(page.locator(ROW, { hasText: 'Superduper E2E' }).first()).toContainText('CI');
 
-    await page.getByRole('checkbox').uncheck();
+    await ciToggle.uncheck();
     await expect(page.locator(ROW, { hasText: 'Superduper E2E' })).toHaveCount(0);
   });
 

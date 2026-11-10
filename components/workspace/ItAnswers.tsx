@@ -32,7 +32,7 @@ import {
 } from '@/lib/workspace-messages';
 import { itObjects, type ItObjectRow, type ItObjects } from '@/lib/it-objects';
 import { IT_ANCHORS, IT_SECTION_IDS, type ItSectionKey, type RunTrust } from '@/lib/it-sections';
-import type { WorkspaceLayer, WorkspaceView } from '@/lib/workspace-model';
+import type { WorkspaceView } from '@/lib/workspace-model';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import type { Loaded } from '@/lib/management-overview';
@@ -69,7 +69,9 @@ import {
 import { itOpening, itState, usesSummary } from '@/lib/it-state';
 import ItRail, { useContract } from './ItRail';
 import PageAnchorBar from '@/components/PageAnchorBar';
-import ItStandardFit from './ItStandardFit';
+import StandardTouchCard from './StandardTouchCard';
+import FitCheckPanel from './FitCheckPanel';
+import { standardTouch } from '@/lib/standard-touch';
 import ItDependencyGraph, { objectKindWord, objectUseWord } from './ItDependencyGraph';
 import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
@@ -121,7 +123,6 @@ export default function ItAnswers({
   coach,
   trust,
   elsewhere = null,
-  standardLayer = null,
   rules = null,
 }: {
   projectId: string;
@@ -167,16 +168,10 @@ export default function ItAnswers({
     deliveryHref: string | null;
   } | null;
   /**
-   * The *Standard fit* layer of the project (`workspaceLayers`), shown as IT's
-   * own section under the two columns since ADR-096 (owner, 12.10.2026: it
-   * leaves the Business view). `null` draws no section.
-   */
-  standardLayer?: WorkspaceLayer | null;
-  /**
    * The full rule register (owner decision 21.10.2026, the new set-up of the
    * business rules): it left the Business view's opening, which says one
    * sentence and leads into Design. Full width under the two columns, before
-   * Standard fit. `null` draws nothing.
+   * "Where this program touches SAP standard". `null` draws nothing.
    */
   rules?: React.ReactNode;
 }) {
@@ -292,6 +287,8 @@ export default function ItAnswers({
     [source],
   );
   const fit = useFitByPlatform(findingsRead, project, wt('mgmt.lookupFailed'));
+  /** Stage 1 of the fit-to-standard approach (owner decision 22.10.2026): read from the same findings. */
+  const touch = useMemo(() => (source === undefined ? undefined : standardTouch(source)), [source]);
   const where: WhereTo | null = useMemo(() => (fit.state === 'ready' ? whereTo(fit.value) : null), [fit]);
 
   /**
@@ -467,7 +464,12 @@ export default function ItAnswers({
                   ? ''
                   : null,
             trust: trust !== 'demo' && trust.signed,
-            standard: standardLayer && standardLayer.rows.length > 0 ? String(standardLayer.total) : null,
+            standard:
+              touch === undefined || source === null
+                ? null
+                : touch.gate.outcome === 'offered'
+                  ? touch.gate.classes.join(', ')
+                  : '',
           })}
         />
       ) : null}
@@ -730,13 +732,17 @@ export default function ItAnswers({
       {/* The rule register (owner decision 21.10.2026): every rule by basket, explained, with its lines and code. */}
       {showContent && rules ? <div data-it-register="" className="mt-4">{rules}</div> : null}
 
-      {/* Standard fit (ADR-096, owner 12.10.2026): full width under the two
-          columns — its table carries a side column of its own, which beside
-          IT's rail would leave the table no room. Last in the page's order, so
-          last in the anchor bar. */}
-      {showContent && standardLayer ? (
+      {/* Where this program touches SAP standard, and the guided check under
+          it (owner decision 22.10.2026; it took the place of the Standard fit
+          table, ADR-096's address `#standard` kept). Full width, last in the
+          page's order, so last in the anchor bar. */}
+      {showContent ? (
         <div id={IT_SECTION_IDS.standard} data-it-standard="" className="mt-4 scroll-mt-28">
-          <ItStandardFit layer={standardLayer} project={project} projectId={projectId} live={!demo} />
+          <StandardTouchCard touch={touch}>
+            {touch && source ? (
+              <FitCheckPanel projectId={projectId} project={project} touch={touch} rows={source.rows} demo={demo} />
+            ) : null}
+          </StandardTouchCard>
         </div>
       ) : null}
 
@@ -966,7 +972,7 @@ function anchorsOf(content: {
   questions: number | null | undefined;
   route: string | null;
   trust: boolean;
-  /** The capabilities' count, or `null` where Standard fit has nothing to read. */
+  /** The gate's classes, `''` for the label alone, or `null` while the findings are read. */
   standard: string | null;
 }): ItAnchor[] {
   const out: ItAnchor[] = [];

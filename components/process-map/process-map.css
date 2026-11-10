@@ -382,6 +382,190 @@
   inset: 0;
   z-index: var(--cc-z-overlay);
   height: 100dvh;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* The bottom inset is the button bar's own (`.cc-tour-nav`), so Next sits above a phone's home bar. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
   background: var(--cc-surface);
+}
+
+/*
+ * The tour's three layouts (owner decisions 22.10.2026, option A). CSS picks
+ * the layout from the first paint, so a phone never shows the wide one for a
+ * frame; `ProcessTour.tsx` reads the same two queries (`TOUR_WIDE`,
+ * `TOUR_LANDSCAPE`) for the camera.
+ *
+ * Stacked, a phone upright (the default): a one-row bar, the map on top, the
+ * card under it — at most 46 % of the screen, scrolling on its own and never
+ * the page behind (`overscroll-behavior: contain`) — and Back / Next pinned
+ * in a bar under the card, outside what scrolls.
+ */
+.cc-tour-head {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 48px;
+  padding: 4px 12px;
+}
+
+.cc-tour-body {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cc-tour-map {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 28dvh;
+  border-bottom: 1px solid var(--cc-line);
+  /* The viewer's own layers (its logo stands at z-index 100) stay inside the map, under the card and the panel. */
+  isolation: isolate;
+}
+
+.cc-tour-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cc-tour-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 46dvh;
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* The card takes a sideways swipe itself and leaves the browser the scrolling up and down. */
+  touch-action: pan-y;
+}
+
+.cc-tour-nav {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px calc(8px + max(env(safe-area-inset-bottom), 0px));
+}
+
+/* "More about it" on a phone: a panel over the whole tour, with its own way back to the map. */
+.cc-tour-more-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cc-tour-more-panel[hidden] {
+  display: none;
+}
+
+.cc-tour-more-scroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 16px 16px calc(16px + max(env(safe-area-inset-bottom), 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cc-tour-wide-only {
+  display: none;
+}
+
+.cc-tour-narrow-only {
+  display: flex;
+}
+
+/* A phone on its side: the card in a column beside the map (about 42 %, at most 360 px), the buttons under it. */
+@media (max-width: 1023px) and (max-height: 559px) and (orientation: landscape) {
+  .cc-tour-body {
+    flex-direction: row;
+  }
+
+  .cc-tour-map {
+    height: auto;
+    min-height: 0;
+    border-right: 1px solid var(--cc-line);
+    border-bottom: 0;
+  }
+
+  .cc-tour-side {
+    flex: 0 0 min(42%, 360px);
+  }
+
+  /* A phone on its side has about 270 px under the bar: the card says the same, a little tighter. */
+  .cc-tour-card {
+    flex: 1 1 auto;
+    gap: 8px;
+    min-height: 0;
+    max-height: none;
+    padding: 12px 16px;
+  }
+
+  .cc-tour-card h2 {
+    font-size: 15px;
+  }
+
+  .cc-tour-card [data-tour-narration] p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .cc-tour-nav {
+    padding-top: 6px;
+    padding-bottom: calc(6px + max(env(safe-area-inset-bottom), 0px));
+  }
+}
+
+/* Wide and tall enough: the map fills the layer and the card, with its buttons, stands beside the element. */
+@media (min-width: 768px) and (min-height: 560px) {
+  .cc-tour-head {
+    padding: 8px 24px;
+  }
+
+  .cc-tour-body {
+    display: block;
+  }
+
+  .cc-tour-map {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    border-bottom: 0;
+  }
+
+  .cc-tour-side {
+    position: absolute;
+    width: 380px;
+    max-height: calc(100% - 32px);
+    border: 1px solid var(--cc-line);
+    border-radius: var(--cc-radius-card);
+    box-shadow: var(--cc-shadow);
+    overflow: hidden;
+  }
+
+  .cc-tour-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .cc-tour-wide-only {
+    display: revert;
+  }
+
+  .cc-tour-head p.cc-tour-wide-only {
+    display: flex;
+  }
+
+  .cc-tour-narrow-only {
+    display: none;
+  }
 }

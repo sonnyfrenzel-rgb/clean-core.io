@@ -299,13 +299,16 @@ test('080cd5fce607: the proxy signs the stage it was called under — at the rou
   // And the store takes it: the real chain, proxy receipt into the statements route.
   const stored = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: body.text, receipt: body.receipt } });
   expect(stored.status(), await stored.text()).toBe(200);
-  // …while the naming store refuses the same receipt.
+  // …while the naming store refuses the same receipt. Since 3.0.21 the naming
+  // route refuses every naming without the engine's facts before it reads a
+  // receipt (`NAMING_WITHOUT_FACTS_PAUSED`), so the refusal is the pause; the
+  // receipt's wrong stage is asserted by `verifyModelReceipt` just above.
   const naming = await request.post(`/api/projects/${PROJECT_ID}/process-naming`, {
     headers: headers(),
     data: { digest: namingContextOf(PROGRAM).digest, text: body.text, receipt: body.receipt },
   });
-  expect(naming.status(), await naming.text()).toBe(422);
-  expect(await naming.json()).toMatchObject({ code: 'receipt-refused', refusal: 'wrong-stage' });
+  expect(naming.status(), await naming.text()).toBe(403);
+  expect(await naming.json()).toMatchObject({ code: 'naming-paused' });
 
   // The stub sits behind the stage switch, not in front of it.
   await request.post('/api/model-stages', { headers: headers(), data: { stages: { statements: false } } });

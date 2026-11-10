@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -15,19 +16,33 @@ import { verifyModelReceipt } from '@/lib/model-receipt';
 import {
   MAX_ANSWER_LENGTH,
   NAMING_FORMAT_VERSION,
+  NAMING_MADE_FROM_FACTS,
+  NAMING_PAUSED_CODE,
+  NAMING_PAUSED_REASON,
   NAMING_STAGE,
   isProcessNamingRecord,
+  namingContextHasFacts,
   namingContextOf,
+  namingPaused,
   validateNamingAnswer,
   type ProcessNamingRecord,
 } from '@/lib/process-naming';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson } from '@/lib/url-validation';
+
+/** The answer, its digest and its receipt, read under a bound before parsing. */
+const ANSWER_BODY_LIMITS = { maxBytes: MAX_ANSWER_LENGTH * 6 + 64 * 1024, timeoutMs: 20_000 };
 
 /**
  * The business names of a project's process skeleton — roadmap 2.4.
  *
  *   GET  → `{ record }`, the stored naming or `null`.
  *   POST `{ digest, text, receipt }` → `{ record }`, the naming as validated.
+ *
+ * Since 3.0.21 the POST answers 403 `naming-paused` for a reading without the
+ * engine's facts (`NAMING_WITHOUT_FACTS_PAUSED` in `lib/process-naming.ts`) and
+ * stores nothing. The GET still returns a stored naming; `applyNaming` does not
+ * apply one that was not built from the facts.
  *
  * The model is not called here. `/api/gemini` is the only path from this
  * product to a model (`lib/model-receipt.ts`), so the browser asks it for the
@@ -43,7 +58,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  *   2. **The origin is observed, not claimed.** A naming is stored only with a
  *      receipt that verifies for this account and this text. Without one the
  *      text could have been typed by anyone, and a name typed by anyone must not
- *      carry the chip *Model proposal* — so it is refused, not stored as
+ *      carry the chip *AI-generated* — so it is refused, not stored as
  *      something vaguer. The receipt's MAC is not kept; what is kept is that the
  *      server checked it, and which model it named.
  *   3. **The validation is the server's.** `validateNamingAnswer` drops and
@@ -91,7 +106,7 @@ async function openProject(
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -213,6 +228,7 @@ export async function GET(
       discarded: data.discarded,
       origin: data.origin,
       namedAt: isoOf(data.namedAt),
+      ...(data.madeFrom === NAMING_MADE_FROM_FACTS ? { madeFrom: NAMING_MADE_FROM_FACTS } : {}),
     };
     // A document of another format version is not a naming this build can
     // apply. Saying "none" is true; handing it over as one is not.
@@ -231,7 +247,9 @@ export async function POST(
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    const body = (await req.json().catch(() => null)) as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
+    const read = await readBoundedRequestJson(req, ANSWER_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
     if (!body || typeof body.text !== 'string' || typeof body.digest !== 'string') {
       return NextResponse.json(
         { error: 'Expected { digest, text, receipt }: the answer from /api/gemini as it came back.', code: 'bad-request' },
@@ -249,6 +267,12 @@ export async function POST(
       return NextResponse.json({ error: 'This source is too large to name in one request.', code: 'too-large' }, { status: 413 });
     }
     const context = namingContextOf(gate.legacyCode);
+    // Paused (owner decision 06.11.2026): a naming not built from the engine's
+    // facts is not stored. 403 with its own code, as `/api/gemini` answers a
+    // switched-off stage; nothing is written, and a stored naming stays as it is.
+    if (namingPaused(context)) {
+      return NextResponse.json({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE }, { status: 403 });
+    }
     if (body.digest !== context.digest) {
       return NextResponse.json(
         {
@@ -279,7 +303,7 @@ export async function POST(
     if (!verdict.ok) {
       return NextResponse.json(
         {
-          error: 'These names carry no valid receipt from the model call, so they are not stored as a model proposal.',
+          error: 'These names carry no valid receipt from the model call, so they are not stored as AI-generated.',
           code: 'receipt-refused',
           refusal: verdict.refusal,
         },
@@ -304,6 +328,7 @@ export async function POST(
         textSha256: verdict.receipt.textSha256,
       },
       namedAt: new Date().toISOString(),
+      ...(namingContextHasFacts(context) ? { madeFrom: NAMING_MADE_FROM_FACTS } : {}),
     };
 
     const { db } = await getAdminDb();

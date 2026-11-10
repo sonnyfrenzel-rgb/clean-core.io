@@ -1639,7 +1639,7 @@ export function technicalTrace(engine: ProcessDocumentation, ctx: TraceContext):
   ];
   const lanes: PdText[] = [
     ...engine.lanes.map((l) => ({ text: `${l.name || '(program)'} — ${l.kind}${l.basis.length ? `, from ${l.basis.join(', ')}` : ''}.`, anchors: [copy(l.anchor)] })),
-    ...engine.proposedLanes.filter((l) => l.anchor).map((l) => ({ text: `${l.name}${l.authorityObject ? ` (${l.authorityObject})` : ''} — Model proposal.`, anchors: [copy(l.anchor!)] })),
+    ...engine.proposedLanes.filter((l) => l.anchor).map((l) => ({ text: `${l.name}${l.authorityObject ? ` (${l.authorityObject})` : ''} — AI-generated.`, anchors: [copy(l.anchor!)] })),
   ];
   return { elements, groups: ordered, merged, luw, lanes };
 }

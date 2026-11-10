@@ -128,6 +128,12 @@ function diIndex(definitions: ModdleElement): Map<string, number> {
 }
 
 const OPTIONS = (file: string) => ({ processName: file.replace(/\.\w+$/, ''), sourceFileName: file });
+/**
+ * The expanded reading, pinned: roadmap row "3.0.21 — The BPMN reconstruction stays at the business level" draws a
+ * routine once and a run of guard checks as one step from engine 3.0.21 on (`lib/bpmn/model.ts`, `businessLevel`,
+ * read for `exporterVersion`). The tests that are about the reading before it name the engine it was drawn for.
+ */
+const ENGINE_3020 = '3.0.20';
 
 /* ================================================================== *
  * The eight programs this product ships
@@ -190,10 +196,24 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_SALES_ORDER_CREATOR.txt', 14, 12, 2, 3, 0, 0, 0],
 ];
 
+/**
+ * Roadmap row "3.0.21 — The BPMN reconstruction stays at the business level": the rows `SHIPPED` holds are the
+ * engine 3.0.20 reading. From 3.0.21 only PO moves: `CHECK_REQUISITION` checks `gs_eban-matnr IS INITIAL` (L78) and
+ * `gs_eban-frgkz = 'X'` (L82), each performing `REJECT` and leaving — a run of two guards, now one business-rule task
+ * "2 checks (L78, L82)", one "2 checks passed" gateway and one early end instead of two gateways, two `REJECT` tasks
+ * and two early ends: 84→81 flow nodes, 81→78 flows; sub-processes, planes and stores do not move. No shipped file
+ * performs a routine twice, so "drawn once" moves none of them. Every other file reads the same at both engines.
+ */
+const SHIPPED_3021: Record<string, [number, number, number, number, number, number, number]> = {
+  [PO]: [81, 78, 9, 10, 11, 0, 0],
+};
+
 test.describe('the eight programs this product ships', () => {
-  for (const [file, flowNodes, sequenceFlows, subProcesses, planes, dataStores, pools, messageFlows] of SHIPPED) {
-    test(`${file} — ${flowNodes} flow nodes, ${sequenceFlows} flows, ${subProcesses} sub-processes, read without a warning`, async () => {
-      const exported = buildBpmnExportFromSource(read(file), OPTIONS(file));
+  for (const [file, ...at3020] of SHIPPED) {
+    const at3021 = SHIPPED_3021[file] ?? at3020;
+    for (const [engine, [flowNodes, sequenceFlows, subProcesses, planes, dataStores, pools, messageFlows]] of [[ENGINE_3020, at3020], ['3.0.21', at3021]] as const) {
+    test(`${file} — engine ${engine}: ${flowNodes} flow nodes, ${sequenceFlows} flows, ${subProcesses} sub-processes, read without a warning`, async () => {
+      const exported = buildBpmnExportFromSource(read(file), { ...OPTIONS(file), exporterVersion: engine });
       const parser = await moddle();
       const parsed = await parser.fromXML(exported.xml);
       expect(parsed.warnings.map((w) => w.message)).toEqual([]);
@@ -227,6 +247,7 @@ test.describe('the eight programs this product ships', () => {
         .filter((t) => t === 'bpmn:SubProcess');
       expect(subPlanes).toHaveLength(subProcesses);
     });
+    }
 
     test(`${file} — survives a round trip and is byte-identical when built twice`, async () => {
       const source = read(file);
@@ -757,7 +778,8 @@ test.describe('the palette, as BPMN', () => {
     ].join('\n');
     const parser = await moddle();
 
-    const a = await parser.fromXML(buildBpmnExportFromSource(twice, { processName: 't', sourceFileName: 't.abap' }).xml);
+    // The expanded reading, pinned to engine 3.0.20; the 3.0.21 one is the next test.
+    const a = await parser.fromXML(buildBpmnExportFromSource(twice, { processName: 't', sourceFileName: 't.abap', exporterVersion: ENGINE_3020 }).xml);
     expect(a.warnings.map((w) => w.message)).toEqual([]);
     const subs = countOf(a.rootElement).elements.filter((e) => e.$type === 'bpmn:SubProcess');
     expect(subs.map((s) => s.id)).toEqual(['nd-2-0', 'nd-3-1']);
@@ -783,6 +805,32 @@ test.describe('the palette, as BPMN', () => {
     expect(traceOf(catcher)?.fallback).toBe('unattached-handler');
   });
 
+  test('from engine 3.0.21 a routine performed twice is drawn once; the second call site is a call to it', async () => {
+    // Roadmap row "3.0.21 — The BPMN reconstruction stays at the business level": a routine is drawn once, later
+    // call sites are call activities (`fallback="drawn-once"`), still anchored on their own `PERFORM` line.
+    const post = [
+      "  SELECT SINGLE * FROM mara INTO ls_mara WHERE matnr = '1'.",
+      "  UPDATE zlog SET x = 'X'.",
+      '  IF sy-subrc <> 0.',
+      '    MESSAGE e001(zz).',
+      '  ENDIF.',
+      "  CALL FUNCTION 'Z_NOTIFY'.",
+    ];
+    const twice = ['REPORT ztwice.', 'START-OF-SELECTION.', '  PERFORM post.', '  PERFORM post.', 'FORM post.', ...post, 'ENDFORM.'].join('\n');
+    const parsed = await (await moddle()).fromXML(buildBpmnExportFromSource(twice, { processName: 't', sourceFileName: 't.abap', exporterVersion: '3.0.21' }).xml);
+    expect(parsed.warnings.map((w) => w.message)).toEqual([]);
+    const elements = countOf(parsed.rootElement).elements;
+    const subs = elements.filter((e) => e.$type === 'bpmn:SubProcess');
+    expect(subs.map((s) => s.id)).toEqual(['nd-2-0']);
+    const ids = (s: ModdleElement) => list<ModdleElement>(s.flowElements).filter((e) => e.$instanceOf('bpmn:FlowNode')).map((e) => e.id);
+    expect(ids(subs[0])).toEqual(['nd-4-0', 'nd-11-0', 'nd-5-0', 'nd-6-0', 'nd-7-0', 'nd-8-0', 'nd-10-0']);
+    expect(elements.some((e) => String(e.id).startsWith('nd-3-1__'))).toBe(false);
+    const call = elements.find((e) => e.id === 'nd-3-1') as ModdleElement;
+    expect(call.$type).toBe('bpmn:CallActivity');
+    expect(call.name).toBe('POST');
+    expect(traceOf(call)).toMatchObject({ node: 'nd-3-1', lineStart: '4', fallback: 'drawn-once' });
+  });
+
   test('a source that performs one routine from everywhere stops expanding at the limit', () => {
     // Ten levels, each routine performing the next twice: 2^10 copies of the
     // last one if nothing stopped it.
@@ -792,13 +840,23 @@ test.describe('the palette, as BPMN', () => {
         `  SELECT SINGLE * FROM mara INTO ls_mara WHERE matnr = '${i}'.`, `  UPDATE zlog${i} SET x = 'X'.`, 'ENDFORM.');
     }
     lines.push('FORM r14.', "  UPDATE zend SET x = 'X'.", "  CALL FUNCTION 'Z_END'.", "  SELECT SINGLE * FROM mara INTO ls_mara WHERE matnr = 'e'.", "  UPDATE zend2 SET x = 'X'.", 'ENDFORM.');
-    const exported = buildBpmnExportFromSource(lines.join('\n'), { processName: 'fan', sourceFileName: 'fan.abap' });
+    // The expanded reading, pinned to engine 3.0.20: it is the one that copies a routine at every call site.
+    const exported = buildBpmnExportFromSource(lines.join('\n'), { processName: 'fan', sourceFileName: 'fan.abap', exporterVersion: ENGINE_3020 });
     // The limit is checked before each expansion; the routines already open on
     // the way down still finish, which is at most a depth's worth of nodes more.
     expect(exported.stats.flowNodes).toBeGreaterThan(MAX_NODES / 2);
     expect(exported.stats.flowNodes).toBeLessThanOrEqual(MAX_NODES + 100);
     expect(exported.xml).toContain('fallback="expansion-limit"');
     expect(exported.xml).toContain('not expanded because the diagram reached its size limit');
+
+    // Roadmap row "3.0.21 — The BPMN reconstruction stays at the business level": from engine 3.0.21 each of the
+    // fifteen routines is drawn once and the second `PERFORM` of each level is a call to it, so the fan-out never
+    // reaches the limit — 15 sub-processes, 14 call activities, 93 flow nodes.
+    const business = buildBpmnExportFromSource(lines.join('\n'), { processName: 'fan', sourceFileName: 'fan.abap', exporterVersion: '3.0.21' });
+    expect(business.stats).toMatchObject({ flowNodes: 93, sequenceFlows: 77, subProcesses: 15, planes: 16 });
+    expect((business.xml.match(/<bpmn:callActivity /g) ?? []).length).toBe(14);
+    expect((business.xml.match(/fallback="drawn-once"/g) ?? []).length).toBe(14);
+    expect(business.xml).not.toContain('fallback="expansion-limit"');
   });
 });
 
@@ -944,7 +1002,40 @@ test('the documentation stage exports the skeleton of the signed run, not a mode
 test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () => {
   const TECHNICAL = /\bSY-SUBRC\b|\bSY-TABIX\b|\bIS\s+(?:NOT\s+)?ASSIGNED\b|\bIS\s+(?:NOT\s+)?BOUND\b|\bLINES\s*\(/i;
 
+  /** Exclusive gateways in the export of the eight files, and how many of them only read a return code. */
+  function technicalShare(exporterVersion: string): { gateways: number; technical: number } {
+    let gateways = 0;
+    let technical = 0;
+    for (const [file] of SHIPPED) {
+      const skeleton = buildProcessSkeleton(read(file));
+      const exported = buildBpmnExport(skeleton, { ...OPTIONS(file), exporterVersion });
+      const conditions = new Map<string, string[]>();
+      for (const edge of skeleton.edges) {
+        const own = conditions.get(edge.from) ?? [];
+        own.push(edge.condition);
+        conditions.set(edge.from, own);
+      }
+      const byId = new Map(skeleton.nodes.map((n) => [n.id, n]));
+      for (const [elementId, nodeId] of Object.entries(exported.elementNode)) {
+        if (!exported.xml.includes(`<bpmn:exclusiveGateway id="${elementId}"`)) continue;
+        gateways += 1;
+        if (byId.get(nodeId)?.kind !== 'gateway') continue;
+        const own = (conditions.get(nodeId) ?? []).filter((c) => c.trim());
+        if (own.length && own.every((c) => TECHNICAL.test(c))) technical += 1;
+      }
+    }
+    return { gateways, technical };
+  }
+
+  test('from engine 3.0.21 6 of 31 exclusive gateways are purely technical — the guard run in PO is one decision', () => {
+    // Roadmap row "3.0.21 — The BPMN reconstruction stays at the business level": the two guards of
+    // `CHECK_REQUISITION` in PO (L78, L82) become one "2 checks" step and one "2 checks passed" gateway, so the
+    // denominator loses one business gateway (32→31). Neither guard reads a return code: the six technical ones stay.
+    expect(technicalShare('3.0.21')).toEqual({ gateways: 31, technical: 6 });
+  });
+
   test('6 of 32 exclusive gateways in the eight files are purely technical, from 17 of 52', () => {
+    // Engine 3.0.20, pinned: the share 2.15 measured. The 3.0.21 business-level figure is the test above.
     // Counted out of the XML, like every other number in this file, and counted
     // over the whole export rather than over the skeleton: an `exclusiveGateway`
     // is what a reader of the file sees, and `model.ts` draws a loop as one too.
@@ -961,26 +1052,7 @@ test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () =
     // `READ TABLE` draw no node at all, `OPEN DATASET` draws an `output`), so
     // there is no activity whose failure this is. The gap is that, not a
     // condition the fold could not read.
-    let gateways = 0;
-    let technical = 0;
-    for (const [file] of SHIPPED) {
-      const skeleton = buildProcessSkeleton(read(file));
-      const exported = buildBpmnExport(skeleton, OPTIONS(file));
-      const conditions = new Map<string, string[]>();
-      for (const edge of skeleton.edges) {
-        const own = conditions.get(edge.from) ?? [];
-        own.push(edge.condition);
-        conditions.set(edge.from, own);
-      }
-      const byId = new Map(skeleton.nodes.map((n) => [n.id, n]));
-      for (const [elementId, nodeId] of Object.entries(exported.elementNode)) {
-        if (!exported.xml.includes(`<bpmn:exclusiveGateway id="${elementId}"`)) continue;
-        gateways += 1;
-        if (byId.get(nodeId)?.kind !== 'gateway') continue;
-        const own = (conditions.get(nodeId) ?? []).filter((c) => c.trim());
-        if (own.length && own.every((c) => TECHNICAL.test(c))) technical += 1;
-      }
-    }
+    const { gateways, technical } = technicalShare(ENGINE_3020);
     console.log(`2.15: ${technical} of ${gateways} exclusive gateways in the eight files are purely technical (${(technical / gateways * 100).toFixed(1)} %)`);
     expect(gateways).toBe(32);
     expect(technical).toBe(6);

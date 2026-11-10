@@ -231,7 +231,7 @@ test('with a model narrative stored, the head says which part is the proposal', 
   await expect(head).not.toContainText('with a model narrative');
   // The proposal is marked where it stands, while it is still folded.
   const summary = page.locator('#analyze-summary');
-  await expect(summary).toContainText('Model proposal');
+  await expect(summary).toContainText('AI-generated');
   await expect(summary.locator('[data-cc-disclosure-trigger]').first()).toHaveAttribute('aria-expanded', 'false');
   await summary.locator('[data-cc-disclosure-trigger]').first().click();
   await expect(summary).toContainText('writes their status back to EBAN');

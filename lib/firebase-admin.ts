@@ -2,16 +2,26 @@ import { createHash, randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
-import { sealByokSecret, openByokSecret, ByokKeyUnreadableError, OwnModelKeyMissingError } from './byok-key';
+import { sealByokSecret, openByokSecret, ByokKeyUnreadableError, OwnModelKeyMissingError, OwnModelKeyBlockedError } from './byok-key';
+import { ownKeyCounts } from './run-quota-rule';
+import { byokAddendumSha256, type ByokAddendumAcceptance, type ByokAgreementEnding, type ByokAgreementEvent } from './byok-addendum';
 import { MODEL_KEY_PROVIDERS, ownKeyProviderOf, storedKeyProviderOf, type ModelKeyProvider } from './model-providers';
 import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
-import { normaliseEmail, suppressionId } from './unsubscribe-token';
+import { suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
-import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-email';
+import { erasePortfolioOf } from './portfolio/erasure';
+import { ADMIN_SIGNUP_MAIL_KIND, legacyAdminSignupSubject } from './admin-signup-email';
+import { quotaSpentSentence } from './run-quota-rule';
+import { isRecentLogin } from './recent-login';
+import { retainProofsOfErasedAccount, type ProofLogDb } from './proof-log-erasure';
+import { PROOF_LOG_RETENTION, PseudonymPepperMissingError, type ContractEnding } from './proof-log';
+import { pseudonymPepperConfigured, subjectHashOf } from './pseudonym';
+import { auditRowErasureUpdate, auditRowNamesActorEmail, erasedAccountPseudonym } from './audit-pseudonymisation';
+import { INVITATION_DELIVERY_RECORDS } from './invitation-delivery-record';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -105,8 +115,9 @@ export async function getAdminAuth() {
  * routes and the `isAdminClaim` exemptions — at the price of one lookup per
  * request from a handful of accounts.
  */
-export async function verifyIdToken(idToken: string) {
+export async function verifyIdToken(idToken: string, checkRevoked = false) {
   const auth = (await ensureAuthModule()).getAuth();
+  if (checkRevoked) return auth.verifyIdToken(idToken, true);
   const decoded = await auth.verifyIdToken(idToken);
   if (decoded.admin === true) {
     return auth.verifyIdToken(idToken, true);
@@ -165,7 +176,17 @@ async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T)
  * A token that still claims `admin` after the claim was withdrawn comes back
  * without it — see `withoutWithdrawnAdminClaim`.
  */
-export async function verifyRequestAuth(req: Request) {
+export async function verifyRequestAuth(
+  req: Request,
+  /**
+   * `checkRevoked: true` asks Firebase Auth whether the account still exists,
+   * is enabled and has not revoked its tokens (one Auth lookup). For the doors
+   * into an account — registration and consent (L-01): an ID token outlives
+   * the erasure of its account by up to an hour, and those routes would
+   * otherwise write a profile back for an account that no longer exists.
+   */
+  opts: { checkRevoked?: boolean } = {},
+) {
   const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) return null;
 
@@ -173,7 +194,7 @@ export async function verifyRequestAuth(req: Request) {
   if (!token) return null;
 
   try {
-    return await withoutWithdrawnAdminClaim(await verifyIdToken(token));
+    return await withoutWithdrawnAdminClaim(await verifyIdToken(token, opts.checkRevoked === true));
   } catch (err) {
     logRejectedToken(err);
     return null;
@@ -251,10 +272,7 @@ export async function verifyAdminRequest(req: Request) {
 }
 
 export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {
-  const authTime = Number(decodedToken?.auth_time);
-  const nowSeconds = Math.floor(Date.now() / 1000);
-
-  if (!Number.isFinite(authTime) || nowSeconds - authTime > maxAgeSeconds) {
+  if (!isRecentLogin(decodedToken, maxAgeSeconds)) {
     throw new QuotaError('Security timeout. Please re-authenticate and try again.', 403);
   }
 }
@@ -301,6 +319,21 @@ export class QuotaError extends Error {
     this.name = 'QuotaError';
     this.status = status;
   }
+}
+
+/**
+ * What a route may tell the caller when its MFA gate throws.
+ *
+ * The gate's own refusal (`QuotaError`) is written for the account and is
+ * passed on, with its status. Anything else — a failed profile read, an
+ * infrastructure error — is logged here and the caller gets an empty object,
+ * so its own generic sentence (`q.message || '…'`) and status (`q.status || 403`)
+ * apply and no internal error text leaves the server.
+ */
+export function mfaRefusal(err: unknown): { message?: string; status?: number } {
+  if (err instanceof QuotaError) return { message: err.message, status: err.status };
+  logger.error('mfa gate failed', { error: providerErrorShape(err) });
+  return {};
 }
 
 /** Outcome of a run-quota reservation — see `reserveRunQuota`. */
@@ -384,8 +417,10 @@ export async function reserveRunQuota(
     if (tier === 'enterprise') {
       return { charged: false, reason: 'enterprise' as const, used, limit };
     }
-    if (data.byokConfigured === true) {
+    if (ownKeyCounts(data)) {
       // BYOK runs are on the user's own Gemini key — "unlimited" per Terms §6.
+      // 3.0.21: only a key that passed its test counts (`ownKeyCounts`); a key
+      // that was merely stored lifts nothing.
       return { charged: false, reason: 'byok' as const, used, limit };
     }
 
@@ -428,10 +463,8 @@ export async function reserveRunQuota(
     }
 
     if (used >= limit) {
-      throw new QuotaError(
-        `You've used all ${limit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`,
-        403,
-      );
+      // The quota's one name, roadmap 3.0.21 (2): the same sentence the screens show.
+      throw new QuotaError(quotaSpentSentence(limit), 403);
     }
 
     tx.set(
@@ -900,7 +933,7 @@ async function commitInChunks(db: Firestore, writes: Array<(batch: WriteBatch) =
  */
 export async function deleteUserDataAndAccount(
   uid: string,
-  deps: { db?: Firestore; auth?: Auth } = {},
+  deps: { db?: Firestore; auth?: Auth; ending?: ContractEnding } = {},
 ): Promise<void> {
   await ensureInitialized();
   const db = deps.db ?? (await getAdminDb()).db;
@@ -948,8 +981,11 @@ export async function deleteUserDataAndAccount(
   };
   await sweepClientCreatable();
 
-  // 2. Other user-owned top-level collections
-  await deleteCollectionByUid('consent_events'); // F-16: purge consent records (hold uid/email)
+  // 2. Other user-owned top-level collections.
+  //    Not the proof log (`consent_events`, `byok_agreement_events`) and not
+  //    the delivery records (`email_events`): since 3.0.21 (T05/T06) they are
+  //    kept, pseudonymised, with their own deletion date — step 3c,
+  //    `retainProofsOfErasedAccount` (privacy policy section 5, Terms 1.3, C7).
   //    Survey answers and the free-text comment beside them: one document per
   //    campaign, `${campaign}__${uid}`, written by /api/survey/vote with the
   //    owner in `uid`. It was missing from this list, so an erased account's
@@ -959,10 +995,6 @@ export async function deleteUserDataAndAccount(
   //    and campaign, `${campaign}__${uid}`, holding the address beside the uid.
   //    It exists so nobody is mailed twice; an erased account is mailed never.
   await deleteCollectionByUid('email_sends', 'uid');
-  //    The delivery log (`lib/email-events.ts`) keeps the recipient address per
-  //    message. Records written with the account's uid go here; records written
-  //    for the address alone go in step 3c, once the address has been read.
-  await deleteCollectionByUid('email_events', 'uid');
   //    Proxy capabilities of the account's live test runs (`lib/s4-proxy-
   //    capability-store.ts`): project id, uid, tenant host, run id. A run deletes
   //    its own when it returns; one a crashed run left behind waits for the TTL
@@ -1008,6 +1040,8 @@ export async function deleteUserDataAndAccount(
   //    The per-account write ceiling (`lib/write-ceiling.ts`): counts and the
   //    ids of the last created project and ticket.
   await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+  //    The account's test-run slot and its runner seconds of the day (`lib/test-run-lock.ts`).
+  await tryDelete('test_run_locks', () => db.collection('test_run_locks').doc(uid).delete());
   // Note: rate_limits docs are pseudonymised (HMAC ids) and self-expire via a
   // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
 
@@ -1063,6 +1097,12 @@ export async function deleteUserDataAndAccount(
     });
   }
 
+  //     Roadmap 3.0.21: the account's portfolio batches and named selections,
+  //     and its uid among the readers of selections shared with it
+  //     (`lib/portfolio/erasure.ts`). Invitations addressed to it there go with
+  //     the collection-group sweep of `invitations` below.
+  await tryDelete('portfolio', () => erasePortfolioOf(db, FieldValue, uid));
+
   //     The invitations are **deleted, not withdrawn**. A withdrawal writes
   //     `status: 'revoked'` and leaves `email` in place — the address of the
   //     person who asked to be erased, still sitting in another owner's
@@ -1107,59 +1147,108 @@ export async function deleteUserDataAndAccount(
     });
   }
 
-  //     Delivery-log records that name the account by address only — a mail
-  //     sent before the log carried a uid, or by a route that never passed one.
-  //     `to` holds the address as it was sent, so both spellings are asked.
-  for (const address of new Set([profileAddress, invitedAddress].filter((a): a is string => !!a))) {
-    const q = db.collection('email_events').where('to', 'array-contains', address).limit(400);
-    await tryDelete('email_events', async () => {
-      let snapshot = await q.get();
-      while (snapshot.size > 0) {
-        const batch = db.batch();
-        snapshot.docs.forEach((eventDoc: ErasableDoc) => batch.delete(eventDoc.ref));
-        await batch.commit();
-        snapshot = await q.get();
+  //     "Proofs, not data" (privacy policy section 5, Terms 1.3, C7; T05/T06):
+  //     the acceptance and ending records, the delivery records of mails to the
+  //     account (by uid and by address, both spellings) and an opt-out of
+  //     community mail stay — with the keyed hash of the address in place of
+  //     account and address and their own deletion date — plus the record of
+  //     the end of the contract and the deletion note. `lib/proof-log-erasure.ts`.
+  //
+  //     Without `PSEUDONYM_PEPPER` no keyed hash can be made. Then the records
+  //     are deleted as before 3.0.21 rather than kept with the address: an
+  //     erasure that cannot complete is worse than a proof the operator loses,
+  //     and the critical log says the deployment lacks the secret.
+  const proofAddresses = [profileAddress, invitedAddress].filter((a): a is string => !!a);
+  await tryDelete('proof-log', async () => {
+    try {
+      await retainProofsOfErasedAccount(db as unknown as ProofLogDb, () => FieldValue.delete(), {
+        uid,
+        addresses: proofAddresses,
+        endedAt: new Date(),
+        ending: deps.ending ?? 'account-deletion',
+      });
+    } catch (e) {
+      if (!(e instanceof PseudonymPepperMissingError)) throw e;
+      logger.critical('account erasure: PSEUDONYM_PEPPER is not set — proof records deleted instead of pseudonymised', { code: e.code });
+      await deleteCollectionByUid('consent_events');
+      await deleteCollectionByUid(BYOK_AGREEMENT_EVENTS);
+      await deleteCollectionByUid('email_events', 'uid');
+      await deleteCollectionByUid(INVITATION_DELIVERY_RECORDS, 'inviterUid');
+      for (const address of new Set(proofAddresses)) {
+        const rows = await db.collection('email_events').where('to', 'array-contains', address).get();
+        await commitInChunks(db, rows.docs.map((row: ErasableDoc) => (batch: WriteBatch) => batch.delete(row.ref as DocumentReference)));
       }
-    });
-  }
+      const legacy = [...new Set(proofAddresses)].map((a) => db.collection('email_suppressions').doc(suppressionId(a)));
+      await commitInChunks(db, legacy.map((ref) => (batch: WriteBatch) => batch.delete(ref)));
+    }
+  });
+
+  //     The security log keeps its rows for the retention period
+  //     (`docs/DATA-RETENTION.md`), pseudonymised (legal review of 05.11.2026):
+  //     every row in which this account is the actor or the subject keeps its
+  //     action and time, its uid is replaced by the keyed hash the proof log
+  //     names the account by, and no address of it stays
+  //     (`auditRowErasureUpdate`, `lib/audit-pseudonymisation.ts`). Another
+  //     administrator's uid and address in the same row stay — they attribute
+  //     a privileged act on this account to whoever made it.
+  //
+  //     Without `PSEUDONYM_PEPPER` no keyed hash can be made; the rows naming
+  //     the account are then deleted, as the proof records are above, rather
+  //     than kept with its uid.
+  await tryDelete('audit_events', async () => {
+    const named = new Map<unknown, ErasableDoc>();
+    for (const field of ['actorUid', 'targetUid']) {
+      for (const row of (await db.collection('audit_events').where(field, '==', uid).get()).docs) named.set(row.ref, row);
+    }
+    let pseudonym: string | null = null;
+    try {
+      pseudonym = erasedAccountPseudonym(uid, proofAddresses);
+    } catch (e) {
+      if (!(e instanceof PseudonymPepperMissingError)) throw e;
+      logger.critical('account erasure: PSEUDONYM_PEPPER is not set — security log rows of the account deleted instead of pseudonymised', { code: e.code });
+    }
+    const writes: Array<(batch: WriteBatch) => void> = [];
+    for (const row of named.values()) {
+      const ref = row.ref as DocumentReference;
+      if (pseudonym === null) {
+        writes.push((batch) => batch.delete(ref));
+        continue;
+      }
+      const update = auditRowErasureUpdate(row.data() || {}, uid, pseudonym, FieldValue.delete());
+      if (update) writes.push((batch) => batch.update(ref, update));
+    }
+    await commitInChunks(db, writes);
+  });
 
   //     The operator's signup notification about this account, written before
   //     it carried the account's uid: found by its subject, which is built from
   //     the name the registration record kept. Only that kind of record is
   //     touched; another account registered under the identical name loses its
   //     notification record too, which names nobody but that name.
+  //     Since 3.0.21 the record holds the keyed hash of the subject, not the
+  //     subject (`lib/email-events.ts`); one written before holds the subject
+  //     until the owner's one-off rewrite (`scripts/hash-email-events.ts`).
   if (signupName) {
-    const q = db.collection('email_events').where('subject', '==', buildAdminSignupSubject(signupName));
+    const subject = legacyAdminSignupSubject(signupName);
+    const queries = [db.collection('email_events').where('subject', '==', subject)];
+    if (pseudonymPepperConfigured()) queries.push(db.collection('email_events').where('subjectHash', '==', subjectHashOf(subject)));
     await tryDelete('email_events', async () => {
-      const snapshot = await q.get();
-      const refs = snapshot.docs
-        .filter((eventDoc: ErasableDoc) => (eventDoc.data() || {}).kind === ADMIN_SIGNUP_MAIL_KIND)
-        .map((eventDoc: ErasableDoc) => eventDoc.ref);
-      await commitInChunks(db, refs.map((ref: unknown) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
+      const refs = new Map<string, unknown>();
+      for (const q of queries) {
+        for (const eventDoc of (await q.get()).docs as ErasableDoc[]) {
+          if ((eventDoc.data() || {}).kind === ADMIN_SIGNUP_MAIL_KIND) refs.set((eventDoc.ref as DocumentReference).path, eventDoc.ref);
+        }
+      }
+      await commitInChunks(db, [...refs.values()].map((ref: unknown) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
     });
   }
 
-  //     The opt-out list (`app/api/unsubscribe/route.ts`) holds the address of
-  //     everyone who unsubscribed from community mail, keyed by its hash. It is
-  //     a record of the person, and an erased account is mailed never anyway —
-  //     `email_sends` above and the profile below go with it, so no send
-  //     script finds the address to skip. Removed by the id the route writes,
-  //     by the stored address in case a spelling differed, and by uid for any
-  //     entry that carries one (Sonny, 30.09.2026).
+  //     The opt-out list (`app/api/unsubscribe/route.ts`) is kept, as the keyed
+  //     hash only, without end (privacy policy sections 2 and 5, C7): the
+  //     proof-log step above turned an entry with the address in clear into
+  //     one without it. Owner decision of 30.09.2026 ("removed on erasure")
+  //     superseded by the legal texts of Fassung 1.1.
   const addresses = [...new Set([profileAddress, invitedAddress].filter((a): a is string => !!a))];
-  const suppressionRefs = new Map<string, unknown>();
-  await tryDelete('email_suppressions', async () => {
-    for (const address of addresses) {
-      const ref = db.collection('email_suppressions').doc(suppressionId(address));
-      suppressionRefs.set(ref.path, ref);
-      const byAddress = await db.collection('email_suppressions').where('email', '==', normaliseEmail(address)).get();
-      byAddress.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
-    }
-    const byUid = await db.collection('email_suppressions').where('uid', '==', uid).get();
-    byUid.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
-    // Deleting an id that does not exist is not an error in Firestore.
-    await commitInChunks(db, [...suppressionRefs.values()].map((ref) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
-  });
 
   //     Weekly-report snapshots (`usage_reports`) written before 30.09.2026
   //     listed accounts by name and address; snapshots since hold figures only
@@ -1217,6 +1306,7 @@ export async function deleteUserDataAndAccount(
       erasureErrors.push(`second sweep: ${e instanceof Error ? e.message : String(e)}`);
     }
     await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
+    await tryDelete('test_run_locks', () => db.collection('test_run_locks').doc(uid).delete());
   }
   if (erasureErrors.length > 0) {
     throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);
@@ -1480,11 +1570,20 @@ export async function auditActorEmail(db: any, actorUid: string): Promise<string
   return 'system-admin';
 }
 
+/**
+ * Whether a row for `action` records the actor's address (PRV-01): only the
+ * administrative actions do; an account acting on its own key, projects or
+ * readers is recorded by its uid alone. The set and the erasure rule live in
+ * `lib/audit-pseudonymisation.ts` (pure, shared with the legacy backfill).
+ * Re-exported for the tests.
+ */
+export { auditRowNamesActorEmail };
+
 /** The `audit_events` row for one action, ready for `add()` or for a batch. */
 async function auditEventRecord(db: any, actorUid: string, action: string, targetUid: string) {
   return {
     actorUid,
-    actorEmail: await auditActorEmail(db, actorUid),
+    ...(auditRowNamesActorEmail(action) ? { actorEmail: await auditActorEmail(db, actorUid) } : {}),
     action,
     targetUid,
     timestamp: new Date(),
@@ -1685,8 +1784,26 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
   // GDPR Art. 17: run the SAME full erasure cascade as self-service deletion.
   // Previously this only removed registration_requests + users, which orphaned
   // projects, immutable runs, BYOK/S4 secrets, MFA data and the Firebase Auth account.
+  // The address is read before the cascade removes the profile, so the row
+  // written after it names the erased account by the same keyed hash the
+  // cascade put into its other rows — not by the uid it just pseudonymised
+  // everywhere else (legal review of 05.11.2026). Without the pepper the row
+  // names no account at all.
+  let address: string | null = null;
+  try {
+    const stored = ((await db.collection('users').doc(targetUid).get()).data() || {}).email;
+    address = typeof stored === 'string' && stored.trim() ? stored : null;
+  } catch {
+    /* named by the hash of the uid */
+  }
   await deleteUserDataAndAccount(targetUid);
-  await logAuditEvent(db, adminUid, 'DELETE_USER_CASCADE', targetUid);
+  let subject = 'erased-account';
+  try {
+    subject = erasedAccountPseudonym(targetUid, [address]);
+  } catch (e) {
+    if (!(e instanceof PseudonymPepperMissingError)) throw e;
+  }
+  await logAuditEvent(db, adminUid, 'DELETE_USER_CASCADE', subject);
 }
 
 /**
@@ -1704,7 +1821,30 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
  * 3. Updates the user profile with BYOK metadata (configured status, provider,
  *    last 4 chars, timestamp) and deletes the legacy cleartext key.
  */
-export async function saveOwnModelKey(uid: string, apiKey: string, provider: ModelKeyProvider): Promise<any> {
+export async function saveOwnModelKey(
+  uid: string,
+  apiKey: string,
+  provider: ModelKeyProvider,
+  /**
+   * 3.0.21 — the acceptance of the Additional Agreement on Own Model Keys that
+   * an Anthropic key is stored with (`lib/byok-addendum.ts`). The route refuses
+   * an Anthropic save without one; it is recorded in the same transaction as
+   * the key, so a key never stands without its acceptance on record.
+   */
+  opts: {
+    addendum?: ByokAddendumAcceptance | null;
+    /**
+     * 3.0.21 — the caller tested the key with the provider and it passed
+     * (`lib/own-key-test.ts`). An own key counts as configured only after a
+     * successful test, so nothing is stored without one.
+     */
+    tested?: boolean;
+  } = {},
+): Promise<any> {
+  // Refused before anything is opened or written (3.0.21).
+  if (opts.tested !== true) throw new Error('An own model key is stored only after a successful key test.');
+  const addendum = provider === 'anthropic' ? opts.addendum ?? null : null;
+  if (provider === 'anthropic' && !addendum) throw new Error('An Anthropic key is stored only with the Additional Agreement accepted.');
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
   const sealed = sealByokSecret(apiKey, { uid, provider });
@@ -1720,24 +1860,41 @@ export async function saveOwnModelKey(uid: string, apiKey: string, provider: Mod
   const profileRef: DocumentReference = db.collection('users').doc(uid);
   const secrets = db.collection('user_secrets').doc(uid).collection('providers');
   const secretRef: DocumentReference = secrets.doc(provider);
+  let agreementReplaced = false;
   await db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(profileRef);
     if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
+    const before = ownKeyProviderOf(profile.data() as { byokConfigured?: unknown; byokProvider?: unknown });
+    agreementReplaced = before === 'anthropic' && provider !== 'anthropic';
+    // A new record, whole: a new key starts with automatic steps off (3.0.21,
+    // owner decision B6 — recorded per key) and unblocked.
     tx.set(secretRef, {
       encryptedApiKey: sealed.encryptedApiKey,
       keyVersion: sealed.keyVersion,
       provider,
       last4,
       rotatedAt: FieldValue.serverTimestamp(),
+      testedAt: FieldValue.serverTimestamp(),
+      ...(addendum ? { addendum: { version: addendum.version, language: addendum.language, acceptedAt: FieldValue.serverTimestamp() } } : {}),
     });
     // One own key per account: the other provider's record goes with this save.
     for (const other of MODEL_KEY_PROVIDERS) if (other !== provider) tx.delete(secrets.doc(other));
+    // The proof log (clause 12): an Anthropic key replaced by a Gemini key ends
+    // the agreement; every Anthropic save accepts the version then in force.
+    if (agreementReplaced) byokAgreementEventWrite(tx, db, FieldValue, uid, { kind: 'ended', ending: 'replaced' });
+    if (addendum) byokAgreementEventWrite(tx, db, FieldValue, uid, { kind: 'accepted', version: addendum.version, language: addendum.language });
     // Mirror metadata to the user profile and remove legacy key
     tx.update(profileRef, {
       byokConfigured: true,
       byokProvider: provider,
       byokLast4: last4,
       byokRotatedAt: FieldValue.serverTimestamp(),
+      byokTestedAt: FieldValue.serverTimestamp(),
+      byokAutoSteps: FieldValue.delete(),
+      byokBlocked: FieldValue.delete(),
+      byokAddendum: addendum
+        ? { version: addendum.version, language: addendum.language, acceptedAt: FieldValue.serverTimestamp() }
+        : FieldValue.delete(),
       geminiApiKey: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -1747,6 +1904,8 @@ export async function saveOwnModelKey(uid: string, apiKey: string, provider: Mod
     byokConfigured: true,
     byokProvider: provider,
     byokLast4: last4,
+    /** Whether this save ended an agreement on an Anthropic key (replaced by a Gemini key). */
+    agreementReplaced,
   };
 }
 
@@ -1754,6 +1913,12 @@ export async function saveOwnModelKey(uid: string, apiKey: string, provider: Mod
 export interface OwnModelKey {
   provider: ModelKeyProvider;
   apiKey: string;
+  /**
+   * 3.0.21 — whether the steps the product starts by itself when a project is
+   * opened may run on this key (owner decision B6: a switch per key, off by
+   * default). Recorded on the key's own record, so a new key starts off.
+   */
+  autoSteps: boolean;
 }
 
 /**
@@ -1805,8 +1970,13 @@ export async function loadOwnModelKey(
       throw new ByokKeyUnreadableError(typeof data.keyVersion === 'number' ? data.keyVersion : null, 'wrong-provider');
     }
     const apiKey = openByokSecret(data as { encryptedApiKey: string; keyVersion?: unknown }, { uid, provider });
-    return { provider, apiKey };
+    // Blocked by the operator after an ending in text form (clause 11):
+    // refused like a missing key, never served with the platform key.
+    if (data.blockedAt) throw new OwnModelKeyBlockedError();
+    // Automatic steps only on a key that passed its test (3.0.21).
+    return { provider, apiKey, autoSteps: data.autoSteps === true && !!data.testedAt };
   } catch (err) {
+    if (err instanceof OwnModelKeyBlockedError) throw err;
     // A code, never the error object (3.0.13 e).
     logger.error('byok key decrypt failed', {
       error: providerErrorShape(err),
@@ -1835,24 +2005,171 @@ export async function loadOwnModelKey(
  * Now the secret and the profile change together or not at all, and a missing
  * profile is updated never: the secret still goes, the profile stays gone.
  */
-export async function deleteOwnModelKey(uid: string): Promise<void> {
+export async function deleteOwnModelKey(
+  uid: string,
+  /**
+   * 3.0.21 — how an Additional Agreement on an Anthropic key ends with this
+   * delete: in Settings (the default) or by the operator after a declaration
+   * in text form (clause 11). Recorded in the proof log when the deleted key
+   * was Anthropic's. Returns whether an agreement ended.
+   */
+  opts: { ending?: Extract<ByokAgreementEnding, 'settings' | 'text-form'> } = {},
+): Promise<{ agreementEnded: boolean }> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
   const profileRef: DocumentReference = db.collection('users').doc(uid);
   const secrets = db.collection('user_secrets').doc(uid).collection('providers');
-  await db.runTransaction(async (tx: Transaction) => {
+  return db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(profileRef);
+    const anthropicRecord = await tx.get(secrets.doc('anthropic') as DocumentReference);
+    const agreementEnded = anthropicRecord.exists;
     for (const provider of MODEL_KEY_PROVIDERS) tx.delete(secrets.doc(provider));
-    if (!profile.exists) return;
+    if (agreementEnded) byokAgreementEventWrite(tx, db, FieldValue, uid, { kind: 'ended', ending: opts.ending ?? 'settings' });
+    if (!profile.exists) return { agreementEnded };
     tx.update(profileRef, {
       byokConfigured: FieldValue.delete(),
       byokProvider: FieldValue.delete(),
       byokLast4: FieldValue.delete(),
       byokRotatedAt: FieldValue.delete(),
+      byokTestedAt: FieldValue.delete(),
+      byokAutoSteps: FieldValue.delete(),
+      byokBlocked: FieldValue.delete(),
+      byokAddendum: FieldValue.delete(),
       geminiApiKey: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+    return { agreementEnded };
   });
+}
+
+/**
+ * The collection of the proof log of the Additional Agreement on Own Model
+ * Keys (its clause 12): append-only, Admin SDK only — no rule names it, so
+ * every client read and write is refused by Firestore's default — and purged
+ * with the account (`userId`), like `consent_events`.
+ */
+export const BYOK_AGREEMENT_EVENTS = 'byok_agreement_events';
+
+/** One proof-log row, written inside the caller's transaction. */
+function byokAgreementEventWrite(
+  tx: Transaction,
+  db: Firestore,
+  FieldValue: { serverTimestamp: () => unknown },
+  uid: string,
+  event: ByokAgreementEvent,
+): void {
+  tx.create(db.collection(BYOK_AGREEMENT_EVENTS).doc(), {
+    uid,
+    userId: uid,
+    provider: 'anthropic',
+    kind: event.kind,
+    ...(event.kind === 'accepted'
+      ? {
+          version: event.version,
+          // The language version of the wording accepted — not the interface locale.
+          language: event.language,
+          // Derived here from what is recorded, never taken from a request (lib/consent.ts).
+          contentSha256: byokAddendumSha256(event.version, event.language),
+        }
+      : {}),
+    ...(event.kind === 'ended' ? { ending: event.ending } : {}),
+    createdAt: FieldValue.serverTimestamp(),
+    // The proof log (T05/T06): the record's own deletion date, set with the
+    // keyed hash when the contract ends (`lib/proof-log.ts`).
+    retention: PROOF_LOG_RETENTION,
+    expiresAt: null,
+  });
+}
+
+/**
+ * 3.0.21 — switches the automatic steps on or off for the account's stored own
+ * key (owner decision B6). Written on the key's record and mirrored on the
+ * profile (`byokAutoSteps`) for Settings; both through the Admin SDK only — the
+ * profile field is not in the client allowlist of `firestore.rules`, so no
+ * rules change. Throws `QuotaError(…, 409)` when no own key is stored.
+ */
+export async function setOwnKeyAutoSteps(uid: string, on: boolean): Promise<{ provider: ModelKeyProvider; autoSteps: boolean }> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  const secrets = db.collection('user_secrets').doc(uid).collection('providers');
+  return db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
+    const named = ownKeyProviderOf(profile.data() as { byokConfigured?: unknown; byokProvider?: unknown });
+    if (named === null || named === 'unknown') throw new QuotaError(NO_OWN_KEY_STORED, 409);
+    const record = await tx.get(secrets.doc(named) as DocumentReference);
+    if (!record.exists) throw new QuotaError(NO_OWN_KEY_STORED, 409);
+    // Only a key that passed its test counts (3.0.21) — switching on is refused
+    // for any other; switching off is always allowed.
+    if (on && !ownKeyCounts(profile.data() as { byokConfigured?: boolean; byokTestedAt?: unknown })) {
+      throw new QuotaError('Test your key first: automatic steps can be switched on only for a key that passed its test.', 409);
+    }
+    tx.update(record.ref, { autoSteps: on, autoStepsAt: FieldValue.serverTimestamp() });
+    tx.update(profileRef, { byokAutoSteps: on, updatedAt: FieldValue.serverTimestamp() });
+    return { provider: named, autoSteps: on };
+  });
+}
+
+const NO_OWN_KEY_STORED = 'No own model key is stored for this account.';
+
+/**
+ * 3.0.21 — the result of testing the **stored** key again: a pass stamps
+ * `byokTestedAt` (a key saved before the rule counts from its first passed
+ * test); a refusal takes it away and switches the automatic steps off, so a
+ * key that no longer works lifts nothing. Best effort for an erased profile:
+ * nothing is recreated.
+ */
+export async function recordOwnKeyTest(uid: string, provider: ModelKeyProvider, passed: boolean): Promise<void> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  const recordRef: DocumentReference = db.collection('user_secrets').doc(uid).collection('providers').doc(provider);
+  await db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    const record = await tx.get(recordRef);
+    if (!profile.exists || !record.exists) return;
+    if (passed) {
+      tx.update(recordRef, { testedAt: FieldValue.serverTimestamp() });
+      tx.update(profileRef, { byokTestedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    } else {
+      tx.update(recordRef, { testedAt: FieldValue.delete(), autoSteps: false });
+      tx.update(profileRef, { byokTestedAt: FieldValue.delete(), byokAutoSteps: false, updatedAt: FieldValue.serverTimestamp() });
+    }
+  });
+}
+
+/**
+ * 3.0.21 — the operator blocks an account's own key after the account ended
+ * the Additional Agreement in text form (clause 11): from now on no call goes
+ * out on it (`loadOwnModelKey` throws `OwnModelKeyBlockedError`), until the
+ * key is deleted. Recorded in the proof log and the audit log.
+ */
+export async function adminBlockOwnModelKey(adminUid: string, uid: string): Promise<{ blocked: boolean }> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  const secrets = db.collection('user_secrets').doc(uid).collection('providers');
+  const blocked = await db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    const records = await Promise.all(MODEL_KEY_PROVIDERS.map((p) => tx.get(secrets.doc(p) as DocumentReference)));
+    const stored = records.filter((r) => r.exists);
+    if (stored.length === 0) return false;
+    for (const r of stored) tx.update(r.ref, { blockedAt: FieldValue.serverTimestamp() });
+    if (stored.some((r) => r.id === 'anthropic')) byokAgreementEventWrite(tx, db, FieldValue, uid, { kind: 'blocked' });
+    if (profile.exists) tx.update(profileRef, { byokBlocked: true, updatedAt: FieldValue.serverTimestamp() });
+    return true;
+  });
+  await logAuditEvent(db, adminUid, 'BYOK_BLOCK', uid);
+  return { blocked };
+}
+
+/** 3.0.21 — the operator deletes the key after an ending in text form (clause 11). */
+export async function adminEndByokAgreement(adminUid: string, uid: string): Promise<{ agreementEnded: boolean }> {
+  const out = await deleteOwnModelKey(uid, { ending: 'text-form' });
+  const { db } = await getAdminDb();
+  await logAuditEvent(db, adminUid, 'BYOK_DELETE_TEXT_FORM', uid);
+  return out;
 }
 
 

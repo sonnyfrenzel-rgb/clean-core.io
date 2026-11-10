@@ -303,6 +303,10 @@ test.describe('public texts of a piece (3.0.8)', () => {
  * - `docs/archiv/` (history) and the German privacy notice `app/datenschutz/de`
  *   (a legal text whose German version prevails, E-7); `docs/korpus/` is the
  *   domain source and outside the inventory's scope as well;
+ * - the German contract versions in the legal archive (`GERMAN_LEGAL` below):
+ *   from Terms v2.3.0 a contract can be concluded in German (section 1.4), and
+ *   the archived German wording is the evidence a German acceptance hashes
+ *   (Fassung 1.1 of the legal texts, 3.0.21) — the same reason as E-7;
  * - decided by Sonny on 02.10.2026, the frozen measurement material: the corpus
  *   and benchmark cases (`tests/korpus/`, `tests/prozess-benchmark/` — data, not
  *   code, so the code half below never reads them) and the two judge briefs
@@ -324,6 +328,9 @@ const GERMAN_FROZEN: Record<string, string> = {
   'tests/prozess-benchmark/judge/richter-brief.md': 'judge prompt of the frozen process benchmark — stays German (Sonny, 02.10.2026)',
   'tests/prozess-benchmark/judge/richter-brief-schluss.md': 'judge prompt of the frozen process benchmark — stays German (Sonny, 02.10.2026)',
 };
+
+/** The German contract versions in the legal archive — legal texts, German by design (see above). */
+const GERMAN_LEGAL = /^docs\/(?:terms|byok-addendum)\/[^/]+\.de\.md$/;
 
 const GERMAN_WORDS = /(?<![\p{L}])(und|nicht|wird|werden|wurde|oder|dass|keine?n?|sind|auch|noch|wenn|eine[nmrs]?|für|über|bleibt|steht|kein|nach|beim|zum|zur|vom|sich|schon|nur|weil|jede[rsn]?|diese[rsnm]?|dem|des|ohne|gegen|seit|ein|im|auf|aus|bei|mit|von|der|das|hat|haben|kann|muss|soll|statt|heute|damit|dann|aber|doch|sondern)(?![\p{L}])/giu;
 
@@ -381,8 +388,10 @@ test.describe('everything public is English (3.0.14)', () => {
     expect(files.length).toBeGreaterThan(30);
     for (const frozen of Object.keys(GERMAN_FROZEN)) expect(files, `${frozen} is listed as frozen but not tracked`).toContain(frozen);
     const found = files
-      .filter((f) => !(f in GERMAN_FROZEN))
+      .filter((f) => !(f in GERMAN_FROZEN) && !GERMAN_LEGAL.test(f))
       .flatMap((f) => germanSentences(read(f)).map((s) => `${f}: ${s}`));
+    // The exception is exactly the German archive files, and they exist.
+    expect(files.filter((f) => GERMAN_LEGAL.test(f)).length, 'GERMAN_LEGAL matches no archived German legal text').toBeGreaterThan(0);
     expect(found, 'German prose in a public file — translate it, or quote the German string the text is about').toEqual([]);
   });
 

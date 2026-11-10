@@ -58,6 +58,8 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.businessOfferLead':
     'Who does what at each step, who is accountable, and the controls — proposed by a language model from the process documentation read from your code. The steps and their lines stay the code reading.',
   'doc.businessGenerate': 'Generate the business SOP & RACI',
+  // Nothing writes the layer on opening (legal review 06.11.2026, 3.0.21, item 1): the progress card says it waits.
+  'doc.businessWaitsForClick': 'Not written yet. It is written when you click Generate draft below; nothing is sent before.',
   'doc.businessBlockedTitle': 'Not yet possible',
   'doc.businessNeedsDocumentation':
     'The business layer is written from the process documentation, and none is saved yet. Read it from the code first; that takes no model call.',
@@ -93,8 +95,8 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.ownerWrites': 'The owner of this project writes it by opening this stage.',
   'doc.otherTab': 'Another tab of this browser is writing the business layer right now.',
 
-  // Roadmap 3.0.7, "Documentation lean" — one card for the model proposals.
-  'doc.proposalsTitle': 'Model proposals',
+  // Roadmap 3.0.7, "Documentation lean" — one card for the AI-generated proposals.
+  'doc.proposalsTitle': 'AI-generated proposals',
   'doc.proposalsLead':
     'Written by a language model on top of the process description: who does what at each step, and business wording for the code reading. The steps, their lines and the controls stay the code reading.',
   'doc.proposalsSentencesTitle': 'Business sentences',
@@ -199,7 +201,7 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.raciNotSaved': 'The RACI was not saved.',
   'doc.raciDemoKept': 'Kept in this browser only — the demo stores nothing.',
   'doc.raciDemoLead': 'A project starts from the model’s proposal; the demo calls no model. Name the roles yourself and say who does what at each step.',
-  'doc.raciEditedNote': 'Your RACI replaces the model proposal in the matrix and in every export.',
+  'doc.raciEditedNote': 'Your RACI replaces the AI-generated draft in the matrix and in every export.',
   'doc.dataReads': 'Data it reads',
   'doc.derivedValues': 'Values it computes',
   'doc.integrationsTitle': 'Integrations',
@@ -355,13 +357,13 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
 }
 
 /**
- * The one cost line of the model proposals card (DESIGN.md §2.8): what each
+ * The one cost line of the AI-generated proposals card (DESIGN.md §2.8): what each
  * proposal costs, said before any click. Every part is a fact of the page —
  * the model it names is the one the business layer is asked of, the key is
  * the one `/api/model-stages` reports.
  */
 export function docProposalsCostLine(model: string, byok: boolean): string {
-  return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation writes the SOP and RACI once when none is on record; the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+  return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation calls no model: the SOP and RACI are written on “Generate draft”, the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
 }
 
 /** Roadmap 3.0.13 — the end of the progress card when a stage stopped. */

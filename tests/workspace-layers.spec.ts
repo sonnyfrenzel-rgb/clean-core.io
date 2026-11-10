@@ -94,7 +94,8 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     expect(LAYERS).toEqual(['need', 'standard', 'costs', 'architecture', 'evidence']);
     expect(workspaceLayers(populated).map((l) => l.label)).toEqual([
       'Need & process',
-      'Standard fit',
+      // "Standard fit" until 22.10.2026; its content is IT's "Where this program touches SAP standard" (owner decision).
+      'Where it touches SAP standard',
       'Costs & assumptions',
       'Architecture & dependencies',
       'Evidence & controls',

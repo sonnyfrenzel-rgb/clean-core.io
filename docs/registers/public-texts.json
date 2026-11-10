@@ -979,7 +979,7 @@
       "kind": "concept",
       "purpose": "Concept German version (as of v2.0.0, 06.07.2026, draft for decision)",
       "audience": "internal, Sonny",
-      "saysToday": "Concept of the German version for the product from 3.0: workspace with three views and six layers, seven stages as tools, existing text keys (lib/cc-messages.ts, lib/provenance.ts), /de subpath without redirecting today's URLs, German model output with the Model proposal chip, terminology of the fixed lists; scheduled after 3.0 (ROADMAP §7, 3.1).",
+      "saysToday": "Concept of the German version for the product from 3.0: workspace with three views and six layers, seven stages as tools, existing text keys (lib/cc-messages.ts, lib/provenance.ts), /de subpath without redirecting today's URLs, German model output with the AI-generated chip (KI-generiert), terminology of the fixed lists; scheduled after 3.0 (ROADMAP §7, 3.1).",
       "wrongWith30": [
         {
           "lines": "16, 47, 116, 156",
@@ -1135,6 +1135,24 @@
       ],
       "measured": {
         "lines": 118
+      }
+    },
+    {
+      "path": "docs/EMERGENCY-ACCESS.md",
+      "kind": "runbook",
+      "purpose": "Emergency access by the operator: when it is allowed, how it is logged, what is never done",
+      "audience": "Operations, owner",
+      "saysToday": "Runbook for the open value emergencyAccessLogging (06.11.2026).",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Active runbook behind privacy section 8 and ZV 10.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 70
       }
     },
     {
@@ -1643,6 +1661,27 @@
       ],
       "measured": {
         "lines": 436
+      }
+    },
+    {
+      "path": "docs/design/analyze-business-first-plan.md",
+      "kind": "plan",
+      "purpose": "Build plan for the Analyze business-first rebuild along the accepted mockup v4.1 and the home page mockup v2: target picture, owner decisions, engine prerequisites, work packages AB-0 to AB-14 in the releases 3.0.22, 3.0.23 and 3.5.0, migration, tests and risks",
+      "audience": "Sonny, agents",
+      "saysToday": "Plan of 06.11.2026 with the owner's decisions and release cut; nothing built yet.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The binding plan of the open roadmap steps 3.0.22, 3.0.23 and 3.5.0; it is archived once they are built.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ROADMAP.md"
+      ],
+      "measured": {
+        "lines": 765
       }
     },
     {
@@ -2297,7 +2336,7 @@
         "terms": "check"
       },
       "measured": {
-        "lines": 74
+        "lines": 70
       },
       "executed": "2026-10-02"
     },
@@ -2902,6 +2941,94 @@
       "executed": "2026-10-02"
     },
     {
+      "path": "docs/terms/2026-11-09.md",
+      "kind": "legal",
+      "purpose": "Terms of Service v2.3.0, English version (Fassung 1.1, 3.0.21; provisional id = release date)",
+      "audience": "public, legal (lib/terms-versions.ts)",
+      "saysToday": "Terms of Service and Community Guidelines v2.3.0: German and English contract versions, the own Anthropic key under the Additional Agreement, no right of withdrawal (section 13).",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 171
+      }
+    },
+    {
+      "path": "docs/terms/2026-11-09.de.md",
+      "kind": "legal",
+      "purpose": "Terms of Service v2.3.0, German version (Fassung 1.1, 3.0.21) — a German legal text, section 1.4",
+      "audience": "public, legal (lib/terms-versions.ts)",
+      "saysToday": "Nutzungsbedingungen und Community-Richtlinien v2.3.0, deutsche Fassung.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 171
+      }
+    },
+    {
+      "path": "docs/byok-addendum/ZV-BYOK-1.0.md",
+      "kind": "legal",
+      "purpose": "Additional Agreement on Own Model Keys ZV-BYOK-1.0, English version (Fassung 1.1, 3.0.21)",
+      "audience": "public, legal (lib/legal/byok-addendum-versions.ts)",
+      "saysToday": "The agreement accepted when storing an own Anthropic key: recipient, roles, transfer, model, costs, ending, record.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/byok-addendum-versions.ts"
+      ],
+      "measured": {
+        "lines": 41
+      }
+    },
+    {
+      "path": "docs/byok-addendum/ZV-BYOK-1.0.de.md",
+      "kind": "legal",
+      "purpose": "Additional Agreement on Own Model Keys ZV-BYOK-1.0, German version (Fassung 1.1, 3.0.21) — a German legal text",
+      "audience": "public, legal (lib/legal/byok-addendum-versions.ts)",
+      "saysToday": "Zusatzvereinbarung zu eigenen Modellschlüsseln ZV-BYOK-1.0, deutsche Fassung.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text of Fassung 1.1 (3.0.21), generated from lib/legal/texts by scripts/legal/archive-terms.ts and never edited after publication. Until the release date is set it is regenerated, not edited (tests/legal-archive-sync.spec.ts).",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/byok-addendum-versions.ts"
+      ],
+      "measured": {
+        "lines": 41
+      }
+    },
+    {
       "path": "docs/terms/2026-10-03.md",
       "kind": "legal",
       "purpose": "Terms of Service, version effective 3 October 2026 (v2.2.0, with 3.0)",
@@ -3281,6 +3408,86 @@
       }
     },
     {
+      "path": "docs/legal/network-capture-2026-11-06-dev.md",
+      "kind": "report",
+      "purpose": "Comparison network capture of the dev service (3.0.21) for privacy policy section 7, made by scripts/legal/network-capture.ts",
+      "audience": "Sonny, legal review",
+      "saysToday": "As of 06.11.2026, v3.0.21 on dev: steps 1-8 contact only the first party in Chromium and WebKit and store nothing; Firebase Auth hosts from step 9 in WebKit.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Dated measurement report; a later release gets a new dated capture, this one is not rewritten.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/legal/network-capture-2026-11-06.md"
+      ],
+      "measured": {
+        "lines": 154
+      }
+    },
+    {
+      "path": "docs/legal/network-capture-2026-11-09-dev-before-fix.md",
+      "kind": "report",
+      "purpose": "Release-day network capture of the dev service (3.0.21, 2793847d) for privacy policy section 7, made by scripts/legal/network-capture.ts, before the fix for pages that need an account",
+      "audience": "Sonny, legal review",
+      "saysToday": "As of 09.11.2026, v3.0.21 on dev before the fix: steps 1-8 contact only the first party in every engine and store nothing; from step 9 (sign-in dialog) and on steps 10-11 (account pages opened signed out) WebKit contacts apis.google.com, the project's firebaseapp.com and www.googleapis.com.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Dated measurement report and the evidence for the fix of 09.11.2026; the capture after the fix is docs/legal/network-capture-2026-11-10-dev.md.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [],
+      "measured": {
+        "lines": 150
+      }
+    },
+    {
+      "path": "docs/legal/network-capture-2026-11-10-dev.md",
+      "kind": "report",
+      "purpose": "Network capture of the dev service (3.0.21, d4324cc3) after the fix for pages that need an account, for privacy policy section 7, made by scripts/legal/network-capture.ts",
+      "audience": "Sonny, legal review",
+      "saysToday": "As of 10.11.2026, v3.0.21 on dev after the fix: steps 1-8 contact only the first party in every engine and store nothing; on steps 9-11 WebKit contacts Google only from the sign-in dialog (issued by /), which a page that needs an account now leads to without starting Auth itself.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Dated measurement report confirming the open value noRequestWithoutSignIn; a later release gets a new dated capture, this one is not rewritten.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [],
+      "measured": {
+        "lines": 150
+      }
+    },
+    {
+      "path": "docs/legal/network-capture-2026-11-06.md",
+      "kind": "report",
+      "purpose": "Network capture of the public production site for privacy policy section 7 (no third party before sign-in), made by scripts/legal/network-capture.ts",
+      "audience": "Sonny, legal review",
+      "saysToday": "As of 06.11.2026, production v3.0.20: the claim does not hold in WebKit (Firebase Auth contacts Google on public pages) and Firebase IndexedDB databases are created before sign-in in every engine; Chromium desktop contacts no third party.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Dated measurement report; repeated with a new dated file on every release, never rewritten.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/legal/network-capture.ts"
+      ],
+      "measured": {
+        "lines": 448
+      }
+    },
+    {
       "path": "tests/prozess-benchmark/judge/richter-brief.md",
       "kind": "brief",
       "purpose": "Instruction to the judge agents for the content assessment of the business statements (baseline state)",
@@ -3502,6 +3709,25 @@
       "measured": {
         "lines": 11
       }
+    },
+    {
+      "path": "public/.well-known/security.txt",
+      "kind": "notice",
+      "purpose": "RFC 9116 contact for reporting a vulnerability: the operator address from the imprint, expiry, canonical URL, link to the reporting section of SECURITY.md",
+      "audience": "Security researchers, scanners",
+      "saysToday": "Contact info@clean-core.io; expires 2027-10-22; preferred languages English and German; policy in SECURITY.md#reporting-a-vulnerability.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The reporting path for vulnerabilities (L-21); renewed before its Expires date.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": ["SECURITY.md"],
+      "measured": {
+        "lines": 5
+      }
     }
   ],
   "served": [
@@ -3510,7 +3736,7 @@
       "kind": "served",
       "purpose": "llms.txt for AI search engines",
       "audience": "public (crawlers, answer engines)",
-      "saysToday": "3.0 product sentence: deterministic analysis before any model, process as BPMN with line anchors, Level A-D, not determined, signed runs; workspace with three views, seven stages as tools, BPMN 2.0 XML without a Signavio connection; numbers still from lib/facts; Model proposal instead of 'AI-generated'.",
+      "saysToday": "3.0 product sentence: deterministic analysis before any model, process as BPMN with line anchors, Level A-D, not determined, signed runs; workspace with three views, seven stages as tools, BPMN 2.0 XML without a Signavio connection; numbers still from lib/facts; what a model writes is marked AI-generated (the chip word since 3.0.21, before it Model proposal).",
       "wrongWith30": [
         {
           "lines": "22-27",

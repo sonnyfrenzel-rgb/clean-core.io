@@ -6,6 +6,8 @@ import {
   namingContextOf,
   validateNamingAnswer,
   NAMING_FORMAT_VERSION,
+  NAMING_MADE_FROM_FACTS,
+  NAMING_PAUSED_REASON,
   type ProcessNamingRecord,
 } from '../lib/process-naming';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -155,7 +157,7 @@ test.describe('nothing the code does not give', () => {
     expect(doc.steps.every((s) => s.businessName === null && s.lane === null && s.namingProvenance === null)).toBe(true);
   });
 
-  test('with a saved naming, names and lanes stand beside the technical ones, as a Model proposal', () => {
+  test('with a saved naming, names and lanes stand beside the technical ones, as AI-generated', () => {
     const source = read('Z_MM_PO_APPROVAL.abap');
     const ctx = namingContextOf(source);
     const target = ctx.skeleton.nodes.find((n) => n.kind === 'gateway' && n.label.includes('50000.00'))!;
@@ -175,7 +177,16 @@ test.describe('nothing the code does not give', () => {
       },
       namedAt: '2026-09-24T09:00:00.000Z',
     };
-    const doc = buildProcessDocumentation({ source, map: mapOf(source, 'Z_MM_PO_APPROVAL.abap', record) });
+    // 3.0.21 (owner decision 06.11.2026): a naming stored before, not built from the engine's facts, is not applied —
+    // no business name, no lane, no AI mark, and the documentation says the names are paused.
+    const paused = buildProcessDocumentation({ source, map: mapOf(source, 'Z_MM_PO_APPROVAL.abap', record) });
+    expect(paused.steps.every((s) => s.businessName === null && s.lane === null && s.namingProvenance === null)).toBe(true);
+    expect(paused.proposedLanes).toEqual([]);
+    expect(paused.naming.notice).toContain(NAMING_PAUSED_REASON);
+    expect(processDocumentationToMarkdown(paused)).not.toContain('cc:origin');
+
+    // The mechanism, held with a naming stored as built from the facts (no route of this build writes one).
+    const doc = buildProcessDocumentation({ source, map: mapOf(source, 'Z_MM_PO_APPROVAL.abap', { ...record, madeFrom: NAMING_MADE_FROM_FACTS }) });
 
     const named = doc.steps.filter((s) => s.businessName);
     expect(named).toHaveLength(1);
@@ -186,7 +197,8 @@ test.describe('nothing the code does not give', () => {
       expect.objectContaining({ name: 'Purchasing group check', authorityObject: 'M_BANF_EKG', anchor: { lineStart: 108, lineEnd: 110 }, provenance: 'proposed' }),
     ]);
     const md = processDocumentationToMarkdown(doc);
-    expect(md).toContain(`Emergency within the limit? (${named[0].technicalName}) — ${PROVENANCE.proposed.label}`);
+    // 3.0.21 (T08): the name is the naming model's, marked where it stands; its call is not recorded per project.
+    expect(md).toContain(`<!-- cc:origin value="ai" ai_provider="not-recorded" ai_model="not-recorded" -->Emergency within the limit?<!-- /cc:origin --> (${named[0].technicalName}) — ${PROVENANCE.proposed.label}`);
   });
 
   test('a naming made for another source is not applied', () => {
@@ -248,10 +260,14 @@ test.describe('the stored form', () => {
     const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
     const md = processDocumentationToMarkdown(doc);
     // Not "no model wrote any of it": the naming stage's names and lanes are
-    // model proposals inside the same document (QA review of 4b4586aff273).
+    // AI-generated proposals inside the same document (QA review of 4b4586aff273).
     expect(md).toContain('No language model wrote its process structure or its statements.');
     expect(md).not.toContain('No language model wrote any of it');
-    expect(md).toContain('business names and lanes from the naming stage are model proposals');
+    // 3.0.21: the naming sentence stands only where the document shows a name or lane — this one shows none.
+    expect(md).not.toContain('business names and lanes from the naming stage are AI-generated');
+    const named = structuredClone(doc);
+    named.steps[0].businessName = 'Approve the order';
+    expect(processDocumentationToMarkdown(named)).toContain('business names and lanes from the naming stage are AI-generated');
     // Owner 11.10.2026: the gaps stand under the evidence and open decisions, before the appendix.
     expect(md).toContain('**Not determined**');
     expect(md.indexOf('**Not determined**')).toBeLessThan(md.indexOf('## Appendix: technical reconstruction'));

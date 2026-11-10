@@ -94,12 +94,17 @@ async function analyse(
 }
 
 /**
- * A run that fails *after* the quota reservation. `uploadedFileName` travels
- * straight into the run document, and Firestore refuses an array inside an array,
- * so the write throws where a signing or storage failure would — which is the
- * path "never on an abort or an error" has to survive.
+ * A run that fails *after* the quota reservation. A narrative gap's fields
+ * travel as sent into the project's worklist (`readModelGaps` checks the title
+ * only), and Firestore refuses an array inside an array, so the write throws
+ * where a signing or storage failure would — which is the path "never on an
+ * abort or an error" has to survive. Until 3.0.21 the break rode on
+ * `uploadedFileName`; since L-05 that name is checked before anything is
+ * charged (`lib/uploaded-file-name.ts`) and answers 400 without a reservation.
  */
-const BREAKS_AFTER_RESERVATION = { uploadedFileName: [['not a file name']] };
+const BREAKS_AFTER_RESERVATION = {
+  analysis: JSON.stringify({ gaps: [{ title: 'A gap', severity: [['not a severity']], rationale: 'r', strategy: 's', complexity: 'Low' }] }),
+};
 
 test.beforeAll(async () => {
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -136,7 +141,9 @@ test.describe('the four places that state the rule state the whole of it', () =>
   // free" and nothing else, which stopped being the whole truth the moment a
   // second start of an example began to cost a run.
   for (const rel of [
-    'app/terms/page.tsx',
+    // The wording of the Terms, which `app/terms/page.tsx` renders since the
+    // legal texts of Fassung 1.1 (3.0.21) moved to one source each.
+    'lib/legal/texts/terms.en.ts',
     'lib/welcome-email.ts',
     'lib/clean-core-capabilities.ts',
     'components/admin/UsageQuotaPanel.tsx',
@@ -280,7 +287,9 @@ test.describe('each signed run records what the quota charged for it', () => {
     expect(await meteredRun(request, own), 'own code, first time').toBe('charged');
     expect(await meteredRun(request, own), 'own code again').toBe('reanalysis');
 
-    await resetAccount({ byokConfigured: true });
+    // An own key counts once it passed its test (the tested-key rule of 3.0.21,
+    // `ownKeyCounts` in lib/run-quota-rule.ts); the Admin SDK records when.
+    await resetAccount({ byokConfigured: true, byokTestedAt: new Date() });
     expect(await meteredRun(request, `${own}* and on my own key\n`), 'own key').toBe('byok');
   });
 
@@ -308,7 +317,7 @@ test.describe('nothing is spent on a run that does not complete', () => {
     const projectId = await newProject();
     const inFlight = request.post('/api/runs/create', {
       headers: headers(),
-      data: { projectId, legacyCode: source, s4Deployment: 'public', analysis: '{}', ...BREAKS_AFTER_RESERVATION },
+      data: { projectId, legacyCode: source, s4Deployment: 'public', ...BREAKS_AFTER_RESERVATION },
     });
 
     // The reservation is *observed*, not inferred. Without this the test would
@@ -420,10 +429,13 @@ test.describe('after the five analyses only your own key continues', () => {
 
     const refused = await analyse(request, source);
     expect(refused.status()).toBe(403);
-    expect((await refused.json()).error).toContain('Add your own Gemini API key');
+    // The quota's one wording since roadmap 3.0.21 (2): "analysis runs", and an
+    // own model key (Gemini or Claude) as the way on.
+    expect((await refused.json()).error).toContain('Add your own model key');
     expect((await profile()).transformationsUsed, 'a refusal spends nothing').toBe(5);
 
-    await adminSetDoc('users', uid, { ...(await profile()), byokConfigured: true });
+    // A key that passed its test (the tested-key rule of 3.0.21).
+    await adminSetDoc('users', uid, { ...(await profile()), byokConfigured: true, byokTestedAt: new Date() });
     const withKey = await analyse(request, source);
     expect(withKey.status(), await withKey.text()).toBe(200);
     expect((await profile()).transformationsUsed, 'an own key is not metered').toBe(5);
@@ -479,8 +491,11 @@ test.describe('the screen says what the click costs, before the click', () => {
     expect(starterExampleIsFree({ ...fresh, starterExamplesUsed: { Z_MATERIAL_STOCK_CALC: true } }, 'Z_MATERIAL_STOCK_CALC')).toBe(false);
     // A different example is untouched by the one that ran.
     expect(starterExampleIsFree({ ...fresh, starterExamplesUsed: { Z_MATERIAL_STOCK_CALC: true } }, 'Z_INVOICE_EXTRACTOR')).toBe(true);
-    // Nothing is metered for these two, so nothing has to be warned about.
-    expect(starterExampleIsFree({ ...fresh, byokConfigured: true, starterExamplesUsed: { Z_MATERIAL_STOCK_CALC: true } }, 'Z_MATERIAL_STOCK_CALC')).toBe(true);
+    // Nothing is metered for these two, so nothing has to be warned about. An
+    // own key counts once it passed its test (the tested-key rule of 3.0.21);
+    // an untested one is metered like no key.
+    expect(starterExampleIsFree({ ...fresh, byokConfigured: true, starterExamplesUsed: { Z_MATERIAL_STOCK_CALC: true } }, 'Z_MATERIAL_STOCK_CALC')).toBe(false);
+    expect(starterExampleIsFree({ ...fresh, byokConfigured: true, byokTestedAt: '2026-10-23T00:00:00Z', starterExamplesUsed: { Z_MATERIAL_STOCK_CALC: true } }, 'Z_MATERIAL_STOCK_CALC')).toBe(true);
     expect(starterExampleIsFree({ ...fresh, tier: 'enterprise', starterExamplesUsed: { Z_MATERIAL_STOCK_CALC: true } }, 'Z_MATERIAL_STOCK_CALC')).toBe(true);
     expect(starterExampleIsFree(null, 'Z_MATERIAL_STOCK_CALC')).toBe(true);
   });

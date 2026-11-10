@@ -126,7 +126,7 @@ logical database, every transaction became a "creation", `MESSAGE … INTO` beca
 reliable, but stays technical — a sentence construction kit cannot translate `faksp` into "Fakturasperre" (billing block)
 without guessing (a general list of SAP standard terms helps, but does not replace that).
 
-**Path B** has been in the Business view since roadmap **17.10**: at the push of a button a Model proposal (provenance
+**Path B** has been in the Business view since roadmap **17.10**: at the push of a button an AI-generated draft (provenance
 "proposal"), below it the sentence from A as evidence, and a deterministic contradiction marker. The
 marker is a **safety net, not a guarantee**: on the test half it finds 2 of 14 wrong
 model statements at 0.3 % false alarms. None of it goes into the signature, run or audit pack; the

@@ -58,7 +58,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-cc-surface border border-cc-line rounded-3xl p-6 sm:p-8 space-y-5">
           <p className="text-cc-ink leading-relaxed font-medium">
-            Every tenant connection is strictly limited to a <strong>connection check, read-only OData metadata requests</strong> and read-only OData GET requests, each one started by you. Running generated tests against the tenant is locked until the isolated live runner has passed its review. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
+            Every tenant connection is strictly limited to a <strong>connection check and read-only OData metadata requests</strong>, each one started by you: only structural information is read — a service&apos;s $metadata — never a record, a field value or a count. Running generated tests against the tenant is locked until the isolated live runner has passed its review. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -69,7 +69,6 @@ export default function TenantSecurityPage() {
               </div>
               <ul className="space-y-2 text-sm text-cc-ink-muted font-medium">
                 <li className="flex items-start gap-2"><Check size={16} strokeWidth={3} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" /> OData service metadata ($metadata endpoints)</li>
-                <li className="flex items-start gap-2"><Check size={16} strokeWidth={3} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" /> Read-only OData responses for the entities you choose to read</li>
               </ul>
             </div>
             <div className="bg-cc-surface-muted p-5 rounded-xl border border-cc-line">
@@ -80,7 +79,7 @@ export default function TenantSecurityPage() {
               <ul className="space-y-2 text-sm text-cc-ink-muted font-medium">
                 <li className="flex items-start gap-2"><X size={16} strokeWidth={3} aria-hidden="true" className="text-cc-error mt-0.5 shrink-0" /> No POST, PUT, PATCH, or DELETE operations</li>
                 <li className="flex items-start gap-2"><X size={16} strokeWidth={3} aria-hidden="true" className="text-cc-error mt-0.5 shrink-0" /> No transport releases or workbench changes</li>
-                <li className="flex items-start gap-2"><X size={16} strokeWidth={3} aria-hidden="true" className="text-cc-error mt-0.5 shrink-0" /> No data exports or bulk reads from business tables</li>
+                <li className="flex items-start gap-2"><X size={16} strokeWidth={3} aria-hidden="true" className="text-cc-error mt-0.5 shrink-0" /> No record, field value or record count is read</li>
               </ul>
             </div>
           </div>
@@ -105,7 +104,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-cc-surface border border-cc-line rounded-3xl p-6 sm:p-8 space-y-5">
           <p className="text-cc-ink leading-relaxed font-medium">
-            Your connection credentials are encrypted using AES-256-GCM and stored securely on Google Cloud Platform in Europe (completely blocked from direct client SDK access). All actual business data (such as transactional records or metadata lists) retrieved from your S/4HANA OData tenant is processed transiently and never persisted, cached, or logged on our servers. Uploaded code files are stored in your encrypted, user-isolated project workspace, which you can permanently delete at any time.
+            Your connection credentials are encrypted using AES-256-GCM and stored securely on Google Cloud Platform in Europe (completely blocked from direct client SDK access). No business data is retrieved from your S/4HANA tenant; the service metadata that is read is processed transiently and never persisted, cached, or logged on our servers. Uploaded code files are stored in your encrypted, user-isolated project workspace, which you can permanently delete at any time.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

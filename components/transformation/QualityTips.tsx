@@ -33,6 +33,7 @@ export default function QualityTips({
   regenerate,
   keySource,
   onGenerate,
+  generateLabel,
   conceptSource = '',
   plan = null,
 }: {
@@ -53,6 +54,12 @@ export default function QualityTips({
   regenerate: boolean;
   keySource: 'byok' | 'community' | null;
   onGenerate: () => void;
+  /**
+   * The button's words when the page names where the code goes (legal review
+   * 06.11.2026, 3.0.21, item 1: "Generate draft (sends code to …)"). Absent:
+   * the catalogue's "Generate now".
+   */
+  generateLabel?: string;
   /**
    * The legacy source, for the concept successors under the tips (DSAG
    * guideline review B2): classic concepts ABAP Cloud replaces. Not a tip —
@@ -148,7 +155,8 @@ export default function QualityTips({
             onClick={onGenerate}
             data-generate-now=""
           >
-            {regenerate ? wt('transformation.regenerateNow') : wt('transformation.generateNow')}
+            {/* The label names the provider (legal review 06.11.2026) and is long: it wraps on a phone. */}
+            <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel ?? (regenerate ? wt('transformation.regenerateNow') : wt('transformation.generateNow'))}</span>
           </CcButton>
           {tips.some((t) => t.key === 'rules') ? (
             <span className="text-[13px] font-medium text-cc-ink-muted">{wt('transformation.generateNote')}</span>

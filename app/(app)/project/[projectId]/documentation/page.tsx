@@ -9,6 +9,7 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
 import { BookOpenText, Download, FileCode2, FileText, Printer, RefreshCw, Rocket, Workflow } from 'lucide-react';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { generateDraftLabel, providerCompanyOf } from '@/lib/messages/model-consent';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
@@ -44,9 +45,9 @@ import { useProcessDocument } from '@/hooks/useProcessDocument';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import { processDocumentFileName } from '@/lib/process-document';
-import { documentOutline, processDocumentBlocks } from '@/lib/process-document-outline';
+import { documentOutline, processDocumentBlocks, stepSummaryModelNames } from '@/lib/process-document-outline';
 import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
-import { aiMarkingStatement, withAiMarkings } from '@/lib/ai-marking';
+import { aiMarkingStatement, UNRECORDED_AI, withAiMarkings } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 import {
   BUSINESS_LAYER_CEILING_MS,
@@ -179,7 +180,7 @@ const extractJSON = (text: string) => {
  *   which `docs/ROADMAP.md` §6 forbids: a lane is a reconstruction, never an
  *   organisational statement, and 2.4 proposes lanes with a provenance chip;
  * - RACI and SOP text rode along inside a process file as if they were facts
- *   about the process. They are model proposals, they are shown as such on the
+ *   about the process. They are AI-generated proposals, they are shown as such on the
  *   Business tab and in the Confluence export, and they have no place in an
  *   exchange format where the chip that qualifies them does not travel.
  *
@@ -293,12 +294,11 @@ export default function DocumentationPage() {
   }, [businessDocumentation]);
 
   /**
-   * Owner 03.10.2026 — the business layer is written when the stage opens,
-   * as Design writes its design: once, by the owner's browser, only while
-   * nothing current is on record. These hold one generation per tab and
-   * page (`lib/documentation-generation-lease.ts`), the moment it started for
-   * the "seconds waited" line, and the documentation each automatic start was
-   * made for, so a failed start is never repeated by itself.
+   * The business layer is written on a click only (legal review 06.11.2026,
+   * 3.0.21, item 1 — until then it was written when the stage opened, owner
+   * 03.10.2026). These hold one generation per tab and page
+   * (`lib/documentation-generation-lease.ts`) and the moment it started, for
+   * the "seconds waited" line.
    */
   const tabId = useRef<string | null>(null);
   const [businessStartedAt, setBusinessStartedAt] = useState<number | null>(null);
@@ -321,7 +321,6 @@ export default function DocumentationPage() {
    * the layer so the server records which provider and model wrote it. Kept beside the answers it belongs to.
    */
   const layerReceipt = useRef<{ key: string; receipt: ModelReceipt } | null>(null);
-  const autoBusinessFor = useRef<string | null>(null);
   /**
    * The stored layer an owner asked to replace ("Regenerate SOP and RACI",
    * owner 04.10.2026: "unrealistically many roles"). Set only by that click;
@@ -538,6 +537,10 @@ export default function DocumentationPage() {
     }
   }
 
+  /**
+   * The click — every button that writes the layer (legal review 06.11.2026,
+   * 3.0.21, item 1: nothing writes it on opening, on any key).
+   */
   const generateBusinessDocumentation = useCallback(async () => {
     if (!project || !projectId) return;
     const leaseId = Array.isArray(projectId) ? projectId[0] : projectId;
@@ -843,11 +846,9 @@ export default function DocumentationPage() {
    *    source. Engine only: no model, no cost, no click. A stored legacy
    *    blueprint is not replaced by itself (the reader decides that), and a
    *    stale state nothing would change is left to the button.
-   * 2. The business layer follows when the model is available for this stage,
-   *    the stored document is current and no layer is on record — once per
-   *    documentation, never on a reader's visit, never twice at once
-   *    (`lib/documentation-generation-lease.ts`), and never again by itself
-   *    after a failure: "Try again" is the reader's.
+   * 2. The business layer is not written on opening (legal review 06.11.2026,
+   *    3.0.21, item 1): it calls a model, so it waits for *Generate draft*, on
+   *    every key.
    */
   const autoDocFor = useRef<string | null>(null);
   const signedDigest = useMemo(() => (signedSource ? sha256Hex(signedSource.source) : null), [signedSource]);
@@ -861,20 +862,6 @@ export default function DocumentationPage() {
     autoDocFor.current = key;
     void generateDocumentation();
   }, [project, isOwner, signedSource, signedDigest, processMap.model, isGeneratingDoc, documentation, generateDocumentation]);
-
-  const businessAutoReady = Boolean(
-    project && isOwner && engineDoc && signedDigest && engineDoc.sourceSha256 === signedDigest
-    && !businessDocumentation.trim() && !isGeneratingBusinessDoc && !isGeneratingDoc
-    && modelAvailability.known && !modelAvailability.loading && modelAvailability.enabled('documentation')
-    && generationBlockers(project, 'documentation').length === 0,
-  );
-  useEffect(() => {
-    if (!businessAutoReady || !project) return;
-    const key = `${project.activeRunId ?? ''}|${sha256Hex(documentation)}`;
-    if (autoBusinessFor.current === key) return;
-    autoBusinessFor.current = key;
-    void generateBusinessDocumentation();
-  }, [businessAutoReady, project, documentation, generateBusinessDocumentation]);
 
   // A generation this page started before it was mounted again (leaving the
   // stage and coming back): show it as running and pick up what it stored.
@@ -1121,13 +1108,19 @@ export default function DocumentationPage() {
     // and already drawn in the reading worker, so the click neither waits for a
     // second layout nor freezes the page for one (owner, 12.10.2026: the CO
     // project froze the Documentation tool).
-    const [{ readingExportsOffThread }, { bpmnFileName }] = await Promise.all([
+    // With stored business names (3.0.21) the file carries them, marked with the provider and model of their
+    // receipt — a reading of its own, still off the main thread; without, the map's reading as it is.
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    const [{ readingExportsOffThread }, { bpmnFileName }, { fetchProcessNaming }] = await Promise.all([
       import('@/lib/bpmn/reading-exports-client'),
       import('@/lib/bpmn/export'),
+      import('@/lib/process-naming-client'),
     ]);
+    const naming = idStr ? await fetchProcessNaming(idStr) : null;
     const { bpmn: { xml } } = await readingExportsOffThread(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
+      ...(naming ? { naming } : {}),
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));
@@ -1182,10 +1175,12 @@ export default function DocumentationPage() {
   const exportStatements = (built: NonNullable<typeof processDocument.document>, layer: unknown): string[] => {
     const ai = exportAuthorship();
     const proposal = documentOutline(built, { projectName: project?.name, openQuestions: openQuestionsOfProject }).glance.proposal;
-    return [
+    // 3.0.21 (T08): and the naming stage's when the file prints a business name — its call is not recorded per project.
+    return [...new Set([
       layer && ai.sop ? aiMarkingStatement(ai.sop, ai.appVersion) : null,
       proposal && ai.analysis ? aiMarkingStatement(ai.analysis, ai.appVersion) : null,
-    ].filter((s): s is string => s !== null);
+      stepSummaryModelNames(built).some(Boolean) ? aiMarkingStatement(UNRECORDED_AI, ai.appVersion) : null,
+    ].filter((s): s is string => s !== null))];
   };
 
   /** The process description as Markdown or Word — the same document, the same order (`processDocumentBlocks`). */
@@ -1200,6 +1195,8 @@ export default function DocumentationPage() {
       openQuestions: openQuestionsOfProject,
       // The owner's RACI when one is saved, else the model's proposal (owner request 10.10.2026).
       raci: layer ? raciFileTable(layer, processSteps, edit) : null,
+      // 3.0.21 (T08): each model-written block of the Markdown marked where it stands, with its writer.
+      ai: exportAuthorship(),
     });
     // 3.0.17: every statement — the layer's and the glance proposal's — as a header comment line of the Markdown file,
     // and in the Word file's core properties.
@@ -1289,7 +1286,8 @@ export default function DocumentationPage() {
             ? wt('doc.otherTab')
             : progressBlockers.length > 0
               ? progressBlockers.join(' ')
-              : null;
+              // Nothing starts it on opening (3.0.21, item 1): not "starting the model call" — it waits for the button.
+              : wt('doc.businessWaitsForClick');
   const progress = documentationProgress({
     loading,
     loadError: loadError || null,
@@ -1386,7 +1384,7 @@ export default function DocumentationPage() {
   );
 
   /**
-   * What the model proposals cost before any click — DESIGN.md §2.8, one line
+   * What the AI-generated proposals cost before any click — DESIGN.md §2.8, one line
    * for the card (roadmap 3.0.7). Every part of it is a fact of this page: the
    * model it names is the one `generateBusinessDocumentation` passes to
    * `/api/gemini`, the key is the one `/api/model-stages` reports, and that
@@ -1406,7 +1404,7 @@ export default function DocumentationPage() {
   const tracePanel = engineDoc ? (
     <ProcessDocumentationView appendix doc={engineDoc} proposal={statementPanelProps} proposalPanel={false} groups={processDocument.document?.appendix.groups} />
   ) : null;
-  /** The technical trace, last on the page — after the model proposals and the map. */
+  /** The technical trace, last on the page — after the AI-generated proposals and the map. */
   const appendixPanel = engineDoc ? (
     <ProcessDocumentAppendix document={processDocument.document}>{tracePanel}</ProcessDocumentAppendix>
   ) : null;
@@ -1524,7 +1522,8 @@ export default function DocumentationPage() {
             icon={<Rocket size={16} aria-hidden={true} />}
             data-generate-business-layer
           >
-            {wt('doc.businessGenerate')}
+            {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
+            <span className="min-w-0 text-left leading-snug whitespace-normal">{generateDraftLabel(modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null)}</span>
           </CcButton>
         </div>
       )}
@@ -1692,7 +1691,7 @@ export default function DocumentationPage() {
 
       {/* Owner 04.10.2026 (ADR-077 amended) — the stage reads top-down like
           the document a business reader opens: the process description first;
-          the model proposals right after it; the map with its chapters to
+          the AI-generated proposals right after it; the map with its chapters to
           explore below; the technical trace last. Printed, the description
           and its appendix are the page — everything else is `cc-no-print`. */}
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -1832,7 +1831,7 @@ export default function DocumentationPage() {
         )}
       </section>
 
-      {/* The model proposals — who does what, who is accountable, and the
+      {/* The AI-generated proposals — who does what, who is accountable, and the
           business sentences — on top of the description, so after it. */}
       {proposalsCard}
 

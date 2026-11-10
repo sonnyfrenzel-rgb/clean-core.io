@@ -3,8 +3,9 @@ import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
+import { signManifestHash } from '@/lib/pack-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { signEd25519, getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -55,10 +56,10 @@ export async function POST(req: NextRequest) {
     // to write into the very chain that is supposed to prove provenance.
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr?.message || 'Multi-factor authentication required.' },
-        { status: mfaErr?.status || 403 },
+        { error: mfaRefusal(mfaErr).message || 'Multi-factor authentication required.' },
+        { status: mfaRefusal(mfaErr).status || 403 },
       );
     }
 
@@ -375,7 +376,8 @@ export async function POST(req: NextRequest) {
       console.error(MISSING_SIGNING_KEY_LOG);
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
-    const signature = crypto.createHmac('sha256', signingKey).update(manifestHash).digest('hex');
+    // Under the key derived for pack manifests (`lib/pack-signature.ts`), never the run key.
+    const signature = signManifestHash(manifestHash, signingKey);
 
     // The asymmetric signature, when a key is configured. It covers exactly the
     // same string as the HMAC, so a verifier checks one value with either method

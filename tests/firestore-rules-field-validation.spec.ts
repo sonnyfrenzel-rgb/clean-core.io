@@ -260,7 +260,6 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, { worklist: 'none' })), 'worklist').toBe(true);
   expect(await denied(() => updateDoc(ref, { businessDocumentation: 42 })), 'businessDocumentation').toBe(true);
   expect(await denied(() => updateDoc(ref, { coverageEstimate: 'high' })), 'coverageEstimate').toBe(true);
-  expect(await denied(() => updateDoc(ref, { manualTestingRequirements: 'none' })), 'manualTestingRequirements').toBe(true);
   expect(await denied(() => updateDoc(ref, { updatedAt: 'now' })), 'updatedAt').toBe(true);
 
   // 3.0.6: the worklist is written by POST /api/runs/create only.
@@ -280,7 +279,7 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, { coverageEstimate: { percentage: 150, explanation: 'x', missingCoverage: 'y' } })), 'coverage above 100').toBe(true);
   expect(await denied(() => updateDoc(ref, { coverageEstimate: { percentage: 10, note: 'x' } })), 'coverage extra key').toBe(true);
   expect(await denied(() => updateDoc(ref, {
-    solutionDesign: '{"summary":"x"}', status: 'designed', nonFunctionalRequirements: { availability: '99.5%' },
+    solutionDesign: '{"summary":"x"}', status: 'designed', nonFunctionalRequirements: { slaRequirements: '99.5%' },
   })), 'design').toBe(false);
   expect(await denied(() => updateDoc(ref, {
     solutionDesign: '{"summary":"y"}', status: 'designed', nonFunctionalRequirements: deleteField(),
@@ -291,19 +290,29 @@ test('client-writable project fields keep their type and size', async () => {
   for (const status of ['analyzed', 'transformed', 'completed', 'uploaded', 'created']) {
     expect(await denied(() => updateDoc(ref, { status })), `status ${status}`).toBe(true);
   }
+  // 3.0.21: the Testing stage writes its cases, manual requirements and label through
+  // POST /api/projects/{projectId}/artefacts (since 3.0.14); the browser writes none of them.
   expect(await denied(() => updateDoc(ref, {
     testCases: [{ id: 't1', title: 'Case', status: 'pending' }],
     testSuite: { code: 'CLASS ltc DEFINITION FOR TESTING.' },
     coverageEstimate: { percentage: 0, explanation: 'n/a', missingCoverage: 'N/A' },
     manualTestingRequirements: [],
     status: 'testing',
-  })), 'testing').toBe(false);
+  })), 'testing from the browser').toBe(true);
+  expect(await denied(() => updateDoc(ref, {
+    testSuite: { code: 'CLASS ltc DEFINITION FOR TESTING.' },
+    coverageEstimate: { percentage: 0, explanation: 'n/a', missingCoverage: 'N/A' },
+  })), 'testing: the typed suite fields').toBe(false);
   expect(await denied(() => setDoc(ref, { s4Environment: 'live' }, { merge: true })), 'testing: environment').toBe(false);
   expect(await denied(() => updateDoc(ref, {
     businessDocumentation: '{"summary":"x"}', generatedCode: '[]',
   })), 'documentation: business').toBe(false);
+  // 3.0.21: 'documented' is the artefacts route's label, not the browser's.
   expect(await denied(() => updateDoc(ref, {
     documentation: '# Process', generatedCode: '[]', status: 'documented',
+  })), 'documentation with its label').toBe(true);
+  expect(await denied(() => updateDoc(ref, {
+    documentation: '# Process', generatedCode: '[]',
   })), 'documentation').toBe(false);
 
   // Exports: the browser only removes stale entries (Analyze and Design do).
@@ -322,4 +331,43 @@ test('a stage label is set only on a project an analysis has run on', async () =
   }
   // Other client fields on the same project still update.
   expect(await denied(() => updateDoc(ref, { s4Deployment: 'public' })), 'an edition').toBe(false);
+});
+
+/* 3.0.21 — SEC-2026-888, -889, -890: the project label and the nested fields a browser may still write. */
+
+test('the browser sets only the Design label, and only with the design in the same write', async () => {
+  const id = `fields-label-${stamp}`;
+  await adminSetDoc('projects', id, { name: 'Label fixture', status: 'analyzed', userId: uids.owner, createdAt: new Date() });
+  const ref = doc(owner.db, 'projects', id);
+
+  // A label alone claims a step nobody ran.
+  for (const status of ['designed', 'testing', 'documented']) {
+    expect(await denied(() => updateDoc(ref, { status })), `${status} alone`).toBe(true);
+  }
+  // An empty design is no design.
+  expect(await denied(() => updateDoc(ref, { status: 'designed', solutionDesign: '' })), 'designed with an empty design').toBe(true);
+  // The write the Design stage performs.
+  expect(await denied(() => updateDoc(ref, { status: 'designed', solutionDesign: '{"summary":"x"}' })), 'the Design stage write').toBe(false);
+  // And from 'designed' no browser moves it on to a later stage's label.
+  expect(await denied(() => updateDoc(ref, { status: 'testing', solutionDesign: '{"summary":"y"}' })), 'testing with a design').toBe(true);
+});
+
+test("test cases and manual test requirements are the server's, and the non-functional requirements keep their shape", async () => {
+  const id = `fields-nested-${stamp}`;
+  await adminSetDoc('projects', id, { name: 'Nested fixture', status: 'designed', userId: uids.owner, createdAt: new Date() });
+  const ref = doc(owner.db, 'projects', id);
+
+  expect(await denied(() => updateDoc(ref, { testCases: [{ any: { nested: 'thing' } }] })), 'testCases from the browser').toBe(true);
+  expect(await denied(() => updateDoc(ref, { testCases: [] })), 'an empty testCases from the browser').toBe(true);
+  expect(await denied(() => updateDoc(ref, { manualTestingRequirements: [{ x: 1 }] })), 'manualTestingRequirements from the browser').toBe(true);
+
+  const write = (nfr: unknown) => updateDoc(ref, { solutionDesign: '{"summary":"x"}', nonFunctionalRequirements: nfr });
+  expect(await denied(() => write({ availability: '99.5%' })), 'an unknown NFR key').toBe(true);
+  expect(await denied(() => write({ auditTrail: { nested: 'map' } })), 'a nested value').toBe(true);
+  expect(await denied(() => write({ auditTrail: 42 })), 'a number').toBe(true);
+  expect(await denied(() => write({ auditTrail: 'x'.repeat(20001) })), 'a value over the bound').toBe(true);
+  expect(await denied(() => write('text')), 'not a map').toBe(true);
+  // What the Design stage stores: some of the eight topics as text, or nothing.
+  expect(await denied(() => write({ auditTrail: 'Change documents on EBAN.', monitoring: 'Job log.' })), 'the Design stage write').toBe(false);
+  expect(await denied(() => updateDoc(ref, { solutionDesign: '{"summary":"y"}', nonFunctionalRequirements: deleteField() })), 'design without NFR').toBe(false);
 });

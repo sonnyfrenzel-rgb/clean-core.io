@@ -184,12 +184,19 @@ test.describe('what the text claims', () => {
 
   test('2cf1897568e5 / bef1c6f1a097 / 709ec093f58f / 3120a2e48677 · the privacy summaries match the policy', () => {
     const src = code('components/LandingModals.tsx');
-    // Both overlays name the second sign-in path, as /datenschutz does.
-    expect(src.match(/Email and password \(Firebase Auth\):/g)?.length).toBe(2);
+    // Since Fassung 1.1 (3.0.21) the overlays show the policy itself, not a
+    // summary of it: the summaries had drifted from the text they summarised.
+    // Since 3.0.21 the sign-up overlay shows the policy in the language the
+    // reader accepts the terms in (`lang={termsLanguage}`), and so do the terms;
+    // it is still the policy itself, twice.
+    expect(src.match(/<LegalOverlayBody id="privacy"(?: lang=\{termsLanguage\})? \/>/g)?.length).toBe(2);
+    expect(src).toMatch(/<LegalOverlayBody id="terms"(?: lang=\{termsLanguage\})? \/>/);
     expect(src).not.toMatch(/fully GDPR-compliant/);
     expect(src).not.toMatch(/instantly wipe/);
-    expect(src).toContain('Residual copies in encrypted backups age out within 30 days');
     expect(src).not.toMatch(/to the Google Gemini API for analysis and transformation/);
+    const policy = code('lib/legal/texts/privacy.en.ts');
+    expect(policy).toMatch(/Email and password \(Firebase Auth\):/);
+    expect(policy).toContain('Residual copies in encrypted backups age out within 30 days');
   });
 
   test('ea12e4b9a418 · a section that fails to render is not blamed on old data', () => {

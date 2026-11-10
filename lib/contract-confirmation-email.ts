@@ -1,0 +1,208 @@
+import { createHash } from 'crypto';
+import { APP_BASE_URL, TERMS_VERSION } from '@/lib/constants';
+import { buildUserMail } from '@/lib/user-mail';
+import { escapeHtml } from '@/lib/utils';
+import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
+import { formatLegalDate, type LegalLang } from '@/lib/legal/open-values';
+import { TERMS_LABEL, legalDocumentBlocks } from '@/lib/legal/documents';
+import { toArchiveMarkdown } from '@/lib/legal/markup';
+import { archivedTermsSha256For } from '@/lib/terms-versions';
+import { byokAddendumSha256 } from '@/lib/byok-addendum';
+
+/**
+ * The contract confirmation mail — C5 of the legal texts, Fassung 1.1
+ * (Terms 1.3 and 10.2, Additional Agreement clause 12; acceptance test T03).
+ *
+ * One template for the three occasions the texts name: after sign-up, after
+ * accepting an amendment of the Terms, and after accepting the Additional
+ * Agreement with an Anthropic key — the agreements accepted separately are
+ * confirmed the same way (Terms 1.3). It names the version, the language
+ * version, the time, the SHA-256 of the wording and the place of acceptance,
+ * and carries one link to the wording of exactly that version in exactly that
+ * language, at an address bound to both that stays reachable while the
+ * Platform is operated
+ * (`publishedWordingPath`; the pages serve the archived bytes the digest is
+ * taken over). It carries nothing more than Terms 1.3 promises: not the
+ * wording itself (legal texts Fassung 1.1, 1.3).
+ *
+ * The mail speaks the language version accepted: a German acceptance gets the
+ * German C5 text and the German wording. Best effort and no resend (legal
+ * review E14/E25): the record in the proof log is the evidence, the mail the
+ * account's copy of it.
+ *
+ * Pure (no database, no send): `acceptedWording` renders the wording the way the
+ * archive is written, and the sender is `lib/contract-confirmation-mail.ts`.
+ */
+
+export type ConfirmationOccasion = 'sign-up' | 'amendment' | 'byok-addendum';
+
+export interface ContractConfirmationInput {
+  occasion: ConfirmationOccasion;
+  language: LegalLang;
+  /** The address the mail goes to, raw — escaped here. */
+  recipient: string;
+  /** The first name on the profile, raw, or null. */
+  firstName: string | null;
+  /** The version identifier the record names: "2026-11-09" for the Terms, "ZV-BYOK-1.0" for the agreement. */
+  versionId: string;
+  /** What the document calls itself, e.g. "Terms v2.3.0"; the agreement's id again. */
+  versionLabel: string;
+  /** SHA-256 of the archived wording of that language version. */
+  sha256: string;
+  /** ISO time of the acceptance as the server recorded it. */
+  acceptedAt: string;
+  /**
+   * ISO time an amendment takes effect (Terms 10.2, G13/G14). Later than
+   * `acceptedAt` when it was accepted before its announced day; the mail then
+   * names that day. Ignored for a sign-up and the Additional Agreement.
+   */
+  effectiveAt?: string | null;
+}
+
+type Bi = { de: string; en: string };
+
+const DOCUMENT: Record<'terms' | 'addendum', Bi> = {
+  terms: { de: 'Nutzungsbedingungen und Community-Richtlinien', en: 'Terms of Service and Community Guidelines' },
+  addendum: { de: 'Zusatzvereinbarung zu eigenen Modellschlüsseln', en: 'Additional Agreement on Own Model Keys' },
+};
+
+const PLACE: Record<ConfirmationOccasion, Bi> = {
+  'sign-up': { de: 'Registrierungsdialog auf clean-core.io', en: 'sign-up dialog on clean-core.io' },
+  amendment: { de: 'Änderungsdialog nach der Anmeldung auf clean-core.io', en: 'amendment dialog after sign-in on clean-core.io' },
+  'byok-addendum': { de: 'Einstellungen auf clean-core.io, eigener Anthropic-Schlüssel', en: 'Settings on clean-core.io, own Anthropic key' },
+};
+
+const BASIS: Record<ConfirmationOccasion, Bi> = {
+  'sign-up': { de: 'Ziffer 1.3 der Nutzungsbedingungen', en: 'section 1.3 of the Terms of Service' },
+  amendment: { de: 'Ziffer 10.2 in Verbindung mit Ziffer 1.3 der Nutzungsbedingungen', en: 'section 10.2 together with section 1.3 of the Terms of Service' },
+  'byok-addendum': { de: 'Ziffer 12 der Zusatzvereinbarung', en: 'clause 12 of the Additional Agreement' },
+};
+
+const LINK_LEAD: Bi = {
+  de: 'Der Wortlaut dieser Fassung mit seinem Hashwert:',
+  en: 'The wording of this version with its hash value:',
+};
+
+function isAddendum(occasion: ConfirmationOccasion): boolean {
+  return occasion === 'byok-addendum';
+}
+
+/**
+ * Where the accepted version stays published, bound to the version and the
+ * language (Terms 1.3: "a link to the wording of the accepted version, which
+ * remains available at that address for as long as the operator operates the
+ * Platform"). Without the scheme, as the
+ * texts write it. The pages behind both serve the archived file, never the
+ * current source: `app/terms/versions/[version]/{en,de}` and
+ * `app/terms/byok-addendum/versions/[id]/[lang]`.
+ */
+export function publishedWordingPath(occasion: ConfirmationOccasion, versionId: string, language: LegalLang): string {
+  const id = encodeURIComponent(versionId);
+  if (isAddendum(occasion)) return `/terms/byok-addendum/versions/${id}/${language}`;
+  return `/terms/versions/${id}/${language}`;
+}
+
+export function contractConfirmationSubject(input: Pick<ContractConfirmationInput, 'occasion' | 'language' | 'versionLabel'>): string {
+  const doc = DOCUMENT[isAddendum(input.occasion) ? 'addendum' : 'terms'][input.language];
+  return consentText(CONSENT_TEXTS.confirmationMail.subject, input.language).replace('{Dokument}', `${doc} ${input.versionLabel}`);
+}
+
+function timeOf(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) throw new Error(`not an ISO time: ${iso}`);
+  const isoDate = d.toISOString().slice(0, 10);
+  return { date: isoDate, time: d.toISOString().slice(11, 16) };
+}
+
+/**
+ * The sentence after the acceptance line of an amendment (G13/G14): the day it
+ * takes effect when that is later than the acceptance, else that it applies at
+ * once. Nothing for a sign-up or the Additional Agreement, which take effect
+ * when accepted.
+ */
+function effectiveSentence(input: ContractConfirmationInput, lang: LegalLang): string {
+  if (input.occasion !== 'amendment') return '';
+  const accepted = new Date(input.acceptedAt).getTime();
+  const effective = input.effectiveAt ? new Date(input.effectiveAt).getTime() : NaN;
+  if (Number.isFinite(effective) && effective > accepted) {
+    // The calendar day in Germany, where the announced day begins at midnight.
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(effective));
+    return consentText(CONSENT_TEXTS.confirmationMail.effectiveOn, lang).replace('{Wirksamkeitstag}', formatLegalDate(day, lang));
+  }
+  return consentText(CONSENT_TEXTS.confirmationMail.effectiveNow, lang);
+}
+
+export function buildContractConfirmationMail(input: ContractConfirmationInput): { subject: string; html: string } {
+  const lang = input.language;
+  const addendum = isAddendum(input.occasion);
+  const doc = DOCUMENT[addendum ? 'addendum' : 'terms'][lang];
+  const subjectMatter =
+    lang === 'de'
+      ? `die ${doc} von Clean-Core.io (Fassung ${input.versionLabel})`
+      : `the Clean-Core.io ${doc} (version ${input.versionLabel})`;
+  const { date, time } = timeOf(input.acceptedAt);
+  const effective = effectiveSentence(input, lang);
+  const path = publishedWordingPath(input.occasion, input.versionId, lang);
+  const version = addendum ? input.versionId : `${input.versionLabel} (${lang === 'de' ? 'Kennung' : 'identifier'} ${input.versionId})`;
+
+  const filled = consentText(CONSENT_TEXTS.confirmationMail.body, lang)
+    // The draft's article choice: both documents take "die" in German.
+    .replace('den/die', 'die')
+    .replace('{Vorname}', input.firstName ? input.firstName : '')
+    .replace('{Gegenstand}', subjectMatter)
+    .replace('{Datum}', formatLegalDate(date, lang))
+    .replace('{Uhrzeit}', time)
+    .replace('{Wirksamkeit}', effective)
+    .replace('{Fassung}', version)
+    .replace('{Hash}', input.sha256)
+    .replace('{E-Mail}', input.recipient)
+    .replace('{Stelle}', PLACE[input.occasion][lang])
+    .replace('{Adresse}', `clean-core.io${path}`)
+    .replace('{Grundlage}', BASIS[input.occasion][lang]);
+
+  const head = filled.trim().split('\n\n');
+  const greetingLine = head.shift() ?? '';
+  // "Hallo ," when there is no name on the profile reads as a slip.
+  const greeting = escapeHtml(greetingLine.replace(/ ,$/, ','));
+  // A digest or an address is one unbreakable word; it wraps on a 320px screen.
+  const paragraphs = head.map((p) => `<span style="overflow-wrap: anywhere;">${p.split('\n').map(escapeHtml).join('<br>')}</span>`);
+
+  const html = buildUserMail({
+    greeting,
+    paragraphs,
+    link: { lead: LINK_LEAD[lang], url: `${APP_BASE_URL}${path}` },
+    signature: 'Felix',
+    footer: [
+      lang === 'de'
+        ? `Gesendet an ${escapeHtml(input.recipient)}, weil dieses Konto auf Clean-Core.io ${escapeHtml(subjectMatter)} angenommen hat.`
+        : `Sent to ${escapeHtml(input.recipient)} because this account accepted ${escapeHtml(subjectMatter)} on Clean-Core.io.`,
+    ],
+  });
+  return { subject: contractConfirmationSubject(input), html };
+}
+
+const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
+
+/**
+ * The wording and digest of what an occasion accepted, or null when it is not
+ * archived — or when the wording rendered from the source no longer hashes to
+ * the archived digest: then the page behind the link would not show the words
+ * the digest names, and no confirmation goes out.
+ */
+export function acceptedWording(
+  occasion: ConfirmationOccasion,
+  language: LegalLang,
+  addendumVersion?: string,
+): { versionId: string; versionLabel: string; wording: string; sha256: string } | null {
+  if (occasion === 'byok-addendum') {
+    if (!addendumVersion) return null;
+    const digest = byokAddendumSha256(addendumVersion, language);
+    const wording = toArchiveMarkdown(legalDocumentBlocks('byok-addendum', language));
+    if (!digest || sha256(wording) !== digest) return null;
+    return { versionId: addendumVersion, versionLabel: addendumVersion, wording, sha256: digest };
+  }
+  const digest = archivedTermsSha256For(TERMS_VERSION, language);
+  const wording = toArchiveMarkdown(legalDocumentBlocks('terms', language));
+  if (!digest || sha256(wording) !== digest) return null;
+  return { versionId: TERMS_VERSION, versionLabel: TERMS_LABEL, wording, sha256: digest };
+}

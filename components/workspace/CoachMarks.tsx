@@ -245,24 +245,31 @@ export default function CoachMarkNote({
 
   if (inline) {
     return (
-      <div ref={slotRef} data-coach-slot={slot} className="pb-3">
+      // Compact on purpose (owner decision 05.11.2026): the tip stands in the
+      // flow above the next step, and every pixel it takes pushes the first
+      // insights' first steps out of the first screen (first-look-map spec).
+      // Counter and title share a line; the buttons stand beside the text from
+      // `sm` up.
+      <div ref={slotRef} data-coach-slot={slot} className="pb-2">
         <div
           ref={popRef}
           data-coach-mark={mark.id}
           data-coach-form="inline"
           role="note"
           aria-label={mark.title}
-          className="relative max-w-xl rounded-cc-card bg-cc-surface-dark p-4 text-cc-on-dark shadow-cc-dialog"
+          className="relative flex max-w-5xl flex-col gap-2 rounded-cc-card bg-cc-surface-dark px-4 py-2 text-cc-on-dark shadow-cc-dialog sm:flex-row sm:items-center sm:justify-between sm:gap-4"
         >
           <span aria-hidden={true} className="absolute -bottom-1 left-6 h-3 w-3 rotate-45 bg-cc-surface-dark" />
-          {counter ? <p className="m-0 text-[11px] font-semibold">{counter}</p> : null}
-          <p className="m-0 mt-1 text-[15px] font-bold">
-            <b data-coach-mark-title="" className="font-bold">
-              {mark.title}
-            </b>
-          </p>
-          <p className="m-0 mt-1 text-[13px] leading-snug font-medium">{mark.body}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="min-w-0">
+            <p className="m-0 text-[15px] font-bold">
+              {counter ? <span className="mr-2 text-[11px] font-semibold">{counter}</span> : null}
+              <b data-coach-mark-title="" className="font-bold">
+                {mark.title}
+              </b>
+            </p>
+            <p className="m-0 text-[13px] leading-snug font-medium">{mark.body}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
             <CcButton onClick={() => onDismiss(mark.id)} data-coach-mark-dismiss={mark.id}>
               {last ? wt('coach.done') : wt('coach.next')}
             </CcButton>

@@ -95,6 +95,15 @@ export interface CoverageOptions {
    * version; every other caller, and a run of an earlier engine, keeps the gap.
    */
   datasetAssessed?: boolean;
+  /**
+   * From engine 3.0.21 (`ENGINE_READS_3021_FROM`) a macro is named where it is
+   * used, not only where it is defined, and the definition says what this
+   * engine actually does with it: the statements of a macro body are read once,
+   * where they are written, and never at the lines that use the macro. The
+   * engine passes true from that version; every other caller, and a run of an
+   * earlier engine, keeps the definition alone with its earlier sentence.
+   */
+  macroUsesNamed?: boolean;
 }
 
 interface Rule {
@@ -117,6 +126,10 @@ interface Context {
   unresolved: boolean;
   /** Program includes this statement names whose text the source does not hold. */
   includesNotRead: string[];
+  /** The macro this statement uses, with the line it is defined on (`macroUsesNamed` only). */
+  macroUse: { name: string; definedAt: number } | null;
+  /** Whether the 3.0.21 macro sentences apply (`CoverageOptions.macroUsesNamed`). */
+  macroUsesNamed: boolean;
 }
 
 const RULES: Rule[] = [
@@ -188,9 +201,24 @@ const RULES: Rule[] = [
     test: (_s, at) => at.unresolved,
   },
   {
+    // From 3.0.21: the line that uses a macro. ABAP puts the macro's statements
+    // here when it compiles; this engine does not, so what runs at this line was
+    // read only where the macro is written.
+    gap: 'macro',
+    label: 'Macro not expanded',
+    why: 'This statement uses a macro. This engine does not expand macros, so the statements the macro stands for are read where it is defined, not here where they run.',
+    whyAt: (_s, at) =>
+      `This statement uses the macro ${at.macroUse!.name}, defined at line ${at.macroUse!.definedAt}. This engine does not expand macros, so the statements it stands for are read once where it is defined, not here where they run, and with its placeholders &1 to &9 unfilled.`,
+    test: (_s, at) => at.macroUse !== null,
+  },
+  {
     gap: 'macro',
     label: 'Macro definition',
     why: 'Macro bodies are expanded by the compiler, not by this engine, so any statement written inside one is invisible to every detector.',
+    whyAt: (_s, at) =>
+      at.macroUsesNamed
+        ? 'This engine does not expand macros. The statements inside this definition are read once, where they are written, with the placeholders &1 to &9 unfilled — never at the lines that use the macro, each of which is listed on its own.'
+        : 'Macro bodies are expanded by the compiler, not by this engine, so any statement written inside one is invisible to every detector.',
     test: (s) => /^DEFINE\s+\w/.test(s),
   },
   {
@@ -246,17 +274,42 @@ function includesCarried(code: string): Set<string> {
   return carried;
 }
 
+/**
+ * The macros a source defines, by upper-cased name, with the line each is
+ * defined on. `DEFINE name.` opens one and `END-OF-DEFINITION.` closes it; a
+ * name defined twice keeps its first line.
+ */
+function macroDefinitions(statements: ReturnType<typeof tokenize>): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const stmt of statements) {
+    const name = /^\s*DEFINE\s+([\w/-]+)/i.exec(maskLiterals(stmt.text))?.[1]?.toUpperCase();
+    if (name && !out.has(name)) out.set(name, stmt.line);
+  }
+  return out;
+}
+
 export function assessCoverage(code: string, options: CoverageOptions = {}): CoverageReport {
   const unassessed: UnassessedConstruct[] = [];
   const answered: CatalogAnsweredCall[] = [];
   const unresolved = new Set(readTableDependencies(code).unresolved.map((target) => target.statement));
   const carried = includesCarried(code);
+  const statements = tokenize(code);
+  const macros = options.macroUsesNamed ? macroDefinitions(statements) : new Map<string, number>();
+  let inMacroBody = false;
 
-  for (const [index, stmt] of tokenize(code).entries()) {
+  for (const [index, stmt] of statements.entries()) {
     const upper = maskLiterals(stmt.text).toUpperCase().trim();
+    // A macro used inside another macro's body is the nesting this engine
+    // does not follow; the body is reported with its definition.
+    const head = /^([\w/-]+)\s*:?/.exec(upper)?.[1] ?? '';
+    const definedAt = !inMacroBody && head !== 'DEFINE' ? macros.get(head) : undefined;
+    if (/^DEFINE\s+\w/.test(upper)) inMacroBody = true;
+    else if (/^END-OF-DEFINITION\b/.test(upper)) inMacroBody = false;
     const at: Context = {
       unresolved: unresolved.has(index),
       includesNotRead: programIncludesOf(upper).filter((name) => !carried.has(name)),
+      macroUse: definedAt !== undefined ? { name: head, definedAt } : null,
+      macroUsesNamed: options.macroUsesNamed === true,
     };
     for (const rule of RULES) {
       if (rule.gap === 'file-io' && options.datasetAssessed) continue;
@@ -273,7 +326,9 @@ export function assessCoverage(code: string, options: CoverageOptions = {}): Cov
       }
       unassessed.push({
         gap: rule.gap,
-        label: rule.label,
+        // From 3.0.21 a definition and every use share one label, so the line
+        // that counts them ("3 × macro not expanded") does not call a use a definition.
+        label: rule.gap === 'macro' && at.macroUsesNamed ? 'Macro not expanded' : rule.label,
         why: rule.whyAt ? rule.whyAt(upper, at) : rule.why,
         line: stmt.line,
         snippet: trim(stmt.text),

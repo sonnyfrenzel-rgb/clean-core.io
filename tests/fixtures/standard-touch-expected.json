@@ -1,0 +1,14 @@
+{
+  "purpose": "Expected gate outcome of the stage-1 card 'Where this program touches SAP standard' for the shipped starter examples, written down BEFORE lib/standard-touch.ts was run on them (docs/design/fit-to-standard-concept.md section 3.4; owner decision 22.10.2026). A case where the gate disagrees is a finding to report, not a knob to tune: change an entry here only with the reason in 'note'.",
+  "writtenAt": "2026-10-22",
+  "basis": "Read from the source of each example against the classes of the concept, section 3.2 and 3.3: A deviation from a standard process (enhancement, BAdI implementation, modification); B own view on standard data (no writes, reads of SAP tables with a released path); C code driving standard transactions or BAPIs; D hard-coded customising (an add-on to A-C, never offered alone). Exclusions: no SAP object; integration as the main effect (outbound RFC, ABAP proxy, file exchange) with no A or C signal; own persistence as the main effect (writes only to its own tables) with no A signal.",
+  "cases": {
+    "Z_SALES_ORDER_CREATOR.txt": { "outcome": "offered", "includes": ["C"], "why": "Creates sales orders through BAPI_SALESORDER_CREATEFROMDAT2; no own tables." },
+    "Z_INVOICE_EXTRACTOR.txt": { "outcome": "not-offered", "reason": "integration", "why": "Reads billing documents and writes a file on the application server for another system: an interface." },
+    "Z_MATERIAL_STOCK_CALC.txt": { "outcome": "offered", "includes": ["B"], "why": "A read-only list over stock tables." },
+    "Z_MM_PO_APPROVAL.abap": { "outcome": "offered", "includes": ["C"], "why": "Drives ME21N by batch input and calls BAPI_PO_CREATE1; also writes EBAN directly." },
+    "Z_SD_DELIVERY_PRIORITY.abap": { "outcome": "offered", "includes": ["A"], "why": "A BAdI implementation that fills a field when a sales order is saved." },
+    "Z_SD_FREIGHT_RATE_CHECK.abap": { "outcome": "not-offered", "reason": "integration", "why": "Its main effect is the quote of an external carrier system over an outbound RFC, logged in its own table." },
+    "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap": { "outcome": "offered", "includes": ["C"], "why": "Changes sales orders through batch input on VA02, beside an outbound RFC and its own tables." }
+  }
+}

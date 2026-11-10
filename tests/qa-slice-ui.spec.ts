@@ -27,10 +27,13 @@ test('9e437b2930c4 — the invitation preview is shown only to the account it wa
   expect(src).toMatch(/\{shownPreview && \(/);
 });
 
-test('f7c64ceb4e3f — the accepted state is shown only to the account that accepted', () => {
+test('f7c64ceb4e3f — no accepted state outlives the account that accepted', () => {
+  // Roadmap 3.0.21 (4), owner decision 22.10.2026: accepting opens the project
+  // directly, so there is no accepted state on this page at all — and no project
+  // name for a later account to see. The project's own read decides from there.
   const src = read('app/(app)/invitation/[projectId]/[invitationId]/page.tsx');
-  expect(src).toMatch(/const accepted = acceptedState && acceptedState\.readFor === previewKey \? acceptedState : null;/);
-  expect(src).toMatch(/setAccepted\(\{ readFor: `\$\{user\.uid\}\|\$\{projectId\}\|\$\{invitationId\}`, projectName:/);
+  expect(src).not.toMatch(/acceptedState|setAccepted|projectName/);
+  expect(src).toContain('router.replace(`/project/${projectId}`);');
 });
 
 test('76118078e97f — the assistant starts from the greeting when the project changes', () => {

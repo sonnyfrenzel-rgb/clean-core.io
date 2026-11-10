@@ -70,7 +70,7 @@ export const CAPABILITIES: Capability[] = [
     effort:
       'The business questions come first; the solution design is then written with the model on your click — two calls, not counted against your analysis runs. The functional requirements come from the code, without a model.',
     limit:
-      'The design is a Model proposal until you record the target you accept. Where SAP names no released successor, it says so rather than inventing one.',
+      'The design is AI-generated until you record the target you accept. Where SAP names no released successor, it says so rather than inventing one.',
   },
   {
     stage: 'Transformation',

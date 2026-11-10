@@ -962,8 +962,8 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(point('successor-unverified', 'BAPI_X').place).toMatchObject({ view: 'it', hash: 'it-findings' });
     expect(point('standard-fit-not-assessed', null)).toMatchObject({
       kind: 'limit',
-      // IT's own Standard fit section since ADR-096 (owner, 12.10.2026).
-      place: { kind: 'view', view: 'it', hash: 'standard', action: 'Check standard fit' },
+      // IT's #standard: where the program touches SAP standard, and the fit-to-standard check (owner decision 22.10.2026).
+      place: { kind: 'view', view: 'it', hash: 'standard', action: 'See where it touches SAP standard' },
     });
     for (const code of ['catalog-not-edition-specific', 'modification-unreset', 'coverage-incomplete', 'no-successor-published', 'successor-unverified', 'standard-fit-not-assessed']) {
       const p = point(code, 'X');

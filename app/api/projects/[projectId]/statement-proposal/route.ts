@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
@@ -22,6 +23,10 @@ import {
   type StatementProposalRecord,
 } from '@/lib/statement-proposal';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson } from '@/lib/url-validation';
+
+/** The answer, its digest and its receipt, read under a bound before parsing. */
+const ANSWER_BODY_LIMITS = { maxBytes: MAX_ANSWER_LENGTH * 6 + 64 * 1024, timeoutMs: 20_000 };
 
 /**
  * The model's business sentences for a project's source — roadmap 17.10.
@@ -44,7 +49,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  *      project's stored source; a browser whose digest disagrees gets 409.
  *   2. **The origin is observed, not claimed.** Stored only with a receipt that
  *      verifies for this account and this text — a sentence typed by anyone
- *      must not wear the chip *Model proposal*.
+ *      must not wear the chip *AI-generated*.
  *   3. **The validation is the server's.** `validateStatementAnswer` drops and
  *      counts every sentence whose anchor, file, line or element does not hold.
  *      The answer itself is not stored — only its SHA-256, the sentences that
@@ -84,7 +89,7 @@ async function openProject(
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -209,7 +214,9 @@ export async function POST(
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    const body = (await req.json().catch(() => null)) as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
+    const read = await readBoundedRequestJson(req, ANSWER_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
     if (!body || typeof body.text !== 'string' || typeof body.digest !== 'string') {
       return NextResponse.json(
         { error: 'Expected { digest, text, receipt }: the answer from /api/gemini as it came back.', code: 'bad-request' },
@@ -254,7 +261,7 @@ export async function POST(
     if (!verdict.ok) {
       return NextResponse.json(
         {
-          error: 'These sentences carry no valid receipt from the model call, so they are not stored as a model proposal.',
+          error: 'These sentences carry no valid receipt from the model call, so they are not stored as AI-generated.',
           code: 'receipt-refused',
           refusal: verdict.refusal,
         },

@@ -9,6 +9,7 @@ import {
   COMPARISON_ASPECTS,
   COMPARISON_ASPECT_LABELS,
   readOptionComparison,
+  type OptionComparisonView,
 } from '@/lib/design-option-comparison';
 import { cn } from '@/lib/utils';
 import { KEY_USER_COMPANY_POLICY, keyUserLevelSentence, type KeyUserStepList } from '@/lib/key-user-steps';
@@ -22,7 +23,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
  * restates the route ("CAP because the target is CAP") is not shown as a
  * reason: the section says it was refused and why (`readOptionComparison`).
  */
-export default function OptionComparison({ design, keyUser = null }: {
+export default function OptionComparison({ design, keyUser = null, keyUserChosen = false }: {
   design: unknown;
   /**
    * Roadmap 3.0.19: the engine's key-user step list, where the signed run's
@@ -30,9 +31,16 @@ export default function OptionComparison({ design, keyUser = null }: {
    * an engine before 3.0.19, and the section is the one it always was.
    */
   keyUser?: KeyUserStepList | null;
+  /**
+   * Key user is the engine's recommendation or the target the owner confirmed
+   * (the page knows both). With the comparison's own proposal, the one reason
+   * the key-user limits are shown (`keyUserLimitsShown`).
+   */
+  keyUserChosen?: boolean;
 }) {
   const view = readOptionComparison(design);
   const fourOptions = view.state === 'ready' && view.options.some((o) => o.option === 'keyuser');
+  const limitsShown = keyUserLimitsShown({ view, keyUser, chosen: keyUserChosen });
   return (
     <section
       aria-labelledby="design-options-title"
@@ -91,7 +99,7 @@ export default function OptionComparison({ design, keyUser = null }: {
           ) : null}
           {keyUser && view.keyUserNotCompared ? (
             <p data-option-key-user-not-compared="" className="m-0 text-[13px] text-cc-ink-muted">
-              Key-user extensibility is not compared in this design — it was written before the engine read key-user candidates, or the model left it out. Regenerate the design to compare it; its engine limits are below.
+              Key-user extensibility is not compared in this design — it was written before the engine read key-user candidates, or the model left it out. Regenerate the design to compare it{limitsShown ? '; its engine limits are below' : ''}.
             </p>
           ) : null}
           {view.reason ? (
@@ -110,9 +118,26 @@ export default function OptionComparison({ design, keyUser = null }: {
           )}
         </>
       )}
-      {keyUser ? <KeyUserLimits list={keyUser} /> : null}
+      {keyUser && limitsShown ? <KeyUserLimits list={keyUser} /> : null}
     </section>
   );
+}
+
+/**
+ * Whether the key-user limits stand under the comparison (owner decision
+ * 22.10.2026): only where key-user extensibility is the option in question —
+ * the comparison proposes it, the engine recommends it, or the owner chose it
+ * as the target. Otherwise the block and its company-policy note are left out;
+ * the key-user option's card in the comparison keeps its own sentences.
+ */
+export function keyUserLimitsShown({ view, keyUser, chosen }: {
+  view: OptionComparisonView;
+  keyUser: KeyUserStepList | null;
+  chosen: boolean;
+}): boolean {
+  if (!keyUser) return false;
+  if (chosen) return true;
+  return view.state === 'ready' && view.recommended === 'keyuser';
 }
 
 /**

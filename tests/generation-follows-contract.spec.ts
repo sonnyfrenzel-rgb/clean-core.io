@@ -458,6 +458,8 @@ test('the prompt is built from the inputs the token covers, not from what the pa
   // c42de15e9c75: the prompt used to take legacyCode, design and analysis from
   // load-time state, so a design replaced since then was invisible to any check.
   const body = generationBody();
+  // It takes nothing: it never says what it generates from, and since the legal
+  // review of 06.11.2026 (item 1) it is started by a click only.
   expect(body).toContain('const generateTransformation = useCallback(async () => {');
   expect(body).toContain('const generationToken = generation.token;');
   expect(body).toContain('const { legacyCode, solutionDesign: design, analysis } = generation.inputs;');

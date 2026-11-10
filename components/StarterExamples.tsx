@@ -11,7 +11,10 @@ import PersonalDataHints from '@/components/PersonalDataHints';
 import { isUnchangedShippedExample } from '@/lib/shipped-example-fingerprint';
 import {
   COMMUNITY_QUOTA_FALLBACK,
+  OWN_KEY_ACTION,
+  OWN_KEY_HREF,
   quotaExhausted,
+  quotaSpentSentence,
   runsAreSelfFunded,
   starterExampleIsFree,
   type QuotaSubject,
@@ -23,6 +26,7 @@ import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
 import { formatNumber } from '@/lib/format';
 import { Eye, FileCode2, Info, Play } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcDialog from '@/components/cc/Dialog';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcFilterBar from '@/components/cc/FilterBar';
@@ -102,9 +106,11 @@ export default function StarterExamples({
   const [kind, setKind] = useState<'' | 'example' | 'snippet'>('');
   const costId = useId();
   // Whether the start asks the model for the narrative (owner decision
-  // 03.10.2026): the account's analysis stage and a key, said before the click.
+  // 03.10.2026): the account's analysis stage and a key, said before the click —
+  // and the main switch "All automatic AI steps", without which the first run
+  // asks no model (legal review 06.11.2026, N2; `hooks/useStartRun.ts`).
   const model = useModelAvailability();
-  const startCallsModel = model.enabled('analyze');
+  const startCallsModel = model.enabled('analyze') && model.autoModelSteps;
 
   const limit = account?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK;
   const atLimit = quotaExhausted(account);
@@ -370,12 +376,18 @@ export default function StarterExamples({
             headline="Limit reached."
             announce
             actions={
-              <CcButton variant="ghost" onClick={() => setLimitHit(false)}>
-                Close
-              </CcButton>
+              // The way on, not only "Close" (roadmap 3.0.21 (3)): straight to the own-key card.
+              <>
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+                <CcButton variant="ghost" onClick={() => setLimitHit(false)}>
+                  Close
+                </CcButton>
+              </>
             }
           >
-            {`You've used all ${limit} free analysis runs. Add your own Gemini API key in Settings for unlimited runs — Clean-Core.io stays free.`}
+            {quotaSpentSentence(limit)}
           </CcMessageStrip>
         </div>
       ) : null}
@@ -394,6 +406,7 @@ export default function StarterExamples({
           disabled={!!busy}
           release={release}
           onReleaseChange={setRelease}
+          folded
         />
 
         <div data-examples-tier="start-here" className="flex flex-col gap-2">

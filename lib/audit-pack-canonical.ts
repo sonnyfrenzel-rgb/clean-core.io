@@ -356,6 +356,113 @@ export function canonicalManifestDefect(m: CanonicalManifestParts): string | nul
   return null;
 }
 
+/** The inverse of `escapeField`. */
+function unescapeField(value: string): string {
+  return value.replace(/%(25|3A|3B)/g, (_, hex: string) => (hex === '25' ? '%' : hex === '3A' ? ':' : ';'));
+}
+
+/**
+ * The manifest a canonical string was built from, or null when it was not
+ * built by `canonicalAuditManifest` at all (CA-INT-03).
+ *
+ * `/api/export/verify` takes the canonical string, not the manifest, and used
+ * to check a signature over any string it was sent. It now checks only a
+ * string this function can read back into a manifest that canonicalises to
+ * exactly the same bytes — so the answer "valid" is a statement about an audit
+ * pack and about nothing else.
+ *
+ * The reading is a parse and a proof in one: whatever the parse assumes, the
+ * result is canonicalised again (with every defect check of
+ * `canonicalManifestDefect`) and must reproduce the input byte for byte. A
+ * misreading can therefore only refuse a string, never accept one the issuer
+ * could not have written.
+ */
+export function parseCanonicalManifest(s: string): CanonicalManifestParts | null {
+  if (typeof s !== 'string' || !s.endsWith(';')) return null;
+  const segs = s.slice(0, -1).split(';');
+  const parts: CanonicalManifestParts = { files: [] };
+
+  // The trailing sections, last first: ai=, covers=, issued=, attested=.
+  let last = segs[segs.length - 1];
+  if (segs.length > 1 && last.startsWith('ai=')) {
+    const f = last.slice(3).split(':').map(unescapeField);
+    if (f.length !== 6) return null;
+    const orNull = (v: string) => (v === '' ? null : v);
+    parts.aiGeneration = {
+      artefact: f[0] as AuditPackAiGeneration['artefact'],
+      statement: orNull(f[1]),
+      provider: orNull(f[2]),
+      model: orNull(f[3]),
+      generatedOn: orNull(f[4]),
+      basis: f[5],
+    };
+    segs.pop();
+    last = segs[segs.length - 1];
+  }
+  if (segs.length > 1 && last.startsWith('covers=')) {
+    const rows = last.slice(7).split(',');
+    const covers: CoverEntry[] = [];
+    for (const row of rows) {
+      const c = row.split(':');
+      if (c.length !== 3) return null;
+      covers.push({ step: c[0], coverage: c[1], ref: c[2] } as CoverEntry);
+    }
+    parts.covers = covers;
+    segs.pop();
+    last = segs[segs.length - 1];
+  }
+  if (segs.length > 1 && last.startsWith('issued=')) {
+    const body = last.slice(7);
+    const at = body.indexOf(':');
+    if (at <= 0) return null;
+    parts.version = body.slice(0, at);
+    parts.generatedAt = body.slice(at + 1);
+    segs.pop();
+    last = segs[segs.length - 1];
+  }
+  const bound = bindsIssuanceMetadata(parts.version);
+  if (segs.length > 1 && last.startsWith('attested=')) {
+    const rows = last.slice(9).split(',');
+    parts.attested = rows.map((row) => {
+      if (!bound) return { path: row };
+      const at = row.lastIndexOf(':');
+      return at < 0 ? { path: row } : { path: row.slice(0, at), sha256: row.slice(at + 1) };
+    });
+    segs.pop();
+  }
+
+  // The run binding, when present: the last remaining segment with four or
+  // more colons (a file row has exactly one).
+  const tail = segs[segs.length - 1];
+  if (segs.length > 1 && (tail.match(/:/g) || []).length >= 4) {
+    const f = tail.split(':');
+    if (bound) {
+      if (f.length !== 5) return null;
+      [parts.projectId, parts.runId, parts.runHash, parts.engineVersion, parts.sapApiCatalogVersion] = f.map(unescapeField);
+    } else {
+      [parts.projectId, parts.runId, parts.runHash, parts.engineVersion] = f;
+      parts.sapApiCatalogVersion = f.slice(4).join(':');
+    }
+    segs.pop();
+  }
+
+  // What is left are the file rows — `<path>:<sha256>` — or the single empty
+  // segment of a manifest without files.
+  if (!(segs.length === 1 && segs[0] === '')) {
+    for (const row of segs) {
+      const at = row.indexOf(':');
+      if (at <= 0) return null;
+      parts.files = [...parts.files, { path: row.slice(0, at), sha256: row.slice(at + 1) }];
+    }
+  }
+
+  try {
+    return canonicalAuditManifest(parts) === s ? parts : null;
+  } catch {
+    return null;
+  }
+}
+
 export function canonicalAuditManifest(m: CanonicalManifestParts): string {
   const defect = canonicalManifestDefect(m);
   if (defect) throw new Error(`This manifest has no unambiguous canonical form: ${defect}`);

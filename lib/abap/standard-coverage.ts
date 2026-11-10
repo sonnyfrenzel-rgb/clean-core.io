@@ -41,7 +41,7 @@ import { APP_VERSION } from '../version';
  * judgement about business meaning and nothing in the source says it. The label
  * is therefore the subject **as written** — code, not a business name, the same
  * rule `BusinessRule.label` keeps. A plain-language name is roadmap 7.8's job
- * and arrives with the *Model proposal* provenance on it.
+ * and arrives with the *AI-generated* provenance on it.
  *
  * A rule whose subject the engine could not read (`subjectKind:
  * 'not-derivable'`) belongs to no capability and is listed under `unassigned`

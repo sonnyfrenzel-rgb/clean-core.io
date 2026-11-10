@@ -261,7 +261,10 @@ test.describe('the business layer on screen', () => {
     const html = renderToStaticMarkup(React.createElement(BusinessLayer, { layer: technicalLayer(doc), process: processStepsOf(doc.steps) }));
     expect(html).toContain('data-sop-level="technical"');
     expect(html).toContain('data-sop-legacy=""');
-    expect(html).toContain('Written per technical step by an earlier version — 49 rows.');
+    // 47 since 3.0.21 (was 49): the BPMN reconstruction stays at the business
+    // level (roadmap row "3.0.21 — The BPMN reconstruction stays at the business
+    // level"), so the PO map has two elements fewer to write a row for.
+    expect(html).toContain('Written per technical step by an earlier version — 47 rows.');
     expect(html).toContain('Regenerate SOP and RACI for one entry per step of “How it works”');
     // A stored layer of any shape the page accepts renders.
     for (const layer of [{}, { raci_matrix: [], sop_details: [] }, { sop_details: [{ stepId: 'x', stepTechnical: 'not a list' }], level: BUSINESS_STEP_LEVEL }]) {

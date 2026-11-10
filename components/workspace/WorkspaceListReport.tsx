@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { targetEditionOf } from '@/lib/target-edition';
 import { createWithinCeiling } from '@/lib/write-ceiling';
-import { ArrowDownUp, Plus } from 'lucide-react';
+import { ArrowDownUp, Layers, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -36,6 +36,7 @@ import {
   wt,
 } from '@/lib/workspace-messages';
 import { describeRunCost, type RunCost } from '@/lib/run-cost';
+import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_ACTION, OWN_KEY_HREF, quotaExhausted, quotaSpentSentence } from '@/lib/run-quota-rule';
 import { saveAs } from '@/lib/fileSaver';
 import { DEMO_LIST_TAGLINE, DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import {
@@ -63,6 +64,7 @@ import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcFilterBar from '@/components/cc/FilterBar';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
@@ -396,8 +398,9 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
   const setSearch = useCallback((search: string) => setFilter((f) => ({ ...f, search })), []);
 
   const costFor = useCallback(
-    (callsModel: boolean): RunCost => describeRunCost({ profile, metered: true, callsModel }),
-    [profile],
+    (callsModel: boolean): RunCost =>
+      describeRunCost({ profile, metered: true, callsModel, provider: modelAvailability.known ? modelAvailability.provider : undefined }),
+    [profile, modelAvailability.known, modelAvailability.provider],
   );
 
   const start = useCallback(
@@ -779,6 +782,26 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           <p className="mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">{t('workspace.lead')}</p>
         </div>
 
+        {/* The free runs are spent: said where the account lands, with the way
+            on to an own key (roadmap 3.0.21 (3)) — not only once a start has
+            been refused. The old dashboard page carried this strip; the list
+            report that replaced it for every active account (3.0.1) did not. */}
+        {quotaExhausted(profile) ? (
+          <div data-workspace-limit="">
+            <CcMessageStrip
+              state="warning"
+              headline={wt('myWorkspace.limitReached')}
+              actions={
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+              }
+            >
+              {quotaSpentSentence(profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK)}
+            </CcMessageStrip>
+          </div>
+        ) : null}
+
         <YourTurnCard
           hasOwnProjects={hasOwn}
           items={yourTurn}
@@ -792,7 +815,14 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           count={shownRows.length}
           density="cozy"
           actions={
-            hasOwn ? (
+            <span className="flex flex-wrap items-center gap-2">
+              {/* Roadmap 3.0.21: the portfolio — many programs in one batch,
+                  one aggregated view. Every account sees the way in; the page
+                  says why it is closed without an own model key. */}
+              <CcLinkButton href="/portfolio" density="cozy" icon={<Layers size={16} aria-hidden={true} />} data-workspace-portfolio="">
+                {wt('portfolio.entry')}
+              </CcLinkButton>
+            {hasOwn ? (
               <span className="flex flex-wrap items-center gap-2">
                 <CcButton
                   icon={<ArrowDownUp size={16} aria-hidden={true} />}
@@ -811,7 +841,8 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
                   {t('workspace.newProject')}
                 </CcButton>
               </span>
-            ) : null
+            ) : null}
+            </span>
           }
         >
           {/* Nothing to filter while the demo is the only row, which is also what

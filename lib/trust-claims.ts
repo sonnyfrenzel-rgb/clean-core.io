@@ -14,10 +14,14 @@
  * Privacy Policy first. That is the intended order, not an obstacle.
  */
 
-/** The only documents a claim may cite. Anything else is not a source. */
+/**
+ * The only documents a claim may cite. Anything else is not a source. Since
+ * Fassung 1.1 of the legal texts (3.0.21) the words of the Terms and the
+ * privacy policy are in `lib/legal/texts/*` and the pages render them.
+ */
 export const TRUST_SOURCE_FILES = [
-  'app/terms/page.tsx',
-  'app/datenschutz/page.tsx',
+  'lib/legal/texts/terms.en.ts',
+  'lib/legal/texts/privacy.en.ts',
   'SECURITY.md',
 ] as const;
 
@@ -67,11 +71,11 @@ export const SECURITY_MODEL_URL =
  */
 export const TRUST_PLEDGE: TrustClaim = {
   id: 'pledge',
-  text: 'By uploading, you confirm you may share this code for analysis, including with the Google Gemini API.',
+  text: 'By uploading, you confirm you may share this code for analysis, including with the model provider — the Google Gemini API, or the provider of your own key.',
   icon: 'access',
   sources: [
     {
-      file: 'app/terms/page.tsx',
+      file: 'lib/legal/texts/terms.en.ts',
       href: '/terms#third-party-ai',
       label: 'Terms §5',
       evidence: [
@@ -79,11 +83,11 @@ export const TRUST_PLEDGE: TrustClaim = {
       ],
     },
     {
-      file: 'app/terms/page.tsx',
+      file: 'lib/legal/texts/terms.en.ts',
       href: '/terms#your-content',
       label: 'Terms §8',
       evidence: [
-        'You warrant that you are entitled to upload and process any content, code, or data you submit to the Platform',
+        'You warrant that you are entitled to upload and have processed all content, code and data you submit to the Platform',
       ],
     },
   ],
@@ -134,7 +138,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     icon: 'residency',
     sources: [
       {
-        file: 'app/datenschutz/page.tsx',
+        file: 'lib/legal/texts/privacy.en.ts',
         href: '/datenschutz#hosting',
         label: 'Privacy Policy §4',
         evidence: [
@@ -149,7 +153,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     icon: 'access',
     sources: [
       {
-        file: 'app/datenschutz/page.tsx',
+        file: 'lib/legal/texts/privacy.en.ts',
         href: '/datenschutz#project-access',
         label: 'Privacy Policy §8',
         evidence: [
@@ -166,11 +170,11 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     icon: 'proxy',
     sources: [
       {
-        file: 'app/terms/page.tsx',
+        file: 'lib/legal/texts/terms.en.ts',
         href: '/terms#third-party-ai',
         label: 'Terms §5',
         evidence: [
-          'stored encrypted and is used solely to forward your requests to the Google Gemini API on your behalf via a secure backend proxy; your key is never exposed to the browser',
+          'stored encrypted and is used solely to forward your requests to the provider of that key via a secure backend proxy; your key is never exposed to the browser',
         ],
       },
     ],
@@ -203,7 +207,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     icon: 'tracking',
     sources: [
       {
-        file: 'app/datenschutz/page.tsx',
+        file: 'lib/legal/texts/privacy.en.ts',
         href: '/datenschutz#cookies',
         label: 'Privacy Policy §7',
         evidence: ['We do not use analytics, advertising, or tracking cookies'],
@@ -216,7 +220,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     icon: 'erasure',
     sources: [
       {
-        file: 'app/datenschutz/page.tsx',
+        file: 'lib/legal/texts/privacy.en.ts',
         href: '/datenschutz#your-rights',
         label: 'Privacy Policy §5',
         evidence: [
@@ -228,16 +232,17 @@ export const TRUST_CLAIMS: TrustClaim[] = [
   },
   {
     id: 'training',
-    text: "With our community key, Google does not use your code to train its models — the paid Gemini API terms apply. With your own key, your Google account's terms apply.",
+    text: "With our community key, Google does not use your code to train its models — the paid Gemini API terms apply. With your own key, the terms of your own account with that key's provider apply.",
     icon: 'training',
     sources: [
       {
-        file: 'app/datenschutz/page.tsx',
+        file: 'lib/legal/texts/privacy.en.ts',
         href: '/datenschutz#source-code',
         label: 'Privacy Policy §3',
         evidence: [
-          'The shared community key is a paid Gemini API key, so the paid Gemini API terms govern every request made with it: Google does not use your code to train its models',
-          'When you use your own key (BYOK), the terms of your own Google account apply',
+          'The shared community key uses the paid tier of the Gemini API only (Paid Services); its terms govern every request made with it',
+          'Google does not use paid-tier inputs and outputs to train its models',
+          'With your own key (BYOK), the terms of your own account with the provider of that key apply',
         ],
       },
     ],
@@ -263,16 +268,16 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     icon: 'free',
     sources: [
       {
-        file: 'app/terms/page.tsx',
+        file: 'lib/legal/texts/terms.en.ts',
         href: '/terms#free-community-edition',
         label: 'Terms §2',
         evidence: [
           'Clean-Core.io is a free community project: there is no paid tier',
-          'No payment, subscription, or consideration is required or accepted',
+          'No payment, subscription, or other fee is required or accepted',
         ],
       },
       {
-        file: 'app/datenschutz/page.tsx',
+        file: 'lib/legal/texts/privacy.en.ts',
         href: '/datenschutz#source-code',
         label: 'Privacy Policy §3',
         evidence: [

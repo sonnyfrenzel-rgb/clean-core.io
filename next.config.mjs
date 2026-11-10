@@ -66,6 +66,7 @@ export const NONCE_ROUTE_SOURCES = [
   '/auth/action',
   '/survey/:token',
   '/unsubscribe',
+  '/unsubscribe/invitations',
   '/admin/design-system/first-render',
 ];
 
@@ -176,6 +177,19 @@ const nextConfig = {
         // page. Permanent-redirect so external links and search results keep working.
         source: '/sap-tier-2-extensions',
         destination: '/sap-clean-core-object-classification',
+        permanent: true,
+      },
+      {
+        // Terms v2.3.0 carried the provisional version id 2026-10-23 until the release date
+        // (9 November 2026) became its id. That id was never published on main, but the draft
+        // address circulated in reviews and test mails, so it must not lead nowhere.
+        source: '/terms/versions/2026-10-23',
+        destination: '/terms/versions/2026-11-09',
+        permanent: true,
+      },
+      {
+        source: '/terms/versions/2026-10-23/:path*',
+        destination: '/terms/versions/2026-11-09/:path*',
         permanent: true,
       },
       {

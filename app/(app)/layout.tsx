@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAuth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect } from 'react';
 import ShellHelpMenu, {
   SHELL_MENU_ITEMS,
   SHELL_MENU_PANEL,
@@ -19,23 +19,25 @@ import CcTag from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
 import { PHASES } from '@/lib/workflow-steps';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAccountPage, useAuthWanted } from '@/hooks/useAuthWanted';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
+import { END_CONTRACT_FOOTER_CLASS, END_CONTRACT_HREF, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE } from '@/lib/contract-withdrawal';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
-import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
+import NewVersionWatcher from '@/components/NewVersionWatcher';
+import { runsLeftLabel } from '@/lib/run-quota-rule';
+import { signInLinkFor } from '@/lib/return-path';
 import { Lightbulb } from 'lucide-react';
 import { showTipsAgain } from '@/lib/show-tips-again';
 import { forgetShellProject, openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
 import { workspaceBackHref } from '@/lib/workspace-back-href';
 import { nav } from '@/lib/messages/navigation';
 import { wt } from '@/lib/workspace-messages';
+import { useLocationSearch } from '@/lib/location-search';
 
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -124,18 +126,43 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    * "Settings & Profile" and "Sign Out", which read as a pseudo account (owner
    * report 21.10.2026).
    */
-  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  const [firebaseSignedIn, setFirebaseSignedIn] = useState<boolean | undefined>(undefined);
+
+  /**
+   * Privacy policy section 7: on a public page of this shell (About, Knowledge,
+   * the demo …, lib/shell-routes.ts) a visitor without the first-party
+   * signed-in hint gets the "Sign in" link without the Auth SDK being started —
+   * starting it contacts Google on mobile browsers and Safari. With the hint,
+   * on a page that needs an account, or once this page has started Auth, the
+   * shell asks Firebase as before (hooks/useAuthWanted.ts). While a public page
+   * hydrates the answer is not known yet, and neither control is shown.
+   */
+  const authWanted = useAuthWanted();
+  const signedIn = authWanted === false ? false : authWanted === undefined ? undefined : firebaseSignedIn;
+
+  /**
+   * A page that needs an account (lib/shell-routes.ts), opened without the
+   * signed-in hint: the page is not rendered — it would start Auth itself — and
+   * the reader goes to the sign-in dialog, which brings them back afterwards
+   * (signInLinkFor). Network capture 09.11.2026, privacy policy section 7.
+   */
+  const accountPage = useAccountPage();
+  const holdAccountPage = accountPage && authWanted !== true;
+  useEffect(() => {
+    if (accountPage && authWanted === false) router.replace(signInLinkFor(pathname ?? '/'));
+  }, [accountPage, authWanted, pathname, router]);
 
   // A project name announced for one account is not shown to the next one.
   useEffect(() => {
+    if (!authWanted) return;
     let uid: string | null | undefined;
     return onAuthStateChanged(getAuth(), (user) => {
       const next = user?.uid ?? null;
-      setSignedIn(next !== null);
+      setFirebaseSignedIn(next !== null);
       if (uid !== undefined && next !== uid) forgetShellProject();
       uid = next;
     });
-  }, []);
+  }, [authWanted]);
 
   const handleLogout = async () => {
     try {
@@ -197,7 +224,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   // in the view the stage was opened from (the same rule as the stage's own
   // "Back to workspace", `lib/workspace-back-href.ts`). On the object page it is
   // where the reader stands.
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const search = useLocationSearch();
   const projectHref = projectId ? workspaceBackHref({ projectId, search }) : null;
   // The search slot of §2.1: a button only while a project search is on the
   // page (the object page's ⌘K dialog), opening it by a named event.
@@ -307,10 +334,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                   <span className="text-[13px] font-semibold text-cc-ink">{profile.firstName} {profile.lastName}</span>
                   {planLabel(profile.tier) ? <CcTag>{planLabel(profile.tier)}</CcTag> : null}
                 </div>
-                <div data-shell-quota="" className="whitespace-nowrap text-[12px] font-semibold text-cc-ink-muted">
-                  {runsAreSelfFunded(profile) || profile.transformationsLimit > 900
-                    ? 'Unlimited'
-                    : `${runsRemaining(profile)} of ${profile.transformationsLimit} left`}
+                {/* On a phone the label may take two lines: "N of 5 runs left"
+                    (3.0.21) beside the project search, the help and the account
+                    menu is two pixels wider than a 360 px screen. */}
+                <div data-shell-quota="" className="text-right text-[12px] font-semibold text-cc-ink-muted sm:whitespace-nowrap">
+                  {runsLeftLabel(profile)}
                 </div>
               </div>
             )}
@@ -341,7 +369,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 (and the server's) must not show a signed-out visitor an account menu. */}
             {signedIn === false ? (
               <Link
-                href="/"
+                // Back to this page after the sign-in, where the page is one a mail or a bookmark leads to
+                // (`lib/return-path.ts`); every other page signs in to My workspace (roadmap 3.0.21 (1)).
+                href={signInLinkFor(pathname ?? '/')}
                 data-shell-sign-in=""
                 className={cn(SHELL_TRIGGER, 'px-3 text-[13px] font-semibold text-cc-ink no-underline')}
               >
@@ -459,7 +489,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl',
         )}
       >
-        {children}
+        {/* A tab left open across a deploy says so when it comes back into view, and waits for the reader's click (roadmap 3.0.21 (8)). */}
+        <NewVersionWatcher />
+        {holdAccountPage ? null : children}
       </main>
       {/* The legal links of every page in this shell live here, in one of
           the two branches below — never behind the login. This shell also wraps
@@ -482,6 +514,13 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             <Link href="/impressum" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Legal Notice</Link>
             <Link href="/datenschutz" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Privacy Policy</Link>
             <Link href="/terms" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Terms</Link>
+            {/* C13 (Terms section 13): signed in only — it opens the account's own withdrawal form.
+                Highlighted (A6 of 3.0.21): bold, in full ink and underlined, beside the muted links. */}
+            {profile ? (
+              <Link href={END_CONTRACT_HREF} className={END_CONTRACT_FOOTER_CLASS} data-footer-end-contract="">
+                {END_CONTRACT_LABEL} · <span lang="de">{END_CONTRACT_LABEL_DE}</span>
+              </Link>
+            ) : null}
             <span aria-hidden={true}>·</span>
             <span className="font-cc-mono">Clean-Core.io {APP_VERSION}</span>
           </div>
@@ -490,6 +529,14 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
         <footer className="cc-no-print border-t border-cc-line bg-cc-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <SiteFooter />
+            {/* C13 (Terms section 13): signed in only — it opens the account's own withdrawal form. Highlighted like the step footer's. */}
+            {profile ? (
+              <p className="m-0 mt-8 text-center text-xs font-medium text-cc-ink-muted">
+                <Link href={END_CONTRACT_HREF} className={END_CONTRACT_FOOTER_CLASS} data-footer-end-contract="">
+                  {END_CONTRACT_LABEL} · <span lang="de">{END_CONTRACT_LABEL_DE}</span>
+                </Link>
+              </p>
+            ) : null}
             <div className="mt-8 pt-6 border-t border-cc-line text-center">
               <SapTrademarkNotice className="max-w-3xl mx-auto" />
             </div>

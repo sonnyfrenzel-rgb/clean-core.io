@@ -3,8 +3,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { publicButton } from '@/components/landing/public-button';
+import { CONSENT_TEXTS } from '@/lib/legal/consent-texts';
 
 type State = 'reading' | 'idle' | 'working' | 'done' | 'error';
+
+/**
+ * Which list the link unsubscribes from: community mail (`/unsubscribe`) or
+ * invitations to a project or portfolio (`/unsubscribe/invitations`, C10/C12).
+ */
+export type UnsubscribeList = 'community' | 'invitations';
 
 /**
  * The token from the address, and the address without it.
@@ -35,7 +42,7 @@ function takeTokenFromAddress(): string {
  * scanners, corporate mail gateways and browser prefetchers all follow GETs, and
  * any of them silently unsubscribing a reader would be worse than no link at all.
  */
-export default function UnsubscribeClient() {
+export default function UnsubscribeClient({ list = 'community' }: { list?: UnsubscribeList } = {}) {
   const [token, setToken] = useState('');
   const [state, setState] = useState<State>('reading');
   const [message, setMessage] = useState('');
@@ -67,11 +74,13 @@ export default function UnsubscribeClient() {
       // mail carries it in the fragment for the same reason; only the RFC 8058
       // one-click URL in the header keeps it in the query, because providers
       // POST there without a body.
-      const res = await fetch('/api/unsubscribe', {
+      const init: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ t: token }),
-      });
+      };
+      const res =
+        list === 'invitations' ? await fetch('/api/unsubscribe/invitations', init) : await fetch('/api/unsubscribe', init);
       const data = await res.json().catch(() => ({ success: false }));
       if (data.success) {
         setState('done');
@@ -84,6 +93,24 @@ export default function UnsubscribeClient() {
       setMessage('The request did not go through. Please try again, or write to us.');
     }
   };
+
+  if (state === 'done' && list === 'invitations') {
+    return (
+      <div className="rounded-2xl border border-cc-success-border bg-cc-success-bg p-6">
+        <h2 className="text-lg font-bold text-cc-success mb-2">You are unsubscribed</h2>
+        <p className="text-sm text-cc-ink leading-relaxed">
+          {CONSENT_TEXTS.portfolioInvitation.unsubscribed.en}
+        </p>
+        <p className="text-sm text-cc-ink leading-relaxed mt-3">
+          Landed here by accident? Write to{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold underline">
+            {CONTACT_EMAIL}
+          </a>
+          .
+        </p>
+      </div>
+    );
+  }
 
   if (state === 'done') {
     return (
@@ -125,8 +152,9 @@ export default function UnsubscribeClient() {
   return (
     <div className="rounded-2xl border border-cc-line bg-cc-surface p-6">
       <p className="text-sm text-cc-ink-muted leading-relaxed mb-5">
-        Confirm below and we will stop sending you community updates. Messages about your own account
-        are unaffected.
+        {list === 'invitations'
+          ? 'Confirm below and no further invitation to a project or portfolio on Clean-Core.io will be sent to this address.'
+          : 'Confirm below and we will stop sending you community updates. Messages about your own account are unaffected.'}
       </p>
       <button
         type="button"

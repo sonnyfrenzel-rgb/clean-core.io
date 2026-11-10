@@ -21,7 +21,7 @@ import { DECISION_OPTIONS, DECISION_OPTION_LABELS } from '@/lib/decision-options
  *   - Level A–D per SAP object under a versioned rule — `lib/abap/abcd-classification.ts`,
  *     `lib/abap/level-rule-version.ts`, `/method/levels`;
  *   - the four decision options in the Management view — `lib/decision-options.ts`;
- *   - Model proposal, not determined — `lib/provenance.ts`;
+ *   - AI-generated, not determined — `lib/provenance.ts`;
  *   - a run signed with HMAC — `app/api/runs/create/route.ts`; the audit pack with
  *     HMAC and Ed25519 — `lib/audit-pack.ts`, `/verify-pack`;
  *   - CAP tests against mocks in an isolated runner, RAP ABAP Unit result recorded from
@@ -54,7 +54,7 @@ export const AS_OF_PARAGRAPH =
   `As of ${APP_VERSION} (released ${APP_RELEASE_DATE_ISO}), Clean-Core.io is a free, independent web workspace for deciding what happens to one custom ABAP program. ` +
   'A deterministic engine reads the code before any language model does and reconstructs the business process as BPMN, with a line anchor on every element or the reason it has none, including the business rules hard-coded in the program. ' +
   'Each SAP object the code uses gets a Level A–D under a versioned rule, read from SAP’s published Cloudification Repository and object classification, or Unknown where neither holds an answer. ' +
-  `On that evidence the Management view asks for one decision — ${decisionWords} — and Design, Transformation and Testing carry the same evidence to a target design, a code draft and test scenarios, each marked as a Model proposal for a person to review. ` +
+  `On that evidence the Management view asks for one decision — ${decisionWords} — and Design, Transformation and Testing carry the same evidence to a target design, a code draft and test scenarios, each marked as AI-generated for a person to review. ` +
   'Every completed analysis is stored as an immutable run signed by the server with HMAC; the audit pack exported from it is signed with HMAC and Ed25519, and its Ed25519 signature can be verified offline. ' +
   'What the engine could not determine is listed as not determined, not guessed.';
 

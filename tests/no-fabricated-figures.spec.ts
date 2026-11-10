@@ -517,13 +517,11 @@ test.describe('nothing reports success it did not achieve', () => {
 
 test('no scope column shows a meter nobody measured', () => {
   // "Cloud Readiness 95 %" and "Decommission Ratio 80 %" were a number and a
-  // bar width written into the file. The Standard Fit column beside them had
-  // already given up its invented 90/50/15 for the three words the model
-  // returns; these two had nothing behind them at all (UX review of
-  // 52f171091948, 29e1d6c0013f).
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components/analyze/TargetScopeMapping.tsx'), 'utf8');
-  expect(src, 'no hard-coded percentage as a value').not.toMatch(/>\s*\d{1,3}%\s*</);
-  expect(src, 'and none as a bar width').not.toMatch(/width:\s*'\d{1,3}%'/);
-  // The one bar that stays is driven by the model's own word.
-  expect(src).toContain("standardFit?.potential === 'High' ? 3");
+  // bar width written into the file; the Standard Fit column beside them showed
+  // the model's three words. Since 3.0.21 (owner decision 22.10.2026) the whole
+  // mapping card is gone: its standard fit was the model's guess at what cannot
+  // be measured, and the two other columns showed fixed text.
+  expect(fs.existsSync(path.resolve(__dirname, '..', 'components/analyze/TargetScopeMapping.tsx'))).toBe(false);
+  const page = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8');
+  expect(page).not.toContain('TargetScopeMapping');
 });

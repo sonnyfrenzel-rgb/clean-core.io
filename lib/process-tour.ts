@@ -9,14 +9,21 @@
  * What this file decides is **which steps are stations** and what is said at
  * each. The sentences are the walk guide's (`lib/process-walk-guide.ts`) —
  * engine-written, anchored, worded by the model only through the 3.0.20 guard
- * — and this file adds three engine sentences of its own: where the process
- * goes next, what the tour leaves out in a part, and the whole program at the
- * end.
+ * — and this file adds engine sentences of its own: where the process goes
+ * next, what the tour leaves out in a part, and the overview it opens with.
  *
+ *   - **An overview first** (owner, 22.10.2026: "walk me through the process
+ *     needs only business context at the start, so that every user finds
+ *     their way in the process at once"): what the program is for, who starts
+ *     it, where it starts and ends, what comes out, and how many steps in which
+ *     parts — all engine-written ({@link TourOverview}). It is not counted: the
+ *     stations stay "Step 1 of N".
  *   - **Only business stations.** Technical steps (checks, run options and the
  *     test-data switch, logging, files, set-up and loops) are the guide's
  *     `technical` groups; they are never stations. Where they sit, one sentence
- *     says so ("In this part the program also makes 3 technical checks").
+ *     says so ("In this part the program also makes 3 technical checks"), one
+ *     level down ("More about it", owner 22.10.2026), as is the line that a new
+ *     part begins.
  *   - **Phases are chapters.** The guide's phases, in walk order; a stretch of
  *     the main flow is a chapter named after its first station.
  *   - **A few stations per chapter.** The steps a business reader learns most
@@ -25,14 +32,21 @@
  *     one, and no more than {@link MAX_STATIONS} in all where the chapters
  *     allow it. A phase box is a chapter, not a station, unless nothing inside
  *     it is a station. Steps of the same name in one chapter are one station.
+ *   - **What a step checks and where it can end** — the First insights' story
+ *     lines "Checks: …" and "Can end here: …" (`lib/process-story.ts`) moved
+ *     into the tour on 22.10.2026: each story step goes to the station it is,
+ *     the first station of the part it is, or the station before it on the
+ *     walk, one level down, without what the station already says.
  *
  * Pure: no React, no DOM, no network, no clock. Nothing here is stored or
  * signed — it is presentation, built in the browser from the source the
  * active run signed, as the map is.
  */
 import type { ProcessMapModel } from './process-map';
+import { readProcess } from './first-look';
+import { processStory } from './process-story';
 import { programSummaryFactsOf } from './program-summary-facts';
-import { businessInShort, programSummary } from './program-summary-text';
+import { businessInShort, programSummary, withoutCodes, type SummaryLine } from './program-summary-text';
 import { APP_VERSION } from './version';
 import type { WalkGuide, WalkGuideStep, WalkLine, WalkRange, WalkRole, WalkTechnicalGroup } from './process-walk-guide';
 
@@ -60,12 +74,19 @@ export interface TourStation {
   /** The level of the map the element is drawn on: null for the top one. */
   plane: string | null;
   chapter: number;
+  /** What happens, as the card says it: a long case list in its short form. */
   happens: WalkLine;
+  /** The full case list, one level down, where the card says it short; null otherwise. */
+  cases: WalkLine | null;
   matters: WalkLine;
-  /** Where the process goes after it, in the tour's terms. Engine-written. */
-  next: string;
-  /** What the tour leaves out in this part, in one sentence — on a chapter's first station only. */
+  /** Where the process goes after it, on the card: the next step of the same part, or the end. Null when a new part begins. */
+  next: string | null;
+  /** "Then the part … begins." — one level down (owner 22.10.2026); null inside a part. */
+  nextPart: string | null;
+  /** What the tour leaves out in this part, in one sentence — on a chapter's first station only, one level down. */
   aside: string | null;
+  /** What the story of the First insights says the step checks and where it can end, one level down. */
+  story: TourStoryNote[];
   /** One fold down ("More about it"): what decides it, what data it touches, and its lines. */
   decides: WalkLine[];
   data: WalkLine | null;
@@ -74,11 +95,61 @@ export interface TourStation {
   engine: string | null;
 }
 
+/**
+ * A step of the First insights' story (`lib/process-story.ts`) at a station:
+ * what it checks and where it can end, in the story's plain labels, without
+ * what the station already says. `step` names the story step where it is not
+ * the station itself.
+ */
+export interface TourStoryNote {
+  step: string | null;
+  checks: string[];
+  stops: string[];
+}
+
+/** A story step as the tour reads it: the engine's plain labels, never a model's names. */
+export interface TourStoryStep {
+  text: string;
+  /** The skeleton node the step starts at — the map element's `nodeId`. */
+  nodeId: string;
+  anchor: WalkRange | null;
+  checks: string[];
+  stops: string[];
+}
+
+/** What the engine reads about the whole program for the tour (`tourReadingOf`). */
+export interface TourReading {
+  /** What it is for and what it changes: the aim the program's names support, then the First insights' "In short". */
+  purpose: WalkLine[];
+  /** Who starts it. */
+  trigger: WalkLine | null;
+  /** What comes out. */
+  result: WalkLine | null;
+  story: TourStoryStep[];
+}
+
+/**
+ * The overview the tour opens with (owner decision 22.10.2026) — before the
+ * first station, not counted. Every line is engine-written; a line the engine
+ * has nothing for is absent.
+ */
+export interface TourOverview {
+  purpose: WalkLine[];
+  trigger: WalkLine | null;
+  /** "It starts at “Run starts with the entered selection” and ends at “Done”." — the map's top-level events. */
+  route: string | null;
+  /** Who else takes part, as far as the code shows it: another system, an e-mail. */
+  involved: string | null;
+  result: WalkLine | null;
+  /** "7 steps in 5 parts: Check authority, …" */
+  count: string;
+}
+
 export interface ProcessTour {
   chapters: TourChapter[];
   stations: TourStation[];
-  /** The whole program in one sentence, said at the end; null when the engine has none. */
-  closing: WalkLine | null;
+  /** What the process is about, said before the first station. */
+  overview: TourOverview;
   /** The steps the old walk-through went through one by one (business and technical) — what the tour replaced. */
   walkSteps: number;
 }
@@ -134,11 +205,12 @@ export function asideSentence(left: { decisions: number; steps: number; technica
 const isDecisionRole = (role: WalkRole) => role === 'control' || role === 'rule' || role === 'permission';
 
 /**
- * The tour of a process map: its stations by chapter, each said in plain
- * words. `closing` is the one sentence about the whole program the tour ends
- * with (the First-insights purpose sentence, or the engine's program summary).
+ * The tour of a process map: the overview, then its stations by chapter,
+ * each said in plain words. `reading` is what the engine reads about the
+ * whole program (`tourReadingOf`): the overview's sentences and the story's
+ * checks and stops; without it the overview says the route and the count only.
  */
-export function buildProcessTour(guide: WalkGuide, model: ProcessMapModel, closing: WalkLine | null = null): ProcessTour {
+export function buildProcessTour(guide: WalkGuide, model: ProcessMapModel, reading: TourReading | null = null): ProcessTour {
   const byId = new Map(model.elements.map((e) => [e.id, e]));
   const walkSteps = guide.business.length + guide.technical.reduce((n, g) => n + g.stepIds.length, 0);
 
@@ -233,10 +305,13 @@ export function buildProcessTour(guide: WalkGuide, model: ProcessMapModel, closi
         title: step.title,
         plane: element.plane,
         chapter: c,
-        happens: step.happens,
+        happens: step.brief ?? step.happens,
+        cases: step.brief ? step.happens : null,
         matters: step.matters,
-        next: '',
+        next: null,
+        nextPart: null,
         aside: k === 0 ? asideSentence({ ...pick.dropped, technical: technicalByChapter.get(c) ?? {} }) : null,
+        story: [],
         decides: step.decides,
         data: step.data,
         anchor: step.anchor,
@@ -252,26 +327,181 @@ export function buildProcessTour(guide: WalkGuide, model: ProcessMapModel, closi
     } else if (after.chapter === station.chapter || chapters[after.chapter].label === after.title) {
       station.next = `Then it goes on to “${after.title}”.`;
     } else {
-      station.next = `Then the part “${chapters[after.chapter].label}” begins.`;
+      station.nextPart = `Then the part “${chapters[after.chapter].label}” begins.`;
     }
   });
-  return { chapters, stations, closing, walkSteps };
+  placeStory(reading?.story ?? [], stations, chapters, guide, model);
+  return { chapters, stations, overview: overviewOf(reading, stations, chapters, guide, model), walkSteps };
 }
 
+/* ------------------------------------------------------------- the overview */
+
+/** Up to this many parts the overview names each; above, the first and the last (the full list is the part select). */
+export const OVERVIEW_PARTS = 6;
+
+/** "7 steps in 5 parts: Check authority, Read requisition, …" — with many parts, the first and the last. */
+export function countSentence(steps: number, parts: readonly string[]): string {
+  const what = `${steps} ${steps === 1 ? 'step' : 'steps'} in ${parts.length} ${parts.length === 1 ? 'part' : 'parts'}`;
+  if (parts.length === 0) return `${what}.`;
+  if (parts.length <= OVERVIEW_PARTS) return `${what}: ${list([...parts])}.`;
+  return `${what}, from “${parts[0]}” to “${parts[parts.length - 1]}”.`;
+}
+
+function overviewOf(
+  reading: TourReading | null,
+  stations: readonly TourStation[],
+  chapters: readonly TourChapter[],
+  guide: WalkGuide,
+  model: ProcessMapModel,
+): TourOverview {
+  // Where it starts and ends: the map's top-level start and its first regular end, by their labels.
+  const top = model.elements.filter((e) => e.event && e.plane === null);
+  const start = top.find((e) => e.tag === 'startEvent' && e.label.trim());
+  const end = top.find((e) => e.tag === 'endEvent' && !e.early && e.label.trim());
+  const route = start && end ? `It starts at “${start.label.trim()}” and ends at “${end.label.trim()}”.` : null;
+  // Who else takes part, as far as the code shows it — never a lane a model proposed.
+  const roles = new Set(guide.business.map((id) => guide.byId[id]?.role));
+  const others = [...(roles.has('remote') ? ['asks another system'] : []), ...(roles.has('mail') ? ['sends an e-mail'] : [])];
+  return {
+    purpose: reading?.purpose ?? [],
+    trigger: reading?.trigger ?? null,
+    route,
+    involved: others.length ? `It also ${list(others)}.` : null,
+    result: reading?.result ?? null,
+    count: countSentence(stations.length, chapters.map((c) => c.label)),
+  };
+}
+
+/* ------------------------------------------------- the story at the stations */
+
+/** A label as it is compared: no "Decided by:" or "Only when", no closing mark, lower case. */
+const core = (text: string): string =>
+  text
+    .replace(/^(?:decided by:|only when)\s*/i, '')
+    .replace(/^the\s+/i, '')
+    .replace(/[.?!]+\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+/** "L42" or "L60-75" as a range. */
+const rangeOfLabel = (label: string | null): WalkRange | null => {
+  const m = label ? /^L(\d+)(?:-(\d+))?$/.exec(label.trim()) : null;
+  return m ? { lineStart: Number(m[1]), lineEnd: Number(m[2] ?? m[1]) } : null;
+};
+
 /**
- * The one sentence about the whole program the tour ends with: the purpose
- * line of the engine's program summary, the same the First insights' "In
- * short" leads with, without the table codes. Null when the engine cannot read
- * one. `engineVersion`: the engine the summary is read for (3.0.20) — the
- * project's run's.
+ * Each story step goes to one station: the station it is; else the first
+ * station of the part it is (a phase box); else the last station at or before
+ * where it stands on the walk (the first station when none is before it); a
+ * step off the walk goes where the story step before it went. A check the
+ * station already says — a title of its part, or a line of what decides it —
+ * is left out, and a step with nothing left is not placed. Exported for the spec.
  */
-export function tourClosingOf(source: string, engineVersion: string | null = APP_VERSION): WalkLine | null {
+export function placeStory(
+  story: readonly TourStoryStep[],
+  stations: TourStation[],
+  chapters: readonly TourChapter[],
+  guide: WalkGuide,
+  model: ProcessMapModel,
+): void {
+  if (stations.length === 0) return;
+  const byId = new Map(model.elements.map((e) => [e.id, e]));
+  const walk = Object.keys(guide.byId);
+  const at = new Map(walk.map((id, i) => [id, i]));
+  const stationAt = new Map(stations.map((s, i) => [s.id, i]));
+  /** Whether `id` is `outer` or drawn on a level `outer` opens, at any depth. */
+  const within = (id: string, outer: string): boolean => {
+    let current = byId.get(id);
+    for (let guard = 0; current && guard < 50; guard += 1) {
+      if (current.id === outer) return true;
+      current = current.plane ? byId.get(current.plane) : undefined;
+    }
+    return false;
+  };
+  let previous = 0;
+  for (const step of story) {
+    const element = model.elements.find((e) => e.nodeId === step.nodeId) ?? byId.get(step.nodeId) ?? null;
+    let target: number | undefined = element ? stationAt.get(element.id) : undefined;
+    if (target === undefined && element) {
+      const chapter = chapters.find((c) => c.id === element.id);
+      if (chapter) target = chapter.first;
+    }
+    if (target === undefined) {
+      // Where the step stands on the walk: itself or the first step inside it, else the first step on its lines.
+      let position = element ? walk.findIndex((id) => within(id, element.id)) : -1;
+      if (position < 0 && step.anchor) {
+        const range = step.anchor;
+        position = walk.findIndex((id) => {
+          const a = byId.get(id)?.anchor;
+          return !!a && a.lineStart <= range.lineEnd && a.lineEnd >= range.lineStart;
+        });
+      }
+      if (position < 0) {
+        // Off the walk (a step on a branch): where the story step before it went — the story runs in the code's order.
+        target = previous;
+      } else {
+        let before = 0;
+        stations.forEach((s, i) => {
+          if ((at.get(s.id) ?? Number.MAX_SAFE_INTEGER) <= position) before = i;
+        });
+        target = before;
+      }
+    }
+    previous = target;
+    const station = stations[target];
+    // What the station says already, and the stations of its part (a check that is a station of its own is said there).
+    const said = new Set([
+      ...chapters[station.chapter].stations.map((i) => core(stations[i].title)),
+      ...station.decides.map((d) => core(d.text)),
+    ]);
+    const checks = step.checks.filter((c) => c.trim() && !said.has(core(c)));
+    const stops = step.stops.map((s) => withoutCodes(s)).filter((s) => s.trim() && !said.has(core(s)));
+    if (checks.length === 0 && stops.length === 0) continue;
+    const self = element?.id === station.id || core(step.text) === core(station.title);
+    station.story.push({ step: self ? null : step.text, checks, stops });
+  }
+}
+
+/* ------------------------------------------------ what the engine reads here */
+
+const lineOf = (line: SummaryLine): WalkLine => {
+  const first = line.anchors[0];
+  return { text: line.text, anchor: first ? { lineStart: first.lineStart, lineEnd: first.lineEnd } : null };
+};
+
+/**
+ * What the engine reads about the whole program for the tour: the aim the
+ * program's names support (`lib/abap/program-domain.ts`, through the summary
+ * facts), the First insights' "In short" without the table codes — purpose,
+ * what it changes, what comes out, who starts it — and the story's checks and
+ * stops in the engine's plain labels (no model's names). A part the engine
+ * cannot read is left out; a summary that throws gives null.
+ * `engineVersion`: the engine the summary and the story are read for (3.0.20)
+ * — the project's run's.
+ */
+export function tourReadingOf(source: string, engineVersion: string | null = APP_VERSION): TourReading | null {
+  let reading: TourReading;
   try {
-    const [purpose] = businessInShort(programSummary(programSummaryFactsOf(source, { engineVersion })), { codes: false });
-    if (!purpose || purpose.basis === 'not-determined' || !purpose.text.trim()) return null;
-    const first = purpose.anchors[0];
-    return { text: purpose.text, anchor: first ? { lineStart: first.lineStart, lineEnd: first.lineEnd } : null };
+    const facts = programSummaryFactsOf(source, { engineVersion });
+    const lines = businessInShort(programSummary(facts), { codes: false }).filter((l) => l.basis !== 'not-determined' && l.text.trim());
+    const purpose = lines.filter((l) => l.key === 'purpose' || l.key === 'changes').map(lineOf);
+    const domain = facts.domain;
+    if (domain && !purpose.some((l) => l.text === domain.text)) {
+      const [line] = domain.lines;
+      purpose.unshift({ text: domain.text, anchor: typeof line === 'number' ? { lineStart: line, lineEnd: line } : null });
+    }
+    const trigger = lines.find((l) => l.key === 'trigger');
+    const result = lines.find((l) => l.key === 'result');
+    reading = { purpose, trigger: trigger ? lineOf(trigger) : null, result: result ? lineOf(result) : null, story: [] };
   } catch {
     return null;
   }
+  try {
+    const story = processStory(readProcess(source).skeleton, source, null, engineVersion);
+    reading.story = story.steps.map((s) => ({ text: s.text, nodeId: s.nodeId, anchor: rangeOfLabel(s.anchor), checks: s.checks, stops: s.stops }));
+  } catch {
+    reading.story = [];
+  }
+  return reading;
 }

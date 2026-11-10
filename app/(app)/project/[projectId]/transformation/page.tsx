@@ -21,7 +21,6 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
 import { isProjectOwner } from '@/lib/project-readers';
 import { wt } from '@/lib/workspace-messages';
@@ -85,6 +84,7 @@ import type { GenerationRefusal } from '@/lib/generation-direction';
 import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { generateDraftLabel, providerCompanyOf, regenerateDraftLabel } from '@/lib/messages/model-consent';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP } from '@/lib/sap-naming';
 import { enterGenerationPhase, type GenerationPhase, type GenerationPhaseKey } from '@/lib/generation-progress';
@@ -126,6 +126,7 @@ import { readProcessStatesOutcome, type StatesReadOutcome } from '@/lib/process-
 import type { RuleRegister } from '@/lib/rule-register';
 import { engineStampOf, engineVersionOfProject } from '@/lib/run-engine-version';
 import { rulesReadRefusal, tfFilesResult, tfFillsNote, tfLiteralsResult, tfSingleCallNote } from '@/lib/workspace-messages';
+import { useLocationSearch } from '@/lib/location-search';
 
 /**
  * An authenticated JSON POST that honours the generation's cancel — the
@@ -215,9 +216,6 @@ async function ruleRegisterOf(outcome: StatesReadOutcome, source: string, engine
 }
 
 /** The address the page is on, read in the browser only (as `StageHeader` reads it). */
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 /** Tailwind's `xl`: from here the two code panes stand side by side (roadmap 3.0.14, item 6). */
 const SIDE_BY_SIDE_QUERY = '(min-width: 1280px)';
 const subscribeSideBySide = (onChange: () => void) => {
@@ -395,7 +393,7 @@ export default function TransformationPage() {
    * decided rules there and came back sees the new count, never the one this
    * tab held before. Until the fresh read is in, the tip says "Reading…".
    */
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const search = useLocationSearch();
   const readerView = new URLSearchParams(search).get('view');
   const readsRules = Boolean(isOwner && project?.legacyCode);
   const { outcome: statesOutcome, reload: reloadStates } = useProcessStates(projectId as string, readsRules);
@@ -562,10 +560,11 @@ export default function TransformationPage() {
   // score and signed off a finding on the strength of a timer.
   //
   // The capability it mimed is real and lives in stage 5, where the tenant
-  // connection actually exists: the OData explorer there now reads records from
-  // a chosen entity set through /api/test-s4-odata-read and reports the count it
-  // actually got back. What it does not claim is equivalence — nothing compares
-  // the generated TypeScript against those rows, so nothing says it does.
+  // connection actually exists: the OData metadata read there checks that a
+  // chosen entity set exists and names its fields from the service's $metadata
+  // (/api/test-s4-odata-read) — no record and no count since 3.0.21. What it
+  // does not claim is equivalence — nothing compares the generated TypeScript
+  // against the tenant, so nothing says it does.
 
   // Two substitutions used to live here. `|| 70` invented a baseline for a
   // project that never got scored, and the `: 100` branch declared full
@@ -1251,6 +1250,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   /** The chain as the page reads it, for the Built-on snapshot the store records (§15.4). */
   const slotsRef = useRef<ChainSlot[]>([]);
 
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 1): a generation starts only on a
+   * click — *Generate draft*, *Generate now*, *Replace* or *Try again* — for
+   * every key, the platform key included. Nothing calls this on opening.
+   */
   const generateTransformation = useCallback(async () => {
     if (generationInFlight.current) return;
     generationInFlight.current = true;
@@ -1765,7 +1769,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const planPending = planWanted && (planView === undefined || planView?.state === 'reading');
   const canStart = canGenerate && planBlocked === null && !planPending && contractRefusal === null;
   /** Once a package exists the button replaces it, and says so. */
-  const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
+  // Legal review 06.11.2026 (3.0.21, item 1): the button names where the code goes — the provider of the key actually used.
+  const draftCompany = modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null;
+  const generateLabel = files.length > 0 ? regenerateDraftLabel(draftCompany) : generateDraftLabel(draftCompany);
   /** The first reason the code cannot be generated now, for the empty package card. */
   const whyNotGenerated = prerequisites[0]?.reason ?? keyUserEvidenceWait ?? (blockers.length > 0 ? blockers.join(' ') : modelOff);
   // Owner, 16.10.2026: what moved is said as it is — a decision confirmed after
@@ -1848,10 +1854,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const storedRecord = storedGenerationRecord(storedBinding);
 
   /**
-   * The first generation starts by itself only when no tip is open (owner,
-   * 12.10.2026; design §14.4): with every count read and nothing that would
-   * change what the generation uses, there is nothing to read first. Once per
-   * visit, never over a package on record, and only where the button could.
+   * The first generation no longer starts by itself (legal review 06.11.2026,
+   * 3.0.21, item 1): it used to start on opening when no tip was open (owner,
+   * 12.10.2026; design §14.4). Now it waits for *Generate draft* on every key,
+   * so opening the tool never sends code anywhere.
    */
   /**
    * The plan before the click (owner, 13.10.2026): the same contract read and
@@ -1920,18 +1926,6 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     };
   }, [planWanted, projectId, planNonce]);
 
-  const autoStarted = useRef(false);
-  // Never by itself while the decision warning shows: the reader decides to generate against it.
-  const nothingOpen = settled && tips.length === 0 && warning === null;
-  // ... and only once the plan is read and allows it (owner, 13.10.2026).
-  const planSettled = planView !== undefined && planView?.state !== 'reading';
-  useEffect(() => {
-    if (autoStarted.current || !nothingOpen || !canStart || !planSettled || files.length > 0 || modelAvailability.loading || loading) return;
-    autoStarted.current = true;
-    const timer = setTimeout(() => generateTransformation(), 0);
-    return () => clearTimeout(timer);
-  }, [nothingOpen, canStart, planSettled, files.length, modelAvailability.loading, loading, generateTransformation]);
-
   /** The fills' time left — an estimate in words, from the calls that finished (owner, 13.10.2026). */
   const fillsEstimate =
     generating && generationPhase?.key === 'model' && plannedFillCalls !== null
@@ -1999,11 +1993,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           The decision is key-user extensibility: no code is generated. A key user configures the program in the system from the step list the engine built from the signed run.
         </span>
       </StageHeader>
-      {project && !isOwner ? (
-        <div className="mb-6">
-          <OwnerOnlyNote />
-        </div>
-      ) : null}
+      {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={blockers} />
       {evidenceFailed ? (
         <div className="mb-6" data-transformation-evidence-failed="">
@@ -2092,7 +2082,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           </div>
           {/* Roadmap 3.0.12, step E (design §12.1): a step's anchor — its ABAP
               lines, its rules with the owner's decision, and who wrote what:
-              the frame is the engine's, the body a model proposal, a body
+              the frame is the engine's, the body an AI-generated draft, a body
               nobody wrote is not determined. */}
           {selectedUnits.map((u) => (
             <div key={u.unitId} data-unit-anchor={u.unitId} className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
@@ -2230,6 +2220,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           plan={planView === undefined ? (planWanted ? { state: 'reading' } : null) : planView}
           keySource={modelAvailability.keySource}
           onGenerate={startGeneration}
+          generateLabel={generateLabel}
           conceptSource={legacySource}
         />
   ) : null;
@@ -2258,7 +2249,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
               data-generate-code=""
             >
-              {generateLabel}
+              {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
+              <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel}</span>
             </CcButton>
             <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
               Copy Code
@@ -2292,11 +2284,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         }}
       />
 
-      {project && !isOwner ? (
-        <div className="mb-6">
-          <OwnerOnlyNote />
-        </div>
-      ) : null}
+      {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
 
       {/* Why the code cannot be generated now, each reason with the one
           action that resolves it (owner report 03.10.2026). On the

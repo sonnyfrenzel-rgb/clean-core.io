@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ownKeyCounts } from '@/lib/run-quota-rule';
 import {
   verifyRequestAuth,
   getAdminDb,
@@ -38,8 +39,11 @@ export async function GET(req: Request) {
     const named = ownKeyProviderOf(profile);
     const provider = named === null || named === 'unknown' ? 'gemini' : named;
     const snap = await db.collection('user_secrets').doc(decodedToken.uid).collection('providers').doc(provider).get();
+    const testedRaw = (profile as { byokTestedAt?: { toDate?: () => Date } | string | null } | null)?.byokTestedAt;
+    const profileTestedAt = !ownKeyCounts(profile as Parameters<typeof ownKeyCounts>[0]) ? null
+      : typeof testedRaw === 'string' ? testedRaw : testedRaw && typeof testedRaw.toDate === 'function' ? testedRaw.toDate().toISOString() : null;
     if (!snap.exists) {
-      return NextResponse.json({ byokConfigured: false, provider: null, last4: '', rotatedAt: null });
+      return NextResponse.json({ byokConfigured: false, provider: null, last4: '', rotatedAt: null, testedAt: null });
     }
 
     const data = snap.data();
@@ -48,6 +52,8 @@ export async function GET(req: Request) {
       provider,
       last4: data?.last4 || '',
       rotatedAt: data?.rotatedAt ? data.rotatedAt.toDate().toISOString() : null,
+      // Roadmap 3.0.21: whether the saved key passed its test (`ownKeyCounts`, lib/run-quota-rule.ts).
+      testedAt: profileTestedAt,
     });
   } catch (err: unknown) {
     // A refusal says why — those messages are ours. Anything else is an Admin

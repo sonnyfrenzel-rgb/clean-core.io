@@ -1,6 +1,7 @@
 import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
+import { engineReads3021Apply } from '../abap/engine-reads-3021-gate';
 import { anchorText, flowText, layoutModel, NOTE_W, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
@@ -15,6 +16,8 @@ import {
 } from './model';
 import { el, serialize, textEl, type XmlElement } from './xml';
 import { readingExportsKey } from './reading-key';
+import { aiMarkingField, aiMarkingStatement, aiModelWords, aiOriginOf, withAiMarking, type AiAuthorship } from '../ai-marking';
+import { applyNaming, namingContextOf, type NamingContext, type NamingOrigin, type ProcessNamingRecord } from '../process-naming';
 
 /**
  * BPMN 2.0 XML out of the process skeleton — roadmap 2.6.
@@ -45,7 +48,11 @@ export interface BpmnExportOptions {
   processName: string;
   /** The file the signed run analysed (`inputFingerprint.fileName`). */
   sourceFileName: string;
-  /** Recorded as `exporterVersion`. Defaults to this release. */
+  /**
+   * Recorded as `exporterVersion`. Defaults to this release. It is also the engine the map is drawn for: from 3.0.21
+   * (`ENGINE_READS_3021_FROM`) at the business level — a routine drawn once, a run of guard checks as one step
+   * (`ExportModelOptions.businessLevel`).
+   */
   exporterVersion?: string;
   /**
    * `plain` names every element for a business reader (`lib/abap/plain-language.ts`,
@@ -64,6 +71,25 @@ export interface BpmnExportOptions {
   wrapOf?: (containerId: string) => number | undefined;
   /** Width of a plane's note (`LayoutOptions.noteWidth`) — the phone's view only, never a file. */
   noteWidth?: number;
+  /**
+   * 3.0.21 (acceptance test T08): element names a language model wrote — the business names of roadmap 2.4, keyed by
+   * skeleton node id — and who wrote them, as recorded. An element named from here carries
+   * `<cc:origin value="ai" ai_provider="…" ai_model="…"/>` in its `extensionElements`; the file then carries the AI
+   * marking as its header comment and as `cc:aiMarking` in the process's extension elements, and its documentation
+   * no longer says "without a language model". Every other element stays unmarked: absence is the engine's. Without
+   * this option the file is byte-identical to what it was.
+   */
+  aiNames?: { names: Readonly<Record<string, string>>; authorship: AiAuthorship };
+  /**
+   * 3.0.21 (owner decision 23.10.2026): the project's stored business names (`GET /api/projects/{id}/process-naming`,
+   * roadmap 2.4) for a download. Read by {@link buildBpmnExportFromSource} and {@link buildReadingExports}, which turn
+   * it into `aiNames` with the provider and model of the receipt the server verified when it stored the names
+   * ({@link aiNamesOfNaming}) — never a name written here. A naming made for another reading of the source applies to
+   * nothing, and the file stays the engine's. `buildBpmnExport` itself reads only `aiNames`. Only a plain file
+   * (`names: 'plain'`) takes it: the technical file stays byte for byte the engine's, for a clean round trip with
+   * SAP Signavio (owner decision 23.10.2026).
+   */
+  naming?: ProcessNamingRecord | null;
 }
 
 export interface BpmnExportStats {
@@ -116,12 +142,16 @@ export interface BpmnExport {
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
   const model = buildExportModel(skeleton, {
     labels: options.names === 'plain' ? plainLabels(skeleton, options.source) : undefined,
+    businessLevel: engineReads3021Apply(options.exporterVersion ?? APP_VERSION),
   });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;
+  // Before the layout, so a model-written name is measured as the name it is.
+  const aiNamed = applyAiNames(nodes, options.aiNames);
+  const ai = aiNamed.size > 0 && options.aiNames ? { authorship: options.aiNames.authorship, count: aiNamed.size } : null;
   model.root.annotations.unshift({
     id: 'note-reconstruction',
-    text: reconstructionNote(options, anchored, nodes.length),
+    text: reconstructionNote(options, anchored, nodes.length, ai),
   });
   const layout = layoutModel(model, { direction: options.direction, wrap: options.wrap, wrapOf: options.wrapOf, noteWidth: options.noteWidth });
 
@@ -151,8 +181,8 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
   const process = el('bpmn:process', [
     ['id', 'process'], ['name', options.processName], ['isExecutable', 'false'],
   ], [
-    textEl('bpmn:documentation', processDocumentation(skeleton, model, options, anchored, nodes.length)),
-    el('bpmn:extensionElements', [], [el('cc:reconstruction', [
+    textEl('bpmn:documentation', processDocumentation(skeleton, model, options, anchored, nodes.length, ai)),
+    el('bpmn:extensionElements', [], [...(ai ? [aiMarkingElement(ai, options)] : []), el('cc:reconstruction', [
       ['status', STATUS],
       ['file', options.sourceFileName],
       ['engine', options.exporterVersion ?? APP_VERSION],
@@ -168,7 +198,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     // Roadmap 2.16. Before the flow elements, because that is the order the
     // BPMN 2.0 schema fixes for `tProcess`: laneSet*, then flowElement*.
     ...laneSet(model, options),
-    ...containerContent(model.root, options),
+    ...containerContent(model.root, options, aiNamed),
   ]);
 
   const definitions = el('bpmn:definitions', [
@@ -191,8 +221,10 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     ...diagrams(model, layout.planes, layout.participant),
   ]);
 
+  const xml = serialize(definitions);
   return {
-    xml: serialize(definitions),
+    // The file-level marking, after the XML declaration (`withAiMarking` keeps it first).
+    xml: ai ? withAiMarking('process.bpmn', xml, aiMarkingStatement(ai.authorship, options.exporterVersion ?? APP_VERSION)) : xml,
     elementNode,
     dataByElement,
     stats: {
@@ -213,7 +245,41 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
 
 /** The same, for a caller that holds the source rather than the skeleton. */
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
-  return buildBpmnExport(buildProcessSkeleton(source), { source, ...options });
+  const { naming, ...rest } = options;
+  // The technical file is the engine's alone (owner decision 23.10.2026): a naming applies to the plain file only.
+  if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source), { source, ...rest });
+  // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once.
+  const context = namingContextOf(source);
+  const aiNames = aiNamesOfNaming(context, naming);
+  return buildBpmnExport(context.skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
+}
+
+/** Who wrote a stored naming, as the receipt the server verified says — nothing more, nothing assumed. */
+export function authorshipOfNaming(origin: NamingOrigin): AiAuthorship {
+  return {
+    provider: origin.provider || null,
+    modelId: origin.modelId || null,
+    byok: typeof origin.byok === 'boolean' ? origin.byok : null,
+    generatedAt: Number.isFinite(origin.issuedAt) ? new Date(origin.issuedAt).toISOString() : null,
+    appVersion: null,
+  };
+}
+
+/**
+ * The `aiNames` of a stored naming: the business names that still apply to this reading (`applyNaming` — same
+ * digest, same technical name), keyed by skeleton node id, with the authorship of the naming's receipt. `undefined`
+ * when nothing applies — no naming, a stale one, or one whose names all fell away — so the file stays the engine's.
+ */
+export function aiNamesOfNaming(
+  context: NamingContext,
+  record: ProcessNamingRecord | null | undefined,
+): BpmnExportOptions['aiNames'] | undefined {
+  const named = applyNaming(context, record);
+  if (named.state !== 'named' || !named.origin) return undefined;
+  const names: Record<string, string> = {};
+  for (const node of named.nodes) if (node.businessName) names[node.id] = node.businessName;
+  if (Object.keys(names).length === 0) return undefined;
+  return { names, authorship: authorshipOfNaming(named.origin) };
 }
 
 /**
@@ -224,7 +290,7 @@ export function buildBpmnExportFromSource(source: string, options: BpmnExportOpt
  */
 export function buildReadingExports(
   source: string,
-  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion'>,
+  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion' | 'naming'>,
 ): { bpmn: BpmnExport; technical: BpmnExport } {
   // The same source and options always give the same reading, and laying out a
   // large program takes seconds: the map, the process summary and every tool of
@@ -233,10 +299,15 @@ export function buildReadingExports(
   const key = readingExportsKey(source, options);
   const hit = readingCache.get(key);
   if (hit) return hit;
-  const skeleton = buildProcessSkeleton(source);
+  const { naming, ...base } = options;
+  // A stored naming (a download, 3.0.21) puts the model's names on the plain file, marked; the technical file is the
+  // code's own tokens and stays so.
+  const context = naming ? namingContextOf(source) : null;
+  const skeleton = context?.skeleton ?? buildProcessSkeleton(source);
+  const aiNames = context ? aiNamesOfNaming(context, naming) : undefined;
   const out = {
-    bpmn: buildBpmnExport(skeleton, { ...options, source, names: 'plain', wrap: READING_WRAP }),
-    technical: buildBpmnExport(skeleton, { ...options, source, wrap: READING_WRAP }),
+    bpmn: buildBpmnExport(skeleton, { ...base, source, names: 'plain', wrap: READING_WRAP, ...(aiNames ? { aiNames } : {}) }),
+    technical: buildBpmnExport(skeleton, { ...base, source, wrap: READING_WRAP }),
   };
   if (readingCache.size >= 4) readingCache.delete(readingCache.keys().next().value as string);
   readingCache.set(key, out);
@@ -348,9 +419,57 @@ function tableNamespace(table: string): 'customer' | 'registered' | 'sap' {
   return 'sap';
 }
 
-function reconstructionNote(options: BpmnExportOptions, anchored: number, total: number): string {
+/** What the file says about the model's part, when a model named elements. */
+interface AiPart {
+  authorship: AiAuthorship;
+  count: number;
+}
+
+/**
+ * The model's names put on the elements they belong to; the ids of the export elements that got one. A name that is
+ * empty after trimming is no name, and an element already called that stays the engine's.
+ */
+function applyAiNames(nodes: ExportNode[], aiNames: BpmnExportOptions['aiNames']): Set<string> {
+  const named = new Set<string>();
+  if (!aiNames) return named;
+  for (const node of nodes) {
+    const name = aiNames.names[node.source.id];
+    if (typeof name !== 'string' || !name.trim() || name.trim() === node.name) continue;
+    node.name = name.trim();
+    named.add(node.id);
+  }
+  return named;
+}
+
+function aiSentence(ai: AiPart): string {
+  return `${plural(ai.count, 'element name was', 'element names were')} written by a language model (${aiModelWords(ai.authorship)}) and ${ai.count === 1 ? 'is' : 'are'} marked cc:origin="ai"; everything else was reconstructed without a language model.`;
+}
+
+/** The file-level metadata field: the AI marking's statement and its parts (`lib/ai-marking.ts`). */
+function aiMarkingElement(ai: AiPart, options: BpmnExportOptions): XmlElement {
+  const field = aiMarkingField(ai.authorship, options.exporterVersion ?? APP_VERSION);
+  return el('cc:aiMarking', [
+    ['statement', field.statement],
+    ['provider', field.provider ?? undefined],
+    ['model', field.model ?? undefined],
+    ['keyOwner', field.keyOwner ?? undefined],
+    ['generatedOn', field.generatedOn ?? undefined],
+    ['basis', field.basis],
+    ['elements', ai.count],
+  ]);
+}
+
+/** `<cc:origin value="ai" ai_provider="…" ai_model="…"/>` — the mark of one model-written element. */
+function originElement(authorship: AiAuthorship): XmlElement {
+  const o = aiOriginOf(authorship);
+  return el('cc:origin', [['value', o.origin], ['ai_provider', o.provider], ['ai_model', o.model]]);
+}
+
+function reconstructionNote(options: BpmnExportOptions, anchored: number, total: number, ai: AiPart | null = null): string {
   return [
-    `Reconstructed from the ABAP source ${options.sourceFileName} without a language model.`,
+    ai
+      ? `Reconstructed from the ABAP source ${options.sourceFileName}. ${aiSentence(ai)}`
+      : `Reconstructed from the ABAP source ${options.sourceFileName} without a language model.`,
     'Not confirmed by anyone, and not evidence of how the process runs in production.',
     `${anchored} of ${total} elements carry a line anchor.`,
   ].join('\n');
@@ -366,9 +485,12 @@ function processDocumentation(
   options: BpmnExportOptions,
   anchored: number,
   total: number,
+  ai: AiPart | null = null,
 ): string {
   const lines = [
-    `Reconstructed from the ABAP source ${options.sourceFileName} by Clean-Core.io ${options.exporterVersion ?? APP_VERSION}, without a language model.`,
+    ai
+      ? `Reconstructed from the ABAP source ${options.sourceFileName} by Clean-Core.io ${options.exporterVersion ?? APP_VERSION}. ${aiSentence(ai)}`
+      : `Reconstructed from the ABAP source ${options.sourceFileName} by Clean-Core.io ${options.exporterVersion ?? APP_VERSION}, without a language model.`,
     'Status: reconstructed. Derived from the code; not confirmed by anyone, and not evidence of how the process runs in production.',
     `${anchored} of ${total} elements carry a line anchor in the source.`,
   ];
@@ -479,9 +601,9 @@ function laneSet(model: ExportModel, options: BpmnExportOptions): XmlElement[] {
   }))];
 }
 
-function containerContent(container: ExportContainer, options: BpmnExportOptions): XmlElement[] {
+function containerContent(container: ExportContainer, options: BpmnExportOptions, aiNamed: ReadonlySet<string> = new Set()): XmlElement[] {
   const out: XmlElement[] = [];
-  for (const node of container.nodes) out.push(flowNode(node, container, options));
+  for (const node of container.nodes) out.push(flowNode(node, container, options, aiNamed));
   for (const flow of container.flows) {
     const conditional = flow.condition !== '';
     const shown = flowText(flow);
@@ -518,7 +640,7 @@ function containerContent(container: ExportContainer, options: BpmnExportOptions
   return out;
 }
 
-function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExportOptions): XmlElement {
+function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExportOptions, aiNamed: ReadonlySet<string>): XmlElement {
   const attrs: Array<[string, string | undefined]> = [['id', node.id], ['name', node.name]];
   if (node.tag === 'exclusiveGateway') attrs.push(['default', node.defaultFlow]);
   if (node.tag === 'boundaryEvent') attrs.push(['attachedToRef', node.attachedTo]);
@@ -540,7 +662,10 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
     ...(node.name !== node.technicalName
       ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}`)]
       : []),
-    el('bpmn:extensionElements', [], [nodeTrace(node.source, options.sourceFileName, extra)]),
+    el('bpmn:extensionElements', [], [
+      nodeTrace(node.source, options.sourceFileName, extra),
+      ...(aiNamed.has(node.id) && options.aiNames ? [originElement(options.aiNames.authorship)] : []),
+    ]),
     ...node.incoming.map((id) => textEl('bpmn:incoming', id)),
     ...node.outgoing.map((id) => textEl('bpmn:outgoing', id)),
   ];
@@ -572,7 +697,7 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
       ['id', `${node.id}-mi`], ['isSequential', true],
     ]));
   }
-  if (node.inner) children.push(...containerContent(node.inner, options));
+  if (node.inner) children.push(...containerContent(node.inner, options, aiNamed));
 
   return el(`bpmn:${node.tag}`, attrs, children);
 }

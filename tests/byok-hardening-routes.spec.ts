@@ -83,7 +83,7 @@ test('(a) an answer cut off at the output limit is refused — no text, no recei
 });
 
 test('(a) an answer the provider filter stopped is refused the same way', async ({ request }) => {
-  const res = await request.post('/api/gemini', { headers: stub('SAFETY'), data: { prompt: 'Say something.' } });
+  const res = await request.post('/api/gemini', { headers: stub('SAFETY'), data: { prompt: 'Say something.', stage: 'analyze' } });
   expect(res.status(), await res.text()).toBe(502);
   const body = await res.json();
   expect(body.code).toBe(MODEL_INCOMPLETE_CODE);
@@ -145,7 +145,7 @@ test('(g) a stored key the server cannot open is refused — never replaced by t
     expect(await keySource(request), 'an unreadable key is reported as available').toBeNull();
     // The test server stubs by default, but the stub replaces only the provider
     // call: the route still loads the key, and must stop there.
-    const res = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'Say something.' } });
+    const res = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'Say something.', stage: 'analyze' } });
     expect(res.status(), await res.text()).toBe(503);
     expect((await res.json()).code).toBe(BYOK_KEY_UNREADABLE_CODE);
     const probe = await request.post('/api/secrets/gemini/test', { headers: headers(), data: {} });
@@ -162,7 +162,7 @@ test('(g) a record in the pre-3.0.13 shape (no version, S/4 key) is unreadable �
   await adminMergeDoc('users', uid, { byokConfigured: true, byokLast4: secret.slice(-4) });
   try {
     expect(await keySource(request), 'a pre-3.0.13 record is reported as a usable key').toBeNull();
-    const res = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'Say something.' } });
+    const res = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'Say something.', stage: 'analyze' } });
     expect(res.status(), await res.text()).toBe(503);
     expect((await res.json()).code).toBe(BYOK_KEY_UNREADABLE_CODE);
     const probe = await request.post('/api/secrets/gemini/test', { headers: headers(), data: {} });

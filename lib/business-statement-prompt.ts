@@ -20,7 +20,7 @@ import type { ProvenanceValue } from './provenance';
  *     does not have or that does not sit at the anchor line — the sentence is
  *     discarded and **counted**, never repaired. Nothing the model says adds
  *     an anchor or a line the source does not have.
- *   - **Provenance `proposed`** (`lib/provenance.ts`, *Model proposal*), and
+ *   - **Provenance `proposed`** (`lib/provenance.ts`, *AI-generated*), and
  *     the type below allows nothing else. An open remainder hangs as a caveat
  *     **on** the sentence, with `not-determined` — never in its place
  *     (requirement 3 of 17.6: resolve first, then disclose).

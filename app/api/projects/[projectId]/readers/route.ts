@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
   assertMfaSatisfied,
-  auditActorEmail,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -12,6 +12,7 @@ import { logger, errMessage } from '@/lib/logger';
 import { projectReaderOverview, readersAfterRevoke, isProjectOwner } from '@/lib/project-readers';
 import type { Invitation, InvitationStatus } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 
 /**
  * Roadmap 5.5 — overview and revocation.
@@ -93,7 +94,7 @@ async function openAsOwner(
   try {
     await assertMfaSatisfied(req, decoded);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return {
       ok: false,
       response: NextResponse.json(
@@ -199,12 +200,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
     const gate = await openAsOwner(req, params);
     if (!gate.ok) return gate.response;
 
-    let body: { uid?: unknown } = {};
-    try {
-      body = (await req.json()) as { uid?: unknown };
-    } catch {
-      body = {};
-    }
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = (read.body && typeof read.body === 'object' ? read.body : {}) as { uid?: unknown };
     const uid = typeof body.uid === 'string' ? body.uid.trim() : '';
     if (!uid) {
       return NextResponse.json({ error: 'Missing uid.' }, { status: 400 });
@@ -216,7 +214,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       return NextResponse.json({ error: 'The owner cannot be revoked.' }, { status: 400 });
     }
 
-    const actorEmail = await auditActorEmail(gate.db, gate.uid);
     const projectRef = gate.db.collection('projects').doc(gate.projectId);
 
     const revokedAt = new Date().toISOString();
@@ -257,7 +254,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       }
       tx.set(gate.db.collection('audit_events').doc(), {
         actorUid: gate.uid,
-        actorEmail,
         action: `project.reader.revoke:${gate.projectId}`,
         targetUid: uid,
         timestamp: new Date(),

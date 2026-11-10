@@ -87,11 +87,16 @@ test.describe('testing page — QA full review of fc787674705f', () => {
     expect(save, 'the guide tells the reader to test before there is anything saved').toBeLessThan(tst);
   });
 
-  test('the OData explorer names the saved tenant it queries (f0332e0eefbf)', () => {
-    const cat = handler('handleFetchODataCatalog');
-    expect(cat).toContain('useStoredCredentials: true');
-    expect(cat, 'the log names the editable form URL').not.toContain('catalog from ${s4Url}');
-    expect(cat).toContain('savedS4?.url');
+  test('the OData metadata read uses the saved tenant, never the editable form (f0332e0eefbf)', () => {
+    // The finding was on the catalog handler, which logged the form's URL while
+    // querying the saved one. The catalog mode is gone since 3.0.21 (it read
+    // records of the gateway catalog; tests/s4-metadata-only-guard.spec.ts), so
+    // the same question is asked of the one handler that remains.
+    expect(page(), 'the service catalog is queried again').not.toContain('handleFetchODataCatalog');
+    const meta = handler('handleFetchServiceMetadata');
+    expect(meta).toContain('useStoredCredentials: true');
+    expect(meta).toContain('servicePath: path');
+    expect(meta, 'the log names the editable form URL').not.toContain('${s4Url}');
   });
 
   test('the ABAP path does not claim compilation or ADT execution (b372006ca6ad)', () => {
@@ -131,11 +136,12 @@ test.describe('testing page — QA full review of fc787674705f', () => {
 });
 
 test.describe('testing error boundary — stale chunk recovery (1ef3f93640d4)', () => {
-  // Since 3.0.6 every boundary shares lib/stale-build.ts; this one must use it,
-  // and the shared matcher must still know every message below.
+  // Since 3.0.6 every boundary shares lib/stale-build.ts; the one that covers
+  // this tool — the project's, since 3.0.21 (7) — must use it, and the shared
+  // matcher must still know every message below.
   const matcher = () => {
-    const src = fs.readFileSync(path.join(SEGMENT, 'error.tsx'), 'utf8');
-    expect(src, 'the testing boundary no longer uses the shared matcher').toContain("from '@/lib/stale-build'");
+    const src = fs.readFileSync(path.join(SEGMENT, '..', 'error.tsx'), 'utf8');
+    expect(src, 'the boundary over the testing tool no longer uses the shared matcher').toContain("from '@/lib/stale-build'");
     return { test: (msg: string) => isStaleBuildError({ message: msg }) };
   };
 

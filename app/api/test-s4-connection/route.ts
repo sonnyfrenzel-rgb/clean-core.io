@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 import {
   isUrlSafe,
@@ -190,9 +190,9 @@ export async function POST(req: NextRequest) {
 
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { status: 'failed', message: mfaErr.message || 'MFA verification required.' },
+        { status: 'failed', message: mfaRefusal(mfaErr).message || 'MFA verification required.' },
         { status: 403 }
       );
     }

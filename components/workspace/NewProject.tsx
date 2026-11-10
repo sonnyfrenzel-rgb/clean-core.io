@@ -124,8 +124,10 @@ export default function NewProject({
   const ownCodeCost = describeRunCost({
     profile,
     metered: true,
-    callsModel: model.enabled('analyze'),
+    // The first run of own code: the narrative needs the main switch too (legal review 06.11.2026, N2).
+    callsModel: model.enabled('analyze') && model.autoModelSteps,
     sameSourceAgain: false,
+    provider: model.known ? model.provider : undefined,
   });
 
   const closeIntro = useCallback(() => {

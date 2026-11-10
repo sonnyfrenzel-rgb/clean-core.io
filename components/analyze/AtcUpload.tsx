@@ -10,6 +10,8 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
 import { ATC_PRIVACY_NOTICE } from '@/lib/abap/atc-privacy';
+import { atcRunLabel } from '@/lib/abap/atc-lines';
+import { withDeclaredRunDate } from '@/lib/abap/atc-parser';
 import {
   personalDataHintKey,
   scanForPersonalDataHints,
@@ -31,7 +33,7 @@ const PREVIEW_ROWS = 25;
  * row is what matters most and it stands at the top of the file.
  */
 const HINT_SCAN_BYTES = 512 * 1024;
-const TEXT_FILE = /\.(csv|tsv|txt)$/i;
+const TEXT_FILE = /\.(csv|tsv|txt|xml)$/i;
 const NOT_TEXT_NOTE =
   'This file is not plain text — a spreadsheet is a compressed archive — so nothing here has read it. ' +
   'An ATC worklist export names who wrote or last reviewed each finding by construction, which makes it ' +
@@ -67,6 +69,8 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   } | null>(null);
   const [hintAckFor, setHintAckFor] = useState('');
   const hintSeq = useRef(0);
+  /** The ATC run's day, entered by the reader for a file that names none (`YYYY-MM-DD`). */
+  const [declaredDay, setDeclaredDay] = useState('');
 
   const read = useCallback(async (f: File) => {
     const seq = ++readSeq.current;
@@ -110,6 +114,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
     setSaveError(null);
     setHintScan(null);
     setHintAckFor('');
+    setDeclaredDay('');
     void read(f);
     void inspect(f);
   };
@@ -139,8 +144,9 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
     readSeq.current++;
     setSaving(true);
     setSaveError(null);
+    const report = declaredDay ? withDeclaredRunDate(preview, declaredDay) : preview;
     try {
-      await onImport(preview);
+      await onImport(report);
     } catch (err) {
       // The confirm superseded any read still in flight, so nothing else will
       // clear the reading state.
@@ -150,7 +156,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
     } finally {
       setSaving(false);
     }
-    setImported(preview);
+    setImported(report);
     setPreview(null);
     setFile(null);
     setHintScan(null);
@@ -191,6 +197,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
             )}
             <span>Imported <span className="font-cc-mono">{formatIsoDate(imported.importedAt) ?? 'date not recorded'}</span></span>
           </span>
+          <span className="mt-1 block" data-atc-imported-run="">{atcRunLabel(imported)}</span>
           <Warnings warnings={imported.warnings} />
         </CcMessageStrip>
       </div>
@@ -214,7 +221,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.xlsx,.xls,.tsv,.txt"
+          accept=".csv,.xlsx,.xls,.tsv,.txt,.xml"
           onChange={handleFileInput}
           data-atc-file
           className="hidden"
@@ -224,7 +231,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
           {parsing ? 'Reading ATC worklist…' : file ? `${file.name} — drop another file to replace it` : 'Drop ATC worklist export here'}
         </p>
         <p className="cc-text-meta text-cc-ink-muted">
-          CSV/TSV (from SAP GUI &quot;Local File&quot;) or XLSX (from ADT export) · nothing is stored until you confirm
+          CSV/TSV (from SAP GUI &quot;Local File&quot;), XLSX (from ADT export), an ATC worklist or checkstyle XML · nothing is stored until you confirm
         </p>
         <CcButton
           variant="secondary"
@@ -265,6 +272,22 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
               <span className="text-cc-error"> · {preview.quarantined.length} rows rejected</span>
             )}
           </p>
+          <p className="cc-text-meta m-0 text-cc-ink" data-atc-preview-run="">
+            {atcRunLabel(declaredDay ? withDeclaredRunDate(preview, declaredDay) : preview)}
+          </p>
+          {preview.runAtSource !== 'file' ? (
+            <label className="flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink" data-atc-run-date="">
+              <span className="font-semibold">Date of the ATC run (optional)</span>
+              <input
+                type="date"
+                value={declaredDay}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setDeclaredDay(e.target.value)}
+                className="rounded-cc-row border border-cc-field-border bg-cc-surface px-2 py-1 font-cc-mono text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+              />
+              <span className="text-cc-ink-muted">The file does not say when ATC ran. Shown as the date you entered, never as the file&apos;s.</span>
+            </label>
+          ) : null}
           <Warnings warnings={preview.warnings} />
 
           {preview.quarantined && preview.quarantined.length > 0 && (
@@ -357,6 +380,11 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
         <Info size={14} aria-hidden={true} className="mt-0.5 shrink-0" />
         <p>{ATC_PRIVACY_NOTICE}</p>
       </div>
+      <p className="m-0 cc-text-meta text-cc-ink-muted" data-atc-ccm-note="">
+        Results of SAP&apos;s Custom Code Migration app: its own export has no openly documented format, so it is not read
+        directly. A CSV or XLSX of its findings list is read like any ATC export when it has an object column and a message
+        column.
+      </p>
     </div>
   );
 }

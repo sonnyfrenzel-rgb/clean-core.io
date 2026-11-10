@@ -66,6 +66,37 @@ test.describe('a test data switch by shape counts only rows the arms fill themse
   });
 });
 
+test.describe('a copy of the switch that IMPORT overwrites is not the switch (3.0.21)', () => {
+  // QA review of 114a811d045d: `lv_case = p_case` and then `IMPORT lv_case FROM MEMORY …` gives lv_case another
+  // value, so a CASE on lv_case no longer picks test data by the parameter.
+  const src = (importLine: string) => [
+    'REPORT zsd_order_list.',
+    'PARAMETERS p_case TYPE i.',
+    'DATA lv_case TYPE i.',
+    'DATA lt_orders TYPE STANDARD TABLE OF vbak.',
+    'START-OF-SELECTION.',
+    '  lv_case = p_case.',
+    `  ${importLine}`,
+    '  CASE lv_case.',
+    ...[1, 2, 3, 4, 5].map((n) => `    WHEN ${n}.\n      APPEND VALUE #( auart = 'T${n}' ) TO lt_orders.`),
+    '  ENDCASE.',
+    '',
+  ].join('\n');
+
+  test('IMPORT … FROM MEMORY overwrites the copy from 3.0.21 on', () => {
+    expect(readDemoSwitches(src("IMPORT lv_case FROM MEMORY ID 'CASE'."), '3.0.21')).toBeNull();
+    expect(readDemoSwitches(src("IMPORT case = lv_case FROM MEMORY ID 'CASE'."), '3.0.21')).toBeNull();
+  });
+
+  test('a run of 3.0.20 keeps the reading it was signed with', () => {
+    expect(readDemoSwitches(src("IMPORT lv_case FROM MEMORY ID 'CASE'."), 'v3.0.20')?.flag.name).toBe('P_CASE');
+  });
+
+  test('without IMPORT the copy is still the switch', () => {
+    expect(readDemoSwitches(src('WRITE lv_case.'), '3.0.21')?.flag.name).toBe('P_CASE');
+  });
+});
+
 test.describe('counter-check scenarios are derived for the engine a run was made with', () => {
   // Without a demo flag, a CASE whose five arms only append rows of literals is a test data switch from 3.0.20 on.
   const SWITCH = [

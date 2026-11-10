@@ -92,9 +92,10 @@ function normalise(text: string): string {
 const ALL_CLAIMS: TrustClaim[] = [TRUST_PLEDGE, ...TRUST_CLAIMS];
 
 /** Where an in-app link points, as a file in this repository. */
+// Since Fassung 1.1 (3.0.21) the legal pages render their words from lib/legal/texts.
 const PAGE_FOR_ROUTE: Record<string, string> = {
-  '/terms': 'app/terms/page.tsx',
-  '/datenschutz': 'app/datenschutz/page.tsx',
+  '/terms': 'lib/legal/texts/terms.en.ts',
+  '/datenschutz': 'lib/legal/texts/privacy.en.ts',
 };
 
 test.describe('every statement on the card is written down somewhere', () => {
@@ -177,7 +178,8 @@ test.describe('every statement on the card is written down somewhere', () => {
         expect(page, `${claim.id} links to ${route}, which is not a legal page`).toBeTruthy();
         expect(page, `${claim.id} links to ${route} but cites ${source.file}`).toBe(source.file);
         expect(anchor, `${claim.id} links to ${route} without an anchor`).toBeTruthy();
-        expect(read(page), `${route} has no id="${anchor}" to land on`).toContain(`id="${anchor}"`);
+        // A section anchor in the legal-text markup (`## Heading {#anchor}`, lib/legal/markup.ts).
+        expect(read(page), `${route} has no id="${anchor}" to land on`).toContain(`{#${anchor}}`);
       }
     }
   });
@@ -241,14 +243,15 @@ test.describe('the access line tracks the rule it describes', () => {
       'the admin has no standing read — the card must not present it as a reader',
     ).not.toContain(ACCESS_NAMES_ADMIN);
     expect(
-      prose('app/datenschutz/page.tsx'),
+      prose('lib/legal/texts/privacy.en.ts'),
       'the privacy policy has to say who can open a project before the card does',
     ).toContain('No account you have not invited has standing access, and our administrator account does not either');
     // And the one thing that is not a standing permission is written down too,
     // because the Admin SDK bypasses these rules by design and "nobody can read
     // it" would be false.
-    expect(prose('app/datenschutz/page.tsx')).toContain(
-      'Reaching a project then is a deliberate act by the operator on the server, not a permission that stands open, and it leaves a record',
+    expect(prose('lib/legal/texts/privacy.en.ts')).toContain(
+      // The G-series wording of 3.0.21: the access also goes no further than needed.
+      'Reaching a project then is a deliberate act by the operator on the server, not a permission that stands open; it goes only as far as needed to examine and block the content, and it leaves a record',
     );
   });
 
@@ -270,9 +273,10 @@ test.describe('the privacy policy says it first', () => {
     // Roadmap 0.11: "the privacy policy names the paid tier of the community key
     // explicitly, before the card says it." Without that
     // sentence the card's no-training line is a promise with nothing behind it.
-    const policy = prose('app/datenschutz/page.tsx');
-    expect(policy).toContain('The shared community key is a paid Gemini API key');
-    expect(policy).toContain('Google does not use your code to train its models');
+    const policy = prose('lib/legal/texts/privacy.en.ts');
+    // Fassung 1.1 (3.0.21): the paid tier is named as such, with Google's terms as the reason.
+    expect(policy).toContain('The shared community key uses the paid tier of the Gemini API only (Paid Services)');
+    expect(policy).toContain('Google does not use paid-tier inputs and outputs to train its models');
     expect(policy, 'BYOK still has to carry the free-tier caveat').toMatch(/free-tier/i);
   });
 });
@@ -299,7 +303,13 @@ const SIGN_IN_WORD = /\b(sign-in|sign in|authentication)\b/i;
 const EU_REGION = /europe-west1|Belgium|\(EU\b/;
 const NOT_REGIONAL = /not tied to (a|an EU) region|an keine EU-Region gebunden/;
 
-/** Shipped source lines with comments left out; `lib/trust-claims.ts` quotes the policy and is checked above. */
+/**
+ * Shipped source lines with comments left out; `lib/trust-claims.ts` quotes the
+ * policy and is checked above. `lib/legal/` is the policy itself (Fassung 1.1 of
+ * the legal texts, 3.0.21) — the place the qualifications come from, where each
+ * statement about training stands inside the paragraph about the key it
+ * concerns — and is checked by the legal-text specs, not by this sweep.
+ */
 function shippedLines(): { where: string; line: string }[] {
   const out: { where: string; line: string }[] = [];
   const walk = (dir: string) => {
@@ -308,7 +318,7 @@ function shippedLines(): { where: string; line: string }[] {
       if (e.isDirectory()) {
         if (e.name === 'node_modules' || e.name.startsWith('.') || e.name === 'generated') continue;
         walk(rel);
-      } else if (/\.tsx?$/.test(e.name) && rel !== 'lib/trust-claims.ts') {
+      } else if (/\.tsx?$/.test(e.name) && rel !== 'lib/trust-claims.ts' && !rel.startsWith('lib/legal/')) {
         read(rel).split(/\r?\n/).forEach((line, i) => {
           if (!/^\s*(\/\/|\*|\/\*)/.test(line)) out.push({ where: `${rel}:${i + 1}`, line });
         });
@@ -337,6 +347,18 @@ function unqualifiedTrainingIn(text: string): string[] {
       !TRAINING_QUALIFIED.test(sentences[i + 1] ?? ''),
   );
 }
+/**
+ * The same, for one rendered block (a paragraph or a list item). /trust renders
+ * the legal text of Fassung 1.1 (`lib/legal/texts/trust.en.ts`, 3.0.21), where
+ * each statement about training stands inside the item about the key it
+ * concerns — the reason the source sweep leaves `lib/legal/` to the legal-text
+ * specs. An item that opens by naming the own key is that qualification: what
+ * it says about training is said of the own key.
+ */
+function unqualifiedTrainingInBlock(block: string): string[] {
+  const first = block.split(/(?<=[.!?])\s+/)[0] ?? '';
+  return TRAINING_QUALIFIED.test(first) ? [] : unqualifiedTrainingIn(block);
+}
 const signInInTheEu = (line: string) => SIGN_IN_WORD.test(line) && EU_REGION.test(line) && !NOT_REGIONAL.test(line);
 
 test.describe('the qualifications travel with the claim', () => {
@@ -350,6 +372,9 @@ test.describe('the qualifications travel with the claim', () => {
     // And the qualified forms pass.
     const training = TRUST_CLAIMS.find((c) => c.id === 'training')!.text;
     expect(unqualifiedTrainingIn(training)).toEqual([]);
+    // A block is qualified by its opening only when that opening names the own key.
+    expect(unqualifiedTrainingInBlock('Your own Gemini key. Google, under your account. On the paid tier Google does not use your requests for training.')).toEqual([]);
+    expect(unqualifiedTrainingInBlock('Our key. Google, as our processor. Google does not use your requests for training.')).toHaveLength(1);
     expect(signInInTheEu('Hosting and database run in europe-west1 (Belgium); the sign-in, Firebase Authentication, is a Google service not tied to a region.')).toBe(false);
   });
 
@@ -374,7 +399,7 @@ test.describe('the qualifications travel with the claim', () => {
       // Block by block first, so a header's "Sign in" never joins the next paragraph's sentence.
       const blocks = text.split(/\n+/).map(normalise);
       const sentences = blocks.flatMap((block) => block.split(/(?<=[.!?])\s+/));
-      expect(blocks.flatMap(unqualifiedTrainingIn), `${route} promises no training without the own-key case`).toEqual([]);
+      expect(blocks.flatMap(unqualifiedTrainingInBlock), `${route} promises no training without the own-key case`).toEqual([]);
       expect(sentences.filter(signInInTheEu), `${route} places the sign-in in the EU`).toEqual([]);
       if (route.startsWith('/clean-core-explained')) expect(rendered, route).toContain(training);
     }

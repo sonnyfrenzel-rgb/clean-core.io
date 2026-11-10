@@ -48,6 +48,10 @@ function engineWords(text: string): string {
   return text
     .replace(/"[^"]*"/g, ' ')
     .replace(/'[^']*'/g, ' ')
+    // English typographic quotes around what the source says (3.0.21: the
+    // header's title line quoted as the author's claim). The German pair
+    // („…“) does not match and is still caught below.
+    .replace(/“[^”]*”/g, ' ')
     .replace(/\b[\w/]*[_~<>\-=]+[\w/<>~\-=]*\b/g, ' ')
     .replace(/\b[A-Z0-9/]{2,}\b/g, ' ');
 }

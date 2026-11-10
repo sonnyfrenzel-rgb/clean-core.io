@@ -77,7 +77,7 @@ async function seed(prefix: string, opts: { design: boolean; narrative: boolean 
 /** The stage as if a key were configured — the owner's situation; no model is reached. */
 async function keyAvailable(page: Page) {
   await page.route('**/api/model-stages', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keyAvailable: true, keySource: 'community' }) }),
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keyAvailable: true, keySource: 'community', autoSteps: true }) }),
   );
 }
 
@@ -127,7 +127,7 @@ for (const width of [1280, 390] as const) {
       await openStage(page, account);
       await shot(page, `owner-state-${width}`);
       await expectReason(page, 'design', /No solution design yet/, /Open Design/, new RegExp(`/project/${account.projectId}/design$`));
-      await expect(page.locator('[data-generate-code]')).toHaveText(/Generate code/);
+      await expect(page.locator('[data-generate-code]')).toHaveText(/Generate draft \(sends code to /);
     });
 
     test('no design, narrative present: the reason and "Open Design"', async ({ page }) => {

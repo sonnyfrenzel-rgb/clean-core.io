@@ -38,10 +38,38 @@ const built: { type: string; audience: 'nutzer' | 'betrieb'; mail: ProductionMai
 }));
 const userMails = built.filter((b) => b.audience === 'nutzer');
 
-test('the catalogue still has every mail, and the user mails are the eight expected', () => {
-  expect(built).toHaveLength(13);
+test('the catalogue still has every mail, and the user mails are the ones expected', () => {
+  // 3.0.21 (T03): the contract confirmation C5 after sign-up, after an amendment
+  // and after the Additional Agreement, each in English and German.
+  // 3.0.21 (C13): the receipt of a declaration to withdraw from / end the
+  // contract, in English and German.
+  // Terms 10.1: the notice of an amendment of the Terms (scripts/send-terms-announcement.ts).
+  // The community mail on what is planned next (legal statement 17e, M1).
+  expect(built).toHaveLength(26);
   expect(userMails.map((b) => b.type).sort()).toEqual(
-    ['address-confirmation', 'invitation', 'survey', 'tenant-approval', 'tenant-pending', 'tenant-revoke', 'welcome', 'welcome-approval'],
+    [
+      'address-confirmation',
+      'amendment-confirmation',
+      'amendment-confirmation-de',
+      'byok-agreement-accepted',
+      'byok-agreement-accepted-de',
+      'byok-agreement-ended',
+      'community-update',
+      'contract-confirmation',
+      'contract-confirmation-de',
+      'invitation',
+      'portfolio-address-confirmation',
+      'portfolio-invitation',
+      'survey',
+      'tenant-approval',
+      'tenant-pending',
+      'tenant-revoke',
+      'terms-announcement',
+      'welcome',
+      'welcome-approval',
+      'withdrawal-receipt',
+      'withdrawal-receipt-de',
+    ],
   );
 });
 
@@ -57,8 +85,9 @@ for (const { type, mail } of built) {
 for (const { type, mail } of userMails) {
   test(`${type}: plain layout, exactly one link shown as its URL, no button`, () => {
     expect(mail.html).toContain('data-mail-layout="plain"');
-    // The survey's unsubscribe URL is the one allowed extra, in the footer.
-    const expected = type === 'survey' ? 2 : 1;
+    // An unsubscribe URL is the one allowed extra, in the footer: the survey's,
+    // and the invitation mails' (C10/C12, the invitation suppression list).
+    const expected = ['survey', 'invitation', 'portfolio-invitation', 'community-update'].includes(type) ? 2 : 1;
     expect(htmlLinkCount(mail.html), 'number of links').toBe(expected);
     for (const m of mail.html.matchAll(/<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
       expect(m[2].trim(), 'a link hides its URL behind a label').toBe(m[1]);
@@ -71,7 +100,7 @@ for (const { type, mail } of userMails) {
     // The link comes after the body, not in it: nothing but the sign-off and
     // the small print follows it.
     const first = mail.html.search(/<a\s/i);
-    expect(mail.html.slice(first)).toMatch(/Regards,<br>The Clean-Core\.io Team|<p[^>]*>Felix<\/p>/);
+    expect(mail.html.slice(first)).toMatch(/Regards,<br>The Clean-Core\.io Team|<p[^>]*>Felix(?: Frenzel)?<\/p>/);
   });
 
   test(`${type}: fits a 320px screen`, async ({ page }) => {

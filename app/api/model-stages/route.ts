@@ -1,7 +1,15 @@
+import { providerSuspendedNotice, suspensionDetailsOf } from '@/lib/provider-suspension';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { ByokKeyUnreadableError, OwnModelKeyMissingError } from '@/lib/byok-key';
-import { PLATFORM_PROVIDER, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
+import {
+  MODEL_PROVIDERS_SUSPENDED_ENV,
+  PLATFORM_PROVIDER,
+  isStageAnswerRecord,
+  suspendedProvidersOf,
+  type ModelKeyProvider,
+  type StageAnswerRecord,
+} from '@/lib/model-providers';
 import {
   verifyRequestAuth,
   assertMfaSatisfied,
@@ -13,6 +21,9 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
+import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_SEEN } from '@/lib/auto-steps-notice';
+import { AUTO_MODEL_STEPS_FIELD, autoModelStepsOn, automaticStepsAllowed } from '@/lib/auto-model-steps';
 
 /**
  * The per-stage model switch, and whether there is a key to switch on.
@@ -55,6 +66,31 @@ interface StageAnswer {
    * stage that has not been answered since 3.0.15.
    */
   answers: Partial<Record<ModelStage, StageAnswerRecord>>;
+  /**
+   * 3.0.21 (owner decision B6) — whether the steps the product starts by
+   * itself may run on the key: always on the platform key; on an own key only
+   * once the account switched them on for that key.
+   */
+  autoSteps: boolean;
+  /**
+   * 3.0.21 (T01) — the provider of the key when the operator has switched it
+   * off; `keyAvailable` is then false, and the screens say why.
+   */
+  suspendedProvider: ModelKeyProvider | null;
+  /** What the screens say then: C11 with date and reason where it applies (`lib/provider-suspension.ts`). */
+  suspendedNotice: string | null;
+  /**
+   * 3.0.21 (A10) — the one-time notice before the first automatic model call
+   * was answered or closed (`users/{uid}.autoStepsNoticeAt`, written only
+   * below; `lib/auto-steps-notice.ts`).
+   */
+  autoStepsNoticeSeen: boolean;
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 2) — the account's main switch
+   * "Automatic AI steps" (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`):
+   * on unless switched off. `autoSteps` above is false whenever it is off.
+   */
+  autoModelSteps: boolean;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -62,8 +98,10 @@ const UNREADABLE = Symbol('byok-key-unreadable');
 async function answerFor(uid: string): Promise<StageAnswer> {
   const { db } = await getAdminDb();
   const snap = await db.collection('users').doc(uid).get();
-  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown }) : null;
+  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown; autoStepsNoticeAt?: unknown; autoModelSteps?: unknown }) : null;
   const stages = modelStagesOf(profile);
+  const autoStepsNoticeSeen = profile?.[AUTO_STEPS_NOTICE_FIELD] != null;
+  const autoModelSteps = autoModelStepsOn(profile);
   const answers: StageAnswer['answers'] = {};
   for (const stage of MODEL_STAGES) {
     const a = profile?.modelAnswers?.[stage];
@@ -78,15 +116,21 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers };
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoModelSteps };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
       ? 'community'
       : null;
   const provider = ownKey ? ownKey.provider : keySource === 'community' ? PLATFORM_PROVIDER : null;
+  // A switched-off provider is no available key: `/api/gemini` refuses it.
+  const suspendedProvider = provider && suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider) ? provider : null;
+  // The main switch first, on every key; on an own key that key's "Automatic steps" as well.
+  const autoSteps = automaticStepsAllowed({ mainSwitch: autoModelSteps, keySource, ownKeyAutoSteps: ownKey !== null && ownKey.autoSteps });
 
-  return { stages, keyAvailable: keySource !== null, keySource, provider, answers };
+  const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
+
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps };
 }
 
 export async function GET(req: NextRequest) {
@@ -123,6 +167,10 @@ export async function GET(req: NextRequest) {
  * stages move. An unknown key is a 400 rather than a silent no-op: a settings
  * screen that misspells a stage would otherwise report success and change
  * nothing, which is the kind of failure nobody finds for months.
+ *
+ * 3.0.21 (A10): `autoStepsNotice: 'seen'`, alone or beside `stages`, records
+ * that the one-time notice before the first automatic model call was answered
+ * or closed (`users/{uid}.autoStepsNoticeAt`), so it does not come back.
  */
 export async function POST(req: NextRequest) {
   let uid = '';
@@ -142,10 +190,30 @@ export async function POST(req: NextRequest) {
     // gave one account a fresh allowance per address.
     await assertRateLimit(`model_stages:${uid}`, 60, 60 * 60 * 1000);
 
-    const body = await req.json().catch(() => ({}));
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body ?? {};
     // `null` is valid JSON and has no properties: read through `?.`, so it is the
     // 400 below and not a TypeError answered as 500.
     const requested = (body as { stages?: unknown } | null)?.stages;
+    const notice = (body as { autoStepsNotice?: unknown } | null)?.autoStepsNotice;
+    if (notice !== undefined && notice !== AUTO_STEPS_NOTICE_SEEN) {
+      return NextResponse.json({ error: `autoStepsNotice must be '${AUTO_STEPS_NOTICE_SEEN}'.` }, { status: 400 });
+    }
+    const noticeSeen = notice === AUTO_STEPS_NOTICE_SEEN;
+    // The main switch "Automatic AI steps" (3.0.21, legal review 06.11.2026): true or false, alone or beside the others.
+    const mainSwitch = (body as { autoModelSteps?: unknown } | null)?.autoModelSteps;
+    if (mainSwitch !== undefined && typeof mainSwitch !== 'boolean') {
+      return NextResponse.json({ error: 'autoModelSteps must be true or false.' }, { status: 400 });
+    }
+    if ((noticeSeen || mainSwitch !== undefined) && requested === undefined) {
+      const { db, FieldValue } = await getAdminDb();
+      const only: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+      if (noticeSeen) only[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
+      if (typeof mainSwitch === 'boolean') only[AUTO_MODEL_STEPS_FIELD] = mainSwitch;
+      await updateExistingProfile(uid, only, { db });
+      return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
+    }
     if (!requested || typeof requested !== 'object' || Array.isArray(requested)) {
       return NextResponse.json(
         { error: `Missing required field: stages. Expected an object keyed by ${MODEL_STAGES.join(', ')}.` },
@@ -172,6 +240,8 @@ export async function POST(req: NextRequest) {
     // `modelStages`, but an account erased in the meantime is not recreated.
     const fields: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
     for (const [stage, on] of Object.entries(update)) fields[`modelStages.${stage}`] = on;
+    if (noticeSeen) fields[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
+    if (typeof mainSwitch === 'boolean') fields[AUTO_MODEL_STEPS_FIELD] = mainSwitch;
     await updateExistingProfile(uid, fields, { db });
 
     return NextResponse.json({ ok: true, ...(await answerFor(uid)) });

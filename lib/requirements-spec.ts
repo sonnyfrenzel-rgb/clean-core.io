@@ -585,7 +585,7 @@ const DEFAULT_GLOSSARY: SpecGlossaryEntry[] = [
   { term: 'Business rule', meaning: 'A rule the current program applies, numbered BR-nnn. Hard-coded means it is written into the program, not configured.' },
   { term: 'Decision point', meaning: 'A place in the process where the program takes one path or another, depending on the data.' },
   { term: 'Reconstructed', meaning: 'Derived from the code of the current program by the Clean-Core.io engine, not confirmed by a person.' },
-  { term: 'Model proposal', meaning: 'A sentence or a value a language model proposed. It is never taken over without a person accepting it.' },
+  { term: 'AI-generated', meaning: 'A sentence or a value a language model proposed. It is never taken over without a person accepting it.' },
   { term: 'Not determined', meaning: 'The code cannot answer this. It is a decision for the business or IT, recorded in section 7.' },
 ];
 

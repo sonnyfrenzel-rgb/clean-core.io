@@ -17,7 +17,16 @@ import {
   type FunctionalRequirement,
   type RequirementSet,
 } from '@/lib/functional-requirements';
-import { withAiMarkingHtml, withAiMarkings } from '@/lib/ai-marking';
+import {
+  AI_ORIGIN_MARKDOWN_CLOSE,
+  aiOriginDocxAlias,
+  aiOriginDocxTag,
+  aiOriginHtmlAttributes,
+  aiOriginMarkdownOpen,
+  withAiMarkingHtml,
+  withAiMarkings,
+  type AiAuthorship,
+} from '@/lib/ai-marking';
 
 /**
  * The functional requirements as a requirement specification — Markdown for
@@ -50,13 +59,27 @@ export interface RequirementsExportMeta {
    * (`lib/ai-marking.ts`), carried in the Word file's core properties. Absent: the engine's wording alone.
    */
   aiStatement?: string | null;
+  /**
+   * 3.0.21 (T08): who wrote the proposed wording, so each such sentence is marked where it stands — the
+   * cc:origin comment pair in Markdown, `data-origin` in HTML, a tagged content control in Word. Absent or null:
+   * the wording is model-written all the same and is marked with provider and model "not recorded".
+   */
+  ai?: DocBlockAi | null;
 }
 
+/** Who wrote a model-written element whose writer the caller did not hand in: model-written, and marked so. */
+const UNRECORDED_ELEMENT_AI: DocBlockAi = { provider: null, modelId: null };
+
 export const PROVENANCE_NOTE =
-  'Every requirement below is reconstructed by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source. Priorities follow from what the code does (a hard-coded rule or a change of data is Must). Nothing here is confirmed by the business. Where a sentence is marked as a model proposal, a language model reworded it and the server checked it against the anchors; the engine wording is kept beside it.';
+  'Every requirement below is reconstructed by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source. Priorities follow from what the code does (a hard-coded rule or a change of data is Must). Nothing here is confirmed by the business. Where a sentence is marked as AI-generated, a language model reworded it and the server checked it against the anchors; the engine wording is kept beside it.';
 
 const statementOf = (r: FunctionalRequirement, meta: RequirementsExportMeta) => meta.wording?.[r.id] ?? r.statement;
 const isProposed = (r: FunctionalRequirement, meta: RequirementsExportMeta) => Boolean(meta.wording?.[r.id]);
+/** Who wrote a requirement's statement: the wording model when it proposed the sentence, else nobody (the engine). */
+const wordingAi = (r: FunctionalRequirement, meta: RequirementsExportMeta): DocBlockAi | null => (isProposed(r, meta) ? (meta.ai ?? UNRECORDED_ELEMENT_AI) : null);
+
+/** Markdown: `text` wrapped in the cc:origin comment pair when a model wrote it — inline, for a table cell or a list item. */
+const mdInline = (text: string, ai: DocBlockAi | null): string => (ai ? `${aiOriginMarkdownOpen(ai)}${text}${AI_ORIGIN_MARKDOWN_CLOSE}` : text);
 
 function objectText(r: FunctionalRequirement): string {
   if (!r.objects.length) return 'none named at these lines';
@@ -88,7 +111,7 @@ export function requirementText(set: RequirementSet, r: FunctionalRequirement, m
     `SAP objects: ${objectText(r)}`,
     'Acceptance criteria:',
     ...r.acceptance.map((c, i) => `  ${i + 1}. Given ${c.given}, when ${c.when}, then ${c.then}.`),
-    `Provenance: reconstructed from the code by the engine${isProposed(r, m) ? '; wording: model proposal, checked against the anchors' : ''}.`,
+    `Provenance: reconstructed from the code by the engine${isProposed(r, m) ? '; wording: AI-generated, checked against the anchors' : ''}.`,
   );
   return lines.join('\n');
 }
@@ -103,7 +126,7 @@ export function requirementsMarkdown(set: RequirementSet, meta: RequirementsExpo
   out.push('## 1. Overview', '');
   out.push('| ID | Priority | Requirement | Process step | Lines |', '|---|---|---|---|---|');
   for (const r of set.requirements) {
-    out.push(`| ${r.id} | ${PRIORITY_LABEL[r.priority]} | ${mdCell(statementOf(r, meta))}${isProposed(r, meta) ? ' *(model proposal)*' : ''} | ${mdCell(stepLabel(set, r.stepId))} | ${anchorList(r.anchors)} |`);
+    out.push(`| ${r.id} | ${PRIORITY_LABEL[r.priority]} | ${mdInline(`${mdCell(statementOf(r, meta))}${isProposed(r, meta) ? ' *(AI-generated)*' : ''}`, wordingAi(r, meta))} | ${mdCell(stepLabel(set, r.stepId))} | ${anchorList(r.anchors)} |`);
   }
   out.push('');
 
@@ -119,8 +142,9 @@ export function requirementsMarkdown(set: RequirementSet, meta: RequirementsExpo
     out.push(`### 2.${gi + 1} ${g.title}`, '');
     for (const r of g.items) {
       out.push(`#### ${r.id} — ${PRIORITY_LABEL[r.priority]} · ${BASIS_LABEL[r.basis.kind]}`, '');
-      out.push(`**${statementOf(r, meta)}**`, '');
-      if (isProposed(r, meta)) out.push(`Model proposal. Engine wording: ${r.statement}`, '');
+      const who = wordingAi(r, meta);
+      out.push(...(who ? [aiOriginMarkdownOpen(who), `**${statementOf(r, meta)}**`, '', AI_ORIGIN_MARKDOWN_CLOSE] : [`**${statementOf(r, meta)}**`]), '');
+      if (isProposed(r, meta)) out.push(`AI-generated. Engine wording: ${r.statement}`, '');
       out.push(`- Rationale: ${r.rationale}`);
       out.push(`- Priority: ${PRIORITY_LABEL[r.priority]} — ${r.priorityReason}`);
       out.push(`- Lines: ${anchorList(r.anchors)}`);
@@ -150,13 +174,45 @@ export function requirementsMarkdown(set: RequirementSet, meta: RequirementsExpo
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/**
+ * One HTML table cell; a model-written one carries `data-origin` — on the cell when the model wrote all of it, on
+ * a `<span>` around its part when the cell opens with the engine's or the account's text (`from`).
+ */
+function htmlCell(td: string, text: string, cell: DocCellAi | null): string {
+  if (!cell) return `<td ${td}>${esc(text)}</td>`;
+  if (!splitSpan(text, cell)[0]) return `<td ${td}${aiOriginHtmlAttributes(cell.ai)}>${esc(text)}</td>`;
+  return `<td ${td}>${htmlSpan(text, cell)}</td>`;
+}
+
+/** HTML text with its model-written part inside a `<span data-origin="ai" …>`; escaped. */
+function htmlSpan(text: string, span: DocSpanAi | null | undefined): string {
+  if (!span) return esc(text);
+  const [before, model] = splitSpan(text, span);
+  return `${esc(before)}<span${aiOriginHtmlAttributes(span.ai)}>${esc(model)}</span>`;
+}
+
+/** Markdown: one table cell, its model-written part inside the cc:origin comment pair. */
+function mdTableCell(text: string, cell: DocCellAi | null): string {
+  if (!cell) return mdCell(text);
+  const [before, model] = splitSpan(text, cell);
+  return `${mdCell(before)}${mdInline(mdCell(model), cell.ai)}`;
+}
+
+/** The overview table's model-written cells: the Requirement column of each requirement a model worded. */
+function overviewCellAi(set: RequirementSet, meta: RequirementsExportMeta, col = 2): Array<DocCellAi | null> {
+  return set.requirements.map((r) => {
+    const ai = wordingAi(r, meta);
+    return ai ? { col, ai } : null;
+  });
+}
+
 /** The same document as HTML — the rich half of "Copy as text", so a paste into Word or Confluence keeps headings and tables. */
 export function requirementsHtml(set: RequirementSet, meta: RequirementsExportMeta): string {
   const td = 'style="border:1px solid #cbd5e1;padding:4px 6px;vertical-align:top"';
   const th = 'style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;background:#f1f5f9"';
-  const table = (head: string[], rows: string[][]) =>
+  const table = (head: string[], rows: string[][], cellAi: ReadonlyArray<DocCellAi | null> = []) =>
     `<table style="border-collapse:collapse"><thead><tr>${head.map((h) => `<th ${th}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
-      .map((r) => `<tr>${r.map((c) => `<td ${td}>${esc(c)}</td>`).join('')}</tr>`)
+      .map((r, ri) => `<tr>${r.map((c, ci) => htmlCell(td, c, cellAi[ri]?.col === ci ? cellAi[ri] : null)).join('')}</tr>`)
       .join('')}</tbody></table>`;
   const parts: string[] = [];
   parts.push(`<h1>Functional requirements — ${esc(meta.projectName)}</h1>`);
@@ -164,13 +220,13 @@ export function requirementsHtml(set: RequirementSet, meta: RequirementsExportMe
   parts.push(`<p><em>${esc(PROVENANCE_NOTE)}</em></p>`);
   parts.push('<h2>1. Overview</h2>');
   parts.push(table(['ID', 'Priority', 'Requirement', 'Process step', 'Lines'], set.requirements.map((r) => [
-    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (model proposal)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
-  ])));
+    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (AI-generated)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
+  ]), overviewCellAi(set, meta)));
   parts.push('<h2>2. Requirements</h2>');
   for (const r of set.requirements) {
     parts.push(`<h3>${esc(r.id)} — ${PRIORITY_LABEL[r.priority]} · ${esc(stepLabel(set, r.stepId))}</h3>`);
-    parts.push(`<p><strong>${esc(statementOf(r, meta))}</strong></p>`);
-    if (isProposed(r, meta)) parts.push(`<p>Model proposal. Engine wording: ${esc(r.statement)}</p>`);
+    parts.push(`<p${aiOriginHtmlAttributes(wordingAi(r, meta))}><strong>${esc(statementOf(r, meta))}</strong></p>`);
+    if (isProposed(r, meta)) parts.push(`<p>AI-generated. Engine wording: ${esc(r.statement)}</p>`);
     parts.push(`<ul><li>Rationale: ${esc(r.rationale)}</li><li>Priority: ${PRIORITY_LABEL[r.priority]} — ${esc(r.priorityReason)}</li><li>Lines: ${esc(anchorList(r.anchors))}</li><li>SAP objects: ${esc(objectText(r))}</li></ul>`);
     parts.push(`<ol>${r.acceptance.map((c) => `<li>Given ${esc(c.given)}, when ${esc(c.when)}, then ${esc(c.then)}.</li>`).join('')}</ol>`);
   }
@@ -186,6 +242,31 @@ export function requirementsHtml(set: RequirementSet, meta: RequirementsExportMe
 /* ---------------------------------------------------------------- docx */
 
 const x = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const xAttr = (t: string) => x(t).replace(/"/g, '&quot;');
+
+/**
+ * 3.0.21 (T08, the legal review of 05.11.2026): a model-written element of a Word file is a content control —
+ * `w:sdt` with the origin in its tag (`cc:origin=ai;ai_provider=…;ai_model=…`, `aiOriginDocxTag`) and in words in
+ * its title (`AI-generated (Google Gemini …)`), locked against deletion while its text stays editable
+ * (`sdtLocked`). The repository has no docx library — every Word file is WordprocessingML written here and zipped
+ * with JSZip — and a content control is the one element of the format that is meant to carry a machine-readable
+ * label on a span of content and that Word keeps, tag and all, when the text inside it is edited, copied within
+ * the document or saved again. Bookmarks lose their name on a copy and comments are a reviewer's tool; custom
+ * XML would need a part of its own and a binding. Deterministic content is never wrapped.
+ */
+function sdtProperties(ai: DocBlockAi): string {
+  return `<w:sdtPr><w:alias w:val="${xAttr(aiOriginDocxAlias(ai))}"/><w:tag w:val="${xAttr(aiOriginDocxTag(ai))}"/><w:lock w:val="sdtLocked"/></w:sdtPr>`;
+}
+
+/** Block level: paragraphs or a table, inside the body. */
+function blockSdt(ai: DocBlockAi | null | undefined, content: string): string {
+  return ai ? `<w:sdt>${sdtProperties(ai)}<w:sdtContent>${content}</w:sdtContent></w:sdt>` : content;
+}
+
+/** Run level: runs inside one paragraph — a table cell, or the model's part of one. */
+function runSdt(ai: DocBlockAi | null | undefined, runs: string): string {
+  return ai ? `<w:sdt>${sdtProperties(ai)}<w:sdtContent>${runs}</w:sdtContent></w:sdt>` : runs;
+}
 
 function run(text: string, opts: { bold?: boolean; mono?: boolean; italic?: boolean } = {}): string {
   const props = [
@@ -200,17 +281,26 @@ function para(content: string, style?: string): string {
   return `<w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ''}${content}</w:p>`;
 }
 
-function docxTable(head: string[], rows: string[][], muted: readonly number[] = []): string {
-  const cell = (t: string, header: boolean, grey: boolean) =>
-    `<w:tc><w:tcPr>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : ''}</w:tcPr>${para(grey && !header ? mutedRun(t) : run(t, { bold: header }))}</w:tc>`;
+function docxTable(head: string[], rows: string[][], muted: readonly number[] = [], cellAi: ReadonlyArray<DocCellAi | null> = [], ai?: DocBlockAi | null): string {
+  const text = (t: string, header: boolean, grey: boolean) => (grey && !header ? mutedRun(t) : run(t, { bold: header }));
+  const cell = (t: string, header: boolean, grey: boolean, model: DocCellAi | null = null) => {
+    let runs = text(t, header, grey);
+    if (model) {
+      const [before, written] = splitSpan(t, model);
+      runs = before ? text(before, header, grey) + runSdt(model.ai, text(written, header, grey)) : runSdt(model.ai, runs);
+    }
+    return `<w:tc><w:tcPr>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : ''}</w:tcPr>${para(runs)}</w:tc>`;
+  };
   // A header row of empty cells (a key–value table) is left out.
   const headRow = head.some((h) => h.trim())
     ? [`<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>${head.map((h, i) => cell(h, true, muted.includes(i))).join('')}</w:tr>`]
     : [];
-  return `<w:tbl><w:tblPr><w:tblStyle w:val="Grid"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr>${[
+  const table = `<w:tbl><w:tblPr><w:tblStyle w:val="Grid"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr>${[
     ...headRow,
-    ...rows.map((r) => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${r.map((c, i) => cell(c, false, muted.includes(i))).join('')}</w:tr>`),
-  ].join('')}</w:tbl>${para('')}`;
+    ...rows.map((r, ri) => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${r.map((c, i) => cell(c, false, muted.includes(i), cellAi[ri]?.col === i ? cellAi[ri] : null)).join('')}</w:tr>`),
+  ].join('')}</w:tbl>`;
+  // A table a model wrote whole is one content control; the empty paragraph after it stays outside.
+  return `${blockSdt(ai, table)}${para('')}`;
 }
 
 /** A two-column table of facts — the title page — without a header row. */
@@ -234,8 +324,8 @@ function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string 
   b.push(para(run(PROVENANCE_NOTE, { italic: true })));
   b.push(para(run('1. Overview'), 'Heading1'));
   b.push(docxTable(['ID', 'Priority', 'Requirement', 'Process step', 'Lines'], set.requirements.map((r) => [
-    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (model proposal)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
-  ])));
+    r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (AI-generated)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors),
+  ]), [], overviewCellAi(set, meta)));
   b.push(para(run('2. Requirements by process step'), 'Heading1'));
   const groups: Array<{ title: string; items: FunctionalRequirement[] }> = [];
   const wide = set.requirements.filter((r) => !r.stepId);
@@ -248,8 +338,8 @@ function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string 
     b.push(para(run(g.title), 'Heading2'));
     for (const r of g.items) {
       b.push(para(run(`${r.id} — ${PRIORITY_LABEL[r.priority]} · ${BASIS_LABEL[r.basis.kind]}`), 'Heading3'));
-      b.push(para(run(statementOf(r, meta), { bold: true })));
-      if (isProposed(r, meta)) b.push(para(run(`Model proposal. Engine wording: ${r.statement}`, { italic: true })));
+      b.push(blockSdt(wordingAi(r, meta), para(run(statementOf(r, meta), { bold: true }))));
+      if (isProposed(r, meta)) b.push(para(run(`AI-generated. Engine wording: ${r.statement}`, { italic: true })));
       b.push(para(run('Rationale: ', { bold: true }) + run(r.rationale)));
       b.push(para(run('Priority: ', { bold: true }) + run(`${PRIORITY_LABEL[r.priority]} — ${r.priorityReason}`)));
       b.push(para(run('Lines: ', { bold: true }) + run(anchorList(r.anchors), { mono: true })));
@@ -307,9 +397,41 @@ export function requirementsFileName(projectName: string, ext: 'md' | 'docx'): s
  * functional set into blocks of its own.
  * ==================================================================== */
 
+/**
+ * Who wrote a block a model wrote (3.0.21, acceptance test T08): Markdown puts `<!-- cc:origin … -->` before it and
+ * `<!-- /cc:origin -->` after it, HTML carries `data-origin`/`data-ai-provider`/`data-ai-model` on its element, Word
+ * wraps it in a content control tagged with the origin (`lib/ai-marking.ts`; the statements stay in the core
+ * properties too). Absent on everything the engine wrote.
+ */
+export type DocBlockAi = Pick<AiAuthorship, 'provider' | 'modelId'>;
+
+/**
+ * One model-written cell of a table row: its column, who wrote it, and — for a cell that opens with the engine's or
+ * the account's text and then prints a model's (an answer, then the model's proposal) — the character from which on
+ * the text is the model's. Every spelling marks only that part.
+ */
+export interface DocSpanAi {
+  /** Index into the text where the model's part begins; 0 or absent: the whole text. */
+  from?: number;
+  ai: DocBlockAi;
+}
+
+export interface DocCellAi extends DocSpanAi {
+  col: number;
+}
+
+/** The text split at a span's start: the part before (the engine's) and the model's part. */
+function splitSpan(text: string, span: DocSpanAi): [string, string] {
+  const from = Math.max(0, Math.min(text.length, span.from ?? 0));
+  return [text.slice(0, from), text.slice(from)];
+}
+
 export type DocBlock =
-  /** `id`: an anchor a link in the same document points at (`#pd-rules`); in Word a bookmark (`pd_rules`). */
-  | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string; id?: string }
+  /**
+   * `id`: an anchor a link in the same document points at (`#pd-rules`); in Word a bookmark (`pd_rules`).
+   * `span`: the part of the heading a model wrote (a step's business name after its number).
+   */
+  | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string; id?: string; span?: DocSpanAi }
   /**
    * Links into the same document (owner 11.10.2026: clickable entry questions).
    * `href` is an in-page anchor; `plain` is the section in words, printed after
@@ -317,10 +439,11 @@ export type DocBlock =
    * follows the link in every spelling.
    */
   | { k: 'links'; items: Array<{ text: string; href: string; plain: string; tail?: string }> }
-  | { k: 'p'; text: string; strong?: boolean; em?: boolean }
+  | { k: 'p'; text: string; strong?: boolean; em?: boolean; ai?: DocBlockAi }
   | { k: 'note'; text: string }
   /** `muted`: columns printed small and grey (a source column of names and lines). */
-  | { k: 'table'; head: string[]; rows: string[][]; muted?: number[] }
+  /** `ai`: a model wrote the whole table; `cellAi`: per row, the one cell a model wrote (aligned with `rows`). */
+  | { k: 'table'; head: string[]; rows: string[][]; muted?: number[]; ai?: DocBlockAi; cellAi?: ReadonlyArray<DocCellAi | null> }
   | { k: 'kv'; items: Array<[string, string]> }
   | { k: 'ol'; items: string[] }
   | { k: 'code'; items: Array<{ label: string; quote: string }> }
@@ -330,7 +453,8 @@ export type DocBlock =
   | { k: 'titlepage'; title: string; subtitle: string; rows: Array<[string, string]>; note: string }
   /** A table of contents, written out (no field to update in Word). */
   | { k: 'toc'; items: Array<{ level: 1 | 2; text: string }> }
-  | { k: 'ul'; items: string[] }
+  /** `ai`: per item, who wrote it when a model did — aligned with `items`, null for the engine's. */
+  | { k: 'ul'; items: string[]; ai?: ReadonlyArray<DocBlockAi | null> }
   /** A new page in Word and in print; nothing in Markdown. */
   | { k: 'pagebreak' };
 
@@ -345,15 +469,24 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
   for (const b of blocks) {
     if (b.k === 'h') {
       if (b.id && SAFE_ID.test(b.id)) out.push(`<a id="${b.id}"></a>`, '');
-      out.push(`${'#'.repeat(b.level)} ${b.text}`, '');
+      const [before, model] = b.span ? splitSpan(b.text, b.span) : [b.text, ''];
+      out.push(`${'#'.repeat(b.level)} ${b.span && model ? `${before}${mdInline(model, b.span.ai)}` : b.text}`, '');
     } else if (b.k === 'links') {
       b.items.forEach((l) => out.push(`- ${SAFE_ID.test(l.href) ? `[${mdLinkText(l.text)}](#${l.href})` : l.text}${l.tail ? ` — ${l.tail}` : ''}`));
       out.push('');
-    } else if (b.k === 'p') out.push(b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text, '');
+    } else if (b.k === 'p') {
+      const text = b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text;
+      out.push(...(b.ai ? [aiOriginMarkdownOpen(b.ai), text, '', AI_ORIGIN_MARKDOWN_CLOSE] : [text]), '');
+    }
     else if (b.k === 'note') out.push(`> ${b.text}`, '');
     else if (b.k === 'table') {
+      if (b.ai) out.push(aiOriginMarkdownOpen(b.ai));
       out.push(`| ${b.head.map(mdCell).join(' | ')} |`, `|${b.head.map(() => '---').join('|')}|`);
-      for (const r of b.rows) out.push(`| ${r.map(mdCell).join(' | ')} |`);
+      b.rows.forEach((r, ri) => {
+        const cell = b.cellAi?.[ri] ?? null;
+        out.push(`| ${r.map((c, ci) => mdTableCell(c, cell?.col === ci ? cell : null)).join(' | ')} |`);
+      });
+      if (b.ai) out.push('', AI_ORIGIN_MARKDOWN_CLOSE);
       out.push('');
     } else if (b.k === 'kv') {
       for (const [k, v] of b.items) out.push(`- ${k}: ${v}`);
@@ -362,7 +495,10 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
       b.items.forEach((t, i) => out.push(`${i + 1}. ${t}`));
       out.push('');
     } else if (b.k === 'ul') {
-      b.items.forEach((t) => out.push(`- ${t}`));
+      b.items.forEach((t, i) => {
+        const who = b.ai?.[i];
+        out.push(who ? `- ${aiOriginMarkdownOpen(who)}${t}${AI_ORIGIN_MARKDOWN_CLOSE}` : `- ${t}`);
+      });
       out.push('');
     } else if (b.k === 'code' && b.items.length) {
       out.push('```abap', ...b.items.map((a) => `* ${a.label}\n${a.quote}`), '```', '');
@@ -389,17 +525,20 @@ export function blocksHtml(blocks: DocBlock[]): string {
   const th = 'style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;background:#f1f5f9"';
   const parts: string[] = [];
   for (const b of blocks) {
-    if (b.k === 'h') parts.push(`<h${b.level}${b.id && SAFE_ID.test(b.id) ? ` id="${b.id}"` : ''}>${esc(b.text)}</h${b.level}>`);
+    if (b.k === 'h') parts.push(`<h${b.level}${b.id && SAFE_ID.test(b.id) ? ` id="${b.id}"` : ''}>${htmlSpan(b.text, b.span)}</h${b.level}>`);
     else if (b.k === 'links') parts.push(`<ul>${b.items.map((l) => `<li>${SAFE_ID.test(l.href) ? `<a href="#${l.href}">${esc(l.text)}</a>` : esc(l.text)}${l.tail ? ` — ${esc(l.tail)}` : ''}</li>`).join('')}</ul>`);
-    else if (b.k === 'p') parts.push(`<p>${b.strong ? `<strong>${esc(b.text)}</strong>` : b.em ? `<em>${esc(b.text)}</em>` : esc(b.text)}</p>`);
+    else if (b.k === 'p') parts.push(`<p${aiOriginHtmlAttributes(b.ai ?? null)}>${b.strong ? `<strong>${esc(b.text)}</strong>` : b.em ? `<em>${esc(b.text)}</em>` : esc(b.text)}</p>`);
     else if (b.k === 'note') parts.push(`<p><em>${esc(b.text)}</em></p>`);
     else if (b.k === 'table') {
-      parts.push(`<table style="border-collapse:collapse"><thead><tr>${b.head.map((h) => `<th ${th}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.rows
-        .map((r) => `<tr>${r.map((c) => `<td ${td}>${esc(c)}</td>`).join('')}</tr>`)
+      parts.push(`<table${aiOriginHtmlAttributes(b.ai ?? null)} style="border-collapse:collapse"><thead><tr>${b.head.map((h) => `<th ${th}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.rows
+        .map((r, ri) => {
+          const cell = b.cellAi?.[ri] ?? null;
+          return `<tr>${r.map((c, ci) => htmlCell(td, c, cell?.col === ci ? cell : null)).join('')}</tr>`;
+        })
         .join('')}</tbody></table>`);
     } else if (b.k === 'kv') parts.push(`<ul>${b.items.map(([k, v]) => `<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>`);
     else if (b.k === 'ol') parts.push(`<ol>${b.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`);
-    else if (b.k === 'ul') parts.push(`<ul>${b.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`);
+    else if (b.k === 'ul') parts.push(`<ul>${b.items.map((t, i) => `<li${aiOriginHtmlAttributes(b.ai?.[i] ?? null)}>${esc(t)}</li>`).join('')}</ul>`);
     else if (b.k === 'code' && b.items.length) {
       parts.push(`<pre style="font-family:Consolas,monospace;font-size:12px;background:#f8fafc;padding:6px">${b.items.map((a) => `${esc(a.label)}  ${esc(a.quote)}`).join('\n')}</pre>`);
     } else if (b.k === 'rich') parts.push(richHtml(b.text));
@@ -471,18 +610,21 @@ function blocksDocument(blocks: DocBlock[]): string {
   for (const block of blocks) {
     if (block.k === 'h') {
       const name = docxBookmarkName(block.id);
+      const [before, model] = block.span ? splitSpan(block.text, block.span) : [block.text, ''];
+      const runs = block.span && model ? `${before ? run(before) : ''}${runSdt(block.span.ai, run(model))}` : run(block.text);
       if (name && !placed.has(name)) {
         placed.add(name);
         const id = bookmarkId++;
-        b.push(para(`<w:bookmarkStart w:id="${id}" w:name="${name}"/>${run(block.text)}<w:bookmarkEnd w:id="${id}"/>`, HEADING_STYLE[block.level]));
-      } else b.push(para(run(block.text), HEADING_STYLE[block.level]));
+        b.push(para(`<w:bookmarkStart w:id="${id}" w:name="${name}"/>${runs}<w:bookmarkEnd w:id="${id}"/>`, HEADING_STYLE[block.level]));
+      } else b.push(para(runs, HEADING_STYLE[block.level]));
     }
-    else if (block.k === 'p') b.push(para(run(block.text, { bold: block.strong, italic: block.em })));
+    else if (block.k === 'p') b.push(blockSdt(block.ai, para(run(block.text, { bold: block.strong, italic: block.em }))));
     else if (block.k === 'note') b.push(para(run(block.text, { italic: true })));
-    else if (block.k === 'table') b.push(docxTable(block.head, block.rows, block.muted));
+    else if (block.k === 'table') b.push(docxTable(block.head, block.rows, block.muted, block.cellAi ?? [], block.ai));
     else if (block.k === 'kv') for (const [k, v] of block.items) b.push(para(run(`${k}: `, { bold: true }) + run(v, { mono: k === 'Lines' })));
     else if (block.k === 'ol') block.items.forEach((t, i) => b.push(para(run(`${i + 1}. ${t}`))));
-    else if (block.k === 'ul') block.items.forEach((t) => b.push(para(run(`•  ${t}`))));
+    // The bullet is the document's; the item's text is the model's when it wrote it.
+    else if (block.k === 'ul') block.items.forEach((t, i) => b.push(para(block.ai?.[i] ? run('•  ') + runSdt(block.ai[i], run(t)) : run(`•  ${t}`))));
     // An internal hyperlink to the heading's bookmark, and the section in words for print;
     // without a bookmark to lead to, the words alone.
     else if (block.k === 'links') {
@@ -575,7 +717,7 @@ export async function blocksDocx(blocks: DocBlock[], meta: DocxMeta = {}): Promi
 /* ---------------------------------------------------- non-functional */
 
 export const NFR_PROVENANCE_NOTE =
-  'Every non-functional requirement below is read by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source, and only code an entry point reaches counts. The questions to be decided are what the code cannot answer — service levels, volumes, retention periods, roles, the cutover date. They are not requirements found in the code, and no value is assumed for them. Model proposals, where listed, are marked and were not checked against the code.';
+  'Every non-functional requirement below is read by the Clean-Core.io engine from the ABAP source; the line anchors (L…) point at that source, and only code an entry point reaches counts. The questions to be decided are what the code cannot answer — service levels, volumes, retention periods, roles, the cutover date. They are not requirements found in the code, and no value is assumed for them. AI-generated proposals, where listed, are marked and were not checked against the code.';
 
 /** The design model's text for one category, with what it names of this program. */
 export interface NfrProposalExport {
@@ -596,6 +738,11 @@ export interface NfrExportMeta {
    * core properties; an export without a printed proposal carries nothing.
    */
   aiStatement?: string | null;
+  /**
+   * 3.0.21 (T08): who wrote the proposals, so each printed proposal is marked where it stands. Absent or null: the
+   * design model's call is not recorded per project, and the mark says "not-recorded".
+   */
+  proposalsAi?: DocBlockAi | null;
 }
 
 export const NFR_STATUS_WORD: Readonly<Record<NfrCategoryStatus, string>> = {
@@ -709,7 +856,7 @@ function proposalEntries(meta: Pick<NfrExportMeta, 'proposals'>): Array<[NfrCate
   return entries;
 }
 
-/** True when the export prints a model proposal's text: one that names something of this program (`proposalBlocks`). */
+/** True when the export prints an AI-generated draft's text: one that names something of this program (`proposalBlocks`). */
 function printsNfrProposal(meta: Pick<NfrExportMeta, 'proposals'>): boolean {
   return proposalEntries(meta).some(([, p]) => p.references.length > 0);
 }
@@ -732,7 +879,16 @@ function proposalBlocks(meta: NfrExportMeta, level: 2 | 3, title: string): DocBl
   const generic = entries.length - specific.length;
   const out: DocBlock[] = [{ k: 'h', level, text: title }];
   out.push({ k: 'p', em: true, text: 'Written by the design model with the solution design. Proposals, not requirements: not checked against the code.' });
-  if (specific.length) out.push({ k: 'table', head: ['Category', 'Model proposal', 'Names'], rows: specific.map(([c, p]) => [NFR_CATEGORY_LABEL[c], p.text.trim(), p.references.join(', ')]) });
+  // The proposal is the model's; the category and the names it was found to name are the engine's.
+  const who = meta.proposalsAi ?? UNRECORDED_ELEMENT_AI;
+  if (specific.length) {
+    out.push({
+      k: 'table',
+      head: ['Category', 'AI-generated proposal', 'Names'],
+      rows: specific.map(([c, p]) => [NFR_CATEGORY_LABEL[c], p.text.trim(), p.references.join(', ')]),
+      cellAi: specific.map(() => ({ col: 1, ai: who })),
+    });
+  }
   if (generic) out.push({ k: 'p', text: `${generic} further proposal${generic === 1 ? '' : 's'} named nothing from this program and ${generic === 1 ? 'is' : 'are'} left out.` });
   return out;
 }
@@ -754,7 +910,7 @@ function nfrBlocks(set: NfrSet, meta: NfrExportMeta): DocBlock[] {
     { k: 'h', level: 2, text: '3. To be decided by the business / IT operations' },
     { k: 'p', text: 'The code cannot answer these. They are questions, not requirements found in the code.' },
     { k: 'table', head: ['ID', 'Category', 'Owner', 'Question', 'Evidence', 'Lines'], rows: questionRows(set.questions) },
-    ...proposalBlocks(meta, 2, '4. Model proposals'),
+    ...proposalBlocks(meta, 2, '4. AI-generated proposals'),
   ];
 }
 
@@ -779,7 +935,8 @@ function frBlocks(set: RequirementSet, meta: RequirementsExportMeta): DocBlock[]
   out.push({
     k: 'table',
     head: ['ID', 'Priority', 'Requirement', 'Process step', 'Lines'],
-    rows: set.requirements.map((r) => [r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (model proposal)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors)]),
+    rows: set.requirements.map((r) => [r.id, PRIORITY_LABEL[r.priority], `${statementOf(r, meta)}${isProposed(r, meta) ? ' (AI-generated)' : ''}`, stepLabel(set, r.stepId), anchorList(r.anchors)]),
+    cellAi: overviewCellAi(set, meta),
   });
   out.push({ k: 'h', level: 3, text: 'A.2 Requirements by process step' });
   const groups: Array<{ title: string; items: FunctionalRequirement[] }> = [];
@@ -793,8 +950,9 @@ function frBlocks(set: RequirementSet, meta: RequirementsExportMeta): DocBlock[]
     out.push({ k: 'h', level: 4, text: `A.2.${gi + 1} ${g.title}` });
     for (const r of g.items) {
       out.push({ k: 'h', level: 5, text: `${r.id} — ${PRIORITY_LABEL[r.priority]} · ${BASIS_LABEL[r.basis.kind]}` });
-      out.push({ k: 'p', text: statementOf(r, meta), strong: true });
-      if (isProposed(r, meta)) out.push({ k: 'p', em: true, text: `Model proposal. Engine wording: ${r.statement}` });
+      const who = wordingAi(r, meta);
+      out.push({ k: 'p', text: statementOf(r, meta), strong: true, ...(who ? { ai: who } : {}) });
+      if (isProposed(r, meta)) out.push({ k: 'p', em: true, text: `AI-generated. Engine wording: ${r.statement}` });
       out.push({
         k: 'kv',
         items: [
@@ -821,7 +979,7 @@ function frBlocks(set: RequirementSet, meta: RequirementsExportMeta): DocBlock[]
   return out;
 }
 
-export type SpecificationMeta = RequirementsExportMeta & Pick<NfrExportMeta, 'proposals'>;
+export type SpecificationMeta = RequirementsExportMeta & Pick<NfrExportMeta, 'proposals' | 'proposalsAi'>;
 
 function specificationBlocks(fr: RequirementSet, nfr: NfrSet, meta: SpecificationMeta): DocBlock[] {
   const frOpen = fr.open.filter((o) => !FR_TOPICS_COVERED_BY_NFR.has(o.topic));
@@ -849,7 +1007,7 @@ function specificationBlocks(fr: RequirementSet, nfr: NfrSet, meta: Specificatio
         ...questionRows(nfr.questions),
       ],
     },
-    ...proposalBlocks(meta, 2, 'D. Model proposals for the non-functional requirements'),
+    ...proposalBlocks(meta, 2, 'D. AI-generated proposals for the non-functional requirements'),
   ];
 }
 

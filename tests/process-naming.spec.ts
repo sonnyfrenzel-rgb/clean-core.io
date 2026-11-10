@@ -8,11 +8,14 @@ import {
   MAX_LANES,
   NAME_MAX_LENGTH,
   NAMING_FORMAT_VERSION,
+  NAMING_MADE_FROM_FACTS,
+  NAMING_PAUSED_REASON,
   TECHNICAL_NAMES_KEPT,
   UNANCHORED,
   applyNaming,
   buildNamingPrompt,
   isProcessNamingRecord,
+  namingContextFrom,
   namingContextOf,
   runNamingRequest,
   validateNamingAnswer,
@@ -22,6 +25,7 @@ import {
   type ProcessNamingRecord,
   type ValidatedNaming,
 } from '../lib/process-naming';
+import { buildProcessFacts } from '../lib/abap/process-facts';
 import {
   MODEL_STAGES,
   NOT_GENERATED,
@@ -79,6 +83,17 @@ const PROBE = [
 
 const context = () => namingContextOf(PROBE);
 
+/**
+ * 3.0.21 (owner decision 06.11.2026): the naming is paused for a reading
+ * without the engine's facts (`NAMING_WITHOUT_FACTS_PAUSED`). No context of
+ * this build carries them; this stand-in does, so the tests below keep holding
+ * the mechanism a naming built from the facts runs through. The pause itself is
+ * held by `tests/naming-paused-3021.spec.ts`.
+ */
+const withFacts = (ctx: NamingContext): NamingContext => ({ ...ctx, facts: new Map() }) as NamingContext;
+/** A reading that hands the model nothing but the skeleton — what every context of this build is. */
+const withoutFacts = () => namingContextFrom(buildProcessFacts(PROBE));
+
 /** The gateway in CHECK_ACCESS, the CASE in DECIDE, the write under it, the unanchored end. */
 function ids(ctx: NamingContext) {
   const find = (kind: string, label: string) => {
@@ -119,6 +134,11 @@ function recordFor(ctx: NamingContext, validated: ValidatedNaming, digest = ctx.
     },
     namedAt: '2026-09-18T09:00:00.000Z',
   };
+}
+
+/** The same, as the route stores it for a reading with the engine's facts — the only record applied while the naming is paused. */
+function factsRecordFor(ctx: NamingContext, validated: ValidatedNaming, digest = ctx.digest): ProcessNamingRecord {
+  return { ...recordFor(ctx, validated, digest), madeFrom: NAMING_MADE_FROM_FACTS };
 }
 
 /* ================================================================== *
@@ -433,7 +453,7 @@ test.describe('lanes: proposals from AUTHORITY-CHECK and naming, never an organi
 
 test.describe('what the map gets', () => {
   test('without a key: every node with its technical name, no error, and one sentence saying why', () => {
-    const ctx = context();
+    const ctx = withFacts(context());
     const view = applyNaming(ctx, null, 'no-key');
     expect(view.state).toBe('not-named');
     expect(view.nodes.length).toBe(ctx.skeleton.nodes.length);
@@ -446,16 +466,22 @@ test.describe('what the map gets', () => {
     expect(view.lanes).toEqual([]);
     expect(view.notice).toBe(`${NOT_GENERATED}. ${modelAbsenceReason('no-key', 'naming')} ${TECHNICAL_NAMES_KEPT}`);
     expect(view.counts.discarded).toBeNull();
+
+    // 3.0.21: a reading without the engine's facts says the names are paused, whatever the key.
+    const paused = applyNaming(withoutFacts(), null, 'no-key');
+    expect(paused.state).toBe('not-named');
+    expect(paused.nodes.every((n) => n.businessName === null && n.nameProvenance === null)).toBe(true);
+    expect(paused.notice).toBe(`${NOT_GENERATED}. ${NAMING_PAUSED_REASON} ${TECHNICAL_NAMES_KEPT}`);
   });
 
   test('with the stage switched off, the sentence names the switch rather than the key', () => {
-    const view = applyNaming(context(), null, 'stage-off');
+    const view = applyNaming(withFacts(context()), null, 'stage-off');
     expect(view.state).toBe('not-named');
     expect(view.notice).toContain('switched off for business names');
     expect(view.notice).not.toContain('No Gemini key');
   });
 
-  test('the business name stands beside the technical name, the anchor does not move, and the chip is always Model proposal', () => {
+  test('the business name stands beside the technical name, the anchor does not move, and the chip is always AI-generated', () => {
     const ctx = context();
     const { denied, release } = ids(ctx);
     const validated = validateNamingAnswer(ctx, answer({
@@ -464,7 +490,7 @@ test.describe('what the map gets', () => {
         { id: release, name: 'Release the requisition' },
       ],
     }));
-    const view = applyNaming(ctx, recordFor(ctx, validated));
+    const view = applyNaming(ctx, factsRecordFor(ctx, validated));
     expect(view.state).toBe('named');
     expect(view.notice).toBeNull();
 
@@ -485,7 +511,7 @@ test.describe('what the map gets', () => {
     const ctx = context();
     const { unfinishedEnd } = ids(ctx);
     const validated = validateNamingAnswer(ctx, answer({ names: [{ id: unfinishedEnd, name: 'Purchase order blocked' }] }));
-    const node = applyNaming(ctx, recordFor(ctx, validated)).nodes.find((n) => n.id === unfinishedEnd)!;
+    const node = applyNaming(ctx, factsRecordFor(ctx, validated)).nodes.find((n) => n.id === unfinishedEnd)!;
     expect(node.businessName).toBe('Purchase order blocked');
     expect(node.anchor).toBeNull();
     expect(node.evidence).toBe('unanchored');
@@ -502,7 +528,7 @@ test.describe('what the map gets', () => {
         { name: 'Requester', authorityCheck: null, nodes: [notify] },
       ],
     }));
-    const [approver, requester] = applyNaming(ctx, recordFor(ctx, validated)).lanes;
+    const [approver, requester] = applyNaming(ctx, factsRecordFor(ctx, validated)).lanes;
     expect(approver).toMatchObject({
       basis: 'authority-check', authorityObject: 'M_BANF_EKG', anchor: { lineStart: 9, lineEnd: 9 },
       evidence: 'anchored', evidenceLabel: null, statement: LANE_STATEMENT,
@@ -517,7 +543,7 @@ test.describe('what the map gets', () => {
   test('names made for another reading of the source are not applied, and the map says so', () => {
     const ctx = context();
     const validated = validateNamingAnswer(ctx, answer({ names: [{ id: ids(ctx).denied, name: 'Access denied?' }] }));
-    const record = recordFor(ctx, validated);
+    const record = factsRecordFor(ctx, validated);
 
     // One more statement at the top renumbers every node after it.
     const edited = namingContextOf(PROBE.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR lv_secret.'));
@@ -536,11 +562,13 @@ test.describe('what the map gets', () => {
     expect(isProcessNamingRecord({ ...good, origin: { ...good.origin, source: 'user' } })).toBe(false);
     expect(isProcessNamingRecord({ ...good, formatVersion: NAMING_FORMAT_VERSION + 1 })).toBe(false);
     expect(isProcessNamingRecord({ ...good, names: [{ id: ids(ctx).denied, name: 'Access denied?' }] })).toBe(false);
+    expect(isProcessNamingRecord({ ...good, madeFrom: NAMING_MADE_FROM_FACTS })).toBe(true);
+    expect(isProcessNamingRecord({ ...good, madeFrom: 'tokens' })).toBe(false);
   });
 
   test('a stored name whose node now reads differently is not put on it', () => {
     const ctx = context();
-    const record = recordFor(ctx, {
+    const record = factsRecordFor(ctx, {
       names: [{ id: ids(ctx).denied, technicalName: 'IF sy-subrc = 0', name: 'Access granted?' }],
       lanes: [],
       discarded: { total: 0, byRule: {} },
@@ -573,7 +601,7 @@ test.describe('the request: prompt, model, route — and every way it can end', 
 
   test('no key, already known: no model call is made and nothing is stored', async () => {
     const { d, calls } = deps();
-    const outcome = await runNamingRequest(context(), d, { known: true, keyAvailable: false, stages: {} });
+    const outcome = await runNamingRequest(withFacts(context()), d, { known: true, keyAvailable: false, stages: {} });
     expect(outcome).toEqual({ ok: false, absence: 'no-key', message: modelAbsenceReason('no-key', 'naming') });
     expect(calls.model).toBe(0);
     expect(calls.store).toEqual([]);
@@ -582,14 +610,14 @@ test.describe('the request: prompt, model, route — and every way it can end', 
   test('the proxy refuses a switched-off stage or a missing key: the outcome is that absence, not an error', async () => {
     for (const [code, absence] of [[STAGE_DISABLED_CODE, 'stage-off'], [NO_KEY_CODE, 'no-key']] as const) {
       const { d, calls } = deps({ callModel: async () => { throw new Error(`Refused (${code}).`); } });
-      const outcome = await runNamingRequest(context(), d);
+      const outcome = await runNamingRequest(withFacts(context()), d);
       expect(outcome).toMatchObject({ ok: false, absence });
       expect(calls.store, 'a refused call stored something').toEqual([]);
     }
   });
 
   test('the answer is posted byte for byte with its receipt and the digest of this reading', async () => {
-    const ctx = context();
+    const ctx = withFacts(context());
     const text = '{ "names": [ {"id": "nd-8-0", "name": "Access denied?"} ] }\n';
     const receipt = { v: 1, mac: 'f'.repeat(64) };
     let seenPrompt = '';

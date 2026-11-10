@@ -116,6 +116,8 @@ for (const [previous, tag] of [
       await expect(gate.locator('[data-terms-gate-change="2026-09-18"]')).toHaveCount(0);
     }
 
+    // C2 of the legal texts (Fassung 1.1): the statement naming the version is ticked first.
+    await gate.locator('[data-terms-gate-checkbox] input[type="checkbox"]').check();
     await gate.locator('[data-terms-gate-accept]').click();
     await expect(gate, 'the gate stayed up after accepting').toBeHidden({ timeout: 60000 });
 

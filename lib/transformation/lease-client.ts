@@ -148,8 +148,14 @@ export async function readGenerationWindow(): Promise<GenerationWindow | null> {
  *
  * `onReceipt` (roadmap 3.0.17, AI Act Art. 50(2)) is handed the receipt of every call that answered, so the page
  * can send the last one with the package: the server records provider and model of the generation from it.
+ *
+ * Never marked as an automatic call, since the legal review of 06.11.2026 (3.0.21, item 1): a generation starts only on a click.
  */
-export function leasedFillModel(lease: LeaseReference, modelName: string = PRODUCT_GEMINI_MODEL, onReceipt?: (receipt: ModelReceipt) => void): FillModel {
+export function leasedFillModel(
+  lease: LeaseReference,
+  modelName: string = PRODUCT_GEMINI_MODEL,
+  onReceipt?: (receipt: ModelReceipt) => void,
+): FillModel {
   // A refusal comes back as `GeminiCallError` with `status` and `code`, which
   // the orchestrator reads (`modelErrorKind`) to retry, stop or give up a unit.
   // A repair of gate errors is marked (`meta.gateRepair`), so the server may count it against the lease's

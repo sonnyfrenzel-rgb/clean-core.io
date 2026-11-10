@@ -36,6 +36,7 @@ import { readSpecRecord, SPEC_COLLECTION, SPEC_DOC, SPEC_NFR_CATEGORY_LABEL, typ
 import { richPlain } from '@/lib/rich-text';
 import { standardFitAssessed } from '@/lib/standard-fit-gate';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { decisionKindOf } from '@/lib/rule-decision-flow';
 
 /**
  * The server's half of the PLATFORM KNOWLEDGE block (owner, 12.10.2026;
@@ -171,6 +172,8 @@ function rulesOf(set: BusinessRuleSet | null, answers: RuleAnswers, reason: stri
       answer: e ? e.state : null,
       note: e?.note ?? null,
       line: first ? first.lineStart : null,
+      // A Keep answered *Move to SAP standard* is not rebuilt (owner decision 21.10.2026 (5)).
+      ...(decisionKindOf(e) === 'standard' ? { toStandard: true as const } : {}),
     };
   });
   return { basis: answers.basis, revision: answers.revision, items };
@@ -320,7 +323,8 @@ function requirementsStamp(accepted: AcceptedRequirements | null): string {
 
 /** The digest of the rule answers the block applies. */
 function rulesStamp(rules: ContextRules): string {
-  const applied = rules.items.map((r) => [r.id, r.answer, r.note]);
+  // A rule left to SAP standard adds its marker; every other rule hashes as before.
+  const applied = rules.items.map((r) => (r.toStandard ? [r.id, r.answer, r.note, 'standard'] : [r.id, r.answer, r.note]));
   return `${rules.basis}:r${rules.revision ?? 0}:${sha256Hex(JSON.stringify(applied)).slice(0, 16)}`;
 }
 
@@ -392,7 +396,12 @@ export function assembleTransformationContext(args: AssembleArgs): { context: Tr
       rules: rulesStamp(rules),
       decision: decisionStamp(args.project),
       requirements: requirementsStamp(args.accepted ?? null),
-      decisions: rules.items.map((r) => ({ id: r.id, answer: r.answer, note: r.note })),
+      // The scaffold carries no rule left to SAP standard: to the planner it is not carried over, like a Drop.
+      decisions: rules.items.map((r) =>
+        r.toStandard
+          ? { id: r.id, answer: 'drop' as const, note: 'Left to SAP standard by decision (Move to SAP standard).' }
+          : { id: r.id, answer: r.answer, note: r.note },
+      ),
     },
   };
 }

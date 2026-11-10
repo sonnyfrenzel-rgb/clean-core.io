@@ -345,7 +345,7 @@ test.describe('the scenarios on the page', () => {
       await expect(toggle).toHaveAttribute('aria-expanded', 'true');
       const details = row.locator('[data-scenario-details]');
       await expect(details).toBeVisible();
-      // Model proposal stays visible on the details.
+      // AI-generated stays visible on the details.
       await expect(details.locator('[data-provenance="proposed"]').first()).toBeVisible();
       for (const field of scenarioFields(tc)) {
         const shown = details.locator(`[data-scenario-field="${field.key}"]`);

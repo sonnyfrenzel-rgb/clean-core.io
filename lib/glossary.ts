@@ -443,8 +443,8 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     category: 'Product',
     kind: 'product',
     sourceRef: PRODUCT_SOURCE,
-    definition: 'The label on every statement saying where it came from: the deterministic engine, SAP\'s published data, something you imported, or a model proposal.',
-    cleanCoreImplication: 'It lets a reader weigh a sentence without reading the code behind it - and makes a model proposal impossible to mistake for a measurement.',
+    definition: 'The label on every statement saying where it came from: the deterministic engine, SAP\'s published data, something you imported, or an AI-generated draft.',
+    cleanCoreImplication: 'It lets a reader weigh a sentence without reading the code behind it - and makes an AI-generated draft impossible to mistake for a measurement.',
   },
   TCO: {
     term: 'Total cost of ownership (TCO)',

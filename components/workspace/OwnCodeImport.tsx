@@ -26,6 +26,7 @@ import { readUploadedFile } from '@/lib/own-code-zip';
 import { leaveOwnCodeHandoff } from '@/lib/own-code-handoff';
 import {
   wt,
+  ownCodeStartNext,
   ownCodeAttention,
   ownCodeChecked,
   ownCodeDropLimit,
@@ -38,9 +39,11 @@ import {
   ownCodeTooLarge,
 } from '@/lib/workspace-messages';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
+import AutoStepsNotice from '@/components/AutoStepsNotice';
+import { runModelCallNotice } from '@/lib/legal/run-notice';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
-import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
+import TargetEditionChoice, { targetEditionTitle, type TargetEdition } from '@/components/TargetEditionChoice';
 import { leaveStartRelease } from '@/lib/start-release-handoff';
 import CcCard from '@/components/cc/Card';
 import CcCheckbox from '@/components/cc/Checkbox';
@@ -49,6 +52,7 @@ import CcIconButton from '@/components/cc/IconButton';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { NAMING_ASKED_IN_THIS_BUILD, NAMING_PAUSED_REASON } from '@/lib/process-naming';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { cn } from '@/lib/utils';
 
@@ -209,8 +213,13 @@ export default function OwnCodeImport() {
   // analysis stage is on and a key is available, asks the model for the
   // narrative of that same run (owner decision 03.10.2026). What it costs is the
   // run's, said here before the click, with whether the model is called.
-  const startCallsModel = model.enabled('analyze');
-  const cost = describeRunCost({ profile, metered: true, callsModel: startCallsModel });
+  // Legal review 06.11.2026 (item 3): the main switch "Automatic AI steps" off
+  // means no narrative and no model call for that first run (`hooks/useStartRun.ts`).
+  const startCallsModel = model.enabled('analyze') && model.autoModelSteps;
+  // The notice at the button (legal review 06.11.2026, B5/N2): the consent text
+  // `startRun.modelCall` with the provider of the key, or `noModelCall`.
+  const startNotice = runModelCallNotice({ callsModel: startCallsModel, provider: model.provider, lang: 'en' });
+  const cost = describeRunCost({ profile, metered: true, callsModel: startCallsModel, provider: model.known ? model.provider : undefined });
   const trimmedName = name.trim();
   const nameMissing = trimmedName.length === 0;
 
@@ -320,6 +329,10 @@ export default function OwnCodeImport() {
             <CcRequiredNote />
           </span>
         </div>
+
+        {/* C14 (3.0.21, A10): once per account, before the first own project —
+            what runs by itself on opening it, with the switch to turn it off. */}
+        <AutoStepsNotice model={model} />
 
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-w-0 flex-col gap-4">
@@ -562,7 +575,10 @@ export default function OwnCodeImport() {
               <div className="mt-3">
                 <CcCheckbox
                   label={wt('ownCode.namesSwitch')}
-                  help={namingAvailable ? wt('ownCode.namesSwitchHelp') : wt('ownCode.namesNoKey')}
+                  help={
+                    // 3.0.21: while the business names are paused the switch keeps its setting and says so in one sentence.
+                    !NAMING_ASKED_IN_THIS_BUILD ? NAMING_PAUSED_REASON : namingAvailable ? wt('ownCode.namesSwitchHelp') : wt('ownCode.namesNoKey')
+                  }
                   checked={namingOn}
                   disabled={!namingAvailable || namingSaving || !model.known}
                   onChange={(next) => void toggleNaming(next)}
@@ -603,6 +619,7 @@ export default function OwnCodeImport() {
           disabled={busy}
           release={release}
           onReleaseChange={setRelease}
+          folded
         />
         </div>
 
@@ -639,7 +656,7 @@ export default function OwnCodeImport() {
               </p>
             ) : (
               <p className="m-0 text-[12px] font-medium text-cc-ink-muted">
-                {startCallsModel ? wt('ownCode.startNextModel') : wt('ownCode.startNext')}
+                <span data-own-code-start-next="">{ownCodeStartNext(startCallsModel, targetEditionTitle(edition))}</span>
               </p>
             )}
           </div>
@@ -659,11 +676,18 @@ export default function OwnCodeImport() {
               busy={busy}
               disabled={startDisabled}
               onClick={() => void start()}
+              aria-describedby={ready && !hintsPending ? 'own-code-start-notice' : undefined}
               data-own-code-start=""
             >
               {wt('ownCode.start')}
             </CcButton>
           </div>
+          {/* The notice directly at the button (legal review 06.11.2026, item 3): what the first run sends, and where. */}
+          {ready && !hintsPending && !assembly.blocked && !assembly.tooLarge && attentionRows.length === 0 ? (
+            <p id="own-code-start-notice" className="m-0 text-[12px] font-semibold text-cc-ink lg:max-w-xs" data-own-code-start-notice={startCallsModel ? 'model-call' : 'no-model-call'}>
+              {startNotice}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

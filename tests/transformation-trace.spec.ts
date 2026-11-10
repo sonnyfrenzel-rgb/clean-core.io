@@ -48,7 +48,7 @@ test('who wrote each body: model, repair rounds, or a stub', () => {
   expect(files.map((f) => f.path)).toEqual(expect.arrayContaining(['traceability.json', 'TRACE.md']));
   const md = files.find((f) => f.path === 'TRACE.md')!.content;
   expect(md).toContain('| U02 | `checkCoverage` (srv/steps/02-check-coverage.ts) |');
-  expect(md).toContain('model proposal (repair round 2)');
+  expect(md).toContain('AI-generated (repair round 2)');
   expect(md).toContain('Demo data of the original, not carried over in this version: LOAD_DEMO');
   expect(md).not.toMatch(/@cc-fill/);
 });

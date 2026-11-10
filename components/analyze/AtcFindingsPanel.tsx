@@ -4,6 +4,9 @@ import { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { AtcComparisonState, AtcJoinRow, AtcReport } from '@/lib/abap/atc-model';
 import { joinAtcWithEvidence, summarizeAtcComparison } from '@/lib/abap/atc-join';
+import { atcRunLabel, compareAtcByLine, type AtcLineRow, type AtcLineState } from '@/lib/abap/atc-lines';
+import { includeLocationLabel } from '@/lib/process-map';
+import CcAnchor from '@/components/cc/Anchor';
 import { atcQualityGate } from '@/lib/abap/atc-quality-gate';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { normaliseSeverity } from '@/lib/severity';
@@ -20,6 +23,12 @@ import { CcTag } from '@/components/cc/Tag';
 interface AtcFindingsPanelProps {
   atcReport: AtcReport;
   findings: EvidenceFinding[];
+  /**
+   * The analysed source the findings' lines count in, and its file name — for
+   * the line comparison (roadmap 3.0.21). Without it only objects are compared.
+   */
+  source?: string;
+  fileName?: string;
 }
 
 /**
@@ -61,7 +70,7 @@ const PRIORITY_LABEL: Record<string, string> = {
   unknown: 'Unknown',
 };
 
-export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPanelProps) {
+export default function AtcFindingsPanel({ atcReport, findings, source, fileName }: AtcFindingsPanelProps) {
   const rows = useMemo(() => joinAtcWithEvidence(atcReport, { findings }), [atcReport, findings]);
   // Three numbers, one per bucket — never added up into one.
   const overlap = useMemo(() => summarizeAtcComparison(rows), [rows]);
@@ -97,6 +106,9 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
           <span className="cc-text-label text-cc-ink-muted">ATC import</span>
           <CcProvenanceChip value="imported" note="ATC" />
         </div>
+        <p className="m-0 cc-text-meta font-semibold text-cc-ink" data-atc-run-label={atcReport.runAtSource ?? 'unknown'}>
+          {atcRunLabel(atcReport)}
+        </p>
         <h3 className="cc-text-h2 text-cc-ink">ATC Findings, Compared With the Engine</h3>
         <p className="cc-text-cell max-w-3xl text-cc-ink-muted">
           Every finding below is exactly what ATC reported — this product does not verify it. Where an object
@@ -125,6 +137,8 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
       </div>
 
       <AtcQualityGateNote gate={gate} />
+
+      {source ? <AtcByLine atcReport={atcReport} findings={findings} source={source} fileName={fileName ?? ''} /> : null}
 
       <div className="px-6 pb-4">
         <CcFilterBar
@@ -322,6 +336,115 @@ function AtcRow({
           </div>
         </div>
       )}
+    </li>
+  );
+}
+
+/**
+ * ATC and the engine, line by line (roadmap 3.0.21). Each ATC finding with a
+ * line is placed in the analysed source — through the include map when the
+ * program came with its includes — and set beside the engine's findings on
+ * that line. Four counts, never added up; the words say what each does not
+ * mean.
+ */
+const LINE_META: Record<AtcLineState, { short: string; explain: string }> = {
+  'same-line': {
+    short: 'Same line',
+    explain: 'ATC and the engine both point at this line. That does not make them the same issue — read both.',
+  },
+  'atc-only': {
+    short: 'ATC only on this line',
+    explain: 'The engine reports nothing on this line. It may have no detector for what ATC checked; this is a gap in what the engine covers, not a defect ATC proved it missed.',
+  },
+  outside: {
+    short: 'Not in this source',
+    explain: 'The object or include ATC checked is not part of the analysed source, or the line lies beyond it. Not compared.',
+  },
+  'no-line': {
+    short: 'No line in the export',
+    explain: 'The export names no line for these findings, so they cannot be placed. Not compared.',
+  },
+};
+
+const LINE_STATES = Object.keys(LINE_META) as AtcLineState[];
+const LINE_ROWS_SHOWN = 50;
+
+function AtcByLine({ atcReport, findings, source, fileName }: { atcReport: AtcReport; findings: EvidenceFinding[]; source: string; fileName: string }) {
+  const comparison = useMemo(() => compareAtcByLine(atcReport, findings, source, fileName), [atcReport, findings, source, fileName]);
+  const byId = useMemo(() => new Map(findings.map((f) => [f.id, f])), [findings]);
+  const placed = comparison.rows.filter((r) => r.line !== null).sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
+  return (
+    <section className="px-6 pb-4" data-atc-by-line="" aria-labelledby="atc-by-line-title">
+      <div className="rounded-cc-row border border-cc-line p-3">
+        <h4 id="atc-by-line-title" className="cc-text-label m-0 text-cc-ink-muted">By line in this source</h4>
+        <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 cc-text-meta text-cc-ink">
+          {LINE_STATES.map((state) => (
+            <li key={state} data-atc-line-count={state}>
+              <span className="tabular-nums font-semibold">{comparison.byState[state]}</span>{' '}
+              <span className="font-medium text-cc-ink-muted">{LINE_META[state].short}</span>
+            </li>
+          ))}
+          {comparison.checkedObjects.length > 0 ? (
+            <li data-atc-line-count="engine-only">
+              <span className="tabular-nums font-semibold">{comparison.engineOnly.length}</span>{' '}
+              <span className="font-medium text-cc-ink-muted">engine findings on lines ATC is silent on</span>
+            </li>
+          ) : null}
+        </ul>
+        <CcDisclosure title="What these numbers mean">
+          <dl className="mt-2 space-y-2">
+            {LINE_STATES.map((state) => (
+              <div key={state}>
+                <dt className="cc-text-meta text-cc-ink">{LINE_META[state].short}</dt>
+                <dd className="cc-text-cell text-cc-ink-muted">{LINE_META[state].explain}</dd>
+              </div>
+            ))}
+            <div>
+              <dt className="cc-text-meta text-cc-ink">Engine findings on lines ATC is silent on</dt>
+              <dd className="cc-text-cell text-cc-ink-muted">
+                Counted only in the program and includes ATC&apos;s results name. Silence, not a pass: an ATC export lists what failed a check.
+              </dd>
+            </div>
+          </dl>
+        </CcDisclosure>
+        {placed.length > 0 ? (
+          <ul className="m-0 mt-3 list-none divide-y divide-cc-line p-0" data-atc-line-list="">
+            {placed.slice(0, LINE_ROWS_SHOWN).map((row, i) => (
+              <AtcLineItem key={`${row.line}-${i}`} row={row} source={source} byId={byId} />
+            ))}
+          </ul>
+        ) : null}
+        {placed.length > LINE_ROWS_SHOWN ? (
+          <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted">
+            The first {LINE_ROWS_SHOWN} of {placed.length} placed findings, by line.
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function AtcLineItem({ row, source, byId }: { row: AtcLineRow; source: string; byId: Map<string, EvidenceFinding> }) {
+  const line = row.line ?? 0;
+  const inInclude = includeLocationLabel(source, { lineStart: line, lineEnd: line });
+  return (
+    <li className="flex flex-col gap-1 py-2" data-atc-line-row={row.state} data-atc-line={line}>
+      <span className="flex flex-wrap items-center gap-2 cc-text-cell text-cc-ink">
+        <CcAnchor label={`Source line ${line}`}>{`L${line}`}</CcAnchor>
+        {inInclude ? <span className="cc-text-meta text-cc-ink-muted">{inInclude}</span> : null}
+        <CcTag>{LINE_META[row.state].short}</CcTag>
+      </span>
+      <span className="cc-text-cell text-cc-ink">
+        <span className="font-semibold">ATC: </span>
+        {row.finding.checkTitle ? <span className="font-semibold">{row.finding.checkTitle}: </span> : null}
+        {row.finding.message}
+      </span>
+      <span className="cc-text-cell text-cc-ink-muted">
+        <span className="font-semibold text-cc-ink">Engine: </span>
+        {row.engineFindingIds.length === 0
+          ? 'nothing reported on this line.'
+          : row.engineFindingIds.map((id) => byId.get(id)?.title ?? id).join(' · ')}
+      </span>
     </li>
   );
 }

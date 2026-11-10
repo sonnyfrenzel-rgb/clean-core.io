@@ -40,7 +40,7 @@ const faqs = [
   },
   {
     question: 'What role does the language model play?',
-    answer: 'The language model (Google Gemini) writes after the engine and on its evidence: plain business names for process steps, the narrative of the analysis, the target design, the transformed code draft and the test scenarios. Everything it writes is marked as a Model proposal until a person confirms it. The process, the business rules, Level A–D, the findings, the Clean Core Score and the table-to-successor lookups come from the engine and SAP’s published Cloudification Repository, never from the model.'
+    answer: 'The language model (Google Gemini) writes after the engine and on its evidence: plain business names for process steps, the narrative of the analysis, the target design, the transformed code draft and the test scenarios. Everything it writes is marked as AI-generated until a person confirms it. The process, the business rules, Level A–D, the findings, the Clean Core Score and the table-to-successor lookups come from the engine and SAP’s published Cloudification Repository, never from the model.'
   },
   {
     question: 'Who makes the decision — keep, rebuild, move to SAP standard or retire?',
@@ -186,7 +186,7 @@ export default function HowItWorksPage() {
             How It <span className="text-cc-brand-strong">Works</span>
           </h1>
           <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
-            One chain from a custom ABAP program to a decision and a signed record: the process as BPMN with line anchors, Level A–D for each SAP object (or Unknown), the decision, then design, code draft and tests. The engine reads the code first; what a language model writes comes after it and is marked as a Model proposal.
+            One chain from a custom ABAP program to a decision and a signed record: the process as BPMN with line anchors, Level A–D for each SAP object (or Unknown), the decision, then design, code draft and tests. The engine reads the code first; what a language model writes comes after it and is marked as AI-generated.
           </p>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function HowItWorksPage() {
       {/* Quick Answer */}
       <QuickAnswer
         question="How does Clean-Core.io work?"
-        answer={`A deterministic engine reads one custom ABAP program and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. Every SAP object the code uses is graded Level A–D from SAP's published Cloudification Repository (${catalogObjects}), or marked Unknown where the repository holds no answer for it, and the Management view asks for one decision: keep, rebuild, move to SAP standard or retire. Design, code draft and tests are built on that evidence as Model proposals for a person to review, and every completed analysis is stored as an immutable run signed by the server.`}
+        answer={`A deterministic engine reads one custom ABAP program and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. Every SAP object the code uses is graded Level A–D from SAP's published Cloudification Repository (${catalogObjects}), or marked Unknown where the repository holds no answer for it, and the Management view asks for one decision: keep, rebuild, move to SAP standard or retire. Design, code draft and tests are built on that evidence as AI-generated drafts for a person to review, and every completed analysis is stored as an immutable run signed by the server.`}
       />
 
       {/* Section A: the chain of 3.0 (roadmap 3.0.8, item 2) */}
@@ -215,7 +215,7 @@ export default function HowItWorksPage() {
               <h3 className={H3}>The process, read from the code</h3>
             </div>
             <p className={STAGE_TEXT}>
-              The engine parses the program without a language model; the same file gives the same result. It reconstructs the business process the program runs as BPMN — start and end events, tasks, decision points and sub-processes — with a line anchor on every element, or the reason it has none. Literals in conditions, such as tolerances, plants or date limits, become business rules with their line, which the Business view answers with keep, change, drop or clarify. Code no entry point reaches is listed, not drawn. Plain business names a language model proposes are marked as a Model proposal.
+              The engine parses the program without a language model; the same file gives the same result. It reconstructs the business process the program runs as BPMN — start and end events, tasks, decision points and sub-processes — with a line anchor on every element, or the reason it has none. Literals in conditions, such as tolerances, plants or date limits, become business rules with their line, which the Business view answers with keep, change, drop or clarify. Code no entry point reaches is listed, not drawn. Plain business names a language model proposes are marked as AI-generated.
             </p>
             <p className={SOURCE_LINE}>In the code: {CHAIN_SOURCES.process}</p>
           </li>
@@ -257,7 +257,7 @@ export default function HowItWorksPage() {
               <h3 className={H3}>Design, code draft and tests</h3>
             </div>
             <p className={STAGE_TEXT}>
-              Design reads the functional and non-functional requirements from the code and proposes a target: ABAP Cloud (RAP) inside SAP S/4HANA, or CAP on {BTP_FIRST}. Transformation drafts the target code from the source, the analysis and the design; its plan names every finding at its line. Testing derives test scenarios. On the CAP track they run against mocks in an isolated runner, and the server records what ran on which code. On the RAP track they are an ABAP Unit class that runs only in your own SAP system; you record its result as an imported file or your own confirmation, never as proven. All three are Model proposals built on the signed run — drafts to review, not a finished product.
+              Design reads the functional and non-functional requirements from the code and proposes a target: ABAP Cloud (RAP) inside SAP S/4HANA, or CAP on {BTP_FIRST}. Transformation drafts the target code from the source, the analysis and the design; its plan names every finding at its line. Testing derives test scenarios. On the CAP track they run against mocks in an isolated runner, and the server records what ran on which code. On the RAP track they are an ABAP Unit class that runs only in your own SAP system; you record its result as an imported file or your own confirmation, never as proven. All three are AI-generated drafts built on the signed run — drafts to review, not a finished product.
             </p>
             <p className={SOURCE_LINE}>In the workspace: {CHAIN_SOURCES.build}</p>
           </li>

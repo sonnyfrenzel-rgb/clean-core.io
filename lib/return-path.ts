@@ -46,6 +46,9 @@ const ALLOWED_TARGETS: RegExp[] = [
   /^\/dashboard$/,
   /^\/settings$/,
   /^\/admin$/,
+  // 09.11.2026: the shell sends a reader without the signed-in hint from any page
+  // that needs an account to sign in and back; "My workspace" is the list they open.
+  /^\/admin\/workspace$/,
   /^\/first-run$/,
   /^\/demo$/,
   // Roadmap 3.0.1: the landing's "Explore the demo" opens the workspace demo with its tour.
@@ -55,9 +58,22 @@ const ALLOWED_TARGETS: RegExp[] = [
   /^\/verify-pack$/,
   // Roadmap 5.1: the reason this module exists.
   new RegExp(`^/invitation/${ID}/${ID}$`),
+  // Roadmap 3.0.21: the portfolio, its invitation link and the overview it opens.
+  /^\/portfolio$/,
+  new RegExp(`^/portfolio/invitation/${ID}/${ID}$`),
+  new RegExp(`^/portfolio/shared/${ID}$`),
   new RegExp(`^/project/${ID}$`),
   new RegExp(`^/project/${ID}/(?:${STAGES})$`),
 ];
+
+/**
+ * Places on a page a sign-in may return to, with their anchor — exact strings
+ * and nothing built from them (roadmap 3.0.21 (3)): after two-factor is turned
+ * on, the new sign-in brings the reader back to the own-key card they turned it
+ * on for. A fragment is otherwise refused below; these two are compared
+ * character for character, so there is still nothing to clean or decode.
+ */
+const ALLOWED_PLACES = new Set<string>(['/settings#own-key', '/settings#sign-in-security']);
 
 /**
  * The internal path to return to after sign-in, or `null`.
@@ -68,6 +84,7 @@ const ALLOWED_TARGETS: RegExp[] = [
 export function safeReturnPath(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   if (raw.length === 0 || raw.length > 512) return null;
+  if (ALLOWED_PLACES.has(raw)) return raw;
 
   // One absolute path of unreserved characters. This alone rules out an
   // absolute URL (`:`), a query or a fragment (`?`, `#`), a userinfo trick
@@ -90,4 +107,14 @@ export function safeReturnPath(raw: unknown): string | null {
 export function signInLinkFor(path: string): string {
   const target = safeReturnPath(path);
   return target ? `/?auth=signin&next=${encodeURIComponent(target)}` : '/?auth=signin';
+}
+
+/**
+ * `/?auth=signup&next=<path>` — the same, opening the registration step of the
+ * dialog (roadmap 3.0.21 (4): a new invited reader). Registration itself is
+ * unchanged; only where it lands afterwards is, as for a sign-in.
+ */
+export function signUpLinkFor(path: string): string {
+  const target = safeReturnPath(path);
+  return target ? `/?auth=signup&next=${encodeURIComponent(target)}` : '/?auth=signup';
 }

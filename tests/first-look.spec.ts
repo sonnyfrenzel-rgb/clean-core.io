@@ -437,10 +437,11 @@ test.describe('the first look on screen', () => {
     const first = page.locator('[data-first-look]');
     await expect(first).toBeVisible({ timeout: 60000 });
     // Its own name, the same while it builds and at its end, and a sentence
-    // that it is not the analysis — nothing on it borrows the stage header of
-    // Analyze (roadmap 3.0.7, owner 10.10.2026).
+    // on what it is for — nothing on it borrows the stage header of Analyze
+    // (roadmap 3.0.7, owner 10.10.2026). Since 3.0.21 the Business lead says
+    // it is for understanding, with nothing to decide (owner decisions 22.10.2026).
     await expect(first.getByRole('heading', { level: 2, name: 'First insights into your process' })).toBeVisible();
-    await expect(first.locator('[data-first-look-lead]')).toContainText('not the analysis');
+    await expect(first.locator('[data-first-look-lead]')).toContainText('nothing to decide here');
     await expect(first.locator('[data-stage-title]')).toHaveCount(0);
     await expect(page.locator('[data-first-look-stage]')).toHaveCount(4, { timeout: 60000 });
     expect(
@@ -546,7 +547,8 @@ test.describe('the first look on screen', () => {
   }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
+    // "Ask this case" stands in the IT view since 22.10.2026 (owner decision; DESIGN.md §5.3).
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
 
     const card = page.locator('[data-ask-this-case]');
     await expect(card).toBeVisible({ timeout: 60000 });
@@ -707,11 +709,13 @@ test.describe('"New project" explains before it starts', () => {
       ),
     ).toEqual([STARTER_BADGE_FREE]);
 
-    // Own code: the quota sentence out of `lib/run-cost.ts`, with the number.
+    // Own code: the quota sentence out of `lib/run-cost.ts`, with the number —
+    // the consent text `startRun.freePlatformKey`, never a word about costs
+    // (legal review 06.11.2026).
     await page.click('[data-start-choice="own-code"]');
-    await expect(page.locator('[data-new-project-quota="own-code"]')).toContainText(
-      'Uses 1 of your 5 free analysis runs',
-    );
+    const quota = page.locator('[data-new-project-quota="own-code"]');
+    await expect(quota).toContainText('Free. This run uses one of your 5 analyses;');
+    await expect(quota).not.toContainText(/cost/i);
     await expect(page.locator('[data-new-project-start="own-code"]')).toContainText(
       'Continue to upload',
     );

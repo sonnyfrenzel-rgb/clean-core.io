@@ -15,7 +15,8 @@ import {
   normaliseTermsText,
   parseArchivedTerms,
 } from '../lib/terms-versions';
-import { recordConsent } from '../lib/consent';
+import { ConsentProfileMissingError, recordConsent } from '../lib/consent';
+import { ARCHIVED_BYOK_ADDENDUM_VERSIONS } from '../lib/legal/byok-addendum-versions';
 
 /**
  * The archive of Terms versions, and the three promises it has to keep.
@@ -163,11 +164,16 @@ test.describe('every archived version has a text, a date and a digest', () => {
       .readdirSync(path.resolve(ROOT, TERMS_ARCHIVE_DIR))
       .map((name) => `${TERMS_ARCHIVE_DIR}/${name}`)
       .sort();
-    const listed = ARCHIVED_TERMS_VERSIONS.map((v) => v.file).sort();
+    // From v2.3.0 a version is archived in German beside the English file
+    // (section 1.4), and the German file is listed with it.
+    const listed = ARCHIVED_TERMS_VERSIONS.flatMap((v) => [v.file, ...(v.translations ?? []).map((t) => t.file)]).sort();
     expect(onDisk, `${TERMS_ARCHIVE_DIR} and lib/terms-versions.ts disagree about what is archived`).toEqual(listed);
   });
 
   test('each digest is the SHA-256 of the archived wording', () => {
+    for (const t of ARCHIVED_TERMS_VERSIONS.flatMap((v) => v.translations ?? [])) {
+      expect(sha256(normaliseTermsText(read(t.file))), `${t.file} no longer hashes to the digest recorded for it`).toBe(t.sha256);
+    }
     for (const entry of ARCHIVED_TERMS_VERSIONS) {
       expect(
         sha256(normaliseTermsText(read(entry.file))),
@@ -277,6 +283,15 @@ test.describe('the archived text is the one that was in force', () => {
       const items = blocks.reduce((n, b) => n + (b.kind === 'list' ? b.items.length : 1), 0);
       expect(items, `${entry.file} loses text between the file and the blocks`).toBe(chunks);
     }
+    for (const t of ARCHIVED_TERMS_VERSIONS.flatMap((v) => v.translations ?? [])) {
+      const blocks = parseArchivedTerms(read(t.file));
+      expect(blocks.length, `${t.file} parses to nothing`).toBeGreaterThan(20);
+      expect(blocks[0], `${t.file} does not begin with its title`).toEqual({
+        kind: 'heading',
+        level: 1,
+        text: 'Nutzungsbedingungen und Community-Richtlinien',
+      });
+    }
   });
 });
 
@@ -382,6 +397,33 @@ test.describe('a reader opening /terms finds the archive', () => {
       }
     }
   });
+
+  // Terms 1.3 (Fassung 1.1): the confirmation mail links to the wording of the
+  // accepted version at an address bound to version and language.
+  test('the addresses the confirmation mail links to answer with the archived wording and its digest', async ({ page }) => {
+    const pages: Array<{ url: string; file: string; sha256: string }> = [];
+    for (const entry of ARCHIVED_TERMS_VERSIONS) {
+      pages.push({ url: `/terms/versions/${entry.version}/en`, file: entry.file, sha256: entry.sha256 });
+      for (const t of entry.translations ?? []) pages.push({ url: `/terms/versions/${entry.version}/${t.lang}`, file: t.file, sha256: t.sha256 });
+    }
+    for (const v of ARCHIVED_BYOK_ADDENDUM_VERSIONS) {
+      for (const f of v.files) pages.push({ url: `/terms/byok-addendum/versions/${v.id}/${f.lang}`, file: f.file, sha256: f.sha256 });
+    }
+    for (const p of pages) {
+      const response = await page.goto(p.url, { waitUntil: 'domcontentloaded' });
+      expect(response?.status(), `${p.url} did not answer`).toBe(200);
+      await expect(page.locator('[data-archived-sha256]'), p.url).toHaveText(p.sha256);
+      const article = normalise(await page.locator('[data-archived-text]').innerText());
+      for (const block of parseArchivedTerms(read(p.file))) {
+        const wanted = block.kind === 'heading' ? block.text : block.kind === 'list' ? block.items.join(' ') : block.lines.join(' ');
+        expect(article, `${p.url} does not show: "${wanted.slice(0, 80)}…"`).toContain(normalise(wanted));
+      }
+    }
+    // The version in force is not called superseded on its own address.
+    await page.goto(`/terms/versions/${TERMS_VERSION}/en`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-archived-current]')).toBeVisible();
+    await expect(page.locator('main')).not.toContainText('This version is no longer current.');
+  });
 });
 
 test.describe('a consent record carries the wording it was given for', () => {
@@ -394,7 +436,19 @@ test.describe('a consent record carries the wording it was given for', () => {
     await db.collection('users').doc(uid).delete().catch(() => {});
   });
 
+  test('recordConsent writes nothing for an account without a profile (L-01)', async () => {
+    const erased = `${uid}-erased`;
+    await expect(
+      recordConsent({ uid: erased, email: `${erased}@cleancore-test.io`, source: 'tests/terms-version-archive.spec.ts', locale: 'en' }),
+    ).rejects.toThrow(ConsentProfileMissingError);
+    const db = adminDb();
+    expect((await db.collection('users').doc(erased).get()).exists, 'a consent recreated an erased profile').toBe(false);
+    expect((await db.collection('consent_events').where('uid', '==', erased).get()).size, 'an event was written without a profile').toBe(0);
+  });
+
   test('recordConsent stores the digest of the version it records', async () => {
+    // The account exists, as it does whenever a consent is recorded.
+    await adminDb().collection('users').doc(uid).set({ email: `${uid}@cleancore-test.io` });
     await recordConsent({
       uid,
       email: `${uid}@cleancore-test.io`,
@@ -443,4 +497,25 @@ test.describe('a consent record carries the wording it was given for', () => {
     expect(archivedTermsSha256('1999-01-01'), 'an unpublished version must not resolve to a digest').toBeNull();
     expect(archivedTermsSha256(null)).toBeNull();
   });
+});
+
+/**
+ * Terms v2.3.0 carried the provisional id 2026-10-23 until the release date
+ * (9 November 2026) became its id. That id was never published on main, but
+ * the draft address went round in reviews and test mails, so it moves to the
+ * published one permanently instead of answering 404.
+ */
+test('the draft address of v2.3.0 redirects permanently to the published version', async ({ request }) => {
+  expect(TERMS_VERSION).toBe('2026-11-09');
+  expect(archivedTerms('2026-10-23')).toBeNull();
+  for (const [from, to] of [
+    ['/terms/versions/2026-10-23', '/terms/versions/2026-11-09'],
+    ['/terms/versions/2026-10-23/de', '/terms/versions/2026-11-09/de'],
+    ['/terms/versions/2026-10-23/en', '/terms/versions/2026-11-09/en'],
+  ]) {
+    const res = await request.get(from, { maxRedirects: 0 });
+    expect(res.status(), from).toBe(308);
+    expect(new URL(res.headers()['location'], 'http://x').pathname, from).toBe(to);
+    expect((await request.get(to)).status(), to).toBe(200);
+  }
 });

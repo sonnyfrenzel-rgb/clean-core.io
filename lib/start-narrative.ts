@@ -36,6 +36,12 @@ export interface StartNarrativeInput {
   deployment: 'public' | 'private';
   targetProfile: AssessmentTarget;
   signal?: AbortSignal;
+  /**
+   * The first run after "Create project" (`hooks/useStartRun.ts`): sent as `trigger: 'start'`, which the
+   * proxy refuses while the main switch "Automatic AI steps" is off (legal review 06.11.2026, item 3).
+   * A target change (`components/workspace/TargetChange.tsx`) is a click and does not set it.
+   */
+  firstRun?: boolean;
 }
 
 export interface StartNarrative {
@@ -44,13 +50,13 @@ export interface StartNarrative {
 }
 
 export async function writeStartNarrative(input: StartNarrativeInput): Promise<StartNarrative> {
-  const { projectId, source, fileName, deployment, targetProfile, signal } = input;
+  const { projectId, source, fileName, deployment, targetProfile, signal, firstRun = false } = input;
   const evidenceReport = await previewRunEvidence(projectId, { source, fileName, deployment, targetProfile });
   if (signal?.aborted) throw new DOMException('The wait for the narrative ended.', 'AbortError');
   // The run about to be made, scored by this engine's rule.
   const routeReport = routeExtensibility(evidenceReport, deployment, APP_VERSION);
   const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport, code: source });
-  const generated = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, 'analyze', signal);
+  const generated = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, 'analyze', signal, firstRun ? { startRun: true } : undefined);
   const cleaned = generated.text.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
   const parsed: unknown = JSON.parse(cleaned);
   const obj = Array.isArray(parsed) ? parsed[0] : parsed;

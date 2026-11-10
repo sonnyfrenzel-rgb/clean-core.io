@@ -12,10 +12,24 @@ import { collection, query, where, onSnapshot, orderBy, serverTimestamp, getDocs
 import { createWithinCeiling } from '@/lib/write-ceiling';
 import { Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, FileText, FileCode2, Download, Copy, Eye, BookOpen, ShieldAlert, Clock, HelpCircle, UserPlus, Play } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quota-rule';
+import ContentBlockNotice from '@/components/ContentBlockNotice';
+import {
+  OWN_KEY_ACTION,
+  OWN_KEY_HREF,
+  QUOTA_NAME,
+  quotaExhausted,
+  quotaSpentSentence,
+  runsAreSelfFunded,
+  runsLeftLabel,
+} from '@/lib/run-quota-rule';
+import { signInLinkFor } from '@/lib/return-path';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
+import { aiAuthorshipFactsOf, dashboardDeliverableAuthorship } from '@/lib/ai-authorship';
+import { aiMarkingStatement, withAiMarking } from '@/lib/ai-marking';
+import { isEngineDocumentation } from '@/lib/process-documentation';
+import { APP_VERSION } from '@/lib/version';
 import { workflowSteps, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
 import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
 import { projectContinueHref, projectOpenHref, projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
@@ -41,6 +55,7 @@ import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/c
 import CcTag from '@/components/cc/Tag';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
+import { withdrawalReceiptPendingMessage } from '@/lib/messages/model-consent';
 
 /**
  * "My workspace" — the dashboard every account sees (block D, D.22a).
@@ -160,8 +175,9 @@ export default function Dashboard() {
             setUser(auth.currentUser);
             setLoadingAuth(false);
           } else {
-            console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to /');
-            router.push('/');
+            // To the sign-in, with the way back here (roadmap 3.0.21 (1)) — not the bare landing page.
+            console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to sign-in');
+            router.push(signInLinkFor('/dashboard'));
           }
         }, 3000);
       } else {
@@ -359,6 +375,19 @@ export default function Dashboard() {
     );
   }
 
+  // B8 (legal review 06.11.2026): a withdrawal received and effective whose
+  // receipt is still queued — the account is blocked and is deleted after the
+  // receipt goes out. Said as it is, never as a suspension and never "try again".
+  const withdrawal = (profile as { withdrawal?: { state?: unknown; receivedAt?: unknown } } | null)?.withdrawal;
+  if (withdrawal?.state === 'receipt-pending' && typeof withdrawal.receivedAt === 'string') {
+    return (
+      <div className="cc mx-auto flex max-w-2xl flex-col items-center px-4 pt-16 text-center md:pt-24" data-dashboard-withdrawal-pending="">
+        <p className="m-0 mb-3 cc-text-body text-cc-ink">{withdrawalReceiptPendingMessage(withdrawal.receivedAt, 'en')}</p>
+        <p lang="de" className="m-0 cc-text-meta text-cc-ink-muted">{withdrawalReceiptPendingMessage(withdrawal.receivedAt, 'de')}</p>
+      </div>
+    );
+  }
+
   // A suspended account is the only state an administrator can still put someone
   // in, and it is not something the person can undo themselves.
   if (profile?.status === 'suspended' || profile?.status === 'deleted') {
@@ -443,20 +472,23 @@ export default function Dashboard() {
   const showYourTurn = !loadingProjects && projects.length === 0;
 
   // What a new run costs this account, said inside the dialog that starts one.
+  // The quota's one name — "analysis runs", counted as left (roadmap 3.0.21 (2)).
   const quotaStrip = exhausted ? (
-    <CcMessageStrip state="warning" headline="Quota exceeded.">
-      You have used all <strong>{limitCount}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
+    <CcMessageStrip
+      state="warning"
+      headline="Limit reached."
+      actions={<CcLinkButton href={OWN_KEY_HREF} variant="ghost">{OWN_KEY_ACTION}</CcLinkButton>}
+    >
+      {quotaSpentSentence(limitCount)}
     </CcMessageStrip>
   ) : (
-    <CcMessageStrip state="information" headline="Free balance.">
+    <CcMessageStrip state="information" headline={`${QUOTA_NAME}.`}>
       {runsAreSelfFunded(profile) ? (
         profile?.tier === 'enterprise'
-          ? 'Unlimited enterprise transformations remaining.'
-          : 'Your own Gemini key — runs are not counted against the free quota.'
+          ? 'Unlimited analysis runs.'
+          : 'Your own model key — runs are not counted against the free analysis runs.'
       ) : (
-        <>
-          You have <strong>{runsRemaining(profile)}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
-        </>
+        <>{runsLeftLabel(profile)}.</>
       )}
     </CcMessageStrip>
   );
@@ -575,17 +607,19 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <ContentBlockNotice profile={profile} />
+
         {exhausted ? (
           <CcMessageStrip
             state="warning"
             headline="Limit reached."
             actions={
-              <CcButton variant="ghost" onClick={() => router.push('/settings')}>
-                Go to settings
-              </CcButton>
+              <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                {OWN_KEY_ACTION}
+              </CcLinkButton>
             }
           >
-            You&apos;ve used your {limitCount} free transformations. Add your own Gemini API key in settings for unlimited runs — at no cost.
+            {quotaSpentSentence(limitCount)}
           </CcMessageStrip>
         ) : null}
 
@@ -595,12 +629,17 @@ export default function Dashboard() {
             headline="Limit reached."
             announce
             actions={
-              <CcButton variant="ghost" onClick={() => setQuotaBlocked(false)}>
-                Close
-              </CcButton>
+              <>
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+                <CcButton variant="ghost" onClick={() => setQuotaBlocked(false)}>
+                  Close
+                </CcButton>
+              </>
             }
           >
-            You&apos;ve used all {limitCount} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
+            {quotaSpentSentence(limitCount)}
           </CcMessageStrip>
         ) : null}
 
@@ -796,9 +835,9 @@ export default function Dashboard() {
           <div>
             <h3 className="m-0 cc-text-h3 text-cc-ink">Free Community Edition limits</h3>
             <p className="mt-1 mb-0">
-              Free accounts are limited to <strong>{limitCount} transformations</strong>. For unlimited
-              transformations, configure your own Gemini API key in{' '}
-              <a href="/settings" className={LINK}>Profile Settings</a> (BYOK mode) at no extra cost.
+              Free accounts have <strong>{limitCount} free analysis runs</strong>. For unlimited runs, add your
+              own model key in{' '}
+              <a href={OWN_KEY_HREF} className={LINK}>Settings</a> at no extra cost.
             </p>
           </div>
           <div>
@@ -917,6 +956,19 @@ function ProjectDeliverables({
     stale: item.isExport ? stale.sourceChanged : Boolean(STALE_BY_ID[item.id]),
   }));
 
+  // 3.0.21 (T08, AI Act Art. 50(2)): a downloaded deliverable a model wrote or co-wrote carries the statement as its
+  // header comment, in the file's own syntax (`lib/ai-marking.ts`); the source, the test status and an engine
+  // documentation without business names carry none. The viewer shows the content as stored.
+  const aiFacts = aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation(project.documentation) });
+  const markedForDownload = (item: (typeof allItems)[number], fileName: string): string => {
+    if (item.isExport || typeof item.content !== 'string') return item.content;
+    const who = dashboardDeliverableAuthorship(item.id, item.content, aiFacts, {
+      testsAreSuite: Boolean(project.testSuite?.code),
+      documentationFromEngine: isEngineDocumentation(project.documentation),
+    });
+    return who ? withAiMarking(fileName, item.content, aiMarkingStatement(who, APP_VERSION)) : item.content;
+  };
+
   return (
     <div id={`project-deliverables-${project.id}`} className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
       {allItems.length === 0 ? (
@@ -949,7 +1001,10 @@ function ProjectDeliverables({
                 <CcButton
                   variant="ghost"
                   icon={<Download size={16} aria-hidden={true} />}
-                  onClick={() => void onDownload(item.content, `${project.name.replace(/\s+/g, '_')}_${item.id}${item.stale ? '_STALE' : ''}${item.ext}`, item.type === 'html' ? 'text/html' : item.type === 'code' ? 'text/javascript' : 'text/plain')}
+                  onClick={() => {
+                    const fileName = `${project.name.replace(/\s+/g, '_')}_${item.id}${item.stale ? '_STALE' : ''}${item.ext}`;
+                    void onDownload(markedForDownload(item, fileName), fileName, item.type === 'html' ? 'text/html' : item.type === 'code' ? 'text/javascript' : 'text/plain');
+                  }}
                   aria-label={`Download ${item.title}${item.stale ? ' (stale)' : ''}`}
                 >
                   {item.type === 'code' ? 'Code' : 'Download'}

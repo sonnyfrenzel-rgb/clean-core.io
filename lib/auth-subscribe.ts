@@ -1,4 +1,5 @@
 import type { Auth, User } from 'firebase/auth';
+import { hasSignedInHint, SIGNED_IN_HINT_EVENT, SIGNED_IN_HINT_KEY } from './auth-hint';
 
 /**
  * `onAuthStateChanged` for components that only need to know who is signed in
@@ -19,7 +20,16 @@ import type { Auth, User } from 'firebase/auth';
  * Returns the unsubscribe function; calling it before the SDK has arrived
  * cancels the subscription that would otherwise follow.
  *
- * `load` is the seam tests/auth-subscribe-guard.spec.ts uses to make the load fail; callers never pass it.
+ * **Signed out, nothing is loaded at all** (privacy policy section 7, roadmap
+ * 3.0.21): without the first-party signed-in hint of lib/auth-hint.ts the
+ * callback hears `null` at once and the SDK stays where it is, because
+ * initialising Auth contacts Google on mobile browsers and Safari even for a
+ * visitor nobody ever signed in. The subscription then waits for the hint —
+ * set by a sign-in in this page's dialog or in another tab — and only then
+ * loads the SDK and asks Firebase. With the hint, the SDK loads as before.
+ *
+ * `load` and `signedInHint` are the seams tests/auth-subscribe-guard.spec.ts
+ * uses; callers never pass them.
  */
 export interface AuthSdk {
   getAuth: () => Auth | null;
@@ -32,24 +42,56 @@ const loadAuthSdk = (): Promise<AuthSdk> =>
     import(/* webpackExports: ["onAuthStateChanged"] */ 'firebase/auth'),
   ]).then(([app, sdk]) => ({ getAuth: app.getAuth, onAuthStateChanged: sdk.onAuthStateChanged }));
 
-export function subscribeToAuth(callback: (user: User | null) => void, load: () => Promise<AuthSdk> = loadAuthSdk): () => void {
+export function subscribeToAuth(
+  callback: (user: User | null) => void,
+  load: () => Promise<AuthSdk> = loadAuthSdk,
+  signedInHint: () => boolean = hasSignedInHint,
+): () => void {
   let cancelled = false;
+  let started = false;
   let unsubscribe: (() => void) | undefined;
-  void load()
-    .then(({ getAuth, onAuthStateChanged }) => {
-      if (cancelled) return;
-      const auth = getAuth();
-      if (!auth) return;
-      unsubscribe = onAuthStateChanged(auth, callback);
-    })
-    .catch(() => {
-      // A chunk that does not load (a deploy replaced it, the network dropped) must not leave the header in its
-      // placeholder for good: the controls fall back to signed out, whose link opens the sign-in dialog — which
-      // loads the SDK again.
-      if (!cancelled) callback(null);
-    });
+  const start = () => {
+    if (started || cancelled) return;
+    started = true;
+    stopWaiting();
+    void load()
+      .then(({ getAuth, onAuthStateChanged }) => {
+        if (cancelled) return;
+        const auth = getAuth();
+        if (!auth) return;
+        unsubscribe = onAuthStateChanged(auth, callback);
+      })
+      .catch(() => {
+        // A chunk that does not load (a deploy replaced it, the network dropped) must not leave the header in its
+        // placeholder for good: the controls fall back to signed out, whose link opens the sign-in dialog — which
+        // loads the SDK again.
+        if (!cancelled) callback(null);
+      });
+  };
+  // A sign-in on this page (the dialog) or in another tab sets the hint; only then is there anyone to ask about.
+  const onHint = (event: Event) => {
+    if (event.type === 'storage' && (event as StorageEvent).key !== SIGNED_IN_HINT_KEY) return;
+    if (signedInHint()) start();
+  };
+  const listening = typeof window !== 'undefined';
+  function stopWaiting() {
+    if (!listening) return;
+    window.removeEventListener(SIGNED_IN_HINT_EVENT, onHint);
+    window.removeEventListener('storage', onHint);
+  }
+
+  if (signedInHint()) {
+    start();
+  } else {
+    callback(null);
+    if (listening) {
+      window.addEventListener(SIGNED_IN_HINT_EVENT, onHint);
+      window.addEventListener('storage', onHint);
+    }
+  }
   return () => {
     cancelled = true;
+    stopWaiting();
     unsubscribe?.();
   };
 }

@@ -18,10 +18,12 @@ import { businessLayerFor, engineDocumentationOf, fixtureSource, FIXTURE_FILE } 
  *
  *   - the process description is built and stored when the owner opens the
  *     stage: engine only, no model call, no click;
- *   - with a model available and nothing current on record, the business
- *     layer is written once — exactly one model call (a fixture answer here,
- *     never a real one), with the "Writing … (model)" state and its cost on
- *     screen; opening the stage again calls nothing;
+ *   - the business layer is never written on opening (legal review
+ *     06.11.2026, 3.0.21, item 1): with a model available, opening calls
+ *     nothing; "Generate draft (sends code to Google)" writes it — exactly one
+ *     model call (a fixture answer here, never a real one), with the
+ *     "Writing … (model)" state and its cost on screen; opening the stage
+ *     again calls nothing;
  *   - without a model: no call, and the reason in one line with Settings;
  *   - a reader never starts anything (the effects are the owner's);
  *   - nothing scrolls sideways on a phone.
@@ -33,19 +35,17 @@ const SOURCE = fixtureSource();
 const LAYER = businessLayerFor(engineDocumentationOf(SOURCE));
 const SHOTS = process.env.PROCDOC_SHOTS || '';
 
-test('the automatic starts belong to the owner, and the business layer waits for a known model', () => {
+test('the automatic start is the engine description only, the owner\'s; the business layer waits for its button', () => {
   const page = read('app/(app)/project/[projectId]/documentation/page.tsx');
-  const docEffect = page.slice(page.indexOf('const autoDocFor = useRef'), page.indexOf('const businessAutoReady'));
+  const docEffect = page.slice(page.indexOf('const autoDocFor = useRef'), page.indexOf('// A generation this page started'));
   expect(docEffect).toMatch(/if \(!project \|\| !isOwner/);
   expect(docEffect).toContain("stored.kind === 'none'");
   // A stored legacy blueprint is never replaced by itself.
   expect(docEffect).not.toContain("'other'");
-  const ready = page.slice(page.indexOf('const businessAutoReady'), page.indexOf('// A generation this page started'));
-  for (const condition of ['isOwner', 'modelAvailability.known', "modelAvailability.enabled('documentation')", '!businessDocumentation.trim()', 'engineDoc.sourceSha256 === signedDigest']) {
-    expect(ready, `the automatic business layer does not wait for ${condition}`).toContain(condition);
-  }
-  // Once per documentation: a failure is not retried by itself.
-  expect(ready).toContain('autoBusinessFor.current === key');
+  // Legal review 06.11.2026, item 1: no effect writes the business layer.
+  expect(page).not.toContain('businessAutoReady');
+  expect(page).not.toContain('autoBusinessFor');
+  expect(page).toContain('onClick={generateBusinessDocumentation}');
   // No double call: the page's own generation and another tab's lease.
   expect(page).toContain('businessLayerInFlight(leaseId)');
   expect(page).toContain('claimBusinessLayerLease(leaseId, tab)');
@@ -103,7 +103,7 @@ test.describe('the Documentation stage on opening', () => {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(on
-        ? { stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community' }
+        ? { stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true, naming: true, statements: true }, keyAvailable: true, keySource: 'community', provider: 'gemini', autoSteps: true }
         : { stages: {}, keyAvailable: false, keySource: null }),
     }));
   }
@@ -121,7 +121,7 @@ test.describe('the Documentation stage on opening', () => {
     });
   }
 
-  test('with a model: the document is stored at once, the business layer written with one call, and never again', async ({ page }) => {
+  test('with a model: the document is stored at once, the business layer only on its button, with one call, and never again', async ({ page }) => {
     test.setTimeout(300 * 1000);
     const calls = { n: 0 };
     await model(page, true);
@@ -129,6 +129,14 @@ test.describe('the Documentation stage on opening', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${ON}/documentation`, { waitUntil: 'domcontentloaded' });
+
+    // Opening calls nothing (legal review 06.11.2026, item 1): the button says where the code goes.
+    const button = page.locator('[data-generate-business-layer]');
+    await expect(button).toBeVisible({ timeout: 120000 });
+    await expect(button).toHaveText('Generate draft (sends code to Google)');
+    await page.waitForTimeout(3000);
+    expect(calls.n, 'the business layer was asked for on opening').toBe(0);
+    await button.click();
 
     // The writing state says what it is and what it costs.
     const writing = page.locator('[data-business-layer-writing]');

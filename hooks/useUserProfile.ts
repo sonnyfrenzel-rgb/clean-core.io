@@ -3,6 +3,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/fires
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { User } from 'firebase/auth';
 import { COMMUNITY_QUOTA } from '@/lib/constants';
+import { useAuthWanted } from './useAuthWanted';
 
 export interface UserProfile {
   firstName: string;
@@ -38,6 +39,16 @@ export interface UserProfile {
    * with the key; absent on a key saved before 3.0.15, which is a Gemini key.
    */
   byokProvider?: string;
+  /**
+   * 3.0.21 — server-written with the key and by a passed key test: an own key
+   * counts as configured only once it passed a test (`ownKeyCounts` in
+   * `lib/run-quota-rule.ts`).
+   */
+  byokTestedAt?: unknown;
+  /** 3.0.21 — "Automatic steps" switched on for the stored own key (owner decision B6). Server-written. */
+  byokAutoSteps?: boolean;
+  /** 3.0.21 — the operator blocked the key after the agreement was ended in text form. Server-written. */
+  byokBlocked?: boolean;
   /**
    * Which of the five model stages this account has switched on (roadmap 1.2).
    * Server-written, like `transformationsUsed`: only `POST /api/model-stages`
@@ -94,6 +105,8 @@ export interface FinishRegistrationInput {
   /** Both must be true for a consent record to be written. */
   acceptedTerms: boolean;
   acceptedPrivacy: boolean;
+  /** The contract language the ticks accepted (Terms 1.4, T02); English when absent. */
+  termsLanguage?: 'en' | 'de';
 }
 
 /**
@@ -120,6 +133,7 @@ export async function finishRegistration(user: User, input: FinishRegistrationIn
       motivation: input.motivation || '',
       acceptedTerms: input.acceptedTerms === true,
       acceptedPrivacy: input.acceptedPrivacy === true,
+      termsLanguage: input.termsLanguage === 'de' ? 'de' : 'en',
       locale: typeof navigator !== 'undefined' ? navigator.language : null,
     }),
   });
@@ -129,18 +143,59 @@ export async function finishRegistration(user: User, input: FinishRegistrationIn
   }
 }
 
+/**
+ * The uids this page load has already reported (`POST /api/account/signed-in`).
+ * Module-level, because every component using this hook subscribes on its own.
+ */
+const reportedSignIns = new Set<string>();
+
+/** The profile says a withdrawal is effective and its receipt still pending (`lib/withdrawal-queue.ts`). */
+function withdrawalReceiptPending(data: unknown): boolean {
+  const w = data && typeof data === 'object' ? (data as { withdrawal?: { state?: unknown } }).withdrawal : undefined;
+  return w?.state === 'receipt-pending';
+}
+
+/**
+ * Asks the server to clear the profile picture address from the account's
+ * Firebase Authentication record (`lib/profile-picture.ts`). Only for an
+ * account signed in with Google, once per page load. It looks at which
+ * provider signed in, never at the picture; best effort, nothing waits on it.
+ */
+function reportGoogleSignIn(user: User, withdrawalPending = false): void {
+  if (reportedSignIns.has(user.uid)) return;
+  // Legal review 06.11.2026 (B8): with a withdrawal receipt pending, every provider reports — the route tries it again.
+  if (!withdrawalPending && !user.providerData.some((p) => p.providerId === 'google.com')) return;
+  reportedSignIns.add(user.uid);
+  void user
+    .getIdToken()
+    .then((token) => fetch('/api/account/signed-in', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }))
+    .catch(() => {
+      // Asked again at the next page load.
+      reportedSignIns.delete(user.uid);
+    });
+}
+
 export function useUserProfile() {
-  const auth = getAuth();
-  const db = getDb();
+  // Privacy policy section 7: on a public page of the shell, a visitor without
+  // the signed-in hint gets no Auth SDK at all (hooks/useAuthWanted.ts) — the
+  // profile is simply absent, as it is for anyone signed out. `undefined` is
+  // the hydrating render of a public page: still loading, nothing started.
+  const authWanted = useAuthWanted();
+  const auth = authWanted ? getAuth() : null;
+  const db = authWanted ? getDb() : null;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authWanted === undefined) return;
     if (!auth || !db) {
       setLoading(false);
       return;
     }
+    // A public page that reported "signed out" without asking and then saw the
+    // hint arrive (a sign-in in another tab) asks now, and is loading again.
+    setLoading(true);
     // The profile listener from the previous signed-in user, so it can be torn
     // down when the user changes.
     //
@@ -177,6 +232,10 @@ export function useUserProfile() {
         return;
       }
 
+      // Privacy policy section 2, Variante B: after a Google sign-in the server
+      // removes the picture address Google sent from the Auth record.
+      reportGoogleSignIn(user);
+
       const userDocRef = doc(db, 'users', user.uid);
       
       // F-06: Admin/tier is determined solely by the Firestore document
@@ -192,6 +251,7 @@ export function useUserProfile() {
           // (firestore.rules) and never change it, so a limit the operator raised is shown as raised.
           setProfile(docSnap.data() as UserProfile);
           setLoading(false);
+          if (withdrawalReceiptPending(docSnap.data())) reportGoogleSignIn(user, true);
         }
       }).catch((err) => {
         console.error('Immediate getDoc profile fetch error:', err);
@@ -222,7 +282,7 @@ export function useUserProfile() {
       releaseProfile();
       unsubscribeAuth();
     };
-  }, [auth, db]);
+  }, [authWanted, auth, db]);
 
   /**
    * Creates the profile and finishes registration in one step.
@@ -244,6 +304,7 @@ export function useUserProfile() {
     lastName: string,
     motivation?: string,
     authMethod: 'google' | 'password' = 'google',
+    termsLanguage: 'en' | 'de' = 'en',
   ) => {
     // F-06: No email-based privilege escalation. All new users start as 'pilot' / 'pending'.
     // Admin status is granted server-side via the set-admin-claim API.
@@ -270,7 +331,7 @@ export function useUserProfile() {
     // retry into the same wall. Skip the write when the document is already
     // there and go straight on to the activation call.
     try {
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = doc(db ?? getDb(), 'users', user.uid);
       const existing = await getDoc(userDocRef);
       if (!existing.exists()) {
         await setDoc(userDocRef, newProfile);
@@ -281,7 +342,7 @@ export function useUserProfile() {
 
     try {
       // We also store a registration request
-      const regRef = doc(db, 'registration_requests', user.uid);
+      const regRef = doc(db ?? getDb(), 'registration_requests', user.uid);
       const existingReq = await getDoc(regRef);
       if (!existingReq.exists()) {
         await setDoc(regRef, {
@@ -302,6 +363,7 @@ export function useUserProfile() {
       motivation: motivation || '',
       acceptedTerms: true,
       acceptedPrivacy: true,
+      termsLanguage,
     });
 
     return newProfile;
@@ -310,7 +372,7 @@ export function useUserProfile() {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!auth || !auth.currentUser) return;
     try {
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      const userDocRef = doc(db ?? getDb(), 'users', auth.currentUser.uid);
       await setDoc(userDocRef, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);

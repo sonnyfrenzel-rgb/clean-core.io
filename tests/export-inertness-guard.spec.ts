@@ -44,7 +44,7 @@ const active = (where: string) => `<img src=x onerror="window.${FLAG} = '${where
 const attributeBreak = `" onmouseover="window.${FLAG} = 'attribute'" data-x="`;
 
 const SEEDED_FIELDS = [
-  'projectTitle', 'summary', 'asIs', 'targetProcess', 'rationale',
+  'projectTitle', 'summary', 'asIs',
   'gapTitle', 'gapStrategy', 'gapRationale',
   'keepClean', 'decommission', 'cloudReady', 'nextStep', 'valueDriver',
   'actionPlan', 'checkpointName', 'checkpointQuestion', 'checkpointEvaluation',
@@ -53,6 +53,14 @@ const SEEDED_FIELDS = [
   'inventoryObject', 'inventoryModule', 'couplingTable', 'couplingAdvice',
   'worklistTitle', 'worklistLocation', 'worklistAdvice',
 ] as const;
+
+/**
+ * Fields a stored analysis still carries but the export no longer prints: the
+ * model's "Standard Fit" left Analyze and both exports (owner decision
+ * 22.10.2026, fit-to-standard option (b)). They stay in the fixture because a
+ * stored analysis still parses with them, and the guard checks they stay out.
+ */
+const RETIRED_TEXT = ['J60', 'Fit rationale'] as const;
 
 const analysisFixture = {
   projectTitle: `Report title ${active('projectTitle')}`,
@@ -256,6 +264,8 @@ test.describe('the analysis export is a document, not a program', () => {
     // fields would also pass every check above.
     const missing = SEEDED_FIELDS.filter((f) => !audit.text.includes(`window.${FLAG} = '${f}'`));
     expect(missing, `fields that vanished from the document instead of being escaped: ${missing.join(', ')}`).toEqual([]);
+    const retiredShown = RETIRED_TEXT.filter((t) => html.includes(t));
+    expect(retiredShown, `the retired Standard Fit reached the export: ${retiredShown.join(', ')}`).toEqual([]);
 
     await reader.close();
     fs.unlinkSync(produced);

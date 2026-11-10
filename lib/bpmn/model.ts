@@ -101,7 +101,7 @@ export const ACTIVITY_TAGS: ReadonlySet<BpmnTag> = new Set<BpmnTag>([
 /** Above this many flow nodes, no further routine is expanded (decision 6). */
 export const MAX_NODES = 5000;
 
-export type ExportFallback = 'recursion' | 'expansion-limit' | 'unattached-handler';
+export type ExportFallback = 'recursion' | 'expansion-limit' | 'unattached-handler' | 'drawn-once';
 
 export interface ExportNode {
   id: string;
@@ -400,11 +400,28 @@ export interface ExportModelOptions {
    * Default: on exactly when `labels` are given.
    */
   chainEntries?: boolean;
+  /**
+   * The business level (roadmap 3.0.21, from engine 3.0.21 — `ENGINE_READS_3021_FROM`; owner report of 22.10.2026:
+   * a 937-line class-based program became 1,680 shapes and 670 gateways). Two things change, and nothing else:
+   *
+   *   - **a routine is drawn once** (decision 6 amended): its first call site opens its plane, every later one is a
+   *     call activity to it (`fallback: 'drawn-once'`) instead of a copy of the whole plane;
+   *   - **a run of guard checks is one step** (`collapseGuardChains`): two or more decisions in a row, each with one
+   *     arm that leaves the routine early (an early or error end, perhaps after a step such as a log line or a
+   *     message) and one that goes on to the next, become a business-rule task "N checks" with every guard's line,
+   *     a decision "all checks passed?" and one early end — the granularity of the step list.
+   *
+   * Default: off — the reading of every engine before 3.0.21.
+   */
+  businessLevel?: boolean;
 }
 
 export function buildExportModel(skeleton: ProcessSkeleton, options: ExportModelOptions = {}): ExportModel {
-  return new ModelBuilder(skeleton, options.labels ?? null, options.chainEntries ?? !!options.labels).build();
+  return new ModelBuilder(skeleton, options.labels ?? null, options.chainEntries ?? !!options.labels, options.businessLevel ?? false).build();
 }
+
+/** At least this many guard checks in a row are drawn as one step at the business level. */
+export const GUARD_CHAIN_MIN = 2;
 
 /** A table with its business name when the glossary knows it: "Purchase requisition (EBAN)". */
 export function storeDisplayName(table: string): string {
@@ -428,7 +445,7 @@ class ModelBuilder {
   /** Skeleton edges of the run order between two report event blocks (roadmap 3.0.7) — drawn by `chainEntries`. */
   private runOrder: SkeletonEdge[] = [];
 
-  constructor(private skeleton: ProcessSkeleton, private labels: PlainLabels | null, private chain = false) {}
+  constructor(private skeleton: ProcessSkeleton, private labels: PlainLabels | null, private chain = false, private businessLevel = false) {}
 
   build(): ExportModel {
     for (const region of this.skeleton.regions) this.regionByKey.set(region.key, region);
@@ -602,6 +619,12 @@ class ModelBuilder {
         node.fallback = 'expansion-limit';
         continue;
       }
+      // Decision 6, amended at the business level (3.0.21): a routine already drawn is a call to it, not a copy.
+      if (this.businessLevel && this.instantiated.has(sub.key) && /^(?:form|method):/.test(sub.key)) {
+        node.tag = 'callActivity';
+        node.fallback = 'drawn-once';
+        continue;
+      }
       // Decision 6: the first instance of a routine keeps the skeleton's ids.
       const childPrefix = this.instantiated.has(sub.key) ? `${id}__` : '';
       this.instantiated.add(sub.key);
@@ -640,6 +663,8 @@ class ModelBuilder {
       to.incoming.push(flow.id);
     }
 
+    if (this.businessLevel) this.collapseGuardChains(into, band, local);
+
     for (const node of local.values()) {
       // Decision 3.
       if (node.tag === 'boundaryEvent' && !node.attachedTo) {
@@ -651,6 +676,146 @@ class ModelBuilder {
     // After the defaults, so a bypass can never be read as a gateway's default
     // arm — it carries a condition of its own and is not one.
     for (const node of local.values()) this.bypassGuard(node, into);
+  }
+
+  /**
+   * The business level (3.0.21): a run of guard checks becomes one step — see `ExportModelOptions.businessLevel`.
+   *
+   * A guard is a decision of the skeleton (`gateway`, not a loop) with exactly two ways out, one of which runs
+   * through plain steps only (no decision, no plane, nothing else leading in) to an early or error end; the other
+   * leads on. Guards follow one another when the way on of one is the only way into the next. Such a run of
+   * `GUARD_CHAIN_MIN` or more is replaced by a business-rule task (the first guard's node, every guard's line in its
+   * trace), a decision on whether every check passed, and the first of the early ends; the steps on the leaving
+   * arms (a log line, a message) are not drawn, their tables go to the task. Nothing is invented: the conditions on
+   * the two new ways out are the guards' own, joined.
+   */
+  private collapseGuardChains(into: ExportContainer, band: ExportBand, local: Map<string, ExportNode>): void {
+    const byId = new Map(into.nodes.map((n) => [n.id, n]));
+    const flowById = new Map(into.flows.map((f) => [f.id, f]));
+    const outOf = (n: ExportNode) => n.outgoing.map((id) => flowById.get(id)!).filter(Boolean);
+    const isEnd = (n: ExportNode) => (isEarlyEnd(n.source) || n.source.kind === 'end-error') && n.outgoing.length === 0;
+    const plainStep = (n: ExportNode) => ACTIVITY_TAGS.has(n.tag) && !n.inner && n.tag !== 'subProcess' && !n.attachedTo;
+    /** The leaving arm of a guard: the nodes it runs through and its end, or null. */
+    const leaving = (f: ExportFlow): { path: ExportNode[]; end: ExportNode } | null => {
+      const path: ExportNode[] = [];
+      let at = byId.get(f.targetId);
+      for (let i = 0; at && i < 4; i++) {
+        if (at.incoming.length !== 1) return null;
+        if (isEnd(at)) return { path, end: at };
+        if (!plainStep(at) || at.outgoing.length !== 1) return null;
+        path.push(at);
+        at = byId.get(flowById.get(at.outgoing[0])?.targetId ?? '');
+      }
+      return null;
+    };
+    const guardOfNode = (g: ExportNode): { leave: ExportFlow; on: ExportFlow; path: ExportNode[]; end: ExportNode } | null => {
+      if (g.tag !== 'exclusiveGateway' || g.source.kind !== 'gateway' || g.attachedTo) return null;
+      const outs = outOf(g);
+      if (outs.length !== 2 || outs.some((f) => f.back)) return null;
+      for (const [a, b] of [[outs[0], outs[1]], [outs[1], outs[0]]]) {
+        const arm = leaving(a);
+        if (arm && !leaving(b)) return { leave: a, on: b, ...arm };
+      }
+      return null;
+    };
+    const done = new Set<string>();
+    for (const first of [...into.nodes]) {
+      if (done.has(first.id) || !byId.has(first.id)) continue;
+      const head = guardOfNode(first);
+      if (!head) continue;
+      // Not the middle of a run: the way in is not the way on of another guard.
+      const ins = first.incoming.map((id) => flowById.get(id)!).filter(Boolean);
+      if (ins.some((f) => { const g = byId.get(f.sourceId); const gg = g && guardOfNode(g); return !!gg && gg.on.id === f.id; })) continue;
+      const chain = [{ node: first, ...head }];
+      for (;;) {
+        const last = chain[chain.length - 1];
+        const next = byId.get(last.on.targetId);
+        if (!next || next.incoming.length !== 1 || chain.some((c) => c.node.id === next.id)) break;
+        const g = guardOfNode(next);
+        if (!g) break;
+        chain.push({ node: next, ...g });
+      }
+      for (const c of chain) done.add(c.node.id);
+      if (chain.length < GUARD_CHAIN_MIN) continue;
+
+      const removed = new Set<string>();
+      for (const c of chain) {
+        removed.add(c.node.id);
+        for (const p of c.path) removed.add(p.id);
+        if (c !== chain[0]) removed.add(c.end.id);
+      }
+      const keptEnd = chain[0].end;
+      const tail = chain[chain.length - 1];
+      const lines = chain.map((c) => c.node.source.anchor?.lineStart).filter((l): l is number => typeof l === 'number');
+      const leaveConditions = chain.map((c) => c.leave.condition).filter(Boolean);
+      const anchorOf = (n: ExportNode) => n.source.anchor;
+      const from = anchorOf(first);
+      const to = anchorOf(tail.node);
+      const span = from && to ? { ...from, lineEnd: Math.max(from.lineEnd, to.lineEnd, ...chain.flatMap((c) => c.path.map((p) => p.source.anchor?.lineEnd ?? 0))) } : from;
+      const detail = { ...(first.source.detail ?? {}), collapsedGuards: chain.length, guardLines: lines.map(String) };
+      const technical = `${chain.length} checks (${lines.map((l) => `L${l}`).join(', ')})`;
+      const task: ExportNode = {
+        id: `${first.id}__checks`,
+        tag: 'businessRuleTask',
+        name: this.labels ? `${chain.length} checks` : technical,
+        technicalName: technical,
+        source: { ...first.source, kind: 'business-rule-task', label: technical, anchor: span ?? null, detail },
+        error: false,
+        incoming: [],
+        outgoing: [],
+        reads: [...new Set(chain.flatMap((c) => c.path.flatMap((p) => p.reads)))],
+        writes: [...new Set(chain.flatMap((c) => c.path.flatMap((p) => p.writes)))],
+        band: first.band,
+        anchorLabel: lines.map((l) => `L${l}`).join(', '),
+      };
+      const join: ExportNode = {
+        id: `${first.id}__passed`,
+        tag: 'exclusiveGateway',
+        name: this.labels ? 'All checks passed?' : `${chain.length} checks passed`,
+        technicalName: `${chain.length} checks passed`,
+        source: { ...tail.node.source, label: `${chain.length} checks passed`, detail: { ...(tail.node.source.detail ?? {}), collapsedGuards: chain.length } },
+        error: false,
+        incoming: [],
+        outgoing: [],
+        reads: [],
+        writes: [],
+        band: first.band,
+        anchorLabel: lines.map((l) => `L${l}`).join(', '),
+      };
+      // The flows: every way into the first guard now goes into the task; the task into the decision; the decision
+      // on (the last guard's way on) and out (to the kept early end), with the guards' own conditions.
+      const keepFlows = into.flows.filter((f) => !removed.has(f.sourceId) && (!removed.has(f.targetId) || f.targetId === first.id) && f.targetId !== keptEnd.id);
+      for (const f of keepFlows) if (f.targetId === first.id) f.targetId = task.id;
+      const mk = (id: string, src: ExportNode, dst: ExportNode, condition: string, kind: SkeletonEdge['kind']): ExportFlow => {
+        const edge: SkeletonEdge = { from: src.source.id, to: dst.source.id, kind, condition };
+        return { id, sourceId: src.id, targetId: dst.id, condition, edge, back: false, label: this.labels ? this.labels.flow(edge) : undefined };
+      };
+      const onTarget = byId.get(tail.on.targetId)!;
+      const shown = leaveConditions.slice(0, 3).join(' OR ') + (leaveConditions.length > 3 ? ` OR … (${leaveConditions.length - 3} more)` : '');
+      const flows = [
+        mk(`${first.id}__fl-checks`, task, join, '', 'sequence'),
+        mk(`${first.id}__fl-passed`, join, onTarget, tail.on.condition, tail.on.edge.kind === 'default' ? 'default' : 'conditional'),
+        mk(`${first.id}__fl-failed`, join, keptEnd, shown, 'conditional'),
+      ];
+      // The kept early end keeps only the new way in.
+      into.flows = [...keepFlows.filter((f) => f.targetId !== onTarget.id || !removed.has(f.sourceId)), ...flows];
+      into.nodes = into.nodes.filter((n) => !removed.has(n.id));
+      const at = into.nodes.indexOf(keptEnd);
+      into.nodes.splice(at < 0 ? into.nodes.length : at, 0, task, join);
+      for (const id of removed) local.delete(byId.get(id)?.source.id ?? '');
+      local.set(task.source.id + '#checks', task);
+      local.set(join.source.id + '#passed', join);
+      band.nodeIds = into.nodes.filter((n) => n.band === first.band).map((n) => n.id).filter((id) => band.nodeIds.includes(id) || id === task.id || id === join.id);
+      if (band.entryId === first.id) band.entryId = task.id;
+      byId.clear();
+      for (const n of into.nodes) byId.set(n.id, n);
+      flowById.clear();
+      for (const f of into.flows) flowById.set(f.id, f);
+      for (const n of into.nodes) {
+        n.incoming = into.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+        n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+      }
+    }
   }
 
   /**

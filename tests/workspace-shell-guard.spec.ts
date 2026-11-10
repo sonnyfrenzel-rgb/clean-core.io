@@ -487,13 +487,19 @@ async function signIn(page: Page, email: string): Promise<void> {
   await signInViaLanding(page, email, PASSWORD);
 }
 
-/** Either the shell renders or the address is a 404. Nothing in between. */
-async function openWorkspace(page: Page, projectId: string, query = ''): Promise<'shell' | '404'> {
+/**
+ * The shell renders, or the account reads that it has no access, or a signed-out
+ * reader is in the sign-in dialog (roadmap 3.0.21 (1): no more 404 for a good
+ * link). Nothing in between.
+ */
+async function openWorkspace(page: Page, projectId: string, query = ''): Promise<'shell' | 'no-access' | 'sign-in'> {
   await page.goto(`/project/${projectId}${query}`, { waitUntil: 'domcontentloaded' });
   const shell = page.locator('[data-workspace-shell]');
-  const notFound = page.locator('h1:has-text("404")');
-  await expect(shell.or(notFound).first()).toBeVisible({ timeout: 60000 });
-  return (await shell.count()) > 0 ? 'shell' : '404';
+  const noAccess = page.locator('[data-project-gate="no-access"]');
+  const signInDialog = page.locator('[data-access-dialog]');
+  await expect(shell.or(noAccess).or(signInDialog).first()).toBeVisible({ timeout: 60000 });
+  if ((await shell.count()) > 0) return 'shell';
+  return (await noAccess.count()) > 0 ? 'no-access' : 'sign-in';
 }
 
 test.describe('every account opens its own projects in the workspace — and only its own', () => {
@@ -527,9 +533,10 @@ test.describe('every account opens its own projects in the workspace — and onl
     });
   });
 
-  test('a signed-out visitor gets the 404 the address has always been', async ({ page }) => {
+  test('a signed-out visitor goes to the sign-in, with the way back to the project', async ({ page }) => {
     test.setTimeout(120 * 1000);
-    expect(await openWorkspace(page, PROJECT_ID)).toBe('404');
+    expect(await openWorkspace(page, PROJECT_ID)).toBe('sign-in');
+    expect(new URL(page.url()).searchParams.get('next')).toBe(`/project/${PROJECT_ID}`);
   });
 
   test('a community account opens its project in the workspace, and its stages lead back there', async ({ page }) => {
@@ -558,13 +565,19 @@ test.describe('every account opens its own projects in the workspace — and onl
     await expect(page.locator('header [data-command-search-trigger]')).toHaveCount(0);
   });
 
-  test('another account gets the 404 for a project that is not theirs', async ({ page }) => {
+  test('another account reads that the project is not shared with it', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, STRANGER);
     expect(
       await openWorkspace(page, PROJECT_ID),
       "the workspace showed a stranger somebody else's project",
-    ).toBe('404');
+    ).toBe('no-access');
+    await expect(page.locator('[data-project-gate="no-access"]')).toContainText(
+      'This project does not exist or is not shared with this account.',
+    );
+    await expect(page.locator('[data-project-gate="no-access"] a[href="/dashboard"]')).toHaveText('Go to My workspace');
+    // Nothing of the project leaks into the page.
+    await expect(page.locator('body')).not.toContainText('A community project');
   });
 });
 

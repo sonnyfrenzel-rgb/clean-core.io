@@ -35,13 +35,13 @@ import { SCORE_BANDS_SOURCE, scoreWithBand } from '@/lib/clean-core-score';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import { APP_VERSION } from '@/lib/version';
 import { analysisAuthorshipOf } from '@/lib/ai-authorship';
-import { aiMarkingStatement, withAiMarkingHtml } from '@/lib/ai-marking';
+import { aiMarkingStatement, aiOriginHtmlAttributes, withAiMarkingHtml } from '@/lib/ai-marking';
 import { successorSource, successorSourceNote } from '@/lib/successor-source';
 import { BTP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
 import { EXPORT_CSS, severityClass, toneClass } from '@/lib/export-style';
 // SAP identifiers the model wrote, each followed by its check (external review F-03/F-09).
-import { COVERAGE_CLAIM_NOTE, coverageClaims, sapAttributionHtml, sapCheckedNarrative, sapReferenceAnnotator } from '@/lib/sap-reference-check';
+import { COVERAGE_CLAIM_NOTE, STANDARD_EXCLUSION_NOTE, coverageClaims, sapAttributionHtml, sapCheckedNarrative, sapReferenceAnnotator, standardExclusionClaims } from '@/lib/sap-reference-check';
 
 export interface AnalysisExportInput {
   project: Project;
@@ -65,6 +65,11 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
   const checked = sapRefs.annotate;
 
   let htmlContent = '';
+  // Roadmap 3.0.17 (AI Act Art. 50(2)): the narrative is model text unless no model took part in the run
+  // (`analysisAuthorshipOf`); the engine's findings beside it are never marked. 3.0.21 (T08): the file is mixed, so
+  // every part the model wrote also carries `data-origin="ai"` with its provider and model where it stands.
+  const analysis = analysisAuthorshipOf(project);
+  const ai = analysis ? aiOriginHtmlAttributes(analysis) : '';
 
   // The same reader as the stage itself: every stored shape, amounts of money masked (lib/money-honesty.ts).
   const data = readStoredAnalysis<AnalysisData>(project.analysis);
@@ -91,18 +96,25 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
     // asks the model for a RANGE, hedged language and a calibration disclaimer.
     // The fallback then threw that discipline away. Missing values are now
     // missing, and the renderer says so.
+    // The model's plan, or null — then the three engine sentences below stand in, unmarked.
+    const modelPlan = modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan);
     const bizFallback = {
       legacyAssetScore: data.businessValueAnalysis?.legacyAssetScore ?? null,
       // The model's own level, or none — never a second reading of the score
       // beside Clean-Core.io's bands (lib/clean-core-score.ts).
       technicalDebtLevel: data.businessValueAnalysis?.technicalDebtLevel ?? null,
       valueDrivers: data.businessValueAnalysis?.valueDrivers ?? null,
-      plainEnglishActionPlan: modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan) ?? [
-        "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
-        "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
+      plainEnglishActionPlan: modelPlan ?? [
+        "1. Check each custom function against SAP standard in your own fit-to-standard workshop before anything is rebuilt.",
+        "2. Retire custom workarounds only after that check, a data migration assessment and business sign-off.",
         `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${routeLabel(project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'decoupled')} architecture.`
       ]
     };
+    // 3.0.21 (T08): a line the model filled is marked; "not determined" and the engine's stand-in plan are not.
+    const aiAsset = bizFallback.legacyAssetScore !== null ? ai : '';
+    const aiDebt = bizFallback.technicalDebtLevel !== null ? ai : '';
+    const aiDrivers = bizFallback.valueDrivers?.length ? ai : '';
+    const aiPlan = modelPlan ? ai : '';
 
     // Build visual table for gaps. A single object is one gap; any other
     // shape is said in the table instead of leaving it silently empty.
@@ -131,10 +143,15 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
         <li><strong>${esc(checked(step))}</strong></li>
       `).join('') || '';
 
-    // A "High" fit or a claim of full coverage is said to be unbacked (external review F-09).
-    const coverageNote = data.standardFit?.potential === 'High'
-      || coverageClaims([data.standardFit?.rationale, data.recommendations?.cloudReadiness].join(' ')).length > 0
+    // A claim of full coverage is said to be unbacked (external review F-09). The
+    // model's "Standard Fit" is no longer exported (owner decision 22.10.2026):
+    // functional fit to the SAP standard is not measured.
+    const coverageNote = coverageClaims(data.recommendations?.cloudReadiness ?? '').length > 0
       ? `<p class="muted">${esc(COVERAGE_CLAIM_NOTE)}</p>`
+      : '';
+    // 3.0.21 (MM review, point 5): a blanket exclusion of the SAP standard is said to be unbacked too.
+    const exclusionNote = standardExclusionClaims(data.recommendations?.cloudReadiness ?? '').length > 0
+      ? `<p class="muted">${esc(STANDARD_EXCLUSION_NOTE)}</p>`
       : '';
 
     /*
@@ -209,7 +226,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
             <div class="meta">Clean Core Score: <strong>${typeof signedScore === 'number' ? `${esc(scoreWithBand(signedScore))} (a grade, not a compliance percentage; ${esc(SCORE_BANDS_SOURCE)})` : 'not determined'}</strong> | Generated by Clean-Core.io | ${esc(formatIsoDate(new Date()) ?? '')}</div>
           </div>
           <div class="content">
-            <div class="summary-box">
+            <div class="summary-box"${ai}>
               <h3>Executive Summary</h3>
               <p>${esc(data.summary)}</p>
             </div>
@@ -218,11 +235,11 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
             <div class="card-grid">
               <div class="card">
                 <div class="card-title">Business Asset Audit</div>
-                <p><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore !== null ? `${esc(bizFallback.legacyAssetScore)}% (Custom IP Value)` : 'not determined'}</p>
-                <p><strong>Technical Debt Level:</strong> ${esc(bizFallback.technicalDebtLevel ?? 'not determined')}</p>
+                <p${aiAsset}><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore !== null ? `${esc(bizFallback.legacyAssetScore)}% (Custom IP Value)` : 'not determined'}</p>
+                <p${aiDebt}><strong>Technical Debt Level:</strong> ${esc(bizFallback.technicalDebtLevel ?? 'not determined')}</p>
                 <p><strong>Annual maintenance cost:</strong> not determined</p>
                 <div><strong>Value Drivers:</strong></div>
-                <ul>
+                <ul${aiDrivers}>
                   ${(bizFallback.valueDrivers ?? []).map(d => `<li>${esc(d)}</li>`).join('') || '<li>not identified for this run</li>'}
                 </ul>
                 <p class="note">
@@ -232,24 +249,20 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
               <div class="card">
                 <div class="card-title">Plain English Stakeholder Roadmap</div>
                 <p class="muted">Simplified action items to modernize this business capability successfully:</p>
-                <ul class="strong">
+                <ul class="strong"${aiPlan}>
                   ${bizFallback.plainEnglishActionPlan.map(action => `<li>${esc(action)}</li>`).join('')}
                 </ul>
               </div>
             </div>
 
+            <div${ai}>
             <h2>As-Is Process & Legacy Context</h2>
             <p>${esc(checked(data.asIsContext))}</p>
-
-            <h2>Standard Fit Assessment</h2>
-            <p class="muted">Model proposal. SAP identifiers are checked against SAP data this product holds.</p>
-            <p><strong>Target Standard Process ID / Module:</strong> ${esc(sapCheckedNarrative(data.standardFit?.targetStandardProcess || 'N/A', checked))}</p>
-            <p><strong>Standardization Potential (model's estimate, not a measured fit):</strong> <span class="tag tone-neutral">${esc(data.standardFit?.potential || 'not determined')}</span></p>
-            <p>${esc(sapCheckedNarrative(data.standardFit?.rationale, checked))}</p>
-            ${coverageNote}
+            </div>
 
             <h2>SAP Extensibility Routing Decision Path</h2>
             ${checkpoints === null ? notDetermined('This analysis did not return the step-by-step checkpoints behind the routing decision.') : `
+            <div${ai}>
             <p>The legacy ABAP code was evaluated step-by-step against the official SAP Clean Core extensibility decision tree. Below is the detailed pathway and checkpoint audit:</p>
             <table>
               <thead>
@@ -264,10 +277,12 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
               <tbody>
                 ${checkpointsRows}
               </tbody>
-            </table>`}
+            </table>
+            </div>`}
 
             <h2>Extensibility Track Comparative Matrix</h2>
             ${comparative === null ? notDetermined('This analysis did not return a side-by-side comparison of the two extensibility tracks.') : `
+            <div${ai}>
             <p>Direct architectural comparison of both available tracks mapped specifically to this project's requirements:</p>
             <div class="card-grid">
               <div class="card">
@@ -296,8 +311,10 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                   ${comparative.sideBySideBTP.cons.map(con => `<li>${esc(sapNamesForDisplay(con))}</li>`).join('')}
                 </ul>
               </div>
+            </div>
             </div>`}
 
+            <div${ai}>
             <h2>Functional Gaps Analysis Matrix</h2>
             <table>
               <thead>
@@ -313,27 +330,31 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                 ${gapsRows}
               </tbody>
             </table>
+            </div>
 
             <h2>Modernization Recommendations</h2>
             <div class="card-grid">
               <div class="card">
                 <div class="card-title">Keep Core Clean</div>
-                <p>${esc(checked(data.recommendations?.keepCoreClean))}</p>
+                <p${ai}>${esc(checked(data.recommendations?.keepCoreClean))}</p>
               </div>
               <div class="card">
                 <div class="card-title">Decommissioning</div>
-                <p>${esc(checked(data.recommendations?.decommissioning))}</p>
+                <p${ai}>${esc(checked(data.recommendations?.decommissioning))}</p>
               </div>
               <div class="card">
                 <div class="card-title">Cloud Readiness</div>
-                <p>${esc(checked(data.recommendations?.cloudReadiness))}</p>
+                <p${ai}>${esc(checked(data.recommendations?.cloudReadiness))}</p>
+                ${coverageNote}${exclusionNote}
               </div>
             </div>
 
+            <div${ai}>
             <h2>Architectural Next Steps</h2>
             <ol>
               ${stepsList}
             </ol>
+            </div>
 
             <h2>Detailed Technical Assessment</h2>
             ${complexity !== undefined || criticality !== undefined ? `
@@ -516,7 +537,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
             <h1>Business Analysis Report: ${esc(project.name)}</h1>
             <div class="meta">Generated by Clean-Core.io | ${esc(formatIsoDate(new Date()) ?? '')}</div>
           </div>
-          <div class="content">
+          <div class="content"${ai}>
             ${renderMarkdownSafe(withoutUnapprovedMoney(project.analysis))}
           </div>
         </body>
@@ -524,9 +545,6 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
       `;
   }
 
-  // Roadmap 3.0.17 (AI Act Art. 50(2)): the narrative is model text unless no model took part in the run
-  // (`analysisAuthorshipOf`); the engine's findings beside it are never marked.
-  const analysis = analysisAuthorshipOf(project);
   return withAiMarkingHtml(htmlContent, analysis ? [aiMarkingStatement(analysis, APP_VERSION)] : []);
 }
 

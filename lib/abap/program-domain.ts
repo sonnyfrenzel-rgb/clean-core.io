@@ -21,7 +21,8 @@ import { maskLiterals, readStatements } from './statement-reader';
  * determined (`null`), never guessed. The sentence says what the program does
  * as its names say it — never why the company needs it.
  *
- * Pure: the statement reader only. The callers gate it (`ENGINE_READS_3020_FROM`).
+ * Pure: the statement reader only. The callers gate it (`ENGINE_READS_3020_FROM`; the wider purpose words
+ * `ENGINE_READS_3021_FROM`).
  */
 
 export interface DomainObject {
@@ -64,6 +65,21 @@ const VERBS: ReadonlyArray<[string, readonly string[]]> = [
   ['evaluates', ['EVAL', 'EVALUATE', 'EVALUATION', 'ANALYSIS', 'ANALYZE', 'ANALYSE']],
 ];
 
+/**
+ * From engine 3.0.21 (`ENGINE_READS_3021_FROM`; owner decision 22.10.2026): names whose purpose word is a noun —
+ * an emergency purchase *approval*, a delivery *priority* — or a reading verb the list above lacks. A noun says
+ * what the program is about, not what it does to it ("Covers the approval of …"), and names at most two objects:
+ * the one the name gives and the one the code names most. Verbs of change (create, post, book) stay out — the
+ * name alone never claims a change.
+ */
+const WIDER_VERBS: ReadonlyArray<[string, readonly string[]]> = [
+  ['covers the approval of', ['APPROVAL', 'APPROVALS', 'APPROVE', 'APPR']],
+  ['covers the priority of', ['PRIORITY', 'PRIORITIES', 'PRIO', 'PRIORITISATION', 'PRIORITIZATION']],
+  ['rates', ['RATING', 'SCORING']],
+  ['extracts', ['EXTRACT', 'EXTRACTOR', 'EXTRACTION']],
+];
+const NOUN_PHRASE = /^covers the /;
+
 /** Objects a check is made *of*, weighed against the others: an invoice is checked against its order and receipt. */
 const CHECKED = ['supplier invoices', 'invoices', 'billing documents', 'deliveries', 'payments', 'goods receipts'];
 
@@ -95,8 +111,13 @@ function joinAnd(items: readonly string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
+export interface ProgramDomainOptions {
+  /** From engine 3.0.21: the wider purpose words (`WIDER_VERBS`). The callers gate it; off by default. */
+  wider?: boolean;
+}
+
 /** The purpose the names support, or null when they do not (no verb in the program's name, or no object). */
-export function readProgramDomain(source: string): ProgramDomain | null {
+export function readProgramDomain(source: string, options: ProgramDomainOptions = {}): ProgramDomain | null {
   let statements;
   try {
     statements = readStatements(source);
@@ -107,7 +128,8 @@ export function readProgramDomain(source: string): ProgramDomain | null {
   const program = head ? /^\S+\s+([\w/]+)/.exec(head.text)?.[1] ?? null : null;
   if (!program || !head) return null;
   const nameTokens = tokensOf(program.replace(/^[ZY]_?/i, ''));
-  const verb = VERBS.find(([, words]) => nameTokens.some((t) => words.includes(t)))?.[0] ?? null;
+  const verbs = options.wider ? [...VERBS, ...WIDER_VERBS] : VERBS;
+  const verb = verbs.find(([, words]) => nameTokens.some((t) => words.includes(t)))?.[0] ?? null;
   if (!verb) return null;
 
   // Every name and message word on every line, comments left out.
@@ -163,7 +185,7 @@ export function readProgramDomain(source: string): ProgramDomain | null {
     .sort((a, b) => b[1].length - a[1].length || DOMAIN_OBJECTS.findIndex((o) => o.word === a[0]) - DOMAIN_OBJECTS.findIndex((o) => o.word === b[0]))
     .map(([word]) => word);
   // "goods movements" is the technical side of "goods receipts": one of the two is said.
-  const objects = [...inName, ...others].filter((w, i, all) => !(w === 'goods movements' && all.includes('goods receipts'))).slice(0, 3);
+  const objects = [...inName, ...others].filter((w, i, all) => !(w === 'goods movements' && all.includes('goods receipts'))).slice(0, NOUN_PHRASE.test(verb) ? 2 : 3);
   if (objects.length === 0) return null;
 
   let phrase: string;

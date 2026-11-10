@@ -17,6 +17,10 @@ import { plainLabels } from './abap/plain-language';
 import { buildExportModel, type BpmnTag } from './bpmn/model';
 import { businessExcerpt } from './bpmn/excerpt';
 import { layoutModel, nodeAnchor, type Bounds, type PlacedLabel, type Point } from './bpmn/layout';
+import { readDemoSwitches } from './abap/demo-switches';
+import { engineReads3020Apply } from './abap/engine-reads-3020-gate';
+import { firstLookReadingOf, testDataStepAt } from './first-look-plain';
+import { APP_VERSION } from './version';
 
 export interface ExcerptNode {
   id: string;
@@ -58,11 +62,33 @@ function firstLine(anchor: string | null, fallback: number | null): number | nul
   return m ? Number(m[1]) : fallback;
 }
 
-export function firstLookExcerpt(skeleton: ProcessSkeleton | null, source: string, steps = 5): ExcerptDrawing {
+/**
+ * `engineVersion`: the engine of the project's signed run. From 3.0.20 the step
+ * list sets the program's own test-data switch apart (`lib/process-story.ts`);
+ * the drawing beside it does the same (3.0.21 fix — the receipt check's picture
+ * used to open with "Apply case → Demo not selected?" while the steps beside it
+ * said the switch is not part of the process).
+ */
+export function firstLookExcerpt(
+  skeleton: ProcessSkeleton | null,
+  source: string,
+  steps = 5,
+  engineVersion: string | null = APP_VERSION,
+): ExcerptDrawing {
   if (!skeleton || skeleton.nodes.length === 0) return EMPTY;
   try {
     const model = buildExportModel(skeleton, { labels: plainLabels(skeleton, source) });
-    const excerpt = businessExcerpt(model, { steps });
+    const demo = engineReads3020Apply(engineVersion) ? readDemoSwitches(source, engineVersion) : null;
+    const reading = demo ? firstLookReadingOf(source, demo) : null;
+    const excerpt = businessExcerpt(model, {
+      steps,
+      skipStep: reading
+        ? (n) => {
+            const line = n.source.anchor?.lineStart;
+            return typeof line === 'number' && testDataStepAt(reading, line);
+          }
+        : undefined,
+    });
     const plane = layoutModel(excerpt, { direction: 'TB' }).planes.get(excerpt.root.id);
     if (!plane) return EMPTY;
     const nodes: ExcerptNode[] = excerpt.root.nodes.flatMap((n) => {

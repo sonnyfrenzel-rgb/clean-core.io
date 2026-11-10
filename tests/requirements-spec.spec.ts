@@ -301,12 +301,12 @@ test.describe('the exports', () => {
     expect(traceRows(spec)).toHaveLength(spec.requirements.length);
   });
 
-  test('a model proposal is printed as one, beside an open decision — never as its answer', () => {
+  test('an AI-generated draft is printed as one, beside an open decision — never as its answer', () => {
     const spec = draft(SOURCE, { proposals: { slaRequirements: 'For TBD-13: business hours, 2 s.' } });
     const d = spec.decisions.find((x) => x.id === 'D-TBD-13')!;
     expect(d.proposal).toContain('TBD-13');
     expect(d.answer).toBeNull();
-    expect(specMarkdown(spec, META)).toContain('Model proposal: For TBD-13: business hours, 2 s.');
+    expect(specMarkdown(spec, META)).toContain('AI-generated: For TBD-13: business hours, 2 s.');
     // A generic proposal that names no question is not attached to one.
     const generic = draft(SOURCE, { proposals: { slaRequirements: 'Fast.' } });
     expect(generic.decisions.every((x) => x.proposal === '')).toBe(true);

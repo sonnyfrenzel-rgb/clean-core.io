@@ -1,10 +1,11 @@
+import { revisionDocData } from '@/lib/process-revision-store';
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   getAdminDb,
   assertAccountActive,
   assertMfaSatisfied,
-  auditActorEmail,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -68,7 +69,7 @@ async function rulesNow(
   if (Buffer.byteLength(source, 'utf8') > MAX_RULES_SOURCE_BYTES) return null;
   const baseline = await tx.get(ref.collection(PROCESS_REVISION_COLLECTION).doc('1'));
   if (!baseline.exists) return null;
-  const data = baseline.data() as Record<string, unknown>;
+  const data = revisionDocData(baseline.data() as Record<string, unknown>);
   const record = { ...data, savedAt: isoOf(data.savedAt) };
   if (!isProcessRevisionRecord(record) || sha256Hex(source) !== record.sourceSha256) return null;
   const statesSnap = await tx.get(ref.collection(PROCESS_STATE_COLLECTION).orderBy('revision', 'desc').limit(1));
@@ -143,7 +144,7 @@ export async function POST(
     try {
       await assertMfaSatisfied(req, decodedToken);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },
@@ -184,7 +185,6 @@ export async function POST(
     const email = typeof decodedToken.email === 'string' ? decodedToken.email : '';
     // Resolved before the transaction: it reads a different document, and a
     // transaction's reads all have to happen before its first write.
-    const actorEmail = await auditActorEmail(db, decodedToken.uid);
 
     const commandName =
       typeof body === 'object' && body !== null ? (body as { command?: unknown }).command : undefined;
@@ -360,7 +360,6 @@ export async function POST(
         tx.set(ref, { ...decision.fields, updatedAt: new Date() }, { merge: true });
         tx.set(db.collection('audit_events').doc(), {
           actorUid: decodedToken.uid,
-          actorEmail,
           action: `${decision.action}:${projectId}`,
           targetUid: decodedToken.uid,
           timestamp: new Date(),

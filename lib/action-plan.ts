@@ -3,7 +3,7 @@
  *
  * An empty list, a list of blank strings or a value that is not a list is
  * "none": the analyze page then shows its generic guidance and says so, and it
- * must not label that guidance a model proposal (`[]` is truthy, so a plain
+ * must not label that guidance an AI-generated draft (`[]` is truthy, so a plain
  * `||` fallback treated an empty plan as the model's).
  */
 export function modelActionPlan(plan: unknown): string[] | null {

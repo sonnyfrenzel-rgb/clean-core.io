@@ -26,7 +26,7 @@ import { documentOutline, longTables, processDocumentBlocks } from '../lib/proce
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { blocksMarkdown, blocksDocxParts } from '../lib/requirements-export';
 import { escapeHtml } from '../lib/export-safety';
-import { pinnedExamplePath } from './helpers/starter-example-files';
+import { EXAMPLES_DIR, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
  * The process description of the Documentation stage — as data, over the two
@@ -56,18 +56,20 @@ function sourceOf(file: string): string {
   return fs.readFileSync(pinnedExamplePath(file), 'utf8').replace(/\r\n/g, '\n');
 }
 
-function mapOf(source: string, file: string) {
-  const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file });
+function mapOf(source: string, file: string, engineVersion?: string) {
+  const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file, ...(engineVersion ? { exporterVersion: engineVersion } : {}) });
   return buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null, 'no-key'), fileName: file });
 }
 
 const built = new Map<string, { source: string; doc: ProcessDocument }>();
-function documentOf(file: string) {
-  if (!built.has(file)) {
+/** The document as the current engine builds it, or as the engine `engineVersion` built it. */
+function documentOf(file: string, engineVersion?: string) {
+  const key = engineVersion ? `${file}@${engineVersion}` : file;
+  if (!built.has(key)) {
     const source = sourceOf(file);
-    built.set(file, { source, doc: buildProcessDocument({ source, map: mapOf(source, file) }) });
+    built.set(key, { source, doc: buildProcessDocument({ source, map: mapOf(source, file, engineVersion), ...(engineVersion ? { engineVersion } : {}) }) });
   }
-  return built.get(file)!;
+  return built.get(key)!;
 }
 
 const htmlOf = async (doc: ProcessDocument) => buildEngineConfluenceHtml(doc, null, { projectName: doc.program }).text();
@@ -218,9 +220,20 @@ for (const [file] of EXAMPLES) {
   });
 }
 
+test('every example the site offers opens with a business page of at most 400 words (owner 11.10.2026, 23.10.2026)', () => {
+  for (const file of fs.readdirSync(EXAMPLES_DIR).sort()) {
+    const source = fs.readFileSync(path.join(EXAMPLES_DIR, file), 'utf8').replace(/\r\n/g, '\n');
+    const md = markdownOf(buildProcessDocument({ source, map: mapOf(source, file) }));
+    const page = md.slice(md.indexOf('## In short'), md.indexOf('## At a glance'));
+    expect(page.length, file).toBeGreaterThan(0);
+    expect(wordCount(page), `the business page of ${file}`).toBeLessThanOrEqual(400);
+  }
+});
+
 test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
   test('the body is about half as long as before, and the summary names the business', () => {
-    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    // Pinned to the engine before 3.0.21: from that engine the page carries two more purpose lines (see the next test).
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap', '3.0.20');
     // Before 04.10.2026 the body (everything above the appendix) was 2,801
     // words by this count; the owner asked for about half.
     // Owner 11.10.2026: the business page in front of it is a page of its own, held to a page.
@@ -235,6 +248,40 @@ test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
     expect(summary).toContain('purchase requisitions');
     expect(summary).not.toContain('BAPI_PO_CREATE1');
     // The program's names are kept — in the source column, not in the sentence.
+    expect(doc.glance.summary[0].detail).toContain('BAPI_PO_CREATE1');
+  });
+
+  test('from engine 3.0.21 the page opens with the header title and the purpose the names support', () => {
+    // Roadmap 3.0.21, "First insights becomes the strongest page" (owner decisions 22.10.2026): the header's title
+    // line is read as the author's claim, and the purpose the program's names support stands whenever it exists.
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const md = markdownOf(doc);
+    const page = md.slice(md.indexOf('## In short'), md.indexOf('## At a glance'));
+    const body = wordCount(bodyOf(md).replace(page, ''));
+    expect(body, `the body has ${body} words`).toBeLessThanOrEqual(1650);
+    const title = '- Title, as the header comment states it: “Emergency purchase approval” (Author\'s claim, L3)';
+    const aim = '- Covers the approval of purchase orders and purchase requisitions. (Reconstructed, L11, L13)';
+    expect(page).toContain(title);
+    expect(page).toContain(aim);
+    // The whole page, the two 3.0.21 lines included, is held to one page of at most 400 words (owner 11.10.2026;
+    // 23.10.2026: shortened, not the limit raised). It was 408; the answer on S/4HANA no longer repeats the change
+    // line word for word, and the caveat lines say once what they said twice. Pinned exactly, so it cannot grow unnoticed.
+    expect(wordCount(page), 'the business page is one page').toBeLessThanOrEqual(400);
+    expect(wordCount(page), 'the whole 3.0.21 business page').toBe(378);
+    // What it changes stands once on the page: under "What it does", and the S/4HANA answer points to it.
+    const changes = 'It creates purchase orders (BAPI_PO_CREATE1)';
+    expect(page.split(changes).length - 1, 'the change line stands once').toBe(1);
+    expect(page).toContain('[What changes in S/4HANA?](#pd-outputs) — What it changes today stands above; the move is decided in Design and Management, with the open questions.');
+    // Every content category is still on the page.
+    for (const heading of ['What it does', 'What it does not do', 'Limits of this reading', 'Owner and approval', 'Questions a reader asks']) expect(page).toContain(`**${heading}**`);
+    expect(page).toContain('Process owner: Not determined');
+    expect(page).toContain('Business approval: Not recorded');
+    expect(page).toContain('A line reference shows where a statement comes from in the code, not that the business confirmed it.');
+    // The reader question still answers with the selection, not with the read list (the aim line carries no "selected by").
+    expect(page).toContain('[Why is an item missing?](#pd-data) — It selects by purchase requisition number.');
+    const summary = doc.glance.summary.map((s) => s.text).join(' ');
+    expect(summary).toMatch(/^Covers the approval of purchase orders and purchase requisitions\. Creates purchase orders/);
+    expect(summary).not.toContain('BAPI_PO_CREATE1');
     expect(doc.glance.summary[0].detail).toContain('BAPI_PO_CREATE1');
   });
 

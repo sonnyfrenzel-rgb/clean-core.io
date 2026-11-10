@@ -114,7 +114,7 @@ test('when the Accountables fit the columns, every row shows its A in a column',
 test('the Confluence page carries the six columns, the key and the further roles', async () => {
   const html = await buildEngineConfluenceHtml(processDocumentOf(SOURCE), LAYER, { processSteps: STEPS }).text();
   const matrix = raciMatrix(sopSteps(LAYER, STEPS));
-  const section = html.slice(html.indexOf('RACI matrix — Model proposal'));
+  const section = html.slice(html.indexOf('RACI matrix — AI-generated'));
   for (const r of matrix.roles) expect(section).toContain(`<th>${r.short}`);
   for (const r of matrix.moreRoles) expect(section).toContain(`<li>${r.name}: `);
   for (const st of matrix.steps) for (const a of st.hiddenAccountable) expect(section).toContain(`A: ${a}`);

@@ -42,6 +42,7 @@ import { publishProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries, type EditorRule } from '@/lib/rules-editor';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { usePlainWording } from '@/hooks/usePlainWording';
+import AskOnClick from './AskOnClick';
 import { ARCHITECTURE_OPTIONS_ID, architectureChoice, architectureOptions, technicalKeepChoices } from '@/lib/rule-questions';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
@@ -432,6 +433,7 @@ export default function RuleDecisionFlow({
     owner,
     active: explanation !== null,
     modelEnabled: plainModelEnabled(availability),
+    autoAllowed: availability.autoSteps,
     initial: plainWording ?? null,
   });
   const say: Say = wording.say;
@@ -504,6 +506,7 @@ export default function RuleDecisionFlow({
 
   return (
     <div data-rule-flow="" data-decided={flow.decided} data-total={flow.total} className="flex min-w-0 flex-col gap-3">
+      <AskOnClick askNow={wording.askNow} step="plain" />
       <p className="m-0 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink-muted">
         {owner ? wt('rules.flowLead') : wt('rules.flowLeadReader')}
       </p>

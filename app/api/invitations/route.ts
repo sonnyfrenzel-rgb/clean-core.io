@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, assertMfaSatisfied, assertAccountActive, getAdminDb, QuotaError } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, assertMfaSatisfied, assertAccountActive, getAdminDb, QuotaError } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, errMessage } from '@/lib/logger';
 import { INVITATION_COLLECTION } from '@/lib/invitations';
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     try {
       await assertMfaSatisfied(req, decodedToken);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },

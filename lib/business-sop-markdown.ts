@@ -2,7 +2,8 @@ import { capabilityPresence, isAbsent, readCapabilityFacts, type CapabilityFacts
 import { docStepName, readStoredDocumentation, type ProcessDocumentation } from '@/lib/process-documentation';
 import { RACI_LETTERS, isBusinessLevelLayer, lettersOf, raciMatrix, sopSteps, stepsNotInProcess, type ProcessStepRef, type SopStep, type StoredBusinessLayer } from '@/lib/business-summary';
 import { sopLevelBusinessLine, sopLevelLegacyLine } from '@/lib/messages/documentation';
-import { layerFacts, sopStatementLine, SOP_BASIS } from '@/lib/sop-provenance';
+import { layerFacts, sopStatementLine, SOP_BASIS, type SopStatement } from '@/lib/sop-provenance';
+import { AI_ORIGIN_MARKDOWN_CLOSE, aiOriginMarkdownOpen, UNRECORDED_AI, type AiAuthorship } from '@/lib/ai-marking';
 
 /**
  * The business SOP as the delivery package's `business-documentation.md` —
@@ -16,7 +17,7 @@ import { layerFacts, sopStatementLine, SOP_BASIS } from '@/lib/sop-provenance';
  *
  *   - every step is headed by its business name and its lines, never a node id;
  *   - every sentence carries its basis — Reconstructed (from the code, with its
- *     line), Model proposal, or **Proposal — not in the program** for roles,
+ *     line), AI-generated, or **Proposal — not in the program** for roles,
  *     approval, escalation and every capability the program does not have
  *     (`lib/sop-provenance.ts`, `lib/documentation-capabilities.ts`);
  *   - the business exception is a proposal, always;
@@ -87,8 +88,16 @@ export const UNREADABLE_SOP_MARKDOWN = [
   '',
 ].join('\n');
 
-export function businessSopMarkdown(rawJson: string, documentation?: string | ProcessDocumentation | null): string {
+/**
+ * 3.0.21 (T08, the legal review of 05.11.2026): the file mixes the engine's reading (what the program does not do,
+ * the technical steps, the step names and lines) with the SOP model's text, so each model-written element is
+ * marked where it stands with the cc:origin comment pair — every statement and business exception, the RACI, the
+ * historical controls. `ai` is who wrote the layer (`businessDocumentationModel`); without it, "not-recorded".
+ */
+export function businessSopMarkdown(rawJson: string, documentation?: string | ProcessDocumentation | null, opts: { ai?: Pick<AiAuthorship, 'provider' | 'modelId'> | null } = {}): string {
   if (!rawJson) return '';
+  const open = aiOriginMarkdownOpen(opts.ai ?? UNRECORDED_AI);
+  const model = (text: string) => `${open}${text}${AI_ORIGIN_MARKDOWN_CLOSE}`;
   const layer = parse(rawJson);
   if (!layer) return UNREADABLE_SOP_MARKDOWN;
   const doc = typeof documentation === 'string'
@@ -100,7 +109,7 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
 
   out.push(`# Business SOP${doc ? ` — ${doc.processName}` : ''}`, '');
   out.push('> Written by a language model from the process documentation; not current practice until the business confirms it. '
-    + 'Every sentence says its basis: **Reconstructed** — read from the code, with its line; **Model proposal** — the model\'s wording, unchecked; '
+    + 'Every sentence says its basis: **Reconstructed** — read from the code, with its line; **AI-generated** — the model\'s wording, unchecked; '
     + '**Proposal — not in the program** — roles, approval, escalation, and anything the program does not do.', '');
 
   if (facts) {
@@ -126,8 +135,10 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
   for (const step of steps) {
     out.push(`### ${step.ref ?? step.number}. ${nameOf(step, layer)} (${stepLines(step, layer)})`, '');
     if (step.statements.length === 0) out.push('- Not determined — the proposal says nothing about this step.');
-    for (const st of step.statements) out.push(`- ${sopStatementLine(st)}`);
-    if (step.exceptionStatement) out.push(`- **If it cannot be completed:** ${sopStatementLine(step.exceptionStatement)}`);
+    // The sentence is the model's; the basis in brackets after it is the engine's judgement of it, left outside.
+    const marked = (st: SopStatement) => `${model(st.text)}${sopStatementLine(st).slice(st.text.length)}`;
+    for (const st of step.statements) out.push(`- ${marked(st)}`);
+    if (step.exceptionStatement) out.push(`- **If it cannot be completed:** ${marked(step.exceptionStatement)}`);
     if (step.technical.length) {
       out.push('', `**Technical steps (${step.technical.length}):**`, '');
       for (const t of step.technical) out.push(`${'  '.repeat(Math.max(0, Math.min(t.depth, 3) - 1))}  - ${cell(t.name)}${t.kind ? ` — ${cell(t.kind)}` : ''} (${lines(t.anchor)})`);
@@ -141,12 +152,14 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
     out.push(`## Who is responsible (RACI) — ${SOP_BASIS['not-in-program'].label}`, '');
     out.push('The code names no role: the roles are a proposal for the business to confirm, not current practice. '
       + `${RACI_LETTERS.map((l) => `${l} = ${({ R: 'Responsible', A: 'Accountable', C: 'Consulted', I: 'Informed' } as const)[l]}`).join(' · ')}.`, '');
+    // The roles and letters are the model's; the table is one element, opened and closed around it.
+    out.push(open);
     out.push(`| No. | Step | ${roles.map((r) => cell(r.name)).join(' | ')} |`);
     out.push(`| :--- | :--- | ${roles.map(() => ':---:').join(' | ')} |`);
     for (const s of matrix.steps) {
       out.push(`| ${s.ref ?? s.number} | ${cell(nameOf(s, layer))} | ${roles.map((r) => lettersOf(s, r.name).join(' ')).join(' | ')} |`);
     }
-    out.push('');
+    out.push('', AI_ORIGIN_MARKDOWN_CLOSE, '');
   }
 
   // A layer written before 3.0.7 may still hold control proposals; they are kept as data and marked.
@@ -154,17 +167,18 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
   if (controls.length) {
     const name = new Map(steps.map((s) => [s.stepId, nameOf(s, layer)]));
     out.push(`## Controls an earlier proposal named — ${SOP_BASIS['not-in-program'].label}`, '');
-    // The rows are model proposals only — the sentence
+    // The rows are AI-generated proposals only — the sentence
     // that introduces them must not read as if they came from the code.
     out.push('These rows are historical: a language model proposed them before 3.0.7, and nothing in them was read from or checked against the code.', '');
     out.push('Separately, the controls the code actually has are listed in the process documentation.', '');
+    out.push(open);
     out.push('| Step | Control objective | Mitigation | Assertion |');
     out.push('| :--- | :--- | :--- | :--- |');
     for (const c of controls) {
       const id = typeof c.stepId === 'string' ? c.stepId : '';
       out.push(`| ${cell(name.get(id) ?? 'A step not in the process')} | ${cell(String(c.controlObjective ?? 'Not determined'))} | ${cell(String(c.mitigationAction ?? 'Not determined'))} | ${cell(String(c.assertionMethod ?? 'Not determined'))} |`);
     }
-    out.push('');
+    out.push('', AI_ORIGIN_MARKDOWN_CLOSE, '');
   }
   return out.join('\n');
 }

@@ -135,6 +135,20 @@ export const TRANSFORMATION_CODES = {
     kind: 'settings',
     counted: false,
   },
+  'stage-required': {
+    title: 'call without a stage',
+    explain: 'The model call named no stage, or one that does not exist, so it was refused before anything was asked.',
+    action: 'Reload the page, then start the generation again.',
+    kind: 'restart',
+    counted: false,
+  },
+  'platform-model-budget-exhausted': {
+    title: 'community key used up for today',
+    explain: 'The community model key has reached its daily limit, so the call was refused before anything was asked.',
+    action: 'Generate again after midnight UTC, or add your own model key in Settings.',
+    kind: 'settings',
+    counted: false,
+  },
   // ── /api/gemini, after the lease counted the call ──
   'model-timeout': {
     title: 'the model took too long',

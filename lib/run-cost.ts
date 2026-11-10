@@ -16,6 +16,8 @@
  */
 
 import { START_NARRATIVE_CEILING_MS } from './model-stages';
+import { runFreeNotice, runModelCallNotice } from './legal/run-notice';
+import type { ModelKeyProvider } from './model-providers';
 import {
   COMMUNITY_QUOTA_FALLBACK,
   quotaExhausted,
@@ -44,6 +46,12 @@ export interface RunCostInput {
   targetChange?: boolean;
   /** Whether this action calls the language model at all. */
   callsModel: boolean;
+  /**
+   * The provider of the key the run would use. Given, the model sentence is
+   * the consent text `startRun.modelCall` / `noModelCall` (legal review
+   * 06.11.2026, B5/N2), naming who receives the code; absent, the short label.
+   */
+  provider?: ModelKeyProvider | null;
 }
 
 export interface RunCost {
@@ -56,26 +64,32 @@ export interface RunCost {
 }
 
 export function describeRunCost(input: RunCostInput): RunCost {
-  const { profile, metered, sameSourceAgain, starterExample, targetChange, callsModel } = input;
+  const { profile, metered, sameSourceAgain, starterExample, targetChange, callsModel, provider } = input;
 
-  const modelCall = callsModel ? 'Calls the model' : 'No model call';
+  const modelCall =
+    provider !== undefined
+      ? runModelCallNotice({ callsModel, provider, lang: 'en' })
+      : callsModel ? 'Calls the model' : 'No model call';
+  // Legal review 06.11.2026 (owner): Clean-Core.io is free — nothing before a run
+  // speaks of costs. The quota sentences are the consent texts `startRun.free*`.
+  const notCounted = runFreeNotice({ kind: 'not-counted' }, 'en');
 
   if (!metered) return { quota: 'Not counted', modelCall, blocked: false };
 
   if (runsAreSelfFunded(profile)) {
-    return { quota: 'Uses your own Gemini key', modelCall, blocked: false };
+    return { quota: runFreeNotice({ kind: 'own-key' }, 'en'), modelCall, blocked: false };
   }
 
   if (targetChange && starterExample) {
-    return { quota: 'Free — changing the target of an example', modelCall, blocked: false };
+    return { quota: notCounted, modelCall, blocked: false };
   }
 
   if (sameSourceAgain) {
-    return { quota: 'Free — this source was already analysed', modelCall, blocked: false };
+    return { quota: notCounted, modelCall, blocked: false };
   }
 
   if (starterExample && starterExampleIsFree(profile, starterExample)) {
-    return { quota: 'Free — your first run of this example', modelCall, blocked: false };
+    return { quota: notCounted, modelCall, blocked: false };
   }
 
   const remaining = runsRemaining(profile);
@@ -91,7 +105,7 @@ export function describeRunCost(input: RunCostInput): RunCost {
   }
 
   return {
-    quota: `Uses 1 of your ${limit} free analysis runs — ${remaining - 1} left after this one`,
+    quota: runFreeNotice({ kind: 'platform-key', limit, remainingAfter: remaining - 1 }, 'en'),
     modelCall,
     blocked: false,
   };

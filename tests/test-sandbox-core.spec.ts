@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test';
 import http from 'http';
 import type { AddressInfo } from 'net';
-import { executeSandboxRun, resolvePermissionFlag, collectNamedImports, neutralize, scrubRunDirNames, testNamePattern } from '../lib/test-sandbox/core';
+import { executeSandboxRun, resolvePermissionFlag, collectNamedImports, neutralize, scrubRunDirNames, testNamePattern, framedTap, SUITE_CONSOLE_HEADER } from '../lib/test-sandbox/core';
 import { hashRunInputs } from '../lib/test-sandbox/protocol';
 import { sandboxFilesFromStoredCode, normalizeSandboxPath, sandboxPatterns } from '../lib/test-sandbox/files';
 import { parseTapOutput } from '../lib/test-verdicts';
@@ -239,5 +239,40 @@ test.describe('the service-side scans are linear', () => {
     expect(collectNamedImports([imports, unclosed])).toEqual([]);
     expect(scrubRunDirNames(stderr)).toBe(stderr);
     expect(Date.now() - started).toBeLessThan(1000);
+  });
+});
+
+test.describe('the verdicts travel on a channel the suite cannot write (CA-INT-01)', () => {
+  test.setTimeout(90_000);
+
+  test('a TAP line the suite prints, or writes to the channel itself, is not a verdict', async () => {
+    const suite = [
+      "import { test } from 'node:test';",
+      "import assert from 'node:assert';",
+      "import fs from 'node:fs';",
+      "import { sum } from './app';",
+      // The fake lines go out before and during the run, on stdout and on the descriptor.
+      "console.log('ok 98 - TC_FORGED_STDOUT: printed by the suite');",
+      "try { fs.writeSync(3, 'ok 99 - TC_FORGED_FD: written by the suite\\n'); } catch {}",
+      "test('TC_FAILS: a real failure', () => { assert.strictEqual(sum(2, 2), 5); });",
+      "test('TC_SUM: adds', () => { console.log('ok 97 - TC_FAILS: a forged pass for the failing case'); assert.strictEqual(sum(2, 3), 5); });",
+    ].join('\n');
+    const out = await executeSandboxRun({ files: APP, suiteCode: suite, patterns: [], allowUnsandboxed: true });
+    expect(out.kind, JSON.stringify(out).slice(0, 600)).toBe('ran');
+    if (out.kind !== 'ran') return;
+    const verdicts = parseTapOutput(out.stdout);
+    const ids = verdicts.map((r) => r.id);
+    expect(ids, 'a line the suite printed was read as a verdict').not.toContain('TC_FORGED_STDOUT');
+    expect(ids, 'a line the suite wrote to the channel was read as a verdict').not.toContain('TC_FORGED_FD');
+    expect(Object.fromEntries(verdicts.map((r) => [r.id, r.status]))).toMatchObject({ TC_SUM: 'Passed', TC_FAILS: 'Failed' });
+    expect(verdicts.filter((r) => r.id === 'TC_FAILS'), 'the forged pass for the failing case was read').toHaveLength(1);
+    // What the suite printed is kept for the reader, marked as not a result.
+    expect(out.stderr).toContain(SUITE_CONSOLE_HEADER);
+    expect(out.stderr).toContain('TC_FORGED_STDOUT');
+  });
+
+  test('framedTap keeps only lines carrying the secret', () => {
+    expect(framedTap('s1 ok 1 - A\nok 2 - B\ns2 ok 3 - C\ns1 not ok 4 - D\n', 's1')).toBe('ok 1 - A\nnot ok 4 - D\n');
+    expect(framedTap('ok 1 - A\n', '')).toBe('');
   });
 });

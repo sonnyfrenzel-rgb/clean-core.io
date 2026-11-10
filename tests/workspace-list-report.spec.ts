@@ -475,7 +475,13 @@ test.describe('with projects', () => {
     await expect(cost).toBeVisible();
     await expect(cost.locator('[data-cc-run-cost-quota]')).not.toBeEmpty();
     await expect(cost.locator('[data-cc-run-cost-model]')).not.toBeEmpty();
-    expect(await cost.innerText()).toMatch(/No model call|Calls the model/);
+    // The consent texts `startRun.*` (legal review 06.11.2026): free, and who
+    // receives the code — never a word about costs.
+    await expect(cost.locator('[data-cc-run-cost-quota]')).toHaveText(/^Free\. /);
+    await expect(cost.locator('[data-cc-run-cost-model]')).toHaveText(
+      /^(Calls no AI model\. Your code does not leave the platform\.|Calls the AI model \((Google|Anthropic)\)\. Your code is sent to \2 for this\.)$/,
+    );
+    expect(await cost.innerText()).not.toMatch(/cost/i);
   });
 
   test('a run in flight shows stages and a cancel that says what it cannot cancel', async ({

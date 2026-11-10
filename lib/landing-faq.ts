@@ -53,7 +53,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'How does Clean-Core.io turn ABAP code into a BPMN process?',
-    a: 'Clean-Core.io’s deterministic engine reads the ABAP program and reconstructs the business process it runs as a BPMN 2.0 diagram: every task, gateway and event points to the ABAP line it came from, or says why it has none. Business names that a language model suggests are marked as a model proposal. The process can be edited in the built-in BPMN editor; every save is a new revision, and the reconstruction itself is never overwritten.',
+    a: 'Clean-Core.io’s deterministic engine reads the ABAP program and reconstructs the business process it runs as a BPMN 2.0 diagram: every task, gateway and event points to the ABAP line it came from, or says why it has none. Business names that a language model suggests are marked as AI-generated. The process can be edited in the built-in BPMN editor; every save is a new revision, and the reconstruction itself is never overwritten.',
     more: { href: '/features/process-blueprints', label: 'Process blueprints' },
   },
   {

@@ -14,7 +14,7 @@
  *
  * The counts keep apart what the acceptance counts (C(7), owner decision 18.10.2026): the engine's test classes
  * (`ltc_engine_cases`, `ltc_golden_master`, `ltc_counterparts`) are evidence; a class the testing model wrote
- * (`ltcl_…`) is a proposal, and a red method of it reads "model proposal, red in SAP: <message>" — never passed,
+ * (`ltcl_…`) is a proposal, and a red method of it reads "AI-generated, red in SAP: <message>" — never passed,
  * never counted with the engine's (`splitSapUnitRun`, lib/testing-abap-unit.ts).
  *
  * The runner is the owner's local tool outside the repository (it holds the trial's OAuth tokens; nothing here
@@ -108,7 +108,7 @@ export interface TrialRecord {
   engineUnit: UnitTally;
   /** The testing model's classes (ltcl_…): a proposal, not evidence. */
   modelUnit: UnitTally;
-  /** Every red method, engine and model, with SAP's message ("model proposal, red in SAP: …" for a model method). */
+  /** Every red method, engine and model, with SAP's message ("AI-generated, red in SAP: …" for a model method). */
   red: string[];
   classes: Array<{ name: string; ok: boolean; failure: string | null } & UnitTally>;
 }
@@ -323,7 +323,7 @@ export function trialRapPackage(pkgDir: string, program: string, runNo: number, 
   }
   rec.engineUnit = tally(all.filter((m) => isEngineTestClass(m.testClass)));
   rec.modelUnit = tally(all.filter((m) => !isEngineTestClass(m.testClass)));
-  // The words of lib/testing-abap-unit.ts: a red method of the model's class is "model proposal, red in SAP: …".
+  // The words of lib/testing-abap-unit.ts: a red method of the model's class is "AI-generated, red in SAP: …".
   rec.red = splitSapUnitRun(all.map(sapMethodOf)).red;
   rec.state = rec.classes.some((c) => !c.ok) ? 'failed' : 'ran';
   if (rec.state === 'failed') rec.reason = `ABAP Unit did not run on ${rec.classes.filter((c) => !c.ok).map((c) => c.name).join(', ')}: ${rec.classes.find((c) => !c.ok)!.failure}`;
@@ -363,7 +363,7 @@ export function trialMarkdown(records: readonly TrialRecord[]): string[] {
   L.push(
     `**${t.ran} of ${t.packages} package(s) imported, activated and run · ${t.activated} object(s) activated, ${t.activationErrors} activation error(s) · ABAP Unit, engine classes (counted, C(7)): ${t.engine.green} green, ${t.engine.red} red, ${t.engine.skipped} skipped · the testing model's classes (a proposal, not evidence): ${t.model.green} green, ${t.model.red} red, ${t.model.skipped} skipped**`,
     '',
-    '| Program | Run | Package · repository | Objects | Pull | Activated (passes) · errors | Engine green / red / skipped | Model proposal green / red / skipped | State |',
+    '| Program | Run | Package · repository | Objects | Pull | Activated (passes) · errors | Engine green / red / skipped | AI-generated green / red / skipped | State |',
     '|---|---|---|---|---|---|---|---|---|',
   );
   for (const r of records) {

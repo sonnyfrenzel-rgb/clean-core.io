@@ -269,7 +269,8 @@ test.describe('the design compares standard, RAP and CAP before ruling the stand
   test('the Design document and its export render the comparison', () => {
     const doc = fs.readFileSync(path.join(ROOT, 'components/design/DesignDocument.tsx'), 'utf8');
     // 3.0.19: with the engine's key-user step list for the fourth option's limits.
-    expect(doc).toContain('<OptionComparison design={design} keyUser={keyUser} />');
+    // 3.0.21 (owner decision 22.10.2026): the limits only where key user is the option in question.
+    expect(doc).toContain('<OptionComparison design={design} keyUser={keyUser} keyUserChosen={keyUserChosen} />');
     const exp = fs.readFileSync(path.join(ROOT, 'lib/design-export.ts'), 'utf8');
     expect(exp).toContain('readOptionComparison(data)');
   });

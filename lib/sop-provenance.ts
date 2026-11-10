@@ -30,9 +30,9 @@ import {
  *     the step shows *that* something happens there, not that the model's
  *     sentence says it right — "the worklist shows each open item" at a
  *     `SELECT` line is the model's wording;
- *   - **Model proposal** — the model's wording, unchecked. Where the model
+ *   - **AI-generated** — the model's wording, unchecked. Where the model
  *     cited lines of the step they stay with the sentence as a pointer
- *     ("Model proposal, cites L24"), never as proof;
+ *     ("AI-generated, cites L24"), never as proof;
  *   - **Proposal — not in the program** — an organisational element the code
  *     cannot hold (roles and job titles, approval, override, escalation, dual
  *     control, policy) or a capability the engine shows to be absent (posting
@@ -56,7 +56,7 @@ export interface SopStatement {
   text: string;
   basis: SopBasis;
   /**
-   * Reconstructed: the lines of the engine sentence it is. Model proposal: the
+   * Reconstructed: the lines of the engine sentence it is. AI-generated: the
    * lines of the step the model cited — a pointer, not proof. Otherwise empty.
    */
   anchors: DocAnchor[];
@@ -69,7 +69,7 @@ export interface SopStatement {
 /** How each basis reads, and the chip it maps to (`lib/provenance.ts` holds the words of the chips). */
 export const SOP_BASIS: Readonly<Record<SopBasis, { label: string; chip: ProvenanceValue; note?: string }>> = {
   reconstructed: { label: 'Reconstructed', chip: 'reconstructed', note: 'from the code' },
-  proposed: { label: 'Model proposal', chip: 'proposed' },
+  proposed: { label: 'AI-generated', chip: 'proposed' },
   'not-in-program': { label: 'Proposal — not in the program', chip: 'proposed', note: 'not in the program' },
   'not-determined': { label: 'Not determined', chip: 'not-determined' },
   confirmed: { label: 'Confirmed', chip: 'confirmed' },
@@ -94,7 +94,7 @@ const lineWords = (anchors: readonly DocAnchor[]) => {
 };
 const UNCHECKED_REASON = 'The program\'s capabilities were not recorded with this documentation, so this cannot be checked against the code.';
 
-/** "Reconstructed, L42" · "Model proposal" · "Model proposal, cites L42" · "Proposal — not in the program". */
+/** "Reconstructed, L42" · "AI-generated" · "AI-generated, cites L42" · "Proposal — not in the program". */
 export function sopBasisText(s: Pick<SopStatement, 'basis' | 'anchors'>): string {
   const label = SOP_BASIS[s.basis].label;
   if (!s.anchors.length) return label;

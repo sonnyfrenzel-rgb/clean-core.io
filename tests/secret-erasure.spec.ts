@@ -44,7 +44,7 @@ test('a delete that worked leaves neither the key nor the claim that one is conf
     await db.collection('s4_credentials').doc(uid).set({ url: 'https://s4.example.com', secretEnc: 'ciphertext' });
     await db.collection('users').doc(uid).set({ s4Meta: { configured: true, url: 'https://s4.example.com' } }, { merge: true });
 
-    await expect(deleteOwnModelKey(uid)).resolves.toBeUndefined();
+    await expect(deleteOwnModelKey(uid)).resolves.toEqual({ agreementEnded: false });
     await expect(deleteS4Credentials(uid)).resolves.toBeUndefined();
 
     expect((await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get()).exists).toBe(false);
@@ -71,7 +71,7 @@ test('a key delete after an erasure does not bring the profile back (0ce264ac607
   try {
     await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({ encryptedApiKey: 'ciphertext', last4: 'AbCd' });
 
-    await expect(deleteOwnModelKey(uid)).resolves.toBeUndefined();
+    await expect(deleteOwnModelKey(uid)).resolves.toEqual({ agreementEnded: false });
 
     expect((await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get()).exists).toBe(false);
     expect((await db.collection('users').doc(uid).get()).exists, 'the erased profile was recreated').toBe(false);
@@ -89,6 +89,6 @@ test('the key delete is one transaction with the profile read, never a merge-set
   expect(fn).toContain('await tx.get(profileRef)');
   // 3.0.15: every provider's record goes, whichever the own key was.
   expect(fn).toContain('for (const provider of MODEL_KEY_PROVIDERS) tx.delete(secrets.doc(provider));');
-  expect(fn).toMatch(/if \(!profile\.exists\) return;\s*tx\.update\(profileRef,/);
+  expect(fn).toMatch(/if \(!profile\.exists\) return \{ agreementEnded \};\s*tx\.update\(profileRef,/);
   expect(fn, 'the profile is merge-set again').not.toMatch(/\{\s*merge:\s*true\s*\}/);
 });

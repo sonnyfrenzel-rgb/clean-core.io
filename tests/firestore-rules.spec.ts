@@ -111,7 +111,8 @@ test.describe('Firestore Security Rules: AnalysisRuns subcollection validation',
 
     let updateFailed = false;
     try {
-      await setDoc(projectRef, { status: 'documented' }, { merge: true });
+      // A field the owner may write (since 3.0.21 no browser sets 'documented' at all).
+      await setDoc(projectRef, { solutionDesign: 'an operator edit' }, { merge: true });
     } catch {
       updateFailed = true;
     }

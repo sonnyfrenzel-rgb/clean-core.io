@@ -158,8 +158,13 @@ export function buildUserMessage({ range, batch, batchIndex, batchCount, triage,
     `Risk tags: ${triage.tags.join(', ') || 'none'}`,
     `Code changed without any test file in the delta: ${triage.codeWithoutTests ? 'YES — check whether that is acceptable' : 'no'}`,
     triage.signals.length
-      ? `Test-weakening signals (confirm or clear each):\n${triage.signals.map((s) => `- ${s.file}: ${s.signal} — \`${s.line}\``).join('\n')}`
+      ? `Test-weakening signals (confirm or clear each; "lower weight" = the same hunk adds an assertion on the same subject, check that it is no weaker):\n${triage.signals.map((s) => `- ${s.file}: ${s.signal}${s.weight === 'low' ? ' (lower weight)' : ''} — \`${s.line}\``).join('\n')}`
       : 'Test-weakening signals: none',
+    // Commit trailers `Test-Change: owner decision <date> <id>`: the stated reason, to check against the diff.
+    // A removed assertion stays a signal; the trailer only says which decision the change claims to follow.
+    triage.testChanges?.length
+      ? `Test changes the commits attribute to an owner decision (check each change against it; a removal it does not explain is still a finding):\n${triage.testChanges.map((t) => `- ${t}`).join('\n')}`
+      : 'Test changes attributed to an owner decision: none',
   ].join('\n');
 
   const criteria = triage.criteria.length ? triage.criteria.map((c) => `- ${c}`).join('\n') : '(none quoted — derive what the commits claim and check that)';

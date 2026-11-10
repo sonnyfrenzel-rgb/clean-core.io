@@ -1,8 +1,10 @@
+import { providerSuspendedNotice, suspensionDetailsOf } from '@/lib/provider-suspension';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
 import type { DocumentSnapshot } from 'firebase-admin/firestore';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   QuotaError,
   assertMfaSatisfied,
@@ -13,11 +15,18 @@ import {
 } from '@/lib/firebase-admin';
 import {
   ALLOWED_CLAUDE_MODELS,
+  AUTO_STEPS_OFF_CODE,
+  MODEL_PROVIDERS_SUSPENDED_ENV,
   OWN_CLAUDE_MODEL,
   PLATFORM_PROVIDER,
   PROVIDER_LABEL,
+  PROVIDER_NOT_ENABLED_CODE,
+  PROVIDER_SUSPENDED_CODE,
   RECEIPT_PROVIDER_ID,
+  autoStepsOffMessage,
+  ownKeyCallRefusal,
   stageAnswerNeedsWrite,
+  suspendedProvidersOf,
   type KeyOwner,
   type ModelKeyProvider,
   type StageAnswerRecord,
@@ -61,6 +70,10 @@ import { LEASED_PROMPT_MAX_CHARS, isGateRepairPrompt } from '@/lib/transformatio
 import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
+import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
+import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
+import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
+import { AUTO_MODEL_STEPS_OFF_CODE, autoModelStepsOffMessage, autoModelStepsOn } from '@/lib/auto-model-steps';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -204,6 +217,8 @@ const MAX_PROMPT_LENGTH = 250_000;
 const GEMINI_BODY_LIMITS = { maxBytes: MAX_PROMPT_LENGTH * 6 + 64 * 1024, timeoutMs: 30_000 };
 
 const MAX_RETRIES = 3;
+/** Anthropic is asked again at most twice (privacy policy and terms, Fassung 1.1: "höchstens zweimal"). */
+const ANTHROPIC_MAX_RETRIES = 2;
 const INITIAL_DELAY = 2000;
 
 async function callWithRetry<T>(
@@ -382,9 +397,9 @@ export async function POST(request: NextRequest) {
     try {
       profile = await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get();
       await assertMfaSatisfied(request, decodedToken, { profile });
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr.message || 'MFA verification required.' },
+        { error: mfaRefusal(mfaErr).message || 'MFA verification required.' },
         { status: 403 }
       );
     }
@@ -412,11 +427,14 @@ export async function POST(request: NextRequest) {
       jsonResponse = false,
       stage,
       responseShape,
+      trigger,
     } = (body ?? {}) as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
-      /** Which of the five model stages is asking. Absent for the glossary chatbot and the key test. */
+      /** 3.0.21 — `'automatic'` for a step the product started by itself on opening a project. */
+      trigger?: unknown;
+      /** Which stage is asking (`lib/model-call-stage.ts`): required since 3.0.21. */
       stage?: string;
       /** An answer shape within the stage (`lib/model-response-schema.ts`): the fill calls of 3.0.12. */
       responseShape?: unknown;
@@ -424,20 +442,29 @@ export async function POST(request: NextRequest) {
     // The product default, named or omitted, is this deployment's product
     // model — so `GEMINI_MODEL` reaches the callers that name the constant.
     const model = resolveRequestedModel(requestedModel, productModel());
+    const automatic = trigger === 'automatic';
+    // The narrative of the first run after "Create project" (`hooks/useStartRun.ts`).
+    const startNarrative = trigger === 'start';
 
     // Roadmap 1.2 — the per-stage switch, enforced on the server.
     //
     // The switch is the account owner's preference about their own key and
-    // their own quota, not a security boundary: a caller that omits `stage`
-    // is not stopped, and the five product callers name themselves. It is
+    // their own quota, not a security boundary. It is
     // enforced here rather than only in the browser so that a page left open
     // in another tab cannot spend on a stage the owner has since switched off.
     // The answer carries a code as well as a sentence, because the screens
     // branch on the reason and a message is for a person to read.
-    if (stage !== undefined) {
-      if (!isModelStage(stage)) {
-        return NextResponse.json({ error: `Unknown model stage: ${stage}.` }, { status: 400 });
-      }
+    //
+    // SEC-01 (3.0.21): every call names its stage — one of the seven, or the
+    // help chatbot's — and the stage bounds the answer's length below. A call
+    // without one is refused before any key is loaded.
+    if (!isModelCallStage(stage)) {
+      return NextResponse.json(
+        { error: stage === undefined ? 'Every model call names its stage.' : `Unknown model stage: ${stage}.`, code: 'stage-required' },
+        { status: 400 },
+      );
+    }
+    if (isModelStage(stage)) {
       if (!modelStageEnabled(profile.exists ? (profile.data() as { modelStages?: Record<string, boolean> }) : null, stage)) {
         return NextResponse.json(
           {
@@ -447,6 +474,18 @@ export async function POST(request: NextRequest) {
           { status: 403 },
         );
       }
+    }
+
+    // Legal review 06.11.2026 (3.0.21, item 2) — the account's one main switch
+    // "Automatic AI steps" (`lib/auto-model-steps.ts`): with it off, no call the
+    // product starts by itself goes out, on any key — the platform key
+    // included — and neither does the narrative of the first run. Refused
+    // before any key is loaded, so nothing is sent. The per-stage switch above
+    // and the own key's "Automatic steps" below apply on top of it.
+    // Terms 5.4 (legal review 06.11.2026): the assistant (`glossary`) is covered as well — with the
+    // switch off the platform calls no model for the account from it.
+    if ((automatic || startNarrative || stage === 'glossary') && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {
+      return NextResponse.json({ error: autoModelStepsOffMessage(), code: AUTO_MODEL_STEPS_OFF_CODE }, { status: 403 });
     }
 
     // A lease is bought for the Transformation stage and spends on nothing else.
@@ -479,6 +518,13 @@ export async function POST(request: NextRequest) {
         { error: 'The prompt must be a single string.' },
         { status: 400 },
       );
+    }
+
+    // 3.0.21 (owner decision 06.11.2026): business names are asked for only
+    // with the engine's facts in the prompt. A naming prompt without them is
+    // refused before any key is loaded, so no code goes to a model for it.
+    if (stage === NAMING_STAGE && !namingPromptAllowed(prompt)) {
+      return NextResponse.json({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE }, { status: 403 });
     }
 
     // F-07: Validate model against server-side allowlist
@@ -542,6 +588,29 @@ export async function POST(request: NextRequest) {
     const byokKey = ownKey?.apiKey ?? null;
     calledWithOwnKey = ownKey?.provider ?? null;
     const provider: ModelKeyProvider = ownKey ? ownKey.provider : PLATFORM_PROVIDER;
+    // 3.0.21 (T01) — the per-provider switch-off: a provider the operator has
+    // suspended is not called, and nothing else is called in its place — not
+    // another provider, not the platform key. The step stops with the reason.
+    if (suspendedProvidersOf(process.env[MODEL_PROVIDERS_SUSPENDED_ENV]).includes(provider)) {
+      return NextResponse.json({ error: providerSuspendedNotice(provider, suspensionDetailsOf(process.env)), code: PROVIDER_SUSPENDED_CODE }, { status: 503 });
+    }
+    // Legal texts Fassung 1.1 — the one switch for the own Claude key
+    // (`ANTHROPIC_OWN_KEY_OFFERED`): an own key of a provider that is not enabled
+    // (an Anthropic key stored on dev before) is not called, and nothing is
+    // called in its place. The step stops with the reason.
+    const notEnabled = ownKey ? ownKeyCallRefusal(ownKey.provider) : null;
+    if (notEnabled) {
+      return NextResponse.json({ error: notEnabled, code: PROVIDER_NOT_ENABLED_CODE }, { status: 503 });
+    }
+    // 3.0.21 (owner decision B6) — a step the product starts by itself when the
+    // owner opens a project (`trigger: 'automatic'`) runs on an own key only
+    // once the account switched "Automatic steps" on for that key; until then
+    // it comes on a click. With the platform key it runs as before. Like the
+    // stage switch, the account's preference about its own key, held here so a
+    // page left open cannot spend on it.
+    if (automatic && ownKey && !ownKey.autoSteps) {
+      return NextResponse.json({ error: autoStepsOffMessage(PROVIDER_LABEL[ownKey.provider]), code: AUTO_STEPS_OFF_CODE }, { status: 403 });
+    }
     // The model the provider is asked for: a Gemini request runs as asked; with
     // an own Claude key every stage runs on the one Claude model set in
     // `lib/model-providers.ts`, checked against its own register.
@@ -578,6 +647,24 @@ export async function POST(request: NextRequest) {
     // back in `finally` below, whatever the call does; the call itself stays
     // counted. A leased call also ends with its request: when the browser
     // cancels the generation, the provider call is aborted and not retried.
+    // SEC-01 (3.0.21): the community key's daily budget, with its breaker
+    // (`lib/platform-model-budget.ts`). Only a call the platform key would pay
+    // for is counted; an own key is never counted or refused here. Asked
+    // before a lease counts the call, so a refused call costs the lease nothing.
+    if (!ownKey && !stubbed) {
+      let admitted: boolean;
+      try {
+        const { db, FieldValue } = await getAdminDb();
+        admitted = (await reservePlatformModelCall(db, (n) => FieldValue.increment(n))).ok;
+      } catch (budgetErr: unknown) {
+        logger.error('platform model budget check failed', { route: 'api/gemini', error: budgetErr instanceof Error ? budgetErr.name : 'unknown' });
+        return NextResponse.json({ error: 'The usage check could not run. Please try again shortly.' }, { status: 503 });
+      }
+      if (!admitted) {
+        return NextResponse.json({ error: platformBudgetMessage(), code: PLATFORM_BUDGET_CODE }, { status: 503 });
+      }
+    }
+
     if (lease) {
       const { db } = await getAdminDb();
       const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
@@ -596,6 +683,10 @@ export async function POST(request: NextRequest) {
     const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
     // Fill and repair calls think LOW (`lib/model-thinking.ts`, measured 13.10.2026); every other shape keeps the default.
     const thinkingConfig = thinkingConfigFor(shape);
+    // Set inside the provider call below; typed so the assignment there is not narrowed away.
+    let inferenceGeo = null as string | null;
+    // SEC-01 (3.0.21): the most output (thinking included) one call of this stage may produce.
+    const maxOutputTokens = STAGE_MAX_OUTPUT_TOKENS[stage];
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : provider === 'anthropic'
@@ -631,8 +722,11 @@ export async function POST(request: NextRequest) {
             leased: lease !== null,
             durationMs: Date.now() - attemptAt,
           }));
+          // Where Anthropic says inference ran (`usage.inference_geo`, 3.0.21) —
+          // recorded with who answered, beside the receipt, never inside it.
+          inferenceGeo = result.inferenceGeo;
           return result.answer;
-        }, undefined, undefined, callSignal)
+        }, ANTHROPIC_MAX_RETRIES, undefined, callSignal)
       : await callWithRetry(async () => {
           const attemptAt = Date.now();
           const result = await ai!.models.generateContent({
@@ -646,9 +740,10 @@ export async function POST(request: NextRequest) {
                   responseMimeType: 'application/json',
                   ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
                   ...(thinkingConfig ? { thinkingConfig } : {}),
+                  maxOutputTokens,
                   abortSignal: callSignal,
                 }
-              : { ...(thinkingConfig ? { thinkingConfig } : {}), abortSignal: callSignal },
+              : { ...(thinkingConfig ? { thinkingConfig } : {}), maxOutputTokens, abortSignal: callSignal },
           }).catch((providerErr: unknown) => {
             // A failed attempt is a call too: its duration is logged, its
             // counts are null.
@@ -716,8 +811,12 @@ export async function POST(request: NextRequest) {
     // trust record — the receipt below is that.
     const keyOwner: KeyOwner = ownKey ? 'own' : 'platform';
     const receiptProvider = RECEIPT_PROVIDER_ID[provider];
-    if (stage !== undefined && !stubbed) {
-      const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString() };
+    // Who answered, as every answer carries it: the receipt's claim set is
+    // unchanged (no signed format changes what it signs); the data region of a
+    // Claude answer travels beside it.
+    const answeredBy = { provider: receiptProvider, modelId: servedModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };
+    if (isModelStage(stage) && !stubbed) {
+      const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString(), ...(inferenceGeo ? { inferenceGeo } : {}) };
       const previous = (profile.data() as { modelAnswers?: Record<string, unknown> } | undefined)?.modelAnswers?.[stage];
       if (stageAnswerNeedsWrite(previous, record)) {
         try {
@@ -732,7 +831,7 @@ export async function POST(request: NextRequest) {
     const signingKey = getAuditSigningKey();
     if (!signingKey) {
       console.error(MISSING_SIGNING_KEY_LOG);
-      return NextResponse.json({ text, answeredBy: { provider: receiptProvider, modelId: servedModel, keyOwner } });
+      return NextResponse.json({ text, answeredBy });
     }
 
     const receipt = issueModelReceipt(
@@ -752,11 +851,13 @@ export async function POST(request: NextRequest) {
         modelId: servedModel,
         byok: !!byokKey,
         ...(stage !== undefined ? { stage } : {}),
+        // CA-INT-02 (3.0.21): the receipt binds the prompt as well as the answer.
+        prompt,
       },
       signingKey,
     );
 
-    return NextResponse.json({ text, receipt, answeredBy: { provider: receiptProvider, modelId: servedModel, keyOwner } });
+    return NextResponse.json({ text, receipt, answeredBy });
   } catch (error: unknown) {
     // The deadline ended the call: said as such, with a code, before Cloud Run
     // would have answered 504 with no body (13.10.2026). Not retried here: the

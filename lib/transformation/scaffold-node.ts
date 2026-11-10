@@ -41,7 +41,7 @@ import { fillProbeConfigs } from './fill-probes';
 import { DISPLAY_TAG, displaySitesOf, displayWords, type DisplaySite } from './display-node';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
-import { camelName, partLocalsOf, pascalName, rangeWords, staticLocalsOf, type EngineFacts } from './unit-plan';
+import { argsTypeName, camelName, partLocalsOf, pascalName, rangeWords, staticLocalsOf, type EngineFacts } from './unit-plan';
 import { NODE_STOP_FLAG, stopFlagName } from './part-exit';
 import { operandsOf } from './guard-basis';
 import { AUTHORITY_FILE, authorityDocLines, authorityEntriesOf, authorityFile, authorityFrameLines } from './authority-node';
@@ -1154,7 +1154,7 @@ function guardsFile(
 
 function argsInterface(u: Unit, shapes: AbapShapes): string | null {
   if (u.parameters.length === 0 || u.part) return null;
-  const name = `${u.fn[0].toUpperCase()}${u.fn.slice(1)}Args`;
+  const name = argsTypeName(u.fn);
   // Typed as the FORM declares each parameter (3.0.13, acceptance run 14.10.2026: every argument was `unknown`,
   // and a faithful `dec.compare(args.ivNum, '0')` did not compile); `unknown` only where the FORM says nothing.
   const at = u.abap[0]?.lineStart ?? 0;
@@ -1429,6 +1429,9 @@ function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes, auth: readonly Au
     out.push(`import { ${c.fn} } from '${rel}';`);
   }
   out.push('');
+  // A split part (scaffold version 23) takes its parent routine's parameters: their interface is the parent's.
+  const parent = u.part ? plan.units.find((x) => x.id === u.part!.parent) : undefined;
+  if (parent && parent.parameters.length > 0) out.push(`import type { ${argsTypeName(parent.fn)} } from './${parent.file.split('/').pop()}';`, '');
   const args = argsInterface(u, shapes);
   if (args) {
     out.push(args);
@@ -1531,7 +1534,8 @@ function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan, shapes: AbapSha
     out.push(`  const local: Record<string, unknown> = Object.assign(kept, ${literal(start)});`);
   } else out.push(`  const local: Record<string, unknown> = ${literal(start)};`);
   for (const p of parts) {
-    out.push(`  const r${p.part!.index} = ${p.fn}(sel, st, local);`);
+    // Scaffold version 23: every part gets the routine's own parameters, as RAP hands them over.
+    out.push(`  const r${p.part!.index} = ${p.fn}(sel, st, local${u.parameters.length > 0 ? ', args' : ''});`);
     out.push(`  if (r${p.part!.index}) return r${p.part!.index};`);
     // The part left the routine (RETURN, a CHECK or EXIT outside a loop): no further part runs, as in the original.
     if (p !== parts[parts.length - 1]) out.push(`  if (local.${stopFlag}) return;`);

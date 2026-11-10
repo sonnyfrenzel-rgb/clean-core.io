@@ -42,7 +42,15 @@ async function firstScreen(page: Page) {
   // its steps in plain words, the opening of the Business view (owner: "he just
   // wants to know more about his old process") — and the full map, drawn from
   // the signed run, follows right under it.
+  //
+  // Since 3.0.21 (ADR-103, five blocks on one screen) the story is block 3,
+  // under "In short" — which quotes the header's title as the author's claim —
+  // and "Started by / Goes in / Comes out". Owner decision 23.10.2026: its first
+  // steps stand whole in the first screen of 1440 × 1000, beside the main line.
+  await expect(page.locator('[data-first-look-process="drawn"]')).toBeInViewport();
   await expect(page.locator('[data-process-story]')).toBeInViewport();
+  await expect(page.locator('[data-process-story-step="1"]')).toBeInViewport({ ratio: 1 });
+  await expect(page.locator('[data-process-story-step="2"]')).toBeInViewport({ ratio: 1 });
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
   // The main line stays on the right after the build-up (owner 10.10.2026,

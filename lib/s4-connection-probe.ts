@@ -22,9 +22,9 @@ import { safeFetch, SsrfError, isSafeODataServicePath } from './url-validation';
  * service named in it is cut to `/sap/opu/odata/{namespace}/{service}`, and the
  * request is one GET on that service's `$metadata` — nothing else is ever built.
  *
- * Reading records stays a separate, explicitly started action
- * (`/api/test-s4-odata-read`, "Read one record from the tenant"), behind the
- * same tenant-access gate; it is not part of this test.
+ * Checking an entity set is a separate, explicitly started action
+ * (`/api/test-s4-odata-read`, "Check the entity set in the tenant"), behind the
+ * same tenant-access gate; since 3.0.21 it too reads only `$metadata`.
  */
 
 /** The service checked when the saved address names none — the siblings' default too. */

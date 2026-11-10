@@ -73,6 +73,12 @@ test.describe('one stage header, defined once', () => {
     expect(read('lib/messages/navigation.ts')).toContain("'nav.backToProjectWorkspace': 'Back to project workspace'");
     expect(code.indexOf('data-stage-back')).toBeGreaterThan(-1);
     expect(code.indexOf('data-stage-back')).toBeLessThan(code.indexOf('data-stage-title'));
+    // The view the tool is read in, with the switch, on the row of the way back (ADR-105).
+    expect(code.indexOf('<StageViewSwitch')).toBeGreaterThan(code.indexOf('data-stage-back'));
+    expect(code.indexOf('<StageViewSwitch')).toBeLessThan(code.indexOf('data-stage-title'));
+    const sw = read('components/StageViewSwitch.tsx').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(sw, 'the switch is the shared segmented control, no look of its own').toContain('<CcSegmentedControl');
+    expect(sw).not.toMatch(/\bfont-black\b|\btext-(?:[2-9]xl|gray-\d+|slate-\d+)\b|\bbg-green-/);
   });
 
   test('the cc-text-title role is 22 px / 800 / -0.02em (DESIGN.md §1.2, §2.3)', () => {

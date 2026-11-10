@@ -32,18 +32,121 @@ export function isModelKeyProvider(value: unknown): value is ModelKeyProvider {
 export const PLATFORM_PROVIDER: ModelKeyProvider = 'gemini';
 
 /**
- * Whether an own Claude key is offered in Settings and accepted by the save
- * route. One switch for both, so the page and the route cannot disagree.
- * The owner turns it off here should the privacy texts for Anthropic as a
- * recipient not be live when this reaches production.
+ * **The one switch for the own Claude key** — whether an Anthropic key is
+ * selectable in Settings, storable by the save route, testable by the key test
+ * and callable by the proxy (`/api/gemini`). Every one of them reads it through
+ * `offeredKeyProviders()` / `ownKeyCallRefusal()`, so they cannot disagree, and
+ * turning the feature on is this one line.
+ *
+ * **Off in 3.0.21** (owner decision 06.11.2026): the Claude BYOK code and the
+ * Anthropic passages of the legal texts ship, but the key is enabled only once
+ * the amended Terms are in effect for accounts (`TERMS_EFFECTIVE_DATE_ISO`) and
+ * acceptance tests T01, T03 and T08 have passed (open values `providerSwitchOff`,
+ * `t03AdditionalAgreementAcceptance`, `aiMarkingManifest` and the check
+ * `anthropicGoLive` in `lib/legal/open-values.ts`). Until then the privacy policy
+ * (section 2), the Terms (5.2) and the Trust page say that no Anthropic key can
+ * be stored, Settings shows the Anthropic option as not selectable with
+ * `ANTHROPIC_OWN_KEY_STATUS`, the save and test routes refuse it, and the proxy
+ * refuses a call on an Anthropic key stored before (dev) — all with
+ * `PROVIDER_NOT_ENABLED_CODE`, never falling back to the platform key. When it
+ * is turned on, an Anthropic key is stored only with the Additional Agreement on
+ * Own Model Keys accepted (`lib/byok-addendum.ts`), for a business account (its
+ * clause 9), and the status sentence in those texts is replaced with it.
  */
-// Off until the owner's privacy policy, terms and DPA name Anthropic (3.0.15 legal TODO, owner 16.10.2026).
 export const ANTHROPIC_OWN_KEY_OFFERED = false;
 
-/** The providers a save may name today. */
-export function offeredKeyProviders(): ModelKeyProvider[] {
-  return MODEL_KEY_PROVIDERS.filter((p) => p !== 'anthropic' || ANTHROPIC_OWN_KEY_OFFERED);
+/**
+ * The providers a save, a key test and a call may use today. `anthropicOffered`
+ * exists for the specs that prove both positions of the switch; every caller in
+ * the product passes nothing.
+ */
+export function offeredKeyProviders(anthropicOffered: boolean = ANTHROPIC_OWN_KEY_OFFERED): ModelKeyProvider[] {
+  return MODEL_KEY_PROVIDERS.filter((p) => p !== 'anthropic' || anthropicOffered);
 }
+
+/**
+ * Why a model call on an own key of `provider` is refused by the switch above,
+ * or null when it may go out. The proxy asks this before any provider contact;
+ * a refusal never falls back to the platform key.
+ */
+export function ownKeyCallRefusal(provider: ModelKeyProvider, anthropicOffered: boolean = ANTHROPIC_OWN_KEY_OFFERED): string | null {
+  if (offeredKeyProviders(anthropicOffered).includes(provider)) return null;
+  return `Calls on an own ${PROVIDER_LABEL[provider]} key are not enabled yet (${PROVIDER_NOT_ENABLED_CODE}). Nothing was sent, and the platform key was not used instead. ${provider === 'anthropic' ? ANTHROPIC_OWN_KEY_STATUS : ''}`.trim();
+}
+
+/** The code a save or a key test carries when it names a provider that is not enabled yet. */
+export const PROVIDER_NOT_ENABLED_CODE = 'byok-provider-not-enabled';
+
+/**
+ * What Settings and a refused save say while the own Anthropic key is not
+ * enabled — the English mirror of the status sentence in the privacy policy
+ * (section 2), the Terms (5.2) and the Trust page.
+ */
+export const ANTHROPIC_OWN_KEY_STATUS =
+  'We will enable own Anthropic keys once the functions they require have passed acceptance; until then no Anthropic key can be stored, and the settings show the current status.';
+
+/** Why a provider cannot be chosen now, or null when it can. */
+export function providerUnavailableReason(provider: ModelKeyProvider, anthropicOffered: boolean = ANTHROPIC_OWN_KEY_OFFERED): string | null {
+  if (offeredKeyProviders(anthropicOffered).includes(provider)) return null;
+  return provider === 'anthropic' ? `Not available yet. ${ANTHROPIC_OWN_KEY_STATUS}` : 'Not available.';
+}
+
+/**
+ * The per-provider switch-off (legal review 22.10.2026, acceptance T01; the
+ * Additional Agreement, clause 6): should the recipient of a provider change or
+ * the basis for calling it cease, the operator stops every call to that
+ * provider — **without** a deploy, by setting the server environment variable
+ * `MODEL_PROVIDERS_SUSPENDED` (comma-separated provider ids, e.g.
+ * `anthropic`). A suspended provider is never replaced by another provider or
+ * by the platform key: the step stops and says why, the stored key stays until
+ * its owner deletes it, and Settings says so beside the key.
+ *
+ * Pure: the caller hands the variable's value in; an unknown id is ignored.
+ */
+export const MODEL_PROVIDERS_SUSPENDED_ENV = 'MODEL_PROVIDERS_SUSPENDED';
+
+export function suspendedProvidersOf(value: string | null | undefined): ModelKeyProvider[] {
+  if (!value) return [];
+  const named = value.split(',').map((s) => s.trim().toLowerCase());
+  return MODEL_KEY_PROVIDERS.filter((p) => named.includes(p));
+}
+
+/** The code a refused call carries when its provider is switched off. */
+export const PROVIDER_SUSPENDED_CODE = 'model-provider-suspended';
+
+/** What the step and Settings say when a provider is switched off. */
+export function providerSuspendedMessage(provider: ModelKeyProvider): string {
+  return `Calls to ${PROVIDER_LABEL[provider]} are switched off by the operator (${PROVIDER_SUSPENDED_CODE}). Nothing was sent, and no other provider or key was used instead. Your stored key stays until you delete it; until then, the model steps of this account are not available.`;
+}
+
+/**
+ * 3.0.21 (owner decision B6) — the code a step the product started by itself
+ * carries when it is refused because the account has not switched "Automatic
+ * steps" on for its own key. The screens read the code and offer the step on a
+ * click instead; nothing is shown as an error.
+ */
+export const AUTO_STEPS_OFF_CODE = 'own-key-auto-steps-off';
+
+export function autoStepsOffMessage(providerLabel: string): string {
+  return `Automatic steps are off for your own ${providerLabel} key (${AUTO_STEPS_OFF_CODE}). Nothing was sent. Start the step with a click, or switch automatic steps on in Settings.`;
+}
+
+/**
+ * Whether a step the product starts by itself may run for this account now:
+ * on the platform key always; on an own key only with the switch on.
+ */
+export function autoStepsAllowed(a: { keySource: 'byok' | 'community' | null; autoSteps: boolean }): boolean {
+  return a.keySource === 'community' || (a.keySource === 'byok' && a.autoSteps);
+}
+
+/**
+ * The data region of every call on an own Claude key (legal review B7, the
+ * Additional Agreement clause 6): `inference_geo: "us"` — the direct API knows
+ * only `us` and `global`, and a named region documents better than `global`.
+ * Anthropic charges 1.1× its standard price for it, which the key owner bears.
+ * Supported from Claude 4.6 on; `OWN_CLAUDE_MODEL` below is newer.
+ */
+export const ANTHROPIC_INFERENCE_GEO = 'us';
 
 /**
  * The provider id a model receipt and a signed run carry. `google-gemini` is
@@ -84,6 +187,13 @@ export const KEY_PLACEHOLDER: Readonly<Record<ModelKeyProvider, string>> = {
  * name goes into the model receipt, as with `PRODUCT_GEMINI_MODEL`.
  */
 export const OWN_CLAUDE_MODEL = 'claude-sonnet-5-5';
+
+/**
+ * The same model as a reader reads it, for prose on screen. The id above is
+ * what the API, the receipt and the legal register name; in a sentence it is a
+ * machine string (`tests/helpers/machine-strings.ts`). Changed with the id.
+ */
+export const OWN_CLAUDE_MODEL_NAME = 'Claude Sonnet 5.5';
 
 /** The Claude models the proxy may call. Only a model named here is ever sent. */
 export const ALLOWED_CLAUDE_MODELS: ReadonlySet<string> = new Set([OWN_CLAUDE_MODEL]);
@@ -130,6 +240,11 @@ export interface StageAnswerRecord {
   keyOwner: KeyOwner;
   /** ISO time of the call. */
   at: string;
+  /**
+   * 3.0.21 — where the provider says inference ran (`usage.inference_geo` of a
+   * Claude answer). Absent for Gemini and for records written before.
+   */
+  inferenceGeo?: string;
 }
 
 export function isStageAnswerRecord(v: unknown): v is StageAnswerRecord {
@@ -153,6 +268,7 @@ export const STAGE_ANSWER_REFRESH_MS = 10 * 60 * 1000;
 export function stageAnswerNeedsWrite(previous: unknown, next: StageAnswerRecord): boolean {
   if (!isStageAnswerRecord(previous)) return true;
   if (previous.provider !== next.provider || previous.modelId !== next.modelId || previous.keyOwner !== next.keyOwner) return true;
+  if ((previous.inferenceGeo ?? null) !== (next.inferenceGeo ?? null)) return true;
   const before = Date.parse(previous.at);
   const now = Date.parse(next.at);
   return !Number.isFinite(before) || !Number.isFinite(now) || now - before >= STAGE_ANSWER_REFRESH_MS;

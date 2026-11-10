@@ -18,6 +18,7 @@
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { csvCell } from '@/lib/csv-formula';
+import { formatTenPointScore } from '@/lib/score-scale';
 import { buildEvidenceChain } from '@/lib/evidence-chain';
 import { recordedProfileOf } from '@/lib/assessment-target';
 import { profileCoverage, PROFILE_INPUT_ID } from '@/lib/assessment-profile';
@@ -354,8 +355,8 @@ export function generateExecutiveSummary(project: Project): string {
 | Run | ${mdCell(project.activeRunId)} |
 | Run Status | ${mdCell(project.status || 'unknown')} |
 | Clean Core Score | ${project.cleanCoreScore ?? '—'}/100 |
-| Complexity Score | ${project.complexityScore ?? '—'}/100 |
-| Criticality Score | ${project.criticalityScore ?? '—'}/100 |
+| Complexity Score | ${formatTenPointScore(project.complexityScore)} |
+| Criticality Score | ${formatTenPointScore(project.criticalityScore)} |
 | Engine Recommendation | ${mdCell(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || routeLabel(project.extensibilityRoute) : '—')} |
 | Target Architecture & Sign-Off | ${SEE_ATTESTED} |
 | Extensibility Route | ${mdCell(project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : '—')} |
@@ -398,8 +399,8 @@ export function generateExecutiveSummaryDoc(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
   const score = project.cleanCoreScore ?? '—';
-  const complexity = project.complexityScore ?? '—';
-  const criticality = project.criticalityScore ?? '—';
+  const complexity = formatTenPointScore(project.complexityScore);
+  const criticality = formatTenPointScore(project.criticalityScore);
 
   return `<html xmlns:o='urn:schemas-microsoft-com:office:office' 
       xmlns:w='urn:schemas-microsoft-com:office:word' 
@@ -437,8 +438,8 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       <tr><td>Run</td><td>${escapeHtml(project.activeRunId)}</td></tr>
       <tr><td>Run Status</td><td>${escapeHtml(project.status || 'unknown')}</td></tr>
       <tr><td>Clean Core Score</td><td>${score}/100</td></tr>
-      <tr><td>Complexity Score</td><td>${complexity}/100</td></tr>
-      <tr><td>Criticality Score</td><td>${criticality}/100</td></tr>
+      <tr><td>Complexity Score</td><td>${complexity}</td></tr>
+      <tr><td>Criticality Score</td><td>${criticality}</td></tr>
       <tr><td>Engine Recommendation</td><td>${escapeHtml(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || routeLabel(project.extensibilityRoute) : '—')}</td></tr>
       <tr><td>Target Architecture &amp; Sign-Off</td><td>${escapeHtml(SEE_ATTESTED)}</td></tr>
       <tr><td>Extensibility Route</td><td>${escapeHtml(project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : '—')}</td></tr>

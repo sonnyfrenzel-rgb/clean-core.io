@@ -19,7 +19,16 @@
 
 import type { AtcFinding, AtcPriority, AtcQuarantineEntry, AtcReport } from './atc-model';
 import { sanitizeAtcFindings } from './atc-privacy';
-import { parseTabularRows } from './tabular-import';
+import { MAX_TABULAR_IMPORT_BYTES, parseTabularRows } from './tabular-import';
+import { looksLikeXml, parseAtcXmlText } from './atc-xml';
+
+/**
+ * The most findings one import keeps — `ATC_REPORT_MAX_FINDINGS` in
+ * `lib/project-commands.ts`, which refuses more; said here first, with the
+ * reason, rather than as a refused save (`tests/atc-import-3021.spec.ts` holds
+ * the two together).
+ */
+export const ATC_MAX_FINDINGS = 20000;
 
 // ── Column synonym map (language/version tolerant) ─────────────────
 
@@ -51,6 +60,7 @@ const EXEMPTED_FALSE = new Set(['', 'FALSE', 'NO', 'NEIN', 'NOT APPROVED', 'NICH
  * @param file - Browser File object from the upload
  */
 export async function parseAtc(file: File): Promise<AtcReport> {
+  if (/\.xml$/i.test(file.name) || (file.type && /xml/i.test(file.type))) return parseAtcXmlFile(file);
   const rawRows = await parseTabularRows(file);
   if (rawRows.length === 0) {
     throw new Error('The uploaded file contains no data rows. Please check the file format.');
@@ -151,6 +161,9 @@ export async function parseAtc(file: File): Promise<AtcReport> {
     });
   });
 
+  if (findings.length > ATC_MAX_FINDINGS) {
+    throw new Error(`This ATC export holds ${findings.length} findings; one import keeps at most ${ATC_MAX_FINDINGS}. Export only the programs this project covers.`);
+  }
   if (quarantined.length > 0) {
     warnings.push(`${quarantined.length} row${quarantined.length === 1 ? '' : 's'} not taken over — see the list of rejected rows.`);
   }
@@ -171,11 +184,63 @@ export async function parseAtc(file: File): Promise<AtcReport> {
   return withoutUndefined({
     findings: sanitized,
     source: 'atc',
+    format: 'table',
     quarantined,
     importedAt: new Date().toISOString(),
     warnings,
     retentionExpiresAt,
   });
+}
+
+/**
+ * An ATC result exported as XML — the ADT worklist or checkstyle
+ * (`atc-xml.ts`). Same contract as the table: a row that cannot be read is
+ * quarantined with its reason, personal data never reaches a finding, and the
+ * file's size is asked before a byte is read.
+ */
+async function parseAtcXmlFile(file: File): Promise<AtcReport> {
+  if (file.size > MAX_TABULAR_IMPORT_BYTES) {
+    throw new Error(
+      `This file is ${Math.round(file.size / 1024 / 1024)} MB; an import reads at most ${MAX_TABULAR_IMPORT_BYTES / 1024 / 1024} MB. Export only the programs this project covers and upload that file.`,
+    );
+  }
+  const text = await file.text();
+  if (!looksLikeXml(text)) throw new Error('This file is named .xml but does not hold XML.');
+  const read = parseAtcXmlText(text);
+  if (read.findings.length === 0 && read.quarantined.length === 0) {
+    throw new Error('This ATC export holds no findings, so there is nothing to compare.');
+  }
+  if (read.findings.length > ATC_MAX_FINDINGS) {
+    throw new Error(`This ATC export holds ${read.findings.length} findings; one import keeps at most ${ATC_MAX_FINDINGS}. Export only the programs this project covers.`);
+  }
+  const warnings = [...read.warnings];
+  if (read.quarantined.length > 0) {
+    warnings.push(`${read.quarantined.length} finding${read.quarantined.length === 1 ? '' : 's'} not taken over — see the list of rejected rows.`);
+  }
+  return withoutUndefined({
+    findings: sanitizeAtcFindings(read.findings),
+    source: 'atc',
+    format: read.format,
+    quarantined: read.quarantined,
+    importedAt: new Date().toISOString(),
+    warnings,
+    retentionExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    ...(read.runAt ? { runAt: read.runAt, runAtSource: 'file' as const } : {}),
+  });
+}
+
+/**
+ * The run date a person enters for a file that names none — `YYYY-MM-DD`, not
+ * in the future. Returns the report with the date, or the report unchanged when
+ * the file already named one (the file wins) or the date is not a real day.
+ */
+export function withDeclaredRunDate(report: AtcReport, day: string): AtcReport {
+  if (report.runAtSource === 'file') return report;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day.trim());
+  if (!m) return report;
+  const at = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  if (at.getUTCDate() !== Number(m[3]) || at.getTime() > Date.now()) return report;
+  return { ...report, runAt: at.toISOString(), runAtSource: 'declared' };
 }
 
 /** Drop `undefined` at every depth; keep `null`, which is a value. Firestore refuses `undefined`. */

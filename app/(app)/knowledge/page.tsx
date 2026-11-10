@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",
-    answer: "A deterministic engine reads the custom ABAP before any language model does. It reconstructs the business process as BPMN, with a line anchor on every element or the reason it has none, lists the business rules hard-coded in the program, and grades each SAP object the code uses Level A–D from SAP's published Cloudification Repository, or marks it Unknown where the repository holds no answer for it. The Management view then asks for one decision: keep, rebuild, move to SAP standard or retire. Design, Transformation and Testing carry the same evidence to a target design, a code draft in ABAP Cloud (RAP) or CAP, and test scenarios, each marked as a Model proposal for an architect to review, and every completed analysis is stored as a signed run. It complements SAP's own tooling and does not replace human judgment."
+    answer: "A deterministic engine reads the custom ABAP before any language model does. It reconstructs the business process as BPMN, with a line anchor on every element or the reason it has none, lists the business rules hard-coded in the program, and grades each SAP object the code uses Level A–D from SAP's published Cloudification Repository, or marks it Unknown where the repository holds no answer for it. The Management view then asks for one decision: keep, rebuild, move to SAP standard or retire. Design, Transformation and Testing carry the same evidence to a target design, a code draft in ABAP Cloud (RAP) or CAP, and test scenarios, each marked as AI-generated for an architect to review, and every completed analysis is stored as a signed run. It complements SAP's own tooling and does not replace human judgment."
   },
   {
     question: "What are the five dimensions of SAP Clean Core?",
@@ -168,7 +168,7 @@ export default function KnowledgePage() {
           <li><strong>Process:</strong> the business process read from the code as BPMN, with a line anchor on every element or the reason it has none, and the business rules hard-coded in the program.</li>
           <li><strong>Level A–D:</strong> each SAP object the code uses, graded from SAP&apos;s published Cloudification Repository and object classification under a versioned rule, or marked Unknown where neither holds an answer — an orientation; ABAP Test Cockpit stays the authority.</li>
           <li><strong>Decision:</strong> keep, rebuild, move to SAP standard or retire, in the Management view, recorded by the signed-in account.</li>
-          <li><strong>Design, code draft, tests:</strong> on the same evidence, each a Model proposal for a person to review.</li>
+          <li><strong>Design, code draft, tests:</strong> on the same evidence, each AI-generated, for a person to review.</li>
           <li><strong>Signature:</strong> every completed analysis is stored as an immutable run signed by the server.</li>
         </ol>
         <Link href="/how-it-works" className="inline-flex items-center gap-2 text-cc-brand-strong font-bold text-sm underline-offset-2 hover:underline">

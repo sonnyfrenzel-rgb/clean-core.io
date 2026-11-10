@@ -19,7 +19,7 @@ import { anchorHolds, sourceLines, type RequirementSet } from '@/lib/functional-
  *     of that requirement's own anchors; one that is not is dropped with the
  *     reason `anchor-not-in-source` or `anchor-not-of-requirement`.
  *
- * What survives is a proposal: shown with the chip *Model proposal*, the
+ * What survives is a proposal: shown with the chip *AI-generated*, the
  * engine's sentence beneath it, in every export too. Pure, no imports beyond
  * the builder.
  */

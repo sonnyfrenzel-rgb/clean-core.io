@@ -25,10 +25,14 @@ import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emu
  *
  * Needs the commit in the clone: the e2e job checks out with fetch-depth 0
  * (see tests/terms-version-archive.spec.ts); a shallow clone skips with that
- * reason. Without a pending block there is no transition, and it skips too.
+ * reason. Without a pending block there is no transition, and it skips too —
+ * and so it does once the deployed ruleset already carries the write ceiling:
+ * a later pending change (3.0.21) is not this transition, and its old rules no
+ * longer close `write_ceilings`.
  */
 
-const DEPLOYED_RULES_COMMIT = '1c8e7562';
+// The commit whose rules are recorded as deployed (docs/registers/rules-deployment.json, 7247edb0…).
+const DEPLOYED_RULES_COMMIT = '1b8066e3';
 const ROOT = path.resolve(__dirname, '..');
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
 
@@ -112,6 +116,7 @@ test('with the rules live in production, the app still creates projects and tick
     lfHash(text!),
     `firestore.rules at ${DEPLOYED_RULES_COMMIT} is not the ruleset recorded as deployed - pin DEPLOYED_RULES_COMMIT to the commit whose rules were deployed`,
   ).toBe(register.deployed.sha256OfLfNormalisedText);
+  test.skip(/match \/write_ceilings\//.test(text!), 'the deployed rules already carry the write ceiling - the transition is behind us');
 
   await loadRules(text!);
   // The old rules close write_ceilings to the browser: that is what the fallback answers.

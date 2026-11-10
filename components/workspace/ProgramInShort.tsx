@@ -20,7 +20,7 @@ import { wt } from '@/lib/workspace-messages';
  * The level is always said: the chip *Reconstructed* and the sentence that the
  * business has not confirmed it. A model's wording of the purpose, where one
  * passed the check against the engine's facts, stands first with the chip
- * *Model proposal* — the engine's sentences stay underneath it.
+ * *AI-generated* — the engine's sentences stay underneath it.
  *
  * Only layout: the sentences and the anchors come in ready.
  */
@@ -31,7 +31,11 @@ export default function ProgramInShort({
   authorClaim = null,
   headingLevel = 4,
   id = 'program-in-short-title',
+  compact = false,
+  worded = null,
 }: {
+  /** The chip of a plain wording that stands in place of the engine's sentence (First insights); nothing otherwise. */
+  worded?: React.ReactNode;
   lines: readonly SummaryLine[];
   /** The level of the whole summary — "Reconstructed from the code — not confirmed by the business." */
   level: SummaryLine;
@@ -45,16 +49,23 @@ export default function ProgramInShort({
   authorClaim?: AuthorClaim | null;
   headingLevel?: 2 | 3 | 4;
   id?: string;
+  /**
+   * The Business view's First insights (roadmap 3.0.21): one sentence under the
+   * heading, and the level said once — by the card's own chip *Reconstructed*
+   * and in its "How this was read" fold — instead of a second chip and a level
+   * sentence here. Analyze keeps the full form.
+   */
+  compact?: boolean;
 }) {
   if (lines.length === 0) return null;
   const Heading = headingLevel === 2 ? 'h2' : headingLevel === 3 ? 'h3' : 'h4';
   return (
-    <section data-program-in-short="" aria-labelledby={id} className="flex min-w-0 flex-col gap-2">
+    <section data-program-in-short={compact ? 'compact' : ''} aria-labelledby={id} className="flex min-w-0 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Heading id={id} className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
           {wt('biz.inShortTitle')}
         </Heading>
-        <CcProvenanceChip value={level.basis === 'confirmed' ? 'confirmed' : 'reconstructed'} />
+        {compact ? null : <CcProvenanceChip value={level.basis === 'confirmed' ? 'confirmed' : 'reconstructed'} />}
       </div>
       {authorClaim?.state === 'shown' ? (
         <p data-program-in-short-author-claim="" className="m-0 flex flex-wrap items-center gap-2 text-[15px] leading-snug font-semibold text-cc-ink">
@@ -69,10 +80,15 @@ export default function ProgramInShort({
           <CcProvenanceChip value="proposed" note={wt('biz.inShortProposalNote')} />
         </p>
       ) : null}
-      {proposal || authorClaim?.state === 'shown' ? (
+      {/* Compact (First insights): "Read from the code:" leads the engine's sentence on its own line instead of
+          taking a line of its own, so the first screen keeps room for the steps (owner decision 23.10.2026). */}
+      {!compact && (proposal || authorClaim?.state === 'shown') ? (
         <p className="m-0 text-[12px] font-semibold text-cc-ink-muted">{wt('biz.inShortEngine')}</p>
       ) : null}
       <p data-program-in-short-text="" className={proposal || authorClaim?.state === 'shown' ? 'm-0 text-[13px] leading-snug font-medium text-cc-ink' : 'm-0 text-[15px] leading-snug font-semibold text-cc-ink'}>
+        {compact && (proposal || authorClaim?.state === 'shown') ? (
+          <span data-program-in-short-engine="" className="font-semibold text-cc-ink-muted">{`${wt('biz.inShortEngine')} `}</span>
+        ) : null}
         {lines.map((line, i) => (
           <React.Fragment key={`${line.key}-${i}`}>
             <span data-in-short-slot={line.key} className="break-words">{line.text}</span>
@@ -85,11 +101,14 @@ export default function ProgramInShort({
             {i < lines.length - 1 ? ' ' : null}
           </React.Fragment>
         ))}
+        {worded}
       </p>
       {authorClaim?.state === 'contradicted' ? (
         <p data-program-in-short-author-claim="not-quoted" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{authorClaim.note}</p>
       ) : null}
-      <p data-program-in-short-level="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{level.text}</p>
+      {compact ? null : (
+        <p data-program-in-short-level="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{level.text}</p>
+      )}
     </section>
   );
 }

@@ -68,7 +68,7 @@ export interface RaciEditing {
  *   1. **the SOP as a step strip** — every step in the order of the process,
  *      who is Responsible, the outcome in one line, the step's lines and its
  *      provenance chip: *Reconstructed* or *Confirmed* for a step of the
- *      process read from the code, *Model proposal* for one the model named and
+ *      process read from the code, *AI-generated* for one the model named and
  *      the code does not have;
  *   2. **the RACI as a matrix** — steps × roles, a coloured letter per cell, a
  *      legend, and the gaps said in words: a step with no Accountable or with
@@ -81,7 +81,7 @@ export interface RaciEditing {
  *      description — and a layer stored before keeps them in its data, not on
  *      the screen.
  *
- * The layer is a model proposal from end to end and says so on the section,
+ * The layer is AI-generated from end to end and says so on the section,
  * on the matrix and in the fold. Nothing is added to it here: the data is
  * `lib/business-summary.ts` over the stored JSON.
  */
@@ -138,7 +138,7 @@ function StepChip({ step }: { step: SopStep }) {
   return <StatementChip statement={first} />;
 }
 
-/** One SOP sentence's basis as a chip — "Model proposal · not in the program" for an organisational element. */
+/** One SOP sentence's basis as a chip — "AI-generated · not in the program" for an organisational element. */
 function StatementChip({ statement }: { statement: SopStatement }) {
   const basis = SOP_BASIS[statement.basis];
   return <CcProvenanceChip value={basis.chip} note={statement.basis === 'reconstructed' ? undefined : basis.note} />;
@@ -582,7 +582,7 @@ export default function BusinessLayer({
   process: ProcessStepRef[];
   /** The owner's "Regenerate SOP and RACI" — absent for a reader. */
   action?: React.ReactNode;
-  /** Inside the stage's one card of model proposals (roadmap 3.0.7): no card of its own, a heading one level down. */
+  /** Inside the stage's one card of AI-generated proposals (roadmap 3.0.7): no card of its own, a heading one level down. */
   embedded?: boolean;
   /** What the program can do — each SOP sentence is judged against it; absent: the facts stored with the layer. */
   facts?: CapabilityFacts | null;

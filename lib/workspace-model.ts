@@ -44,7 +44,6 @@ import { INPUT_IDS, type InputManifest } from './input-manifest';
 import { assessCoverage, type UnassessedConstruct } from './abap/coverage';
 import type { BusinessRuleSet } from './abap/business-rule-set';
 import type { ProcessSummary } from './process-summary';
-import { capabilityKeyOf } from './abap/standard-coverage';
 import { pricedOptions } from './economics-record';
 import { formatTextDate } from './format';
 
@@ -624,21 +623,12 @@ export function workspaceLayers(
   const needRows: LayerRow[] = [...processRows, ...ruleRows, ...usageRows];
 
   /* --------------------------------------------------------- standard */
-  // One row per capability — the rules that decide the same subject (roadmap
-  // 7.2). The evidence behind each, read against SAP's catalogue, is the
-  // layer's own table (`components/workspace/StandardFitTable.tsx`); here it is
-  // only counted, so the bar and the section agree on whether there is a table.
-  const capabilities = new Map<string, string[]>();
-  for (const rule of rules) {
-    const key = capabilityKeyOf(rule);
-    if (key) capabilities.set(key, [...(capabilities.get(key) ?? []), rule.id]);
-  }
-  const standardRows: LayerRow[] = [...capabilities.entries()].map(([key, ids]) => ({
-    key: `capability-${key}`,
-    label: key,
-    value: ids.join(', '),
-    anchor: null,
-  }));
+  // "Where this program touches SAP standard" (owner decision 22.10.2026) is
+  // read from the findings of the signed run, which only the IT view loads
+  // (`lib/standard-touch.ts`, `StandardTouchCard`). The capability rows that
+  // stood here counted rule subjects nothing compared with SAP standard, so
+  // this layer carries no rows of its own: its content is IT's section.
+  const standardRows: LayerRow[] = [];
 
   /* ----------------------------------------------------- architecture */
   const architectureRows: LayerRow[] = [
@@ -777,10 +767,10 @@ export function workspaceLayers(
     },
     {
       key: 'standard',
-      label: 'Standard fit',
+      label: 'Where it touches SAP standard',
       hash: '#standard',
-      count: standardRows.length > 0 ? `${standardRows.length} ${standardRows.length === 1 ? 'capability' : 'capabilities'}` : null,
-      missing: 'No standard candidate carries an evidence level yet.',
+      count: null,
+      missing: 'Read in the IT view from the findings of the signed run.',
       rows: standardRows.slice(0, FIRST),
       total: standardRows.length,
       provenance: standardRows.length > 0 ? 'reconstructed' : 'not-determined',

@@ -85,7 +85,7 @@ export const sectionName = (key: ProcessDocumentSection): string => sectionTitle
  */
 export const PROCESS_DOCUMENT_NOTE =
   'Reconstructed from the code by the Clean-Core.io engine. Line references (L…) point at the source. '
-  + 'What the code cannot answer is asked once, in the open questions. Text marked "Model proposal" was written by a language model.';
+  + 'What the code cannot answer is asked once, in the open questions. Text marked "AI-generated" was written by a language model.';
 
 /** The provenance of the whole document, for the cover. Never "Proven". */
 export const PROCESS_DOCUMENT_STATUS = 'Reconstructed from the code — to be confirmed by the business';
@@ -106,7 +106,7 @@ export const EMPTY_SECTION: Readonly<Record<'trigger' | 'rules' | 'exceptions' |
   questions: 'No question is left open.',
 };
 
-export const MODEL_PROPOSAL_LABEL = 'Model proposal';
+export const AI_GENERATED_LABEL = 'AI-generated';
 
 /* ------------------------------------------------------------------ types */
 
@@ -163,7 +163,7 @@ export interface PdProposal {
  *   step holds no evidence of its own.
  *
  * Business roles (a buyer, an approver) are never this: they are the RACI's,
- * a model proposal.
+ * an AI-generated draft.
  */
 export type PdActorWho = 'User' | 'System' | 'Background job';
 
@@ -204,7 +204,7 @@ export interface PdStep {
   name: string;
   /** The routine or token the source writes — secondary. */
   technicalName: string;
-  /** The naming stage's business name, a model proposal. */
+  /** The naming stage's business name, an AI-generated draft. */
   businessName: string | null;
   /** The call and, for a routine, its body. Never empty for an anchored element. */
   anchors: DocAnchor[];

@@ -481,7 +481,7 @@ test.describe('capture the landing page views', () => {
    *     (Private Cloud, the dialog's boxes ticked), then Design (which drafts
    *     its document on first open) and Delivery opened. This half makes model
    *     calls, so the server needs `GEMINI_API_KEY`; what the model wrote keeps
-   *     its "Model proposal" mark in the picture, as in the product.
+   *     its "AI-generated" mark in the picture, as in the product.
    *
    * Every picture: 2× device pixels, from the stage title (with the tags or the
    * eyebrow above it) down, one aspect (1248 × 900 CSS px; Design's canvas page

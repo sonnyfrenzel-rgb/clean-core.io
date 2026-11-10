@@ -7,9 +7,14 @@ import {
   adminGrantS4,
   adminRevokeS4,
   adminDeleteUser,
+  adminBlockOwnModelKey,
+  adminEndByokAgreement,
+  getAdminAuth,
 } from '@/lib/firebase-admin';
+import { sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { processAllPendingWithdrawals } from '@/lib/withdrawal-queue-store';
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +37,15 @@ export async function POST(req: NextRequest) {
     // 3. Parse request body
     const body = await req.json();
     const { uid, action } = body;
+
+    // Legal review 06.11.2026 (B8): withdrawal receipts that could not be sent —
+    // tried again now; a receipt that goes out, or the seventh day without one,
+    // ends in the deletion of that account (`lib/withdrawal-queue.ts`). Not
+    // about one account, so no uid; the answer is counts only, never an address.
+    if (action === 'withdrawal-receipts') {
+      const counts = await processAllPendingWithdrawals();
+      return NextResponse.json({ success: true, counts });
+    }
 
     if (!uid || !action) {
       return NextResponse.json({ error: 'Missing required parameters: uid, action.' }, { status: 400 });
@@ -58,6 +72,21 @@ export async function POST(req: NextRequest) {
       case 'delete-user':
         await adminDeleteUser(decodedAdmin.uid, uid);
         break;
+      // 3.0.21 — the Additional Agreement on Own Model Keys ended in text form
+      // (its clause 11, legal review E24): first block the stored key, so no
+      // call goes out on it, then delete it. Both are recorded in the proof log;
+      // the deletion is confirmed to the account's sign-in address.
+      case 'block-own-key':
+        await adminBlockOwnModelKey(decodedAdmin.uid, uid);
+        break;
+      case 'end-byok-agreement': {
+        const { agreementEnded } = await adminEndByokAgreement(decodedAdmin.uid, uid);
+        if (agreementEnded) {
+          const email = await getAdminAuth().then((auth) => auth.getUser(uid)).then((u) => u.email ?? null, () => null);
+          await sendAgreementEndedMail(email, uid, 'text-form');
+        }
+        break;
+      }
       default:
         return NextResponse.json({ error: 'Invalid action name.' }, { status: 400 });
     }

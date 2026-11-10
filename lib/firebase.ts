@@ -1,10 +1,10 @@
 import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator, terminate } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
-import { getAuth, getFirebaseApps } from './firebase-app';
+import { getAuth, getAuthIfStarted, getFirebaseApps } from './firebase-app';
 
 // The app and Auth live in `lib/firebase-app.ts` so a page that needs only Auth
 // does not load Firestore; every importer of this module gets the same two.
-export { getAuth, getFirebaseApps };
+export { getAuth, getAuthIfStarted, getFirebaseApps };
 
 // F-09: Firestore SDK noise is silenced via the SDK's own logger below.
 // Transient stream errors ("CANCELLED", "Disconnecting idle stream", ...) are

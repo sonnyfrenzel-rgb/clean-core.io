@@ -256,17 +256,37 @@ service cloud.firestore {
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
 
+    // NFRData (lib/non-functional-requirements.ts): the eight topics the Design
+    // stage stores, each optional text. Nothing else, nothing nested.
+    function isValidNonFunctionalRequirements(value) {
+      return value is map &&
+             value.keys().hasOnly(['dataMigration', 'dataRetention', 'auditTrail', 'authorizationConcept',
+                                   'errorHandling', 'monitoring', 'slaRequirements', 'cutoverStrategy']) &&
+             (!('dataMigration' in value) || isBoundedString(value.dataMigration, 0, 20000)) &&
+             (!('dataRetention' in value) || isBoundedString(value.dataRetention, 0, 20000)) &&
+             (!('auditTrail' in value) || isBoundedString(value.auditTrail, 0, 20000)) &&
+             (!('authorizationConcept' in value) || isBoundedString(value.authorizationConcept, 0, 20000)) &&
+             (!('errorHandling' in value) || isBoundedString(value.errorHandling, 0, 20000)) &&
+             (!('monitoring' in value) || isBoundedString(value.monitoring, 0, 20000)) &&
+             (!('slaRequirements' in value) || isBoundedString(value.slaRequirements, 0, 20000)) &&
+             (!('cutoverStrategy' in value) || isBoundedString(value.cutoverStrategy, 0, 20000));
+    }
+
     // The client-writable project fields isValidProject() does not already type.
     // Checked only when the write touches them, so a field an older server
     // version stored in another shape does not block unrelated edits; a field
     // that is touched must be present afterwards (the app deletes none of them).
     //
-    // `status`: a client sets only the three labels its stage tools write —
-    // 'designed' (Design), 'testing' (Testing), 'documented' (Documentation) —
-    // and only on a project whose stored status shows that an analysis ran.
-    // 'analyzed' and 'transformed' are written by the server (POST
-    // /api/runs/create, POST /api/projects/{projectId}/contract); 'uploaded' and
-    // 'created' exist only on create.
+    // `status`: a client sets only the one label its stage tools still write —
+    // 'designed', by the Design stage, in the same write as the design itself
+    // (SEC-2026-888) — and only on a project whose stored status shows that an
+    // analysis ran. 'testing' and 'documented' are written by
+    // POST /api/projects/{projectId}/artefacts since 3.0.14; 'analyzed' and
+    // 'transformed' by POST /api/runs/create and POST
+    // /api/projects/{projectId}/contract; 'uploaded' and 'created' exist only on
+    // create.
+    //
+    // `nonFunctionalRequirements`: the closed NFRData shape (SEC-2026-889/-890).
     //
     // `exports`: a client only removes entries; adding or changing one is the
     // server's.
@@ -274,16 +294,17 @@ service cloud.firestore {
     // `updatedAt`: only the time of the write itself (serverTimestamp()).
     function isValidProjectFieldChange(data, before, changed) {
       return (!('status' in changed) ||
-                (data.status in ['designed', 'testing', 'documented'] &&
+                (data.status == 'designed' &&
+                 'solutionDesign' in changed && isBoundedString(data.solutionDesign, 1, 999999) &&
                  before.get('status', '') in ['analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed'])) &&
+             (!('nonFunctionalRequirements' in changed) || !('nonFunctionalRequirements' in data) ||
+                isValidNonFunctionalRequirements(data.nonFunctionalRequirements)) &&
              (!('s4Deployment' in changed) || data.s4Deployment in ['public', 'private']) &&
              (!('s4Environment' in changed) || data.s4Environment in ['mock', 'live']) &&
              (!('businessDocumentation' in changed) || isBoundedString(data.businessDocumentation, 0, 999999)) &&
              (!('coverageEstimate' in changed) || isValidCoverageEstimate(data.coverageEstimate)) &&
              (!('testSuite' in changed) || isValidTestSuite(data.testSuite)) &&
              (!('exports' in changed) || isExportsRemovalOnly(data, before)) &&
-             (!('manualTestingRequirements' in changed) ||
-                (data.manualTestingRequirements is list && data.manualTestingRequirements.size() <= 500)) &&
              (!('updatedAt' in changed) || data.updatedAt == request.time);
     }
 
@@ -411,10 +432,13 @@ service cloud.firestore {
                       // writes it, and no stage writes it from the browser.
                       // `extensibilityRoute` followed in 3.0.7: only POST /api/runs/create
                       // writes it since the Analyze route switch was removed.
+                      // `testCases` and `manualTestingRequirements` followed in 3.0.21
+                      // (SEC-2026-889/-890): POST /api/projects/{projectId}/artefacts
+                      // writes them since 3.0.14, and no stage writes them from the browser.
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                         'status', 'legacyCode', 's4Deployment', 'solutionDesign',
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
-                        'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
+                        'testSuite', 'coverageEstimate',
                         'exports', 'updatedAt', 's4Environment',
                         'nonFunctionalRequirements'
                       ])

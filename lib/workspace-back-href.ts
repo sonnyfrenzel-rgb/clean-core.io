@@ -90,7 +90,7 @@ function layerHome(view: string | null, layer: LayerKey): { view: WorkspaceView;
 /** The place names of the layer homes in IT and Management, as the way back says them. */
 const HOME_LABELS: Readonly<Record<string, string>> = {
   [BUSINESS_MAP_ID]: 'Process map',
-  standard: 'Standard fit',
+  standard: 'Where it touches SAP standard',
   [IT_SECTION_IDS.objects]: 'Objects & dependencies',
   [IT_SECTION_IDS.trust]: 'Run & trust',
   [MANAGEMENT_IDS.decision]: 'Decision',
@@ -211,7 +211,7 @@ export function stageHref({
  */
 export const LAYER_LABELS: Readonly<Record<LayerKey, string>> = {
   need: 'Need & process',
-  standard: 'Standard fit',
+  standard: 'Where it touches SAP standard',
   costs: 'Costs & assumptions',
   architecture: 'Architecture & dependencies',
   evidence: 'Evidence & controls',

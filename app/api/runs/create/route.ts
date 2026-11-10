@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
+import { mfaRefusal, verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
 import { recommendationOfRoute } from '@/lib/project-commands';
 import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
@@ -9,7 +9,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
-import { canonicalizeJson } from '@/lib/run-signature';
+import { canonicalizeJson, RUN_SIGNATURE_SCHEME, signRunHashV2 } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 import { withStoredArtefacts } from '@/lib/project-artefact-store';
@@ -29,6 +29,7 @@ import {
   runProfileRecord,
 } from '@/lib/assessment-target';
 import { INPUT_IDS } from '@/lib/input-manifest';
+import { uploadedFileNameDefect } from '@/lib/uploaded-file-name';
 import {
   checkProjectWrite,
   mergedDocument,
@@ -41,6 +42,7 @@ import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 import { countSourceLines } from '@/lib/source-lines';
 import { isTargetChange, projectTarget } from '@/lib/target-change';
+import { portfolioStepFor } from '@/lib/portfolio/run-context';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -142,10 +144,10 @@ export async function POST(req: NextRequest) {
     // to write into the very chain that is supposed to prove provenance.
     try {
       await assertMfaSatisfied(req, decodedToken);
-    } catch (mfaErr: any) {
+    } catch (mfaErr: unknown) {
       return NextResponse.json(
-        { error: mfaErr?.message || 'Multi-factor authentication required.' },
-        { status: mfaErr?.status || 403 },
+        { error: mfaRefusal(mfaErr).message || 'Multi-factor authentication required.' },
+        { status: mfaRefusal(mfaErr).status || 403 },
       );
     }
 
@@ -154,8 +156,11 @@ export async function POST(req: NextRequest) {
     // fingerprint is free by design, so one account could repeat the same
     // expensive analysis of a large source without limit.
     // 30/h is far above what a person analysing ABAP produces.
+    // Roadmap 3.0.21: a portfolio step signs each program through this very
+    // handler, in-process, and is bounded by the batch's own limits instead
+    // (`lib/portfolio/run-context.ts` — no request can set that context).
     try {
-      await assertRateLimit(`runs-create:${decodedToken.uid}`, 30, 60 * 60 * 1000);
+      if (!portfolioStepFor(decodedToken.uid)) await assertRateLimit(`runs-create:${decodedToken.uid}`, 30, 60 * 60 * 1000);
     } catch (rateErr: any) {
       if (rateErr instanceof QuotaError) {
         return NextResponse.json({ error: rateErr.message }, { status: rateErr.status });
@@ -184,6 +189,12 @@ export async function POST(req: NextRequest) {
     // (lib/firestore-id.ts).
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
+    }
+    // The file name goes into the signed evidence; it is held to what a
+    // browser's File.name can be before anything is read or charged (L-05).
+    const fileNameDefect = uploadedFileNameDefect(uploadedFileName);
+    if (fileNameDefect) {
+      return NextResponse.json({ error: fileNameDefect, code: 'bad-file-name' }, { status: 400 });
     }
 
     const { db, FieldValue } = await getAdminDb();
@@ -515,16 +526,20 @@ export async function POST(req: NextRequest) {
       })),
     ];
     // Narrative, not evidence: project worklist only, never the signed run.
+    // A gap the model sent without one of its fields is stored with null
+    // there: `readModelGaps` admits any gap with a title, and an undefined
+    // value made Firestore refuse the whole write — the run failed after its
+    // reservation, for a missing rationale.
     const narrativeGapItems = gapsList.map((g, idx) => ({
       id: `gap-${idx}`,
       title: g.title,
       category: 'Functional Gap',
-      severity: g.severity,
+      severity: g.severity ?? null,
       location: 'S/4HANA Configuration',
-      recommendation: g.rationale,
-      strategy: g.strategy,
+      recommendation: g.rationale ?? null,
+      strategy: g.strategy ?? null,
       status: 'open',
-      effort: g.complexity
+      effort: g.complexity ?? null
     }));
 
     // 5. Construct run document properties
@@ -562,19 +577,16 @@ export async function POST(req: NextRequest) {
     // `/api/model-stages`. Putting a client-supplied reason in the signed run
     // would sign a sentence the client chose.
     const narrativeAsSubmitted = typeof analysis === 'string' ? analysis : '';
-    // No `stage` asked for, deliberately. The naming and statements stores
-    // require their stage
-    // because a receipt there *is* the permission to store under a switch. Here
-    // the receipt decides nothing about whether the run is created — only
-    // whether its narrative may name a provider and a model — and the narrative
-    // is the Analyze stage's by construction (both callers, `analyze/page.tsx`
-    // and `lib/analysis-run.ts`, ask under 'analyze'). Requiring it would turn
-    // every run with a receipt from before the stage field into "origin not
-    // established" for no gain in what the signed run claims.
+    // Under 'analyze' (roadmap 3.0.21, CA-INT-02). The narrative is the Analyze
+    // stage's by construction — both callers, `analyze/page.tsx` and
+    // `lib/analysis-run.ts`, ask under 'analyze' — so a receipt minted under
+    // any other stage, or under none, is not a receipt for this narrative. A
+    // receipt lives ten minutes, so none from before the stage field remains.
     const receiptVerdict = verifyModelReceipt(body.modelReceipt, {
       uid: decodedToken.uid,
       text: narrativeAsSubmitted,
       key: signingKey,
+      stage: 'analyze',
     });
     const attested = receiptVerdict.ok ? receiptVerdict.receipt : null;
     if (!receiptVerdict.ok && receiptVerdict.refusal !== 'absent') {
@@ -722,6 +734,10 @@ export async function POST(req: NextRequest) {
       // the weekly report counts units from this rather than from the account's
       // current tier and key.
       metering,
+      // Roadmap 3.0.21 (CA-INT-03): signed under the key derived for runs, and
+      // the scheme is inside the hash, so it cannot be moved back to the
+      // legacy form (`lib/run-signature.ts`).
+      signatureScheme: RUN_SIGNATURE_SCHEME,
     };
 
     // Calculate cryptographic runHash over sorted canonical representation of complete payload (Finding 2)
@@ -729,7 +745,7 @@ export async function POST(req: NextRequest) {
     const runHash = crypto.createHash('sha256').update(canonicalPayloadStr).digest('hex');
 
     // Generate HMAC signature. `signingKey` is non-null past the guard above.
-    const signature = crypto.createHmac('sha256', signingKey).update(runHash).digest('hex');
+    const signature = signRunHashV2(runHash, signingKey);
 
     const analysisRun: AnalysisRun = {
       ...unsignedRunPayload,

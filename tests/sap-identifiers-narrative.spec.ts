@@ -63,16 +63,18 @@ test.describe('model SAP identifiers pass the check before a document shows them
     expect(text).toContain('1FM [not verified — check before use]');
   });
 
-  test('the standard-fit text of the business analysis drops a contradicted ID with SAP\'s title', () => {
+  test('an older analysis\'s model standard fit is not exported at all (owner decision 22.10.2026)', () => {
+    // The text this test used to check (a contradicted ID dropped from the
+    // standard-fit section) has no section any more: the model's standard fit
+    // is the guess at what cannot be measured, and it is shown nowhere.
     const md = formatAnalysisToMarkdown(JSON.stringify({
       projectTitle: 'Collections',
       summary: 'A report.',
       asIsContext: 'Reads open items.',
       standardFit: { potential: 'Medium', targetStandardProcess: 'Collections Management with F2358 (Process Collections Worklist)', rationale: 'Scope item 1FM covers it.' },
     }), { code: SOURCE });
-    const fit = md.slice(md.indexOf('## Target Standard Process & SAP Fit'));
-    expect(fit).not.toMatch(/Target Standard Process:\*\* `[^`]*Process Collections Worklist/);
-    expect(fit).toContain('SAP: F2358 is “Monitor Purchase Order Items”');
-    expect(fit).toContain('1FM [not verified — check before use]');
+    expect(md).not.toContain('Target Standard Process');
+    expect(md).not.toContain('Process Collections Worklist');
+    expect(md).not.toContain('1FM');
   });
 });

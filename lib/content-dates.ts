@@ -31,6 +31,7 @@ export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/datenschutz': '2026-10-02',
   '/datenschutz/de': '2026-10-02',
   '/terms': '2026-10-02',
+  '/report': '2026-10-22',
   '/licenses': '2026-09-30',
   '/catalog': '2026-10-10',
   '/catalog/browse': '2026-10-10',

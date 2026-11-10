@@ -30,7 +30,12 @@
  * wants — and `chainHeadLine` says where the keyword it borrowed stands.
  *
  * What this reader does not do: expand macros (`DEFINE … END-OF-DEFINITION`) or
- * follow `INCLUDE`. Native SQL between `EXEC SQL` and `ENDEXEC` is marked with
+ * follow `INCLUDE`. Includes are put in place before any reader runs, when a
+ * program is uploaded with them (`include-resolution.ts`), and one the upload
+ * did not hold is reported as not read (`coverage.ts`, `include-not-read`).
+ * Macros are said, not expanded: from engine 3.0.21 every line that uses one
+ * is listed as "Macro not expanded" beside its definition (`coverage.ts`).
+ * Native SQL between `EXEC SQL` and `ENDEXEC` is marked with
  * `nativeSql` rather than parsed — it carries no ABAP periods, and its
  * `:host_variable` colons are not chain operators.
  */

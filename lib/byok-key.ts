@@ -92,13 +92,36 @@ export const OWN_KEY_REJECTED_CODE = 'own-key-rejected';
  * decided its code goes only through its own key.
  */
 export class OwnModelKeyMissingError extends Error {
-  readonly code = OWN_KEY_MISSING_CODE;
+  readonly code: string;
+  constructor(code: string = OWN_KEY_MISSING_CODE, message?: string) {
+    super(
+      message ??
+        `Your own model key is set for this account but could not be found on this server (${OWN_KEY_MISSING_CODE}). Nothing was sent to a model, ` +
+          'and nothing is sent with the platform key instead. Save your key again in Settings, or remove it there to use the platform key.',
+    );
+    this.code = code;
+    this.name = 'OwnModelKeyMissingError';
+  }
+}
+
+/** The code of a key the operator has blocked until it is deleted. */
+export const OWN_KEY_BLOCKED_CODE = 'own-key-blocked';
+
+/**
+ * 3.0.21 — the account ended the Additional Agreement on Own Model Keys in text
+ * form (its clause 11, legal review E24), and the operator blocked the stored
+ * key until it is deleted. A kind of "set but not usable": every caller that
+ * refuses a missing own key refuses this one the same way, so no call goes to
+ * the provider and none to the platform key instead.
+ */
+export class OwnModelKeyBlockedError extends OwnModelKeyMissingError {
   constructor() {
     super(
-      `Your own model key is set for this account but could not be found on this server (${OWN_KEY_MISSING_CODE}). Nothing was sent to a model, ` +
-        'and nothing is sent with the platform key instead. Save your key again in Settings, or remove it there to use the platform key.',
+      OWN_KEY_BLOCKED_CODE,
+      `Your own model key is blocked on this server because the agreement for it was ended (${OWN_KEY_BLOCKED_CODE}). Nothing was sent to a model, ` +
+        'and nothing is sent with the platform key instead. Delete the key in Settings to use the platform key again.',
     );
-    this.name = 'OwnModelKeyMissingError';
+    this.name = 'OwnModelKeyBlockedError';
   }
 }
 

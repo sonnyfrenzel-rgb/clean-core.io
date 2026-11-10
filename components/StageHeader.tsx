@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useSyncExternalStore } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { PHASES, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
@@ -11,6 +11,8 @@ import ChoiceBackLink from '@/components/ChoiceBackLink';
 import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { StageToolBar } from '@/components/workspace/ToolBar';
+import StageViewSwitch from '@/components/StageViewSwitch';
+import { useLocationSearch } from '@/lib/location-search';
 
 /**
  * The header at the top of a workflow stage. There is exactly one.
@@ -47,6 +49,11 @@ import { StageToolBar } from '@/components/workspace/ToolBar';
  * instead — "Back to Management view, Options" (`data-stage-back="origin"`,
  * `components/ChoiceBackLink.tsx`); the footer keeps the way to the workspace.
  *
+ * On the same row, top right, the view switch (ADR-105, owner decision
+ * 22.10.2026): "Business | IT | Management", the view the tool is read in
+ * selected; one click changes the view and stays on the tool
+ * (`components/StageViewSwitch.tsx`). The view lives in the address only.
+ *
  * The link is navigation, and navigation does not print (§7.1): it carries
  * `cc-no-print`, so no stage has to hide it on paper by itself — on paper it
  * would be a bare path in brackets (block D, D.31; Economics did it locally).
@@ -62,10 +69,6 @@ import { StageToolBar } from '@/components/workspace/ToolBar';
  */
 
 /** A layer id on the workspace page: letters, digits and dashes, nothing that could leave the fragment. */
-
-const noSubscription = () => () => {};
-const readSearch = () => window.location.search;
-const serverSearch = () => '';
 
 export default function StageHeader({
   stage,
@@ -117,8 +120,9 @@ export default function StageHeader({
 
   // Read from the address in the browser only: the query is not part of the
   // server render (`''` there), and a statically generated demo page must not
-  // depend on it — `useSearchParams` would force it to render on demand.
-  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  // depend on it — `useSearchParams` would force it to render on demand. Read
+  // again when the view switch below changes it (`lib/location-search.ts`).
+  const search = useLocationSearch();
 
   // The demo's stages hand their tools the `/demo` base; their way back is
   // the demo workspace (owner 02.10.2026), by the same rule as a project's.
@@ -139,19 +143,30 @@ export default function StageHeader({
       data-stage-header={stage ?? ''}
       className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
-      {back.kind === 'link' && back.origin ? (
-        // A choice made here was asked for elsewhere (`?origin=`, a key of the
-        // closed list in `lib/choice-addresses.ts`): the way back leads there,
-        // one level deep. The tool bar and the footer still lead to the workspace.
-        <ChoiceBackLink href={back.origin.href} label={back.origin.label} stage />
-      ) : back.kind === 'link' && (
-        <Link
-          href={back.href}
-          data-stage-back="workspace"
-          className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap`}
-        >
-          <StageBackText projectName={backName} search={search} />
-        </Link>
+      {back.kind === 'link' && (
+        // The way back on the left, the view on the right (owner decision
+        // 22.10.2026): which of the three views this tool is read in, and the
+        // switch to the other two, on every tool. On a phone the switch wraps
+        // under the way back and fills the row.
+        <div data-stage-head-row="" className="flex flex-wrap items-start justify-between gap-x-4">
+          <div className="min-w-0">
+            {back.kind === 'link' && back.origin ? (
+              // A choice made here was asked for elsewhere (`?origin=`, a key of the
+              // closed list in `lib/choice-addresses.ts`): the way back leads there,
+              // one level deep. The tool bar and the footer still lead to the workspace.
+              <ChoiceBackLink href={back.origin.href} label={back.origin.label} stage />
+            ) : (
+              <Link
+                href={back.href}
+                data-stage-back="workspace"
+                className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap`}
+              >
+                <StageBackText projectName={backName} search={search} />
+              </Link>
+            )}
+          </div>
+          <StageViewSwitch search={search} />
+        </div>
       )}
 
       {tools && toolCurrent && toolBase && (

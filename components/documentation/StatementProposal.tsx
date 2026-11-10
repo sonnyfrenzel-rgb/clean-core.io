@@ -23,7 +23,7 @@ import {
  *     of the stored proposal. Only the owner gets the button; an invited reader
  *     sees what the owner asked for and nothing to press.
  *   - `StatementPair` — the model's sentence in the reading size with its chip
- *     *Model proposal*, the engine's sentence beneath it one step smaller with
+ *     *AI-generated*, the engine's sentence beneath it one step smaller with
  *     its chip *Reconstructed*. The evidence is never dropped for the proposal:
  *     the reader always sees what the code proves under what the model says.
  *   - `ContradictionMark` — a quiet rule in the margin and one line of words,

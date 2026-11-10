@@ -29,9 +29,11 @@ import {
 import { screenSensitiveText, sensitiveTextNote } from '@/lib/sensitive-text';
 import { cleanModelText } from '@/lib/model-text';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
-import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import { PROVIDER_LABEL } from '@/lib/model-providers';
 import { aiAssistantNotice } from '@/lib/ai-assistant-notice';
+import { OWN_CLAUDE_MODEL, PROVIDER_LABEL } from '@/lib/model-providers';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { assistantOffNote } from '@/lib/messages/model-consent';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP_FIRST } from '@/lib/sap-naming';
 import { isDemoPath, DEMO_ASSISTANT_NOTICE } from '@/lib/demo-marks';
 
@@ -258,10 +260,6 @@ export default function GlossaryChatbot() {
 
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
   const inDemo = isDemoPath(pathname);
-  // Art. 50(1) AI Act (hotfix 05.11.2026, legal review L3/B8): the notice that
-  // the reader is talking to an AI system. Every call of this panel goes to
-  // Gemini — an own Claude key is not offered on this release.
-  const assistantNotice = aiAssistantNotice(PROVIDER_LABEL.gemini, PRODUCT_GEMINI_MODEL);
 
   const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
   const caseContextRef = useRef<Promise<CaseContext> | null>(null);
@@ -421,7 +419,7 @@ export default function GlossaryChatbot() {
    *     is what a statement read off the code is (`DESIGN.md` §4).
    *   - **a model proposal, grounded** — the model sees the anchored evidence
    *     and nothing else, and only the sentences of the reply that cite one of
-   *     those anchors are shown (`guardCaseAnswer`). Marked *Model proposal*.
+   *     those anchors are shown (`guardCaseAnswer`). Marked *AI-generated*.
    */
   const answerInProject = async (id: string, text: string, asked: number): Promise<void> => {
     const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;
@@ -454,7 +452,7 @@ export default function GlossaryChatbot() {
       return;
     }
 
-    const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false);
+    const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false, 'glossary');
     if (moved()) return;
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
@@ -489,6 +487,9 @@ export default function GlossaryChatbot() {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || loading) return;
+    // Legal review 06.11.2026 (Terms 5.4): with "All automatic AI steps" off the
+    // assistant calls no model for this account; the proxy refuses it as well.
+    if (assistantOff) return;
 
     const userMessage: Message = {
       sender: 'user',
@@ -560,7 +561,7 @@ export default function GlossaryChatbot() {
       const systemPrompt = `You are the Clean-Core.io Assistant. You help the people who use Clean-Core.io — business readers, SAP architects and developers — with the product itself (its stages, views, results and limits) and with the clean core method and concepts it works with. You are NOT SAP product support: for how an SAP product, a release, a licence, an SAP note or a system configuration works, say that this is a question for SAP or the reader's SAP team, and answer only what Clean-Core.io itself does with it.
 
 ABOUT CLEAN-CORE.IO (positioning — always represent it honestly):
-- It is a FREE, community-built assessment & modernization assistant. Every feature is available to every user; the only limit is 5 transformations (bring your own Google Gemini API key for unlimited runs). There are no paid, premium, or "pilot" tiers to buy.
+- It is a FREE, community-built assessment & modernization assistant. Every feature is available to every user; the only limit is 5 free analysis runs (bring your own Google Gemini API key for unlimited runs). There are no paid, premium, or "pilot" tiers to buy.
 - It is COMPLEMENTARY to SAP's own tooling (ADT, ATC, Readiness Check, Signavio) — it does not replace them, and it is NOT affiliated with, endorsed by, or certified by SAP SE. Never claim SAP certification or approval.
 - AI output (transformed code, narratives, estimates) is a DRAFT for human review — never present it as production-ready or as formal SAP/legal/security advice. Be honest about limitations.
 - The live S/4HANA sandbox connection is read-only, encrypted, non-production only, and admin-gated.
@@ -585,7 +586,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
       const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
-      const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false);
+      const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false, 'glossary');
       // Asked outside a project; the reader has since opened one, where this
       // panel answers from that project's evidence only.
       if (currentProjectRef.current !== null || superseded()) return;
@@ -593,7 +594,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       const botMessage: Message = {
         sender: 'bot',
         text: responseText || 'My apologies, I could not compile a response. Please rephrase your question.',
-        timestamp: clockNow()
+        timestamp: clockNow(),
+        // 3.0.21: a model's answer carries the AI-generated provenance, outside a
+        // project as inside one; a fallback sentence of ours is not a model's.
+        ...(responseText ? { provenance: 'proposed' as const } : {}),
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -627,6 +631,20 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
    * close button instead of relying on this one.
    */
   const floatingOffOnDesktop = profile?.desktopChatbotEnabled !== true;
+  /**
+   * Art. 50(1) AI Act (roadmap 3.0.21, legal review L3): the notice that the
+   * reader is talking to an AI system, permanently at the input — with the
+   * provider and model the account's calls go to: the own Claude key's model,
+   * otherwise the Gemini model this panel asks for.
+   */
+  const keyInfo = useModelAvailability();
+  const noticeProvider = keyInfo.known && keyInfo.provider ? keyInfo.provider : 'gemini';
+  /** The account's main switch "All automatic AI steps" is off: the assistant is shown disabled, with the reason. */
+  const assistantOff = !inDemo && keyInfo.known && !keyInfo.autoModelSteps;
+  const assistantNotice = aiAssistantNotice(
+    PROVIDER_LABEL[noticeProvider],
+    noticeProvider === 'anthropic' ? OWN_CLAUDE_MODEL : PRODUCT_GEMINI_MODEL,
+  );
   const openToggle = () => {
     openerRef.current = toggleRef.current?.querySelector('button') ?? null;
     setIsOpen((prev) => !prev);
@@ -736,7 +754,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <div className="flex min-w-0 items-center gap-2">
               {/* No sparkles: `DESIGN.md` §3.1 forbids them as the icon for
                   model work. A pen is what `lib/provenance.ts` gives the
-                  value *Model proposal*, so the panel and its chips agree. */}
+                  value *AI-generated*, so the panel and its chips agree. */}
               <PenLine size={16} aria-hidden className="shrink-0 text-cc-ink-muted" />
               <div className="min-w-0">
                 <h2 id="chatbot-panel-title" className="m-0 cc-text-h3 text-cc-ink" data-chatbot-title="">
@@ -891,7 +909,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                 <CcButton
                   variant="ghost"
                   onClick={() => handleSend(chip)}
-                  disabled={loading}
+                  disabled={loading || assistantOff}
                 >
                   {chip}
                 </CcButton>
@@ -907,6 +925,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-medium text-cc-ink-muted"
             >
               {assistantNotice}
+            </p>
+          ) : null}
+          {assistantOff ? (
+            <p
+              data-chatbot-off=""
+              role="status"
+              className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-semibold text-cc-ink"
+            >
+              {assistantOffNote()}
             </p>
           ) : null}
 
@@ -935,7 +962,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     placeholder={projectId ? 'Ask about this case…' : 'Ask about Clean-Core.io or clean core…'}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || assistantOff}
                     className={className}
                   />
                 )}
@@ -944,7 +971,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <CcButton
               type="submit"
               variant="primary"
-              disabled={loading || !inputValue.trim()}
+              disabled={loading || assistantOff || !inputValue.trim()}
               icon={<Send size={16} aria-hidden />}
             >
               Send

@@ -82,7 +82,7 @@ ${WHAT_CHANGED_ANSWER}
    100 and takes points off for the constructs found.
 3. Decision: the Management view asks one question of the program — keep, rebuild, move
    to SAP standard or retire — and shows what the answer rests on.
-4. Design, code draft, tests: Model proposals built on the signed run, for a person to
+4. Design, code draft, tests: AI-generated drafts built on the signed run, for a person to
    review; on the CAP track the tests run against mocks in an isolated runner, on the RAP
    track the ABAP Unit result is recorded from the user's own SAP system.
 5. Signed run: every completed analysis is an immutable run signed with HMAC; the audit
@@ -183,7 +183,7 @@ product. It is a measure of code structure, not of money.
 - It does not claim SAP certification, endorsement, or affiliation.
 - Its Level A–D is a derived orientation, not an authoritative SAP ATC classification,
   and is deliberately excluded from the signed audit pack.
-- What a language model writes is marked as a Model proposal: generated code and text
+- What a language model writes is marked as AI-generated: generated code and text
   are drafts for a person to review, never a finished deliverable. Structurally untransformable patterns (Dynpro screens, dynamic call
   routing, kernel internals) are flagged rather than guessed at.
 `;

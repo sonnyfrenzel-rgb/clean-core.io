@@ -21,11 +21,12 @@ import { EXPORT_COLORS, EXPORT_FONT_MONO, EXPORT_STYLE_ELEMENT } from '@/lib/exp
 import { NOT_DETERMINED_LABEL } from '@/lib/process-documentation';
 import {
   EMPTY_SECTION,
-  MODEL_PROPOSAL_LABEL,
+  AI_GENERATED_LABEL,
   linesLabel,
   sectionName,
   sectionTitle,
   stepRef,
+  type PdStep,
   type PdText,
   type ProcessDocument,
   type ProcessDocumentSection,
@@ -38,6 +39,8 @@ import {
   STEP_SUMMARY_HEAD,
   sharedQuestionLead,
   stepSummaryRows,
+  stepSummaryModelNames,
+  STEP_SUMMARY_NAME_COLUMN,
   appendixLead,
   figureText,
   longTables,
@@ -50,6 +53,7 @@ import {
   sourceText,
   stepDetailLines,
   stepName,
+  stepProposalLine,
   wordingRows,
   BUSINESS_TARGET_ANCHOR,
   type PdSectionKey,
@@ -62,7 +66,7 @@ import { readCapabilityFacts } from '@/lib/documentation-capabilities';
 import type { OpenQuestions } from '@/lib/open-questions';
 import { raciGapWord, raciLetterWord, sopLevelBusinessLine, sopLevelLegacyLine } from '@/lib/messages/documentation';
 import { RACI_EDITED_IN_FILE, type RaciEditRecord } from '@/lib/raci-edit';
-import { aiMarkingComment, aiMarkingMetaTag, aiMarkingStatement, type AiAuthorship } from '@/lib/ai-marking';
+import { aiMarkingComment, aiMarkingMetaTag, aiMarkingStatement, aiOriginHtmlAttributes, UNRECORDED_AI, type AiAuthorship } from '@/lib/ai-marking';
 import { wt } from '@/lib/workspace-messages';
 import {
   RACI_LETTERS,
@@ -186,16 +190,26 @@ export function buildEngineConfluenceHtml(
   const lines = (anchors: PdText['anchors']) => esc(linesLabel(anchors));
   const para = (t: PdText) => `<p>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</p>`;
   const item = (t: PdText) => `<li>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</li>`;
+  // 3.0.21 (T08): the page mixes the engine's reading with model text, so each model-written element carries its
+  // origin (`aiOriginHtmlAttributes`) — the glance proposal the analysis model's, the business layer the SOP model's,
+  // the RACI nobody's once the owner has saved their own.
+  const proposalWho = options?.ai?.analysis ?? UNRECORDED_AI;
+  // A step's proposal: the analysis model's narrative, or a statement proposal whose call is not recorded here.
+  const stepProposalAttributes = (step: PdStep) =>
+    aiOriginHtmlAttributes(step.proposal?.origin === 'narrative' ? proposalWho : UNRECORDED_AI);
   const proposal = (text: string, anchors: PdText['anchors'], engineWord: string) =>
-    `<p class="card accent-information"><span class="tag tone-information">${esc(MODEL_PROPOSAL_LABEL)}</span> ${esc(text)}${anchors.length ? ` <small>${lines(anchors)}</small>` : ''}<br><small>${esc(engineWord)}</small></p>`;
-  const table = (head: string[], rows: string[][], muted: number[] = []) =>
+    `<p class="card accent-information"${aiOriginHtmlAttributes(proposalWho)}><span class="tag tone-information">${esc(AI_GENERATED_LABEL)}</span> ${esc(text)}${anchors.length ? ` <small>${lines(anchors)}</small>` : ''}<br><small>${esc(engineWord)}</small></p>`;
+  // A step's business name is the naming stage's — a model's whose call is not recorded per project (3.0.21, T08).
+  const namingAttributes = aiOriginHtmlAttributes(UNRECORDED_AI);
+  /** `modelCell`: per row, the column a model wrote (a business name), or null. */
+  const table = (head: string[], rows: string[][], muted: number[] = [], modelCell: ReadonlyArray<number | null> = []) =>
     `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
-      .map((row) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}>${esc(cell)}</td>`).join('')}</tr>`)
+      .map((row, ri) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}${modelCell[ri] === i ? namingAttributes : ''}>${esc(cell)}</td>`).join('')}</tr>`)
       .join('')}</tbody></table>`;
   // Owner review 10.10.2026: a question on several rows of a table is said once, above it.
   const tableOf = (t: PdTable | null, whole = false) => (t
     ? `${(t.shared ?? []).map((q) => `<p class="meta" data-doc-shared-question="${esc(q.action)}">${esc(sharedQuestionLead(q, t.rows.length) + ':')} <a href="#oq-${esc(q.action)}">${esc(q.title)}</a></p>`).join('')}<table><thead><tr>${[...t.head, SOURCE_COLUMN].map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${(whole ? t.rows : t.rows.slice(0, t.first))
-      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c) => `<td>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
+      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c, i) => `<td${r.aiCell === i ? namingAttributes : ''}>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
       .join('')}</tbody></table>${t.note ? `<p class="meta">${esc(t.note)}</p>` : ''}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
     : '');
   const empty = (key: keyof typeof EMPTY_SECTION) => `<p class="muted">${esc(EMPTY_SECTION[key])}</p>`;
@@ -297,28 +311,30 @@ export function buildEngineConfluenceHtml(
   const editedNote = edited ? RACI_EDITED_IN_FILE + ' · ' + edited.editedAt.slice(0, 10) + '.' : '';
   // Owner 16.10.2026: the SOP and the RACI stand on the business level, each step's technical steps beside it.
   const business = isBusinessLevelLayer(parsedBusinessDoc);
+  const sopWho = parsedBusinessDoc ? (options?.ai?.sop ?? UNRECORDED_AI) : null;
+  const raciWho = edited ? null : sopWho;
   const levelLine = business
     ? sopLevelBusinessLine(sop.length, sop.reduce((n, st) => n + st.technical.length, 0))
     : sopLevelLegacyLine(sop.length);
   const businessSection = parsedBusinessDoc
-    ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
+    ? `<h2 data-business-layer="">${esc('Business layer — AI-generated')}</h2>
     <p><em>${esc('Written by a language model from the process description above. Every sentence says its basis: Reconstructed only where it cites a line of its step and nothing in it contradicts the code; roles, approvals, escalations and anything the program does not do are a proposal, not in the program.')}</em></p>
     <p class="meta" data-sop-level="${esc(business ? 'business' : 'technical')}">${esc(levelLine)}</p>
     ${edited ? `<p data-raci-edited=""><span class="tag tone-information">${esc('Confirmed')}</span> ${esc("The RACI below is the owner's, not the model's. " + editedNote)}</p>` : ''}
-    ${glanceHtml(parsedBusinessDoc, steps, edited ? editedNote : null, judgement)}
+    ${glanceHtml(parsedBusinessDoc, steps, edited ? editedNote : null, judgement, sopWho)}
     <h3>${esc('RACI assignment')}</h3>
-    <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${sop.filter((st) => st.hasRaci)
+    <table${aiOriginHtmlAttributes(raciWho)}><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${sop.filter((st) => st.hasRaci)
       .map((st) => `<tr><td>${esc(sopStepLabel(st))}</td><td>${esc(st.roles.R.join(', ') || nd)}</td><td>${esc(st.roles.A.join(', ') || nd)}</td><td>${esc(st.roles.C.join(', ') || nd)}</td><td>${esc(st.roles.I.join(', ') || nd)}</td></tr>`)
       .join('')}</tbody></table>
     <h3>${esc('Standard operating procedure')}</h3>
-    ${sopTableHtml(sop, business)}
+    ${sopTableHtml(sop, business, sopWho)}
     <p class="meta">${esc(CONTROLS_FROM_THE_CODE)}</p>`
     : '';
 
   const a = document.appendix;
   const stepDetailsSection = document.overview.path.map((entry) => entry.kind === 'gate'
     ? `<p class="note">${esc(gateSentence(entry))}</p>`
-    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry, o.whoActs).map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`).join('');
+    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. `)}${entry.businessName ? `<span${namingAttributes}>` : ''}${esc(stepName(entry))}${entry.businessName ? '</span>' : ''}</h4><ul>${stepDetailLines(entry, o.whoActs).map((l) => `<li${l === stepProposalLine(entry) ? stepProposalAttributes(entry) : ''}>${esc(l)}</li>`).join('')}</ul>`).join('');
   const long = longTables(o);
   const completeSection = long.length
     ? `<h3>${esc(COMPLETE_TABLES)}</h3>${long.map((t) => `<h4>${esc(`${t.caption} (${t.rows.length})`)}</h4>${tableOf(t, true)}`).join('')}`
@@ -326,7 +342,7 @@ export function buildEngineConfluenceHtml(
   const appendixSection = `<div class="appendix">${h2('appendix')}
     <p><em>${esc(appendixLead(a))}</em></p>
     <h3>${esc('A.1 Step details')}</h3>
-    ${table(STEP_SUMMARY_HEAD, stepSummaryRows(document, o.whoActs), [3])}
+    ${table(STEP_SUMMARY_HEAD, stepSummaryRows(document, o.whoActs), [3], stepSummaryModelNames(document).map((named) => (named ? STEP_SUMMARY_NAME_COLUMN : null)))}
     ${stepDetailsSection}
     ${completeSection}
     <h3>${esc('A.3 Wording as read from the code')}</h3>
@@ -345,10 +361,12 @@ export function buildEngineConfluenceHtml(
   // Roadmap 3.0.17 (AI Act Art. 50(2)): the statement of every model that wrote text on this page — the business
   // layer's, and the analysis model's for the glance proposal — as the header comment and as metadata.
   const aiVersion = options?.ai?.appVersion ?? '';
-  const aiStatements = [
+  // 3.0.21: and the naming stage's, when the page prints a business name — its call is not recorded per project.
+  const aiStatements = [...new Set([
     parsedBusinessDoc && options?.ai?.sop ? aiMarkingStatement(options.ai.sop, aiVersion) : null,
     g.proposal && options?.ai?.analysis ? aiMarkingStatement(options.ai.analysis, aiVersion) : null,
-  ].filter((s): s is string => s !== null);
+    options?.ai && stepSummaryModelNames(document).some(Boolean) ? aiMarkingStatement(UNRECORDED_AI, aiVersion) : null,
+  ].filter((s): s is string => s !== null))];
   // Both are assembled by `lib/ai-marking.ts`, which writes the statement on one line with no comment terminator and
   // escapes it for the attribute (fed hostile names in tests/ai-marking.spec.ts).
   // One comment line and one meta element per statement: a page with the text of two models names both.
@@ -385,11 +403,13 @@ export function sopStepLabel(step: SopStep): string {
  * the technical steps of each step in a column of their own, since a pasted
  * page has no fold to open. Every value escaped.
  */
-export function sopTableHtml(sop: readonly SopStep[], business: boolean): string {
+export function sopTableHtml(sop: readonly SopStep[], business: boolean, who: AiAuthorship | null = null): string {
   const esc = escapeHtml;
   const head = ['Step', 'Description', 'Business exception', ...(business ? ['Technical steps'] : [])];
+  // 3.0.21 (T08): the model's cells carry its origin; the step's name and its technical steps are the engine's.
+  const ai = aiOriginHtmlAttributes(who);
   return `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${sop
-    .map((st) => `<tr><td>${esc(sopStepLabel(st))}</td><td>${sopStatementsHtml(st.statements)}</td><td>${sopStatementsHtml(st.exceptionStatement ? [st.exceptionStatement] : [])}</td>${business ? `<td data-sop-technical="${esc(String(st.technical.length))}">${technicalStepsHtml(st)}</td>` : ''}</tr>`)
+    .map((st) => `<tr><td>${esc(sopStepLabel(st))}</td><td${ai}>${sopStatementsHtml(st.statements)}</td><td${ai}>${sopStatementsHtml(st.exceptionStatement ? [st.exceptionStatement] : [])}</td>${business ? `<td data-sop-technical="${esc(String(st.technical.length))}">${technicalStepsHtml(st)}</td>` : ''}</tr>`)
     .join('')}</tbody></table>`;
 }
 
@@ -421,7 +441,7 @@ const anchorWords = (a: GlanceAnchor) => (a.lineStart === a.lineEnd ? `L${a.line
  * The business layer as tables (owner 03.10.2026): the SOP steps in process
  * order and the RACI matrix with its gaps. It stands **in addition to** the
  * full RACI table below it, which keeps every row as stored. Every value is
- * escaped; the tables are marked as a model proposal.
+ * escaped; the tables are marked as AI-generated.
  */
 /** The SOP sentences of one cell, each with its basis; *Not determined* when there are none. Every value escaped. */
 export function sopStatementsHtml(list: readonly SopStatement[]): string {
@@ -441,13 +461,17 @@ function glanceHtml(
   processSteps: ProcessStepRef[],
   editedNote: string | null = null,
   judgement: SopJudgement = {},
+  who: AiAuthorship | null = null,
 ): string {
   const esc = escapeHtml;
   const parts: string[] = [];
+  // 3.0.21 (T08): the model's cells and the model's matrix carry its origin; an owner-edited matrix is the owner's.
+  const ai = aiOriginHtmlAttributes(who);
+  const raciAi = editedNote ? '' : ai;
   if (parsedBusinessDoc) {
     const steps = sopSteps(parsedBusinessDoc, processSteps, judgement);
-    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.statements[0]?.text ?? s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(s.statements[0] ? SOP_BASIS[s.statements[0].basis].label : NOT_DETERMINED_LABEL)}</td></tr>`).join('');
-    parts.push(`<h3>SOP steps — Model proposal</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
+    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td${ai}>${esc(s.statements[0]?.text ?? s.outcome ?? NOT_DETERMINED_LABEL)}</td><td${ai}>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(s.statements[0] ? SOP_BASIS[s.statements[0].basis].label : NOT_DETERMINED_LABEL)}</td></tr>`).join('');
+    parts.push(`<h3>SOP steps — AI-generated</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
     const matrix = raciMatrix(steps);
     if (matrix.steps.length > 0) {
       // At most six role columns (`MAX_RACI_COLUMNS`); a long name is shortened
@@ -458,7 +482,7 @@ function glanceHtml(
       const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(s.ref ?? String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc([...s.gaps.map(raciGapWord), ...(s.hiddenAccountable.length ? [`A: ${s.hiddenAccountable.join(', ')}`] : [])].join(', '))}</td></tr>`).join('');
       const key = matrix.roles.filter((r) => r.short !== r.name).map((r) => `${r.short} = ${r.name}`).join(' · ');
       const more = matrix.moreRoles.map((r) => `<li>${esc(r.name)}: ${esc(matrix.steps.map((st) => ({ st, l: lettersOf(st, r.name) })).filter((x) => x.l.length).map((x) => `${x.l.join('')} on ${x.st.ref ?? x.st.number}`).join(', '))}</li>`).join('');
-      parts.push(`<h3>RACI matrix — ${editedNote ? 'Edited by the owner' : 'Model proposal'}</h3><p><small>${editedNote ? `${esc(editedNote)} ` : ''}${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
+      parts.push(`<h3>RACI matrix — ${editedNote ? 'Edited by the owner' : 'AI-generated'}</h3><p><small>${editedNote ? `${esc(editedNote)} ` : ''}${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table${raciAi}><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
     }
   }
   return parts.join('\n');

@@ -10,6 +10,8 @@ import {
   blocksHtml,
   blocksMarkdown,
   type DocBlock,
+  type DocBlockAi,
+  type DocCellAi,
 } from '@/lib/requirements-export';
 import {
   DECISION_OWNER_LABEL,
@@ -61,7 +63,18 @@ export interface SpecExportMeta {
    * `<meta name="ai-generated">`, the Word file's core properties (`specAiStatements`); one without carries nothing.
    */
   aiStatement?: string | null;
+  /**
+   * 3.0.21 (T08): who wrote the decision proposals, so each printed proposal is marked where it stands — the
+   * cc:origin comment pair in Markdown, `data-origin` on a span in HTML, a tagged content control in Word. Absent or
+   * null: the design model's call is not recorded per project, and the mark says "not-recorded".
+   */
+  proposalsAi?: DocBlockAi | null;
 }
+
+const UNRECORDED_PROPOSAL_AI: DocBlockAi = { provider: null, modelId: null };
+
+/** The words before a model's proposal in a decision's answer cell — the model's part begins with them. */
+const PROPOSAL_SEPARATOR = ' · ';
 
 export const SPEC_EXPORT_NOTE =
   'Drafted from the ABAP source by the Clean-Core.io engine and completed in the requirements workspace. Requirements marked “Reconstructed from the code” are read from the current program and not confirmed by a person; “Accepted” is the author’s own statement, not an organisational approval. Line references (L…) point at the signed source named above. This specification is not evidence and is not part of the signed audit pack.';
@@ -219,8 +232,11 @@ export function specBlocks(spec: RequirementsSpec, meta: SpecExportMeta): DocBlo
   blocks.push({ k: 'h', level: 2, text: SECTIONS[6] });
   blocks.push({
     k: 'p',
-    text: `${counts.openDecisions} of ${counts.decisions} decisions are open. Suggested answers are starting points, not read from the code; a model proposal is printed as one and was not taken over.`,
+    text: `${counts.openDecisions} of ${counts.decisions} decisions are open. Suggested answers are starting points, not read from the code; an AI-generated draft is printed as one and was not taken over.`,
   });
+  // The answer is the account's (or "Open"); a proposal printed after it is the model's, and only that part is marked.
+  const printsProposal = (d: SpecDecision) => d.proposal.trim() !== '' && decisionOpen(d);
+  const proposalsAi = meta.proposalsAi ?? UNRECORDED_PROPOSAL_AI;
   blocks.push({
     k: 'table',
     head: ['ID', 'Question', 'Who decides', 'Answer', 'Shapes', 'Lines'],
@@ -228,10 +244,13 @@ export function specBlocks(spec: RequirementsSpec, meta: SpecExportMeta): DocBlo
       d.id,
       d.question,
       DECISION_OWNER_LABEL[d.owner],
-      `${answerText(d)}${d.proposal.trim() && decisionOpen(d) ? ` · Model proposal: ${richPlain(d.proposal)}` : ''}`,
+      `${answerText(d)}${printsProposal(d) ? `${PROPOSAL_SEPARATOR}AI-generated: ${richPlain(d.proposal)}` : ''}`,
       d.affects.join(', ') || '—',
       linesText(d.lines) || 'not in the code',
     ]),
+    cellAi: spec.decisions.map((d): DocCellAi | null =>
+      printsProposal(d) ? { col: 3, from: answerText(d).length + PROPOSAL_SEPARATOR.length, ai: proposalsAi } : null,
+    ),
   });
 
   blocks.push({ k: 'h', level: 2, text: SECTIONS[7] });

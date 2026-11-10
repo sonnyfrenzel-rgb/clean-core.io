@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink } from 'lucide-react';
-import { getAuth } from '@/lib/firebase';
+import { AlertTriangle, Download, ExternalLink } from 'lucide-react';
+import { getAuth, getAuthIfStarted } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
@@ -13,6 +13,15 @@ import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcCheckbox from '@/components/cc/Checkbox';
+import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
+import { TERMS_LABEL } from '@/lib/legal/documents';
+import { ContractLanguageChoice } from '@/components/legal/SignupConsent';
+import SaveWordingActions from '@/components/legal/SaveWordingActions';
+import type { TermsLanguage } from '@/lib/terms-versions';
+import { announcedEffectiveDate, effectiveDateAhead } from '@/lib/terms-effective';
+import { NOTICE_FILE_PATH, NOTICE_SUMMARY_PATH } from '@/lib/terms-announcement/notice-paths';
+import type { NoticeSummary } from '@/lib/terms-announcement/notice-file';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -102,8 +111,10 @@ type TermsTextBlock =
  * the consent record carries — and takes only the text of its article, element
  * by element. Text, never markup: nothing fetched reaches `innerHTML`.
  */
-async function loadTermsText(): Promise<TermsTextBlock[]> {
-  const res = await fetch(`/terms/versions/${TERMS_VERSION}`, { credentials: 'same-origin' });
+async function loadTermsText(lang: TermsLanguage): Promise<TermsTextBlock[]> {
+  // The language version being accepted: its archive page is prerendered from
+  // `docs/terms/<version>.de.md` for German (T02).
+  const res = await fetch(`/terms/versions/${TERMS_VERSION}${lang === 'de' ? '/de' : ''}`, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(String(res.status));
   const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
   const article = doc.querySelector('[data-archived-text]');
@@ -124,7 +135,8 @@ async function loadTermsText(): Promise<TermsTextBlock[]> {
   return blocks;
 }
 
-function TermsInline() {
+/** Keyed by the language at its call site, so a change of language starts it afresh. */
+function TermsInline({ lang }: { lang: TermsLanguage }) {
   const [open, setOpen] = useState(false);
   const [blocks, setBlocks] = useState<TermsTextBlock[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -133,12 +145,12 @@ function TermsInline() {
     setOpen(next);
     if (next && !blocks) {
       setFailed(false);
-      loadTermsText().then(setBlocks, () => setFailed(true));
+      loadTermsText(lang).then(setBlocks, () => setFailed(true));
     }
   };
 
   return (
-    <div data-terms-gate-inline={open ? 'open' : 'closed'} className="mt-4">
+    <div data-terms-gate-inline={open ? 'open' : 'closed'} lang={lang} className="mt-4">
       <CcDisclosure title="Read the Terms here" open={open} onOpenChange={onOpenChange}>
         <div data-terms-gate-terms-text="" className="space-y-3 rounded-cc-row border border-cc-line p-3 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">
           {blocks ? (
@@ -179,17 +191,87 @@ function TermsInline() {
   );
 }
 
+/**
+ * Dialog = notice (final review of the notice, 06.11.2026): the dialog carries
+ * what the notice under Terms 10.1 carries. The list of changed provisions with
+ * their reasons under 10.4, the effective day and the attachment itself come
+ * from the notice's own builder (`app/terms/notice/`, prerendered from
+ * `lib/terms-announcement/notice-file.ts`), so the two cannot differ.
+ */
+function NoticeInDialog({ lang, mayDecline }: { lang: TermsLanguage; mayDecline: boolean }) {
+  const C2 = CONSENT_TEXTS.amendment;
+  const [summary, setSummary] = useState<NoticeSummary | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    fetch(NOTICE_SUMMARY_PATH, { credentials: 'same-origin' })
+      .then((res) => (res.ok ? (res.json() as Promise<NoticeSummary>) : Promise.reject(new Error(String(res.status)))))
+      .then((s) => live && setSummary(s), () => live && setFailed(true));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return (
+    <div data-terms-gate-notice={summary ? 'ready' : failed ? 'failed' : 'loading'} lang={lang} className="mt-3 space-y-2 cc-text-cell text-cc-ink-muted">
+      <p className="m-0 font-semibold text-cc-ink">{consentText(C2.noticeListLead, lang)}</p>
+      {summary ? (
+        <ul data-terms-gate-notice-clauses="" className="m-0 list-disc space-y-1 pl-5">
+          {summary.clauses[lang].map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      ) : failed ? (
+        <p className="m-0">
+          {lang === 'de'
+            ? 'Die Liste konnte hier nicht geladen werden; sie steht in der Datei unten.'
+            : 'The list could not be loaded here; it is in the file below.'}
+        </p>
+      ) : (
+        <p className="m-0" aria-live="polite">{lang === 'de' ? 'Die Liste wird geladen…' : 'Loading the list…'}</p>
+      )}
+      <p className="m-0">
+        {consentText(C2.noticeFile, lang)}{' '}
+        <a
+          href={summary?.file.href ?? NOTICE_FILE_PATH}
+          download={summary?.file.filename ?? true}
+          data-terms-gate-notice-file=""
+          className="inline-flex items-center gap-1 text-cc-ink underline underline-offset-2 hover:text-cc-information [overflow-wrap:anywhere]"
+        >
+          <Download size={12} aria-hidden={true} />
+          {summary?.file.filename ?? (lang === 'de' ? 'Mitteilung herunterladen' : 'Download the notice')}
+        </a>
+      </p>
+      {mayDecline && (
+        <p className="m-0 font-semibold text-cc-ink" data-terms-gate-not-required="">
+          {consentText(C2.notRequired, lang)}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // C2 of the legal texts: the acceptance is a ticked statement and a button,
+  // not the button alone — the box names the version and the language accepted.
+  const [ticked, setTicked] = useState(false);
+  // T02: the contract language the tick accepts (Terms 1.4) — chosen here, not
+  // read from the interface. Changing it clears the tick.
+  const [termsLanguage, setTermsLanguage] = useState<TermsLanguage>('en');
   // Safe as a lazy initialiser despite SSR: this component renders `null` while
   // the profile is loading, so the server and the first client paint agree
   // regardless of what storage holds.
   const [declinedMark, setDeclinedMark] = useState<string | null>(readDeclined);
   // A decline counts only for the sign-in it was made in: a sign-out and a new
-  // sign-in in the same tab asks again.
-  const declined = declinedInThisSignIn(declinedMark, typeof window === 'undefined' ? null : getAuth().currentUser);
+  // sign-in in the same tab asks again. Read without starting Auth: this gate is
+  // mounted on the public pages of the shell too, where a visitor without the
+  // signed-in hint gets no Auth SDK (privacy policy section 7); with a profile,
+  // Auth is running already (hooks/useUserProfile.ts).
+  const declined = declinedInThisSignIn(declinedMark, getAuthIfStarted()?.currentUser ?? null);
 
   const setDeclined = (value: boolean) => {
     const mark = value ? currentMark() : null;
@@ -270,7 +352,7 @@ export default function TermsReacceptGate() {
       const res = await fetch('/api/consent', {
         method: 'POST',
         headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ termsVersion: TERMS_VERSION }),
+        body: JSON.stringify({ termsVersion: TERMS_VERSION, termsLanguage }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -305,11 +387,28 @@ export default function TermsReacceptGate() {
    */
   const blocking = !mayDecline;
 
+  /*
+   * C2 of the legal texts (Fassung 1.1): the date and version the Terms change
+   * on, what changes and why (the list below, from `lib/terms-changes.ts`),
+   * where the full wording is, and that the previous version goes on applying
+   * until then (section 10.3). The statement to tick, the note after the list
+   * and the notice speak the contract language chosen above them, and the
+   * record stores that language with the digest of its wording (T02).
+   */
+  const C2 = CONSENT_TEXTS.amendment;
+  const lang = termsLanguage;
+  // The C2 texts name the day the amendment takes effect — the open value
+  // `termsEffectiveDate` (Terms 10.2, G13/G14): an acceptance before it takes
+  // effect only on it. While that day lies ahead — or is not set yet, when the
+  // open value shows its marker — the dialog says so; after it, an acceptance
+  // applies at once and there is no later day to name.
+  const ahead = !announcedEffectiveDate() || effectiveDateAhead();
+  const fill = (text: string) => text.replace(/\{Fassung\}/g, TERMS_LABEL);
   const explanation = noAcceptance && !mayDecline
     ? 'Your account has no recorded acceptance of the Terms of Service, so the platform is closed to it until there is one. Please read the Terms and accept them to carry on. Your account and your data are unchanged.'
     : mayDecline
-      ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
-      : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.';
+      ? fill(consentText(C2.lead, 'en'))
+      : `The version your account accepted is no longer in force, so the platform is closed to it. ${fill(consentText(C2.lead, 'en'))}`;
   const title = noAcceptance && !mayDecline ? 'Please accept the Terms of Service' : 'The Terms of Service have changed';
 
   // What changed, the two documents and the error: the same in both forms.
@@ -328,11 +427,37 @@ export default function TermsReacceptGate() {
         )}
       </div>
 
-      <TermsInline />
+      {!noAcceptance && <NoticeInDialog lang={lang} mayDecline={mayDecline} />}
+
+      {(mayDecline || !noAcceptance) && (
+        <p className="mt-3 mb-0 cc-text-cell text-cc-ink-muted" data-terms-gate-after-list="" lang={lang}>
+          {fill(ahead ? consentText(C2.afterList, lang) : consentText(C2.afterListPastDate, lang))}
+        </p>
+      )}
+
+      <div className="mt-4">
+        <ContractLanguageChoice
+          value={lang}
+          onChange={(l) => {
+            setTermsLanguage(l);
+            // A tick belongs to the wording it was given for.
+            setTicked(false);
+          }}
+        />
+      </div>
+
+      <TermsInline key={lang} lang={lang} />
+      {/* Save or print the offered wording (§ 312i Abs. 1 S. 1 Nr. 4 BGB). */}
+      <SaveWordingActions key={`save-${lang}`} documents={['terms']} lang={lang} />
+
+      <div className="mt-4" data-terms-gate-checkbox="" data-terms-gate-language={lang}>
+        <CcCheckbox checked={ticked} onChange={setTicked} label={<span lang={lang}>{fill(ahead ? consentText(C2.checkbox, lang) : consentText(C2.checkboxPastDate, lang))}</span>} />
+      </div>
+      <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted" lang={lang}>{consentText(C2.notice, lang)}</p>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 cc-text-identifier">
         <Link
-          href="/terms"
+          href={lang === 'de' ? '/terms/de' : '/terms'}
           target="_blank"
           rel="noopener noreferrer"
           data-terms-gate-link="terms"
@@ -361,21 +486,22 @@ export default function TermsReacceptGate() {
     </>
   );
 
-  // Accepting is entering into a contract — the binding confirmation of §1.5,
-  // and the only place on this layer that wears `dark`. `data-cc-initial-focus`
-  // puts the caret on it when the blocking dialog opens.
+  // C2 (G14): "Accept" and "Decide later" are equal in design — the same
+  // variant, neither emphasised — so the dialog puts no pressure on the answer.
+  // `data-cc-initial-focus` puts the caret on Accept when the blocking dialog
+  // opens, where declining is not offered.
   const actions = (
     <>
       <CcButton data-terms-gate-signout variant="ghost" onClick={() => signOut(getAuth())}>
         Sign out instead
       </CcButton>
       {mayDecline && (
-        <CcButton data-terms-gate-decline variant="ghost" onClick={() => setDeclined(true)}>
-          Not now &mdash; carry on under the Terms I accepted
+        <CcButton data-terms-gate-decline variant="secondary" onClick={() => setDeclined(true)}>
+          {consentText(C2.later, 'en')} &mdash; carry on under the Terms I accepted
         </CcButton>
       )}
-      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="dark" busy={busy} onClick={accept}>
-        I have read and accept the Terms
+      <CcButton data-terms-gate-accept data-cc-initial-focus="" variant="secondary" busy={busy} disabled={!ticked} onClick={accept}>
+        {consentText(C2.accept, 'en')}
       </CcButton>
     </>
   );

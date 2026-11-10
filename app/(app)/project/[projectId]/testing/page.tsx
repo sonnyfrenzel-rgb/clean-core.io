@@ -14,7 +14,7 @@ import { findingsForOrigin, signedForOrigin, useScenarioOriginEngine } from '@/h
 import { useTestExecution } from '@/hooks/useTestExecution';
 import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
 import type { Project } from '@/lib/types';
-import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
+import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Layers, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import { PAGE_ANCHOR_LABELS, testingAnchors } from '@/lib/page-anchors';
@@ -69,11 +69,12 @@ import TestPipeline from '@/components/testing/TestPipeline';
 import HandChecks from '@/components/testing/HandChecks';
 import type { StripTick } from '@/components/testing/ProgramStrip';
 import { readProgram } from '@/components/testing/program-reading';
-import { coveringTestRunReceipt, viaContractOfRun } from '@/lib/test-receipt';
+import { coveringTestRunReceipt, OWNER_EDITED_SUITE_NOTE, viaContractOfRun } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
-import { aiAuthorshipFactsOf, testCasesAuthorshipOf } from '@/lib/ai-authorship';
+import CounterChecks from '@/components/testing/CounterChecks';
+import { aiAuthorshipFactsOf, testCaseOrigin, testCasesAuthorshipOf } from '@/lib/ai-authorship';
 import { aiMarkingStatement } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
@@ -86,7 +87,6 @@ import SapResultCard from '@/components/testing/SapResultCard';
 import { outsideChipNote, outsideCountsLine, outsideReading, summaryOf, type OutsideTestRecord } from '@/lib/sap-test-results';
 import { isProjectOwner } from '@/lib/project-readers';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { wt } from '@/lib/workspace-messages';
 import { targetEditionOf } from '@/lib/target-edition';
 import TestEvidenceCard from '@/components/testing/TestEvidenceCard';
@@ -181,6 +181,23 @@ const SAP_RECORD_READS = 3;
 const SAP_RECORD_BACKOFF_MS = 800;
 const RAIL_GRID = 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start';
 
+/**
+ * Well-known S/4HANA OData services offered as quick picks for the metadata
+ * read. A fixed list, never read from the tenant: the service catalog that
+ * used to fill this place is a set of records, and the connection reads
+ * metadata only (privacy policy, section 2; removed in 3.0.21).
+ */
+const COMMON_ODATA_SERVICES: ReadonlyArray<{ title: string; path: string }> = [
+  { title: 'Business Partner', path: 'API_BUSINESS_PARTNER' },
+  { title: 'Sales Order', path: 'API_SALES_ORDER_SRV' },
+  { title: 'Purchase Order', path: 'API_PURCHASEORDER_PROCESS_SRV' },
+  { title: 'Product Master', path: 'API_PRODUCT_SRV' },
+  { title: 'Cost Center', path: 'API_COSTCENTER_SRV' },
+  { title: 'Journal Entry', path: 'API_JOURNALENTRYITEMBASIC_SRV' },
+  { title: 'Material Document', path: 'API_MATERIAL_DOCUMENT_SRV' },
+  { title: 'GL Account', path: 'API_GLACCOUNTINCHARTOFACCOUNTS_SRV' },
+];
+
 const AUTH_TYPE_OPTIONS = [
   { value: 'basic', label: 'Basic Authentication (Username + Password)' },
   { value: 'oauth2', label: 'OAuth 2.0 Client Credentials (Client ID + Secret)' },
@@ -260,20 +277,19 @@ export default function TestingSandboxPage() {
   const [deleteConnectionError, setDeleteConnectionError] = useState('');
 
   // OData Metadata Fetch states
-  const [odataMode, setOdataMode] = useState<'idle' | 'loading' | 'catalog' | 'metadata' | 'error'>('idle');
-  const [odataCatalog, setOdataCatalog] = useState<Array<{ title: string; path: string; serviceUrl: string }>>([]);
-  const [odataSuggestedServices, setOdataSuggestedServices] = useState<Array<{ title: string; path: string }>>([]);
+  // No 'catalog' mode since 3.0.21: listing a tenant's services read records of
+  // its gateway catalog, and the connection reads metadata only (privacy
+  // policy, section 2). A service is named, or picked from COMMON_ODATA_SERVICES.
+  const [odataMode, setOdataMode] = useState<'idle' | 'loading' | 'metadata' | 'error'>('idle');
   const [odataEntityTypes, setOdataEntityTypes] = useState<Array<{ name: string; properties: Array<{ name: string; type: string; nullable: boolean }> }>>([]);
   const [odataServicePath, setOdataServicePath] = useState('');
   // Per-entity-set result of an actual read against the connected tenant.
   const [odataReadState, setOdataReadState] = useState<
-    Record<string, { status: 'reading' | 'done' | 'failed'; message: string; recordCount?: number }>
+    Record<string, { status: 'reading' | 'done' | 'failed'; message: string; fieldCount?: number }>
   >({});
   const [odataSelectedService, setOdataSelectedService] = useState('');
   const [odataMessage, setOdataMessage] = useState('');
-  const [odataTotalServices, setOdataTotalServices] = useState(0);
   const [odataExpandedEntity, setOdataExpandedEntity] = useState<string | null>(null);
-  const [odataCatalogSearch, setOdataCatalogSearch] = useState('');
 
   /**
    * Owner decision 03.10.2026: a scenario states where in the legacy source it
@@ -293,12 +309,14 @@ export default function TestingSandboxPage() {
    * Excel export as its description — null when no model wrote what they hold (`lib/ai-authorship.ts`).
    */
   const aiStatements = useMemo(() => {
-    if (!project) return { suite: null, cases: null };
+    if (!project) return { suite: null, cases: null, casesAuthorship: null };
     const tests = aiAuthorshipFactsOf(project, { documentationFromEngine: true }).tests;
     const cases = testCasesAuthorshipOf(project);
     return {
       suite: tests ? aiMarkingStatement(tests, APP_VERSION) : null,
       cases: cases ? aiMarkingStatement(cases, APP_VERSION) : null,
+      // 3.0.21 (T08): who wrote the scenarios, for the per-row origin of the Excel export.
+      casesAuthorship: cases,
     };
   }, [project]);
   const { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying: genRetrying, progress: genProgress } = useTestGeneration(projectId as string, project, setProject, originFindings);
@@ -554,52 +572,6 @@ export default function TestingSandboxPage() {
   };
 
   // --- OData Metadata Fetch ---
-  const handleFetchODataCatalog = async () => {
-    setOdataMode('loading');
-    setOdataMessage('');
-    setOdataEntityTypes([]);
-    setOdataSelectedService('');
-    setTenantLog(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${savedS4?.url || 'the saved connection'} (saved connection)...\n`);
-
-    try {
-      const token = await getAuth().currentUser?.getIdToken();
-      const response = await fetch('/api/fetch-odata-metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          useStoredCredentials: true,
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        setOdataCatalog(result.services || []);
-        setOdataTotalServices(result.totalServices || 0);
-        setOdataMode('catalog');
-        setTenantLog(prev => prev + `[odata-explorer] [SUCCESS] Discovered ${result.totalServices} OData services on tenant.\n`);
-      } else if (result.status === 'partial') {
-        setOdataCatalog([]);
-        setOdataSuggestedServices(result.suggestedServices || []);
-        setOdataMessage(result.message || '');
-        setOdataMode('catalog');
-        setTenantLog(prev => prev + `[odata-explorer] [INFO] ${result.message}\n`);
-      } else {
-        setOdataMode('error');
-        setOdataMessage(result.message || 'Failed to fetch catalog.');
-        setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
-      }
-    } catch (err) {
-      setOdataMode('error');
-      const msg = err instanceof Error ? err.message : 'Network error';
-      setOdataMessage(`Failed to fetch OData catalog: ${msg}`);
-      setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
-    }
-  };
-
   const handleFetchServiceMetadata = async (path: string) => {
     setOdataMode('loading');
     setOdataSelectedService(path);
@@ -685,13 +657,13 @@ export default function TestingSandboxPage() {
       if (result.status === 'success') {
         setOdataReadState(prev => ({
           ...prev,
-          [entitySet]: { status: 'done', message: result.message || '', recordCount: result.recordCount },
+          [entitySet]: { status: 'done', message: result.message || '', fieldCount: result.sampleFields?.length ?? 0 },
         }));
         setTenantLog(prev => prev +
-          `[odata-explorer] [SUCCESS] ${result.recordCount ?? 0} record(s) returned from ${entitySet}.
+          `[odata-explorer] [SUCCESS] ${entitySet} is declared in the service metadata (no record read).
 ` +
           (result.sampleFields?.length
-            ? `[odata-explorer] Fields in first record: ${result.sampleFields.join(', ')}
+            ? `[odata-explorer] Fields in the metadata: ${result.sampleFields.join(', ')}
 `
             : '') +
           `[odata-explorer] Read complete. Note: this is a read, not a comparison — nothing here checks the generated code against these rows.
@@ -985,15 +957,23 @@ export default function TestingSandboxPage() {
         { header: 'ID', key: 'ID', width: 15 },
         { header: 'Name', key: 'Name', width: 35 },
         { header: 'Priority', key: 'Priority', width: 15 },
-        { header: 'Status', key: 'Status', width: 15 }
+        { header: 'Status', key: 'Status', width: 15 },
+        // 3.0.21 (T08): a scenario the model wrote says so in its row; a case the engine built leaves these empty.
+        { header: 'Origin', key: 'Origin', width: 12 },
+        { header: 'AI provider', key: 'AIProvider', width: 18 },
+        { header: 'AI model (as stated by the system)', key: 'AIModel', width: 34 }
       ];
       
       testCases.forEach(tc => {
+        const origin = testCaseOrigin(tc, aiStatements.casesAuthorship);
         wsSummary.addRow({
           ID: renderSafeValue(tc.id) || 'N/A',
           Name: renderSafeValue(tc.name) || 'Untitled',
           Priority: renderSafeValue(tc.priority) || 'Medium',
-          Status: 'Pending'
+          Status: 'Pending',
+          Origin: origin ? origin.origin : '',
+          AIProvider: origin ? origin.provider : '',
+          AIModel: origin ? origin.model : ''
         });
       });
 
@@ -1005,6 +985,8 @@ export default function TestingSandboxPage() {
         wsDetail.addRow(["Test Case ID", safeId]);
         wsDetail.addRow(["Test Case Name", renderSafeValue(tc.name) || 'Untitled']);
         wsDetail.addRow(["Priority", renderSafeValue(tc.priority) || 'Medium']);
+        const origin = testCaseOrigin(tc, aiStatements.casesAuthorship);
+        if (origin) wsDetail.addRow(["Origin", `AI-generated · provider ${origin.provider} · model ${origin.model}`]);
         wsDetail.addRow(["", ""]);
         wsDetail.addRow(["Description", renderSafeValue(tc.description) || '']);
         wsDetail.addRow(["Preconditions", renderSafeValue(tc.preconditions) || '']);
@@ -1411,7 +1393,7 @@ export default function TestingSandboxPage() {
           tenantLocked={LIVE_TEST_EXECUTION.locked}
           status={[
             testCases.length > 0
-              ? { label: 'Suite', value: 'model proposal', tone: 'proposal' }
+              ? { label: 'Suite', value: 'AI-generated', tone: 'proposal' }
               : { label: 'Suite', value: 'not written yet', tone: 'plain' },
             {
               label: 'Runner',
@@ -1455,11 +1437,7 @@ export default function TestingSandboxPage() {
         }}
       />
 
-      {reader ? (
-        <div className="mb-6">
-          <OwnerOnlyNote />
-        </div>
-      ) : null}
+      {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
 
       <div data-testing-flow="" className={clsx(RAIL_GRID, 'mb-8')}>
         <div className="flex min-w-0 flex-col gap-5">
@@ -1716,6 +1694,14 @@ export default function TestingSandboxPage() {
                 dashes under a disabled button. */}
             {run.kind !== 'none' ? <TestPipeline written={testCases.length} run={run} /> : null}
 
+            {/* CA-INT-01 — the recorded run executed a suite the server did not
+                record storing as generated: said beside the counts. */}
+            {run.kind === 'recorded' && run.suiteEditedByOwner ? (
+              <div data-testing-suite-owner-edited="" className="mb-4">
+                <CcMessageStrip state="neutral">{OWNER_EDITED_SUITE_NOTE}</CcMessageStrip>
+              </div>
+            ) : null}
+
             {/* 3.0.10 — rule coverage against the original, the shared-selection
                 invariant and the mutation probe (external review F-01/F-02/F-05). */}
             {!isAbapCloud && testCases.length > 0 ? (
@@ -1906,6 +1892,9 @@ export default function TestingSandboxPage() {
               gaps={program?.gaps ?? []}
               strip={program ? { lines: program.lines, bands: program.bands, marks: program.marks, ticks: findingTicks } : null}
             />
+            {/* How the business checks each rule without ABAP (roadmap 7.3) — here since the IT view's
+                Standard fit table was removed (owner decision 22.10.2026). */}
+            <CounterChecks source={originSource} engineVersion={evidenceEngine} />
             {/* What the testing model itself says no unit test here can cover —
                 only your own system can. It used to appear only after a run in
                 this session, and never on the ABAP Cloud route, which has no
@@ -2182,17 +2171,10 @@ export default function TestingSandboxPage() {
                           <div className="flex items-center gap-3">
                             <Database className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
                             <div>
-                              <h4 className="cc-text-h3 text-cc-ink">OData Service Explorer</h4>
-                              <p className="cc-text-meta font-medium text-cc-ink-muted">Browse live OData services exposed by your connected tenant.</p>
+                              <h4 className="cc-text-h3 text-cc-ink">OData metadata</h4>
+                              <p className="cc-text-meta font-medium text-cc-ink-muted">Reads the $metadata of one service you name — its schema, never a record.</p>
                             </div>
                           </div>
-                          <CcButton
-                            onClick={handleFetchODataCatalog}
-                            disabled={odataMode === 'loading'}
-                            icon={odataMode === 'loading' ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Search className="w-4 h-4" />}
-                          >
-                            {odataMode === 'loading' ? 'Fetching...' : 'Discover Services'}
-                          </CcButton>
                         </div>
 
                         {/* Manual service input */}
@@ -2228,80 +2210,24 @@ export default function TestingSandboxPage() {
                           </div>
                         )}
 
-                        {/* Info message (partial catalog) */}
-                        {odataMode === 'catalog' && odataMessage && odataCatalog.length === 0 && (
-                          <div className="mb-4">
-                            <CcMessageStrip state="warning">
-                              <span className="block">{odataMessage}</span>
-                              {odataSuggestedServices.length > 0 && (
-                                <span className="mt-2 flex flex-wrap gap-2">
-                                  {odataSuggestedServices.map(svc => (
-                                    <CcButton
-                                      key={svc.path}
-                                      onClick={() => handleFetchServiceMetadata(svc.path)}
-                                      icon={<Database className="w-4 h-4" />}
-                                    >
-                                      {svc.title}
-                                    </CcButton>
-                                  ))}
-                                </span>
-                              )}
-                            </CcMessageStrip>
-                          </div>
-                        )}
-
-                        {/* Service Catalog Results */}
-                        {odataMode === 'catalog' && odataCatalog.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-end justify-between gap-3 mb-2">
-                              <span className={clsx(LABEL, 'pb-2')}>
-                                {odataTotalServices} Services Discovered
-                              </span>
-                              <div className="w-48">
-                                <CcField label="Filter services">
-                                  {(control) => (
-                                    <input
-                                      id={control.id}
-                                      type="text"
-                                      aria-describedby={control.describedBy}
-                                      value={odataCatalogSearch}
-                                      onChange={e => setOdataCatalogSearch(e.target.value)}
-                                      placeholder="Filter services..."
-                                      className={control.className}
-                                    />
-                                  )}
-                                </CcField>
-                              </div>
-                            </div>
-                            {/* A list of services, each one a button that fetches
-                                its $metadata. Rows of a list rather than buttons of
-                                §1.5, so they carry no surface of their own — the
-                                title underlines under the pointer, and the focus
-                                ring is the app's own. */}
-                            <ul className="max-h-60 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface divide-y divide-cc-line m-0 p-0 list-none">
-                              {odataCatalog
-                                .filter(svc =>
-                                  !odataCatalogSearch ||
-                                  svc.title.toLowerCase().includes(odataCatalogSearch.toLowerCase()) ||
-                                  svc.path.toLowerCase().includes(odataCatalogSearch.toLowerCase())
-                                )
-                                .slice(0, 50)
-                                .map((svc, i) => (
-                                  <li key={i}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleFetchServiceMetadata(svc.path)}
-                                      className="w-full flex items-center justify-between gap-2 px-4 py-2 text-left group"
-                                    >
-                                      <span className="min-w-0">
-                                        <span className="cc-text-cell font-semibold text-cc-ink block truncate group-hover:underline">{svc.title}</span>
-                                        <span className="text-[12px] font-cc-mono text-cc-ink-muted block truncate">{svc.path}</span>
-                                      </span>
-                                      <ChevronRight className="w-4 h-4 text-cc-ink-muted group-hover:text-cc-ink shrink-0 transition-colors" aria-hidden="true" />
-                                    </button>
-                                  </li>
-                                ))}
-                            </ul>
+                        {/* Common services — a fixed list in this file, not read from
+                            the tenant: listing a tenant's services would read
+                            records of its gateway catalog (removed in 3.0.21). */}
+                        {odataMode !== 'metadata' && (
+                          <div data-common-odata-services className="mb-4">
+                            <span className={clsx(LABEL, 'block mb-2')}>Common services</span>
+                            <span className="flex flex-wrap gap-2">
+                              {COMMON_ODATA_SERVICES.map(svc => (
+                                <CcButton
+                                  key={svc.path}
+                                  onClick={() => handleFetchServiceMetadata(svc.path)}
+                                  disabled={odataMode === 'loading'}
+                                  icon={<Database className="w-4 h-4" />}
+                                >
+                                  {svc.title}
+                                </CcButton>
+                              ))}
+                            </span>
                           </div>
                         )}
 
@@ -2311,10 +2237,10 @@ export default function TestingSandboxPage() {
                             <div className="flex items-center gap-2 flex-wrap mb-2">
                               <CcButton
                                 variant="ghost"
-                                onClick={() => { setOdataMode('catalog'); setOdataEntityTypes([]); }}
+                                onClick={() => { setOdataMode('idle'); setOdataEntityTypes([]); }}
                                 icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />}
                               >
-                                Back to catalog
+                                Back
                               </CcButton>
                               <span className={LABEL}>
                                 {odataSelectedService} — {odataEntityTypes.length} Entity Types
@@ -2341,11 +2267,11 @@ export default function TestingSandboxPage() {
                                           onClick={() => handleReadEntitySet(et.name)}
                                           disabled={odataReadState[et.name]?.status === 'reading'}
                                         >
-                                          {odataReadState[et.name]?.status === 'reading' ? 'Reading…' : 'Read one record from the tenant'}
+                                          {odataReadState[et.name]?.status === 'reading' ? 'Checking…' : 'Check the entity set in the tenant'}
                                         </CcButton>
                                         {odataReadState[et.name]?.status === 'done' && (
                                           <span className="cc-text-meta text-cc-ink">
-                                            {odataReadState[et.name]?.recordCount ?? 0} record(s) returned
+                                            Declared in the metadata — no record read
                                           </span>
                                         )}
                                         {odataReadState[et.name]?.status === 'failed' && (
@@ -2381,7 +2307,7 @@ export default function TestingSandboxPage() {
                         {odataMode === 'idle' && (
                           <div className="text-center py-6 text-cc-ink-muted">
                             <Database className="w-8 h-8 mx-auto mb-2" aria-hidden="true" />
-                            <p className="cc-text-cell">Click "Discover Services" to browse the OData catalog, or enter a service name above.</p>
+                            <p className="cc-text-cell">Enter a service name above or pick a common service to read its $metadata.</p>
                           </div>
                         )}
                       </div>

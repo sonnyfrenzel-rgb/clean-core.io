@@ -10,7 +10,7 @@ import {
 import {
   ensureProcessBaseline,
   fetchProcessRevision,
-  fetchProcessRevisions,
+  fetchProcessRevisionPage,
 } from '@/lib/process-revisions-client';
 
 /**
@@ -61,6 +61,8 @@ interface HeldList {
   key: string;
   revisions: ProcessRevisionSummary[];
   failed: boolean;
+  /** The cursor to the older page, or null when revision 1 is on screen. */
+  nextBefore: number | null;
 }
 
 interface HeldDiff {
@@ -74,7 +76,8 @@ export default function RevisionCompare({
   ensureBaseline = false,
   className,
 }: RevisionCompareProps) {
-  const [held, setHeld] = useState<HeldList>({ key: '', revisions: [], failed: false });
+  const [held, setHeld] = useState<HeldList>({ key: '', revisions: [], failed: false, nextBefore: null });
+  const [olderFailed, setOlderFailed] = useState(false);
   // One state, not two: the pair is only ever set together, and two states would
   // let a render see the old `from` beside the new `to`.
   const [pair, setPair] = useState<{ from: number | null; to: number | null }>({ from: null, to: null });
@@ -86,9 +89,11 @@ export default function RevisionCompare({
     let cancelled = false;
     const load = async () => {
       if (ensureBaseline) await ensureProcessBaseline(projectId);
-      const list = await fetchProcessRevisions(projectId);
+      const page = await fetchProcessRevisionPage(projectId);
+      const list = page.revisions;
       if (cancelled) return;
-      setHeld({ key: listKey, revisions: list, failed: false });
+      setHeld({ key: listKey, revisions: list, failed: false, nextBefore: page.nextBefore });
+      setOlderFailed(false);
       // The newest against the one before it: the comparison a reader opening
       // the history is most often after. One revision has nothing to compare.
       setPair(
@@ -98,7 +103,7 @@ export default function RevisionCompare({
       );
     };
     load().catch(() => {
-      if (!cancelled) setHeld({ key: listKey, revisions: [], failed: true });
+      if (!cancelled) setHeld({ key: listKey, revisions: [], failed: true, nextBefore: null });
     });
     return () => {
       cancelled = true;
@@ -106,6 +111,22 @@ export default function RevisionCompare({
   }, [projectId, listKey, ensureBaseline]);
 
   const loaded = held.key === listKey;
+
+  /** The history comes in pages, newest first; older revisions are read on request. */
+  const loadOlder = useCallback(async () => {
+    if (held.key !== listKey || held.nextBefore === null) return;
+    try {
+      const page = await fetchProcessRevisionPage(projectId, held.nextBefore);
+      setHeld((current) =>
+        current.key === listKey
+          ? { ...current, revisions: [...page.revisions, ...current.revisions], nextBefore: page.nextBefore }
+          : current,
+      );
+      setOlderFailed(false);
+    } catch {
+      setOlderFailed(true);
+    }
+  }, [held.key, held.nextBefore, listKey, projectId]);
   const revisions = loaded ? held.revisions : [];
   const from = loaded ? pair.from : null;
   const to = loaded ? pair.to : null;
@@ -167,6 +188,19 @@ export default function RevisionCompare({
       className={['flex flex-col gap-4', className].filter(Boolean).join(' ')}
     >
       <RevisionHistory revisions={revisions} from={from} to={to} onPick={pick} />
+      {loaded && held.nextBefore !== null ? (
+        <button
+          type="button"
+          data-revision-older=""
+          onClick={() => void loadOlder()}
+          className="self-start rounded-cc-row px-2 py-0.5 text-[13px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+        >
+          Show older revisions
+        </button>
+      ) : null}
+      {olderFailed ? (
+        <p className="text-[13px] font-medium text-cc-ink-muted">The older revisions could not be read.</p>
+      ) : null}
 
       {diffKey ? (
         <div data-revision-diff={`${from}-${to}`} className="flex flex-col gap-3">

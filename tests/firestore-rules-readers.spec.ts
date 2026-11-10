@@ -248,7 +248,8 @@ test('6 · a reader reads the project including its ABAP, and writes nothing any
   expect(snap.data()?.legacyCode, 'including the source code — that is what 5.4 promises').toContain('REPORT z_shared.');
 
   const ref = doc(db, 'projects', SHARED);
-  expect(await denied(() => setDoc(ref, { status: 'documented' }, { merge: true })), 'the project document').toBe(true);
+  // A field the owner may write (since 3.0.21 no browser sets 'documented' at all).
+  expect(await denied(() => setDoc(ref, { solutionDesign: 'a reader edit' }, { merge: true })), 'the project document').toBe(true);
   expect(await denied(() => setDoc(ref, { legacyCode: 'REPORT z_theirs.' }, { merge: true })), 'the source code').toBe(true);
   expect(await denied(() => setDoc(ref, { solutionDesign: 'mine now' }, { merge: true })), 'a draft field').toBe(true);
   expect(await denied(() => setDoc(ref, { approvedByArchitect: true }, { merge: true })), 'a confirmation').toBe(true);

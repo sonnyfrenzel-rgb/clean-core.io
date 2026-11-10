@@ -58,7 +58,8 @@ test.describe('the way back names the view and the layer', () => {
     const itBack = (layer: string) => workspaceBackHref({ projectId: 'p-1', search: `?view=it&from=workspace-tools&layer=${layer}` });
     // Standard fit is IT's own section since ADR-096 (owner, 12.10.2026).
     expect(itBack('standard')).toBe('/project/p-1?view=it#standard');
-    expect(stageBackPlace('?view=it&layer=standard')).toBe('IT view, Standard fit');
+    // The section at #standard is "Where it touches SAP standard" since 22.10.2026 (owner decision).
+    expect(stageBackPlace('?view=it&layer=standard')).toBe('IT view, Where it touches SAP standard');
     expect(itBack('architecture')).toBe('/project/p-1?view=it#it-objects');
     expect(itBack('evidence')).toBe('/project/p-1?view=it#it-trust');
     expect(itBack('changes')).toBe('/project/p-1?view=management#decision-card');
@@ -89,7 +90,7 @@ test.describe('the way back names the view and the layer', () => {
     // Standard fit left Business for IT (ADR-096): a stage opened from it in
     // Business returns to IT, where the content lives now, and says so.
     expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=standard' })).toBe('/project/p-1?view=it#standard');
-    expect(stageBackPlace('?view=business&layer=standard')).toBe('IT view, Standard fit');
+    expect(stageBackPlace('?view=business&layer=standard')).toBe('IT view, Where it touches SAP standard');
     // Business's own layer still returns to Business.
     expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=evidence' })).toBe('/project/p-1?view=business#evidence');
     expect(stageBackPlace('?view=it')).toBe('IT view');

@@ -1,5 +1,11 @@
 import crypto from 'crypto';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { mailDeliveryRecordExpiry } from '@/lib/proof-log';
+import { RANK, TERMINAL_NEGATIVE } from '@/lib/mail-status';
+import { recordInvitationEvent } from '@/lib/invitation-delivery-record';
+import { deliveryRecordHashes, withoutAddresses } from '@/lib/email-event-hashing';
+import { isTestAccount } from '@/lib/test-accounts';
+import { logger } from '@/lib/logger';
 
 /**
  * What happened to a message after Resend accepted it.
@@ -24,20 +30,8 @@ export type EmailEventType =
   | 'email.opened'
   | 'email.clicked';
 
-/**
- * Ordered worst-to-best is deliberate: a message that bounces after a delivery
- * event has still bounced, and the summary must not be overwritten by a later
- * `opened` from a scanner. Only a strictly higher rank replaces the current one,
- * except for the terminal negatives, which always win.
- */
-const RANK: Record<string, number> = {
-  'email.sent': 1,
-  'email.delivery_delayed': 2,
-  'email.delivered': 3,
-  'email.opened': 4,
-  'email.clicked': 5,
-};
-const TERMINAL_NEGATIVE = new Set(['email.bounced', 'email.complained']);
+// The ranking of statuses (worst to best, terminal negatives always win) is
+// shared with the invitation delivery records: `lib/mail-status.ts`.
 
 export interface EmailEventInput {
   /** Resend's message id — the join key between the send and everything after. */
@@ -49,6 +43,13 @@ export interface EmailEventInput {
   detail?: string | null;
   /** The event's own timestamp from Resend, not our clock. */
   occurredAt?: string | null;
+}
+
+let warnedNoPepper = false;
+function warnNoPepper(messageId: string) {
+  if (warnedNoPepper) return;
+  warnedNoPepper = true;
+  logger.critical('mail delivery record without recipient and subject: PSEUDONYM_PEPPER is not set', { messageId });
 }
 
 /**
@@ -113,9 +114,21 @@ export function verifyResendSignature(opts: {
  * Idempotent on the event id, because a webhook is retried until it is
  * acknowledged and a duplicate must not become a second timeline entry.
  */
-export async function recordEmailEvent(input: EmailEventInput, eventId: string): Promise<void> {
+export async function recordEmailEvent(event: EmailEventInput, eventId: string): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
+  // The provider's text without the addresses it may quote; everything below
+  // reads the event through this.
+  const input: EmailEventInput = { ...event, detail: withoutAddresses(event.detail) };
+  // An invitation mail has its own delivery record, which holds the keyed
+  // hash of the address and never the address, the subject or the provider's
+  // text (privacy policy sections 6 and 8), kept six months. Its events go
+  // there and nowhere else — `email_events` has another period (90 days).
+  if (await recordInvitationEvent(db, input, eventId)) return;
   const ref = db.collection('email_events').doc(input.messageId);
+  // The webhook carries the address and the subject in clear; the record
+  // keeps their keyed hashes only (`deliveryRecordHashes`).
+  const hashed = deliveryRecordHashes({ to: input.to, subject: input.subject });
+  if (!hashed) warnNoPepper(input.messageId);
 
   await db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
@@ -149,8 +162,12 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
       ref,
       {
         messageId: input.messageId,
-        to: input.to,
-        subject: input.subject ?? data.subject ?? null,
+        // Hashes only. A record written before 3.0.21 with the address or the
+        // subject in clear loses them here (and in
+        // `scripts/hash-email-events.ts`).
+        to: hashed ? hashed.to : [],
+        subjectHash: hashed?.subjectHash ?? data.subjectHash ?? null,
+        subject: FieldValue.delete(),
         status,
         lastDetail,
         lastEventAt,
@@ -158,6 +175,9 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
         // Capped: a message with a pathological retry loop must not grow a
         // document past Firestore's 1 MB limit.
         seenEventIds: [...seen, eventId].slice(-40),
+        // A webhook can arrive before the send's own record: the deletion date
+        // is set by whichever writes first, and kept.
+        ...(data.expiresAt ? {} : { expiresAt: mailDeliveryRecordExpiry(new Date()) }),
         timeline: [
           ...(Array.isArray(data.timeline) ? data.timeline : []),
           { type: input.type, at: input.occurredAt ?? new Date().toISOString(), detail: input.detail ?? null },
@@ -168,9 +188,9 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
 
     // The whole point of the exercise: a welcome mail that did not arrive has to
     // be visible where the operator already looks, not only in a collection they
-    // would have to go looking for. `email_events` is server-only because the
-    // documents carry recipient addresses; the registration request is already on
-    // the admin console, so the verdict goes there.
+    // would have to go looking for. `email_events` is server-only, and since
+    // 3.0.21 it holds no address to join on; the registration request is already
+    // on the admin console, so the verdict goes there.
     if (data.uid && data.kind === 'welcome') {
       tx.set(
         db.collection('registration_requests').doc(data.uid),
@@ -203,6 +223,8 @@ export async function recordEmailSent(
 ): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
   const ref = db.collection('email_events').doc(messageId);
+  const hashed = deliveryRecordHashes({ to: [to], subject });
+  if (!hashed) warnNoPepper(messageId);
 
   // A transaction rather than a plain merge, because this races the webhook:
   // Resend can report a hard bounce before the send call's own bookkeeping has
@@ -217,13 +239,23 @@ export async function recordEmailSent(
       ref,
       {
         messageId,
-        to: [to],
-        subject,
+        // The keyed hashes of the address and the subject, never either in
+        // clear (privacy policy sections 2 and 6).
+        to: hashed ? hashed.to : [],
+        subjectHash: hashed?.subjectHash ?? null,
+        subject: FieldValue.delete(),
+        // The weekly report leaves the CI's own mail out; it decided that by
+        // the address, which the record no longer holds.
+        ...(isTestAccount(to) ? { testRecipient: true } : {}),
         kind,
         uid: uid ?? null,
         status,
         sentAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
+        // The record's own deletion date (privacy policy section 6, open value
+        // `mailDeliveryRecordRetention`); a Firestore TTL policy on it deletes
+        // the record then (`docs/DATA-RETENTION.md`).
+        expiresAt: mailDeliveryRecordExpiry(new Date()),
       },
       { merge: true },
     );

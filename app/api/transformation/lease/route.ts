@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import {
+  mfaRefusal,
   verifyRequestAuth,
   assertMfaSatisfied,
   assertAccountActive,
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     try {
       await assertMfaSatisfied(req, decodedToken);
     } catch (mfaErr: unknown) {
-      const q = mfaErr as { message?: string; status?: number };
+      const q = mfaRefusal(mfaErr);
       return NextResponse.json({ error: q?.message || 'MFA verification required.' }, { status: q?.status || 403 });
     }
     // Bounds the work below (the contract is rebuilt from the source) — the
@@ -238,7 +239,7 @@ async function signedInOwner(req: NextRequest): Promise<{ uid: string } | NextRe
   try {
     await assertMfaSatisfied(req, decodedToken);
   } catch (mfaErr: unknown) {
-    const q = mfaErr as { message?: string; status?: number };
+    const q = mfaRefusal(mfaErr);
     return NextResponse.json({ error: q?.message || 'MFA verification required.' }, { status: q?.status || 403 });
   }
   return { uid: decodedToken.uid };

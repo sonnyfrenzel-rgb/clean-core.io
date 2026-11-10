@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
  *   2. four groups by question instead of nine cards — what we build, how it
  *      connects to SAP, how it is secured and run, when — the first open, the
  *      rest folded, with a sticky section nav;
- *   3. "Model proposal" once per section, not on every card.
+ *   3. "AI-generated" once per section, not on every card.
  *
  * The non-functional requirements have their own section since ADR-074; the
  * document links there instead of repeating them.
@@ -53,6 +53,8 @@ export interface DesignDocumentProps {
   banner?: React.ReactNode;
   /** Roadmap 3.0.19: the engine's key-user step list, for the fourth option's limits; null before 3.0.19. */
   keyUser?: KeyUserStepList | null;
+  /** Key user is the engine's recommendation or the confirmed target: its limits are shown (owner decision 22.10.2026). */
+  keyUserChosen?: boolean;
 }
 
 type Service = DesignData['cloudServices'][number];
@@ -197,7 +199,7 @@ const GROUPS: { key: DesignGroupKey; title: string; line: string; icon: typeof B
   { key: 'when', title: 'When', line: 'The phases of the change, in order.', icon: CalendarRange },
 ];
 
-export default function DesignDocument({ design, routeReason, levels, findings, nfrTopics, banner, keyUser = null }: DesignDocumentProps) {
+export default function DesignDocument({ design, routeReason, levels, findings, nfrTopics, banner, keyUser = null, keyUserChosen = false }: DesignDocumentProps) {
   const [open, setOpen] = useState<ReadonlySet<DesignGroupKey>>(() => new Set<DesignGroupKey>(['build']));
   const toggle = (key: DesignGroupKey, to?: boolean) =>
     setOpen((prev) => {
@@ -347,7 +349,7 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
       </section>
 
       {/* 1b. The options, compared before the standard is ruled out (roadmap 3.0.12, F14) */}
-      <OptionComparison design={design} keyUser={keyUser} />
+      <OptionComparison design={design} keyUser={keyUser} keyUserChosen={keyUserChosen} />
 
       {/* 2. The section nav */}
       <nav

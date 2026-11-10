@@ -74,7 +74,7 @@ async function seed(prefix: string, source: string, name: string): Promise<Seede
 
 async function keyAvailable(page: Page) {
   await page.route('**/api/model-stages', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keyAvailable: true, keySource: 'community' }) }),
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keyAvailable: true, keySource: 'community', autoSteps: true }) }),
   );
 }
 

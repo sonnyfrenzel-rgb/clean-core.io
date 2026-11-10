@@ -133,7 +133,7 @@ test.describe('the Gemini route ends a call the provider never answers', () => {
     const req = new NextRequestCtor('http://localhost/api/gemini', {
       method: 'POST',
       headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'Say hello.' }),
+      body: JSON.stringify({ prompt: 'Say hello.', stage: 'glossary' }),
     });
     const started = Date.now();
     const res = await route.POST(req);
@@ -147,5 +147,74 @@ test.describe('the Gemini route ends a call the provider never answers', () => {
     // The provider was asked, and its call was aborted — nothing keeps running for nobody.
     expect(probe().calls).toBeGreaterThanOrEqual(1);
     expect(probe().aborted).toBe(probe().calls);
+  });
+
+  /** A signed-in, approved account on the emulators, and its ID token. */
+  async function signedInAccount(prefix: string): Promise<string> {
+    const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+    const uid = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const email = `${uid}@example.test`;
+    await adminAuth(app).createUser({ uid, email, password: 'emulator-only-password' });
+    await adminFirestore(app, FIRESTORE_DB_ID).collection('users').doc(uid).set({
+      firstName: 'Budget', lastName: 'Route', email, tier: 'pilot', status: 'approved', activatedAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
+    });
+    const custom = await adminAuth(app).createCustomToken(uid);
+    const signIn = await fetch(`http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${firebaseConfig.apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: custom, returnSecureToken: true }),
+    });
+    return ((await signIn.json()) as { idToken: string }).idToken;
+  }
+
+  const probeCalls = () => ((globalThis as { __deadlineProbe?: { calls: number } }).__deadlineProbe ?? { calls: 0 }).calls;
+
+  test('SEC-01: a call that names no stage is refused before the provider is asked', async () => {
+    test.setTimeout(60_000);
+    delete process.env[GEMINI_TEST_STUB_DEFAULT_ENV];
+    process.env.GEMINI_API_KEY = 'test-key-not-used-by-the-stand-in';
+    const idToken = await signedInAccount('stage');
+    const before = probeCalls();
+    for (const body of [{ prompt: 'Say hello.' }, { prompt: 'Say hello.', stage: 'anything' }]) {
+      const res = await route.POST(new NextRequestCtor('http://localhost/api/gemini', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }));
+      expect(res.status).toBe(400);
+      expect(((await res.json()) as { code?: string }).code).toBe('stage-required');
+    }
+    expect(probeCalls(), 'the provider was asked for a call without a stage').toBe(before);
+  });
+
+  // Last in this file: the breaker it opens is remembered by the route module.
+  test('SEC-01: the platform key\'s daily budget, once spent, refuses before the provider is asked', async () => {
+    test.setTimeout(60_000);
+    delete process.env[GEMINI_TEST_STUB_DEFAULT_ENV];
+    process.env.GEMINI_API_KEY = 'test-key-not-used-by-the-stand-in';
+    const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+    const day = new Date().toISOString().slice(0, 10);
+    const budgetRef = adminFirestore(app, FIRESTORE_DB_ID).collection('platform_model_budget').doc(day);
+    const previousCap = process.env.PLATFORM_MODEL_DAILY_CALLS;
+    process.env.PLATFORM_MODEL_DAILY_CALLS = '1000000';
+    await budgetRef.set({ calls: 1_000_000 }, { merge: true });
+    try {
+      const idToken = await signedInAccount('budget');
+      const before = probeCalls();
+      const res = await route.POST(new NextRequestCtor('http://localhost/api/gemini', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Say hello.', stage: 'glossary' }),
+      }));
+      expect(res.status).toBe(503);
+      expect(((await res.json()) as { code?: string }).code).toBe('platform-model-budget-exhausted');
+      expect(probeCalls(), 'the provider was asked past the day\'s budget').toBe(before);
+      expect((await budgetRef.get()).data()?.open, 'the breaker did not record that it opened').toBe(true);
+    } finally {
+      if (previousCap === undefined) delete process.env.PLATFORM_MODEL_DAILY_CALLS;
+      else process.env.PLATFORM_MODEL_DAILY_CALLS = previousCap;
+      await budgetRef.delete().catch(() => {});
+    }
   });
 });

@@ -332,8 +332,11 @@ test.describe('a test result belongs to the project it is reported for', () => {
   test('the same verdicts without the run behind them are Self-reported, and stay that way', async () => {
     // The other half of the pair, on the same stored project: the verdicts the
     // server wrote, with the server's record of the run taken away. That is
-    // exactly the shape an owner can produce through `firestore.rules`, which
-    // lets a client update `testCases` and not `testRunReceipt`.
+    // the shape an owner could produce through `firestore.rules` until 3.0.21,
+    // when a client could update `testCases` but not `testRunReceipt`. Since
+    // SEC-2026-889/-890 (3.0.21) neither is client-writable; the verdicts come
+    // from POST /api/projects/{projectId}/artefacts. The label must still hold
+    // for a stored project of that shape.
     const stored = (await read(`projects/${PROJECT_ID}`)) as Project;
     const selfReported: Project = { ...stored, testRunReceipt: undefined };
     const byKey = Object.fromEntries(workflowSteps(selfReported).map((s) => [s.key, s]));
@@ -342,15 +345,16 @@ test.describe('a test result belongs to the project it is reported for', () => {
     expect(byKey.delivery).toMatchObject({ state: 'done', proven: false, badge: 'Unverified' });
     expect(byKey.delivery.detail).not.toContain('a passing test run');
 
-    // And the asymmetry that keeps the two apart is in the rules: an owner may
-    // update `testCases`, and no client may touch `testRunReceipt`. If that ever
-    // changed, `Self-reported` would be a label a browser could take off itself.
+    // And the rules keep the two apart: no client may touch `testRunReceipt`
+    // (nor, since 3.0.21, `testCases`). If a client could write the receipt,
+    // `Self-reported` would be a label a browser could take off itself.
     const allowlist = readFileSync(resolve(__dirname, '..', 'firestore.rules'), 'utf8');
     const projectUpdate = allowlist.slice(
       allowlist.indexOf("'status', 'legacyCode'"),
       allowlist.indexOf('])', allowlist.indexOf("'status', 'legacyCode'")),
     );
-    expect(projectUpdate, 'the project update allowlist moved — this guard names it').toContain("'testCases'");
+    expect(projectUpdate, 'the project update allowlist moved — this guard names it').toContain("'testSuite'");
+    expect(projectUpdate, 'a client may write test verdicts again (SEC-2026-889/-890)').not.toContain("'testCases'");
     expect(projectUpdate, 'a client may write an execution receipt now').not.toContain('testRunReceipt');
   });
 });

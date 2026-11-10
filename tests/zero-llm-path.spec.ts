@@ -6,7 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
-import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
+import { recomputeStoredRunHash, RUN_SIGNATURE_SCHEME, signRunHashV2, verifyRunIntegrity } from '../lib/run-signature';
 import { MODEL_STAGES, NOT_GENERATED, STAGE_DISABLED_CODE, offeredModelStages } from '../lib/model-stages';
 import { signInViaLanding } from './helpers/sign-in';
 
@@ -151,7 +151,10 @@ test('a run with no model part is created and its signature verifies', async ({ 
   const key = process.env.AUDIT_SIGNING_KEY!;
   expect(key, 'AUDIT_SIGNING_KEY must match the server under test').toBeTruthy();
   expect(recomputeStoredRunHash(run)).toBe(runHash);
-  expect(signRunHash(runHash, key)).toBe(signature);
+  // Signed under the key derived for runs (3.0.21), with the scheme inside the hash.
+  expect(run.signatureScheme).toBe(RUN_SIGNATURE_SCHEME);
+  expect(signRunHashV2(runHash, key)).toBe(signature);
+  expect(verifyRunIntegrity(run, key)).toEqual({ valid: true });
   expect(run.signature).toBe(signature);
 });
 

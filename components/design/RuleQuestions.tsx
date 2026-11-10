@@ -30,6 +30,7 @@ import {
   questionChoices,
   questionFlow,
   recommendedAnswerOf,
+  targetQuestionGroups,
   type QuestionAnswer,
   type QuestionState,
   type RecommendedAnswer,
@@ -38,10 +39,11 @@ import { ANSWERS_READING, NO_BUSINESS_QUESTIONS, businessAnswersOf, type Busines
 import { recordRuleChoices } from '@/lib/rule-record-client';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { usePlainWording } from '@/hooks/usePlainWording';
+import AskOnClick from '@/components/workspace/AskOnClick';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type WordedSentence } from '@/lib/plain-wording';
 import type { Project } from '@/lib/types';
-import { itProposals, questionsAnsweredOf, questionsLater, wt, type WorkspaceMessageKey } from '@/lib/workspace-messages';
+import { itProposals, questionsAnsweredOf, questionsChangeTarget, questionsLater, questionsWithoutImpact, wt, type WorkspaceMessageKey } from '@/lib/workspace-messages';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
@@ -62,6 +64,11 @@ import { engineVersionOfProject } from '@/lib/run-engine-version';
  * options for IT — configuration or SAP standard — are no business answers:
  * they are taken in the rule register of the IT view, and Design says in one
  * line how many there are.
+ *
+ * Since owner decision 22.10.2026 (ADR-106) the panel stands beside the
+ * Design canvas, and the open questions come in two groups: the ones that
+ * change the target on top, the ones without impact on it folded
+ * (`targetQuestionGroups`, the rule in `changesTarget`).
  *
  * The page hears what is answered (`onAnswers`): the solution design is
  * written only on a click, once every question has an answer, and carries the
@@ -284,6 +291,8 @@ export interface RuleQuestionsViewProps {
 /** Presentational: the flow, the answered questions, and one line on IT's options. */
 export function RuleQuestionsView({ explanation, entries, rules, owner, busy, error, recorded, onRecord, say, registerHref }: RuleQuestionsViewProps) {
   const flow = useMemo(() => questionFlow(explanation, entries), [explanation, entries]);
+  // The open questions in two groups: the ones that change the target first (owner decision 22.10.2026).
+  const groups = useMemo(() => targetQuestionGroups(explanation, entries), [explanation, entries]);
   // Taken in the rule register of the IT view; Design names how many there are.
   const options = useMemo(() => architectureOptions(explanation, entries), [explanation, entries]);
   const accept = useMemo(() => acceptAllChoices(explanation, entries), [explanation, entries]);
@@ -345,16 +354,38 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
             </CcMessageStrip>
           ) : null}
 
-          {flow.shown.length > 0 ? (
-            <ol data-questions-open="" className="m-0 flex list-none flex-col gap-3 p-0">
-              {flow.shown.map((s) => (
-                <QuestionCard key={s.question.id} state={s} explained={explainedOf(s.question.ruleIds)} rules={rules} owner={owner} busy={busy} onRecord={record} say={say} recommended={recommendedOf(s)} />
-              ))}
-            </ol>
-          ) : flow.total > 0 && !allAnsweredNow ? (
+          {/* Owner decision 22.10.2026 (3.0.21): the questions that change the
+              target on top, the ones without impact on it folded
+              (`targetQuestionGroups`, the rule in `changesTarget`). */}
+          {groups.changing.length > 0 ? (
+            <div data-questions-changing={groups.changingOpen} className="flex min-w-0 flex-col gap-2">
+              <h3 data-questions-changing-title="" className="m-0 text-[14px] font-bold text-cc-ink">{questionsChangeTarget(groups.changingOpen)}</h3>
+              <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('questions.changingNote')}</p>
+              <ol data-questions-open="" className="m-0 flex list-none flex-col gap-3 p-0">
+                {groups.changing.map((s) => (
+                  <QuestionCard key={s.question.id} state={s} explained={explainedOf(s.question.ruleIds)} rules={rules} owner={owner} busy={busy} onRecord={record} say={say} recommended={recommendedOf(s)} />
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          {groups.quiet.length > 0 ? (
+            <div data-questions-quiet={groups.quietOpen}>
+              <CcDisclosure title={questionsWithoutImpact(groups.quietOpen)} level={3} defaultOpen={groups.changingOpen === 0}>
+                <div className="flex min-w-0 flex-col gap-2">
+                  <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('questions.quietNote')}</p>
+                  <ol data-questions-open-quiet="" className="m-0 flex list-none flex-col gap-3 p-0">
+                    {groups.quiet.map((s) => (
+                      <QuestionCard key={s.question.id} state={s} explained={explainedOf(s.question.ruleIds)} rules={rules} owner={owner} busy={busy} onRecord={record} say={say} recommended={recommendedOf(s)} />
+                    ))}
+                  </ol>
+                </div>
+              </CcDisclosure>
+            </div>
+          ) : null}
+          {flow.shown.length === 0 && flow.total > 0 && !allAnsweredNow ? (
             <p data-questions-all-answered="" className="m-0 text-[13px] font-semibold text-cc-ink">{wt('questions.allAnswered')}</p>
           ) : null}
-          {flow.later > 0 ? <p data-questions-later="" className="m-0 text-[12px] font-medium text-cc-ink-muted">{questionsLater(flow.later)}</p> : null}
+          {groups.later > 0 ? <p data-questions-later="" className="m-0 text-[12px] font-medium text-cc-ink-muted">{questionsLater(groups.later)}</p> : null}
 
           {flow.done.length > 0 ? (
             <div data-questions-done="">
@@ -484,6 +515,7 @@ export default function RuleQuestions({
     owner,
     active: explanation !== null,
     modelEnabled: plainModelEnabled(availability),
+    autoAllowed: availability.autoSteps,
     initial: plainWording ?? null,
   });
   // What the page hears: still reading, no question at all, or every question with its answer.
@@ -524,6 +556,8 @@ export default function RuleQuestions({
   if (!source.trim() || !reading || reading.ruleSet.rules.length === 0) return null;
   if (!explanation) return null;
   return (
+    <>
+    <AskOnClick askNow={wording.askNow} step="plain" />
     <RuleQuestionsView
       explanation={explanation}
       entries={entries}
@@ -536,5 +570,6 @@ export default function RuleQuestions({
       say={wording.say}
       registerHref={`/project/${encodeURIComponent(projectId)}?view=it#${BUSINESS_RULES_ID}`}
     />
+    </>
   );
 }

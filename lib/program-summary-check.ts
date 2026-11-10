@@ -9,7 +9,7 @@ import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
  * Holds a model's wording of what a program is for against the engine's facts
  * (roadmap 3.0.11, "In short"; owner, 12.10.2026): *"Where the purpose needs
  * words the code does not hold, a model may phrase it from those facts, marked
- * Model proposal and checked against them — no claim the facts contradict;
+ * AI-generated and checked against them — no claim the facts contradict;
  * every business object it names must be one the engine read."*
  *
  * A proposal that fails is not shown; the engine's sentence stands alone. The
@@ -149,7 +149,7 @@ const WORD_TABLES: Array<{ re: RegExp; tables: Set<string> }> = (() => {
  * The model's purpose of a program, from the Analyze narrative (`asIsContext`,
  * else `summary`): its first two sentences, without citations and Markdown —
  * or null when there is none or it fails the check. The caller shows it with
- * the chip *Model proposal*, the engine's sentence underneath.
+ * the chip *AI-generated*, the engine's sentence underneath.
  */
 export function purposeProposalOf(narrative: string | null | undefined, facts: ProgramSummaryFacts | null): string | null {
   if (!narrative || !facts) return null;
@@ -176,13 +176,16 @@ export function purposeProposalOf(narrative: string | null | undefined, facts: P
 /** The tag beside a quoted header comment — a tag, not one of the nine provenance values (DESIGN.md §4). */
 export const AUTHOR_CLAIM_LABEL = "Author's claim";
 
+/** The heading a claim read off the header's title line carries (`lib/program-summary-facts.ts`, from engine 3.0.21). */
+export const TITLE_HEADING = 'Title';
+
 export type AuthorClaim =
   | { state: 'shown'; heading: string; text: string; lineStart: number; lineEnd: number }
   | { state: 'contradicted'; heading: string; problems: string[]; lineStart: number; lineEnd: number; note: string };
 
 /**
  * The header comment's statement of purpose as an *Author's claim* (owner,
- * 12.10.2026), held to the same check as a model proposal. A claim the facts
+ * 12.10.2026), held to the same check as AI-generated. A claim the facts
  * contradict is **not shown** — the safer of the two choices the owner left
  * open: a reader who skims would take the quoted sentence for the program's
  * behaviour even under a warning. What stands instead is one line that the
@@ -195,6 +198,10 @@ export function authorClaimOf(facts: ProgramSummaryFacts | null): AuthorClaim | 
   const check = checkPurposeProposal(claim.text, facts);
   const quoted = check.ok ? quotableClaim(claim.text) : null;
   if (quoted) return { state: 'shown', ...claim, text: quoted };
+  // Roadmap 3.0.21: a title line of a few words often shows too little of any language to tell
+  // ("Freight charge check before goods issue"). Unread, it is not quoted — and, being only a
+  // title, not announced either: a note on it would outweigh the line itself.
+  if (claim.heading === TITLE_HEADING && check.problems.every((p) => p === UNREAD_LANGUAGE)) return null;
   const range = claim.lineEnd > claim.lineStart ? `L${claim.lineStart}–${claim.lineEnd}` : `L${claim.lineStart}`;
   const problems = check.ok ? [TOO_LONG] : check.problems;
   return {

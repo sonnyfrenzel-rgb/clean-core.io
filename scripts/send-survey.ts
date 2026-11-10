@@ -25,6 +25,7 @@ import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { communityMailBlock, unsubscribeUrls } from '../lib/community-mail';
 import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token';
+import { accountHashOf } from '../lib/pseudonym';
 import { createSurveyToken } from '../lib/survey/token';
 import { SURVEY_CAMPAIGN, SURVEY_OPEN_DAYS, SURVEY_SUBJECT } from '../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
@@ -163,7 +164,15 @@ async function loadRecipients(db: Firestore) {
     db.collection('email_sends').where('campaign', '==', SURVEY_CAMPAIGN).get(),
   ]);
 
-  const suppressed = new Set(suppressions.docs.map((d) => normaliseEmail(d.data().email || '')));
+  // Two kinds of entry: since 3.0.21 the document id is the keyed hash of the
+  // address and no address is stored (privacy policy section 2); older entries
+  // carry the address in clear. An account is suppressed by either.
+  const suppressed = new Set(suppressions.docs.map((d) => normaliseEmail(d.data().email || '')).filter(Boolean));
+  const keyedIds = new Set(suppressions.docs.filter((d) => d.data().keyed === true).map((d) => d.id));
+  for (const doc of users.docs) {
+    const email = normaliseEmail(doc.data().email || '');
+    if (email && keyedIds.has(accountHashOf(email))) suppressed.add(email);
+  }
   // A send record is written *before* the provider is asked (see the loop in
   // main), so the states mean: `sent` — accepted and recorded; `sending` — the
   // provider was asked and the outcome was never written, which is a message

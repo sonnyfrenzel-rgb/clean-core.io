@@ -38,7 +38,8 @@ test('the production-build setup the comment above names is still there (not tha
   const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8');
   const workflow = read('.github/workflows/deploy.yml');
   expect(workflow).toContain('run: npm run build');
-  expect(workflow).toMatch(/run: npx playwright test --shard=/);
+  // Since 3.0.21 each shard runs its spec files from tests/shard-plan.json.
+  expect(workflow).toContain('npx playwright test $files');
   expect(read('playwright.config.ts')).toMatch(/command: process\.env\.CI \? 'npm start'/);
   for (const [spec, title] of [
     ['tests/generation-store-cas.spec.ts', "test('happy path:"],

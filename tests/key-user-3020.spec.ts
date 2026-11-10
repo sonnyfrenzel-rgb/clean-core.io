@@ -162,7 +162,7 @@ test.describe('2. "level A by construction" holds once each candidate\'s release
 
   test('the design comparison (Design) renders the caveat beside the fourth option', async () => {
     const OptionComparison = await component('components/design/OptionComparison.tsx', 'default');
-    const html = renderToStaticMarkup(React.createElement(OptionComparison, { design: null, keyUser: listOf() }));
+    const html = renderToStaticMarkup(React.createElement(OptionComparison, { design: null, keyUser: listOf(), keyUserChosen: true }));
     expect(html).toContain('data-key-user-level="A"');
     expect(html).toContain('It holds once each candidate&#x27;s release, with its other limits, is checked in the target system');
   });

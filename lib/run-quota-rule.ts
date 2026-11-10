@@ -22,6 +22,13 @@
 export interface QuotaSubject {
   tier?: string | null;
   byokConfigured?: boolean | null;
+  /**
+   * When the stored own key last passed its test (server time, written by the
+   * Admin SDK only). Roadmap 3.0.21: an own key counts as configured — lifts
+   * the quota, may run automatic steps, counts as "own key" anywhere else —
+   * only once it passed a test.
+   */
+  byokTestedAt?: unknown;
   transformationsUsed?: number | null;
   transformationsLimit?: number | null;
   /**
@@ -33,10 +40,21 @@ export interface QuotaSubject {
 
 export const COMMUNITY_QUOTA_FALLBACK = 5;
 
+/**
+ * The account's own key counts: stored **and** tested successfully (roadmap
+ * 3.0.21). A key saved before the rule, or one whose last test failed, carries
+ * no `byokTestedAt` and does not count until a test passes. The one rule —
+ * `reserveRunQuota`, the automatic-steps switch and the screens read it.
+ */
+export function ownKeyCounts(profile: Pick<QuotaSubject, 'byokConfigured' | 'byokTestedAt'> | null | undefined): boolean {
+  if (!profile) return false;
+  return profile.byokConfigured === true && profile.byokTestedAt !== undefined && profile.byokTestedAt !== null;
+}
+
 /** The account pays for its own runs — the community quota does not apply. */
 export function runsAreSelfFunded(profile: QuotaSubject | null | undefined): boolean {
   if (!profile) return false;
-  return profile.tier === 'enterprise' || profile.byokConfigured === true;
+  return profile.tier === 'enterprise' || ownKeyCounts(profile);
 }
 
 /**
@@ -75,4 +93,32 @@ export function runsRemaining(profile: QuotaSubject | null | undefined): number 
   const used = typeof profile.transformationsUsed === 'number' ? profile.transformationsUsed : 0;
   const limit = typeof profile.transformationsLimit === 'number' ? profile.transformationsLimit : COMMUNITY_QUOTA_FALLBACK;
   return Math.max(0, limit - used);
+}
+
+/**
+ * The quota's one name — roadmap 3.0.21 (2), UX-084 regressed.
+ *
+ * The same five runs were "4 of 5 left" in the header, "Transformations used 1
+ * of 5" in Settings and "free transformations" in the server's refusal, while
+ * the start screens, the mockup and `DESIGN.md` §2.8 say "analysis runs". One
+ * noun now, counted one way — what is left — wherever the quota is named.
+ */
+export const QUOTA_NAME = 'Analysis runs';
+
+/** "4 of 5 runs left", or "Unlimited" for an account that pays for its own runs. */
+export function runsLeftLabel(profile: QuotaSubject | null | undefined): string {
+  const limit = typeof profile?.transformationsLimit === 'number' ? profile.transformationsLimit : COMMUNITY_QUOTA_FALLBACK;
+  if (runsAreSelfFunded(profile) || limit > 900) return 'Unlimited';
+  return `${runsRemaining(profile)} of ${limit} runs left`;
+}
+
+/** Where an own model key is added — the key card's anchor in Settings (roadmap 3.0.21 (3)). */
+export const OWN_KEY_HREF = '/settings#own-key';
+
+/** The action on every notice that says the free runs are spent. */
+export const OWN_KEY_ACTION = 'Add your own key';
+
+/** The sentence of that notice — the server's refusal says the same. */
+export function quotaSpentSentence(limit: number): string {
+  return `You've used all ${limit} free analysis runs. Add your own model key in Settings for unlimited runs — Clean-Core.io stays free.`;
 }

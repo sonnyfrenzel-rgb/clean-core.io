@@ -443,7 +443,7 @@ export default function TransformationObjectPage({
         <span className="inline-flex items-center gap-2">
           <Dot tone="warning" />
           <span className="cc-text-label text-cc-ink-muted">Code</span>
-          {generated ? 'model proposal' : files === null ? 'none in a demo' : 'not generated'}
+          {generated ? 'AI-generated' : files === null ? 'none in a demo' : 'not generated'}
         </span>
         <span className="inline-flex items-center gap-2">
           <Dot tone="information" />
@@ -647,7 +647,7 @@ export default function TransformationObjectPage({
                   note: generated
                     ? engineLed
                       ? `${groups.length} objects — frame by the engine, function bodies by the model`
-                      : `${files!.length} files, model proposal`
+                      : `${files!.length} files, AI-generated`
                     : files === null ? 'not in a demo' : 'not yet',
                 },
                 // The grounding audit is a checklist in this browser, not a step

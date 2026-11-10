@@ -60,6 +60,14 @@ import {
   ADDRESS_CONFIRMATION_SUBJECT,
 } from '../../lib/invitation-email';
 import { invitationLinkPath } from '../../lib/invitations';
+import { buildPortfolioInvitationEmail, PORTFOLIO_INVITATION_SUBJECT, portfolioInvitationLinkPath } from '../../lib/portfolio/invitation-email';
+import { BYOK_AGREEMENT_ENDED_SUBJECT, buildAgreementEndedMail } from '../../lib/byok-agreement-email';
+import { buildWithdrawalReceiptMail, withdrawalReceiptSubject } from '../../lib/withdrawal-receipt-email';
+import { acceptedWording, buildContractConfirmationMail, type ConfirmationOccasion } from '../../lib/contract-confirmation-email';
+import { currentTermsChanges } from '../../lib/terms-announcement/changes';
+import { buildTermsAnnouncementMail } from '../../lib/terms-announcement/mail';
+import { buildCommunityUpdateMail } from '../../lib/terms-announcement/community-update';
+import { TERMS_EFFECTIVE_DATE_ISO } from '../../lib/legal/open-values';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
 import { summarise, type SurveyResponse } from '../../lib/survey/store';
@@ -338,13 +346,140 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       const link = `${APP_BASE_URL}${invitationLinkPath(sampleId('seed-project', ctx), sampleId('seed-invitation', ctx))}`;
       const expires = new Date(ctx.now.getTime() + 14 * 24 * 60 * 60 * 1000).toUTCString().slice(5, 16);
       const html = wrapEmailDocument(
-        buildInvitationEmail({ inviterName: escapeHtml(SEED_NAME), recipient: escapeHtml(ctx.recipient.address), link, expires }),
+        buildInvitationEmail({
+          inviterName: escapeHtml(SEED_NAME),
+          recipient: escapeHtml(ctx.recipient.address),
+          link,
+          expires,
+          // Production: invitationUnsubscribeUrl (lib/invitation-suppression.ts), a signed inv-unsub token.
+          unsubscribeUrl: `${APP_BASE_URL}/unsubscribe/invitations#t=${unsignedToken('inv-unsub', ctx)}`,
+        }),
         'Clean-Core.io — invitation',
       );
       // lib/transactional-mail.ts: DEFAULT_FROM, reply_to USER_MAIL_REPLY_TO, text from htmlToText.
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: INVITATION_EMAIL_SUBJECT, html, text: htmlToText(html) };
     },
   },
+  // The contract confirmation C5 (T03): after sign-up, after an amendment and
+  // after the Additional Agreement, each in the language version accepted, with
+  // the digest and the full wording — `sendContractConfirmationMail` through
+  // `sendTransactionalMail`, called by the register, consent and key-save routes.
+  ...(
+    [
+      ['contract-confirmation', 'sign-up', 'en'],
+      ['contract-confirmation-de', 'sign-up', 'de'],
+      ['amendment-confirmation', 'amendment', 'en'],
+      ['amendment-confirmation-de', 'amendment', 'de'],
+      ['byok-agreement-accepted', 'byok-addendum', 'en'],
+      ['byok-agreement-accepted-de', 'byok-addendum', 'de'],
+    ] as Array<[string, ConfirmationOccasion, 'en' | 'de']>
+  ).map(
+    ([type, occasion, language]): SeedMailType => ({
+      type,
+      audience: 'nutzer',
+      source: 'lib/contract-confirmation-mail.ts',
+      template: 'lib/contract-confirmation-email.ts',
+      build: (ctx) => {
+        const accepted = acceptedWording(occasion, language, 'ZV-BYOK-1.0');
+        if (!accepted) throw new Error(`${type}: the wording does not match its archived digest`);
+        const { subject, html: body } = buildContractConfirmationMail({
+          occasion,
+          language,
+          recipient: ctx.recipient.address,
+          firstName: SEED_NAME.split(' ')[0],
+          ...accepted,
+          acceptedAt: ctx.now.toISOString(),
+        });
+        const html = wrapEmailDocument(body, subject);
+        return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject, html, text: htmlToText(html) };
+      },
+    }),
+  ),
+  // Terms 10.1: the notice of an amendment of the Terms, German and English in
+  // one mail, generated from the live texts at render time. Its own text part:
+  // written for itself; the full changed wording travels as an attachment.
+  {
+    type: 'terms-announcement',
+    audience: 'nutzer',
+    source: 'scripts/send-terms-announcement.ts',
+    template: 'lib/terms-announcement/mail.ts',
+    build: () => {
+      // Before the effective day is set, the seed renders the day the notice proposes (owner, 06.11.2026).
+      const m = buildTermsAnnouncementMail({
+        changes: currentTermsChanges(),
+        effectiveDateIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23',
+        baseUrl: 'https://clean-core.io',
+      });
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: m.subject, html: m.html, text: m.text };
+    },
+  },
+  // The community mail on what is planned next (legal statement 17e, M1): the
+  // block the notice no longer carries, to opted-in accounts only, with the
+  // unsubscribe link in the body and the RFC 8058 header like the survey.
+  {
+    type: 'community-update',
+    audience: 'nutzer',
+    source: 'scripts/send-community-update.ts',
+    template: 'lib/terms-announcement/community-update.ts',
+    build: (ctx) => {
+      const unsubscribe = unsubscribeUrls('https://clean-core.io', unsignedToken('unsub', ctx));
+      const m = buildCommunityUpdateMail({
+        plannedDayIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23',
+        consentedOnIso: ctx.now.toISOString().slice(0, 10),
+        unsubscribeUrl: unsubscribe.page,
+        baseUrl: 'https://clean-core.io',
+      });
+      return {
+        from: USER_MAIL_FROM,
+        replyTo: USER_MAIL_REPLY_TO,
+        subject: m.subject,
+        html: m.html,
+        text: m.text,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribe.oneClick}>, <mailto:${USER_MAIL_REPLY_TO}?subject=Unsubscribe>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      };
+    },
+  },
+  {
+    type: 'byok-agreement-ended',
+    audience: 'nutzer',
+    source: 'lib/byok-agreement-mail.ts',
+    template: 'lib/byok-agreement-email.ts',
+    build: (ctx) => {
+      const html = wrapEmailDocument(buildAgreementEndedMail({ recipient: escapeHtml(ctx.recipient.address), ending: 'settings', endedAt: ctx.now.toISOString() }));
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: BYOK_AGREEMENT_ENDED_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  // C13 (Terms section 13): the receipt of a declaration to withdraw from /
+  // end the contract, in the language of the accepted Terms.
+  ...(
+    [
+      ['withdrawal-receipt', 'en'],
+      ['withdrawal-receipt-de', 'de'],
+    ] as Array<[string, 'en' | 'de']>
+  ).map(
+    ([type, language]): SeedMailType => ({
+      type,
+      audience: 'nutzer',
+      source: 'lib/withdrawal-receipt-mail.ts',
+      template: 'lib/withdrawal-receipt-email.ts',
+      build: (ctx) => {
+        const subject = withdrawalReceiptSubject(language);
+        const html = wrapEmailDocument(
+          buildWithdrawalReceiptMail({
+            language,
+            recipient: escapeHtml(ctx.recipient.address),
+            name: escapeHtml(SEED_NAME),
+            receivedAt: ctx.now.toISOString(),
+          }),
+          subject,
+        );
+        return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject, html, text: htmlToText(html) };
+      },
+    }),
+  ),
   {
     type: 'address-confirmation',
     audience: 'nutzer',
@@ -362,6 +497,41 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         buildAddressConfirmationEmail({ recipient: escapeHtml(ctx.recipient.address), link }),
         'Clean-Core.io — confirm your address',
       );
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: ADDRESS_CONFIRMATION_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  {
+    type: 'portfolio-invitation',
+    audience: 'nutzer',
+    source: 'app/api/portfolio/selections/[selectionId]/invitations/route.ts',
+    template: 'lib/portfolio/invitation-email.ts',
+    build: (ctx) => {
+      const link = `${APP_BASE_URL}${portfolioInvitationLinkPath(sampleId('seed-selection', ctx), sampleId('seed-invitation', ctx))}`;
+      const expires = new Date(ctx.now.getTime() + 14 * 24 * 60 * 60 * 1000).toUTCString().slice(5, 16);
+      const html = wrapEmailDocument(
+        buildPortfolioInvitationEmail({
+          inviterName: escapeHtml(SEED_NAME),
+          recipient: escapeHtml(ctx.recipient.address),
+          link,
+          expires,
+          // C12: the unsubscribe link onto the list shared with project invitations.
+          unsubscribeUrl: `${APP_BASE_URL}/unsubscribe/invitations#t=${unsignedToken('inv-unsub-portfolio', ctx)}`,
+        }),
+        'Clean-Core.io — portfolio invitation',
+      );
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: PORTFOLIO_INVITATION_SUBJECT, html, text: htmlToText(html) };
+    },
+  },
+  {
+    type: 'portfolio-address-confirmation',
+    audience: 'nutzer',
+    source: 'app/api/portfolio/selections/[selectionId]/invitations/[invitationId]/accept/route.ts',
+    template: 'lib/invitation-email.ts',
+    build: (ctx) => {
+      const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'firebase-config.json'), 'utf8')) as { authDomain: string; apiKey: string };
+      const q = new URLSearchParams({ mode: 'verifyEmail', oobCode: unsignedToken('oob-portfolio', ctx).replace('.', ''), apiKey: cfg.apiKey, lang: 'en' });
+      const link = ownDomainVerifyEmailLink(`https://${cfg.authDomain}/__/auth/action?${q}`);
+      const html = wrapEmailDocument(buildAddressConfirmationEmail({ recipient: escapeHtml(ctx.recipient.address), link }), 'Clean-Core.io — confirm your address');
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: ADDRESS_CONFIRMATION_SUBJECT, html, text: htmlToText(html) };
     },
   },
@@ -433,11 +603,11 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     source: REGISTER,
     template: 'lib/admin-signup-email.ts',
     build: (ctx) => {
+      // One id per run, not per recipient: the subject names the account id (privacy policy
+      // section 2, Fassung 1.1), and every recipient of a run gets the same production subject.
+      const seedUid = `seed-uid-${ctx.runId}`.toLowerCase();
       const html = wrapEmailDocument(buildAdminSignupEmail({
-        name: escapeHtml(SEED_NAME),
-        email: escapeHtml(ctx.recipient.address),
-        uid: escapeHtml(sampleId('seed-uid', ctx)),
-        motivation: escapeHtml('Seed test 3.0.9 — deliverability measurement, not a real sign-up.'),
+        uid: escapeHtml(seedUid),
         authMethod: 'Email / password',
         termsVersion: '2026-09-18',
         signedUpAt: ctx.now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
@@ -445,7 +615,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       return {
         from: 'Clean-Core <system@clean-core.io>',
         replyTo: CONTACT_EMAIL,
-        subject: buildAdminSignupSubject(SEED_NAME),
+        subject: buildAdminSignupSubject(seedUid),
         html,
         text: htmlToText(html),
       };
@@ -553,11 +723,29 @@ export function linkHosts(mail: Pick<ProductionMail, 'html' | 'text' | 'headers'
  * Links a mail may carry outside https://clean-core.io/, per type, with the
  * reason. Only operator mails have any: they go to one watched mailbox.
  */
-export const LINK_EXCEPTIONS: Record<string, { hosts: string[]; why: string }> = {
+/**
+ * The contract confirmation C5 must carry the full wording of the Terms
+ * (Terms 1.3), and that wording quotes two Google terms pages as plain text.
+ * They are quoted contract text, never an `<a href>` — `quotedWording` marks
+ * the one kind of exception a user mail may have, and
+ * `tests/mail-seed-test.spec.ts` checks that each such host is in the archived
+ * wording and is not linked.
+ */
+const C5_WORDING_QUOTES = {
+  hosts: ['https://ai.google.dev', 'https://cloud.google.com'],
+  why: 'the full wording of the Terms the mail must carry (C5, Terms 1.3) quotes Google\'s terms pages as plain text; not links',
+  quotedWording: true,
+};
+
+export const LINK_EXCEPTIONS: Record<string, { hosts: string[]; why: string; quotedWording?: boolean }> = {
   'security-alert': {
     hosts: ['https://github.com'],
     why: 'links the failed GitHub Actions run; operator mail, never to a user',
   },
+  'contract-confirmation': C5_WORDING_QUOTES,
+  'contract-confirmation-de': C5_WORDING_QUOTES,
+  'amendment-confirmation': C5_WORDING_QUOTES,
+  'amendment-confirmation-de': C5_WORDING_QUOTES,
 };
 
 // Emoji and their building blocks: pictographs, variation selector 16, keycaps,
@@ -571,7 +759,8 @@ const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/u;
  * - a `text/plain` part (M365: the same mail without one went to spam);
  * - a plain subject: no emoji, no exclamation mark; no emoji in the body either;
  * - user mails in the plain layout (roadmap 3.0.9, round 2): exactly one link,
- *   shown as its URL (the survey may add its unsubscribe link), no button,
+ *   shown as its URL (the survey and the two invitation mails may add their
+ *   unsubscribe link), no button,
  *   table or image markup;
  * - every link on https://clean-core.io/ (mailto: is not a link to a site),
  *   apart from the documented `LINK_EXCEPTIONS`;
@@ -596,9 +785,12 @@ export function mailPolicyWarnings(
   if (EMOJI.test(mail.html) || EMOJI.test(mail.text ?? '')) out.push('emoji in the body');
   if (t.audience === 'nutzer') {
     // The plain layout (lib/user-mail.ts): one link, shown as its URL, and no
-    // button, table scaffolding or image. The survey's unsubscribe link is the
-    // one allowed extra, and only in a mail that declares List-Unsubscribe.
-    const allowedLinks = 1 + (mail.headers?.['List-Unsubscribe'] ? 1 : 0);
+    // button, table scaffolding or image. An unsubscribe link is the one
+    // allowed extra: the survey's, in a mail that declares List-Unsubscribe, and
+    // the invitation mails' (C10/C12), in the footer line `buildUserMail` writes.
+    // Any host: which one is allowed is the link check's business, above.
+    const footerUnsubscribe = /Unsubscribe: <a href="[^"]*\/unsubscribe\/invitations#t=/.test(mail.html);
+    const allowedLinks = 1 + (mail.headers?.['List-Unsubscribe'] || footerUnsubscribe ? 1 : 0);
     const links = htmlLinkCount(mail.html);
     if (links !== allowedLinks) out.push(`user mail has ${links} link(s), not ${allowedLinks}`);
     for (const m of mail.html.matchAll(/<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {

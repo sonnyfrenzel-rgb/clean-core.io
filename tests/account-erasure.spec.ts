@@ -10,7 +10,8 @@ import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
-import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from '../lib/admin-signup-email';
+import { accountHashOf } from '../lib/pseudonym';
+import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject, legacyAdminSignupSubject } from '../lib/admin-signup-email';
 import fs from 'fs';
 import path from 'path';
 
@@ -104,10 +105,17 @@ const otherAddress = (uid: string) => `${uid}-someone-else@cleancore-test.io`;
 
 async function expectOptOutsSorted(email: string, uid: string) {
   const db = adminDb();
+  // Since 3.0.21 (privacy policy sections 2 and 5, C7) the opt-out outlives the
+  // account — as the keyed hash only: the entry with the address in clear goes,
+  // a keyed one without address or uid stays.
   expect(
     (await db.collection('email_suppressions').doc(suppressionId(email)).get()).exists,
-    'the erased account is still on the opt-out list',
+    'the opt-out with the address in clear outlived the account',
   ).toBe(false);
+  const keyed = await db.collection('email_suppressions').doc(accountHashOf(email)).get();
+  expect(keyed.exists, 'the opt-out did not outlive the account as its keyed hash').toBe(true);
+  expect(keyed.data()?.email, 'the kept opt-out still names the address').toBeUndefined();
+  expect(keyed.data()?.uid).toBeUndefined();
   expect(
     (await db.collection('email_suppressions').doc(suppressionId(otherAddress(uid))).get()).exists,
     'somebody else\'s opt-out went with the account',
@@ -118,6 +126,7 @@ async function cleanUp(uid: string, email?: string) {
   const db = adminDb();
   for (const address of [email, otherAddress(uid)]) {
     if (address) await db.collection('email_suppressions').doc(suppressionId(address)).delete().catch(() => {});
+    if (address) await db.collection('email_suppressions').doc(accountHashOf(address)).delete().catch(() => {});
   }
   for (const col of ['users', 's4_credentials', 'mfa_secrets']) {
     await db.collection(col).doc(uid).delete().catch(() => {});
@@ -174,6 +183,39 @@ test('a refused step keeps the profile and the sign-in, and names what is still 
     expect(retry.deleted, 'the account was not deleted once everything else was gone').toEqual([uid]);
     await expectOptOutsSorted(email, uid);
   } finally {
+    await cleanUp(uid, email);
+  }
+});
+
+test('the erasure keeps the security log rows and names the account in them by the keyed hash only (legal review of 05.11.2026)', async () => {
+  const db = adminDb();
+  const uid = `erasure-audit-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const email = `${uid}@cleancore-test.io`;
+  const rows = [db.collection('audit_events').doc(), db.collection('audit_events').doc(), db.collection('audit_events').doc(), db.collection('audit_events').doc()];
+  try {
+    await seedOwnedData(uid, email);
+    await rows[0].set({ actorUid: uid, actorEmail: email, action: 'BYOK_SAVE', targetUid: uid, timestamp: new Date() });
+    await rows[1].set({ actorUid: uid, action: 'BYOK_DELETE', targetUid: uid, timestamp: new Date() });
+    await rows[2].set({ actorUid: `${uid}-admin`, actorEmail: 'admin@cleancore-test.io', action: 'APPROVE_USER', targetUid: uid, timestamp: new Date() });
+    await rows[3].set({ actorUid: 'script:mfa-reset', actorEmail: 'operator@cleancore-test.io', action: 'mfa.reset', targetUid: uid, targetEmail: email, timestamp: new Date() });
+
+    await deleteUserDataAndAccount(uid, { db, auth: recordingAuth().client });
+
+    const hash = accountHashOf(email);
+    const own = (await rows[0].get()).data()!;
+    expect(own.actorUid, 'the row still names the erased uid').toBe(hash);
+    expect(own.targetUid).toBe(hash);
+    expect(own.action).toBe('BYOK_SAVE');
+    expect(own.actorEmail, 'the erased account\'s address survived in the log').toBeUndefined();
+    expect((await rows[1].get()).data()).toMatchObject({ actorUid: hash, targetUid: hash, action: 'BYOK_DELETE' });
+    expect((await rows[1].get()).data()!.actorEmail, 'a row without an address gained one').toBeUndefined();
+    // The administrator who acted on the account stays named; only the account is pseudonymised.
+    expect((await rows[2].get()).data()).toMatchObject({ actorUid: `${uid}-admin`, actorEmail: 'admin@cleancore-test.io', targetUid: hash });
+    const reset = (await rows[3].get()).data()!;
+    expect(reset).toMatchObject({ actorEmail: 'operator@cleancore-test.io', targetUid: hash });
+    expect(reset.targetEmail, 'the subject\'s address survived in the log').toBeUndefined();
+  } finally {
+    await Promise.all(rows.map((r) => r.delete().catch(() => {})));
     await cleanUp(uid, email);
   }
 });
@@ -237,13 +279,13 @@ test('the operator notification about the signup goes with the account, in both 
     await seedOwnedData(uid, email);
     await db.collection('registration_requests').doc(uid).set({ email, name, status: 'approved' });
     await db.collection('email_events').doc(ids.current).set({
-      messageId: ids.current, to: [operator], subject: buildAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid, status: 'email.delivered',
+      messageId: ids.current, to: [operator], subject: buildAdminSignupSubject(uid), kind: ADMIN_SIGNUP_MAIL_KIND, uid, status: 'email.delivered',
     });
     await db.collection('email_events').doc(ids.legacy).set({
-      messageId: ids.legacy, to: [operator], subject: buildAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
+      messageId: ids.legacy, to: [operator], subject: legacyAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
     });
     await db.collection('email_events').doc(ids.other).set({
-      messageId: ids.other, to: [operator], subject: buildAdminSignupSubject(`Somebody Else ${uid}`), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
+      messageId: ids.other, to: [operator], subject: legacyAdminSignupSubject(`Somebody Else ${uid}`), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
     });
 
     const auth = recordingAuth();

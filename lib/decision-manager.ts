@@ -63,7 +63,7 @@ export const DECISION_PLACE_IDS = Object.freeze({
   /** The questions for the business in Design (owner decision 21.10.2026, `lib/rule-questions.ts`). */
   ruleQuestions: 'rule-questions',
   businessMap: 'process-map',
-  /** IT's *Standard fit* section — a Business layer until ADR-096 (owner, 12.10.2026). */
+  /** IT's "Where this program touches SAP standard" with the fit-to-standard check (owner decision 22.10.2026; the address of ADR-096's Standard fit). */
   itStandardFit: 'standard',
   /** The options compared in Economics (`app/(app)/project/[projectId]/tco/page.tsx`). */
   economicsCompare: 'economics-compare',
@@ -521,14 +521,14 @@ export function decisionPoint(c: DecisionCondition): DecisionPoint {
           place: it(DECISION_PLACE_IDS.itFindings, 'Check the finding'),
         };
       case 'standard-fit-not-assessed':
-        // The router never assesses it, so the condition stays open; the
-        // Standard fit section is where a reader sees how much SAP covers —
-        // in IT since ADR-096.
+        // Nothing in the product measures it (owner decision 22.10.2026), so it
+        // stays open; IT's #standard shows where the program touches SAP
+        // standard and holds the fit-to-standard check that prepares the workshop.
         return {
           ...base,
           kind: 'limit',
-          line: 'Whether SAP standard already covers the need is still open.',
-          place: { kind: 'view', view: 'it', hash: DECISION_PLACE_IDS.itStandardFit, action: 'Check standard fit' },
+          line: 'Whether SAP standard does what the program does is not measured here — it is decided in your fit-to-standard workshop.',
+          place: { kind: 'view', view: 'it', hash: DECISION_PLACE_IDS.itStandardFit, action: 'See where it touches SAP standard' },
         };
       default:
         break;

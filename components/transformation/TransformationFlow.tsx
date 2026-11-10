@@ -152,7 +152,7 @@ export default function TransformationFlowChart({
   const placesNote = places !== undefined && places !== findings ? ` at ${places} places in the code` : '';
   const summary = `${findings} findings${placesNote} in ${flow.kinds.length} kinds flow to ${flow.targets
     .map((t) => `${t.count} ${t.label}`)
-    .join(', ')}; ${files === null ? 'no generated files in a demo' : `${fileList.length} generated files, a model proposal`}.`;
+    .join(', ')}; ${files === null ? 'no generated files in a demo' : `${fileList.length} generated files, AI-generated`}.`;
 
   return (
     <div data-transformation-flow="">
@@ -242,7 +242,7 @@ export default function TransformationFlowChart({
                     {f.role}
                   </text>
                   <text x={FX + 12} y={fy + 55} fontSize={11} fontWeight={600} fill="var(--cc-warning)">
-                    Model proposal
+                    AI-generated
                   </text>
                 </g>
               );
@@ -283,7 +283,7 @@ export default function TransformationFlowChart({
         ) : (
           fileList.map((f) => (
             <li key={f.path} className="rounded-cc-row border border-dashed border-cc-warning-line bg-cc-surface px-2 py-1 cc-text-meta font-medium">
-              <b className="break-all font-cc-mono">{f.path}</b> <span className="text-cc-ink-muted">{f.role} · Model proposal</span>
+              <b className="break-all font-cc-mono">{f.path}</b> <span className="text-cc-ink-muted">{f.role} · AI-generated</span>
             </li>
           ))
         )}
@@ -298,7 +298,7 @@ export default function TransformationFlowChart({
         ))}
         <span className="inline-flex items-center gap-1">
           <span aria-hidden={true} className="inline-block h-2 w-3 rounded-[3px] border border-dashed border-cc-warning-line" />
-          model proposal
+          AI-generated
         </span>
       </p>
     </div>

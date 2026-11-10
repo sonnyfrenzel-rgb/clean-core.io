@@ -12,7 +12,7 @@ import {
  * Roadmap 3.0.18 item 13: the model-written ABAP Unit class against a real ABAP Unit run. The PM trial of 18.10.2026
  * ran 4 red methods, all of the testing model's class `ltcl_test`, all with wrong preconditions — the engine's case of
  * the same check was green. Owner decision C(7): the model's class is a proposal, not evidence. So (1) a red method of
- * it reads "model proposal, red in SAP: <message>" and is never counted as passed nor with the engine's classes, and
+ * it reads "AI-generated, red in SAP: <message>" and is never counted as passed nor with the engine's classes, and
  * (2) the one bounded repair round takes exactly the red methods SAP named, with SAP's message, and changes nothing
  * else. Server-free.
  */

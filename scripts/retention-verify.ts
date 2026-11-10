@@ -75,6 +75,8 @@ export interface RetentionClaims {
   ceilingDays: number;
   pitrWindowDays: number;
   ttl: { collectionGroup: string; field: string };
+  /** The proof-log TTL policies (3.0.21): one per collection whose records outlive an account. */
+  ttlRows: Array<{ collectionGroup: string; field: string }>;
   logBuckets: { defaultDays: number; requiredDays: number };
 }
 
@@ -147,6 +149,18 @@ export function parseRetentionClaims(markdown: string): RetentionClaims {
   const collectionGroup = claim(ttlRow, /^\|\s*`([A-Za-z0-9_]+)\/\{/, 'the collection the TTL policy covers')[1];
   const field = claim(ttlRow, /`([A-Za-z0-9_]+)` drives a Firestore TTL policy/, 'the field the TTL policy uses')[1];
 
+  // The proof log (3.0.21, T05/T06): every record that outlives an account
+  // carries its own deletion date, and a TTL policy per collection deletes it
+  // — the "nightly routine" the privacy policy names. One row each, read the
+  // same way.
+  const ttlRows = markdown
+    .split('\n')
+    .filter((line) => line.trimStart().startsWith('|') && line.includes('drives the proof-log TTL policy'))
+    .map((row) => ({
+      collectionGroup: claim(row, /^\|\s*`([A-Za-z0-9_]+)\/\{/, 'the collection a proof-log TTL policy covers')[1],
+      field: claim(row, /`([A-Za-z0-9_]+)` drives the proof-log TTL policy/, 'the field a proof-log TTL policy uses')[1],
+    }));
+
   // "...the Cloud Logging bucket `_Default` ... kept **30 days**" and the
   // `_Required` line beside it, which exists so the two are never read as one.
   const defaultBucket = claim(
@@ -171,6 +185,7 @@ export function parseRetentionClaims(markdown: string): RetentionClaims {
     ceilingDays: Number(ceiling[1]),
     pitrWindowDays: Number(pitr[1]),
     ttl: { collectionGroup, field },
+    ttlRows,
     logBuckets: { defaultDays: Number(defaultBucket[1]), requiredDays: Number(requiredBucket[1]) },
   };
 }
@@ -373,6 +388,21 @@ export function compareRetention(claims: RetentionClaims, facts: RetentionFacts)
         ? 'ACTIVE'
         : `state is ${ttl.state}, not ACTIVE — nothing is being deleted yet`,
   });
+
+  /* 2b. The proof-log TTL policies: the records' own deletion dates are
+   *     enforced only if each policy exists and is ACTIVE. */
+  for (const row of claims.ttlRows) {
+    const policy = facts.ttls.find((t) => t.collectionGroup === row.collectionGroup && t.field === row.field);
+    verdicts.push({
+      check: `proof-log TTL policy: ${row.collectionGroup}.${row.field}`,
+      ok: policy?.state === 'ACTIVE',
+      detail: !policy
+        ? 'no TTL policy on that field — the records outlive their deletion date, and the privacy policy says they do not'
+        : policy.state === 'ACTIVE'
+          ? 'ACTIVE'
+          : `state is ${policy.state}, not ACTIVE — nothing is being deleted yet`,
+    });
+  }
 
   /* 3. Cloud Logging. `_Default` is where Cloud Run request logs land, client
    *    IP addresses included; `_Required` holds admin activity audit logs and

@@ -79,7 +79,7 @@ export default function SourcePanel({
           >
             Source at line {line}
           </h3>
-          <p className="m-0 mt-1 font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{codeCardLabel(fileName, anchor)}</p>
+          <p className="m-0 mt-1 font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{codeCardLabel(fileName, anchor, source)}</p>
         </div>
         <CcIconButton onClick={onClose} label="Close the source" data-analyze-source-close="">
           <X size={16} aria-hidden={true} />
@@ -116,7 +116,7 @@ export default function SourcePanel({
         })}
       </ul>
 
-      <CcCodeSurface lines={lines} label={codeCardLabel(fileName, anchor)} />
+      <CcCodeSurface lines={lines} label={codeCardLabel(fileName, anchor, source)} />
 
       <div>
         <CcButton variant="ghost" density="compact" onClick={onShowInList} data-analyze-source-list="">

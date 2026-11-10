@@ -4,6 +4,7 @@ import { readControlFlowFrom, type Branch } from './control-flow';
 import { readGoldenMaster } from '../transformation/golden-master';
 import { APP_VERSION } from '../version';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
+import { engineReads3021Apply } from './engine-reads-3021-gate';
 
 /**
  * The demo switches of a program (roadmap 3.0.13, SD review, 14.10.2026,
@@ -98,7 +99,7 @@ export function readDemoSwitches(source: string, engineVersion: string | null = 
     if (m) parameters.set(norm(m[1]), s.lineStart);
   }
   const flagName = [...parameters.keys()].find((name) => DEMO_NAME.test(name));
-  if (!flagName) return reads3020 ? testDataSwitchByShape(statements, parameters) : null;
+  if (!flagName) return reads3020 ? testDataSwitchByShape(statements, parameters, engineReads3021Apply(engineVersion)) : null;
   const flag = { name: flagName, line: parameters.get(flagName)! };
 
   // Constants holding 'X' (or abap_true) stand for 'X' in a flag test.
@@ -396,7 +397,7 @@ export function hasDemoCases(source: string, engineVersion: string | null = APP_
 }
 
 /** Shape 5: a test data switch without a demo flag (see `readDemoSwitches`). */
-function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<string, number>): DemoSwitches | null {
+function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<string, number>, reads3021 = false): DemoSwitches | null {
   if (parameters.size === 0) return null;
   const structure = readBlocks(statements);
   const { branches } = readControlFlowFrom(statements, structure);
@@ -416,6 +417,12 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     if (fromTarget) written(fromTarget);
     const own = /^(?:MULTIPLY|DIVIDE|CLEAR|FREE|CONDENSE|SHIFT|TRANSLATE|OVERLAY)\s+([\w/]+(?:-[\w/]+)*)/i.exec(text)?.[1];
     if (own) written(own);
+    // From 3.0.21: IMPORT … FROM MEMORY/DATABASE/SHARED BUFFER writes every name it
+    // lists — `IMPORT lv_case FROM MEMORY ID 'X'`, `IMPORT p = lv_case FROM …` — so the copy is no longer the switch.
+    if (reads3021) {
+      const imported = /^IMPORT\s+([\s\S]*?)\s+FROM\b/i.exec(text)?.[1];
+      if (imported) for (const m of imported.matchAll(/[\w/]+(?:-[\w/]+)*/g)) written(m[0]);
+    }
     // A call hands a variable back through a named parameter: `CHANGING iv_case = lv_case`,
     // `IMPORTING ev_mode = lv_case` — the actual on the right is written, not the formal on the left.
     const handedBack = /\b(?:CHANGING|IMPORTING|RECEIVING|TABLES)\b([\s\S]*)$/i.exec(text)?.[1] ?? '';

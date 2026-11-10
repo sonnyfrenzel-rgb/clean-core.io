@@ -190,7 +190,8 @@ test.describe('the page', () => {
     });
 
     await page.goto('/verify-pack');
-    const input = page.locator('input[type="file"]');
+    // Since 3.0.21 (T08) the page also verifies a delivery package, with a file input of its own.
+    const input = page.getByLabel('Audit Pack ZIP file');
 
     await input.setInputFiles({ name: 'genuine.zip', mimeType: 'application/zip', buffer: await pack({ signer: k.privateKey, keyId: k.keyId }) });
     await expect(page.locator('[data-ed25519-state]')).toHaveAttribute('data-ed25519-state', 'verified', { timeout: 30_000 });

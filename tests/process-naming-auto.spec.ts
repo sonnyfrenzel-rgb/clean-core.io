@@ -2,7 +2,7 @@ import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { build, type Plugin } from 'esbuild';
-import { namingModelEnabled, shouldAskNaming, takeFirstNamingAsk } from '../lib/process-naming';
+import { NAMING_WITHOUT_FACTS_PAUSED, namingModelEnabled, shouldAskNaming, takeFirstNamingAsk } from '../lib/process-naming';
 import { WORKSPACE_BUSINESS_MESSAGES } from '../lib/messages/workspace-business';
 
 /**
@@ -36,12 +36,22 @@ test.describe('the rule: once, only the owner, only with a model', () => {
   });
 
   test('asked only while the drawn map has no naming for this source', () => {
-    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'not-named' })).toBe(true);
-    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'stale' })).toBe(true);
-    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'named' })).toBe(false);
-    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: null })).toBe(false);
-    expect(shouldAskNaming({ owner: false, modelEnabled: true, state: 'not-named' })).toBe(false);
-    expect(shouldAskNaming({ owner: true, modelEnabled: false, state: 'not-named' })).toBe(false);
+    // With the engine's facts (no caller of this build has them; see the pause below).
+    const facts = { withFacts: true };
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'not-named', ...facts })).toBe(true);
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'stale', ...facts })).toBe(true);
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'named', ...facts })).toBe(false);
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: null, ...facts })).toBe(false);
+    expect(shouldAskNaming({ owner: false, modelEnabled: true, state: 'not-named', ...facts })).toBe(false);
+    expect(shouldAskNaming({ owner: true, modelEnabled: false, state: 'not-named', ...facts })).toBe(false);
+  });
+
+  test('3.0.21 (owner decision 06.11.2026): without the engine\'s facts nothing is asked, whatever else holds', () => {
+    expect(NAMING_WITHOUT_FACTS_PAUSED).toBe(true);
+    for (const state of ['not-named', 'stale', 'named', null] as const) {
+      expect(shouldAskNaming({ owner: true, modelEnabled: true, state })).toBe(false);
+      expect(shouldAskNaming({ owner: true, modelEnabled: true, state, withFacts: false })).toBe(false);
+    }
   });
 
   test('once per project and source digest', () => {
@@ -70,6 +80,11 @@ test.describe('the Business view: no button, the automatic ask instead', () => {
     const firstLook = read('components/workspace/FirstLook.tsx');
     expect(firstLook).toContain('window.addEventListener(PROCESS_NAMING_STORED_EVENT, hear)');
     expect(firstLook).toContain('}, [projectId, hasSource, namingFrom, namingStored]);');
+  });
+
+  test('the Business view passes no facts to the hook in this build, so it asks nothing (3.0.21)', () => {
+    const process = read('components/workspace/WorkspaceProcess.tsx');
+    expect(process).not.toMatch(/withFacts/);
   });
 
   test('the naming route keeps its server checks', () => {
@@ -112,8 +127,9 @@ const w = window as any;
 w.__asks = []; w.__stored = 0; w.__events = 0;
 window.addEventListener('cc:process-naming-stored', () => { w.__events += 1; });
 function Probe(props: any) {
-  const state = useAutoProcessNaming({ ...props, onStored: () => { w.__stored += 1; } });
-  return React.createElement('span', { id: 'state' }, state);
+  const out = useAutoProcessNaming({ ...props, onStored: () => { w.__stored += 1; } });
+  w.__askNow = out.askNow;
+  return React.createElement('span', { id: 'state', 'data-click': out.askNow ? 'offered' : 'none' }, out.state);
 }
 const root = createRoot(document.getElementById('root')!);
 w.__render = (props: any) => root.render(React.createElement(Probe, props));
@@ -150,7 +166,17 @@ test.describe('the hook in a page', () => {
     };
     const asks = () => page.evaluate(() => (window as unknown as { __asks: string[] }).__asks.length);
     const counter = (name: '__stored' | '__events') => page.evaluate((n) => (window as unknown as Record<string, number>)[n], name);
-    const base = { projectId: 'p1', source: SOURCE_A, owner: true, availability: ON, state: 'not-named' };
+    // The platform key (or "Automatic steps" on for an own key): asked by itself (3.0.21, owner decision B6).
+    // `withFacts`: the ask would hand over the engine's facts — no caller of this build passes it (the pause below).
+    const base = { projectId: 'p1', source: SOURCE_A, owner: true, availability: ON, state: 'not-named', autoAllowed: true, withFacts: true };
+
+    // 3.0.21 (owner decision 06.11.2026): without the facts, nothing is asked and no click is offered.
+    for (const paused of [{ withFacts: undefined }, { withFacts: false }, { withFacts: undefined, autoAllowed: false }]) {
+      await render({ ...base, ...paused });
+      await render({ ...base, ...paused, state: 'stale' });
+      await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+    }
+    expect(await asks()).toBe(0);
 
     // Before the map is drawn, before availability is known, a reader, no key, the stage off: no ask.
     await render({ ...base, state: null });
@@ -185,5 +211,36 @@ test.describe('the hook in a page', () => {
     await expect(page.locator('#state')).toHaveText('idle');
     expect(await counter('__stored')).toBe(2);
     expect(await counter('__events')).toBe(2);
+  });
+
+  test('3.0.21 (owner decision B6): with an own key and automatic steps off, nothing is asked until the click — then once', async ({ page }) => {
+    const script = await bundleHook();
+    await page.setContent('<!doctype html><div id="root"></div>');
+    await page.addScriptTag({ content: script });
+    const render = async (props: Record<string, unknown>) => {
+      await page.evaluate((p) => (window as unknown as { __render: (p: unknown) => void }).__render(p), props);
+      await page.waitForTimeout(80);
+    };
+    const asks = () => page.evaluate(() => (window as unknown as { __asks: string[] }).__asks.length);
+    const off = { projectId: 'p9', source: SOURCE_A, owner: true, availability: ON, state: 'not-named', autoAllowed: false, withFacts: true };
+
+    await render(off);
+    await render({ ...off, state: 'stale' });
+    expect(await asks()).toBe(0);
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'offered');
+
+    // A reader, or a named map, is offered no click either.
+    await render({ ...off, owner: false });
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+    await render({ ...off, state: 'named' });
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+
+    await render(off);
+    await page.evaluate(() => (window as unknown as { __askNow: () => void }).__askNow());
+    await page.waitForTimeout(80);
+    expect(await asks()).toBe(1);
+    await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
+    await render(off);
+    expect(await asks()).toBe(1);
   });
 });

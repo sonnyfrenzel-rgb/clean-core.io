@@ -127,7 +127,7 @@ test.describe('the business-first opening, as pure functions', () => {
     expect(story.proposedNames).toBe(false);
   });
 
-  test('a stored business name is used, and the story says it is a model proposal', () => {
+  test('a stored business name is used, and the story says it is AI-generated', () => {
     const node = reading.skeleton.nodes.find((n) => n.label === 'CHECK_AUTHORITY' && n.kind === 'sub-process');
     const story = processStory(reading.skeleton, PO, new Map([[node!.id, 'Check the buyer may approve']]));
     expect(story.steps[0].text).toBe('Check the buyer may approve');
@@ -424,8 +424,12 @@ test.describe('the Business view on screen', () => {
     await opening.getByRole('button', { name: /How this was read/ }).click();
     await expect(page.locator('[data-first-look-details] [data-first-look-traceability]')).toBeVisible();
 
-    // "Ask this case": plain on top, the code under "Show the code".
+    // "Ask this case" left the Business view (owner decision 22.10.2026, DESIGN.md §5.3) and stands in IT:
+    // plain on top, the code under "Show the code".
+    await expect(page.locator('[data-workspace-shell="business"] [data-ask-this-case]')).toHaveCount(0);
+    await page.goto(`/project/${ids.po}?view=it`, { waitUntil: 'domcontentloaded' });
     const ask = page.locator('[data-ask-this-case="answered"]');
+    await expect(ask).toBeVisible({ timeout: 90_000 });
     await expect(ask).toHaveAttribute('data-ask-wording', 'plain');
     const question = (await ask.locator('[data-ask-question]').innerText()).trim();
     expect(question).not.toMatch(ABAP_TOKENS);
@@ -469,7 +473,7 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
   });
 
-  test('business names: no "Not generated" notice, no button, asked automatically only with a model, a stored name is a model proposal', async ({ page }) => {
+  test('business names: no "Not generated" notice, no button, never asked (paused in 3.0.21), a stored name is not applied', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
@@ -495,21 +499,26 @@ test.describe('the Business view on screen', () => {
     expect(namingAsks).toHaveLength(0);
     await page.unroute('**/api/model-stages');
 
-    // A model is available: the owner's page asks once by itself; refused, the plain names stand, no error.
+    // A model is available. Until 3.0.21 the owner's page asked once by itself; since the
+    // owner decision of 06.11.2026 business names are paused until they can be built from the
+    // code's facts, so nothing is asked, no click is offered, and the plain names stand.
+    // `autoSteps: true` is what the route answers for the platform key (owner decision
+    // 22.10.2026, B6: only an own key waits for the "Automatic steps" switch).
     await page.route('**/api/model-stages', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: true, keySource: 'community' }) }),
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: true, keySource: 'community', autoSteps: true }) }),
     );
     await open(page, ids.po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
-    await expect.poll(() => namingAsks.length, { timeout: 60_000 }).toBe(1);
+    // The ask used to go out within seconds of the map being ready; give it the same room.
+    await page.waitForTimeout(5_000);
+    expect(namingAsks, 'a paused naming was asked for').toHaveLength(0);
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-names-note]')).toHaveCount(0);
     await expect(page.locator('[data-process-map]')).not.toContainText('Not generated');
-    expect(namingAsks).toHaveLength(1);
-    namingAsks.length = 0;
 
-    // A stored naming (the fixture of a model answer, as the route stores it):
-    // the opening names the step by it and marks it as a model proposal.
+    // A stored naming (the fixture of a model answer, as the route stored it before 3.0.21):
+    // it stays stored but is not applied — the step keeps the engine's name and nothing is
+    // marked AI-generated.
     const context = namingContextOf(PO);
     const node = context.skeleton.nodes.find((n) => n.label === 'CHECK_AUTHORITY' && n.kind === 'sub-process')!;
     await adminSetDoc(`projects/${ids.po}/process_naming`, 'current', {
@@ -523,8 +532,11 @@ test.describe('the Business view on screen', () => {
     });
     await open(page, ids.po);
     const step = page.locator('[data-process-story-step="1"]');
-    await expect(step).toContainText('Check the buyer may approve', { timeout: 60_000 });
-    await expect(page.locator('[data-first-look-business] [data-provenance="proposed"]').first()).toBeVisible();
+    await expect(step).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    await expect(step).not.toContainText('Check the buyer may approve');
+    await expect(page.locator('[data-process-map]')).not.toContainText('Check the buyer may approve');
+    await expect(page.locator('[data-first-look-business] [data-provenance="proposed"]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
     // Named for this source already: nothing is asked again.
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
@@ -544,8 +556,11 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     await page.locator('[data-tour-entry-open]').click();
     const tour = page.locator('[data-process-tour]');
-    await expect(tour).toHaveAttribute('data-tour-at', '1', { timeout: 60_000 });
+    // It opens on its overview (owner decision 22.10.2026), not counted; the first station follows.
+    await expect(tour).toHaveAttribute('data-tour-at', 'overview', { timeout: 60_000 });
     await expect(tour.locator('[data-tour-card]')).toBeInViewport();
+    await page.keyboard.press('ArrowRight');
+    await expect(tour).toHaveAttribute('data-tour-at', '1');
     await expect(tour.getByRole('radio')).toHaveCount(0);
     await expect(tour.locator('[data-state-confirm]')).toHaveCount(0);
     await page.keyboard.press('ArrowRight');

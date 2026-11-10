@@ -14,6 +14,9 @@ import {
 } from '@/lib/model-stages';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { PLATFORM_PROVIDER, PROVIDER_LABEL, answeredByLine } from '@/lib/model-providers';
+import { NAMING_ASKED_IN_THIS_BUILD, NAMING_PAUSED_REASON, NAMING_STAGE } from '@/lib/process-naming';
+import { CONSENT_TEXTS, consentText } from '@/lib/legal/consent-texts';
+import { autoModelStepsHelp } from '@/lib/messages/model-consent';
 
 /** Spelled out, because the sentence starts with it. */
 const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
@@ -42,9 +45,45 @@ const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
 export default function ModelStagesCard() {
   const model = useModelAvailability();
   const stages = offeredModelStages();
+  // 3.0.21: a stage that sends nothing in this build is not counted as sending a prompt.
+  const paused = (stage: ModelStage) => stage === NAMING_STAGE && !NAMING_ASKED_IN_THIS_BUILD;
+  const sending = stages.filter((stage) => !paused(stage)).length;
   const [saving, setSaving] = useState<ModelStage | null>(null);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<ModelStage | null>(null);
+  const [mainSaving, setMainSaving] = useState(false);
+  const [mainSaved, setMainSaved] = useState(false);
+
+  /**
+   * The main switch "Automatic AI steps" (legal review 06.11.2026, item 2):
+   * the same stored setting the first-upload notice writes
+   * (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`). Off stops every
+   * call the product would start by itself, on every key; the stage switches
+   * below apply beside it.
+   */
+  const toggleMain = async () => {
+    setError('');
+    setMainSaved(false);
+    setMainSaving(true);
+    try {
+      const user = getAuth().currentUser;
+      if (!user) throw new Error('Sign in again to change this setting.');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/model-stages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ autoModelSteps: !model.autoModelSteps }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'The setting could not be saved.');
+      await model.refresh();
+      setMainSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setMainSaving(false);
+    }
+  };
 
   const toggle = async (stage: ModelStage) => {
     setError('');
@@ -86,7 +125,7 @@ export default function ModelStagesCard() {
         }
       >
       <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-        {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to {PROVIDER_LABEL[model.provider ?? PLATFORM_PROVIDER]}
+        {COUNT_WORDS[sending] ?? sending} stages send a prompt to {PROVIDER_LABEL[model.provider ?? PLATFORM_PROVIDER]}
         {model.keySource === 'byok' ? ' on your own key' : model.keySource === 'community' ? ' on the platform key' : ''}. Switch any of them off and that stage says
         &ldquo;not generated&rdquo; instead of asking for a key. The Analyze stage&rsquo;s evidence — the findings, the
         extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed
@@ -100,6 +139,22 @@ export default function ModelStagesCard() {
           </CcMessageStrip>
         </div>
       )}
+
+      <div
+        data-auto-model-steps={model.autoModelSteps ? 'on' : 'off'}
+        className="mb-4 rounded-cc-row border border-cc-line px-4 py-3"
+      >
+        <CcSwitch
+          label={consentText(CONSENT_TEXTS.autoStepsNotice.switchLabel, 'en')}
+          help={autoModelStepsHelp()}
+          checked={model.autoModelSteps}
+          onChange={() => void toggleMain()}
+          disabled={mainSaving || saving !== null || model.loading}
+          valueState={mainSaving ? 'information' : mainSaved ? 'success' : undefined}
+          message={mainSaving ? 'Saving…' : mainSaved ? `Saved — ${model.autoModelSteps ? 'on' : 'off'}` : undefined}
+          data-auto-model-steps-switch=""
+        />
+      </div>
 
       {/* A switch, not a checkbox: each one is saved the moment it is flipped
           (`POST /api/model-stages`), which is the switch contract of §2.7. */}
@@ -122,6 +177,11 @@ export default function ModelStagesCard() {
                 valueState={saving === stage ? 'information' : saved === stage ? 'success' : undefined}
                 message={saving === stage ? 'Saving…' : saved === stage ? `Saved — ${on ? 'on' : 'off'}` : undefined}
               />
+              {paused(stage) && (
+                <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted" data-model-stage-paused={stage}>
+                  {NAMING_PAUSED_REASON}
+                </p>
+              )}
               {/* 3.0.15 — who answered this stage last: provider, model, whose key. */}
               {model.answers[stage] && (
                 <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted" data-model-stage-answered-by={stage}>

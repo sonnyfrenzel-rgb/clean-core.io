@@ -169,23 +169,24 @@
       "id": "provenance-model-proposal",
       "concept": "provenance value proposed",
       "source": "lib/provenance.ts",
-      "en": "Model proposal",
-      "de": "Model proposal (Oberflaechentext, bleibt englisch)",
+      "en": "AI-generated",
+      "de": "KI-generiert",
+      "decided": "Owner decision 22.10.2026 (roadmap 3.0.21): the visible word of the value proposed is AI-generated; value, key and pen icon stay. Model proposal is the retired word.",
       "variants": [
         {
-          "pattern": "\\bAI[- ][Gg]enerated\\b",
+          "pattern": "\\b[Mm]odel [Pp]roposals?\\b",
           "flags": "",
-          "note": "old badge text"
+          "note": "the word until 3.0.21"
         },
         {
-          "pattern": "\\bModel Proposal\\b",
+          "pattern": "\\bAI [Gg]enerated\\b",
           "flags": "",
-          "note": "Proposal in capitals"
+          "note": "old badge text, without the hyphen"
         },
         {
-          "pattern": "\\bKI-generiert\\b",
+          "pattern": "\\bAI-Generated\\b",
           "flags": "",
-          "note": ""
+          "note": "Generated in capitals"
         }
       ]
     },

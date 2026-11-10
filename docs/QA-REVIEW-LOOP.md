@@ -257,6 +257,39 @@ rounds until then went back to three causes, not to product errors.
   no longer triggers the redaction's name rule; a real key under such a
   name is still recognised by its shape.
 
+**Before a push: the specs that need a server (release 3.0.21).** On run 39857130588
+25 tests failed in CI that nobody had run locally: only server-free specs had run
+before the push. Two configs, two kinds of spec:
+
+- **Server-free** — specs that read source, call library code or run scripts:
+  `npx playwright test -c playwright.serverfree.config.ts <spec names>` (versioned).
+  The gitignored `playwright.serverfree.local.config.ts` some checkouts keep has the
+  same content and keeps working; parallel agents use it because it starts no server.
+- **Rendered** — specs that open a page or call a route. `node scripts/test/affected-rendered.mjs`
+  (base `origin/dev`, else `dev`; `--base <ref>` to choose) reads `git diff <base>...HEAD`,
+  maps changed files under `app/` to the URL paths they serve, and lists every spec that
+  opens one of them (`page.goto`) or calls one (`request.*`, `fetch`) — a changed layout
+  or colocated module counts for every page beneath it — plus changed rendered specs and
+  a fixed core list (the 25 spec files of run 39857130588). It prints the commands: with
+  the emulators running (`--project=cleancore-491216`), `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true npm run build`,
+  then `CI=1 npx playwright test <list>` (CI=1 makes `playwright.config.ts` serve `npm start`,
+  as CI does). Changes under `lib/` or `components/` map to no page by themselves; the
+  core list stands in for them.
+
+**In CI** each shard writes a JSON report next to its line output; the step
+"Skipped and Flaky Tests" lists every skipped test with its reason and every test that
+passed only on a retry in the job summary (`scripts/test/ci-test-summary.mjs`; it never
+fails the shard). The shards run whole spec files split by measured duration
+(`tests/shard-plan.json`): after adding or removing a spec run
+`node scripts/test/shard-plan.mjs refresh` (`tests/shard-plan.spec.ts` fails until then);
+to re-measure, `node scripts/test/shard-plan.mjs generate --log <gh run view <id> --log output of a green run>`.
+
+**Assertions in the triage (release 3.0.21).** A removed `expect(` is "assertion changed"
+(lower weight) when the same hunk adds an `expect(` on the same subject, and "assertion
+removed" otherwise. A commit trailer `Test-Change: owner decision <date> <id>` reaches the
+reviewer as the stated reason for a test change; it clears no signal, so a removal
+without replacement is still reported.
+
 ---
 
 ## 5. Revocation

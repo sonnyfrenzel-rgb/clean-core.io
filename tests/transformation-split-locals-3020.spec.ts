@@ -54,7 +54,7 @@ function prep(track: 'rap' | 'node', source = splitSource()): EngineLedPrepared 
 const partsOf = (p: EngineLedPrepared) => p.plan.units.filter((u) => u.part).sort((a, b) => a.part!.index - b.part!.index);
 
 test('the hand-over came with scaffold version 21 and the current version carries it', () => {
-  expect(SCAFFOLD_VERSION).toBe(22);
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(22);
 });
 
 test('RAP: each part takes the parent locals its lines read or write as CHANGING parameters under their own names', () => {

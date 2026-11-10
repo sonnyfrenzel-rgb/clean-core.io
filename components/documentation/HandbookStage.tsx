@@ -36,7 +36,7 @@ import './handbook.css';
  * the step the reader selected on the map, or the first one until they do.
  * Everything in a chapter comes out of `lib/process-handbook.ts`, which picks it
  * out of what the engine already read from the signed source — nothing here is
- * written by a model, and roles appear only where a stored model proposal names
+ * written by a model, and roles appear only where a stored AI-generated draft names
  * one, under its own chip.
  *
  * The map itself is the product's `ProcessMap` in its `stage` layout, handed in
@@ -274,7 +274,7 @@ function DataBlock({ chapter }: { chapter: HandbookChapter }) {
 
 function Roles({ chapter, namingState }: { chapter: HandbookChapter; namingState: string }) {
   return (
-    <Block label="Roles · model proposal only">
+    <Block label="Roles · AI-generated draft only">
       {chapter.proposedRoles.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {chapter.proposedRoles.map((role) => (
@@ -288,8 +288,8 @@ function Roles({ chapter, namingState }: { chapter: HandbookChapter; namingState
       ) : (
         <p className="m-0 cc-text-meta text-cc-ink-muted">
           {namingState === 'named'
-            ? 'The stored model proposal names no role for this chapter.'
-            : 'No model proposal for roles exists for this run. The code names authorizations, not people.'}
+            ? 'The stored AI-generated draft names no role for this chapter.'
+            : 'No AI-generated draft for roles exists for this run. The code names authorizations, not people.'}
         </p>
       )}
     </Block>

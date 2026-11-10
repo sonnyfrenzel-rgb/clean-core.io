@@ -337,7 +337,11 @@ header comes from `StageHeader` and stands like the project title: **22 px / 800
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
 not a button), which leads back to the view and layer from which the stage was opened — on a demo stage to the demo
-workspace (`/demo/workspace`) by the same rule. Below it the same toolbar as in
+workspace (`/demo/workspace`) by the same rule. On the same row, top right, the **view switch** (ADR-105): the segmented
+control "Business | IT | Management" of §1.5, the view the tool is read in selected (from `?view=`; none or an unknown
+one reads as Business, where the way back leads); one click changes the view in the address and stays on the same tool,
+every other parameter kept — the view stays a view only. On S it wraps under the way back and its segments share the
+row. Below it the same toolbar as in
 the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
 It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
@@ -348,6 +352,16 @@ frame's full width, sticky under the shell bar, the section being read marked (o
 has no anchor of its own — ADR-093). Analyze, Transformation, Documentation,
 Testing and Delivery carry it; Design (a canvas with its own tabs) and Economics (a guided flow whose step guide is its
 navigation) do not.
+
+**The Design tool reads canvas first** (ADR-106, amending ADR-102's order). The canvas is the page's picture, right
+under the header; the questions for the business stand beside it as its side panel from L (below it on S and M) — the
+questions that change the target on top ("N questions change the target"), the others folded ("+ M without impact on
+the target"). The proposal — the target drawn on the canvas, its KPIs, the decision with the recommended route and
+the alternatives, the document drawer with the option comparison — shows once every question has an answer (or none
+is asked), once the reader clicks *Skip questions*, or when a design is already on record. Until then the canvas holds
+one calm placeholder, "The target appears after the questions — or skip them", with *Skip questions* as its one
+secondary button. Afterwards the questions fold to one line in the side panel ("Business questions · n of m
+answered"), open while questions are still open. The design is still written only on the owner's click.
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A
@@ -523,7 +537,7 @@ For first-time users less is more — the depth stays, it just does not come fir
 
 What a language model has written appears on screen, in HTML and PDF exports and in mails like any other
 text of this product: rendered, factual, without traces of its origin in the text itself (ADR-014). **Where a text
-comes from is said by the chip *Model proposal* — never by the text.**
+comes from is said by the chip *AI-generated* — never by the text.**
 
 - **Never raw Markdown characters:** `**`, `__`, `#`/`##`/`###` at the start of a line, single backticks, code fences, `[Text](url)`
   as text, `- ` or `* ` as visible bullet characters in body text, a literal `\n`. Model text is either
@@ -540,7 +554,7 @@ comes from is said by the chip *Model proposal* — never by the text.**
   labels like "AI-powered", "magic", "Smart …"; no emojis in interface text. "Ask AI" is called "Ask this case".
 - **No loading states that play at thinking:** no "AI is thinking…", no typing effect, no dot animation — the
   phase says what is being read or generated right now (§2.8, §5.4).
-- **What stays:** the factual provenance statement (*Model proposal*, §4) and, where it is legally necessary or needed for traceability,
+- **What stays:** the factual provenance statement (*AI-generated*, §4) and, where it is legally necessary or needed for traceability,
   the name of the model in the meta line or evidence — as a statement, not as advertising.
 
 Technically: model output goes through a shared cleanup before display, export and mail (step 1.5,
@@ -560,7 +574,7 @@ forbids freely worded provenance badges (ADR-006).
 | `confirmed` | **Confirmed** | information | Person | confirmed by the account — self-declaration, no mandate | Signed off, confirmed rule |
 | `reconstructed` | **Reconstructed** | information | Gear/code | derived from the code, not confirmed | process skeleton, lanes from AUTHORITY-CHECK |
 | `imported` | **Imported** | information | File arrow | taken over from a file (ATC, BPMN, usage, SAP catalogs) | Usage import, ATC findings, Catalog Match, Level A–D, Readiness (computed from the levels with rule version) |
-| `proposed` | **Model proposal** | warning | Pen (draft) — never sparkles | proposed by the language model, unchecked | AI Generated, business naming |
+| `proposed` | **AI-generated** | warning | Pen (draft) — never sparkles | written by a language model, unchecked | AI Generated, Model proposal (the word until 3.0.21), business naming |
 | `simulation` | **Simulation** | warning | Calculator | computed on assumptions | Economics, Model estimate |
 | `demonstrated-mock` | **Demonstrated · mock** | warning | Test tube | shown against mocks, not against real systems | Simulated, mock test run |
 | `stale` | **Stale** | warning | Clock | no longer current — recompute | Stale notice |
@@ -589,7 +603,7 @@ list has its own shape, its own file in the code next to `lib/provenance.ts` and
 
 | List | Values | Shape | Example |
 |---|---|---|---|
-| **Provenance** (§4) | the nine values | pill with icon, filled/outline/dashed | *Model proposal* |
+| **Provenance** (§4) | the nine values | pill with icon, filled/outline/dashed | *AI-generated* |
 | **Object status** (§2.3) | not started · partial · draft · open · confirmed · mock only · handed over · done · blocked by SAP · failed — *signed* and *stale* are provenance (§4), not a status | text with a state dot, no border | ● draft |
 | **Evidence level** (roadmap 7.2) | E0 none · E1 catalog reference · E2 documented · E3 demonstrated · E4 accepted in the target system | identifier: rectangle, radius 4 px, code in mono, the word after it; neutral for all levels — a maturity of evidence, not a state | `E1` catalog reference |
 | **Clean core level** | A · B · C · D | identifier like evidence level, colour per §1.8 | `D` |
@@ -645,7 +659,7 @@ moment.
 1. **Code read** — lines light up, counters follow the lines: lines · programs · tables · findings.
 2. **Process recognised** — the process skeleton (roadmap 2.3) grows out of the marked lines; decision points carry
    their condition from the code. From here the workspace is usable.
-3. **In business language** — the technical names change once to business names, with the chip *Model proposal*. Without
+3. **In business language** — the technical names change once to business names, with the chip *AI-generated*. Without
    a model call (model unreachable or deselected) the stage is dropped; the skeleton keeps its technical names —
    a valid result.
 4. **This is your process** — process name, the plain-language sentence with anchor, the **reveal line** with the hidden
@@ -677,7 +691,10 @@ the same end state. A second visit has no build-up.
   mark invites it: *"Select the decision point."*
 - **One question is already answered.** *"Ask this case"* shows, when first opened, an asked question with answer and
   anchors (*"What happens when the limit is exceeded?"*) — **derived from the branches of the code** (roadmap 2.1,
-  chip *Reconstructed*), without a model call and without touching the user's quota.
+  chip *Reconstructed*), without a model call and without touching the user's quota. **Since 3.0.21 it stands in the
+  IT view, not in Business** (owner decision 22.10.2026, ADR-103): its question names a decision point the first
+  insights and the walk-through already show the business reader. The assistant of the same name stays in Help in
+  every view.
 - **Standard fit as the second surprise**, one level deeper: *"2 of 7 rules have a standard candidate (scope item … —
   to verify)"* with evidence level (roadmap 7.2). Never "the standard covers it" as long as the level does not carry that.
 - **Take-away:** "Export PNG" and "Export PDF" of the process map with provenance chips and anchors. **No public
@@ -711,6 +728,13 @@ and the end state never waits for a model — the map's place says what is still
 
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
 - **Head of the content:** process name, plain-language sentence, reveal line, the open questions in one line (§5.1, ADR-081).
+  **In Business since 3.0.21 (ADR-103), First insights is at most five blocks on one screen:** *In short* (one sentence);
+  *Started by · Goes in · Comes out*; *Step by step* (one line per step — what a step checks and where it can end are
+  in the walk-through and one fold down); *What the code gives away* (at most three things the code shows that a business
+  reader would not expect, each with its line and who to ask, deterministic readers only, "none of the seven signs found"
+  when there is nothing — never "clean"); *What it decides* (the weightiest questions for the business, as statements,
+  and one quiet line into Design) beside *What it changes*. The step list, the main-line drawing and the full map all
+  stay. The open questions stand once on the page, in their own block; Level A–D is not on First insights.
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
 - **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map. IT and Management show no first look (ADR-086, ADR-087): the process is Business's, and they link to it.
 - **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it. Since ADR-099 the header also carries the tools in one compact row above "Next step", for the reader who comes back to a project and needs one tool again.
@@ -872,7 +896,7 @@ multi-instance is therefore never a step.
 | **Collapsed pool + message flow** | another system: `CALL FUNCTION … DESTINATION`, mail recipient, file system | credit system `PRD_CREDIT_RFC` (L401–402), mail recipient |
 | **Data store** | tables read/written; SAP tables and Z tables distinguishable. In Business shown via the overlay "Data" (§5.9), in IT and in the export always there | reads VBAK, VBAP, KNA1, KNB1, MARA, MARD; writes ZSD_ORD_RISK, ZSD_LEGACY_LOG |
 | **Data object** | file, result list | CSV to `C:\TEMP` (L538) |
-| **Lanes** (proposal) | AUTHORITY-CHECK, user/batch context, naming — always *Model proposal* or *Reconstructed* | batch run · reviewer (outside the program) |
+| **Lanes** (proposal) | AUTHORITY-CHECK, user/batch context, naming — always *AI-generated* or *Reconstructed* | batch run · reviewer (outside the program) |
 | **Text annotation** | what the code does not say, on the element: *Not determined*, hard-wired values | "Review entry is a table row — who works on it is not determined" (L500) |
 
 **Why subprocess start and early ends (ADR-054, Sonny 27.09.2026).** Measured on the
@@ -952,7 +976,7 @@ On the element and in the list of all business statements (ADR-055, roadmap 17.1
 
 | What | How |
 |---|---|
-| **Proposal** (path B, model) | on top, reading size 13 px, `--cc-ink`, followed by the chip *Model proposal* |
+| **Proposal** (path B, model) | on top, reading size 13 px, `--cc-ink`, followed by the chip *AI-generated* |
 | **Evidence** (path A, engine) | directly below, 12 px, `--cc-ink-muted`, preceded by the chip *Reconstructed*; never drops away for the proposal. If the engine has no sentence at these lines, that is what it says |
 | **Contradiction** | on the proposal, no chip: a 2-px edge stroke on the left and one line of words with an icon — *Contradicts the evidence* (`warning`) or *Not supported by the code* (`neutral`). The reason and the lines sit one action deeper (§2.11, `<details>`) |
 | **Request** | a button *Propose business sentences* (Secondary), after the first proposal *Ask the model again* (Ghost); next to it, before the click, the cost line per §2.8 — one model call, does not count against the analysis runs, counts against the hourly limit of model calls; with your own key "with your own Gemini key". Only the owner has it; an invited reader sees what the owner requested |

@@ -3,7 +3,7 @@
  *
  * The rule is one sentence: what the model wrote appears like every other text
  * in this product — rendered, factual, with no trace of where it came from in
- * the text itself. Where it came from is said by the chip *Model proposal*
+ * the text itself. Where it came from is said by the chip *AI-generated*
  * (`lib/provenance.ts`), never by the prose.
  *
  * Why it is worth a guard rather than a code review: the damage is not that a

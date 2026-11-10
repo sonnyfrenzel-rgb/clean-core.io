@@ -23,6 +23,9 @@ import ManagementFold from './ManagementFold';
 import { otherEditionLine, standardFit, standardFitOnOtherEdition } from '@/lib/standard-fit';
 import DecisionOptions from './DecisionOptions';
 import { decisionOptionsView, type OptionPlace } from '@/lib/decision-option-signals';
+import { standardTouch } from '@/lib/standard-touch';
+import { fitCheck, standardConditions } from '@/lib/fit-check';
+import { useProcessStates } from '@/hooks/useProcessStates';
 import {
   costsFromDecision,
   storedCostsOf,
@@ -353,6 +356,14 @@ export default function ManagementOverview({
     [hasRun, steps, project, findings, fit],
   );
   const otherEdition = useMemo(() => otherEditionLine(standardFitOnOtherEdition(fitSource)), [fitSource]);
+  // Stage 1 of the fit-to-standard approach, in one line on the card (owner decision 22.10.2026).
+  const touch = useMemo(() => (findings.state === 'ready' ? standardTouch(findings.value) : null), [findings]);
+  // The check's open points are conditions of Move to SAP standard — shown on its card, never in the record.
+  const ruleStates = useProcessStates(projectId, hasRun && projectId !== '');
+  const conditionsOfStandard = useMemo(() => {
+    if (!touch || findings.state !== 'ready' || !ruleStates.outcome?.ok) return [];
+    return standardConditions(fitCheck(touch, findings.value.rows, ruleStates.outcome.view));
+  }, [touch, findings, ruleStates.outcome]);
   const subject = executiveSubject(project?.legacyCode, project?.name?.trim() || wt('exec.thisProgram'));
   const options = useMemo(() => {
     const read = decision.state === 'ready' ? decision.value : null;
@@ -375,7 +386,8 @@ export default function ManagementOverview({
   }, [decision, subject, hasRun, fitFigure, project]);
   const optionHref = (place: OptionPlace): string => {
     const base = `/project/${projectId}`;
-    if (place === 'business' || place === 'it') return `${base}?view=${place}`;
+    if (place === 'it') return `${base}?view=it`;
+    if (place === 'standard-check') return `${base}?view=it#standard`;
     if (place === 'fit') return '#standard-fit';
     return stageHref({ base, path: place, view: 'management' });
   };
@@ -385,6 +397,7 @@ export default function ManagementOverview({
       view={options}
       hrefFor={optionHref}
       mode="project"
+      standardConditions={conditionsOfStandard}
       pending={decision.state === 'loading' ? 'reading' : decision.state === 'absent' ? 'unreadable' : null}
       choice={
         readDecision
@@ -455,6 +468,8 @@ export default function ManagementOverview({
         optionsView={hasRun ? options : null}
         otherEdition={otherEdition}
         otherBlockers={otherBlockers}
+        touch={hasRun ? touch : null}
+        touchHref={`/project/${projectId}?view=it#standard`}
         trend={
           <ReadinessTrend
             card={readiness}

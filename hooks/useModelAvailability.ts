@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getAuth } from '@/lib/firebase';
+import { getAuthIfStarted } from '@/lib/firebase';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
 import { isModelKeyProvider, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
 
@@ -31,6 +31,25 @@ export interface ModelAvailability {
   provider: ModelKeyProvider | null;
   /** 3.0.15 — per stage, who answered last (provider, model, whose key). */
   answers: Partial<Record<ModelStage, StageAnswerRecord>>;
+  /**
+   * 3.0.21 (owner decision B6) — may the steps the product starts by itself
+   * run now: always on the platform key, on an own key only with "Automatic
+   * steps" switched on for it. Optimistic only on the platform side: false
+   * until the answer is in, so an own key is never spent before it is known.
+   */
+  autoSteps: boolean;
+  /** 3.0.21 (T01) — the key's provider when the operator switched it off. */
+  suspendedProvider: ModelKeyProvider | null;
+  /** The notice the server words for a switched-off provider (C11 where it applies). */
+  suspendedNotice: string | null;
+  /** 3.0.21 (A10) — the one-time notice before the first automatic model call was answered or closed. True until known, so nothing shows on a guess. */
+  autoStepsNoticeSeen: boolean;
+  /**
+   * Legal review 06.11.2026 (3.0.21, item 2) — the account's main switch "Automatic AI steps"
+   * (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`). True until known; `autoSteps` is false
+   * whenever it is off, on every key.
+   */
+  autoModelSteps: boolean;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -46,10 +65,15 @@ export function useModelAvailability(): ModelAvailability {
   const [keySource, setKeySource] = useState<'byok' | 'community' | null>(null);
   const [provider, setProvider] = useState<ModelKeyProvider | null>(null);
   const [answers, setAnswers] = useState<Partial<Record<ModelStage, StageAnswerRecord>>>({});
+  const [autoSteps, setAutoSteps] = useState(false);
+  const [suspendedProvider, setSuspendedProvider] = useState<ModelKeyProvider | null>(null);
+  const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
+  const [autoStepsNoticeSeen, setAutoStepsNoticeSeen] = useState(true);
+  const [autoModelSteps, setAutoModelSteps] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const user = getAuth().currentUser;
+      const user = getAuthIfStarted()?.currentUser ?? null;
       if (!user) {
         setLoading(false);
         return;
@@ -66,6 +90,11 @@ export function useModelAvailability(): ModelAvailability {
         keySource?: 'byok' | 'community' | null;
         provider?: unknown;
         answers?: Record<string, unknown>;
+        autoSteps?: unknown;
+        suspendedProvider?: unknown;
+        suspendedNotice?: unknown;
+        autoStepsNoticeSeen?: unknown;
+        autoModelSteps?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -76,6 +105,13 @@ export function useModelAvailability(): ModelAvailability {
         if (isModelStage(stage) && isStageAnswerRecord(a)) read[stage] = a;
       }
       setAnswers(read);
+      setAutoSteps(data.autoSteps === true);
+      setSuspendedProvider(isModelKeyProvider(data.suspendedProvider) ? data.suspendedProvider : null);
+      setSuspendedNotice(typeof data.suspendedNotice === 'string' ? data.suspendedNotice.slice(0, 600) : null);
+      // Absent (an older server) reads as seen: the notice never shows on a guess.
+      setAutoStepsNoticeSeen(data.autoStepsNoticeSeen !== false);
+      // Absent (an older server) reads as on, as the stored field does.
+      setAutoModelSteps(data.autoModelSteps !== false);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -90,7 +126,7 @@ export function useModelAvailability(): ModelAvailability {
     // user, so it retries briefly rather than racing sign-in.
     const attempt = async (left: number) => {
       if (cancelled) return;
-      if (!getAuth().currentUser && left > 0) {
+      if (!getAuthIfStarted()?.currentUser && left > 0) {
         setTimeout(() => attempt(left - 1), 500);
         return;
       }
@@ -110,7 +146,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

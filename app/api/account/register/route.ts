@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, activateAccount, mergeWhileProfileExists } from '@/lib/firebase-admin';
 import { recordConsent } from '@/lib/consent';
+import { sendContractConfirmationMail } from '@/lib/contract-confirmation-mail';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -12,6 +13,7 @@ import { CONTACT_EMAIL, TERMS_VERSION, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
 import { recordEmailSent } from '@/lib/email-events';
 import { resendFailureSummary } from '@/lib/transactional-mail';
+import { removeProfilePictureAddress } from '@/lib/profile-picture';
 
 /**
  * POST /api/account/register
@@ -36,11 +38,16 @@ import { resendFailureSummary } from '@/lib/transactional-mail';
  */
 export async function POST(request: NextRequest) {
   try {
-    const decodedToken = await verifyRequestAuth(request);
+    const decodedToken = await verifyRequestAuth(request, { checkRevoked: true });
     if (!decodedToken) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
     const uid = decodedToken.uid;
+
+    // Privacy policy section 2, Variante B (owner decision 23.10.2026): the
+    // picture address Google sent leaves the Auth record right after sign-up.
+    // Best effort, before anything else can fail.
+    await removeProfilePictureAddress(decodedToken);
 
     try {
       await assertRateLimit(`account-register:${uid}:${getClientIp(request)}`, 5, 60 * 60 * 1000);
@@ -89,18 +96,31 @@ export async function POST(request: NextRequest) {
     // An account that already carries an acceptance is not asked again here.
     let termsVersion: string | null = profile.termsVersionAccepted || null;
     if (acceptedTerms && acceptedPrivacy && !termsVersion) {
+      let recorded: Awaited<ReturnType<typeof recordConsent>>;
       try {
-        await recordConsent({
+        recorded = await recordConsent({
           uid,
           email: rawEmail,
           source: 'api/account/register',
           locale: typeof body?.locale === 'string' ? body.locale : null,
+          // T02: the contract language chosen in the sign-up dialog (C1).
+          termsLanguage: body?.termsLanguage,
         });
         termsVersion = TERMS_VERSION;
       } catch (consentErr) {
         console.error('[account/register] failed to record consent:', consentErr);
         return NextResponse.json({ error: 'Could not record your consent. Please try again.' }, { status: 500 });
       }
+      // C5 (Terms 1.3, T03): the contract confirmation, in the language version
+      // accepted, with its digest and a link to its wording — to the verified
+      // address only, best effort, no resend.
+      await sendContractConfirmationMail({
+        to: rawEmail,
+        uid,
+        occasion: 'sign-up',
+        language: recorded.termsLanguage,
+        firstName: (typeof body?.firstName === 'string' && body.firstName.trim() ? body.firstName.trim() : profile.firstName) || null,
+      });
     }
 
     // No consent, no account. Recording the acceptance where it was given is only
@@ -145,11 +165,10 @@ export async function POST(request: NextRequest) {
     const recipient = escapeHtml(rawEmail);
     const welcomeHtml = wrapEmailDocument(buildWelcomeEmail({ name, recipient }));
     const adminHtml = wrapEmailDocument(
+      // Account id, sign-in method, Terms version and time — no name, no
+      // address, no motivation (privacy policy section 2, `lib/admin-signup-email.ts`).
       buildAdminSignupEmail({
-        name,
-        email: recipient,
         uid: escapeHtml(uid),
-        motivation: escapeHtml(motivationRaw),
         authMethod: profile.authMethod === 'password' ? 'Email / password' : 'Google',
         termsVersion,
         signedUpAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
@@ -171,7 +190,7 @@ export async function POST(request: NextRequest) {
       await sendMail(resendApiKey, {
         from: 'Clean-Core <system@clean-core.io>',
         to: CONTACT_EMAIL,
-        subject: buildAdminSignupSubject(rawName),
+        subject: buildAdminSignupSubject(uid),
         html: adminHtml,
         label: ADMIN_SIGNUP_MAIL_KIND,
         // Not for the mirror — the kind keeps it off the person's row — but

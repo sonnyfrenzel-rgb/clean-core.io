@@ -43,7 +43,7 @@ import type { ProvenanceValue } from './provenance';
  *   - A lane is a proposal. It carries the sentence the mockup gives it —
  *     reconstructed from AUTHORITY-CHECK and naming, not an organisational
  *     statement — and a lane with no AUTHORITY-CHECK behind it has no anchor.
- *   - Every business name is `proposed` (*Model proposal*). The type below does
+ *   - Every business name is `proposed` (*AI-generated*). The type below does
  *     not admit any other provenance, so a name cannot be shown as proven or
  *     confirmed by a later change that forgets why.
  *
@@ -77,6 +77,45 @@ export const UNANCHORED = 'Unanchored';
 /** One spelling for what the reader keeps when there are no business names. */
 export const TECHNICAL_NAMES_KEPT =
   'Every step keeps its technical name from the code, and every line anchor is unchanged.';
+
+/**
+ * Business names from the model are paused unless the model is handed the
+ * engine's facts for each step (owner decision 06.11.2026, release 3.0.21).
+ *
+ * Named from the step tokens alone, the model sometimes wrote into a name what
+ * the code does not say. Until the names are built from the code's facts only,
+ * nothing is asked for, nothing is stored, and a stored naming is not applied:
+ * the map shows the engine's names, and no element carries an AI mark.
+ *
+ * Read by `namingPaused` (a context without facts), `namingRecordApplies` (a
+ * record not made from the facts), `shouldAskNaming`, `runNamingRequest`, the
+ * naming route and `/api/gemini` (a naming prompt without facts).
+ */
+export const NAMING_WITHOUT_FACTS_PAUSED = true;
+
+/**
+ * Whether this build asks for business names anywhere. The settings screen and
+ * the own-code import read it, so their "Business names" switch promises
+ * nothing that does not happen. False while paused, because no context of this
+ * build carries the facts; a build that hands the facts over sets it from that.
+ */
+export const NAMING_ASKED_IN_THIS_BUILD = !NAMING_WITHOUT_FACTS_PAUSED;
+
+/** The reason, in one spelling: the map's notice, the routes' refusals and the settings screens. */
+export const NAMING_PAUSED_REASON = "Business names are paused until they can be built from the code's facts only.";
+
+/** The error code `/api/gemini` and the naming route answer while the naming is paused. */
+export const NAMING_PAUSED_CODE = 'naming-paused';
+
+/**
+ * How a naming prompt shows that it hands the model the engine's facts: the
+ * answer shape it asks for cites fact ids. A prompt without it is refused by
+ * `/api/gemini` while `NAMING_WITHOUT_FACTS_PAUSED` holds.
+ */
+export const NAMING_FACTS_PROMPT_MARK = '"facts":["<fact id>"]';
+
+/** What a stored naming says it was built from. Only a naming built from the engine's facts is applied while paused. */
+export const NAMING_MADE_FROM_FACTS = 'engine-facts';
 
 /** Longest business name for a node. A label on a BPMN task, not a paragraph. */
 export const NAME_MAX_LENGTH = 80;
@@ -304,6 +343,11 @@ export type NamingRejection =
   | 'model-text'
   /** The "business" name is the technical name again. */
   | 'same-as-technical'
+  /**
+   * The name speaks of a count ("item count is zero", "no items") where the decision counts nothing — it compares a
+   * field such as a price unit with a value (external MM review of 22.10.2026, point 6).
+   */
+  | 'count-not-in-code'
   /** A lane named as a position, a person or a unit of an organisation. */
   | 'lane-organisational'
   /** Two lanes with the same name — both dropped. */
@@ -452,9 +496,24 @@ function validateNames(
     if (problem) { tally.bump(problem); continue; }
     const name = entry.name.trim();
     if (name.toLowerCase() === node.label.trim().toLowerCase()) { tally.bump('same-as-technical'); continue; }
+    if (claimsCountNotInCode(name, node.label)) { tally.bump('count-not-in-code'); continue; }
     accepted.push({ id: node.id, technicalName: node.label, name });
   }
   return accepted;
+}
+
+/** Words of a name that say a count of things. */
+const COUNT_WORDS = /\b(?:count|counts|number\s+of|how\s+many|no\s+(?:items|lines|entries|records|rows|positions)|(?:items|lines|entries|records|rows|positions)\s+(?:is|are)\s+(?:zero|empty|none)|anzahl)\b/i;
+/** What in a decision's own text counts something: a table's lines, a counter, a table that is empty or not. */
+const COUNTS_IN_CODE = /\blines\s*\(|\bdbcnt\b|\btabix\b|count|\bcnt\b|\banz|\bnum|\b(?:lt|gt|et|it|ct|mt)_\w+\s+IS\s+(?:NOT\s+)?INITIAL\b|\bline_exists\s*\(/i;
+
+/**
+ * A model name that calls a decision a count of things when its condition counts nothing — "Item count is zero" for
+ * `ls_item-peinh = 0`, a zero price unit (external MM review of 22.10.2026, point 6). Only a gateway is judged, and
+ * only where its own text holds no table, counter or `lines( )`; the plain wording of the engine keeps "Price unit zero".
+ */
+export function claimsCountNotInCode(name: string, condition: string): boolean {
+  return COUNT_WORDS.test(name) && !COUNTS_IN_CODE.test(condition);
 }
 
 function validateLanes(
@@ -602,6 +661,8 @@ export interface ProcessNamingRecord extends ValidatedNaming {
   origin: NamingOrigin;
   /** ISO time the server stored the naming. */
   namedAt: string;
+  /** Set by the route when the naming was asked for with the engine's facts. Absent on every naming stored before. */
+  madeFrom?: typeof NAMING_MADE_FROM_FACTS;
 }
 
 /** Shape check for a record that arrives over the wire. Anything else is treated as absent. */
@@ -620,7 +681,33 @@ export function isProcessNamingRecord(value: unknown): value is ProcessNamingRec
       && Array.isArray(l.nodes) && l.nodes.every((id) => typeof id === 'string'))
     && isPlainObject(discarded) && typeof discarded.total === 'number' && isPlainObject(discarded.byRule)
     && isPlainObject(origin) && origin.source === 'model' && origin.receipt === 'verified'
-    && typeof origin.modelId === 'string' && typeof origin.provider === 'string';
+    && typeof origin.modelId === 'string' && typeof origin.provider === 'string'
+    && (value.madeFrom === undefined || value.madeFrom === NAMING_MADE_FROM_FACTS);
+}
+
+/* ------------------------------------------------------------------ *
+ * The pause (`NAMING_WITHOUT_FACTS_PAUSED`).
+ * ------------------------------------------------------------------ */
+
+/** Whether a context hands the model the engine's facts per node: a `facts` field, which no context of this build carries. */
+export function namingContextHasFacts(context: NamingContext | null | undefined): boolean {
+  const facts = (context as { facts?: unknown } | null | undefined)?.facts;
+  return facts !== undefined && facts !== null;
+}
+
+/** Whether asking for names is paused for this context. */
+export function namingPaused(context: NamingContext | null | undefined): boolean {
+  return NAMING_WITHOUT_FACTS_PAUSED && !namingContextHasFacts(context);
+}
+
+/** Whether a naming prompt may go to the model: always, unless paused and the prompt hands over no facts. */
+export function namingPromptAllowed(prompt: string): boolean {
+  return !NAMING_WITHOUT_FACTS_PAUSED || prompt.includes(NAMING_FACTS_PROMPT_MARK);
+}
+
+/** Whether a stored naming may be applied at all: while paused, only one the route stored as built from the facts. */
+export function namingRecordApplies(record: ProcessNamingRecord | null | undefined): boolean {
+  return !!record && (!NAMING_WITHOUT_FACTS_PAUSED || record.madeFrom === NAMING_MADE_FROM_FACTS);
 }
 
 /* ------------------------------------------------------------------ *
@@ -694,12 +781,19 @@ export interface NamedProcess {
  * `record` is what `GET /api/projects/{id}/process-naming` returned; `absence`
  * says why there is none, when it is known (`lib/model-stages.ts`). A record
  * made for another reading of the source is not applied, and the map says so.
+ *
+ * While `NAMING_WITHOUT_FACTS_PAUSED` holds, a record not built from the
+ * engine's facts is held back as if there were none: the record stays stored,
+ * the map shows the engine's names, no element is marked AI-generated, and the
+ * notice says the names are paused.
  */
 export function applyNaming(
   context: NamingContext,
-  record: ProcessNamingRecord | null | undefined,
+  incoming: ProcessNamingRecord | null | undefined,
   absence: ModelAbsence = null,
 ): NamedProcess {
+  const heldBack = !!incoming && !namingRecordApplies(incoming);
+  const record = heldBack ? null : incoming;
   const usable = record && record.formatVersion === NAMING_FORMAT_VERSION && record.digest === context.digest
     ? record
     : null;
@@ -744,7 +838,9 @@ export function applyNaming(
 
   const named = nodes.filter((n) => n.businessName !== null).length;
   let notice: string | null = null;
-  if (state === 'not-named') {
+  if (state === 'not-named' && (heldBack || namingPaused(context))) {
+    notice = `${NOT_GENERATED}. ${NAMING_PAUSED_REASON} ${TECHNICAL_NAMES_KEPT}`;
+  } else if (state === 'not-named') {
     notice = `${NOT_GENERATED}. ${modelAbsenceReason(absence, NAMING_STAGE)} ${TECHNICAL_NAMES_KEPT}`;
   } else if (state === 'stale') {
     notice = `Not applied. These business names were proposed for an earlier version of this source. ${TECHNICAL_NAMES_KEPT}`;
@@ -800,7 +896,7 @@ export interface NamingRequestDeps {
 
 export type NamingRequestOutcome =
   | { ok: true; record: ProcessNamingRecord }
-  | { ok: false; absence: 'no-key' | 'stage-off' | 'failed'; message: string };
+  | { ok: false; absence: 'no-key' | 'stage-off' | 'failed' | 'paused'; message: string };
 
 /**
  * Why no call should be made at all, when that is already known.
@@ -828,6 +924,8 @@ export async function runNamingRequest(
   deps: NamingRequestDeps,
   availability?: NamingAvailability | null,
 ): Promise<NamingRequestOutcome> {
+  // No call at all while the naming is paused for this context: no code goes to the model for it.
+  if (namingPaused(context)) return { ok: false, absence: 'paused', message: NAMING_PAUSED_REASON };
   const before = absenceBeforeCall(availability);
   if (before) return { ok: false, absence: before, message: modelAbsenceReason(before, NAMING_STAGE) };
 
@@ -873,8 +971,18 @@ export function namingModelEnabled(availability: NamingAvailability | null | und
  * the naming, a drawn map (`state` known) and no naming for exactly this
  * reading of the source. A stored naming that names nothing is still a naming
  * for this source: it is not asked for again.
+ *
+ * `withFacts`: the ask would hand the model the engine's facts. Without them
+ * nothing is asked while `NAMING_WITHOUT_FACTS_PAUSED` holds — neither by itself
+ * nor on a click.
  */
-export function shouldAskNaming(input: { owner: boolean; modelEnabled: boolean; state: NamingState | null | undefined }): boolean {
+export function shouldAskNaming(input: {
+  owner: boolean;
+  modelEnabled: boolean;
+  state: NamingState | null | undefined;
+  withFacts?: boolean;
+}): boolean {
+  if (NAMING_WITHOUT_FACTS_PAUSED && !input.withFacts) return false;
   if (!input.owner || !input.modelEnabled || !input.state) return false;
   return input.state !== 'named';
 }

@@ -66,7 +66,7 @@ export default function WorkspaceLayerSection({
    * *Need & process* shows the business rules and their one editing mode
    * (mockup `s2`); without them it falls back to the plain rows, as every
    * other layer does. *Standard fit* and its table (`s3`) are an IT section
-   * since ADR-096 (owner, 12.10.2026) — `ItStandardFit`, not a layer here.
+   * since ADR-096 (owner, 12.10.2026) — since 22.10.2026 `StandardTouchCard` there, not a layer here.
    */
   project?: Project | null;
   projectId?: string;
