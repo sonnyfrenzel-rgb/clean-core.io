@@ -3436,7 +3436,26 @@
       "saysToday": "As of 09.11.2026, v3.0.21 on dev before the fix: steps 1-8 contact only the first party in every engine and store nothing; from step 9 (sign-in dialog) and on steps 10-11 (account pages opened signed out) WebKit contacts apis.google.com, the project's firebaseapp.com and www.googleapis.com.",
       "wrongWith30": [],
       "decision": "keep",
-      "reason": "Dated measurement report and the evidence for the fix of 09.11.2026; the capture after the fix is its own dated file.",
+      "reason": "Dated measurement report and the evidence for the fix of 09.11.2026; the capture after the fix is docs/legal/network-capture-2026-11-10-dev.md.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [],
+      "measured": {
+        "lines": 150
+      }
+    },
+    {
+      "path": "docs/legal/network-capture-2026-11-10-dev.md",
+      "kind": "report",
+      "purpose": "Network capture of the dev service (3.0.21, d4324cc3) after the fix for pages that need an account, for privacy policy section 7, made by scripts/legal/network-capture.ts",
+      "audience": "Sonny, legal review",
+      "saysToday": "As of 10.11.2026, v3.0.21 on dev after the fix: steps 1-8 contact only the first party in every engine and store nothing; on steps 9-11 WebKit contacts Google only from the sign-in dialog (issued by /), which a page that needs an account now leads to without starting Auth itself.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Dated measurement report confirming the open value noRequestWithoutSignIn; a later release gets a new dated capture, this one is not rewritten.",
       "effort": "none",
       "guard": {
         "removed": "check",
