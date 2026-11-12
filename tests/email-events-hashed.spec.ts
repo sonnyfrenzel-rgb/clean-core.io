@@ -21,7 +21,7 @@ import { PRIVACY_EN } from '../lib/legal/texts/privacy.en';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const ENV = { PSEUDONYM_PEPPER: 'spec-pseudonym-pepper-0123456789abcdef' };
+const ENV = { PSEUDONYM_PEPPER: 'test-pseudonym-pepper-0123456789abcdef' };
 const DEL = Symbol('delete');
 const ADDRESS = 'Someone@Example.org';
 
