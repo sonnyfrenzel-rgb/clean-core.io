@@ -39,12 +39,17 @@ move.
   export.
 - The assistant describes the transformation (the engine builds the skeleton, the model fills method bodies) and
   the Delivery page as they are.
+- **SAP reference patterns are named again where SAP restored them.** SAP archived several reference architectures
+  of its Architecture Center on 9 October 2026 and restored some of them on 27 October 2026. The integration target
+  names RA0022 and RA0021 again, XSUAA and IAM roles RA0019, the Destination service RA0021 and RA0022 (partial),
+  and the Delivery handover RA0023 for CAP, integration and event targets. CAP still says openly that its patterns
+  are archived.
 
 ### Operations
 
 - `npm run retention:backfill-email-expiry` gives mail delivery records written before v3.0.21 their expiry date,
   so the retention policy removes them (dry run by default, `--apply` writes).
-- DSAG ABAP guide and ABAP cheat-sheet references synced (9 November 2026).
+- SAP Architecture Center, DSAG ABAP guide and ABAP cheat-sheet references synced (9 November 2026).
 
 ## [v3.0.21] — 2026-11-09
 

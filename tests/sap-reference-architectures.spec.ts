@@ -24,7 +24,6 @@ import { cloudServiceDetails } from '../components/design/CloudServiceIntegratio
 import { CLOUD_SERVICE_KEYS, getCloudServiceKey } from '../lib/cloud-service-key';
 import {
   ARCHITECTURE_CENTER_SOURCE,
-  ARCHIVED_DELIVERY,
   ARCHIVED_ONLY,
   DELIVERY_REFERENCE_OF_TARGET,
   RA0001_ABAP_QUOTE,
@@ -112,10 +111,13 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     const archived = allBindings().filter((b) => b.ra !== null && synced.get(b.ra)?.archived !== false);
     expect(archived.map((b) => b.ra), 'an archived (or unknown) RA is named — drop it and say none openly').toEqual([]);
     for (const ra of Object.values(SAP_REFERENCE_ARCHITECTURES)) expect(ra.archived, ra.id).toBe(false);
-    // The synced metadata keeps the archive state: the RAs SAP archived on 09.10.2026 are recorded as such.
-    // RA0023, the delivery pattern, followed (found by the sync of 17.10.2026).
-    for (const id of ['RA0006', 'RA0007', 'RA0018', 'RA0019', 'RA0021', 'RA0022', 'RA0023', 'RA0025']) {
+    // The synced metadata keeps the archive state. Of the RAs SAP archived on 09.10.2026, these are still archived:
+    for (const id of ['RA0006', 'RA0007', 'RA0018']) {
       expect(synced.get(id)?.archived, `${id} archive state in the synced metadata`).toBe(true);
+    }
+    // SAP restored these on 27.10.2026 (sync of 09.11.2026); RA0023, the delivery pattern, among them.
+    for (const id of ['RA0019', 'RA0021', 'RA0022', 'RA0023', 'RA0025']) {
+      expect(synced.get(id)?.archived, `${id} archive state in the synced metadata`).toBe(false);
     }
   });
 
@@ -132,29 +134,35 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
 
   test('the pins of the roadmap row, as decided — current RAs only', () => {
     // Roadmap 3.0.9 as amended by the owner on 10.10.2026: only current RAs;
-    // where only archived ones fitted, none with the open reason.
+    // where only archived ones fit, none with the open reason. Owner decision
+    // 12.11.2026 applies that rule to SAP's restore of 27.10.2026: the bindings
+    // of the restored RAs are back as the roadmap row had them; iamRoles is
+    // partial (checked against RA0019's authorization pillar).
     const of = (bs: readonly ReferenceBinding[]) => bs.map((b) => `${b.ra ?? '-'}:${b.fit}`);
     expect(of(REFERENCE_OF_TARGET.event)).toEqual(['RA0001:direct']);
     expect(of(REFERENCE_OF_SERVICE.eventmesh)).toEqual(['RA0001:direct']);
-    for (const code of ['rap', 'keep', 'retire', 'standard', 'cap', 'integration'] as const) {
+    expect(of(REFERENCE_OF_TARGET.integration)).toEqual(['RA0022:direct', 'RA0021:direct']);
+    expect(of(REFERENCE_OF_SERVICE.xsuaa)).toEqual(['RA0019:direct']);
+    expect(of(REFERENCE_OF_SERVICE.iamRoles)).toEqual(['RA0019:partial']);
+    expect(of(REFERENCE_OF_SERVICE.destination)).toEqual(['RA0021:partial', 'RA0022:partial']);
+    for (const code of ['rap', 'keep', 'retire', 'standard', 'keyuser', 'cap'] as const) {
       expect(of(REFERENCE_OF_TARGET[code]), code).toEqual(['-:none']);
     }
-    for (const code of ['cap', 'integration'] as const) expect(REFERENCE_OF_TARGET[code][0].why).toBe(ARCHIVED_ONLY);
-    for (const key of ['xsuaa', 'iamRoles', 'destination'] as const) {
-      expect(of(REFERENCE_OF_SERVICE[key]), key).toEqual(['-:none']);
-      expect(REFERENCE_OF_SERVICE[key][0].why).toBe(ARCHIVED_ONLY);
-    }
+    // cap's RAs (RA0007, RA0018) are still archived: none, said openly — and only there.
+    expect(REFERENCE_OF_TARGET.cap[0].why).toBe(ARCHIVED_ONLY);
+    expect(allBindings().filter((b) => b.why === ARCHIVED_ONLY)).toEqual([REFERENCE_OF_TARGET.cap[0]]);
     expect(ARCHIVED_ONLY).toBe('No current SAP reference pattern — the ones that fitted were archived by SAP on 09.10.2026.');
-    // RFC: no RA describes replacing it, and the nearest (RA0022) is archived.
-    expect(`${RFC_DRIVER_REFERENCE.ra}:${RFC_DRIVER_REFERENCE.fit}`).toBe('null:none');
-    // Delivery was RA0023 until SAP archived it: none, said openly.
+    const synced = new Map(SYNCED.architectures.map((a) => [a.id, a]));
+    for (const id of ['RA0007', 'RA0018']) expect(synced.get(id)?.archived, `${id} — cap's reason is still true`).toBe(true);
+    // RFC: no RA describes replacing it, so the nearest (RA0022) only as partial.
+    expect(`${RFC_DRIVER_REFERENCE.ra}:${RFC_DRIVER_REFERENCE.fit}`).toBe('RA0022:partial');
+    // Delivery: RA0023 for the targets that ship a BTP application.
     for (const code of ['cap', 'integration', 'event'] as const) {
-      expect(`${DELIVERY_REFERENCE_OF_TARGET[code]?.ra}:${DELIVERY_REFERENCE_OF_TARGET[code]?.fit}`, code).toBe('null:none');
-      expect(DELIVERY_REFERENCE_OF_TARGET[code]?.why, code).toBe(ARCHIVED_DELIVERY);
+      expect(`${DELIVERY_REFERENCE_OF_TARGET[code]?.ra}:${DELIVERY_REFERENCE_OF_TARGET[code]?.fit}`, code).toBe('RA0023:direct');
     }
     expect(DELIVERY_REFERENCE_OF_TARGET.rap).toBeUndefined();
-    // Only RA0001 is named at all.
-    expect([...new Set(allBindings().map((b) => b.ra).filter(Boolean))].sort()).toEqual(['RA0001']);
+    // Exactly these RAs are named, no others.
+    expect([...new Set(allBindings().map((b) => b.ra).filter(Boolean))].sort()).toEqual(['RA0001', 'RA0019', 'RA0021', 'RA0022', 'RA0023']);
   });
 
   test('the RA0001 passage on ABAP is quoted as it stands', () => {
@@ -190,22 +198,29 @@ test.describe('every target and every building block has an entry', () => {
 
   test('the one line says yes · partly · none, and says when SAP archived the pattern', () => {
     expect(referenceAnswer('event')).toBe('yes');
-    expect(referenceAnswer('integration')).toBe('none');
+    expect(referenceAnswer('integration')).toBe('yes');
     expect(referenceAnswer('cap')).toBe('none');
     expect(referenceAnswer('rap')).toBe('none');
     expect(referencePatternLine('event').text).toBe(`${REFERENCE_LINE_LEAD}: yes.`);
     expect(referencePatternLine('event').ras).toEqual(['RA0001']);
+    expect(referencePatternLine('integration').text).toBe(`${REFERENCE_LINE_LEAD}: yes.`);
+    expect(referencePatternLine('integration').ras).toEqual(['RA0022', 'RA0021']);
     expect(referencePatternLine('rap').text).toBe(`${REFERENCE_LINE_LEAD}: none.`);
-    expect(referencePatternLine('integration').text).toBe(`${REFERENCE_LINE_LEAD}: none — the ones that fitted were archived by SAP on 09.10.2026.`);
+    expect(referencePatternLine('cap').text).toBe(`${REFERENCE_LINE_LEAD}: none — the ones that fitted were archived by SAP on 09.10.2026.`);
     expect(referencePatternLine('cap').ras).toEqual([]);
   });
 
   test('the handover README section, by target code', () => {
     expect(referencePatternsReadme('rap')).toContain('No Architecture Center pattern — the ABAP transport path applies');
     for (const code of ['cap', 'integration', 'event'] as const) {
-      expect(referencePatternsReadme(code)).toContain(`Delivery:\n- No SAP pattern: ${ARCHIVED_DELIVERY}`);
-      expect(referencePatternsReadme(code)).not.toContain('RA0023');
+      expect(referencePatternsReadme(code)).toContain(
+        `Delivery:\n- Direct fit: [RA0023 DevOps on SAP BTP with CI/CD and SAP Build](${raUrl('RA0023')}) — last updated by SAP 2026-10-28. ${DELIVERY_REFERENCE_OF_TARGET[code]!.why}`,
+      );
     }
+    expect(referencePatternsReadme('rap')).not.toContain('RA0023');
+    expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0022 API Managed Integration with SAP Integration Suite](${raUrl('RA0022')})`);
+    expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0021 App2App Integration with SAP Integration Suite](${raUrl('RA0021')})`);
+    expect(referencePatternsReadme('integration')).not.toContain(ARCHIVED_ONLY);
     expect(referencePatternsReadme('event', 'public')).toContain(eventSourceSentence('public'));
     expect(referencePatternsReadme(null)).toContain('no pattern is named');
     expect(referencePatternsReadme('cap')).toContain('## Reference patterns');
