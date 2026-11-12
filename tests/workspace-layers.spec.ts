@@ -298,8 +298,9 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
 
   test('the usage records stand beside the map in Business and in the section elsewhere (ADR-080)', () => {
     const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const block = shell.slice(shell.indexOf('    process:'), shell.indexOf('    layerSection: null'));
+    // The map is Analyze, Business's since v3.1.0 (AB-2): the records stand in its block, under the map.
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    const block = business.slice(business.indexOf('data-analyze-map=""'), business.indexOf('data-analyze-interim'));
     expect(block).toContain('<UsageRecords project={project}');
     const section = read('components/workspace/LayerSection.tsx');
     expect(section).toContain('<UsageRecords project={project}');

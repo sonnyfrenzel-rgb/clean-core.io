@@ -267,8 +267,9 @@ test.describe('the shell path', () => {
 // Owner, 01.10.2026 (QA 55bcde6ea5e1): the map is the anchor of the Business
 // view and stays under every layer, not only under "Need & process".
 test('the Business map is not tied to the chosen layer', () => {
-  const shell = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/WorkspaceShell.tsx'), 'utf8');
-  const block = shell.slice(shell.indexOf('    process:'), shell.indexOf('data-workspace-process-block'));
-  expect(block).toContain("view === 'business' ? (");
-  expect(block).not.toMatch(/currentLayer === 'need'|hashLayer === null/);
+  // The map is Analyze, Business's page since v3.1.0 (AB-2): it has no layer to be tied to.
+  const business = fs.readFileSync(path.resolve(__dirname, '..', 'components/analyze/AnalyzeBusiness.tsx'), 'utf8');
+  const block = business.slice(business.indexOf('<div id={BUSINESS_MAP_ID}'), business.indexOf('<WorkspaceProcess'));
+  expect(block).toContain('data-analyze-map=""');
+  expect(business).not.toMatch(/currentLayer|hashLayer|layerFromHash/);
 });

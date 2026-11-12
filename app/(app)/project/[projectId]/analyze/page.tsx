@@ -144,6 +144,7 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
 import { countSourceLines } from '@/lib/source-lines';
 import AnalyzeBusiness from '@/components/analyze/AnalyzeBusiness';
+import { createDraftHolder } from '@/lib/process-map-draft';
 import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 
 /**
@@ -169,6 +170,12 @@ export default function AnalyzePage() {
   // and goes on to `?first=1`) renders again; the view switch writes the address without the router.
   useSearchParams();
   const search = useLocationSearch();
+  /**
+   * The map's unsaved drawing, held here because Analyze, Business is not: a
+   * switch to IT or Management unmounts it, and would otherwise discard the
+   * drawing unasked (held by the workspace shell until v3.1.0, AB-2).
+   */
+  const [processDraft] = useState(createDraftHolder);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted) {
@@ -185,7 +192,9 @@ export default function AnalyzePage() {
   const working = params.has('reason') || params.has('add');
   if (view === 'business' && !working && typeof projectId === 'string') {
     const first = params.get('first') === '1';
-    return <AnalyzeBusiness key={projectId} projectId={projectId} first={first} fallback={<AnalyzeScorePage />} />;
+    return (
+      <AnalyzeBusiness key={projectId} projectId={projectId} first={first} draftHolder={processDraft} fallback={<AnalyzeScorePage />} />
+    );
   }
   return <AnalyzeScorePage />;
 }

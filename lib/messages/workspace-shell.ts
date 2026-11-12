@@ -22,8 +22,6 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.metaNoRun': 'No signed run yet — source, engine, rules and catalog are recorded with the first analysis.',
   'page.view': 'View',
   'page.aboutThisView': 'About this view',
-  // One fixed line under the title of the Business view (ADR-099, owner 12.10.2026).
-  'page.workspaceIntro': 'Your project’s workspace: the process from the code, and the seven tools.',
   'page.projectStatus': 'Project status',
   'page.nothingOnRecord': 'Nothing on record yet for any of the seven',
   'page.showProjectStatus': 'Show project status',
@@ -31,22 +29,6 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.statusTapHint': 'Tap a status to see what it rests on and open the tool behind it.',
   'page.showTipsAgain': 'Show tips again',
 
-  // The central work area under the map — WorkspaceShell, Business (ADR-072).
-  'hub.title': 'Work from this process',
-  'hub.lead':
-    'Your process, reconstructed from the old ABAP, is where everything starts. Take the next step, read the same process as IT or Management, or open a tool.',
-  'hub.eyebrow': 'Central work area',
-  'hub.nextLabel': 'Continue with',
-  'hub.nothingOpen': 'Nothing is open — every phase this product can finish has its own evidence on record.',
-  'hub.viewsTitle': 'Read this process as',
-  'hub.viewHere': 'You are here',
-  'hub.viewBusinessGets': 'The process in plain words: its steps, the business rules hard-coded in it, and what could not be determined.',
-  'hub.viewItGets': 'What the code does, line by line: findings, clean core Level A–D and the target profile.',
-  'hub.viewManagementGets': 'The decision — keep, rebuild, move to standard or retire — with its cost and risk.',
-  'hub.toolsTitle': 'The seven tools',
-  'hub.pathLabel': 'Where the seven tools stand',
-  'hub.stageNone': 'nothing on record',
-  'hub.stageNext': 'next',
   // Until this browser has opened Analyze once (ADR-090): the result is
   // pointed at, never the next step — "Continue with" stays the phase contract's.
   'hub.analysisReadyTitle': 'Your analysis is ready',
@@ -96,9 +78,6 @@ export const WORKSPACE_SHELL_MESSAGES = {
   // While the start run is with the server: the analysis is the step, and it is
   // already happening (owner, 09.10.2026).
   'nextStep.running': 'The analysis is running. This step is done once the run is signed — there is nothing to press.',
-  // While the reading of the rules that decide the step has not landed: said,
-  // never an empty card under the title (owner, 12.10.2026).
-  'nextStep.pending': 'Working out the next step from the rules in the code…',
 } as const;
 
 /** "3 of 7 have something on record" — the folded status row of the Business view. */
@@ -134,21 +113,6 @@ export function toolsNextHint(tool: string, purpose: string): string {
 /** "Open Analyze" — a link to a stage, in the status popover and in "Next step". */
 export function openStageLabel(stage: string): string {
   return `${WORKSPACE_SHELL_MESSAGES['status.open']} ${stage}`;
-}
-
-/** "1 of 7 done" — the path of the seven tools in the work area, counted from the phase contract. */
-export function hubPathDone(done: number, total: number): string {
-  return `${done} of ${total} done`;
-}
-
-/** "Step 2 of 7 · Design" — where the next step stands on the path. */
-export function hubNextPosition(n: number, total: number, stage: string): string {
-  return `Step ${n} of ${total} · ${stage}`;
-}
-
-/** "Open as IT" — a view button of the work area. */
-export function hubViewLabel(view: string): string {
-  return `Open as ${view}`;
 }
 
 function findingsPhrase(findings: number, high: number | null, where: string): string {

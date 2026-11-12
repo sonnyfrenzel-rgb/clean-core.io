@@ -285,13 +285,15 @@ test.describe('where it stands and what it writes', () => {
     expect(process).not.toContain('WALK_TECHNICAL_SUBJECT');
   });
 
-  test('the tour opens only on a click — from the top of the Business view or the First insights — and never by itself', () => {
+  test('the tour opens only on a click — from the invitation above the map in Analyze, Business — and never by itself', () => {
     const process = read('components/workspace/WorkspaceProcess.tsx');
     expect(process).toMatch(/const \[tourOpen, setTourOpen\] = useState\(false\)/);
     expect(process.match(/setTourOpen\(true\)/g)).toHaveLength(1);
     expect(process).toMatch(/if \(takeProcessWalkRequest\(projectId\)\) setTourOpen\(true\)/);
+    // The workspace's Business view with its walk entry is gone (v3.1.0, AB-2): Analyze's invitation is the way in.
     const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toContain('<ProcessTourEntry projectId={projectId} />');
+    expect(shell).not.toMatch(/ProcessTourEntry|requestProcessWalk/);
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).toMatch(/onClick=\{walk\} data-analyze-walk=""/);
     // The First insights' own walk button stood beside the main-line picture, which retired with the
     // build-up in v3.1.0 (AB-3); in Analyze, Business the invitation above the map opens it.
     expect(read('components/workspace/FirstLook.tsx')).not.toContain('data-first-look-walk');

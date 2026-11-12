@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -14,6 +14,9 @@ import {
 } from '../lib/analysis-read';
 import { demoAnalysisReady, hubAnalysisReady } from '../lib/messages/workspace-shell';
 import type { WorklistItem } from '../lib/types';
+import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
+import { adminSetDoc } from './helpers/admin-seed';
+import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
 /**
  * "Your analysis is ready" — ADR-090, owner 10.10.2026.
@@ -25,10 +28,15 @@ import type { WorklistItem } from '../lib/types';
  * the hub one line with the signed run's figures. The phase contract is not
  * touched: Analyze stays done and the next step stays Design.
  *
- * Server-free: the pure rules, the browser storage against a stand-in
- * `window`, and the source lines that keep it an addition. The rendered half
- * (the hint appears, Analyze is opened, the hint is gone) is in
- * `tests/workspace-hub.spec.ts`.
+ * Since v3.1.0 (AB-2) the project opens on Analyze itself and the hub with its
+ * "Your analysis is ready" line is gone with the workspace's Business view; the
+ * "Result ready" tag on the Analyze tool stays (the IT and Management tool bars,
+ * the stage tool bars).
+ *
+ * The pure rules, the browser storage against a stand-in `window`, and the
+ * source lines that keep it an addition are server-free. The rendered half
+ * (the tag stands in the IT view's tool bar, Analyze is opened, the tag is
+ * gone) moved here from the retired `tests/workspace-hub.spec.ts`.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -173,14 +181,11 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
     }
   });
 
-  test('the workspace reads Analyze’s state from the tools it already has, and the hub gets the result', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/analysisReadyResult\(\{\s*analyzeState: tools\.find\(\(t\) => t\.key === 'analyze'\)\?\.state/);
-    expect(shell).toContain('analysis={analysisResult}');
-    const hub = read('components/workspace/WorkspaceHub.tsx');
-    expect(hub).toContain('<AnalysisReady');
-    // The next step of the hub is still the one "Next step" at the top decided.
-    expect(hub).toContain('const next = nextPhaseKey(tools);');
+  // The hub ("Continue with" and its "Your analysis is ready" line) retired with the workspace's
+  // Business view in v3.1.0 (AB-2, ADR-090 retired): the project opens on Analyze itself.
+  test('the workspace has no hub any more, and reads no analysis-ready result', () => {
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/WorkspaceHub.tsx'))).toBe(false);
+    expect(read('components/workspace/WorkspaceShell.tsx')).not.toMatch(/analysisReadyResult|WorkspaceHub|AnalysisReady/);
   });
 
   test('the action is secondary — the page keeps its one primary in "Next step"', () => {
@@ -211,5 +216,75 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
     const shell = read('components/demo/DemoWorkspaceShell.tsx');
     expect(shell).toContain('<AnalysisReady');
     expect(shell).toContain("p.key === 'analyze' && !demoAnalysisRead ? <ResultReadyTag /> : null");
+  });
+});
+
+test.describe('rendered: the Analyze tool says "Result ready" until Analyze has been opened once', () => {
+  const PO = fs.readFileSync(path.resolve('public/starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
+  const BASE = process.env.TEST_BASE_URL || 'http://localhost:3000';
+  let account: Awaited<ReturnType<typeof seedStageProject>>;
+  let projectId = '';
+
+  async function idToken(email: string, password: string): Promise<string> {
+    const res = await fetch(
+      'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true }) },
+    );
+    return ((await res.json()) as { idToken: string }).idToken;
+  }
+
+  async function withoutTips(page: Page) {
+    await page.addInitScript(
+      ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
+      [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
+    );
+  }
+
+  test.beforeAll(async () => {
+    test.setTimeout(240_000);
+    account = await seedStageProject({ prefix: 'ready-tag', acceptTerms: true });
+    const token = await idToken(account.email, account.password);
+    projectId = `${account.projectId}-po`;
+    await adminSetDoc('projects', projectId, {
+      name: 'Z_MM_PO_APPROVAL',
+      userId: account.uid,
+      createdAt: new Date(),
+      status: 'created',
+      legacyCode: PO,
+    });
+    const res = await fetch(`${BASE}/api/runs/create`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId, s4Deployment: 'private', analysis: '', uploadedFileName: 'Z_MM_PO_APPROVAL.abap' }),
+    });
+    expect(res.ok, `the run was not signed: ${res.status}`).toBe(true);
+  });
+
+  test('the IT view\'s tool bar tags Analyze, opening it clears the tag, and the phase does not move', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await withoutTips(page);
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+
+    const analyzeTool = page.locator('[data-workspace-tools="open"] [data-workspace-tool="analyze"]');
+    await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done', { timeout: 60_000 });
+    await expect(analyzeTool).toHaveAttribute('data-workspace-tool-unread', '');
+    await expect(analyzeTool.locator('[data-workspace-tool-result-ready]')).toHaveText('Result ready');
+
+    // Analyze with its result on the page marks it read (IT keeps today's score page until AB-9).
+    await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 90_000 });
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem('cc.workspace.analysis.read') ?? ''), { timeout: 60_000 })
+      .toContain(projectId);
+
+    // Back in the workspace the tag is gone; the phase is as it was.
+    await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done', { timeout: 60_000 });
+    await expect(analyzeTool).not.toHaveAttribute('data-workspace-tool-unread', '');
+    await expect(page.locator('[data-workspace-tool-result-ready]')).toHaveCount(0);
   });
 });

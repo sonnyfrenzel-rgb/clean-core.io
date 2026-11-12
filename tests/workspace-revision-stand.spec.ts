@@ -246,8 +246,9 @@ test.describe('where the Stand is asked (CR-15)', () => {
     expect(gate).toBeLessThan(save.indexOf('await saveProcessRevision('));
     expect(save, 'an own save is not handed to the Stand').toContain('onWritten?.(outcome.record.revision)');
 
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const mounted = shell.slice(shell.indexOf('<WorkspaceProcess'), shell.indexOf('/>', shell.indexOf('<WorkspaceProcess')));
+    // The map is Analyze, Business's since v3.1.0 (AB-2); it keeps the Stand check of the workspace.
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    const mounted = business.slice(business.indexOf('<WorkspaceProcess'), business.indexOf('/>', business.indexOf('<WorkspaceProcess')));
     expect(mounted).toContain('beforeWrite={stand.checkBeforeWrite}');
     expect(mounted).toContain('onWritten={stand.adopt}');
   });

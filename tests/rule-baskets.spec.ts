@@ -489,8 +489,9 @@ test.describe('the register in IT, rendered', () => {
 test.describe('the places (source guards)', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
   test('no rule card in the Business view; the first insights say the one sentence and offer no rule decision; the next step leads with no rule', () => {
-    const block = shell.slice(shell.indexOf('    rules:'), shell.indexOf('    statusTools:'));
-    expect(block).toContain('rules: null');
+    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109).
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    expect(business).not.toContain('<BusinessRulesEditor');
     expect(shell).not.toContain('<BusinessRulesEditor');
     const firstLook = read('components/workspace/FirstLook.tsx');
     // 3.0.21 (owner decisions 22.10.2026): the Business opening offers no rule action at all, the demo's
@@ -498,10 +499,7 @@ test.describe('the places (source guards)', () => {
     expect(firstLook).not.toContain('onDecideRules=');
     expect(firstLook).toMatch(/<RuleBasketLine [^>]*designHref=\{onReviewRules \? null : undefined\}/);
     expect(firstLook).not.toMatch(/const decideRules\b/);
-    expect(shell).toContain('businessNextStep({ point: nextStep, rules: null, owner })');
-    const order = shell.slice(shell.indexOf('const BUSINESS_ORDER'), shell.indexOf('];', shell.indexOf('const BUSINESS_ORDER')));
-    // Where the rules card stood: under the map, which stays right under the answer (ADR-072).
-    expect(order.indexOf("'process'")).toBeLessThan(order.indexOf("'rules'"));
+    expect(business).toContain('businessNextStep({ point: running, rules: null, owner })');
   });
 
   test('the full register is in IT; the questions stand in Design beside its canvas; open questions lead there', () => {

@@ -12,8 +12,6 @@ import { layerRedirect } from '@/lib/layer-redirect';
 import { analyzeEntryHref } from '@/lib/analyze-entry';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { originOf } from '@/lib/choice-addresses';
-import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
-import { useStartRun } from '@/hooks/useStartRun';
 import { useFollowHash } from '@/hooks/useFollowHash';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import CcButton from '@/components/cc/Button';
@@ -22,17 +20,6 @@ import WorkspaceLoading from '@/components/workspace/WorkspaceLoading';
 import ProjectNoAccess from '@/components/ProjectNoAccess';
 import { getAuth } from '@/lib/firebase';
 import type { Project } from '@/lib/types';
-
-/**
- * The query the build-up of `DESIGN.md` §5.2 answers to.
- *
- * *"After a code import or an example"* — so the build-up is not what every visit
- * to a workspace does; it is what the screen that started the analysis asks for
- * when it sends the reader here ("New project", roadmap 2.7). Without it the
- * first look goes straight to its end state, which is also what a second visit
- * gets.
- */
-const FIRST_LOOK_PARAM = 'first';
 
 /**
  * The `#fragment` a view switch carries over: a subject (`#L42`, CR-14) but
@@ -45,6 +32,11 @@ function currentHash(): string {
 
 /**
  * The workspace of a project — roadmap step 1.4, for every account since 3.0.1.
+ *
+ * Since v3.1.0 it holds IT and Management only (plan AB-2, ADR-109): a project
+ * opens in Analyze, Business, and this route sends a Business address there.
+ * The start run of a new project (ADR-072) is signed there too
+ * (`components/analyze/AnalyzeBusiness.tsx`).
  *
  * Built behind an administrator's preview switch (1.4) and opened to every
  * signed-in account with roadmap 3.0.1 (ADR-061): every project opens here, and
@@ -75,22 +67,7 @@ export default function ProjectWorkspacePage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'failed'>('loading');
-  // `null` until the browser has been asked. Rendering the build-up and then
-  // removing it would be the one thing a second visit is promised not to see.
-  const [buildUp, setBuildUp] = useState<boolean | null>(null);
-
   const view = viewFromParam(searchParams?.get('view'));
-  const asked = searchParams?.get(FIRST_LOOK_PARAM) === '1';
-
-  useEffect(() => {
-    if (!enabled || !projectId) return;
-    if (!asked) {
-      setBuildUp(false);
-      return;
-    }
-    setBuildUp(!firstLookSeen(projectId));
-  }, [enabled, projectId, asked]);
-
   /**
    * The address the page arrived with, when it names a layer that now lives in
    * another view or in the Economics tool — `?view=it#costs`,
@@ -175,14 +152,6 @@ export default function ProjectWorkspacePage() {
     return () => window.cancelAnimationFrame(frame);
   }, [arrived]);
 
-  // Marked as seen once the workspace is ready and the build-up is on screen —
-  // not when it was merely asked for: a load that fails, or a tab closed before
-  // the project arrived, used to cost the reader their first look.
-  useEffect(() => {
-    // Not in Business: that view is Analyze's, where the first look is marked (plan AB-2).
-    if (state === 'ready' && buildUp === true && projectId && view !== 'business') markFirstLookSeen(projectId);
-  }, [state, buildUp, projectId, view]);
-
   const setView = useCallback(
     (next: WorkspaceView) => {
       const query = new URLSearchParams(searchParams?.toString() ?? '');
@@ -230,33 +199,6 @@ export default function ProjectWorkspacePage() {
     };
   }, [enabled, projectId]);
 
-  /**
-   * The project read again after the start run signed it, so the map, the
-   * tools and Next step read the run rather than the source alone (ADR-072).
-   * A failed read leaves the page as it was; the run is signed either way.
-   */
-  const reload = useCallback(async () => {
-    if (!projectId) return;
-    try {
-      const loaded = await loadProjectAndHydrate(projectId);
-      if (loaded) setProject(loaded);
-    } catch {
-      /* the next visit reads it */
-    }
-  }, [projectId]);
-
-  // The signed engine-only run a new project starts with (ADR-072): asked for
-  // by the first look of a project that has source and no run, and offered by
-  // hand on any later visit. No model call; what it costs was said on the
-  // screen that started the project.
-  const startRun = useStartRun({
-    project,
-    projectId,
-    // Never on the way to Analyze: the start run of a Business arrival is signed there (plan AB-2).
-    auto: state === 'ready' && buildUp === true && view !== 'business',
-    onSigned: reload,
-  });
-
   // Nothing of the shell is rendered before the profile has arrived — without
   // one there is no page here, and a skeleton would promise one.
   // A status for screen readers, not a skeleton: as an aria-hidden div the
@@ -295,7 +237,8 @@ export default function ProjectWorkspacePage() {
     );
   }
 
-  if (state === 'loading' || buildUp === null || redirecting) {
+  // Business is Analyze's: until the redirect above has landed, the loading gate.
+  if (state === 'loading' || redirecting || view === 'business') {
     return (
       <WorkspaceLoading />
     );
@@ -308,8 +251,6 @@ export default function ProjectWorkspacePage() {
       view={view}
       onViewChange={setView}
       account={profile}
-      buildUp={buildUp}
-      startRun={startRun}
     />
   );
 }

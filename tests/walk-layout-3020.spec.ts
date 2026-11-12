@@ -59,15 +59,17 @@ test('a chapter chip of the tour wraps its name instead of widening the page', a
   }
 });
 
-test('on a new project\'s first visit the tour entry follows the first look; on every later visit the tour entry comes first', () => {
+test('the way into the tour stands above the map on every visit, first or later', () => {
+  // Since v3.1.0 the Business view is Analyze's (AB-2): "Walk me through it" stands in the summary above the
+  // map on the first visit and every later one (mockup state 3), so there is no first-visit place to swap with
+  // — the paced build-up it once had to follow retired with AB-3. The workspace has no walk slot any more.
   const shell = read('components/workspace/WorkspaceShell.tsx');
-  // The order stays the owner's: next step, walk, first look.
-  const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\];/)![1];
-  expect([...block.matchAll(/^\s*'([a-zA-Z]+)',/gm)].map((m) => m[1]).slice(0, 3)).toEqual(['nextStep', 'walk', 'firstLook']);
-  // The `walk` slot is empty during the build-up …
-  expect(shell).toMatch(/walk:\s*view === 'business' && signed !== null && !buildUp \?/);
-  // … and the first look's block carries the entry under it then.
-  const firstLook = shell.slice(shell.indexOf('firstLook: ('), shell.indexOf('ask: answer ?'));
-  expect(firstLook.indexOf('<FirstLook')).toBeLessThan(firstLook.indexOf('<ProcessTourEntry'));
-  expect(firstLook).toMatch(/signed !== null && buildUp \?/);
+  expect(shell).not.toMatch(/BUSINESS_ORDER|ProcessTourEntry|buildUp/);
+  const business = read('components/analyze/AnalyzeBusiness.tsx');
+  const invitation = business.indexOf('data-analyze-invitation=""');
+  expect(invitation).toBeGreaterThan(-1);
+  expect(invitation).toBeLessThan(business.indexOf('<WorkspaceProcess'));
+  // Only "I'll look around myself" moves it, to one quiet line under the map — never the visit.
+  expect(business).toContain('const invitation = signed !== null && !lookingAround;');
+  expect(business).not.toMatch(/firstLookSeen\([^)]*\)[^;]*invitation/);
 });

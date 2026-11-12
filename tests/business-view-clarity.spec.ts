@@ -721,7 +721,8 @@ test.describe('the Business view on screen', () => {
 });
 
 test('the map follow stops as soon as the hash leaves the map (QA 6eaa3be7e7ad)', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'components/workspace/WorkspaceShell.tsx'), 'utf8');
+  // The follower moved with the map from the workspace's Business view to Analyze, Business (v3.1.0, AB-2).
+  const src = fs.readFileSync(path.join(__dirname, '..', 'components/analyze/AnalyzeBusiness.tsx'), 'utf8');
   const start = src.indexOf('const onMap = () =>');
   expect(start, 'the follow loop reads the hash through onMap').toBeGreaterThan(0);
   const body = src.slice(start, src.indexOf("window.addEventListener('hashchange', follow)", start));
