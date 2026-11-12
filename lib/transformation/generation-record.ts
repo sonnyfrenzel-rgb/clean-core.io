@@ -49,6 +49,8 @@ export interface EngineLedRecord {
   repaired: number;
   notWritten: Array<{ unitId: string; title: string; reason: string }>;
   failing: Array<{ unitId: string; title: string; failure: string }>;
+  /** Functions whose model body holds no statement, with the model's comment — never counted as written; absent when none. */
+  empty?: Array<{ unitId: string; title: string; comment: string }>;
   /**
    * `passed`, `notRun`, `scope` and the reasons since the honest count (step
    * E); a record stored before it carries `total` and `failed` only and is read
@@ -125,6 +127,7 @@ function engineOf(raw: unknown): EngineLedRecord | null {
       ? { unitId: str(x.unitId, 40), id: str(x.id, 80), state: str(x.state, 80), sapName: typeof x.sapName === 'string' ? str(x.sapName, 200) : null }
       : null,
   );
+  const empty = list(e.empty, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), comment: str(x.comment, 300) } : null));
   const unverified = Array.isArray(e.unverified) ? e.unverified.slice(0, 12).filter((s): s is string => typeof s === 'string').map((s) => str(s, 500)) : [];
   return {
     status: STATUSES.has(e.status as GenerationStatus) ? (e.status as GenerationStatus) : 'partial',
@@ -135,6 +138,7 @@ function engineOf(raw: unknown): EngineLedRecord | null {
     repaired: int(e.repaired, 1_000),
     notWritten: list(e.notWritten, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), reason: str(x.reason, 500) } : null)),
     failing: list(e.failing, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), failure: str(x.failure, 500) } : null)),
+    ...(empty.length > 0 ? { empty } : {}),
     checks: list(e.checks, 12, checkOf),
     notRun: list(e.notRun, 12, (x) => (typeof x.kind === 'string' ? { kind: str(x.kind, 20), reason: str(x.reason, 500) } : null)),
     scaffoldFindings: Array.isArray(e.scaffoldFindings) ? e.scaffoldFindings.slice(0, 50).filter((s): s is string => typeof s === 'string').map((s) => str(s, 500)) : [],

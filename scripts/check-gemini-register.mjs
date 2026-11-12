@@ -69,13 +69,27 @@ async function probe(model, key) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    // A thinking level, as the fill and wording calls send it (lib/model-thinking.ts):
+    // a model that refuses it cannot serve those stages. A few tokens of room,
+    // because a thinking model spends its first ones before it writes.
     body: JSON.stringify({
       contents: [{ parts: [{ text: 'hi' }] }],
-      generationConfig: { maxOutputTokens: 1 },
+      generationConfig: { maxOutputTokens: 256, thinkingConfig: { thinkingLevel: 'LOW' } },
     }),
   });
   const record = { httpStatus: res.status, answered: res.status === 200 };
-  if (!record.answered) {
+  if (record.answered) {
+    // The model that actually answered. Google reroutes some retired ids to a
+    // successor while still answering 200; a receipt would then name a model
+    // that did not answer, so a rerouted answer does not count as answered.
+    const body = await res.json().catch(() => ({}));
+    const servedBy = typeof body?.modelVersion === 'string' ? body.modelVersion : null;
+    if (servedBy) record.servedBy = servedBy;
+    if (servedBy && servedBy !== model && !servedBy.startsWith(`${model}-`)) {
+      record.answered = false;
+      record.providerMessage = `answered, but served by ${servedBy}`;
+    }
+  } else {
     const body = await res.text();
     let message = body.slice(0, 400);
     try {

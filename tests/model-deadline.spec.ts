@@ -122,8 +122,9 @@ test.describe('the transport under the deadline', () => {
   test('is installed when the server starts, in the Node runtime only', () => {
     const src = code('instrumentation.ts');
     expect(src).toMatch(/export async function register\(\)/);
-    expect(src).toMatch(/if \(process\.env\.NEXT_RUNTIME !== 'nodejs'\) return;/);
-    expect(src).toContain('installModelFetchDispatcher();');
+    // The import inside the branch Next replaces at build time: an early return left it in the edge bundle,
+    // and `next build` failed on undici's `node:http` there.
+    expect(src).toMatch(/if \(process\.env\.NEXT_RUNTIME === 'nodejs'\) \{\s*const \{ installModelFetchDispatcher \} = await import\('\.\/lib\/model-fetch-dispatcher'\);\s*installModelFetchDispatcher\(\);\s*\}/);
   });
 
   test('is the dispatcher the built-in fetch really uses', async () => {

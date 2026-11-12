@@ -88,6 +88,12 @@ export interface CapabilityFacts {
    * may approve without calling SAP's workflow, so no absence of an approval is said. Absent in facts stored before.
    */
   ownApproval?: FactObject[];
+  /**
+   * Lines where the program checks who may act in its own code — a role it requires, a name that authorizes,
+   * `'NOT_AUTHORIZED'` — rather than with an SAP authorization object (hotfix 3.0.22). Such a program is never said
+   * to check no authorization. Absent in facts stored before.
+   */
+  ownAuthorization?: FactObject[];
 }
 
 export type Capability = 'posting' | 'ledger' | 'credit-exposure' | 'approval' | 'mail' | 'audit-log' | 'remote';
@@ -216,7 +222,9 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
       determined: approval.length > 0 || (!callsOpen && !(facts.ownApproval?.length)),
       evidence: [...approval, ...(facts.ownApproval ?? [])],
       // Facts stored before 3.0.22 never read the program's own code for it: their sentence says only what was read.
-      absent: `No SAP workflow or release function is called${facts.ownApproval ? '; its own code approves or overrides nothing' : ''}.`,
+      // The own-code read is a scan for names and values (APPROV…, OVERRID…, 'RELEASED'): it says what it did not
+      // find, never that the program approves nothing — a state code such as 'Y' can approve unseen.
+      absent: `No SAP workflow or release function is called${facts.ownApproval ? '; its code names no approval or override' : ''}.`,
     },
     mail: {
       short: 'no correspondence in the code',

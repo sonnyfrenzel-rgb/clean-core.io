@@ -518,4 +518,23 @@ export function packageShape(files: readonly GeneratedFile[]): string {
   return parts.join(' · ');
 }
 
+/**
+ * The "Code generated" step of the Object Page's "Status of the code" (3.0.23). Files on record are not a finished
+ * step: when the tool bar's Transformation phase (`workflowSteps`) is not done — the server's check found the stored
+ * package not activatable or not runnable, or functions were left as stubs — the step carries no done tick and says
+ * what the tool bar says, with its badge and its detail. Without a phase (the demo) it reads from the files alone.
+ */
+export function codeGeneratedStep(input: {
+  generated: boolean;
+  /** "12 objects — frame by the engine, …" or "4 files, AI-generated": what the package holds. */
+  packageNote: string;
+  /** Shown when nothing is generated: "not yet", "not in a demo". */
+  emptyNote: string;
+  phase?: { state: string; badge: string; detail: string } | null;
+}): { done: boolean; text: string; note: string } {
+  if (!input.generated) return { done: false, text: 'Code generated', note: input.emptyNote };
+  if (input.phase && input.phase.state !== 'done') return { done: false, text: input.phase.badge, note: `${input.packageNote}. ${input.phase.detail}` };
+  return { done: true, text: 'Code generated', note: input.packageNote };
+}
+
 export { calmTitle };

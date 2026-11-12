@@ -1251,10 +1251,11 @@ export default function DeliveryPage() {
                   ),
                 },
                 {
-                  k: 'Decision',
+                  // 3.0.23: the design target, not "Decision" — that word is the keep, rebuild or retire decision.
+                  k: 'Design target',
                   v: target
-                    ? `${target} — confirmed${project.approvedBy ? ` by ${project.approvedBy}` : ''}, in the pack as your statement`
-                    : 'Pending sign-off',
+                    ? `${target} — signed off${project.approvedBy ? ` by ${project.approvedBy}` : ''}, in the pack as your statement`
+                    : 'Awaiting sign-off',
                 },
                 { k: 'Engine', v: modelCard?.engineVersion || APP_VERSION },
                 {

@@ -15,7 +15,16 @@ import { abapMethodMatches } from '../lib/abap-unit-method';
 import { MODEL_NETWORK_CODE, providerConnectionFailure } from '../lib/model-deadline';
 import { modelErrorKind } from '../lib/transformation/orchestrator';
 import { absentClaims, capabilityPresence } from '../lib/documentation-capabilities';
-import { capabilityFactsOf } from '../lib/documentation-facts';
+import { capabilityFactsOf, ownAuthorizationIn } from '../lib/documentation-facts';
+import { buildProcessDocument } from '../lib/process-document-build';
+import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { applyNaming, namingContextOf } from '../lib/process-naming';
+import { buildProcessMapModel } from '../lib/process-map';
+
+function mapOf(source: string, file = 'zccio_role_shape.abap') {
+  const bpmn = buildBpmnExportFromSource(source, { processName: file, sourceFileName: file });
+  return buildProcessMapModel({ bpmn, named: applyNaming(namingContextOf(source), null), fileName: file });
+}
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { programSummary } from '../lib/program-summary-text';
@@ -150,6 +159,44 @@ test.describe('HF-a: the frame of an object-oriented program names only types th
     expect(broken.badge).toBe('Generated · not activatable');
     expect(broken.detail).toMatch(/not activatable/);
     expect(step(project(false)).state).toBe('done');
+  });
+
+  // A local exception class may inherit from the customer's or a namespace's global exception class, not only SAP's
+  // CX_ ones; a reference to it names that ancestor, and the comment above it says so.
+  const EXCEPTION_SHAPE = OO_SHAPE.replace(
+    'INTERFACE lif_items.',
+    [
+      'CLASS lcx_domain DEFINITION INHERITING FROM zcx_domain_error FINAL.',
+      'ENDCLASS.',
+      'CLASS lcx_domain IMPLEMENTATION.',
+      'ENDCLASS.',
+      'CLASS lcx_ns DEFINITION INHERITING FROM /abc/cx_base FINAL.',
+      'ENDCLASS.',
+      'CLASS lcx_ns IMPLEMENTATION.',
+      'ENDCLASS.',
+      'DATA go_domain TYPE REF TO lcx_domain.',
+      'DATA go_refused TYPE REF TO lcx_refused.',
+      'INTERFACE lif_items.',
+    ].join('\n'),
+  );
+
+  test('a local exception class over a customer or namespace exception maps to that ancestor, and the frame says so', () => {
+    const types = localObjectTypes(readEngineFacts(EXCEPTION_SHAPE).statements);
+    expect(types.get('lcx_domain')).toBe('zcx_domain_error');
+    expect(types.get('lcx_ns')).toBe('/abc/cx_base');
+    expect(types.get('lcx_refused')).toBe('cx_static_check');
+    expect(types.get('lcl_service')).toBeNull();
+    const prep = prepareEngineLed({ source: EXCEPTION_SHAPE, track: 'rap', program: null, decisions: [], contextText: '' });
+    if (!prep.ok) throw new Error(prep.reason);
+    const lines = prep.scaffold.files.find((f) => /_logic\.clas\.abap$/.test(f.path))!.content.split('\n');
+    const at = (name: string) => lines.findIndex((l) => new RegExp(`^\\s*DATA ${name} `, 'i').test(l));
+    for (const [name, ancestor] of [['go_domain', 'zcx_domain_error'], ['go_refused', 'cx_static_check']] as const) {
+      const i = at(name);
+      expect(i, name).toBeGreaterThan(0);
+      expect(lines[i]).toMatch(new RegExp(`TYPE REF TO ${ancestor}\\.`, 'i'));
+      expect(lines[i - 1]).toContain(`names its global ancestor ${ancestor}`);
+      expect(lines[i - 1]).not.toContain('the class that carries it');
+    }
   });
 });
 
@@ -321,13 +368,23 @@ test.describe('HF-d: no text asserts an absence the engine did not check', () =>
     expect(facts.ownApproval).toEqual([]);
     const approval = capabilityPresence(facts).approval;
     expect(approval.determined).toBe(true);
-    expect(approval.absent).toBe('No SAP workflow or release function is called; its own code approves or overrides nothing.');
+    expect(approval.absent).toBe('No SAP workflow or release function is called; its code names no approval or override.');
     expect(absentClaims('The manager approves each exception.', facts).map((c) => c.capability)).toEqual(['approval']);
     // Facts stored before 3.0.22 never read the program's own code for it: their sentence stops at the calls.
     const { ownApproval: _unread, ...stored } = facts;
     void _unread;
     expect(capabilityPresence(stored).approval.absent).toBe('No SAP workflow or release function is called.');
     for (const s of Object.values(capabilityPresence(facts))) expect(s.absent).not.toMatch(/no approval, release or override workflow/);
+  });
+
+  test('an approval by a state code the scan does not know is never denied: the sentence says what was not found', () => {
+    // Approves with `'Y'`: no APPROV/OVERRID name, no 'RELEASED' value, no SAP workflow call.
+    const stateCode = ['REPORT zccio_state_code.', 'PARAMETERS p_ok TYPE c LENGTH 1.', 'DATA gv_status TYPE c LENGTH 1.', 'START-OF-SELECTION.', "  IF p_ok = 'X'.", "    gv_status = 'Y'.", '  ENDIF.', '  WRITE / gv_status.'].join('\n');
+    const facts = capabilityFactsOf(stateCode, buildProcessSkeleton(stateCode));
+    expect(facts.ownApproval).toEqual([]);
+    const absent = capabilityPresence(facts).approval.absent;
+    expect(absent).not.toMatch(/approves or overrides nothing|approves nothing|no approval logic/);
+    expect(absent).toMatch(/its code names no approval or override/);
   });
 
   test('a program that approves in its own code is not called "read-only"; one that does not still is', () => {
@@ -337,6 +394,44 @@ test.describe('HF-d: no text asserts an absence the engine did not check', () =>
     expect(approving.lines.map((l) => l.text).join(' ')).toContain('It does not post or change data in SAP');
     const plain = programSummary(programSummaryFactsOf(plainShape));
     expect(plain.lines.find((l) => l.key === 'purpose')!.text).toMatch(/^A read-only report/);
+  });
+
+  test('a role the program checks in its own code is never called "no authorization"', () => {
+    // Owner example A's shape: a role from its own grant table, refused with 'NOT_AUTHORIZED' — no AUTHORITY-CHECK.
+    const roleShape = [
+      'REPORT zccio_role_shape.',
+      'PARAMETERS p_role TYPE string.',
+      'DATA gv_ok TYPE abap_bool.',
+      'START-OF-SELECTION.',
+      '  PERFORM require_role USING p_role CHANGING gv_ok.',
+      '  IF gv_ok = abap_false.',
+      "    MESSAGE 'NOT_AUTHORIZED' TYPE 'E'.",
+      '  ENDIF.',
+      '  WRITE / gv_ok.',
+      'FORM require_role USING iv_role TYPE string CHANGING cv_ok TYPE abap_bool.',
+      "  cv_ok = xsdbool( iv_role = 'APPROVER' ).",
+      'ENDFORM.',
+    ].join('\n');
+    expect(ownAuthorizationIn(roleShape).map((o) => `${o.name}@${o.line}`)).toEqual(['REQUIRE_ROLE@5', 'NOT_AUTHORIZED@7']);
+    expect(capabilityFactsOf(roleShape, buildProcessSkeleton(roleShape)).ownAuthorization?.length).toBe(2);
+    const own = buildProcessDocument({ source: roleShape, map: mapOf(roleShape) }).purpose.users;
+    expect(own.text).toBe('No SAP authorization object is checked; its own code names an authorization or a role it checks.');
+    expect(own.text).not.toMatch(/checks no authorization/);
+    // A program with neither says only what was read.
+    const none = buildProcessDocument({ source: plainShape, map: mapOf(plainShape) }).purpose.users;
+    expect(none.text).toBe('No AUTHORITY-CHECK and no role check in the code.');
+    // An AUTHORITY-CHECK whose object is named at run time is still a check — never "no AUTHORITY-CHECK".
+    const dynamicShape = [
+      'REPORT zccio_dynamic_check.',
+      "DATA gv_object TYPE xuobject VALUE 'M_BEST_WRK'.",
+      'START-OF-SELECTION.',
+      "  AUTHORITY-CHECK OBJECT gv_object ID 'ACTVT' FIELD '03'.",
+      '  WRITE / sy-subrc.',
+    ].join('\n');
+    const dynamic = buildProcessDocument({ source: dynamicShape, map: mapOf(dynamicShape) }).purpose.users;
+    expect(dynamic.text).not.toMatch(/^No AUTHORITY-CHECK/);
+    // AUTHORITY-CHECK is the SAP object check, read elsewhere — not an own check; a comment is no check.
+    expect(ownAuthorizationIn(["  AUTHORITY-CHECK OBJECT 'M_BEST_WRK' ID 'ACTVT' FIELD '03'.", '* require_role is planned'])).toEqual([]);
   });
 
   test('an empty section says only what the engine reads: never "holds no control" or "calls nothing by name"', () => {

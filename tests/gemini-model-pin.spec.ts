@@ -104,7 +104,7 @@ test('the deploy-time escape hatch cannot run an unreviewed model', async () => 
 });
 
 test("a request for the product default runs on the deployment's product model", () => {
-  const replacement = 'gemini-3.5-flash';
+  const replacement = 'gemini-3.6-flash';
   expect(replacement).not.toBe(PRODUCT_GEMINI_MODEL);
   // What every product stage sends, and what an older caller omits.
   expect(resolveRequestedModel(PRODUCT_GEMINI_MODEL, replacement)).toBe(replacement);

@@ -248,7 +248,9 @@ test.describe('the handover reads what is on record', () => {
     expect(needed.find((n) => n.key === 'decision')!.stage).toBe('management');
 
     const facets = handoverFacets(fresh, phases, chain, state);
-    expect(facets.map((f) => f.value)).toEqual(['Not handed over', 'Available', 'Pending', 'No tests']);
+    expect(facets.map((f) => f.value)).toEqual(['Not handed over', 'Available', 'Awaiting sign-off', 'No tests']);
+    // 3.0.23: the target is named the design target, never "decision" beside the unconfirmed Decision below.
+    expect(facets.map((f) => f.label)).toEqual(['Handover', 'Audit pack', 'Design target', 'Quality']);
     expect(facets[0].sub).toBe(`${needed.length} things a handover still needs`);
     expect(handoverStatusLine(fresh, chain).map((s) => `${s.label} ${s.value}`)).toEqual([
       'Run signed', 'Decision not confirmed', 'Receipts none', 'Engine v2.20.0 · no model',

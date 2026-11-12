@@ -5,27 +5,32 @@
     "gemini-3.8-flash": {
       "httpStatus": 200,
       "answered": true,
-      "checkedAt": "2026-09-24"
+      "servedBy": "gemini-3.8-flash",
+      "checkedAt": "2026-11-12"
     },
-    "gemini-3.5-flash": {
+    "gemini-3.6-flash": {
       "httpStatus": 200,
       "answered": true,
-      "checkedAt": "2026-09-24"
+      "servedBy": "gemini-3.6-flash",
+      "checkedAt": "2026-11-12"
     },
-    "gemini-2.5-flash": {
+    "gemini-4-hydrogen": {
       "httpStatus": 200,
       "answered": true,
-      "checkedAt": "2026-09-24"
+      "servedBy": "gemini-4-hydrogen",
+      "checkedAt": "2026-11-12"
     },
     "gemini-3-flash-preview": {
       "httpStatus": 200,
       "answered": true,
-      "checkedAt": "2026-09-24"
+      "servedBy": "gemini-3-flash-preview",
+      "checkedAt": "2026-11-12"
     },
     "gemini-3.5-flash-lite": {
       "httpStatus": 200,
       "answered": true,
-      "checkedAt": "2026-09-24"
+      "servedBy": "gemini-3.5-flash-lite",
+      "checkedAt": "2026-11-12"
     }
   }
 }

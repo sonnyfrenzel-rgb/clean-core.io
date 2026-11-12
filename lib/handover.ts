@@ -1080,11 +1080,14 @@ export function handoverFacets(
   const storedRoute = str(project.extensibilityRoute);
   const route = storedRoute ? routeLabel(storedRoute) : storedRoute;
   const designPhase = phase('design');
+  // 3.0.23: the design target, named as such. "Decision" is the keep/rebuild/retire decision of the status line beside
+  // it (`handoverStatusLine`); a signed-off target is never shown as a confirmed decision next to an unconfirmed one.
+  // The words are the Design phase's ("target signed off", "Awaiting sign-off"). The key stays for the page's wiring.
   const decisionFacet: HandoverFacet = target
-    ? { key: 'decision', label: 'Architecture decision', value: 'Confirmed', sub: `${target}${str(project.approvedBy) ? ` · by ${project.approvedBy}` : ''}`, provenance: 'confirmed', basis: 'The signed-in account’s sign-off — a self-declaration, not an organisational mandate.' }
+    ? { key: 'decision', label: 'Design target', value: 'Signed off', sub: `${target}${str(project.approvedBy) ? ` · by ${project.approvedBy}` : ''}`, provenance: 'confirmed', basis: 'The signed-in account’s sign-off of the target architecture in Design — a self-declaration, not an organisational mandate, and not the keep, rebuild or retire decision.' }
     : designPhase.state === 'empty'
-      ? { key: 'decision', label: 'Architecture decision', value: 'Not drafted', sub: route ? `${route} recommended · no design yet` : 'No design yet', provenance: 'not-determined', basis: 'No solution design is on record.' }
-      : { key: 'decision', label: 'Architecture decision', value: 'Pending', sub: `${route ?? 'Target'} · sign-off not recorded`, provenance: 'proposed', basis: 'A design is drafted; nobody has confirmed the target architecture.' };
+      ? { key: 'decision', label: 'Design target', value: 'Not drafted', sub: route ? `${route} recommended · no design yet` : 'No design yet', provenance: 'not-determined', basis: 'No solution design is on record.' }
+      : { key: 'decision', label: 'Design target', value: 'Awaiting sign-off', sub: `${route ?? 'Target'} · sign-off not recorded`, provenance: 'proposed', basis: 'A design is drafted; nobody has signed off the target architecture.' };
 
   const ev = testEvidence(project);
   const tests = chain.find((l) => l.key === 'tests')!;

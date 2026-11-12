@@ -28,16 +28,19 @@
  * `scripts/sync-sap-architecture-center.ts` writes; the spec fails the day the
  * two disagree, so a moved, retitled or archived RA is reviewed, not missed.
  *
- * **Only current RAs (owner decision 10.10.2026).** On 09.10.2026 SAP archived
- * 18 RAs (tag `archive`, shown on the page as "This content has been archived …
- * should not be relied on as current guidance"), among them every RA that fitted
+ * **Only current RAs (owner decision 10.10.2026).** An archived RA (tag
+ * `archive`, shown on the page as "This content has been archived … should not be
+ * relied on as current guidance") is never named here: where only archived ones
+ * fit, the binding is `none` with a reason that is true today. The synced metadata
+ * keeps the archive state, and the spec fails the day a binding points at an
+ * archived RA. On 09.10.2026 SAP archived 18 RAs, among them every RA that fitted
  * `cap`, `integration`, `xsuaa`, `iamRoles` and `destination` (RA0007, RA0018,
- * RA0019, RA0021, RA0022). An archived RA is never named here: where only
- * archived ones fitted, the binding is `none` and says so (`ARCHIVED_ONLY`). The
- * synced metadata keeps the archive state, and the spec fails the day a binding
- * points at an archived RA. The sync of 17.10.2026 found the delivery pattern
- * archived too (RA0023, CI/CD on SAP BTP), so delivery says none as well
- * (`ARCHIVED_DELIVERY`).
+ * RA0019, RA0021, RA0022) and the delivery pattern (RA0023, found by the sync of
+ * 17.10.2026). On 27.10.2026 SAP restored RA0019, RA0021, RA0022, RA0023 and
+ * RA0025 (sync of 09.11.2026); owner decision 12.11.2026 applies the same rule to
+ * that state, so their bindings are named again. RA0007 and RA0018 are still
+ * archived and stay unnamed; `cap` names the current patterns that cover it in
+ * part (RA0023, RA0021 — owner decision 12.11.2026).
  *
  * Wording is fixed: "SAP reference pattern for the target". Never "approved",
  * "certified", "validated" or "compliant" — the text guard in the spec fails on
@@ -49,13 +52,13 @@ import type { CloudServiceKey } from '@/lib/cloud-service-key';
 export { CLOUD_SERVICE_KEYS, type CloudServiceKey } from '@/lib/cloud-service-key';
 
 /** The day every binding and every RA's metadata below was checked against the repository. */
-export const VERIFIED_AT = '2026-10-17';
+export const VERIFIED_AT = '2026-11-12';
 
 /** The repository, branch and commit the bindings were checked against. */
 export const ARCHITECTURE_CENTER_SOURCE = {
   repository: 'https://github.com/SAP/architecture-center',
   branch: 'dev',
-  commit: '341f32d0e1dc19ec128395fe536eb2dd7298e1c3',
+  commit: '7e0f9af938a89ee2cbf4aac12aa77d78bf644e22',
   license: 'Apache-2.0',
 } as const;
 
@@ -68,7 +71,7 @@ export const REFERENCE_LINE_LEAD = 'SAP-documented pattern for this target';
 export const ARCHITECTURE_CENTER_BASE = 'https://architecture.learning.sap.com/docs/ref-arch/';
 
 /** The RAs this mapping names. Only these — never one that is not in the synced metadata. */
-export type SapRaId = 'RA0001';
+export type SapRaId = 'RA0001' | 'RA0019' | 'RA0021' | 'RA0022' | 'RA0023';
 
 export interface SapReferenceArchitecture {
   id: SapRaId;
@@ -83,6 +86,10 @@ export interface SapReferenceArchitecture {
 
 export const SAP_REFERENCE_ARCHITECTURES: Readonly<Record<SapRaId, SapReferenceArchitecture>> = Object.freeze({
   RA0001: { id: 'RA0001', slug: '196eba', title: 'Designing Event-Driven Applications on SAP BTP', lastUpdate: '2025-10-10', archived: false },
+  RA0019: { id: 'RA0019', slug: '89ab6b', title: 'SAP IAM integration with SAP Cloud Identity Services', lastUpdate: '2026-10-27', archived: false },
+  RA0021: { id: 'RA0021', slug: '6501d5', title: 'App2App Integration with SAP Integration Suite', lastUpdate: '2026-10-28', archived: false },
+  RA0022: { id: 'RA0022', slug: '5f90af', title: 'API Managed Integration with SAP Integration Suite', lastUpdate: '2026-10-26', archived: false },
+  RA0023: { id: 'RA0023', slug: 'b51e91', title: 'DevOps on SAP BTP with CI/CD and SAP Build', lastUpdate: '2026-10-28', archived: false },
 });
 
 export type ReferenceFit = 'direct' | 'partial' | 'none';
@@ -100,22 +107,23 @@ export interface ReferenceBinding {
 const bind = (ra: SapRaId | null, fit: ReferenceFit, why: string): ReferenceBinding =>
   Object.freeze({ ra, fit, why, verifiedAt: VERIFIED_AT });
 
-/**
- * Where the only RAs that fitted were archived by SAP — said openly, never
- * replaced by an archived link or by a weaker current one.
- */
-export const ARCHIVED_ONLY =
-  'No current SAP reference pattern — the ones that fitted were archived by SAP on 09.10.2026.';
-
 const NO_IN_APP_PATTERN =
   'The Architecture Center does not cover in-app ABAP Cloud, RAP, released APIs or Level A–D; SAP’s Cloudification Repository is the source for this path.';
 
 /** Target architecture → RA. Every code has an entry; `none` is said, not left out. */
 export const REFERENCE_OF_TARGET: Readonly<Record<TargetArchitectureCode, readonly ReferenceBinding[]>> = Object.freeze({
   rap: [bind(null, 'none', NO_IN_APP_PATTERN)],
-  // Were RA0007 / RA0018 (partial) and RA0022 / RA0021 (direct) until SAP archived them on 09.10.2026.
-  cap: [bind(null, 'none', ARCHIVED_ONLY)],
-  integration: [bind(null, 'none', ARCHIVED_ONLY)],
+  // Were RA0007 / RA0018 (partial) until SAP archived them on 09.10.2026; both are still archived and not named.
+  // Owner decision 12.11.2026: CAP is SAP's standard for side-by-side extensions, so the current patterns that cover
+  // it in part are named as partial, each for the part it covers.
+  cap: [
+    bind('RA0023', 'partial', 'Names building applications with the Cloud Application Programming (CAP) model on Cloud Foundry, with CI/CD through SAP Continuous Integration and Delivery, transport through SAP Cloud Transport Management and operation in SAP Cloud ALM — the lifecycle of the extension, not its design.'),
+    bind('RA0021', 'partial', 'Connects an application to SAP S/4HANA through Cloud Integration and, for Cloud2OnPremise, the Connectivity service with a cloud connector and the Destination service — the integration side of a side-by-side extension, not the extension itself.'),
+  ],
+  integration: [
+    bind('RA0022', 'direct', 'APIs exposed as governed API proxies through API Management in SAP Integration Suite, with Cloud Integration for mediation beyond it and the Connectivity and Destination services for on-premise back ends.'),
+    bind('RA0021', 'direct', 'Transactional messages between applications through Cloud Integration in SAP Integration Suite, Cloud2Cloud and Cloud2OnPremise, with SAP AIF for monitoring on SAP S/4HANA or SAP ECC.'),
+  ],
   event: [
     bind('RA0001', 'direct', 'Decoupling through SAP Event Mesh and advanced event mesh; its one passage on ABAP names RAP for custom and derived events.'),
   ],
@@ -130,14 +138,20 @@ const IN_APP_BLOCK =
 
 /** Building block → RA. */
 export const REFERENCE_OF_SERVICE: Readonly<Record<CloudServiceKey, readonly ReferenceBinding[]>> = Object.freeze({
-  // Were RA0019 (direct) and RA0021 / RA0022 (partial) until SAP archived them on 09.10.2026.
-  xsuaa: [bind(null, 'none', ARCHIVED_ONLY)],
-  destination: [bind(null, 'none', ARCHIVED_ONLY)],
+  xsuaa: [
+    bind('RA0019', 'direct', 'SAP Cloud Identity Services authenticates the users of SAP cloud applications or federates to the corporate identity provider, and the role collections of XS UAA-based SAP BTP applications are replicated into the Identity Directory and assigned there.'),
+  ],
+  destination: [
+    bind('RA0021', 'partial', 'Names the SAP Connectivity service with a cloud connector and the SAP Destination service for Cloud2OnPremise connections, as one step of App2App integration.'),
+    bind('RA0022', 'partial', 'Names the SAP Connectivity service with a cloud connector and the SAP Destination service for Cloud2OnPremise connections, as one step of API-managed integration.'),
+  ],
   eventmesh: [bind('RA0001', 'direct', 'Event-driven decoupling with SAP Event Mesh and advanced event mesh is the subject of the pattern.')],
   postgresql: [bind(null, 'none', 'No Architecture Center pattern covers a PostgreSQL database of an extension.')],
   hanaCloud: [bind(null, 'none', 'No Architecture Center pattern covers an extension’s own HDI container on SAP HANA Cloud.')],
   cdsView: [bind(null, 'none', IN_APP_BLOCK)],
-  iamRoles: [bind(null, 'none', ARCHIVED_ONLY)],
+  iamRoles: [
+    bind('RA0019', 'partial', 'Covers publishing SAP S/4HANA roles into the Identity Directory and assigning them to users centrally; the roles, their business catalogs and IAM apps stay in the system, which the pattern leaves domain-specific.'),
+  ],
   luwManager: [bind(null, 'none', IN_APP_BLOCK)],
   badi: [bind(null, 'none', IN_APP_BLOCK)],
   rapService: [bind(null, 'none', IN_APP_BLOCK)],
@@ -147,25 +161,25 @@ export const REFERENCE_OF_SERVICE: Readonly<Record<CloudServiceKey, readonly Ref
 /**
  * An RFC call among the route drivers. No RA describes replacing an RFC call
  * (RA0001 mentions BAPI/RFC interfaces only as what SAP AIF handles on older
- * releases); the nearest one, RA0022 (partial), was archived by SAP on
- * 09.10.2026, so there is none. Not shown yet — the driver → RA marker is the
- * optional rest after 3.0.
+ * releases), so the nearest one, RA0022, is named only as `partial` (roadmap
+ * 3.0.9). It was `none` while SAP had RA0022 archived (09.10.–27.10.2026). Not
+ * shown yet — the driver → RA marker is the optional rest after 3.0.
  */
-export const RFC_DRIVER_REFERENCE: ReferenceBinding = bind(null, 'none', ARCHIVED_ONLY);
+export const RFC_DRIVER_REFERENCE: ReferenceBinding = bind(
+  'RA0022',
+  'partial',
+  'No Architecture Center pattern names RFC; the nearest is an on-premise back end reached through the cloud connector and exposed as a governed API through API Management in SAP Integration Suite.',
+);
 
 /**
  * The delivery pattern of a target that ships a BTP application — the
  * "Reference patterns" section of the handover README. `rap` has none: its
  * path is the ABAP transport path.
  */
-export const ARCHIVED_DELIVERY =
-  'No current SAP delivery pattern — the one that fitted (CI/CD, transport and lifecycle on SAP BTP) was archived by SAP, found on 17.10.2026.';
-
 export const DELIVERY_REFERENCE_OF_TARGET: Readonly<Partial<Record<TargetArchitectureCode, ReferenceBinding>>> = Object.freeze({
-  // Were RA0023 (direct) until SAP archived it (found by the sync of 17.10.2026).
-  cap: bind(null, 'none', ARCHIVED_DELIVERY),
-  integration: bind(null, 'none', ARCHIVED_DELIVERY),
-  event: bind(null, 'none', ARCHIVED_DELIVERY),
+  cap: bind('RA0023', 'direct', 'CI/CD pipeline templates for a side-by-side CAP extension on SAP BTP, transport through SAP Cloud Transport Management and operation in SAP Cloud ALM.'),
+  integration: bind('RA0023', 'direct', 'CI/CD, transport and lifecycle on SAP BTP, with its own steps for integration flows and API artifacts of SAP Integration Suite.'),
+  event: bind('RA0023', 'direct', 'CI/CD, transport and lifecycle of an application on SAP BTP, Cloud Foundry environment.'),
 });
 
 /** `rap`'s delivery line: SAP documents no BTP pattern for it, and the reader is told what applies instead. */
@@ -223,8 +237,8 @@ export function referenceAnswer(code: TargetArchitectureCode): ReferenceAnswer {
 
 /**
  * The one line of the Business and Management views:
- * "SAP-documented pattern for this target: yes · partly · none", the RA IDs it
- * rests on and, where it is `none` because SAP archived what fitted, that it did.
+ * "SAP-documented pattern for this target: yes · partly · none" and the RA IDs it
+ * rests on. The reasons stand in the handover README, not in this line.
  */
 export function referencePatternLine(code: TargetArchitectureCode): {
   answer: ReferenceAnswer;
@@ -236,9 +250,7 @@ export function referencePatternLine(code: TargetArchitectureCode): {
   const ras = best
     ? REFERENCE_OF_TARGET[code].filter((b) => b.fit === best && b.ra !== null).map((b) => b.ra as SapRaId)
     : [];
-  // A `none` because SAP archived what fitted says so — openly, in the line itself.
-  const archivedOnly = answer === 'none' && REFERENCE_OF_TARGET[code].some((b) => b.why === ARCHIVED_ONLY);
-  const text = `${REFERENCE_LINE_LEAD}: ${answer}${archivedOnly ? ' — the ones that fitted were archived by SAP on 09.10.2026' : ''}.`;
+  const text = `${REFERENCE_LINE_LEAD}: ${answer}.`;
   return { answer, text, ras };
 }
 

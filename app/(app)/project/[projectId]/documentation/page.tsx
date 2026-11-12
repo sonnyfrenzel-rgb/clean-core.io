@@ -17,6 +17,7 @@ import { callGemini } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import type { Project } from '@/lib/types';
 import {
+  authorizationBasisOf,
   readStoredDocumentation,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
@@ -674,6 +675,9 @@ export default function DocumentationPage() {
     () => (parsedBusinessDoc && raciEdit ? layerWithRaciEdit(parsedBusinessDoc, raciEdit) : parsedBusinessDoc),
     [parsedBusinessDoc, raciEdit],
   );
+  /** What the roles block of the handbook says (3.0.23): the RACI on record where one is, and the code's own reading. */
+  const handbookRaciRoles = useMemo(() => (businessLayer ? rolesOfLayer(businessLayer) : []), [businessLayer]);
+  const handbookAuthorization = useMemo(() => (engineDoc ? authorizationBasisOf(engineDoc) : null), [engineDoc]);
   const saveRaci = useCallback(async (draft: RaciDraft): Promise<string | null> => {
     if (!projectIdStr || !layerSha) return 'There is no SOP and RACI proposal on record to edit.';
     const { saveRaciEdit } = await import('@/lib/raci-edit-client');
@@ -1871,6 +1875,9 @@ export default function DocumentationPage() {
           selected={resolved.node}
           onSelect={selectElement}
           source={signedSource?.source ?? null}
+          raciRoles={handbookRaciRoles}
+          raciEdited={raciEdit !== null}
+          authorization={handbookAuthorization}
           map={signedSource && processMap.model ? (
             <div data-process-map-section="">
               <ProcessMap

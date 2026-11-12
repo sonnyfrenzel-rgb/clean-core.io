@@ -33,7 +33,7 @@ import ProjectNoAccess from '@/components/ProjectNoAccess';
  * reacting to it here as well would race that navigation with a second one.
  *
  * The account, though, is followed for as long as the page is open (hotfix
- * 3.0.22, QA fa3278f7dc9b / 39d71e5eec25): Firebase shares the session across
+ * 3.0.22): Firebase shares the session across
  * tabs, so a sign-in as another account in a second tab switched this tab to
  * that account while it went on showing the first account's project and source.
  * Now every page underneath is mounted per account (`key={account}`) — a switch

@@ -1,9 +1,9 @@
 /**
  * The delivery package, checked against its signed run — 3.0.21, acceptance test T08.
  *
- * The privacy notice and the trust page say that checking an exported artefact
- * against its signed run with the offline verifier shows whether it comes from
- * that run and which model took part. The delivery package is not signed — it
+ * The privacy notice says that the offline verifier establishes whether the
+ * files of a delivery package are unchanged against the package's manifest,
+ * and which model took part. The delivery package is not signed — it
  * is assembled in the browser from what the project stores — so the check is
  * the chain that exists, link by link, and says which link it stands on:
  *
@@ -21,6 +21,14 @@
  *      the pack's run, its source digest is the one the pack signed in
  *      `01-input-fingerprint.json`, and where both name the analysis
  *      narrative's model they name the same one.
+ *
+ * The best verdict is `names-signed-run`, and it says no more than was checked:
+ * the package is consistent with its own manifest, and that manifest names the
+ * run and the source the authentic pack signed. The audit pack's signature does
+ * not cover the package's files or its manifest — the pack is built on the
+ * server from the run, the package in the browser from the project later — so
+ * nothing here shows that the files themselves come from that run, and the
+ * verdict never says they do.
  *
  * Which model took part comes from two places, said apart: the narrative's
  * model from the audit pack's signed `aiGeneration`, and the package's own
@@ -107,7 +115,7 @@ export interface DeliveryCheck {
   models: DeliveryModelRow[];
   /** The comparison with a signed run, or null when none was given. */
   against: { packAuthentic: boolean; runMatches: boolean; sourceMatches: boolean; narrativeMatches: boolean | null } | null;
-  verdict: 'from-signed-run' | 'consistent' | 'failed';
+  verdict: 'names-signed-run' | 'consistent' | 'failed';
   problems: string[];
 }
 
@@ -278,7 +286,7 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
   const verdict: DeliveryCheck['verdict'] = !contentsOk || !markingsOk || (against !== null && !runOk && against.packAuthentic)
     ? 'failed'
     : against && against.packAuthentic && runOk
-      ? 'from-signed-run'
+      ? 'names-signed-run'
       : 'consistent';
   return {
     isDeliveryPackage: true, version, files: rows.length, missing, altered, unlisted, duplicates, headerMismatch, sourceMismatch,
@@ -289,8 +297,8 @@ export async function checkDeliveryPackage(data: Blob | Uint8Array | ArrayBuffer
 /** The verdict in one sentence — what the page shows and the command-line verifier prints. */
 export function deliveryVerdictHeadline(c: Pick<DeliveryCheck, 'verdict' | 'isDeliveryPackage'>): string {
   if (!c.isDeliveryPackage) return 'Not a Clean-Core.io delivery package.';
-  if (c.verdict === 'from-signed-run') {
-    return 'The package comes from the signed run: every file is the file its manifest lists, and the manifest names the run and the source the audit pack signed. The package itself is not signed.';
+  if (c.verdict === 'names-signed-run') {
+    return "The package matches its own manifest, and the manifest names the run and the source the audit pack signed. The package itself is not signed: the audit pack's signature does not cover its files, so this does not show that they come from that run.";
   }
   if (c.verdict === 'consistent') return 'The package matches its own manifest; it has not been checked against a signed audit pack.';
   return 'The package does not match its manifest or the signed run.';
