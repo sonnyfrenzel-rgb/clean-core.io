@@ -27,7 +27,7 @@ import { ADMIN_SIGNUP_MAIL_KIND } from '../lib/admin-signup-email';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const ENV = { PSEUDONYM_PEPPER: 'spec-pseudonym-pepper-0123456789abcdef' };
+const ENV = { PSEUDONYM_PEPPER: 'test-pseudonym-pepper-0123456789abcdef' };
 const DELETE = Symbol('delete');
 
 type Row = Record<string, unknown>;

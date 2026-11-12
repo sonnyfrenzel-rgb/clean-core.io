@@ -23,7 +23,7 @@ import { retainProofsOfErasedAccount, type ProofLogDb } from '../lib/proof-log-e
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-const ENV = { PSEUDONYM_PEPPER: 'spec-pseudonym-pepper-0123456789abcdef' };
+const ENV = { PSEUDONYM_PEPPER: 'test-pseudonym-pepper-0123456789abcdef' };
 const DEL = Symbol('delete');
 
 /** Apply an update the way Firestore does, with `DEL` as `FieldValue.delete()`. */

@@ -27,3 +27,35 @@ test('the verify page names the verdict and the signature through these helpers'
   expect(page).toContain('signatureBadge(signatureStateOf(result))');
   expect(page).not.toContain("? 'Integrity Verified (Unsigned)'");
 });
+
+// 3.0.22: a check still running when another pack is chosen must not land under the new pack.
+// Every state write after an await in the two handlers asks whether its selection is still the current one.
+test('a pack or package check that finishes after a newer selection is dropped', () => {
+  const page = readFileSync('app/(app)/verify-pack/page.tsx', 'utf8').replace(/\r\n/g, '\n');
+  const body = (start: string, end: string) => {
+    const from = page.indexOf(start);
+    const to = page.indexOf(end, from);
+    expect(from, start).toBeGreaterThan(-1);
+    expect(to, end).toBeGreaterThan(from);
+    return page.slice(from, to);
+  };
+  const pack = body('const handleFile = useCallback(', '\n  }, []);');
+  const pkg = body('const handlePackage = useCallback(', '\n  }, [packFile, result]);');
+
+  // Choosing a pack invalidates every package check still running.
+  expect(pack).toMatch(/const selection = \+\+packSelection\.current;/);
+  expect(pack).toContain('packageCheck.current++;');
+  // After the verifier answers, the result is kept only for the pack still selected.
+  const afterAwait = pack.slice(pack.indexOf('await verifyAuditPack(file)'));
+  const guardedResultWrites = afterAwait.split('\n').filter((l) => /\bsetResult\(/.test(l)).length;
+  expect(guardedResultWrites).toBe(2);
+  expect(afterAwait.match(/if \(selection !== packSelection\.current\) return;/g)?.length).toBe(2);
+  expect(afterAwait).toContain('if (selection === packSelection.current) setVerifying(false);');
+
+  // A package check writes its outcome only while it is still the latest check.
+  expect(pkg).toMatch(/const check = \+\+packageCheck\.current;/);
+  const pkgAfterAwait = pkg.slice(pkg.indexOf('await '));
+  const writes = pkgAfterAwait.split('\n').filter((l) => /\bset(?:Delivery|CheckingDelivery)\(/.test(l));
+  expect(writes.length).toBe(3);
+  for (const line of writes) expect(line, line.trim()).toMatch(/^\s*if \(current\(\)\) set(?:Delivery|CheckingDelivery)\(/);
+});
