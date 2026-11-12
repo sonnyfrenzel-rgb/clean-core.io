@@ -15,6 +15,11 @@ A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findin
 - **A model call the generation lease refuses no longer costs the community key's daily budget.** The budget counts
   a call before the lease checks it; a call the lease then refuses never reaches the provider and is now given back
   to the day it was counted on, also when the lease check itself fails.
+- **The delivery-package verdict says only what was checked.** Checked against an authentic audit pack, a delivery
+  package is reported as matching its own manifest, which names the run and source digest the pack signed — no
+  longer as coming from the signed run, because the pack's signature does not cover the package's files. The
+  offline verifier exits 2 for it (consistent but not signed), the verify page shows it as a warning, and the
+  archive name is printed with control characters escaped.
 
 ## [v3.0.22] — 2026-11-12
 
