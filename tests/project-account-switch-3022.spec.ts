@@ -53,15 +53,21 @@ test('a sign-in as another account in a second tab leaves nothing of the first a
   await page.goto(`/project/${PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('body')).toContainText(PROJECT_NAME, { timeout: 60000 });
 
-  // The second tab of the same browser signs in as B over A's session — the
-  // sign-in dialog the landing page opens for `?auth=signin`.
+  // The second tab of the same browser: A signs out from the account menu
+  // (a signed-in visitor is sent on from the landing page, so there is no
+  // signing in over a session), then B signs in.
   const second = await context.newPage();
-  await second.goto('/?auth=signin', { waitUntil: 'domcontentloaded' });
-  await second.waitForSelector('input[type="email"]', { timeout: 60000 });
-  await second.fill('input[type="email"]', EMAIL_B);
-  await second.fill('input[type="password"]', SIGN_IN);
-  await second.click('button[type="submit"]:has-text("Sign In")');
-  await second.waitForTimeout(3500);
+  await second.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await second.locator('[data-account-menu]').click({ timeout: 60000 });
+  await second.getByRole('menuitem', { name: 'Sign Out' }).click();
+  await second.getByRole('button', { name: 'Sign out now' }).click();
+  await second.waitForURL((url) => url.pathname === '/', { timeout: 60000 });
+
+  // Between the two accounts the first tab shows nothing of the project.
+  await expect(page.locator('body')).not.toContainText(PROJECT_NAME, { timeout: 30000 });
+  await expect(page.locator('body')).not.toContainText(MARKER);
+
+  await signInViaLanding(second, EMAIL_B, SIGN_IN, { pauseMs: 3500 });
 
   // The first tab follows: A's project and source are gone, B is told it has no access.
   await expect(page.locator('[data-project-gate="no-access"], [data-project-gate="signed-out"]')).toBeVisible({ timeout: 60000 });
