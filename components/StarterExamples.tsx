@@ -403,15 +403,15 @@ export default function StarterExamples({
         data-testid="starter-examples"
         data-starter-examples-variant="home"
         aria-labelledby="home-examples-title"
-        className="flex min-w-0 flex-1 flex-col gap-3.5"
+        className="flex min-w-0 flex-1 flex-col gap-3"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="home-examples-title" className="m-0 text-[16px] font-bold tracking-[-0.01em] text-cc-ink">
+          <h3 id="home-examples-title" className="cc-text-h2 m-0 text-cc-ink">
             {wt('home.exampleTitle')}
           </h3>
           <span
             data-home-cost="examples"
-            className="inline-flex items-center rounded-full border border-cc-success-border bg-cc-success-bg px-2.5 py-px text-[12px] leading-[18px] font-semibold whitespace-nowrap text-cc-success"
+            className="inline-flex items-center rounded-full border border-cc-success-border bg-cc-success-bg px-2 py-px text-[12px] leading-[18px] font-semibold whitespace-nowrap text-cc-success"
           >
             {wt('home.exampleCost')}
           </span>
@@ -445,7 +445,7 @@ export default function StarterExamples({
         <div
           data-example-card={rec.name}
           data-examples-tier="start-here"
-          className="flex flex-col items-start gap-2 rounded-cc-card border border-cc-line px-4 py-3.5"
+          className="flex flex-col items-start gap-2 rounded-cc-card border border-cc-line px-4 py-3"
         >
           <div className="flex flex-wrap items-center gap-2">
             <span data-testid="starter-example-name" className="font-cc-mono text-[13px] font-bold text-cc-ink">
@@ -505,9 +505,9 @@ export default function StarterExamples({
                     aria-busy={busy === item.key || undefined}
                     aria-label={`Start ${item.example.name}`}
                     data-example-start={item.example.name}
-                    className="grid min-h-[34px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-x-2.5 gap-y-1 px-0.5 py-1.5 text-left text-[12px] font-medium text-cc-ink-muted hover:bg-cc-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus disabled:cursor-not-allowed pointer-coarse:min-h-11 min-[1101px]:grid-cols-[minmax(0,auto)_auto_minmax(0,1fr)_14px]"
+                    className="group grid min-h-[34px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-x-2 gap-y-1 px-1 py-2 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus disabled:cursor-not-allowed pointer-coarse:min-h-11 min-[1101px]:grid-cols-[minmax(0,auto)_auto_minmax(0,1fr)_14px]"
                   >
-                    <span data-testid="starter-example-name" className="truncate font-cc-mono font-semibold text-cc-ink">
+                    <span data-testid="starter-example-name" className="truncate font-cc-mono font-semibold text-cc-ink underline-offset-[3px] group-hover:underline">
                       {item.example.name}
                     </span>
                     <span data-example-lines={item.example.lines} className="inline-flex items-center gap-2 whitespace-nowrap tabular-nums">

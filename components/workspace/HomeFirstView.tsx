@@ -80,7 +80,7 @@ export default function HomeFirstView({
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 pt-5 pb-10 min-[601px]:px-6 min-[1101px]:px-8 min-[1101px]:pt-7">
         <div data-home-intro="" className="max-[600px]:order-0">
           <p className="m-0 text-[13px] font-semibold text-cc-ink-muted">{homeWelcome(profile?.firstName)}</p>
-          <h1 className="mt-1.5 mb-0 text-[24px] leading-[1.15] font-extrabold tracking-[-0.03em] text-cc-ink min-[601px]:text-[30px]">
+          <h1 className="cc-text-title mt-2 mb-0 text-cc-ink">
             {wt('home.title')}
           </h1>
           <p className="mt-2 mb-0 max-w-[760px] text-[14px] leading-[1.6] font-medium text-cc-ink-muted min-[601px]:text-[15px]">
@@ -100,7 +100,7 @@ export default function HomeFirstView({
           <h2 id="home-start-title" className="sr-only">
             {wt('home.startTitle')}
           </h2>
-          <div data-home-way="example" className="flex min-w-0 flex-col p-4 min-[601px]:px-6 min-[601px]:py-[22px]">
+          <div data-home-way="example" className="flex min-w-0 flex-col p-4 min-[601px]:px-6 min-[601px]:py-5">
             <StarterExamples
               userId={userId}
               account={profile}
@@ -127,7 +127,7 @@ function DemoLine() {
   return (
     <div
       data-home-demo=""
-      className="flex flex-wrap items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted px-4 py-3.5 min-[601px]:flex-nowrap"
+      className="flex flex-wrap items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted px-4 py-3 min-[601px]:flex-nowrap"
     >
       <span
         aria-hidden={true}
@@ -175,18 +175,18 @@ function OwnProgramWay({ profile, slice }: { profile: UserProfile | null; slice:
   return (
     <div
       data-home-way="own"
-      className="flex min-w-0 flex-col gap-3.5 border-t border-cc-line p-4 min-[601px]:px-6 min-[601px]:py-[22px] min-[768px]:border-t-0 min-[768px]:border-l"
+      className="flex min-w-0 flex-col gap-3 border-t border-cc-line p-4 min-[601px]:px-6 min-[601px]:py-5 min-[768px]:border-t-0 min-[768px]:border-l"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="m-0 text-[16px] font-bold tracking-[-0.01em] text-cc-ink">{wt('home.ownTitle')}</h3>
+        <h3 className="cc-text-h2 m-0 text-cc-ink">{wt('home.ownTitle')}</h3>
         <span
           data-home-cost="own"
-          className="inline-flex items-center rounded-full border border-cc-neutral-border bg-cc-neutral-bg px-2.5 py-px text-[12px] leading-[18px] font-semibold whitespace-nowrap text-cc-ink-muted"
+          className="inline-flex items-center rounded-full border border-cc-neutral-border bg-cc-neutral-bg px-2 py-px text-[12px] leading-[18px] font-semibold whitespace-nowrap text-cc-ink-muted"
         >
           {homeOwnCost(limit, runsAreSelfFunded(profile))}
         </span>
       </div>
-      <p data-home-own-line="" className="-mt-1.5 mb-0 text-[13px] font-medium text-cc-ink-muted">
+      <p data-home-own-line="" className="-mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">
         {spent ? quotaSpentSentence(limit) : homeOwnLine(runsLeftLabel(profile))}
       </p>
       {spent ? (
@@ -211,7 +211,7 @@ function OwnProgramWay({ profile, slice }: { profile: UserProfile | null; slice:
           go(e.dataTransfer.files);
         }}
         className={
-          'flex flex-col items-stretch gap-3.5 rounded-cc-card border-[1.5px] border-dashed p-4 min-[601px]:p-[18px] ' +
+          'flex flex-col items-stretch gap-3 rounded-cc-card border-[1.5px] border-dashed p-4 min-[601px]:p-5 ' +
           (dragging ? 'border-cc-information bg-cc-information-bg' : 'border-cc-field-border bg-cc-surface-muted')
         }
       >
@@ -227,7 +227,7 @@ function OwnProgramWay({ profile, slice }: { profile: UserProfile | null; slice:
               <span className="max-[600px]:hidden">{wt('home.dropWide')}</span>
               <span className="min-[601px]:hidden">{wt('home.dropTouch')}</span>
             </div>
-            <div className="mt-0.5 text-[13px] font-medium text-cc-ink-muted">{wt('home.dropTypes')}</div>
+            <div className="mt-1 text-[13px] font-medium text-cc-ink-muted">{wt('home.dropTypes')}</div>
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-1 min-[601px]:flex-row min-[601px]:flex-wrap min-[601px]:items-center min-[601px]:gap-3">
@@ -270,7 +270,7 @@ function OwnProgramWay({ profile, slice }: { profile: UserProfile | null; slice:
           <p className="m-0 text-[12px] leading-normal font-medium text-cc-ink-muted">
             <b className="font-semibold text-cc-ink">{wt('home.whatYouGet')}</b> {homeSliceLead(slice.objectName)}
           </p>
-          <div className="w-full max-w-[340px] rounded-cc-card border border-cc-line bg-cc-surface px-1.5 pt-2">
+          <div className="w-full max-w-[340px] rounded-cc-card border border-cc-line bg-cc-surface px-2 pt-2">
             <MapSlice
               xml={slice.xml}
               elements={slice.elements}

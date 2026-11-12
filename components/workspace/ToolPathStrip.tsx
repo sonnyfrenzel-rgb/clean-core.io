@@ -25,21 +25,21 @@ export default function ToolPathStrip() {
         {wt('home.pathTitle')}
       </h2>
       <div>
-        <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.08em] text-cc-ink uppercase">{wt('home.pathComplete')}</span>
+        <span className="mb-2 block text-[11px] font-semibold tracking-[0.08em] text-cc-ink uppercase">{wt('home.pathComplete')}</span>
         <div
           data-home-path-step={first.key}
-          className="flex min-w-0 items-start gap-2 rounded-cc-card border-[1.5px] border-cc-ink bg-cc-surface px-3.5 py-3 min-[1101px]:h-[calc(100%-22px)]"
+          className="flex min-w-0 items-start gap-2 rounded-cc-card border-[1.5px] border-cc-ink bg-cc-surface px-3 py-3 min-[1101px]:h-[calc(100%-24px)]"
         >
           <StepNumber n={first.n} on />
           <div className="min-w-0">
             <b className="block text-[13px] leading-snug font-bold text-cc-ink">{first.label}</b>
-            <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">{wt(`home.path.${first.key}`)}</span>
+            <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{wt(`home.path.${first.key}`)}</span>
           </div>
         </div>
       </div>
       <div>
-        <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('home.pathOptional')}</span>
-        <ol className="m-0 grid list-none grid-cols-2 gap-y-3 rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted px-1.5 py-3 min-[601px]:grid-cols-3 min-[1101px]:grid-cols-6 min-[1101px]:gap-y-0">
+        <span className="mb-2 block text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('home.pathOptional')}</span>
+        <ol className="m-0 grid list-none grid-cols-2 gap-y-3 rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted px-2 py-3 min-[601px]:grid-cols-3 min-[1101px]:grid-cols-6 min-[1101px]:gap-y-0">
           {rest.map((phase, i) => (
             <li
               key={phase.key}
@@ -55,7 +55,7 @@ export default function ToolPathStrip() {
               <StepNumber n={phase.n} />
               <div className="min-w-0">
                 <b className="block text-[13px] leading-snug font-bold text-cc-ink">{phase.label}</b>
-                <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">{wt(`home.path.${phase.key}`)}</span>
+                <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{wt(`home.path.${phase.key}`)}</span>
               </div>
             </li>
           ))}

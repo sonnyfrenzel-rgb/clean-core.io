@@ -47,7 +47,7 @@ export default function NamingStatusLine({ arrival }: { arrival: MapNameArrival 
         {status.sub ? <span className="text-[12px] text-cc-ink-muted">{status.sub}</span> : null}
       </div>
       {arrival.shown.size > 0 ? (
-        <p data-naming-legend="" className="m-0 flex items-center gap-1.5 text-[12px] font-medium text-cc-ink-muted">
+        <p data-naming-legend="" className="m-0 flex items-center gap-2 text-[12px] font-medium text-cc-ink-muted">
           <PenLine size={14} aria-hidden={true} className="shrink-0 text-cc-warning" />
           {wt('mapNaming.legend')}
         </p>
