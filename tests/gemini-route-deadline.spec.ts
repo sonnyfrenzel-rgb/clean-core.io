@@ -188,6 +188,23 @@ test.describe('the Gemini route ends a call the provider never answers', () => {
     expect(probeCalls(), 'the provider was asked for a call without a stage').toBe(before);
   });
 
+  test('a model under evaluation named by the client is refused before the provider is asked', async () => {
+    test.setTimeout(60_000);
+    delete process.env[GEMINI_TEST_STUB_DEFAULT_ENV];
+    delete process.env.GEMINI_MODEL;
+    process.env.GEMINI_API_KEY = 'test-key-not-used-by-the-stand-in';
+    const idToken = await signedInAccount('evaluation-model');
+    const before = probeCalls();
+    const res = await route.POST(new NextRequestCtor('http://localhost/api/gemini', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Say hello.', stage: 'analyze', model: 'gemini-4-hydrogen' }),
+    }));
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error?: string }).error).toContain('"gemini-4-hydrogen" is not permitted');
+    expect(probeCalls(), 'the provider was asked for a model the deployment does not run').toBe(before);
+  });
+
   // Last in this file: the breaker it opens is remembered by the route module.
   test('SEC-01: the platform key\'s daily budget, once spent, refuses before the provider is asked', async () => {
     test.setTimeout(60_000);
