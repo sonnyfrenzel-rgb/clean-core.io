@@ -87,6 +87,8 @@ export interface HandbookStageProps {
   raciRoles?: readonly string[];
   /** How the code limits who may act (`authorizationBasisOf` of the document); null while it is not built. */
   authorization?: AuthorizationBasis | null;
+  /** True when a person's edit of the RACI applies (`raciEditApplies`). */
+  raciEdited?: boolean;
 }
 
 export default function HandbookStage({
@@ -99,6 +101,7 @@ export default function HandbookStage({
   source,
   raciRoles = [],
   authorization = null,
+  raciEdited = false,
 }: HandbookStageProps) {
   const byId = useMemo(() => new Map((model?.elements ?? []).map((e) => [e.id, e])), [model]);
   const chapters = handbook?.chapters ?? [];
@@ -159,7 +162,7 @@ export default function HandbookStage({
         onSelect={onSelect}
         source={source}
         fileName={model?.fileName ?? ''}
-        rolesNote={handbookRolesNote({ namingState: model?.naming.state ?? 'not-named', raciRoles, authorization })}
+        rolesNote={handbookRolesNote({ namingState: model?.naming.state ?? 'not-named', raciRoles, authorization, raciEdited })}
       />
     </section>
   );
@@ -281,9 +284,16 @@ function DataBlock({ chapter }: { chapter: HandbookChapter }) {
 }
 
 function Roles({ chapter, note }: { chapter: HandbookChapter; note: { text: string; raci: boolean } }) {
+  const raciLink = note.raci ? (
+    <a href={`#${DOCUMENTATION_PROPOSALS_ID}`} data-handbook-raci-link="" className="text-cc-ink underline underline-offset-2">
+      Read the RACI
+    </a>
+  ) : null;
+  // The chapter's proposed roles are the model's draft; the RACI note speaks for itself (it may be edited).
+  const proposed = chapter.proposedRoles.length > 0;
   return (
-    <Block label="Roles · AI-generated draft only">
-      {chapter.proposedRoles.length > 0 ? (
+    <Block label={proposed || !note.raci ? 'Roles · AI-generated draft only' : 'Roles'}>
+      {proposed ? (
         <div className="flex flex-wrap items-center gap-2">
           {chapter.proposedRoles.map((role) => (
             <span key={role} className="inline-flex items-center gap-1 cc-text-cell text-cc-ink">
@@ -292,18 +302,12 @@ function Roles({ chapter, note }: { chapter: HandbookChapter; note: { text: stri
             </span>
           ))}
           <CcProvenanceChip value="proposed" />
+          {raciLink}
         </div>
       ) : (
         <p className="m-0 cc-text-meta text-cc-ink-muted">
           {note.text}
-          {note.raci ? (
-            <>
-              {' '}
-              <a href={`#${DOCUMENTATION_PROPOSALS_ID}`} data-handbook-raci-link="" className="text-cc-ink underline underline-offset-2">
-                Read the RACI
-              </a>
-            </>
-          ) : null}
+          {raciLink ? <>{' '}{raciLink}</> : null}
         </p>
       )}
     </Block>

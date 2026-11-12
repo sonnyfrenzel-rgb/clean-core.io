@@ -1871,6 +1871,7 @@ export default function DocumentationPage() {
           onSelect={selectElement}
           source={signedSource?.source ?? null}
           raciRoles={handbookRaciRoles}
+          raciEdited={raciEdit !== null}
           authorization={handbookAuthorization}
           map={signedSource && processMap.model ? (
             <div data-process-map-section="">

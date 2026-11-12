@@ -389,13 +389,16 @@ export function handbookRolesNote(input: {
   raciRoles: readonly string[];
   /** The reading of the document; null while it is not built. */
   authorization: AuthorizationBasis | null;
+  /** True when a person's edit of the RACI applies: it is then no longer only the model's draft. */
+  raciEdited?: boolean;
 }): { text: string; raci: boolean } {
   if (input.raciRoles.length > 0) {
     const shown = input.raciRoles.slice(0, 6).join(', ');
     const more = input.raciRoles.length > 6 ? ` and ${input.raciRoles.length - 6} more` : '';
     const n = input.raciRoles.length;
+    const source = input.raciEdited ? 'The edited RACI on record' : 'The AI-generated SOP and RACI draft';
     return {
-      text: `The AI-generated SOP and RACI draft names ${n === 1 ? '1 role' : `${n} roles`} for the whole process: ${shown}${more}. It does not assign them to the lines of this chapter.`,
+      text: `${source} names ${n === 1 ? '1 role' : `${n} roles`} for the whole process: ${shown}${more}. It does not assign them to the lines of this chapter.`,
       raci: true,
     };
   }

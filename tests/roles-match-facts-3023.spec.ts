@@ -130,6 +130,19 @@ test.describe('the handbook\'s roles block (3.0.23 d)', () => {
     expect(note.text).toContain('Planner, Reviewer');
   });
 
+  test('an edited RACI is not called the AI-generated draft, and the block is not labelled a draft for it', () => {
+    const note = handbookRolesNote({ namingState: 'not-named', raciRoles: ['Planner'], authorization: { kind: 'none' }, raciEdited: true });
+    expect(note.text).toMatch(/^The edited RACI on record names 1 role/);
+    expect(note.text).not.toMatch(/AI-generated/);
+    const stage = fs.readFileSync(path.join(__dirname, '..', 'components', 'documentation', 'HandbookStage.tsx'), 'utf8');
+    expect(stage).toContain("label={proposed || !note.raci ? 'Roles · AI-generated draft only' : 'Roles'}");
+    // The chapter's own proposed roles and the RACI link appear together.
+    const proposedBranch = stage.slice(stage.indexOf('{proposed ? ('), stage.indexOf(') : (', stage.indexOf('{proposed ? (')));
+    expect(proposedBranch).toContain('{raciLink}');
+    const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
+    expect(page).toContain('raciEdited={raciEdit !== null}');
+  });
+
   test('without a RACI it says what the code shows, not a fixed "names authorizations"', () => {
     const own = handbookRolesNote({ namingState: 'not-named', raciRoles: [], authorization: authorizationBasisOf(docOf(OWN_CHECK)) });
     expect(own.text).toMatch(/^No AI-generated draft for roles exists for this run\. /);

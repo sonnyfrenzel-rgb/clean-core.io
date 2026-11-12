@@ -127,6 +127,21 @@ test.describe('one status per fill unit (3.0.23 c)', () => {
     expect(modelFilledFiles(pkg.files).has(prep.fillUnits.find((u) => u.unitId === target.unitId)!.function.file)).toBe(true);
   });
 
+  test('the model\'s comment of an empty body is text in TRACE.md, never a link or HTML', async () => {
+    const prep = prepared(fixture('co-shape'));
+    const result = await generate(prep);
+    const target = result.units.find((u) => u.unitId !== result.units[0].unitId && Object.keys(u.predicates).length === 0) ?? result.units[1];
+    const said = 'see [here](https://example.test) <img src=x onerror=y> *now*';
+    const units = result.units.map((u) => (u.unitId === target.unitId ? { ...u, body: `// ${said}` } : u));
+    const pkg = assembleEngineLed(prep, { ...result, units }, { checks: [], budget: 48 });
+    const md = traceMd(pkg.files);
+    // Nothing the model wrote reaches the Markdown unescaped.
+    expect(md).not.toMatch(/(^|[^\\])\[here\\?\]\(/m);
+    expect(md).not.toMatch(/(^|[^\\])<img/m);
+    expect(md).not.toMatch(/(^|[^\\])\*now/m);
+    expect(md).toContain('see \\[here\\](https://example.test) \\<img src=x onerror=y\\> \\*now\\*');
+  });
+
   test('emptyBodyComment: comments and blank lines are no statement, on both routes', () => {
     expect(emptyBodyComment('// Demo runner routine: omitted', 'node')).toBe('Demo runner routine: omitted');
     expect(emptyBodyComment('/* nothing\n * to do */\n', 'node')).toBe('nothing to do');

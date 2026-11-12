@@ -23,8 +23,8 @@ A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findin
 - **One status per function in Transformation.** STATUS.md, TRACE.md and the page decide each function's status
   once: a function whose body was written but whose guard predicate was not is "written, a check still fails"
   everywhere, and the counts agree.
-- **A function the model left without a statement is "left empty by the model".** Its comment is shown; it is no
-  longer counted as written or traced as model-written.
+- **A function the model left without a statement is "left empty by the model".** Its comment is shown as plain text;
+  it is no longer counted as written or traced as model-written.
 - **The rule line adds up.** The Business view's line counts rules, not questions ("5 questions for the business
   cover 16 rules · 4 technical rules stay as coded · 21 not determined"), so it matches the business-rule count
   beside it.
@@ -39,7 +39,8 @@ A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findin
   AUTHORITY-CHECK and no role check in the code") in the delivery package, on screen and in the description's
   question. The stored document is unchanged.
 - **The handbook's roles block names the RACI when there is one.** It no longer says "No AI-generated draft for
-  roles exists" beside a RACI the SOP and RACI step wrote; without a RACI it says what the code shows.
+  roles exists" beside a RACI the SOP and RACI step wrote, and a RACI a person edited is not called the AI-generated draft;
+  without a RACI it says what the code shows.
 
 ## [v3.0.22] — 2026-11-12
 

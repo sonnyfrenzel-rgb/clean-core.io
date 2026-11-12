@@ -185,6 +185,8 @@ const FILLED_WORD: Record<FilledBy, string> = {
 };
 
 const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+/** Model-written text shown as text: Markdown and HTML syntax escaped, one line, pipes escaped. */
+export const inertText = (s: string) => cell(s.replace(/[\\`*_[\]<>#!~&]/g, (c) => `\\${c}`));
 
 /** TRACE.md — the "How this code was built" table STATUS.md links to (§12.1). */
 export function traceMarkdown(trace: Trace): string {
@@ -271,7 +273,7 @@ export function traceMarkdown(trace: Trace): string {
     if (g.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
     for (const n of g.notRun) lines.push(`- Not run (${n.kind}): ${n.reason}`);
     for (const n of g.notWritten) lines.push(`- Not written: ${n.unitId} — ${n.reason}`);
-    for (const n of g.empty ?? []) lines.push(`- Left empty by the model (no statement): ${n.unitId}${n.comment ? ` — its comment: ${n.comment}` : ''}`);
+    for (const n of g.empty ?? []) lines.push(`- Left empty by the model (no statement): ${n.unitId}${n.comment ? ` — its comment: ${inertText(n.comment)}` : ''}`);
     for (const f of g.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
   }
   lines.push('');
@@ -279,7 +281,7 @@ export function traceMarkdown(trace: Trace): string {
   lines.push('|---|---|---|---|---|---|');
   for (const u of trace.units) {
     const rules = u.rules.map((r) => `${r.id} (${r.decision})`).join(', ') || '—';
-    lines.push(`| ${u.unitId} | \`${cell(u.fn)}\` (${cell(u.file)}) | ${rangeWords(u.abap) || '—'} | ${cell(rules)} | ${u.guards.join(', ') || '—'} | ${FILLED_WORD[u.filledBy]}${u.note ? ` — ${cell(u.note)}` : ''} |`);
+    lines.push(`| ${u.unitId} | \`${cell(u.fn)}\` (${cell(u.file)}) | ${rangeWords(u.abap) || '—'} | ${cell(rules)} | ${u.guards.join(', ') || '—'} | ${FILLED_WORD[u.filledBy]}${u.note ? ` — ${inertText(u.note)}` : ''} |`);
   }
   lines.push('');
   return lines.join('\n');
