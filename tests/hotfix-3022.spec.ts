@@ -151,6 +151,44 @@ test.describe('HF-a: the frame of an object-oriented program names only types th
     expect(broken.detail).toMatch(/not activatable/);
     expect(step(project(false)).state).toBe('done');
   });
+
+  // A local exception class may inherit from the customer's or a namespace's global exception class, not only SAP's
+  // CX_ ones; a reference to it names that ancestor, and the comment above it says so.
+  const EXCEPTION_SHAPE = OO_SHAPE.replace(
+    'INTERFACE lif_items.',
+    [
+      'CLASS lcx_domain DEFINITION INHERITING FROM zcx_domain_error FINAL.',
+      'ENDCLASS.',
+      'CLASS lcx_domain IMPLEMENTATION.',
+      'ENDCLASS.',
+      'CLASS lcx_ns DEFINITION INHERITING FROM /abc/cx_base FINAL.',
+      'ENDCLASS.',
+      'CLASS lcx_ns IMPLEMENTATION.',
+      'ENDCLASS.',
+      'DATA go_domain TYPE REF TO lcx_domain.',
+      'DATA go_refused TYPE REF TO lcx_refused.',
+      'INTERFACE lif_items.',
+    ].join('\n'),
+  );
+
+  test('a local exception class over a customer or namespace exception maps to that ancestor, and the frame says so', () => {
+    const types = localObjectTypes(readEngineFacts(EXCEPTION_SHAPE).statements);
+    expect(types.get('lcx_domain')).toBe('zcx_domain_error');
+    expect(types.get('lcx_ns')).toBe('/abc/cx_base');
+    expect(types.get('lcx_refused')).toBe('cx_static_check');
+    expect(types.get('lcl_service')).toBeNull();
+    const prep = prepareEngineLed({ source: EXCEPTION_SHAPE, track: 'rap', program: null, decisions: [], contextText: '' });
+    if (!prep.ok) throw new Error(prep.reason);
+    const lines = prep.scaffold.files.find((f) => /_logic\.clas\.abap$/.test(f.path))!.content.split('\n');
+    const at = (name: string) => lines.findIndex((l) => new RegExp(`^\\s*DATA ${name} `, 'i').test(l));
+    for (const [name, ancestor] of [['go_domain', 'zcx_domain_error'], ['go_refused', 'cx_static_check']] as const) {
+      const i = at(name);
+      expect(i, name).toBeGreaterThan(0);
+      expect(lines[i]).toMatch(new RegExp(`TYPE REF TO ${ancestor}\\.`, 'i'));
+      expect(lines[i - 1]).toContain(`names its global ancestor ${ancestor}`);
+      expect(lines[i - 1]).not.toContain('the class that carries it');
+    }
+  });
 });
 
 test.describe('HF-b: a unit over the cap with its rules by title and no context still travels, compacted', () => {
@@ -321,13 +359,23 @@ test.describe('HF-d: no text asserts an absence the engine did not check', () =>
     expect(facts.ownApproval).toEqual([]);
     const approval = capabilityPresence(facts).approval;
     expect(approval.determined).toBe(true);
-    expect(approval.absent).toBe('No SAP workflow or release function is called; its own code approves or overrides nothing.');
+    expect(approval.absent).toBe('No SAP workflow or release function is called; its code names no approval or override.');
     expect(absentClaims('The manager approves each exception.', facts).map((c) => c.capability)).toEqual(['approval']);
     // Facts stored before 3.0.22 never read the program's own code for it: their sentence stops at the calls.
     const { ownApproval: _unread, ...stored } = facts;
     void _unread;
     expect(capabilityPresence(stored).approval.absent).toBe('No SAP workflow or release function is called.');
     for (const s of Object.values(capabilityPresence(facts))) expect(s.absent).not.toMatch(/no approval, release or override workflow/);
+  });
+
+  test('an approval by a state code the scan does not know is never denied: the sentence says what was not found', () => {
+    // Approves with `'Y'`: no APPROV/OVERRID name, no 'RELEASED' value, no SAP workflow call.
+    const stateCode = ['REPORT zccio_state_code.', 'PARAMETERS p_ok TYPE c LENGTH 1.', 'DATA gv_status TYPE c LENGTH 1.', 'START-OF-SELECTION.', "  IF p_ok = 'X'.", "    gv_status = 'Y'.", '  ENDIF.', '  WRITE / gv_status.'].join('\n');
+    const facts = capabilityFactsOf(stateCode, buildProcessSkeleton(stateCode));
+    expect(facts.ownApproval).toEqual([]);
+    const absent = capabilityPresence(facts).approval.absent;
+    expect(absent).not.toMatch(/approves or overrides nothing|approves nothing|no approval logic/);
+    expect(absent).toMatch(/its code names no approval or override/);
   });
 
   test('a program that approves in its own code is not called "read-only"; one that does not still is', () => {

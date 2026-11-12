@@ -453,7 +453,7 @@ function readClassDefinitions(statements: readonly AbapStatement[], containers: 
 /**
  * The classes and interfaces the program declares itself (hotfix 3.0.22), lower case, each with what a reference to it
  * becomes in the one generated class: `null` for "that class itself" (an interface, or a class whose methods are now
- * the class's methods), or the nearest global ancestor of a local exception class (`cx_static_check`), since an
+ * the class's methods), or the nearest global ancestor of a local exception class (`cx_static_check`, `zcx_…`), since an
  * exception is not merged into the logic class. `DEFERRED` and `LOAD` forward declarations do not declare a type.
  */
 export function localObjectTypes(statements: readonly Pick<AbapStatement, 'keyword' | 'text'>[]): Map<string, string | null> {
@@ -474,8 +474,9 @@ export function localObjectTypes(statements: readonly Pick<AbapStatement, 'keywo
   for (const name of parentOf.keys()) {
     let p = parentOf.get(name) ?? null;
     for (let depth = 0; p && parentOf.has(p) && depth < 16; depth++) p = parentOf.get(p) ?? null;
-    // A local exception class: its first ancestor the program does not declare (a global CX class).
-    out.set(name, p && /^cx_/i.test(p) ? p : null);
+    // A local exception class: its first ancestor the program does not declare — a global exception class, SAP's
+    // (`cx_static_check`), the customer's (`zcx_domain_error`, `ycx_…`) or a namespace's (`/abc/cx_…`).
+    out.set(name, p && /^(?:\/[\w]+\/|[yz])?cx_/i.test(p) ? p : null);
   }
   return out;
 }
