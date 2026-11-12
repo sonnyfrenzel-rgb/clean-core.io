@@ -85,8 +85,6 @@ const KNOWN_DASH: Readonly<Record<(typeof SCOPE)[number], readonly string[]>> = 
   shell: [
     'autoSteps.onClickNote',
     'page.metaNoRun',
-    'hub.nothingOpen',
-    'hub.viewManagementGets',
     'search.placeholder',
     'tools.mark.startedHint',
     'tools.mark.staleHint',
