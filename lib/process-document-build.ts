@@ -21,7 +21,7 @@ import { capabilityFactsOf, ownAuthorizationIn } from '@/lib/documentation-facts
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary, withoutCodes } from '@/lib/program-summary-text';
 import { checkPurposeProposal } from '@/lib/program-summary-check';
-import { NOT_DETERMINED_LABEL, commitWaitWords, rangeWords, stepEvidence, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
+import { NOT_DETERMINED_LABEL, commitWaitWords, notDeterminedOf, rangeWords, stepEvidence, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
 import { isEventTag, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { buildNavigation } from '@/lib/process-navigation';
 import { readingOrder, readingPath, type PathItem } from '@/lib/process-documentation-path';
@@ -1267,7 +1267,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     'Strategic goal': { question: 'Why does the business need this process, and is it still needed in this form?' },
   };
   let gapNo = 0;
-  for (const gap of engine.notDetermined) {
+  for (const gap of notDeterminedOf(engine)) {
     const entry = gapQuestion[gap.subject];
     if (entry?.skip) continue;
     gapNo += 1;
