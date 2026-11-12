@@ -718,7 +718,7 @@ dates do not hold. Until it ships, Business shows two charts.*
 
 ##### AB-14a — v3.1.0 · The first view for a new account (mockup v2.1) · S–M
 
-- **Status (12.11.2026):** built on branch `night/ab14` (ADR-111): `HomeFirstView`, `ToolPathStrip`, the `home`
+- **Status (12.11.2026):** built on branch `night/ab14` (ADR-110): `HomeFirstView`, `ToolPathStrip`, the `home`
   variant of `StarterExamples`, the slice (`lib/bpmn/slice.ts`, `lib/home-map-slice.ts`,
   `components/process-map/MapSlice.tsx`), the own-code handoff with a paste field (`lib/home-start-handoff.ts`).
   Rendered specs written, to be run on the production build; [look] at the six viewports still open. The portfolio

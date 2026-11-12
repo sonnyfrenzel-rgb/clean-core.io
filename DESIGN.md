@@ -241,7 +241,7 @@ Fiori app and never says so.
 | **Object page** | the workspace of a project | Header, toolbar, anchor bar, sections, footer only when editing (§2.3) |
 | **Overview** | Management view of a project | Cards with one answer each, every number with "Why?" |
 
-**An account without a project has no list yet** (ADR-111, home mockup v2.1 state 1, accepted 06.11.2026). "My
+**An account without a project has no list yet** (ADR-110, home mockup v2.1 state 1, accepted 06.11.2026). "My
 workspace" shows it a first view instead: the welcome, one heading and two sentences on what the product does; the
 seven tools in one quiet line (Analyze outlined as "A complete result on its own", the six after it dashed as
 "Optional, if you want to re-design it"; names and order from `lib/workflow-steps.ts`); and the start built in, with
