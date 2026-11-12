@@ -310,6 +310,11 @@ test.describe('the guided stage', () => {
     await high.fill('4');
     await expect(page.locator('[data-cost-option="rebuild"]')).toHaveAttribute('data-effort-provenance', 'stated');
     await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="stated"]')).toContainText('your figure');
+    // Every option's own field does the same: typing over Move to SAP standard's proposal makes it the reader's figure.
+    await page.click('[data-cost-option-edit="standard"]');
+    await page.locator('[data-cost-field="standard-oneoff-high-dev"]').fill('3');
+    await expect(page.locator('[data-cost-option="standard"]')).toHaveAttribute('data-effort-provenance', 'stated');
+    await expect(page.locator('[data-cost-option="standard"] [data-effort-chip="stated"]')).toContainText('your figure');
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
 
