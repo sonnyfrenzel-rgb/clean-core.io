@@ -7,9 +7,10 @@
  * reader coming from the Business view walks past the Analyze tool and never
  * sees what the engine found. The fix is an **addition, never a change of phase
  * state**: Analyze stays `done` in `lib/workflow-steps.ts`, "Next: Design"
- * stays the next step, and until the reader has opened Analyze once two places
- * say there is a result to read — a "Result ready" tag on the Analyze tool and
- * one line in the work area, with the figures of the signed run.
+ * stays the next step, and until the reader has opened Analyze once the Analyze
+ * tool carries a "Result ready" tag. (The line in the work area, with the
+ * figures of the signed run, retired with the workspace's Business view and its
+ * hub in v3.1.0, AB-2: a project opens on Analyze itself.)
  *
  * **Where the state lives.** In the browser and only in the browser, for the
  * reason the coach marks (ADR-036, `lib/coach-marks.ts`) and the first look's
@@ -26,7 +27,6 @@
  */
 
 import type { PhaseState } from './workflow-steps';
-import type { WorklistItem } from './types';
 
 export const ANALYSIS_READ_KEY = 'cc.workspace.analysis.read';
 
@@ -74,39 +74,6 @@ export function analysisKeyOfBase(base: string): string | null {
   } catch {
     return null;
   }
-}
-
-/** What the line in the work area may say — counted from the run's worklist, never estimated. */
-export interface AnalysisResult {
-  /** Findings as Analyze counts them, one per pattern and object; `null` when the run carries no worklist. */
-  findings: number | null;
-  /** Of those, the ones of high severity (Critical or High); `null` with `findings`. */
-  high: number | null;
-}
-
-/** The figures of a worklist: its findings (not the model's functional gaps) and the high ones. */
-export function resultOfWorklist(worklist: readonly WorklistItem[] | null | undefined): AnalysisResult {
-  if (!Array.isArray(worklist)) return { findings: null, high: null };
-  const findings = worklist.filter((item) => item.category === 'Finding');
-  return { findings: findings.length, high: findings.filter((item) => item.severity === 'High').length };
-}
-
-/**
- * Whether the analysis is a result waiting to be read, and its figures — or
- * `null` when there is nothing to point at.
- *
- * Only where Analyze is `done` by the phase contract: while it is empty,
- * partial or out of date Analyze is itself the next step and already named;
- * and only with a signed run, because "ready" is a claim about a run. This
- * reads the phase state and never writes one.
- */
-export function analysisReadyResult(input: {
-  analyzeState: PhaseState | null | undefined;
-  hasSignedRun: boolean;
-  worklist: readonly WorklistItem[] | null | undefined;
-}): AnalysisResult | null {
-  if (input.analyzeState !== 'done' || !input.hasSignedRun) return null;
-  return resultOfWorklist(input.worklist);
 }
 
 /**

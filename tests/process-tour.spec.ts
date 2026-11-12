@@ -312,9 +312,10 @@ test.describe('where it stands and what it writes', () => {
   });
 
   test('the demo gets the same tour, and calls no model', () => {
-    const shell = read('components/demo/DemoWorkspaceShell.tsx');
-    expect(shell.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
-    expect(shell.indexOf('<DemoWalkThrough')).toBeLessThan(shell.indexOf('{mapCard}'));
+    // The demo's Business view is its Analyze page since v3.1.0 (AB-2, O10).
+    const business = read('components/demo/DemoAnalyzeBusiness.tsx');
+    expect(business.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
+    expect(business.indexOf('<DemoWalkThrough')).toBeLessThan(business.indexOf('<ProcessMap'));
     const demo = read('components/demo/DemoWalkThrough.tsx');
     expect(demo).toContain('<ProcessTour ');
     expect(demo).toContain('demo={true}');

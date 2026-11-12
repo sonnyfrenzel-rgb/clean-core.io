@@ -2,7 +2,6 @@
 
 import { viewSwitchHash } from '@/lib/view-switch';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, RotateCcw } from 'lucide-react';
@@ -12,21 +11,10 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
-import FirstLook from '@/components/workspace/FirstLook';
 import OpenQuestions from '@/components/workspace/OpenQuestions';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
-import WorkspaceLayerBar from '@/components/workspace/LayerBar';
-import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { IT_LAYER_ELSEWHERE, IT_LAYERS, scrollToWhenThere } from '@/lib/it-sections';
 import { replaceHashInPlace } from '@/lib/layer-redirect';
-import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from '@/lib/rules-editor';
-import { plainWordingFor } from '@/lib/business-card';
-import { ELEMENT_STATES, type ElementState } from '@/lib/process-states';
-import DemoRulesCard from '@/components/demo/DemoRulesCard';
-import DemoWalkThrough from '@/components/demo/DemoWalkThrough';
-import BusinessNextStep from '@/components/workspace/BusinessNextStep';
-import { nextOpenPointOf } from '@/lib/next-step';
-import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
 import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
@@ -37,7 +25,6 @@ import { standardFit } from '@/lib/standard-fit';
 import { SteeringOnePagerToggle } from '@/components/workspace/SteeringOnePager';
 import { steeringOnePager } from '@/lib/steering-one-pager';
 import { processCounts } from '@/lib/process-map';
-import CcDisclosure from '@/components/cc/Disclosure';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import { managementExecutive, type ExecutiveTarget } from '@/lib/management-executive';
 import { managementOverview, type Loaded } from '@/lib/management-overview';
@@ -53,19 +40,17 @@ import {
   layerFromHash,
   notDetermined,
   viewFromParam,
-  workspaceLayers,
   workspaceStatusLine,
   type LayerKey,
   type WorkspaceView,
 } from '@/lib/workspace-model';
 import { managementAnswers } from '@/lib/management-answers';
-import { revealedRules, type SourceReading } from '@/lib/first-look';
 import { PHASES } from '@/lib/workflow-steps';
 import {
+  DEMO_ANALYZE_ROUTE,
   DEMO_INVITATION,
   DEMO_OBJECT_NAME,
   DEMO_RESET_LABEL,
-  DEMO_STORAGE_KEY,
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
@@ -82,17 +67,18 @@ import {
   type TourPlace,
 } from '@/lib/demo-tour';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
-import { catalogLookupTargetOf } from '@/lib/assessment-target';
-import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { routeLabel } from '@/lib/sap-naming';
-import AnalysisReady from '@/components/workspace/AnalysisReady';
 import { ResultReadyTag } from '@/components/workspace/ToolBar';
 import { useAnalysisRead } from '@/hooks/useAnalysisRead';
-import { DEMO_ANALYSIS_KEY, resultOfWorklist } from '@/lib/analysis-read';
+import { DEMO_ANALYSIS_KEY } from '@/lib/analysis-read';
 import {
-  demoAnalysisReady,
+  clearWorkspaceDemoState,
+  readWorkspaceDemoState,
+  writeWorkspaceDemoState,
+  type WorkspaceDemoState,
+} from '@/lib/demo-workspace-state';
+import {
   demoConfirmRoute,
-  demoRuleCount,
   demoStartingPoint,
   demoSubtitle,
   tourContinuesIn,
@@ -104,8 +90,11 @@ import {
  * The demo in the 3.0 workspace, with its tour — roadmap 3.0.7, `DESIGN.md` §6.1.2.
  *
  * **Same content, one view at a time.** Business, IT and Management are three
- * orderings of one demo (ADR-018), held in `?view=` and never stored. The layer
- * bar holds the layer in the URL fragment, as the workspace does. Every figure
+ * orderings of one demo (ADR-018), held in `?view=` and never stored. Since
+ * v3.1.0 the demo opens like a project (plan AB-2, O10): Business is the demo's
+ * Analyze page (`/demo/analyze`, `components/demo/DemoAnalyzeBusiness.tsx`), so
+ * this page sends a Business address there and draws IT and Management, as a
+ * project's workspace does until AB-9/AB-10. Every figure
  * on this screen arrives in `data`, built on the server by the engine of this
  * release (`lib/demo-workspace.ts`); this component adds none.
  *
@@ -117,80 +106,11 @@ import {
  * run, a pack, an export or a write (`tests/demo-project.spec.ts`). Where one of
  * them would stand, this file draws the demo's own card from the same data.
  *
- * **What the reader does stays in this browser** — the answers to the rules
- * (Keep, Change, Drop, Clarify, as in the product) and the confirmed route under the demo's key (shared with `/demo/{stage}`), the tour's
- * progress under its own (`lib/demo-tour.ts`). "Reset demo" clears the first.
+ * **What the reader does stays in this browser** — the confirmed route under
+ * the demo's key (shared with `/demo/{stage}` and the answers to the rules of
+ * `/demo/analyze`, `lib/demo-workspace-state.ts`), the tour's progress under its
+ * own (`lib/demo-tour.ts`). "Reset demo" clears the first.
  */
-
-const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
-
-/** The part of the demo's browser state this screen reads; every other field is kept as it is. */
-interface WorkspaceDemoState {
-  /** The answers to the rules, by rule id — the product's draft shape (`lib/rules-editor.ts`). */
-  ruleAnswers: RuleDraft;
-  targetConfirmed: boolean;
-}
-
-const isState = (x: unknown): x is ElementState => typeof x === 'string' && (ELEMENT_STATES as readonly string[]).includes(x);
-
-/** What this browser holds, read defensively — a stored value is never trusted to have the shape. */
-function ruleAnswersOf(raw: Record<string, unknown>): RuleDraft {
-  const out: RuleDraft = {};
-  const answers = raw.ruleAnswers;
-  if (answers && typeof answers === 'object' && !Array.isArray(answers)) {
-    for (const [id, value] of Object.entries(answers as Record<string, unknown>)) {
-      const v = value as Record<string, unknown> | null;
-      if (!v || !isState(v.state)) continue;
-      out[id] = {
-        state: v.state,
-        note: typeof v.note === 'string' ? v.note : '',
-        sourceKind: typeof v.sourceKind === 'string' ? (v.sourceKind as RuleDraft[string]['sourceKind']) : '',
-        sourceNote: typeof v.sourceNote === 'string' ? v.sourceNote : '',
-        appliesTo: Array.isArray(v.appliesTo) ? v.appliesTo.filter((x): x is string => typeof x === 'string') : [],
-      };
-    }
-  }
-  // Before 03.10.2026 the demo only offered "Confirm", which meant the rule is still needed: Keep.
-  if (Array.isArray(raw.confirmedRules)) {
-    for (const id of raw.confirmedRules) if (typeof id === 'string' && !out[id]) out[id] = { state: 'keep', note: '' };
-  }
-  return out;
-}
-
-function readDemoState(): Record<string, unknown> {
-  try {
-    const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
-  } catch {
-    return {};
-  }
-}
-
-function workspaceStateOf(raw: Record<string, unknown>): WorkspaceDemoState {
-  return {
-    ruleAnswers: ruleAnswersOf(raw),
-    targetConfirmed: raw.targetConfirmed === true,
-  };
-}
-
-function writeDemoState(patch: Partial<WorkspaceDemoState>): void {
-  try {
-    const { confirmedRules: _old, ...rest } = readDemoState();
-    void _old;
-    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ ...rest, ...patch }));
-  } catch {
-    /* A browser that refuses storage still runs the demo; it just forgets. */
-  }
-}
-
-function clearDemoState(): void {
-  try {
-    window.localStorage.removeItem(DEMO_STORAGE_KEY);
-  } catch {
-    /* Nothing to clear. */
-  }
-}
 
 /** A region the tour can stand in, with its slot directly above it. */
 function Place({
@@ -213,7 +133,7 @@ function Place({
 }
 
 export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }) {
-  const { demo, project, source, processMap, itFindings } = data;
+  const { demo, project, itFindings } = data;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { profile, loading: profileLoading } = useUserProfile();
@@ -227,8 +147,23 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   }, [profileLoading, enabled, router]);
 
   const view = viewFromParam(searchParams?.get('view'));
+  /**
+   * Business is the demo's Analyze page since v3.1.0 (AB-2, O10): a Business
+   * address — or one with no view — goes there, as `/project/<id>` does for a
+   * project. `replace`, so Back does not bounce into the redirect again.
+   */
+  const toAnalyze = view === 'business';
+  // Only once signed in: a visitor without an account is sent to sign in from
+  // this address first, and comes back here (`lib/return-path.ts`).
+  useEffect(() => {
+    if (enabled && toAnalyze) router.replace(DEMO_ANALYZE_ROUTE);
+  }, [enabled, toAnalyze, router]);
   const setView = useCallback(
     (next: WorkspaceView) => {
+      if (next === 'business') {
+        router.push(DEMO_ANALYZE_ROUTE);
+        return;
+      }
       const query = new URLSearchParams(searchParams?.toString() ?? '');
       query.set('view', next);
       // As in the workspace: the new view opens at its top and a place of the
@@ -253,10 +188,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   useEffect(() => {
     setHashLayer(layerFromHash(window.location.hash));
   }, [view]);
-  const selectLayer = useCallback((next: LayerKey) => {
-    window.location.hash = next;
-    setHashLayer(next);
-  }, []);
   /** Another view at a place in it — IT's links out and its redirects (ADR-086), as in the workspace. */
   const goTo = useCallback(
     (target: WorkspaceView, hash: string, replace: boolean) => {
@@ -316,12 +247,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     }),
     [goTo, demoEconomics],
   );
-  const layersOfModel = useMemo(() => workspaceLayers(project), [project]);
-  // The demo opens on Need & process, with the map (mockup 2.8 s15). The first
-  // layer with a count would be Architecture & dependencies — a list of FORM
-  // routines — because the demo has no usage import to count under Need, while
-  // its process map is the one thing it shows best.
-  const currentLayer: LayerKey = hashLayer ?? 'need';
   // The demo's own rail, not `workflowSteps` over a project-shaped object: the
   // demo has no run, no code and no tests on record by construction, and its
   // rail says what it does have on each stage (`lib/demo-project.ts`).
@@ -398,90 +323,22 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   );
 
   /* ------------------------------------------------------ the reader's state */
+  /** "Result ready" on the Analyze tool until this browser has opened the demo's Analyze (ADR-090's tag). */
+  const demoAnalysisRead = useAnalysisRead(DEMO_ANALYSIS_KEY);
   const [state, setState] = useState<WorkspaceDemoState>({ ruleAnswers: {}, targetConfirmed: false });
   const [hydrated, setHydrated] = useState(false);
-  /** The demo's rules card is answering (the product's "Decide on rules"). */
-  const [rulesEditing, setRulesEditing] = useState(false);
-  /**
-   * The next phase of the demo's own rail, by the product's rule (`nextOpenPointOf`).
-   * A demo can never sign a run, so Analyze can never be "done" here; the engine's
-   * reading stands in for it, and the step is the first phase after it — said so
-   * in the step's own selection line rather than claimed as on record.
-   */
-  /**
-   * The twin of the workspace's "Your analysis is ready" (ADR-090): the demo
-   * reads Analyze as done for its next step (above), so until this browser
-   * has opened `/demo/analyze` the Business view points back at it, with the
-   * figures of the worklist a run of the example would store.
-   */
-  const demoAnalysisRead = useAnalysisRead(DEMO_ANALYSIS_KEY);
-  const demoAnalysisLine = useMemo(() => {
-    const result = resultOfWorklist(demo.analyze.worklist);
-    return demoAnalysisReady(result.findings ?? 0, result.high ?? 0);
-  }, [demo.analyze.worklist]);
-  const demoNextPoint = useMemo(() => {
-    const rail = demo.rail.map((s) => (s.key === 'analyze' ? { ...s, state: 'done' as const, done: true } : s));
-    const point = nextOpenPointOf(rail, true);
-    return point ? { ...point, selection: wt('demo.nextAfterReading') } : null;
-  }, [demo.rail]);
   useEffect(() => {
-    setState(workspaceStateOf(readDemoState()));
+    setState(readWorkspaceDemoState());
     setHydrated(true);
   }, []);
   const patch = useCallback((next: Partial<WorkspaceDemoState>) => {
     setState((prev) => ({ ...prev, ...next }));
-    writeDemoState(next);
+    writeWorkspaceDemoState(next);
   }, []);
   const reset = useCallback(() => {
-    clearDemoState();
+    clearWorkspaceDemoState();
     setState({ ruleAnswers: {}, targetConfirmed: false });
-    setRulesEditing(false);
   }, []);
-
-  /* ---------------------------------------------------- the reading, the map */
-  const [reading, setReading] = useState<SourceReading | null>(null);
-  const onReading = useCallback((next: SourceReading) => setReading(next), []);
-  const rules = useMemo(() => (reading ? revealedRules(reading.ruleSet) : []), [reading]);
-  /** The same rules, worded as the product's rules card words them. */
-  const ruleRows = useMemo(
-    () => (reading ? editorRules(reading.ruleSet, plainWordingFor(source, reading.skeleton)) : []),
-    [reading, source],
-  );
-  /** "Decide on n rules" in the opening leads to the demo's own rules card, answering. */
-  const openDemoRules = useCallback(() => {
-    setRulesEditing(true);
-    document.getElementById('demo-rules')?.scrollIntoView({ block: 'start' });
-  }, []);
-  /** The demo's answers, kept in this browser, in the shape every rule action reads. */
-  const demoRulesStatus = useMemo<RulesStatus | null>(() => {
-    if (!reading) return null;
-    // A Clarify is an open question, as in the product (`rulesStatus`).
-    const answered = (id: string) => {
-      const s = state.ruleAnswers[id]?.state;
-      return !!s && isConfirmedState(s);
-    };
-    return {
-      total: rules.length,
-      confirmed: rules.filter((r) => answered(r.id)).length,
-      open: rules.filter((r) => !answered(r.id)).map((r) => r.id),
-      by: [],
-      lastAt: null,
-    };
-  }, [reading, rules, state.ruleAnswers]);
-  // Need & process holds the map and the rules here; the layer model counts
-  // usage imports under it, which a demo has none of, and would mark it "empty".
-  const layers = useMemo(
-    () =>
-      layersOfModel.map((l) =>
-        l.key === 'need'
-          ? { ...l, count: reading ? demoRuleCount(rules.length) : wt('demo.needLayerMap'), provenance: 'reconstructed' as const }
-          : l,
-      ),
-    [layersOfModel, reading, rules.length],
-  );
-  const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
-  const [plane, setPlane] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
 
   /* ------------------------------------------------------------------ tour */
   const tour = useDemoTour();
@@ -516,7 +373,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const cardInvites = tourInvitationShowing(tour.progress, view);
   const waiting = stationOf(tour.progress);
 
-  if (profileLoading || !enabled) {
+  if (profileLoading || !enabled || toAnalyze) {
     return (
       <div data-workspace-gate="loading" role="status" className="py-16">
         <span className="sr-only">{wt('demo.loading')}</span>
@@ -524,51 +381,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     );
   }
 
-
-  /* The process map is what Need & process holds in the demo. The layer
-     model's own Need section speaks of usage imports and would say the process
-     "is not here yet" beside a map of it, so under Need the demo shows the map
-     instead; any other layer shows its section, and Business keeps the map below. */
-  const mapCard = (
-    <CcCard title={wt('demo.processMap')} meta={<CcProvenanceChip value="reconstructed" />}>
-      <ProcessMap
-        model={processMap}
-        source={source}
-        catalogTarget={catalogLookupTargetOf(project)}
-        engineVersion={engineVersionOfProject(project)}
-        plane={plane}
-        onPlaneChange={setPlane}
-        selected={selected}
-        onSelectedChange={setSelected}
-        exportable={false}
-      />
-    </CcCard>
-  );
-  // Business shows the sections that answer its question, as the workspace
-  // does (owner, 03.10.2026, `lib/business-layers.ts`).
-  // Need & process is not one of them since ADR-080: in Business the map below
-  // is the process, and the bar opens on the first of its sections with
-  // content, or on the first.
-  const viewLayers = view === 'business' ? layers.filter((l) => BUSINESS_LAYERS.includes(l.key)) : layers;
-  const shownLayer: LayerKey = viewLayers.some((l) => l.key === currentLayer)
-    ? currentLayer
-    : view === 'business'
-      ? (viewLayers.find((l) => l.count !== null)?.key ?? viewLayers[0]?.key ?? 'evidence')
-      : 'need';
-  // One layer left in Business since ADR-096 (owner, 12.10.2026): no bar
-  // with one tab, as in the workspace — the section stands on its own.
-  const layerBar =
-    viewLayers.length > 1 ? (
-      <div className="mt-5">
-        <WorkspaceLayerBar layers={viewLayers} current={shownLayer} onSelect={selectLayer} />
-      </div>
-    ) : null;
-  const layerSection =
-    shownLayer === 'need' ? null : (
-      <div className="mt-5 max-w-3xl">
-        <WorkspaceLayerSection layer={viewLayers.find((l) => l.key === shownLayer) ?? currentLayerSection} />
-      </div>
-    );
 
   return (
     <div className="cc" data-demo-workspace={view} data-demo-ready={hydrated ? 'true' : 'false'}>
@@ -660,11 +472,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           </p>
         ) : null}
 
-        {view !== 'business' ? (
-          <div className="mt-4">
-            <WorkspaceStatusLine statuses={statuses} toolBase="/demo" />
-          </div>
-        ) : null}
+        <div className="mt-4">
+          <WorkspaceStatusLine statuses={statuses} toolBase="/demo" />
+        </div>
 
         {/* The seven stages of the demo — the tools of this workspace (ADR-018). */}
         {/* Each carries the view and layer it was opened from, so the demo
@@ -687,126 +497,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         </nav>
       </section>
 
-
-      {/* ------------------------------------------------------ Business */}
-      {view === 'business' ? (
-        <>
-          <Place place="reveal" className="mt-5">
-            <div className="max-w-3xl">{stop('reveal')}</div>
-            {/* The product's one next step (owner, 03.10.2026): while a rule has no
-                answer it is to decide on the rules, and it leads to the demo's
-                own rules card. A demo has no phase contract to name the step after. */}
-            {demoRulesStatus ? (
-              <div className="mb-4">
-                <BusinessNextStep
-                  step={
-                    demoRulesStatus.open.length > 0
-                      ? { kind: 'rules', open: demoRulesStatus.open, total: demoRulesStatus.total, then: demoNextPoint }
-                      : demoNextPoint
-                        ? { kind: 'phase', point: demoNextPoint }
-                        : { kind: 'none' }
-                  }
-                  projectId="demo"
-                  base="/demo"
-                  onDecideRules={openDemoRules}
-                />
-                <AnalysisReady
-                  readKey={DEMO_ANALYSIS_KEY}
-                  line={demoAnalysisLine}
-                  href={stageHref({ base: '/demo', path: 'analyze', view, from: WORKSPACE_RETURN.tools, layer: hashLayer })}
-                />
-              </div>
-            ) : null}
-            {/* The rules card stands below, with the answers this browser
-                holds — the opening reads the same answers instead of a route
-                the demo has no record in, and its "Decide on rules" leads to
-                that card (owner, 03.10.2026). */}
-            <FirstLook
-              project={project}
-              projectId="demo"
-              onReading={onReading}
-              namingFrom="none"
-              rulesBelow
-              rulesOverride={demoRulesStatus}
-              questions={questions}
-              onReviewRules={openDemoRules}
-              elsewhere={{
-                documentation: stageHref({ base: '/demo', path: 'documentation', view, from: WORKSPACE_RETURN.tools, layer: hashLayer }),
-                it: '/demo/workspace?view=it',
-              }}
-            />
-          </Place>
-
-          {layerBar}
-          {layerSection}
-
-          {/* The guided tour on the map, as in an own project (owner decision
-              21.10.2026); it asks nothing, so the demo shows it as it is. */}
-          <div data-demo-walk="">
-            <DemoWalkThrough
-              model={processMap}
-              source={source}
-              designHref={stageHref({ base: '/demo', path: 'design', view, from: WORKSPACE_RETURN.tools, layer: hashLayer })}
-            />
-          </div>
-
-          {/* The map is the process of the Business view itself, not a
-              section of its bar (ADR-080). */}
-          <div data-demo-business-map="" id={BUSINESS_MAP_ID} className="scroll-mt-20">
-            <Place place="process-map" className="mt-5">
-              <div className="max-w-3xl">{stop('process-map')}</div>
-              {mapCard}
-            </Place>
-          </div>
-
-          <Place place="process-levels">
-            {stop('process-levels')}
-            <CcCard title={wt('demo.levels')} count={processMap.planes.length}>
-              <ul data-demo-process-levels="" className="m-0 flex list-none flex-wrap gap-2 p-0">
-                {processMap.planes.map((p) => (
-                  <li key={p.id ?? 'top'}>
-                    <CcButton
-                      onClick={() => setPlane(p.id)}
-                      aria-pressed={plane === p.id}
-                      data-demo-process-level={p.id ?? 'top'}
-                    >
-                      {p.label} · {p.elementIds.length}
-                    </CcButton>
-                  </li>
-                ))}
-              </ul>
-            </CcCard>
-          </Place>
-
-          {/* Under the map, as in an own project, where the open points stand
-              after the process: the tour reaches the map before them in both
-              (owner, 04.10.2026). Folded, with its count — simple on top,
-              complete one click deeper. */}
-          <Place place="not-determined">
-            {stop('not-determined')}
-            <CcDisclosure title={wt('oq.title')} count={questions.open} level={3}>
-              <OpenQuestions questions={questions} projectId="demo" view={view} owner={false} hasRun={false} demo />
-            </CcDisclosure>
-          </Place>
-
-          <Place place="confirm-rule" className="mt-5">
-            <div className="max-w-3xl">{stop('confirm-rule')}</div>
-            <div id="demo-rules" className="scroll-mt-24">
-              {!reading ? (
-                <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('demo.readingRules')}</p>
-              ) : (
-                <DemoRulesCard
-                  rules={ruleRows}
-                  answers={state.ruleAnswers}
-                  editing={rulesEditing}
-                  onEditingChange={setRulesEditing}
-                  onRecord={(ruleAnswers) => patch({ ruleAnswers })}
-                />
-              )}
-            </div>
-          </Place>
-        </>
-      ) : null}
 
       {/* ------------------------------------------------------------ IT */}
       {view === 'it' ? (

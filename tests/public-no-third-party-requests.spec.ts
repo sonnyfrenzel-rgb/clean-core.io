@@ -25,13 +25,16 @@ import { SIGNED_IN_HINT_KEY } from '../lib/auth-hint';
  * every public page inside it (`app/(app)/layout.tsx`: About, Knowledge, Trust,
  * the demo …) — read from lib/shell-routes.ts, so a new public page of the
  * shell is captured without an edit here. `/demo/workspace` needs an account
- * and sends a visitor without the hint to the sign-in dialog; it has a test of
- * its own below.
+ * and sends a visitor without the hint to the sign-in dialog; so does
+ * `/demo/analyze` in its Business view, where the demo opens since v3.1.0 (AB-2,
+ * O10) — both have a test of their own below. The demo's Analyze stage in IT
+ * (`/demo/analyze?view=it`) stays public and is captured with the rest.
  */
 
 /** A route of lib/shell-routes.ts as addresses to visit: a dynamic segment becomes every value the page renders. */
 function shellAddresses(route: string): string[] {
-  if (route === '/demo/[stage]') return PHASES.map((phase) => `/demo/${phase.key}`);
+  // `analyze` has its own page since v3.1.0 (app/(app)/demo/analyze/page.tsx), see SIGN_IN_FIRST.
+  if (route === '/demo/[stage]') return PHASES.filter((phase) => phase.key !== 'analyze').map((phase) => `/demo/${phase.key}`);
   // Only Design has a requirements page (app/(app)/demo/[stage]/requirements/page.tsx).
   if (route === '/demo/[stage]/requirements') return ['/demo/design/requirements'];
   if (route.includes('[')) throw new Error(`no addresses known for ${route} — add them here`);
@@ -39,7 +42,7 @@ function shellAddresses(route: string): string[] {
 }
 
 /** Sends a visitor without the hint to sign in, which starts Auth by design; see its own test. */
-const SIGN_IN_FIRST = new Set(['/demo/workspace']);
+const SIGN_IN_FIRST = new Set(['/demo/workspace', '/demo/analyze']);
 
 const SHELL_PAGES = PUBLIC_SHELL_ROUTES.filter((route) => !SIGN_IN_FIRST.has(route)).flatMap(shellAddresses);
 
@@ -63,6 +66,8 @@ const PAGES = [
   // Deep links into the shell: a query and a fragment change nothing.
   '/knowledge?q=clean-core#levels',
   '/how-to#first-run',
+  // The demo's Analyze stage in IT: public, as every demo stage (its Business view needs an account).
+  '/demo/analyze?view=it',
 ];
 
 /** A device's context options; the browser type is the suite's (Chromium), only the device is emulated. */
@@ -126,31 +131,35 @@ test.describe('a signed-out visit contacts only its own origin', () => {
     expect(foreign.length, 'the sign-in dialog initialised Auth without a request').toBeGreaterThan(0);
   });
 
-  test('the demo workspace sends a visitor without the hint to sign in, and asks nobody on the way', async ({ browser, baseURL }) => {
-    // It needs an account (components/demo/DemoWorkspaceShell.tsx). Without the
-    // hint the shell reports "signed out" without starting Auth, and the page
-    // moves on to the sign-in dialog — which starts Auth by design, so only
-    // the requests made while the address is still the demo's count here.
-    const base = baseURL ?? 'http://localhost:3000';
-    const context = await browser.newContext({ ...PROFILES.iphone, baseURL: base });
-    const own = new URL(base).origin;
-    const foreign: string[] = [];
-    try {
-      const page = await context.newPage();
-      context.on('request', (request) => {
-        const target = request.url();
-        if (/^(data|blob|about):/.test(target)) return;
-        if (new URL(target).origin === own) return;
-        if (new URL(page.url()).pathname === '/demo/workspace') foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
-      });
-      await page.goto('/demo/workspace', { waitUntil: 'load' });
-      await expect.poll(() => new URL(page.url()).searchParams.get('auth'), { timeout: 20000 }).toBe('signin');
-      expect(new URL(page.url()).searchParams.get('next')).toBe('/demo/workspace');
-    } finally {
-      await context.close();
-    }
-    expect(foreign, '/demo/workspace asked someone other than its own origin before it sent the visitor to sign in').toEqual([]);
-  });
+  // `/demo/analyze` is the demo's Analyze, Business since v3.1.0 (components/demo/DemoAnalyzeBusiness.tsx), with
+  // the same gate as the demo workspace; both send the reader back to the demo workspace after the sign-in.
+  for (const address of ['/demo/workspace', '/demo/analyze']) {
+    test(`${address} sends a visitor without the hint to sign in, and asks nobody on the way`, async ({ browser, baseURL }) => {
+      // It needs an account (components/demo/DemoWorkspaceShell.tsx, DemoAnalyzeBusiness.tsx). Without the
+      // hint the shell reports "signed out" without starting Auth, and the page
+      // moves on to the sign-in dialog — which starts Auth by design, so only
+      // the requests made while the address is still the demo's count here.
+      const base = baseURL ?? 'http://localhost:3000';
+      const context = await browser.newContext({ ...PROFILES.iphone, baseURL: base });
+      const own = new URL(base).origin;
+      const foreign: string[] = [];
+      try {
+        const page = await context.newPage();
+        context.on('request', (request) => {
+          const target = request.url();
+          if (/^(data|blob|about):/.test(target)) return;
+          if (new URL(target).origin === own) return;
+          if (new URL(page.url()).pathname === address) foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
+        });
+        await page.goto(address, { waitUntil: 'load' });
+        await expect.poll(() => new URL(page.url()).searchParams.get('auth'), { timeout: 20000 }).toBe('signin');
+        expect(new URL(page.url()).searchParams.get('next')).toBe('/demo/workspace');
+      } finally {
+        await context.close();
+      }
+      expect(foreign, `${address} asked someone other than its own origin before it sent the visitor to sign in`).toEqual([]);
+    });
+  }
 
   test('a stale signed-in hint costs one Auth start, which removes it', async ({ browser, baseURL }) => {
     // The hint says "an account was signed in here", but there is no session:

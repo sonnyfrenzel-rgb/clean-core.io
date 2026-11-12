@@ -396,7 +396,8 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     // The one way back to My workspace (ADR-109): Analyze in the Business view is the project's entry, so its
     // way back is the list of all projects — decided by the page's own prop, never by the account.
     const header = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
-    expect(header).toContain('const toMyWorkspace = backToMyWorkspace && !demo;');
+    // The demo's Analyze, Business is where the demo opens (v3.1.0, O10): its way back is My workspace too.
+    expect(header).toContain('const toMyWorkspace = backToMyWorkspace;');
     expect(header).toContain('href={toMyWorkspace ? myWorkspaceHref() : back.href}');
     expect(fs.readFileSync(path.join(process.cwd(), 'components/StageFooter.tsx'), 'utf8')).not.toContain('myWorkspaceHref');
   });

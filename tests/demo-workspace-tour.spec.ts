@@ -19,6 +19,13 @@ import { signInViaLanding } from './helpers/sign-in';
  * community account gets all of it too, while a visitor without an account is
  * sent through sign-in.
  *
+ * Since v3.1.0 the demo opens like a project (plan AB-2, O10): its Business view
+ * is the demo's Analyze page (`/demo/analyze`, `DemoAnalyzeBusiness`), and
+ * `/demo/workspace` sends a Business address there — so the tour's Business
+ * stations stand on that page and its IT and Management stations in the demo
+ * workspace, and moving on between them navigates. The addresses here stay the
+ * workspace's: they prove the redirect as well.
+ *
  * Needs the dev server and the emulators, like every signed-in spec.
  */
 
@@ -43,8 +50,13 @@ async function signIn(page: Page, email: string) {
 
 async function openDemo(page: Page, query = '') {
   await page.goto(`/demo/workspace${query}`, { waitUntil: 'domcontentloaded' });
+  // Business (or no view) is the demo's Analyze page since v3.1.0.
+  if (query === '' || query === '?view=business') await page.waitForURL(/\/demo\/analyze(\?|$)/, { timeout: 60000 });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
 }
+
+/** The demo's title: the workspace's own heading in IT and Management, the stage title on Analyze, Business. */
+const TITLE = '[data-workspace-title], [data-stage-title]';
 
 /** The one station or invitation on screen — and there is never more than one. */
 async function onlyStop(page: Page) {
@@ -75,7 +87,7 @@ test('a community account opens the demo workspace and its tour, and has "Show t
   await signIn(page, COMMUNITY);
   await openDemo(page);
   await expect(page.locator('[data-demo-workspace]')).toHaveCount(1);
-  await expect(page.locator('[data-workspace-title]')).toContainText(DEMO_TITLE_PREFIX.trim());
+  await expect(page.locator(TITLE)).toContainText(DEMO_TITLE_PREFIX.trim());
   // The tour starts for it as for anybody: one stop on screen.
   await page.evaluate((key) => window.localStorage.removeItem(key), TOUR_STORAGE_KEY);
   await openDemo(page);
@@ -104,7 +116,7 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
   for (const view of ['business', 'it', 'management'] as const) {
     await openDemo(page, `?view=${view}`);
     await expect(page.locator(`[data-demo-workspace="${view}"]`)).toBeVisible();
-    await expect(page.locator('[data-workspace-title]')).toContainText(DEMO_TITLE_PREFIX.trim());
+    await expect(page.locator(TITLE)).toContainText(DEMO_TITLE_PREFIX.trim());
     await expect(page.locator('[data-demo-unsigned]')).toContainText('never signed');
     if (view === 'business') {
       // Every layer of the anchor bar is reachable, filled or saying why not.
@@ -117,6 +129,9 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
       await expect(page.locator('[data-workspace-layer-section="evidence"]')).toHaveCount(1);
       await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
       await expect(page.locator('[data-demo-business-map] [data-demo-tour-place="process-map"]')).toBeVisible();
+      // The same composition as a project's Analyze, Business: the summary, the invitation, the map first.
+      await expect(page.locator('[data-analyze-business="ready"] [data-analyze-summary] [data-analyze-walk=""]')).toBeVisible();
+      await expect(page.locator('[data-analyze-map]')).toHaveCount(1);
     } else if (view === 'management') {
       // Management shows only its own content (ADR-087): no layer bar, no
       // process map — the decision, the distance to standard, the buckets,

@@ -342,7 +342,7 @@ test.describe('capture', () => {
  *
  * The landing page shows the workspace, and the workspace it shows has to be the
  * real one: "no mockup image on a public page". So the pictures are
- * taken here, from the demo project `Z_MM_PO_APPROVAL` in `/demo/workspace` —
+ * taken here, from the demo project `Z_MM_PO_APPROVAL` in `/demo/analyze` (Business) and `/demo/workspace` (IT, Management) —
  * the same engine run every account opens — and committed under
  * `public/landing/`. Run it with every release that changes the workspace or the
  * engine, so picture and product cannot drift apart:
@@ -417,14 +417,18 @@ test.describe('capture the landing page views', () => {
     fs.mkdirSync(out, { recursive: true });
     await signIn(page);
 
+    // Since v3.1.0 the demo opens like a project (AB-2, O10): its Business view is `/demo/analyze`,
+    // `/demo/workspace` keeps IT and Management (and sends a Business address on to Analyze).
+    // The pictures are not re-shot here (AB-12 does that); the addresses only follow the product.
+    const addressOf = (query: string) => (query === '?view=business' ? `/demo/analyze${query}` : `/demo/workspace${query}`);
     const open = async (query: string) => {
-      await page.goto(`/demo/workspace${query}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(addressOf(query), { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
       // The dev server's own badge is not part of the product.
       await page.addStyleTag({ content: 'nextjs-portal{display:none!important}' });
       await waitForDrawnMaps(page);
       await page.waitForTimeout(2500);
-      await assertNoTermsGate(page, `/demo/workspace${query}`);
+      await assertNoTermsGate(page, addressOf(query));
       if (process.env.CAPTURE_LANDING_DEBUG) {
         await page.screenshot({ path: path.join(process.env.CAPTURE_LANDING_DEBUG, `full${query.replace(/\W+/g, '-')}.jpg`), fullPage: true, type: 'jpeg', quality: 60 });
       }

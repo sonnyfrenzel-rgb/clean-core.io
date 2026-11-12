@@ -7,13 +7,9 @@ import {
   DEMO_ANALYSIS_KEY,
   analysisKeyOfBase,
   analysisRead,
-  analysisReadyResult,
   markAnalysisRead,
-  resultOfWorklist,
   resultReadyTag,
 } from '../lib/analysis-read';
-import { demoAnalysisReady, hubAnalysisReady } from '../lib/messages/workspace-shell';
-import type { WorklistItem } from '../lib/types';
 import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import { adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
@@ -42,43 +38,9 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-function item(over: Partial<WorklistItem>): WorklistItem {
-  return {
-    id: 'f',
-    title: 't',
-    category: 'Finding',
-    location: 'Z.abap:1',
-    recommendation: '',
-    status: 'open',
-    effort: 'Low',
-    ...over,
-  };
-}
-
 test.describe('the analysis-ready rules (pure)', () => {
-  test('only a done Analyze with a signed run has a result to point at', () => {
-    const worklist = [item({ severity: 'High' }), item({ severity: 'Low' })];
-    expect(analysisReadyResult({ analyzeState: 'done', hasSignedRun: true, worklist })).toEqual({ findings: 2, high: 1 });
-    // Analyze is itself the next step in each of these — already named, nothing to add.
-    for (const state of ['empty', 'partial', 'stale'] as const) {
-      expect(analysisReadyResult({ analyzeState: state, hasSignedRun: true, worklist })).toBeNull();
-    }
-    expect(analysisReadyResult({ analyzeState: 'done', hasSignedRun: false, worklist })).toBeNull();
-    expect(analysisReadyResult({ analyzeState: undefined, hasSignedRun: true, worklist })).toBeNull();
-  });
-
-  test('the figures count findings, not the model’s functional gaps, and say nothing without a worklist', () => {
-    const worklist = [
-      item({ severity: 'High' }),
-      item({ severity: 'High' }),
-      item({ severity: 'Medium' }),
-      item({ category: 'Functional Gap', severity: 'High' }),
-    ];
-    expect(resultOfWorklist(worklist)).toEqual({ findings: 3, high: 2 });
-    expect(resultOfWorklist(undefined)).toEqual({ findings: null, high: null });
-    expect(resultOfWorklist([])).toEqual({ findings: 0, high: 0 });
-  });
-
+  // The work area's line ("Your analysis is ready", its figures and its sentences, `analysisReadyResult`,
+  // `resultOfWorklist`) retired with the hub and the demo workspace's Business view in v3.1.0 (AB-2, O10).
   test('the tag stands on the Analyze tool only, while done and unread', () => {
     expect(resultReadyTag({ key: 'analyze', state: 'done' }, false)).toBe(true);
     expect(resultReadyTag({ key: 'analyze', state: 'done' }, true)).toBe(false);
@@ -92,15 +54,6 @@ test.describe('the analysis-ready rules (pure)', () => {
     expect(analysisKeyOfBase('/project/a%20b')).toBe('a b');
     expect(analysisKeyOfBase('/project/abc/analyze')).toBeNull();
     expect(analysisKeyOfBase('/elsewhere')).toBeNull();
-  });
-
-  test('the sentences carry the run’s figures and never invent one', () => {
-    expect(hubAnalysisReady(25, 4)).toBe('25 findings in the signed run, 4 of them high severity. Analyze shows each one with its line in the code.');
-    expect(hubAnalysisReady(1, 0)).toBe('1 finding in the signed run. Analyze shows each one with its line in the code.');
-    expect(hubAnalysisReady(0, 0)).toMatch(/no finding/);
-    expect(hubAnalysisReady(null, null)).not.toMatch(/\d/);
-    expect(demoAnalysisReady(25, 4)).toBe('25 findings in the example, 4 of them high severity — a demo run, unsigned. Analyze shows each one with its line in the code.');
-    expect(demoAnalysisReady(25, 4)).toMatch(/unsigned/);
   });
 });
 
@@ -169,7 +122,7 @@ test.describe('the analysis-ready state lives in this browser only', () => {
 
 test.describe('the hint is an addition, never a phase state (source)', () => {
   test('nothing of it reaches the project, the run or the account', () => {
-    for (const rel of ['lib/analysis-read.ts', 'hooks/useAnalysisRead.ts', 'components/workspace/AnalysisReady.tsx']) {
+    for (const rel of ['lib/analysis-read.ts', 'hooks/useAnalysisRead.ts']) {
       const src = read(rel);
       expect(src, rel).not.toMatch(/firebase|getDb|setDoc|updateDoc|fetch\(|\/api\//);
     }
@@ -185,13 +138,8 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
   // Business view in v3.1.0 (AB-2, ADR-090 retired): the project opens on Analyze itself.
   test('the workspace has no hub any more, and reads no analysis-ready result', () => {
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/WorkspaceHub.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/AnalysisReady.tsx'))).toBe(false);
     expect(read('components/workspace/WorkspaceShell.tsx')).not.toMatch(/analysisReadyResult|WorkspaceHub|AnalysisReady/);
-  });
-
-  test('the action is secondary — the page keeps its one primary in "Next step"', () => {
-    const src = read('components/workspace/AnalysisReady.tsx');
-    expect(src).toContain('variant="secondary"');
-    expect(src).not.toMatch(/variant="primary"/);
   });
 
   test('the tool bar tags Analyze from the phase contract and leaves "Next" where it was', () => {
@@ -211,10 +159,10 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
     expect(page).toMatch(/router\.push\(`\/project\/\$\{projectId\}\/analyze\?first=1`\);\s*\} else \{[\s\S]{0,300}markAnalysisRead\(projectId as string\);/);
   });
 
-  test('the demo is the twin: /demo/analyze marks it, the demo workspace points at it', () => {
+  test('the demo is the twin: its Analyze stage marks it, the demo workspace\'s stage row tags it', () => {
     expect(read('components/demo/DemoWorkspace.tsx')).toContain("if (stage === 'analyze') markAnalysisRead(DEMO_ANALYSIS_KEY);");
     const shell = read('components/demo/DemoWorkspaceShell.tsx');
-    expect(shell).toContain('<AnalysisReady');
+    expect(shell).not.toContain('AnalysisReady');
     expect(shell).toContain("p.key === 'analyze' && !demoAnalysisRead ? <ResultReadyTag /> : null");
   });
 });

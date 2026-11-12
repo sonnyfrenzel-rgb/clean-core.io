@@ -20,6 +20,9 @@ export default function DemoWalkThrough({
   source,
   designHref = null,
   initialTour = null,
+  open: openProp,
+  onOpenChange,
+  entry = true,
 }: {
   model: ProcessMapModel;
   source: string;
@@ -27,8 +30,24 @@ export default function DemoWalkThrough({
   designHref?: string | null;
   /** A tour handed in without reading it here (a rendered test). */
   initialTour?: Tour | null;
+  /**
+   * Held by the page when its own invitation opens the tour (the demo's
+   * Analyze, Business: "Walk me through it", as in a project's Analyze).
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** The entry card with its own button; off where the page's invitation is the way in. */
+  entry?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (openProp === undefined) setOwnOpen(next);
+      onOpenChange?.(next);
+    },
+    [openProp, onOpenChange],
+  );
   const [tour, setTour] = useState<Tour | null>(initialTour);
   /** The tour could not be read (a module that did not load, a build that threw): said, never an endless "Reading …". */
   const [failed, setFailed] = useState(false);
@@ -52,10 +71,10 @@ export default function DemoWalkThrough({
   const close = useCallback(() => {
     setOpen(false);
     setFailed(false);
-  }, []);
+  }, [setOpen]);
   return (
     <>
-      <ProcessTourEntry projectId="demo" onOpen={() => setOpen(true)} />
+      {entry ? <ProcessTourEntry projectId="demo" onOpen={() => setOpen(true)} /> : null}
       {open ? <ProcessTour tour={tour} unavailable={failed} model={model} onClose={close} designHref={designHref} demo={true} /> : null}
     </>
   );

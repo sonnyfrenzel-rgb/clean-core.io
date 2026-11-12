@@ -226,7 +226,8 @@ test.describe('progress lives in this browser only', () => {
   });
 
   test('every storage access of the tour and the demo workspace sits in a try', () => {
-    for (const rel of ['lib/demo-tour.ts', 'components/demo/DemoWorkspaceShell.tsx', 'lib/show-tips-again.ts']) {
+    // The demo workspace's own state moved to lib/demo-workspace-state.ts in v3.1.0, read by it and the demo's Analyze.
+    for (const rel of ['lib/demo-tour.ts', 'lib/demo-workspace-state.ts', 'lib/show-tips-again.ts']) {
       const lines = read(rel).split(/\r?\n/);
       let accesses = 0;
       lines.forEach((line, i) => {
@@ -236,6 +237,10 @@ test.describe('progress lives in this browser only', () => {
         expect(before, `${rel}:${i + 1} reaches storage outside a try`).toMatch(/try\s*\{/);
       });
       if (rel !== 'lib/show-tips-again.ts') expect(accesses, `${rel}: no storage access found`).toBeGreaterThan(0);
+    }
+    // The two pages reach storage only through those modules.
+    for (const rel of ['components/demo/DemoWorkspaceShell.tsx', 'components/demo/DemoAnalyzeBusiness.tsx']) {
+      expect(read(rel), rel).not.toMatch(/window\.localStorage\./);
     }
   });
 
