@@ -6,7 +6,7 @@ import type {
   SkeletonRegion,
 } from '../abap/process-skeleton';
 import { ncName } from './xml';
-import type { PlainLabels } from '../abap/plain-language';
+import type { PlainLabels, WorkflowLabels } from '../abap/plain-language';
 import { TABLE_TERMS_EN } from '../abap/plain-glossary';
 import { quotedComment } from '../abap/author-comments';
 import { isConstructorName, isTechnicalMethodName } from '../abap/technical-methods';
@@ -555,6 +555,7 @@ class ModelBuilder {
       this.instantiate(region, root, '', [key]);
     }
     if (this.chain) this.chainEntries(root);
+    if (this.objects && this.labels?.workflow) this.readWorkflow(root, this.labels.workflow);
     if (this.labels) for (const c of this.containers) for (const n of c.nodes) if (n.inner) n.fact = factOf(n.inner);
 
     const stores = this.attachDataStores();
@@ -907,11 +908,12 @@ class ModelBuilder {
    * `main` calling `run` is lifted twice. Nothing else moves: a method with a guard on its way in, an error boundary
    * on it, or a plane that does not open with one flow from its start stays where it is.
    */
-  private liftLoneMethod(into: ExportContainer, band: ExportBand): void {
+  private liftLoneMethod(into: ExportContainer, band: ExportBand, workflow?: ExportContainer): void {
     for (let guard = 0; guard < 8; guard++) {
       const mine = into.nodes.filter((n) => band.nodeIds.includes(n.id));
       const activities = mine.filter((n) => ACTIVITY_TAGS.has(n.tag));
-      const planes = activities.filter((n) => n.tag === 'subProcess' && n.inner && /^method:/i.test(n.source.expandsTo ?? ''));
+      // Round 2: the routine that runs the status workflow is lifted too when it is a FORM (`readWorkflow`).
+      const planes = activities.filter((n) => n.tag === 'subProcess' && n.inner && (/^method:/i.test(n.source.expandsTo ?? '') || (!!workflow && n.inner === workflow)));
       if (planes.length !== 1) return;
       const wrapper = planes[0];
       const inner = wrapper.inner!;
@@ -958,6 +960,320 @@ class ModelBuilder {
         n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
       }
     }
+  }
+
+  /**
+   * AB-15a, round 2 — a status workflow run as a decision over a command (`PlainLabels.workflow`,
+   * `ExportModelOptions.readsObjects`). Two things, each only where the drawing allows it without a guess:
+   *
+   *   - **each arm that moves the status is one step, named as the move** ("Approve (Submitted → Approved)"): the
+   *     arm's elements — its checks, its role check, its stops — go one level down into a sub-process of that name,
+   *     with the arm's lines; an arm that draws one plain step is that step, renamed. An arm is wrapped only where its
+   *     elements have one way in (the decision's arm) and one way on;
+   *   - **a demo driver is not the process** (`WorkflowLabels.driver`): where a band of the top plane shows the
+   *     driver's lines and nothing else, the workflow routine's plane takes their place between the band's start and
+   *     end, and the driver's steps fold onto the start with their names and lines (`folded`) — the scenario that
+   *     exercised the workflow, not a step of it.
+   */
+  private readWorkflow(root: ExportContainer, flow: WorkflowLabels): void {
+    let workflow: ExportContainer | null = null;
+    flow.steps.forEach((step, k) => {
+      const placed = this.armGateway(step.line, step.decision);
+      if (!placed || (workflow && placed.container !== workflow)) return;
+      if (this.wrapArm(placed.container, placed.gateway, step, k)) workflow = placed.container;
+    });
+    if (workflow) this.foldEmptyDecisions(workflow);
+    if (workflow && flow.driver) this.replaceDriver(root, workflow, flow.driver);
+    // A workflow routine the program's entry only calls is the first level, as a lone method is (part 1).
+    if (workflow) for (const band of [...root.bands]) this.liftLoneMethod(root, band, workflow);
+    this.reindexContainers(root);
+  }
+
+  /**
+   * See `readWorkflow`: on the workflow's plane, a decision whose every arm draws nothing and goes on to the same step
+   * (`CASE verb. WHEN 'GRANT'. lv_desk = 'OFFICER'. … ENDCASE.` before a role check) decides nothing a reader
+   * can see: it is folded into that step, its line kept there.
+   */
+  private foldEmptyDecisions(into: ExportContainer): void {
+    for (const g of [...into.nodes]) {
+      if (g.tag !== 'exclusiveGateway' || g.source.kind !== 'gateway') continue;
+      const outs = into.flows.filter((f) => f.sourceId === g.id);
+      const ins = into.flows.filter((f) => f.targetId === g.id);
+      const targets = new Set(outs.map((f) => f.targetId));
+      if (outs.length < 2 || targets.size !== 1 || ins.length !== 1 || outs.some((f) => f.back) || ins[0].back) continue;
+      const next = into.nodes.find((n) => n.id === outs[0].targetId);
+      if (!next || next === g) continue;
+      const a = g.source.anchor;
+      next.folded = [...(next.folded ?? []), { name: g.name, technicalName: g.technicalName, anchor: a ? (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`) : null }];
+      ins[0].targetId = next.id;
+      into.flows = into.flows.filter((f) => f.sourceId !== g.id);
+      into.nodes = into.nodes.filter((n) => n !== g);
+      for (const b of into.bands) b.nodeIds = b.nodeIds.filter((id) => id !== g.id);
+      for (const n of into.nodes) {
+        n.incoming = into.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+        n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+      }
+    }
+  }
+
+  /** The decision an arm belongs to: the gateway drawn at the arm's own line (an `ELSEIF`), else at its decision's. */
+  private armGateway(line: number, decision: number): { container: ExportContainer; gateway: ExportNode } | null {
+    for (const at of [line, decision]) {
+      for (const container of this.containers) {
+        const gateway = container.nodes.find((n) => n.tag === 'exclusiveGateway' && n.source.kind === 'gateway' && n.source.anchor?.lineStart === at);
+        if (gateway) return { container, gateway };
+      }
+    }
+    return null;
+  }
+
+  /** See `readWorkflow`: one arm of the command decision as one step. False where the drawing does not allow it. */
+  private wrapArm(into: ExportContainer, gateway: ExportNode, step: WorkflowLabels['steps'][number], k: number): boolean {
+    // A command that is a code (`WHEN 'A'.`) names no step: its arm stays as drawn, each move said where it is made.
+    if (!step.said) return false;
+    const byId = new Map(into.nodes.map((n) => [n.id, n]));
+    const inArm = (n: ExportNode | undefined): n is ExportNode => {
+      const a = n?.source.anchor;
+      return !!n && n !== gateway && !!a && a.lineStart >= step.lineStart && a.lineStart <= step.lineEnd;
+    };
+    const entries = into.flows.filter((f) => f.sourceId === gateway.id && !f.back && inArm(byId.get(f.targetId)));
+    if (!entries.length) return this.drawEmptyArm(into, gateway, step, k);
+    if (entries.length !== 1) return false;
+    const entry = entries[0];
+    const members = new Set<string>();
+    const queue = [entry.targetId];
+    while (queue.length) {
+      const id = queue.shift()!;
+      if (members.has(id) || !inArm(byId.get(id))) continue;
+      members.add(id);
+      for (const f of into.flows) if (f.sourceId === id) queue.push(f.targetId);
+      for (const b of into.nodes) if (b.attachedTo === id) queue.push(b.id);
+    }
+    const flowsIn = into.flows.filter((f) => members.has(f.targetId) && !members.has(f.sourceId));
+    if (flowsIn.length !== 1 || flowsIn[0] !== entry) return false;
+    const exits = into.flows.filter((f) => members.has(f.sourceId) && !members.has(f.targetId));
+    const onTo = [...new Set(exits.map((f) => f.targetId))];
+    if (onTo.length !== 1) return false;
+    const moved = into.nodes.filter((n) => members.has(n.id));
+    // An arm that moves nothing is wrapped only when it holds checks and stops alone — never a step that does something.
+    if (!step.moves.length && moved.some((n) => ACTIVITY_TAGS.has(n.tag) && n.tag !== 'businessRuleTask')) return false;
+    // One plain step in the arm: that step is the move — renamed, its code and lines kept.
+    if (moved.length === 1 && ACTIVITY_TAGS.has(moved[0].tag) && !moved[0].inner) {
+      moved[0].name = step.name;
+      return true;
+    }
+    const band = into.bands[gateway.band] ?? into.bands[0];
+    const id = `${gateway.id}__arm-${k + 1}`;
+    const anchor = gateway.source.anchor ? { ...gateway.source.anchor, lineStart: step.lineStart, lineEnd: step.lineEnd } : null;
+    const source: SkeletonNode = {
+      ...gateway.source,
+      id: `${gateway.source.id}#arm-${k + 1}`,
+      kind: 'sub-process',
+      label: step.technicalName,
+      anchor,
+      detail: { workflowStep: true, moves: step.moves.map((l) => `L${l}`) },
+    };
+    delete source.expandsTo;
+    delete source.collapsed;
+    const inner = this.container(id, 'subProcess');
+    const event = (suffix: string, tag: 'startEvent' | 'endEvent', name: string, line: number): ExportNode => ({
+      id: `${id}__${suffix}`,
+      tag,
+      name,
+      technicalName: name,
+      source: {
+        ...source,
+        id: `${source.id}#${suffix}`,
+        kind: tag === 'startEvent' ? 'start' : 'end',
+        label: name,
+        anchor: anchor ? { ...anchor, lineStart: line, lineEnd: line } : null,
+        detail: { subProcess: true },
+      },
+      error: false, incoming: [], outgoing: [], reads: [], writes: [], band: 0,
+    });
+    const start = event('start', 'startEvent', 'Start', step.lineStart);
+    const end = event('end', 'endEvent', 'Done', step.lineEnd);
+    const arm: ExportNode = {
+      id,
+      tag: 'subProcess',
+      name: step.name,
+      technicalName: step.technicalName,
+      source,
+      error: false,
+      incoming: [],
+      outgoing: [],
+      reads: [...new Set(moved.flatMap((n) => n.reads))],
+      writes: [...new Set(moved.flatMap((n) => n.writes))],
+      band: gateway.band,
+      anchorLabel: step.lineStart === step.lineEnd ? `L${step.lineStart}` : `L${step.lineStart}–${step.lineEnd}`,
+      inner,
+    };
+    const mk = (fid: string, sourceId: string, targetId: string, like?: ExportFlow): ExportFlow => ({
+      id: fid,
+      sourceId,
+      targetId,
+      condition: like?.condition ?? '',
+      edge: like ? { ...like.edge } : { from: sourceId, to: targetId, kind: 'sequence', condition: '' },
+      back: false,
+      ...(like?.label !== undefined ? { label: like.label } : {}),
+    });
+    // Inside: start → the arm's first element; every way on → the arm's end.
+    for (const n of moved) n.band = 0;
+    inner.nodes = [start, ...moved, end];
+    inner.flows = [
+      mk(`${id}__fl-start`, start.id, entry.targetId),
+      ...into.flows.filter((f) => members.has(f.sourceId) && members.has(f.targetId)),
+      ...exits.map((f, i) => mk(`${id}__fl-end-${i + 1}`, f.sourceId, end.id, f)),
+    ];
+    inner.bands = [{ key: `${band?.key ?? id}#arm-${k + 1}`, anchorId: id, nodeIds: inner.nodes.map((n) => n.id), entryId: start.id, endId: end.id }];
+    // Outside: the decision's arm into the step, the step on to where the arm went on.
+    entry.targetId = id;
+    into.flows = [
+      ...into.flows.filter((f) => !members.has(f.sourceId) && !members.has(f.targetId)),
+      mk(`${id}__fl-on`, id, onTo[0]),
+    ];
+    const at = into.nodes.findIndex((n) => members.has(n.id));
+    into.nodes = into.nodes.filter((n) => !members.has(n.id));
+    into.nodes.splice(Math.min(at, into.nodes.length), 0, arm);
+    for (const b of into.bands) {
+      const first = b.nodeIds.findIndex((nid) => members.has(nid));
+      if (first < 0) continue;
+      b.nodeIds = b.nodeIds.filter((nid) => !members.has(nid));
+      b.nodeIds.splice(first, 0, arm.id);
+      if (b.endId && members.has(b.endId)) b.endId = arm.id;
+    }
+    for (const c of [into, inner]) {
+      for (const n of c.nodes) {
+        n.incoming = c.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+        n.outgoing = c.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * See `readWorkflow`: an arm that moves the status but draws nothing (`WHEN 'CREATE'. ms_x-status = gc_new.`) — its
+   * way out of the decision carries the arm's value — gets the move as a step of its own on that way, with the move's
+   * lines. Only an arm with moves, and only where exactly one way out names its value.
+   */
+  private drawEmptyArm(into: ExportContainer, gateway: ExportNode, step: WorkflowLabels['steps'][number], k: number): boolean {
+    if (!step.moves.length) return false;
+    const names = (condition: string) => {
+      const c = condition.trim();
+      if (!c || /^NOT\b/i.test(c)) return false;
+      return step.when.some((w) => (w.startsWith("'") ? c.toUpperCase().includes(w.toUpperCase()) : new RegExp(`(?:^|[^\\w/-])${w.replace(/[^\w/-]/g, '')}(?:$|[^\\w/-])`, 'i').test(c)));
+    };
+    const ways = into.flows.filter((f) => f.sourceId === gateway.id && !f.back && names(f.condition));
+    if (ways.length !== 1) return false;
+    const way = ways[0];
+    const first = Math.min(...step.moves);
+    const last = Math.max(...step.moves);
+    const anchor = gateway.source.anchor ? { ...gateway.source.anchor, lineStart: first, lineEnd: last } : null;
+    const id = `${gateway.id}__arm-${k + 1}`;
+    const source: SkeletonNode = { ...gateway.source, id: `${gateway.source.id}#arm-${k + 1}`, kind: 'task', label: step.technicalName, anchor, detail: { workflowStep: true, moves: step.moves.map((l) => `L${l}`) } };
+    delete source.expandsTo;
+    delete source.collapsed;
+    const task: ExportNode = {
+      id, tag: 'task', name: step.name, technicalName: step.technicalName, source, error: false, incoming: [], outgoing: [], reads: [], writes: [],
+      band: gateway.band, anchorLabel: step.moves.map((l) => `L${l}`).join(', '),
+    };
+    const on: ExportFlow = { id: `${id}__fl-on`, sourceId: id, targetId: way.targetId, condition: '', edge: { from: source.id, to: way.edge.to, kind: 'sequence', condition: '' }, back: false };
+    way.targetId = id;
+    into.flows.push(on);
+    into.nodes.splice(into.nodes.indexOf(gateway) + 1, 0, task);
+    const band = into.bands[gateway.band] ?? into.bands[0];
+    if (band) band.nodeIds.splice(Math.max(0, band.nodeIds.indexOf(gateway.id) + 1), 0, id);
+    for (const n of into.nodes) {
+      n.incoming = into.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+      n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+    }
+    return true;
+  }
+
+  /**
+   * See `readWorkflow`: the driver's band of the top plane gives way to the workflow routine's plane. Only where every
+   * element of that band between its start and end stands in the driver's lines, the workflow's plane sits under one
+   * of them, and the plane opens with one flow from its start.
+   */
+  private replaceDriver(root: ExportContainer, workflow: ExportContainer, driver: NonNullable<WorkflowLabels['driver']>): void {
+    if (workflow === root || workflow.bands.length !== 1) return;
+    // The top-level element the workflow's plane sits under.
+    let top: ExportNode | null = null;
+    let c: ExportContainer | undefined = workflow;
+    for (let guard = 0; c && guard < 50; guard++) {
+      const o = this.owner.get(c.id);
+      if (!o) break;
+      if (o.parent === root) { top = o.node; break; }
+      c = o.parent;
+    }
+    if (!top) return;
+    const band = root.bands[top.band];
+    if (!band?.entryId || !band.endId) return;
+    const start = root.nodes.find((n) => n.id === band.entryId && n.tag === 'startEvent');
+    const end = root.nodes.find((n) => n.id === band.endId && n.tag === 'endEvent');
+    if (!start || !end) return;
+    const driven = root.nodes.filter((n) => band.nodeIds.includes(n.id) && n !== start && n !== end);
+    const steps = driven.filter((n) => ACTIVITY_TAGS.has(n.tag));
+    const inDriver = (n: ExportNode) => {
+      const a = n.source.anchor;
+      return !!a && a.lineStart >= driver.lineStart && a.lineEnd <= driver.lineEnd;
+    };
+    if (!steps.length || !driven.every(inDriver)) return;
+    const wBand = workflow.bands[0];
+    const wStart = workflow.nodes.find((n) => n.id === wBand.entryId && n.tag === 'startEvent');
+    const wEnd = workflow.nodes.find((n) => n.id === wBand.endId && n.tag === 'endEvent');
+    if (!wStart || !wEnd) return;
+    const opening = workflow.flows.filter((f) => f.sourceId === wStart.id);
+    if (opening.length !== 1 || opening[0].condition) return;
+
+    // The driver's steps, with their names and lines, on the start: the scenario around the workflow.
+    const anchorOf = (n: ExportNode) => {
+      if (n.anchorLabel) return n.anchorLabel;
+      const a = n.source.anchor;
+      return a ? (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`) : null;
+    };
+    start.folded = [...(start.folded ?? []), ...steps.map((n) => ({ name: n.name, technicalName: n.technique || n.technicalName, anchor: anchorOf(n) }))];
+    const calls = driver.calls.lines.map((l) => `L${l}`).join(', ');
+    start.detail = [start.detail, `The program runs this workflow from a demo driver (L${driver.lineStart}–${driver.lineEnd}) that sends it test commands (${calls}); the driver's set-up, test helpers and output are listed here and are not steps of the process.`].filter(Boolean).join(' ');
+
+    const gone = new Set(driven.map((n) => n.id));
+    const moved = workflow.nodes.filter((n) => n !== wStart && n !== wEnd);
+    const bandIndex = root.bands.indexOf(band);
+    for (const n of moved) n.band = bandIndex;
+    for (const f of workflow.flows) {
+      if (f.sourceId === wStart.id) f.sourceId = start.id;
+      if (f.targetId === wEnd.id) f.targetId = end.id;
+    }
+    root.flows = [
+      ...root.flows.filter((f) => !gone.has(f.sourceId) && !gone.has(f.targetId) && !(f.sourceId === start.id && f.targetId === end.id)),
+      ...workflow.flows,
+    ];
+    root.nodes = root.nodes.filter((n) => !gone.has(n.id));
+    root.nodes.splice(root.nodes.indexOf(start) + 1, 0, ...moved);
+    band.nodeIds = [start.id, ...moved.map((n) => n.id), ...band.nodeIds.filter((id) => id !== start.id && !gone.has(id))];
+    root.storeRefs.push(...workflow.storeRefs);
+    root.dataAssociations.push(...workflow.dataAssociations);
+    root.annotations.push(...workflow.annotations);
+    for (const n of root.nodes) {
+      n.incoming = root.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+      n.outgoing = root.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+    }
+  }
+
+  /** The planes again from the top, after elements moved between them: root first, then depth first; owners anew. */
+  private reindexContainers(root: ExportContainer): void {
+    const order: ExportContainer[] = [];
+    this.owner.clear();
+    const walk = (c: ExportContainer) => {
+      order.push(c);
+      for (const n of c.nodes) {
+        if (!n.inner) continue;
+        this.owner.set(n.inner.id, { node: n, parent: c });
+        walk(n.inner);
+      }
+    };
+    walk(root);
+    this.containers = order;
   }
 
   /** See `ExportModelOptions.foldTechnique`. */

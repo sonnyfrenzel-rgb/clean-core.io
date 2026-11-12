@@ -32,7 +32,7 @@ import {
   dictionaryWords,
 } from './sap-dictionary';
 import { APP_VERSION } from '../version';
-import { readStateMachine, stateWords, transitionsIn, type StateMachine, type StateTransition } from './state-machine';
+import { readStateMachine, stateWords, transitionsIn, type CommandArm, type ScenarioDriver, type StateMachine, type StateTransition } from './state-machine';
 import { interfaceOfMethod, isConstructorName, isTechnicalMethodName, ownMethodName } from './technical-methods';
 
 /**
@@ -2073,8 +2073,29 @@ function callSiteName(node: SkeletonNode, c: PlainContext): string {
   if (moves.length) return transitionName(words, moves, c.stateMachine?.() ?? null);
   // A constructor prepares the object the run works with; its class name is the developer's, not the business's.
   if (method && isConstructorName(node.label)) return 'Prepare the run';
+  // Round 2: an interface method named by one word says what it does where the call shows it — a store's
+  // `commit`/`persist` saves the changes; an English noun whose result the call assigns (`ls_claim = lo_vault->claim(
+  // … )`) is read: "Get claim". A name the vocabulary translated (German) keeps its words.
+  if (method && interfaceOfMethod(node.label) && /^[a-z]+$/i.test(own) && !/\(/.test(words)) {
+    if (SAVE_METHODS.test(own)) return 'Save the changes';
+    const text = statementAt(c, node.anchor?.lineStart)?.text ?? '';
+    const assigned = new RegExp(String.raw`^(?:DATA\(\s*)?[\w/<>~-]+\s*\)?\s*=\s*(?:NEW\s+)?(?:[\w/]+(?:->|=>))*${own.replace(/[^\w]/g, '')}\(`, 'i').test(text);
+    if (assigned && !ONE_WORD_VERBS.has(own.toLowerCase()) && !/(?:ize|ise|ate|ify)$/i.test(own)) return `Get ${lcFirst(words)}`;
+  }
   return words;
 }
+
+/** A store's method that writes everything it was given at once (round 2 of AB-15a): said as "Save the changes". */
+const SAVE_METHODS = /^(?:commit|persist|flush|save_all)$/i;
+
+/** One-word method names that already are a verb — never "Get …" (round 2 of AB-15a). */
+const ONE_WORD_VERBS = new Set((
+  'add apply approve assign authorize book build calculate call cancel change check clear close collect commit compute '
+  + 'convert copy count create decide delete determine dispatch display do execute exists filter find flush generate get '
+  + 'grant handle has init insert is load lock log main map merge modify move normalize normalise notify open parse patch '
+  + 'persist post prepare print process read refresh register reject release remove render reset require run save select '
+  + 'send set show sort start store submit test transfer unlock update validate verify write'
+).split(' '));
 
 /**
  * A status value in words (`stateWords`), in English where the value is German the vocabulary can translate
@@ -2101,6 +2122,50 @@ function transitionName(words: string, moves: readonly StateTransition[], machin
   const target = to.length <= 2 ? to.map(say).join(' or ') : `${to.length} statuses`;
   const move = from.length && from.length <= 2 ? `${from.map(say).join(' or ')} → ${target}` : `to ${target}`;
   return `${words} (${move})`;
+}
+
+/**
+ * A command in words, as the verb of its step: `SUBMIT` → "Submit", `gc_cmd_release` → "Release", a German command the
+ * vocabulary can translate in English; a code (`'01'`) stays the code ("Command '01'").
+ */
+function commandSaid(value: string, constant: string | null): string {
+  const v = value.trim();
+  if (/^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß_ ]{2,}$/.test(v)) return stateSaid(v, null);
+  if (constant) {
+    const stem = (constant.split(/=>|-/).pop() ?? constant)
+      .replace(/^(?:g|l|m|s)?c_/i, '')
+      .replace(/^(?:co|c)_/i, '')
+      .replace(/^(?:cmd|command|action|act|fcode|ucomm|okcode|fc)_/i, '');
+    if (/^[a-z][a-z_]{2,}$/i.test(stem)) return stateSaid(stem.toUpperCase(), null);
+  }
+  return `Command '${v}'`;
+}
+
+/** The steps of a command workflow (`WorkflowLabels`), or null. */
+function workflowLabelsOf(machine: StateMachine | null, ctx: PlainContext): WorkflowLabels | null {
+  const flow = machine?.workflow;
+  if (!machine || !flow) return null;
+  const steps = [...flow.arms, ...flow.checks].map((arm: CommandArm): WorkflowStep => {
+    const verbs = arm.values.map((v, k) => commandSaid(v, arm.constants[k] ?? null));
+    // A command that is a code (`'A'`) is no verb: the step says the move itself — "Set status (Approval → Rejected)".
+    const said = !verbs.some((v) => v.startsWith('Command '));
+    const words = !said ? `Set ${machine.field}`
+      : verbs.length <= 2 ? verbs.map((w, k) => (k ? lcFirst(w) : w)).join(' or ') : `${verbs[0]} or ${verbs.length - 1} more`;
+    const opener = statementAt(ctx, arm.line)?.text ?? `WHEN ${arm.values.join(' OR ')}`;
+    return {
+      // An arm that moves nothing holds the checks its command must pass first.
+      name: arm.transitions.length ? transitionName(words, arm.transitions, machine) : `Checks for ${lcFirst(words)}`,
+      technicalName: opener.replace(/\.$/, ''),
+      line: arm.line,
+      decision: arm.decision,
+      lineStart: arm.lineStart,
+      lineEnd: arm.lineEnd,
+      moves: arm.transitions.map((t) => t.line),
+      said,
+      when: [...arm.values.map((v) => `'${v}'`), ...arm.constants.filter((c): c is string => !!c)],
+    };
+  });
+  return { routine: flow.routine, steps, driver: machine.driver };
 }
 
 /** The kinds a status setter's call can be drawn as. */
@@ -2488,6 +2553,39 @@ export interface PlainLabels {
    * '' for an older engine.
    */
   lane?(lane: { kind: string; name: string }): string;
+  /**
+   * 3.1.0 (AB-15a, round 2): the status workflow one routine runs as a decision over a command
+   * (`StateMachine.workflow`) — each arm that moves the status named as the move ("Approve (Submitted → Approved)"),
+   * with its lines — and the program's run when it is only a demo driver of it. Null without one, and always null for
+   * an older engine. The business map (`lib/bpmn/model.ts`, `readsObjects`) draws the arms as the steps.
+   */
+  workflow?: WorkflowLabels | null;
+}
+
+/** One step of a command workflow on the business map: an arm of the decision, named as the move it makes. */
+export interface WorkflowStep {
+  /** "Approve (Submitted → Approved)". */
+  name: string;
+  /** The arm's opener as the code writes it (`WHEN 'APPROVE'`). */
+  technicalName: string;
+  /** The arm's opener (`WHEN`, `IF`, `ELSEIF`) and the decision it belongs to (`CASE`, `IF`). */
+  line: number;
+  decision: number;
+  lineStart: number;
+  lineEnd: number;
+  /** The lines of the moves in the arm; empty for an arm of checks only ("Checks for grant"). */
+  moves: number[];
+  /** True when the command is said in words ("Approve"); false for a code (`'A'`), where the step says the move only. */
+  said: boolean;
+  /** How the code can write the arm's values on a decision's arm: the literal (`'APPROVE'`) or the constant's name. */
+  when: string[];
+}
+
+export interface WorkflowLabels {
+  /** The routine that runs the workflow, `CLASS=>METHOD` upper case. */
+  routine: string;
+  steps: WorkflowStep[];
+  driver: ScenarioDriver | null;
 }
 
 function normalise(condition: string): string {
@@ -2898,6 +2996,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
       const word = own(SAP_AUTHORIZATION_OBJECTS, token);
       return word ? `Authorization for ${lcFirst(word)} (${token})` : '';
     },
+    workflow: ctx.reads310 && ctx.stateMachine ? workflowLabelsOf(ctx.stateMachine(), ctx) : null,
   };
 }
 
