@@ -44,6 +44,16 @@ import { engineVersionAtLeast } from '../score-rule';
  *   - **a loop level begins at a start event of its own** on its `LOOP` line (the ADR-054 follow-up decided
  *     27.09.2026).
  *
+ * **3. Object-oriented programs read as business processes** (AB-15a, owner decision 06.11.2026, ADR-112):
+ *
+ *   - **a status workflow** (`lib/abap/state-machine.ts`) is said on the routines that move it — "Approve (Submitted →
+ *     Approved)", "Set status to Approved" (`lib/abap/plain-language.ts`);
+ *   - **technical methods are technique** (`lib/abap/technical-methods.ts`): a constructor, getter, setter or show
+ *     step folds like a lock (`lib/bpmn/model.ts`, `readsObjects`), and a technical or interface method folded onto
+ *     one statement is named by it; an entry that only calls one method has that method's content as its first level;
+ *   - in the skeleton, a routine that calls a phase of its own stays a phase (`collapseSmallRegions`), and
+ *     `SET HANDLER NEW lcl_x( )->on_y` binds that handler (`handlersSetBy`).
+ *
  * Rule ids and rule count do not change; a rule's `processElements` can name the new steps. A run of an older
  * engine keeps its map: whatever rebuilds one passes its engine version (`engineVersionOfProject`) to
  * `buildProcessSkeleton`, or holds a skeleton of this release and asks `skeletonReadFor`. The readings go live when
