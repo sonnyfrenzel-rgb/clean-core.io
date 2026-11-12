@@ -2307,7 +2307,7 @@
     "shell": "components/workspace/WorkspaceShell.tsx",
     "model": "lib/workspace-model.ts",
     "guard": "tests/preservation-workspace.spec.ts",
-    "reachability": "Every signed-in account since roadmap 3.0.1 (ADR-061): every project opens in the workspace and the seven stages are its tools. Until then it was an administrator's preview; WG-01 (reachability) and WG-02 (the way back led to /dashboard) closed with 3.0.1. The stages stay whole because they are the tools.",
+    "reachability": "Every signed-in account since roadmap 3.0.1 (ADR-061): every project opens in the workspace and the seven stages are its tools. Until then it was an administrator's preview; WG-01 (reachability) and WG-02 (the way back led to /dashboard) closed with 3.0.1. Since 3.1.0 (ADR-109) Analyze in the Business view is the project's entry, so its way back leads to My workspace (the project's way back would lead to itself); every other stage, and every stage of the demo, still leads back to the project's workspace. The stages stay whole because they are the tools.",
     "kinds": {
       "shown": "the workspace itself states it — a status, a chip, a layer row, the \"Why?\" of a status or the Next step card",
       "linked": "it lives on the stage page and the workspace opens that stage as a tool; the workspace neither repeats nor bypasses it",

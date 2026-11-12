@@ -38,7 +38,9 @@ test.describe('the view switch of a tool', () => {
     expect(header).toContain('<StageViewSwitch search={search} />');
     // In the row of the way back, which only a project or the demo has.
     const row = header.slice(header.indexOf('data-stage-head-row'), header.indexOf('<StageViewSwitch'));
-    expect(row).toContain('data-stage-back="workspace"');
+    // The way back names where it leads: the project's workspace, or — Analyze in
+    // the Business view only, the project's entry since ADR-109 — My workspace.
+    expect(row).toContain("data-stage-back={toMyWorkspace ? 'my-workspace' : 'workspace'}");
     expect(header).toMatch(/back\.kind === 'link' && \(\s*(\/\/[^\n]*\n\s*)*<div data-stage-head-row/);
     const sw = read('components/StageViewSwitch.tsx');
     expect(sw).toContain('<CcSegmentedControl');

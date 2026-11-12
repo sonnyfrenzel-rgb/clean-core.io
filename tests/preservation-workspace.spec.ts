@@ -119,6 +119,19 @@ interface Register {
 
 const register: Register = JSON.parse(fs.readFileSync(path.join(ROOT, REGISTER_PATH), 'utf8'));
 const raw = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+/** Every .ts/.tsx under `dir` (repo-relative, forward slashes) whose source matches `re`. */
+const grepTsx = (dir: string, re: RegExp): string[] => {
+  const out: string[] = [];
+  const walk = (abs: string) => {
+    for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
+      const p = path.join(abs, e.name);
+      if (e.isDirectory()) { if (e.name !== 'node_modules') walk(p); continue; }
+      if (/\.tsx?$/.test(e.name) && re.test(fs.readFileSync(p, 'utf8'))) out.push(path.relative(ROOT, p).replace(/\\/g, '/'));
+    }
+  };
+  walk(path.join(ROOT, dir));
+  return out;
+};
 const exists = (rel: string) => fs.existsSync(path.join(ROOT, rel));
 const KINDS: Kind[] = ['shown', 'linked', 'inherited', 'gap'];
 
@@ -427,7 +440,16 @@ test.describe('the open gaps are still open — closing one has to update the re
     // …and the stage header renders exactly that decision as its link (QA 1a44e754567b).
     const header = raw('components/StageHeader.tsx');
     expect(header).toContain('const back = stageBackLink({ projectId, search, demo });');
-    expect(header).toContain('href={back.href}');
+    // ADR-109 (3.1.0) gives exactly one stage another way back: Analyze in the
+    // Business view is the project's entry, so its link leads to My workspace.
+    // The flag is off by default, never on in the demo, and set by that one page.
+    expect(register.workspace.reachability).toContain('ADR-109');
+    expect(header).toContain('href={toMyWorkspace ? myWorkspaceHref() : back.href}');
+    expect(header).toContain('backToMyWorkspace = false,');
+    expect(header).toContain('const toMyWorkspace = backToMyWorkspace && !demo;');
+    const setters = ['app', 'components', 'lib'].flatMap((dir) => grepTsx(dir, /(?<![.\w])backToMyWorkspace\b/))
+      .filter((f) => f !== 'components/StageHeader.tsx');
+    expect(setters).toEqual(['components/analyze/AnalyzeBusiness.tsx']);
   });
 
   test('WG-03: the "Why?" of a status is still its own 24-px target (3.0.4)', () => {
