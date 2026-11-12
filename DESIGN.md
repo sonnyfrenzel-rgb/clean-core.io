@@ -682,6 +682,21 @@ names, the stage line says "Naming in business language …" with "Cancel". When
 an announcement in the live region — never under an open popover or a focused node; there only once it is
 closed. If the call fails, the technical names stay, and a message strip offers "Retry".
 
+**From 3.1.0 the names swap in on the map, visibly, at most 45 s** (ADR-108, mockup *Analyze, business first* v4.1
+states 1, 2, 3 and 18). The map stands with the engine's names at once; an element still waiting carries a small
+waiting mark. The model is asked once, only with the engine's facts (`namingFactsApply`), and its answer walks the map
+in the map's own order — the old name slides up and out, the new one in, a short tint of `--cc-information-bg`, and the
+pen mark of *AI-generated* stays at the element's corner (ADR-104: a pen, never a spark). The name stays inside the
+room the layout made for the engine's name, above the line anchor; a longer one is cut with an ellipsis, and its whole
+text is on the button's accessible name ("… AI-generated name"), in the step list and on the code card. **One status
+line** under the map says what happens: *Naming steps in plain language … 13 of 25*, after 20 s a countdown to the
+ceiling, then *Names are ready. 3 steps kept their technical name (no pen mark).* A name equal to the engine's is no
+swap and carries no mark — the download marks exactly what the map marks. **The ceiling is 45 s per program**, counted
+from the ask: names that are not there by then do not arrive on this visit, and the line says so in one sentence, as it
+does for a failed call — every engine name stays. A name never changes under the focus or an open code card; that
+element swaps once the reader moves on. Names stored before the visit, and every visit under `prefers-reduced-motion`,
+are simply there. An invited reader's visit asks nothing. The swap never rebuilds the map (`naming-swap.ts`).
+
 `prefers-reduced-motion` shows the end state at once — the reveal line is still at the top. "Skip" jumps to
 the same end state. A second visit has no build-up.
 

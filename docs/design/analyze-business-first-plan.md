@@ -415,6 +415,13 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   applied; the BPMN download marks exactly the model's names; a run signed by 3.0.21 keeps its picture; the
   readability ratchet does not go up; screenshots of the workspace map before/after shown to Sonny (the UI is still
   today's).
+- **Status (12.11.2026, branch `night/ab1`):** built. The gate is `ENGINE_READS_310_FROM` (it landed with the
+  pre-work merge); `namingFactsApply(engineVersion)` is the one rule for "names only with facts" — the context builder,
+  `withFacts` from `WorkspaceProcess` and `NAMING_ASKED_IN_THIS_BUILD` all read it, so every 3.0.x build stays paused and
+  3.1.0 asks. Specs: `naming-paused-3021` (claims hold for a context without facts; claim 6 a facts context passes),
+  `process-naming-auto`, `statement-proposal-route` (rendered, version-aware), new `naming-facts-starters-310`. Open:
+  privacy §3, the Trust page and the C14 notice still say names are paused — a check in `naming-paused-3021` fails the
+  3.1.0 bump until their new wording is in (legal review); the screenshots before/after for the owner.
 - **Risk:** medium. 34 % of nodes stay unnamed and half of the named ones equal the engine label (branch
   measurement), so the visible swap of AB-3 is smaller than in the mockup. `namingFactsOf` always uses the 3.5.0
   labels, also for a project signed by an older engine — check that facts and drawn labels match on such a project.
@@ -474,6 +481,15 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   `first-look-pacing`, `first-look` (its build-up half), `first-look-3021` (its drawing half).
 - **Done when:** [look] for states 1, 2, 3, 18; a failed or slow model leaves every engine name in place and the status
   line says so in one sentence; the page is usable during the whole arrival; an invited reader's visit asks nothing.
+- **Status (12.11.2026, branch `night/ab1`):** the swap, the status line, the 45 s ceiling, reduced motion and the
+  hold under focus are built (`lib/naming-arrival.ts`, `hooks/useNamingArrival.ts`,
+  `components/process-map/naming-swap.ts`, `NamingStatusLine.tsx`; ADR-108); a name equal to the engine's carries no
+  pen mark, on the map as in the download. Specs: `analyze-naming-arrival`, `ai-mark-per-element` (server-free),
+  `analyze-naming-swap` (rendered, not yet run). **Not yet:** the retirement of the paced build-up
+  (`FirstLookBuildUp`, `lib/first-look-buildup.ts`, `lib/first-look-excerpt.ts` and their specs) waits for AB-2, which
+  takes `FirstLook` out of Business — doing both on parallel branches would rewrite the same 1,600 lines twice; P2
+  (one facts naming for an older run) is not built: it would change the picture of a run signed before 3.1.0, which the
+  engine rule keeps, so it needs the owner's word first. [look] and the frame-time measurement on state 18 are open.
 - **Risk:** medium. Timing in CI (production build is faster than `next dev`); motion on a canvas of 60+ elements
   (state 18) — measure frame time on the large example before release.
 
