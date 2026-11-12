@@ -263,7 +263,7 @@ for (const vp of [
       test.setTimeout(420 * 1000);
       await startExample(page, { width: vp.width, height: vp.height });
 
-      // Business is Analyze's since AB-2 (ADR-111), and Analyze has no tips
+      // Business is Analyze's since AB-2 (ADR-109), and Analyze has no tips
       // (plan P7): the invitation "Walk me through it" and the tour do that job.
       // The tour of tips stands in the workspace's IT and Management views.
       const mark = page.locator('[data-coach-mark]');

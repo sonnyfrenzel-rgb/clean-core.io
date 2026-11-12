@@ -148,7 +148,7 @@ import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 
 /**
  * Analyze — one route, three views (`?view=`; plan
- * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-111).
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-109).
  *
  * **Business** (the default, and where a project opens): the map is the page —
  * `components/analyze/AnalyzeBusiness.tsx`. A project without source has no

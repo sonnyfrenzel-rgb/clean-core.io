@@ -9,7 +9,7 @@ import { BUSINESS_MAP_ID } from '../lib/business-layers';
 
 /**
  * Analyze opens business first: the map is the page (plan
- * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-111; mockup
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-109; mockup
  * `docs/roadmap/analyze-business-first-mockup.html`, states 3, 7 and 17).
  *
  * The pure half holds the entry's address rules (`lib/analyze-entry.ts`); the

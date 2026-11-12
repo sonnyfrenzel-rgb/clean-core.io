@@ -223,7 +223,7 @@ export const BUSINESS_MAP_LABEL = 'Process map';
 
 /**
  * The project's process — its BPMN map, the one place the process stands:
- * Analyze in the Business view since AB-2 (ADR-111; before, the workspace's
+ * Analyze in the Business view since AB-2 (ADR-109; before, the workspace's
  * Business view, ADR-080). Analyze's IT page links here: it reads findings,
  * never draws the process, and a reader who looks for the BPMN there must find
  * the way to it at once (owner, 11.10.2026).

@@ -620,7 +620,7 @@ is neither provenance nor object status, and no finding carries a severity that 
 
 ## 5. Analyze opens in the Business view
 
-**Since v3.1.0 (ADR-111, plan `docs/design/analyze-business-first-plan.md` AB-2, mockup
+**Since v3.1.0 (ADR-109, plan `docs/design/analyze-business-first-plan.md` AB-2, mockup
 `docs/roadmap/analyze-business-first-mockup.html` states 3, 7 and 17)** a project opens in **Analyze, Business view**
 — after a code import, an example, a link to `/project/<id>` and on every return visit — and **the map is the page**:
 
@@ -1247,7 +1247,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
-| 1.8.14 | 12.11.2026 | Analyze opens in the Business view and is the project's entry (ADR-111, plan AB-2): the map is the page under "What this program does" and one invitation; code on demand beside the map; the workspace sends Business there; the First insights blocks and "Next step" below the map until v3.2.0; no coach marks in Analyze (§5) |
+| 1.8.14 | 12.11.2026 | Analyze opens in the Business view and is the project's entry (ADR-109, plan AB-2): the map is the page under "What this program does" and one invitation; code on demand beside the map; the workspace sends Business there; the First insights blocks and "Next step" below the map until v3.2.0; no coach marks in Analyze (§5) |
 | 1.8.13 | 12.10.2026 | Re-entry in Business (ADR-099, owner 12.10.2026, amending ADR-072): one fixed line under the title says what the page is, and a compact tool bar — the same tools, marks and "Next" tag, with the legend — stands in the header above "Next step"; below L the "Tools" menu. The full bar stays in the work area under the map: §2.3 item 3, §2.11, §5.5 |
 | 1.8.12 | 11.10.2026 | Analyze: the Clean Core Score is the hero, and declutter wave 2 (ADR-093, owner approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`): the score with its band, scale, edition rule, the other edition's figure and its provenance beside the deduction table that sums to the signed score; one row of four facets; the "On this page" bar under the hero without a score anchor; one "Add evidence" and one "Export" menu; complexity/criticality meters and the inventory tables leave Analyze (display only); the hero figure joins the type scale: §1.2, §1.8, §2.3 |
 | 1.8.11 | 10.10.2026 | Analyze is not overlooked (ADR-090, owner 10.10.2026): until this browser has opened Analyze once, a done Analyze carries "Result ready" in every tool bar and the Business work area says "Your analysis is ready" with the signed run's figures; browser-only, the next step unchanged: §2.3 item 3 |

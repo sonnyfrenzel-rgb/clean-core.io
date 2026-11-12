@@ -174,7 +174,7 @@ Proposed new wording, one line each. A new ADR is written when its package lands
 | ADR-103 | superseded | First insights is Analyze's Business view: map, text around it with line anchors, 2–3 charts, two endings. |
 | ADR-104 | unchanged | Note only: the pen mark per element is the same `proposed` value, never a spark. |
 | ADR-105 | unchanged | Copy names "the view switch", never a position on screen. |
-| new ADR-107 (AB-2) — written as **ADR-111** | new | Analyze is business first and is the project's entry; IT and Management are views of the same tool. |
+| new ADR-107 (AB-2) — written as **ADR-109** | new | Analyze is business first and is the project's entry; IT and Management are views of the same tool. |
 | new ADR-108 (AB-3) | new | Names swap in per element after the fact check, within 45 s per program, announced in one status line; reduced motion swaps without motion. |
 | new ADR-109 (AB-4) | new | The soft gate, the two equal endings and "What you can do next" live in the browser only; nothing locks, nothing is confirmed. |
 | new ADR-110 (AB-7) | new | Charts under the map count only the engine's facts, each with its lines and *Reconstructed*; no chart without a sentence that says what it shows. |
@@ -424,7 +424,7 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 - **Status (12.11.2026, worktree branch `night/ab2`, not on `dev`):** built — `AnalyzeBusiness` on the Analyze route
   for Business, the code panel beside the map (`WorkspaceProcess` `codeOnClick`, `#L42`), the start run moved to
   Analyze, the entry points and the workspace redirect (`lib/analyze-entry.ts`), the interim blocks below the map;
-  written as **ADR-111** (ADR-107 went to Documentation the same day; 108–110 stay with AB-3, AB-4, AB-7);
+  written as **ADR-109** (ADR-107 went to Documentation and ADR-108 to the names' arrival of AB-1/AB-3 the same day);
   `analyze-business-first` added, `analyze-layout-guard` enforced for 3, 7, 17, the address-only spec changes made.
   Open: the Business branch of `WorkspaceShell` (unreachable since the redirect), the retirement of `WorkspaceHub`,
   `AnalysisReady` and their three specs, the demo (O10), and the rendered specs that read the workspace's Business

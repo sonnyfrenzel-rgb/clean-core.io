@@ -134,7 +134,7 @@ export default function ProjectWorkspacePage() {
   }
   const arrived = leaving?.kind === 'view' && view === leaving.view;
   /**
-   * The Business view is Analyze's now (plan AB-2, ADR-111): `/project/<id>`
+   * The Business view is Analyze's now (plan AB-2, ADR-109): `/project/<id>`
    * in Business — or with no view — goes to `/project/<id>/analyze`, keeping
    * `view`, `first`, `from`, `origin` and a line (`#L42`) or the map
    * (`lib/analyze-entry.ts`). An old layer address is sent where it lives

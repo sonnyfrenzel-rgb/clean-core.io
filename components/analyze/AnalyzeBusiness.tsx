@@ -44,7 +44,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
 
 /**
  * Analyze in the Business view — the page a project opens on (plan
- * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-111; mockup
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-109; mockup
  * `docs/roadmap/analyze-business-first-mockup.html`, states 3, 7 and 17).
  *
  * **The map is the page.** Under the stage header (way back to My workspace,

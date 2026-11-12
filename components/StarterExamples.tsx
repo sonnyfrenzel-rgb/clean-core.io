@@ -168,12 +168,12 @@ export default function StarterExamples({
         return;
       }
       // The same door "New project" uses: Analyze in the Business view —
-      // every project opens there (plan AB-2, ADR-111) — which signs the
+      // every project opens there (plan AB-2, ADR-109) — which signs the
       // engine's reading at once, so the map stands (ADR-072).
       // The release is not a field the browser may write; the first run
       // carries it (`lib/start-release-handoff.ts`), as Change target does.
       leaveStartRelease(docRef.id, edition === 'private' ? release : '');
-      // The project's entry since AB-2 (ADR-111): Analyze, Business view, which signs the engine's reading at once.
+      // The project's entry since AB-2 (ADR-109): Analyze, Business view, which signs the engine's reading at once.
       router.push(`/project/${docRef.id}/analyze?first=1`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');

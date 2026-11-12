@@ -120,7 +120,7 @@ export default function StageHeader({
   /**
    * The way back leads to "My workspace", the list of all projects, instead of
    * the project's workspace — for Analyze in the Business view, which is where
-   * a project opens (plan AB-2, ADR-111): its way back to the project would
+   * a project opens (plan AB-2, ADR-109): its way back to the project would
    * lead to itself.
    */
   backToMyWorkspace?: boolean;
