@@ -1,6 +1,6 @@
 # Zusatzvereinbarung zu eigenen Modellschlüsseln
 
-Kennung ZV-BYOK-1.0 (Anbieter: Anthropic), wirksam ab [offen: Datum der Freigabe]. Zwischen Felix Frenzel, Hellerstraße 9, 96047 Bamberg („Betreiber") und Ihnen als Inhaber eines Kontos bei Clean-Core.io. Sie nehmen diese Vereinbarung an, indem Sie beim Hinterlegen eines eigenen API-Schlüssels von Anthropic die Erklärung am Ende dieses Textes bestätigen; der vollständige Wortlaut ist dort verlinkt.
+Kennung ZV-BYOK-1.0 (Anbieter: Anthropic), wirksam ab 9. November 2026. Zwischen Felix Frenzel, Hellerstraße 9, 96047 Bamberg („Betreiber") und Ihnen als Inhaber eines Kontos bei Clean-Core.io. Sie nehmen diese Vereinbarung an, indem Sie beim Hinterlegen eines eigenen API-Schlüssels von Anthropic die Erklärung am Ende dieses Textes bestätigen; der vollständige Wortlaut ist dort verlinkt.
 
 ## Abschnitt A — Wofür diese Vereinbarung gilt und wofür nicht
 

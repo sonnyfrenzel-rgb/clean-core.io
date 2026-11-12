@@ -180,6 +180,19 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // Terms v2.3.0 carried the provisional version id 2026-10-23 until the release date
+        // (9 November 2026) became its id. That id was never published on main, but the draft
+        // address circulated in reviews and test mails, so it must not lead nowhere.
+        source: '/terms/versions/2026-10-23',
+        destination: '/terms/versions/2026-11-09',
+        permanent: true,
+      },
+      {
+        source: '/terms/versions/2026-10-23/:path*',
+        destination: '/terms/versions/2026-11-09/:path*',
+        permanent: true,
+      },
+      {
         // Public /changelog page retired — release history is kept internal
         // (CHANGELOG.md in the repo). Redirect any old links to the homepage.
         source: '/changelog',

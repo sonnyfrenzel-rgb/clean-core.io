@@ -12,7 +12,7 @@
  *   npx tsx scripts/send-terms-announcement.ts --send --confirm=<count>
  *       sends to at most 40 recipients (`--limit=<n>` for fewer), then stops;
  *       run the dry run again for the next batch and confirm its new count.
- *       On 09.11.2026 after 14:00 Berlin (or any later day) a real send does not
+ *       On 10.11.2026 after 14:00 Berlin (or any later day) a real send does not
  *       start without `--late-ok`; every run prints the reminder.
  *   npx tsx scripts/send-terms-announcement.ts --test-to scratch/<file> [--send --confirm=<mails>] [--allow-placeholders]
  *       TEST SEND to the seed mailboxes: one "<label> <address>" per line, #
@@ -31,7 +31,9 @@
  * What makes a send refuse: no `--confirm` or a count that does not match; a
  * changed clause without a reason; an "[open: …]" marker still in the new
  * wording; German and English clause lists that differ; TERMS_EFFECTIVE_DATE_ISO
- * not set, or today later than six weeks before it; a version page that does
+ * not set, or today later than the last day of receipt six weeks before it
+ * (`lastNoticeDay`: the effective day minus 43 days, 10 November for 23
+ * December); a stale version id (`staleVersionRefusal`); a version page that does
  * not answer 200; no RESEND_API_KEY outside the emulator.
  *
  * Proof of sending: besides the record on the profile (below), every sent
@@ -60,10 +62,11 @@ import { buildCommunityUpdateMail, type CommunityUpdateMail } from '../lib/terms
 import { parseRecipientFile } from './lib/mail-seed';
 import { TERMS_EFFECTIVE_DATE_ISO } from '../lib/legal/open-values';
 import { currentTermsChanges, type TermsChanges } from '../lib/terms-announcement/changes';
-import { buildTermsAnnouncementMail, type TermsAnnouncementMail } from '../lib/terms-announcement/mail';
+import { buildTermsAnnouncementMail, NOTICE_BASE_URL, type TermsAnnouncementMail } from '../lib/terms-announcement/mail';
 import {
   AnnouncementArgsError,
   NOTICE_FIELD,
+  deadlineFallback,
   deadlineRefusal,
   lastNoticeDay,
   logRef,
@@ -76,12 +79,13 @@ import {
   sendRefusal,
   sendWindowRefusal,
   sendWindowReminder,
+  staleVersionRefusal,
   testSendPlan,
   testSubject,
 } from '../lib/terms-announcement/send-plan';
 
 /** The notice always links the production site, whatever this process's APP_BASE_URL says. */
-const PUBLIC_BASE = 'https://clean-core.io';
+const PUBLIC_BASE = NOTICE_BASE_URL;
 const PAUSE_MS = 700;
 const EMULATOR = !!process.env.FIRESTORE_EMULATOR_HOST || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
 
@@ -122,7 +126,7 @@ function sampleCommunityMail(effective: string): CommunityUpdateMail {
   });
 }
 
-function writeSample(dir: string, c: TermsChanges, mail: TermsAnnouncementMail | null, extra: Record<string, unknown>): void {
+function writeSample(dir: string, c: TermsChanges, mail: TermsAnnouncementMail | null, effective: string | null, extra: Record<string, unknown>): void {
   fs.mkdirSync(dir, { recursive: true });
   // The HTML twin of the attachment is gone (06.11.2026); an old copy must not look current.
   for (const stale of fs.readdirSync(dir)) if (stale.startsWith('aenderungen-nutzungsbedingungen-') && stale.endsWith('.html')) fs.rmSync(path.join(dir, stale));
@@ -130,7 +134,7 @@ function writeSample(dir: string, c: TermsChanges, mail: TermsAnnouncementMail |
     fs.writeFileSync(path.join(dir, 'notice.html'), mail.html, 'utf8');
     fs.writeFileSync(path.join(dir, 'notice.txt'), mail.text, 'utf8');
     for (const a of mail.attachments) fs.writeFileSync(path.join(dir, a.filename), a.content, 'utf8');
-    const community = sampleCommunityMail(TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22');
+    const community = sampleCommunityMail(effective ?? c.to.version);
     fs.writeFileSync(path.join(dir, 'community-update.html'), community.html, 'utf8');
     fs.writeFileSync(path.join(dir, 'community-update.txt'), community.text, 'utf8');
   }
@@ -188,18 +192,21 @@ async function main() {
   const changes = currentTermsChanges();
   const problems = printChanges(changes);
   const effective = TERMS_EFFECTIVE_DATE_ISO;
-  console.log(`effective : ${effective ?? '(not set)'}${effective ? `, last day to send: ${lastNoticeDay(effective)}` : ''}`);
+  console.log(`effective : ${effective ?? '(not set)'}${effective ? `, last day to send: ${lastNoticeDay(effective)} (the day of receipt does not count)` : ''}`);
+  if (effective) console.log(`fallback  : ${deadlineFallback(effective)}`);
   const mail = effective ? buildTermsAnnouncementMail({ changes, effectiveDateIso: effective, baseUrl: PUBLIC_BASE }) : null;
   if (mail) {
     console.log(`subject   : ${mail.subject}`);
     console.log(`mail      : html ${Buffer.byteLength(mail.html)} bytes, text ${Buffer.byteLength(mail.text)} bytes, sha256 ${mail.sha256.slice(0, 16)}…`);
     for (const a of mail.attachments) console.log(`attachment: ${a.filename} ${Buffer.byteLength(a.content)} bytes, sha256 ${a.sha256.slice(0, 16)}…`);
+    const stale = staleVersionRefusal(mail);
+    if (stale) problems.push(stale);
     if (Buffer.byteLength(mail.html) > 102_000) console.log('note      : the HTML part is larger than 102 kB; Gmail shows the rest behind "View entire message".');
   }
   const outDir = path.resolve(args.out ?? path.join('tmp', 'terms-announcement', changes.to.version));
 
   if (args.sampleOnly) {
-    writeSample(outDir, changes, mail, { mode: 'sample-only' });
+    writeSample(outDir, changes, mail, effective, { mode: 'sample-only' });
     for (const p of problems) console.log(`NOT READY : ${p}`);
     return;
   }
@@ -232,7 +239,7 @@ async function main() {
   const thisRun = Math.min(plan.recipients.length, args.limit);
   console.log(`this run  : ${thisRun} (at most ${args.limit} per run)`);
 
-  writeSample(outDir, changes, mail, { mode: args.dryRun ? 'dry-run' : 'send', recipients: plan.recipients.length, skipped: plan.skipped, byAcceptedVersion: plan.byAcceptedVersion });
+  writeSample(outDir, changes, mail, effective, { mode: args.dryRun ? 'dry-run' : 'send', recipients: plan.recipients.length, skipped: plan.skipped, byAcceptedVersion: plan.byAcceptedVersion });
 
   const refusal = sendRefusal(args, plan.recipients.length);
   if (refusal === 'dry run') {
@@ -319,14 +326,23 @@ async function testSend(args: ReturnType<typeof parseAnnouncementArgs>, changes:
     process.exit(1);
   }
   const recipients = parseRecipientFile(fs.readFileSync(file, 'utf8'));
-  // No release date yet: the test renders the day the notice proposes.
-  const day = effective ?? '2026-12-22';
+  // The test renders the day the notice proposes; there is no second source for it.
+  if (!effective) {
+    console.error('REFUSED   : TERMS_EFFECTIVE_DATE_ISO is not set (lib/legal/open-values.ts)');
+    process.exit(1);
+  }
+  const day = effective;
   const mail = buildTermsAnnouncementMail({ changes, effectiveDateIso: day, baseUrl: PUBLIC_BASE });
   const community = sampleCommunityMail(day);
-  const { mails, refusal } = testSendPlan(recipients, args, changes.openMarkers);
+  const plan = testSendPlan(recipients, args, changes.openMarkers);
+  const { mails } = plan;
+  // A stale version id stops a test send as well: the test is the exact final notice.
+  const staleRefusal = staleVersionRefusal(mail);
+  const refusal = plan.refusal === 'dry run' || !staleRefusal ? plan.refusal : staleRefusal;
   console.log(`TEST SEND : ${recipients.length} recipient(s) (${recipients.map((r) => r.label).join(', ')}), ${mails.length} mail(s): notice with ${mail.attachments.map((a) => a.filename).join(', ')}, and the community mail`);
   console.log('test send : no proof, no Firestore write, no account; send window and six-week deadline not applied');
   for (const p of problems.filter((p) => !p.startsWith('open values'))) console.log(`note      : ${p}`);
+  if (staleRefusal && plan.refusal === 'dry run') console.log(`NOT READY : ${staleRefusal}`);
   if (refusal === 'dry run') {
     console.log(`DRY RUN — nothing sent. To send: --test-to ${args.testTo} --send --confirm=${mails.length}${changes.openMarkers.length ? ' --allow-placeholders' : ''}`);
     return;

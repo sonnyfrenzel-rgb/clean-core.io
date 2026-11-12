@@ -407,7 +407,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
       // Before the effective day is set, the seed renders the day the notice proposes (owner, 06.11.2026).
       const m = buildTermsAnnouncementMail({
         changes: currentTermsChanges(),
-        effectiveDateIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22',
+        effectiveDateIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23',
         baseUrl: 'https://clean-core.io',
       });
       return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: m.subject, html: m.html, text: m.text };
@@ -424,7 +424,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     build: (ctx) => {
       const unsubscribe = unsubscribeUrls('https://clean-core.io', unsignedToken('unsub', ctx));
       const m = buildCommunityUpdateMail({
-        plannedDayIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22',
+        plannedDayIso: TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23',
         consentedOnIso: ctx.now.toISOString().slice(0, 10),
         unsubscribeUrl: unsubscribe.page,
         baseUrl: 'https://clean-core.io',

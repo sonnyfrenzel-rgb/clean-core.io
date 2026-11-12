@@ -85,7 +85,7 @@ const ENDED = new Date('2026-10-13T09:30:00Z');
 function seeded() {
   return memoryDb({
     consent_events: {
-      c1: { uid: UID, userId: UID, email: EMAIL, kind: 'accepted', termsVersion: '2026-10-23', termsLanguage: 'de', contentSha256: 'abc', locale: 'de-DE', source: 'api/account/register', retention: PROOF_LOG_RETENTION, expiresAt: null },
+      c1: { uid: UID, userId: UID, email: EMAIL, kind: 'accepted', termsVersion: '2026-11-09', termsLanguage: 'de', contentSha256: 'abc', locale: 'de-DE', source: 'api/account/register', retention: PROOF_LOG_RETENTION, expiresAt: null },
       other: { uid: 'someone', userId: 'someone', email: 'x@example.org', kind: 'accepted', expiresAt: null },
     },
     byok_agreement_events: {
@@ -146,7 +146,7 @@ test.describe('an erasure keeps proofs, not data (privacy section 5, Terms 1.3, 
     expect(hash).not.toContain(suppressionId(EMAIL));
 
     const c1 = col('consent_events').get('c1')!;
-    expect(c1).toMatchObject({ accountHash: hash, termsVersion: '2026-10-23', termsLanguage: 'de', contentSha256: 'abc', contractEnding: 'account-deletion' });
+    expect(c1).toMatchObject({ accountHash: hash, termsVersion: '2026-11-09', termsLanguage: 'de', contentSha256: 'abc', contractEnding: 'account-deletion' });
     for (const gone of ['uid', 'userId', 'email', 'locale']) expect(c1[gone], `consent row kept ${gone}`).toBeUndefined();
     expect((c1.expiresAt as Date).toISOString()).toBe('2029-12-31T00:00:00.000Z');
     const b1 = col('byok_agreement_events').get('b1')!;

@@ -144,12 +144,12 @@ test.describe('registration sends one mail to the user and one to the administra
     const html = buildAdminSignupEmail({
       uid: 'uid-123',
       authMethod: 'Google',
-      termsVersion: '2026-10-23',
-      signedUpAt: '2026-10-23 09:00:00 UTC',
+      termsVersion: '2026-11-09',
+      signedUpAt: '2026-11-09 09:00:00 UTC',
     });
     expect(html).toContain('uid-123');
     expect(html).toContain('Google');
-    expect(html).toContain('2026-10-23');
+    expect(html).toContain('2026-11-09');
     expect(html).not.toMatch(/Full name|Email address|Motivation/);
     expect(buildAdminSignupSubject('uid-123')).toBe('New Clean-Core.io account: uid-123');
 

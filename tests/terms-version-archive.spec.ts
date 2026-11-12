@@ -498,3 +498,24 @@ test.describe('a consent record carries the wording it was given for', () => {
     expect(archivedTermsSha256(null)).toBeNull();
   });
 });
+
+/**
+ * Terms v2.3.0 carried the provisional id 2026-10-23 until the release date
+ * (9 November 2026) became its id. That id was never published on main, but
+ * the draft address went round in reviews and test mails, so it moves to the
+ * published one permanently instead of answering 404.
+ */
+test('the draft address of v2.3.0 redirects permanently to the published version', async ({ request }) => {
+  expect(TERMS_VERSION).toBe('2026-11-09');
+  expect(archivedTerms('2026-10-23')).toBeNull();
+  for (const [from, to] of [
+    ['/terms/versions/2026-10-23', '/terms/versions/2026-11-09'],
+    ['/terms/versions/2026-10-23/de', '/terms/versions/2026-11-09/de'],
+    ['/terms/versions/2026-10-23/en', '/terms/versions/2026-11-09/en'],
+  ]) {
+    const res = await request.get(from, { maxRedirects: 0 });
+    expect(res.status(), from).toBe(308);
+    expect(new URL(res.headers()['location'], 'http://x').pathname, from).toBe(to);
+    expect((await request.get(to)).status(), to).toBe(200);
+  }
+});

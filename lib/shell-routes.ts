@@ -73,6 +73,19 @@ export const SIGNED_IN_SHELL_ROUTES: readonly string[] = [
   '/settings',
 ];
 
+/**
+ * Pages that need an account but show their own signed-out state: an invitation
+ * link offers "Sign in" and "Create an account" to a reader who is not signed in
+ * (roadmap 3.0.21 (4)). The shell does not send them away (app/(app)/layout.tsx);
+ * without the signed-in hint they render that state without starting Auth
+ * (useAuthWanted), so opening a mailed link asks nobody but us (privacy policy
+ * section 7, network capture 09.11.2026).
+ */
+export const OWN_SIGNED_OUT_VIEW_ROUTES: readonly string[] = [
+  '/invitation/[projectId]/[invitationId]',
+  '/portfolio/invitation/[selectionId]/[invitationId]',
+];
+
 /** A route in folder form as a matcher for a pathname: a dynamic segment matches one segment. */
 export function routeMatcher(route: string): RegExp {
   const body = route
@@ -92,4 +105,11 @@ const PUBLIC_MATCHERS = PUBLIC_SHELL_ROUTES.map(routeMatcher);
  */
 export function isPublicShellPath(pathname: string): boolean {
   return PUBLIC_MATCHERS.some((matcher) => matcher.test(pathname));
+}
+
+const OWN_SIGNED_OUT_VIEW_MATCHERS = OWN_SIGNED_OUT_VIEW_ROUTES.map(routeMatcher);
+
+/** Whether `pathname` is a page that needs an account but shows its own signed-out state. */
+export function hasOwnSignedOutView(pathname: string): boolean {
+  return OWN_SIGNED_OUT_VIEW_MATCHERS.some((matcher) => matcher.test(pathname));
 }

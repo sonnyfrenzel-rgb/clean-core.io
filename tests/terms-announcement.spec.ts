@@ -25,6 +25,9 @@ import {
   MAX_TEST_MAILS,
   NOTICE_FIELD,
   NOTICE_SEND_DAY,
+  STALE_TERMS_VERSION_IDS,
+  addDays,
+  deadlineFallback,
   deadlineRefusal,
   lastNoticeDay,
   logRef,
@@ -34,6 +37,7 @@ import {
   sendLogLine,
   sendRefusal,
   sendWindowRefusal,
+  staleVersionRefusal,
   testSendPlan,
   testSubject,
 } from '../lib/terms-announcement/send-plan';
@@ -50,7 +54,7 @@ import { USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '../lib/constants';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const changes = currentTermsChanges();
-const PREVIEW_DAY = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-22';
+const PREVIEW_DAY = TERMS_EFFECTIVE_DATE_ISO ?? '2026-12-23';
 
 test.describe('the generator: every changed clause, from the texts as they are', () => {
   test('it compares the version in force (archived, digest checked) with the live source of the announced one', () => {
@@ -150,10 +154,10 @@ test.describe('the mail: a short body that is the notice, the full changed text 
   const [txt] = mail.attachments;
 
   test('the effective day, in both languages, in the subject and the body', () => {
-    if (PREVIEW_DAY === '2026-12-22') {
-      expect(mail.subject).toBe('Änderung der Nutzungsbedingungen zum 22. Dezember 2026 / Changes to the Terms of Service on 22 December 2026');
-      expect(dePart).toContain('Wirksam ab: 22. Dezember 2026.');
-      expect(enPart).toContain('Effective from: 22 December 2026.');
+    if (PREVIEW_DAY === '2026-12-23') {
+      expect(mail.subject).toBe('Änderung der Nutzungsbedingungen zum 23. Dezember 2026 / Changes to the Terms of Service on 23 December 2026');
+      expect(dePart).toContain('Wirksam ab: 23. Dezember 2026.');
+      expect(enPart).toContain('Effective from: 23 December 2026.');
     }
     expect(mail.subject).not.toMatch(/!/);
   });
@@ -301,12 +305,12 @@ test.describe('the send script: dry run by default, a send only with the confirm
     expect(sendRefusal(parseAnnouncementArgs(['--send', '--confirm=30']), 30)).toBeNull();
   });
 
-  test('the send day: a real send does not start after 14:00 Berlin on 09.11 without --late-ok', () => {
-    expect(NOTICE_SEND_DAY).toBe('2026-11-09');
-    expect(sendWindowRefusal(new Date('2026-11-09T12:59:00Z'), false)).toBeNull(); // 13:59 in Berlin
-    expect(sendWindowRefusal(new Date('2026-11-09T13:00:00Z'), false)).toMatch(/past 14:00 on 2026-11-09/); // 14:00
-    expect(sendWindowRefusal(new Date('2026-11-10T08:00:00Z'), false)).toMatch(/--late-ok/);
-    expect(sendWindowRefusal(new Date('2026-11-10T08:00:00Z'), true)).toBeNull();
+  test('the send day: a real send does not start after 14:00 Berlin on 10.11 without --late-ok', () => {
+    expect(NOTICE_SEND_DAY).toBe('2026-11-10');
+    expect(sendWindowRefusal(new Date('2026-11-10T12:59:00Z'), false)).toBeNull(); // 13:59 in Berlin
+    expect(sendWindowRefusal(new Date('2026-11-10T13:00:00Z'), false)).toMatch(/past 14:00 on 2026-11-10/); // 14:00
+    expect(sendWindowRefusal(new Date('2026-11-11T08:00:00Z'), false)).toMatch(/--late-ok/);
+    expect(sendWindowRefusal(new Date('2026-11-11T08:00:00Z'), true)).toBeNull();
     expect(parseAnnouncementArgs(['--late-ok']).lateOk).toBe(true);
     const src = read('scripts/send-terms-announcement.ts');
     expect(src).toContain('sendWindowRefusal(new Date(), args.lateOk)');
@@ -347,11 +351,47 @@ test.describe('the send script: dry run by default, a send only with the confirm
     for (const l of body.split('\n').filter((x) => /console\.(log|error)\(/.test(x))) expect(l).not.toMatch(/\.address\b/);
   });
 
-  test('six weeks: the last day to send for 22 December 2026 is 10 November 2026 (Berlin)', () => {
-    expect(lastNoticeDay('2026-12-22')).toBe('2026-11-10');
-    expect(deadlineRefusal('2026-12-22', new Date('2026-11-10T22:30:00Z'))).toBeNull(); // 23:30 in Berlin
-    expect(deadlineRefusal('2026-12-22', new Date('2026-11-10T23:30:00Z'))).toMatch(/too late/); // 00:30 on the 11th
+  // BGB section 187(1): the day of receipt does not count. Received on Monday 9 November,
+  // the six weeks run 10 November to 21 December, and the Terms take effect on 22 December.
+  test('six weeks: the last day to send for 22 December 2026 is 9 November 2026 (Berlin), never 10 November', () => {
+    expect(lastNoticeDay('2026-12-22')).toBe('2026-11-09');
+    expect(lastNoticeDay('2026-12-23')).toBe('2026-11-10');
+    expect(deadlineRefusal('2026-12-22', new Date('2026-11-09T22:30:00Z'))).toBeNull(); // 23:30 on the 9th in Berlin
+    const late = deadlineRefusal('2026-12-22', new Date('2026-11-09T23:30:00Z')); // 00:30 on the 10th
+    expect(late).toMatch(/too late/);
+    expect(deadlineRefusal('2026-12-22', new Date('2026-11-10T08:00:00Z'))).toMatch(/too late/);
+    // The refusal names the way out: move the effective day by one.
+    expect(late).toContain(
+      'If the notice cannot go out on 2026-11-09, set TERMS_EFFECTIVE_DATE_ISO to the next day (e.g. 2026-12-23) before sending; mail, attachment and dialog all read that constant.',
+    );
+    expect(deadlineFallback('2026-12-22')).toBe(
+      'If the notice cannot go out on 2026-11-09, set TERMS_EFFECTIVE_DATE_ISO to the next day (e.g. 2026-12-23) before sending; mail, attachment and dialog all read that constant.',
+    );
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
     expect(deadlineRefusal(null, new Date())).toMatch(/not set/);
+    // The script applies the deadline to every real send, and --late-ok does not lift it.
+    const src = read('scripts/send-terms-announcement.ts');
+    expect(src).toContain('const late = deadlineRefusal(effective, new Date());');
+    expect(src).toContain('deadlineFallback(effective)');
+  });
+
+  test('a stale version id: the notice refuses while "2026-10-23" is anywhere in it', () => {
+    expect(STALE_TERMS_VERSION_IDS).toContain('2026-10-23');
+    const clean = { html: '<p>/terms/versions/2026-11-09/de</p>', text: 'v2.3.0 (2026-11-09)', attachments: [{ filename: 'a.txt', content: 'x' }] };
+    expect(staleVersionRefusal(clean)).toBeNull();
+    expect(staleVersionRefusal({ ...clean, html: '<a href="/terms/versions/2026-10-23/de">' })).toMatch(/mail HTML/);
+    expect(staleVersionRefusal({ ...clean, text: 'Neue Fassung: v2.3.0 (2026-10-23)' })).toMatch(/mail text/);
+    expect(staleVersionRefusal({ ...clean, attachments: [{ filename: 'a.txt', content: 'new version (2026-10-23)' }] })).toMatch(/a\.txt/);
+    // The live notice is clean, and the script checks it on every run, test sends included.
+    expect(TERMS_VERSION).not.toBe('2026-10-23');
+    const mail = buildTermsAnnouncementMail({ changes: currentTermsChanges(), effectiveDateIso: '2026-12-22', baseUrl: 'https://clean-core.io' });
+    expect(staleVersionRefusal(mail)).toBeNull();
+    // The one link closes the English part and opens the English wording, in both parts of the mail.
+    expect(mail.text).toContain(`The new version in English:\nhttps://clean-core.io/terms/versions/${TERMS_VERSION}/en`);
+    expect(mail.html).toMatch(new RegExp(`href="https://clean-core\\.io/terms/versions/${TERMS_VERSION}/en"`));
+    const src = read('scripts/send-terms-announcement.ts');
+    expect(src).toContain('const stale = staleVersionRefusal(mail);');
+    expect(src.slice(src.indexOf('async function testSend('))).toContain('staleVersionRefusal(mail)');
   });
 
   test('recipients: every account with a contract, whatever its mail setting; suspended included; never CI, deleted, without a contract, or twice', () => {

@@ -32,6 +32,9 @@ import { LINE_BREAK, type DiffToken, type TermsChange, type TermsChanges } from 
  * address, so one digest per part proves what every recipient got.
  */
 
+/** The notice always links the production site, whatever the process's APP_BASE_URL says. */
+export const NOTICE_BASE_URL = 'https://clean-core.io';
+
 export interface TermsAnnouncementInput {
   changes: TermsChanges;
   /** ISO day the amendment is proposed to take effect (TERMS_EFFECTIVE_DATE_ISO). */
@@ -377,6 +380,9 @@ function attachmentText(blocks: Block[]): string {
 
 /* ------------------------------------------------------------------ the mail */
 
+/** The lead of the one link, which closes the English part and opens the English wording. */
+export const ENGLISH_LINK_LEAD = 'The new version in English:';
+
 /** Signed with the full name at the end of each language part (owner, 06.11.2026). */
 const SIGNATURE = 'Felix Frenzel';
 
@@ -399,7 +405,9 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
   const de = body('de', input, attachments[0].filename);
   const en = body('en', input, attachments[0].filename);
   const paths = { de: versionPath(input.changes.to.version, 'de'), en: versionPath(input.changes.to.version, 'en') };
-  const linkUrl = `${input.baseUrl}${paths.de}`;
+  // The one link of the mail closes the English part, so it opens the English wording (final review of
+  // 06.11.2026); the German part names the German address in its own sentence above (`fullText`).
+  const linkUrl = `${input.baseUrl}${paths.en}`;
 
   const html = wrapEmailDocument(
     buildUserMail({
@@ -412,7 +420,7 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
         'Dear Clean-Core.io community,',
         ...bodyHtml(en),
       ],
-      link: { lead: 'Die neue Fassung / The new version:', url: linkUrl },
+      link: { lead: ENGLISH_LINK_LEAD, url: linkUrl },
       signature: SIGNATURE,
       footer: FOOTER,
     }),
@@ -428,7 +436,7 @@ export function buildTermsAnnouncementMail(input: TermsAnnouncementInput): Terms
       'ENGLISH VERSION',
       'Dear Clean-Core.io community,',
       ...bodyLines(en),
-      `Die neue Fassung / The new version:\n${linkUrl}`,
+      `${ENGLISH_LINK_LEAD}\n${linkUrl}`,
       SIGNATURE,
       ...FOOTER,
       `Impressum / Imprint: ${MAIL_IMPRINT_HTML.replace('&szlig;', 'ß')}`,

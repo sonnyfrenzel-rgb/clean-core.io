@@ -46,6 +46,9 @@ const ALLOWED_TARGETS: RegExp[] = [
   /^\/dashboard$/,
   /^\/settings$/,
   /^\/admin$/,
+  // 09.11.2026: the shell sends a reader without the signed-in hint from any page
+  // that needs an account to sign in and back; "My workspace" is the list they open.
+  /^\/admin\/workspace$/,
   /^\/first-run$/,
   /^\/demo$/,
   // Roadmap 3.0.1: the landing's "Explore the demo" opens the workspace demo with its tour.

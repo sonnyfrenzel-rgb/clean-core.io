@@ -149,9 +149,9 @@ test.describe('G13/G14 — acceptance time and effective date are two facts', ()
     expect(later, 'Decide later is styled differently from Accept').toBe(accept);
     expect(CONSENT_TEXTS.amendment.afterList.de).toContain('wirksam wird sie für Sie erst am {{termsEffectiveDate}}');
     expect(CONSENT_TEXTS.amendment.checkbox.en).toContain('with effect from {{termsEffectiveDate}}');
-    // Set (22.12.2026, entered on the owner's instruction), the day renders in both languages.
-    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'en')).toContain('with effect from 22 December 2026');
-    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'de')).toContain('mit Wirkung zum 22. Dezember 2026');
+    // Set (23.12.2026, owner decision 09.11.2026), the day renders in both languages.
+    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'en')).toContain('with effect from 23 December 2026');
+    expect(consentText(CONSENT_TEXTS.amendment.checkbox, 'de')).toContain('mit Wirkung zum 23. Dezember 2026');
     expect(consentText(CONSENT_TEXTS.amendment.notice, 'de')).toContain('dem Wirksamkeitstag');
   });
 
@@ -161,15 +161,14 @@ test.describe('G13/G14 — acceptance time and effective date are two facts', ()
     expect(route).not.toContain('if (!termsAllowAddendum(profile.termsVersionAccepted))');
   });
 
-  test('the effective date is an open value, a fact, entered on the owner\'s instruction and not yet confirmed', () => {
+  test('the effective date is an open value, a fact, entered on the owner\'s instruction and confirmed by him', () => {
     const v = openValue('termsEffectiveDate');
     expect(v.isFact).toBe(true);
-    // Entered from the owner's instruction (announcement 09.11.2026, effective 22.12.2026);
-    // the release gate stays red until he confirms it.
-    expect(v.ownerConfirmed).toBe(false);
-    expect(v.enteredFrom).toMatch(/09\.11\.2026.*22\.12\.2026/);
-    expect(v.value).toEqual({ de: '22. Dezember 2026', en: '22 December 2026' });
-    expect(read('lib/legal/open-values.ts')).toContain("export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-22';");
+    // Owner decision 09.11.2026: announcement 10.11.2026, effective 23.12.2026 (09.11 was missed).
+    expect(v.ownerConfirmed).toBe(true);
+    expect(v.enteredFrom).toMatch(/10\.11\.2026.*23\.12\.2026/);
+    expect(v.value).toEqual({ de: '23. Dezember 2026', en: '23 December 2026' });
+    expect(read('lib/legal/open-values.ts')).toContain("export const TERMS_EFFECTIVE_DATE_ISO: string | null = '2026-12-23';");
   });
 });
 
@@ -363,14 +362,16 @@ test('no published text carries a change tag, a lawyer question, a variant or a 
   }
 });
 
-test('G21: no text states a Resend period of 30 days; each names the open value instead', () => {
+test('G21: no text states a Resend period of its own; each names the open value, now confirmed from the pricing table', () => {
   const sources = [...LEGAL_DOCUMENTS.map((d) => d.source), TRUST_EN, ...allConsentStrings().flatMap(({ text }) => [text.de, text.en])];
   for (const text of sources) {
     expect(text).not.toMatch(/Resend[^.]{0,80}30 (Tage|days)|30 (Tagen|days)[^.]{0,40}Resend/);
   }
   expect(LEGAL_DOCUMENTS.find((d) => d.id === 'privacy' && d.lang === 'de')!.source.split('{{resendRetentionDays}}').length - 1).toBe(5);
   expect(TRUST_EN.split('{{resendRetentionDays}}').length - 1).toBe(2);
+  // Confirmed 06.11.2026 from resend.com/pricing ("Data retention": 30 days); the texts still read it from the value.
   const v = openValue('resendRetentionDays');
-  expect(v.value).toBeNull();
-  expect(v.ownerConfirmed).toBe(false);
+  expect(v.value).toEqual({ de: '30 Tage', en: '30 days' });
+  expect(v.enteredFrom).toMatch(/resend\.com\/pricing/);
+  expect(v.ownerConfirmed).toBe(true);
 });

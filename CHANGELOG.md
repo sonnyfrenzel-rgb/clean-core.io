@@ -5,9 +5,9 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v3.0.21] — 2026-10-24
+## [v3.0.21] — 2026-11-09
 
-Release candidate on dev. Engine-version gated (3.0.21, `ENGINE_READS_3021_FROM`): a project analysed by an
+Released on 9 November 2026 (first cut on dev 24 October 2026). Engine-version gated (3.0.21, `ENGINE_READS_3021_FROM`): a project analysed by an
 earlier engine keeps the reading it was given — its First insights, Documentation, BPMN, rule baskets and signed
 run do not move. New runs read with the 3.0.21 engine.
 
@@ -53,9 +53,12 @@ run do not move. New runs read with the 3.0.21 engine.
 - **Automatic steps with an own key are a switch, off by default.** With the platform key the automatic plain
   wording and business names stay as they are; with your own Gemini or Claude key they run only after you turn
   on "Automatic steps" in Settings, and come on a click until then.
-- **Claude as your own key (BYOK),** under the Additional Agreement on Own Model Keys (ZV-BYOK-1.0). Settings
-  names the model as a reader reads it (Claude Sonnet 5.5). An own key counts only after a successful test, and a
-  key saved again is untested again.
+- **Claude as your own key (BYOK) is built and switched off.** Code, the Additional Agreement on Own Model Keys
+  (ZV-BYOK-1.0) and the texts ship with this release, but Anthropic is not selectable
+  (`ANTHROPIC_OWN_KEY_OFFERED` is `false`): Settings shows it with a status sentence, and the key routes and the
+  proxy refuse an Anthropic key. It is switched on once Terms v2.3.0 are in effect (23 December 2026) and the
+  acceptance tests T01, T03 and T08 have passed. Settings names the model as a reader reads it (Claude Sonnet
+  5.5); an own key counts only after a successful test, and a key saved again is untested again.
 - **The glossary assistant says it is an AI system** and marks its answers AI-generated (Art. 50(1) AI Act).
 - **A switched-off provider says since when and why.**
 
@@ -65,12 +68,26 @@ run do not move. New runs read with the 3.0.21 engine.
   and English, each from one source, with the lawyer's replacement texts G01–G23: a precautionary joint
   controllership clause, the billing-address criterion, the contract kept apart from community mail, an amendment
   accepted early taking effect on its announced day, Resend retention by account setting, the ATC fields and the
-  SAP interface warranty. Terms v2.2.0 stays in force beside v2.3.0. The release date of Fassung 1.1 and the
-  effective date of v2.3.0 are open values the owner sets on release day; the release gate stays red until then.
+  SAP interface warranty. Terms v2.2.0 stays in force beside v2.3.0. Fassung 1.1 is released on 9 November 2026,
+  and Terms v2.3.0 carries that date as its version id (`/terms/versions/2026-11-09`); for an existing account it
+  takes effect on 23 December 2026, and only if the account accepts it. Every open value of the texts is confirmed
+  by the owner, and the release gate on `main` holds them.
+- **The notice of the amended Terms** goes to every account with a contract on 10 November 2026, six weeks before
+  the change takes effect, with the changed provisions, their reasons and the full changed wording as a text file
+  in German and English. The in-app dialog shows the same list, the effective date and the same file for download,
+  and says that nobody has to accept: without acceptance the previous version continues to apply.
+- **Terms 5.4 and 13, clarified:** with the model-supported steps switched off, a model is still called when you
+  start a step yourself or ask the assistant a question; the Additional Agreement on own keys ends by deleting the
+  key or by writing to us in text form, in both places the Terms mention it.
 - **The record of an acceptance** carries the language version and its digest, and the confirmation mail the full
-  wording and the effective date. Proof records carry a deletion date and are pseudonymised on erasure.
+  wording and the effective date. Proof records carry a deletion date and are pseudonymised on erasure; the five
+  proof-log TTL policies and the pseudonym pepper are in place in production since 9 November 2026.
 - **No request to Google before sign-in:** public pages load the Auth SDK only for a browser that holds the
-  signed-in hint, an open access dialog or a pending redirect. After a Google sign-in the profile picture address
+  signed-in hint, an open access dialog or a pending redirect. A page that needs an account, opened without the
+  hint, is not rendered: the reader goes to sign-in and back, without Auth starting on the way (the network capture
+  of 9 November 2026 had found /dashboard contacting Google on Safari). Opening the sign-in dialog itself contacts
+  Google on Safari and phones, by design. A browser that still holds a session from before this release takes one
+  hop through the sign-in dialog, once. After a Google sign-in the profile picture address
   leaves the account record.
 - **The operator's new-account mail** carries the account id, the sign-in method, the Terms version and the
   time — no name, no address, no motivation.
@@ -179,6 +196,12 @@ run do not move. New runs read with the 3.0.21 engine.
 - **The QA triage tells a rewritten assertion from a removed one.**
 
 ## [v3.0.20] — 2026-10-22
+
+### Fixed — hotfix 05 November 2026
+
+- **The assistant says it is an AI system.** A permanent notice at the input of the assistant names the
+  generative model behind the answers and says they are drafts, not reviewed advice (Art. 50(1) AI Act). Not in
+  the demo, where no model is called.
 
 ### Changed — the Business view for business readers (owner decisions 21 October 2026)
 

@@ -1,6 +1,6 @@
 # Additional Agreement on Own Model Keys
 
-Identifier ZV-BYOK-1.0 (provider: Anthropic), effective from [open: release date]. Between Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany ("operator") and you as the holder of a Clean-Core.io account. You accept this agreement by confirming the statement at the end of this text when you store your own Anthropic API key; the full wording is linked there.
+Identifier ZV-BYOK-1.0 (provider: Anthropic), effective from 9 November 2026. Between Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany ("operator") and you as the holder of a Clean-Core.io account. You accept this agreement by confirming the statement at the end of this text when you store your own Anthropic API key; the full wording is linked there.
 
 ## Part A — What this agreement covers and what it does not
 
