@@ -158,7 +158,8 @@ test.describe('a proposal explains itself', () => {
   test('stands beside the proposed figure on the card, behind "How is this proposed?"', () => {
     const cards = read('components/tco/OptionComparison.tsx');
     expect(cards).toContain('title="How is this proposed?"');
-    expect(cards).toContain('lines={effortDerivation(loc as number, proposal)}');
+    // Hotfix 3.0.22 (HF-e): the option's own proposal (tests/hotfix-3022.spec.ts).
+    expect(cards).toContain('lines={effortDerivation(loc as number, ownProposal)}');
     expect(cards).toContain('lines={baselineDerivation(loc as number, baselineProposal)}');
     expect(read(PAGE)).toMatch(/loc=\{loc\}\s+sourceLoc=\{sourceLoc\}/);
   });

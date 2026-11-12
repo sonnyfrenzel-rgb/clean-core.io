@@ -17,7 +17,7 @@ import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requirements';
 import { buildNfrSet, type NfrSet, NFR_OWNER_LABEL } from '@/lib/non-functional-requirements';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
-import { capabilityFactsOf } from '@/lib/documentation-facts';
+import { capabilityFactsOf, ownAuthorizationIn } from '@/lib/documentation-facts';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary, withoutCodes } from '@/lib/program-summary-text';
 import { checkPurposeProposal } from '@/lib/program-summary-check';
@@ -31,6 +31,7 @@ import { stripModelMarkdown } from '@/lib/model-text';
 import { sapCheckedNarrative } from '@/lib/sap-reference-check';
 import { screenProgramDocument, screenSensitiveText } from '@/lib/sensitive-text';
 import { FR_TOPICS_COVERED_BY_NFR } from '@/lib/requirements-export';
+import { businessRulesWord, documentRuleCounts } from '@/lib/rule-counts';
 import {
   PROCESS_DOCUMENT_FORMAT,
   PROCESS_DOCUMENT_FORMAT_VERSION,
@@ -1379,20 +1380,36 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   };
 
   const authority = calls.authorityChecks.filter((c) => reachedLine(c.lineStart) && c.object);
+  // Hotfix 3.0.22: a role the program checks in its own code is an authorization too — never said to be absent.
+  const ownAuthorization = ownAuthorizationIn(lines);
+  // Any other AUTHORITY-CHECK — its object named at run time, or off the path read here — is still a check: never absent.
+  const otherAuthority = calls.authorityChecks.filter((c) => !authority.includes(c));
   const users: PdText = authority.length
     ? {
         text: 'An authorization check limits who can complete it.',
         anchors: distinctAnchors(authority.map((c) => anchor(c.lineStart, c.lineEnd))),
         detail: [...new Set(authority.map((c) => c.object!.toUpperCase()))].join(', '),
       }
-    : {
-        text: 'The code checks no authorization of its own.',
-        anchors: [anchor(programLine)],
-      };
+    : otherAuthority.length
+      ? {
+          text: 'The code has an AUTHORITY-CHECK; which object it tests, or whether this path reaches it, is not read here.',
+          anchors: distinctAnchors(otherAuthority.map((c) => anchor(c.lineStart, c.lineEnd))),
+        }
+      : ownAuthorization.length
+        ? {
+            // Only what the scan proves: the code names authorization or roles — not that every path is checked.
+            text: 'No SAP authorization object is checked; its own code names an authorization or a role it checks.',
+            anchors: distinctAnchors(ownAuthorization.map((o) => anchor(o.line))),
+            detail: ownAuthorization.map((o) => o.name).join(', '),
+          }
+        : {
+            text: 'No AUTHORITY-CHECK and no role check in the code.',
+            anchors: [anchor(programLine)],
+          };
 
   const inScope: PdText[] = [
     {
-      text: `The process in ${engine.fileName}: ${steps.length} step${steps.length === 1 ? '' : 's'}, ${decisions} decision point${decisions === 1 ? '' : 's'}, ${rules.length} rule${rules.length === 1 ? '' : 's'}.`,
+      text: `The process in ${engine.fileName}: ${steps.length} step${steps.length === 1 ? '' : 's'}, ${decisions} decision point${decisions === 1 ? '' : 's'}, ${businessRulesWord(documentRuleCounts(rules).businessRules)}.`,
       anchors: [anchor(1, Math.max(1, engine.lineCount))],
     },
   ];

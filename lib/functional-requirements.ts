@@ -974,7 +974,7 @@ function openItems(ctx: Ctx, rules: BusinessRule[], unreachable: string[], formR
     out.push({
       topic: 'authorization',
       question: 'Who may run this process, and which role grants it?',
-      why: 'The code contains no authorization check, so it says nothing about who may run it.',
+      why: 'The code contains no AUTHORITY-CHECK, so it does not name the SAP role that may run it.',
       anchors: [],
     });
   }

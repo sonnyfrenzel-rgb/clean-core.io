@@ -155,7 +155,8 @@ const factor = (v: number) => formatNumber(v, { maximumFractionDigits: 2 }) ?? S
  * can never disagree.
  */
 export function effortDerivation(loc: number, proposal: EffortProposal): DerivationLine[] {
-  const f = PROPOSED_DAYS_PER_1000_LINES;
+  // The option's own factors (hotfix 3.0.22, HF-e); a proposal made before carries none and used Rebuild's.
+  const f = proposal.factors ?? PROPOSED_DAYS_PER_1000_LINES;
   const lines = `${formatLines(loc)} lines ÷ 1,000`;
   return [
     {

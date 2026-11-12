@@ -27,7 +27,7 @@
  * Pure.
  */
 
-import { aiOriginMarksIn, aiOriginOf, authorshipOfRecord, storedAiModelRecord, type AiAuthorship, type AiOrigin } from './ai-marking';
+import { AI_MARKING_BASIS, aiMarkingField, aiOriginMarksIn, aiOriginOf, authorshipOfRecord, storedAiModelRecord, type AiAuthorship, type AiMarkingField, type AiOrigin } from './ai-marking';
 import { packageDigest, testSuiteBasisOf } from './test-suite-basis';
 
 export type AiSource = 'code' | 'tests' | 'analysis' | 'design' | 'sop' | 'documentation';
@@ -171,6 +171,66 @@ export function dashboardDeliverableAuthorship(
     default:
       return null;
   }
+}
+
+/** The metadata field of a raw project JSON export (hotfix 3.0.22): one marking per source a model wrote. */
+export interface ProjectExportAiGeneration {
+  basis: string;
+  /** What a reader of the file needs: which fields hold text a model wrote, and who wrote it as far as recorded. */
+  note: string;
+  sources: Partial<Record<AiSource, AiMarkingField>>;
+}
+
+/** The project field each source lives in, for the note. */
+const SOURCE_FIELD: Record<AiSource, string> = {
+  code: 'generatedCode',
+  tests: 'testSuite',
+  analysis: 'analysis',
+  design: 'solutionDesign',
+  sop: 'businessDocumentation',
+  documentation: 'documentation',
+};
+
+/**
+ * The AI marking of a raw project export — the dashboard's and the workspace list's `<name>_export.json` (hotfix
+ * 3.0.22; legal/open-values.ts `aiMarkingManifest`, known limit 3): JSON has no comment, so it carries the metadata
+ * field every other export carries (`aiMarkingField`), per model-written source. Null when no model wrote anything
+ * in it — the source and the engine's records alone are not marked (G05).
+ */
+export function projectExportAiGeneration(facts: AiAuthorshipFacts, appVersion: string): ProjectExportAiGeneration | null {
+  const sources: Partial<Record<AiSource, AiMarkingField>> = {};
+  for (const key of Object.keys(SOURCE_FIELD) as AiSource[]) {
+    const who = facts[key];
+    if (who) sources[key] = aiMarkingField(who, appVersion);
+  }
+  const keys = Object.keys(sources) as AiSource[];
+  if (keys.length === 0) return null;
+  return {
+    basis: AI_MARKING_BASIS,
+    note: `Fields with text a language model wrote or co-wrote: ${keys.map((k) => SOURCE_FIELD[k]).join(', ')}. Every other field is the engine's record or the user's input.`,
+    sources,
+  };
+}
+
+/** The project export with its marking first; unchanged when no model wrote anything in it. */
+export function withProjectExportAiGeneration<T extends object>(data: T, facts: AiAuthorshipFacts, appVersion: string): T | ({ aiGeneration: ProjectExportAiGeneration } & T) {
+  const aiGeneration = projectExportAiGeneration(facts, appVersion);
+  return aiGeneration ? { aiGeneration, ...data } : data;
+}
+
+/**
+ * The marking of the Transformation's unsaved draft file (hotfix 3.0.22): the file list the page holds, wrapped with
+ * the code's metadata field. The draft is model-written by definition — it is the generation that was not stored.
+ */
+export function markedTransformationDraft(draftJson: string, code: AiAuthorship | null, appVersion: string): string {
+  let files: unknown;
+  try {
+    files = JSON.parse(draftJson);
+  } catch {
+    files = draftJson;
+  }
+  const aiGeneration = aiMarkingField(code ?? UNKNOWN, appVersion);
+  return JSON.stringify({ aiGeneration, files }, null, 2);
 }
 
 /**

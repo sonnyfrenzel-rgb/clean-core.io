@@ -25,7 +25,7 @@ import {
 } from './testing-closure';
 import { isAbapUnitRoute } from './test-runnability';
 import { storedActivation, storedContextDigest, storedTypeCheck } from './transformation/generation-record';
-import { activationClosureRefusal, typeCheckClosureRefusal } from './transformation/check-words';
+import { activationClosureRefusal, activationStatusPhrase, typeCheckClosureRefusal, typeCheckStatusPhrase } from './transformation/check-words';
 import { PREVIOUS_PACKAGE, testedPackageMoved } from './test-suite-basis';
 import { isKeyUserDecision, KEY_USER_STEPS_PATH } from './key-user-route';
 import { keyUserAcceptanceLine, keyUserAcceptanceReading } from './key-user-acceptance';
@@ -908,6 +908,16 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
   const engineRecord = (project as { generationBinding?: { path?: unknown; engine?: { status?: unknown; notWritten?: unknown; units?: unknown } | null } } | null)?.generationBinding;
   const notWrittenCount = engineRecord?.path === 'engine-led' && Array.isArray(engineRecord.engine?.notWritten) ? engineRecord.engine.notWritten.length : 0;
   const partialGeneration = engineRecord?.path === 'engine-led' && engineRecord.engine?.status === 'partial' && notWrittenCount > 0;
+  // The stored check's words ("generated — not activatable: …", or "… does not compile" for a Node package), or null
+  // when the check passed or no check is on record (a package stored before 3.0.13 is not re-labelled).
+  const storedLint = storedActivation(engineRecord);
+  const storedTypes = storedTypeCheck(engineRecord);
+  const notActivatable: { badge: string; words: string } | null =
+    storedLint && !storedLint.activatable
+      ? { badge: 'Generated · not activatable', words: activationStatusPhrase(storedLint).replace(/^generated — /, '') }
+      : storedTypes && !storedTypes.runnable
+        ? { badge: 'Generated · not runnable', words: typeCheckStatusPhrase(storedTypes).replace(/^generated — /, '') }
+        : null;
   // Roadmap 3.0.19: a key-user decision generates no code. Transformation's
   // output is the engine's key-user step list, rebuilt from the signed source
   // whenever it is opened — done, never proven: a candidate holds only once
@@ -920,7 +930,15 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
         detail: 'No code is generated: the decision is key-user extensibility. The engine built the key-user step list from the signed run — configured in the system by a key user, not built here.',
       })
     : hasGenerated
-    ? partialGeneration
+    ? notActivatable
+      ? // Hotfix 3.0.22 (HF-a): the state comes from the server's check of the stored package, not from "files
+        // written" — owner example A read "Transformation (done)" with four abaplint errors on it.
+        phase('transformation', {
+          state: 'partial',
+          badge: notActivatable.badge,
+          detail: `Target code ${notActivatable.words} — regenerate it before testing.`,
+        })
+      : partialGeneration
       ? phase('transformation', {
           state: 'partial',
           badge: 'Generated · partial',

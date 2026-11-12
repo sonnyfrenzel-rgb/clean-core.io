@@ -5,6 +5,57 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.22] — 2026-11-12
+
+A hotfix from an end-to-end run of an owner example: a 936-line object-oriented program with a status workflow and
+role checks, run on a production build with the real model. No engine-version gate: what a signed run says does not
+move.
+
+### Fixed
+
+- **Transformation of an object-oriented program activates.** The engine-built frame named the original's local
+  interface and local service class, which the generated logic class does not have — three of four abaplint errors.
+  A reference to the original's own classes and interfaces now names the logic class; a local exception class
+  becomes its nearest global ancestor. The tool bar says "Generated – not activatable" while the stored check fails,
+  never "done".
+- **No stub for a long core routine.** A fill unit over the 28,000-character prompt cap sends its rules' and checks'
+  text by their start (the ABAP slice is never cut) instead of being skipped. A unit that still does not fit is
+  named.
+- **Testing passes on the first attempt or says why.** ABAP Unit method names over 30 characters are shortened,
+  uniquely, instead of failing the attempt. A model call is no longer cut off by the server's transport after
+  300 seconds; it runs to the step's own 870-second deadline, and a failed call says whether it timed out or lost
+  its connection, instead of "Network error … regional restrictions".
+- **No claim of an absence the engine did not check.** A program whose own code approves or overrides is no longer
+  called "read-only" or said to have "no approval workflow". A program that checks roles in its own code (a role it
+  requires, `'NOT_AUTHORIZED'`) is no longer said to check "no authorization of its own": Documentation says its own
+  code names an authorization or a role it checks, and where nothing is found it says only "No AUTHORITY-CHECK and no role check".
+- **Economics, counts and Delivery.** Rebuild, Move to SAP standard and Retire each get the effort of their own
+  option (Retire has no running effort). Design, Transformation, Documentation and Testing count business rules
+  from one source and say what each number counts ("5 questions cover 16 of the 41 business rules"). One line count
+  everywhere. Delivery names the confirmed design apart from the decision still to record.
+- **An open project follows the signed-in account.** Signing in as another account in a second tab switched an
+  open project tab to that account while it kept showing the first account's project and code. Every project page
+  now reloads as the new account (and is refused if that account has no access); after a sign-out nothing of the
+  project stays on screen.
+- **The pack check shows the result of the pack you chose.** On `/verify-pack`, a slow check of one audit pack or
+  delivery package could finish after another pack was chosen and appear beneath it; a result that is no longer
+  current is now dropped.
+- Raw JSON project exports and the Transformation's draft download carry the AI-marking field like every other
+  export.
+- The assistant describes the transformation (the engine builds the skeleton, the model fills method bodies) and
+  the Delivery page as they are.
+- **SAP reference patterns are named again where SAP restored them.** SAP archived several reference architectures
+  of its Architecture Center on 9 October 2026 and restored some of them on 27 October 2026. The integration target
+  names RA0022 and RA0021 again, XSUAA and IAM roles RA0019, the Destination service RA0021 and RA0022 (partial),
+  and the Delivery handover RA0023 for CAP, integration and event targets. A CAP target names RA0023 (its lifecycle) and RA0021
+  (its integration) as partial patterns: no current SAP pattern describes a CAP extension as a whole.
+
+### Operations
+
+- `npm run retention:backfill-email-expiry` gives mail delivery records written before v3.0.21 their expiry date,
+  so the retention policy removes them (dry run by default, `--apply` writes).
+- SAP Architecture Center, DSAG ABAP guide and ABAP cheat-sheet references synced (9 November 2026).
+
 ## [v3.0.21] — 2026-11-09
 
 Released on 9 November 2026 (first cut on dev 24 October 2026). Engine-version gated (3.0.21, `ENGINE_READS_3021_FROM`): a project analysed by an

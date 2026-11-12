@@ -298,13 +298,18 @@ test.describe('the guided stage', () => {
     await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-baseline-provenance', 'stated');
     await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-effort-provenance', 'from-proposal');
 
-    // The taken-over figures are rounded in the input too, and editing one makes it a typed figure.
+    // The taken-over figures are rounded in the input too, and editing one makes it a typed figure. Rebuild keeps the
+    // factor that gives 0.668 × 5 = 3.3400000000000003 (hotfix 3.0.22, HF-e: Move to SAP standard has its own, lower
+    // factors since, so its field reads 2 — the option's own proposal, also rounded).
     await page.click('[data-cost-option-edit="standard"]');
-    const high = page.locator('[data-cost-field="standard-oneoff-high-dev"]');
+    await expect(page.locator('[data-cost-field="standard-oneoff-high-dev"]')).toHaveValue(String(roundDays(proposeEffort(LOC, 'standard')!.oneOff.high.devDays)));
+    await page.click('[data-cost-option-edit="standard"]');
+    await page.click('[data-cost-option-edit="rebuild"]');
+    const high = page.locator('[data-cost-field="rebuild-oneoff-high-dev"]');
     await expect(high).toHaveValue('3.3');
     await high.fill('4');
-    await expect(page.locator('[data-cost-option="standard"]')).toHaveAttribute('data-effort-provenance', 'stated');
-    await expect(page.locator('[data-cost-option="standard"] [data-effort-chip="stated"]')).toContainText('your figure');
+    await expect(page.locator('[data-cost-option="rebuild"]')).toHaveAttribute('data-effort-provenance', 'stated');
+    await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="stated"]')).toContainText('your figure');
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
 

@@ -203,22 +203,54 @@ export const PROPOSED_DAYS_PER_1000_LINES = {
   perReleaseTest: 1.8,
 } as const;
 
+export type EffortFactors = { readonly [K in keyof typeof PROPOSED_DAYS_PER_1000_LINES]: number };
+
+/**
+ * The factors per option (hotfix 3.0.22, HF-e: owner example A's Economics gave Rebuild, Move to SAP standard and
+ * Retire the same proposal, Retire with running effort, and Keep a one-off effort). Each option's figures follow from
+ * what the option is: Rebuild writes the code again and maintains it (the factors above); Move to SAP standard (and
+ * key-user extensibility) configures and migrates once and only retests per release — SAP maintains the code; Retire
+ * removes the code once and has no running effort; Keep and Do nothing build nothing once and adapt and retest per
+ * release (their yearly upkeep is the maintenance baseline). Nothing measured any of these factors.
+ */
+export const PROPOSED_DAYS_BY_KIND: Readonly<Record<OptionKind, EffortFactors>> = {
+  rebuild: PROPOSED_DAYS_PER_1000_LINES,
+  standard: { oneOffDevLow: 1.0, oneOffDevHigh: 3.0, oneOffTestLow: 1.0, oneOffTestHigh: 2.5, perReleaseDev: 0, perReleaseTest: 1.0 },
+  keyuser: { oneOffDevLow: 1.0, oneOffDevHigh: 3.0, oneOffTestLow: 1.0, oneOffTestHigh: 2.5, perReleaseDev: 0, perReleaseTest: 1.0 },
+  retire: { oneOffDevLow: 0.3, oneOffDevHigh: 1.0, oneOffTestLow: 0.5, oneOffTestHigh: 1.0, perReleaseDev: 0, perReleaseTest: 0 },
+  keep: { oneOffDevLow: 0, oneOffDevHigh: 0, oneOffTestLow: 0, oneOffTestHigh: 0, perReleaseDev: PROPOSED_DAYS_PER_1000_LINES.perReleaseDev, perReleaseTest: PROPOSED_DAYS_PER_1000_LINES.perReleaseTest },
+  'do-nothing': { oneOffDevLow: 0, oneOffDevHigh: 0, oneOffTestLow: 0, oneOffTestHigh: 0, perReleaseDev: PROPOSED_DAYS_PER_1000_LINES.perReleaseDev, perReleaseTest: PROPOSED_DAYS_PER_1000_LINES.perReleaseTest },
+};
+
 export interface EffortProposal {
   oneOff: EffortRange;
   perRelease: EffortDays;
   /** The sentence the reader confirms or rejects. Never applied silently. */
   sentence: string;
+  /** The lines it was proposed from (hotfix 3.0.22), so the proposal of another option follows from the same count. */
+  loc?: number;
+  /** The option kind it was proposed for, and the factors used (hotfix 3.0.22). Absent: Rebuild's. */
+  kind?: OptionKind;
+  factors?: EffortFactors;
+}
+
+/** The proposal of the option `kind` from the same lines as `base` (hotfix 3.0.22, HF-e); `base` itself without its line count. */
+export function effortProposalFor(base: EffortProposal | null, kind: OptionKind): EffortProposal | null {
+  if (!base || typeof base.loc !== 'number') return base;
+  if ((base.kind ?? 'rebuild') === kind) return base;
+  return proposeEffort(base.loc, kind);
 }
 
 /**
  * A proposal for an option of `loc` lines, or `null` when there is no line
  * count to propose from. It returns figures and a sentence; it does not return
- * an option, and it sets nothing.
+ * an option, and it sets nothing. `kind` picks the option's own factors
+ * (`PROPOSED_DAYS_BY_KIND`); without it, Rebuild's.
  */
-export function proposeEffort(loc: number | null | undefined): EffortProposal | null {
+export function proposeEffort(loc: number | null | undefined, kind: OptionKind = 'rebuild'): EffortProposal | null {
   if (typeof loc !== 'number' || !Number.isFinite(loc) || loc <= 0) return null;
   const k = loc / 1000;
-  const f = PROPOSED_DAYS_PER_1000_LINES;
+  const f = PROPOSED_DAYS_BY_KIND[kind] ?? PROPOSED_DAYS_PER_1000_LINES;
   // Rounded here, where the figure is made: a taken-over proposal lands in an
   // input, and an input prints its value unformatted — 668 lines × 5 days per
   // 1,000 came out as "3.3400000000000003" (owner, 03.10.2026).
@@ -229,8 +261,11 @@ export function proposeEffort(loc: number | null | undefined): EffortProposal | 
       high: { devDays: d(f.oneOffDevHigh), testDays: d(f.oneOffTestHigh) },
     },
     perRelease: { devDays: d(f.perReleaseDev), testDays: d(f.perReleaseTest) },
+    loc,
+    kind,
+    factors: f,
     sentence:
-      `A proposal from ${formatLines(loc)} lines and fixed factors per 1,000 lines ` +
+      `A proposal from ${formatLines(loc)} lines and fixed factors per 1,000 lines for this option ` +
       `(${f.oneOffDevLow}–${f.oneOffDevHigh} development and ${f.oneOffTestLow}–${f.oneOffTestHigh} test days once, ` +
       `${f.perReleaseDev} development and ${f.perReleaseTest} test days per release). ` +
       'Nothing measured these factors. They count as an assumption of yours only once you confirm them.',

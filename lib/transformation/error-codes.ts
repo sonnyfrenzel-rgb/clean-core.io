@@ -157,6 +157,14 @@ export const TRANSFORMATION_CODES = {
     kind: 'nothing',
     counted: true,
   },
+  // Hotfix 3.0.22 (HF-c): a timeout or a failed connection to the provider, said as such.
+  'model-network': {
+    title: 'connection to the model failed',
+    explain: 'The connection to the model provider timed out or broke before an answer came, so the call was stopped and nothing from it was used.',
+    action: 'Nothing to do — the function is asked once more; if it fails again it stays a stub.',
+    kind: 'nothing',
+    counted: true,
+  },
   'model-incomplete': {
     title: 'answer cut off',
     explain: 'The model stopped before it finished its answer, so the answer was not used.',

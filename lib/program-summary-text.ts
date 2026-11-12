@@ -151,6 +151,12 @@ export interface ProgramSummaryFacts {
   /** Roadmap 3.0.20: the functions it gets its data through, each with the business object it is about. Absent before. */
   dataCalls?: Array<{ name: string; word: string; line: number }>;
   /**
+   * Hotfix 3.0.22 (HF-d): the first line where the program's own code handles an approval or an override
+   * (`CapabilityFacts.ownApproval`); null when it does not. Such a program changes the state of what it approves, even
+   * where it writes no SAP table, so it is never called "read-only". Absent in facts read by an earlier engine.
+   */
+  ownApproval?: number | null;
+  /**
    * Roadmap 3.0.21 (owner decision 22.10.2026): the purpose the program's names support (`domain`) stands before the
    * purpose line whenever it exists — not only when the program reads no table by name, which hid it for a freight
    * check that opened on "Records entries in a custom table in SAP". Absent in facts read by an earlier engine.
@@ -401,7 +407,9 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
       ? plural(business.length, 'table')
       : null;
   const noun = f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report';
-  const readOnly = f.changes.state === 'none' ? 'read-only ' : '';
+  // Hotfix 3.0.22 (HF-d): not "read-only" where its own code approves or overrides — "It does not post or
+  // change data in SAP" (the changes line) still says what the engine proved.
+  const readOnly = f.changes.state === 'none' && !f.ownApproval ? 'read-only ' : '';
   // A program whose every change waits for a user's command is a display program
   // first — a cockpit: what it shows is its purpose, the changes follow in their
   // own slot (SD review, 12.10.2026).

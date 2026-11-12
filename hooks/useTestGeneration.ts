@@ -18,7 +18,7 @@ import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, t
 import { withInvariants } from '@/lib/testing-invariants';
 import { TESTING_PROMPT_LIMIT, TESTING_PROMPT_MARGIN, codeForTestingPrompt, testingCodeNote } from '@/lib/testing-prompt-code';
 import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
-import { abapTestProblemsSentence, accessSeamOf, accessSeamPromptRule, checkAbapTestClass, inputContractPromptRule, withAccessDouble } from '@/lib/testing-abap-unit';
+import { abapTestProblemsSentence, accessSeamOf, accessSeamPromptRule, checkAbapTestClass, inputContractPromptRule, shortenLongAbapMethodNames, withAccessDouble } from '@/lib/testing-abap-unit';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { packageDigest, TEST_SUITE_BASIS_FIELD } from '@/lib/test-suite-basis';
 import { endTestGenProgress, enterTestGenStage, startTestGenProgress, type TestGenProgress, type TestGenStageKey } from '@/lib/testing-progress';
@@ -327,7 +327,9 @@ ${generatedText}
 
         if (packageSources.length > 0) {
           const suite = (result as { testSuite?: { code?: unknown } }).testSuite;
-          const seamed = withAccessDouble(typeof suite?.code === 'string' ? suite.code : '', accessSeam);
+          // Hotfix 3.0.22 (HF-c): a method name over 30 characters is shortened here, never a reason to fail the attempt.
+          const short = shortenLongAbapMethodNames(typeof suite?.code === 'string' ? suite.code : '');
+          const seamed = withAccessDouble(short.code, accessSeam);
           const check = checkAbapTestClass(seamed.code, packageSources);
           const problems = [...check.problems, ...seamed.problems];
           if (problems.length > 0) {
@@ -337,7 +339,7 @@ ${generatedText}
             continue;
           }
           // Stored as rewritten: the class under test with the access double (the comment at the top says where).
-          if (seamed.rewritten > 0 && suite) (suite as { code?: unknown }).code = seamed.code;
+          if ((seamed.rewritten > 0 || short.renamed.length > 0) && suite) (suite as { code?: unknown }).code = seamed.code;
         }
         checkedAnswer = result;
       }

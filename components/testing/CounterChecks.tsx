@@ -5,6 +5,7 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { deriveCounterCheckScenarios } from '@/lib/abap/counter-check';
+import { counterChecksLine } from '@/lib/rule-counts';
 
 /** How many scenarios the list opens with; the rest are counted. */
 const SHOWN = 24;
@@ -38,7 +39,7 @@ export default function CounterChecks({ source, engineVersion }: { source: strin
         <CcProvenanceChip value="reconstructed" />
       </h3>
       <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-        {read.counts.scenarios} scenarios for {read.counts.rules} rules — each rule once where it applies and once where it must not.
+        {counterChecksLine(read.counts.scenarios, read.counts.rules, read.counts.withoutScenario)}
         {' '}A scenario says what to check and which record to prepare; nothing here has run.
       </p>
       <CcDisclosure title="Show the scenarios" count={read.counts.scenarios}>

@@ -450,6 +450,37 @@ function readClassDefinitions(statements: readonly AbapStatement[], containers: 
   return out;
 }
 
+/**
+ * The classes and interfaces the program declares itself (hotfix 3.0.22), lower case, each with what a reference to it
+ * becomes in the one generated class: `null` for "that class itself" (an interface, or a class whose methods are now
+ * the class's methods), or the nearest global ancestor of a local exception class (`cx_static_check`, `zcx_…`), since an
+ * exception is not merged into the logic class. `DEFERRED` and `LOAD` forward declarations do not declare a type.
+ */
+export function localObjectTypes(statements: readonly Pick<AbapStatement, 'keyword' | 'text'>[]): Map<string, string | null> {
+  const parentOf = new Map<string, string | null>();
+  const interfaces = new Set<string>();
+  for (const s of statements) {
+    if (s.keyword === 'CLASS') {
+      const m = /^CLASS\s+([\w/]+)\s+DEFINITION\b([\s\S]*)$/i.exec(s.text);
+      if (!m || /\b(?:DEFERRED|LOAD)\b/i.test(m[2])) continue;
+      parentOf.set(m[1].toLowerCase(), /\bINHERITING\s+FROM\s+([\w/]+)/i.exec(m[2])?.[1].toLowerCase() ?? null);
+    } else if (s.keyword === 'INTERFACE') {
+      const m = /^INTERFACE\s+([\w/]+)([\s\S]*)$/i.exec(s.text);
+      if (m && !/\b(?:DEFERRED|LOAD)\b/i.test(m[2])) interfaces.add(m[1].toLowerCase());
+    }
+  }
+  const out = new Map<string, string | null>();
+  for (const i of interfaces) out.set(i, null);
+  for (const name of parentOf.keys()) {
+    let p = parentOf.get(name) ?? null;
+    for (let depth = 0; p && parentOf.has(p) && depth < 16; depth++) p = parentOf.get(p) ?? null;
+    // A local exception class: its first ancestor the program does not declare — a global exception class, SAP's
+    // (`cx_static_check`), the customer's (`zcx_domain_error`, `ycx_…`) or a namespace's (`/abc/cx_…`).
+    out.set(name, p && /^(?:\/[\w]+\/|[yz])?cx_/i.test(p) ? p : null);
+  }
+  return out;
+}
+
 /** The declaration of a method of a class: its own, or the nearest ancestor's when it is a REDEFINITION or absent. */
 function methodDeclarationOf(classes: ReadonlyMap<string, ClassDefinition>, owner: string, method: string): { text: string; line: number } | null {
   let cls = classes.get(owner);
@@ -515,6 +546,8 @@ export function readRapContract(
   options: {
     /** The SAP tables the access layer reads or writes (scaffold version 11): each gets a row type of the class. */
     sapTables?: readonly string[];
+    /** The class the routines become (hotfix 3.0.22): a reference to one of the original's own classes or interfaces points to it. */
+    selfClass?: string;
   } = {},
 ): RapContract {
   const { statements, blocks } = facts;
@@ -546,7 +579,21 @@ export function readRapContract(
   let firstRowUse: number | null = null;
   /** The SAP tables a declaration of the original is typed by as a whole: their row type must exist. */
   const rowUsed = new Set<string>();
+  // ---- the original's own classes and interfaces (hotfix 3.0.22, owner example A: `TYPE REF TO lif_store` and
+  // `TYPE REF TO lcl_change_service` in the frame, three of four abaplint errors). They are one class here, so a
+  // reference to one of them becomes a reference to that class; a local exception class becomes its nearest global
+  // ancestor (`cx_static_check`), which the class can name.
+  const ownTypes = localObjectTypes(statements);
+  const localRef = (phrase: string): { phrase: string; was: string } | null => {
+    const m = /^TYPE\s+REF\s+TO\s+([\w/]+)\s*$/i.exec(phrase.trim());
+    if (!m || !options.selfClass) return null;
+    const target = ownTypes.get(m[1].toLowerCase());
+    if (target === undefined) return null;
+    return { phrase: `TYPE REF TO ${target ?? options.selfClass}`, was: `REF TO ${m[1].toLowerCase()}` };
+  };
   const cloud = (phrase: string, local?: ReadonlyMap<string, string>, localTypes?: ReadonlySet<string>) => {
+    const own = localRef(phrase);
+    if (own) return own;
     const c = cloudPhrase(phrase, (h) => typeNames.has(h) || globalScope.has(h) || !!local?.has(h) || !!localTypes?.has(h), rowTypeOf);
     if (c.was && rowTypeOf.has(c.was)) rowUsed.add(c.was);
     return c;

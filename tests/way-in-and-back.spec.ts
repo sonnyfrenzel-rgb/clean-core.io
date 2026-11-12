@@ -78,6 +78,15 @@ test.describe('(1) a project link signed out goes to sign-in and back; without a
     expect(frame).toContain("router.replace(signInLinkFor(pathname ?? '/'))");
     expect(frame).toContain('`/api/projects/${encodeURIComponent(projectId)}?for=access`');
     expect(frame).toContain("if (gate === 'no-access') return <ProjectNoAccess />;");
+    // Hotfix 3.0.22 (QA fa3278f7dc9b / 39d71e5eec25): the account is followed while the page is open — a switch
+    // to another account remounts every page underneath, access is asked again for that account, and after a
+    // sign-out nothing of the project stays rendered.
+    expect(frame).toMatch(/stop = onAuthStateChanged\(auth, \(user\) => \{/);
+    expect(frame).toContain('if (seen.current && next && seen.current !== next) setAccount((n) => n + 1);');
+    expect(frame).toContain('<Fragment key={account}>');
+    expect(frame).toContain('}, [signedIn, projectId, uid]);');
+    expect(frame).toContain('access.projectId === projectId && access.uid === uid');
+    expect(frame).toMatch(/if \(signedIn === true && uid === null\) \{\s*return <div data-project-gate="signed-out"/);
     const page = read('app/(app)/project/[projectId]/page.tsx');
     expect(page).toContain('if (profileLoading || (!enabled && !getAuth().currentUser)) {');
     const missing = page.slice(page.indexOf("if (state === 'missing')"));

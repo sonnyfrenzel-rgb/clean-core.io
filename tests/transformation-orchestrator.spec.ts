@@ -437,8 +437,9 @@ test.describe('events', () => {
 
 test.describe('a prompt the route would refuse is never sent (QA finding 804d0920fff4)', () => {
   test('a unit whose prompt stays above the leased cap after every cut is not written, with the reason, and costs no call', async () => {
-    // Rules are never cut, so this unit's prompt stays above 28,000 characters.
-    const huge: FillRequestUnit = { ...unit(2), rules: [{ id: 'BR-002', decision: 'keep', text: 'r'.repeat(LEASED_PROMPT_MAX_CHARS + 1_000) }] };
+    // The ABAP slice is never cut, so this unit's prompt stays above 28,000 characters. (Until hotfix 3.0.22 a rule's
+    // text was never cut either; since HF-b a unit over the cap gives up the rules' text beyond their start.)
+    const huge: FillRequestUnit = { ...unit(2), abap: { ...unit(2).abap, text: 'r'.repeat(LEASED_PROMPT_MAX_CHARS + 1_000) } };
     const sent: string[] = [];
     const result = await runGeneration(
       base({

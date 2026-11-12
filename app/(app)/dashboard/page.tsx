@@ -26,7 +26,7 @@ import { signInLinkFor } from '@/lib/return-path';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
-import { aiAuthorshipFactsOf, dashboardDeliverableAuthorship } from '@/lib/ai-authorship';
+import { aiAuthorshipFactsOf, dashboardDeliverableAuthorship, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { aiMarkingStatement, withAiMarking } from '@/lib/ai-marking';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
@@ -319,7 +319,9 @@ export default function Dashboard() {
 
   const handleExportProject = async (project: any) => {
     const { id, userId, ...exportData } = project;
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    // Hotfix 3.0.22: the metadata field of every model-written source, as every other export carries it (AI Act Art. 50(2)).
+    const marked = withProjectExportAiGeneration(exportData, aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation(project.documentation) }), APP_VERSION);
+    const blob = new Blob([JSON.stringify(marked, null, 2)], { type: 'application/json' });
     await saveAs(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
   };
 

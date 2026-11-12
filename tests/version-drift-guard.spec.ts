@@ -70,6 +70,7 @@ const DOCUMENT_VERSION_DIRS = [path.resolve(ROOT, 'lib/legal'), path.resolve(ROO
  */
 const ALLOWLISTED_LINE_PATTERNS = [
   /version:\s*'v\d/,                    // changelog releases array entries
+  /^\s*\*.*CHANGELOG v\d+\.\d+\.\d+/,   // a comment citing a CHANGELOG section as the source of a statement
   /Version bump to v\d/,               // changelog descriptions about past bumps  
   /Bumped.*version.*from v\d/,          // changelog descriptions about past bumps
   /Bounced version references to v\d/,  // changelog descriptions about past bumps

@@ -28,6 +28,7 @@ import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { newCheckCounters, runPackCheck, runPackageCheck, type CheckCounters } from '@/lib/verify-pack-checks';
 
 /**
  * Audit pack verification — a tool page of the workspace (gap audit 3.0, §18).
@@ -49,19 +50,16 @@ export default function VerifyPackPage() {
   const [delivery, setDelivery] = useState<{ fileName: string; check: DeliveryCheck | null; error: string | null } | null>(null);
   const [checkingDelivery, setCheckingDelivery] = useState(false);
   const packageInputRef = useRef<HTMLInputElement>(null);
+  // Each pack selection and each package check takes a number; an answer that arrives after a newer
+  // selection is dropped, so a slow check of pack A is never shown, or paired, under pack B (`lib/verify-pack-checks.ts`).
+  const checks = useRef<CheckCounters>(newCheckCounters());
 
   const handleFile = useCallback(async (file: File) => {
-    setFileName(file.name);
-    setVerifying(true);
-    setResult(null);
-    setPackFile(file);
-    setDelivery(null);
-    try {
+    await runPackCheck(
+      checks.current,
       // The file goes in as it is: the verifier asks its size before reading it.
-      const res = await verifyAuditPack(file);
-      setResult(res);
-    } catch (err: any) {
-      setResult({
+      () => verifyAuditPack(file),
+      (err): VerifyResult => ({
         success: false,
         integrityValid: false,
         status: 'failed',
@@ -69,27 +67,40 @@ export default function VerifyPackPage() {
         manifestHashValid: false,
         signatureValid: null,
         manifest: null,
-        errors: [`Failed to process ZIP: ${err.message}`],
-      });
-    } finally {
-      setVerifying(false);
-    }
+        errors: [`Failed to process ZIP: ${err instanceof Error ? err.message : String(err)}`],
+      }),
+      {
+        begin: () => {
+          setCheckingDelivery(false);
+          setFileName(file.name);
+          setVerifying(true);
+          setResult(null);
+          setPackFile(file);
+          setDelivery(null);
+        },
+        result: setResult,
+        end: () => setVerifying(false),
+      },
+    );
   }, []);
 
   const handlePackage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    setCheckingDelivery(true);
-    setDelivery(null);
-    try {
-      const signed = packFile && result ? await signedRunFactsOf(packFile, result) : null;
-      setDelivery({ fileName: file.name, check: await checkDeliveryPackage(file, signed), error: null });
-    } catch (err) {
-      setDelivery({ fileName: file.name, check: null, error: err instanceof Error ? err.message : String(err) });
-    } finally {
-      setCheckingDelivery(false);
-    }
+    await runPackageCheck(
+      checks.current,
+      async () => checkDeliveryPackage(file, packFile && result ? await signedRunFactsOf(packFile, result) : null),
+      {
+        begin: () => {
+          setCheckingDelivery(true);
+          setDelivery(null);
+        },
+        outcome: (check) => setDelivery({ fileName: file.name, check, error: null }),
+        error: (err) => setDelivery({ fileName: file.name, check: null, error: err instanceof Error ? err.message : String(err) }),
+        end: () => setCheckingDelivery(false),
+      },
+    );
   }, [packFile, result]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {

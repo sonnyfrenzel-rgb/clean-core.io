@@ -269,7 +269,7 @@ export interface FillBundle {
    * What was left out to stay within the budget, per unit — said in the prompt as well. Since 3.0.13 only
    * context lines (named in `dropped`); the ABAP slice is never cut.
    */
-  trimmed: Array<{ unitId: string; what: 'context' | 'rules'; chars: number; dropped?: string[] }>;
+  trimmed: Array<{ unitId: string; what: 'context' | 'rules' | 'guards'; chars: number; dropped?: string[] }>;
   /** The header carries the code-draft rules by title only (`fillInstructionHeader` `briefRules`). */
   briefRules?: boolean;
 }
@@ -326,6 +326,26 @@ export function gateRepairUnitOf(u: FillRequestUnit, tight = false): FillRequest
     ...(u.types !== undefined ? { types: u.types } : {}),
     ...(u.authority !== undefined ? { authority: u.authority } : {}),
     ...(u.lookups !== undefined ? { lookups: u.lookups } : {}),
+  };
+}
+
+/** A guard's condition in a compact fill unit: its start (hotfix 3.0.22, HF-b). */
+export const FILL_COMPACT_CONDITION_MAX_CHARS = 60;
+
+/**
+ * A fill unit too large for the leased cap even with its rules by title and no context (hotfix 3.0.22, HF-b): the
+ * same unit with each business rule by id, decision and the start of its text (60 characters for `keep` and `open`,
+ * 160 for `change`, whose proposal stays whole — it is the user's decision) and each check's condition and effect by
+ * their start. Its ABAP slice, declarations,
+ * signature, guard ids, helpers, lines and values are untouched.
+ */
+export function compactFillUnitOf(u: FillRequestUnit): FillRequestUnit {
+  const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+  return {
+    ...u,
+    // A `keep` or `open` rule is implemented as the original does — the slice holds that code; a `change` keeps more.
+    rules: u.rules.map((r) => ({ ...r, text: cut(r.text, r.decision === 'change' ? FILL_GATE_REPAIR_RULE_MAX_CHARS : FILL_COMPACT_CONDITION_MAX_CHARS) })),
+    guards: u.guards.map((g) => ({ ...g, condition: cut(g.condition, FILL_COMPACT_CONDITION_MAX_CHARS), effect: cut(g.effect, FILL_COMPACT_CONDITION_MAX_CHARS) })),
   };
 }
 
@@ -469,7 +489,33 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       return { unitIds: [unit.unitId], request, prompt: fillPrompt(request, { briefRules }), trimmed, ...(briefRules ? { briefRules } : {}) };
     };
     const brief = withContext(true);
-    bundles.push(brief.prompt.length <= maxAlone ? brief : withContext(false));
+    if (brief.prompt.length <= maxAlone) {
+      bundles.push(brief);
+      continue;
+    }
+    // Hotfix 3.0.22 (HF-b, owner example A: the dispatch method's prompt was 32,532 characters with its rules by title
+    // and no context, and the method stayed a stub): before the unit is given up, its business rules travel by id,
+    // decision and the start of their text (a proposal whole) and its checks' conditions by their start — the ABAP
+    // slice carries every condition at its line, and the class text above carries every check's call. Said in
+    // `trimmed`; the ABAP slice is still never cut.
+    const compact = compactFillUnitOf(unit);
+    const compactRequest = requestOf(opts, '', [compact]);
+    const compactPrompt = fillPrompt(compactRequest, { briefRules: true });
+    if (compactPrompt.length <= maxAlone) {
+      bundles.push({
+        unitIds: [unit.unitId],
+        request: compactRequest,
+        prompt: compactPrompt,
+        trimmed: [
+          ...brief.trimmed.filter((t) => t.what !== 'context'),
+          { unitId: unit.unitId, what: 'context', chars: context.length, ...(context ? { dropped: cutContext(context, 0).dropped } : {}) },
+          { unitId: unit.unitId, what: 'guards', chars: brief.prompt.length - compactPrompt.length },
+        ],
+        briefRules: true,
+      });
+      continue;
+    }
+    bundles.push(withContext(false));
   }
   close();
   return bundles;

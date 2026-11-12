@@ -1694,6 +1694,21 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-921 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
 | SEC-2026-922 | info | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
 | SEC-2026-923 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-949 | medium | P2 | next rules deploy (owner's go) | scheduled |
+| SEC-2026-950 | medium | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-951 | medium | P2 | 3.0.23 · delivery-package verdict | scheduled |
+| SEC-2026-953 | medium | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-954 | medium | P3 | after 3.0.15 · security bundle (duplicate of SEC-2026-857) | scheduled |
+| SEC-2026-957 | low | P3 | after 3.0.21 · operator-script hardening batch | scheduled |
+| SEC-2026-958 | low | P3 | 3.0.23 · delivery-package verdict | scheduled |
+| SEC-2026-961 | low | P3 | after 3.0.21 · model-call hardening | scheduled |
+| SEC-2026-963 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-964 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-965 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-966 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-967 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+
+**Audit of v3.0.21 (`f0e8e15`), 12.11.2026: 0 critical, 0 high, 9 medium, 6 low, 5 info — all 131 candidates verified by the agent, all 20 findings checked by hand.** SEC-2026-951 and -958 go to 3.0.23 with the QA finding `e8b4b34ecc97`; SEC-2026-949 waits for the next rules deploy; SEC-2026-954 is a duplicate of SEC-2026-857; SEC-2026-950, -953, -957 and -961 are P3 hardening; SEC-2026-963 to -967 join the comment-hygiene decision. Seven were refuted (SEC-2026-948, -952, -955 and -956 against the code, -959 as -700, -960 as -628, -962 as -782). The follow-up audit of `f597131` had no findings. The reasons are in the sealed register.
 
 **Audit of v3.0.19 (`cdde58e`), 21.10.2026: 0 critical, 0 high, 4 medium, 2 low, 3 info.** SEC-2026-897 to -902 go to 3.0.20; SEC-2026-903 to -905 join the comment-hygiene decision. No QA full review was needed (the change was under the thresholds). The reasons are in the sealed register.
 
@@ -2108,6 +2123,36 @@ The pattern against it, however, was already established on 16.09.2026 for `/pro
 the rules, only via hardened routes. Carrying it over to the remaining privileged
 collections is a step of its own and needs Sonny's decision, because it touches the admin
 console.
+
+### Full review of f59713161b25 (v3.0.21), triaged on 12.11.2026
+
+`openai/gpt-6-luna-pro`, 28 calls, $2.05, verdict `no_go`, **INCOMPLETE** (the process
+skeleton's diff alone exceeded one call, and most of `components/design/` and
+`components/documentation/` fell outside the 28-call budget). 4 critical, 9 high, about 1,740
+medium and 580 low — almost all medium and low ones are carried from earlier reviews and are not
+re-triaged here. All 13 critical and high findings were checked against the code:
+
+- **Refuted (8):** the four critical ones are the same false alarm — the spec-only pseudonym
+  pepper in four test files, not a credential; `7d24d94b969f`/`50fa4e8e660f` describe the
+  issuer-only receipt check that `lib/model-receipt.ts` makes on purpose; `d2c877219180` names two
+  JSON files that are tracked; `f242c9f4948a` asks code to judge the entropy of a provisioned secret.
+  The reasons are in `docs/qa/refuted-findings.enc.json`.
+- **Confirmed (5, three defects):** the account-session one (`fa3278f7dc9b`, `39d71e5eec25`) is a
+  user-visible defect and goes to the 3.0.22 hotfix; the delivery-package verdict
+  (`e8b4b34ecc97`) goes to 3.0.23 together with SEC-2026-951; the engine one
+  (`5298757260c1`, `bb4c536fe4fd`) needs an engine version gate and goes to the next engine step.
+
+| ID | Severity | Location | Finding | Roadmap step | Status |
+|---|---|---|---|---|---|
+| fa3278f7dc9b | high | app/(app)/project/[projectId]/page.tsx | *(Title withheld until shipped — integrity)* | 3.0.22 | scheduled |
+| 39d71e5eec25 | high | app/(app)/project/[projectId]/analyze/page.tsx | *(Title withheld until shipped — integrity)* — same defect as fa3278f7dc9b | 3.0.22 | scheduled |
+| e8b4b34ecc97 | high | scripts/verify-pack.mjs | *(Title withheld until shipped — integrity)* | 3.0.23 · delivery-package verdict | scheduled |
+| 5298757260c1 | high | lib/abap/evidence-model.ts | A copied function-module name still counts after the target is overwritten | next engine step | scheduled |
+| bb4c536fe4fd | high | lib/abap/evidence-model.ts | Duplicate of 5298757260c1 | next engine step | scheduled |
+| 1e2ba9ecf41c | high | scripts/verify-pack.mjs | Duplicate of e8b4b34ecc97 | 3.0.23 · delivery-package verdict | scheduled |
+| 28973e2920d1 | high | scripts/verify-pack.mjs | Duplicate of e8b4b34ecc97 | 3.0.23 · delivery-package verdict | scheduled |
+| 8beee3c68735 | high | scripts/verify-pack.mjs | Duplicate of e8b4b34ecc97 | 3.0.23 · delivery-package verdict | scheduled |
+| f3d801d40600 | high | lib/abap/demo-switches.ts | A selector found by its shape is treated as a demo switch everywhere in the program, so a business rule it guards elsewhere is dropped | next engine step (engine version gate) | scheduled |
 
 ### Full reviews of a12774cd2b7f and fc787674705f (v2.20.0) — three public-copy findings decided on 30.09.2026
 

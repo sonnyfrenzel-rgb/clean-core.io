@@ -81,6 +81,19 @@ export interface CapabilityFacts {
    * ledger or credit table means the program may read it.
    */
   possibleReads?: FactObject[];
+  /**
+   * Lines where the program's own code handles an approval or an override — a value or a name such as
+   * `'APPROVED'`, `approve`, `lv_approver` (hotfix 3.0.22, HF-d: owner example A is an approval workflow written in
+   * its own classes, and the documentation said "It has no approval, release or override workflow"). Such a program
+   * may approve without calling SAP's workflow, so no absence of an approval is said. Absent in facts stored before.
+   */
+  ownApproval?: FactObject[];
+  /**
+   * Lines where the program checks who may act in its own code — a role it requires, a name that authorizes,
+   * `'NOT_AUTHORIZED'` — rather than with an SAP authorization object (hotfix 3.0.22). Such a program is never said
+   * to check no authorization. Absent in facts stored before.
+   */
+  ownAuthorization?: FactObject[];
 }
 
 export type Capability = 'posting' | 'ledger' | 'credit-exposure' | 'approval' | 'mail' | 'audit-log' | 'remote';
@@ -202,11 +215,16 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
       absent: 'It computes no credit exposure: no credit-management total (S066, S067, UKM …) is read and no exposure function is called.',
     },
     approval: {
-      short: 'no approval workflow in the code',
+      // Hotfix 3.0.22 (HF-d): the engine reads SAP's workflow and release calls, not an approval the program writes
+      // itself — so the sentence says what it read, and the program's own approval handling keeps it unsaid.
+      short: 'no SAP workflow call in the code',
       present: approval.length > 0,
-      determined: approval.length > 0 || !callsOpen,
-      evidence: approval,
-      absent: 'It has no approval, release or override workflow: no workflow or release function is called.',
+      determined: approval.length > 0 || (!callsOpen && !(facts.ownApproval?.length)),
+      evidence: [...approval, ...(facts.ownApproval ?? [])],
+      // Facts stored before 3.0.22 never read the program's own code for it: their sentence says only what was read.
+      // The own-code read is a scan for names and values (APPROV…, OVERRID…, 'RELEASED'): it says what it did not
+      // find, never that the program approves nothing — a state code such as 'Y' can approve unseen.
+      absent: `No SAP workflow or release function is called${facts.ownApproval ? '; its code names no approval or override' : ''}.`,
     },
     mail: {
       short: 'no correspondence in the code',

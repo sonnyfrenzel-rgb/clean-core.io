@@ -1,4 +1,6 @@
 'use client';
+import { markedTransformationDraft } from '@/lib/ai-authorship';
+import { APP_VERSION } from '@/lib/version';
 
 export const dynamic = 'force-dynamic';
 
@@ -885,7 +887,8 @@ export default function TransformationPage() {
   /** The unsaved draft as the file list it is, for the reader to keep (architecture-02). */
   const downloadUnsavedDraft = () => {
     if (!unsavedDraft) return;
-    const url = URL.createObjectURL(new Blob([unsavedDraft], { type: 'application/json' }));
+    // Hotfix 3.0.22: the draft is model-written; it carries the metadata field every other export carries (AI Act Art. 50(2)).
+    const url = URL.createObjectURL(new Blob([markedTransformationDraft(unsavedDraft, null, APP_VERSION)], { type: 'application/json' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = `transformation-draft-${String(projectId)}.json`;

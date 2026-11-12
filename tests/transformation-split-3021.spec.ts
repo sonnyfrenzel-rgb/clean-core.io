@@ -68,7 +68,7 @@ const partsOf = (p: EngineLedPrepared) => p.plan.units.filter((u) => u.part).sor
 const messages = (p: EngineLedPrepared, regionId: string, body: string) => bodyGuards(body, guardContextOf(p, regionId)).map((r) => r.message);
 
 test('the parameters of a split part and the split of a method come with scaffold version 23', () => {
-  expect(SCAFFOLD_VERSION).toBe(23);
+  expect(SCAFFOLD_VERSION).toBeGreaterThanOrEqual(23);
 });
 
 /* ------------------------------------------------------- the parameters */

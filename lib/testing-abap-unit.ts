@@ -305,6 +305,41 @@ export function checkAbapTestClass(testCode: string, packageSources: ReadonlyArr
   return { ok: problems.length === 0, problems };
 }
 
+/**
+ * Method names of the testing model's ABAP Unit code longer than ABAP's 30 characters, shortened deterministically
+ * (hotfix 3.0.22, HF-c: owner example A's first Testing attempt failed whole on two names of 31 characters, after
+ * 2:45 minutes). A name is cut to 30; where that collides with another name of the code, to 27 plus `_2`, `_3`, ….
+ * Every whole-word use outside comments and literals is renamed with it (definition, `METHOD`, calls), so the scenario
+ * a method stands for still matches by its prefix (`abapMethodMatches`). The code says what was renamed at its top.
+ */
+export function shortenLongAbapMethodNames(testCode: string): { code: string; renamed: Array<{ from: string; to: string }> } {
+  const declared = [...abapDeclarations([{ content: testCode }]).values()].flatMap((d) => [...d.methods.keys()]);
+  const long = [...new Set(declared.filter((n) => n.length > ABAP_NAME_MAX && /^[a-z_][\w]*$/.test(n)))].sort();
+  if (long.length === 0) return { code: testCode, renamed: [] };
+  // Every name already in the code, so a shortened one never takes a name that is there.
+  const masked = maskKeepingOffsets(testCode);
+  const taken = new Set([...masked.matchAll(/[a-z_][\w]*/gi)].map((m) => m[0].toLowerCase()));
+  const renamed: Array<{ from: string; to: string }> = [];
+  for (const from of long) {
+    let to = from.slice(0, ABAP_NAME_MAX).replace(/_+$/, '');
+    for (let i = 2; taken.has(to); i++) to = `${from.slice(0, ABAP_NAME_MAX - 1 - String(i).length).replace(/_+$/, '')}_${i}`;
+    taken.add(to);
+    renamed.push({ from, to });
+  }
+  // Rename on the masked copy's offsets, so a name inside a comment or a literal stays as written.
+  const byName = new Map(renamed.map((r) => [r.from, r.to]));
+  const edits: Array<{ start: number; end: number; to: string }> = [];
+  // `me->name( )` and `ltc=>name( )` are calls of it too; `ls_row-name` is a component, not the method.
+  for (const m of masked.matchAll(/(?<![\w-])[a-z_][\w]*(?![\w])/gi)) {
+    const to = byName.get(m[0].toLowerCase());
+    if (to) edits.push({ start: m.index!, end: m.index! + m[0].length, to });
+  }
+  let code = testCode;
+  for (const e of edits.sort((a, b) => b.start - a.start)) code = code.slice(0, e.start) + e.to + code.slice(e.end);
+  const note = `" Clean-Core.io: ${renamed.length} method name${renamed.length === 1 ? '' : 's'} longer than ${ABAP_NAME_MAX} characters shortened: ${renamed.map((r) => `${r.from} -> ${r.to}`).join(', ')}.\n`;
+  return { code: note + code, renamed };
+}
+
 /** One sentence for a refusal or a repair request: the first problems, named. */
 export function abapTestProblemsSentence(problems: readonly AbapTestProblem[], max = 8): string {
   const shown = problems.slice(0, max).map((p) => p.message);

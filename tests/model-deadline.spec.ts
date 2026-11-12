@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
+import http from 'http';
+import type { AddressInfo } from 'net';
 import path from 'path';
+import { installModelFetchDispatcher, MODEL_FETCH_TIMEOUTS_MS } from '../lib/model-fetch-dispatcher';
 import {
   CLOUD_RUN_REQUEST_TIMEOUT_MS,
   MODEL_CALL_DEADLINE_MS,
@@ -100,5 +103,45 @@ test.describe('the Gemini route keeps it', () => {
     expect(caught).toMatch(/if \(deadline\?\.timedOut\(\)\) \{[\s\S]*?return NextResponse\.json\(\{ error: modelTimeoutMessage\(\), code: MODEL_TIMEOUT_CODE \}, \{ status: 504 \}\);/);
     expect(src.slice(src.lastIndexOf('} finally {'))).toContain('deadline?.clear();');
     expect(MODEL_TIMEOUT_CODE).toBe('model-timeout');
+  });
+});
+
+/**
+ * Hotfix 3.0.22 (HF-c): Node's `fetch` gives up after 300 s without a response
+ * header — before the 870 s deadline. The server raises that limit at start
+ * (`instrumentation.ts` → `lib/model-fetch-dispatcher.ts`). Measured here with
+ * the real built-in `fetch` against a server that answers after 1.5 s.
+ */
+test.describe('the transport under the deadline', () => {
+  test('lets a call run to the deadline: header and body limits at Cloud Run\'s request limit', () => {
+    expect(MODEL_FETCH_TIMEOUTS_MS.headersTimeout).toBeGreaterThan(MODEL_CALL_DEADLINE_MS);
+    expect(MODEL_FETCH_TIMEOUTS_MS.bodyTimeout).toBeGreaterThan(MODEL_CALL_DEADLINE_MS);
+    expect(MODEL_FETCH_TIMEOUTS_MS.headersTimeout).toBe(CLOUD_RUN_REQUEST_TIMEOUT_MS);
+  });
+
+  test('is installed when the server starts, in the Node runtime only', () => {
+    const src = code('instrumentation.ts');
+    expect(src).toMatch(/export async function register\(\)/);
+    // The import inside the branch Next replaces at build time: an early return left it in the edge bundle,
+    // and `next build` failed on undici's `node:http` there.
+    expect(src).toMatch(/if \(process\.env\.NEXT_RUNTIME === 'nodejs'\) \{\s*const \{ installModelFetchDispatcher \} = await import\('\.\/lib\/model-fetch-dispatcher'\);\s*installModelFetchDispatcher\(\);\s*\}/);
+  });
+
+  test('is the dispatcher the built-in fetch really uses', async () => {
+    const server = http.createServer((_req, res) => { setTimeout(() => res.end('late'), 1_500); });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address() as AddressInfo;
+    const url = `http://127.0.0.1:${port}/`;
+    try {
+      installModelFetchDispatcher({ headersTimeout: 300, bodyTimeout: 300 });
+      const tooShort = await fetch(url).then(() => 'answered', (err: { cause?: { code?: string } }) => err.cause?.code);
+      expect(tooShort).toBe('UND_ERR_HEADERS_TIMEOUT');
+
+      installModelFetchDispatcher({ headersTimeout: 10_000, bodyTimeout: 10_000 });
+      expect(await (await fetch(url)).text()).toBe('late');
+    } finally {
+      installModelFetchDispatcher();
+      server.close();
+    }
   });
 });

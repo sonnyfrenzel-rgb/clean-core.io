@@ -280,6 +280,12 @@ export function ProposalFactors({ loc, baseline }: { loc: number; baseline?: Bas
         Fixed factors on {formatLines(loc)} lines; nothing measured them. They count as your assumption only once you
         confirm them.
       </p>
+      {/* Hotfix 3.0.22 (HF-e): the tiles are Rebuild's; every other option is proposed from its own factors. */}
+      <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted" data-economics-factors-per-option="">
+        These are the factors for Rebuild. Move to SAP standard needs no development per release, Retire has no effort
+        per release and less once, Keep and Do nothing need no effort once — each card shows how its own proposal is
+        computed.
+      </p>
       {baseline ? (
         <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted" data-economics-baseline-formula="">
           The maintenance baseline of Keep is the lines in thousands times the maintenance factors
