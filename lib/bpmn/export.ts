@@ -270,6 +270,7 @@ export function businessLevelOf(
     labels: plainLabels(skeleton, source, { engineVersion, ...(customerTexts ? { customerTexts } : {}) }),
     businessLevel: engineReads3021Apply(engineVersion),
     foldTechnique: engineReads310Apply(engineVersion),
+    readsObjects: engineReads310Apply(engineVersion),
   };
 }
 
