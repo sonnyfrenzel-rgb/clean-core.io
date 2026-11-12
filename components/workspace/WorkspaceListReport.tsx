@@ -567,13 +567,14 @@ export default function WorkspaceListReport({
 
   // AB-14a: an account with no project of its own and none shared with it
   // lands on the first view (home mockup v2.1, state 1) — the start built in,
-  // not a list with only the demo in it. Decided only once both lists have
-  // answered for this account; until then the page waits rather than show one
-  // and switch to the other. A list that could not be read keeps today's page.
+  // not a list with only the demo in it. Decided only once the lists that
+  // decide it have answered for this account (the shared one only when the own
+  // one is empty); until then the page waits rather than show one and switch
+  // to the other. A list that could not be read keeps today's page.
   const ownAnswered = !!user && loaded?.uid === user.uid;
   const sharedAnswered = !!user && sharedLoaded?.uid === user.uid;
   const ownFailed = !!user && ownFailedFor === user.uid;
-  if (user && !ownFailed && (!ownAnswered || !sharedAnswered)) {
+  if (user && !ownFailed && (!ownAnswered || (projects.length === 0 && !sharedAnswered))) {
     return (
       <div className="cc min-h-screen bg-cc-page" data-workspace-waiting="">
         <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted" role="status">
