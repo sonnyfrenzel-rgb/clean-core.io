@@ -591,6 +591,17 @@
   transition: fill 0.3s ease;
 }
 
+/*
+ * The overlay bpmn-js wraps each of them in (`djs-overlay djs-overlay-<type>`) is as large as the name's box and lies
+ * over the element: it must let the click through to the step underneath, or a click on a named step opens nothing
+ * (v3.1.0 acceptance run). The name is a picture of the step's name, never a target of its own.
+ */
+.cc-map-canvas .djs-overlay-cc-name,
+.cc-map-canvas .djs-overlay-cc-name-pen,
+.cc-map-canvas .djs-overlay-cc-name-wait {
+  pointer-events: none;
+}
+
 .cc-map-name {
   display: flex;
   align-items: flex-end;
