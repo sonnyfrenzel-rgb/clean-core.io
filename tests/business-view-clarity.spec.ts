@@ -264,11 +264,12 @@ test.describe('the Business view on screen', () => {
     );
   }
 
+  /** The Business view: Analyze's page since v3.1.0 (plan AB-2, ADR-109), the first insights and Next step below the map. */
   async function open(page: Page, id: string) {
-    await page.goto(`/project/${id}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+    await page.goto(`/project/${id}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-first-look-business]')).toBeVisible({ timeout: 90_000 });
-    await expect(page.locator('[data-next-step]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-analyze-interim] [data-next-step]')).toBeVisible({ timeout: 60_000 });
   }
 
   test.beforeAll(async () => {
@@ -313,7 +314,7 @@ test.describe('the Business view on screen', () => {
     await expect(line).toHaveAttribute('data-questions', '1', { timeout: 60_000 });
     await expect(line).toContainText('1 question for the business');
     await noRuleDecisionInBusiness(page);
-    await expect(page.locator('[data-workspace-shell] [data-cc-button="primary"]:visible')).toHaveCount(1);
+    await expect(page.locator('[data-analyze-business] [data-cc-button="primary"]:visible')).toHaveCount(1);
     // The figures one fold down agree with the answers on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
     await expect(fact).toHaveAttribute('data-confirmed', '1', { timeout: 60_000 });
@@ -350,9 +351,9 @@ test.describe('the Business view on screen', () => {
     await expect(toDesign).toHaveText(/Answer them in Design/);
     await expect(toDesign).toHaveAttribute('href', `/project/${encodeURIComponent(ids.open)}/design#rule-questions`);
     await noRuleDecisionInBusiness(page);
-    // The one primary is the phase step, not a rule action.
+    // The one primary is not a rule action (AB-2: the page keeps one primary).
     await expect(page.locator('[data-next-step-rules]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-shell] [data-cc-button="primary"]:visible')).toHaveCount(1);
+    await expect(page.locator('[data-analyze-business] [data-cc-button="primary"]:visible')).toHaveCount(1);
 
     // The figures are one fold down, and agree with what is on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
@@ -426,7 +427,7 @@ test.describe('the Business view on screen', () => {
 
     // "Ask this case" left the Business view (owner decision 22.10.2026, DESIGN.md §5.3) and stands in IT:
     // plain on top, the code under "Show the code".
-    await expect(page.locator('[data-workspace-shell="business"] [data-ask-this-case]')).toHaveCount(0);
+    await expect(page.locator('[data-analyze-business] [data-ask-this-case]')).toHaveCount(0);
     await page.goto(`/project/${ids.po}?view=it`, { waitUntil: 'domcontentloaded' });
     const ask = page.locator('[data-ask-this-case="answered"]');
     await expect(ask).toBeVisible({ timeout: 90_000 });
@@ -439,20 +440,17 @@ test.describe('the Business view on screen', () => {
     await expect(ask.locator('[data-ask-code-question]')).toHaveText(ABAP_TOKENS);
   });
 
-  test('Business has one section and no bar of one tab; Standard fit lives in IT (ADR-096)', async ({ page }) => {
+  test('Business has no section and no bar; an old section address lands where it lives now (ADR-096, AB-2)', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await withoutTips(page);
     await signInThroughForm(page, account);
     await open(page, ids.po);
     await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
-    // Evidence & controls stands under the map on its own: a bar with one tab
-    // is a navigation to the only place there is (owner, 12.10.2026).
-    await expect(page.locator('[data-workspace-layer-section="evidence"]')).toBeVisible({ timeout: 60_000 });
+    // Business is Analyze's map page since v3.1.0: its one section (Evidence & controls) went with the
+    // workspace's Business view — its content is IT's Run & trust — and no bar stands on the page.
+    await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
     await expect(page.getByRole('tablist', { name: 'Sections of this process' })).toHaveCount(0);
-    for (const gone of ['standard', 'costs', 'architecture', 'need']) {
-      await expect(page.locator(`[data-workspace-layer-section="${gone}"]`)).toHaveCount(0);
-    }
 
     // Standard fit's old Business address (a bookmark) goes to IT, where the
     // section lives now — no request, the route sends it on.
@@ -464,11 +462,11 @@ test.describe('the Business view on screen', () => {
     // A link into a section Business no longer shows lands where it lives now.
     await page.goto(`/project/${ids.po}?view=business#costs`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(new RegExp(`/project/${ids.po}/tco`), { timeout: 60_000 });
-    // An old back link into Need & process stays in Business and lands on the
-    // map (ADR-080): the address becomes the map's, and no section is chosen.
+    // An old back link into Need & process lands on the map (ADR-080), in Analyze since AB-2: the address
+    // becomes the map's, and no section is chosen.
     await page.goto(`/project/${ids.po}?view=business#need`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL((url) => url.pathname === `/project/${ids.po}` && url.search === '?view=business' && url.hash === '#process-map', { timeout: 60_000 });
-    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible();
+    await expect(page).toHaveURL((url) => url.pathname === `/project/${ids.po}/analyze` && url.search === '?view=business' && url.hash === '#process-map', { timeout: 60_000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('#process-map[data-workspace-process-block]')).toBeInViewport({ timeout: 30_000 });
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
   });
@@ -554,7 +552,8 @@ test.describe('the Business view on screen', () => {
     // be the end card there.
     await open(page, ids.po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
-    await page.locator('[data-tour-entry-open]').click();
+    // The way in is the invitation above the map in Analyze, Business (AB-2).
+    await page.locator('[data-analyze-walk=""]').click();
     const tour = page.locator('[data-process-tour]');
     // It opens on its overview (owner decision 22.10.2026), not counted; the first station follows.
     await expect(tour).toHaveAttribute('data-tour-at', 'overview', { timeout: 60_000 });
@@ -570,23 +569,24 @@ test.describe('the Business view on screen', () => {
     await tour.locator('[data-tour-close]').click();
     await expect(tour).toHaveCount(0);
 
-    // A step's need is answered in the source column beside the map, into the
-    // need revision — also on a project nothing has reconstructed yet: the PO
+    // A step's need is answered in the code panel beside the map (Analyze, Business since AB-2: the code
+    // opens on a click), into the need revision — also on a project nothing has reconstructed yet: the PO
     // project has only been toured, so the first answer builds revision 1.
     await open(page, ids.po);
-    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    const process = page.locator('[data-analyze-map] [data-workspace-process="ready"]');
+    await expect(process).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-legend-entry="proven"]')).toHaveCount(0);
     const confirmed = page.locator('[data-legend-count="confirmed"]');
     await expect(confirmed).toHaveText('0');
-    await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
-    // The first anchored element that is a step (an event has no need to answer).
-    const anchors = page.locator('[data-workspace-steps-by-line] [data-cc-anchor]');
-    await expect(anchors.first()).toBeVisible({ timeout: 30_000 });
-    const need = page.locator('[data-workspace-step-need]');
+    await process.getByRole('radio', { name: /Steps/ }).click();
+    // The first element of the step list that is a step (an event has no need to answer).
+    const rows = process.locator('[data-step-node]');
+    await expect(rows.first()).toBeVisible({ timeout: 30_000 });
+    const need = page.locator('[data-analyze-code-panel] [data-workspace-step-need]');
     const shown = () => need.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true, () => false);
     for (let i = 0; i < 10 && !(await need.isVisible()); i += 1) {
-      await anchors.nth(i).click();
-      if (!(await shown())) await page.locator('[role="tab"]', { hasText: 'Steps by line' }).click();
+      await rows.nth(i).click();
+      await shown();
     }
     await need.getByRole('radio', { name: /^Keep/ }).first().click();
     await need.locator('[data-state-confirm]').click();
@@ -596,7 +596,7 @@ test.describe('the Business view on screen', () => {
     await expect(need.locator('[data-state-time]')).not.toBeEmpty();
   });
 
-  test('on a phone: the next step comes first, and nothing scrolls sideways', async ({ browser }) => {
+  test('on a phone: what the program does and the map come first, and nothing scrolls sideways', async ({ browser }) => {
     test.setTimeout(300_000);
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
@@ -604,11 +604,15 @@ test.describe('the Business view on screen', () => {
     await signInThroughForm(page, account);
     await open(page, ids.po);
     await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
+    // Analyze, Business since v3.1.0 (AB-2): the summary with the invitation, then the map, then the
+    // first insights and "Next step" below it (the interim until v3.2.0).
     const tops = await page.evaluate(() =>
-      ['[data-next-step]', '[data-first-look]'].map((sel) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1),
+      ['[data-analyze-summary]', '[data-analyze-map]', '[data-analyze-interim] [data-first-look]', '[data-analyze-interim] [data-next-step]'].map(
+        (sel) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1,
+      ),
     );
     expect(tops[0]).toBeGreaterThanOrEqual(0);
-    expect(tops[0]).toBeLessThan(tops[1]);
+    for (let i = 1; i < tops.length; i++) expect(tops[i], `block ${i} stands above block ${i - 1}`).toBeGreaterThan(tops[i - 1]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the Business view scrolls sideways on a phone').toBeLessThanOrEqual(1);
     // The map's canvas stands inside its card: its right edge (border included)

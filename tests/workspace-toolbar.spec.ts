@@ -242,7 +242,9 @@ test.describe('the toolbar, rendered', () => {
     await adminSetDoc(`projects/${STALE}/runs`, RUN_S, staleRun(STALE, acct.uid, RUN_S));
   });
 
-  async function open(page: Page, projectId: string, view: 'business' | 'it' | 'management'): Promise<void> {
+  // The workspace holds IT and Management since v3.1.0: Business is Analyze's page (plan AB-2, ADR-109),
+  // whose seven tools are the stage header's bar (`tests/stage-frame.spec.ts`).
+  async function open(page: Page, projectId: string, view: 'it' | 'management'): Promise<void> {
     await page.goto(`/project/${projectId}?view=${view}`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator(`[data-workspace-shell="${view}"]`)).toBeVisible({ timeout: 60000 });
   }
@@ -273,7 +275,7 @@ test.describe('the toolbar, rendered', () => {
     const steps = expectedSteps(ANALYZED, analyzedDoc(acct.uid), RUN_A, analyzedRun(ANALYZED, acct.uid, RUN_A));
     expect(steps.find((s) => s.key === 'analyze')).toMatchObject({ state: 'done', proven: true });
 
-    for (const view of ['business', 'it', 'management'] as const) {
+    for (const view of ['it', 'management'] as const) {
       await open(page, ANALYZED, view);
       const bar = page.locator('[data-workspace-tools="open"]');
       await expect(bar, `${view}: the open bar`).toBeVisible();
@@ -378,7 +380,7 @@ test.describe('the toolbar, rendered', () => {
     const steps = expectedSteps(STALE, staleDoc(acct.uid), RUN_S, staleRun(STALE, acct.uid, RUN_S));
     expect(steps.find((s) => s.key === 'analyze')?.state, 'the fixture is not stale').toBe('stale');
 
-    await open(page, STALE, 'business');
+    await open(page, STALE, 'management');
     const marks = await shown(page, '[data-workspace-tools="open"]');
     expect(marks.map((m) => [m.key, m.state, m.meaning, m.kind])).toEqual(
       steps.map((s) => [s.key, s.state, toolMark(s).meaning, toolMark(s).kind]),
@@ -441,7 +443,7 @@ test.describe('the toolbar, rendered', () => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     await signInThroughForm(page, acct);
-    for (const view of ['business', 'it'] as const) {
+    for (const view of ['management', 'it'] as const) {
       await open(page, ANALYZED, view);
       await expect(page.locator('[data-workspace-tools="open"]'), `${view}: the open bar on a phone`).toBeHidden();
       await expect(page.locator('[data-workspace-tools="menu"]')).toBeVisible();
@@ -500,11 +502,12 @@ test.describe('the toolbar, rendered', () => {
     await context.close();
   });
 
-  test('between the breakpoints Business keeps the menu (M, 900 px)', async ({ page }) => {
+  test('between the breakpoints Management keeps the menu (M, 900 px)', async ({ page }) => {
+    // Business kept it too while it was the workspace's view (until v3.1.0, AB-2).
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 900, height: 1000 });
     await signInThroughForm(page, acct);
-    await open(page, ANALYZED, 'business');
+    await open(page, ANALYZED, 'management');
     await expect(page.locator('[data-workspace-tools="open"]')).toBeHidden();
     await expect(page.locator('[data-workspace-tools="menu"]')).toBeVisible();
   });

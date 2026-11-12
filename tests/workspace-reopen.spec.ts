@@ -25,6 +25,11 @@ import { workflowSteps } from '../lib/workflow-steps';
  *   - "First insights" leaves "Reading …" and lands before the map is drawn;
  *   - at 1440 and at 390 the page settles with a next step that names an action.
  *
+ * Since v3.1.0 a project reopens in Analyze, Business (plan AB-2, ADR-109):
+ * the map is the page, the first insights and "Next step" stand below it until
+ * v3.2.0, and the seven tools are the stage header's. The same promises are
+ * held there.
+ *
  * `REOPEN_SOURCE` points at another program to seed (a large one shows the
  * order most clearly); `REOPEN_SHOTS_DIR` writes screenshots for a reader.
  */
@@ -82,11 +87,11 @@ async function watchReopen(page: Page) {
     const tick = (now: number) => {
       const gap = now - last;
       last = now;
-      if (document.querySelector('[data-workspace-shell="business"]')) {
+      if (document.querySelector('[data-analyze-business="ready"]')) {
         w.__reopen.longestFrame = Math.max(w.__reopen.longestFrame, gap);
         if (wasEmpty) w.__reopen.emptyMs += gap;
       }
-      const card = document.querySelector('[data-workspace-shell="business"] [data-coach-target="next-step"] > *');
+      const card = document.querySelector('[data-analyze-business="ready"] [data-analyze-interim] [data-next-step]');
       wasEmpty = false;
       if (card) {
         const heading = card.querySelector('h2, h3')?.textContent?.trim() ?? '';
@@ -100,9 +105,9 @@ async function watchReopen(page: Page) {
         const settled = card.querySelector('[data-next-step-state="open"], [data-next-step-state="none"]');
         if (settled && (settled.textContent ?? '').trim() && w.__reopen.nextAt === null) w.__reopen.nextAt = now;
       }
-      // Its end state or its failure — never 'waiting' or 'building'.
+      // Its end state or its failure — never 'waiting' (no build-up since v3.1.0).
       const state = document.querySelector('[data-first-look]')?.getAttribute('data-first-look');
-      if ((state === 'end-state' || state === 'complete' || state === 'failed') && w.__reopen.firstLookAt === null) {
+      if ((state === 'end-state' || state === 'failed') && w.__reopen.firstLookAt === null) {
         w.__reopen.firstLookAt = now;
       }
       if (document.querySelector('[data-workspace-process="ready"] [data-process-map]') && w.__reopen.mapAt === null) {
@@ -157,8 +162,9 @@ test.describe('a project reopened far along its way', () => {
       await withoutTips(page);
       await signInThroughForm(page, account);
       await watchReopen(page);
+      // The old address; the project opens in Analyze, Business.
       await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+      await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
 
       if (SHOTS) {
         fs.mkdirSync(SHOTS, { recursive: true });
@@ -167,13 +173,13 @@ test.describe('a project reopened far along its way', () => {
       }
 
       // The first look leaves "Reading …" and stands in its end state.
-      await expect(page.locator('[data-first-look="end-state"], [data-first-look="complete"], [data-first-look="failed"]')).toBeVisible({ timeout: 120_000 });
+      await expect(page.locator('[data-first-look="end-state"], [data-first-look="failed"]')).toBeVisible({ timeout: 120_000 });
       // The next step settles on an action: a label, the reason for it, and
       // the control that starts it — not the pending sentence.
-      const nextStep = page.locator('[data-workspace-shell="business"] [data-next-step]');
+      const nextStep = page.locator('[data-analyze-interim] [data-next-step]');
       const settled = nextStep.locator('[data-next-step-state="open"]');
       await expect(settled).toBeVisible({ timeout: 60_000 });
-      await expect(page.locator('[data-workspace-shell="business"] [data-next-step-pending]')).toHaveCount(0);
+      await expect(page.locator('[data-next-step-pending]')).toHaveCount(0);
       await expect(settled.locator('p').first()).toHaveText(/\S/);
       await expect(settled.locator('[data-next-step-reason]')).toHaveText(/\S/);
       await expect(nextStep.locator('a[href], button').first()).toBeVisible();
@@ -198,10 +204,10 @@ test.describe('a project reopened far along its way', () => {
       if (SHOTS) {
         // Where the seven tools stand on the settled page — said for a reader.
         const toolsTop = await page.evaluate(() => {
-          const el = document.querySelector('[data-workspace-hub]');
+          const el = document.querySelector('[data-stage-toolbar]');
           return el ? Math.round(el.getBoundingClientRect().top + window.scrollY) : null;
         });
-        console.log(`[reopen ${vp.name}] tools hub at y=${toolsTop}, viewport height ${vp.height}`);
+        console.log(`[reopen ${vp.name}] tools at y=${toolsTop}, viewport height ${vp.height}`);
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.waitForTimeout(500);
         await page.screenshot({ path: path.join(SHOTS, `${vp.name}-settled.png`) });
@@ -211,65 +217,50 @@ test.describe('a project reopened far along its way', () => {
   }
 
   /**
-   * Re-entry (ADR-099, Sonny 12.10.2026): one fixed line under the title says
-   * what the page is, and the seven tools stand in one compact row above
-   * "Next step" — open from breakpoint L, a "Tools" menu below it.
+   * Re-entry (ADR-099, Sonny 12.10.2026): the page says what it is, and the
+   * seven tools stand in the first screen — open from breakpoint L, a "Tools"
+   * menu below it. Since v3.1.0 the project reopens in Analyze, Business (AB-2):
+   * the stage header carries both — its title and lead, and the seven tools
+   * with the soft-gate note. (The workspace's own intro line and head tool row
+   * went with its Business view.)
    */
-  test('a returning reader finds the intro line and the seven tools in the first screen — 1440', async ({ page }) => {
+  test('a returning reader finds what the page is and the seven tools in the first screen — 1440', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await withoutTips(page);
     await signInThroughForm(page, account);
     await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-stage-title]')).toBeVisible();
+    await expect(page.locator('[data-stage-header] p').first()).toHaveText(/\S/);
 
-    await expect(page.locator('[data-workspace-intro]')).toHaveText(
-      'Your project’s workspace: the process from the code, and the seven tools.',
-    );
-
-    const bar = page.locator('[data-workspace-head-tools="open"]');
+    const bar = page.locator('[data-stage-toolbar] [data-stage-tools="open"]');
     await expect(bar).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator('[data-workspace-head-tools="menu"]'), 'a menu beside the open bar at L').toBeHidden();
+    await expect(page.locator('[data-stage-toolbar] [data-stage-tools="menu"]'), 'a menu beside the open bar at L').toBeHidden();
     const box = await bar.boundingBox();
-    expect(box, 'the head tool bar has a box').not.toBeNull();
-    expect((box?.y ?? 0) + (box?.height ?? 0), 'the head tool bar ends above the fold').toBeLessThanOrEqual(900);
+    expect(box, 'the tool bar has a box').not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0), 'the tool bar ends above the fold').toBeLessThanOrEqual(900);
+    // Above the map and above "Next step", in the DOM and on the screen.
+    const mapBox = await page.locator('[data-analyze-map]').boundingBox();
+    expect(box?.y ?? 0, 'the tool bar stands above the map').toBeLessThan(mapBox?.y ?? 0);
 
-    // Above "Next step", in the DOM and on the screen.
-    const nextStep = page.locator('[data-workspace-shell="business"] [data-coach-target="next-step"]');
-    await expect(nextStep).toBeVisible({ timeout: 60_000 });
-    const nextBox = await nextStep.boundingBox();
-    expect(box?.y ?? 0, 'the tool bar stands above Next step').toBeLessThan(nextBox?.y ?? 0);
-
-    // The seven tools, the same marks and exactly one "Next" tag — read from the
-    // phase contract, as on the full bar in the work area.
+    // The seven tools, read from the phase contract, each a link to its stage.
     const links = bar.locator('a[data-workspace-tool]');
     await expect(links).toHaveCount(7);
-    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveCount(1);
-    await expect(bar.locator('[data-tools-legend="head"]')).toBeVisible();
     const keys = workflowSteps(null).map((s) => s.key);
     for (const key of keys) {
-      await expect(bar.locator(`a[data-workspace-tool="${key}"]`)).toHaveAttribute(
-        'href',
-        new RegExp(`^/project/${projectId}/${key}\\?view=business&from=workspace-head-tools`),
-      );
+      await expect(bar.locator(`a[data-workspace-tool="${key}"]`)).toHaveAttribute('href', new RegExp(`^/project/${projectId}/${key}(\\?|$)`));
     }
-    // The full bar's state per tool agrees with the head bar's.
-    const head = await links.evaluateAll((els) => els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}`));
-    const full = await page
-      .locator('[data-workspace-tools="open"] a[data-workspace-tool]')
-      .evaluateAll((els) => els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}`));
-    expect(head).toEqual(full);
 
-    // Keyboard: the first tool takes the focus and Enter opens its stage.
-    const first = links.first();
+    // Keyboard: a tool takes the focus and Enter opens its stage.
+    const first = bar.locator('a[data-workspace-tool="design"]');
     await first.focus();
     await expect(first).toBeFocused();
-    const target = await first.getAttribute('data-workspace-tool');
     await page.keyboard.press('Enter');
-    await page.waitForURL(new RegExp(`/project/${projectId}/${target}\\?`), { timeout: 90_000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/design(\\?|$)`), { timeout: 90_000 });
   });
 
-  test('on a phone the head carries a "Tools" menu in the first screen — 390', async ({ browser }) => {
+  test('on a phone the stage header carries a "Tools" menu in the first screen — 390', async ({ browser }) => {
     test.setTimeout(300_000);
     // A phone, not a narrow desktop window: the 44 px target is the coarse
     // pointer's (CcButton's pointer-coarse:min-h-11), as on business-view-clarity.
@@ -278,11 +269,10 @@ test.describe('a project reopened far along its way', () => {
     await withoutTips(page);
     await signInThroughForm(page, account);
     await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
 
-    await expect(page.locator('[data-workspace-intro]')).toBeVisible();
-    await expect(page.locator('[data-workspace-head-tools="open"]'), 'the open bar on a phone').toBeHidden();
-    const button = page.locator('[data-workspace-head-tools="menu"] button[aria-expanded]');
+    await expect(page.locator('[data-stage-toolbar] [data-stage-tools="open"]'), 'the open bar on a phone').toBeHidden();
+    const button = page.locator('[data-stage-toolbar] [data-stage-tools="menu"] button[aria-expanded]');
     await expect(button).toBeVisible({ timeout: 60_000 });
     const box = await button.boundingBox();
     expect((box?.y ?? 0) + (box?.height ?? 0), 'the Tools button ends above the fold').toBeLessThanOrEqual(844);
@@ -292,14 +282,9 @@ test.describe('a project reopened far along its way', () => {
     // it and hands the focus back to the button.
     await button.focus();
     await page.keyboard.press('Enter');
-    const panel = page.locator('[data-workspace-head-tools-panel]');
+    const panel = page.locator('[data-stage-toolbar] [data-workspace-tools-panel]');
     await expect(panel).toBeVisible();
     await expect(panel.locator('a[data-workspace-tool]')).toHaveCount(7);
-    await expect(panel.locator('a[data-workspace-tool-next]')).toHaveCount(1);
-    await expect(panel.locator('a[data-workspace-tool="testing"]')).toHaveAttribute(
-      'href',
-      new RegExp(`^/project/${projectId}/testing\\?view=business&from=workspace-head-tools`),
-    );
     await page.keyboard.press('Escape');
     await expect(panel).toHaveCount(0);
     await expect(button).toBeFocused();

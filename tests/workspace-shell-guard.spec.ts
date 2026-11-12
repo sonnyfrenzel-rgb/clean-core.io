@@ -543,21 +543,27 @@ test.describe('every account opens its own projects in the workspace — and onl
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signIn(page, COMMUNITY);
+    // The project opens in Analyze, Business since v3.1.0 (AB-2, ADR-109) — its own, for an ordinary account.
+    await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze`), { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    // The workspace itself (IT and Management) opens for it as well.
     expect(
-      await openWorkspace(page, PROJECT_ID),
+      await openWorkspace(page, PROJECT_ID, '?view=it'),
       'an ordinary account was refused its own workspace',
     ).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
 
     // A stage is a tool of it: the shell path names the project from the
     // stage's own read (D.29) and leads back to the workspace, the stage's own
-    // way back does too, and the seven tools stand under it.
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    // way back does too, and the seven tools stand under it. (Design: Analyze in
+    // Business is the entry, whose way back is My workspace, ADR-109.)
+    await page.goto(`/project/${PROJECT_ID}/design`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
     const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
     await expect(crumb).toHaveText('A community project', { timeout: 30000 });
     await expect(crumb).toHaveAttribute('href', `/project/${PROJECT_ID}`);
-    await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Analyze');
+    await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Design');
     await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', `/project/${PROJECT_ID}`);
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool]')).toHaveCount(7);
     await expect(page.locator('nav[aria-label="Workflow phases"]'), 'the old stepper').toHaveCount(0);
@@ -657,12 +663,12 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page, ADMIN);
 
-    expect(await openWorkspace(page, EMPTY_ID)).toBe('shell');
+    // The workspace holds IT and Management since v3.1.0 (Business is Analyze's, AB-2); the seven
+    // statuses fold the same way in both. IT here.
+    expect(await openWorkspace(page, EMPTY_ID, '?view=it')).toBe('shell');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
 
-    // ADR-002: the workspace opens in the Business view.
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
-
-    // Business folds the seven away; open them, because what this test is about
+    // The seven are folded away; open them, because what this test is about
     // is what they say, not where they are.
     await page.click('[data-workspace-status-toggle]');
     await page.waitForSelector('[data-workspace-status-line]');
@@ -696,9 +702,6 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     const green = chips.filter((c) => c.colour === success || c.colour === 'rgb(4, 120, 87)');
     expect(green.map((c) => c.facet), 'an untouched facet is painted as proven').toEqual([]);
 
-    // The area the row asks for, and the sentence that is not "0".
-    await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible();
-
     // And the meta line, when it is opened, admits it has nothing to show —
     // since 02.10.2026 in one sentence instead of a row of "not recorded".
     await page.click('[data-workspace-details-toggle]');
@@ -714,6 +717,13 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await fold.click();
     await expect(page.locator('[data-workspace-status-line]'), 'the project status cannot be folded again').toHaveCount(0);
     await expect(fold).toHaveAttribute('aria-expanded', 'false');
+
+    // The area the row asks for, and the sentence that is not "0" — the open
+    // questions, in Management's Evidence fold (ADR-081; the Business list went
+    // with the workspace's Business view in v3.1.0).
+    expect(await openWorkspace(page, EMPTY_ID, '?view=management')).toBe('shell');
+    await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click({ timeout: 60000 });
+    await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible({ timeout: 60000 });
   });
 
   test('a project with a signed run says so — and unverified work is still not green', async ({ page }) => {
@@ -814,8 +824,10 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
       return route.continue();
     });
 
-    expect(await openWorkspace(page, FULL_ID)).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
+    // The workspace opens on IT here: Business is Analyze's page since v3.1.0 (AB-2, ADR-109), and its
+    // own view switch is the stage header's (`tests/stage-view-switch.spec.ts`).
+    expect(await openWorkspace(page, FULL_ID, '?view=it')).toBe('shell');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
 
     // One segmented control in the header: the view. There is no Focus (ADR-058).
     await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
@@ -832,7 +844,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await expect(aboutPanel).toBeVisible();
     // What the paragraph says and what the code shows must be the same text —
     // a hand-written duplicate in the DOM would drift from `lib/workspace-model.ts`.
-    await expect(aboutPanel).toHaveText(VIEW_ABOUT.business);
+    await expect(aboutPanel).toHaveText(VIEW_ABOUT.it);
 
     // The toggle names the exact paragraph it opens — a real `aria-controls`
     // relationship, not just a visual disclosure two elements happen to sit
@@ -843,20 +855,9 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     expect(controls, 'the toggle does not name the paragraph it opens').toBeTruthy();
     expect(controls).toBe(panelId);
 
-    // Switching to IT shows IT — and no Focus switch beside the view (ADR-058:
+    // IT shows IT — and no Focus switch beside the view (ADR-058:
     // the "Application · Solution · Enterprise" switch scoped nothing and was
     // removed on the owner's decision of 02.10.2026).
-    //
-    // The generous timeout below is not slack for a flaky assertion: the dev
-    // server compiles `/project/[projectId]` on demand, and the client-side
-    // navigation this click triggers is the *first* hit of that route in this
-    // test, which can take several seconds under a full, parallel test run —
-    // the same class of gotcha CLAUDE.md documents for a compiling dev server,
-    // just on the write side instead of a race between two writes.
-    const viewSeg = page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'IT' });
-    await viewSeg.click();
-    await expect(page).toHaveURL(/[?&]view=it\b/, { timeout: 30000 });
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
 
     await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
     await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
@@ -867,14 +868,19 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
       ).toHaveCount(0);
     }
 
-    // The "About this view" paragraph re-opens for IT's own text — the toggle
-    // state is not reset by a view switch, but the content it shows is.
-    await expect(page.locator('[data-workspace-view-about]')).toHaveText(VIEW_ABOUT.it);
-
     // Management: the view is still in the URL. Tight on purpose: by here the
     // page is loaded and the URL change is client-side (QA review of 4a99d5355716).
     await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Management' }).click();
     await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 5000 });
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'management');
+    // The "About this view" paragraph re-opens for Management's own text — the toggle
+    // state is not reset by a view switch, but the content it shows is.
+    await expect(page.locator('[data-workspace-view-about]')).toHaveText(VIEW_ABOUT.management);
+
+    // Business: the workspace's switch leads to Analyze, Business (v3.1.0, AB-2), with no model call either.
+    await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Business' }).click();
+    await page.waitForURL(new RegExp(`/project/${FULL_ID}/analyze\\?view=business`), { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
 
     // Every switch above — two views, one "About this view" toggle — and not
     // one of them called the model or minted a run.
@@ -894,9 +900,10 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
     await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
     // The view switch still works from there, and nothing rewrote or acted on the old parameter.
+    // Business is Analyze's since v3.1.0 (AB-2): the switch lands there, and `focus` is not carried on.
     await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Business' }).click();
-    await expect(page).toHaveURL(/[?&]view=business\b/, { timeout: 30000 });
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
+    await page.waitForURL(new RegExp(`/project/${FULL_ID}/analyze\\?view=business$`), { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
     expect(pageErrors, `the page threw: ${pageErrors.join(' | ')}`).toEqual([]);
   });
 
@@ -982,7 +989,11 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
 
     // The property the move had to keep: in the other two views the Management
     // blocks are not rendered at all, while the access list is.
-    for (const other of ['business', 'it'] as const) {
+    // Business is Analyze's page since v3.1.0 (AB-2): it renders neither block either.
+    await page.goto(`/project/${FULL_ID}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-management-view], [data-public-cloud-fit-panel], [data-management-elsewhere]')).toHaveCount(0);
+    for (const other of ['it'] as const) {
       await page.goto(`/project/${FULL_ID}?view=${other}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-workspace-shell',
