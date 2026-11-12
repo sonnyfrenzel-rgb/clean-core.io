@@ -174,10 +174,10 @@ Proposed new wording, one line each. A new ADR is written when its package lands
 | ADR-103 | superseded | First insights is Analyze's Business view: map, text around it with line anchors, 2–3 charts, two endings. |
 | ADR-104 | unchanged | Note only: the pen mark per element is the same `proposed` value, never a spark. |
 | ADR-105 | unchanged | Copy names "the view switch", never a position on screen. |
-| new ADR-107 (AB-2) | new | Analyze is business first and is the project's entry; IT and Management are views of the same tool. |
+| new ADR-109 (AB-2) | new | Analyze is business first and is the project's entry; IT and Management are views of the same tool. |
 | new ADR-108 (AB-3) | new | Names swap in per element after the fact check, within 45 s per program, announced in one status line; reduced motion swaps without motion. |
-| new ADR-109 (AB-4) | new | The soft gate, the two equal endings and "What you can do next" live in the browser only; nothing locks, nothing is confirmed. |
-| new ADR-110 (AB-7) | new | Charts under the map count only the engine's facts, each with its lines and *Reconstructed*; no chart without a sentence that says what it shows. |
+| new ADR-111 (AB-4) | new | The soft gate, the two equal endings and "What you can do next" live in the browser only; nothing locks, nothing is confirmed. |
+| new ADR-114 (AB-7) | new | Charts under the map count only the engine's facts, each with its lines and *Reconstructed*; no chart without a sentence that says what it shows. |
 | `DESIGN.md` §5 title and §5.1–5.5 | rewrite | "Analyze opens in the Business view"; §5.1 "The code speaks first — on demand in Business, prominent in IT"; §5.2 the stages become: map with engine names → text and names arrive → invitation; §5.3 without coach mark; §5.4 the 20 s exception describes the arrival, not the code column; §5.5 the page order of v4.1. |
 | `DESIGN.md` §5.6 | amend | The "first answer on screen" of IT and Management as in v4.1. |
 | `DESIGN.md` §2.3 | amend (O8) | "Next step in every view" does not apply to Analyze; the two endings take its place. |
@@ -733,6 +733,12 @@ dates do not hold. Until it ships, Business shows two charts.*
 | H-O8 | Rename | A server route instead of a `firestore.rules` change (rules are deployed by hand). | AB-14b, else later |
 
 ##### AB-14a — v3.1.0 · The first view for a new account (mockup v2.1) · S–M
+
+- **Status (12.11.2026):** built on branch `night/ab14` (ADR-110): `HomeFirstView`, `ToolPathStrip`, the `home`
+  variant of `StarterExamples`, the slice (`lib/bpmn/slice.ts`, `lib/home-map-slice.ts`,
+  `components/process-map/MapSlice.tsx`), the own-code handoff with a paste field (`lib/home-start-handoff.ts`).
+  Rendered specs written, to be run on the production build; [look] at the six viewports still open. The portfolio
+  entry stays on the view (a quiet link; the mockup has none — the 3.0.21 rule "every account sees the way in").
 
 - **Mockup:** v2.1 of the same file, accepted by the owner on 06.11.2026 ("build it exactly like this"); state 1 at
   the six viewports, 0 overlaps, 0 clipping.

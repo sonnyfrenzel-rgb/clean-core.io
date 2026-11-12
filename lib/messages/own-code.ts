@@ -21,6 +21,12 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.dropHelp':
     'Upload the main program and every include it uses, as files or as one ZIP — an abapGit export too. Each include goes where its INCLUDE stands; a missing one stays Not determined.',
   'ownCode.reading': 'Reading the files…',
+  // The paste field (AB-14a: "Paste the code" on the home page opens it here).
+  'ownCode.pasteOpen': 'Paste the code',
+  'ownCode.pasteLabel': 'ABAP source, pasted',
+  'ownCode.pasteHelp': 'One program. It is checked like a file, in your browser; nothing is uploaded or stored yet.',
+  'ownCode.pasteAdd': 'Add the code',
+  'ownCode.pasteCancel': 'Close',
   'ownCode.checkedNote':
     'Checked in your browser. Nothing has been uploaded or stored yet.',
   'ownCode.whatItCounts': 'What it counts',

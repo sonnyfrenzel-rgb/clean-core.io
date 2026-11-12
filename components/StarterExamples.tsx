@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { serverTimestamp, updateDoc } from 'firebase/firestore';
 import { createWithinCeiling } from '@/lib/write-ceiling';
@@ -24,7 +24,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { describeSnippet, exampleTiers, START_HERE_WHY, type ExampleSnippet } from '@/lib/example-catalog';
 import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
 import { formatNumber } from '@/lib/format';
-import { Eye, FileCode2, Info, Play } from 'lucide-react';
+import { ArrowRight, Eye, FileCode2, Info, Play } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcDialog from '@/components/cc/Dialog';
@@ -36,6 +36,7 @@ import CcTag from '@/components/cc/Tag';
 import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
 import { leaveStartRelease } from '@/lib/start-release-handoff';
 import { CcNoMatches } from '@/components/cc/EmptyState';
+import { homeExampleLines, homeMoreExamples, wt } from '@/lib/workspace-messages';
 
 /**
  * "Try it with an example" — the one example gallery, on every page that
@@ -72,11 +73,23 @@ export default function StarterExamples({
   userId,
   account,
   heading = true,
+  variant = 'gallery',
+  homeFooter,
 }: {
   userId: string;
   account: Account;
   /** `false` where the page around it already says what this is ("New project"). */
   heading?: boolean;
+  /**
+   * `home`: the compact way "Try an example" of a new account's first view
+   * (AB-14a, home mockup v2.1) — the recommended example with the page's one
+   * filled button, the other shipped examples as a list, the snippets left to
+   * the gallery. The start itself is this component's, unchanged: the same
+   * edition question, the same cost rule, the same project.
+   */
+  variant?: 'gallery' | 'home';
+  /** `home` only: what closes the column on a wide screen (the demo line). */
+  homeFooter?: React.ReactNode;
 }) {
   const router = useRouter();
   const tiers = useMemo(() => exampleTiers(), []);
@@ -104,6 +117,8 @@ export default function StarterExamples({
   const [aboutOpen, setAboutOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [kind, setKind] = useState<'' | 'example' | 'snippet'>('');
+  /** `home` on a phone: the list of the other examples is folded until asked for. */
+  const [homeListOpen, setHomeListOpen] = useState(false);
   const costId = useId();
   // Whether the start asks the model for the narrative (owner decision
   // 03.10.2026): the account's analysis stage and a key, said before the click —
@@ -339,6 +354,196 @@ export default function StarterExamples({
 
   const startHere: Item = { kind: 'example', key: tiers.startHere.file, example: tiers.startHere };
 
+  /** What stands under an example once it was started: the repeat warning, the personal-data panel. */
+  const startNotes = (item: Item) => {
+    const cost = item.kind === 'example' ? describeStarterExampleCost(account, item.example.name) : null;
+    return (
+      <>
+        {confirming === item.key && cost?.rerunWarning ? (
+          <div data-testid="starter-example-rerun-warning">
+            <CcMessageStrip
+              state="warning"
+              actions={
+                <>
+                  <CcButton variant="ghost" onClick={() => setConfirming(null)}>
+                    Cancel
+                  </CcButton>
+                  <CcButton variant="secondary" onClick={() => void create(item)}>
+                    Run again
+                  </CcButton>
+                </>
+              }
+            >
+              {cost.rerunWarning}
+            </CcMessageStrip>
+          </div>
+        ) : null}
+        {scanned?.key === item.key ? (
+          <PersonalDataHints
+            id={`starter-example-personal-data-${item.key.replace(/[^A-Za-z0-9_-]/g, '-')}`}
+            hints={scanned.hints}
+            acknowledged={personalDataAckFor !== '' && personalDataAckFor === personalDataHintKey(scanned.hints)}
+            onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataHintKey(scanned.hints) : '')}
+          />
+        ) : null}
+      </>
+    );
+  };
+
+  if (variant === 'home') {
+    const rec = tiers.startHere;
+    const others: Item[] = [...tiers.next.map(({ example }) => example), ...tiers.more].map((example) => ({
+      kind: 'example' as const,
+      key: example.file,
+      example,
+    }));
+    return (
+      <section
+        data-testid="starter-examples"
+        data-starter-examples-variant="home"
+        aria-labelledby="home-examples-title"
+        className="flex min-w-0 flex-1 flex-col gap-3.5"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 id="home-examples-title" className="m-0 text-[16px] font-bold tracking-[-0.01em] text-cc-ink">
+            {wt('home.exampleTitle')}
+          </h3>
+          <span
+            data-home-cost="examples"
+            className="inline-flex items-center rounded-full border border-cc-success-border bg-cc-success-bg px-2.5 py-px text-[12px] leading-[18px] font-semibold whitespace-nowrap text-cc-success"
+          >
+            {wt('home.exampleCost')}
+          </span>
+        </div>
+
+        {limitHit ? (
+          <CcMessageStrip
+            state="warning"
+            headline="Limit reached."
+            announce
+            actions={
+              <>
+                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+                  {OWN_KEY_ACTION}
+                </CcLinkButton>
+                <CcButton variant="ghost" onClick={() => setLimitHit(false)}>
+                  Close
+                </CcButton>
+              </>
+            }
+          >
+            {quotaSpentSentence(limit)}
+          </CcMessageStrip>
+        ) : null}
+        {failed ? (
+          <CcMessageStrip state="error" announce>
+            {failed}
+          </CcMessageStrip>
+        ) : null}
+
+        <div
+          data-example-card={rec.name}
+          data-examples-tier="start-here"
+          className="flex flex-col items-start gap-2 rounded-cc-card border border-cc-line px-4 py-3.5"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span data-testid="starter-example-name" className="font-cc-mono text-[13px] font-bold text-cc-ink">
+              {rec.name}
+            </span>
+            <CcTag>{wt('home.recommended')}</CcTag>
+            <RanBefore account={account} name={rec.name} />
+          </div>
+          <p className="m-0 text-[13px] leading-normal font-medium text-cc-ink-muted">
+            {rec.summary} <span data-example-lines={rec.lines}>{lines(rec.lines)}.</span>
+          </p>
+          <span data-home-start-example-wrap="" className="flex w-full flex-col min-[601px]:w-auto">
+            <CcButton
+              variant="primary"
+              density="cozy"
+              busy={busy === startHere.key}
+              disabled={!!busy && busy !== startHere.key}
+              onClick={() => start(startHere)}
+              aria-expanded={confirming === startHere.key || undefined}
+              data-example-start={rec.name}
+              data-home-start-example=""
+            >
+              <span>{wt('home.startExample')}</span>
+              <ArrowRight size={16} aria-hidden={true} />
+            </CcButton>
+          </span>
+          {startNotes(startHere)}
+        </div>
+
+        <div className="flex flex-col">
+          <span className="min-[768px]:hidden" data-examples-more="">
+            <button
+              type="button"
+              aria-expanded={homeListOpen}
+              aria-controls="home-examples-list"
+              onClick={() => setHomeListOpen((v) => !v)}
+              data-home-more-examples=""
+              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+            >
+              {homeMoreExamples(others.length)}
+              <ArrowRight size={14} aria-hidden={true} />
+            </button>
+          </span>
+          <ul
+            id="home-examples-list"
+            aria-label={wt('home.otherExamples')}
+            data-home-examples-list=""
+            className={'m-0 list-none flex-col border-t border-cc-line p-0 min-[768px]:flex ' + (homeListOpen ? 'flex' : 'hidden')}
+          >
+            {others.map((item) =>
+              item.kind === 'example' ? (
+                <li key={item.key} data-example-card={item.example.name} className="border-b border-cc-line">
+                  <button
+                    type="button"
+                    onClick={() => start(item)}
+                    disabled={!!busy && busy !== item.key}
+                    aria-busy={busy === item.key || undefined}
+                    aria-label={`Start ${item.example.name}`}
+                    data-example-start={item.example.name}
+                    className="grid min-h-[34px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-x-2.5 gap-y-1 px-0.5 py-1.5 text-left text-[12px] font-medium text-cc-ink-muted hover:bg-cc-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus disabled:cursor-not-allowed pointer-coarse:min-h-11 min-[1101px]:grid-cols-[minmax(0,auto)_auto_minmax(0,1fr)_14px]"
+                  >
+                    <span data-testid="starter-example-name" className="truncate font-cc-mono font-semibold text-cc-ink">
+                      {item.example.name}
+                    </span>
+                    <span data-example-lines={item.example.lines} className="inline-flex items-center gap-2 whitespace-nowrap tabular-nums">
+                      {homeExampleLines(formatNumber(item.example.lines) ?? String(item.example.lines))}
+                      <RanBefore account={account} name={item.example.name} />
+                    </span>
+                    <ArrowRight size={14} aria-hidden={true} className="justify-self-end min-[1101px]:order-last" />
+                    <span className="col-span-full min-w-0 truncate max-[600px]:hidden min-[1101px]:col-span-1">
+                      {item.example.summary}
+                    </span>
+                  </button>
+                  {startNotes(item)}
+                </li>
+              ) : null,
+            )}
+          </ul>
+        </div>
+
+        {/* Said before the click (§2.8): what the start does with the model. */}
+        <p data-examples-cost="" className="m-0 cc-text-meta text-cc-ink-muted">
+          <span data-examples-model={startCallsModel ? 'calls' : 'none'}>{startModelLine(startCallsModel)}</span>
+        </p>
+
+        <TargetEditionChoice
+          value={edition}
+          onChange={setEdition}
+          disabled={!!busy}
+          release={release}
+          onReleaseChange={setRelease}
+          folded
+        />
+
+        {homeFooter}
+      </section>
+    );
+  }
+
   return (
     <section
       data-testid="starter-examples"
@@ -559,5 +764,22 @@ export default function StarterExamples({
         )}
       </CcDialog>
     </section>
+  );
+}
+
+/**
+ * The home list's mark on an example this account already had for free
+ * (`home` only). The section's tag says "Free the first time" for all of them;
+ * the one that would now use a run says so where it is clicked, in the
+ * product's one wording (`STARTER_BADGE_RAN_BEFORE`), and the start asks
+ * before it runs, as the gallery does.
+ */
+function RanBefore({ account, name }: { account: Account; name: string }) {
+  const cost = describeStarterExampleCost(account, name);
+  if (cost.free) return null;
+  return (
+    <span data-testid="starter-example-ran-before">
+      <CcTag>{cost.badge}</CcTag>
+    </span>
   );
 }

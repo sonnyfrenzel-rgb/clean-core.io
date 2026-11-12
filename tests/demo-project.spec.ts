@@ -365,13 +365,14 @@ test.describe('the demo costs an account nothing', () => {
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForURL('**/dashboard', { timeout: 60000 });
 
-    // "My workspace" is the 3.0 list for every account (roadmap 3.0.1): the
-    // demo is its first row, and it opens the demo workspace with its tour.
-    const demoRow = page.locator('[data-workspace-open="demo"]').first();
-    await expect(demoRow).toContainText(DEMO_TITLE_PREFIX.trim(), { timeout: 60000 });
-    await expect(page.getByText('No projects yet')).toBeVisible();
+    // AB-14a: an account with no project lands on the first view, and the demo
+    // is its line "Prefer to look first?" — it opens the demo workspace.
+    await expect(page.locator('[data-home-first-view]')).toBeVisible({ timeout: 60000 });
+    const demoLink = page.locator('[data-home-open-demo]:visible');
+    await expect(demoLink).toHaveCount(1);
+    await expect(demoLink).toHaveAttribute('href', '/demo/workspace');
 
-    await demoRow.click();
+    await demoLink.click();
     await page.waitForURL('**/demo/workspace', { timeout: 60000 });
     await expect(page.locator('[data-demo-workspace]')).toBeAttached({ timeout: 90000 });
 
@@ -382,7 +383,8 @@ test.describe('the demo costs an account nothing', () => {
 
     // Walking the whole demo created nothing: no project document, so nothing
     // that could be charged, signed or stored per account.
+    // The first view again: it stands for an account without a project.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('No projects yet')).toBeVisible();
+    await expect(page.locator('[data-home-first-view]')).toBeVisible({ timeout: 60000 });
   });
 });

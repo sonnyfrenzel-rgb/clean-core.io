@@ -87,10 +87,11 @@ test('the help is a quiet text link, not a second question-mark button', () => {
   expect(component).toContain('On data privacy: uploads are processed by the server and stored in your private workspace');
 });
 
-test('the welcome mail recommends the Start here example', () => {
+test('the welcome mail recommends the example the first view recommends', () => {
   const mail = read('lib/welcome-email.ts');
   expect(mail).toContain('Z_MM_PO_APPROVAL');
-  expect(mail).toContain('Start here');
+  // AB-14a: the home page's words for it, "Start this example" — the gallery's "Start here" is not on that page.
+  expect(mail).toContain('Start this example');
   expect(mail).not.toContain('Z_MATERIAL_STOCK_CALC');
 });
 
@@ -106,7 +107,9 @@ try {
 const PASSWORD = 'Examples123!';
 const EMAIL = `examples-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
 
-test.describe('the gallery on My workspace', () => {
+// AB-14a: a new account's My workspace is its first view; the gallery is at
+// the start of an analysis ("New project"), where every account finds it.
+test.describe('the gallery at the start of an analysis', () => {
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
     const cred = await createUserWithEmailAndPassword(clientAuth, EMAIL, PASSWORD);
@@ -121,8 +124,8 @@ test.describe('the gallery on My workspace', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 390, height: 844 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    const panel = page.getByTestId('starter-examples');
+    await page.goto('/admin/new-project', { waitUntil: 'domcontentloaded' });
+    const panel = page.locator('[data-new-project-examples] [data-testid="starter-examples"]');
     await expect(panel).toBeVisible({ timeout: 60000 });
 
     await panel.locator('[data-examples-about]').click();

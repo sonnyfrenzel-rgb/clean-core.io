@@ -20,7 +20,9 @@ const firebaseAuth = getAuth(firebaseApp);
 // Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
 connectAuthToEmulator(firebaseAuth);
 
-const EMAIL = 'starter-examples-e2e@cleancore-test.io';
+// A new address per run (AB-14a): a fresh account lands on the first view,
+// and an account an earlier run left a project on would not.
+const EMAIL = `starter-examples-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
 const PASSWORD = 'SuperPassword123!';
 
 /**
@@ -69,15 +71,13 @@ test.describe('Dashboard — starter examples', () => {
       await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
     }
 
-    // Scoped to the panel: projects created by earlier runs carry the same names,
-    // so an unscoped text match collides with the project list further up the page.
-    const panel = page.getByTestId('starter-examples');
-    await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
+    // AB-14a: a new account's examples are on its first view — the
+    // recommended one, and every other shipped example in a list beside it.
+    const panel = page.locator('[data-home-first-view] [data-testid="starter-examples"]');
+    await expect(panel.getByRole('heading', { name: 'Try an example' })).toBeVisible({ timeout: 30000 });
 
-    // Every shipped example is offered, including the large one — the first
-    // four up front, the rest one click away under "More examples".
-    await panel.locator('[data-examples-more] button').first().click();
-    const names = panel.locator('[data-example-kind="example"]').getByTestId('starter-example-name');
+    // Every shipped example is offered, including the large one.
+    const names = panel.locator('[data-example-card]').getByTestId('starter-example-name');
     // Six since 18.10.2026: three examples that made no sense were retired (since 3.0.18 in tests/fixtures/retired-starter-examples/);
     // seven since 3.0.19, with the key-user example Z_SD_DELIVERY_PRIORITY.
     await expect(names).toHaveCount(7);
@@ -116,13 +116,15 @@ test.describe('Dashboard — starter examples', () => {
     test.setTimeout(120 * 1000);
     await signInViaLanding(page, EMAIL, PASSWORD, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop());
-    await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 }).catch(async () => {
+    // The gallery at the start of an analysis, which every account has (AB-14a:
+    // a new account's /dashboard shows its first view instead).
+    await page.goto('/admin/new-project', { waitUntil: 'commit', timeout: 45000 }).catch(async () => {
       await page.waitForTimeout(1000);
-      await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
+      await page.goto('/admin/new-project', { waitUntil: 'commit', timeout: 45000 });
     });
 
-    const panel = page.getByTestId('starter-examples');
-    await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
+    const panel = page.locator('[data-new-project-examples] [data-testid="starter-examples"]');
+    await expect(panel).toBeVisible({ timeout: 30000 });
     await panel.locator('[data-examples-more] button').first().click();
     const card = panel.locator('[data-example-card="ZLEGACY_ORDER_FULFILLMENT_AUDIT"]');
     await card.locator('[data-example-start="ZLEGACY_ORDER_FULFILLMENT_AUDIT"]').click();
@@ -135,7 +137,7 @@ test.describe('Dashboard — starter examples', () => {
     // Linked straight from the community mail, so it must render without a session.
     await page.goto('/first-run');
     await expect(page.getByRole('heading', { name: 'Your first run', exact: true })).toBeVisible();
-    await expect(page.getByText(/Scroll to "Try it with an example"/)).toBeVisible();
+    await expect(page.getByText('Look at "Try an example"')).toBeVisible();
     await expect(page.getByText('Z_MATERIAL_STOCK_CALC').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /Open the How-To Guide/i })).toBeVisible();
     await expect(page.getByRole('link', { name: 'info@clean-core.io' })).toBeVisible();

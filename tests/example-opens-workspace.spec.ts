@@ -100,7 +100,7 @@ async function startFromGallery(page: Page, scope: string, name: string) {
 test.describe('an example opens the workspace with the first look, never Analyze (owner 02.10.2026)', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('from the gallery on "My workspace" — the empty list a new account sees', async ({ page }) => {
+  test('from "My workspace" — the first view a new account sees (AB-14a)', async ({ page }) => {
     test.setTimeout(360 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const email = await communityAccount('example-list');
@@ -131,9 +131,9 @@ test.describe('an example opens the workspace with the first look, never Analyze
     await page.setViewportSize({ width: 1440, height: 1000 });
     const email = await communityAccount('example-newproject');
     await signInViaLanding(page, email, PASSWORD);
-    await goto(page, '/dashboard');
-    await page.locator('[data-workspace-new-project]').first().click({ timeout: 90000 });
-    await page.waitForURL(/\/admin\/new-project$/, { timeout: 90000 });
+    // A new account's first view has the start built in and no "New project"
+    // (AB-14a); the page itself is the same for every account.
+    await goto(page, '/admin/new-project');
     await expect(page.locator('[data-cc-new-project]')).toBeVisible({ timeout: 90000 });
     await startFromGallery(page, '[data-new-project-examples]', 'Z_MATERIAL_STOCK_CALC');
     await expectWorkspaceWithFirstLook(page);

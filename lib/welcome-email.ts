@@ -33,8 +33,8 @@ export const WELCOME_EMAIL_SUBJECT = 'Welcome to Clean-Core.io — your workspac
 
 /** Condensed from /first-run, which is the click-by-click version. One line each. */
 const FIRST_RUN_STEPS: string[] = [
-  'On the dashboard, scroll to <strong>Try it with an example</strong>. No SAP connection, no code of your own.',
-  'Press <strong>Start</strong> on the card under <strong>Start here</strong>: <strong>Z_MM_PO_APPROVAL</strong>, the case the demo project is built on. One click creates the project and runs the signed analysis.',
+  'On My workspace, look at <strong>Try an example</strong>. No SAP connection, no code of your own.',
+  'Press <strong>Start this example</strong> on <strong>Z_MM_PO_APPROVAL</strong>, the case the demo project is built on. One click creates the project and runs the signed analysis.',
   'Watch the first look build up, then answer the hard-coded rules: keep, change, drop or clarify.',
   'Open the other tools, then download the abapGit package and the signed audit pack.',
 ];

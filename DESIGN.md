@@ -241,6 +241,16 @@ Fiori app and never says so.
 | **Object page** | the workspace of a project | Header, toolbar, anchor bar, sections, footer only when editing (§2.3) |
 | **Overview** | Management view of a project | Cards with one answer each, every number with "Why?" |
 
+**An account without a project has no list yet** (ADR-110, home mockup v2.1 state 1, accepted 06.11.2026). "My
+workspace" shows it a first view instead: the welcome, one heading and two sentences on what the product does; the
+seven tools in one quiet line (Analyze outlined as "A complete result on its own", the six after it dashed as
+"Optional, if you want to re-design it"; names and order from `lib/workflow-steps.ts`); and the start built in, with
+two ways side by side — *Try an example* (the recommended example carries the page's only filled button, "Start this
+example"; the other shipped examples as a compact list) and *Analyse your own program* (a drop area, "Choose a file",
+"Paste the code", which open today's own-code start with the file preset, and a live slice of the demo map drawn by
+the map's own renderer). The demo is a line, not a row. No duration is claimed. The first project ends the view: from
+then on the list report above applies.
+
 **With 3.0 everything is new, all of a piece** (ADR-052, Sonny 24.09.2026). No old interface is removed instead
 of being rebuilt: the **old dashboard** (`/dashboard`) and the **old stage demo** (`/demo/[stage]`) are rebuilt according to
 this file — floorplan, tokens, cc components, language — like every other page. What they can do today
