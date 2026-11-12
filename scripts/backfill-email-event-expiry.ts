@@ -73,6 +73,83 @@ export function emailEventBackfillExpiry(
   return { expiresAt: mailDeliveryRecordExpiry(from) };
 }
 
+/** A record as the scan sees it — a Firestore query document snapshot satisfies it. */
+export interface BackfillDoc {
+  id: string;
+  data(): Record<string, unknown>;
+  updateTime: Timestamp;
+}
+
+/** The two things the backfill needs from Firestore, so a test can hand it a fake. */
+export interface BackfillStore {
+  /** Up to `limit` records in document-id order, after `after` (from the start when undefined). */
+  page(after: BackfillDoc | undefined, limit: number): Promise<BackfillDoc[]>;
+  batch(): {
+    update(id: string, data: { expiresAt: Date }, precondition: { lastUpdateTime: Timestamp }): void;
+    commit(): Promise<unknown>;
+  };
+}
+
+export interface BackfillCounts {
+  scanned: number;
+  hasExpiry: number;
+  noTime: number;
+  /** Records that get (dry run: would get) `expiresAt`. */
+  toWrite: number;
+  alreadyDue: number;
+  /** Records written; 0 on a dry run. */
+  written: number;
+}
+
+/**
+ * Scan the collection page by page and, with `apply`, write each page's
+ * records in batches of at most `BATCH_SIZE` before the next page is read —
+ * only counters outlive a page, whatever the collection's size. A dry run
+ * writes nothing.
+ */
+export async function backfillEmailEventExpiry(
+  store: BackfillStore,
+  options: { apply: boolean; now?: number; pageSize?: number },
+): Promise<BackfillCounts> {
+  const pageSize = options.pageSize ?? PAGE_SIZE;
+  const now = options.now ?? Date.now();
+  const counts: BackfillCounts = { scanned: 0, hasExpiry: 0, noTime: 0, toWrite: 0, alreadyDue: 0, written: 0 };
+  let cursor: BackfillDoc | undefined;
+  for (;;) {
+    const docs = await store.page(cursor, pageSize);
+    if (docs.length === 0) break;
+    const pending: Array<{ id: string; expiresAt: Date; updateTime: Timestamp }> = [];
+    for (const doc of docs) {
+      counts.scanned++;
+      const plan = emailEventBackfillExpiry(doc.data());
+      if ('skip' in plan) {
+        if (plan.skip === 'has-expiry') counts.hasExpiry++;
+        else counts.noTime++;
+        continue;
+      }
+      counts.toWrite++;
+      if (plan.expiresAt.getTime() <= now) counts.alreadyDue++;
+      pending.push({ id: doc.id, expiresAt: plan.expiresAt, updateTime: doc.updateTime });
+    }
+    if (options.apply) {
+      for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+        const batch = store.batch();
+        // `update` with the record's last update time as precondition: a record
+        // deleted or written (a late webhook sets its own `expiresAt`) since it
+        // was read fails the batch instead of being overwritten or coming back
+        // as a stub. Batches already committed stay; a re-run picks up the rest.
+        const chunk = pending.slice(i, i + BATCH_SIZE);
+        for (const { id, expiresAt, updateTime } of chunk) batch.update(id, { expiresAt }, { lastUpdateTime: updateTime });
+        await batch.commit();
+        counts.written += chunk.length;
+      }
+    }
+    cursor = docs[docs.length - 1];
+    if (docs.length < pageSize) break;
+  }
+  return counts;
+}
+
 function argValue(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
   return i >= 0 ? process.argv[i + 1] : undefined;
@@ -96,63 +173,38 @@ async function main(): Promise<void> {
   const db = getFirestore(getApps()[0], databaseId);
   console.log(`target: ${emulator ? `emulator (${emulator})` : 'production'}, project ${PROJECT_ID}, database ${databaseId}, collection ${COLLECTION}`);
 
-  const updates = new Map<string, { expiresAt: Date; updateTime: Timestamp }>();
-  let scanned = 0;
-  let hasExpiry = 0;
-  let noTime = 0;
-  let alreadyDue = 0;
-  const now = Date.now();
-  let cursor: QueryDocumentSnapshot | undefined;
-  for (;;) {
-    let query = db.collection(COLLECTION).orderBy(FieldPath.documentId()).limit(PAGE_SIZE);
-    if (cursor) query = query.startAfter(cursor);
-    const page = await query.get();
-    if (page.empty) break;
-    for (const doc of page.docs) {
-      scanned++;
-      const plan = emailEventBackfillExpiry(doc.data() as Record<string, unknown>);
-      if ('skip' in plan) {
-        if (plan.skip === 'has-expiry') hasExpiry++;
-        else noTime++;
-        continue;
-      }
-      updates.set(doc.id, { expiresAt: plan.expiresAt, updateTime: doc.updateTime });
-      if (plan.expiresAt.getTime() <= now) alreadyDue++;
-    }
-    cursor = page.docs[page.size - 1];
-    if (page.size < PAGE_SIZE) break;
-  }
+  const store: BackfillStore = {
+    async page(after, limit) {
+      let query = db.collection(COLLECTION).orderBy(FieldPath.documentId()).limit(limit);
+      if (after) query = query.startAfter(after as QueryDocumentSnapshot);
+      return (await query.get()).docs;
+    },
+    batch() {
+      const batch = db.batch();
+      return {
+        update: (id, data, precondition) => {
+          batch.update(db.collection(COLLECTION).doc(id), data, precondition);
+        },
+        commit: () => batch.commit(),
+      };
+    },
+  };
+  const c = await backfillEmailEventExpiry(store, { apply });
 
   console.log('');
-  console.log(`records scanned:                         ${scanned}`);
-  console.log(`records with expiresAt already:          ${hasExpiry}`);
-  console.log(`records without a time (left alone):     ${noTime}`);
-  console.log(`records to get expiresAt:                ${updates.size}`);
-  console.log(`  of which the date has already passed:  ${alreadyDue}`);
+  console.log(`records scanned:                         ${c.scanned}`);
+  console.log(`records with expiresAt already:          ${c.hasExpiry}`);
+  console.log(`records without a time (left alone):     ${c.noTime}`);
+  console.log(`records to get expiresAt:                ${c.toWrite}`);
+  console.log(`  of which the date has already passed:  ${c.alreadyDue}`);
 
   if (!apply) {
     console.log('');
     console.log('DRY RUN — nothing was changed. Re-run with --apply to write expiresAt.');
     return;
   }
-
-  const ids = [...updates.keys()];
-  let written = 0;
-  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-    const batch = db.batch();
-    for (const id of ids.slice(i, i + BATCH_SIZE)) {
-      // `update` with the record's last update time as precondition: a record
-      // deleted or written (a late webhook sets its own `expiresAt`) since it
-      // was read fails the batch instead of being overwritten or coming back
-      // as a stub. Batches already committed stay; a re-run picks up the rest.
-      const { expiresAt, updateTime } = updates.get(id)!;
-      batch.update(db.collection(COLLECTION).doc(id), { expiresAt }, { lastUpdateTime: updateTime });
-    }
-    await batch.commit();
-    written += Math.min(BATCH_SIZE, ids.length - i);
-  }
   console.log('');
-  console.log(`wrote expiresAt on ${written} record(s).`);
+  console.log(`wrote expiresAt on ${c.written} record(s).`);
 }
 
 if (process.argv[1] && /backfill-email-event-expiry/.test(process.argv[1])) {
