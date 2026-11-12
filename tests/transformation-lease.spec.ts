@@ -270,7 +270,7 @@ test.describe('the lease branch of /api/gemini', () => {
       'assertAccountActive(',
       'modelStageEnabled(',
       "if (lease && stage !== 'transformation')",
-      'ALLOWED_MODELS.has(model)',
+      'modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)',
       'prompt.length > MAX_PROMPT_LENGTH',
       'loadOwnModelKey(decodedToken.uid',
     ]) {
