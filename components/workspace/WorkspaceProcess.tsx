@@ -40,6 +40,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { namingFactsApply } from '@/lib/process-naming';
 import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
 import { newerBase, revisionLine } from '@/lib/process-revisions';
@@ -309,6 +310,9 @@ export default function WorkspaceProcess({
     // "Automatic steps" on for the own key; otherwise on a click.
     autoAllowed: availability.autoSteps,
     engineVersion: engineVersionOfProject(project),
+    // 3.1.0 (roadmap item 1): names only with the engine's facts — the ask hands
+    // them over exactly when the context for this run's engine carries them.
+    withFacts: namingFactsApply(engineVersionOfProject(project)),
   });
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();

@@ -97,12 +97,27 @@ export const TECHNICAL_NAMES_KEPT =
 export const NAMING_WITHOUT_FACTS_PAUSED = true;
 
 /**
+ * Whether a naming context read for this engine hands the model the engine's
+ * facts (`namingContextOf`): the product's facts switch (`NAMING_WITH_FACTS`)
+ * and an engine of 3.1.0 or later (`ENGINE_READS_310_FROM`). `engineVersion`
+ * is the run's (`engineVersionOfProject`); absent, this release.
+ *
+ * The one rule for "names only with facts" (roadmap 3.1.0 item 1): the page
+ * passes it to the naming hook as `withFacts`, the context builder attaches the
+ * facts by it, and the pause lets exactly such a context through.
+ */
+export function namingFactsApply(engineVersion?: string | null): boolean {
+  return NAMING_WITH_FACTS && engineReads310Apply(engineVersion ?? APP_VERSION);
+}
+
+/**
  * Whether this build asks for business names anywhere. The settings screen and
  * the own-code import read it, so their "Business names" switch promises
- * nothing that does not happen. False while paused, because no context of this
- * build carries the facts; a build that hands the facts over sets it from that.
+ * nothing that does not happen. While the pause holds, true only once this
+ * release hands the facts over (`namingFactsApply` for `APP_VERSION`): from
+ * 3.1.0 on, with the facts switch on. A 3.0.x build says the names are paused.
  */
-export const NAMING_ASKED_IN_THIS_BUILD = !NAMING_WITHOUT_FACTS_PAUSED;
+export const NAMING_ASKED_IN_THIS_BUILD = !NAMING_WITHOUT_FACTS_PAUSED || namingFactsApply(APP_VERSION);
 
 /** The reason, in one spelling: the map's notice, the routes' refusals and the settings screens. */
 export const NAMING_PAUSED_REASON = "Business names are paused until they can be built from the code's facts only.";

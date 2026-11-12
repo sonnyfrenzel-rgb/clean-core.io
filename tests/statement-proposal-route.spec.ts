@@ -9,7 +9,7 @@ import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { issueModelReceipt, verifyModelReceipt } from '../lib/model-receipt';
 import { GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
 import { STAGE_DISABLED_CODE } from '../lib/model-stages';
-import { namingContextOf } from '../lib/process-naming';
+import { namingContextOf, namingFactsApply } from '../lib/process-naming';
 import {
   STATEMENT_SOURCE_NAME,
   applyStatementProposal,
@@ -301,14 +301,21 @@ test('080cd5fce607: the proxy signs the stage it was called under — at the rou
   expect(stored.status(), await stored.text()).toBe(200);
   // …while the naming store refuses the same receipt. Since 3.0.21 the naming
   // route refuses every naming without the engine's facts before it reads a
-  // receipt (`NAMING_WITHOUT_FACTS_PAUSED`), so the refusal is the pause; the
-  // receipt's wrong stage is asserted by `verifyModelReceipt` just above.
+  // receipt (`NAMING_WITHOUT_FACTS_PAUSED`), so on a 3.0.x build the refusal is
+  // the pause. From 3.1.0 the route's context carries the facts (`namingFactsApply`,
+  // the project's run is of this release), the pause lets it through, and the
+  // refusal is the receipt's wrong stage, as before the pause.
   const naming = await request.post(`/api/projects/${PROJECT_ID}/process-naming`, {
     headers: headers(),
     data: { digest: namingContextOf(PROGRAM).digest, text: body.text, receipt: body.receipt },
   });
-  expect(naming.status(), await naming.text()).toBe(403);
-  expect(await naming.json()).toMatchObject({ code: 'naming-paused' });
+  if (namingFactsApply(null)) {
+    expect(naming.status(), await naming.text()).toBe(422);
+    expect(await naming.json()).toMatchObject({ code: 'receipt-refused', refusal: 'wrong-stage' });
+  } else {
+    expect(naming.status(), await naming.text()).toBe(403);
+    expect(await naming.json()).toMatchObject({ code: 'naming-paused' });
+  }
 
   // The stub sits behind the stage switch, not in front of it.
   await request.post('/api/model-stages', { headers: headers(), data: { stages: { statements: false } } });

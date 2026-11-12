@@ -13,6 +13,7 @@ import {
   applyNaming,
   buildNamingPrompt,
   namingContextOf,
+  namingFactsApply,
   namingPaused,
   namingPromptAllowed,
   namingRecordApplies,
@@ -25,6 +26,9 @@ import { NOT_GENERATED } from '../lib/model-stages';
 import { aiNamesOfNaming, buildBpmnExportFromSource, buildReadingExports } from '../lib/bpmn/export';
 import { aiMarkingOf } from '../lib/ai-marking';
 import { buildProcessMapModel } from '../lib/process-map';
+import { APP_VERSION } from '../lib/version';
+import { engineReads310Apply } from '../lib/abap/engine-reads-310-gate';
+import { PRIVACY_EN } from '../lib/legal/texts/privacy.en';
 
 /**
  * Release 3.0.21, owner decision 06.11.2026: the model's business names for the
@@ -42,6 +46,12 @@ import { buildProcessMapModel } from '../lib/process-map';
  *   4. a naming stored before is not applied: the map shows the engine's names;
  *   5. no element carries an AI mark — on the map, in the plain or technical
  *      BPMN download.
+ *
+ * 3.1.0 (roadmap item 1): the pause stays for every context without facts —
+ * the five claims below hold for one, whatever the release. A context read for
+ * engine 3.1.0 carries the facts (`namingFactsApply`), and that one passes: the
+ * page asks with `withFacts`, the prompt carries the facts mark, and the
+ * request reaches the model and the store (claim 6).
  *
  * Against the running routes: `tests/process-naming-route.spec.ts`.
  */
@@ -65,7 +75,10 @@ const SOURCE = [
   'ENDFORM.',
 ].join('\n');
 
-const context = namingContextOf(SOURCE);
+/** A context without the engine's facts — what every build before 3.1.0 reads, and what the pause holds back. */
+const context = namingContextOf(SOURCE, { facts: false });
+/** The same source read for engine 3.1.0: the facts are attached. */
+const withFacts = namingContextOf(SOURCE, { engineVersion: '3.1.0' });
 const nodeId = (kind: string, label: string) => context.skeleton.nodes.find((n) => n.kind === kind && n.label === label)!.id;
 
 /** A naming as the route stored it before 3.0.21: verified receipt, this reading, no `madeFrom`. */
@@ -93,9 +106,14 @@ const EARLIER: ProcessNamingRecord = {
 const PAUSED_NOTICE = `${NOT_GENERATED}. ${NAMING_PAUSED_REASON} ${TECHNICAL_NAMES_KEPT}`;
 
 test.describe('3.0.21: business names paused until they are built from the code\'s facts', () => {
-  test('the switch is on, and no context of this build carries facts', () => {
+  test('the switch is on; a context without facts is paused, and this build asks only once it hands the facts over', () => {
     expect(NAMING_WITHOUT_FACTS_PAUSED).toBe(true);
-    expect(NAMING_ASKED_IN_THIS_BUILD).toBe(false);
+    // 3.0.x builds say the names are paused; from 3.1.0 the build hands the facts over and asks.
+    expect(NAMING_ASKED_IN_THIS_BUILD).toBe(engineReads310Apply(APP_VERSION));
+    expect(namingFactsApply(null)).toBe(engineReads310Apply(APP_VERSION));
+    expect(namingFactsApply('3.0.21')).toBe(false);
+    expect(namingFactsApply('3.0.23')).toBe(false);
+    expect(namingFactsApply('3.1.0')).toBe(true);
     expect(namingPaused(context)).toBe(true);
     expect('facts' in context).toBe(false);
     // The reason is plain product wording: no review, no lawyer, no percentage.
@@ -119,8 +137,9 @@ test.describe('3.0.21: business names paused until they are built from the code\
     expect(outcome).toEqual({ ok: false, absence: 'paused', message: NAMING_PAUSED_REASON });
     expect(calls.model, 'a paused naming called the model').toBe(0);
     expect(calls.store).toEqual([]);
-    // The page passes no facts, so the hook neither asks nor offers a click.
-    expect(read('components/workspace/WorkspaceProcess.tsx')).not.toContain('withFacts');
+    // 3.1.0: the page passes `withFacts` by the same rule the context attaches the facts by — for a run of an
+    // older engine it is false, so the hook neither asks nor offers a click there.
+    expect(read('components/workspace/WorkspaceProcess.tsx')).toContain('withFacts: namingFactsApply(engineVersionOfProject(project))');
     expect(read('hooks/useAutoProcessNaming.ts')).toContain('shouldAskNaming({ owner, modelEnabled, state, withFacts })');
   });
 
@@ -195,6 +214,45 @@ test.describe('3.0.21: business names paused until they are built from the code\
     const map = buildProcessMapModel({ bpmn: reading.bpmn, technical: reading.technical, named: applyNaming(context, EARLIER), fileName: 'z_paused_probe.abap' });
     expect(map.naming).toEqual({ state: 'not-named', notice: PAUSED_NOTICE, named: 0 });
     expect(map.elements.every((e) => e.businessName === null)).toBe(true);
+  });
+
+  test('6. a context with the facts of the engine passes: asked, allowed through the proxy, sent and stored', async () => {
+    expect(withFacts.facts).toBeDefined();
+    expect(namingPaused(withFacts)).toBe(false);
+    const prompt = buildNamingPrompt(withFacts);
+    expect(prompt).toContain(NAMING_FACTS_PROMPT_MARK);
+    expect(namingPromptAllowed(prompt)).toBe(true);
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'not-named', withFacts: true })).toBe(true);
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'stale', withFacts: true })).toBe(true);
+    // A named map, an invited reader and a model that cannot be called still ask nothing.
+    expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'named', withFacts: true })).toBe(false);
+    expect(shouldAskNaming({ owner: false, modelEnabled: true, state: 'not-named', withFacts: true })).toBe(false);
+    expect(shouldAskNaming({ owner: true, modelEnabled: false, state: 'not-named', withFacts: true })).toBe(false);
+
+    const calls = { prompts: [] as string[], store: [] as NamingSubmission[] };
+    const stored: ProcessNamingRecord = { ...EARLIER, digest: withFacts.digest, names: [], lanes: [], madeFrom: NAMING_MADE_FROM_FACTS };
+    const outcome = await runNamingRequest(
+      withFacts,
+      {
+        callModel: async (p) => { calls.prompts.push(p); return { text: '{"names":[],"lanes":[]}', receipt: { r: 1 } }; },
+        store: async (s) => { calls.store.push(s); return { ok: true, record: stored }; },
+      },
+      { known: true, keyAvailable: true, stages: { naming: true } },
+    );
+    expect(outcome).toEqual({ ok: true, record: stored });
+    expect(calls.prompts).toEqual([prompt]);
+    expect(calls.store).toEqual([{ digest: withFacts.digest, text: '{"names":[],"lanes":[]}', receipt: { r: 1 } }]);
+    // The route stamps what it stored from a facts context, and only such a record is applied.
+    const route = read('app/api/projects/[projectId]/process-naming/route.ts');
+    expect(route).toContain('...(namingContextHasFacts(context) ? { madeFrom: NAMING_MADE_FROM_FACTS } : {}),');
+    expect(namingRecordApplies(stored)).toBe(true);
+  });
+
+  test('names come back only together with privacy wording that no longer calls them paused', () => {
+    // From 3.1.0 the product asks for business names by itself again. Privacy section 3 (and the Trust page and
+    // the C14 notice) say they are paused; a build that asks must not ship beside that sentence.
+    const sayPaused = PRIVACY_EN.includes('Business names, which we also started ourselves, are paused');
+    expect(NAMING_ASKED_IN_THIS_BUILD && sayPaused, 'names are asked while the privacy policy says they are paused: the legal texts need their new wording first').toBe(false);
   });
 
   test('the settings and the own-code import say the names are paused instead of promising them', () => {

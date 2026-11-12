@@ -38,7 +38,9 @@ const ASKED = new Set<string>();
  *
  * 3.0.21 (owner decision 06.11.2026): while `NAMING_WITHOUT_FACTS_PAUSED`
  * holds, `shouldAskNaming` says no without the engine's facts, so the hook asks
- * nothing and offers no click. No caller passes `withFacts` in this build.
+ * nothing and offers no click. 3.1.0: the page passes `withFacts` from
+ * `namingFactsApply` for the run's engine — the same rule `namingContextOf`
+ * attaches the facts by, so the hook asks exactly when the prompt carries them.
  */
 export function useAutoProcessNaming(input: {
   projectId: string | null;

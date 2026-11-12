@@ -36,7 +36,7 @@ test.describe('the rule: once, only the owner, only with a model', () => {
   });
 
   test('asked only while the drawn map has no naming for this source', () => {
-    // With the engine's facts (no caller of this build has them; see the pause below).
+    // With the engine's facts (from engine 3.1.0, `namingFactsApply`; see the pause below).
     const facts = { withFacts: true };
     expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'not-named', ...facts })).toBe(true);
     expect(shouldAskNaming({ owner: true, modelEnabled: true, state: 'stale', ...facts })).toBe(true);
@@ -82,9 +82,13 @@ test.describe('the Business view: no button, the automatic ask instead', () => {
     expect(firstLook).toContain('}, [projectId, hasSource, namingFrom, namingStored]);');
   });
 
-  test('the Business view passes no facts to the hook in this build, so it asks nothing (3.0.21)', () => {
+  test('the Business view passes the facts flag by the rule the context attaches them by (3.1.0)', () => {
+    // 3.0.21 passed no flag, so nothing was asked. From 3.1.0 names come back only with the engine's facts:
+    // the flag is true exactly for a run whose naming context carries them, so a run of an older engine still
+    // asks nothing (tests/naming-paused-3021.spec.ts).
     const process = read('components/workspace/WorkspaceProcess.tsx');
-    expect(process).not.toMatch(/withFacts/);
+    expect(process.match(/withFacts/g)).toHaveLength(1);
+    expect(process).toContain('withFacts: namingFactsApply(engineVersionOfProject(project)),');
   });
 
   test('the naming route keeps its server checks', () => {
@@ -167,7 +171,7 @@ test.describe('the hook in a page', () => {
     const asks = () => page.evaluate(() => (window as unknown as { __asks: string[] }).__asks.length);
     const counter = (name: '__stored' | '__events') => page.evaluate((n) => (window as unknown as Record<string, number>)[n], name);
     // The platform key (or "Automatic steps" on for an own key): asked by itself (3.0.21, owner decision B6).
-    // `withFacts`: the ask would hand over the engine's facts — no caller of this build passes it (the pause below).
+    // `withFacts`: the ask would hand over the engine's facts — the page passes it from engine 3.1.0 (the pause below).
     const base = { projectId: 'p1', source: SOURCE_A, owner: true, availability: ON, state: 'not-named', autoAllowed: true, withFacts: true };
 
     // 3.0.21 (owner decision 06.11.2026): without the facts, nothing is asked and no click is offered.
