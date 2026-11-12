@@ -111,7 +111,12 @@ test.describe('process naming', () => {
     const src = read('app/api/projects/[projectId]/process-naming/route.ts');
     const bound = src.indexOf("Buffer.byteLength(gate.legacyCode, 'utf8') > MAX_SOURCE_BYTES");
     expect(bound, 'no source bound before the naming context is built').toBeGreaterThan(0);
-    expect(bound).toBeLessThan(src.indexOf('namingContextOf(gate.legacyCode)'));
+    // The call takes the run's engine version as a second argument since 3.1.0
+    // (the naming context of the engine that signed the run), so match the call
+    // by its first argument — and make sure it is found at all.
+    const context = src.indexOf('namingContextOf(gate.legacyCode');
+    expect(context, 'the naming context is no longer built from the project source').toBeGreaterThan(0);
+    expect(bound).toBeLessThan(context);
   });
 });
 
