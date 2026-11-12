@@ -49,8 +49,15 @@ export default function VerifyPackPage() {
   const [delivery, setDelivery] = useState<{ fileName: string; check: DeliveryCheck | null; error: string | null } | null>(null);
   const [checkingDelivery, setCheckingDelivery] = useState(false);
   const packageInputRef = useRef<HTMLInputElement>(null);
+  // Each pack selection and each package check takes a number; an answer that arrives after a newer
+  // selection is dropped, so a slow check of pack A is never shown, or paired, under pack B.
+  const packSelection = useRef(0);
+  const packageCheck = useRef(0);
 
   const handleFile = useCallback(async (file: File) => {
+    const selection = ++packSelection.current;
+    packageCheck.current++;
+    setCheckingDelivery(false);
     setFileName(file.name);
     setVerifying(true);
     setResult(null);
@@ -59,8 +66,10 @@ export default function VerifyPackPage() {
     try {
       // The file goes in as it is: the verifier asks its size before reading it.
       const res = await verifyAuditPack(file);
+      if (selection !== packSelection.current) return;
       setResult(res);
     } catch (err: any) {
+      if (selection !== packSelection.current) return;
       setResult({
         success: false,
         integrityValid: false,
@@ -72,7 +81,7 @@ export default function VerifyPackPage() {
         errors: [`Failed to process ZIP: ${err.message}`],
       });
     } finally {
-      setVerifying(false);
+      if (selection === packSelection.current) setVerifying(false);
     }
   }, []);
 
@@ -80,15 +89,18 @@ export default function VerifyPackPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    const check = ++packageCheck.current;
+    const current = () => check === packageCheck.current;
     setCheckingDelivery(true);
     setDelivery(null);
     try {
       const signed = packFile && result ? await signedRunFactsOf(packFile, result) : null;
-      setDelivery({ fileName: file.name, check: await checkDeliveryPackage(file, signed), error: null });
+      const outcome = await checkDeliveryPackage(file, signed);
+      if (current()) setDelivery({ fileName: file.name, check: outcome, error: null });
     } catch (err) {
-      setDelivery({ fileName: file.name, check: null, error: err instanceof Error ? err.message : String(err) });
+      if (current()) setDelivery({ fileName: file.name, check: null, error: err instanceof Error ? err.message : String(err) });
     } finally {
-      setCheckingDelivery(false);
+      if (current()) setCheckingDelivery(false);
     }
   }, [packFile, result]);
 
