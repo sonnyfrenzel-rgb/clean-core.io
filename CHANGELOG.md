@@ -44,7 +44,7 @@ move.
 
 - `npm run retention:backfill-email-expiry` gives mail delivery records written before v3.0.21 their expiry date,
   so the retention policy removes them (dry run by default, `--apply` writes).
-- SAP Architecture Center, DSAG ABAP guide and ABAP cheat-sheet references synced (9 November 2026).
+- DSAG ABAP guide and ABAP cheat-sheet references synced (9 November 2026).
 
 ## [v3.0.21] — 2026-11-09
 
