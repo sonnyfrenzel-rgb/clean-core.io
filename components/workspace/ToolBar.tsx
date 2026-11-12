@@ -218,6 +218,7 @@ function ToolsNav({
   open,
   surface,
   readKey,
+  compact: compactStage = false,
 }: {
   tools: WorkspaceTool[];
   /** Whose analysis "Result ready" is about — the project id or `demo` (`lib/analysis-read.ts`). */
@@ -236,8 +237,14 @@ function ToolsNav({
    * are never mistaken for each other.
    */
   surface: 'workspace' | 'workspace-head' | 'stage';
+  /**
+   * A stage's bar drawn like the compact one (ADR-099): the links, marks, "Next" tag and the legend in one row, without
+   * the hint line and "What the tools do" — Analyze in the Business view, where the map is the page and the soft-gate
+   * hint stands beside the tools (plan AB-2, mockup state 3). The stage's own data hooks stay.
+   */
+  compact?: boolean;
 }) {
-  const compact = surface === 'workspace-head';
+  const compact = surface === 'workspace-head' || compactStage;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -388,7 +395,7 @@ function ToolsNav({
         {menuOpen && (
           <div
             id={panelId}
-            {...(compact ? { 'data-workspace-head-tools-panel': '' } : { 'data-workspace-tools-panel': '' })}
+            {...(surface === 'workspace-head' ? { 'data-workspace-head-tools-panel': '' } : { 'data-workspace-tools-panel': '' })}
             className="absolute left-0 z-20 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
           >
             <ToolsLegend inMenu />
@@ -453,12 +460,15 @@ export function StageToolBar({
   steps,
   current,
   base,
+  compact = false,
 }: {
   /** `workflowSteps(project)` — or the demo's rail, which is assignable to it. */
   steps: WorkspaceTool[];
   current: PhaseKey;
   /** `/project/<id>`, or `/demo`. */
   base: string;
+  /** One row, as the compact bar: the tools, their marks and the legend (Analyze, Business — mockup state 3). */
+  compact?: boolean;
 }) {
   // Read from the address in the browser only, as `StageHeader` does: a
   // statically generated demo stage must not depend on the query.
@@ -474,6 +484,7 @@ export function StageToolBar({
       current={current}
       open={false}
       surface="stage"
+      compact={compact}
       readKey={analysisKeyOfBase(base)}
       link={{ base, view: params.get('view'), from, layer: params.get('layer') }}
     />

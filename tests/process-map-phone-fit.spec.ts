@@ -181,10 +181,12 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await expect(frame.locator('[data-process-map-canvas]')).toHaveAttribute('data-map-layout', 'phone');
     expect(await frame.locator('.cc-map-anchor-code').count()).toBeGreaterThan(5);
     await expect(frame.locator('.djs-label', { hasText: '?' }).first()).toBeVisible();
+    // Since v3.1.0 this map is Analyze, Business (ADR-109): the step's code is the page's panel under the map on a
+    // phone (mockup state 7), not a card inside the map.
     await frame.locator('[data-map-node]').nth(2).click();
-    const details = page.locator('[data-process-map-details]');
+    const details = page.locator('[data-analyze-code-panel]');
     await expect(details).toBeVisible();
-    await expect(details).toContainText(/line \d+/);
+    await expect(details).toContainText(/[Ll]ines? \d+/);
   });
 
   test('the workspace (Business): a small example that fits keeps its layout', async ({ page }) => {

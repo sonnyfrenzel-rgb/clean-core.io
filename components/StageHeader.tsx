@@ -198,10 +198,15 @@ export default function StageHeader({
       )}
 
       {tools && toolCurrent && toolBase && (
-        <div data-stage-toolbar="" className="cc-no-print mb-4">
-          <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} />
+        // With a note (Analyze, Business — mockup state 3) the bar is one row, compact, and the note stands at its
+        // end: the map is the page there, and three lines of tool hints above it pushed it below the fold.
+        <div
+          data-stage-toolbar=""
+          className={toolsNote ? 'cc-no-print mb-4 flex flex-wrap items-center gap-x-4 gap-y-2' : 'cc-no-print mb-4'}
+        >
+          <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} compact={!!toolsNote} />
           {toolsNote ? (
-            <p data-stage-tools-note="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            <p data-stage-tools-note="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
               {toolsNote}
             </p>
           ) : null}

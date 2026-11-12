@@ -269,41 +269,48 @@ test.describe('levels in full screen and inline — desktop', () => {
     await expect(editorPath).toHaveAttribute('data-process-crumb', editorSub);
   });
 
-  test('the map takes the width: details only when a step is chosen, the outline folds and is remembered', async ({ page }) => {
+  test('the map takes the width: the code only when a step is chosen, beside the map; the outline folds and is remembered', async ({ page }) => {
     test.setTimeout(300_000);
+    // Since v3.1.0 the project's map is Analyze, Business (ADR-109), where the map is the page (mockup states 3 and
+    // 7): the outline column starts folded, and a chosen step's code is one panel beside the map — the map draws no
+    // card of its own there, which had squeezed the canvas to a strip (3.1.0 acceptance run).
     await signIn(page, acct);
+    await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline.page'));
     const frame = await openWorkspaceMap(page, acct);
     const map = page.locator('[data-workspace-process] [data-process-map]').first();
     const share = async () => {
       const [f, m] = await Promise.all([frame.boundingBox(), map.boundingBox()]);
       return f!.width / m!.width;
     };
+    await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
     await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
-    expect(await share(), 'the map is under 70 % of the card with nothing chosen').toBeGreaterThanOrEqual(0.7);
+    expect(await share(), 'the map is under 90 % of the card with nothing chosen').toBeGreaterThanOrEqual(0.9);
     const before = (await frame.boundingBox())!.width;
     if (SHOTS) await map.screenshot({ path: `${SHOTS}/after-inline-1440.png` });
 
-    // A step: the details open beside the map; closing them gives the width back.
+    // A step: its code opens beside the map, never over it; closing it gives the width back.
     const step = frame.locator('[data-map-node]').nth(2);
     await step.click();
-    const details = page.locator('[data-process-map-details]');
-    await expect(details).toBeVisible();
-    if (SHOTS) await map.screenshot({ path: `${SHOTS}/after-inline-details-1440.png` });
-    await details.locator('[data-process-code-card-close]').click();
-    await expect(details).toHaveCount(0);
+    const panel = page.locator('[data-analyze-code-panel]');
+    await expect(panel).toBeVisible();
+    await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
+    const [p, f0] = await Promise.all([panel.boundingBox(), frame.boundingBox()]);
+    expect(p!.x, 'the code panel lies over the map').toBeGreaterThanOrEqual(f0!.x + f0!.width - 1);
+    expect(f0!.width, 'the code panel squeezes the map').toBeGreaterThanOrEqual(600);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/after-inline-details-1440.png` });
+    await panel.locator('[data-analyze-code-close]').click();
+    await expect(panel).toHaveCount(0);
     await expect.poll(async () => Math.round((await frame.boundingBox())!.width)).toBe(Math.round(before));
 
-    // The outline folds from the control row, and the choice is kept for this viewer.
+    // The outline opens from the control row, and the choice is kept for this viewer.
     const layout = page.locator('[data-workspace-process] [data-process-map-layout]').first();
-    await expect(layout).toHaveAttribute('data-outline', 'open');
-    await frame.locator('[data-process-outline-toggle]').click();
     await expect(layout).toHaveAttribute('data-outline', 'closed');
-    await expect(page.locator('[data-workspace-process] [data-process-map-outline-column]').first()).toBeHidden();
-    await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(before + 100);
+    await frame.locator('[data-process-outline-toggle]').click();
+    await expect(layout).toHaveAttribute('data-outline', 'open');
+    await expect(page.locator('[data-workspace-process] [data-process-map-outline-column]').first()).toBeVisible();
+    await expect.poll(async () => (await frame.boundingBox())!.width).toBeLessThan(before - 100);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'closed', { timeout: 120_000 });
-    await page.locator('[data-workspace-process] [data-process-outline-toggle]').first().click();
-    await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'open');
+    await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'open', { timeout: 120_000 });
 
     // Owner 11.10.2026: "BPMN view button labels — and the one circled button
     // does nothing, or I can't see it." Every button of the row says its word
@@ -338,16 +345,16 @@ test.describe('levels in full screen and inline — desktop', () => {
     await mapFrame.locator('[data-map-fullscreen-toggle]').click();
     await expect(mapFrame).toHaveAttribute('data-map-fullscreen', 'false');
 
-    // Narrower than 1280 px: the outline starts folded for a viewer who never chose, and details lie over the map.
-    await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline'));
+    // Narrower than 1280 px: the outline starts folded, and the code still stands beside the map, not over it.
+    await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline.page'));
     await page.setViewportSize({ width: 1200, height: 900 });
     const narrow = await openWorkspaceMap(page, acct);
     await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'closed');
-    const width = (await narrow.boundingBox())!.width;
     await narrow.locator('[data-map-node]').nth(2).click();
-    await expect(page.locator('[data-process-map-details]')).toBeVisible();
-    expect(Math.round((await narrow.boundingBox())!.width), 'the details shrank the map instead of lying over it').toBe(Math.round(width));
-    await page.keyboard.press('Escape');
+    await expect(panel).toBeVisible();
+    const [p2, f2] = await Promise.all([panel.boundingBox(), narrow.boundingBox()]);
+    expect(p2!.x, 'the code panel lies over the map').toBeGreaterThanOrEqual(f2!.x + f2!.width - 1);
+    await panel.locator('[data-analyze-code-close]').click();
 
     if (SHOTS) {
       await page.setViewportSize({ width: 1280, height: 900 });

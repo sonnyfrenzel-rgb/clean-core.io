@@ -50,6 +50,8 @@ import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } f
 
 /** Where a viewer's choice to fold the outline is kept — this browser only. */
 const OUTLINE_KEY = 'cc.processMap.outline';
+/** The same choice on Analyze, Business (`layout="page"`), kept apart: the map there opens without the column. */
+const OUTLINE_PAGE_KEY = 'cc.processMap.outline.page';
 
 /**
  * The modeller is loaded when somebody presses *Edit model* and not before: a
@@ -198,8 +200,17 @@ export interface ProcessMapProps {
    * own side panel (it renders `ProcessCodeCard` there), so the code card is
    * not drawn here. Everything else — the props, the address, the keys, the
    * editor — is the same map.
+   *
+   * `page` — Analyze in the Business view, where the map is the page (plan
+   * AB-2, mockup states 3 and 7): the canvas comes first under the page's
+   * summary, with "Map | Steps" in the canvas's own tool row; what reads about
+   * the map — its title and counts, the traceability sentence, the legend, the
+   * notes, the level's line and the filters — stands under it. The outline
+   * column starts folded (a viewer's own choice is kept under its own key), and
+   * the code of a chosen step is the caller's panel beside the map, never a
+   * card inside it, so the canvas keeps its width.
    */
-  layout?: 'workspace' | 'stage';
+  layout?: 'workspace' | 'stage' | 'page';
   /**
    * Zoom, fit and full screen on the canvas, and the whole level on open —
    * never below 40 % on a phone (`fitWhole`). Always on in the `stage`
@@ -264,6 +275,8 @@ export default function ProcessMap({
   nameArrival = null,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
+  /** Analyze, Business: the canvas first, everything about it under it, the code in the caller's panel. */
+  const page = layout === 'page';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
   const isPhone = useBreakpointS();
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
@@ -346,13 +359,17 @@ export default function ProcessMap({
    * stands under the map and costs it no width, so it starts open there. A
    * phone keeps the mobile pass's order either way: the fold is a desktop one.
    */
+  // Analyze, Business keeps its own choice: the mockup's map has no outline beside it, so it starts folded there
+  // whatever a reader chose on another map (v3.1.0, AB-2).
+  const outlineKey = page ? OUTLINE_PAGE_KEY : OUTLINE_KEY;
   const [outlineOpen, setOutlineOpen] = useState<boolean>(() => {
     try {
-      const kept = window.localStorage.getItem(OUTLINE_KEY);
+      const kept = window.localStorage.getItem(outlineKey);
       if (kept === 'open' || kept === 'closed') return kept === 'open';
     } catch {
       /* no storage: the default below */
     }
+    if (page) return false;
     return stage || typeof window === 'undefined' || window.innerWidth >= 1280;
   });
   /**
@@ -367,7 +384,7 @@ export default function ProcessMap({
   const toggleOutline = useCallback(() => {
     const opening = !outlineOpen;
     try {
-      window.localStorage.setItem(OUTLINE_KEY, opening ? 'open' : 'closed');
+      window.localStorage.setItem(outlineKey, opening ? 'open' : 'closed');
     } catch {
       /* the choice holds for this visit */
     }
@@ -383,7 +400,7 @@ export default function ProcessMap({
       if (!onScreen) column.scrollIntoView({ block: 'start' });
       column.focus({ preventScroll: true });
     });
-  }, [outlineOpen, stage]);
+  }, [outlineOpen, stage, outlineKey]);
   /** The keyboard hint, behind the map's help button rather than in a column of its own. */
   const [helpOpen, setHelpOpen] = useState(false);
   const [highlight, setHighlight] = useState<PathHighlight>('none');
@@ -716,75 +733,101 @@ export default function ProcessMap({
   const openProblem = problems.get(plane);
 
   /**
-   * In the `stage` layout the parts are reordered, not removed: the toolbar,
+   * In the `stage` and `page` layouts the parts are reordered, not removed: the toolbar,
    * the way up and the canvas first, the filters, legend and notes after it.
    * Elsewhere the wrapper is `display: contents` and the map is what it was.
    */
-  const slot = (order: string) => (stage ? order : 'contents');
+  const slot = (order: string) => (stage || page ? order : 'contents');
   const traceability = (
     <p data-process-map-traceability className={`${stage ? 'text-[12px]' : 'mt-1 text-[13px]'} font-medium text-cc-ink-muted`}>
       {model.traceability.sentence}
       {measuredAt ? ` ${mapMeasuredOn(measuredAt.slice(0, 10))}` : ''}
     </p>
   );
+  const titleBlock = (
+    <div className="min-w-0">
+      <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
+        {wt('map.title')}
+      </h3>
+      <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
+        {model.overview}
+      </p>
+      {traceability}
+    </div>
+  );
+  const viewSwitch = (
+    <CcSegmentedControl<ProcessMapView>
+      label={wt('map.viewLabel')}
+      value={view}
+      onChange={setView}
+      segments={[
+        { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
+        { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
+      ]}
+    />
+  );
+  const modeButtons = (
+    <>
+      {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
+          two renderings of the same thing, and a modeller is a third state
+          of the first one. The reading view stays reachable at all times. */}
+      {modelProp.technicalXml ? (
+        <CcButton
+          data-process-technical-toggle=""
+          aria-pressed={technical}
+          icon={<Code2 size={16} aria-hidden={true} />}
+          onClick={() => setTechnical((was) => !was)}
+        >
+          {wt('map.technicalNames')}
+        </CcButton>
+      ) : null}
+      <CcButton
+        data-process-edit-toggle=""
+        aria-pressed={editing}
+        icon={<Pencil size={16} aria-hidden={true} />}
+        disabled={!canEdit && !editing}
+        aria-describedby={!canEdit ? ownerOnlyId : undefined}
+        onClick={() => {
+          setView('map');
+          setEditing((was) => !was);
+        }}
+      >
+        {wt(editing ? 'map.stopEditing' : 'map.editModel')}
+      </CcButton>
+      {!canEdit ? (
+        <OwnerOnlyNote id={ownerOnlyId} className="m-0 self-center text-[12px] font-medium text-cc-ink-muted" />
+      ) : null}
+    </>
+  );
+  /**
+   * On the page layout the reading map carries "Map | Steps" and the two modes in the canvas's own tool row (mockup
+   * state 3); the row above it is drawn only where there is no canvas row — the steps, the modeller.
+   */
+  const toolsInCanvas = page && view === 'map' && !editing;
+  const levelLine = openProblem && !editing ? (
+    <p
+      data-process-map-level
+      data-determined={openProblem.determined ? 'true' : 'false'}
+      className="text-[12px] font-medium text-cc-ink-muted"
+    >
+      {openProblem.counters}. {openProblem.text}
+    </p>
+  ) : null;
 
   return (
-    <section data-process-map="" aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
-      <div className={stage ? 'order-1 flex flex-wrap items-center justify-end gap-2' : 'flex flex-col gap-3 md:flex-row md:items-start md:justify-between'}>
-        {stage ? null : (
-          <div className="min-w-0">
-            <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
-              {wt('map.title')}
-            </h3>
-            <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-              {model.overview}
-            </p>
-            {traceability}
+    <section data-process-map="" data-process-map-layout-kind={layout} aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
+      {toolsInCanvas ? null : (
+        <div className={stage ? 'order-1 flex flex-wrap items-center justify-end gap-2' : page ? 'order-1 flex flex-wrap items-center gap-2' : 'flex flex-col gap-3 md:flex-row md:items-start md:justify-between'}>
+          {stage || page ? null : titleBlock}
+          <div className="flex flex-wrap items-center gap-2">
+            {viewSwitch}
+            {modeButtons}
           </div>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <CcSegmentedControl<ProcessMapView>
-            label={wt('map.viewLabel')}
-            value={view}
-            onChange={setView}
-            segments={[
-              { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
-              { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
-            ]}
-          />
-          {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
-              two renderings of the same thing, and a modeller is a third state
-              of the first one. The reading view stays reachable at all times. */}
-          {modelProp.technicalXml ? (
-            <CcButton
-              data-process-technical-toggle=""
-              aria-pressed={technical}
-              icon={<Code2 size={16} aria-hidden={true} />}
-              onClick={() => setTechnical((was) => !was)}
-            >
-              {wt('map.technicalNames')}
-            </CcButton>
-          ) : null}
-          <CcButton
-            data-process-edit-toggle=""
-            aria-pressed={editing}
-            icon={<Pencil size={16} aria-hidden={true} />}
-            disabled={!canEdit && !editing}
-            aria-describedby={!canEdit ? ownerOnlyId : undefined}
-            onClick={() => {
-              setView('map');
-              setEditing((was) => !was);
-            }}
-          >
-            {wt(editing ? 'map.stopEditing' : 'map.editModel')}
-          </CcButton>
-          {!canEdit ? (
-            <OwnerOnlyNote id={ownerOnlyId} className="m-0 self-center text-[12px] font-medium text-cc-ink-muted" />
-          ) : null}
         </div>
-      </div>
+      )}
 
       <div className={slot('order-5 flex flex-col gap-2')}>
+      {page ? titleBlock : null}
       {stage ? traceability : null}
       <ProcessMapLegend
         entries={model.legend}
@@ -809,21 +852,14 @@ export default function ProcessMap({
           {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
         </p>
       ) : null}
+      {page ? levelLine : null}
       </div>
 
       <div className={slot('order-2 flex flex-col gap-2')}>
 
       {editing || view === 'map' ? null : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
 
-      {openProblem && !editing ? (
-        <p
-          data-process-map-level
-          data-determined={openProblem.determined ? 'true' : 'false'}
-          className="text-[12px] font-medium text-cc-ink-muted"
-        >
-          {openProblem.counters}. {openProblem.text}
-        </p>
-      ) : null}
+      {page ? null : levelLine}
       </div>
 
       <div className={slot('order-3 flex flex-col gap-3')}>
@@ -958,7 +994,13 @@ export default function ProcessMap({
                  a prop for callers; every map carries the controls now. */
               controls
               openFit="whole"
-              levelPath={<ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
+              levelPath={page ? (
+                // Analyze, Business (mockup state 3): "Map | Steps" leads the canvas row.
+                <div className="flex flex-wrap items-center gap-2">
+                  {viewSwitch}
+                  <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />
+                </div>
+              ) : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
               tools={(filled: boolean) => (
                 <>
                   {/* The outline stands outside the full-screen frame, so in
@@ -990,6 +1032,8 @@ export default function ProcessMap({
                       <Keyboard size={16} aria-hidden={true} />
                     </CcIconButton>
                   </span>
+                  {/* Analyze, Business: the two modes stand in the same row; in full screen the row is the map's alone. */}
+                  {page && !filled ? modeButtons : null}
                 </>
               )}
               names={canvasNames}
@@ -1031,7 +1075,8 @@ export default function ProcessMap({
           ) : null}
           </div>
 
-          {stage || !selectedElement ? null : (
+          {/* The page layout shows the code in the caller's panel beside the map (`WorkspaceProcess` `codeOnClick`). */}
+          {stage || page || !selectedElement ? null : (
             <div
               data-process-map-details=""
               className="mt-3 lg:absolute lg:top-16 lg:right-2 lg:z-cc-popover lg:mt-0 lg:max-h-[calc(100%-5rem)] lg:w-[340px] lg:overflow-y-auto lg:rounded-cc-card lg:shadow-cc-dialog xl:static xl:max-h-none xl:shrink-0 xl:shadow-none"
