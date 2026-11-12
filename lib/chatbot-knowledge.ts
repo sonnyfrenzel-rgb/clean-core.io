@@ -70,7 +70,7 @@ A: Clean-Core.io does not configure anything in your SAP BTP subaccount or S/4HA
 A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
 
 ### Q: How does Clean-Core.io help modernize legacy ABAP?
-A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 XML blueprints. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
+A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. On the Transformation stage the engine then writes the target package's skeleton itself — types, guards, the input contract and one function stub per routine with its ABAP lines — and Google Gemini writes only the business logic inside each function: ABAP Cloud artefacts on the RAP track, a Node.js (TypeScript) project on the CAP track. The process documentation and its BPMN 2.0 XML are reconstructed from the code by the engine, with no model; a draft test suite is generated for the code. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,12 +201,14 @@ Process documentation read out of the whole analysed source by the engine, with 
 - **Export Options**: BPMN 2.0 XML, and the process description as Confluence HTML, Markdown or Word, and nothing else — the page offers no PDF export
 
 ### Delivery Stage (/project/[id]/delivery)
-What is on record for handover, and the downloads that follow from it. The page has six cards and no others — there is no sprint backlog, no go-live checklist and no deployment guide on it; never offer one.
-- **Delivery Bundle**: a ZIP with the generated files, the test suite and the documentation
-- **Stakeholder briefing** and **Board Presentation**: a slide summary of findings and architecture, without a savings figure
-- **SOP & Compliance** and **Developer Guide**: the business layer and the technical guidelines, when they were generated
-- **Integrity Report**: what exists and what it is worth — generated code is reported as not compiled or tested, never as ready to deploy
-- **Audit evidence pack**: signed by the server over the signed run; blocked while anything was built for a previous source, and checkable afterwards on the Verify Pack page
+What is on record for handover, and the downloads that follow from it. The page shows the next step, the evidence chain, what a real handover still needs and the artefacts below, and nothing else — there is no sprint backlog, no go-live checklist, no deployment guide and no separate board presentation on it; never offer one.
+- **Audit evidence pack**: the page's main download, signed by the server over the signed run, with no model call; blocked while anything was built for a previous source, and checkable afterwards on the Verify Pack page
+- **Evidence chain**: requirement → decision → receipt → artefact, link by link — generated code is reported as not compiled or tested, never as ready to deploy, and test coverage as an estimate
+- **Delivery Bundle**: a ZIP with the generated code, the test suite and the documentation, with STATUS.md and a manifest that say what is decided, tested and only proposed; a review version, not signed
+- **Requirements specification**: the one drafted in the Design tool, opened from here
+- **Stakeholder briefing**: seven slides from the signed run and the engine's findings — no model wrote them, and they carry no savings figure
+- **Business documentation** and **Developer guide**: the operating procedures, roles and controls the model wrote on the Documentation stage, when they were generated, and the rules for the chosen route with the SAP standard tables the program uses, read from the engine's findings
+- **Process as BPMN 2.0 XML** and **Test scenarios**: the process reconstructed from the code the signed run read, every element with its lines, and the generated test scenarios
 
 ### TCO Analysis (/project/[id]/tco)
 A cost model for your modernization project — priced only with figures you enter.
