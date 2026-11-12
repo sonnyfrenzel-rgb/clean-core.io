@@ -144,20 +144,33 @@ export default function MapSlice({
   );
 }
 
+/**
+ * Where the camera stands for a drawing of `inner` units in a frame `width` pixels wide, and how tall the frame is
+ * then — or null when there is nothing to fit: no drawing, or a frame of no width. The frame has no width while the
+ * page that holds it is leaving (v3.1.0 acceptance run): a view box of width 0 gave bpmn-js a scale of 0/0, and the
+ * browser threw "Failed to execute 'scale' on 'SVGMatrix': The provided float value is non-finite". Pure: exported
+ * for the spec.
+ */
+export function sliceViewbox(
+  inner: { x: number; y: number; width: number; height: number },
+  width: number,
+): { viewbox: { x: number; y: number; width: number; height: number }; frameHeight: number } | null {
+  if (!(inner.width > 0) || !(inner.height > 0) || !(width > 0) || !Number.isFinite(width)) return null;
+  const scale = sliceScale(inner, width);
+  const viewWidth = width / scale;
+  return {
+    viewbox: { x: inner.x + inner.width / 2 - viewWidth / 2, y: inner.y - MARGIN, width: viewWidth, height: inner.height + 2 * MARGIN },
+    frameHeight: Math.ceil((inner.height + 2 * MARGIN) * scale),
+  };
+}
+
 /** The whole drawing across the frame's width; the frame as tall as the drawing at that scale. */
 function fit(viewer: Viewer, host: HTMLElement): void {
+  if (!host.isConnected) return;
   const canvas = viewer.get('canvas');
-  const { inner } = canvas.viewbox();
-  if (!inner.width || !inner.height) return;
-  const width = host.clientWidth;
-  const scale = sliceScale(inner, width);
-  host.style.height = `${Math.ceil((inner.height + 2 * MARGIN) * scale)}px`;
+  const placed = sliceViewbox(canvas.viewbox().inner, host.clientWidth);
+  if (!placed) return;
+  host.style.height = `${placed.frameHeight}px`;
   canvas.resized();
-  const viewWidth = width / scale;
-  canvas.viewbox({
-    x: inner.x + inner.width / 2 - viewWidth / 2,
-    y: inner.y - MARGIN,
-    width: viewWidth,
-    height: inner.height + 2 * MARGIN,
-  });
+  canvas.viewbox(placed.viewbox);
 }
