@@ -10,6 +10,8 @@ import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
 import { localDataObjectsOf } from './table-dependencies';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
+import { engineReads310Apply } from './engine-reads-310-gate';
+import { APP_VERSION } from '../version';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -262,6 +264,13 @@ export interface SkeletonRegion {
    * keeps `collapseSmallRegions` from dissolving the marker back into one step.
    */
   multiInstance?: boolean;
+  /**
+   * Engine 3.1.0 (`markEmptyEntries`): an entry that draws nothing between its start and its end — an empty BAdI
+   * method, a screen module that only sets its status. The business reading leaves it out (`lib/bpmn/model.ts`);
+   * the technical reading and every anchor keep it. Never set on a reporting event block, which hands over to
+   * the next one.
+   */
+  drawsNothing?: boolean;
 }
 
 export type FormEffect =
@@ -594,6 +603,22 @@ const DOMINANT_ORDER: SkeletonNodeKind[] = [
 /* ------------------------------------------------------------------ *
  * Small readers over one statement.
  * ------------------------------------------------------------------ */
+
+/**
+ * Engine 3.1.0 (`flagStep`): `field = value` where the value is one literal, a number or one name — `abap_true`,
+ * `space`, a constant. A computed value (`a + b`, a call, a constructor) is a calculation, not a flag.
+ */
+const FLAG_ASSIGNMENT = /^((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)\s*=\s*('(?:[^']|'')*'|`(?:[^`]|``)*`|-?\d+|[\w/]+=>[\w/]+|[\w/]+)\s*\.?$/;
+/** The built-in constants a flag is set to. Any other bare name must be a `CONSTANTS` of this source. */
+const BUILT_IN_FLAG_VALUES = new Set(['ABAP_TRUE', 'ABAP_FALSE', 'ABAP_UNDEFINED', 'SPACE']);
+/** Engine 3.1.0 (`buildsWhileDeciding`): the blocks that decide or iterate around an append. */
+const DECIDING_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select']);
+/** Engine 3.1.0 (`buildsWhileDeciding`): the statements that add rows to an internal table. */
+const BUILDS_TABLE = /^(?:APPEND\b[\s\S]*\bTO\b|COLLECT\b[\s\S]*\bINTO\b|INSERT\b[\s\S]*\bINTO\s+TABLE\b)/i;
+/** Engine 3.1.0 (`collectStep`): a row built with the fields of a message (BAPIRET2, BAL, SYMSG). */
+const MESSAGE_ROW = /\b(?:MSGTY|MSGNO|MSGID|MSGV1)\s*=|\bTYPE\s*=[\s\S]*\bMESSAGE\s*=|\bMESSAGE\s*=[\s\S]*\bTYPE\s*=/i;
+/** Engine 3.1.0 (`collectStep`): the table such a statement adds its row to. */
+const COLLECT_TARGET = /\b(?:TO|INTO\s+TABLE|INTO)\s+((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)(?:\[\])?\s*(?:\.|$|\s(?:SORTED|REFERENCE|ASSIGNING)\b)/i;
 
 function snippet(text: string): string {
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
@@ -943,8 +968,17 @@ function functionTaskKind(name: string | undefined): SkeletonNodeKind {
  * The build.
  * ------------------------------------------------------------------ */
 
-export function buildProcessSkeleton(source: string): ProcessSkeleton {
-  return buildProcessSkeletonFrom(buildProcessFacts(source));
+/**
+ * What a build reads for. `engineVersion` is the engine of the run the map is drawn for
+ * (`engineVersionOfProject`); absent, this release. From `ENGINE_READS_310_FROM` the walk draws what
+ * the older engines left out (`reads310`); a run of an older engine keeps exactly the map it had.
+ */
+export interface SkeletonBuildOptions {
+  engineVersion?: string | null;
+}
+
+export function buildProcessSkeleton(source: string, options: SkeletonBuildOptions = {}): ProcessSkeleton {
+  return buildProcessSkeletonFrom(buildProcessFacts(source), options);
 }
 
 /**
@@ -954,13 +988,42 @@ export function buildProcessSkeleton(source: string): ProcessSkeleton {
  * of the source, or the gateway and the task drawn from the same `IF` carry two
  * different line numbers (`process-facts.ts`).
  */
-export function buildProcessSkeletonFrom(facts: ProcessFacts): ProcessSkeleton {
-  return new SkeletonBuilder(
+export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonBuildOptions = {}): ProcessSkeleton {
+  const reads310 = readsOf(options.engineVersion);
+  const skeleton = new SkeletonBuilder(
     facts.statements,
     facts.structure,
     facts.control,
     facts.calls,
+    reads310,
   ).build();
+  readFor.set(skeleton, reads310);
+  return skeleton;
+}
+
+/** Which gated readings a build for `engineVersion` carries; absent, this release's. */
+function readsOf(engineVersion: string | null | undefined): boolean {
+  return engineReads310Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
+}
+
+/** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
+const readFor = new WeakMap<ProcessSkeleton, boolean>();
+
+/**
+ * `skeleton` when it is the map the engine `engineVersion` draws for these facts, otherwise that map, built.
+ *
+ * For a caller that holds a skeleton read for this release (`readProcess`, a naming context) and has to answer for
+ * the engine of a signed run: the rules, the story and the map of a run of an older engine are read off the map that
+ * engine drew, never off a newer one. A skeleton not built here is taken as it is.
+ */
+export function skeletonReadFor(
+  skeleton: ProcessSkeleton,
+  facts: ProcessFacts | (() => ProcessFacts),
+  engineVersion: string | null | undefined,
+): ProcessSkeleton {
+  const drawn = readFor.get(skeleton);
+  if (drawn === undefined || drawn === readsOf(engineVersion)) return skeleton;
+  return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
 }
 
 interface Exit {
@@ -1238,12 +1301,22 @@ class SkeletonBuilder {
   private resultWriteCache = new Map<number, Set<number>>();
   /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
   private regionLast = new Map<string, number>();
+  /** Engine 3.1.0: the decisions reading each field, by upper-cased field — `decisionsReading`. */
+  private flagReaderCache = new Map<string, Array<{ index: number; line: number }>>();
+  private constantsCache: Set<string> | null = null;
 
   constructor(
     private statements: AbapStatement[],
     private structure: BlockStructure,
     private control: ControlFlowReport,
     private calls: CallGraphReport,
+    /**
+     * Engine 3.1.0 (`ENGINE_READS_310_FROM`): the readings of the process-quality step — an arm that only sets
+     * a flag a later decision reads is a step (`flagStep`), a routine that builds a table while it decides or
+     * iterates is a calculation and not a helper (`buildsWhileDeciding`), and a loop level begins at a start
+     * event of its own (`addSubProcessStarts`). False for a run of an older engine, whose map stays as it was.
+     */
+    private reads310 = false,
   ) {}
 
   build(): ProcessSkeleton {
@@ -1296,6 +1369,7 @@ class SkeletonBuilder {
     // Roadmap 3.0.7, once every node and end is settled: a reporting event
     // block that ends normally hands over to the next one.
     this.chainReportEvents();
+    if (this.reads310) this.markEmptyEntries();
     this.noteUnreachableSteps();
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
@@ -1597,7 +1671,34 @@ class SkeletonBuilder {
       if (this.methodCallsIn(statement).some((call) => call.standalone && !call.key)) out.add('call');
     }
     if (out.size === 0 && this.classifiesFromLiterals(block)) out.add('business-rule');
+    if (out.size === 0 && this.reads310 && this.buildsWhileDeciding(block)) out.add('compute');
     return out;
+  }
+
+  /**
+   * Engine 3.1.0 — a routine that builds a table while it decides or iterates is a calculation.
+   *
+   * Since 3.0.7 a routine that changes an internal table (`MODIFY gt_out …`, `DELETE lt_rows WHERE …`) is a step
+   * of the process (`compute`), but the commonest way to build one — `APPEND … TO`, `COLLECT … INTO`,
+   * `INSERT … INTO TABLE` — counted for nothing, so a routine that walks the contracts, decides which ones
+   * qualify and appends the new rents was folded into its caller as a technical helper, with every decision in
+   * it. §5.8 folds a routine *without an effect of its own*; building the result set by decisions is one.
+   * Kept narrow on purpose: a routine that only appends one row (`add_message`, `add_issue`) decides nothing
+   * and stays a helper — the rule needs the append to stand **inside** a branch or a loop of the routine's own.
+   * A log helper that appends its line and then counts warnings by level (`add_log`) appends beside its branch,
+   * not in it, and stays a helper too.
+   */
+  private buildsWhileDeciding(block: Block): boolean {
+    const [from, to] = bodyRange(block);
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (statement.nativeSql || !BUILDS_TABLE.test(maskLiterals(statement.text))) continue;
+      // The row is added under a decision or per iteration of this routine: an append beside a branch (a log
+      // helper that appends its line and then counts warnings) builds nothing by deciding.
+      const around = this.structure.enclosing[i] ?? [];
+      if (around.some((outer) => outer.openIndex > block.openIndex && DECIDING_BLOCKS.has(outer.kind))) return true;
+    }
+    return false;
   }
 
   /**
@@ -3289,16 +3390,239 @@ class SkeletonBuilder {
       const bodyTo = (next ? next.headerIndex : block.closeIndex) - 1;
       const isDefault = arm.kind === 'else' || arm.kind === 'when-others';
       if (isDefault) hasDefault = true;
-      const armExits = this.walkRange(bodyFrom, bodyTo, ctx, [{
+      const armEntry: Exit = {
         from: gateway.id,
         condition: arm.condition,
         kind: isDefault ? 'default' : 'conditional',
-      }]);
+      };
+      const before = this.nodes.length;
+      const edgesBefore = this.edges.length;
+      let armExits = this.walkRange(bodyFrom, bodyTo, ctx, [armEntry]);
+      if (this.reads310 && !table) armExits = this.armOutcome(armEntry, armExits, before, edgesBefore, bodyFrom, bodyTo, block, ctx);
       exits.push(...armExits);
     }
     // No ELSE and no WHEN OTHERS: the gateway itself is the way past it.
     if (!hasDefault) exits.push({ from: gateway.id, condition: '', kind: 'default' });
     return exits;
+  }
+
+  /**
+   * Engine 3.1.0 — what an arm that drew no step does is the outcome of its decision.
+   *
+   * Two shapes, and nothing else is touched:
+   *
+   * - **The arm drew nothing.** Its way out is still the way in. A call of a technical helper in it
+   *   (`helperStep`: `PERFORM add_issue USING … 'Postal code has the wrong length'`) is what the arm does —
+   *   without it both ways out of "Postal code length wrong?" ran to the same next step and the decision looked
+   *   as if it decided nothing. Failing that, a flag a later decision reads (`flagStep`).
+   * - **The arm drew only its own end** (`PERFORM add_message USING 'E' …. RETURN.`): the helper call goes
+   *   between the decision and that end, so the stop says what it recorded on the way out.
+   *
+   * A `CONTINUE`, `EXIT` or `CHECK` in the arm changes its way out, and such an arm is left as it is.
+   */
+  private armOutcome(
+    entry: Exit,
+    exits: Exit[],
+    nodesBefore: number,
+    edgesBefore: number,
+    from: number,
+    to: number,
+    block: Block,
+    ctx: WalkContext,
+  ): Exit[] {
+    const drawn = this.nodes.slice(nodesBefore);
+    if (drawn.length === 0) {
+      const untouched = this.edges.length === edgesBefore && exits.length === 1 && exits[0].from === entry.from
+        && exits[0].kind === entry.kind && exits[0].condition === entry.condition;
+      if (!untouched) return exits;
+      const step = this.helperStep(from, to, block, ctx) ?? this.collectStep(from, to, block, ctx)
+        ?? this.flagStep(from, to, block, ctx);
+      if (!step) return exits;
+      this.connect(exits, step.id);
+      return [{ from: step.id, condition: '', kind: 'sequence' }];
+    }
+    if (drawn.length !== 1 || (drawn[0].kind !== 'end' && drawn[0].kind !== 'end-error')) return exits;
+    const into = this.edges.slice(edgesBefore).filter((e) => e.to === drawn[0].id);
+    if (into.length !== 1 || into[0].from !== entry.from || this.edges.length !== edgesBefore + 1) return exits;
+    const step = this.helperStep(from, to, block, ctx);
+    if (!step) return exits;
+    // The step was appended after the end; it goes before it, so the file lists the arm in reading order.
+    this.nodes.pop();
+    this.nodes.splice(nodesBefore, 0, step);
+    into[0].to = step.id;
+    this.edges.push({ from: step.id, to: drawn[0].id, kind: 'sequence', condition: '' });
+    return exits;
+  }
+
+  /**
+   * Engine 3.1.0 (`armOutcome`): the first call, standing directly in this arm, of a routine folded as a
+   * technical helper — drawn as one task, named after the routine as the call writes it (rule 6), with the
+   * routine's range as the secondary anchor and the program's own sentences the call passes in `detail`.
+   */
+  private helperStep(from: number, to: number, block: Block, ctx: WalkContext): SkeletonNode | null {
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (!statement || statement.nativeSql) continue;
+      const around = this.structure.enclosing[i] ?? [];
+      if (around[around.length - 1] !== block) continue;
+      let key: string | null = null;
+      let label = '';
+      let token = 1;
+      if (statement.keyword === 'PERFORM') {
+        const call = this.calls.performs.find((p) => p.lineStart === statement.lineStart && p.text === statement.text);
+        if (call?.target && !call.program && this.helpers.has(call.target)) { key = call.target; label = call.target; }
+      } else {
+        const call = this.methodCallsIn(statement).find((c) => c.standalone && c.key && this.helpers.has(c.key));
+        if (call?.key) { key = call.key; label = call.label; token = this.callToken(statement, call); }
+      }
+      if (!key) continue;
+      const routine = this.routineBlocks.get(key);
+      const texts = [...statement.text.matchAll(/'((?:[^']|'')*)'|`((?:[^`]|``)*)`/g)]
+        .map((m) => (m[1] ?? m[2] ?? '').replace(/''/g, "'").trim())
+        .filter((text) => /[A-Za-z]{2}/.test(text) && text.includes(' '));
+      return this.addNode('task', label, {
+        ...anchorOf(statement, token),
+        ...(routine ? { secondary: { lineStart: routine.lineStart, lineEnd: routine.lineEnd, reason: 'routine-definition' as const } } : {}),
+      }, ctx.region, ctx.container, {
+        detail: { helperCall: true, routine: key, ...(texts.length ? { programTexts: texts } : {}) },
+      });
+    }
+    return null;
+  }
+
+  /**
+   * Engine 3.1.0 (`armOutcome`): the first row added, directly in this arm, to an internal table —
+   * `IF deviation > tolerance. … APPEND gs_line TO gt_report. ENDIF.` The decision is "does this row belong in the
+   * result?", and the append is its yes. Drawn as the plain step a change to an internal table already is since
+   * 3.0.7 (`MODIFY gt_out …`): a task named after the table, `detail.operation`, `internalTable` and `collects`.
+   *
+   * Only a table that outlives the routine: a global one, or a parameter the routine hands back. A table the
+   * routine declares for itself (`DATA lt_keys …`) is scaffolding for the routine's next step, which says what
+   * it does with it.
+   */
+  private collectStep(from: number, to: number, block: Block, ctx: WalkContext): SkeletonNode | null {
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (!statement || statement.nativeSql) continue;
+      const around = this.structure.enclosing[i] ?? [];
+      if (around[around.length - 1] !== block) continue;
+      const bare = maskLiterals(statement.text);
+      if (!BUILDS_TABLE.test(bare)) continue;
+      const table = COLLECT_TARGET.exec(bare)?.[1];
+      if (!table || table.startsWith('<')) continue;
+      // A message row (`msgty`, `msgno`, `type` with `message`) goes into a log, not into the result.
+      if (MESSAGE_ROW.test(bare)) continue;
+      const routine = [...around].reverse().find((b) => b.kind === 'form' || b.kind === 'method');
+      if (routine && this.declaresLocally(routine, table)) continue;
+      return this.addNode('task', table.toUpperCase(),
+        anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${table}(?:\\[\\])?\\.?$`, 'i'))),
+        ctx.region, ctx.container, {
+          detail: { operation: statement.keyword, internalTable: true, collects: true },
+        });
+    }
+    return null;
+  }
+
+  /** Does this routine declare `name` itself (`DATA name`, `DATA: …, name`, `DATA(name)`, `FIELD-SYMBOLS`)? */
+  private declaresLocally(routine: Block, name: string): boolean {
+    const key = name.toUpperCase().replace(/-.*$/, '');
+    const word = new RegExp(`(?:^|[\\s:,(])${key.replace(/[/]/g, '\\/')}(?=[\\s).,]|$)`, 'i');
+    for (let i = routine.openIndex + 1; i < routine.closeIndex; i++) {
+      const statement = this.statements[i];
+      if (!statement) continue;
+      if ((statement.keyword === 'DATA' || statement.keyword === 'STATICS') && word.test(statement.text.split(/\s+TYPE\s|\s+LIKE\s/i)[0])) return true;
+      if (new RegExp(`\\bDATA\\(\\s*${key.replace(/[/]/g, '\\/')}\\s*\\)`, 'i').test(statement.text)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Engine 3.1.0 — an arm that only sets a flag is the outcome of its decision.
+   *
+   * `ELSE. gv_approved = abap_true. ENDIF. … IF gv_approved = abap_true. PERFORM create_order.` The arm draws
+   * nothing — an assignment is no element of §5.8 — so the map showed the third way out of the decision as an
+   * empty flow, and a reader could not see that this way *approves*. What the arm does is decide the later
+   * question in advance. So where an arm draws nothing at all and one of its statements sets a field to a
+   * value (a literal, a constant, `abap_true`) that the condition of **another** decision of this source reads,
+   * that assignment is a step of its own: a task on the assignment's line, labelled with the statement as
+   * written (rule 6), the field and its value in `detail`, and the program's own words assigned in the same
+   * arm (`gv_message = '…'`) beside them, so a view can say the outcome in the program's text.
+   *
+   * Not for a field no decision reads (a message text alone stays an assignment), not for an arm that draws
+   * anything (its steps already say what it does), and not for a decision table — arms that each set the same
+   * field are drawn as one classification (`readDecisionTable`).
+   */
+  private flagStep(from: number, to: number, block: Block, ctx: WalkContext): SkeletonNode | null {
+    const flags: Array<{ field: string; value: string; statement: AbapStatement }> = [];
+    const texts: string[] = [];
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (!statement || statement.nativeSql) continue;
+      const m = FLAG_ASSIGNMENT.exec(statement.text.trim());
+      if (!m) continue;
+      const [, field, value] = m;
+      // A copy of another variable (`lv_eur = iv_amount`) carries a value along; it does not settle a question.
+      if (/^[\w/]+$/.test(value) && !/^-?\d+$/.test(value) && !BUILT_IN_FLAG_VALUES.has(value.toUpperCase())
+        && !this.constantNames().has(value.toUpperCase())) continue;
+      if (value.startsWith("'") || value.startsWith('`')) {
+        const text = value.slice(1, -1).replace(/''/g, "'").trim();
+        if (/[A-Za-z]{2}/.test(text) && text.includes(' ')) texts.push(text);
+      }
+      if (this.decisionsReading(field, block).length) flags.push({ field, value, statement });
+    }
+    if (!flags.length) return null;
+    const first = flags[0];
+    const readAt = this.decisionsReading(first.field, block);
+    return this.addNode('task', snippet(first.statement.text), anchorOf(first.statement), ctx.region, ctx.container, {
+      detail: {
+        flagStep: true,
+        flag: first.field.toUpperCase(),
+        value: first.value,
+        ...(flags.length > 1 ? { flags: flags.map((f) => f.field.toUpperCase()) } : {}),
+        readAtLines: readAt.map((line) => String(line)),
+        ...(texts.length ? { programTexts: texts } : {}),
+      },
+    });
+  }
+
+  /** Names this source declares with `CONSTANTS`, upper-cased — read once. */
+  private constantNames(): Set<string> {
+    if (this.constantsCache) return this.constantsCache;
+    const out = new Set<string>();
+    for (const statement of this.statements) {
+      if (statement.keyword !== 'CONSTANTS') continue;
+      const name = /^CONSTANTS\s*:?\s*(?:BEGIN\s+OF\s+)?([\w/]+)/i.exec(statement.text)?.[1];
+      if (name) out.add(name.toUpperCase());
+    }
+    this.constantsCache = out;
+    return out;
+  }
+
+  /** The lines of the decisions outside `own` whose condition, selector or `CHECK` reads `field`. */
+  private decisionsReading(field: string, own: Block): number[] {
+    const key = field.toUpperCase();
+    const cached = this.flagReaderCache.get(key);
+    const all = cached ?? this.computeDecisionsReading(key);
+    if (!cached) this.flagReaderCache.set(key, all);
+    return all.filter((r) => r.index < own.openIndex || r.index > own.closeIndex).map((r) => r.line);
+  }
+
+  private computeDecisionsReading(key: string): Array<{ index: number; line: number }> {
+    const escaped = key.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+    const reads = new RegExp(`(?<![\\w/<>-])${escaped}(?![\\w/-])`, 'i');
+    const out: Array<{ index: number; line: number }> = [];
+    for (const branch of this.control.branches) {
+      const words = [branch.selector ?? '', ...branch.arms.map((arm) => arm.condition)];
+      if (words.some((w) => reads.test(maskLiterals(w)))) {
+        out.push({ index: branch.openIndex, line: this.statements[branch.openIndex]?.lineStart ?? 0 });
+      }
+    }
+    for (const statement of this.statements) {
+      if ((statement.keyword === 'CHECK' || statement.keyword === 'WHILE') && reads.test(maskLiterals(statement.text))) {
+        out.push({ index: statement.index, line: statement.lineStart });
+      }
+    }
+    return out;
   }
 
   /**
@@ -4182,18 +4506,50 @@ class SkeletonBuilder {
    * turned into the one step it does, a business-rule task, a technical helper
    * (no region at all) and the body of a multi-instance `LOOP AT` get none.
    */
+  /**
+   * Engine 3.1.0 — an entry process that draws nothing between its start and its end says nothing to a business
+   * reader: eight empty methods of a BAdI interface were eight maps "Start → Done". Marked here
+   * (`SkeletonRegion.drawsNothing`), left out by the business reading only. A reporting event block is never
+   * marked: it hands the run over to the next one (`chainReportEvents`), and leaving it out would cut that chain.
+   */
+  private markEmptyEntries(): void {
+    const kinds = new Map<string, Set<string>>();
+    for (const node of this.nodes) {
+      const own = kinds.get(node.region);
+      if (own) own.add(node.kind);
+      else kinds.set(node.region, new Set([node.kind]));
+    }
+    for (const region of this.regions) {
+      if (region.kind !== 'entry') continue;
+      const start = this.nodes.find((n) => n.id === region.entryNodeId);
+      const origin = start?.detail?.origin;
+      if (origin === 'event' || origin === 'implicit') continue;
+      const own = kinds.get(region.key) ?? new Set<string>();
+      if ([...own].every((kind) => kind === 'start' || kind === 'end')) region.drawsNothing = true;
+    }
+  }
+
   private addSubProcessStarts(): void {
     const planes = new Set<string>();
     for (const node of this.nodes) {
       if (node.kind === 'sub-process' && node.expandsTo) planes.add(node.expandsTo);
     }
+    // Engine 3.1.0 — the loop levels too (decided 27.09.2026, the follow-up ADR-054 named): the body of a
+    // multi-instance `LOOP AT` is a plane of its own exactly as a routine is, and it begins where the iteration
+    // begins, at a start event on the `LOOP` line. A body that draws nothing has no plane and gets none.
+    if (this.reads310) {
+      for (const node of this.nodes) {
+        if (node.kind === 'loop' && node.detail?.multiInstance === true && node.expandsTo) planes.add(node.expandsTo);
+      }
+    }
     for (const region of this.regions) {
-      if (region.kind !== 'sub-process' || region.multiInstance || !planes.has(region.key)) continue;
-      if (!region.anchor || !/^(?:form|method):/.test(region.key)) continue;
+      if (region.kind !== 'sub-process' || !planes.has(region.key)) continue;
+      if (region.multiInstance && !this.reads310) continue;
+      if (!region.anchor || !/^(?:form|method|loop):/.test(region.key)) continue;
       const end = this.nodes.find((n) => n.id === region.endNodeId);
       const first = this.nodes.findIndex((n) => n.region === region.key);
       const start = this.addNode('start', region.label, region.anchor, region, end?.container ?? region.label, {
-        detail: { subProcess: true },
+        detail: { subProcess: true, ...(region.multiInstance ? { loopLevel: true } : {}) },
       });
       // `addNode` appends; the start goes before the first node of its region,
       // so the file lists a plane in the order it is read.
@@ -4559,7 +4915,9 @@ class SkeletonBuilder {
         // it takes the place the flow to the normal end had, and counting it
         // would turn a small routine into a phase because it has two exits.
         const inner = (inRegion.get(region.key) ?? [])
-          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true);
+          // Engine 3.1.0: a row put into the result (`collectStep`) is the yes of a decision, not an element that
+          // makes a routine one step or a phase — the routine folds, or not, exactly as before it was drawn.
+          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true && n.detail?.collects !== true);
         const callers = callersOf.get(region.key) ?? [];
         if (!callers.length) continue;
         // Roadmap 2.17 (b): a routine that iterates a business table is a phase,

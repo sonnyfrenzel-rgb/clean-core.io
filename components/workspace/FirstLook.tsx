@@ -34,6 +34,8 @@ import { firstLookPlainSentences, plainModelEnabled } from '@/lib/plain-wording'
 import AskOnClick from './AskOnClick';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
+import type { CustomerTexts } from '@/lib/abap/customer-texts';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 import {
   BUILD_UP_BUDGET,
@@ -275,10 +277,10 @@ interface Result {
  * "What it decides" from the rule explanations, from engine 3.0.20 (`lib/first-look-plain.ts`); null before.
  * `engineVersion`: the engine of the project's signed run.
  */
-function explanationOf(source: string, process: ProcessReading, rules: BusinessRuleSet, engineVersion: string | null): RuleSetExplanation | null {
+function explanationOf(source: string, process: ProcessReading, rules: BusinessRuleSet, engineVersion: string | null, customerTexts: CustomerTexts | null = null): RuleSetExplanation | null {
   if (!engineReads3020Apply(engineVersion)) return null;
   try {
-    return explainBusinessRules(source, rules, process.facts, engineVersion);
+    return explainBusinessRules(source, rules, process.facts, engineVersion, customerTexts);
   } catch {
     return null;
   }
@@ -291,9 +293,10 @@ function inShortOf(
   rules: BusinessRuleSet,
   narrative: string | undefined,
   engineVersion: string | null,
+  customerTexts: CustomerTexts | null = null,
 ): { inShort: Result['inShort']; facts: ProgramSummaryFacts | null } {
   try {
-    const facts = programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules, engineVersion });
+    const facts = programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules, engineVersion, customerTexts });
     const summary = programSummary(facts);
     return {
       inShort: { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(narrative, facts), authorClaim: authorClaimOf(facts) },
@@ -491,6 +494,8 @@ export default function FirstLook({
    * every stage, the naming wait and Skip over from nothing.
    */
   const readingKey = `${projectId}\u0000${source}`;
+  // 3.1.0 (H5b): the project's customer texts, for the story, "In short" and the rules alike.
+  const customerTexts = useCustomerTexts(projectId);
   const [readFor, setReadFor] = useState(readingKey);
   if (readFor !== readingKey) {
     setReadFor(readingKey);
@@ -602,9 +607,10 @@ export default function FirstLook({
         source,
         new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
         engineVersion,
+        customerTexts,
       );
-      const summarised = inShortOf(source, process, rules, project?.analysis, engineVersion);
-      const explanation = explanationOf(source, process, rules, engineVersion);
+      const summarised = inShortOf(source, process, rules, project?.analysis, engineVersion, customerTexts);
+      const explanation = explanationOf(source, process, rules, engineVersion, customerTexts);
       const result: Result = {
         processName: processNameOf(rules),
         traceability,
@@ -634,7 +640,7 @@ export default function FirstLook({
     } catch {
       return { result: null, failed: true };
     }
-  }, [hasSource, source, process, named, rules, access, project, engineVersion]);
+  }, [hasSource, source, process, named, rules, access, project, engineVersion, customerTexts]);
   const result = built.result;
   const failed = stageFailed || built.failed;
 

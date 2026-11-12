@@ -459,6 +459,7 @@ function StepDetails({ story }: { story: ProcessStory }) {
                 <span className="min-w-0 break-words">{`${n}. ${step.text}`}</span>
                 <Line anchor={step.anchor} />
               </p>
+              {step.customerText ? <p data-customer-text="" className="m-0 text-[11px] font-medium text-cc-ink-muted">{step.customerText}</p> : null}
               {step.checks.length > 0 ? (
                 <p data-process-story-checks="" className="m-0 text-[12px] leading-snug font-medium break-words text-cc-ink-muted">
                   {bizStoryChecks(step.checks, 0)}

@@ -398,6 +398,12 @@ export interface EngineReading {
  */
 export type SkeletonMutation = (skeleton: ProcessSkeleton, file: string) => ProcessSkeleton;
 
+/**
+ * KORPUS_ENGINE_VERSION: the engine version the skeleton is read for (`buildProcessSkeleton`'s gate); unset, this
+ * release. A measurement of a gated reading sets it to the gate's version (3.1.0) before `APP_VERSION` reaches it.
+ */
+const ENGINE_VERSION = process.env.KORPUS_ENGINE_VERSION || undefined;
+
 export function readWithEngine(
   korpusCase: KorpusCase,
   mutate?: SkeletonMutation,
@@ -426,7 +432,7 @@ export function readWithEngine(
       if (finding.objectName) objectNames.add(finding.objectName.toUpperCase());
     }
     routeCount += routeExtensibility(evidence, deployment, APP_VERSION).checkpoints.length;
-    const built = buildProcessSkeleton(source.code);
+    const built = buildProcessSkeleton(source.code, ENGINE_VERSION === undefined ? {} : { engineVersion: ENGINE_VERSION });
     const skeleton = mutate ? mutate(built, source.name) : built;
     return { file: source.name, evidence, facts, skeleton, statements: readStatements(source.code), tables };
   });

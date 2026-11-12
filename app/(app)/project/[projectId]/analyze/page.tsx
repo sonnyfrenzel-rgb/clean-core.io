@@ -58,6 +58,7 @@ import { signedRecommendationOf, signedRouteReport } from '@/lib/signed-route-re
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import type { SourceFile } from '@/lib/abap/findings-detector';
@@ -815,16 +816,18 @@ export default function AnalyzePage() {
   // opens with, before the score (owner, 12.10.2026: the business texts about
   // what a Z program does must get clearly better, Analyze included).
   const summaryEngine = engineVersionOfProject(project);
+  // 3.1.0 (H5b): the project's customer texts — a line of "In short" that says one is marked.
+  const customerTexts = useCustomerTexts(typeof projectId === 'string' ? projectId : null);
   const inShort = useMemo(() => {
     if (!legacyCode) return null;
     try {
-      const facts = programSummaryFactsOf(legacyCode, { engineVersion: summaryEngine });
+      const facts = programSummaryFactsOf(legacyCode, { engineVersion: summaryEngine, customerTexts });
       const summary = programSummary(facts);
       return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(project?.analysis, facts), authorClaim: authorClaimOf(facts) };
     } catch {
       return null;
     }
-  }, [legacyCode, project?.analysis, summaryEngine]);
+  }, [legacyCode, project?.analysis, summaryEngine, customerTexts]);
   const programInShort = inShort ? (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3">
       <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal} authorClaim={inShort.authorClaim} headingLevel={2} id="analyze-in-short-title" />

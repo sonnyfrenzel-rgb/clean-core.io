@@ -1,7 +1,10 @@
-import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
+import type { CustomerTexts } from '../abap/customer-texts';
+import { buildProcessSkeleton, skeletonReadFor, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
+import { buildProcessFacts } from '../abap/process-facts';
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
 import { engineReads3021Apply } from '../abap/engine-reads-3021-gate';
+import { engineReads310Apply } from '../abap/engine-reads-310-gate';
 import { anchorText, flowText, layoutModel, NOTE_W, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
@@ -12,6 +15,7 @@ import {
   isMultiInstanceLoop,
   type ExportContainer,
   type ExportModel,
+  type ExportModelOptions,
   type ExportNode,
 } from './model';
 import { el, serialize, textEl, type XmlElement } from './xml';
@@ -63,6 +67,12 @@ export interface BpmnExportOptions {
   names?: 'plain' | 'technical';
   /** The ABAP source — lets plain names read declarations and message texts. */
   source?: string;
+  /**
+   * 3.1.0 (H5b, owner decision 06.11.2026): the project's own dictionary texts from its abapGit upload
+   * (`GET /api/projects/{id}/customer-texts`) — the first source of words for the plain file, each marked
+   * "Customer text" in the element's documentation. Read only from engine 3.1.0 on.
+   */
+  customerTexts?: CustomerTexts | null;
   /** Layout direction. Default left to right. */
   direction?: Direction;
   /** Most columns in one row before a band continues below (`LayoutOptions.wrap`). */
@@ -140,10 +150,10 @@ export interface BpmnExport {
 
 /** The export API. `skeleton` is `buildProcessSkeleton(source)` of the source the signed run analysed. */
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
-  const model = buildExportModel(skeleton, {
-    labels: options.names === 'plain' ? plainLabels(skeleton, options.source) : undefined,
-    businessLevel: engineReads3021Apply(options.exporterVersion ?? APP_VERSION),
-  });
+  const version = options.exporterVersion ?? APP_VERSION;
+  const model = buildExportModel(skeleton, options.names === 'plain'
+    ? businessLevelOf(skeleton, options.source, version, options.customerTexts)
+    : { businessLevel: engineReads3021Apply(version) });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;
   // Before the layout, so a model-written name is measured as the name it is.
@@ -243,15 +253,38 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
   };
 }
 
+/**
+ * The model options of the plain reading — the map a business reader sees — as the engine `engineVersion` draws it:
+ * plain labels, from 3.0.21 the business level, from 3.1.0 the labels in business language and technique one level
+ * down (`ENGINE_READS_310_FROM`). One function, so the file, the workspace map and the readability measure
+ * (`tests/helpers/business-readability.ts`) read the same thing.
+ */
+export function businessLevelOf(
+  skeleton: ProcessSkeleton,
+  source: string | undefined,
+  engineVersion: string,
+  /** 3.1.0 (H5b): the project's customer texts — the first source of words, read only from that engine on. */
+  customerTexts?: CustomerTexts | null,
+): ExportModelOptions {
+  return {
+    labels: plainLabels(skeleton, source, { engineVersion, ...(customerTexts ? { customerTexts } : {}) }),
+    businessLevel: engineReads3021Apply(engineVersion),
+    foldTechnique: engineReads310Apply(engineVersion),
+  };
+}
+
 /** The same, for a caller that holds the source rather than the skeleton. */
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
   const { naming, ...rest } = options;
   // The technical file is the engine's alone (owner decision 23.10.2026): a naming applies to the plain file only.
-  if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source), { source, ...rest });
-  // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once.
-  const context = namingContextOf(source);
+  const engine = { engineVersion: rest.exporterVersion ?? APP_VERSION };
+  if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source, engine), { source, ...rest });
+  // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once —
+  // unless the run's engine draws another map than this release (`skeletonReadFor`).
+  const context = namingContextOf(source, engine);
   const aiNames = aiNamesOfNaming(context, naming);
-  return buildBpmnExport(context.skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
+  const skeleton = skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engine.engineVersion);
+  return buildBpmnExport(skeleton, { source, ...rest, ...(aiNames ? { aiNames } : {}) });
 }
 
 /** Who wrote a stored naming, as the receipt the server verified says — nothing more, nothing assumed. */
@@ -290,7 +323,7 @@ export function aiNamesOfNaming(
  */
 export function buildReadingExports(
   source: string,
-  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion' | 'naming'>,
+  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion' | 'naming' | 'customerTexts'>,
 ): { bpmn: BpmnExport; technical: BpmnExport } {
   // The same source and options always give the same reading, and laying out a
   // large program takes seconds: the map, the process summary and every tool of
@@ -302,8 +335,11 @@ export function buildReadingExports(
   const { naming, ...base } = options;
   // A stored naming (a download, 3.0.21) puts the model's names on the plain file, marked; the technical file is the
   // code's own tokens and stays so.
-  const context = naming ? namingContextOf(source) : null;
-  const skeleton = context?.skeleton ?? buildProcessSkeleton(source);
+  const engineVersion = options.exporterVersion ?? APP_VERSION;
+  const context = naming ? namingContextOf(source, { engineVersion }) : null;
+  const skeleton = context
+    ? skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engineVersion)
+    : buildProcessSkeleton(source, { engineVersion });
   const aiNames = context ? aiNamesOfNaming(context, naming) : undefined;
   const out = {
     bpmn: buildBpmnExport(skeleton, { ...base, source, names: 'plain', wrap: READING_WRAP, ...(aiNames ? { aiNames } : {}) }),
@@ -355,7 +391,7 @@ export function buildPhoneReadingXml(
     if (w <= fit) return undefined;
     return w <= 2 * fit ? PHONE_WRAP : PHONE_MIN_WRAP;
   };
-  const skeleton = buildProcessSkeleton(source);
+  const skeleton = buildProcessSkeleton(source, { engineVersion: options.exporterVersion ?? APP_VERSION });
   const build = (wrapOf: (key: string) => number | undefined) =>
     buildBpmnExport(skeleton, {
       ...options,
@@ -656,11 +692,16 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
   if (node.fallback) extra.fallback = node.fallback;
   if (node.name !== node.technicalName) extra.technicalName = node.technicalName;
   if (node.fact) extra.fact = node.fact;
+  // 3.1.0: the steps folded into this one, each with its code and its lines — in the trace and in the documentation.
+  if (node.folded?.length) extra.folded = node.folded.map((f) => `${f.technicalName}${f.anchor ? ` ${f.anchor}` : ''}`).join('; ');
   const anchor = anchorText(node.source.anchor);
+  const foldedText = node.folded?.length
+    ? ` Also in this step: ${node.folded.map((f) => `${f.name} — ${f.technicalName}${f.anchor ? ` (${f.anchor.replace(/^L/, 'line ')})` : ''}`).join('; ')}.`
+    : '';
   const children: XmlElement[] = [
     // A plain name says what the step is; the documentation keeps what the code wrote.
-    ...(node.name !== node.technicalName
-      ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}`)]
+    ...(node.name !== node.technicalName || foldedText
+      ? [textEl('bpmn:documentation', `In the code: ${node.technique || node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}${foldedText}${node.detail ? ` ${node.detail}` : ''}${node.comment ? ` ${node.comment}` : ''}`)]
       : []),
     el('bpmn:extensionElements', [], [
       nodeTrace(node.source, options.sourceFileName, extra),

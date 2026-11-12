@@ -9,6 +9,8 @@ import { hasDemoCases, readDemoSwitches } from './demo-switches';
 import { APP_VERSION } from '../version';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
+import { engineReads310Apply } from './engine-reads-310-gate';
+import { customerTextProvenance, type CustomerTexts } from './customer-texts';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -154,6 +156,8 @@ export const RULE_BASKET_LABELS: Readonly<Record<RuleBasket, string>> = Object.f
 export interface RuleQuestion {
   /** `Q-BR-004` — after the weightiest rule it asks about. */
   id: string;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the question says a customer text; absent otherwise. */
+  customerText?: string;
   /** The rules it asks about, weightiest first. Never empty. */
   ruleIds: string[];
   topic: RuleTopic;
@@ -211,6 +215,8 @@ export interface RuleExplanation {
   proposal: { kind: RuleProposalKind; reason: ExplainedSentence };
   /** Who is asked about it: the business, nobody (it stays as coded), or it is not determined — with the reason. */
   basket: { kind: RuleBasket; reason: ExplainedSentence };
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the title or the sentence says a customer text; absent otherwise. */
+  customerText?: string;
 }
 
 export interface RuleSetExplanation {
@@ -282,7 +288,8 @@ function fieldStem(subject: string | null | undefined): string {
 /** The business words for a subject. A constant is named by its own name, never by its value. */
 function subjectWords(p: RuleParameter | undefined, ctx: PlainContext): string {
   if (!p?.subject) return 'the value';
-  if (operatorOf(p) === 'VALUE') return lcFirst(humaniseField(p.subject)) || 'the value';
+  // A constant's name, not its value; from 3.1.0 with the dictionary (`sap-dictionary.ts`): "Weight unit", not "Gewei".
+  if (operatorOf(p) === 'VALUE') return lcFirst(humaniseField(p.subject, ctx.reads310 ? { ...ctx, constants: new Map() } : undefined)) || 'the value';
   return lcFirst(humaniseField(p.subject, ctx)) || 'the value';
 }
 
@@ -1443,10 +1450,13 @@ export function explainBusinessRules(
   facts: ExplainFacts,
   /** The engine the explanation is read for (`ENGINE_READS_3020_FROM`). */
   engineVersion: string | null = APP_VERSION,
+  /** 3.1.0 (H5b): the project's customer texts — the first source of words, each title and question that says one marked. */
+  customerTexts?: CustomerTexts | null,
 ): RuleSetExplanation {
   const reads3020 = engineReads3020Apply(engineVersion);
   const reads3021 = engineReads3021Apply(engineVersion);
-  const ctx = plainContext(source);
+  const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
+  const ctx = plainContext(source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
   const hasInclude = facts.statements.some((s) => s.keyword.toUpperCase() === 'INCLUDE' && !/^INCLUDE\s+(?:TYPE|STRUCTURE)\b/i.test(s.text));
   // The values the code tests one field against, across rules — for "handled by another rule".
   const siblings = new Map<string, string[]>();
@@ -1515,7 +1525,18 @@ export function explainBusinessRules(
   const order = ordered.flatMap((t) => t.ruleIds);
   const baskets: Record<RuleBasket, string[]> = { business: [], technical: [], undetermined: [] };
   for (const id of order) baskets[byId.get(id)!.basket.kind].push(id);
-  return { rules, order, topics: ordered, baskets, questions: questionsOf(asked, ctx) };
+  const questions = questionsOf(asked, ctx);
+  if (!texts) return { rules, order, topics: ordered, baskets, questions };
+  // 3.1.0 (H5b): a title or a question that says a customer text carries its provenance.
+  const markedRules = rules.map((r) => {
+    const customerText = customerTextProvenance([r.headline ?? '', r.protects.text].join(' | '), texts);
+    return customerText ? { ...r, customerText } : r;
+  });
+  const markedQuestions = questions.map((q) => {
+    const customerText = customerTextProvenance(q.statement.text, texts);
+    return customerText ? { ...q, customerText } : q;
+  });
+  return { rules: markedRules, order, topics: ordered, baskets, questions: markedQuestions };
 }
 
 /**

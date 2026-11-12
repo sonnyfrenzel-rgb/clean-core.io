@@ -51,8 +51,11 @@ export function useAutoProcessNaming(input: {
   autoAllowed: boolean;
   /** The ask would hand the model the engine's facts (`shouldAskNaming`). Absent: nothing is asked while the naming is paused. */
   withFacts?: boolean;
+  /** The engine of the project's run (`engineVersionOfProject`) — the map the names are asked for; null: this release. */
+  engineVersion?: string | null;
 }): { state: 'idle' | 'asking'; askNow: (() => void) | null } {
   const { projectId, source, owner, availability, state, onStored, autoAllowed, withFacts } = input;
+  const engineVersion = input.engineVersion ?? null;
   const [asking, setAsking] = useState(false);
   const [clickedFor, setClickedFor] = useState<string | null>(null);
   const modelEnabled = namingModelEnabled(availability);
@@ -76,7 +79,7 @@ export function useAutoProcessNaming(input: {
           const [naming, client] = await Promise.all([import('@/lib/process-naming'), import('@/lib/process-naming-client')]);
           const outcome = await client.requestProcessNaming(
             pid,
-            naming.namingContextOf(src),
+            naming.namingContextOf(src, engineVersion ? { engineVersion } : {}),
             { known, keyAvailable, stages: { [naming.NAMING_STAGE]: modelEnabled } },
             undefined,
             { automatic },
@@ -91,7 +94,7 @@ export function useAutoProcessNaming(input: {
         }
       })();
     },
-    [known, keyAvailable, modelEnabled],
+    [known, keyAvailable, modelEnabled, engineVersion],
   );
 
   const digest = source ? sha256Hex(source) : null;

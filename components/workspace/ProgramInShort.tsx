@@ -92,6 +92,7 @@ export default function ProgramInShort({
         {lines.map((line, i) => (
           <React.Fragment key={`${line.key}-${i}`}>
             <span data-in-short-slot={line.key} className="break-words">{line.text}</span>
+            {line.customerText ? <span data-customer-text="" className="text-[11px] font-medium text-cc-ink-muted">{` ${line.customerText}`}</span> : null}
             {line.anchors[0] ? (
               <>
                 {' '}

@@ -23,6 +23,7 @@ import {
   type OwnCodeRow,
 } from '@/lib/own-code-import';
 import { readUploadedFile } from '@/lib/own-code-zip';
+import { mergeCustomerTexts, storeCustomerTexts } from '@/lib/customer-texts-client';
 import { leaveOwnCodeHandoff } from '@/lib/own-code-handoff';
 import {
   wt,
@@ -246,6 +247,12 @@ export default function OwnCodeImport() {
         setBusy(false);
         return;
       }
+      // 3.1.0 (H5b): the customer's dictionary texts of an abapGit upload stay with the project — best effort: without
+      // them the Business view reads as it does for a source without a package.
+      const customerTexts = mergeCustomerTexts(files.map((f) => f.customerTexts));
+      if (customerTexts && !(await storeCustomerTexts(docRef.id, customerTexts))) {
+        console.error('[OwnCodeImport] customer texts not stored');
+      }
       leaveOwnCodeHandoff({
         projectId: docRef.id,
         personalDataKey: hintKey,
@@ -264,7 +271,7 @@ export default function OwnCodeImport() {
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));
       setBusy(false);
     }
-  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition, release]);
+  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition, release, files]);
 
   const toggleNaming = useCallback(
     async (next: boolean) => {

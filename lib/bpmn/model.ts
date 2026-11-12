@@ -8,6 +8,7 @@ import type {
 import { ncName } from './xml';
 import type { PlainLabels } from '../abap/plain-language';
 import { TABLE_TERMS_EN } from '../abap/plain-glossary';
+import { quotedComment } from '../abap/author-comments';
 
 /**
  * Skeleton → BPMN elements — roadmap 2.6, the half that decides *what* is drawn.
@@ -115,6 +116,13 @@ export interface ExportNode {
    * Only with plain labels; the element's documentation says it under the name (owner, 11.10.2026).
    */
   technique?: string;
+  /**
+   * 3.1.0: what the reader should know beside the name, in the engine's words (`PlainLabels.detail`) — an unknown
+   * check says that the code does not state what it means (owner decision 06.11.2026). In the documentation only.
+   */
+  detail?: string;
+  /** 3.1.0 (H4): the author's comment at the element, quoted with its tag and line (`quotedComment`). Documentation only. */
+  comment?: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
   error: boolean;
@@ -137,6 +145,12 @@ export interface ExportNode {
    * Undefined: the source node's own line range.
    */
   anchorLabel?: string;
+  /**
+   * The steps folded into this one at the business level (3.1.0, `ExportModelOptions.foldTechnique`): a lock, its
+   * release, a list's set-up, or a step of the same name right after it — each with its own name, its code and its
+   * lines. The element's anchor (`anchorLabel`) carries every one of their lines; the documentation names them.
+   */
+  folded?: Array<{ name: string; technicalName: string; anchor: string | null }>;
   /**
    * One fact about a collapsed phase, counted on its plane — "2 decisions ·
    * 1 error end", "reads EBAN". Set in the plain reading only; it is drawn under
@@ -414,11 +428,31 @@ export interface ExportModelOptions {
    * Default: off — the reading of every engine before 3.0.21.
    */
   businessLevel?: boolean;
+  /**
+   * Technique one level down (concept "Business-Lesbarkeit", from engine 3.1.0 — `ENGINE_READS_310_FROM`). With
+   * plain labels, two things on a straight run of plain steps (one way in, one way out, no condition between them):
+   *
+   *   - **a technical step is folded into the step beside it** — a lock (`ENQUEUE_*`), its release (`DEQUEUE_*`),
+   *     the application log (`BAL_*`), the set-up of a list's columns: the business step it serves stays, the
+   *     technical one is named in its documentation and keeps its lines on its anchor;
+   *   - **a step of the same name right after another is one step** — five "Show the result list" in a row are one,
+   *     with every line.
+   *
+   * Nothing is dropped: every folded element's lines stay on the element that carries it (`ExportNode.folded`,
+   * `anchorLabel`), and the technical file and the IT view draw every statement. Default: off.
+   */
+  foldTechnique?: boolean;
 }
 
 export function buildExportModel(skeleton: ProcessSkeleton, options: ExportModelOptions = {}): ExportModel {
-  return new ModelBuilder(skeleton, options.labels ?? null, options.chainEntries ?? !!options.labels, options.businessLevel ?? false).build();
+  return new ModelBuilder(skeleton, options.labels ?? null, options.chainEntries ?? !!options.labels, options.businessLevel ?? false,
+    !!options.labels && (options.foldTechnique ?? false)).build();
 }
+
+/** The SAP technique a business step does not need to see (`ExportModelOptions.foldTechnique`), by the code's name. */
+const TECHNIQUE_CALL = /^(?:ENQUEUE_|DEQUEUE_|BAL_|REUSE_ALV_FIELDCATALOG|LVC_FIELDCATALOG)/i;
+/** 3.1.0: a helper routine that writes the program's log, by its name (`ADD_LOG`, `LOG_MESSAGE`, `PROTOKOLL_SCHREIBEN`). */
+const LOG_HELPER = /(?:^|[_:])(?:log|logs|protokoll|applog|msg_add|add_msg)(?:[_:]|$)/i;
 
 /** At least this many guard checks in a row are drawn as one step at the business level. */
 export const GUARD_CHAIN_MIN = 2;
@@ -445,7 +479,13 @@ class ModelBuilder {
   /** Skeleton edges of the run order between two report event blocks (roadmap 3.0.7) — drawn by `chainEntries`. */
   private runOrder: SkeletonEdge[] = [];
 
-  constructor(private skeleton: ProcessSkeleton, private labels: PlainLabels | null, private chain = false, private businessLevel = false) {}
+  constructor(
+    private skeleton: ProcessSkeleton,
+    private labels: PlainLabels | null,
+    private chain = false,
+    private businessLevel = false,
+    private technique = false,
+  ) {}
 
   build(): ExportModel {
     for (const region of this.skeleton.regions) this.regionByKey.set(region.key, region);
@@ -472,9 +512,14 @@ class ModelBuilder {
     }
 
     const root = this.container('process', 'process');
+    // Engine 3.1.0: the business reading leaves out an entry that draws nothing between start and end
+    // (`SkeletonRegion.drawsNothing`) — unless that would leave no process at all. The technical reading draws it.
+    const hideEmpty = this.businessLevel && !!this.labels
+      && this.skeleton.entries.some((key) => this.regionByKey.get(key) && !this.regionByKey.get(key)?.drawsNothing);
     for (const key of this.skeleton.entries) {
       const region = this.regionByKey.get(key);
       if (!region) continue;
+      if (hideEmpty && region.drawsNothing) continue;
       this.instantiated.add(key);
       this.instantiate(region, root, '', [key]);
     }
@@ -520,7 +565,8 @@ class ModelBuilder {
     }
     return this.skeleton.lanes.map((lane) => ({
       id: lane.id,
-      name: lane.name,
+      // 3.1.0 (H9): an authorization lane by what it protects (`PlainLabels.lane`); the skeleton's token otherwise.
+      name: this.labels?.lane?.(lane) || lane.name,
       kind: lane.kind,
       source: lane,
       flowNodeRefs: refs.get(lane.id) ?? [],
@@ -587,6 +633,8 @@ class ModelBuilder {
         name: plain !== undefined && (plain || tagOf(source) === 'parallelGateway') ? plain : technicalName,
         technicalName,
         ...(this.labels ? { technique: this.labels.technique(source.id) } : {}),
+        ...(this.labels?.detail?.(source.id) ? { detail: this.labels.detail(source.id) } : {}),
+        ...(this.labels?.comment?.(source.id) ? { comment: quotedComment(this.labels.comment(source.id)!) } : {}),
         source,
         error: source.kind === 'end-error' || source.kind === 'error-boundary',
         incoming: [],
@@ -664,6 +712,7 @@ class ModelBuilder {
     }
 
     if (this.businessLevel) this.collapseGuardChains(into, band, local);
+    if (this.technique) this.foldTechniqueSteps(into, band, local);
 
     for (const node of local.values()) {
       // Decision 3.
@@ -811,6 +860,59 @@ class ModelBuilder {
       for (const n of into.nodes) byId.set(n.id, n);
       flowById.clear();
       for (const f of into.flows) flowById.set(f.id, f);
+      for (const n of into.nodes) {
+        n.incoming = into.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+        n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+      }
+    }
+  }
+
+  /** See `ExportModelOptions.foldTechnique`. */
+  private foldTechniqueSteps(into: ExportContainer, band: ExportBand, local: Map<string, ExportNode>): void {
+    // 3.1.0: the call of a technical helper the engine draws as an arm's outcome (`detail.helperCall`) is technique too
+    // when it writes a log (`PERFORM add_log`) — folded where it stands in a straight run; an arm's only step stays.
+    const isTechnique = (n: ExportNode) => TECHNIQUE_CALL.test(n.technicalName.replace(/^\/\w+\//, ''))
+      || (n.source.detail?.helperCall === true && LOG_HELPER.test(String(n.source.detail?.routine ?? n.technicalName)));
+    const plain = (n: ExportNode) => ACTIVITY_TAGS.has(n.tag) && !n.inner && n.tag !== 'subProcess' && !n.attachedTo
+      && !guardOf(n) && !into.nodes.some((b) => b.attachedTo === n.id);
+    // The same words as `anchorText` in layout.ts, which imports this file.
+    const anchorOf = (n: ExportNode) => {
+      if (n.anchorLabel) return n.anchorLabel;
+      const a = n.source.anchor;
+      return a ? (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`) : null;
+    };
+    for (let guard = 0; guard < 500; guard++) {
+      const flowById = new Map(into.flows.map((f) => [f.id, f]));
+      const byId = new Map(into.nodes.map((n) => [n.id, n]));
+      let pair: { keep: ExportNode; drop: ExportNode; via: ExportFlow } | null = null;
+      for (const a of into.nodes) {
+        if (!plain(a) || a.outgoing.length !== 1) continue;
+        const via = flowById.get(a.outgoing[0]);
+        if (!via || via.back || via.condition || via.bypassOf || via.runtimeOrder) continue;
+        const b = byId.get(via.targetId);
+        if (!b || b === a || !plain(b) || b.incoming.length !== 1 || b.id === band.entryId) continue;
+        if (a.name === b.name) pair = { keep: a, drop: b, via };
+        else if (isTechnique(a) && !isTechnique(b)) pair = { keep: b, drop: a, via };
+        else if (isTechnique(b) && !isTechnique(a)) pair = { keep: a, drop: b, via };
+        if (pair) break;
+      }
+      if (!pair) return;
+      const { keep, drop, via } = pair;
+      const ordered = byId.get(via.sourceId) === keep ? [keep, drop] : [drop, keep];
+      keep.anchorLabel = ordered.map(anchorOf).filter(Boolean).join(', ') || undefined;
+      keep.folded = [...(keep.folded ?? []), ...(drop.folded ?? []), { name: drop.name, technicalName: drop.technique || drop.technicalName, anchor: anchorOf(drop) }];
+      keep.reads = [...new Set([...keep.reads, ...drop.reads])];
+      keep.writes = [...new Set([...keep.writes, ...drop.writes])];
+      into.flows = into.flows.filter((f) => f.id !== via.id);
+      for (const f of into.flows) {
+        if (f.sourceId === drop.id) f.sourceId = keep.id;
+        if (f.targetId === drop.id) f.targetId = keep.id;
+      }
+      into.nodes = into.nodes.filter((n) => n !== drop);
+      band.nodeIds = band.nodeIds.filter((id) => id !== drop.id);
+      if (band.entryId === drop.id) band.entryId = keep.id;
+      if (band.endId === drop.id) band.endId = keep.id;
+      local.delete(drop.source.id);
       for (const n of into.nodes) {
         n.incoming = into.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
         n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);

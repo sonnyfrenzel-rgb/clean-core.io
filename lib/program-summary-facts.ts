@@ -2,7 +2,7 @@ import { readCallGraph, type CallGraphReport } from '@/lib/abap/call-graph';
 import { readTableDependencies, type TableDependencyReport } from '@/lib/abap/table-dependencies';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
-import { humaniseField, plainContext, type PlainContext } from '@/lib/abap/plain-language';
+import { businessCallWord, businessTableTerm, humaniseField, plainContext, type PlainContext } from '@/lib/abap/plain-language';
 import { FUNCTION_TERMS_EN, TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { capabilityPresence } from '@/lib/documentation-capabilities';
@@ -11,8 +11,12 @@ import { maskLiterals, readStatements, type AbapStatement } from '@/lib/abap/sta
 import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@/lib/abap/constant-gates';
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
+import { readProgramShape } from '@/lib/abap/program-shape';
+import { emptyCustomerTexts, isCustomerTexts, type CustomerTexts } from '@/lib/abap/customer-texts';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
+import { engineReads310Apply } from '@/lib/abap/engine-reads-310-gate';
+import { reachableWrites } from '@/lib/abap/reachable-writes';
 import { APP_VERSION } from '@/lib/version';
 import { headerRuleRange } from '@/lib/abap/header-rules';
 import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
@@ -57,8 +61,11 @@ const CHANGING_VERB = /^(?:Post|Create|Change|Delete|Cancel|Reverse|Release|Star
 
 const lcFirst = (text: string): string => (/^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text);
 
-function objectOf(name: string, line: number): SummaryObject {
-  const term = TABLE_TERMS_EN[name.toLowerCase()];
+function objectOf(name: string, line: number, engineVersion?: string | null, customerTexts?: CustomerTexts | null): SummaryObject {
+  // 3.1.0 (H5): the dictionary and a customer table's own words too (`businessTableTerm`); the glossary alone before.
+  const term = engineVersion !== undefined && engineReads310Apply(engineVersion)
+    ? businessTableTerm(name, { engineVersion, ...(customerTexts ? { customerTexts } : {}) })
+    : TABLE_TERMS_EN[name.toLowerCase()];
   const word = term ? lcFirst(term.plural) : null;
   const kind: SummaryObject['kind'] = SETTINGS_TABLE.test(name)
     ? 'setting'
@@ -188,7 +195,8 @@ function fixedListsOf(calls: CallGraphReport, ctx: PlainContext): SummaryFixedLi
   return out.sort((a, b) => a.lineStart - b.lineStart);
 }
 
-function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi'): string | null {
+function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi', engineVersion?: string | null): string | null {
+  if (engineVersion !== undefined && engineReads310Apply(engineVersion)) return businessCallWord(name, kind === 'transaction' ? 'transaction' : 'function', { engineVersion });
   const word = kind === 'transaction' ? TRANSACTION_TERMS_EN[name] : FUNCTION_TERMS_EN[name];
   return word ?? null;
 }
@@ -457,6 +465,11 @@ export interface ProgramSummaryReaders {
    * names support (`domain`) and the functions it reads its data through (`dataCalls`).
    */
   engineVersion?: string | null;
+  /**
+   * 3.1.0 (H5b): the project's customer texts — the first source of words for tables and inputs. The words used are
+   * kept in the facts (`customerWords`) so every line that says one is marked. Read only from engine 3.1.0 on.
+   */
+  customerTexts?: CustomerTexts | null;
 }
 
 /**
@@ -489,8 +502,8 @@ function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | n
  * program that names no table reads by calling (`BAPI_PO_GETDETAIL1`), and
  * "reads no table by name" told a business reader nothing.
  */
-function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[], wider: boolean): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
-  const domain = readProgramDomain(text, { wider });
+function purposeFacts(text: string, calls: CallGraphReport, actions: readonly SummaryAction[], wider: boolean, german = false): Pick<ProgramSummaryFacts, 'domain' | 'dataCalls'> {
+  const domain = readProgramDomain(text, { wider, german });
   const seen = new Set(actions.map((a) => a.name));
   const dataCalls: NonNullable<ProgramSummaryFacts['dataCalls']> = [];
   for (const f of calls.functionModules) {
@@ -502,6 +515,19 @@ function purposeFacts(text: string, calls: CallGraphReport, actions: readonly Su
     dataCalls.push({ name, word, line: f.lineStart });
   }
   return { domain: domain ? { text: domain.text, lines: domain.lines } : null, dataCalls };
+}
+
+/** 3.1.0 (H5b): the part of the customer's texts the summary can say — its tables and its selection fields. */
+function customerWordsOf(texts: CustomerTexts, tables: readonly string[], selections: readonly string[]): CustomerTexts {
+  const pick = (from: Record<string, string>, keys: readonly string[]) =>
+    Object.fromEntries(keys.map((k) => k.toLowerCase()).filter((k) => Object.prototype.hasOwnProperty.call(from, k)).map((k) => [k, from[k]]));
+  return { ...emptyCustomerTexts(), tables: pick(texts.tables, tables), selections: pick(texts.selections, selections) };
+}
+
+/** 3.1.0 (H8): the program's shape, when the constructs give it one. */
+function shapeFacts(text: string): Pick<ProgramSummaryFacts, 'shape'> {
+  const shape = readProgramShape(text);
+  return shape ? { shape: { text: shape.text, lines: shape.lines, kind: shape.kind } } : {};
 }
 
 /** The header's rule candidates, counted; nothing when the header states none. */
@@ -519,12 +545,36 @@ function headerRuleFacts(ruleSet: Pick<BusinessRuleSet, 'headerRules'> | null): 
   };
 }
 
+/**
+ * 3.1.0: the changes a run reaches that the capability reading has no business word for — batch input, a posting
+ * call, `MODIFY ENTITIES` (`reachableWrites`) — and the reports it starts (`SUBMIT`), outside lines a constant gate
+ * locks away. Table writes are left to the capability reading, which words them.
+ */
+function reachedChangesOf(text: string, calls: CallGraphReport): { unworded: NonNullable<ProgramSummaryFacts['changes']['unworded']>; submits: Array<{ name: string; line: number }> } {
+  try {
+    const statements = readStatements(text);
+    const unworded = reachableWrites({ source: text, statements, graph: calls })
+      .filter((w): w is typeof w & { kind: 'batch-input' | 'posting-call' | 'entity-modify' } => w.kind !== 'table-write')
+      .map((w) => ({ kind: w.kind, object: w.object, line: w.lineStart }));
+    const gates = readConstantGates(text, { engineReads: true });
+    const submits = statements
+      .filter((s) => /^SUBMIT\s+[\w/]+/i.test(s.text) && !isUnreachableLine(gates, s.lineStart))
+      .map((s) => ({ name: (/^SUBMIT\s+([\w/]+)/i.exec(s.text)?.[1] ?? '').toUpperCase(), line: s.lineStart }))
+      .filter((x, i, all) => x.name && all.findIndex((y) => y.name === x.name) === i);
+    return { unworded, submits };
+  } catch {
+    return { unworded: [], submits: [] };
+  }
+}
+
 export function programSummaryFactsOf(source: string, readers: ProgramSummaryReaders = {}): ProgramSummaryFacts {
   const text = String(source ?? '').replace(/\r\n?/g, '\n');
-  const ctx = plainContext(text);
+  const texts310 = engineReads310Apply(readers.engineVersion === undefined ? APP_VERSION : readers.engineVersion) && isCustomerTexts(readers.customerTexts) ? readers.customerTexts : null;
+  // 3.1.0 (H5b): with customer texts the context is read for the engine (the selection texts name the inputs).
+  const ctx = texts310 ? plainContext(text, { engineVersion: readers.engineVersion, customerTexts: texts310 }) : plainContext(text);
   const calls = readers.calls ?? readCallGraph(text);
   const tables = readers.tables ?? readTableDependencies(text);
-  const skeleton = readers.skeleton ?? buildProcessSkeleton(text);
+  const skeleton = readers.skeleton ?? buildProcessSkeleton(text, { engineVersion: readers.engineVersion });
   const engineVersion = readers.engineVersion === undefined ? APP_VERSION : readers.engineVersion;
   const reads3020 = engineReads3020Apply(engineVersion);
   const reads3021 = engineReads3021Apply(engineVersion);
@@ -538,6 +588,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   }
   const capability = capabilityFactsOf(text, skeleton, { calls, tables });
   const presence = capabilityPresence(capability);
+  const changesOf310 = engineReads310Apply(engineVersion) ? reachedChangesOf(text, calls) : null;
 
   const head = /^\s*(REPORT|PROGRAM|FUNCTION-POOL|CLASS-POOL|FUNCTION|CLASS)\s+([\w/]+)/im.exec(text);
   const keyword = head?.[1].toUpperCase() ?? null;
@@ -555,7 +606,9 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   // passes is not something the program reads; it is named apart, with the gate.
   // Read as this engine reads it (3.0.18): the summary takes no engine version.
   const gates = readConstantGates(text, { engineReads: true });
-  const allReads = capability.reads.map((r) => objectOf(r.name, r.line));
+  const reads310 = engineReads310Apply(engineVersion);
+  const v310 = reads310 ? engineVersion : undefined;
+  const allReads = capability.reads.map((r) => objectOf(r.name, r.line, v310, texts310));
   const lockedRead = (o: { line: number }) => gates.unreachable.length > 0 && isUnreachableLine(gates, o.line);
   const reads = allReads.filter((o) => !lockedRead(o));
   const lockedReads = allReads.filter(lockedRead);
@@ -570,7 +623,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     ...calls.databaseWrites.map((d) => ({ name: d.table, line: d.lineStart })),
   ].filter((w) => !command.onCommand(w.line)).map((w) => w.name.toUpperCase()));
   const writes = capability.writes.map((w) => (
-    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line), onCommand: true } : objectOf(w.name, w.line)
+    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line, v310, texts310), onCommand: true } : objectOf(w.name, w.line, v310, texts310)
   ));
 
   // What it changes in SAP, in business verbs: the posting calls and the
@@ -596,11 +649,11 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   };
   for (const f of calls.functionModules) {
     if (!f.name) continue;
-    addAction(f.name.toUpperCase(), sentenceWordOf(f.name.toUpperCase(), f.bapi ? 'bapi' : 'function'), f.lineStart, f.bapi ? 'interface' : 'function');
+    addAction(f.name.toUpperCase(), sentenceWordOf(f.name.toUpperCase(), f.bapi ? 'bapi' : 'function', v310), f.lineStart, f.bapi ? 'interface' : 'function');
   }
   for (const t of calls.transactions) {
     if (!t.code) continue;
-    addAction(t.code.toUpperCase(), sentenceWordOf(t.code.toUpperCase(), 'transaction'), t.lineStart, t.batchInput ? 'simulated-entry' : 'transaction');
+    addAction(t.code.toUpperCase(), sentenceWordOf(t.code.toUpperCase(), 'transaction', v310), t.lineStart, t.batchInput ? 'simulated-entry' : 'transaction');
   }
 
   const callNames = calls.functionModules.filter((f) => f.name).map((f) => ({ name: (f.name as string).toUpperCase(), line: f.lineStart }));
@@ -623,12 +676,18 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     reads,
     writes,
     changes: {
-      state: posting.present ? 'changes' : posting.determined ? 'none' : 'not-determined',
+      // 3.1.0: what a run reaches decides too — batch input or a posting call is a change, and a report it starts
+      // is a change this code does not show (`reachedChangesOf`).
+      state: posting.present || (changesOf310?.unworded.length ?? 0) > 0
+        ? 'changes'
+        : (changesOf310?.submits.length ?? 0) > 0 ? 'not-determined' : posting.determined ? 'none' : 'not-determined',
+      ...(changesOf310?.unworded.length ? { unworded: changesOf310.unworded } : {}),
+      ...(changesOf310?.submits.length && !posting.present ? { submits: changesOf310.submits } : {}),
       actions,
       commits: capability.commits.length + capability.updateTask.length,
       displayTransactions: calls.transactions
         .filter((t) => t.code && !t.batchInput && !actions.some((a) => a.name === t.code?.toUpperCase()))
-        .map((t) => ({ name: (t.code as string).toUpperCase(), word: TRANSACTION_TERMS_EN[(t.code as string).toUpperCase()] ?? null, line: t.lineStart })),
+        .map((t) => ({ name: (t.code as string).toUpperCase(), word: sentenceWordOf((t.code as string).toUpperCase(), 'transaction', v310), line: t.lineStart })),
       dynamic: (capability.dynamicWrites ?? []).length + (capability.dynamicCalls ?? []).length,
     },
     outputs: {
@@ -674,9 +733,13 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       : {}),
     ...demoFacts(text, ruleSet, readers.engineVersion),
     // Roadmap 3.0.20 — present only from that engine, so earlier facts stay what they were.
-    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021) : {}),
+    ...(reads3020 ? purposeFacts(text, calls, actions, reads3021, reads310) : {}),
     // Roadmap 3.0.21 — the purpose the names support stands whenever it exists; present only from that engine.
     ...(reads3021 ? { purposeAlways: true as const } : {}),
+    // 3.1.0 (H8) — present only from that engine and only for a program of one of the shapes `readProgramShape` knows.
+    ...(reads310 ? shapeFacts(text) : {}),
+    // 3.1.0 (H5b) — the customer's words the facts use, so each line that says one carries its provenance.
+    ...(texts310 ? { customerWords: customerWordsOf(texts310, [...capability.reads, ...capability.writes].map((o) => o.name), [...ctx.selections.keys()]) } : {}),
     ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };

@@ -28,6 +28,7 @@ import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-c
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import LevelDRegister from '@/components/documentation/LevelDRegister';
@@ -590,6 +591,7 @@ export default function DocumentationPage() {
     signedSource,
     project?.name || '',
     modelAvailability,
+    { engineVersion: engineVersionOfProject(project) },
   );
 
   /**
@@ -598,7 +600,9 @@ export default function DocumentationPage() {
    * asks, an invited reader reads.
    */
   /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
-  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model, engineVersionOfProject(project));
+  // 3.1.0 (H5b): the project's customer texts — every step, line and summary that says one is marked.
+  const customerTexts = useCustomerTexts((Array.isArray(projectId) ? projectId[0] : projectId) ?? null);
+  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model, engineVersionOfProject(project), customerTexts);
   const isPhone = useBreakpointS();
 
   /**
@@ -707,6 +711,7 @@ export default function DocumentationPage() {
     typeof project?.analysis === 'string' && project.analysis.trim() ? project.analysis : null,
     proposalInputs,
     engineVersionOfProject(project),
+    customerTexts,
   );
 
   /**
@@ -796,7 +801,7 @@ export default function DocumentationPage() {
 
     try {
       const { buildProcessDocumentation } = await import('@/lib/process-documentation-build');
-      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model, engineVersion: engineVersionOfProject(project) });
+      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model, engineVersion: engineVersionOfProject(project), customerTexts });
       const stored = JSON.stringify(built);
       // The reader of the stored value is the gate: what is written must read
       // back as an engine document, or nothing is written.
@@ -837,7 +842,7 @@ export default function DocumentationPage() {
     } finally {
       setIsGeneratingDoc(false);
     }
-  }, [projectId, project, signedSource, processMap.model, processMap.status, processMap.reason]);
+  }, [projectId, project, signedSource, processMap.model, processMap.status, processMap.reason, customerTexts]);
 
   /**
    * Generate on open (owner 03.10.2026, analogous to Design).

@@ -32,6 +32,8 @@
  * component, renders it as well as the server-side exports.
  */
 
+import { customerTextProvenance, type CustomerTexts } from './abap/customer-texts';
+
 export const PROGRAM_SUMMARY_FACTS_VERSION = 1;
 
 export interface SummaryObject {
@@ -98,6 +100,13 @@ export interface ProgramSummaryFacts {
     displayTransactions: Array<{ name: string; word: string | null; line: number }>;
     /** Places that name the table or function they change only at run time. */
     dynamic: number;
+    /**
+     * From engine 3.1.0: what a run reaches that changes data and has no business word of its own — a transaction run
+     * with prepared entries (batch input), a posting call, `MODIFY ENTITIES` (`reachable-writes.ts`). Absent before.
+     */
+    unworded?: Array<{ kind: 'batch-input' | 'posting-call' | 'entity-modify'; object: string; line: number }>;
+    /** From engine 3.1.0: the reports it starts (`SUBMIT`), whose changes this code does not show. Absent before. */
+    submits?: Array<{ name: string; line: number }>;
   };
   outputs: {
     list: number | null;
@@ -162,7 +171,21 @@ export interface ProgramSummaryFacts {
    * check that opened on "Records entries in a custom table in SAP". Absent in facts read by an earlier engine.
    */
   purposeAlways?: true;
+  /**
+   * 3.1.0 (concept "Business-Lesbarkeit" H8): what kind of program the constructs make it — a BAdI, an exit, an output
+   * program, an inbound IDoc function, a BW extractor (`lib/abap/program-shape.ts`) — the purpose line when the names
+   * support none (`domain`). Absent in facts read by an earlier engine and for a plain report.
+   */
+  shape?: { text: string; lines: number[]; kind?: string } | null;
+  /** 3.1.0 (H5b): the customer's texts the facts use (tables, selection fields); absent without any. */
+  customerWords?: CustomerTexts;
 }
+
+/** 3.1.0 (H8): what the purpose line calls a program of a shape (`ProgramShape.kind`). */
+const SHAPE_NOUN: Readonly<Record<string, string>> = Object.freeze({
+  badi: 'enhancement', 'customer-exit': 'enhancement', 'user-exit': 'enhancement', 'output-program': 'output program',
+  'idoc-inbound': 'function', 'bw-extractor': 'extractor',
+});
 
 export type SummaryBasis = 'reconstructed' | 'not-determined' | 'confirmed';
 export type SummarySlotKey = 'purpose' | 'trigger' | 'reads' | 'changes' | 'result' | 'rules' | 'limits' | 'level';
@@ -175,6 +198,8 @@ export interface SummaryLine {
   basis: SummaryBasis;
   /** Roadmap 3.0.20: the purpose as the program's names say it — a `purpose` line before the one on what it reads and changes. */
   aim?: true;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the line says a customer text; absent otherwise. */
+  customerText?: string;
 }
 
 export interface ProgramSummary {
@@ -390,8 +415,18 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     const custom = flow.writes.filter((o) => o.kind === 'custom');
     const parts = [
       changed.words.length ? `changes ${joinAnd(changed.words)}` : '',
-      custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
+      // 3.1.0 (H5b): one custom table the customer's own dictionary names is said by that name, with its code.
+      custom.length === 1 && custom[0].word && f.customerWords?.tables[custom[0].name.toLowerCase()]
+        ? `records ${custom[0].word} (${custom[0].name})`
+        : custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
     ].filter(Boolean);
+    // 3.1.0: a change with no business word is said by how it is made — never as "changes data" alone.
+    if (!parts.length && f.changes.unworded?.length) {
+      const batch = [...new Set(f.changes.unworded.filter((u) => u.kind === 'batch-input').map((u) => u.object))];
+      const posting = [...new Set(f.changes.unworded.filter((u) => u.kind !== 'batch-input').map((u) => u.object))];
+      if (batch.length) parts.push(`runs ${batch.length === 1 ? `transaction ${batch[0]}` : `transactions ${joinAnd(batch)}`} with prepared entries`);
+      if (posting.length) parts.push(`posts through ${joinAnd(posting)}`);
+    }
     const source = objectWords(business.filter((o) => !f.writes.some((w) => w.name === o.name)), 2).words;
     return {
       key: 'purpose',
@@ -406,7 +441,9 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     : business.length
       ? plural(business.length, 'table')
       : null;
-  const noun = f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report';
+  // 3.1.0 (H8): an enhancement or an output program is not called a report.
+  const shaped = f.shape?.kind ? SHAPE_NOUN[f.shape.kind] : undefined;
+  const noun = shaped ?? (f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report');
   // Hotfix 3.0.22 (HF-d): not "read-only" where its own code approves or overrides — "It does not post or
   // change data in SAP" (the changes line) still says what the engine proved.
   const readOnly = f.changes.state === 'none' && !f.ownApproval ? 'read-only ' : '';
@@ -457,6 +494,32 @@ function shownAs(f: ProgramSummaryFacts): string {
 }
 
 function changesLine(f: ProgramSummaryFacts): SummaryLine {
+  // 3.1.0: a report it starts — what that report changes is not in this code, and the line says so.
+  if (f.changes.state === 'not-determined' && f.changes.submits?.length) {
+    const names = f.changes.submits.map((x) => x.name);
+    return {
+      key: 'changes',
+      text: `It starts ${names.length === 1 ? `the report ${names[0]}` : `the reports ${joinAnd(names)}`}; what ${names.length === 1 ? 'that report changes' : 'those reports change'} in SAP is not visible in this code.`,
+      anchors: f.changes.submits.flatMap((x) => anchorOf(x.line)),
+      basis: 'not-determined',
+    };
+  }
+  // 3.1.0: a change with no business word — said by how it is made, and that the transaction decides what changes.
+  const unworded = f.changes.unworded ?? [];
+  if (f.changes.state === 'changes' && unworded.length && f.changes.actions.length === 0 && f.writes.length === 0) {
+    const batch = [...new Set(unworded.filter((u) => u.kind === 'batch-input').map((u) => u.object))];
+    const posting = [...new Set(unworded.filter((u) => u.kind !== 'batch-input').map((u) => u.object))];
+    const parts = [
+      ...(batch.length ? [`runs ${batch.length === 1 ? `transaction ${batch[0]}` : `transactions ${joinAnd(batch)}`} with prepared entries, so ${batch.length === 1 ? 'that transaction decides' : 'those transactions decide'} what is posted`] : []),
+      ...(posting.length ? [`calls ${joinAnd(posting)} to post data`] : []),
+    ];
+    return {
+      key: 'changes',
+      text: `It changes data in SAP: it ${joinAnd(parts)}.`,
+      anchors: unworded.flatMap((u) => anchorOf(u.line)),
+      basis: 'reconstructed',
+    };
+  }
   if (f.changes.state === 'not-determined') {
     return {
       key: 'changes',
@@ -639,8 +702,10 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   // report that reads no table by name …"), the purpose the program's names support stands before it.
   const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
   // Roadmap 3.0.21: from that engine it stands whenever the names support one (`purposeAlways`).
-  const aim: SummaryLine[] = f.domain && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
-    ? [{ key: 'purpose', text: f.domain.text, anchors: anchorsOf(f.domain.lines), basis: 'reconstructed', aim: true }]
+  // 3.1.0 (H8): without a purpose from the names, the program's shape says who calls it and when.
+  const named = f.domain ?? f.shape ?? null;
+  const aim: SummaryLine[] = named && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
+    ? [{ key: 'purpose', text: named.text, anchors: anchorsOf(named.lines), basis: 'reconstructed', aim: true }]
     : [];
   const lines: SummaryLine[] = [...aim, purpose];
   const list = bestFixedList(f.fixedLists);
@@ -668,7 +733,14 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   const level: SummaryLine = c
     ? { key: 'level', text: `Confirmed by the business${c.by ? ` (${c.by}${c.on ? `, ${c.on}` : ''})` : ''}.`, anchors: [], basis: 'confirmed' }
     : { key: 'level', text: LEVEL_RECONSTRUCTED, anchors: [], basis: 'reconstructed' };
-  return { program: f.program, lines, level };
+  // 3.1.0 (H5b): a line that says a customer text carries its provenance.
+  const marked = f.customerWords
+    ? lines.map((l) => {
+      const customerText = customerTextProvenance(l.text, f.customerWords);
+      return customerText ? { ...l, customerText } : l;
+    })
+    : lines;
+  return { program: f.program, lines: marked, level };
 }
 
 /* -------------------------------------------------------------- renderings */

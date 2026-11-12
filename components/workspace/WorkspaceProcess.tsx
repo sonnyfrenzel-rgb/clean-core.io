@@ -139,6 +139,7 @@ export default function WorkspaceProcess({
   const map = useProcessMap(projectId || null, signed, project?.name || '', availability, {
     measure: false,
     reload: namingRead,
+    engineVersion: engineVersionOfProject(project),
   });
   const owner = useIsOwner(project);
   const isS = useBreakpointS();
@@ -307,6 +308,7 @@ export default function WorkspaceProcess({
     // 3.0.21 (owner decision B6): by itself only on the platform key or with
     // "Automatic steps" on for the own key; otherwise on a click.
     autoAllowed: availability.autoSteps,
+    engineVersion: engineVersionOfProject(project),
   });
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();

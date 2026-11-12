@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { sha256Hex } from '@/lib/artefact-digest';
 import type { ProcessMapModel } from '@/lib/process-map';
+import type { CustomerTexts } from '@/lib/abap/customer-texts';
 import type { ProcessHandbook } from '@/lib/process-handbook';
 
 /**
@@ -23,10 +24,16 @@ export interface ProcessHandbookState {
   status: 'idle' | 'loading' | 'ready' | 'failed';
 }
 
-export function useProcessHandbook(source: string | null, model: ProcessMapModel | null, engineVersion: string | null): ProcessHandbookState {
+export function useProcessHandbook(
+  source: string | null,
+  model: ProcessMapModel | null,
+  engineVersion: string | null,
+  /** 3.1.0 (H5b): the project's customer texts (`useCustomerTexts`). */
+  customerTexts: CustomerTexts | null = null,
+): ProcessHandbookState {
   const key = useMemo(
-    () => (source && model ? `${sha256Hex(source)}|${engineVersion ?? ''}|${model.xml.length}|${model.elements.length}` : ''),
-    [source, model, engineVersion],
+    () => (source && model ? `${sha256Hex(source)}|${engineVersion ?? ''}|${model.xml.length}|${model.elements.length}|${customerTexts ? sha256Hex(JSON.stringify(customerTexts)) : ''}` : ''),
+    [source, model, engineVersion, customerTexts],
   );
   const [held, setHeld] = useState<{ key: string; value: ProcessHandbookState }>({
     key: '',
@@ -67,7 +74,7 @@ export function useProcessHandbook(source: string | null, model: ProcessMapModel
       }
       let doc = null;
       try {
-        doc = docModule.buildProcessDocumentation({ source, map: model, engineVersion });
+        doc = docModule.buildProcessDocumentation({ source, map: model, engineVersion, customerTexts });
       } catch {
         doc = null;
       }
@@ -83,7 +90,7 @@ export function useProcessHandbook(source: string | null, model: ProcessMapModel
     return () => {
       cancelled = true;
     };
-  }, [source, model, key, engineVersion]);
+  }, [source, model, key, engineVersion, customerTexts]);
 
   if (!key) return { handbook: null, status: 'idle' };
   return held.key === key ? held.value : { handbook: null, status: 'loading' };

@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { readCustomerTexts, type CustomerTexts } from './abap/customer-texts';
 import {
   OWN_CODE_MAX_FILE_BYTES,
   OWN_CODE_ZIP_LIMITS,
@@ -64,6 +65,9 @@ function readEntryBounded(file: JSZip.JSZipObject, budget: { remaining: number }
   });
 }
 
+/** 3.1.0 (H5b): the abapGit object types that carry the customer's texts (`readCustomerTexts`). */
+const CUSTOMER_TEXT_TYPES = /\.(?:dtel|tabl|view|doma|prog|fugr|clas)\.xml$/i;
+
 /** Archive housekeeping that is nobody's source: macOS forks, dot files. */
 function isHousekeeping(path: string): boolean {
   return path.startsWith('__MACOSX/') || path.split('/').some((part) => part.startsWith('.'));
@@ -82,7 +86,7 @@ function isAbapGitMetadata(path: string): boolean {
 
 export async function readZipSources(
   bytes: ArrayBuffer | Uint8Array,
-): Promise<{ sources: OwnCodeSource[]; issues: OwnCodeIssue[] }> {
+): Promise<{ sources: OwnCodeSource[]; issues: OwnCodeIssue[]; customerTexts?: CustomerTexts | null }> {
   const size = bytes.byteLength;
   if (size > OWN_CODE_ZIP_LIMITS.archiveBytes) {
     return { sources: [], issues: [{ kind: 'too-large', bytes: size, limit: OWN_CODE_ZIP_LIMITS.archiveBytes }] };
@@ -103,10 +107,21 @@ export async function readZipSources(
   const issues: OwnCodeIssue[] = [];
   const skipped: string[] = [];
   let abapGitMetadata = 0;
+  const metadata: Array<{ name: string; text: string }> = [];
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name, 'en'))) {
     if (!isSourceName(entry.name)) {
-      if (isAbapGitMetadata(entry.name)) abapGitMetadata += 1;
-      else skipped.push(entry.name);
+      if (isAbapGitMetadata(entry.name)) {
+        abapGitMetadata += 1;
+        // 3.1.0 (H5b): the descriptions the customer's dictionary gives its objects — read, within the same budget.
+        if (CUSTOMER_TEXT_TYPES.test(entry.name)) {
+          try {
+            const xml = await readEntryBounded(entry, budget);
+            metadata.push({ name: entry.name, text: new TextDecoder('utf-8').decode(xml) });
+          } catch (err) {
+            return { sources: [], issues: [err instanceof ZipLimit ? { kind: 'zip-limit' } : { kind: 'zip-unreadable' }] };
+          }
+        }
+      } else skipped.push(entry.name);
       continue;
     }
     let entryBytes: Uint8Array;
@@ -128,7 +143,8 @@ export async function readZipSources(
   if (skipped.length > 0) issues.push({ kind: 'zip-skipped', names: skipped });
   if (abapGitMetadata > 0) issues.push({ kind: 'zip-abapgit-metadata', count: abapGitMetadata });
   if (sources.length === 0 && !issues.some((i) => i.kind === 'blocked')) issues.unshift({ kind: 'zip-empty' });
-  return { sources, issues };
+  const customerTexts = metadata.length ? readCustomerTexts(metadata) : null;
+  return customerTexts ? { sources, issues, customerTexts } : { sources, issues };
 }
 
 /** What the page hands over for one dropped or chosen file — a `File` is one. */
@@ -150,8 +166,8 @@ export async function readUploadedFile(file: UploadedFileLike, id: string): Prom
     if (file.size > OWN_CODE_ZIP_LIMITS.archiveBytes) {
       return { ...base, sources: [], issues: [{ kind: 'too-large', bytes: file.size, limit: OWN_CODE_ZIP_LIMITS.archiveBytes }] };
     }
-    const { sources, issues } = await readZipSources(await file.arrayBuffer());
-    return { ...base, sources, issues };
+    const { sources, issues, customerTexts } = await readZipSources(await file.arrayBuffer());
+    return customerTexts ? { ...base, sources, issues, customerTexts } : { ...base, sources, issues };
   }
   if (!isSourceName(file.name)) return { ...base, sources: [], issues: [{ kind: 'not-source' }] };
   if (file.size > OWN_CODE_MAX_FILE_BYTES) {

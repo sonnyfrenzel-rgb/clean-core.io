@@ -295,6 +295,75 @@ const WORDS: Readonly<Record<string, Entry>> = Object.freeze({
 });
 
 /**
+ * 3.1.0 (concept "Business-Lesbarkeit" H5, owner decision 06.11.2026): more German words customer ABAP commonly uses
+ * in names and texts — read only for engine 3.1.0 (`WordSources.reads310`), so an older engine keeps its picture.
+ * Ordinary German, chosen by business area, not from the gaps of any benchmark. Words that are also English words
+ * (`charge`, `personal`, `provision`, `land`) stay out on purpose.
+ */
+const WORDS_310: Readonly<Record<string, Entry>> = Object.freeze({
+  // verbs, with the imperative a routine name often uses
+  erfragen: verb('ask for', 'erfragen'), abfragen: verb('query', 'abfragen'), fragen: verb('ask', 'fragen'),
+  anpassen: verb('adjust', 'anpassen'), zusammenfuehren: verb('merge', 'zusammenführen'), abschliessen: verb('close', 'abschließen'),
+  eroeffnen: verb('open', 'eröffnen'), vorbelegen: verb('preset', 'vorbelegen'), ableiten: verb('derive', 'ableiten'),
+  zuweisen: verb('assign', 'zuweisen'), klassifiziere: verb('classify', 'klassifiziere'), bestimme: verb('determine', 'bestimme'),
+  lies: verb('read', 'lies'), verbuche: verb('post', 'verbuche'), storniere: verb('reverse', 'storniere'), erzeuge: verb('generate', 'erzeuge'),
+  melde: verb('report', 'melde'), rechne: verb('calculate', 'rechne'), sortiere: verb('sort', 'sortiere'), sammle: verb('collect', 'sammle'),
+  uebertrage: verb('transfer', 'übertrage'), aktualisiere: verb('update', 'aktualisiere'),
+  versende: verb('send', 'versende'), genehmige: verb('approve', 'genehmige'), pflege: verb('maintain', 'pflege'),
+  // nouns
+  entscheid: noun('decision', 'Entscheid'), ursprung: noun('origin', 'Ursprung'), ausfall: noun('failure', 'Ausfall'),
+  mappe: noun('batch input session', 'Mappe'), termintreue: noun('delivery reliability', 'Termintreue'),
+  zins: noun('interest', 'Zins'), zinsen: noun('interest', 'Zinsen'), quelle: noun('source', 'Quelle'),
+  rabatt: noun('discount', 'Rabatt'), skonto: noun('cash discount', 'Skonto'), staffel: noun('scale', 'Staffel'),
+  verzug: noun('delay', 'Verzug'), mahnstufe: noun('dunning level', 'Mahnstufe'), storno: noun('reversal', 'Storno'),
+  gebuehr: noun('fee', 'Gebühr'), gebuehren: noun('fees', 'Gebühren'), bewegung: noun('movement', 'Bewegung'),
+  bewegungen: noun('movements', 'Bewegungen'), buchungen: noun('postings', 'Buchungen'), sendung: noun('shipment', 'Sendung'),
+  empfang: noun('receipt', 'Empfang'), geraet: noun('device', 'Gerät'), geraete: noun('devices', 'Geräte'),
+  zaehlerstand: noun('meter reading', 'Zählerstand'), mieter: noun('tenant', 'Mieter'), miete: noun('rent', 'Miete'),
+  nebenkosten: noun('service charges', 'Nebenkosten'), kasse: noun('cash desk', 'Kasse'), teil: noun('part', 'Teil'),
+  teile: noun('parts', 'Teile'), stueck: noun('piece', 'Stück'), auswertung: noun('evaluation', 'Auswertung'),
+  statistik: noun('statistics', 'Statistik'), uebersicht: noun('overview', 'Übersicht'), kontrolle: noun('check', 'Kontrolle'),
+  schwelle: noun('threshold', 'Schwelle'), grenze: noun('limit', 'Grenze'), grenzwert: noun('limit', 'Grenzwert'),
+  toleranz: noun('tolerance', 'Toleranz'), prozent: noun('percent', 'Prozent'), anteil: noun('share', 'Anteil'),
+  faktor: noun('factor', 'Faktor'), kurs: noun('exchange rate', 'Kurs'), ort: noun('location', 'Ort'),
+  kostenart: noun('cost element', 'Kostenart'), urlaub: noun('leave', 'Urlaub'), abwesenheit: noun('absence', 'Abwesenheit'),
+  anwesenheit: noun('attendance', 'Anwesenheit'), gehalt: noun('salary', 'Gehalt'), lohn: noun('wage', 'Lohn'),
+  schicht: noun('shift', 'Schicht'), ueberstunden: noun('overtime', 'Überstunden'), zulage: noun('allowance', 'Zulage'),
+  reise: noun('trip', 'Reise'), reisekosten: noun('travel expenses', 'Reisekosten'), spesen: noun('expenses', 'Spesen'),
+  genehmiger: noun('approver', 'Genehmiger'), antragsteller: noun('requester', 'Antragsteller'), vorgesetzter: noun('manager', 'Vorgesetzter'),
+  zustand: noun('state', 'Zustand'), stoermeldung: noun('malfunction report', 'Störmeldung'), instandhaltung: noun('maintenance', 'Instandhaltung'),
+  wartung: noun('maintenance', 'Wartung'), techniker: noun('technician', 'Techniker'), ersatzteil: noun('spare part', 'Ersatzteil'),
+  ersatzteile: noun('spare parts', 'Ersatzteile'), lagerplatz: noun('storage bin', 'Lagerplatz'), umlagerung: noun('stock transfer', 'Umlagerung'),
+  kommissionierung: noun('picking', 'Kommissionierung'), verpackung: noun('packaging', 'Verpackung'), spediteur: noun('carrier', 'Spediteur'),
+  zoll: noun('customs', 'Zoll'), ausfuhr: noun('export', 'Ausfuhr'), einfuhr: noun('import', 'Einfuhr'), sanktion: noun('sanction', 'Sanktion'),
+  kalender: noun('calendar', 'Kalender'), feiertag: noun('public holiday', 'Feiertag'), arbeitstag: noun('working day', 'Arbeitstag'),
+  stichtag: noun('key date', 'Stichtag'), zeitpunkt: noun('point in time', 'Zeitpunkt'), gueltigkeit: noun('validity', 'Gültigkeit'),
+  zuschlag: noun('surcharge', 'Zuschlag'), abzug: noun('deduction', 'Abzug'), guthaben: noun('credit balance', 'Guthaben'),
+  forderung: noun('receivable', 'Forderung'), forderungen: noun('receivables', 'Forderungen'), verbindlichkeit: noun('liability', 'Verbindlichkeit'),
+  kreditlimit: noun('credit limit', 'Kreditlimit'), sachbearbeiter: noun('clerk', 'Sachbearbeiter'), freigeber: noun('approver', 'Freigeber'),
+  vertreter: noun('representative', 'Vertreter'), filiale: noun('branch', 'Filiale'), standort: noun('site', 'Standort'),
+  verkaeufer: noun('sales person', 'Verkäufer'), bon: noun('receipt', 'Bon'), anlieferung: noun('inbound delivery', 'Anlieferung'),
+  rueckmeldungen: noun('confirmations', 'Rückmeldungen'), auftragspositionen: noun('order items', 'Auftragspositionen'),
+  klaerfall: noun('case to clarify', 'Klärfall'), klaerfaelle: noun('cases to clarify', 'Klärfälle'),
+  // adjectives and participles
+  kritisch: adj('critical', 'kritisch'), geplant: adj('planned', 'geplant'), tatsaechlich: adj('actual', 'tatsächlich'),
+  vorlaeufig: adj('provisional', 'vorläufig'), endgueltig: adj('final', 'endgültig'), fehlend: adj('missing', 'fehlend'),
+  aktuell: adj('current', 'aktuell'), vorig: adj('previous', 'vorig'), zulaessig: adj('permitted', 'zulässig'),
+  unzulaessig: adj('not permitted', 'unzulässig'), ausreichend: adj('sufficient', 'ausreichend'), gemeldet: adj('reported', 'gemeldet'),
+  versendet: adj('sent', 'versendet'), bestaetigt: adj('confirmed', 'bestätigt'), ueberschritten: adj('exceeded', 'überschritten'),
+});
+
+/** 3.1.0: first parts of a compound the larger vocabulary reads (`Arbeits|zeit`, `Bar|betrag`). */
+const MODIFIERS_310: Readonly<Record<string, Entry>> = Object.freeze({
+  arbeits: noun('working', 'Arbeits'), bar: noun('cash', 'Bar'), mindest: noun('minimum', 'Mindest'), hoechst: noun('maximum', 'Höchst'),
+  reise: noun('travel', 'Reise'), zins: noun('interest', 'Zins'), mahn: noun('dunning', 'Mahn'), kredit: noun('credit', 'Kredit'),
+  ersatz: noun('replacement', 'Ersatz'), wartungs: noun('maintenance', 'Wartungs'), qualitaets: noun('quality', 'Qualitäts'),
+  vertriebs: noun('sales', 'Vertriebs'), personal: noun('personnel', 'Personal'), lohn: noun('wage', 'Lohn'), soll: noun('planned', 'Soll'),
+  ist: noun('actual', 'Ist'), rest: noun('remaining', 'Rest'), sonder: noun('special', 'Sonder'),
+  fremd: noun('external', 'Fremd'), eigen: noun('own', 'Eigen'), ziel: noun('target', 'Ziel'), quell: noun('source', 'Quell'),
+});
+
+/**
  * First parts of a compound noun that are not words of their own here
  * (`Liefer|datum`, `Bestell|nummer`). A noun of `WORDS` may also stand first;
  * then its singular English is used.
@@ -402,6 +471,11 @@ export interface WordSources {
   acronyms?: ReadonlySet<string>;
   /** SAP field names and other words the caller already knows (`kunnr` → "customer number"). */
   known?: (word: string) => string | null;
+  /**
+   * Read for engine 3.1.0 (`ENGINE_READS_310_FROM`): the larger vocabulary `WORDS_310` / `MODIFIERS_310` is read
+   * too. An older engine reads the vocabulary it always read.
+   */
+  reads310?: boolean;
 }
 
 /** A key of one of the tables — never an inherited one (`constructor`, `toString`). */
@@ -409,13 +483,13 @@ function own<T>(table: Readonly<Record<string, T>> | undefined, key: string): T 
   return table && Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined;
 }
 
-function lookup(word: string): Entry | null {
-  const hit = own(WORDS, word);
+function lookup(word: string, wide = false): Entry | null {
+  const hit = own(WORDS, word) ?? (wide ? own(WORDS_310, word) : undefined);
   if (hit) return hit;
   // An inflected adjective: offene, offenen, offener, letzte, erledigten …
   for (const ending of ['en', 'er', 'es', 'em', 'e']) {
     if (word.length > ending.length + 2 && word.endsWith(ending)) {
-      const stem = own(WORDS, word.slice(0, -ending.length));
+      const stem = own(WORDS, word.slice(0, -ending.length)) ?? (wide ? own(WORDS_310, word.slice(0, -ending.length)) : undefined);
       if (stem?.pos === 'adj') return { ...stem, de: stem.de + ending, inflected: true };
     }
   }
@@ -423,16 +497,17 @@ function lookup(word: string): Entry | null {
 }
 
 /** `lieferdatum` → Liefer|datum; `buchungskreis` → listed; `feldkatalog` → Feld|katalog. */
-function compound(word: string, depth = 0): Entry | null {
+function compound(word: string, depth = 0, wide = false): Entry | null {
   if (depth > 2 || word.length < 6) return null;
+  const words = (key: string) => own(WORDS, key) ?? (wide ? own(WORDS_310, key) : undefined);
   for (let cut = word.length - 3; cut >= 3; cut--) {
     const head = word.slice(cut);
-    const headEntry = depth === 0 ? (own(WORDS, head) ?? compound(head, depth + 1)) : own(WORDS, head) ?? null;
+    const headEntry = depth === 0 ? (words(head) ?? compound(head, depth + 1, wide)) : words(head) ?? null;
     if (!headEntry || (headEntry.pos !== 'noun' && headEntry.pos !== 'action')) continue;
     for (const first of [word.slice(0, cut), word.slice(0, cut).replace(/s$/, '')]) {
       const linkS = first.length < cut;
-      const listed = own(WORDS, first);
-      const mod = own(MODIFIERS, first) ?? (listed?.pos === 'noun' ? listed : null);
+      const listed = words(first);
+      const mod = own(MODIFIERS, first) ?? (wide ? own(MODIFIERS_310, first) : undefined) ?? (listed?.pos === 'noun' ? listed : null);
       if (!mod || first.length < 3) continue;
       const modEn = mod === listed ? singularEnglish(mod.en) : mod.en;
       const headNoun = headEntry.pos === 'action' ? headEntry.noun ?? headEntry.en : headEntry.en;
@@ -457,7 +532,7 @@ function classify(raw: string, sources: WordSources): Token | null {
   const word = asciiGerman(raw);
   if (!word) return null;
   if (/^\d+$/.test(word)) return { kind: 'abbr', entry: noun(word, word), upper: true };
-  const german = lookup(word);
+  const german = lookup(word, sources.reads310 === true);
   if (german) return { kind: 'de', entry: german };
   const shared = own(SHARED, word);
   if (shared) return { kind: 'shared', entry: shared };
@@ -473,7 +548,7 @@ function classify(raw: string, sources: WordSources): Token | null {
   if (sources.acronyms?.has(word)) return { kind: 'abbr', entry: noun(word.toUpperCase(), word.toUpperCase()), upper: true };
   const known = sources.known?.(word);
   if (known) return { kind: 'abbr', entry: noun(known, word.toUpperCase()), upper: true };
-  const parts = compound(word);
+  const parts = compound(word, 0, sources.reads310 === true);
   if (parts) return { kind: 'de', entry: parts };
   // A short token is an abbreviation (`FI`, `IC`, `VE`), written as it stands —
   // two letters, or a token with a digit. An unknown three-letter word may be
@@ -634,6 +709,15 @@ function gerund(verbWord: string): string {
   else if (/^(get|set|put|run|stop|plan)$/.test(head)) ing = `${head}${head.slice(-1)}ing`;
   else ing = `${head}ing`;
   return [ing, ...tail].join(' ');
+}
+
+/** 3.1.0: does a text hold a word this vocabulary reads as German (`ohne`, `Prüfung`, `nachverarbeitet` is not one)? */
+export function hasGermanWord(text: string, sources: WordSources = {}): boolean {
+  try {
+    return String(text ?? '').split(/[\s,.;:!?()'"/-]+/).filter(Boolean).some((w) => classify(w, sources)?.kind === 'de');
+  } catch {
+    return false;
+  }
 }
 
 /**
