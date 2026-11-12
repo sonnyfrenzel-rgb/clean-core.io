@@ -724,7 +724,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             <FirstLook
               project={project}
               projectId="demo"
-              buildUp={false}
               onReading={onReading}
               namingFrom="none"
               rulesBelow

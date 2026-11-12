@@ -62,7 +62,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  *
  * **Interim until v3.2.0** (release cut of 06.11.2026, so nothing a user had
  * goes missing): today's First insights blocks (`BusinessOpening`, rendered by
- * `FirstLook` in its end state) and `BusinessNextStep` stand unchanged below
+ * `FirstLook`, whose paced build-up retired with v3.1.0, AB-3) and `BusinessNextStep` stand unchanged below
  * the map; AB-6 and AB-4 replace them in place.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
@@ -176,9 +176,6 @@ export default function AnalyzeBusiness({
   /** "I'll look around myself": the invitation steps aside; one quiet line under the map keeps the way in. */
   const [lookingAround, setLookingAround] = useState(false);
   const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);
-  const openMap = useCallback(() => {
-    document.getElementById(BUSINESS_MAP_ID)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }, []);
 
   // The interim "Next step" bar under the map (until AB-4's two endings).
   const nothingOpen = useMemo(() => nothingOpenText(steps), [steps]);
@@ -316,10 +313,6 @@ export default function AnalyzeBusiness({
           <FirstLook
             project={project}
             projectId={projectId}
-            buildUp={false}
-            onOpenMap={openMap}
-            onWalk={signed !== null ? walk : undefined}
-            map={signed ? 'drawn' : 'unsigned'}
             fullMapBelow={signed !== null}
             rulesBelow
             questions={questions}

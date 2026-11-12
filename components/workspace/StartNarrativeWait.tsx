@@ -12,8 +12,8 @@ import { wt, bizNarrativeContinueNote, bizNarrativeWaited } from '@/lib/workspac
  *
  * The figure is the seconds actually waited, counted from the moment the start
  * asked — not a percentage, because nothing here knows how far the model is.
- * Shown in the build-up's last moment and where the map goes, so a reader who
- * skipped the build-up, or asked for less movement, is told the same.
+ * Shown where the map goes (Analyze, Business): the paced build-up whose last
+ * moment also showed it retired with v3.1.0.
  */
 export default function StartNarrativeWait({
   since,

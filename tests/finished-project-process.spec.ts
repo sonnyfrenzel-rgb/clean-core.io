@@ -98,10 +98,10 @@ test.describe('a finished project reopens on its process', () => {
     // The first look is rendered in every view, with no phase condition.
     expect(shell).toMatch(/firstLook: \(\s*\n\s*<div className="mt-5">/);
     expect(shell).not.toMatch(/nextStep === null[^\n]*firstLook|firstLook[^\n]*nextStep === null/);
-    // A second visit gets the end state, not nothing.
+    // Every visit gets the end state, not nothing (the paced build-up retired with v3.1.0, AB-3).
     const firstLook = read('components/workspace/FirstLook.tsx');
-    expect(firstLook).toContain("data-first-look={endStateOnly ? 'end-state' : 'complete'}");
-    expect(firstLook).toContain('const endStateOnly = reduced || skipped || !buildUp;');
+    expect(firstLook).toContain('<section data-first-look="end-state">');
+    expect(firstLook).not.toContain('endStateOnly');
   });
 
   test('Analyze has the way to the process where a run is signed', () => {

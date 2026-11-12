@@ -69,7 +69,7 @@ async function recordTipsDuringBuildUp(page: Page) {
     w.__tipWhileBuilding = false;
     w.__sawBuilding = false;
     new MutationObserver(() => {
-      const building = !!document.querySelector('[data-first-look="building"]');
+      const building = !!document.querySelector('[data-first-look="building"], [data-first-look-buildup]');
       if (building) w.__sawBuilding = true;
       if (building && document.querySelector('[data-coach-mark]')) w.__tipWhileBuilding = true;
     }).observe(document, { subtree: true, childList: true, attributes: true });
@@ -189,6 +189,9 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await page.waitForURL(/\/dashboard/, { timeout: 60000 });
   });
 
+  // The paced build-up retired with v3.1.0 (AB-3), so reduced motion no longer
+  // changes what is drawn and the card carries no `data-reduced-motion` mark;
+  // what is held is that nothing builds up, under reduced motion as without.
   test('(3) under reduced motion the end state stands at once — no build-up', async ({ page }) => {
     test.setTimeout(360 * 1000);
     const { email } = await communityAccount('ws-start-reduced');
@@ -199,7 +202,6 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await startExample(page, { width: 1440, height: 900 });
 
     await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-first-look="end-state"]')).toHaveAttribute('data-reduced-motion', 'true');
     const flags = await page.evaluate(() => ({
       __sawBuilding: (window as unknown as { __sawBuilding: boolean }).__sawBuilding,
     }));

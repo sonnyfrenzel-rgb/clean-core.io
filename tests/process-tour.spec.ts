@@ -292,8 +292,10 @@ test.describe('where it stands and what it writes', () => {
     expect(process).toMatch(/if \(takeProcessWalkRequest\(projectId\)\) setTourOpen\(true\)/);
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell).toContain('<ProcessTourEntry projectId={projectId} />');
-    expect(shell).toMatch(/onWalk=\{view === 'business' && signed !== null \? \(\) => requestProcessWalk\(projectId\) : undefined\}/);
-    expect(read('components/workspace/FirstLook.tsx')).toContain('data-first-look-walk=""');
+    // The First insights' own walk button stood beside the main-line picture, which retired with the
+    // build-up in v3.1.0 (AB-3); in Analyze, Business the invitation above the map opens it.
+    expect(read('components/workspace/FirstLook.tsx')).not.toContain('data-first-look-walk');
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).toContain('const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);');
     const tour = read('components/workspace/ProcessTour.tsx');
     expect(tour).not.toMatch(/setInterval|autoplay|auto-play/i);
   });

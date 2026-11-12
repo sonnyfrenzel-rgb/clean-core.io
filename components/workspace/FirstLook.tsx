@@ -3,7 +3,7 @@
 import OpenQuestionsLine from './OpenQuestionsLine';
 import type { OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Check, ChevronDown, ChevronRight, CircleDashed, FileCode, Footprints } from 'lucide-react';
+import { ArrowRight, Check, CircleDashed, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
@@ -14,7 +14,6 @@ import GlossaryTerm from '@/components/GlossaryTerm';
 import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import FirstLookBuildUp, { ExcerptSvg, type BuildUpMapState, type BuildUpNarrative } from './FirstLookBuildUp';
 import { BUSINESS_RULES_ID, requestRuleEditing, useIsOwner, useSignedInUid } from './BusinessRulesEditor';
 import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import RulesDoneLine from './RulesDoneLine';
@@ -37,15 +36,6 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import type { CustomerTexts } from '@/lib/abap/customer-texts';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
-import {
-  BUILD_UP_BUDGET,
-  BUILD_UP_MAP_WAIT,
-  BUILD_UP_MAP_WAIT_WITH_MODEL,
-  NAMING_WAIT_MS,
-  buildUpStageAt,
-  namingWaitOver,
-} from '@/lib/first-look-buildup';
-import { firstLookExcerpt } from '@/lib/first-look-excerpt';
 import { rulesStatus, stepStrip, type RulesStatus, type StepChip } from '@/lib/rules-editor';
 import { tokenizeAbapLine } from '@/lib/process-map';
 import { useProcessStates } from '@/hooks/useProcessStates';
@@ -63,6 +53,7 @@ import {
   tablesOf,
   traceabilityOf,
   yourProcessStage,
+  NAMING_WAIT_MS,
   type DecisionLine,
   type FirstLookFigure,
   type FirstLookStage,
@@ -98,91 +89,35 @@ import {
 } from '@/lib/workspace-messages';
 
 /**
- * The first look — `DESIGN.md` §5.1, §5.2, roadmap 2.7.
+ * The first insights — `DESIGN.md` §5.1, roadmap 2.7; since v3.1.0 the interim
+ * blocks below the map in Analyze, Business (plan
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2 and AB-3).
  *
- * Four stages: *Code read · Process recognised · In business language · This is
- * your process*. Three rules decide everything below, and each of them was a way
- * of getting this wrong:
+ * Four readings: *Code read · Process recognised · In business language · This
+ * is your process*. Three rules decide everything below, and each of them was a
+ * way of getting this wrong:
  *
  *   1. **Every number comes from the run.** The figures are built in
  *      `lib/first-look.ts` and each carries where it came from — the signed run,
  *      the engine here and now, or nowhere at all. A figure with no origin is
  *      printed as a word ("not analysed"), never as `0`. Nothing in this
  *      component computes a number of its own.
- *   2. **The work is never padded; the showing is paced** (§5.4, ADR-072). Each
- *      stage's data is produced by *its own call* — stage 1 by the table read,
- *      stage 2 by the skeleton, stage 3 by the stored naming, stage 4 by the
- *      rules — and on a small source all four land in two frames. What a
- *      reader sees is paced so it can be followed (owner, 03.10.2026: "not too
- *      fast"): every moment shows that real content, none shows a wait, and
- *      Skip and reduced motion go straight to the end.
+ *   2. **The end state, at once.** Each reading is produced by *its own call* —
+ *      stage 1 by the table read, stage 2 by the skeleton, stage 3 by the stored
+ *      naming, stage 4 by the rules — and the card shows what is being read
+ *      until all four are in, then its end state. The paced build-up with the
+ *      code column (ADR-072) retired with v3.1.0: the map is
+ *      the page above this card, and its names arrive there in place (ADR-108).
  *   3. **A stage with nothing to show says so.** Stage 3 needs a naming from
  *      roadmap 2.4; without one it reports the reason `applyNaming` gives and
  *      the technical names stay. §5.2 calls that a valid result, so it is not
  *      painted as a failure.
- *
- * `prefers-reduced-motion` shows the **end state** — not a faster build-up: the
- * work still takes what it takes, and nothing is revealed until all of it is in,
- * so no stage ever appears and disappears under a reader who asked for less
- * movement. "Skip" reaches the same state, which is why it sets the same flag.
- *
- * What this step deliberately does not build: the process map growing out of the
- * lit source line (roadmap 2.5, 2.9) and the plain-language sentence under the
- * name (roadmap 2.4). Both belong to other rows, and a placeholder for either
- * would be the claim the *Not determined* area exists to rule out.
  */
 
 const HAS_WINDOW = typeof window !== 'undefined';
 
-/**
- * How long the build-up's last moment waits for a start run that is still
- * being signed, and how long when the start writes the narrative first — both
- * counted from the end of the build-up, both set with its pace
- * (`lib/first-look-buildup.ts`). The start ends the wait for the model itself
- * at its ceiling, so the second is the cap of a cap — the build-up never holds
- * without end.
- */
-const MAP_WAIT = BUILD_UP_MAP_WAIT;
-const MAP_WAIT_WITH_MODEL = BUILD_UP_MAP_WAIT_WITH_MODEL;
-
-/** The states in which the start run is still under way. */
-function mapPending(map: BuildUpMapState): boolean {
-  return map === 'running' || map === 'writing';
-}
-
 /** Stage 3 without a stored naming — the technical names stay. */
 const NO_NAMING: { record: ProcessNamingRecord | null } = { record: null };
-
-function useReducedMotion(): boolean {
-  // Read once when the state is created, so not a single frame of the
-  // build-up is painted for a reader who asked for less movement (ADR-072:
-  // "the end state at once"). Both callers render this component only on the
-  // client — after the profile has loaded — so there is no server render to
-  // disagree with; without `matchMedia` the answer is "not reduced", and the
-  // effect below follows any later change.
-  const [reduced, setReduced] = useState(() => {
-    if (!HAS_WINDOW || typeof window.matchMedia !== 'function') return false;
-    try {
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    if (!HAS_WINDOW || typeof window.matchMedia !== 'function') return;
-    let query: MediaQueryList;
-    try {
-      query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    } catch {
-      return;
-    }
-    setReduced(query.matches);
-    const onChange = (event: MediaQueryListEvent) => setReduced(event.matches);
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  }, []);
-  return reduced;
-}
 
 /** Runs `work` after the next paint, so the previous stage is visible first. */
 function afterPaint(work: () => void): () => void {
@@ -345,19 +280,13 @@ function openingDecides(result: Result): { rules: OpeningRule[]; rulesMore: numb
 export default function FirstLook({
   project,
   projectId,
-  buildUp = true,
   onReading,
   namingFrom = 'project',
   proposedName = null,
-  onOpenMap,
-  onWalk,
-  map = 'unsigned',
-  narrative = null,
   fullMapBelow = false,
   rulesBelow = false,
   rulesOverride,
   onReviewRules,
-  onSettled,
   questions = null,
   onReadingFailed,
   elsewhere = null,
@@ -372,12 +301,6 @@ export default function FirstLook({
    * "Next step" above it).
    */
   onReadingFailed?: () => void;
-  /**
-   * False on a second visit — *"A second visit has no build-up"* (§5.2).
-   * The four calls still run in the same order; only the staged reveal is gone,
-   * which is the same thing `prefers-reduced-motion` and "Skip" ask for.
-   */
-  buildUp?: boolean;
   /**
    * The reading, handed up once every call has returned, so the screen around
    * this card can use the same skeleton and the same rule set instead of
@@ -397,28 +320,8 @@ export default function FirstLook({
    */
   proposedName?: string | null;
   /**
-   * Scrolls to the full process map, where the screen has one (Business). The
-   * picture in this card is the main line only; this is the way to the rest.
-   */
-  onOpenMap?: () => void;
-  /** Opens the guided tour on the process map, where the screen has one (Business; owner decision 21.10.2026). */
-  onWalk?: () => void;
-  /**
-   * Where the full map stands (ADR-072): drawn from a signed run, being signed
-   * by the start run, refused, or not signed. The build-up's last moment says
-   * which, and waits — briefly — for a start run that is still being signed,
-   * so it ends on the map rather than on an empty place for it.
-   */
-  map?: BuildUpMapState;
-  /**
-   * The start's narrative when the model is on: the build-up's last moment
-   * shows the wait, with the way not to wait (owner decision 03.10.2026).
-   */
-  narrative?: BuildUpNarrative | null;
-  /**
-   * True where the signed map stands directly under this card (Business). The
-   * row of first steps then gives way to it. The picture of the main line on
-   * the right stays (owner 10.10.2026, reversing 03.10.2026).
+   * True where the signed map stands with this card (Analyze, Business). The
+   * row of first steps then gives way to it.
    */
   fullMapBelow?: boolean;
   /**
@@ -436,8 +339,6 @@ export default function FirstLook({
   rulesOverride?: RulesStatus | null;
   /** Where the rule action leads, when the page has its own rules card (the demo). */
   onReviewRules?: () => void;
-  /** Told when the build-up is over (end state on screen) — the tips wait for it. */
-  onSettled?: (settled: boolean) => void;
   /**
    * The project's open questions (ADR-081). The card says them in their one
    * line; the list stands once on the page. `null` while not known.
@@ -455,13 +356,10 @@ export default function FirstLook({
   const hasSource = source.trim().length > 0;
   const sourceName =
     project?.auditMetadata?.inputFingerprint?.fileName || project?.name || projectId;
-  const reduced = useReducedMotion();
-
-  const [skipped, setSkipped] = useState(false);
   const [access, setAccess] = useState<TableDependency[] | null>(null);
   const [process, setProcess] = useState<ProcessReading | null>(null);
   const [naming, setNaming] = useState<{ record: ProcessNamingRecord | null } | null>(null);
-  /** The naming wait of its own (`NAMING_WAIT_MS`) is over — counts only when nothing animates. */
+  /** The naming wait (`NAMING_WAIT_MS`) is over: the end state stands with the names it has. */
   const [namingWaited, setNamingWaited] = useState(false);
   const [rules, setRules] = useState<BusinessRuleSet | null>(null);
   /**
@@ -491,7 +389,7 @@ export default function FirstLook({
    * So the reading is tied to what it was read from, and a change throws it away
    * during the render that brings it, before anything is painted (React's
    * "adjusting state when a prop changes"): a new project or source starts
-   * every stage, the naming wait and Skip over from nothing.
+   * every stage and the naming wait over from nothing.
    */
   const readingKey = `${projectId}\u0000${source}`;
   // 3.1.0 (H5b): the project's customer texts, for the story, "In short" and the rules alike.
@@ -504,7 +402,6 @@ export default function FirstLook({
     setNaming(null);
     setNamingWaited(false);
     setRules(null);
-    setSkipped(false);
     setStageFailed(false);
   }
 
@@ -559,22 +456,17 @@ export default function FirstLook({
   }, [source, hasSource, process, guarded, engineVersion]);
 
   /**
-   * "The model does not hold up the build-up" (mockup s0, DESIGN.md §5.2): the stored naming
-   * is one network read, and once the build-up's budget is spent — or the reader
-   * skipped — the end state does not wait for it. The process stands with the
-   * names it has; a naming that arrives later changes them once.
+   * The model does not hold up the first insights (DESIGN.md §5.2): the stored
+   * naming is one network read, and after `NAMING_WAIT_MS` the end state does
+   * not wait for it. The process stands with the names it has; a naming that
+   * arrives later changes them once.
    */
-  const [elapsed, setElapsed] = useState(0);
-  // Runs only when a build-up was asked for and nobody asked for less movement
-  // or pressed Skip (the clock below). Without it the clock stands still, so
-  // the wait for the naming has a timer of its own.
-  const animate = buildUp && !reduced && !skipped && hasSource;
   useEffect(() => {
-    if (!hasSource || naming || animate || namingWaited) return;
+    if (!hasSource || naming || namingWaited) return;
     const timer = setTimeout(() => setNamingWaited(true), NAMING_WAIT_MS);
     return () => clearTimeout(timer);
-  }, [readingKey, hasSource, naming, animate, namingWaited]);
-  const namingNow = naming ?? (namingWaitOver({ skipped, animate, elapsed, waited: namingWaited }) ? NO_NAMING : null);
+  }, [readingKey, hasSource, naming, namingWaited]);
+  const namingNow = naming ?? (namingWaited ? NO_NAMING : null);
   const named = useMemo(
     () => (process && namingNow ? applyNaming(process.context, namingNow.record) : null),
     [process, namingNow],
@@ -654,17 +546,6 @@ export default function FirstLook({
 
   const complete = !hasSource || result !== null || failed;
 
-  /**
-   * The process the build-up drew, kept in the end state (owner, 02.10.2026:
-   * "The process always has to be shown … with first look — the process was
-   * there briefly and then gone"). The build-up grows this drawing beside
-   * the code; the end state used to drop it for the step strip, so the one
-   * picture of the process on the first screen vanished after ~2.4 s. Same
-   * skeleton, same layout, plain names, every node with its line — nothing is
-   * added (`lib/first-look-excerpt.ts`).
-   */
-  const drawing = useMemo(() => firstLookExcerpt(process?.skeleton ?? null, source, 5, engineVersion), [process, source, engineVersion]);
-
   useEffect(() => {
     if (!process || !rules || tables === null) return;
     onReading?.({
@@ -677,62 +558,6 @@ export default function FirstLook({
   useEffect(() => {
     if (failed) onReadingFailed?.();
   }, [failed, onReadingFailed]);
-
-  const skip = useCallback(() => setSkipped(true), []);
-
-  /**
-   * The build-up's clock — at a pace a reader can follow (ADR-072).
-   *
-   * Runs only when a build-up was asked for and nobody asked for less movement
-   * or pressed Skip. The moments follow the budget in
-   * `lib/first-look-buildup.ts`; the end state takes over at its end, or as
-   * soon as the engine is done if that is later, or once the start run is
-   * signed if the map is still being signed then — at most MAP_WAIT later.
-   */
-  // Pause stops the clock where it stands; Continue runs it on from there
-  // (owner, 03.10.2026: a first-time reader may want to look longer).
-  const [paused, setPaused] = useState(false);
-  const togglePause = useCallback(() => setPaused((p) => !p), []);
-  const pause = useMemo(() => ({ paused, onToggle: togglePause }), [paused, togglePause]);
-  const clockRef = React.useRef({ key: readingKey, elapsed: 0 });
-  const mapRef = React.useRef(map);
-  useEffect(() => {
-    mapRef.current = map;
-  }, [map]);
-  // Once the start has been seen writing the narrative, the last moment may
-  // hold for the model's ceiling as well as for the signing.
-  const [sawWriting, setSawWriting] = useState(map === 'writing');
-  if (map === 'writing' && !sawWriting) setSawWriting(true);
-  const holdRef = React.useRef(MAP_WAIT);
-  useEffect(() => {
-    holdRef.current = sawWriting ? MAP_WAIT_WITH_MODEL : MAP_WAIT;
-  }, [sawWriting]);
-  useEffect(() => {
-    if (!animate || paused || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
-    // A new source starts from the beginning; a pause runs on from where it stood.
-    if (clockRef.current.key !== readingKey) clockRef.current = { key: readingKey, elapsed: 0 };
-    let handle = 0;
-    const start = window.performance.now() - clockRef.current.elapsed;
-    const tick = (now: number) => {
-      const next = now - start;
-      clockRef.current.elapsed = next;
-      setElapsed(next);
-      const waiting = mapPending(mapRef.current) && next < BUILD_UP_BUDGET.endAt + holdRef.current;
-      if (next < BUILD_UP_BUDGET.endAt || waiting) handle = window.requestAnimationFrame(tick);
-    };
-    handle = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(handle);
-  }, [animate, readingKey, paused]);
-  // The last moment holds while the start run is still under way — up to
-  // MAP_WAIT, or with the model the start's ceiling and MAP_WAIT, never longer:
-  // a slow server is said where the map goes, not by a build-up that does not
-  // end.
-  const waitingForMap =
-    mapPending(map) && elapsed < BUILD_UP_BUDGET.endAt + (sawWriting ? MAP_WAIT_WITH_MODEL : MAP_WAIT);
-  const playing = animate && (elapsed < BUILD_UP_BUDGET.endAt || !complete || waitingForMap);
-  useEffect(() => {
-    onSettled?.(!playing);
-  }, [playing, onSettled]);
 
   const owner = useIsOwner(project);
   /**
@@ -799,37 +624,18 @@ export default function FirstLook({
   );
   const uid = useSignedInUid();
 
-  const reached = stages.filter(Boolean).length + (finalStage ? 1 : 0);
-
   const shown: (FirstLookStage | null)[] = hasSource
     ? [stages[0], stages[1], stages[2], finalStage]
     : stages;
 
   /**
-   * One announcement per stage, and only the newest (`DESIGN.md` §2.8, §8;
-   * roadmap 3.0.4). The region used to hold every stage reached so far, so each
-   * new stage made a screen reader repeat the ones before it — four stages, ten
-   * announcements. It also lived inside whichever branch below was rendering,
-   * so the region itself was replaced as the build-up moved on, and a live
-   * region that is inserted together with its text is not reliably read at all.
-   * It now stands once, after the card, for the whole life of this component.
+   * One announcement, the newest stage reached (`DESIGN.md` §2.8, §8; roadmap
+   * 3.0.4). It stands once, after the card, for the whole life of this
+   * component: a live region inserted together with its text is not reliably
+   * read at all, and one that held every stage made a screen reader repeat them.
    */
-  // While the build-up plays, the stage on the screen is the one announced —
-  // the engine is usually done long before the picture is, and announcing its
-  // fourth stage while the first is painted would read the screen out of order.
-  const playingStage = playing ? buildUpStageAt(elapsed) : null;
-  const playingIndex =
-    playingStage === null
-      ? null
-      : playingStage === 'code-read'
-        ? 0
-        : playingStage === 'process-recognised'
-          ? 1
-          : playingStage === 'business-language'
-            ? 2
-            : 3;
   const latest =
-    (playingIndex !== null ? shown.slice(0, playingIndex + 1) : shown)
+    shown
       .slice()
       .reverse()
       .find((s): s is FirstLookStage => s !== null) ?? null;
@@ -854,13 +660,6 @@ export default function FirstLook({
     </p>
   );
 
-  /**
-   * Reduced motion and Skip both mean *the end state*. Until the engine has it
-   * there is nothing to show but what is being read — §5.1 is explicit that a
-   * slow engine says what it is reading rather than drawing a progress bar.
-   */
-  const endStateOnly = reduced || skipped || !buildUp;
-
   // A reading that did not succeed says so and stops (owner, 12.10.2026) —
   // never "Reading <file>." for as long as the page stands. The analysis is
   // not this card's: it is the Analyze tool's, from the signed run.
@@ -880,12 +679,14 @@ export default function FirstLook({
     );
   }
 
-  if (!complete && endStateOnly) {
+  // Until every reading is in, the card says what is being read (§5.1: a slow
+  // engine says what it is reading rather than drawing a progress bar).
+  if (!complete) {
     // `level={2}`: in Business this card is the first thing under the
     // project's `h1` (§2.9), and a card title there would skip a level (§2.3).
     return (
       <>
-        <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'}>
+        <section data-first-look="waiting">
           <CcCard title={wt('firstLook.title')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
             {lead}
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
@@ -898,48 +699,12 @@ export default function FirstLook({
     );
   }
 
-  /* ------------------------------------------------------------ the build-up */
-
-  if (playing) {
-    return (
-      <>
-        <section data-first-look="building" data-reached={reached}>
-          {/* The same name while it builds as at its end (roadmap 3.0.7). The
-              build-up's own headline stays an `h2` beside it — the step being
-              read, not the name of the screen. */}
-          <CcCard title={wt('firstLook.title')} level={2}>
-            {lead}
-            <FirstLookBuildUp
-              source={source}
-              sourceName={sourceName}
-              access={access}
-              skeleton={process?.skeleton ?? null}
-              named={named}
-              elapsed={elapsed}
-              onSkip={skip}
-              card={result?.card ?? null}
-              map={map}
-              narrative={narrative}
-              pause={pause}
-              story={result?.story ?? null}
-              engineVersion={engineVersion}
-            />
-          </CcCard>
-        </section>
-        {live}
-      </>
-    );
-  }
-
   /* ---------------------------------------------------------- the end state */
 
   return (
     <>
       <AskOnClick askNow={plain.askNow} step="plain" />
-      <section
-        data-first-look={endStateOnly ? 'end-state' : 'complete'}
-        data-reduced-motion={reduced ? 'true' : 'false'}
-      >
+      <section data-first-look="end-state">
         <CcCard
           title={wt('firstLook.title')}
           level={2}
@@ -964,8 +729,14 @@ export default function FirstLook({
         >
           {result ? lead : null}
           {result ? (
+            // The lines behind the card stand beside it when asked for. The
+            // picture of the main line that stood there retired with the
+            // build-up (v3.1.0): the map is the page above this card.
             <div
-              className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] xl:grid-cols-[minmax(0,1fr)_minmax(0,600px)]"
+              className={cn(
+                'grid grid-cols-1 gap-4',
+                sourceOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] xl:grid-cols-[minmax(0,1fr)_minmax(0,600px)]',
+              )}
             >
               {rulesBelow ? (
                 <BusinessOpening
@@ -1003,7 +774,6 @@ export default function FirstLook({
                       mapBelow={fullMapBelow}
                       rulesBelow
                       stages={shown}
-                      endStateOnly={endStateOnly}
                       questions={questions}
                     />
                   }
@@ -1019,22 +789,14 @@ export default function FirstLook({
                   mapBelow={fullMapBelow}
                   onReviewRules={onReviewRules}
                   stages={shown}
-                  endStateOnly={endStateOnly}
                   questions={questions}
                 />
               )}
-              <div className="flex min-w-0 flex-col gap-4">
-                {/* The main line stays on the right after the build-up, also
-                    where the full map stands under this card (owner 10.10.2026,
-                    reversing 03.10.2026): it is the one picture of the process
-                    a reader sees without scrolling. */}
-                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} onWalk={onWalk} sticky={!sourceOpen} />
-                {sourceOpen ? (
-                  <div data-first-look-source="" className="min-w-0">
-                    <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
-                  </div>
-                ) : null}
-              </div>
+              {sourceOpen ? (
+                <div data-first-look-source="" className="min-w-0">
+                  <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
+                </div>
+              ) : null}
             </div>
           ) : (
             <p data-first-look-result="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
@@ -1042,7 +804,7 @@ export default function FirstLook({
             </p>
           )}
 
-          {/* The four stages stay on the page after the build-up: they are the
+          {/* The four stages stay on the page: they are the
               receipt for every figure above. Folded, not removed — the process
               owner reads the answer, the sceptic opens the receipt. Open when
               there is no answer, because then the stages are all there is.
@@ -1052,7 +814,7 @@ export default function FirstLook({
           <div className="mt-4 border-t border-cc-line pt-2">
             <CcDisclosure title={wt('firstLook.derivedTitle')} defaultOpen={!result} level={3}>
               <ol
-                data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
+                data-first-look-stages="end-state"
                 className="m-0 flex list-none flex-col gap-2 p-0"
               >
                 {shown.map((stage, i) => (
@@ -1080,106 +842,6 @@ export default function FirstLook({
 }
 
 /* ------------------------------------------------------- the end state, parts */
-
-/**
- * The picture of the process in the end state — the drawing the build-up
- * grew, whole and with plain names. A source the engine could not draw says
- * so in one sentence; it never leaves an empty frame.
- */
-export function FirstLookProcess({
-  drawing,
-  onOpenMap,
-  onWalk,
-  sticky = false,
-}: {
-  drawing: ReturnType<typeof firstLookExcerpt>;
-  onOpenMap?: () => void;
-  onWalk?: () => void;
-  /** Beside the step list on a wide screen, the card stays in view while the list scrolls. */
-  sticky?: boolean;
-}) {
-  // The drawing stands at the card's width with a readable minimum
-  // (`ExcerptSvg fit`), so a long main line is taller than a screen. On a wide
-  // screen the drawing then scrolls inside the card (on a phone sideways, past
-  // the readable minimum), and the card says so while there is more — never a silent clip (owner 10.10.2026: the line
-  // stopped at "Read vendor" with nothing to say more followed).
-  const scroller = React.useRef<HTMLDivElement>(null);
-  const [more, setMore] = useState<'below' | 'right' | null>(null);
-  useEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    const measure = () =>
-      setMore(
-        el.scrollHeight - el.clientHeight - el.scrollTop > 8
-          ? 'below'
-          : el.scrollWidth - el.clientWidth - el.scrollLeft > 8
-            ? 'right'
-            : null,
-      );
-    measure();
-    el.addEventListener('scroll', measure, { passive: true });
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-    observer?.observe(el);
-    return () => {
-      el.removeEventListener('scroll', measure);
-      observer?.disconnect();
-    };
-  }, [drawing]);
-  if (drawing.nodes.length === 0) {
-    return (
-      <p data-first-look-process="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-        {wt('firstLook.processNone')}
-      </p>
-    );
-  }
-  return (
-    <figure
-      data-first-look-process="drawn"
-      className={cn(
-        'm-0 flex min-w-0 flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4',
-        sticky && 'lg:sticky lg:top-20',
-      )}
-    >
-      <figcaption className="text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-        {wt('firstLook.processTitle')}
-      </figcaption>
-      <div
-        ref={scroller}
-        data-first-look-process-scroll={more ?? 'end'}
-        // A focusable region, so a keyboard reader can scroll a drawing taller than the card.
-        tabIndex={more ? 0 : undefined}
-        role={more ? 'region' : undefined}
-        aria-label={more ? wt('firstLook.processLabel') : undefined}
-        className="min-w-0 overflow-x-auto rounded-cc-row focus-visible:outline-2 focus-visible:outline-cc-focus lg:max-h-[calc(100dvh-16rem)] lg:overflow-y-auto"
-      >
-        <ExcerptSvg drawing={drawing} grown={drawing.nodes.length} named fit label={wt('firstLook.processLabel')} />
-      </div>
-      {more ? (
-        <p
-          data-first-look-process-more={more}
-          className="m-0 flex items-center gap-1 border-t border-cc-line pt-2 text-[12px] font-medium text-cc-ink-muted"
-        >
-          {more === 'below' ? <ChevronDown size={16} aria-hidden={true} /> : <ChevronRight size={16} aria-hidden={true} />}
-          {wt(more === 'below' ? 'firstLook.processMoreBelow' : 'firstLook.processMoreRight')}
-        </p>
-      ) : null}
-      {onOpenMap || onWalk ? (
-        <div className="cc-no-print flex flex-wrap items-center gap-2">
-          {onWalk ? (
-            <CcButton variant="secondary" icon={<Footprints size={16} aria-hidden={true} />} onClick={onWalk} data-first-look-walk="">
-              {wt('walk.entryOpen')}
-            </CcButton>
-          ) : null}
-          {onOpenMap ? (
-            <CcButton variant="ghost" onClick={onOpenMap} data-first-look-open-map="">
-              {wt('firstLook.openMap')}
-            </CcButton>
-          ) : null}
-        </div>
-      ) : null}
-    </figure>
-  );
-}
 
 /** A line anchor chip, labelled for a screen reader. */
 function Anchor({ anchor }: { anchor: string | null }) {
@@ -1243,7 +905,6 @@ function EndState({
   rulesBelow = false,
   onReviewRules,
   stages,
-  endStateOnly,
   questions,
 }: {
   /** The project a rule request is made for. */
@@ -1264,7 +925,6 @@ function EndState({
   onReviewRules?: () => void;
   /** The four stages — the receipt, folded into the one details row when the rules stand below. */
   stages: (FirstLookStage | null)[];
-  endStateOnly: boolean;
 }) {
   const { card } = result;
   const [showCode, setShowCode] = useState(false);
@@ -1496,7 +1156,7 @@ function EndState({
               {anyPlain ? <CcSwitch label={wt('firstLook.showCode')} checked={showCode} onChange={setShowCode} /> : null}
               <DecisionList card={card} showCode={showCode} />
               <ol
-                data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
+                data-first-look-stages="end-state"
                 className="m-0 flex list-none flex-col gap-2 p-0"
               >
                 {stages.map((stage, i) => (

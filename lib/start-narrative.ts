@@ -19,10 +19,11 @@ import type { AssessmentTarget } from '@/lib/assessment-target';
  * the prompt is written here, so the narrative of a start and the narrative of
  * Analyze cannot drift apart.
  *
- * It runs while the first look builds up, not before or after it (owner,
- * 03.10.2026: "use the time of the first steps"): the build-up paints the
- * engine's own reading, which needs no model, and only its last moment waits
- * for the answer — never past `START_NARRATIVE_CEILING_MS` (`lib/engine-run.ts`).
+ * It runs at the start, while the page already shows the engine's own reading
+ * (owner, 03.10.2026: "use the time of the first steps"; since v3.1.0 the
+ * summary and the first insights in Analyze, Business, the paced build-up having
+ * retired): only the map's place waits for the answer — never past
+ * `START_NARRATIVE_CEILING_MS` (`lib/engine-run.ts`).
  *
  * The answer is checked the way `lib/analysis-run.ts` checks it — readable JSON,
  * one object — and handed on byte for byte; the run route normalises its own

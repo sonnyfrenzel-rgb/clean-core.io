@@ -29,17 +29,17 @@ import type { Project } from '@/lib/types';
  *   - `failed`  — the route refused or the request failed, with its sentence.
  *
  * **At most one start per project and page view.** The automatic start is
- * asked for by the first look (`?first=1`, first visit), and React may mount
+ * asked for by Analyze, Business (`?first=1`, first visit), and React may mount
  * twice in development; a second request would be a second run — for a
  * shipped example after its free first one, a charged run. The guard is a
  * module set, so a remount cannot start another; a reload is a new page and
- * the first look is then marked seen, so it does not start automatically
+ * the first visit is then marked seen, so it does not start automatically
  * again (the page offers the manual start instead).
  *
  * **With the model on** (owner decision 03.10.2026): when the account's
  * analysis stage is on and a key is available, the start first asks the model
  * for the narrative — the same analysis Analyze runs (`lib/start-narrative.ts`)
- * — while the first look builds up, and signs that one run with it. The wait
+ * — while the map's place says so (`StartNarrativeWait`), and signs that one run with it. The wait
  * ends at `START_NARRATIVE_CEILING_MS`, on a refusal or failure of the call, or
  * when the reader goes on without it (`continueWithout`); the run is then
  * signed with the engine's reading alone and `narrativeMissing` says why. Each
@@ -206,8 +206,8 @@ export function useStartRun({
   }, []);
 
   // The automatic start waits for the account's model answer, so a start with
-  // the model off never asks it, and one with the model on asks it from the
-  // first moment of the build-up.
+  // the model off never asks it, and one with the model on asks it as soon as
+  // the page is ready.
   useEffect(() => {
     if (auto && startable && phase === 'idle' && !model.loading) start();
   }, [auto, startable, phase, start, model.loading]);

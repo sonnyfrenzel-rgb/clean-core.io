@@ -65,18 +65,20 @@ import { engineVersionOfProject } from './run-engine-version';
 /* ------------------------------------------------------- the second visit */
 
 /**
- * *"A second visit has no build-up"* — `DESIGN.md` §5.2.
+ * Whether this browser has had the first visit of a project — once the paced
+ * build-up's "a second visit has no build-up" (`DESIGN.md` §5.2); since v3.1.0
+ * the rule that the start run signs by itself only on the first visit after an
+ * import or an example (`?first=1`, `components/analyze/AnalyzeBusiness.tsx`).
  *
  * In the browser and only in the browser, for the same reason the coach marks
  * are (ADR-036, `lib/coach-marks.ts`): what a person has already seen is not a
  * fact about the case, and it does not belong on the account. Keyed by project
- * because the build-up is about *this* code — a second project is a second first
- * look.
+ * because the first visit is about *this* code.
  *
- * Every access is wrapped. When storage cannot be read the answer is "not seen",
- * so the build-up runs again: a build-up shown twice is a few hundred
- * milliseconds, and one suppressed by a failed read is the whole point of the
- * step gone missing.
+ * Every access is wrapped. When storage cannot be read the answer is "not seen":
+ * a start offered by itself twice signs nothing twice (`hooks/useStartRun.ts`
+ * reads the project first), and one suppressed by a failed read leaves the
+ * reader a button where the map would stand.
  */
 export const FIRST_LOOK_SEEN_KEY = 'cc.workspace.firstLook.seen';
 
@@ -103,9 +105,17 @@ export function markFirstLookSeen(projectId: string): void {
       JSON.stringify([...new Set([...seen, projectId])].slice(-50)),
     );
   } catch {
-    /* private window, blocked site data — the build-up runs once more */
+    /* private window, blocked site data — the first visit counts once more */
   }
 }
+
+/**
+ * How long the first insights wait for the stored naming before they stand
+ * with the names they have (`components/workspace/FirstLook.tsx`). A naming
+ * read that never settled used to keep the card on "reading" for good; a
+ * naming that arrives later still changes the names once.
+ */
+export const NAMING_WAIT_MS = 2500;
 
 /* ------------------------------------------------------------------ anchors */
 

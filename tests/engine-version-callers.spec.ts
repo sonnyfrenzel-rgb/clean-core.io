@@ -56,8 +56,7 @@ const POSITIONAL: Readonly<Record<string, number>> = {
   readEngineFacts: 2,
   deriveEngineCasesOf: 2,
   travellingFact: 2,
-  // 3.0.21: the First-insights drawing sets the test-data switch apart from engine 3.0.20 on.
-  firstLookExcerpt: 4,
+  // (3.0.21's `firstLookExcerpt`, the First-insights drawing, retired with the build-up in v3.1.0.)
   // 3.0.21: "What it decides" reads the rule baskets from that engine on.
   openingDecisions: 3,
 };

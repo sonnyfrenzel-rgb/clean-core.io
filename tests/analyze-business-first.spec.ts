@@ -106,7 +106,19 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
     expect(map).toBeGreaterThan(BUSINESS.indexOf('data-analyze-summary'));
     expect(look).toBeGreaterThan(map);
     expect(next).toBeGreaterThan(look);
-    expect(BUSINESS).toContain('buildUp={false}');
+    // In their end state: the paced build-up retired with v3.1.0 (AB-3), so there is nothing to switch off.
+    expect(BUSINESS).not.toContain('buildUp');
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLookBuildUp.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(ROOT, 'lib/first-look-buildup.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(ROOT, 'lib/first-look-excerpt.ts'))).toBe(false);
+    expect(read('components/workspace/FirstLook.tsx')).not.toMatch(/buildUp|FirstLookBuildUp|firstLookExcerpt/);
+  });
+
+  test('the first visit is marked seen once the project is ready here, not when it was asked for', () => {
+    // Carried from the retired `first-look-buildup-view` spec (a QA finding of 3.0.x): marked when it was
+    // asked for, before the project loaded, a failed load cost the reader their first visit.
+    expect(BUSINESS.match(/markFirstLookSeen\(/g) ?? []).toHaveLength(1);
+    expect(BUSINESS).toContain("if (state === 'ready' && autoStart === true) markFirstLookSeen(projectId);");
   });
 
   test('the project opens there: the starter examples and the own-code import send it to Analyze', () => {

@@ -17,9 +17,10 @@ import { signInViaLanding } from './helpers/sign-in';
  * And 03.10.2026: "the complete process map has to be created directly."
  *
  * Since ADR-072 the start signs the engine's reading itself, so the first look
- * ends on the full map, drawn from that run, right under the answer. This
- * walks the real path — own code, `?first=1`, no Analyze — and reads the first
- * screen after the build-up and again five seconds later.
+ * ends on the full map, drawn from that run. Since v3.1.0 (AB-2, AB-3) the
+ * project opens on that map in Analyze, Business, with no build-up before it.
+ * This walks the real path — own code, `?first=1`, no score page — and reads
+ * the first screen once it stands and again five seconds later.
  */
 
 const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -43,7 +44,7 @@ async function firstScreen(page: Page) {
   // (interim until v3.2.0).
   await expect(page.locator('[data-analyze-summary]')).toBeInViewport();
   await expect(page.locator('[data-analyze-map]')).toBeInViewport();
-  await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible();
+  await expect(page.locator('[data-first-look="end-state"]')).toBeVisible();
   // The process stands in the first screen — since 03.10.2026 as the story of
   // its steps in plain words, the opening of the Business view (owner: "he just
   // wants to know more about his old process") — and the full map, drawn from
@@ -58,9 +59,9 @@ async function firstScreen(page: Page) {
   await expect(page.locator('[data-process-story]')).toBeAttached();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
-  // The main line stays on the right after the build-up (owner 10.10.2026,
-  // reversing 03.10.2026).
-  await expect(page.locator('[data-first-look-process="drawn"]')).toBeVisible();
+  // The picture of the main line beside the first insights retired with the
+  // build-up in v3.1.0 (AB-3): the map above them is the one picture.
+  await expect(page.locator('[data-first-look-process]')).toHaveCount(0);
 }
 
 test.describe('a new project: the first look ends on the full map', () => {
@@ -97,7 +98,7 @@ test.describe('a new project: the first look ends on the full map', () => {
     await page.click('[data-own-code-start]');
 
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
-    // No build-up since AB-2: the map stands at once, the first look's blocks below it in their end state.
+    // No build-up since AB-2/AB-3: the map stands at once, the first look's blocks below it in their end state.
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });

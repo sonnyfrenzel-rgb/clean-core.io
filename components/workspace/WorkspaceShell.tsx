@@ -52,7 +52,6 @@ import type { SourceReading } from '@/lib/first-look';
 import type { ProcessSummary } from '@/lib/process-summary';
 import { signedSourceOf } from '@/lib/signed-source';
 import type { StartRun } from '@/hooks/useStartRun';
-import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint, nothingOpenText } from '@/lib/next-step';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { businessNextStep } from '@/lib/business-next-step';
@@ -598,33 +597,6 @@ export default function WorkspaceShell({
     };
   }, [view]);
 
-  /** Where the full map stands, for the first look's last moment (ADR-072). */
-  const mapState: BuildUpMapState = signed
-    ? 'drawn'
-    : startRun?.phase === 'running'
-      ? startRun.step === 'narrative'
-        ? 'writing'
-        : 'running'
-      : startRun?.phase === 'failed'
-        ? 'failed'
-        : 'unsigned';
-
-  /** The start's narrative, when the model is on (owner decision 03.10.2026). */
-  const startNarrative: BuildUpNarrative | null = useMemo(
-    () =>
-      startRun && startRun.callsModel
-        ? { since: startRun.narrativeSince, onContinue: startRun.continueWithout, withModel: true }
-        : null,
-    [startRun],
-  );
-
-  /**
-   * The tips wait for the first look to settle: during the build-up a popover
-   * stood over the very content being built (owner, 03.10.2026).
-   */
-  const [firstLookSettled, setFirstLookSettled] = useState(!buildUp);
-  const onFirstLookSettled = useCallback((settled: boolean) => setFirstLookSettled(settled), []);
-
   /** Deterministic, from the branches of the code. No model call (§5.3). */
   const answer: PreAnswered | null = useMemo(
     () =>
@@ -718,7 +690,6 @@ export default function WorkspaceShell({
   // Only Business builds the first look up; no other view has one to wait for.
   const marksReady =
     marks.ready &&
-    (firstLookSettled || view !== 'business') &&
     (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
   const currentMark = marksReady ? marks.current : null;
   // "Select the decision point" stands right above the map where Business has
@@ -1070,16 +1041,10 @@ export default function WorkspaceShell({
         <FirstLook
           project={project}
           projectId={projectId}
-          buildUp={buildUp}
           onReading={onReading}
           onReadingFailed={onReadingFailed}
-          onOpenMap={view === 'business' ? openMap : undefined}
-          onWalk={view === 'business' && signed !== null ? () => requestProcessWalk(projectId) : undefined}
-          map={mapState}
-          narrative={startNarrative}
           fullMapBelow={view === 'business' && signed !== null}
           rulesBelow={view === 'business'}
-          onSettled={onFirstLookSettled}
           questions={questions}
           elsewhere={givesAwayElsewhere}
         />

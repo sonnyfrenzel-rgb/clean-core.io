@@ -154,7 +154,6 @@ export const WORKSPACE_PAGE_MESSAGES = {
   // it builds, at its end and in the demo tour, so it is not read as Analyze.
   'firstLook.title': 'First insights into your process',
   'firstLook.lead': 'The first reading of this program, taken straight from its code. It is not the analysis: that is the Analyze tool.',
-  'firstLook.skip': 'Skip',
   'firstLook.noProgramName': 'No program name in this source',
   'firstLook.sourceLine': 'Source line',
   'firstLook.noLine': 'no line',
@@ -630,11 +629,6 @@ export function firstLookMoreRules(n: number): string {
 /** "Outcomes: approved · rejected". */
 export function firstLookOutcomes(outcomes: readonly string[]): string {
   return `Outcomes: ${outcomes.join(' · ')}`;
-}
-
-/** "Local function-module call (6)". */
-export function firstLookOpenGroup(label: string, n: number): string {
-  return `${label} (${n})`;
 }
 
 /** "9 not determined". */
