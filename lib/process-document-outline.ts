@@ -7,6 +7,7 @@ import { readCapabilityFacts } from '@/lib/documentation-capabilities';
 import { programSummary, readProgramSummaryFacts } from '@/lib/program-summary-text';
 import { authorClaimOf } from '@/lib/program-summary-check';
 import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableHitPolicy, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
+import { documentRuleCounts, documentRulesLine } from '@/lib/rule-counts';
 import {
   EMPTY_SECTION,
   AI_GENERATED_LABEL,
@@ -572,14 +573,13 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
   const steps = doc.overview.path.filter((e): e is PdStep => e.kind === 'step');
   const tables = doc.decisionTables ?? [];
   const list = meta.openQuestions ?? null;
-  const brRules = doc.rules.filter((r) => /^BR-\d+$/.test(r.ref) && !/^Always/.test(r.condition)).length;
-  const fixedRules = doc.rules.filter((r) => /^Always/.test(r.condition)).length;
-  const decisionRows = doc.rules.length - brRules - fixedRules;
+  // HF-e (3.0.22): one count source — the chapter's rows are entries; its business rules are the register's.
+  const ruleRows = documentRuleCounts(doc.rules);
 
   const figures: PdFigure[] = [
     { section: 'overview', label: 'Steps', value: steps.length },
     { section: 'overview', label: 'Decision points', value: doc.overview.decisions },
-    { section: 'rules', label: 'Business rules', value: doc.rules.length },
+    { section: 'rules', label: 'Business rules', value: ruleRows.businessRules },
     { section: 'exceptions', label: 'Exceptions', value: doc.exceptions.length },
     { section: 'systems', anchor: 'integrations', label: 'Integrations', value: doc.integrations.length },
     { section: 'questions', label: 'Open questions', value: list ? list.open : null },
@@ -607,7 +607,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
       ? `${doc.overview.sentence} A run starts from a selection screen with ${plural(t.selection.length, 'input')}.`
       : doc.overview.sentence,
     rules: doc.rules.length
-      ? `${plural(doc.rules.length, 'rule')}: ${plural(brRules, 'business rule')}, ${plural(decisionRows, 'decision point')}, ${plural(fixedRules, 'fixed value')}${tables.length ? `; ${plural(tables.length, 'decision table')}` : ''}.`
+      ? `${documentRulesLine(ruleRows)}${tables.length ? `; ${plural(tables.length, 'decision table')}` : ''}.`
       : tables.length ? `${plural(tables.length, 'decision table')}.` : EMPTY_SECTION.rules,
     exceptions: doc.exceptions.length
       ? `${plural(stops, 'case stops', 'cases stop')} the run with an error; ${plural(warns, 'warns', 'warn')} and continue; ${plural(ends, 'ends', 'end')} a step or the run early.`
@@ -662,7 +662,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
   const n = (v: number) => (v > 0 ? String(v) : wt('doc.chapterNone'));
   const chapters: PdChapter[] = [
     { key: 'overview', label: wt('doc.chapterOverview'), count: n(steps.length), question: `${wt('doc.goToWhat')} ${wt('doc.goToWho')} — ${plural(steps.length, 'step')}` },
-    { key: 'rules', label: wt('doc.chapterRules'), count: n(doc.rules.length + tables.length), question: `${wt('doc.goToRules')} — ${plural(doc.rules.length, 'rule')}${tables.length ? `, ${plural(tables.length, 'decision table')}` : ''}` },
+    { key: 'rules', label: wt('doc.chapterRules'), count: n(ruleRows.businessRules), question: `${wt('doc.goToRules')} — ${documentRulesLine(ruleRows)}${tables.length ? `, ${plural(tables.length, 'decision table')}` : ''}` },
     { key: 'exceptions', label: wt('doc.chapterExceptions'), count: n(doc.exceptions.length), question: `${wt('doc.goToFails')} — ${plural(doc.exceptions.length, 'case')}` },
     { key: 'outputs', label: wt('doc.chapterOutputs'), count: n(doc.outputs.length), question: `${wt('doc.goToChanges')} — ${plural(doc.outputs.length, 'effect')}` },
     { key: 'systems', label: wt('doc.chapterSystems'), count: n(t.data.length + doc.integrations.length), question: `${wt('doc.goToSystems')} — ${plural(t.data.length, 'table')} read, ${plural(doc.integrations.length, 'call')}` },
@@ -680,7 +680,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     })(),
     authorClaim: authorClaimOf(readProgramSummaryFacts(doc.programSummary)),
     facts: readCapabilityFacts(doc.facts),
-    counts: { steps: steps.length, decisions: doc.overview.decisions, rules: doc.rules.length + tables.length, exceptions: doc.exceptions.length, inputs: t.selection.length },
+    counts: { steps: steps.length, decisions: doc.overview.decisions, rules: ruleRows.businessRules, exceptions: doc.exceptions.length, inputs: t.selection.length },
     tableWord: (name) => tableWords.get(name.toUpperCase()) ?? null,
     // The owner's RACI is the one thing a person recorded here (ADR-084 (13)): "edited 2026-10-10".
     recorded: meta.raci && meta.raci.note.startsWith(RACI_EDITED_NOTE)

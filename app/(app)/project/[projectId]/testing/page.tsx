@@ -1208,7 +1208,7 @@ export default function TestingSandboxPage() {
   const probeBasisReading = probeBasis(coveringReceipt, caseIdsForProbe);
   const evidence = {
     coverage: materialRuleRead.rules
-      ? ruleCoverage(materialRuleRead.rules, testCases as unknown as Array<Record<string, unknown>>, originEngine.engine)
+      ? ruleCoverage(materialRuleRead.rules, testCases as unknown as Array<Record<string, unknown>>, originEngine.engine, materialRuleRead.all)
       : null,
     coverageNote: !originSource
       ? 'No signed source is on this project, so the rules of the original cannot be read.'

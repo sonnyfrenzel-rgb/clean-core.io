@@ -36,6 +36,7 @@
 
 import type { BusinessRuleSet } from './abap/business-rule-set';
 import type { ElementState } from './process-states';
+import { tracedRulesLine } from './rule-counts';
 import {
   checkScenarioOrigin,
   lineWord,
@@ -298,7 +299,10 @@ export interface RuleCoverage {
   notAsked: string[];
   /** Traced cases whose rule id or lines do not match the source. */
   mismatched: Array<{ caseId: string; ruleId: string; problem: string }>;
+  /** The rules a case can reach (`materialRules`). */
   total: number;
+  /** HF-e (3.0.22): every business rule of the original, the register's count, when known. */
+  all?: number;
 }
 
 /**
@@ -312,6 +316,8 @@ export function ruleCoverage(
   rules: ReadonlyArray<{ id: string }>,
   cases: ReadonlyArray<Record<string, unknown>>,
   engine: OriginEngine | null,
+  /** Every business rule of the original (`deriveBusinessRules(…).rules.length`), when the caller holds it — `rules` is the reachable part. */
+  allRules: number | null = null,
 ): RuleCoverage {
   const wanted = new Set(rules.slice(0, MAX_PROMPT_RULES).map((r) => r.id));
   const covered = new Set<string>();
@@ -336,6 +342,7 @@ export function ruleCoverage(
     notAsked: order.slice(MAX_PROMPT_RULES),
     mismatched,
     total: order.length,
+    ...(allRules !== null ? { all: allRules } : {}),
   };
 }
 
@@ -347,7 +354,7 @@ export function ruleCoverage(
  */
 export function ruleCoverageSentence(c: RuleCoverage): string {
   if (c.total === 0) return 'The engine found no business rule in the original, so no case can be traced to one.';
-  const parts = [`${c.covered.length} of ${c.total} business rules of the original have a traced case · the expected results are model-stated from the original, not verified`];
+  const parts = [`${tracedRulesLine(c.covered.length, c.total, c.all ?? null)} · the expected results are model-stated from the original, not verified`];
   if (c.missing.length > 0) {
     const shown = c.missing.slice(0, 8).join(', ');
     parts.push(`not covered: ${shown}${c.missing.length > 8 ? ` and ${c.missing.length - 8} more` : ''}`);

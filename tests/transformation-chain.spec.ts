@@ -134,11 +134,11 @@ test.describe('the chain', () => {
     expect(by('analyze').when).toBe('signed run 12 Oct 2026');
     // Rules: keep 1 + drop 1 decided; a Clarify is a question and still open.
     expect(by('business-rules').facts.map((f) => [f.text, f.provenance])).toEqual([
-      ['4 rules — 2 decided by you: 1 keep, 0 change, 1 drop', 'confirmed'],
-      ['2 open — implemented as the original and marked open', 'not-determined'],
+      ['4 business rules — 2 decided: 1 keep, 0 change, 1 drop', 'confirmed'],
+      ['2 business rules open — implemented as the original and marked open', 'not-determined'],
     ]);
     expect(by('business-rules').when).toBe('need revision 3');
-    expect(by('business-rules').warn?.text).toBe('2 rules have no decision yet.');
+    expect(by('business-rules').warn?.text).toBe('2 business rules have no decision yet.');
     expect(by('business-rules').warn?.fix.href).toBe('/project/p1/design?view=business&origin=transformation.tips#rule-questions');
     // Design: the route with its reason, a proposal until confirmed; the warning leads to the sign-off.
     expect(by('design').facts[0]).toMatchObject({ text: 'Target: Side-by-side (CAP) — reason: It uploads files and runs outside the posting LUW.', provenance: 'proposed' });
@@ -230,7 +230,7 @@ test.describe('the tips', () => {
       ['decision', 6, 1],
     ]);
     const [rules, reqs, nfr, target, decision] = tips;
-    expect(rules.title).toBe('Decide the 2 open rules');
+    expect(rules.title).toBe('Decide the 2 open business rules');
     expect(rules.impact).toMatch(/keep, change or drop/);
     expect(rules.inCode).toMatch(/dropped rule is left out/);
     expect(rules.link.href).toBe('/project/p1/design?view=business&origin=transformation.tips#rule-questions');

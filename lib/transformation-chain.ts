@@ -35,6 +35,7 @@
 import type { Project } from '@/lib/types';
 import type { ProvenanceValue } from '@/lib/provenance';
 import type { RuleRegister, RuleRow } from '@/lib/rule-register';
+import { decideOpenRules, openRulesLine, openRulesWarning, ruleDecisionCounts, ruleDecisionsLine, type RuleDecisionCounts } from '@/lib/rule-counts';
 import { PHASES, staleness, type PhaseKey } from '@/lib/workflow-steps';
 import { choiceHref, type OriginKey } from '@/lib/choice-addresses';
 import { stageHref } from '@/lib/workspace-back-href';
@@ -262,19 +263,13 @@ export function nfrProposalCount(project: Project | null): number {
   return Object.values(v as Record<string, unknown>).filter((x) => typeof x === 'string' && x.trim()).length;
 }
 
-/** The rule register's decided and open counts, from its rows. A Clarify is a question, and open. */
-export function ruleTally(rows: readonly RuleRow[]): { keep: number; change: number; drop: number; open: number; total: number; revision: number | null } {
-  let keep = 0;
-  let change = 0;
-  let drop = 0;
+/** The rule register's decided and open counts, from its rows (`ruleDecisionCounts`, the one count source). A Clarify is a question, and open. */
+export function ruleTally(rows: readonly RuleRow[]): RuleDecisionCounts & { revision: number | null } {
   let revision: number | null = null;
   for (const r of rows) {
-    if (r.answer === 'keep') keep += 1;
-    else if (r.answer === 'change') change += 1;
-    else if (r.answer === 'drop') drop += 1;
     if (typeof r.revision === 'number' && (revision === null || r.revision > revision)) revision = r.revision;
   }
-  return { keep, change, drop, open: rows.length - keep - change - drop, total: rows.length, revision };
+  return { ...ruleDecisionCounts(rows.map((r) => r.answer)), revision };
 }
 
 /** The decision record stored on the project (`data.decision`), read defensively. */
@@ -360,19 +355,18 @@ function rulesSlot(inputs: ChainInputs): ChainSlot {
     return { ...shell, state: 'ready', facts: [fact('none', M['transformation.rules.none'], 'reconstructed', PROMPT_READS.rules)], when: null, warn: null };
   }
   const t = ruleTally(reg.rows);
-  const decided = t.keep + t.change + t.drop;
   const facts: ChainFact[] = [
-    decided > 0
-      ? fact('decided', `${plural(t.total, 'rule')} — ${n(decided)} decided by you: ${n(t.keep)} keep, ${n(t.change)} change, ${n(t.drop)} drop`, 'confirmed', PROMPT_READS.ruleDecisions)
-      : fact('decided', `${plural(t.total, 'rule')} — none decided yet`, 'reconstructed', PROMPT_READS.rules),
+    t.decided > 0
+      ? fact('decided', ruleDecisionsLine(t), 'confirmed', PROMPT_READS.ruleDecisions)
+      : fact('decided', ruleDecisionsLine(t), 'reconstructed', PROMPT_READS.rules),
   ];
-  if (t.open > 0) facts.push(fact('open', `${n(t.open)} open — implemented as the original and marked open`, 'not-determined', PROMPT_READS.rules));
+  if (t.open > 0) facts.push(fact('open', openRulesLine(t.open), 'not-determined', PROMPT_READS.rules));
   return {
     ...shell,
     state: 'ready',
     facts,
     when: t.revision !== null ? `need revision ${t.revision}` : null,
-    warn: t.open > 0 ? { text: t.open === 1 ? 'One rule has no decision yet.' : `${n(t.open)} rules have no decision yet.`, fix: { label: M['transformation.fix.rules'], href } } : null,
+    warn: t.open > 0 ? { text: openRulesWarning(t.open), fix: { label: M['transformation.fix.rules'], href } } : null,
   };
 }
 
@@ -475,7 +469,7 @@ export interface QualityTip {
   rank: number;
   /** The real count from this project, for the badge; `null` while it is being read or where there is none. */
   count: number | null;
-  /** "Decide the 62 open rules". */
+  /** "Decide the 62 open business rules". */
   title: string;
   /** What it does to the generated code, positively. */
   impact: string;
@@ -517,7 +511,7 @@ export function qualityTips(inputs: TipInputs): QualityTip[] {
     if (t.open > 0) {
       tips.push({
         key: 'rules', rank: 2, count: t.open,
-        title: t.open === 1 ? 'Decide the open rule' : `Decide the ${n(t.open)} open rules`,
+        title: decideOpenRules(t.open),
         impact: M['transformation.tip.rules.impact'],
         inCode: M['transformation.tip.rules.inCode'],
         link: { label: M['transformation.fix.rules'], href: rulesHref },
