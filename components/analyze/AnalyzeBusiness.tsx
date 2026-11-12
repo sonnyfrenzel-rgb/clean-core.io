@@ -60,7 +60,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  * **No score, no findings, no code before a click** — those are IT's
  * (`?view=it`, today's Analyze page until AB-9).
  *
- * **Interim until v3.2.0** (release cut of 06.11.2026, so nothing a user had
+ * **Interim until release 3.2.0** (release cut of 06.11.2026, so nothing a user had
  * goes missing): today's First insights blocks (`BusinessOpening`, rendered by
  * `FirstLook` in its end state) and `BusinessNextStep` stand unchanged below
  * the map; AB-6 and AB-4 replace them in place.
@@ -311,7 +311,7 @@ export default function AnalyzeBusiness({
           <UsageRecords project={project} className="mt-4" />
         </div>
 
-        {/* Interim until v3.2.0: today's First insights blocks and "Next step", unchanged, below the map. */}
+        {/* Interim until release 3.2.0: today's First insights blocks and "Next step", unchanged, below the map. */}
         <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
           <FirstLook
             project={project}
