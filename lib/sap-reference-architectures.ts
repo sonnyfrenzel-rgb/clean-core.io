@@ -39,7 +39,8 @@
  * 17.10.2026). On 27.10.2026 SAP restored RA0019, RA0021, RA0022, RA0023 and
  * RA0025 (sync of 09.11.2026); owner decision 12.11.2026 applies the same rule to
  * that state, so their bindings are named again. RA0007 and RA0018 are still
- * archived, so `cap` stays `none`.
+ * archived and stay unnamed; `cap` names the current patterns that cover it in
+ * part (RA0023, RA0021 — owner decision 12.11.2026).
  *
  * Wording is fixed: "SAP reference pattern for the target". Never "approved",
  * "certified", "validated" or "compliant" — the text guard in the spec fails on
@@ -236,8 +237,8 @@ export function referenceAnswer(code: TargetArchitectureCode): ReferenceAnswer {
 
 /**
  * The one line of the Business and Management views:
- * "SAP-documented pattern for this target: yes · partly · none", the RA IDs it
- * rests on and, where it is `none` because SAP archived what fitted, that it did.
+ * "SAP-documented pattern for this target: yes · partly · none" and the RA IDs it
+ * rests on. The reasons stand in the handover README, not in this line.
  */
 export function referencePatternLine(code: TargetArchitectureCode): {
   answer: ReferenceAnswer;
