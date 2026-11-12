@@ -72,7 +72,7 @@ import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_NETWORK_CODE, MODEL_TIMEOUT_CODE, errorCodes, modelDeadline, modelTimeoutMessage, providerConnectionFailure, type ModelDeadline } from '@/lib/model-deadline';
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
-import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
+import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall, returnPlatformModelCall } from '@/lib/platform-model-budget';
 import { AUTO_MODEL_STEPS_OFF_CODE, autoModelStepsOffMessage, autoModelStepsOn } from '@/lib/auto-model-steps';
 
 /**
@@ -650,25 +650,45 @@ export async function POST(request: NextRequest) {
     // SEC-01 (3.0.21): the community key's daily budget, with its breaker
     // (`lib/platform-model-budget.ts`). Only a call the platform key would pay
     // for is counted; an own key is never counted or refused here. Asked
-    // before a lease counts the call, so a refused call costs the lease nothing.
+    // before a lease counts the call, so a refused call costs the lease nothing;
+    // a call the lease then refuses is given back to the budget below.
+    // The day the community budget counted this call on, when it did.
+    let platformDay: string | null = null;
     if (!ownKey && !stubbed) {
-      let admitted: boolean;
       try {
         const { db, FieldValue } = await getAdminDb();
-        admitted = (await reservePlatformModelCall(db, (n) => FieldValue.increment(n))).ok;
+        const reserved = await reservePlatformModelCall(db, (n) => FieldValue.increment(n));
+        platformDay = reserved.ok ? reserved.day : null;
       } catch (budgetErr: unknown) {
         logger.error('platform model budget check failed', { route: 'api/gemini', error: budgetErr instanceof Error ? budgetErr.name : 'unknown' });
         return NextResponse.json({ error: 'The usage check could not run. Please try again shortly.' }, { status: 503 });
       }
-      if (!admitted) {
+      if (!platformDay) {
         return NextResponse.json({ error: platformBudgetMessage(), code: PLATFORM_BUDGET_CODE }, { status: 503 });
       }
     }
 
     if (lease) {
-      const { db } = await getAdminDb();
-      const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
+      const { db, FieldValue } = await getAdminDb();
+      // A call the lease refuses (or cannot check) never reaches the provider,
+      // so the community budget gets back the call it counted above.
+      const giveBack = async () => {
+        if (!platformDay) return;
+        try {
+          await returnPlatformModelCall(db, (n) => FieldValue.increment(n), platformDay);
+        } catch (returnErr: unknown) {
+          logger.warn('platform model budget return failed', { route: 'api/gemini', error: returnErr instanceof Error ? returnErr.name : 'unknown' });
+        }
+      };
+      let counted: Awaited<ReturnType<typeof acquireLeaseCall>>;
+      try {
+        counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
+      } catch (leaseErr: unknown) {
+        await giveBack();
+        throw leaseErr;
+      }
       if (!counted.ok) {
+        await giveBack();
         return NextResponse.json({ error: counted.error, code: counted.code }, { status: counted.status });
       }
       // The slot this call took, by its time, so the release frees exactly it.

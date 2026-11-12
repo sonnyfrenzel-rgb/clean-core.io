@@ -92,7 +92,7 @@ export async function reservePlatformModelCall(
   db: BudgetStore,
   increment: (n: number) => unknown,
   opts: { now?: Date; cap?: number } = {},
-): Promise<{ ok: true } | { ok: false }> {
+): Promise<{ ok: true; day: string } | { ok: false }> {
   const now = opts.now ?? new Date();
   const day = budgetDay(now);
   if (openedOn === day) return { ok: false };
@@ -105,5 +105,20 @@ export async function reservePlatformModelCall(
     return { ok: false };
   }
   await ref.set({ calls: increment(1), cap, expiresAt }, { merge: true });
-  return { ok: true };
+  return { ok: true, day };
+}
+
+/**
+ * Give back one call counted by `reservePlatformModelCall` on `day` when the
+ * provider is never asked — the lease refused it after the budget counted it.
+ * Counted on the day it was reserved, so a refusal just after midnight does
+ * not lower the new day's count. Throws when the store cannot be written; the
+ * caller logs that and answers the refusal it already has.
+ */
+export async function returnPlatformModelCall(
+  db: BudgetStore,
+  increment: (n: number) => unknown,
+  day: string,
+): Promise<void> {
+  await db.collection(PLATFORM_BUDGET_COLLECTION).doc(day).set({ calls: increment(-1) }, { merge: true });
 }

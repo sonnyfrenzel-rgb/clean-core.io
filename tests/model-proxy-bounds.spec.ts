@@ -10,6 +10,7 @@ import {
   platformDailyCallCap,
   reservePlatformModelCall,
   resetPlatformBudgetMemory,
+  returnPlatformModelCall,
   type BudgetStore,
 } from '../lib/platform-model-budget';
 import { issueModelReceipt, narrativeDigest, verifyModelReceipt, verifyModelReceiptIssuer } from '../lib/model-receipt';
@@ -117,8 +118,37 @@ test.describe('the community key\'s daily budget (SEC-01)', () => {
     const guard = route.lastIndexOf('if (!ownKey && !stubbed) {', at);
     expect(guard, 'the budget is asked for an own key too').toBeGreaterThan(-1);
     expect(at - guard).toBeLessThan(400);
-    expect(at).toBeLessThan(route.indexOf('const counted = await acquireLeaseCall('));
+    const leaseAt = route.indexOf('counted = await acquireLeaseCall(');
+    expect(leaseAt).toBeGreaterThan(-1);
+    expect(at).toBeLessThan(leaseAt);
     expect(at).toBeLessThan(route.indexOf('ai!.models.generateContent({'));
+  });
+
+  test('a call given back is taken off the day it was counted on, not the next one', async () => {
+    const { store, docs, increment } = memoryStore();
+    const now = new Date('2026-10-22T23:59:59Z');
+    const reserved = await reservePlatformModelCall(store, increment, { now, cap: 3 });
+    expect(reserved).toEqual({ ok: true, day: '2026-10-22' });
+    await reservePlatformModelCall(store, increment, { now, cap: 3 });
+    await returnPlatformModelCall(store, increment, reserved.ok ? reserved.day : '');
+    expect(docs.get('platform_model_budget/2026-10-22')!.calls).toBe(1);
+    expect(docs.has('platform_model_budget/2026-10-23')).toBe(false);
+  });
+
+  test('a call the lease refuses or cannot check gives its budget count back before the route answers', () => {
+    const route = read('app/api/gemini/route.ts');
+    const from = route.indexOf('if (lease) {', route.indexOf('reservePlatformModelCall(db'));
+    const block = route.slice(from, route.indexOf('heldLease = { ...lease, slotAt: counted.slotAt };', from));
+    expect(block).toContain('returnPlatformModelCall(db, (n) => FieldValue.increment(n), platformDay)');
+    // The refusal: given back, then answered.
+    const refusal = block.slice(block.indexOf('if (!counted.ok) {'));
+    expect(refusal.indexOf('await giveBack();')).toBeGreaterThan(-1);
+    expect(refusal.indexOf('await giveBack();')).toBeLessThan(refusal.indexOf('return NextResponse.json('));
+    // A lease check that throws: given back, then rethrown.
+    const thrown = block.slice(block.indexOf('} catch (leaseErr: unknown) {'));
+    expect(thrown.indexOf('await giveBack();')).toBeLessThan(thrown.indexOf('throw leaseErr;'));
+    // Only a call the budget counted is given back.
+    expect(block).toContain('if (!platformDay) return;');
   });
 });
 
