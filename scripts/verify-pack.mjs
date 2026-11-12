@@ -19,9 +19,11 @@
  * file its manifest lists, every file a model wrote carries the statement its
  * manifest names, and the manifest names the pack's run and the source digest
  * the pack signed in 01-input-fingerprint.json. It prints which model wrote
- * which files. The package is not signed; the verdict says which link the
- * signature stands behind. A delivery package given alone is checked against
- * its own manifest only, and exits 2.
+ * which files. The package is not signed, and the audit pack's signature does
+ * not cover its files or its manifest: the best verdict says the package is
+ * consistent with its own manifest and names the pack's run and source - never
+ * that its files come from the signed run - and exits 2, as does a delivery
+ * package given alone, which is checked against its own manifest only.
  *
  * With no --key it fetches https://clean-core.io/.well-known/clean-core-io-signing.json
  * — always that address, never one the pack names. Point --key at a file or a
@@ -738,16 +740,19 @@ async function checkDelivery(JSZip, path, signed) {
       ? (analysis.provider ?? null) === signed.narrative.provider && (analysis.model ?? null) === signed.narrative.model
       : null;
     console.log(runMatches ? `${c.ok('OK')}        the package names the pack's run` : c.bad("FAILED    the package names another run than the pack's, or none"));
-    console.log(sourceMatches ? `${c.ok('OK')}        the package was built from the source the pack signed` : c.bad('FAILED    the package names another source digest than the pack signed, or none'));
+    console.log(sourceMatches ? `${c.ok('OK')}        the package names the source digest the pack signed` : c.bad('FAILED    the package names another source digest than the pack signed, or none'));
     if (narrativeMatches === true) console.log(`${c.ok('OK')}        the analysis narrative's model is the one the pack signed`);
     if (narrativeMatches === false) console.log(c.bad("FAILED    the package names another model for the analysis narrative than the pack signed"));
     runOk = runMatches && sourceMatches && narrativeMatches !== false;
     if (!signed.authentic) console.log(c.warn('NOTE      the audit pack did not verify as authentic, so this is not a check against a signed run'));
   }
-  const verdict = !ok || !marksOk || (signed && signed.authentic && !runOk) ? 'failed' : signed && signed.authentic && runOk ? 'from-signed-run' : 'consistent';
+  // The best verdict names only what was checked: the pack's signature covers
+  // neither the package's files nor its manifest, so a package whose manifest
+  // names the signed run is not thereby shown to come from it.
+  const verdict = !ok || !marksOk || (signed && signed.authentic && !runOk) ? 'failed' : signed && signed.authentic && runOk ? 'names-signed-run' : 'consistent';
   console.log(
-    verdict === 'from-signed-run'
-      ? c.ok('\nThe package comes from the signed run: every file is the file its manifest lists, and the manifest names the run and the source the audit pack signed. The package itself is not signed.')
+    verdict === 'names-signed-run'
+      ? c.warn("\nThe package matches its own manifest, and the manifest names the run and the source the audit pack signed. The package itself is not signed: the audit pack's signature does not cover its files, so this does not show that they come from that run.")
       : verdict === 'consistent'
         ? c.warn('\nThe package matches its own manifest; it has not been checked against a signed audit pack.')
         : c.bad('\nThe package does not match its manifest or the signed run.'),
@@ -795,13 +800,15 @@ async function main() {
     process.exit(verdict === 'failed' ? FAILED : CANNOT_CHECK);
   }
   // The package, when one is named, is checked after the pack, against the pack's run.
+  // Exit 0 is "verified", and no signature covers the package: a verified pack
+  // with a package that names its run still exits 2.
   const finish = async (code, authentic) => {
     if (!packageArg) process.exit(code);
     const verdict = await checkDelivery(JSZip, packageArg, await signedRunFacts(zip, manifest, authentic));
-    process.exit(verdict === 'failed' ? FAILED : verdict === 'from-signed-run' ? code : code === OK ? CANNOT_CHECK : code);
+    process.exit(verdict === 'failed' ? FAILED : code === OK ? CANNOT_CHECK : code);
   };
 
-  console.log(`\nPack      ${packPath}`);
+  console.log(`\nPack      ${shown(packPath)}`);
   console.log(`Run       ${shown(manifest.runId)}  ${c.dim(`project ${shown(manifest.projectId)}`)}`);
   console.log(`Issued    ${shown(manifest.generatedAt)}  ${c.dim(`engine ${shown(manifest.engineVersion)}`)}`);
   // Before format 3 the issue date is outside the signed string altogether, and

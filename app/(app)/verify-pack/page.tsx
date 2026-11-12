@@ -378,7 +378,7 @@ export default function VerifyPackPage() {
               {delivery && (
                 <div className="mt-3 flex flex-col gap-3">
                   <CcMessageStrip
-                    state={delivery.check?.verdict === 'from-signed-run' ? 'success' : delivery.check?.verdict === 'consistent' ? 'warning' : 'error'}
+                    state={delivery.check && delivery.check.verdict !== 'failed' ? 'warning' : 'error'}
                     headline={delivery.check ? deliveryVerdictHeadline(delivery.check) : 'The package could not be read.'}
                     announce
                   >
