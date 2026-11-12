@@ -606,11 +606,18 @@ So the calls of one generation run under a **lease**:
 - **In the code**: every function's doc comment (§9.1).
 - **`traceability.json`** in the package: `{ program, sourceSha256, contextDigest, scaffoldVersion,
   units: [{ unitId, fn, file, abap: [ranges], rules: [{ id, decision }], guards, filledBy:
-  'engine' | 'model' | 'model-repair-1' | 'model-repair-2' | 'not-filled', checks: { lint, cases,
-  probes } }], notCarried: [...] }`.
+  'engine' | 'model' | 'model-repair-1' | 'model-repair-2' | 'model-repair-3' | 'empty' | 'not-filled',
+  checks: { lint, cases, probes } }], notCarried: [...] }`.
+- **One status per unit (3.0.23)**: `assembleEngineLed` decides each unit's status once — *written*,
+  *written, a check still fails*, *left empty* or *not written (stub)* — and the summary (STATUS.md,
+  the page's counts) and the trace (`filledBy`, TRACE.md's header and rows) are read from that one
+  decision. A unit whose body was written but whose guard predicate was not is *written, a check still
+  fails* everywhere, never a stub in TRACE.md. A body with no statement (only the model's comment,
+  `emptyBodyComment`) is `empty`: not counted as written, not marked *AI-generated* in its row, its
+  comment quoted; the file still carries the AI-generated mark, because the comment is the model's text.
 - **`STATUS.md`** (`lib/delivery-package.ts`): a section "How this code was built" — counts (units,
-  filled, repaired, not filled), the open rules, the routines not carried over and why, the checks —
-  and a table function → ABAP lines → rules → filled by.
+  filled, repaired, left empty, not filled), the open rules, the routines not carried over and why, the
+  checks — and a table function → ABAP lines → rules → filled by.
 - **Transformation UI**: the file tree groups `srv/steps/*` under their step titles in reading order;
   above a selected function's code a chip row shows `L500–L540` (links to Analyze's source column at
   those lines), the rule ids (link to the rule in the Business view) and the provenance of the body:

@@ -180,6 +180,7 @@ const FILLED_WORD: Record<FilledBy, string> = {
   'model-repair-1': 'AI-generated (repair round 1)',
   'model-repair-2': 'AI-generated (repair round 2)',
   'model-repair-3': 'AI-generated (repair round 3, gate errors)',
+  empty: 'left empty — the model wrote no statement',
   'not-filled': 'not written — stub',
 };
 
@@ -188,8 +189,10 @@ const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 /** TRACE.md — the "How this code was built" table STATUS.md links to (§12.1). */
 export function traceMarkdown(trace: Trace): string {
   const lines: string[] = [];
-  const written = trace.units.filter((u) => u.filledBy !== 'not-filled' && u.filledBy !== 'engine').length;
+  // The counts read each unit's one status (`assembleEngineLed`), so they are the counts of STATUS.md and the page.
+  const written = trace.units.filter((u) => u.filledBy !== 'not-filled' && u.filledBy !== 'engine' && u.filledBy !== 'empty').length;
   const stubs = trace.units.filter((u) => u.filledBy === 'not-filled').length;
+  const empty = trace.units.filter((u) => u.filledBy === 'empty').length;
   const abap = trace.units.some((u) => u.file.endsWith('.abap'));
   lines.push(`# How this code was built — ${trace.program ?? 'the program'}`);
   lines.push('');
@@ -199,7 +202,7 @@ export function traceMarkdown(trace: Trace): string {
       : 'Clean-Core.io wrote the frame of every function from the original (types, input checks, guards, run store, CSV, call contract); a model wrote the business logic between the fill markers. A model-written body is a proposal, never proven.',
   );
   lines.push('');
-  lines.push(`- Functions anchored to ABAP lines: ${trace.units.length} (${written} written by the model, ${stubs} left as stubs).`);
+  lines.push(`- Functions anchored to ABAP lines: ${trace.units.length} (${written} written by the model, ${empty ? `${empty} left empty by the model, ` : ''}${stubs} left as stubs).`);
   lines.push(`- Open rules (kept as the original until decided): ${trace.openRules.length ? trace.openRules.join(', ') : 'none'}.`);
   lines.push(`- Rules dropped by the owner (not carried over): ${trace.droppedRules.length ? trace.droppedRules.join(', ') : 'none'}.`);
   const fixtures = trace.notCarried.filter((n) => n.reason === 'fixture');
@@ -268,6 +271,7 @@ export function traceMarkdown(trace: Trace): string {
     if (g.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
     for (const n of g.notRun) lines.push(`- Not run (${n.kind}): ${n.reason}`);
     for (const n of g.notWritten) lines.push(`- Not written: ${n.unitId} — ${n.reason}`);
+    for (const n of g.empty ?? []) lines.push(`- Left empty by the model (no statement): ${n.unitId}${n.comment ? ` — its comment: ${n.comment}` : ''}`);
     for (const f of g.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
   }
   lines.push('');

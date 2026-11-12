@@ -1423,7 +1423,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { requestGenerationLease, leasedFillModel, newGenerationRunId, closeGenerationLease },
         { runGeneration },
         { createRunnerVerifier, runnerOverHttp, packageFormatsHook, abapScaffoldCheck, nodeScaffoldCheck },
-        { guardBodyOf, normalizeBodyOf, repairBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
+        { guardBodyOf, normalizeBodyOf, repairBodyOf, candidateFiles, assembleEngineLed, fillCountsLine, preflightFactsOf },
         { sha256Hex },
         { affSchemaSource },
         { preflight },
@@ -1603,20 +1603,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         });
         setBoardFinal(result.units.map((u) => ({ unitId: u.unitId, state: u.state, reason: u.reason, code: u.code ?? null, status: u.status ?? null })));
         if (result.status === 'cancelled') throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
-        const writtenCount = result.units.filter((u) => u.state === 'written').length;
-        setStageLog((log) =>
-          withFacts(log, 'fills', [
-            `${writtenCount} of ${result.units.length} functions written${writtenCount < result.units.length ? `; ${result.units.length - writtenCount} left as stubs` : ''}`,
-            `${result.callsUsed - (result.gateRepairCallsUsed ?? 0)} of ${leaseNow.budget} model calls used${result.gateRepairCallsUsed ? `, and ${result.gateRepairCallsUsed} of ${leaseNow.gateRepairBudget ?? 0} held for repairs of activation or type-check errors` : ''}`,
-          ]),
-        );
-        for (const n of result.checksNotRun) {
-          if (n.kind === 'lint') continue;
-          setStageLog((log) => withChecks(log, setCheck(log.checks?.checks ?? pendingEngineChecks(), n.kind, 'warning', n.reason)));
-        }
-
         // 4. The package: the final splice (refused if an engine character
-        //    moved), the trace, the suite — and the store, as today.
+        //    moved), the trace, the suite — and the store, as today. Assembled
+        //    before the fills' counts are shown, so the page says what
+        //    STATUS.md and TRACE.md say: one status per function.
         const pkg = assembleEngineLed(prep, result, {
           contextDigest: sha256Hex(platformKnowledge),
           runId: projectRef.current?.activeRunId ?? null,
@@ -1626,6 +1616,16 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           activation: lastActivation,
           typeCheck: typeCheckRecordOf(lastTypeCheck),
         });
+        setStageLog((log) =>
+          withFacts(log, 'fills', [
+            fillCountsLine(pkg.summary),
+            `${result.callsUsed - (result.gateRepairCallsUsed ?? 0)} of ${leaseNow.budget} model calls used${result.gateRepairCallsUsed ? `, and ${result.gateRepairCallsUsed} of ${leaseNow.gateRepairBudget ?? 0} held for repairs of activation or type-check errors` : ''}`,
+          ]),
+        );
+        for (const n of result.checksNotRun) {
+          if (n.kind === 'lint') continue;
+          setStageLog((log) => withChecks(log, setCheck(log.checks?.checks ?? pendingEngineChecks(), n.kind, 'warning', n.reason)));
+        }
         enterPhase('storing');
         setStageLog((log) => enterStage(log, 'storing', Date.now()));
         await store(pkg.files, pkg.suite, {
@@ -2097,6 +2097,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               <CcProvenanceChip value="reconstructed" note="signature and guards" />
               {u.filledBy === 'not-filled' ? (
                 <CcProvenanceChip value="not-determined" note={u.note ? `not written — ${u.note}` : 'not written'} />
+              ) : u.filledBy === 'empty' ? (
+                <CcProvenanceChip value="not-determined" note={u.note ? `left empty by the model — ${u.note}` : 'left empty by the model'} />
               ) : u.filledBy === 'engine' ? null : (
                 <CcProvenanceChip value="proposed" note={u.filledBy === 'model' ? 'body' : `body, ${u.filledBy === 'model-repair-1' ? 'repair round 1' : u.filledBy === 'model-repair-3' ? 'repair round 3' : 'repair round 2'}`} />
               )}

@@ -437,6 +437,11 @@ export interface EngineLedSummary {
   notWritten: Array<{ unitId: string; title: string; reason: string }>;
   /** Functions written whose checks still fail (kept as a reviewable draft). */
   failing: Array<{ unitId: string; title: string; failure: string }>;
+  /**
+   * Functions whose model body holds no statement — only a comment, or nothing (`emptyBodyComment`): neither
+   * written nor a stub, and never counted or marked as model-written. Absent when none (and in a record from before).
+   */
+  empty?: Array<{ unitId: string; title: string; comment: string }>;
   checks: CheckSummary[];
   notRun: Array<{ kind: string; reason: string }>;
   scaffoldFindings: string[];
@@ -457,6 +462,60 @@ export interface EngineLedPackage {
   trace: Trace;
   suite: { config: string; spec: string };
   summary: EngineLedSummary;
+}
+
+/**
+ * A body with no statement: what is left after comments and blank lines is nothing. Returns the body's own comment
+ * (joined, at most 200 characters; empty when it has none) — or `null` when the body holds a statement.
+ * ABAP: full-line comments (`*` in column one, `"`) and end-of-line `"` comments; TypeScript: `//` and block comments.
+ */
+export function emptyBodyComment(body: string, track: 'node' | 'rap'): string | null {
+  const comments: string[] = [];
+  let code: string;
+  if (track === 'rap') {
+    code = body
+      .split('\n')
+      .map((l) => {
+        const full = /^\s*(?:\*|")(.*)$/.exec(l);
+        if (full) {
+          comments.push(full[1]);
+          return '';
+        }
+        const tail = /"([^'`|]*)$/.exec(l);
+        if (tail) {
+          comments.push(tail[1]);
+          return l.slice(0, tail.index);
+        }
+        return l;
+      })
+      .join('\n');
+  } else {
+    code = body
+      .replace(/\/\*([\s\S]*?)\*\//g, (_, c: string) => {
+        comments.push(c.replace(/^\s*\*\s?/gm, ''));
+        return '';
+      })
+      .replace(/\/\/(.*)$/gm, (_, c: string) => {
+        comments.push(c);
+        return '';
+      });
+  }
+  if (code.trim() !== '') return null;
+  const words = comments.map((c) => c.trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ');
+  return words.length > 200 ? `${words.slice(0, 199)}…` : words;
+}
+
+/**
+ * The one status of a fill unit after the final splice, which STATUS.md, TRACE.md, traceability.json and the page
+ * all read: `not-written` (a stub — no body, or the final splice refused it), `empty` (a body with no statement),
+ * `failing` (written, a check still fails on it), `written`.
+ */
+export type FillUnitStatus = 'written' | 'failing' | 'empty' | 'not-written';
+
+/** The fills' counts as the page's progress log says them — from the summary, so they are STATUS.md's and TRACE.md's. */
+export function fillCountsLine(s: Pick<EngineLedSummary, 'units' | 'written' | 'notWritten' | 'empty'>): string {
+  const empty = s.empty?.length ?? 0;
+  return `${s.written} of ${s.units} functions written${empty ? `; ${empty} left empty by the model` : ''}${s.notWritten.length ? `; ${s.notWritten.length} left as stubs` : ''}`;
 }
 
 const NODE_SUITE_CONFIG = 'node:test — `npm test` runs test/engine-cases.test.mjs through the call contract (srv/engine-contract.ts).';
@@ -513,19 +572,36 @@ export function assembleEngineLed(
   const byUnit = new Map(result.units.map((u) => [u.unitId, u]));
   const notWritten: EngineLedSummary['notWritten'] = [];
   const failing: EngineLedSummary['failing'] = [];
+  const empty: NonNullable<EngineLedSummary['empty']> = [];
+  // One status per unit, decided here and only here: the counts of the summary (STATUS.md, the page) and the trace's
+  // "Body written by" (TRACE.md, traceability.json) are read from it. A guard's predicate the model did not write is
+  // a failing check of a written unit — never a reason to call the unit a stub in one file and written in another.
+  const statusOf = new Map<string, FillUnitStatus>();
   for (const t of trace.units) {
     const u = byUnit.get(t.unitId);
     if (!u) continue;
     const kinds = (k: string) => u.failures.filter((f) => f.startsWith(`${k}:`)).length;
     t.checks = { lint: kinds('lint'), cases: kinds('cases'), probes: kinds('probes') };
     const refused = refusedNow.get(t.unitId);
+    const emptyComment = u.state === 'written' && !refused && u.body !== null ? emptyBodyComment(u.body, prep.scaffold.track) : null;
     if (u.state !== 'written' || refused) {
       const reason = refused ? `the body was refused by the checks on fills: ${refused}` : (u.reason ?? 'not written');
       notWritten.push({ unitId: t.unitId, title: title(t.unitId), reason });
       t.note = reason;
-    } else if (u.failures.length > 0) {
-      failing.push({ unitId: t.unitId, title: title(t.unitId), failure: u.failures[0] });
-      t.note = `checks still failing: ${u.failures[0]}`;
+      t.filledBy = 'not-filled';
+      statusOf.set(t.unitId, 'not-written');
+    } else if (emptyComment !== null) {
+      empty.push({ unitId: t.unitId, title: title(t.unitId), comment: emptyComment });
+      if (emptyComment) t.note = `the model's comment: ${emptyComment}`;
+      t.filledBy = 'empty';
+      statusOf.set(t.unitId, 'empty');
+    } else {
+      if (t.filledBy !== 'engine') t.filledBy = u.filledBy === 'not-filled' ? 'model' : u.filledBy;
+      statusOf.set(t.unitId, u.failures.length > 0 ? 'failing' : 'written');
+      if (u.failures.length > 0) {
+        failing.push({ unitId: t.unitId, title: title(t.unitId), failure: u.failures[0] });
+        t.note = `checks still failing: ${u.failures[0]}`;
+      }
     }
     // A mechanical repair of the engine on an accepted body (a missing final period) is said, never hidden.
     if (!refused && u.state === 'written' && u.repairs?.length) t.note = [t.note, ...u.repairs].filter(Boolean).join('; ');
@@ -567,10 +643,14 @@ export function assembleEngineLed(
     ...(node && unverified.length > 0 ? { unverified } : {}),
     ...(sapIds.length > 0 ? { sapIds: sapIds.slice(0, 40) } : {}),
     units: result.units.length,
-    written: result.units.filter((u) => u.state === 'written').length - refusedNow.size,
-    repaired: result.units.filter((u) => u.state === 'written' && u.filledBy !== 'model' && u.filledBy !== 'not-filled').length,
+    written: [...statusOf.values()].filter((x) => x === 'written' || x === 'failing').length,
+    repaired: result.units.filter((u) => {
+      const x = statusOf.get(u.unitId);
+      return (x === 'written' || x === 'failing') && u.filledBy !== 'model' && u.filledBy !== 'not-filled';
+    }).length,
     notWritten,
     failing,
+    ...(empty.length > 0 ? { empty } : {}),
     checks: options.checks.map(checkSummaryOf),
     notRun: result.checksNotRun.map((n) => ({ kind: n.kind, reason: n.reason })),
     scaffoldFindings: [...(result.scaffoldBaseline ?? []), ...result.scaffoldFindings],
@@ -606,6 +686,7 @@ function summaryForTrace(s: EngineLedSummary): NonNullable<Trace['generation']> 
     repaired: s.repaired,
     units: s.units,
     notWritten: s.notWritten.map((n) => ({ unitId: n.unitId, reason: n.reason })),
+    ...(s.empty?.length ? { empty: s.empty.map((n) => ({ unitId: n.unitId, comment: n.comment })) } : {}),
     checks: s.checks.map(checkSummaryOf),
     notRun: s.notRun,
     scaffoldFindings: s.scaffoldFindings,
