@@ -494,7 +494,11 @@ export interface ProcessMapModel {
   /** *"Process with 14 steps and 5 decision points."* — `DESIGN.md` §5.7. */
   overview: string;
   /** 2.4's state and its one sentence, passed through unchanged. */
-  naming: { state: NamingState; notice: string | null; named: number };
+  /**
+   * `origin` (v3.1.0): who wrote the stored names, as the server recorded it from the model's receipt — what the AI mark
+   * of each name in a download carries. Null without a naming; absent in a model built before.
+   */
+  naming: { state: NamingState; notice: string | null; named: number; origin?: { provider: string; modelId: string } | null };
   /** The lanes 2.4 proposed, with the sentence every one of them carries. */
   lanes: Array<{
     key: string;
@@ -739,7 +743,12 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
     })),
     traceability: traceabilityOf(technical?.stats ?? bpmn.stats),
     overview: overviewOf(elements),
-    naming: { state: named.state, notice: named.notice, named: named.counts.named },
+    naming: {
+      state: named.state,
+      notice: named.notice,
+      named: named.counts.named,
+      origin: named.origin ? { provider: named.origin.provider, modelId: named.origin.modelId } : null,
+    },
     lanes: named.lanes.map((lane) => ({
       key: lane.key,
       name: lane.name,
@@ -754,6 +763,40 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
 /** The accessible name an element has with the engine's names only — what the canvas is built with (roadmap 3.1.0). */
 export function engineAccessibleName(element: Omit<ProcessMapElement, 'accessibleName'>): string {
   return accessibleNameOf({ ...element, businessName: null });
+}
+
+/**
+ * The map's file with the names the reader sees written in — one source of the shown name (v3.1.0 acceptance run).
+ * The guided tour draws the map's file in a viewer of its own (`TourCanvas`), which has no name overlay; drawn as it
+ * is, its canvas said the engine's names ("Prepare the run") while its chapter chips and the map's step list said the
+ * model's ("Prepares the run"). Every element with a business name gets it as its `name`; nothing else of the file
+ * changes. Pure.
+ */
+export function xmlWithShownNames(model: Pick<ProcessMapModel, 'xml' | 'elements'>): string {
+  const names = new Map<string, string>();
+  for (const e of model.elements) if (e.businessName) names.set(e.id, e.businessName);
+  return xmlWithNames(model.xml, names);
+}
+
+const XML_ATTR_ESCAPE: Readonly<Record<string, string>> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+const XML_ATTR_UNESCAPE: Readonly<Record<string, string>> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" };
+
+/** `xml` with the `name` of each element whose `id` is a key of `names` set to its value (added where it has none). */
+export function xmlWithNames(xml: string, names: ReadonlyMap<string, string>): string {
+  if (names.size === 0) return xml;
+  return xml.replace(/<([A-Za-z_][\w:.-]*)(\s[^<>]*?)?(\/?)>/g, (tag: string, element: string, attrs: string | undefined, close: string) => {
+    if (!attrs) return tag;
+    const id = /\sid="([^"]*)"/.exec(attrs);
+    if (!id) return tag;
+    const want = names.get(id[1].replace(/&(?:amp|lt|gt|quot|apos);/g, (e) => XML_ATTR_UNESCAPE[e] ?? e));
+    if (want === undefined) return tag;
+    const value = want.replace(/[&<>"]/g, (c) => XML_ATTR_ESCAPE[c] ?? c);
+    const tail = /\s*$/.exec(attrs)?.[0] ?? '';
+    const next = /\sname="[^"]*"/.test(attrs)
+      ? attrs.replace(/\sname="[^"]*"/, () => ` name="${value}"`)
+      : `${attrs.slice(0, attrs.length - tail.length)} name="${value}"${tail}`;
+    return `<${element}${next}${close}>`;
+  });
 }
 
 /**
