@@ -119,14 +119,9 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
     await expect(page.locator(TITLE)).toContainText(DEMO_TITLE_PREFIX.trim());
     await expect(page.locator('[data-demo-unsigned]')).toContainText('never signed');
     if (view === 'business') {
-      // Every layer of the anchor bar is reachable, filled or saying why not.
-      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
-      // Business has no Need & process (ADR-080): the map is its process, and
-      // the bar opens on one of its own sections.
-      await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
-      // Its one layer is Evidence & controls, without a bar of one tab;
-      // Standard fit is IT's own section (ADR-096).
-      await expect(page.locator('[data-workspace-layer-section="evidence"]')).toHaveCount(1);
+      // Business is the demo's Analyze page since v3.1.0 (AB-2, O10), as a project's: no layer bar and
+      // no layer section — the map is its process, and Evidence & controls is IT's Run & trust (ADR-096).
+      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
       await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
       await expect(page.locator('[data-demo-business-map] [data-demo-tour-place="process-map"]')).toBeVisible();
       // The same composition as a project's Analyze, Business: the summary, the invitation, the map first.

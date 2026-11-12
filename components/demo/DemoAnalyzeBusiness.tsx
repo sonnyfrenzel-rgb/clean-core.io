@@ -17,14 +17,13 @@ import { CcTag } from '@/components/cc/Tag';
 import FirstLook from '@/components/workspace/FirstLook';
 import BusinessNextStep from '@/components/workspace/BusinessNextStep';
 import OpenQuestions from '@/components/workspace/OpenQuestions';
-import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import DemoRulesCard from '@/components/demo/DemoRulesCard';
 import DemoTourStop from '@/components/demo/DemoTourStop';
 import DemoWalkThrough from '@/components/demo/DemoWalkThrough';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDemoTour } from '@/hooks/useDemoTour';
-import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { plainWordingFor } from '@/lib/business-card';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
@@ -35,7 +34,7 @@ import { businessInShort, programSummary } from '@/lib/program-summary-text';
 import { editorRules, isConfirmedState, type RulesStatus } from '@/lib/rules-editor';
 import { signInLinkFor } from '@/lib/return-path';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
-import { notDetermined, workspaceLayers, VIEW_LABELS } from '@/lib/workspace-model';
+import { notDetermined, VIEW_LABELS } from '@/lib/workspace-model';
 import {
   DEMO_INVITATION,
   DEMO_RESET_LABEL,
@@ -60,7 +59,7 @@ import {
   type WorkspaceDemoState,
 } from '@/lib/demo-workspace-state';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
-import { demoRuleCount, tourContinuesIn, tourPausedAt, wt } from '@/lib/workspace-messages';
+import { tourContinuesIn, tourPausedAt, wt } from '@/lib/workspace-messages';
 
 /** The map pulls bpmn-js: client only and on demand, as in a project's Analyze. */
 const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
@@ -99,7 +98,9 @@ function Place({ place, children, className }: { place: TourPlace; children: Rea
  * **What only the demo has** stands where it stood in the demo workspace's
  * Business view: the strip (demo, nothing kept, nothing signed, the one
  * invitation), the tour's stations at their places, the levels of the map, the
- * open questions and the demo's own rules card.
+ * open questions and the demo's own rules card. The one Business layer
+ * (Evidence & controls) is not drawn here, as in a project's Analyze: its
+ * content is IT's Run & trust (ADR-096, plan §1.1).
  *
  * For every signed-in account, like the demo workspace: without one the reader
  * is sent to sign in and returned (`lib/return-path.ts`) before anything below
@@ -174,14 +175,6 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   const open = useMemo(() => notDetermined(project), [project]);
   // The demo's open questions (ADR-081): read-only, nothing to write to.
   const questions = useOpenQuestions(project, '', { open, rulesEnabled: false });
-  // The one Business layer left (`BUSINESS_LAYERS`, ADR-096): a section, no bar.
-  const businessLayer = useMemo(() => {
-    const layer = workspaceLayers(project).find((l) => BUSINESS_LAYERS.includes(l.key));
-    if (!layer) return null;
-    return layer.key === 'need'
-      ? { ...layer, count: reading ? demoRuleCount(rules.length) : wt('demo.needLayerMap'), provenance: 'reconstructed' as const }
-      : layer;
-  }, [project, reading, rules.length]);
   /**
    * The next phase of the demo's own rail, by the product's rule. A demo can
    * never sign a run, so Analyze can never be "done" here; the engine's reading
@@ -441,12 +434,6 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
               base="/demo"
               onDecideRules={openDemoRules}
             />
-          ) : null}
-
-          {businessLayer ? (
-            <div className="max-w-3xl">
-              <WorkspaceLayerSection layer={businessLayer} />
-            </div>
           ) : null}
 
           {/* Folded, with its count — simple on top, complete one click deeper. */}

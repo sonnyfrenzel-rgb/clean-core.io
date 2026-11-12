@@ -21,9 +21,8 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.viewLabel': 'View',
   'demo.stagesNav': 'Stages',
 
-  // DemoWorkspaceShell — Business
+  // DemoAnalyzeBusiness — the demo's Analyze, Business (DemoWorkspaceShell's Business view until v3.1.0)
   'demo.processMap': 'Process map',
-  'demo.needLayerMap': 'process map',
   'demo.levels': 'Levels of this process',
   'demo.rules': 'Rules in this code',
   'demo.readingRules': 'Reading the rules out of the source…',
@@ -94,11 +93,6 @@ export function catalogForReader(catalogVersion: string): string {
 /** The line under the demo's title: subject · file · 1000 lines · catalog 2024.FPS02, SAP release list of … */
 export function demoSubtitle(subject: string, sourceFile: string, totalLines: number, catalogVersion: string): string {
   return `${subject} · ${sourceFile} · ${totalLines} ${m('demo.lines')} · ${m('demo.catalog')} ${catalogForReader(catalogVersion)}`;
-}
-
-/** The count on the Need & process layer of the demo: "11 rules". */
-export function demoRuleCount(n: number): string {
-  return `${n} ${n === 1 ? 'rule' : 'rules'}`;
 }
 
 /** The accessible name of a line anchor: "Source line 42". */
