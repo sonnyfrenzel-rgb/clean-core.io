@@ -42,6 +42,14 @@ A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findin
   roles exists" beside a RACI the SOP and RACI step wrote, and a RACI a person edited is not called the AI-generated draft;
   without a RACI it says what the code shows.
 
+### Changed
+
+- **The model register's emergency exit works again.** `gemini-2.5-flash` (refuses the thinking level the fill and
+  wording calls send; shut down by Google on 1 December 2026) and `gemini-3.5-flash` (rerouted by Google to
+  `gemini-3.6-flash`, so a receipt would name a model that did not answer) are struck; `gemini-3.6-flash` is the
+  exit. `gemini-4-hydrogen` is registered for evaluation; the product model stays `gemini-3.8-flash`. The register
+  probe now sends a thinking level and counts a rerouted answer as not answered.
+
 ## [v3.0.22] — 2026-11-12
 
 A hotfix from an end-to-end run of an owner example: a 936-line object-oriented program with a status workflow and

@@ -172,6 +172,13 @@ function getDefaultAI(): GoogleGenAI | null {
  * naming the permitted models instead of a 500 from a provider 404, and
  * `GEMINI_MODEL` can no longer be pointed at an emergency exit that is walled up.
  *
+ * The same happened twice more, found 12.11.2026: `gemini-3.5-flash` answered
+ * but was served by `gemini-3.6-flash` (Google reroutes it), so a receipt would
+ * have named a model that did not answer; `gemini-2.5-flash` refuses a thinking
+ * level, which the fill and wording calls send, and shuts down on 1.12.2026.
+ * Both were struck; `gemini-3.6-flash` is the exit. The probe now sends a
+ * thinking level and counts a rerouted answer as not answered.
+ *
  * `scripts/check-gemini-register.mjs` makes the call for every entry here and
  * writes what came back to `tests/gemini-register-liveness.json`;
  * `tests/gemini-model-pin.spec.ts` holds the register and that record together
@@ -179,8 +186,8 @@ function getDefaultAI(): GoogleGenAI | null {
  */
 const ALLOWED_MODELS = new Set([
   'gemini-3.8-flash',       // GA — the product default (lib/constants.ts)
-  'gemini-3.5-flash',       // GA — the longest-standing GA of the 3 line
-  'gemini-2.5-flash',       // GA — stable fallback
+  'gemini-3.6-flash',       // GA — the emergency exit: serves itself and takes a thinking level
+  'gemini-4-hydrogen',      // NEW — under evaluation as the next product model, via GEMINI_MODEL only
   'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
   'gemini-3.5-flash-lite',  // GA — the naming stage only (lib/constants.ts, roadmap 17.3)
 ]);
