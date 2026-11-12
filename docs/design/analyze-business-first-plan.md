@@ -869,6 +869,16 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 specs `engine-state-machine` and `engine-method-collapse`. Starter examples read byte-identical. Open: the run of
 owner example A end to end (owner), and the Analyze views (not part of the engine).*
 
+*Status 13.11.2026, round 2 on `night/ab15b` (ADR-112, items 6–9): the acceptance run of owner example A showed the
+workflow two levels down — one method runs it as a `CASE` over the command, and the program's entry is a demo driver.
+Now a command workflow (moves in two or more arms of one decision over a command) is read in `state-machine.ts`, each
+moving arm is one step named as the move with its checks one level down (`lib/bpmn/model.ts`, `readWorkflow`), a demo
+driver's band gives way to the workflow, its steps folded onto the start with their lines. Spec
+`engine-command-workflow` (three sizes, negatives). Starter examples and all LEARN cases draw the same business model;
+`evaluate.ts` on LEARN unchanged with and without `BM_CONCAT=1` (no LEARN case has the shape). Owner example A, run
+locally through the engine: the first level holds the six moving arms of its command decision as steps named as the move, each with its lines; the driver folds onto the start. Open: the
+owner's end-to-end run on the integration state.*
+
 - **Scope:** read classes, interfaces, methods, local classes and events as the program's structure, not its process;
   surface a **state machine** — a status field with its transitions (constants such as DRAFT/SUBMITTED/APPROVED/
   APPLIED, the checks that guard each transition, the role checks) — as the first level of the business map, each

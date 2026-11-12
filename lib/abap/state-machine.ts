@@ -46,8 +46,66 @@ export interface StateTransition {
   checks: number[];
   /** Lines of the status checks that give `from`. */
   statusChecks: number[];
-  /** Authority checks before the transition in its routine. */
+  /**
+   * Authority checks before the transition in its routine — an `AUTHORITY-CHECK OBJECT` (`object` is the object), or
+   * the call of a role check of the program's own (`assert_permission( … iv_perm = 'GRANT' )`, `check_authority( … )`):
+   * `object` is then the role it passes as a literal, otherwise the method's name.
+   */
   roles: Array<{ object: string; line: number }>;
+  /**
+   * The command arm the transition stands in, when it stands in one: the `WHEN` of a `CASE` over an operand that is
+   * not the status (`CASE is_order-verb`, `CASE sy-ucomm`), or an `IF`/`ELSEIF` that asks that operand for values.
+   */
+  command?: { operand: string; values: string[]; arm: number };
+}
+
+/**
+ * One arm of a decision over a command (`WHEN 'APPROVE'.`): the values it answers, its lines and the moves it makes.
+ * `line` is the arm's own opener (`WHEN`, `IF`, `ELSEIF`), `decision` the statement that opens the decision (`CASE`,
+ * `IF`); `lineStart`–`lineEnd` the arm from its opener to the last statement before the next arm or the close.
+ */
+export interface CommandArm {
+  values: string[];
+  /** The constants the values were written with, lower case; null for a literal. */
+  constants: Array<string | null>;
+  line: number;
+  decision: number;
+  lineStart: number;
+  lineEnd: number;
+  transitions: StateTransition[];
+}
+
+/**
+ * A status workflow that one routine runs as a decision over a command (roadmap 3.1.0, AB-15a round 2): the method
+ * whose body is a `CASE` (or an `IF` chain) over a command or action parameter whose arms move the status. Only arms
+ * that move the status are listed; at least two different commands must.
+ */
+export interface CommandWorkflow {
+  /** `CLASS=>METHOD` or the FORM's name, upper case. */
+  routine: string;
+  /** The operand the arms decide on (`is_order-verb`), lower case. */
+  operand: string;
+  arms: CommandArm[];
+  /**
+   * The other arms of the same decision over the same operand that move nothing (`IF verb = 'GRANT'. <checks>.
+   * ENDIF.`) — the checks a command must pass before the common part; their `transitions` are empty. An arm inside a
+   * listed arm is not listed again.
+   */
+  checks: CommandArm[];
+}
+
+/**
+ * The program's own run is a demo or scenario driver of the workflow: a routine with no decision of its own that calls
+ * the same method (one that reaches the workflow routine) at least twice and sets the command operand's field to at
+ * least two of the workflow's command values as literals — test data, not a process.
+ */
+export interface ScenarioDriver {
+  /** The routine key (`CLASS=>METHOD`, a FORM, `@<line>` for an event block). */
+  routine: string;
+  lineStart: number;
+  lineEnd: number;
+  /** The method it calls repeatedly, its own name upper case, and the lines of those calls. */
+  calls: { method: string; lines: number[] };
 }
 
 export interface StateMachine {
@@ -58,6 +116,10 @@ export interface StateMachine {
   transitions: StateTransition[];
   /** Lines of the conditions that read the field. */
   reads: number[];
+  /** The routine that runs the workflow as a decision over a command, when one does (`CommandWorkflow`). */
+  workflow: CommandWorkflow | null;
+  /** The program's run when it is a demo driver of that workflow (`ScenarioDriver`); null otherwise. */
+  driver: ScenarioDriver | null;
 }
 
 /** The last segment of a field name that says status. `ms_req-status`, `mv_status`, `ls_head-zz_state`, `gv_stufe`. */
@@ -219,7 +281,57 @@ function stops(statements: readonly AbapStatement[], from: number, to: number): 
   return false;
 }
 
-interface Frame { kind: 'if' | 'case' | 'loop' | 'try'; start: number; condition: string | null; subject: string | null; when: string[] | null }
+interface Guard { line: number; condition: string; stopped: boolean; status: boolean; check?: boolean }
+interface Role { object: string; line: number }
+
+interface Frame {
+  kind: 'if' | 'case' | 'loop' | 'try';
+  start: number;
+  condition: string | null;
+  subject: string | null;
+  when: string[] | null;
+  /**
+   * The guards and role checks closed inside the frame's current arm: they guard what follows in that arm only, and
+   * are forgotten when the next arm opens (`WHEN`, `ELSEIF`, `ELSE`) or the decision closes.
+   */
+  armGuards: Guard[];
+  armRoles: Role[];
+  /** The command arm open in this frame (an index into the arms read), or -1. */
+  arm: number;
+  /** The statement that opened the decision (`CASE`, `IF`) — `start` moves on with each arm. */
+  opened: number;
+}
+
+/** A role check of the program's own, by its method's name: `assert_permission`, `check_authority`, `verify_access`. */
+const ROLE_CHECK = /^(?:require|check|assert|ensure|verify|has)_?(?:role|roles|authority|authorization|authorisation|auth|permission|permissions|grant|access)$|^authority_check$/i;
+
+/** The operand and the values of a condition that asks one operand for values: `x = 'A'`, `x = 'A' OR x = 'B'`. */
+function commandCondition(condition: string, constants: Constants): { operand: string; values: string[]; constants: Array<string | null> } | null {
+  const parts = condition.trim().split(/\s+OR\s+/i);
+  let operand: string | null = null;
+  const values: string[] = [];
+  const named: Array<string | null> = [];
+  for (const part of parts) {
+    const m = new RegExp(String.raw`^(${OPERAND})\s*(?:=|\bEQ\b)\s*(${VALUE})$`, 'i').exec(part.trim());
+    if (!m || /\(/.test(m[1])) return null;
+    const o = m[1].toLowerCase().replace(/^me->/, '');
+    if (operand && o !== operand) return null;
+    operand = o;
+    const v = valueOf(m[2], constants);
+    if (!v) return null;
+    values.push(v.value);
+    named.push(v.constant);
+  }
+  return operand && isCommandOperand(operand) ? { operand, values, constants: named } : null;
+}
+
+/** An operand a command can be: a field, not the status, not a truth value or a system counter. */
+function isCommandOperand(operand: string): boolean {
+  const o = operand.trim().toLowerCase().replace(/^me->/, '');
+  if (!/^[\w/]+(?:(?:->|-|=>)[\w/]+)*$/.test(o)) return false;
+  if (/^(?:abap_true|abap_false|space|sy-subrc|sy-tabix|sy-index|sy-dbcnt)$/.test(o)) return false;
+  return statusWordOf(o) === null;
+}
 
 const EVENT_BLOCK = /^(?:START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|LOAD-OF-PROGRAM|AT\s+SELECTION-SCREEN|AT\s+LINE-SELECTION|AT\s+USER-COMMAND|TOP-OF-PAGE|END-OF-PAGE|GET\s+\w+)\b/i;
 
@@ -261,8 +373,31 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     let frames: Frame[] = [];
     let currentRoutine: string | null = null;
     /** Closed guards of the current routine: a condition whose block stopped. */
-    let guards: Array<{ line: number; condition: string; stopped: boolean; status: boolean; check?: boolean }> = [];
-    let roles: Array<{ object: string; line: number }> = [];
+    let guards: Guard[] = [];
+    let roles: Role[] = [];
+    /** The command arms read so far (`CommandArm`, without their transitions), each with its routine and operand. */
+    const arms: ArmRead[] = [];
+    const frame = (kind: Frame['kind'], start: number, condition: string | null, subject: string | null): Frame =>
+      ({ kind, start, condition, subject, when: null, armGuards: [], armRoles: [], arm: -1, opened: start });
+    /** The innermost decision: where a guard or a role check closed inside it belongs. */
+    const innermostDecision = () => [...frames].reverse().find((f) => f.kind === 'if' || f.kind === 'case');
+    const closeArm = (f: Frame | undefined, i: number) => {
+      if (!f || f.arm < 0) return;
+      const a = arms[f.arm];
+      if (a.open) { a.lineEnd = statements[Math.max(0, i - 1)].lineEnd; a.open = false; }
+      f.arm = -1;
+    };
+    const openArm = (f: Frame, i: number, operand: string, values: string[], named: Array<string | null>) => {
+      arms.push({
+        routine: currentRoutine, operand, values, constants: named, line: statements[i].lineStart, decision: statements[f.opened].lineStart,
+        lineStart: statements[i].lineStart, lineEnd: statements[i].lineEnd, open: true,
+      });
+      f.arm = arms.length - 1;
+    };
+    const ifArm = (f: Frame, i: number, condition: string) => {
+      const c = commandCondition(condition, constants);
+      if (c) openArm(f, i, c.operand, c.values, c.constants);
+    };
 
     /** Per called routine (its own name, upper case): how often it is called, and the status values its callers ask for. */
     const callFrom = new Map<string, { sites: number; asked?: number; values: Map<string, string[]>; lines: number[] }>();
@@ -287,45 +422,59 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       }
       if (kw === 'AUTHORITY-CHECK') {
         const object = /\bOBJECT\s+('(?:[^']|'')*'|[\w/]+)/i.exec(t)?.[1];
-        if (object) roles.push({ object: unquote(object).toUpperCase(), line: s.lineStart });
+        // A check inside a decision guards that arm only.
+        if (object) (innermostDecision()?.armRoles ?? roles).push({ object: unquote(object).toUpperCase(), line: s.lineStart });
         continue;
       }
       if (kw === 'IF') {
         const condition = conditionOf(s) ?? '';
         noteRead(s.lineStart, condition);
-        frames.push({ kind: 'if', start: i, condition, subject: null, when: null });
+        const f = frame('if', i, condition, null);
+        frames.push(f);
+        ifArm(f, i, condition);
         continue;
       }
       if (kw === 'ELSEIF') {
         const top = frames[frames.length - 1];
         const condition = conditionOf(s) ?? '';
         noteRead(s.lineStart, condition);
-        if (top?.kind === 'if') { top.condition = condition; top.start = i; }
+        if (top?.kind === 'if') {
+          closeArm(top, i);
+          top.condition = condition; top.start = i; top.armGuards = []; top.armRoles = [];
+          ifArm(top, i, condition);
+        }
         continue;
       }
       if (kw === 'ELSE') {
         const top = frames[frames.length - 1];
-        if (top?.kind === 'if') { top.condition = null; top.start = i; }
+        if (top?.kind === 'if') { closeArm(top, i); top.condition = null; top.start = i; top.armGuards = []; top.armRoles = []; }
         continue;
       }
       if (kw === 'ENDIF') {
         const top = frames.pop();
-        if (top?.kind === 'if' && top.condition !== null && !decisionOpen(frames)) {
+        closeArm(top, i);
+        if (top?.kind === 'if' && top.condition !== null) {
           const opener = statements[top.start];
           const status = comparisons(top.condition, constants).length > 0;
-          guards.push({ line: opener.lineStart, condition: top.condition, stopped: stops(statements, top.start + 1, i), status });
+          // A decision over the command is no check of a move: it chooses the arm (`IF verb = 'GRANT'. … RETURN.`).
+          const guard: Guard = { line: opener.lineStart, condition: top.condition, stopped: stops(statements, top.start + 1, i) && !commandCondition(top.condition, constants), status };
+          // A check closed inside a decision guards only what follows it in that arm, not the routine.
+          if (!decisionOpen(frames)) guards.push(guard);
+          else innermostDecision()?.armGuards.push(guard);
         }
         continue;
       }
       if (kw === 'CASE') {
         const subject = t.replace(/^CASE\s+/i, '').replace(/\.$/, '');
         if (statusWordOf(subject)) reads.set(statusWordOf(subject)!, [...(reads.get(statusWordOf(subject)!) ?? []), s.lineStart]);
-        frames.push({ kind: 'case', start: i, condition: null, subject, when: null });
+        frames.push(frame('case', i, null, subject));
         continue;
       }
       if (kw === 'WHEN') {
         const top = frames[frames.length - 1];
         if (top?.kind === 'case') {
+          closeArm(top, i);
+          top.armGuards = []; top.armRoles = [];
           const values = t.replace(/^WHEN\s+/i, '').replace(/\.$/, '');
           top.when = /^OTHERS$/i.test(values) ? null : values.split(/\s+OR\s+/i);
           if (top.subject && statusWordOf(top.subject)) {
@@ -335,14 +484,21 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
             }
           }
           top.start = i;
+          // A `WHEN` of a decision over a command: an arm, when every value is one the code writes down.
+          if (top.subject && top.when && isCommandOperand(top.subject)) {
+            const read = top.when.map((w) => valueOf(w, constants));
+            if (read.every((v) => v != null)) {
+              openArm(top, i, top.subject.toLowerCase().replace(/^me->/, ''), read.map((v) => v!.value), read.map((v) => v!.constant));
+            }
+          }
         }
         continue;
       }
-      if (kw === 'ENDCASE') { frames.pop(); continue; }
+      if (kw === 'ENDCASE') { closeArm(frames.pop(), i); continue; }
       // Loops and TRY only nest; a SELECT is not tracked (whether it has an ENDSELECT is not worth guessing here).
       if (/^(?:LOOP|DO|WHILE|TRY)$/.test(kw)) {
         if (kw === 'WHILE') noteRead(s.lineStart, conditionOf(s) ?? '');
-        frames.push({ kind: kw === 'TRY' ? 'try' : 'loop', start: i, condition: null, subject: null, when: null });
+        frames.push(frame(kw === 'TRY' ? 'try' : 'loop', i, null, null));
         continue;
       }
       if (/^(?:ENDLOOP|ENDDO|ENDWHILE|ENDTRY)$/.test(kw)) {
@@ -353,7 +509,9 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       if (kw === 'CHECK' || kw === 'ASSERT') {
         const condition = conditionOf(s) ?? '';
         noteRead(s.lineStart, condition);
-        if (!decisionOpen(frames)) guards.push({ line: s.lineStart, condition, stopped: true, status: comparisons(condition, constants).length > 0, check: true });
+        const guard: Guard = { line: s.lineStart, condition, stopped: true, status: comparisons(condition, constants).length > 0, check: true };
+        if (!decisionOpen(frames)) guards.push(guard);
+        else innermostDecision()?.armGuards.push(guard);
         continue;
       }
 
@@ -361,6 +519,11 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       // A call of a routine inside a decision on the status: the routine runs only from those values
       // (`WHEN gc_status-new. check_request( ).`). Read for every call; used where the routine states no value itself.
       const called = calledRoutine(t);
+      // A role check of the program's own: `assert_permission( … iv_perm = 'GRANT' )` — the role it names, else its name.
+      if (called && !assignment && ROLE_CHECK.test(called)) {
+        const role = /\b\w*(?:role|perm|auth|right)\w*\s*=\s*('(?:[^']|'')*'|`[^`]*`)/i.exec(t)?.[1];
+        (innermostDecision()?.armRoles ?? roles).push({ object: role ? unquote(role).toUpperCase() : called, line: s.lineStart });
+      }
       if (called && !assignment) {
         const asked = enclosingStates(frames, statements, constants);
         const known = callFrom.get(called) ?? { sites: 0, values: new Map<string, string[]>(), lines: [] as number[] };
@@ -373,6 +536,9 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
         callFrom.set(called, known);
       }
       if (!assignment) continue;
+      /** The innermost command arm the move stands in. */
+      const armFrame = [...frames].reverse().find((x) => x.arm >= 0);
+      const command = armFrame ? { operand: arms[armFrame.arm].operand, values: arms[armFrame.arm].values, arm: armFrame.arm } : null;
       const from: string[] = [];
       const statusChecks: number[] = [];
       const add = (values: string[], line: number) => {
@@ -381,8 +547,10 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       };
       // An enclosing decision that asks for a value: `IF status = X`, `WHEN X` of `CASE status`.
       for (const a of enclosingStates(frames, statements, constants)) if (a.word === assignment.word) add(a.values, a.line);
-      // An earlier guard that stops on any other value: `IF status <> X. MESSAGE … TYPE 'E'. ENDIF.`, `CHECK status = X`.
-      for (const g of guards) {
+      // An earlier guard that stops on any other value: `IF status <> X. MESSAGE … TYPE 'E'. ENDIF.`, `CHECK status = X` —
+      // of the routine, or closed before it inside the arm it stands in.
+      const inScope = [...guards, ...frames.flatMap((f) => f.armGuards)];
+      for (const g of inScope) {
         if (!g.status || !g.stopped) continue;
         const isCheck = g.check === true;
         for (const c of comparisons(g.condition, constants)) {
@@ -396,9 +564,10 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
         to: assignment.value,
         toConstant: assignment.constant,
         from,
-        checks: guards.filter((g) => !g.status && g.stopped).map((g) => g.line),
+        checks: inScope.filter((g) => !g.status && g.stopped).map((g) => g.line),
         statusChecks,
-        roles: [...roles],
+        roles: [...roles, ...frames.flatMap((f) => f.armRoles)],
+        ...(command ? { command } : {}),
       } });
     }
 
@@ -433,15 +602,133 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
         if (!states.some((s) => s.value === v)) states.push({ value: v, constant: named.get(v) ?? null, line: t.statusChecks[0] ?? t.line });
       }
     }
+    const workflow = commandWorkflowOf(list, arms);
     return {
       field,
       states,
       transitions: list,
       reads: [...new Set(reads.get(field) ?? [])].sort((a, b) => a - b),
+      workflow,
+      driver: workflow ? scenarioDriverOf(statements, routines, workflow) : null,
     };
   } catch {
     return null;
   }
+}
+
+/** A command arm as the walk reads it: with its routine and operand, and whether it is still open. */
+type ArmRead = Omit<CommandArm, 'transitions'> & { routine: string | null; operand: string; open: boolean };
+
+/**
+ * The routine that runs the workflow as a decision over a command (`CommandWorkflow`), or null: the moves that stand in
+ * a command arm, grouped by routine and operand; a group counts with moves in at least two arms of two different
+ * commands. The most moves wins, a tie none. An arm that holds another arm of the group is not listed — its inner arms are.
+ */
+function commandWorkflowOf(transitions: readonly StateTransition[], arms: readonly ArmRead[]): CommandWorkflow | null {
+  const groups = new Map<string, StateTransition[]>();
+  for (const t of transitions) {
+    // The arm knows its routine — an event block's too (`@<line>`), where a move has none.
+    const routine = t.command ? arms[t.command.arm]?.routine : null;
+    if (!t.command || !routine) continue;
+    const key = `${routine} ${t.command.operand}`;
+    groups.set(key, [...(groups.get(key) ?? []), t]);
+  }
+  const candidates = [...groups.entries()].filter(([, list]) => {
+    const byArm = new Set(list.map((t) => t.command!.arm));
+    const commands = new Set(list.flatMap((t) => t.command!.values));
+    return byArm.size >= 2 && commands.size >= 2;
+  });
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => b[1].length - a[1].length);
+  if (candidates.length > 1 && candidates[0][1].length === candidates[1][1].length) return null;
+  const [key, list] = candidates[0];
+  const [routine, operand] = key.split(' ');
+  const used = [...new Set(list.map((t) => t.command!.arm))].sort((a, b) => a - b);
+  const read = used.map((i) => ({ ...arms[i], transitions: list.filter((t) => t.command!.arm === i) }));
+  const listed = read.filter((a) => !read.some((b) => b !== a && b.lineStart > a.lineStart && b.lineEnd <= a.lineEnd));
+  if (listed.length < 2) return null;
+  const plain = (a: Omit<CommandArm, 'transitions'>, transitions: StateTransition[]): CommandArm => ({
+    values: a.values, constants: a.constants, line: a.line, decision: a.decision, lineStart: a.lineStart, lineEnd: a.lineEnd, transitions,
+  });
+  const within = (a: { lineStart: number; lineEnd: number }, b: { lineStart: number; lineEnd: number }) => a.lineStart >= b.lineStart && a.lineEnd <= b.lineEnd;
+  const checks = arms.filter((a, i) => a.routine === routine && a.operand === operand && !used.includes(i)
+    && !listed.some((l) => within(a, l) || within(l, a)));
+  return {
+    routine,
+    operand,
+    arms: listed.map((a) => plain(a, a.transitions)),
+    checks: checks.map((a) => plain(a, [])),
+  };
+}
+
+/** Every routine a statement calls, by its own name, upper case — as a statement or inside an expression. */
+function callsIn(text: string): string[] {
+  const out: string[] = [];
+  const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
+  if (perform) out.push(perform[1].toUpperCase());
+  for (const m of text.matchAll(/(?:^|[\s=(])(?:CALL\s+METHOD\s+)?(?:(?:[\w/]+|me)(?:->|=>))?([\w/~]+)\(/gi)) {
+    out.push((m[1].split('~').pop() ?? m[1]).toUpperCase());
+  }
+  return out;
+}
+
+/** A statement that decides or repeats: a driver of test scenarios has none. */
+const DECIDES = /^(?:IF|ELSEIF|CASE|WHEN|LOOP|DO|WHILE|SELECT|CHECK|PROVIDE)\b/i;
+
+/**
+ * The program's run as a demo driver of the workflow (`ScenarioDriver`), or null. A routine counts when it decides
+ * nothing (no IF, CASE, loop or SELECT; a TRY is set-up), calls one method at least twice that is the workflow
+ * routine or reaches it (through at most three calls), and writes the command operand's own field with at least two
+ * of the workflow's command values as literals (`action = 'SUBMIT'`). Everything else the routine does — the set-up,
+ * a simulated change, the output — is then the scenario around the workflow, not a step of it. Exactly one such
+ * routine, or none.
+ */
+function scenarioDriverOf(statements: readonly AbapStatement[], routines: ReadonlyArray<string | null>, workflow: CommandWorkflow): ScenarioDriver | null {
+  const body = new Map<string, number[]>();
+  routines.forEach((r, i) => { if (r) body.set(r, [...(body.get(r) ?? []), i]); });
+  const own = (key: string) => (key.split('=>').pop() ?? key).split('~').pop() ?? key;
+  const calls = new Map<string, Set<string>>();
+  for (const [key, idx] of body) {
+    const set = calls.get(own(key)) ?? new Set<string>();
+    for (const i of idx) for (const c of callsIn(statements[i].text.trim())) set.add(c);
+    calls.set(own(key), set);
+  }
+  const target = own(workflow.routine);
+  const reaches = (method: string): boolean => {
+    let frontier = [method];
+    const seen = new Set<string>(frontier);
+    for (let depth = 0; depth <= 3 && frontier.length; depth++) {
+      if (frontier.includes(target)) return true;
+      const next: string[] = [];
+      for (const m of frontier) for (const c of calls.get(m) ?? []) if (!seen.has(c)) { seen.add(c); next.push(c); }
+      frontier = next;
+    }
+    return false;
+  };
+  const field = (workflow.operand.split(/->|-|=>/).pop() ?? workflow.operand).replace(/[^\w/]/g, '');
+  const values = new Set(workflow.arms.flatMap((a) => a.values.map((v) => v.toUpperCase())));
+  const literal = new RegExp(String.raw`(?:^|[\s(-])${field}\s*=\s*'((?:[^']|'')*)'`, 'gi');
+  const found: ScenarioDriver[] = [];
+  for (const [key, idx] of body) {
+    if (own(key) === target) continue;
+    // The routine's own statements, without its opening `METHOD`/`FORM`/event keyword.
+    const inner = idx.filter((i) => !/^(?:METHOD|FORM|ENDMETHOD|ENDFORM)\b/i.test(statements[i].text.trim()) && !EVENT_BLOCK.test(statements[i].text.trim()));
+    const texts = inner.map((i) => statements[i].text.trim());
+    if (texts.some((t) => DECIDES.test(t))) continue;
+    const counted = new Map<string, number[]>();
+    for (const i of inner) {
+      for (const c of callsIn(statements[i].text.trim())) counted.set(c, [...(counted.get(c) ?? []), statements[i].lineStart]);
+    }
+    const repeated = [...counted.entries()].filter(([m, lines]) => lines.length >= 2 && reaches(m));
+    if (repeated.length !== 1) continue;
+    const set = new Set<string>();
+    for (const t of texts) for (const m of t.matchAll(literal)) if (values.has(m[1].toUpperCase())) set.add(m[1].toUpperCase());
+    if (set.size < 2) continue;
+    const first = statements[idx[0]];
+    const last = statements[idx[idx.length - 1]];
+    found.push({ routine: key, lineStart: first.lineStart, lineEnd: last.lineEnd, calls: { method: repeated[0][0], lines: repeated[0][1] } });
+  }
+  return found.length === 1 ? found[0] : null;
 }
 
 /** The transitions that stand in one routine (`CLASS=>METHOD` or a FORM), in source order. */
