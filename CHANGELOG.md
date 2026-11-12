@@ -28,7 +28,7 @@ move.
 - **No claim of an absence the engine did not check.** A program whose own code approves or overrides is no longer
   called "read-only" or said to have "no approval workflow". A program that checks roles in its own code (a role it
   requires, `'NOT_AUTHORIZED'`) is no longer said to check "no authorization of its own": Documentation says its own
-  code checks who may act, and where nothing is found it says only "No AUTHORITY-CHECK and no role check".
+  code names an authorization or a role it checks, and where nothing is found it says only "No AUTHORITY-CHECK and no role check".
 - **Economics, counts and Delivery.** Rebuild, Move to SAP standard and Retire each get the effort of their own
   option (Retire has no running effort). Design, Transformation, Documentation and Testing count business rules
   from one source and say what each number counts ("5 questions cover 16 of the 41 business rules"). One line count

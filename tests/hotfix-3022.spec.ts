@@ -415,11 +415,21 @@ test.describe('HF-d: no text asserts an absence the engine did not check', () =>
     expect(ownAuthorizationIn(roleShape).map((o) => `${o.name}@${o.line}`)).toEqual(['REQUIRE_ROLE@5', 'NOT_AUTHORIZED@7']);
     expect(capabilityFactsOf(roleShape, buildProcessSkeleton(roleShape)).ownAuthorization?.length).toBe(2);
     const own = buildProcessDocument({ source: roleShape, map: mapOf(roleShape) }).purpose.users;
-    expect(own.text).toBe('Its own code checks who may act; no SAP authorization object is checked.');
+    expect(own.text).toBe('No SAP authorization object is checked; its own code names an authorization or a role it checks.');
     expect(own.text).not.toMatch(/checks no authorization/);
     // A program with neither says only what was read.
     const none = buildProcessDocument({ source: plainShape, map: mapOf(plainShape) }).purpose.users;
     expect(none.text).toBe('No AUTHORITY-CHECK and no role check in the code.');
+    // An AUTHORITY-CHECK whose object is named at run time is still a check — never "no AUTHORITY-CHECK".
+    const dynamicShape = [
+      'REPORT zccio_dynamic_check.',
+      "DATA gv_object TYPE xuobject VALUE 'M_BEST_WRK'.",
+      'START-OF-SELECTION.',
+      "  AUTHORITY-CHECK OBJECT gv_object ID 'ACTVT' FIELD '03'.",
+      '  WRITE / sy-subrc.',
+    ].join('\n');
+    const dynamic = buildProcessDocument({ source: dynamicShape, map: mapOf(dynamicShape) }).purpose.users;
+    expect(dynamic.text).not.toMatch(/^No AUTHORITY-CHECK/);
     // AUTHORITY-CHECK is the SAP object check, read elsewhere — not an own check; a comment is no check.
     expect(ownAuthorizationIn(["  AUTHORITY-CHECK OBJECT 'M_BEST_WRK' ID 'ACTVT' FIELD '03'.", '* require_role is planned'])).toEqual([]);
   });

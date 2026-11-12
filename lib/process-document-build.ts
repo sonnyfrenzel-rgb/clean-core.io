@@ -1382,22 +1382,30 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const authority = calls.authorityChecks.filter((c) => reachedLine(c.lineStart) && c.object);
   // Hotfix 3.0.22: a role the program checks in its own code is an authorization too — never said to be absent.
   const ownAuthorization = ownAuthorizationIn(lines);
+  // Any other AUTHORITY-CHECK — its object named at run time, or off the path read here — is still a check: never absent.
+  const otherAuthority = calls.authorityChecks.filter((c) => !authority.includes(c));
   const users: PdText = authority.length
     ? {
         text: 'An authorization check limits who can complete it.',
         anchors: distinctAnchors(authority.map((c) => anchor(c.lineStart, c.lineEnd))),
         detail: [...new Set(authority.map((c) => c.object!.toUpperCase()))].join(', '),
       }
-    : ownAuthorization.length
+    : otherAuthority.length
       ? {
-          text: 'Its own code checks who may act; no SAP authorization object is checked.',
-          anchors: distinctAnchors(ownAuthorization.map((o) => anchor(o.line))),
-          detail: ownAuthorization.map((o) => o.name).join(', '),
+          text: 'The code has an AUTHORITY-CHECK; which object it tests, or whether this path reaches it, is not read here.',
+          anchors: distinctAnchors(otherAuthority.map((c) => anchor(c.lineStart, c.lineEnd))),
         }
-      : {
-          text: 'No AUTHORITY-CHECK and no role check in the code.',
-          anchors: [anchor(programLine)],
-        };
+      : ownAuthorization.length
+        ? {
+            // Only what the scan proves: the code names authorization or roles — not that every path is checked.
+            text: 'No SAP authorization object is checked; its own code names an authorization or a role it checks.',
+            anchors: distinctAnchors(ownAuthorization.map((o) => anchor(o.line))),
+            detail: ownAuthorization.map((o) => o.name).join(', '),
+          }
+        : {
+            text: 'No AUTHORITY-CHECK and no role check in the code.',
+            anchors: [anchor(programLine)],
+          };
 
   const inScope: PdText[] = [
     {
