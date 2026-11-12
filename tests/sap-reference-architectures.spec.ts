@@ -222,6 +222,7 @@ test.describe('every target and every building block has an entry', () => {
     expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0022 API Managed Integration with SAP Integration Suite](${raUrl('RA0022')})`);
     expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0021 App2App Integration with SAP Integration Suite](${raUrl('RA0021')})`);
     expect(referencePatternsReadme('cap')).toContain(`- Partial fit: [RA0021 App2App Integration with SAP Integration Suite](${raUrl('RA0021')})`);
+    expect(referencePatternsReadme('cap')).toContain(`- Partial fit: [RA0023 DevOps on SAP BTP with CI/CD and SAP Build](${raUrl('RA0023')}) — last updated by SAP 2026-10-28. ${REFERENCE_OF_TARGET.cap[0].why}`);
     expect(referencePatternsReadme('event', 'public')).toContain(eventSourceSentence('public'));
     expect(referencePatternsReadme(null)).toContain('no pattern is named');
     expect(referencePatternsReadme('cap')).toContain('## Reference patterns');

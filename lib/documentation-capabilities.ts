@@ -88,6 +88,12 @@ export interface CapabilityFacts {
    * may approve without calling SAP's workflow, so no absence of an approval is said. Absent in facts stored before.
    */
   ownApproval?: FactObject[];
+  /**
+   * Lines where the program checks who may act in its own code — a role it requires, a name that authorizes,
+   * `'NOT_AUTHORIZED'` — rather than with an SAP authorization object (hotfix 3.0.22). Such a program is never said
+   * to check no authorization. Absent in facts stored before.
+   */
+  ownAuthorization?: FactObject[];
 }
 
 export type Capability = 'posting' | 'ledger' | 'credit-exposure' | 'approval' | 'mail' | 'audit-log' | 'remote';

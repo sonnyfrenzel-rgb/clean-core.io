@@ -109,26 +109,8 @@ export function capabilityFactsOf(
   // Hotfix 3.0.22 (HF-d): an approval the program handles in its own code — a value or a name that approves or
   // overrides (`'APPROVED'`, `approve`, `lv_approver`, `'RELEASED'`), outside comments. First line per name. Not
   // "rejected": a rejected sales item is no approval.
-  const ownApproval = first(
-    lines.flatMap((text, i) => {
-      if (/^\s*\*/.test(text)) return [];
-      // The line up to its `"` comment — a `"` inside a literal is text, not a comment.
-      let quote: string | null = null;
-      let end = text.length;
-      for (let k = 0; k < text.length; k++) {
-        const ch = text[k];
-        if (quote) {
-          if (ch === quote) quote = null;
-        } else if (ch === "'" || ch === '`') quote = ch;
-        else if (ch === '"') {
-          end = k;
-          break;
-        }
-      }
-      const code = text.slice(0, end);
-      return [...code.matchAll(/\b[\w]*(?:APPROV|OVERRID)[\w]*\b|'RELEASED?'/gi)].map((m) => ({ name: m[0].replace(/'/g, ''), line: i + 1 }));
-    }),
-  );
+  const ownApproval = first(namesInCode(lines, /\b[\w]*(?:APPROV|OVERRID)[\w]*\b|'RELEASED?'/gi));
+  const ownAuthorization = ownAuthorizationIn(lines);
   return {
     version: CAPABILITY_FACTS_VERSION,
     reads,
@@ -143,5 +125,36 @@ export function capabilityFactsOf(
     dynamicReads,
     possibleReads,
     ownApproval,
+    ownAuthorization,
   };
+}
+
+/** The line up to its `"` comment — a `"` inside a literal is text, not a comment. Nothing for a `*` comment line. */
+function codeOf(text: string): string {
+  if (/^\s*\*/.test(text)) return '';
+  let quote: string | null = null;
+  for (let k = 0; k < text.length; k++) {
+    const ch = text[k];
+    if (quote) {
+      if (ch === quote) quote = null;
+    } else if (ch === "'" || ch === '`') quote = ch;
+    else if (ch === '"') return text.slice(0, k);
+  }
+  return text;
+}
+
+function namesInCode(lines: string[], pattern: RegExp): FactObject[] {
+  return lines.flatMap((text, i) => [...codeOf(text).matchAll(pattern)].map((m) => ({ name: m[0].replace(/'/g, ''), line: i + 1 })));
+}
+
+/**
+ * Lines where the program checks who may act in its own code rather than with an SAP authorization object: a name
+ * that authorizes or requires a role (`require_role`, `check_role`, `is_authorized`, `'NOT_AUTHORIZED'`), outside
+ * comments. Hotfix 3.0.22: owner example A checks a role from its own grant table and raises 'NOT_AUTHORIZED', and the
+ * documentation said "The code checks no authorization of its own". `AUTHORITY-CHECK` is not matched here — it is
+ * read as an SAP authorization object (`calls.authorityChecks`). First line per name.
+ */
+export function ownAuthorizationIn(source: string | string[]): FactObject[] {
+  const lines = Array.isArray(source) ? source : source.replace(/\r\n?/g, '\n').split('\n');
+  return first(namesInCode(lines, /\b\w*AUTHORI[SZ]\w*\b|'\w*AUTHORI[SZ]\w*'|\b(?:\w+_)?(?:require|check|has|assert|verify)_roles?\b/gi));
 }

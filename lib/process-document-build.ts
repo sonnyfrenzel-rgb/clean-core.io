@@ -17,7 +17,7 @@ import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requirements';
 import { buildNfrSet, type NfrSet, NFR_OWNER_LABEL } from '@/lib/non-functional-requirements';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
-import { capabilityFactsOf } from '@/lib/documentation-facts';
+import { capabilityFactsOf, ownAuthorizationIn } from '@/lib/documentation-facts';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary, withoutCodes } from '@/lib/program-summary-text';
 import { checkPurposeProposal } from '@/lib/program-summary-check';
@@ -1380,16 +1380,24 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   };
 
   const authority = calls.authorityChecks.filter((c) => reachedLine(c.lineStart) && c.object);
+  // Hotfix 3.0.22: a role the program checks in its own code is an authorization too — never said to be absent.
+  const ownAuthorization = ownAuthorizationIn(lines);
   const users: PdText = authority.length
     ? {
         text: 'An authorization check limits who can complete it.',
         anchors: distinctAnchors(authority.map((c) => anchor(c.lineStart, c.lineEnd))),
         detail: [...new Set(authority.map((c) => c.object!.toUpperCase()))].join(', '),
       }
-    : {
-        text: 'The code checks no authorization of its own.',
-        anchors: [anchor(programLine)],
-      };
+    : ownAuthorization.length
+      ? {
+          text: 'Its own code checks who may act; no SAP authorization object is checked.',
+          anchors: distinctAnchors(ownAuthorization.map((o) => anchor(o.line))),
+          detail: ownAuthorization.map((o) => o.name).join(', '),
+        }
+      : {
+          text: 'No AUTHORITY-CHECK and no role check in the code.',
+          anchors: [anchor(programLine)],
+        };
 
   const inScope: PdText[] = [
     {

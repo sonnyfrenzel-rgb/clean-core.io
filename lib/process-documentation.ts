@@ -642,7 +642,9 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: 
   }
   out.push('### Controls', '');
   if (controls.length) for (const g of controls) out.push(`- ${groupLine(g)}`);
-  else out.push('No authorization check in the code.');
+  else if (facts?.ownAuthorization?.length) {
+    out.push(`No AUTHORITY-CHECK; its own code checks who may act: ${facts.ownAuthorization.map((o) => `${o.name} (L${o.line})`).join(', ')}.`);
+  } else out.push('No AUTHORITY-CHECK in the code.');
   out.push('', '### Who acts', '');
   out.push('Read from the code (Reconstructed). A lane is the token the source writes, never a job title.', '');
   for (const lane of doc.lanes) {

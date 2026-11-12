@@ -15,7 +15,16 @@ import { abapMethodMatches } from '../lib/abap-unit-method';
 import { MODEL_NETWORK_CODE, providerConnectionFailure } from '../lib/model-deadline';
 import { modelErrorKind } from '../lib/transformation/orchestrator';
 import { absentClaims, capabilityPresence } from '../lib/documentation-capabilities';
-import { capabilityFactsOf } from '../lib/documentation-facts';
+import { capabilityFactsOf, ownAuthorizationIn } from '../lib/documentation-facts';
+import { buildProcessDocument } from '../lib/process-document-build';
+import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { applyNaming, namingContextOf } from '../lib/process-naming';
+import { buildProcessMapModel } from '../lib/process-map';
+
+function mapOf(source: string, file = 'zccio_role_shape.abap') {
+  const bpmn = buildBpmnExportFromSource(source, { processName: file, sourceFileName: file });
+  return buildProcessMapModel({ bpmn, named: applyNaming(namingContextOf(source), null), fileName: file });
+}
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { programSummary } from '../lib/program-summary-text';
@@ -385,6 +394,34 @@ test.describe('HF-d: no text asserts an absence the engine did not check', () =>
     expect(approving.lines.map((l) => l.text).join(' ')).toContain('It does not post or change data in SAP');
     const plain = programSummary(programSummaryFactsOf(plainShape));
     expect(plain.lines.find((l) => l.key === 'purpose')!.text).toMatch(/^A read-only report/);
+  });
+
+  test('a role the program checks in its own code is never called "no authorization"', () => {
+    // Owner example A's shape: a role from its own grant table, refused with 'NOT_AUTHORIZED' — no AUTHORITY-CHECK.
+    const roleShape = [
+      'REPORT zccio_role_shape.',
+      'PARAMETERS p_role TYPE string.',
+      'DATA gv_ok TYPE abap_bool.',
+      'START-OF-SELECTION.',
+      '  PERFORM require_role USING p_role CHANGING gv_ok.',
+      '  IF gv_ok = abap_false.',
+      "    MESSAGE 'NOT_AUTHORIZED' TYPE 'E'.",
+      '  ENDIF.',
+      '  WRITE / gv_ok.',
+      'FORM require_role USING iv_role TYPE string CHANGING cv_ok TYPE abap_bool.',
+      "  cv_ok = xsdbool( iv_role = 'APPROVER' ).",
+      'ENDFORM.',
+    ].join('\n');
+    expect(ownAuthorizationIn(roleShape).map((o) => `${o.name}@${o.line}`)).toEqual(['REQUIRE_ROLE@5', 'NOT_AUTHORIZED@7']);
+    expect(capabilityFactsOf(roleShape, buildProcessSkeleton(roleShape)).ownAuthorization?.length).toBe(2);
+    const own = buildProcessDocument({ source: roleShape, map: mapOf(roleShape) }).purpose.users;
+    expect(own.text).toBe('Its own code checks who may act; no SAP authorization object is checked.');
+    expect(own.text).not.toMatch(/checks no authorization/);
+    // A program with neither says only what was read.
+    const none = buildProcessDocument({ source: plainShape, map: mapOf(plainShape) }).purpose.users;
+    expect(none.text).toBe('No AUTHORITY-CHECK and no role check in the code.');
+    // AUTHORITY-CHECK is the SAP object check, read elsewhere — not an own check; a comment is no check.
+    expect(ownAuthorizationIn(["  AUTHORITY-CHECK OBJECT 'M_BEST_WRK' ID 'ACTVT' FIELD '03'.", '* require_role is planned'])).toEqual([]);
   });
 
   test('an empty section says only what the engine reads: never "holds no control" or "calls nothing by name"', () => {
