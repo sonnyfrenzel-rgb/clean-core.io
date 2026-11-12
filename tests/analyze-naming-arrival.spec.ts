@@ -49,7 +49,7 @@ test.describe('the names arrive: engine names at once, a counted status line, a 
     expect(view.shown.size).toBe(0);
     expect(view.waiting.size).toBe(25);
     expect(view.status?.text).toBe('Naming steps in plain language … 0 of 25');
-    expect(view.status?.sub).toBe('Names change in place as they arrive. You can use the map now.');
+    expect(view.status?.sub).toBe('Names change in place as they arrive. You can start the walk-through now.');
     expect(view.status?.tone).toBe('busy');
     expect(view.status?.progress).toBe(0);
   });
@@ -80,10 +80,10 @@ test.describe('the names arrive: engine names at once, a counted status line, a 
     expect(view.shown.size).toBe(22);
     expect(view.waiting.size).toBe(0);
     expect(view.swapping.size).toBe(0);
-    expect(view.status).toEqual({ text: 'Names are ready. 3 steps keep the name read from the code (no pen mark).', sub: null, progress: null, tone: 'calm' });
+    expect(view.status).toEqual({ text: 'Names are ready. 3 steps kept their technical name (no pen mark).', sub: null, progress: null, tone: 'calm' });
     expect(view.nextChangeAt).toBeNull();
     const one = arrivalAt(input({ elements: mapOf(5, 4), arrivedAt: T0 }), T0 + 60_000);
-    expect(one.status?.text).toBe('Names are ready. 1 step keeps the name read from the code (no pen mark).');
+    expect(one.status?.text).toBe('Names are ready. 1 step kept its technical name (no pen mark).');
     const all = arrivalAt(input({ elements: mapOf(5, 5), arrivedAt: T0 }), T0 + 60_000);
     expect(all.status?.text).toBe('Names are ready.');
   });
@@ -103,25 +103,25 @@ test.describe('the names arrive: engine names at once, a counted status line, a 
   test('a naming that names nothing new still ends the wait: names ready, every step kept', () => {
     const view = arrivalAt(input({ elements: mapOf(8, 0, 3), arrivedAt: T0 + 2_000 }), T0 + 2_001);
     expect(view.phase).toBe('ready');
-    expect(view.status?.text).toBe('Names are ready. 8 steps keep the name read from the code (no pen mark).');
+    expect(view.status?.text).toBe('Names are ready. 8 steps kept their technical name (no pen mark).');
   });
 
   test('state 18: a larger program says why it takes longer; the map works now', () => {
     const view = arrivalAt(input({ elements: mapOf(61, 50) }), T0 + 9_000);
     expect(61).toBeGreaterThanOrEqual(LARGE_PROGRAM_STEPS);
     expect(view.status?.text).toBe('Naming steps in plain language … 0 of 61');
-    expect(view.status?.sub).toBe('This program is larger, so naming takes up to 45 s. The map works now.');
+    expect(view.status?.sub).toBe('This program is larger, so naming takes up to 45 s. The map and the walk-through work now.');
   });
 
   test('late: the line counts down to the ceiling, then says in one sentence that every step keeps its name', () => {
     const late = arrivalAt(input(), T0 + NAMING_LATE_MS + 5_000);
-    expect(late.status?.sub).toBe('Still waiting for the names, at most 20 s. Then every step keeps the name read from the code.');
+    expect(late.status?.sub).toBe('Waiting for the names, at most 20 s. Then the steps keep their technical name.');
     expect(late.nextChangeAt).toBe(T0 + NAMING_LATE_MS + 6_000);
     const over = arrivalAt(input(), T0 + NAMING_CEILING_MS);
     expect(over.phase).toBe('timeout');
     expect(over.shown.size).toBe(0);
     expect(over.waiting.size).toBe(0);
-    expect(over.status?.text).toBe('The AI names took longer than 45 s. Every step keeps the name read from the code for now.');
+    expect(over.status?.text).toBe('The AI names took longer than 45 s. The steps keep their technical name for now.');
     expect(over.nextChangeAt).toBeNull();
     // Names that come after the ceiling do not arrive on this visit.
     const after = arrivalAt(input({ arrivedAt: T0 + NAMING_CEILING_MS + 1 }), T0 + NAMING_CEILING_MS + 10_000);
@@ -134,7 +134,7 @@ test.describe('the names arrive: engine names at once, a counted status line, a 
     expect(view.phase).toBe('failed');
     expect(view.shown.size).toBe(0);
     expect(view.waiting.size).toBe(0);
-    expect(view.status?.text).toBe('The AI names could not be written this time. Every step keeps the name read from the code.');
+    expect(view.status?.text).toBe('The AI names could not be written this time. The steps keep their technical name.');
     expect(view.status?.sub).toBeNull();
   });
 
