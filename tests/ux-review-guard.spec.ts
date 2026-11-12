@@ -420,6 +420,24 @@ test.describe('what a review covers', () => {
     for (const env of ['CAPTURE_OUT', 'CAPTURE_SEGMENTS', 'CAPTURE_DARK', 'CAPTURE_MOCKUPS']) expect(spec).toContain(`process.env.${env}`);
   });
 
+  test('the target pictures of the Analyze rebuild are in the repo, English, offline, with the states v3.1.0 builds', async () => {
+    const { TARGET_MOCKUPS, MOCKUP_FILE } = await lib('config.mjs');
+    const files = (TARGET_MOCKUPS as { file: string; label: string; states: string[] }[]).map((m) => m.file);
+    expect(files).toEqual(['docs/roadmap/analyze-business-first-mockup.html', 'docs/roadmap/home-mockup-v2.html']);
+    // The capture's set is untouched: the target pictures are listed, not photographed (owner decision 24.09.2026).
+    expect(files).not.toContain(MOCKUP_FILE);
+    for (const m of TARGET_MOCKUPS as { file: string; label: string; states: string[] }[]) {
+      const html = read(m.file);
+      expect(html, m.file).toMatch(/^<!DOCTYPE html>\s*<html lang="en">/);
+      // One file, nothing fetched: no address of another host in the page.
+      expect(html.match(/https?:\/\/[^\s"'<>)]+/g) ?? [], `${m.file} loads from the network`).toEqual([]);
+      expect(m.label.length).toBeGreaterThan(3);
+      expect(m.states.length).toBeGreaterThan(0);
+      // A state opens with #state=<key>; the key has to be one the mockup knows.
+      for (const state of m.states) expect(html, `${m.file} has no state "${state}"`).toMatch(new RegExp(`[\\s{,]${state}\\s*:\\s*[{'"]`));
+    }
+  });
+
   test('the design scan counts what drifts, and names what a release adds that the product hardly uses', async () => {
     const { designScan, introducedTokens, renderScan } = await lib('scan.mjs');
     const files = [

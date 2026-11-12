@@ -183,6 +183,35 @@ export const MOCKUP_VIEWS = [
 ];
 export const MOCKUP_SCREENS = MOCKUP_VIEWS.map((v) => v.screen);
 
+/**
+ * The accepted target pictures of the Analyze rebuild, releases 3.1.0 to 3.5.0
+ * (plan docs/design/analyze-business-first-plan.md §4, AB-0, P10): the Analyze
+ * mockup v4.1 and the home page mockup v2, both accepted by the owner on
+ * 06.11.2026 and copied unchanged from the mockup run. Each is one HTML file
+ * with no network access; a state opens with `#state=<key>&embed=1`. `states`
+ * names the ones v3.1.0 builds (Analyze 1, 2, 3, 7, 17, 18; the home page's
+ * first view for a new account, AB-14a). The home page mockup loads `inter.woff2`
+ * from beside it; the font file was not copied, so it renders in the system
+ * sans-serif. Layout and copy are unchanged by that.
+ *
+ * Listed, not captured: `MOCKUP_VIEWS` above stays the set the capture
+ * photographs, because every picture more is a picture more in each review
+ * call (owner decision 24.09.2026). Moving these into the capture is a cost
+ * decision of its own.
+ */
+export const TARGET_MOCKUPS = [
+  {
+    file: 'docs/roadmap/analyze-business-first-mockup.html',
+    label: 'Analyze, business first (mockup v4.1)',
+    states: ['early', 'mid', 'ready', 'code', 'ret', 'complex'],
+  },
+  {
+    file: 'docs/roadmap/home-mockup-v2.html',
+    label: 'My workspace, the home page (mockup v2)',
+    states: ['new'],
+  },
+];
+
 /** The screen of one configured mockup view, by its `sN` — never by position in the list. */
 export function mockupScreen(view) {
   const hit = MOCKUP_VIEWS.find((v) => v.view === view);
