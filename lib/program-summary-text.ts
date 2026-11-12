@@ -177,6 +177,12 @@ export interface ProgramSummaryFacts {
    * support none (`domain`). Absent in facts read by an earlier engine and for a plain report.
    */
   shape?: { text: string; lines: number[]; kind?: string } | null;
+  /**
+   * 3.1.0 (AB-15a): the status workflow the code moves its object through (`lib/abap/state-machine.ts`) — the field's
+   * word, its states in words in the order the code first sets them, and the lines of the moves. Absent in facts read
+   * by an earlier engine and where the code holds no workflow.
+   */
+  workflow?: { field: string; states: string[]; lines: number[] } | null;
   /** 3.1.0 (H5b): the customer's texts the facts use (tables, selection fields); absent without any. */
   customerWords?: CustomerTexts;
 }
@@ -695,6 +701,16 @@ export interface ProgramSummaryOptions {
 
 export const LEVEL_RECONSTRUCTED = 'Reconstructed from the code — not confirmed by the business.';
 
+/** "It runs a status workflow with 4 states: draft, submitted, approved and applied." — null without a workflow. */
+export function workflowLine(workflow: ProgramSummaryFacts['workflow']): { text: string; lines: number[] } | null {
+  if (!workflow || workflow.states.length < 2) return null;
+  const words = workflow.states.map((s) => (/^'/.test(s) ? s : s.toLowerCase()));
+  return {
+    text: `It runs a ${workflow.field === 'status' || workflow.field === 'state' ? `${workflow.field}` : 'status'} workflow with ${workflow.states.length} states: ${joinAnd(words)}.`,
+    lines: workflow.lines.slice(0, 3),
+  };
+}
+
 /** The summary, slot by slot. */
 export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOptions = {}): ProgramSummary {
   const purpose = purposeLine(f);
@@ -703,7 +719,10 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
   // Roadmap 3.0.21: from that engine it stands whenever the names support one (`purposeAlways`).
   // 3.1.0 (H8): without a purpose from the names, the program's shape says who calls it and when.
-  const named = f.domain ?? f.shape ?? null;
+  // 3.1.0 (AB-15a, v3.1.0 acceptance run): without either, a status workflow the code moves its object through says
+  // what the program does — a program that keeps its data in its own objects otherwise opened on "A report that reads
+  // no table by name", which tells a business reader nothing.
+  const named = f.domain ?? f.shape ?? workflowLine(f.workflow);
   const aim: SummaryLine[] = named && (f.purposeAlways || (namesNoObject && /^A /.test(purpose.text)))
     ? [{ key: 'purpose', text: named.text, anchors: anchorsOf(named.lines), basis: 'reconstructed', aim: true }]
     : [];

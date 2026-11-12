@@ -12,6 +12,7 @@ import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { domainObjectOf, readProgramDomain } from '@/lib/abap/program-domain';
 import { readProgramShape } from '@/lib/abap/program-shape';
+import { readStateMachine, stateWords } from '@/lib/abap/state-machine';
 import { emptyCustomerTexts, isCustomerTexts, type CustomerTexts } from '@/lib/abap/customer-texts';
 import { engineReads3020Apply } from '@/lib/abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
@@ -530,6 +531,19 @@ function shapeFacts(text: string): Pick<ProgramSummaryFacts, 'shape'> {
   return shape ? { shape: { text: shape.text, lines: shape.lines, kind: shape.kind } } : {};
 }
 
+/**
+ * 3.1.0 (AB-15a, v3.1.0 acceptance run): the status workflow the code moves its object through
+ * (`lib/abap/state-machine.ts`), in words — so a program whose names support no purpose and that reads no table by
+ * name still opens on what it does, instead of "A report that reads no table by name". Nothing when the code holds
+ * no such workflow.
+ */
+function workflowFacts(text: string): Pick<ProgramSummaryFacts, 'workflow'> {
+  const machine = readStateMachine(text);
+  if (!machine || machine.states.length < 2) return {};
+  const states = [...new Set(machine.states.map((s) => stateWords(s.value, s.constant)))];
+  const lines = [...new Set(machine.transitions.map((t) => t.line))].sort((a, b) => a - b);
+  return { workflow: { field: machine.field, states, lines } };
+}
 /** The header's rule candidates, counted; nothing when the header states none. */
 function headerRuleFacts(ruleSet: Pick<BusinessRuleSet, 'headerRules'> | null): Pick<ProgramSummaryFacts, 'headerRules'> {
   const h = ruleSet?.headerRules ?? [];
@@ -738,6 +752,8 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     ...(reads3021 ? { purposeAlways: true as const } : {}),
     // 3.1.0 (H8) — present only from that engine and only for a program of one of the shapes `readProgramShape` knows.
     ...(reads310 ? shapeFacts(text) : {}),
+    // 3.1.0 (AB-15a) — the status workflow, present only from that engine and only where the code holds one.
+    ...(reads310 ? workflowFacts(text) : {}),
     // 3.1.0 (H5b) — the customer's words the facts use, so each line that says one carries its provenance.
     ...(texts310 ? { customerWords: customerWordsOf(texts310, [...capability.reads, ...capability.writes].map((o) => o.name), [...ctx.selections.keys()]) } : {}),
     ...headerRuleFacts(ruleSet),
