@@ -33,7 +33,7 @@ export const VIEWPORT_GROUPS = {
 
 /**
  * The pages, named after the mockup state they stand for. Since AB-2 the
- * project opens in Analyze, Business (ADR-107): state 3 is its map page with
+ * project opens in Analyze, Business (ADR-111): state 3 is its map page with
  * the names ready, state 7 the same page with a step's code open beside the
  * map (`#L42` opens the panel as a click on the step does), state 17 a return
  * visit (no `?first=1`, no banner, no hub). `analyze` is today's score page,

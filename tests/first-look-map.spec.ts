@@ -37,7 +37,7 @@ const EMAIL = `first-look-map-${Date.now()}-${Math.random().toString(36).slice(2
 /** What stands in the first screen, at the top of the page. */
 async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
-  // Since AB-2 (ADR-107) the project opens in Analyze, Business: "What this
+  // Since AB-2 (ADR-111) the project opens in Analyze, Business: "What this
   // program does", then the map from the signed run — the first block under it,
   // starting in the first screen. The first look's blocks stand below the map
   // (interim until v3.2.0).

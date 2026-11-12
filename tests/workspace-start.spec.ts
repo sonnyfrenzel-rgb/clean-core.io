@@ -111,7 +111,7 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     const seen = watch(page);
     const projectId = await startExample(page, { width: 1440, height: 900 });
 
-    // Since AB-2 (ADR-107) the project opens in Analyze, Business: the map is the
+    // Since AB-2 (ADR-111) the project opens in Analyze, Business: the map is the
     // page, and the paced build-up of the workspace is gone — the first look's
     // blocks stand below the map in their end state (interim until v3.2.0).
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });

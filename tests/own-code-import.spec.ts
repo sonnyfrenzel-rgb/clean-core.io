@@ -267,7 +267,7 @@ test.describe('own code: the handoff to Analyze', () => {
 
   test('the import opens the project\'s entry, and Analyze returns there after a project\'s first run', () => {
     // Owner 02.10.2026: an example or own code always opens with the first look
-    // first. Since AB-2 (ADR-107) the entry is Analyze in the Business view —
+    // first. Since AB-2 (ADR-111) the entry is Analyze in the Business view —
     // the map — with `?first=1`, never today's score page.
     const importPage = read('components/workspace/OwnCodeImport.tsx');
     expect(importPage).toContain('router.push(`/project/${docRef.id}/analyze?first=1`);');

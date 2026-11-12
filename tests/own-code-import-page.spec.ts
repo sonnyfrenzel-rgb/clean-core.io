@@ -170,7 +170,7 @@ test.describe('own code: choose, check, start', () => {
     await page.click('[data-own-code-start]');
 
     // The project's entry first, with the first look — Analyze in the Business
-    // view since AB-2 (ADR-107), never the score page (owner 02.10.2026) — and
+    // view since AB-2 (ADR-111), never the score page (owner 02.10.2026) — and
     // it signs the engine's reading at once (ADR-072).
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
     expect(page.url()).not.toContain('view=it');

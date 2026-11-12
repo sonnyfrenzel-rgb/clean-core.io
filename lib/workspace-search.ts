@@ -190,7 +190,7 @@ function findingResults(projectId: string, worklist: readonly WorklistItem[]): S
     title: typeof item.title === 'string' && item.title ? item.title : 'Finding without a title',
     detail: [item.category, item.severity].filter(Boolean).join(' · '),
     anchor: item.targetAnchor ?? (item.location || null),
-    // Findings are IT's: Analyze opens in Business since AB-2 (ADR-107), which shows none.
+    // Findings are IT's: Analyze opens in Business since AB-2 (ADR-111), which shows none.
     href: `/project/${projectId}/analyze?view=it`,
   }));
 }

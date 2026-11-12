@@ -145,7 +145,7 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
     });
 
     for (const [name, path, ready] of [
-      // The project's address opens Analyze, Business, since AB-2 (ADR-107); IT stays on the workspace.
+      // The project's address opens Analyze, Business, since AB-2 (ADR-111); IT stays on the workspace.
       ['the project, Analyze in the Business view', '', '[data-analyze-business="ready"]'],
       ['the workspace, IT view', '?view=it', '[data-workspace-shell]'],
       // The bucket panel stands in the folded "Evidence" since 03.10.2026; the

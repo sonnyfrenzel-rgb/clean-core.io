@@ -3,7 +3,7 @@ import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 
 /**
  * A project opens in Analyze, Business view (plan
- * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-107). Pure, so
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-111). Pure, so
  * the rules can be read and tested in one place
  * (`tests/analyze-business-first.spec.ts`).
  */
