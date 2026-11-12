@@ -100,6 +100,12 @@ export interface BpmnExportOptions {
    * SAP Signavio (owner decision 23.10.2026).
    */
   naming?: ProcessNamingRecord | null;
+  /**
+   * A view of the model, applied right before the layout — the home page's slice of the demo map only
+   * (`lib/bpmn/slice.ts`, AB-14a). Never a file: nothing exported, stored or signed passes it. `stats`,
+   * `elementNode` and `dataByElement` still describe the whole model.
+   */
+  view?: (model: ExportModel) => ExportModel;
 }
 
 export interface BpmnExportStats {
@@ -151,7 +157,7 @@ export interface BpmnExport {
 /** The export API. `skeleton` is `buildProcessSkeleton(source)` of the source the signed run analysed. */
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
   const version = options.exporterVersion ?? APP_VERSION;
-  const model = buildExportModel(skeleton, options.names === 'plain'
+  let model = buildExportModel(skeleton, options.names === 'plain'
     ? businessLevelOf(skeleton, options.source, version, options.customerTexts)
     : { businessLevel: engineReads3021Apply(version) });
   const nodes = model.containers.flatMap((c) => c.nodes);
@@ -163,6 +169,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     id: 'note-reconstruction',
     text: reconstructionNote(options, anchored, nodes.length, ai),
   });
+  if (options.view) model = options.view(model);
   const layout = layoutModel(model, { direction: options.direction, wrap: options.wrap, wrapOf: options.wrapOf, noteWidth: options.noteWidth });
 
   const elementNode: Record<string, string> = {};
