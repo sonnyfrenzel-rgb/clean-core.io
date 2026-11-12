@@ -2149,6 +2149,10 @@ re-triaged here. All 13 critical and high findings were checked against the code
 | e8b4b34ecc97 | high | scripts/verify-pack.mjs | *(Title withheld until shipped — integrity)* | 3.0.23 · delivery-package verdict | scheduled |
 | 5298757260c1 | high | lib/abap/evidence-model.ts | A copied function-module name still counts after the target is overwritten | next engine step | scheduled |
 | bb4c536fe4fd | high | lib/abap/evidence-model.ts | Duplicate of 5298757260c1 | next engine step | scheduled |
+| 1e2ba9ecf41c | high | scripts/verify-pack.mjs | Duplicate of e8b4b34ecc97 | 3.0.23 · delivery-package verdict | scheduled |
+| 28973e2920d1 | high | scripts/verify-pack.mjs | Duplicate of e8b4b34ecc97 | 3.0.23 · delivery-package verdict | scheduled |
+| 8beee3c68735 | high | scripts/verify-pack.mjs | Duplicate of e8b4b34ecc97 | 3.0.23 · delivery-package verdict | scheduled |
+| f3d801d40600 | high | lib/abap/demo-switches.ts | A selector found by its shape is treated as a demo switch everywhere in the program, so a business rule it guards elsewhere is dropped | next engine step (engine version gate) | scheduled |
 
 ### Full reviews of a12774cd2b7f and fc787674705f (v2.20.0) — three public-copy findings decided on 30.09.2026
 
