@@ -35,6 +35,9 @@ move.
   open project tab to that account while it kept showing the first account's project and code. Every project page
   now reloads as the new account (and is refused if that account has no access); after a sign-out nothing of the
   project stays on screen.
+- **The pack check shows the result of the pack you chose.** On `/verify-pack`, a slow check of one audit pack or
+  delivery package could finish after another pack was chosen and appear beneath it; a result that is no longer
+  current is now dropped.
 - Raw JSON project exports and the Transformation's draft download carry the AI-marking field like every other
   export.
 - The assistant describes the transformation (the engine builds the skeleton, the model fills method bodies) and
