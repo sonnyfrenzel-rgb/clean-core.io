@@ -459,8 +459,9 @@ test.describe('the questions in Design, rendered', () => {
 
   test('the Business view’s opening says one sentence and leads into Design — no rule decision', async () => {
     const mod = await load('components/workspace/RuleBasketLine.tsx');
-    const html = renderToStaticMarkup(React.createElement(mod.RuleBasketLineView, { questions: 7, technical: 6, undetermined: 2, designHref: '/project/p1/design#rule-questions' }));
-    expect(html).toContain('7 questions for the business · 6 technical rules stay as coded');
+    const html = renderToStaticMarkup(React.createElement(mod.RuleBasketLineView, { questions: 7, rulesAsked: 12, total: 20, technical: 6, undetermined: 2, designHref: '/project/p1/design#rule-questions' }));
+    // 3.0.23: counted in rules, so the line adds up to the 20 business rules (12 + 6 + 2).
+    expect(html).toContain('7 questions for the business cover 12 rules · 6 technical rules stay as coded');
     expect(html).toContain('2 not determined');
     expect(html).toContain('href="/project/p1/design#rule-questions"');
     expect(html).not.toContain('data-rule-decide');

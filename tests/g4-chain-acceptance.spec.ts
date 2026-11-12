@@ -1169,7 +1169,7 @@ test.describe('G4 path 4 — undecidable (CC-021: the deciding logic is in an IN
     expect(h.link('decision').value).toContain('picks nothing');
     expect(h.link('design').provenance).toBe('proposed');
     expect(h.status('decision').value).toBe('draft, not confirmed');
-    expect(h.facets.find((f) => f.key === 'decision')?.value).toBe('Pending');
+    expect(h.facets.find((f) => f.key === 'decision')?.value).toBe('Awaiting sign-off');
     expect(h.stillNeeded).toEqual(expect.arrayContaining(['design', 'decision']));
     expect(h.chain.some((l) => l.provenance === 'confirmed'), 'something in the chain claims a confirmation').toBe(false);
   });

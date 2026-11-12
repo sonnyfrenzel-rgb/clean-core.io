@@ -7,34 +7,58 @@ import type { BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import { buildProcessFacts } from '@/lib/abap/process-facts';
 import { explainBusinessRules } from '@/lib/abap/business-rule-set-explain';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
-import { basketLineText, basketUndetermined, wt } from '@/lib/workspace-messages';
+import { questionRuleCountsOf } from '@/lib/rule-counts';
+import { basketLineText, basketOther, basketUndetermined, wt } from '@/lib/workspace-messages';
 
 /**
  * The business rules in the Business view's opening — one sentence and a way
  * into Design, never a decision (owner decision 21.10.2026: "we are in the
  * first insights, and a business user is to decide that right away?").
  *
- * "7 questions for the business · 6 technical rules stay as coded", counted
- * from the engine's three baskets (`lib/abap/business-rule-set-explain.ts`);
+ * "7 questions for the business cover 12 rules · 6 technical rules stay as
+ * coded · 2 not determined", counted in rules from the engine's three baskets
+ * (`lib/abap/business-rule-set-explain.ts`) through `lib/rule-counts.ts`, so the
+ * line adds up to the business-rule count beside it (3.0.23);
  * the questions are asked in Design, the full rule register is in the IT view
  * and in the delivery package.
  */
 
 export const RULE_BASKET_LINE_ID = 'rule-baskets';
 
-export function RuleBasketLineView({ questions, technical, undetermined, designHref }: { questions: number; technical: number; undetermined: number; designHref: string | null }) {
+export function RuleBasketLineView({
+  questions,
+  rulesAsked,
+  total,
+  technical,
+  undetermined,
+  designHref,
+}: {
+  questions: number;
+  /** Business rules the questions cover, each once (`questionRuleCounts`). */
+  rulesAsked: number;
+  /** Every business rule of the program — what the line adds up to. */
+  total: number;
+  technical: number;
+  undetermined: number;
+  designHref: string | null;
+}) {
+  // Rules no question covers that are neither technical nor not determined: said, so the line still adds up.
+  const other = Math.max(0, total - rulesAsked - technical - undetermined);
   return (
     <p
       id={RULE_BASKET_LINE_ID}
       data-rule-basket-line=""
       data-questions={questions}
+      data-rules-asked={rulesAsked}
+      data-rules-total={total}
       data-technical={technical}
       data-undetermined={undetermined}
       className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] leading-snug font-semibold text-cc-ink"
     >
       <span>
-        {basketLineText(questions, technical)}
+        {basketLineText(questions, rulesAsked, technical)}
         {undetermined > 0 ? <span className="font-medium text-cc-ink-muted"> · {basketUndetermined(undetermined)}</span> : null}
+        {other > 0 ? <span className="font-medium text-cc-ink-muted"> · {basketOther(other)}</span> : null}
       </span>
       {designHref && questions > 0 ? (
         <CcLinkButton href={designHref} variant="ghost" icon={<ArrowRight size={16} aria-hidden={true} />} data-rule-basket-design="">
@@ -68,7 +92,9 @@ export default function RuleBasketLine({
     if (!ruleSet || !source.trim() || ruleSet.rules.length === 0) return null;
     try {
       const ex = explainBusinessRules(source, ruleSet, buildProcessFacts(source), engineVersion);
-      return { questions: ex.questions.length, technical: ex.baskets.technical.length, undetermined: ex.baskets.undetermined.length };
+      // One count source with Design's "5 questions cover 16 of the 41 business rules" (`lib/rule-counts.ts`).
+      const c = questionRuleCountsOf(ex, 0);
+      return { questions: c.questions, rulesAsked: c.rulesAsked, total: c.total, technical: c.technical, undetermined: c.undetermined };
     } catch {
       return null;
     }

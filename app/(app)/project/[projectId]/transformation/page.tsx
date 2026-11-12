@@ -2485,6 +2485,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             </div>
           }
           extraAnchors={[['tf-side', 'Side by side']]}
+          codePhase={phases.find((p) => p.key === 'transformation') ?? null}
           after={sideBySide}
         />
       </div>
