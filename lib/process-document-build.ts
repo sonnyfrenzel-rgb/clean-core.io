@@ -32,6 +32,7 @@ import { stripModelMarkdown } from '@/lib/model-text';
 import { sapCheckedNarrative } from '@/lib/sap-reference-check';
 import { screenProgramDocument, screenSensitiveText } from '@/lib/sensitive-text';
 import { FR_TOPICS_COVERED_BY_NFR } from '@/lib/requirements-export';
+import { businessRulesWord, documentRuleCounts } from '@/lib/rule-counts';
 import {
   PROCESS_DOCUMENT_FORMAT,
   PROCESS_DOCUMENT_FORMAT_VERSION,
@@ -1395,7 +1396,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
 
   const inScope: PdText[] = [
     {
-      text: `The process in ${engine.fileName}: ${steps.length} step${steps.length === 1 ? '' : 's'}, ${decisions} decision point${decisions === 1 ? '' : 's'}, ${rules.length} rule${rules.length === 1 ? '' : 's'}.`,
+      text: `The process in ${engine.fileName}: ${steps.length} step${steps.length === 1 ? '' : 's'}, ${decisions} decision point${decisions === 1 ? '' : 's'}, ${businessRulesWord(documentRuleCounts(rules).businessRules)}.`,
       anchors: [anchor(1, Math.max(1, engine.lineCount))],
     },
   ];

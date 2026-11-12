@@ -31,6 +31,7 @@ import { contractParts } from './decision-card';
 import { sapNamesForDisplay } from './sap-naming';
 import { DECISION_OPTION_LABELS, optionOfArchitecture } from './decision-options';
 import { costRevisionWords, decisionCostLine, type DecisionCostBasis, type DecisionCostCheck } from './decision-cost';
+import { decideOpenRules } from './rule-counts';
 
 /**
  * Where a point is resolved: a stage of the project, or another view of the
@@ -248,7 +249,8 @@ function needPlace(open: ReturnType<typeof needOpenOf>): DecisionPlace {
       kind: 'stage',
       path: 'design',
       hash: DECISION_PLACE_IDS.ruleQuestions,
-      action: `Answer the questions on ${plural(open.rules, 'open rule', 'open rules')}`,
+      // HF-e (3.0.22): rules are not questions — Design asks some of them; the rest are in the rule register.
+      action: `${decideOpenRules(open.rules)}, starting with the questions in Design`,
     };
   }
   return { kind: 'view', view: 'business', hash: DECISION_PLACE_IDS.businessMap, action: 'Walk through the process' };

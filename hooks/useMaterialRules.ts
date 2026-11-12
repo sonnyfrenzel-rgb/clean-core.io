@@ -20,8 +20,8 @@ import type { MaterialRule } from '@/lib/testing-rule-trace';
 export function useMaterialRules(
   source: string | null,
   engineVersion: string | null,
-): { rules: MaterialRule[] | null; failed: boolean } {
-  const [held, setHeld] = useState<{ source: string; engine: string | null; rules: MaterialRule[] | null; failed: boolean } | null>(null);
+): { rules: MaterialRule[] | null; all: number | null; failed: boolean } {
+  const [held, setHeld] = useState<{ source: string; engine: string | null; rules: MaterialRule[] | null; all: number | null; failed: boolean } | null>(null);
   useEffect(() => {
     if (!source) return undefined;
     let cancelled = false;
@@ -30,15 +30,17 @@ export function useMaterialRules(
         import('@/lib/abap/business-rule-set'),
         import('@/lib/testing-rule-trace'),
       ]);
-      const rules = materialRules(deriveBusinessRules(source, engineVersion));
-      if (!cancelled) setHeld({ source, engine: engineVersion, rules, failed: false });
+      const set = deriveBusinessRules(source, engineVersion);
+      const rules = materialRules(set);
+      // HF-e (3.0.22): every business rule too, so the coverage names the register's count beside the reachable ones.
+      if (!cancelled) setHeld({ source, engine: engineVersion, rules, all: set.rules.length, failed: false });
     })().catch(() => {
-      if (!cancelled) setHeld({ source, engine: engineVersion, rules: null, failed: true });
+      if (!cancelled) setHeld({ source, engine: engineVersion, rules: null, all: null, failed: true });
     });
     return () => {
       cancelled = true;
     };
   }, [source, engineVersion]);
-  if (!source || !held || held.source !== source || held.engine !== engineVersion) return { rules: null, failed: false };
-  return { rules: held.rules, failed: held.failed };
+  if (!source || !held || held.source !== source || held.engine !== engineVersion) return { rules: null, all: null, failed: false };
+  return { rules: held.rules, all: held.all, failed: held.failed };
 }

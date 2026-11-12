@@ -18,7 +18,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.tipsDone': 'Everything the generation uses is decided and current.',
   'transformation.generateNow': 'Generate now',
   'transformation.regenerateNow': 'Regenerate now',
-  'transformation.generateNote': 'Generating now is fine — open rules are implemented as the original has them and marked open.',
+  'transformation.generateNote': 'Generating now is fine — open business rules are implemented as the original has them and marked open.',
   'transformation.inCode': 'In the code:',
   'transformation.chainBeforeTitle': 'What this generation will use',
   'transformation.chainBeforeLead': 'From the tools before Transformation, in workflow order.',
@@ -33,7 +33,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.warnDecision.checkStandardFit': 'Decide in Management',
   'transformation.warnDecision.lead': 'You can still generate — the decision stays yours.',
 
-  'transformation.tip.rules.titleLoading': 'Decide the open rules',
+  'transformation.tip.rules.titleLoading': 'Decide the open business rules',
   'transformation.tip.rules.impact':
     'each decided rule is implemented exactly as you chose (keep, change or drop) instead of copied as-is.',
   'transformation.tip.rules.inCode':
