@@ -177,6 +177,33 @@ function conditionOf(statement: AbapStatement): string | null {
   return m ? m[1] : null;
 }
 
+/** The status values the open decisions ask for: `IF status = X` (or `IN`), the `WHEN X` of a `CASE status`. */
+function enclosingStates(frames: readonly Frame[], statements: readonly AbapStatement[], constants: Constants): Array<{ word: string; values: string[]; line: number }> {
+  const out: Array<{ word: string; values: string[]; line: number }> = [];
+  for (const f of frames) {
+    if (f.kind === 'if' && f.condition) {
+      for (const c of comparisons(f.condition, constants)) {
+        if (c.op === '=' || c.op === 'IN') out.push({ word: c.word, values: c.values, line: statements[f.start].lineStart });
+      }
+    }
+    const word = f.kind === 'case' && f.subject ? statusWordOf(f.subject) : null;
+    if (word && f.when) {
+      const values = f.when.map((w) => valueOf(w, constants)?.value).filter((v): v is string => v != null);
+      if (values.length) out.push({ word, values, line: statements[f.start].lineStart });
+    }
+  }
+  return out;
+}
+
+/** The routine a statement calls as a statement of its own: `PERFORM x`, `x( )`, `me->x( )`, `CALL METHOD x`. Upper case. */
+function calledRoutine(text: string): string | null {
+  const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
+  if (perform) return perform[1].toUpperCase();
+  const call = /^(?:CALL\s+METHOD\s+)?(?:(?:me|[\w/]+)(?:->|=>))?([\w/~]+)\s*\(/i.exec(text) ?? /^CALL\s+METHOD\s+(?:(?:me|[\w/]+)(?:->|=>))?([\w/~]+)\b/i.exec(text);
+  if (!call) return null;
+  return (call[1].split('~').pop() ?? call[1]).toUpperCase();
+}
+
 /** Is a decision (`IF`, `CASE`) open — then a check closed inside it guards only that arm, not the routine. */
 function decisionOpen(frames: readonly Frame[]): boolean {
   return frames.some((f) => f.kind === 'if' || f.kind === 'case');
@@ -237,6 +264,8 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     let guards: Array<{ line: number; condition: string; stopped: boolean; status: boolean; check?: boolean }> = [];
     let roles: Array<{ object: string; line: number }> = [];
 
+    /** Per called routine (its own name, upper case): how often it is called, and the status values its callers ask for. */
+    const callFrom = new Map<string, { sites: number; asked?: number; values: Map<string, string[]>; lines: number[] }>();
     /** The constant a value was written with, wherever the code names one. */
     const named = new Map<string, string>();
     const noteRead = (line: number, condition: string) => {
@@ -299,6 +328,12 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
         if (top?.kind === 'case') {
           const values = t.replace(/^WHEN\s+/i, '').replace(/\.$/, '');
           top.when = /^OTHERS$/i.test(values) ? null : values.split(/\s+OR\s+/i);
+          if (top.subject && statusWordOf(top.subject)) {
+            for (const w of top.when ?? []) {
+              const v = valueOf(w, constants);
+              if (v?.constant && !named.has(v.value)) named.set(v.value, v.constant);
+            }
+          }
           top.start = i;
         }
         continue;
@@ -323,6 +358,20 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       }
 
       const assignment = assignmentOf(s, constants);
+      // A call of a routine inside a decision on the status: the routine runs only from those values
+      // (`WHEN gc_status-new. check_request( ).`). Read for every call; used where the routine states no value itself.
+      const called = calledRoutine(t);
+      if (called && !assignment) {
+        const asked = enclosingStates(frames, statements, constants);
+        const known = callFrom.get(called) ?? { sites: 0, values: new Map<string, string[]>(), lines: [] as number[] };
+        known.sites += 1;
+        for (const a of asked) {
+          known.values.set(a.word, [...new Set([...(known.values.get(a.word) ?? []), ...a.values])]);
+          if (!known.lines.includes(a.line)) known.lines.push(a.line);
+        }
+        known.asked = (known.asked ?? 0) + (asked.length ? 1 : 0);
+        callFrom.set(called, known);
+      }
       if (!assignment) continue;
       const from: string[] = [];
       const statusChecks: number[] = [];
@@ -331,17 +380,7 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
         if (!statusChecks.includes(line)) statusChecks.push(line);
       };
       // An enclosing decision that asks for a value: `IF status = X`, `WHEN X` of `CASE status`.
-      for (const f of frames) {
-        if (f.kind === 'if' && f.condition) {
-          for (const c of comparisons(f.condition, constants)) {
-            if (c.word === assignment.word && (c.op === '=' || c.op === 'IN')) add(c.values, statements[f.start].lineStart);
-          }
-        }
-        if (f.kind === 'case' && f.subject && statusWordOf(f.subject) === assignment.word && f.when) {
-          const values = f.when.map((w) => valueOf(w, constants)?.value).filter((v): v is string => v != null);
-          if (values.length) add(values, statements[f.start].lineStart);
-        }
-      }
+      for (const a of enclosingStates(frames, statements, constants)) if (a.word === assignment.word) add(a.values, a.line);
       // An earlier guard that stops on any other value: `IF status <> X. MESSAGE … TYPE 'E'. ENDIF.`, `CHECK status = X`.
       for (const g of guards) {
         if (!g.status || !g.stopped) continue;
@@ -366,6 +405,17 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     // The field: at least two transitions to two values, read in a condition, and at least one move the code makes
     // only from a stated value — a field that is set from a result (a traffic light, a log severity, a dunning level)
     // is a classification, not a workflow. The most transitions wins, a tie none.
+    // A move whose routine states no from-value takes its callers' — only where every call of it asks for one.
+    for (const f of found) {
+      const t = f.transition;
+      if (t.from.length || !t.routine) continue;
+      const own = t.routine.split(/=>|~/).pop() ?? t.routine;
+      const callers = callFrom.get(own);
+      const values = callers?.values.get(f.word);
+      if (!callers || !values?.length || callers.asked !== callers.sites) continue;
+      t.from = values.filter((v) => v !== t.to);
+      t.statusChecks = [...callers.lines];
+    }
     const byWord = new Map<string, StateTransition[]>();
     for (const f of found) byWord.set(f.word, [...(byWord.get(f.word) ?? []), f.transition]);
     const qualified = [...byWord.entries()].filter(([word, list]) =>

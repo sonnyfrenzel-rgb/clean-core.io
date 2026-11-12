@@ -2076,11 +2076,25 @@ function callSiteName(node: SkeletonNode, c: PlainContext): string {
   return words;
 }
 
+/**
+ * A status value in words (`stateWords`), in English where the value is German the vocabulary can translate
+ * ("ABGELEHNT" → "Rejected"); German it cannot translate stays the code it is — never a German word in an English label.
+ */
+function stateSaid(value: string, constant: string | null): string {
+  const words = value.replace(/_/g, ' ').trim().toLowerCase();
+  if (/^[a-zäöüß ]{3,}$/.test(words)) {
+    const english = translateGermanText(words, FIELD_SOURCES_310)?.english;
+    if (english) return sentenceCase(english);
+    if (hasGermanWord(words, FIELD_SOURCES_310) || germanUntranslated(words)) return value.toUpperCase();
+  }
+  return stateWords(value, constant);
+}
+
 /** "Approve (Submitted → Approved)", "Decide (Pending → Approved or Rejected)", "Start (to Draft)". */
 function transitionName(words: string, moves: readonly StateTransition[], machine: StateMachine | null): string {
   const say = (value: string) => {
     const known = machine?.states.find((s) => s.value === value);
-    return stateWords(value, known?.constant ?? null);
+    return stateSaid(value, known?.constant ?? null);
   };
   const to = [...new Set(moves.map((m) => m.to))];
   const from = [...new Set(moves.flatMap((m) => m.from))].filter((v) => !to.includes(v) || to.length > 1);
@@ -2089,11 +2103,22 @@ function transitionName(words: string, moves: readonly StateTransition[], machin
   return `${words} (${move})`;
 }
 
+/** The kinds a status setter's call can be drawn as. */
+const STEP_KINDS_FOR_MOVES = new Set<string>(['call-opaque', 'task', 'write', 'send-task', 'service-task', 'sub-process', 'call-activity']);
+
 /** Readable name for a step, a sub-process, a loop or an event. */
 export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
   try {
     const c = contextOf(ctx);
     const line = node.anchor?.lineStart;
+    // 3.1.0 (AB-15a): the call of a status setter (`set_status( gc_approved )`) is the move it makes.
+    if (c.reads310 && c.stateMachine && STEP_KINDS_FOR_MOVES.has(node.kind)) {
+      const machine = c.stateMachine?.();
+      const move = machine?.transitions.find((t) => t.line === line);
+      if (machine && move && /\(/.test(statementAt(c, line)?.text ?? '')) {
+        return fit(`Set ${machine.field} to ${stateSaid(move.to, move.toConstant)}`);
+      }
+    }
     switch (node.kind) {
       case 'start': {
         if (node.detail?.subProcess === true) return 'Start';
@@ -2257,6 +2282,9 @@ function flagStepName(node: SkeletonNode, ctx: PlainContext): string {
   // The program's sentence is the value set into the field itself: the field and the sentence.
   if (said && literal !== null && englishText(literal).replace(/[.:;,]+$/, '').trim() === said) return firstFitting([`${subject}: ${lcFirst(said)}`, sentenceCase(said)]);
   if (said) return sentenceCase(said);
+  // 3.1.0 (AB-15a): a move of the program's status workflow says the state in words ("Set status to Declined").
+  const move = ctx.stateMachine?.()?.transitions.find((t) => t.line === node.anchor?.lineStart);
+  if (move) return `Set ${lcFirst(subject)} to ${stateSaid(move.to, move.toConstant)}`;
   const lower = value.toLowerCase();
   const participle = isParticiple(field, ctx);
   if (TRUE_VALUES.has(lower)) return participle ? `Mark as ${lcFirst(subject)}` : `Set ${lcFirst(subject)}`;
@@ -2575,6 +2603,8 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     if (!method || node.collapsed !== true || !(isTechnicalMethodName(node.label) || interfaceOfMethod(node.label))) return null;
     // A constructor is the set-up of the run whatever it reads (`callSiteName`): "Prepare the run".
     if (isConstructorName(node.label)) return null;
+    // A status setter's call is the move it makes (`stepName`), not what the setter does besides.
+    if (ctx.stateMachine?.()?.transitions.some((t) => t.line === node.anchor?.lineStart)) return null;
     let step: SkeletonNode | undefined = node;
     for (let depth = 0; step?.collapsed === true && step.expandsTo && depth < 10; depth++) {
       const from = detailString(step, 'collapsedFrom');
