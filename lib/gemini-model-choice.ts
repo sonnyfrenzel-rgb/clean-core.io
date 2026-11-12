@@ -17,3 +17,19 @@ export function resolveRequestedModel(requested: string | undefined, deploymentM
   if (requested === undefined || requested === PRODUCT_GEMINI_MODEL) return deploymentModel;
   return requested;
 }
+
+/**
+ * Whether the resolved model may run: it is in the register, and a model under
+ * evaluation runs only when it is this deployment's product model
+ * (`GEMINI_MODEL`), never because a client named it. Pure: the register and the
+ * deployment's model are handed in.
+ */
+export function modelServable(
+  model: string,
+  deploymentModel: string,
+  register: ReadonlySet<string>,
+  evaluationOnly: ReadonlySet<string>,
+): boolean {
+  if (!register.has(model)) return false;
+  return !evaluationOnly.has(model) || model === deploymentModel;
+}

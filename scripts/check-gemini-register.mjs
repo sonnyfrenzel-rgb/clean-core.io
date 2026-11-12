@@ -77,9 +77,10 @@ export function servedVerdict(model, body) {
   return { answered: true, servedBy };
 }
 
-async function probe(model, key) {
+/** One probe call; `fetchImpl` is the network, handed in so a test can stand in for the provider. */
+export async function probe(model, key, fetchImpl = fetch) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${key}`;
-  const res = await fetch(url, {
+  const res = await fetchImpl(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // A thinking level, as the fill and wording calls send it (lib/model-thinking.ts):

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { PRODUCT_GEMINI_MODEL, NAMING_GEMINI_MODEL } from '../lib/constants';
-import { resolveRequestedModel } from '../lib/gemini-model-choice';
+import { modelServable, resolveRequestedModel } from '../lib/gemini-model-choice';
 
 /**
  * One place decides which model the product calls.
@@ -146,9 +146,26 @@ test("a request for the product default runs on the deployment's product model",
  * when there is no key. Wiring it in is not part of this step.
  */
 test('a model under evaluation is served only as the deployment\'s product model, never on a client\'s request', () => {
+  const register = new Set(['gemini-3.8-flash', 'gemini-4-hydrogen']);
+  const evaluation = new Set(['gemini-4-hydrogen']);
+  // A client naming it is refused while the deployment runs the product default …
+  expect(modelServable('gemini-4-hydrogen', 'gemini-3.8-flash', register, evaluation)).toBe(false);
+  // … and served once GEMINI_MODEL makes it the deployment's model.
+  expect(modelServable('gemini-4-hydrogen', 'gemini-4-hydrogen', register, evaluation)).toBe(true);
+  expect(modelServable('gemini-3.8-flash', 'gemini-4-hydrogen', register, evaluation)).toBe(true);
+  expect(modelServable('gemini-2.5-flash', 'gemini-3.8-flash', register, evaluation)).toBe(false);
+  // The route decides with this function, over its own register and evaluation list.
   const route = read('app/api/gemini/route.ts');
   expect(route).toContain("const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);");
-  expect(route).toContain('if (!ALLOWED_MODELS.has(model) || (EVALUATION_ONLY_MODELS.has(model) && model !== productModel())) {');
+  expect(route).toContain('if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {');
+});
+
+test('the register probe records a 200 without a named model as not answered', async () => {
+  const { probe } = await import('../scripts/check-gemini-register.mjs');
+  const answer = (body: unknown) => (async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
+  expect((await probe('gemini-3.8-flash', 'k', answer({}))).answered).toBe(false);
+  expect((await probe('gemini-3.5-flash', 'k', answer({ modelVersion: 'gemini-3.6-flash' }))).answered).toBe(false);
+  expect(await probe('gemini-3.8-flash', 'k', answer({ modelVersion: 'gemini-3.8-flash' }))).toEqual({ httpStatus: 200, answered: true, servedBy: 'gemini-3.8-flash' });
 });
 
 test('the register probe counts an answer only from the model that was asked', async () => {

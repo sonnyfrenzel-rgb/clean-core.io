@@ -59,7 +59,7 @@ import {
 } from '@/lib/gemini-test-stub';
 import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import { resolveRequestedModel } from '@/lib/gemini-model-choice';
+import { modelServable, resolveRequestedModel } from '@/lib/gemini-model-choice';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
@@ -540,7 +540,7 @@ export async function POST(request: NextRequest) {
     // F-07: Validate model against server-side allowlist. A model under
     // evaluation runs only as this deployment's product model (`GEMINI_MODEL`),
     // never because a client asked for it by name.
-    if (!ALLOWED_MODELS.has(model) || (EVALUATION_ONLY_MODELS.has(model) && model !== productModel())) {
+    if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {
       return NextResponse.json(
         { error: `Model "${model}" is not permitted. Allowed: ${[...ALLOWED_MODELS].join(', ')}` },
         { status: 400 },
