@@ -1707,6 +1707,14 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-965 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-966 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-967 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-969 | medium | P2 | 3.0.23 · model-call hardening (with QA c12ee6c4bf32) | scheduled |
+| SEC-2026-970 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-971 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-972 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-973 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-974 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+
+**Audit of v3.0.22 (`377837c`), 12.11.2026: 0 critical, 0 high, 2 medium, 0 low, 5 info — all 63 candidates verified by the agent, all 7 findings checked by hand.** SEC-2026-969 goes to 3.0.23 with the QA finding `c12ee6c4bf32`; SEC-2026-970 to -974 join the comment-hygiene decision. SEC-2026-968 was refuted against the code. The reasons are in the sealed register.
 
 **Audit of v3.0.21 (`f0e8e15`), 12.11.2026: 0 critical, 0 high, 9 medium, 6 low, 5 info — all 131 candidates verified by the agent, all 20 findings checked by hand.** SEC-2026-951 and -958 go to 3.0.23 with the QA finding `e8b4b34ecc97`; SEC-2026-949 waits for the next rules deploy; SEC-2026-954 is a duplicate of SEC-2026-857; SEC-2026-950, -953, -957 and -961 are P3 hardening; SEC-2026-963 to -967 join the comment-hygiene decision. Seven were refuted (SEC-2026-948, -952, -955 and -956 against the code, -959 as -700, -960 as -628, -962 as -782). The follow-up audit of `f597131` had no findings. The reasons are in the sealed register.
 
