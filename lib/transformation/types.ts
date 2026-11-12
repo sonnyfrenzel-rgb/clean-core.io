@@ -926,7 +926,11 @@ export interface AcceptanceAdapter {
 
 /* ---------------------------------------------------------------- trace */
 
-export type FilledBy = 'engine' | 'model' | 'model-repair-1' | 'model-repair-2' | 'model-repair-3' | 'not-filled';
+/**
+ * Who wrote a unit's body. `empty`: the model answered with a body that holds no statement (only a comment, or
+ * nothing) — not counted or marked as model-written, and not a stub (`emptyBodyComment`, engine-led.ts).
+ */
+export type FilledBy = 'engine' | 'model' | 'model-repair-1' | 'model-repair-2' | 'model-repair-3' | 'empty' | 'not-filled';
 
 export interface TraceUnit {
   unitId: string;
@@ -995,6 +999,8 @@ export interface Trace {
     written: number;
     repaired: number;
     notWritten: Array<{ unitId: string; reason: string }>;
+    /** Units whose model body holds no statement, with the model's comment; absent when none. */
+    empty?: Array<{ unitId: string; comment: string }>;
     /** `passed`, `notRun`, `scope` and the reasons since the honest count (step E); absent in an older trace. */
     checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number; scope?: 'engine-code' | 'fills'; notRunReason?: string | null; baseThrew?: string | null }>;
     notRun: Array<{ kind: string; reason: string }>;

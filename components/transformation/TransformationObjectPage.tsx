@@ -16,6 +16,7 @@ import type { CoverageReport } from '@/lib/abap/coverage';
 import {
   calmTitle,
   changeExcerpt,
+  codeGeneratedStep,
   changeOrder,
   fileCard,
   findingTarget,
@@ -75,6 +76,11 @@ export interface TransformationObjectPageProps {
   after?: React.ReactNode;
   /** Extra anchors for those sections: [id, label]. */
   extraAnchors?: Array<[string, string]>;
+  /**
+   * The Transformation phase as the tool bar reads it (`workflowSteps`): its state, badge and detail. "Status of
+   * the code" ticks "Code generated" only when it is done (3.0.23). Absent in the demo.
+   */
+  codePhase?: { state: string; badge: string; detail: string } | null;
 }
 
 const sectionCls = 'min-w-0 scroll-mt-28 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc';
@@ -337,6 +343,7 @@ export default function TransformationObjectPage({
   children,
   after,
   extraAnchors = [],
+  codePhase,
 }: TransformationObjectPageProps) {
   const [allChanges, setAllChanges] = useState(false);
   const figures = useMemo(() => transformationFigures(findings), [findings]);
@@ -641,15 +648,18 @@ export default function TransformationObjectPage({
             <ol className="m-0 list-none px-4 pb-4 pt-2" data-code-status="">
               {[
                 { done: findings.length > 0, text: 'Plan written by the engine', note: `${figures.findings} findings${figures.places !== figures.findings ? ` at ${figures.places} places in the code` : ''}` },
-                {
-                  done: generated,
-                  text: 'Code generated',
-                  note: generated
-                    ? engineLed
+                // 3.0.23: no done tick while the tool bar says the stored package is not activatable (or not
+                // runnable, or partial) — the step says what the tool bar says.
+                codeGeneratedStep({
+                  generated,
+                  packageNote: !generated
+                    ? ''
+                    : engineLed
                       ? `${groups.length} objects — frame by the engine, function bodies by the model`
-                      : `${files!.length} files, AI-generated`
-                    : files === null ? 'not in a demo' : 'not yet',
-                },
+                      : `${files!.length} files, AI-generated`,
+                  emptyNote: files === null ? 'not in a demo' : 'not yet',
+                  phase: codePhase ?? null,
+                }),
                 // The grounding audit is a checklist in this browser, not a step
                 // of the code's status (dev acceptance 14.10.2026); its count stays
                 // in the status line above and on its facet.

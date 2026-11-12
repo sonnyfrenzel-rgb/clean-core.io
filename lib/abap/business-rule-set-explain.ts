@@ -286,6 +286,15 @@ function subjectWords(p: RuleParameter | undefined, ctx: PlainContext): string {
   return lcFirst(humaniseField(p.subject, ctx)) || 'the value';
 }
 
+/**
+ * A subject with its article, once: "the order amount", but "the value" stays "the value" — the fallback of
+ * `subjectWords` already carries one, and a template that wrote "the " in front of it said "When the the value is
+ * below 3" (3.0.23). Every sentence below that puts "the" before a subject goes through here.
+ */
+export function theSubject(subject: string): string {
+  return /^(?:the|a|an)\s/i.test(subject) ? subject : `the ${subject}`;
+}
+
 /** The condition parameters — the tests — leaving out the declaration of the constant they read. */
 const testsOf = (rule: BusinessRule): RuleParameter[] => rule.parameters.filter((p) => operatorOf(p) !== 'VALUE');
 
@@ -794,7 +803,7 @@ function protectsOf(rc: RuleContext, sidesHolds: string[], sidesOtherwise: strin
   const { op, values } = t;
   const v = values[0] ?? '';
   if (OPERATOR_WORDS[op] && isNumeric(v) && op !== '=' && op !== '<>') {
-    return { text: `It sets a limit on the ${t.subject}: ${OPERATOR_WORDS[op]} ${numberWords(v)}, a case is handled differently from the rest.`, anchors };
+    return { text: `It sets a limit on ${theSubject(t.subject)}: ${OPERATOR_WORDS[op]} ${numberWords(v)}, a case is handled differently from the rest.`, anchors };
   }
   const either = (list: readonly string[]) => joinWords(list.map(valueWords)).replace(/ and ([^,]+)$/, ' or $1');
   if (rule.classes.includes('organisationseinheit') && op === '=') {
@@ -827,7 +836,7 @@ function exampleOf(rc: RuleContext, siblings: ReadonlyMap<string, string[]>, ctx
     const decl = rule.parameters[0];
     const v = decl ? valuesOf(decl)[0] : undefined;
     if (!decl || !v) return null;
-    return { text: `The code declares the ${rc.subject} as ${valueWords(v)} on line ${decl.lineStart} and never tests a case against it.`, anchors: [range(decl.lineStart, decl.lineEnd)] };
+    return { text: `The code declares ${theSubject(rc.subject)} as ${valueWords(v)} on line ${decl.lineStart} and never tests a case against it.`, anchors: [range(decl.lineStart, decl.lineEnd)] };
   }
   const t = firstTestOf(rc, ctx);
   if (!t || t.values.length === 0) return null;
@@ -1251,7 +1260,7 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   }
   // A check of what was entered on the selection screen, ending the run with a message: a plausibility check of the input.
   if (tests.length > 0 && tests.every((p) => isSelectionField(p.subject, bf.ctx)) && rc.holdsStop) {
-    return say('technical', `It checks the ${rc.subject} entered when the program is started and stops with a message if it is out of range — a plausibility check of the input, not a business rule.`);
+    return say('technical', `It checks ${theSubject(rc.subject)} entered when the program is started and stops with a message if it is out of range — a plausibility check of the input, not a business rule.`);
   }
   if (tests.length > 0 && tests.every((p) => isRunOption(p.subject, bf.ctx))) {
     return say('technical', `It follows an option chosen when the program is started (${humaniseField(tests[0].subject ?? '', bf.ctx) || 'a run option'}), not a business value.`);
@@ -1273,7 +1282,7 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
     const line = bf.written.get(markerKey(p.subject, bf.types))?.get(v.toUpperCase()) ?? p.lineStart;
     return say(
       'technical',
-      `The program sets the ${rc.subject} to ${valueWords(v)} itself (line ${line}) and reads it back here — a marker of its own, not a value the business sets.`,
+      `The program sets ${theSubject(rc.subject)} to ${valueWords(v)} itself (line ${line}) and reads it back here — a marker of its own, not a value the business sets.`,
       [rc.anchor, range(line)],
     );
   }
@@ -1281,7 +1290,7 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
     return say('technical', 'It checks that a value is there before the program goes on — a plausibility check, not a business rule.');
   }
   if (topic === 'other') {
-    return say('undetermined', `The code does not show which business subject the ${rc.subject} belongs to, so whether the business sets it is not determined.`);
+    return say('undetermined', `The code does not show which business subject ${theSubject(rc.subject)} belongs to, so whether the business sets it is not determined.`);
   }
   return say('business', `${ucFirst(rc.subject)}: a value the business sets (${RULE_TOPIC_LABELS[topic].toLowerCase()}), so the business is asked.`);
 }
@@ -1367,7 +1376,7 @@ function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
     return {
       ...base,
       shape: 'limits',
-      statement: { text: `The program works with ${limits.length === 1 ? 'one limit' : `${limits.length} limits`} on the ${subject}: ${joinWords(limits)}.`, anchors },
+      statement: { text: `The program works with ${limits.length === 1 ? 'one limit' : `${limits.length} limits`} on ${theSubject(subject)}: ${joinWords(limits)}.`, anchors },
       ask: 'Are these limits still right?',
     };
   }
@@ -1376,7 +1385,7 @@ function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
     return {
       ...base,
       shape: 'values',
-      statement: { text: `The program handles the ${subject} ${joinWords(values.map(valueWords))} each in its own way.`, anchors },
+      statement: { text: `The program handles ${theSubject(subject)} ${joinWords(values.map(valueWords))} each in its own way.`, anchors },
       ask: 'Are these still the right values?',
     };
   }
@@ -1400,14 +1409,14 @@ function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
       ...base,
       topic: 'amounts',
       shape: 'limit',
-      statement: { text: `When the ${money.subject} is ${OPERATOR_WORDS[operatorOf(money.limit)]} ${numberWords(v)} ${money.currency}, ${outcomeWords(first)}.${more}`, anchors },
+      statement: { text: `When ${theSubject(money.subject)} is ${OPERATOR_WORDS[operatorOf(money.limit)]} ${numberWords(v)} ${money.currency}, ${outcomeWords(first)}.${more}`, anchors },
       ask: 'Is the limit still right?',
     };
   }
   const t = first.t;
   const caveat = t && isLimit(t) && t.p.caveat ? ' The code does not say in which currency or unit.' : '';
   const when = t && !t.mixed
-    ? `When the ${subject} ${conditionWords(t)}`
+    ? `When ${theSubject(subject)} ${conditionWords(t)}`
     : `When ${phraseOf(t ? conditionFor(first.rc.rule, t.p) : first.rc.rule.label, ctx, first.rc.anchor.lineStart)}`;
   return {
     ...base,

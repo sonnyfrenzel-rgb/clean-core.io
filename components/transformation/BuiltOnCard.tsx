@@ -120,6 +120,7 @@ function isStale(b: BasisSlot, now: readonly ChainSlot[]): boolean {
 
 function checksSentence(e: NonNullable<GenerationRecord['engine']>): string {
   const parts = [`${e.written} of ${e.units} functions written${e.repaired ? `, ${e.repaired} after a repair round` : ''}`];
+  if (e.empty?.length) parts.push(`${e.empty.length} left empty by the model`);
   for (const c of orderedChecks(e.checks)) parts.push(checkPhrase(c));
   for (const n of e.notRun) parts.push(`${n.kind === 'cases' ? 'engine cases' : n.kind === 'probes' ? 'probes' : n.kind} not run`);
   parts.push(`${e.callsUsed} model calls`);

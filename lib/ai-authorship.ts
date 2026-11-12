@@ -276,7 +276,9 @@ export function modelFilledFiles(files: ReadonlyArray<{ path: string; content: s
     units?: Array<{ unitId?: unknown; file?: unknown; filledBy?: unknown }>;
   };
   if (!Array.isArray(t.functions) || !Array.isArray(t.units)) return filesWithFilledRegions(files);
-  const byModel = (filledBy: unknown) => typeof filledBy === 'string' && filledBy.startsWith('model');
+  // A body the model left empty (`empty`) is not counted as written, but the comment it holds is still the model's
+  // text — the file keeps its AI-generated mark.
+  const byModel = (filledBy: unknown) => typeof filledBy === 'string' && (filledBy.startsWith('model') || filledBy === 'empty');
   const modelUnits = new Set(t.units.filter((u) => byModel(u.filledBy) && typeof u.unitId === 'string').map((u) => u.unitId as string));
   const out = new Set<string>();
   for (const u of t.units) if (byModel(u.filledBy) && typeof u.file === 'string') out.add(u.file);
