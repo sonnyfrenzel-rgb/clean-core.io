@@ -20,6 +20,20 @@ A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findin
   longer as coming from the signed run, because the pack's signature does not cover the package's files. The
   offline verifier exits 2 for it (consistent but not signed), the verify page shows it as a warning, and the
   archive name is printed with control characters escaped.
+- **One status per function in Transformation.** STATUS.md, TRACE.md and the page decide each function's status
+  once: a function whose body was written but whose guard predicate was not is "written, a check still fails"
+  everywhere, and the counts agree.
+- **A function the model left without a statement is "left empty by the model".** Its comment is shown; it is no
+  longer counted as written or traced as model-written.
+- **The rule line adds up.** The Business view's line counts rules, not questions ("5 questions for the business
+  cover 16 rules · 4 technical rules stay as coded · 21 not determined"), so it matches the business-rule count
+  beside it.
+- **No "Code generated" tick while the code is not activatable.** Transformation's "Status of the code" says what
+  the tool bar says.
+- **Delivery labels the signed-off target "Design target".** It no longer shows "Architecture decision: Confirmed"
+  beside the unconfirmed keep, rebuild or retire decision.
+- **"When the the value is below 3" reads "When the value is below 3".** Rule statements add the article once
+  where the code tests an expression without a field name.
 
 ## [v3.0.22] — 2026-11-12
 
