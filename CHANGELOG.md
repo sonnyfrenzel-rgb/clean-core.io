@@ -5,7 +5,7 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v3.0.22] — 2026-11-13
+## [v3.0.22] — 2026-11-12
 
 A hotfix from an end-to-end run of an owner example: a 936-line object-oriented program with a status workflow and
 role checks, run on a production build with the real model. No engine-version gate: what a signed run says does not
