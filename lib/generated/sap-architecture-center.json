@@ -1,8 +1,8 @@
 {
   "source": "https://github.com/SAP/architecture-center",
   "branch": "dev",
-  "commit": "7e0f9af938a89ee2cbf4aac12aa77d78bf644e22",
-  "syncedAt": "2026-11-09",
+  "commit": "341f32d0e1dc19ec128395fe536eb2dd7298e1c3",
+  "syncedAt": "2026-10-17",
   "architectures": [
     {
       "id": "RA0001",
@@ -57,8 +57,8 @@
       "id": "RA0008",
       "slug": "0a229d",
       "title": "SAP Integration Suite Edge Integration Cell on Hyperscalers",
-      "lastUpdate": "2026-10-28",
-      "archived": false
+      "lastUpdate": "2026-10-09",
+      "archived": true
     },
     {
       "id": "RA0009",
@@ -92,8 +92,8 @@
       "id": "RA0013",
       "slug": "e1732d",
       "title": "Enterprise Data Strategy with SAP Business Data Cloud",
-      "lastUpdate": "2026-10-21",
-      "archived": true
+      "lastUpdate": "2026-05-12",
+      "archived": false
     },
     {
       "id": "RA0014",
@@ -106,7 +106,7 @@
       "id": "RA0015",
       "slug": "b3c3ac",
       "title": "Business-to-Government Integration Reference Architecture",
-      "lastUpdate": "2026-10-21",
+      "lastUpdate": "2024-08-01",
       "archived": true
     },
     {
@@ -126,16 +126,16 @@
     {
       "id": "RA0018",
       "slug": "b86487",
-      "title": "Integrate and extend with SAP Build Process Automation",
-      "lastUpdate": "2026-10-21",
+      "title": "Integrate and Extend with SAP Build Process Automation",
+      "lastUpdate": "2025-05-14",
       "archived": true
     },
     {
       "id": "RA0019",
       "slug": "89ab6b",
       "title": "SAP IAM integration with SAP Cloud Identity Services",
-      "lastUpdate": "2026-10-27",
-      "archived": false
+      "lastUpdate": "2025-05-13",
+      "archived": true
     },
     {
       "id": "RA0020",
@@ -148,22 +148,22 @@
       "id": "RA0021",
       "slug": "6501d5",
       "title": "App2App Integration with SAP Integration Suite",
-      "lastUpdate": "2026-10-28",
-      "archived": false
+      "lastUpdate": "2026-10-09",
+      "archived": true
     },
     {
       "id": "RA0022",
       "slug": "5f90af",
       "title": "API Managed Integration with SAP Integration Suite",
-      "lastUpdate": "2026-10-26",
-      "archived": false
+      "lastUpdate": "2026-10-09",
+      "archived": true
     },
     {
       "id": "RA0023",
       "slug": "b51e91",
       "title": "DevOps on SAP BTP with CI/CD and SAP Build",
-      "lastUpdate": "2026-10-28",
-      "archived": false
+      "lastUpdate": "2026-10-09",
+      "archived": true
     },
     {
       "id": "RA0024",
@@ -176,14 +176,14 @@
       "id": "RA0025",
       "slug": "4b76ae",
       "title": "Transitioning Architectures from SAP NetWeaver",
-      "lastUpdate": "2026-10-28",
-      "archived": false
+      "lastUpdate": "2025-08-02",
+      "archived": true
     },
     {
       "id": "RA0026",
       "slug": "0f87e5",
-      "title": "Physical AI, Embodied AI & Robotics for SAP Business AI",
-      "lastUpdate": "2026-10-26",
+      "title": "Embodied AI Agents & Robotics for SAP Business AI",
+      "lastUpdate": "2026-05-12",
       "archived": false
     },
     {
@@ -204,7 +204,7 @@
       "id": "RA0029",
       "slug": "98efa0",
       "title": "Agentic AI & AI Agents on SAP Business AI Platform",
-      "lastUpdate": "2026-10-26",
+      "lastUpdate": "2026-10-14",
       "archived": false
     },
     {
@@ -236,17 +236,10 @@
       "archived": false
     },
     {
-      "id": "RA0039",
-      "slug": "5hj89h",
-      "title": "SAP Business AI Platform",
-      "lastUpdate": "2026-10-25",
-      "archived": false
-    },
-    {
-      "id": "RA0040",
-      "slug": "a45y7d",
-      "title": "Training-Free Predictive Analytics over a Semantic Lakehouse",
-      "lastUpdate": "2026-10-19",
+      "id": "RA0034",
+      "slug": "jkg4j2",
+      "title": "SAP AI Agent Hub for Enterprise AI Governance",
+      "lastUpdate": "2026-10-01",
       "archived": false
     }
   ]
