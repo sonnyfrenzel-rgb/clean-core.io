@@ -285,15 +285,19 @@ test.describe('where it stands and what it writes', () => {
     expect(process).not.toContain('WALK_TECHNICAL_SUBJECT');
   });
 
-  test('the tour opens only on a click — from the top of the Business view or the First insights — and never by itself', () => {
+  test('the tour opens only on a click — from the invitation above the map in Analyze, Business — and never by itself', () => {
     const process = read('components/workspace/WorkspaceProcess.tsx');
     expect(process).toMatch(/const \[tourOpen, setTourOpen\] = useState\(false\)/);
     expect(process.match(/setTourOpen\(true\)/g)).toHaveLength(1);
     expect(process).toMatch(/if \(takeProcessWalkRequest\(projectId\)\) setTourOpen\(true\)/);
+    // The workspace's Business view with its walk entry is gone (v3.1.0, AB-2): Analyze's invitation is the way in.
     const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toContain('<ProcessTourEntry projectId={projectId} />');
-    expect(shell).toMatch(/onWalk=\{view === 'business' && signed !== null \? \(\) => requestProcessWalk\(projectId\) : undefined\}/);
-    expect(read('components/workspace/FirstLook.tsx')).toContain('data-first-look-walk=""');
+    expect(shell).not.toMatch(/ProcessTourEntry|requestProcessWalk/);
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).toMatch(/onClick=\{walk\} data-analyze-walk=""/);
+    // The First insights' own walk button stood beside the main-line picture, which retired with the
+    // build-up in v3.1.0 (AB-3); in Analyze, Business the invitation above the map opens it.
+    expect(read('components/workspace/FirstLook.tsx')).not.toContain('data-first-look-walk');
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).toContain('const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);');
     const tour = read('components/workspace/ProcessTour.tsx');
     expect(tour).not.toMatch(/setInterval|autoplay|auto-play/i);
   });
@@ -308,9 +312,10 @@ test.describe('where it stands and what it writes', () => {
   });
 
   test('the demo gets the same tour, and calls no model', () => {
-    const shell = read('components/demo/DemoWorkspaceShell.tsx');
-    expect(shell.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
-    expect(shell.indexOf('<DemoWalkThrough')).toBeLessThan(shell.indexOf('{mapCard}'));
+    // The demo's Business view is its Analyze page since v3.1.0 (AB-2, O10).
+    const business = read('components/demo/DemoAnalyzeBusiness.tsx');
+    expect(business.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
+    expect(business.indexOf('<DemoWalkThrough')).toBeLessThan(business.indexOf('<ProcessMap'));
     const demo = read('components/demo/DemoWalkThrough.tsx');
     expect(demo).toContain('<ProcessTour ');
     expect(demo).toContain('demo={true}');

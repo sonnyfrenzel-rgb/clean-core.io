@@ -298,8 +298,9 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
 
   test('the usage records stand beside the map in Business and in the section elsewhere (ADR-080)', () => {
     const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const block = shell.slice(shell.indexOf('    process:'), shell.indexOf('    layerSection: null'));
+    // The map is Analyze, Business's since v3.1.0 (AB-2): the records stand in its block, under the map.
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    const block = business.slice(business.indexOf('data-analyze-map=""'), business.indexOf('data-analyze-interim'));
     expect(block).toContain('<UsageRecords project={project}');
     const section = read('components/workspace/LayerSection.tsx');
     expect(section).toContain('<UsageRecords project={project}');
@@ -402,31 +403,16 @@ test.describe('the layers on the screen', () => {
     });
   });
 
-  test('an empty layer is a place: it names itself and says why it is empty', async ({ page }) => {
+  // Business had one layer, Evidence & controls (ADR-080, ADR-096), until v3.1.0: the Business view is
+  // Analyze's page since then (AB-2, ADR-109), with no layer bar and no layer section — the map is its
+  // process, and the evidence the layer showed is IT's Run & trust (plan §1.1), held below and in the IT test.
+  test('Business has no layer any more: an old Business layer address lands where its content lives now', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // Business: the one view with a layer — Evidence & controls (ADR-080,
-    // ADR-096: Standard fit is IT's). One layer is no bar: the section stands
-    // on its own. IT has its own sections (ADR-086), Management none (ADR-087).
     await page.goto(`/project/${BARE_ID}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-
-    // Nothing has been analysed, so the layer is empty — and it stands open,
-    // saying so, rather than leaving a blank.
-    const section = page.locator('[data-workspace-layer-section]');
-    await expect(section, 'the layer leads nowhere').toBeVisible({ timeout: 30000 });
-    await expect(section).toHaveAttribute('data-workspace-layer-section', 'evidence');
-    await expect(section).toHaveAttribute('data-layer-empty', 'yes');
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls');
-    await expect(page.locator('[data-workspace-layer-absent-reason]')).toHaveText(
-      'No signed run — every figure in this product derives from one.',
-    );
-    // An empty layer is empty in the vocabulary, not in prose (§4).
-    await expect(section.locator('[data-provenance]')).toHaveAttribute('data-provenance', 'not-determined');
-    // And it does not pretend to hold rows.
-    await expect(page.locator('[data-workspace-layer-rows]')).toHaveCount(0);
-    // A bar with one tab is a navigation to the only place there is (ADR-096).
-    await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
+    await page.waitForURL(new RegExp(`/project/${BARE_ID}/analyze\\?view=business$`), { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('nav[data-workspace-layers], [data-workspace-layer-section]')).toHaveCount(0);
 
     // Standard fit's old Business address goes to IT, where it lives now.
     await page.goto(`/project/${BARE_ID}?view=business#standard`, { waitUntil: 'domcontentloaded' });
@@ -434,19 +420,18 @@ test.describe('the layers on the screen', () => {
     expect(new URL(page.url()).hash).toBe('#standard');
   });
 
-  test('a layer with content shows it, with the line each row sits on', async ({ page }) => {
+  test('the evidence the Business layer showed stands in IT, with the run it rests on', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // Business: Evidence & controls, from the address. (IT has its own
-    // sections since ADR-086 — the next test.)
+    // The old address keeps opening the project — on its map, the fragment dropped (`lib/analyze-entry.ts`).
     await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-
-    const section = page.locator('[data-workspace-layer-section]');
-    await expect(section).toHaveAttribute('data-workspace-layer-section', 'evidence', { timeout: 30000 });
-    await expect(section).toHaveAttribute('data-layer-empty', 'no');
-    await expect(section.locator('[data-provenance]')).toHaveAttribute('data-provenance', 'proven');
-    await expect(section.locator('[data-workspace-layer-row="run"]')).toContainText('run-4b8c');
+    await page.waitForURL(new RegExp(`/project/${RUN_ID}/analyze\\?view=business$`), { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    // The content: IT's Run & trust, proven by the signed run.
+    await page.goto(`/project/${RUN_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\?view=it#it-trust$/, { timeout: 90000 });
+    await expect(page.locator('#it-trust [data-it-trust="signed"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-it-trust-run]')).toContainText('run-4b8c');
   });
 
   test('Management has no layers: an old layer address lands where the content lives now (ADR-087)', async ({ page }) => {
@@ -475,11 +460,11 @@ test.describe('the layers on the screen', () => {
     // ("CHECK_VENDOR, source line 225"), CI 38057847305.
     ).toHaveText(/^L225–L234(?!\d)/);
 
-    // Evidence → IT's Run & trust; Need → the Business map.
+    // Evidence → IT's Run & trust; Need → the Business map, in Analyze since v3.1.0 (AB-2).
     await page.goto(`/project/${RUN_ID}?view=management#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\?view=it#it-trust$/, { timeout: 90000 });
     await page.goto(`/project/${RUN_ID}?view=management#need`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=business#process-map$/, { timeout: 90000 });
+    await expect(page).toHaveURL(/\/analyze\?view=business#process-map$/, { timeout: 90000 });
   });
 
   test('IT has its own sections: an old layer address lands where the content lives now (ADR-086)', async ({ page }) => {
@@ -518,25 +503,18 @@ test.describe('the layers on the screen', () => {
     await expect(page).toHaveURL(/\/tco\?view=it/, { timeout: 90000 });
   });
 
-  test('a view switch starts the new view at its top, and a layer switch keeps the view (ADR-018; owner 10.10.2026)', async ({ page }) => {
+  test('a view switch starts the new view at its top, and carries no place of the old view (ADR-018; owner 10.10.2026)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // Evidence & controls: Business's one layer (ADR-080, ADR-096).
-    await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
-      timeout: 30000,
-    });
-
-    // The layer does not move the view: Business keeps one layer and, with
-    // one, no bar to switch with (ADR-096); IT has its own sections (ADR-086),
-    // Management none (ADR-087).
+    // From a place in IT (Business is Analyze's page since v3.1.0, with its own switch in the stage header).
+    await page.goto(`/project/${RUN_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/[?&]view=it#it-trust$/, { timeout: 60000 });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
-    expect(new URL(page.url()).searchParams.get('view'), 'the layer threw the reader into another view').toBe('business');
 
     // A plain view switch starts the new view at its top and carries no
     // fragment (owner 10.10.2026, replacing CR-14): the old view's place
-    // bounced the reader back (Business, #architecture, back to IT).
+    // bounced the reader back.
     await page.evaluate(() => window.scrollTo(0, 600));
     await page
       .locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Management' })
@@ -545,9 +523,7 @@ test.describe('the layers on the screen', () => {
     expect(new URL(page.url()).hash).toBe('');
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 
-    // Into IT from a layer: IT opens at its top, not at Run & trust.
-    await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', { timeout: 60000 });
+    // Back into IT: IT opens at its top, not at Run & trust.
     await page
       .locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'IT' })
       .click();
@@ -559,15 +535,15 @@ test.describe('the layers on the screen', () => {
   test('the view switch moves the focus with the selection on the arrow keys (QA review of a88149856dcc)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await page.goto(`/project/${RUN_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
     const radio = (name: string) =>
       page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
-    await radio('Business').focus();
+    await radio('IT').focus();
     await page.keyboard.press('ArrowRight');
-    await expect(page).toHaveURL(/[?&]view=it\b/, { timeout: 30000 });
-    await expect(radio('IT')).toBeFocused();
+    await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 30000 });
+    await expect(radio('Management')).toBeFocused();
     await page.keyboard.press('ArrowLeft');
-    await expect(radio('Business')).toBeFocused();
+    await expect(radio('IT')).toBeFocused();
   });
 });

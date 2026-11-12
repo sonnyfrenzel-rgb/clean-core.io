@@ -17,7 +17,10 @@
  *
  * `/demo/workspace` is public although it needs an account: without the hint
  * it sends the visitor to the sign-in dialog without starting Auth on the way
- * (components/demo/DemoWorkspaceShell.tsx); a returning reader whose browser
+ * (components/demo/DemoWorkspaceShell.tsx). `/demo/analyze` is the same in its
+ * Business view, where the demo opens since v3.1.0
+ * (components/demo/DemoAnalyzeBusiness.tsx); its IT and Management views are
+ * the public Analyze stage as before. A returning reader whose browser
  * holds a session but not yet the hint finds the session there and comes back
  * (components/LandingModals.tsx).
  *
@@ -36,6 +39,7 @@ export const PUBLIC_SHELL_ROUTES: readonly string[] = [
   '/demo',
   '/demo/[stage]',
   '/demo/[stage]/requirements',
+  '/demo/analyze',
   '/demo/workspace',
   '/first-run',
   '/how-it-works',

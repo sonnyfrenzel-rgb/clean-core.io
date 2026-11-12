@@ -414,7 +414,7 @@ test.describe('the first look on screen', () => {
     });
   });
 
-  test('builds up in the four stages of §5.2, is skippable, and every figure says where it is from', async ({
+  test('stands in its end state below the map in Analyze, Business: the four stages of §5.2, every figure says where it is from', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
@@ -428,18 +428,20 @@ test.describe('the first look on screen', () => {
       route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'held by the spec' }) }),
     );
 
+    // The project opens in Analyze, Business (AB-2, ADR-109); the first
+    // insights stand below the map until v3.2.0, in their end state from the
+    // first frame — the paced build-up and its Skip retired with v3.1.0 (AB-3).
     await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
 
-    // The engine is fast on this source, so the build-up may already be over.
-    // What must hold either way: the four stages, in order, each with its own
-    // sentence, and a Skip that is a real, reachable control while it runs.
-    const first = page.locator('[data-first-look]');
-    await expect(first).toBeVisible({ timeout: 60000 });
-    // Its own name, the same while it builds and at its end, and a sentence
-    // on what it is for — nothing on it borrows the stage header of Analyze
-    // (roadmap 3.0.7, owner 10.10.2026). Since 3.0.21 the Business lead says
-    // it is for understanding, with nothing to decide (owner decisions 22.10.2026).
+    const first = page.locator('[data-analyze-interim] [data-first-look]');
+    await expect(first).toHaveAttribute('data-first-look', 'end-state', { timeout: 60000 });
+    await expect(page.locator('[data-first-look-buildup], [data-first-look-skip]')).toHaveCount(0);
+    // Its own name and a sentence on what it is for — nothing on it borrows
+    // the stage header of Analyze (roadmap 3.0.7, owner 10.10.2026). Since
+    // 3.0.21 the Business lead says it is for understanding, with nothing to
+    // decide (owner decisions 22.10.2026).
     await expect(first.getByRole('heading', { level: 2, name: 'First insights into your process' })).toBeVisible();
     await expect(first.locator('[data-first-look-lead]')).toContainText('nothing to decide here');
     await expect(first.locator('[data-stage-title]')).toHaveCount(0);
@@ -476,70 +478,21 @@ test.describe('the first look on screen', () => {
     await expect(page.locator('[data-first-look-decisions]')).toHaveAttribute('data-count', /[1-9]/);
   });
 
-  /*
-   * The test above cannot reach Skip: on this source the engine is usually done
-   * before the build-up can be looked at. Holding stage 3's one network read
-   * keeps the build-up on the screen for as long as it takes to find the
-   * control, press it, and see it do what it says (QA full review of
-   * fc787674705f, 9962d7aa0148).
-   */
-  test('Skip is there while the build-up runs, and pressing it ends in the end state', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await page.setViewportSize({ width: 1440, height: 1400 });
-    await signIn(page, ADMIN);
-
-    const held: Array<() => Promise<void>> = [];
-    await page.route('**/api/projects/*/process-naming', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      held.push(() => route.continue().catch(() => {}));
-    });
-
-    await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
-    const first = page.locator('[data-first-look]');
-    await expect(first, 'the build-up never started').toHaveAttribute('data-first-look', 'building', {
-      timeout: 60000,
-    });
-
-    const skip = page.locator('[data-first-look-skip]');
-    await expect(skip, 'no Skip while the build-up runs').toBeVisible();
-    await expect(skip).toBeEnabled();
-    await skip.click();
-    await expect(skip, 'Skip did nothing — the build-up is still running').toHaveCount(0);
-    await expect(first).not.toHaveAttribute('data-first-look', 'building');
-
-    await page.unroute('**/api/projects/*/process-naming');
-    for (const release of held.splice(0)) await release();
-    await expect(first).toHaveAttribute('data-first-look', 'end-state', { timeout: 60000 });
-  });
-
-  test('a second visit has no build-up — it opens in the end state', async ({ page }) => {
+  // Skip, the "second visit has no build-up" rule and reduced motion were the
+  // paced build-up's (ADR-072). It retired with v3.1.0 (plan AB-3): every visit
+  // opens in the end state, held here.
+  test('every visit opens in the end state — there is no build-up to skip', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
 
-    // No `?first=1`: this is what every ordinary visit to a workspace looks like.
-    await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look]')).toHaveAttribute('data-first-look', 'end-state', {
+    // No `?first=1`: what every ordinary visit looks like.
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-interim] [data-first-look]')).toHaveAttribute('data-first-look', 'end-state', {
       timeout: 60000,
     });
     await expect(page.locator('[data-first-look-skip]')).toHaveCount(0);
-  });
-
-  test('prefers-reduced-motion shows the end state, not a faster build-up', async ({ browser }) => {
-    test.setTimeout(240 * 1000);
-    const context = await browser.newContext({ reducedMotion: 'reduce' });
-    const page = await context.newPage();
-    await signIn(page, ADMIN);
-
-    await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-
-    const look = page.locator('[data-first-look]');
-    await expect(look).toHaveAttribute('data-reduced-motion', 'true', { timeout: 60000 });
-    await expect(look).toHaveAttribute('data-first-look', 'end-state', { timeout: 60000 });
-    // The end state, so there is nothing left to skip.
-    await expect(page.locator('[data-first-look-skip]')).toHaveCount(0);
-    await context.close();
+    await expect(page.locator('[data-first-look="building"]')).toHaveCount(0);
   });
 
   test('the pre-answered question stands there, out of the code and without a model call', async ({
@@ -580,25 +533,28 @@ test.describe('the first look on screen', () => {
     await expect(card.locator('[data-cc-anchor]').first()).toBeVisible();
   });
 
-  test('the three coach marks appear one at a time and go away for good', async ({ page }) => {
+  // The coach marks stand in the workspace's IT view only since AB-2 (ADR-109):
+  // Analyze, Business has none (plan P7, the invitation bar and the tour lead).
+  // IT offers two of the three, "Your next step" and "Not determined"
+  // (`IT_COACH_ORDER`); "Select the decision point" pointed at the Business map.
+  test('the coach marks of the IT view appear one at a time and go away for good', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
 
     const mark = page.locator('[data-coach-mark]');
     await expect(mark).toHaveCount(1, { timeout: 60000 });
     await expect(mark).toHaveAttribute('data-coach-mark', 'next-step');
 
     await page.click('[data-coach-mark-dismiss="next-step"]');
-    await expect(mark).toHaveAttribute('data-coach-mark', 'decision');
-    await page.click('[data-coach-mark-dismiss="decision"]');
     await expect(mark).toHaveAttribute('data-coach-mark', 'not-determined');
     await page.click('[data-coach-mark-dismiss="not-determined"]');
     await expect(mark).toHaveCount(0);
 
     // Gone across a reload, because the browser remembers — and nothing else does.
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
 
     // "Show tips again" brings them back (§6.2).
@@ -606,21 +562,21 @@ test.describe('the first look on screen', () => {
     await expect(page.locator('[data-coach-mark]')).toHaveCount(1);
   });
 
-  test('a project with nothing staged says so four times and paints no zero', async ({ page }) => {
+  // A project with nothing staged: Analyze, Business shows the upload and
+  // start path in place of the map (P4, `AnalyzeBusiness` `fallback`), so the
+  // first insights' four "did not run" rows are no longer drawn on a page; the
+  // rule itself is held above ('a project with no source says every stage did
+  // not run, and shows no zero'). Here: the page opens on that path, never on
+  // a first look that paints a zero.
+  test('a project with nothing staged opens on the upload path, with no first look and no zero', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${EMPTY_ID}?first=1`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-
-    const states = await page.locator('[data-first-look-stage]').evaluateAll((els) =>
-      els.map((el) => el.getAttribute('data-state')),
-    );
-    expect(states).toEqual(['did-not-run', 'did-not-run', 'did-not-run', 'did-not-run']);
+    await page.waitForURL(/\/project\/[^/?]+\/analyze/, { timeout: 60000 });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
+    await expect(page.locator('[data-first-look]')).toHaveCount(0);
     await expect(page.locator('[data-first-look-figure]')).toHaveCount(0);
-    await expect(page.locator('[data-first-look-result]')).toHaveAttribute(
-      'data-first-look-result',
-      'none',
-    );
   });
 });
 

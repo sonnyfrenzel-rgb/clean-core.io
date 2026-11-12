@@ -232,7 +232,8 @@ test.describe('a PCE project gets the same grade in the core result and each der
       ['hooks/useProcessOverlays.ts', /useAbcdCatalogLookup\(objects, catalogTarget\)/],
       ['components/analyze/UsageRiskMatrix.tsx', /useAbcdCatalogLookup\(lookupObjects, target\)/],
       ['app/(app)/project/[projectId]/documentation/page.tsx', /catalogTarget=\{project \? catalogLookupTargetOf\(project\) : null\}/],
-      ['components/demo/DemoWorkspaceShell.tsx', /catalogTarget=\{catalogLookupTargetOf\(project\)\}/],
+      // The demo's map stands in its Analyze, Business since v3.1.0 (AB-2, O10).
+      ['components/demo/DemoAnalyzeBusiness.tsx', /catalogTarget=\{catalogLookupTargetOf\(project\)\}/],
       ['components/workspace/WorkspaceProcess.tsx', /catalogTarget=\{project \? catalogLookupTargetOf\(project\) : null\}/],
       ['app/(app)/project/[projectId]/analyze/page.tsx', /target=\{project \? catalogLookupTargetOf\(project\) : null\}/],
     ];

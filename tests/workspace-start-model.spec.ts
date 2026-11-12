@@ -5,7 +5,6 @@ import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { GEMINI_TEST_STUB_HEADER } from '../lib/gemini-test-stub';
-import { BUILD_UP_BUDGET } from '../lib/first-look-buildup';
 import { START_NARRATIVE_CEILING_MS } from '../lib/model-stages';
 import { missingFrom, startNarrativeMissingReason } from '../lib/start-narrative-basics';
 import { describeRunCost, startModelLine } from '../lib/run-cost';
@@ -19,18 +18,20 @@ import { signInViaLanding } from './helpers/sign-in';
  * the model during that."
  *
  * Held here, each for a shipped example started from My workspace by an
- * account whose analysis stage is on:
+ * account whose analysis stage is on. The example opens Analyze, Business
+ * (plan AB-2), where the start run is signed; the paced build-up the model
+ * once ran behind retired with v3.1.0 (AB-3), so the wait is said where the
+ * map goes and the first insights stand in their end state from the start:
  *
- *   1. the model is asked while the build-up is still in its first moments —
- *      before the second one ends — and the one signed run carries the
- *      narrative with a receipt; exactly one `/api/runs/create`; the example's
- *      free first run is still free;
+ *   1. the model is asked at the start, before the run is sent, and the one
+ *      signed run carries the narrative with a receipt; exactly one
+ *      `/api/runs/create`; the example's free first run is still free; no
+ *      build-up plays;
  *   2. a model that fails: the run is signed without the narrative, the map
  *      stands, the page says so with one action and what it costs;
- *   3. a model that does not answer: the last moment waits with the seconds
+ *   3. a model that does not answer: the map's place waits with the seconds
  *      waited, and "Go on without the narrative" signs the engine's reading —
- *      one run, never a second;
- *   4. reduced motion: the end state at once, and the map once the run is signed.
+ *      one run, never a second.
  *
  * No real model is called. `/api/gemini` is either answered here, or handed to
  * the server's test stub (`lib/gemini-test-stub.ts`, every gate of the route
@@ -91,17 +92,13 @@ function watch(page: Page) {
   return { runs, model };
 }
 
-/** When each moment of the build-up first stood on the page, by the browser's clock. */
-async function recordMoments(page: Page) {
+/** Whether anything of the retired build-up ever stood on the page. */
+async function recordBuildUp(page: Page) {
   await page.addInitScript(() => {
-    const w = window as unknown as { __moments: Record<string, number>; __sawBuilding: boolean };
-    w.__moments = {};
+    const w = window as unknown as { __sawBuilding: boolean };
     w.__sawBuilding = false;
     new MutationObserver(() => {
-      const el = document.querySelector('[data-first-look-buildup]');
-      if (document.querySelector('[data-first-look="building"]')) w.__sawBuilding = true;
-      const stage = el?.getAttribute('data-first-look-buildup');
-      if (stage && !(stage in w.__moments)) w.__moments[stage] = Date.now();
+      if (document.querySelector('[data-first-look="building"], [data-first-look-buildup]')) w.__sawBuilding = true;
     }).observe(document, { subtree: true, childList: true, attributes: true });
   });
 }
@@ -148,7 +145,7 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     expect(startNarrativeMissingReason('failed', START_NARRATIVE_CEILING_MS)).toContain('signed without the narrative');
   });
 
-  test('the model runs during the build-up, and the one signed run carries its narrative', async ({ page }) => {
+  test('the model is asked at the start, and the one signed run carries its narrative', async ({ page }) => {
     test.setTimeout(360 * 1000);
     expect(STUB_SECRET, 'the stub needs PILOT_APPROVAL_SECRET').not.toBe('');
     const { email, uid } = await modelAccount('ws-model-on');
@@ -161,23 +158,22 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, email, PASSWORD);
-    await recordMoments(page);
+    await recordBuildUp(page);
     const seen = watch(page);
     const projectId = await startExample(page);
 
-    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-map] [data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
+    const sawBuilding = await page.evaluate(() => (window as unknown as { __sawBuilding: boolean }).__sawBuilding);
+    expect(sawBuilding, 'a build-up played: it retired with v3.1.0').toBe(false);
 
-    // The model was asked before the build-up's second moment ended.
-    const moments = await page.evaluate(() => (window as unknown as { __moments: Record<string, number> }).__moments);
-    expect(moments['code-read'], 'the build-up never played').toBeDefined();
-    const secondEnded = moments['business-language'] ?? moments['code-read'] + BUILD_UP_BUDGET.namesFrom;
+    // The model was asked once, at the start, before the one run was sent.
     expect(seen.model, 'the start asked the model more or less than once').toHaveLength(1);
     expect(seen.model[0].stage).toBe('analyze');
-    expect(seen.model[0].at, 'the model was asked only after the second moment ended').toBeLessThan(secondEnded);
 
     // One run, signed once, with the narrative and its receipt.
     expect(seen.runs, 'the start sent more or less than one run').toHaveLength(1);
+    expect(seen.model[0].at, 'the run was sent before the model was asked').toBeLessThan(seen.runs[0]);
     const { run } = await signedRun(projectId);
     expect(run.modelParticipation).toBe('narrative-attested');
     // The narrative is kept on the run, beside the signature and outside it.
@@ -224,7 +220,7 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     expect(account?.transformationsUsed ?? 0).toBe(0);
   });
 
-  test('a model that does not answer: the last moment waits, and going on signs one run without it', async ({ page }) => {
+  test('a model that does not answer: the place of the map waits, and going on signs one run without it', async ({ page }) => {
     test.setTimeout(360 * 1000);
     const { email } = await modelAccount('ws-model-wait');
     await keyAvailable(page);
@@ -241,11 +237,10 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     const seen = watch(page);
     const projectId = await startExample(page);
 
-    // The build-up reaches its last moment and waits there, saying for how long.
-    const waiting = page.locator('[data-first-look-moment="map"] [data-start-narrative="writing"]');
+    // The map's place waits, saying for how long (there is no build-up to wait in since v3.1.0).
+    const waiting = page.locator('[data-analyze-map] [data-workspace-process="signing"] [data-start-narrative="writing"]');
     await expect(waiting).toBeVisible({ timeout: 60000 });
     await expect(waiting).toContainText('Writing the narrative (model)');
-    await expect(page.locator('[data-first-look-rail-step="map"]')).toContainText('writing the narrative (model)');
     await expect.poll(async () => Number(await waiting.locator('[data-start-narrative-waited]').getAttribute('data-start-narrative-waited')), { timeout: 10000 }).toBeGreaterThan(0);
     expect(seen.runs, 'a run was signed while the model was still being waited for').toHaveLength(0);
 
@@ -260,30 +255,5 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     expect(seen.runs).toHaveLength(1);
     const { run } = await signedRun(projectId);
     expect(run.modelParticipation).toBe('none');
-  });
-
-  test('under reduced motion: the end state at once, the map once the run is signed', async ({ page }) => {
-    test.setTimeout(360 * 1000);
-    const { email } = await modelAccount('ws-model-reduced');
-    await keyAvailable(page);
-    await page.route('**/api/gemini', async (route: Route) => {
-      await new Promise((r) => setTimeout(r, 3000));
-      await route.continue({ headers: { ...route.request().headers(), [GEMINI_TEST_STUB_HEADER]: STUB_SECRET } });
-    });
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    await signInViaLanding(page, email, PASSWORD);
-    await recordMoments(page);
-    const seen = watch(page);
-    const projectId = await startExample(page);
-
-    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-first-look="end-state"]')).toHaveAttribute('data-reduced-motion', 'true');
-    await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
-    const sawBuilding = await page.evaluate(() => (window as unknown as { __sawBuilding: boolean }).__sawBuilding);
-    expect(sawBuilding, 'a build-up played under reduced motion').toBe(false);
-    expect(seen.runs).toHaveLength(1);
-    const { run } = await signedRun(projectId);
-    expect(run.modelParticipation).toBe('narrative-attested');
   });
 });

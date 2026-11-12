@@ -55,6 +55,13 @@ export const DEMO_ASSISTANT_NOTICE =
  */
 export const DEMO_WORKSPACE_ROUTE = '/demo/workspace';
 
+/**
+ * Where the demo opens since v3.1.0, like a project (plan AB-2, O10): its
+ * Analyze, Business view, the map page. `/demo/workspace` in Business (or with
+ * no view) leads here; its IT and Management views stay where they were.
+ */
+export const DEMO_ANALYZE_ROUTE = '/demo/analyze';
+
 /** The eighth starter example — the case the 3.0 mockups are drawn around. */
 export const DEMO_SOURCE_FILE = 'Z_MM_PO_APPROVAL.abap';
 export const DEMO_OBJECT_NAME = 'Z_MM_PO_APPROVAL';

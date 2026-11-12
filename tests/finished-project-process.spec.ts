@@ -89,19 +89,18 @@ test.describe('a finished project reopens on its process', () => {
   });
 
   test('Business renders the first insights and the process map whatever the phase', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const order = shell.slice(shell.indexOf('const BUSINESS_ORDER'), shell.indexOf('];', shell.indexOf('const BUSINESS_ORDER')));
-    expect(order).toContain("'firstLook'");
-    expect(order).toContain("'process'");
-    // The map block is Business's, with no other condition.
-    expect(shell).toMatch(/process:\s*\n\s*view === 'business' \? \(\s*\n\s*<div id=\{BUSINESS_MAP_ID\}/);
-    // The first look is rendered in every view, with no phase condition.
-    expect(shell).toMatch(/firstLook: \(\s*\n\s*<div className="mt-5">/);
-    expect(shell).not.toMatch(/nextStep === null[^\n]*firstLook|firstLook[^\n]*nextStep === null/);
-    // A second visit gets the end state, not nothing.
+    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109).
+    const page = read('components/analyze/AnalyzeBusiness.tsx');
+    // The map with no phase condition: only "nothing to draw" (no source, no run) falls back.
+    expect(page).toContain("if (!legacyCode.trim() && !signed) return <>{fallback}</>;");
+    expect(page).toMatch(/<div id=\{BUSINESS_MAP_ID\} data-analyze-map=""/);
+    // The first insights, likewise, whatever the phase or the next step.
+    expect(page).toContain('<FirstLook');
+    expect(page).not.toMatch(/nextOpenPoint\([^)]*\)[^\n]*FirstLook|workflowSteps\(project\)[^\n]*FirstLook/);
+    // Every visit gets the end state, not nothing (the paced build-up retired with v3.1.0, AB-3).
     const firstLook = read('components/workspace/FirstLook.tsx');
-    expect(firstLook).toContain("data-first-look={endStateOnly ? 'end-state' : 'complete'}");
-    expect(firstLook).toContain('const endStateOnly = reduced || skipped || !buildUp;');
+    expect(firstLook).toContain('<section data-first-look="end-state">');
+    expect(firstLook).not.toContain('endStateOnly');
   });
 
   test('Analyze has the way to the process where a run is signed', () => {

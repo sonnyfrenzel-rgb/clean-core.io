@@ -436,6 +436,14 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   Open: the Business branch of `WorkspaceShell` (unreachable since the redirect), the retirement of `WorkspaceHub`,
   `AnalysisReady` and their three specs, the demo (O10), and the rendered specs that read the workspace's Business
   view in depth (listed in the branch's report). No rendered spec was run on the branch.
+  **Status (13.11.2026, branch `night/ab23-rest`):** the open points are built. `WorkspaceShell` draws IT and
+  Management only; `WorkspaceHub` and `AnalysisReady` are gone (`workspace-hub`, `workspace-hub-running` retired;
+  `analysis-ready` keeps the Analyze tool's "Result ready" tag, which stays); the `#process-map` follower and the map's
+  draft moved to Analyze; the target reference line (ADR-089) stands under the interim "Next step". The demo opens on
+  `/demo/analyze`, Business (`DemoAnalyzeBusiness`, same composition; `/demo/workspace` keeps IT and Management). The
+  rendered specs that read the workspace's Business view were rewritten for Analyze, Business or the IT view (listed in
+  the branch's report); none was run on the branch. Left: the workspace no longer marks a start run that Analyze is
+  signing as running in IT and Management (it starts none); `LayerBar`/`LayerSection` have no user left (AB-11, O3).
 - **Scope:** the Business view of Analyze per mockup states 3, 7 and 17 without the tour, the swap and the text
   blocks: header as today's `StageHeader` (way back, view switch, tools, soft-gate hint), "What this program does"
   with the engine sentence, the invitation bar ("Walk me through it" starts today's tour layer until AB-4; "I'll look
@@ -493,9 +501,9 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   hold under focus are built (`lib/naming-arrival.ts`, `hooks/useNamingArrival.ts`,
   `components/process-map/naming-swap.ts`, `NamingStatusLine.tsx`; ADR-108); a name equal to the engine's carries no
   pen mark, on the map as in the download. Specs: `analyze-naming-arrival`, `ai-mark-per-element` (server-free),
-  `analyze-naming-swap` (rendered, not yet run). **Not yet:** the retirement of the paced build-up
-  (`FirstLookBuildUp`, `lib/first-look-buildup.ts`, `lib/first-look-excerpt.ts` and their specs) waits for AB-2, which
-  takes `FirstLook` out of Business — doing both on parallel branches would rewrite the same 1,600 lines twice; P2
+  `analyze-naming-swap` (rendered, not yet run). **Built since (13.11.2026, branch `night/ab23-rest`):** the paced build-up is retired (`FirstLookBuildUp`,
+  `lib/first-look-buildup.ts`, `lib/first-look-excerpt.ts`; `first-look-pacing` and `first-look-buildup-view` retired,
+  the others rewritten) — the First insights stand in their end state below the map. **Not yet:** P2
   (one facts naming for an older run) is not built: it would change the picture of a run signed before 3.1.0, which the
   engine rule keeps, so it needs the owner's word first. [look] and the frame-time measurement on state 18 are open.
 - **Risk:** medium. Timing in CI (production build is faster than `next dev`); motion on a canvas of 60+ elements

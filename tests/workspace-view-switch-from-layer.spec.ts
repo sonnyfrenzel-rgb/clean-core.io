@@ -14,9 +14,6 @@ import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
  * with no fragment, sampled every frame for a second and a half.
  */
 
-const radio = (page: Page, name: string) =>
-  page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
-const shell = (page: Page) => page.locator('[data-workspace-shell]');
 
 let account: Awaited<ReturnType<typeof seedStageProject>>;
 
@@ -32,24 +29,27 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test('from a Business layer, Management opens and stays', async ({ page }) => {
+// Since v3.1.0 Business has no layer and is Analyze's page (plan AB-2, ADR-109): an old Business layer
+// address opens Analyze, Business with the fragment dropped (`lib/analyze-entry.ts`), and the view switch
+// there is the stage header's. The promise is the same: the new view opens, holds, and keeps no fragment.
+test('from an old Business layer address, Analyze opens in Business without it, and Management opens and stays', async ({ page }) => {
   test.setTimeout(300_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, account);
-  // Business has one layer since ADR-096; #standard leads to IT (tests/standard-fit-in-it.spec.ts).
   for (const layer of ['evidence']) {
     await page.goto(`/project/${account.projectId}?view=business#${layer}`, { waitUntil: 'domcontentloaded' });
-    await expect(shell(page)).toHaveAttribute('data-workspace-shell', 'business', { timeout: 90_000 });
+    await page.waitForURL(new RegExp(`/project/${account.projectId}/analyze\\?view=business$`), { timeout: 90_000 });
     await page.waitForTimeout(1500);
-    expect(new URL(page.url()).hash, `Business kept #${layer}`).toBe(`#${layer}`);
-    await radio(page, 'Management').evaluate((el) => (el as HTMLElement).click());
-    await expect(shell(page)).toHaveAttribute('data-workspace-shell', 'management', { timeout: 30_000 });
+    expect(new URL(page.url()).hash, `Business kept #${layer}`).toBe('');
+    const stageRadio = page.locator('[data-stage-view-switch] button[role="radio"]', { hasText: 'Management' });
+    await stageRadio.evaluate((el) => (el as HTMLElement).click());
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'management', { timeout: 30_000 });
     const seen = await page.evaluate(async () => {
       const out = new Set<string>();
       const t0 = performance.now();
       while (performance.now() - t0 < 1500) {
         await new Promise((r) => requestAnimationFrame(r));
-        out.add(`${document.querySelector('[data-workspace-shell]')?.getAttribute('data-workspace-shell')}|${new URL(location.href).searchParams.get('view')}|${location.hash}`);
+        out.add(`${document.querySelector('[data-stage-view-switch]')?.getAttribute('data-stage-view-switch')}|${new URL(location.href).searchParams.get('view')}|${location.hash}`);
       }
       return [...out];
     });

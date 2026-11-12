@@ -154,7 +154,8 @@ export default function StageHeader({
   const toolEyebrow = projectName || null;
   const toolCurrent = tools?.current ?? stage;
   const toolBase = tools?.base ?? (projectId ? `/project/${projectId}` : null);
-  const toMyWorkspace = backToMyWorkspace && !demo;
+  // The demo's Analyze, Business is where the demo opens (v3.1.0, O10): its way back is My workspace too.
+  const toMyWorkspace = backToMyWorkspace;
 
   return (
     <header

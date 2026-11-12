@@ -13,6 +13,7 @@ import CcSkeleton from '@/components/cc/Skeleton';
 import ProjectNoAccess from '@/components/ProjectNoAccess';
 import FirstLook from '@/components/workspace/FirstLook';
 import BusinessNextStep from '@/components/workspace/BusinessNextStep';
+import TargetReferenceLine from '@/components/workspace/TargetReferenceLine';
 import StartNarrativeMissing from '@/components/workspace/StartNarrativeMissing';
 import UsageRecords from '@/components/workspace/UsageRecords';
 import { useIsOwner } from '@/components/workspace/BusinessRulesEditor';
@@ -24,7 +25,7 @@ import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { requestProcessWalk } from '@/lib/process-walk-request';
-import { createDraftHolder } from '@/lib/process-map-draft';
+import type { DraftHolder } from '@/lib/process-map-draft';
 import { signedSourceOf } from '@/lib/signed-source';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { notDetermined } from '@/lib/workspace-model';
@@ -62,7 +63,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  *
  * **Interim until release 3.2.0** (release cut of 06.11.2026, so nothing a user had
  * goes missing): today's First insights blocks (`BusinessOpening`, rendered by
- * `FirstLook` in its end state) and `BusinessNextStep` stand unchanged below
+ * `FirstLook`, whose paced build-up retired with v3.1.0, AB-3) and `BusinessNextStep` stand unchanged below
  * the map; AB-6 and AB-4 replace them in place.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
@@ -79,11 +80,14 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
 export default function AnalyzeBusiness({
   projectId,
   first,
+  draftHolder,
   fallback,
 }: {
   projectId: string;
   /** `?first=1`: arrived from a code import or an example — the start run signs at once on the first visit. */
   first: boolean;
+  /** The map's unsaved drawing, held by the route so a view switch does not discard it. */
+  draftHolder: DraftHolder;
   /** What stands when the project has no source: today's upload and start path (P4). */
   fallback: React.ReactNode;
 }) {
@@ -136,7 +140,6 @@ export default function AnalyzeBusiness({
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const owner = useIsOwner(project);
   const stand = useWorkspaceRevision(projectId);
-  const [processDraft] = useState(createDraftHolder);
   const open = useMemo(() => notDetermined(project), [project]);
   const questions = useOpenQuestions(project, projectId, { open });
   const steps = useMemo(() => workflowSteps(project), [project]);
@@ -168,6 +171,63 @@ export default function AnalyzeBusiness({
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, []);
+  /**
+   * `#process-map` arrives before the map exists — a link from a stage, an old
+   * workspace address sent on here (`lib/analyze-entry.ts`), a page still
+   * loading — so the browser's own jump finds nothing and the reader stays at
+   * the top. Wait for the map, bring it into view, and hold it there for five
+   * seconds while the blocks around it settle; a wheel, a touch, a key or a
+   * pointer press by the reader ends it at once — the press covers a drag of
+   * the scrollbar, which sends no wheel. Moved here from the workspace's
+   * Business view with v3.1.0 (AB-2): the map is this page's.
+   * (`hooks/useFollowHash.ts` leaves the map's id to this follower.)
+   */
+  useEffect(() => {
+    let frame = 0;
+    let stop = false;
+    const end = () => {
+      stop = true;
+    };
+    const onMap = () => window.location.hash === `#${BUSINESS_MAP_ID}`;
+    const follow = () => {
+      // A new hash ends the loop that is running, whatever it points at; only
+      // the map's own hash starts another.
+      window.cancelAnimationFrame(frame);
+      stop = true;
+      if (!onMap()) return;
+      stop = false;
+      const started = performance.now();
+      let lastTop: number | null = null;
+      const tick = (now: number) => {
+        if (stop || !onMap() || now - started > 5000) return;
+        const map = document.getElementById(BUSINESS_MAP_ID);
+        if (map) {
+          const top = Math.round(map.getBoundingClientRect().top);
+          if (lastTop === null || Math.abs(top - lastTop) > 1) {
+            map.scrollIntoView({ block: 'start' });
+            lastTop = Math.round(map.getBoundingClientRect().top);
+          }
+        }
+        frame = window.requestAnimationFrame(tick);
+      };
+      frame = window.requestAnimationFrame(tick);
+    };
+    follow();
+    window.addEventListener('hashchange', follow);
+    window.addEventListener('wheel', end, { passive: true });
+    window.addEventListener('pointerdown', end, { passive: true });
+    window.addEventListener('touchmove', end, { passive: true });
+    window.addEventListener('keydown', end);
+    return () => {
+      stop = true;
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', follow);
+      window.removeEventListener('wheel', end);
+      window.removeEventListener('pointerdown', end);
+      window.removeEventListener('touchmove', end);
+      window.removeEventListener('keydown', end);
+    };
+  }, []);
   const openAnchor = useCallback((lineStart: number, lineEnd: number) => {
     setOpenLines((prev) => ({ lineStart, lineEnd, key: (prev?.key ?? 0) + 1000 }));
     document.getElementById(BUSINESS_MAP_ID)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -176,9 +236,6 @@ export default function AnalyzeBusiness({
   /** "I'll look around myself": the invitation steps aside; one quiet line under the map keeps the way in. */
   const [lookingAround, setLookingAround] = useState(false);
   const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);
-  const openMap = useCallback(() => {
-    document.getElementById(BUSINESS_MAP_ID)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }, []);
 
   // The interim "Next step" bar under the map (until AB-4's two endings).
   const nothingOpen = useMemo(() => nothingOpenText(steps), [steps]);
@@ -295,7 +352,7 @@ export default function AnalyzeBusiness({
             notDetermined={open}
             beforeWrite={stand.checkBeforeWrite}
             onWritten={stand.adopt}
-            draftHolder={processDraft}
+            draftHolder={draftHolder}
             startRun={startRun}
             codeOnClick
             openLines={openLines}
@@ -316,16 +373,15 @@ export default function AnalyzeBusiness({
           <FirstLook
             project={project}
             projectId={projectId}
-            buildUp={false}
-            onOpenMap={openMap}
-            onWalk={signed !== null ? walk : undefined}
-            map={signed ? 'drawn' : 'unsigned'}
             fullMapBelow={signed !== null}
             rulesBelow
             questions={questions}
             elsewhere={givesAwayElsewhere}
           />
           {businessStep ? <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} /> : null}
+          {/* The target and its SAP reference pattern, one line under "Next step" (roadmap 3.0.9, ADR-089),
+              as it stood in the workspace's Business view until v3.1.0. */}
+          <TargetReferenceLine project={project} />
         </section>
       </div>
     </StageFrame>

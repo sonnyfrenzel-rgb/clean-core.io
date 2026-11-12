@@ -25,8 +25,10 @@ import { DEMO_PROJECT_TITLE, DEMO_STRIP_NOTICE } from '@/lib/demo-marks';
  */
 export const revalidate = 300;
 
+// `analyze` has its own page since v3.1.0 (`app/(app)/demo/analyze/page.tsx`):
+// the demo opens there, in the Business view, like a project (plan AB-2, O10).
 export function generateStaticParams() {
-  return PHASES.map((p) => ({ stage: p.key }));
+  return PHASES.filter((p) => p.key !== 'analyze').map((p) => ({ stage: p.key }));
 }
 
 export const metadata: Metadata = {

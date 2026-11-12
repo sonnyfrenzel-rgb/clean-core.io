@@ -235,7 +235,9 @@ test.describe('a stage as a tool, rendered', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
     for (const st of STAGES) {
-      await page.goto(`/demo/${st}`, { waitUntil: 'domcontentloaded' });
+      // The demo's Analyze opens in Business since v3.1.0 (the map page, which needs an account and leads back
+      // to My workspace, AB-2, O10); its stage page with the way back to the demo workspace is its IT view.
+      await page.goto(st === 'analyze' ? '/demo/analyze?view=it' : `/demo/${st}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
       const bar = page.locator('[data-stage-tools="open"]');
       await expect(bar, `demo ${st}: the tools bar`).toBeVisible();
@@ -256,7 +258,8 @@ test.describe('a stage as a tool, rendered', () => {
       // The way back, above the tools, as on a project's stage (owner 02.10.2026).
       const back = page.locator('[data-stage-back]');
       await expect(back, `demo ${st}: the way back`).toHaveCount(1);
-      await expect(back).toHaveAttribute('href', '/demo/workspace');
+      // Analyze is opened in IT here, and its way back keeps the view it was read in.
+      await expect(back).toHaveAttribute('href', st === 'analyze' ? '/demo/workspace?view=it' : '/demo/workspace');
       await expect(back).toHaveText(/Back to project workspace/);
       const [backTop, barTop] = await Promise.all([
         back.evaluate((el) => el.getBoundingClientRect().top),

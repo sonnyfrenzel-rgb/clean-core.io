@@ -372,10 +372,12 @@ const PUBLIC_ROUTES: { path: string; ready?: string }[] = [
 /** The demo sits behind sign-in, like the rest of the product shell. */
 const DEMO_ROUTES: { path: string; ready?: string }[] = [
   { path: '/demo' },
-  { path: '/demo/workspace?view=business', ready: '[data-demo-ready="true"]' },
+  // The demo opens like a project since v3.1.0 (AB-2, O10): its Business view is its Analyze page.
+  { path: '/demo/analyze', ready: '[data-analyze-business="ready"][data-demo-ready="true"]' },
   { path: '/demo/workspace?view=management', ready: '[data-demo-ready="true"]' },
   { path: '/demo/workspace?view=it', ready: '[data-demo-ready="true"]' },
-  ...STAGES.map((s) => ({ path: `/demo/${s}`, ready: '[data-demo-ready="true"]' })),
+  // Analyze's own address is its Business view (above); its stage page is its IT view.
+  ...STAGES.map((s) => ({ path: s === 'analyze' ? '/demo/analyze?view=it' : `/demo/${s}`, ready: '[data-demo-ready="true"]' })),
 ];
 
 test.describe('phone: no page wider than the screen', () => {
@@ -444,7 +446,7 @@ test.describe('phone: every map moves under a finger', () => {
     const cdp = await (context as BrowserContext).newCDPSession(page);
     const broken: string[] = [];
 
-    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
     await openMapView(page);
     broken.push(...(await exerciseTouch(page, cdp, bpmnProbe(page, 'demo workspace map'))));
@@ -612,7 +614,7 @@ test.describe('phone: the assistant', () => {
     test.setTimeout(300 * 1000);
     if (!acct) await seed();
     await signIn(page);
-    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
     const broken: string[] = [];
     for (const size of WIDTHS) {
@@ -660,7 +662,7 @@ test.describe('desktop: the assistant', () => {
     await signIn(page);
     // `signIn` turns the window back into the phone; this test is the desktop.
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('open-chatbot')));
     const panel = page.locator('#chatbot-panel');

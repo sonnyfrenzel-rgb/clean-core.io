@@ -207,7 +207,8 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     test.setTimeout(300_000);
     // The demo workspace is for a signed-in account, like a project.
     await signIn(page, small);
-    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    // The demo's map is its Analyze, Business since v3.1.0 (AB-2, O10).
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     const frame = await showMap(page, '[data-process-map]');
     await shot(page, 'demo-workspace-390', frame);
     await expectFits(frame, 'demo workspace');

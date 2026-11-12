@@ -67,7 +67,10 @@ test.describe('the head and the signed source, as pure functions', () => {
 
 /* -------------------------------------------------------------- rendered */
 
-test.describe('the Business view of a real project (mockup s1)', () => {
+// The Business view is Analyze's page since v3.1.0 (plan AB-2, ADR-109): the map
+// is the page, its code opens beside it on a click, and the workspace's head
+// (eyebrow, read access, Export, Invite) is IT's and Management's.
+test.describe('the Business view of a real project (Analyze, Business; mockup states 3, 7)', () => {
   test.describe.configure({ mode: 'serial' });
 
   let account: Awaited<ReturnType<typeof seedStageProject>>;
@@ -97,12 +100,13 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await adminSetDoc('projects', empty, { name: 'Untitled project', userId: account.uid, createdAt: new Date(), status: 'created' });
   });
 
+  /** The old Business address, which the workspace sends on to Analyze. */
   async function open(page: Page, id: string) {
     await page.goto(`/project/${id}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+    await page.waitForURL(new RegExp(`/project/${id}/analyze\\?view=business`), { timeout: 90_000 });
   }
 
-  test('the map and its source column are on the page, linked both ways, in the order of ADR-072', async ({ page }) => {
+  test('the map and its code are on the page, linked both ways, in the order of AB-2', async ({ page }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const writes: string[] = [];
@@ -111,37 +115,19 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     });
     await signInThroughForm(page, account);
     await open(page, signed);
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
 
-    // The head: eyebrow from the record, read access, Export and Invite.
-    await expect(page.locator('[data-workspace-eyebrow]')).toHaveText(
-      `Project · ${FILE.replace(/\.abap$/, '')} · SAP Cloud ERP Private`.toUpperCase(),
-      { ignoreCase: true },
-    );
-    await expect(page.locator('[data-workspace-read-access="0"]')).toContainText('Read access: only you', { timeout: 60_000 });
-    await expect(page.locator('[data-workspace-export]')).toBeVisible();
-    await expect(page.locator('[data-workspace-invite]')).toBeVisible();
-
-    // The map, drawn from the signed source.
-    const process = page.locator('[data-workspace-process="ready"]');
+    // The map, drawn from the signed source; no code before a click.
+    const process = page.locator('[data-analyze-map] [data-workspace-process="ready"]');
     await expect(process).toBeVisible({ timeout: 120_000 });
     await expect(process.locator('[data-process-map]')).toBeVisible();
-    await expect(page.locator('[data-workspace-source-column]')).toBeVisible();
-
-    // The map is the anchor of the view beside its layer, on the screen and not
-    // only in the source guard below (carried QA finding caa77476a0d2). Since
-    // ADR-096 (owner, 12.10.2026) Business has one layer, Evidence & controls,
-    // and no bar: there is nothing to switch to, so the check is that the bar is
-    // gone, the one section is there, and the map stands with it.
+    await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+    // No layer bar: Business has one section, and it is not on this page's first screen (ADR-096, AB-2).
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-layer-section]')).toHaveAttribute('data-workspace-layer-section', 'evidence');
-    await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
-    // The order since 03.10.2026 (owner: "show more prominently what I as a
-    // user should do here"): Next step → answer → map → layer → folded
-    // Not determined. No rules card since the owner decision of 21.10.2026:
-    // the first insights say the rules in one sentence and lead into Design.
+    // The order of AB-2: what the program does → the map → the first insights → Next step (interim until v3.2.0).
     const tops = await page.evaluate(() =>
-      ['[data-next-step]', '[data-first-look]', '[data-workspace-process]', '[data-workspace-layer-section]', '#not-determined'].map(
+      ['[data-analyze-summary]', '[data-analyze-map]', '[data-analyze-interim] [data-first-look]', '[data-analyze-interim] [data-next-step]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
@@ -150,48 +136,32 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     );
     expect(tops.every((t) => t >= 0), `a block is missing: ${tops.join(', ')}`).toBe(true);
     for (let i = 1; i < tops.length; i++) expect(tops[i], `block ${i} stands above block ${i - 1}`).toBeGreaterThan(tops[i - 1]);
-    await expect(page.locator('[data-next-step-variant="bar"]')).toBeVisible();
-    // The open questions (ADR-081): the list stands open, the engine's lines of
-    // each group one click deeper.
-    await expect(page.locator('#not-determined [data-open-questions]')).toBeVisible();
-    await expect(page.locator('#not-determined [data-cc-disclosure]').first()).toHaveAttribute('data-cc-disclosure', 'closed');
+    await expect(page.locator('[data-analyze-interim] [data-next-step-variant="bar"]')).toBeVisible();
 
-    // Code → step: a line range under "Steps by line" selects its step on the map.
-    const column = page.locator('[data-workspace-source-column]');
-    await column.getByRole('tab', { name: /Steps by line/ }).click();
-    const firstRange = column.locator('[data-workspace-steps-by-line] [data-cc-anchor]').first();
-    await firstRange.click();
-    await expect(page.locator('[data-process-code-card]')).toBeVisible();
-    await expect(column.locator('[data-workspace-source] [data-cc-code-line="highlighted"]').first()).toBeVisible();
-    const stepName = (await column.locator('[data-workspace-source-step]').textContent())?.trim() ?? '';
-    expect(stepName.length).toBeGreaterThan(0);
-
-    // Step → code: a step chosen in the map's own step list marks its lines here.
+    // Step → code: a step chosen in the map's own step list opens its lines in the panel beside the map.
     await process.getByRole('radio', { name: /Steps/ }).click();
     const rows = process.locator('[data-step-node]');
-    if ((await rows.count()) > 1) {
-      await rows.nth(1).click();
-      await expect(column.locator('[data-cc-code-line="highlighted"]').first()).toBeVisible();
-    }
+    await expect(rows.first()).toBeVisible({ timeout: 60_000 });
+    await rows.nth((await rows.count()) > 1 ? 1 : 0).click();
+    const panel = page.locator('[data-analyze-code-panel]');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-cc-code-line="highlighted"]').first()).toBeVisible();
 
     // The full source scrolls to the marked lines rather than starting at line 1.
-    await column.locator('[data-workspace-source-full]').click();
-    await expect(column.locator('[data-cc-code-line="highlighted"]').first()).toBeInViewport();
+    await panel.locator('[data-workspace-source-full]').click();
+    await expect(panel.locator('[data-cc-code-line="highlighted"]').first()).toBeInViewport();
+    await panel.locator('[data-analyze-code-close]').click();
+    await expect(panel).toHaveCount(0);
 
-    // Export: the BPMN file of the signed source, print, and the Delivery stage.
-    await page.locator('[data-workspace-export]').click();
-    await expect(page.locator('[data-workspace-export-bpmn]')).toBeVisible();
-    const download = page.waitForEvent('download');
-    await page.locator('[data-workspace-export-bpmn]').click();
-    expect((await download).suggestedFilename()).toMatch(/\.bpmn$/);
+    // Code → map: a line address opens the same panel at that line.
+    await page.evaluate(() => {
+      window.location.hash = '#L3';
+    });
+    await expect(page.locator('[data-analyze-code-panel]')).toBeVisible();
+    await expect(page.locator('[data-analyze-code-panel] [data-cc-code-line="highlighted"]').first()).toBeVisible();
 
-    // Invite opens the dialog that says what it gives away.
-    await page.locator('[data-workspace-invite]').click();
-    await expect(page.getByRole('dialog')).toContainText(/source code/i);
-    await page.keyboard.press('Escape');
-
-    // Opening the workspace measured and stored nothing.
-    expect(writes, 'the workspace wrote a process-map record on open').toEqual([]);
+    // Opening the page measured and stored nothing.
+    expect(writes, 'Analyze, Business wrote a process-map record on open').toEqual([]);
 
     // App pages: the one-line legal footer, not the marketing footer.
     const footer = page.locator('footer').last();
@@ -199,33 +169,60 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(footer).toContainText('Clean-Core.io');
   });
 
+  test('the workspace head: eyebrow from the record, read access, Export of the signed BPMN, Invite', async ({ page }) => {
+    // The head of the workspace stands in IT and Management since v3.1.0 (Business is Analyze's, AB-2).
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${signed}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-workspace-eyebrow]')).toHaveText(
+      `Project · ${FILE.replace(/\.abap$/, '')} · SAP Cloud ERP Private`.toUpperCase(),
+      { ignoreCase: true },
+    );
+    await expect(page.locator('[data-workspace-read-access="0"]')).toContainText('Read access: only you', { timeout: 60_000 });
+    await page.locator('[data-workspace-export]').click();
+    await expect(page.locator('[data-workspace-export-bpmn]')).toBeVisible();
+    const download = page.waitForEvent('download');
+    await page.locator('[data-workspace-export-bpmn]').click();
+    expect((await download).suggestedFilename()).toMatch(/\.bpmn$/);
+    await page.keyboard.press('Escape');
+    // Invite opens the dialog that says what it gives away.
+    await page.locator('[data-workspace-invite]').click();
+    await expect(page.getByRole('dialog')).toContainText(/source code/i);
+    await page.keyboard.press('Escape');
+  });
+
   test('a source that moved after signing draws no map, and says why', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await open(page, moved);
-    await expect(page.locator('[data-workspace-process="absent"][data-absence="changed"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-analyze-map] [data-workspace-process="absent"][data-absence="changed"]')).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
-    // And Export does not offer a BPMN file of bytes nobody signed.
+    // And Export (the workspace's, IT since v3.1.0) does not offer a BPMN file of bytes nobody signed.
+    await page.goto(`/project/${moved}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
     await page.locator('[data-workspace-export]').click();
     await expect(page.locator('[data-workspace-export-bpmn]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-export-bpmn-absent]')).toBeVisible();
   });
 
-  test('an empty project: no map box repeating the empty layer, the absence open, Analyze next', async ({ page }) => {
+  test('an empty project: no map, and the upload path in its place (P4)', async ({ page }) => {
+    // Since v3.1.0 an empty project's Business view is Analyze's upload and start path (AB-2, P4): there is
+    // nothing to draw, so neither the map's absence box nor the first insights stand there.
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await open(page, empty);
-    await expect(page.locator('[data-workspace-process="absent"][data-absence="no-source"]')).toHaveCount(1, { timeout: 60_000 });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
-    // Need & process is not a section of Business (ADR-080), nor Standard fit
-    // (ADR-096): its one section, Evidence & controls, says it is empty, and
-    // the map's absence stands above.
-    await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-layer-absent="evidence"]')).toBeVisible();
-    await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible();
-    await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'analyze');
+    await expect(page.locator('[data-first-look]')).toHaveCount(0);
+    // The workspace still says what is open: Analyze is the next step, the open questions say "no source".
+    await page.goto(`/project/${empty}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-next-step-state="open"]').first()).toHaveAttribute('data-next-step-key', 'analyze');
   });
 
   test('on a phone the map opens as the map, at 40 % or more, with full screen — and nothing scrolls sideways (ADR-072)', async ({ browser }) => {
@@ -234,7 +231,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     const page = await context.newPage();
     await signInThroughForm(page, account);
     await open(page, signed);
-    const process = page.locator('[data-workspace-process="ready"]');
+    const process = page.locator('[data-analyze-map] [data-workspace-process="ready"]');
     await expect(process).toBeVisible({ timeout: 120_000 });
     // The map itself, as on Documentation: fitted, never below 40 %, full
     // screen one tap away; the step list stays one tab away.
@@ -267,8 +264,9 @@ test.describe('the shell path', () => {
 // Owner, 01.10.2026 (QA 55bcde6ea5e1): the map is the anchor of the Business
 // view and stays under every layer, not only under "Need & process".
 test('the Business map is not tied to the chosen layer', () => {
-  const shell = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/WorkspaceShell.tsx'), 'utf8');
-  const block = shell.slice(shell.indexOf('    process:'), shell.indexOf('data-workspace-process-block'));
-  expect(block).toContain("view === 'business' ? (");
-  expect(block).not.toMatch(/currentLayer === 'need'|hashLayer === null/);
+  // The map is Analyze, Business's page since v3.1.0 (AB-2): it has no layer to be tied to.
+  const business = fs.readFileSync(path.resolve(__dirname, '..', 'components/analyze/AnalyzeBusiness.tsx'), 'utf8');
+  const block = business.slice(business.indexOf('<div id={BUSINESS_MAP_ID}'), business.indexOf('<WorkspaceProcess'));
+  expect(block).toContain('data-analyze-map=""');
+  expect(business).not.toMatch(/currentLayer|hashLayer|layerFromHash/);
 });

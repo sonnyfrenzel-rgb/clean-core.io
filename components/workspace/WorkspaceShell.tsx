@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
@@ -14,18 +13,10 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import WorkspaceMetaLine from './MetaLine';
 import WorkspaceStatusLine from './StatusLine';
-import WorkspaceLayerBar from './LayerBar';
-import WorkspaceLayerSection from './LayerSection';
 import WorkspaceToolBar from './ToolBar';
 import OpenQuestions, { type OpenAnswerOverlay } from './OpenQuestions';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import NextStepCard from './NextStepCard';
-import UsageRecords from './UsageRecords';
-import BusinessNextStep from './BusinessNextStep';
-import ProcessTourEntry from './ProcessTourEntry';
-import { requestProcessWalk } from '@/lib/process-walk-request';
-import TargetReferenceLine from './TargetReferenceLine';
-import WorkspaceHub from './WorkspaceHub';
 import { useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
@@ -34,8 +25,6 @@ import ItRuleRegister from './ItRuleRegister';
 import DecisionCard from './DecisionCard';
 import SteeringOnePager from './SteeringOnePager';
 import ManagementElsewhere from './ManagementElsewhere';
-import FirstLook from './FirstLook';
-import StartNarrativeMissing from './StartNarrativeMissing';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
 import type { CoachMarkId } from '@/lib/coach-marks';
@@ -46,17 +35,12 @@ import WorkspacePrintSheet from './WorkspacePrintSheet';
 import WorkspaceHeadActions, { ReadAccessLine } from './HeadActions';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
-import { createDraftHolder } from '@/lib/process-map-draft';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
-import type { SourceReading } from '@/lib/first-look';
 import type { ProcessSummary } from '@/lib/process-summary';
 import { signedSourceOf } from '@/lib/signed-source';
-import type { StartRun } from '@/hooks/useStartRun';
-import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint, nothingOpenText } from '@/lib/next-step';
 import { workflowSteps } from '@/lib/workflow-steps';
-import { businessNextStep } from '@/lib/business-next-step';
-import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { runTrust, scrollToWhenThere } from '@/lib/it-sections';
 import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
 import { useSourceReading } from '@/hooks/useSourceReading';
@@ -84,94 +68,30 @@ import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
 import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import { pricedOptions } from '@/lib/economics-record';
-import { analysisReadyResult } from '@/lib/analysis-read';
 import type { Project } from '@/lib/types';
 
-type ContentBlock =
-  | 'answers'
-  | 'layerBar'
-  | 'nextStep'
-  | 'layerSection'
-  | 'firstLook'
-  | 'ask'
-  | 'notDetermined'
-  | 'statusTools'
-  | 'process'
-  | 'walk'
-  | 'rules';
-
 /**
- * Business, as the owner asked on 03.10.2026 ("show more prominently what I as
- * a user should do here; make the Business view clearer"): **"Your next step"
- * first** — the page's one primary action, with one sentence of why, derived
- * from the rules' answers and the phase contract (`lib/business-next-step.ts`)
- * — then the answer (what the program does, the found rules beside what is not
- * determined, and the figures once), the map with its source column, the
- * business rules in one card, and after them the folded parts: the status and
- * tools, the other sections, the pre-answered question and the not-determined
- * detail. That order holds at every width, so on a phone the next step is the
- * first thing under the header and the focus order is the reading order.
- *
- * Before, the same page offered two primaries — "Confirm the rule" in the
- * answer card and "Next step" under the map — and summarised the process and
- * its rules twice ("Your process" and "Need & process"). One of the two rule
- * actions did not read the confirmations and asked for one that was on record.
- *
- * **The map follows the answer directly** (owner, 02.10.2026: "The process
- * always has to be shown when I start a new project, with first
- * look"). The first look's build-up draws the process inside its own card;
- * when it ends (~2.4 s) the card turns into the answer and that drawing goes.
- * With status, tools and the anchor bar in between, the map then stood about
- * 1,070 px down, under the fold of a 1440×1000 screen, so a new project's
- * process appeared and vanished. Under the answer it stands in the first
- * screen from the first frame of the build-up on, and stays (§5.1: "below it
- * the process map"). The anchor bar now sits where it belongs, over the layer
- * it switches — the map is not tied to a layer (owner, 01.10.2026).
- * `tests/first-look-map.spec.ts` holds it.
+ * The Business view is Analyze's since v3.1.0 (plan
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-109):
+ * `/project/<id>` in Business — or with no view — goes to
+ * `/project/<id>/analyze` before this component renders
+ * (`app/(app)/project/[projectId]/page.tsx`, `lib/analyze-entry.ts`), so this
+ * shell draws IT and Management only, until AB-9/AB-10 give each a page of its
+ * own on the Analyze tool. What the Business branch held — the next-step bar,
+ * the walk entry, the first insights, the map with its source column, the
+ * central work area ("Work from this process") and the folded open questions — stands in
+ * Analyze, Business (`components/analyze/AnalyzeBusiness.tsx`) or left the
+ * app with the hub (ADR-090 retired).
  */
-const BUSINESS_ORDER: readonly ContentBlock[] = [
-  'nextStep',
-  // The way into the guided walk-through, in the first screen (roadmap
-  // "3.0.20 — with it", part 1: the walk is the leading way in, and under the
-  // first look and the map it stood below the fold). The walk itself stands
-  // with the map it selects steps on, at the head of the process block.
-  'walk',
-  'firstLook',
-  // The map right under the answer (ADR-072): the process is the entry of the
-  // work area, and on a 1440 × 900 screen it starts in the first screen after
-  // the build-up instead of under the fold.
-  'process',
-  // The rules as one sentence where their card stood (owner decision
-  // 21.10.2026): how many questions for the business, how many technical
-  // rules stay as coded, and the way into Design — no decision here.
-  'rules',
-  'statusTools',
-  'layerBar',
-  'layerSection',
-  // "Ask this case" left the Business view (owner decision 22.10.2026,
-  // DESIGN.md §5.3): its pre-answered question named a decision point the
-  // first insights and the walk-through already show. It stands in IT, and the
-  // assistant behind the same name stays in Help in every view.
-  'notDetermined',
-];
-
-/**
- * The map and its source column — client only and on demand: it pulls bpmn-js
- * and the ABAP reader, which IT and Management never draw.
- */
-const WorkspaceProcess = dynamic(() => import('./WorkspaceProcess'), { ssr: false });
-
+export type ShellView = Exclude<WorkspaceView, 'business'>;
 
 /**
  * IT shows only its own content (owner decision 10.10.2026, ADR-086): the
  * answer, the four figures and "Next step" (§2.3 item 5), then its own anchor
  * bar over Findings → Objects & dependencies → Open questions, with target
- * profile, route and Run & trust beside them — all inside `ItAnswers`. No
- * block of the shell stands before or after it: the six layers, the first
- * look and "Ask this case" answer the other views' questions and stand there.
- */
-const IT_HEAD: readonly ContentBlock[] = [];
-/**
+ * profile, route and Run & trust beside them — all inside `ItAnswers` — and
+ * "Ask this case" under it (owner decision 22.10.2026).
+ *
  * In IT the tour starts at "Next step", the page's one primary action right
  * under the answer, then the Not determined figure in that answer. "Select
  * the decision point" points at the process, which IT does not draw since
@@ -197,25 +117,22 @@ const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];
  * IT's, the amounts Economics', the audit pack Delivery's. "Next step" is not
  * a card of its own here: it is the decision card's button, so the page never
  * says it twice.
- */
-const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers'];
-
-/**
+ *
  * The Object Page of a project — `DESIGN.md` §2.3, roadmap step 1.4.
  *
- * Header, status line, toolbar, anchor bar, and the one section this step
- * builds: *Not determined*. It **opens in the Business view** (ADR-002), and
- * everything it says about the project is derived in `lib/workspace-model.ts`
- * so that the honesty of it is testable in one place rather than seven.
+ * Header, status line, toolbar, and the view's own answer. A project opens in
+ * Analyze, Business since v3.1.0 (ADR-109), so this page holds IT and
+ * Management; everything it says about the project is derived in
+ * `lib/workspace-model.ts` so that the honesty of it is testable in one place
+ * rather than seven.
  *
  * **One header in all three views** (ADR-026, ADR-037, note of 04.10.2026).
  * The meta line sits behind "Details" and the seven statuses fold into one
  * "Project status" row in every view — IT and Management see the provenance
  * status in the folded row, Business its plain sentence — because "catalog
  * releaseInfo fb0df9f2" and seven statuses with seven "?" cost every reader the
- * line that mattered. The tools stay open in IT from M up. In Business the
- * status row and the tools stand under "Next step"; in IT and Management in the
- * header.
+ * line that mattered. The tools stay open in IT from M up; the status row
+ * and the tools stand in the header.
  *
  * **Three navigations, three jobs** (ADR-018). The view orders the same content
  * and lives in `?view=`; the layer jumps within this page and lives in the URL
@@ -226,10 +143,6 @@ const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers'];
  * **"Next step"** (roadmap 6.5) is the one card here with a `primary` button —
  * *"the page's main action is in 'Next step'"* (`DESIGN.md` §1.5) — and
  * it renders `lib/next-step.ts`'s answer without adding an opinion of its own.
- * The Business view also carries the process map with its linked source
- * column (`WorkspaceProcess.tsx`, mockup s1), drawn from the source the active
- * run signed — and where there is no such source, it says which of the reasons
- * applies rather than showing a placeholder.
  */
 export default function WorkspaceShell({
   project,
@@ -237,12 +150,11 @@ export default function WorkspaceShell({
   view,
   onViewChange,
   account,
-  buildUp = false,
-  startRun,
 }: {
   project: Project | null;
   projectId: string;
-  view: WorkspaceView;
+  /** IT or Management: Business is Analyze's page since v3.1.0 (AB-2). */
+  view: ShellView;
   onViewChange: (view: WorkspaceView) => void;
   /**
    * The signed-in account's own profile, or `undefined`/`null` while it has
@@ -254,20 +166,6 @@ export default function WorkspaceShell({
    * grows a field that has nothing to do with the next step.
    */
   account?: ModelStageSubject | null;
-  /**
-   * Whether the first look builds itself up in four stages (`DESIGN.md` §5.2)
-   * or goes straight to its end state. True after an import or an example, and
-   * never on a second visit — *"A second visit has no build-up"*. The
-   * decision is the route's, because it is the route that knows where the
-   * reader came from.
-   */
-  buildUp?: boolean;
-  /**
-   * The signed engine-only run a new project starts with (ADR-072) — started
-   * by the page, which owns the project and reads it again once it is signed.
-   * The first look's last moment and the map's place say where it stands.
-   */
-  startRun?: StartRun;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -314,15 +212,6 @@ export default function WorkspaceShell({
     setHashLayer(layerFromHash(window.location.hash));
   }, [view]);
 
-  const selectLayer = useCallback((next: LayerKey) => {
-    // Assigning the hash is a history entry, the same as the view's `push`, so
-    // Back returns to the layer the reader came from. Nothing is written: this
-    // is the address bar, not Firestore — and a view or a layer on a stored
-    // artefact is the one thing `docs/ROADMAP.md` forbids outright.
-    window.location.hash = next;
-    setHashLayer(next);
-  }, []);
-
   /**
    * Which revision of the process this screen is showing, and the notice when
    * somebody else has moved it (roadmap 6.9, CR-15).
@@ -334,28 +223,10 @@ export default function WorkspaceShell({
    */
   const stand = useWorkspaceRevision(projectId);
 
-  /**
-   * The map's unsaved drawing, held here because the map is not: it is dropped
-   * when the reader switches to IT or Management and remounted across the phone
-   * breakpoint, and either would otherwise discard the drawing unasked.
-   */
-  const [processDraft] = useState(createDraftHolder);
-
   const meta = useMemo(() => metaLine(project, projectId), [project, projectId]);
   const eyebrow = useMemo(() => workspaceEyebrow(project), [project]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
   const tools = useMemo(() => workspaceTools(project), [project]);
-  // "Your analysis is ready" in the work area (ADR-090): read from the phase
-  // contract and the signed run's worklist, never a phase state of its own.
-  const analysisResult = useMemo(
-    () =>
-      analysisReadyResult({
-        analyzeState: tools.find((t) => t.key === 'analyze')?.state,
-        hasSignedRun: Boolean(project?.activeRunId?.trim()),
-        worklist: project?.worklist,
-      }),
-    [tools, project?.activeRunId, project?.worklist],
-  );
   const open = useMemo(() => notDetermined(project), [project]);
   // What a project stored by an earlier version does not carry (roadmap 3.0.2).
   // Read, never repaired: opening a project writes nothing to it.
@@ -373,41 +244,15 @@ export default function WorkspaceShell({
   );
 
   /**
-   * The reading of the source, done once by the first look and handed up here.
-   *
-   * Not read a second time: `readSource` walks every statement of the source,
-   * and a second walk in this component would be a second set of line numbers
-   * for the same `IF` — the thing `lib/abap/process-facts.ts` exists to prevent
-   * — as well as the parse paid for twice.
+   * The reading of the source, for the search, the print sheet, the rule
+   * register and "Ask this case" — read once, here: the first insights that
+   * used to hand theirs up stand in Analyze, Business since v3.1.0 (AB-2).
    */
-  const [firstLookReading, setReading] = useState<SourceReading | null>(null);
-  const onReading = useCallback((next: SourceReading) => setReading(next), []);
-  /**
-   * Only Business renders the first look — IT not since ADR-086, Management
-   * not since ADR-087 — yet the search, the print sheet and the counts read
-   * the same reading in every view. So where the first look has not handed one
-   * up, the page reads the source itself, once, the same way.
-   */
-  const ownReading = useSourceReading(
+  const reading = useSourceReading(
     typeof project?.legacyCode === 'string' ? project.legacyCode : '',
-    view !== 'business' && firstLookReading === null,
+    true,
     engineVersionOfProject(project),
   );
-  const reading = firstLookReading ?? ownReading;
-  /**
-   * The first look could not read the source (a stage threw). The next step
-   * waits for the reading, and must not wait for one that will not come
-   * (owner, 12.10.2026: a reopened project stood on "Reading …" under an empty
-   * "Next step"). Tied to the source it failed on, so a new source is read again.
-   */
-  const legacySource = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
-  const [failedSource, setFailedSource] = useState<string | null>(null);
-  const onReadingFailed = useCallback(() => setFailedSource(legacySource), [legacySource]);
-  const readingFailed = failedSource !== null && failedSource === legacySource;
-  /** From the first look's picture of the main line to the whole map, right under it. */
-  const openMap = useCallback(() => {
-    document.getElementById('workspace-process-title')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }, []);
   /**
    * The source the active run signed, and the map of it in four numbers — so
    * *Need & process* says what the map shows instead of "nothing on record"
@@ -445,11 +290,10 @@ export default function WorkspaceShell({
   const mapSummary = signed && processSummary?.source === signed.source ? processSummary.summary : null;
 
   // The layers count the process, the rules and the capabilities of that
-  // reading (mockups s2, s3). Only Business shows layers — the sections that
-  // answer its question (owner, 03.10.2026; ADR-080); IT has its own sections
-  // (ADR-086) and Management none (ADR-087).
+  // reading (mockups s2, s3). No view of this page shows a layer bar any more —
+  // IT has its own sections (ADR-086), Management none (ADR-087), and Business
+  // is Analyze's (ADR-109) — but Management's Need row reads the Need count.
   const allLayers = useMemo(() => workspaceLayers(project, reading, mapSummary), [project, reading, mapSummary]);
-  const layers = useMemo(() => allLayers.filter((l) => BUSINESS_LAYERS.includes(l.key)), [allLayers]);
   // "Your process" in Management: one line in the decision's Need row, counted
   // as the map counts it (ADR-087) — the Need layer's own count, said once.
   // Owner 12.10.2026: Management reads what the program is for and what the
@@ -462,7 +306,7 @@ export default function WorkspaceShell({
    * fragment, the rest of the query kept. Used by the redirects below and by
    * IT's links out (ADR-086). The layer is set here because a client
    * navigation fires no `hashchange`; the place is brought into view once it
-   * has rendered — the map has its own follow below.
+   * has rendered. A place in Business is Analyze's (the route sends it there).
    */
   const goTo = useCallback(
     (target: WorkspaceView, hash: string, replace: boolean) => {
@@ -476,14 +320,6 @@ export default function WorkspaceShell({
       if (hash !== BUSINESS_MAP_ID) scrollToWhenThere(hash);
     },
     [projectId, router],
-  );
-  /** Where "What the code gives away" sends "+ N more" (3.0.21): Documentation and the IT view. */
-  const givesAwayElsewhere = useMemo(
-    () => ({
-      documentation: stageHref({ base: `/project/${projectId}`, path: 'documentation', view: 'business', from: WORKSPACE_RETURN.tools }),
-      it: `/project/${encodeURIComponent(projectId)}?view=it`,
-    }),
-    [projectId],
   );
   const toEconomics = useCallback(
     (from: WorkspaceView) => stageHref({ base: `/project/${projectId}`, path: 'tco', view: from, from: WORKSPACE_RETURN.tools }),
@@ -538,93 +374,6 @@ export default function WorkspaceShell({
     goTo(target.view, target.hash, true);
   }, [view, hashLayer, hasActiveRun, router, goTo, toEconomics]);
 
-  /**
-   * `#process-map` arrives before the map exists — the redirect above runs as
-   * soon as the view is known, a link from a stage lands on a page still
-   * loading — so the browser's own jump finds nothing and the reader stays at
-   * the top. Wait for the map, bring it into view, and hold it there for five
-   * seconds while the blocks above it grow; a wheel, a touch, a key or a
-   * pointer press by the reader ends it at once — the press covers a drag of
-   * the scrollbar, which sends no wheel. Not until the page
-   * is still for a moment: the blocks above grow in steps (the first look, the
-   * result line), and a pause between two steps read as the end left the
-   * reader a screen above the map.
-   */
-  useEffect(() => {
-    if (view !== 'business') return;
-    let frame = 0;
-    let stop = false;
-    const end = () => {
-      stop = true;
-    };
-    const onMap = () => window.location.hash === `#${BUSINESS_MAP_ID}`;
-    const follow = () => {
-      // A new hash ends the loop that is running, whatever it points at; only
-      // the map's own hash starts another.
-      window.cancelAnimationFrame(frame);
-      stop = true;
-      if (!onMap()) return;
-      stop = false;
-      const started = performance.now();
-      let lastTop: number | null = null;
-      const tick = (now: number) => {
-        if (stop || !onMap() || now - started > 5000) return;
-        const map = document.getElementById(BUSINESS_MAP_ID);
-        if (map) {
-          const top = Math.round(map.getBoundingClientRect().top);
-          if (lastTop === null || Math.abs(top - lastTop) > 1) {
-            map.scrollIntoView({ block: 'start' });
-            lastTop = Math.round(map.getBoundingClientRect().top);
-          }
-        }
-        frame = window.requestAnimationFrame(tick);
-      };
-      frame = window.requestAnimationFrame(tick);
-    };
-    follow();
-    window.addEventListener('hashchange', follow);
-    window.addEventListener('wheel', end, { passive: true });
-    window.addEventListener('pointerdown', end, { passive: true });
-    window.addEventListener('touchmove', end, { passive: true });
-    window.addEventListener('keydown', end);
-    return () => {
-      stop = true;
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('hashchange', follow);
-      window.removeEventListener('wheel', end);
-      window.removeEventListener('pointerdown', end);
-      window.removeEventListener('touchmove', end);
-      window.removeEventListener('keydown', end);
-    };
-  }, [view]);
-
-  /** Where the full map stands, for the first look's last moment (ADR-072). */
-  const mapState: BuildUpMapState = signed
-    ? 'drawn'
-    : startRun?.phase === 'running'
-      ? startRun.step === 'narrative'
-        ? 'writing'
-        : 'running'
-      : startRun?.phase === 'failed'
-        ? 'failed'
-        : 'unsigned';
-
-  /** The start's narrative, when the model is on (owner decision 03.10.2026). */
-  const startNarrative: BuildUpNarrative | null = useMemo(
-    () =>
-      startRun && startRun.callsModel
-        ? { since: startRun.narrativeSince, onContinue: startRun.continueWithout, withModel: true }
-        : null,
-    [startRun],
-  );
-
-  /**
-   * The tips wait for the first look to settle: during the build-up a popover
-   * stood over the very content being built (owner, 03.10.2026).
-   */
-  const [firstLookSettled, setFirstLookSettled] = useState(!buildUp);
-  const onFirstLookSettled = useCallback((settled: boolean) => setFirstLookSettled(settled), []);
-
   /** Deterministic, from the branches of the code. No model call (§5.3). */
   const answer: PreAnswered | null = useMemo(
     () =>
@@ -642,28 +391,15 @@ export default function WorkspaceShell({
 
   // Rule-based, no model call (roadmap 6.5) — `null` once every phase this
   // product can finish already is, never a step invented to fill the card.
-  // While the start run is with the server the open point is still Analyze —
-  // the project has no run until it is signed — so it is marked as running
-  // rather than offered as "Run the analysis" (owner, 09.10.2026).
-  const startRunning = startRun?.phase === 'running';
+  // The start run of a new project is signed in Analyze, Business since v3.1.0
+  // (AB-2), which marks its own "Next step" as running while it is with the server.
   // ADR-094 — "nothing is open" says so when Testing was closed without a pass.
   const nothingOpen = useMemo(() => nothingOpenText(workflowSteps(project)), [project]);
-  const nextStep = useMemo(() => {
-    const point = nextOpenPoint(project, account);
-    return point && point.key === 'analyze' && startRunning ? { ...point, running: true as const } : point;
-  }, [project, account, startRunning]);
+  const nextStep = useMemo(() => nextOpenPoint(project, account), [project, account]);
 
-  /**
-   * Business: the rules first while any has no answer, then the phase step —
-   * one decision, from the same answers the rules card and the first look
-   * read (`rulesStatus`), so no two places on the page can disagree about it
-   * (owner, 03.10.2026). `null` while it is not known yet: a strip that says
-   * "Draft the design" and a second later "Decide on 1 rule" would move the
-   * one action under the reader's hand.
-   */
   const owner = useIsOwner(project);
   const hasSource = typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0;
-  const { outcome: ruleStates } = useProcessStates(projectId, (view === 'business' || view === 'management') && hasSource);
+  const { outcome: ruleStates } = useProcessStates(projectId, view === 'management' && hasSource);
   // Management's Need row (owner 12.10.2026): what the program is for, what the
   // decision has to know from the code, and how many of its rules are still
   // open in the rule register — the counts the delivery package says — then
@@ -677,30 +413,14 @@ export default function WorkspaceShell({
       : mapSummary?.management ?? null;
     return [management, processCount].filter(Boolean).join(' — ') || null;
   }, [mapSummary, ruleStates, processCount, tallyEngine]);
-  const businessStep = useMemo(() => {
-    if (view !== 'business') return null;
-    // A reading that failed decides as "no rules known": the phase step, never
-    // a card left waiting (owner, 12.10.2026).
-    const ready = !hasSource || !project?.activeRunId || readingFailed || (reading !== null && ruleStates !== null);
-    if (!ready) return null;
-    // Owner decision 21.10.2026: the opening asks for no rule decision — the
-    // questions for the business wait in Design, which the phase step leads to.
-    return businessNextStep({ point: nextStep, rules: null, owner });
-  }, [view, hasSource, project?.activeRunId, reading, readingFailed, ruleStates, nextStep, owner]);
-
   // A tip that points at nothing is a claim: "Select the decision" exists only
   // where the source has one, and that is not known before the reading lands.
   // The same is now true of "Your next step" — it used to be offered whenever
   // `workflowSummary` named *a* phase, which was always, because that cursor
   // never returns nothing; the tip pointed at the empty space above the card
   // this step just built on a project that had nothing left to do.
-  // "Select the decision point" points at the map in Business, and Business
-  // has no "Ask this case" any more (22.10.2026): without a map the tip has
-  // nothing to point at there.
-  const decisionTipAtMap =
-    view === 'business' && signed !== null && processSummary?.source === signed.source && !!processSummary.summary;
   const marks = useCoachMarks({
-    hasDecision: answer?.kind === 'answered' && (view !== 'business' || decisionTipAtMap),
+    hasDecision: answer?.kind === 'answered',
     hasNextStep: nextStep !== null,
     order: view === 'it' ? IT_COACH_ORDER : undefined,
     only: view === 'management' ? MANAGEMENT_COACH_MARKS : view === 'it' ? IT_COACH_ORDER : undefined,
@@ -715,14 +435,10 @@ export default function WorkspaceShell({
    * that appears and is swapped for another is worse than one that arrives
    * late.
    */
-  // Only Business builds the first look up; no other view has one to wait for.
   const marksReady =
     marks.ready &&
-    (firstLookSettled || view !== 'business') &&
     (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
   const currentMark = marksReady ? marks.current : null;
-  // "Select the decision point" stands right above the map where Business has
-  // one, in the flow; elsewhere above "Ask this case", whose question is one.
 
   // The plain-language fold of ADR-026. Derived, not written: the row says how
   // many of the seven facets have anything on record at all, which is a fact
@@ -736,26 +452,11 @@ export default function WorkspaceShell({
   const toolsOpen = view === 'it';
   const provenanceStatus = statuses.find((s) => s.facet === 'provenance') ?? null;
 
-  // The reader's own choice wins, empty or not — an empty layer opened from
-  // "More" is a place, and saying so is the whole of roadmap 6.2. Without a
-  // choice the bar opens on the first layer that has anything in it, and on a
-  // project where nothing does, on the first layer, which then says it is empty.
-  // Business opens on the map (ADR-080): the map and the rules card stand on
-  // the page itself, and its one section is Evidence & controls since
-  // Standard fit moved to IT (ADR-096) — never a section Business does not show.
-  const currentLayer =
-    (hashLayer && layers.some((l) => l.key === hashLayer) ? hashLayer : null) ??
-    layers.find((l) => l.count !== null)?.key ??
-    BUSINESS_LAYERS[0];
-  const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
   // How many options Economics prices — never an amount (ADR-022); the Costs
   // row of the decision says it (ADR-085 amendment, ADR-087).
   const costScenario = useMemo(() => (project?._economics ? pricedOptions(project._economics) : null), [project]);
 
-  /**
-   * The status line and the toolbar with Export and "Invite to view" — in
-   * the header in IT and Management, under "Next step" in Business.
-   */
+  /** The status line and the toolbar with Export and "Invite to view" — in the header. */
   const statusFold = (
     <>
       {/* The project status — one folded row in every view (ADR-026, note
@@ -771,9 +472,8 @@ export default function WorkspaceShell({
               {wt('page.projectStatus')}
             </span>
             <span data-workspace-status-summary className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-cc-ink">
-              {/* IT and Management read where the evidence comes from first;
-                  Business keeps its plain sentence (ADR-026). */}
-              {view !== 'business' && provenanceStatus ? (
+              {/* IT and Management read where the evidence comes from first (ADR-026). */}
+              {provenanceStatus ? (
                 <span data-workspace-status-summary-provenance="" className="inline-flex items-center gap-2">
                   <CcObjectStatus value={provenanceStatus.status} facet={provenanceStatus.label} />
                   {provenanceStatus.provenance ? <CcProvenanceChip value={provenanceStatus.provenance} /> : null}
@@ -828,18 +528,6 @@ export default function WorkspaceShell({
     </>
   );
 
-  /**
-   * The content under the header, as named blocks — so the order can follow
-   * the view (roadmap 3.0.4).
-   *
-   * Business reads in the order of `DESIGN.md` §2.3 and §2.9: the process and
-   * its plain sentence, then the reveal line and *Not determined*, then "Next
-   * step". That order holds at every width, so the phone order of breakpoint S
-   * is the DOM order and the focus order follows the reading order (§1.6),
-   * instead of a CSS `order` that would split the two — and the trust reason
-   * never slides under the content. In IT and Management "Next step" stands at
-   * the top of the content (§2.3 item 5).
-   */
   const openQuestionsList = (
     <OpenQuestions
       questions={questions}
@@ -851,16 +539,13 @@ export default function WorkspaceShell({
       onAnswered={onAnswered}
     />
   );
-  const contentBlocks: Record<ContentBlock, React.ReactNode> = {
-    // Management begins with its answer, above every card (ADR-029,
-    // `DESIGN.md` §5.6: *"Management begins with a sentence above all
-    // cards that answers the view's question"*) — roadmap 6.4, moved
-    // here from the route by roadmap 6.10: the decision panel, the figures
-    // and the answer cards one action deeper. Rendered only in that view: a
-    // stub of somebody else's answer in the other two views is a promise the
-    // page does not keep. It reads the runs of this project itself, because
-    // the history is the one thing the hydrated project does not carry.
-    answers:
+  /**
+   * Management begins with its answer, above every card (ADR-029, `DESIGN.md`
+   * §5.6) — the decision panel, the figures and the answer cards one action
+   * deeper. It reads the runs of this project itself, because the history is
+   * the one thing the hydrated project does not carry.
+   */
+  const managementAnswers =
       view === 'management' ? (
         <div className="mt-5">
           <ManagementAnswers
@@ -895,243 +580,36 @@ export default function WorkspaceShell({
               <>
                 <PublicCloudFitPanel project={project} />
                 {/* The open questions, in the Evidence fold (ADR-081): the
-                    same one list as in Business and IT, grouped by the action
+                    same one list as in Analyze, Business and IT, grouped by the action
                     that resolves each, the engine's lines one click deeper. */}
                 <div id="not-determined">{openQuestionsList}</div>
               </>
             }
           />
         </div>
-      ) : null,
-    // The bar and the section it switches stand in one group: the bar is
-    // sticky within it (owner, 03.10.2026), so it stays in view while the
-    // reader is in the section and lets go where the section ends.
-    layerBar: (
-      <div className="mt-5" data-workspace-layer-group="">
-        {/* One layer left in Business since ADR-096 (owner, 12.10.2026): a bar
-            with one tab is a navigation to the only place there is, so the
-            section stands on its own — as Management has no bar (ADR-087). */}
-        {layers.length > 1 ? <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} /> : null}
-        <div className="mt-2">
-          <WorkspaceLayerSection
-            layer={currentLayerSection}
-            project={project}
-            projectId={projectId}
-            reading={reading}
-            process={mapSummary}
-            onOpenMap={view === 'business' ? openMap : undefined}
-          />
-        </div>
-      </div>
-    ),
-    // The rule-based "next step" (`DESIGN.md` §2.3 item 5, §5.5, roadmap 6.5)
-    // — the next open point in the one phase contract every other view already
-    // reads, or the plain statement that nothing is open. No model call:
-    // `lib/next-step.ts` is pure, and `tests/next-step.spec.ts` proves it never
-    // reaches the Gemini proxy. "Your next step" — the coach mark points at
-    // this card. Directly under the `h1` in IT and Management, so its title is
-    // an `h2` there, or the outline would skip a level (§2.3, §8).
-    nextStep: (
-      <div className={view === 'business' ? 'mt-4' : 'mt-5 max-w-3xl'}>
-        {/* The tour starts here (owner, 04.10.2026: next step first), in the
-            flow right above the bar: a floating tip below it would stand over
-            the first look, and on a phone a sheet over the bar's button. */}
+      ) : null;
+  /**
+   * "Ask this case" in IT (owner decision 22.10.2026): the first ten seconds
+   * after the answer (§5.3) — one question already answered, out of the
+   * branches of the code and without a model call.
+   */
+  const askThisCase =
+    answer ? (
+      <div className="mt-5 max-w-3xl">
         <div className="cc-no-print">
           <CoachMarkNote
             mark={currentMark}
-            slot="next-step"
-            form="inline"
+            slot="decision"
             onDismiss={marks.dismiss}
             onDismissAll={marks.dismissAll}
           />
         </div>
-        {/* A bar in Business (mockup s1): one row at the top of the content,
-            the one primary button of the page on its right. */}
-        <div data-coach-target="next-step">
-          {view === 'business' ? (
-            businessStep ? (
-              <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} />
-            ) : (
-              <div
-                data-next-step-pending=""
-                aria-busy="true"
-                className="min-h-[76px] rounded-cc-card border border-l-4 border-cc-line border-l-cc-line bg-cc-surface px-4 py-3"
-              >
-                <h2 className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
-                  {wt('nextStep.title')}
-                </h2>
-                {/* Said, never an empty card under the title (owner, 12.10.2026). */}
-                <p role="status" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
-                  {wt('nextStep.pending')}
-                </p>
-              </div>
-            )
-          ) : (
-            <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" noneText={nothingOpen} />
-          )}
-        </div>
-        {/* Business: the target and its SAP reference pattern, one line
-            (roadmap 3.0.9, ADR-089). Management says it beside the decision. */}
-        {view === 'business' ? <TargetReferenceLine project={project} /> : null}
-      </div>
-    ),
-    // Business only, and only where there is a map to walk: the entry to the
-    // walk-through, with how many steps the account's answers already cover.
-    // On the first visit of a new project (ADR-072) the build-up and the
-    // process story it lands on keep the first screen, and the entry stands
-    // right under them instead (CI of 18a3d8e3: above them it pushed the story
-    // under the fold of a 1440 × 1000 screen); on every later visit it comes
-    // first, as the owner decided.
-    walk:
-      view === 'business' && signed !== null && !buildUp ? (
-        <ProcessTourEntry projectId={projectId} />
-      ) : null,
-    // Business only: the business rules, once, in their own card under the map
-    // (owner, 03.10.2026). The rule actions of the page — "Your next step" and
-    // the first look outside Business — lead here by this block's id. Not while
-    // the start run is still being signed: forty rules to decide on under a
-    // map that is still loading confuse the reader (owner, 15.10.2026).
-    // Owner decision 21.10.2026 (the new set-up of the business rules): no
-    // rule card and no rule decision in the Business view. The first insights
-    // say the rules in one sentence — how many questions the business has, how
-    // many technical rules stay as coded — with the way into Design, where the
-    // questions are asked (`RuleBasketLine` in `BusinessOpening`). The full
-    // register is in IT. The slot stays in the order, empty.
-    rules: null,
-    // Business only: the folded status and the tools sit under "Next step"
-    // there, as in mockup s1; IT and Management keep them in the header.
-    //
-    // Titled as what it is (owner, 03.10.2026: "it must be clearly
-    // recognisable that you are in the central work area, from which you
-    // start all views and tools"): the process above is the entry, and from
-    // here the same process opens in the other two views and every tool
-    // opens its step. The view buttons switch the view exactly as the
-    // segmented control does — one job, two places to reach it. Since
-    // 06.10.2026 a band of its own (owner: "easy to overlook"): the next step,
-    // the three views with what each gets, the seven tools — `WorkspaceHub`.
-    statusTools:
-      view === 'business' ? (
-        <WorkspaceHub
-          projectId={projectId}
-          step={businessStep}
-          tools={tools}
-          onViewChange={onViewChange}
-          toolsRow={toolsRow}
-          statusFold={statusFold}
-          analysis={analysisResult}
-        />
-      ) : null,
-    // Business only: the process map and its linked source column (roadmap
-    // 2.5, mockup s1). It stays under every layer — the map is the anchor of
-    // the Business view and the chosen layer reads beside it (owner,
-    // 01.10.2026).
-    process:
-      view === 'business' ? (
-        <div id={BUSINESS_MAP_ID} className="mt-4 scroll-mt-20" data-workspace-process-block="">
-          <WorkspaceProcess
-            project={project}
-            projectId={projectId}
-            view={view}
-            notDetermined={open}
-            beforeWrite={stand.checkBeforeWrite}
-            onWritten={stand.adopt}
-            draftHolder={processDraft}
-            startRun={startRun}
-            coach={
-              decisionTipAtMap ? (
-                <div className="cc-no-print">
-                  <CoachMarkNote
-                    mark={currentMark}
-                    slot="decision"
-                    form="inline"
-                    onDismiss={marks.dismiss}
-                    onDismissAll={marks.dismissAll}
-                  />
-                </div>
-              ) : undefined
-            }
-          />
-          {/* The imported usage records beside the map (ADR-080) — every one,
-              the first five and "Show all"; nothing when none is imported. */}
-          <UsageRecords project={project} className="mt-4" />
-        </div>
-      ) : null,
-    // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
-    // the anchor bar scrolls the reader here by the section's own `id`.
-    // Rendered inside the layer group above, with its bar.
-    layerSection: null,
-    // The first look — four stages, then the head of the content (§5.1, §5.5):
-    // process name, traceability, the reveal line and the decisions.
-    firstLook: (
-      <div className="mt-5">
-        {startRun?.narrativeMissing ? (
-          <StartNarrativeMissing project={project} projectId={projectId} view={view} missing={startRun.narrativeMissing} />
-        ) : null}
-        <FirstLook
-          project={project}
-          projectId={projectId}
-          buildUp={buildUp}
-          onReading={onReading}
-          onReadingFailed={onReadingFailed}
-          onOpenMap={view === 'business' ? openMap : undefined}
-          onWalk={view === 'business' && signed !== null ? () => requestProcessWalk(projectId) : undefined}
-          map={mapState}
-          narrative={startNarrative}
-          fullMapBelow={view === 'business' && signed !== null}
-          rulesBelow={view === 'business'}
-          onSettled={onFirstLookSettled}
-          questions={questions}
-          elsewhere={givesAwayElsewhere}
-        />
-        {/* The first visit's place of the walk entry: under the story (see `walk`). */}
-        {view === 'business' && signed !== null && buildUp ? (
-          <ProcessTourEntry projectId={projectId} />
-        ) : null}
-      </div>
-    ),
-    // The first ten seconds after it (§5.3): one question already answered,
-    // out of the branches of the code and without a model call.
-    ask: answer ? (
-      <div className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}>
-        {decisionTipAtMap ? null : (
-          <div className="cc-no-print">
-            <CoachMarkNote
-              mark={currentMark}
-              slot="decision"
-              onDismiss={marks.dismiss}
-              onDismissAll={marks.dismissAll}
-            />
-          </div>
-        )}
-        {/* What "Select the decision point" points at where the map does not
-            stand on this page — the tip's own slot stays outside it. */}
-        <div data-coach-target={decisionTipAtMap ? undefined : 'decision'}>
+        {/* What "Select the decision point" points at; the tip's own slot stays outside it. */}
+        <div data-coach-target="decision">
           <AskThisCase answer={answer} />
         </div>
       </div>
-    ) : null,
-    // Everything the engine could not work out, as open questions grouped by
-    // the action that resolves them (ADR-081) — the reason to trust the rest of
-    // the screen (roadmap 1.4). The block keeps its name and its `#not-determined`
-    // address, so links and the tour that point here still land.
-    notDetermined: (
-      <div
-        id="not-determined"
-        data-coach-target="not-determined"
-        className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}
-      >
-        <div className="cc-no-print">
-          <CoachMarkNote
-            mark={currentMark}
-            slot="not-determined"
-            onDismiss={marks.dismiss}
-            onDismissAll={marks.dismissAll}
-          />
-        </div>
-        {openQuestionsList}
-      </div>
-    ),
-  };
+    ) : null;
   /** Run & trust and the links out of the IT view (ADR-086). */
   const trust = useMemo(() => runTrust(project), [project]);
   /** The links out of the Management view (ADR-087). */
@@ -1144,8 +622,6 @@ export default function WorkspaceShell({
     }),
     [goTo, toEconomics, projectId],
   );
-  const contentOrder: readonly ContentBlock[] =
-    view === 'business' ? BUSINESS_ORDER : view === 'management' ? MANAGEMENT_HEAD : IT_HEAD;
 
   return (
     <div className="cc" data-workspace-shell={view}>
@@ -1221,15 +697,6 @@ export default function WorkspaceShell({
                 </CcButton>
               </span>
             </div>
-            {/* What this page is, in one fixed line, for a reader who comes back
-                to a project (ADR-099, owner 12.10.2026: "there is no real intro
-                of what this is"). Business only: IT and Management open with
-                their own answer. */}
-            {view === 'business' ? (
-              <p data-workspace-intro="" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
-                {wt('page.workspaceIntro')}
-              </p>
-            ) : null}
             {metaVisible && (
               <div className="mt-2">
                 <WorkspaceMetaLine entries={meta} />
@@ -1279,24 +746,10 @@ export default function WorkspaceShell({
           </div>
         </div>
 
-        {view !== 'business' ? statusAndTools : null}
-        {/* Business: the seven tools in one compact row above "Next step"
-            (ADR-099, owner 12.10.2026: "you don't get quickly to the tools if
-            you need something again"). The same component, marks and "Next"
-            tag as the full bar, which stays in the work area under the map
-            (ADR-072); a "Tools" menu below breakpoint L (§2.3). */}
-        {view === 'business' ? (
-          <div id={WORKSPACE_RETURN.headTools} data-workspace-head-toolbar="" className="cc-no-print mt-3 scroll-mt-20">
-            <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={false} compact />
-          </div>
-        ) : null}
+        {statusAndTools}
       </section>
 
-      {/* Keyed, so a view switch reorders these blocks instead of remounting
-          them — the first look keeps its reading and does not build up again. */}
-      {contentOrder.map((key) => (
-        <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>
-      ))}
+      {managementAnswers}
 
       {/* IT's own answer (ADR-029, `DESIGN.md` §5.6: *"the chain belongs to a
           selected finding … and the coverage is stated with it"*) — roadmap 8.1: the
@@ -1351,7 +804,7 @@ export default function WorkspaceShell({
           answered from the branches of the code, with its anchors — the IT
           reader asks about decision points; Business reads them in the first
           insights and the walk-through. */}
-      {view === 'it' ? contentBlocks.ask : null}
+      {view === 'it' ? askThisCase : null}
 
       {/* Management, under its answer (ADR-087): the place the steering
           one-pager opens in — from the button at the top of the decision card

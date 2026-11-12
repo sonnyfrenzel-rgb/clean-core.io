@@ -190,24 +190,22 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads Next step, the answer, the map, the rules, then the folded detail — in that order in the DOM (§2.9)', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
-    expect(block, 'no Business order').not.toBeNull();
-    const order = [...block![1].matchAll(/'([a-zA-Z]+)'/g)].map((m) => m[1]);
-    // The one next action first (owner, 03.10.2026: "show more prominently
-    // what I as a user should do here") — the same DOM order at every width,
-    // so on a phone it is the first thing under the header and the focus
-    // order is the reading order.
-    expect(order[0]).toBe('nextStep');
-    // Then the answer — the process in plain steps, with what is not
-    // determined in one line — and the full map right under it (ADR-072).
-    expect(order.indexOf('firstLook')).toBeLessThan(order.indexOf('process'));
-    // The business rules once, in their own card, before the sections.
-    expect(order.indexOf('process')).toBeLessThan(order.indexOf('rules'));
-    expect(order.indexOf('rules')).toBeLessThan(order.indexOf('layerBar'));
-    // The detail of what is not determined is folded and last, never absent.
-    expect(order[order.length - 1]).toBe('notDetermined');
+  test('Business reads what the program does, the map, then the first insights and Next step — in that order in the DOM (§2.9)', () => {
+    // Since v3.1.0 the Business view is Analyze's page (AB-2, ADR-109), not an
+    // order of blocks in the workspace shell: the map is the page. The reading
+    // order is the DOM order at every width — no CSS `order` splits the two, so
+    // on a phone the focus order is still the reading order.
+    const page = read('components/analyze/AnalyzeBusiness.tsx');
+    const at = (needle: string) => {
+      const i = page.indexOf(needle);
+      expect(i, `${needle} is not on the page`).toBeGreaterThan(-1);
+      return i;
+    };
+    const order = [at('data-analyze-summary=""'), at('<WorkspaceProcess'), at('<FirstLook'), at('<BusinessNextStep')];
+    for (let i = 1; i < order.length; i++) expect(order[i], `block ${i} stands before block ${i - 1}`).toBeGreaterThan(order[i - 1]);
+    expect(page).not.toMatch(/\border-(first|last|\d+)\b/);
+    // The workspace shell keeps no Business order to drift from it.
+    expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('BUSINESS_ORDER');
   });
 
   test('on a phone the toolbar is a menu in every view (§2.9)', () => {

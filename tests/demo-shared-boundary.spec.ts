@@ -80,7 +80,9 @@ test.describe('the shared components keep the demo’s promise', () => {
     }).toPass({ timeout: 60000 });
   }
 
-  for (const route of ['/demo/analyze', '/demo/workspace?view=business']) {
+  // The demo's Analyze stage (IT) and its Analyze, Business — where the demo opens since v3.1.0 (AB-2, O10),
+  // the Business view the demo workspace held until then.
+  for (const route of ['/demo/analyze?view=it', '/demo/analyze']) {
     test(`the shell assistant on ${route} answers a non-glossary question without a model`, async ({ page }) => {
       test.setTimeout(240 * 1000);
       await page.setViewportSize({ width: 1440, height: 1000 });
@@ -110,7 +112,7 @@ test.describe('the shared components keep the demo’s promise', () => {
     });
   }
 
-  test('the editor behind the demo workspace map offers no download, and none happens', async ({ page }) => {
+  test('the editor behind the demo map offers no download, and none happens', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1100 });
 
@@ -123,10 +125,11 @@ test.describe('the shared components keep the demo’s promise', () => {
       ([key, last]) => window.localStorage.setItem(key, JSON.stringify({ index: last, state: 'ended', inviting: false })),
       [TOUR_STORAGE_KEY, TOUR_STATIONS.length - 1] as const,
     );
-    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    // The demo's map is its Analyze, Business page since v3.1.0 (AB-2, O10).
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
 
-    await page.locator('[data-process-map-canvas]').first().waitFor({ timeout: 90000 });
+    await page.locator('[data-analyze-map] [data-process-map-canvas]').first().waitFor({ timeout: 90000 });
     await page.locator('[data-process-edit-toggle]').first().click();
     await page.locator('[data-process-editor]').waitFor({ timeout: 60000 });
     await expect
@@ -141,6 +144,6 @@ test.describe('the shared components keep the demo’s promise', () => {
     await expect(editor.locator('a[download]')).toHaveCount(0);
 
     await page.waitForTimeout(1000);
-    expect(downloads, 'the demo workspace downloaded a file').toEqual([]);
+    expect(downloads, 'the demo downloaded a file').toEqual([]);
   });
 });
