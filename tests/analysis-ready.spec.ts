@@ -202,7 +202,8 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
     const calls = page.match(/markAnalysisRead\(/g) ?? [];
     expect(calls).toHaveLength(2);
     expect(page).toContain('if (hydratedProject.activeRunId?.trim()) markAnalysisRead(projectId as string);');
-    expect(page).toMatch(/router\.push\(`\/project\/\$\{projectId\}\?first=1`\);\s*\} else \{[\s\S]{0,300}markAnalysisRead\(projectId as string\);/);
+    // A first run goes on to the project's entry, Analyze in the Business view, since AB-2 (ADR-109).
+    expect(page).toMatch(/router\.push\(`\/project\/\$\{projectId\}\/analyze\?first=1`\);\s*\} else \{[\s\S]{0,300}markAnalysisRead\(projectId as string\);/);
   });
 
   test('the demo is the twin: /demo/analyze marks it, the demo workspace points at it', () => {

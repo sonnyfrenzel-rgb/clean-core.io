@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { PHASES, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
-import { stageBackLink } from '@/lib/workspace-back-href';
+import { myWorkspaceHref, stageBackLink } from '@/lib/workspace-back-href';
 import { useShellProjectName } from '@/lib/shell-context';
 import StageBackText from '@/components/StageBackText';
 import ChoiceBackLink from '@/components/ChoiceBackLink';
@@ -154,6 +154,7 @@ export default function StageHeader({
   const toolEyebrow = projectName || null;
   const toolCurrent = tools?.current ?? stage;
   const toolBase = tools?.base ?? (projectId ? `/project/${projectId}` : null);
+  const toMyWorkspace = backToMyWorkspace && !demo;
 
   return (
     <header
@@ -167,27 +168,27 @@ export default function StageHeader({
         // under the way back and fills the row.
         <div data-stage-head-row="" className="flex flex-wrap items-start justify-between gap-x-4">
           <div className="min-w-0">
-            {backToMyWorkspace && !demo && !back.origin ? (
-              <Link
-                href="/dashboard"
-                data-stage-back="my-workspace"
-                className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap`}
-              >
-                <ArrowLeft size={16} aria-hidden="true" className="shrink-0" />
-                <span data-stage-back-lead="">{nav('nav.backToMyWorkspace')}</span>
-              </Link>
-            ) : back.kind === 'link' && back.origin ? (
+            {back.kind === 'link' && back.origin ? (
               // A choice made here was asked for elsewhere (`?origin=`, a key of the
               // closed list in `lib/choice-addresses.ts`): the way back leads there,
               // one level deep. The tool bar and the footer still lead to the workspace.
               <ChoiceBackLink href={back.origin.href} label={back.origin.label} stage />
             ) : (
+              // One link, two places: the project's workspace, or — for Analyze in the Business view,
+              // which is where a project opens (ADR-109) — My workspace, the list of all projects.
               <Link
-                href={back.href}
-                data-stage-back="workspace"
-                className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap`}
+                href={toMyWorkspace ? myWorkspaceHref() : back.href}
+                data-stage-back={toMyWorkspace ? 'my-workspace' : 'workspace'}
+                className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap max-sm:min-h-11`}
               >
-                <StageBackText projectName={backName} search={search} />
+                {toMyWorkspace ? (
+                  <>
+                    <ArrowLeft size={16} aria-hidden="true" className="shrink-0" />
+                    <span data-stage-back-lead="">{nav('nav.backToMyWorkspace')}</span>
+                  </>
+                ) : (
+                  <StageBackText projectName={backName} search={search} />
+                )}
               </Link>
             )}
           </div>

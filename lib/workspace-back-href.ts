@@ -124,6 +124,15 @@ export function stageBackLink({
   return origin ? { kind: 'link', href, origin } : { kind: 'link', href };
 }
 
+/**
+ * "My workspace", the list of all projects — where Analyze's Business view leads
+ * back to, because it is where a project opens (ADR-109): its way back to the
+ * project would lead to itself. Every other stage still leads back to the project.
+ */
+export function myWorkspaceHref(): string {
+  return '/dashboard';
+}
+
 /** The way back to the place that asked for a choice made on this stage — one level deep. */
 export interface StageOriginLink {
   key: OriginKey;
