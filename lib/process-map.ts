@@ -650,7 +650,10 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
     const node = nodeId ? namedById.get(nodeId) : undefined;
     const plainName = element.trace?.technicalName ? (element.name || null) : null;
     const technicalName = element.trace?.technicalName || element.name || node?.technicalName || element.id;
-    const businessName = node?.businessName ?? null;
+    // A name equal to the one the file already draws is no model text on the map — the export keeps the engine's
+    // name for it too (`applyAiNames`, `lib/bpmn/export.ts`), so neither marks it AI-generated (roadmap 3.1.0).
+    const proposed = node?.businessName?.trim() || null;
+    const businessName = proposed && proposed !== (element.name || '').trim() ? proposed : null;
     const label = businessName ?? plainName ?? technicalName;
     labelOf.set(element.id, label);
     const anchor = element.trace && element.trace.lineStart !== null && element.trace.lineEnd !== null
@@ -745,6 +748,35 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
       authorityObject: lane.authorityObject,
       anchor: lane.anchor ? { lineStart: lane.anchor.lineStart, lineEnd: lane.anchor.lineEnd } : null,
     })),
+  };
+}
+
+/** The accessible name an element has with the engine's names only — what the canvas is built with (roadmap 3.1.0). */
+export function engineAccessibleName(element: Omit<ProcessMapElement, 'accessibleName'>): string {
+  return accessibleNameOf({ ...element, businessName: null });
+}
+
+/**
+ * The model as the reader sees it while the AI names arrive (`lib/naming-arrival.ts`): an element carries its
+ * business name only once its swap has begun, so the step list, the code card and every accessible name say what the
+ * canvas shows. Elements, order, anchors and branches are otherwise the model's.
+ */
+export function withShownNames(model: ProcessMapModel, shown: ReadonlyMap<string, string>): ProcessMapModel {
+  const changed = model.elements.some((e) => (shown.get(e.id) ?? null) !== e.businessName);
+  if (!changed) return model;
+  const named = model.elements.map((e) => {
+    const businessName = shown.get(e.id) ?? null;
+    return { ...e, businessName, label: businessName ?? e.plainName ?? e.technicalName };
+  });
+  const label = new Map(named.map((e) => [e.id, e.label]));
+  const elements = named.map((e) => {
+    const draft = { ...e, branches: e.branches.map((b) => ({ ...b, toLabel: label.get(b.to) ?? b.toLabel })) };
+    return { ...draft, accessibleName: accessibleNameOf(draft) };
+  });
+  return {
+    ...model,
+    elements,
+    naming: { ...model.naming, named: elements.filter((e) => e.businessName !== null).length },
   };
 }
 

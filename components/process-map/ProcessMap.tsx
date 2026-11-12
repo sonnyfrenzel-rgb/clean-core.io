@@ -14,7 +14,10 @@ import { useProcessOverlays } from '@/hooks/useProcessOverlays';
 import type { CatalogLookupTarget } from '@/lib/assessment-target';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
-import { EARLY_END_WORD, elementsOfPlane, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import { EARLY_END_WORD, elementsOfPlane, engineAccessibleName, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import type { MapNameArrival } from '@/lib/naming-arrival';
+import NamingStatusLine from './NamingStatusLine';
+import type { CanvasNames } from './naming-swap';
 import {
   buildNavigation,
   buildOverlays,
@@ -227,6 +230,13 @@ export interface ProcessMapProps {
    * Save the server refuses (ADR-083, decision-input audit item 4).
    */
   canEdit?: boolean;
+  /**
+   * Roadmap 3.1.0 item 4 (plan AB-3): the AI names as they arrive (`hooks/useNamingArrival.ts`). Given, the canvas
+   * draws the model's names in place with their pen mark and swap, and one status line stands under the map; `model`
+   * is then the arrival's model, which carries a name only once its swap has begun. Absent (Documentation, the demo):
+   * the canvas shows the engine's names, as before.
+   */
+  nameArrival?: MapNameArrival | null;
 }
 
 export default function ProcessMap({
@@ -251,6 +261,7 @@ export default function ProcessMap({
   exportable = true,
   draftHolder,
   canEdit = true,
+  nameArrival = null,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
@@ -506,9 +517,18 @@ export default function ProcessMap({
 
   const planeElements = useMemo(() => elementsOfPlane(model, plane), [model, plane]);
   const byId = useMemo(() => new Map(model.elements.map((e) => [e.id, e])), [model]);
+  /**
+   * With names arriving, the canvas is built with the engine's accessible names and the names are laid over it
+   * (`naming-swap.ts`): a name arriving must not rebuild the viewer, which would drop the reader's focus. The nodes
+   * keep their identity for as long as nothing but the names changed.
+   */
+  const arriving = nameArrival !== null && !technical;
+  const canvasKey = arriving
+    ? model.elements.map((e) => `${e.id} ${engineAccessibleName(e)} ${e.anchor?.lineStart ?? ''}-${e.anchor?.lineEnd ?? ''} ${e.fact ?? ''}`).join('')
+    : null;
   const canvasNodes = useMemo(
     () => new Map(model.elements.map((e) => [e.id, {
-      accessibleName: e.accessibleName,
+      accessibleName: arriving ? engineAccessibleName(e) : e.accessibleName,
       unanchored: e.anchor === null,
       unanchoredLabel: UNANCHORED,
       // ADR-054's word over an early end — needed where the end is named by
@@ -518,10 +538,26 @@ export default function ProcessMap({
       fact: e.fact,
       opensPlane: e.opensPlane,
     }])),
-    [model],
+    // With names arriving the key stands for the model: everything the canvas is built from, without the names.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [arriving ? canvasKey : model, model.xml, arriving],
   );
 
   const selectedElement: ProcessMapElement | null = selected ? (byId.get(selected) ?? null) : null;
+
+  /** What the canvas lays over the engine's names; the open code card's element waits (ADR-025). */
+  const canvasNames = useMemo((): CanvasNames | null => {
+    if (!arriving || !nameArrival) return null;
+    return {
+      shown: nameArrival.shown,
+      waiting: nameArrival.waiting,
+      motion: nameArrival.motion,
+      accessibleNames: new Map(model.elements.map((e) => [e.id, e.accessibleName])),
+      hold: selected ? new Set([selected]) : new Set(),
+      penLabel: wt('mapNaming.pen'),
+      waitingLabel: wt('mapNaming.waiting'),
+    };
+  }, [arriving, nameArrival, model, selected]);
 
   /** Element id → what a reader calls it. The editor names its hints with these. */
   /** What the editor names elements by: always the plain reading, whatever the switch says. */
@@ -956,6 +992,7 @@ export default function ProcessMap({
                   </span>
                 </>
               )}
+              names={canvasNames}
               toolsPanel={helpOpen ? (
                 <p
                   data-process-map-hint=""
@@ -987,6 +1024,11 @@ export default function ProcessMap({
               )}
             </>
           )}
+          {nameArrival && !editing ? (
+            <div className="mt-2" data-process-map-naming="">
+              <NamingStatusLine arrival={nameArrival} />
+            </div>
+          ) : null}
           </div>
 
           {stage || !selectedElement ? null : (

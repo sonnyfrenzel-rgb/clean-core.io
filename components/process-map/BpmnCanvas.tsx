@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
@@ -10,6 +10,7 @@ import type { PhoneXml } from './phone-layout';
 import { MapViewTools } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
+import { applyCanvasNames, clearNameTimers, drawnNames, type CanvasNames, type SwapViewer } from './naming-swap';
 import { LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
 import { wrapText } from '@/lib/bpmn/text-metrics';
 
@@ -128,6 +129,11 @@ export interface BpmnCanvasProps {
   tools?: React.ReactNode | ((filled: boolean) => React.ReactNode);
   /** A panel under the row, inside the frame (the keyboard help). */
   toolsPanel?: React.ReactNode;
+  /**
+   * Roadmap 3.1.0 item 4: the AI names as they arrive (`naming-swap.ts`), laid over the engine's names without
+   * rebuilding the viewer. Null or absent: the canvas shows the engine's names only, as before.
+   */
+  names?: CanvasNames | null;
 }
 
 interface CanvasService extends ViewboxCanvas {
@@ -238,6 +244,7 @@ export default function BpmnCanvas({
   levelPath,
   tools,
   toolsPanel,
+  names = null,
 }: BpmnCanvasProps) {
   const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -312,6 +319,11 @@ export default function BpmnCanvas({
   const phoneRef = useRef(phoneXml);
   const narrowRef = useRef(false);
   const [layoutPass, setLayoutPass] = useState(0);
+  /** What the viewer on show has drawn of the AI names; a new viewer starts empty. */
+  const namesDrawnRef = useRef(drawnNames());
+  /** Bumped when a viewer finished its import, and when a held-back name may swap now. */
+  const [drawnPass, setDrawnPass] = useState(0);
+  const namesPendingRef = useRef(false);
 
   useEffect(() => {
     phoneRef.current = phoneXml;
@@ -499,6 +511,7 @@ export default function BpmnCanvas({
         setZoom(Math.round(canvas.zoom() * 100));
       }
       applyRovingTabIndex(host, activeRef.current);
+      setDrawnPass((n) => n + 1);
 
       if (refocusRef.current) {
         refocusRef.current = false;
@@ -521,8 +534,33 @@ export default function BpmnCanvas({
         /* a viewer that never finished importing has nothing to tear down */
       }
       viewerRef.current = null;
+      clearNameTimers(namesDrawnRef.current);
+      namesDrawnRef.current = drawnNames();
     };
   }, [xml, nodes, layoutPass]);
+
+  /** The AI names, as they arrive: laid over the viewer on show, compared element by element. */
+  const engineNames = useMemo(() => new Map([...nodes].map(([id, node]) => [id, node.accessibleName])), [nodes]);
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    const host = hostRef.current;
+    if (!viewer || !host) return;
+    try {
+      namesPendingRef.current = applyCanvasNames(viewer as unknown as SwapViewer, host, names, namesDrawnRef.current, engineNames);
+    } catch {
+      /* a viewer still importing has nothing to draw on */
+    }
+  }, [names, engineNames, drawnPass]);
+  /** A name held back under the focus swaps once the focus moves on. */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    const moved = () => {
+      if (namesPendingRef.current) setDrawnPass((n) => n + 1);
+    };
+    host.addEventListener('focusout', moved);
+    return () => host.removeEventListener('focusout', moved);
+  }, []);
 
   /** The plane the parent asks for. */
   useEffect(() => {
@@ -692,11 +730,11 @@ export default function BpmnCanvas({
       onKeyDown={controls ? keyDown : onKeyDown}
       className={
         controls && filled
-          ? 'cc-map-canvas min-h-0 w-full flex-1 overflow-hidden rounded-cc-card border border-cc-line'
+          ? `cc-map-canvas min-h-0 w-full flex-1 overflow-hidden rounded-cc-card border border-cc-line${names?.motion ? ' cc-map-motion' : ''}`
           : // The window's height less the page header and the map's own row,
             // between a floor a level can be read in and a ceiling a reader can
             // still scroll past (owner 03.10.2026: more room for the map).
-            'cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[clamp(480px,calc(100dvh-14rem),860px)]'
+            `cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[clamp(480px,calc(100dvh-14rem),860px)]${names?.motion ? ' cc-map-motion' : ''}`
       }
       ref={hostRef}
     />

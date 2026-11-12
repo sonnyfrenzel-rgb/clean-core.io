@@ -29,6 +29,7 @@ import { isConfirmedState } from '@/lib/rules-editor';
 import type { ElementState, StateSubject } from '@/lib/process-states';
 import { anchorWords } from '@/lib/rule-anchor';
 import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
+import { useNamingArrival } from '@/hooks/useNamingArrival';
 import AskOnClick from './AskOnClick';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
@@ -251,31 +252,6 @@ export default function WorkspaceProcess({
     [projectId, stateView, reloadStates],
   );
   /**
-   * The map's legend, as the Business view counts it: *Confirmed* is the steps
-   * a business answer stands on, read from the need revision; *Proven* is left
-   * out, because nothing a business reader can do in this product writes it —
-   * the map file marks every element Reconstructed, and Proven would need
-   * evidence from a running system the product does not import per element.
-   * A counter that can never move is not shown where it cannot change.
-   */
-  const shownModel = useMemo(() => {
-    if (!model) return model;
-    const confirmed = Object.values(answers).filter((e) => isConfirmedState(e.state)).length;
-    const total = model.legend.reduce((sum, entry) => sum + entry.count, 0);
-    return {
-      ...model,
-      legend: model.legend
-        .filter((entry) => entry.value !== 'proven')
-        .map((entry) =>
-          entry.value === 'confirmed'
-            ? { ...entry, count: confirmed }
-            : entry.value === 'reconstructed'
-              ? { ...entry, count: Math.max(0, total - confirmed) }
-              : entry,
-        ),
-    };
-  }, [model, answers]);
-  /**
    * "Walk through the process" from the top of the Business view or the First
    * insights (`ProcessTourEntry`): the tour opens at its first step, over the
    * page — while it is still being read it says so. Only on that click; it
@@ -314,6 +290,42 @@ export default function WorkspaceProcess({
     // them over exactly when the context for this run's engine carries them.
     withFacts: namingFactsApply(engineVersionOfProject(project)),
   });
+  /**
+   * Roadmap 3.1.0 item 4: the AI names swap in on the map as they arrive, within 45 s, with one status line
+   * (`hooks/useNamingArrival.ts`). Until a name's swap begins, the map and everything read off it keep the engine's.
+   */
+  const arrival = useNamingArrival({
+    model,
+    asking: naming.state === 'asking',
+    outcome: naming.outcome,
+    identity: `${projectId}|${model?.xml ?? ''}`,
+  });
+  /**
+   * The map's legend, as the Business view counts it: *Confirmed* is the steps
+   * a business answer stands on, read from the need revision; *Proven* is left
+   * out, because nothing a business reader can do in this product writes it —
+   * the map file marks every element Reconstructed, and Proven would need
+   * evidence from a running system the product does not import per element.
+   * A counter that can never move is not shown where it cannot change.
+   */
+  const shownModel = useMemo(() => {
+    const model = arrival?.model ?? null;
+    if (!model) return model;
+    const confirmed = Object.values(answers).filter((e) => isConfirmedState(e.state)).length;
+    const total = model.legend.reduce((sum, entry) => sum + entry.count, 0);
+    return {
+      ...model,
+      legend: model.legend
+        .filter((entry) => entry.value !== 'proven')
+        .map((entry) =>
+          entry.value === 'confirmed'
+            ? { ...entry, count: confirmed }
+            : entry.value === 'reconstructed'
+              ? { ...entry, count: Math.max(0, total - confirmed) }
+              : entry,
+        ),
+    };
+  }, [arrival?.model, answers]);
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
     for (const element of model?.elements ?? []) out.set(element.id, element);
@@ -722,6 +734,7 @@ export default function WorkspaceProcess({
             <ProcessMap
               key={isS ? 'steps' : 'map'}
               model={shownModel ?? model}
+              nameArrival={arrival}
               source={signed.source}
               measuredAt={map.measuredAt}
               usage={project?.usageReport ?? null}

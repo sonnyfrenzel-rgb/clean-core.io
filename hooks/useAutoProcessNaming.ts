@@ -55,10 +55,16 @@ export function useAutoProcessNaming(input: {
   withFacts?: boolean;
   /** The engine of the project's run (`engineVersionOfProject`) — the map the names are asked for; null: this release. */
   engineVersion?: string | null;
-}): { state: 'idle' | 'asking'; askNow: (() => void) | null } {
+}): {
+  state: 'idle' | 'asking';
+  askNow: (() => void) | null;
+  /** How the last ask of this page ended: stored, or ended without names (3.1.0: the map's status line says so). */
+  outcome: 'stored' | 'failed' | null;
+} {
   const { projectId, source, owner, availability, state, onStored, autoAllowed, withFacts } = input;
   const engineVersion = input.engineVersion ?? null;
   const [asking, setAsking] = useState(false);
+  const [outcome, setOutcome] = useState<'stored' | 'failed' | null>(null);
   const [clickedFor, setClickedFor] = useState<string | null>(null);
   const modelEnabled = namingModelEnabled(availability);
   // Primitives for the dependency list: the availability object is new on every render.
@@ -86,11 +92,16 @@ export function useAutoProcessNaming(input: {
             undefined,
             { automatic },
           );
-          if (!outcome.ok) return;
+          if (!outcome.ok) {
+            setOutcome('failed');
+            return;
+          }
+          setOutcome('stored');
           window.dispatchEvent(new CustomEvent(PROCESS_NAMING_STORED_EVENT, { detail: pid }));
           storedRef.current?.();
         } catch {
           // The plain names stand.
+          setOutcome('failed');
         } finally {
           setAsking(false);
         }
@@ -116,6 +127,7 @@ export function useAutoProcessNaming(input: {
   }, [projectId, source, digest, ask]);
 
   return {
+    outcome,
     state: asking ? 'asking' : 'idle',
     askNow: mode === 'click' && clickedFor !== digest && !asking ? askNow : null,
   };

@@ -354,7 +354,7 @@
 .cc-tour-canvas .cc-tour-here .djs-visual > :first-child {
   stroke: var(--cc-ink) !important;
   stroke-width: 3px !important;
-  fill: var(--cc-information-bg) !important;
+  fill: var(--cc-information-bg);
 }
 
 .cc-tour-canvas .cc-tour-here .djs-visual text {
@@ -567,5 +567,124 @@
 
   .cc-tour-narrow-only {
     display: none;
+  }
+}
+/*
+ * Roadmap 3.1.0 item 4 — the AI names swap in on the map (`naming-swap.ts`, mockup states 1, 2, 3, 18).
+ *
+ * The engine's text stays in bpmn-js's SVG and steps aside; the model's name is an overlay in the same box. With
+ * motion (`cc-map-motion` on the canvas) the old name slides up and out, the new one in, and the shape takes a short
+ * tint of the information colour; without it the name is simply there. The pen mark is the AI-generated icon of the
+ * provenance chip (ADR-104), in the warning ink of the mockup's legend.
+ */
+.cc-map-canvas .cc-name-replaced .djs-visual > text {
+  opacity: 0;
+}
+
+.cc-map-canvas.cc-map-motion .cc-name-replaced .djs-visual > text {
+  transform: translateY(-3px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.cc-map-canvas .cc-name-swap .djs-visual > :first-child {
+  fill: var(--cc-information-bg);
+  transition: fill 0.3s ease;
+}
+
+.cc-map-name {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 4px;
+  pointer-events: none;
+}
+
+.cc-map-name-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: center;
+  font-size: 12px;
+  line-height: 14.4px;
+  color: var(--cc-ink);
+  overflow-wrap: anywhere;
+}
+
+.cc-map-name-in .cc-map-name-text {
+  animation: cc-map-name-in 0.5s ease 0.4s both;
+}
+
+@keyframes cc-map-name-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cc-map-name-pen {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.cc-map-name-pen svg {
+  fill: none;
+  stroke: var(--cc-warning);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cc-map-name-wait {
+  display: inline-flex;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.cc-map-name-wait i {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--cc-ink-muted);
+}
+
+.cc-map-motion .cc-map-name-wait i {
+  animation: cc-naming-pulse 1.2s ease-in-out infinite;
+}
+
+.cc-map-motion .cc-map-name-wait i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.cc-map-motion .cc-map-name-wait i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.cc-naming-pulse {
+  animation: cc-naming-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cc-naming-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-map-canvas.cc-map-motion .cc-name-replaced .djs-visual > text,
+  .cc-map-name-in .cc-map-name-text,
+  .cc-map-motion .cc-map-name-wait i,
+  .cc-naming-pulse {
+    animation: none;
+    transition: none;
   }
 }
