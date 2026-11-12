@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { pathToFileURL } from 'url';
 
 /**
  * The UX agent (docs/UX-REVIEW-AGENT.md): every release on main gets a UX delta
@@ -385,22 +386,46 @@ test.describe('what a review covers', () => {
     for (const screen of [...AREAS.flatMap((a: { screens: string[] }) => a.screens), ...REFERENCE_SCREENS]) expect(captured, screen).toContain(screen);
     for (const name of ['00-access-desktop.jpg', '03-analyze-desktop-s1.jpg', '11-settings-phone-s3.jpg', '02-dashboard-dark-s1.jpg', 'm6-mockup-desktop.jpg', 'm12-mockup-desktop.jpg']) expect(name).toMatch(SHOT_NAME);
     // The mockups: the names the capture writes, through the real loader, reach the real selection (finding b255c3fc77a5).
-    const { MOCKUP_SCREENS, MOCKUP_VIEWS, MOCKUP_FILE, mockupScreen } = await lib('config.mjs');
+    const { MOCKUP_SCREENS, MOCKUP_VIEWS, MOCKUP_FILE, TARGET_MOCKUPS, TARGET_SHOTS, mockupScreen, targetScreen } = await lib('config.mjs');
     const { loadShots, pickShots } = await lib('shots.mjs');
-    // The binding mockups 2.8, a handful of key views so the cost per review stays put (owner decision 24.09.2026).
+    // A handful of pictures so the reviewer's attention per call stays put (owner decision 24.09.2026); since
+    // 12.11.2026 the v3.1.0 target states replace the two 2.8 views they supersede — swap, not add: 8 pictures.
     expect(MOCKUP_FILE).toBe('docs/roadmap/clean-core-mockups-v2_8.html');
-    expect(MOCKUP_VIEWS.length).toBeGreaterThanOrEqual(6);
-    expect(MOCKUP_VIEWS.length).toBeLessThanOrEqual(8);
+    expect(MOCKUP_VIEWS.map((v: { view: string }) => v.view)).toEqual(['s4', 's5', 's6', 's7', 's12']);
     const mockups = read(MOCKUP_FILE);
     for (const v of MOCKUP_VIEWS as { view: string; screen: string; label: string }[]) {
       expect(mockups, v.view).toContain(`data-s="${v.view}"`);
       expect(v.screen).toBe(`m${v.view.slice(1)}-mockup`);
       expect(v.label.length).toBeGreaterThan(3);
     }
-    expect(MOCKUP_SCREENS).toEqual(MOCKUP_VIEWS.map((v: { screen: string }) => v.screen));
+    const targets = TARGET_SHOTS as { file: string; state: string; screen: string; label: string }[];
+    expect(targets.map((t) => [t.file, t.state, t.screen])).toEqual([
+      ['docs/roadmap/analyze-business-first-mockup.html', 'ready', 'm41-analyze-ready-mockup'],
+      ['docs/roadmap/analyze-business-first-mockup.html', 'complex', 'm41-analyze-complex-mockup'],
+      ['docs/roadmap/home-mockup-v2.html', 'new', 'm20-home-new-mockup'],
+    ]);
+    for (const t of targets) {
+      // Every photographed state is one v3.1.0 builds, and its name parses back to its screen.
+      expect((TARGET_MOCKUPS as { file: string; states: string[] }[]).find((m) => m.file === t.file)?.states, t.screen).toContain(t.state);
+      expect(SHOT_NAME.exec(`${t.screen}-desktop.jpg`)?.[1]).toBe(t.screen);
+      expect(t.label.length).toBeGreaterThan(3);
+    }
+    expect(MOCKUP_SCREENS).toEqual([...MOCKUP_VIEWS.map((v: { screen: string }) => v.screen), ...targets.map((t) => t.screen)]);
+    expect(MOCKUP_SCREENS).toHaveLength(8);
+    expect(new Set(MOCKUP_SCREENS).size).toBe(8);
+    // The first look and the BPMN view of 2.8 are superseded and no longer photographed.
+    for (const gone of ['m0-mockup', 'm1-mockup']) expect(MOCKUP_SCREENS).not.toContain(gone);
+    expect(() => mockupScreen('s0')).toThrow();
+    expect(() => mockupScreen('s1')).toThrow();
     expect(() => mockupScreen('s99')).toThrow();
-    // The capture takes views and names from that list and writes `<screen>-desktop.jpg` — once.
+    expect(targetScreen('new')).toBe('m20-home-new-mockup');
+    expect(() => targetScreen('early')).toThrow();
+    // The synthesis picks its three mockups by view and state, all of them configured.
+    expect(read('scripts/ux/review.mjs')).toContain("targetScreen('new'), targetScreen('ready'), mockupScreen('s5')");
+    // The capture takes views, states and names from those lists and writes `<screen>-desktop.jpg` — once.
     expect(spec).toContain("ux.MOCKUP_VIEWS");
+    expect(spec).toContain("ux.TARGET_SHOTS");
+    expect(spec).toContain('#state=${state}&embed=1');
     expect(spec).toContain('button[data-s="${view}"]');
     expect(spec).not.toContain('clean-core-mockups-v2_7');
     expect([...spec.matchAll(/`\$\{screen\}-desktop\.jpg`/g)].length).toBe(1);
@@ -424,7 +449,7 @@ test.describe('what a review covers', () => {
     const { TARGET_MOCKUPS, MOCKUP_FILE } = await lib('config.mjs');
     const files = (TARGET_MOCKUPS as { file: string; label: string; states: string[] }[]).map((m) => m.file);
     expect(files).toEqual(['docs/roadmap/analyze-business-first-mockup.html', 'docs/roadmap/home-mockup-v2.html']);
-    // The capture's set is untouched: the target pictures are listed, not photographed (owner decision 24.09.2026).
+    // TARGET_MOCKUPS lists what v3.1.0 builds; the capture photographs three of its states (TARGET_SHOTS, 12.11.2026).
     expect(files).not.toContain(MOCKUP_FILE);
     for (const m of TARGET_MOCKUPS as { file: string; label: string; states: string[] }[]) {
       const html = read(m.file);
@@ -436,6 +461,22 @@ test.describe('what a review covers', () => {
       // A state opens with #state=<key>; the key has to be one the mockup knows.
       for (const state of m.states) expect(html, `${m.file} has no state "${state}"`).toMatch(new RegExp(`[\\s{,]${state}\\s*:\\s*[{'"]`));
     }
+  });
+
+  test("the home mockup renders in the app's own Inter — one deliberate edit of the copy, no second font file", async ({ page }) => {
+    // Owner decision 12.11.2026: the copied mockup points to app/fonts instead of a font file beside it.
+    const html = read('docs/roadmap/home-mockup-v2.html');
+    expect(html).toContain('src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2")');
+    expect(html).not.toMatch(/url\(inter\.woff2\)/);
+    expect(fs.existsSync(path.resolve(ROOT, 'docs/roadmap/inter.woff2'))).toBe(false);
+    expect(fs.existsSync(path.resolve(ROOT, 'app/fonts/OFL.txt'))).toBe(true);
+    await page.goto(`${pathToFileURL(path.resolve(ROOT, 'docs/roadmap/home-mockup-v2.html')).href}#state=new&embed=1`);
+    const status = await page.evaluate(async () => {
+      await document.fonts.load('16px Inter');
+      await document.fonts.ready;
+      return [...document.fonts].filter((f) => f.family.replace(/"/g, '') === 'Inter').map((f) => f.status);
+    });
+    expect(status).toEqual(['loaded']);
   });
 
   test('the design scan counts what drifts, and names what a release adds that the product hardly uses', async () => {

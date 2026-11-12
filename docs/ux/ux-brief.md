@@ -77,13 +77,20 @@ Product rules that are UX requirements, not just engineering rules:
 
 Version 3.0 is a large UX rebuild along the binding **mockups 2.8**
 (`docs/roadmap/clean-core-mockups-v2_8.html`, built to `DESIGN.md`). You see their
-key views, named after the mockup's view number `sN`: `m0-mockup` the first look,
-`m1-mockup` the Business view with the process as BPMN and its rules,
-`m4-mockup` the IT view with findings and the evidence chain, `m5-mockup` the
-Management view where the decision is taken, `m6-mockup` handover and evidence
-chain, `m7-mockup` the workspace, `m12-mockup` a large process as an overview.
+key views, named after the mockup's view number `sN`: `m4-mockup` the IT view
+with findings and the evidence chain, `m5-mockup` the Management view where the
+decision is taken, `m6-mockup` handover and evidence chain, `m7-mockup` the
+workspace, `m12-mockup` a large process as an overview.
 Management, Business and IT are views of one project, not roles. They are a
 concept; new UI grows behind an admin-only switch until 3.0.
+
+Release 3.1.0 rebuilds the first look and Analyze's Business view along newer
+target mockups, which replace the 2.8 views for those screens: the Analyze mockup
+v4.1 (`docs/roadmap/analyze-business-first-mockup.html`), business first, with
+`m41-analyze-ready-mockup` (the process map with its names ready) and
+`m41-analyze-complex-mockup` (a larger program), and the home page mockup v2
+(`docs/roadmap/home-mockup-v2.html`) with `m20-home-new-mockup` (the first view for
+a new account).
 
 Use them as the target picture: say whether new work moves toward it or away from
 it, and which existing patterns would not survive the rebuild. Do not report

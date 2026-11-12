@@ -31,7 +31,8 @@ import { archivedTermsSha256 } from '../lib/terms-versions';
  *   CAPTURE_SEGMENTS=3       screen-height pictures from the top instead of one full-page picture —
  *                            a 12,000-pixel page scaled down for a model is unreadable
  *   CAPTURE_DARK=1           the signed-in overview screens once more in the dark theme
- *   CAPTURE_MOCKUPS=1        the key views of the binding 3.0 mockups 2.8 (MOCKUP_VIEWS in scripts/ux/lib/config.mjs)
+ *   CAPTURE_MOCKUPS=1        the key views of the binding 3.0 mockups 2.8 (MOCKUP_VIEWS) and three states of
+ *                            the v3.1.0 target mockups (TARGET_SHOTS), both in scripts/ux/lib/config.mjs
  * File names are the contract with scripts/ux/lib/config.mjs (SHOT_NAME).
  */
 const ENABLED = process.env.CAPTURE_SCREENS === '1';
@@ -299,19 +300,28 @@ test.describe('capture', () => {
     }
 
     if (MOCKUPS) {
-      // The key views of the binding mockups 2.8, and their file names, come from the agent's config —
-      // one list, so the capture and the loader cannot drift apart.
+      // The key views of the binding mockups 2.8 and the target states of v3.1.0 (owner decision
+      // 12.11.2026: swap, not add), and their file names, come from the agent's config — one list, so
+      // the capture and the loader cannot drift apart.
       const ux = await import(pathToFileURL(path.resolve(__dirname, '..', 'scripts', 'ux', 'lib', 'config.mjs')).href);
       const views = ux.MOCKUP_VIEWS as { view: string; screen: string; label: string }[];
+      const targets = ux.TARGET_SHOTS as { file: string; state: string; screen: string; label: string }[];
+      const fileUrl = (file: string) => pathToFileURL(path.resolve(__dirname, '..', file)).href;
       await page.setViewportSize({ width: 1440, height: 1000 });
-      await page.goto(pathToFileURL(path.resolve(__dirname, '..', ux.MOCKUP_FILE as string)).href);
-      for (const { view, screen, label } of views) {
+      await page.goto(fileUrl(ux.MOCKUP_FILE as string));
+      const shots = [
+        ...views.map(({ view, screen, label }) => ({ screen, label: `${view} · ${label}`, open: async () => page.click(`button[data-s="${view}"]`) })),
+        // A target mockup sets its state from the address once, so every state is a fresh load.
+        ...targets.map(({ file, state, screen, label }) => ({ screen, label, open: async () => page.goto(`${fileUrl(file)}#state=${state}&embed=1`) })),
+      ];
+      for (const { screen, label, open } of shots) {
         try {
-          await page.click(`button[data-s="${view}"]`);
+          await open();
           await page.waitForTimeout(600);
+          await page.evaluate(() => document.fonts.ready);
           const file = path.join(OUT, `${screen}-desktop.jpg`);
           await page.screenshot({ path: file, type: 'jpeg', quality: 72 });
-          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup ${view} · ${label}`);
+          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup ${label}`);
         } catch (err) {
           notes.push(`${screen}-desktop  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
         }

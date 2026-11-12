@@ -19,7 +19,7 @@ import { callReviewer, modelsOf } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { loadDotEnv, sealedReports } from '../qa/lib/store.mjs';
 import { assignAreas, numbered, packAreas } from './lib/areas.mjs';
-import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, mockupScreen, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, baselineOf, resolveMode, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
+import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, mockupScreen, REFERENCE_SCREENS, targetScreen, REQUEST_TIMEOUT_MS, baselineOf, resolveMode, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
 import { buildText, loadBrief, UX_SCHEMA } from './lib/prompt.mjs';
 import { chooseDeltaBase } from './lib/range.mjs';
 import { closedBy, loadRegister, refutedEntries } from './lib/register.mjs';
@@ -241,8 +241,9 @@ async function main() {
   if (mode === 'full' && results.length) {
     const areaFindings = results.flatMap(({ review, batch }) => review.findings.map((f) => ({ ...f, area: batch.area, fingerprint: fingerprint({ ...f, area: batch.area }) })));
     // Of the mockups, the synthesis sees the three views the product is judged against end to end:
-    // the first look, the Business view with the process, and the decision.
-    const screens = [...new Set([...AREAS.flatMap((a) => a.screens), ...['s0', 's1', 's5'].map(mockupScreen)])];
+    // the first look (home v2, a new account), the Business view with the process (Analyze v4.1,
+    // names ready), and the decision (2.8, s5) — owner decision 12.11.2026.
+    const screens = [...new Set([...AREAS.flatMap((a) => a.screens), targetScreen('new'), targetScreen('ready'), mockupScreen('s5')])];
     // A contact sheet: the first screen height of every screen, desktop — the view that shows drift between areas.
     const firstViews = shots.filter((s) => s.viewport === 'desktop' && s.segment === 1);
     const c = { kind: 'synthesis', batch: null, screens, picked: pickShots(firstViews, screens, { limit: budget.maxImagesPerCall + 8, maxBytes: MAX_IMAGE_BYTES_PER_CALL * 1.5 }), scanText: renderScan(scan) };

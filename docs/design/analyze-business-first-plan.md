@@ -682,7 +682,9 @@ dates do not hold. Until it ships, Business shows two charts.*
 
 - **Mockup:** `scratch/mockups-0511/home-mockup/home-mockup.html` (v2.1 since 06.11.2026; 12 states × 6 viewports in
   `screens/`, overlap check 0 in all 72). Like the Analyze mockup (P10) it is copied unchanged into `docs/roadmap/` with AB-0, as
-  `docs/roadmap/home-mockup-v2.html` together with its local font file; its report is German and stays out of the repo.
+  `docs/roadmap/home-mockup-v2.html`; its report is German and stays out of the repo. One deliberate edit (owner
+  decision 12.11.2026): instead of a copied font file, its `@font-face` points to the app's own byte-identical Inter,
+  `../../app/fonts/inter-latin-variable.woff2` (licence `app/fonts/OFL.txt`).
   State numbers below are the mockup's (1 new account … 12 runs used up).
 - **Why it belongs to the rebuild:** a project now opens in Analyze and First insights is part of Analyze, so the home
   page loses its First-insights remnants and gains a first view that says what happens: one program in, its process

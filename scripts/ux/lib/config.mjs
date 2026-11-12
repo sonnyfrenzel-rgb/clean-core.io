@@ -170,34 +170,36 @@ export const REFERENCE_SCREENS = ['01-landing', '02-dashboard', '03-analyze', '0
  * writes `<screen>-desktop.jpg`, so `m5-mockup-desktop.jpg` is view `s5` and parses
  * to screen `m5-mockup`. The target picture: wanted, but its absence does not make
  * a review of the product incomplete.
+ *
+ * Owner decision 12.11.2026: the capture swaps instead of adds. `s0` (first look)
+ * and `s1` (Business view with the process as BPMN) left this list, because
+ * v3.1.0 replaces both with the target mockups below; three states of those are
+ * photographed in their place (`TARGET_SHOTS`), 8 pictures instead of 7. Cost is
+ * not the concern: at the pinned model's 0.10 USD per million input tokens and
+ * about 1,600 tokens per image, a picture costs about 0.00016 USD. The concern is
+ * the reviewer's attention per call, so every picture added means one taken away.
  */
 export const MOCKUP_FILE = 'docs/roadmap/clean-core-mockups-v2_8.html';
 export const MOCKUP_VIEWS = [
-  { view: 's0', screen: 'm0-mockup', label: 'Erster Blick' },
-  { view: 's1', screen: 'm1-mockup', label: 'Business · Prozess & Regeln (BPMN)' },
   { view: 's4', screen: 'm4-mockup', label: 'IT · Findings & Kette' },
   { view: 's5', screen: 'm5-mockup', label: 'Management · Entscheiden' },
   { view: 's6', screen: 'm6-mockup', label: 'Übergabe & Nachweiskette' },
   { view: 's7', screen: 'm7-mockup', label: 'Mein Arbeitsbereich' },
   { view: 's12', screen: 'm12-mockup', label: 'Großer Prozess · Übersicht' },
 ];
-export const MOCKUP_SCREENS = MOCKUP_VIEWS.map((v) => v.screen);
 
 /**
  * The accepted target pictures of the Analyze rebuild, releases 3.1.0 to 3.5.0
  * (plan docs/design/analyze-business-first-plan.md §4, AB-0, P10): the Analyze
  * mockup v4.1 and the home page mockup v2, both accepted by the owner on
- * 06.11.2026 and copied unchanged from the mockup run. Each is one HTML file
+ * 06.11.2026 and copied unchanged from the mockup run — with one deliberate
+ * edit (owner decision 12.11.2026): the home page mockup's `@font-face` points
+ * to the app's own Inter, `../../app/fonts/inter-latin-variable.woff2` (licence
+ * app/fonts/OFL.txt, byte-identical to the font the mockup run used), so it
+ * renders in the product's font with no copy of the file. Each is one HTML file
  * with no network access; a state opens with `#state=<key>&embed=1`. `states`
  * names the ones v3.1.0 builds (Analyze 1, 2, 3, 7, 17, 18; the home page's
- * first view for a new account, AB-14a). The home page mockup loads `inter.woff2`
- * from beside it; the font file was not copied, so it renders in the system
- * sans-serif. Layout and copy are unchanged by that.
- *
- * Listed, not captured: `MOCKUP_VIEWS` above stays the set the capture
- * photographs, because every picture more is a picture more in each review
- * call (owner decision 24.09.2026). Moving these into the capture is a cost
- * decision of its own.
+ * first view for a new account, AB-14a).
  */
 export const TARGET_MOCKUPS = [
   {
@@ -211,6 +213,29 @@ export const TARGET_MOCKUPS = [
     states: ['new'],
   },
 ];
+
+/**
+ * The states of the target mockups the capture photographs (owner decision
+ * 12.11.2026): Analyze ready (names arrived, the map as v3.1.0 opens it),
+ * Analyze complex (a larger program) and the home page for a new account. The
+ * screen names follow `SHOT_NAME`: `m41-` is the Analyze mockup v4.1, `m20-`
+ * the home page mockup v2 — numbers no view of the 2.8 mockups (s0 … s15) uses.
+ */
+export const TARGET_SHOTS = [
+  { file: TARGET_MOCKUPS[0].file, state: 'ready', screen: 'm41-analyze-ready-mockup', label: 'Analyze v4.1 · names ready' },
+  { file: TARGET_MOCKUPS[0].file, state: 'complex', screen: 'm41-analyze-complex-mockup', label: 'Analyze v4.1 · a larger program' },
+  { file: TARGET_MOCKUPS[1].file, state: 'new', screen: 'm20-home-new-mockup', label: 'Home v2 · a new account' },
+];
+
+/** Every mockup picture the capture writes: the 2.8 key views, then the target states — 8 in all. */
+export const MOCKUP_SCREENS = [...MOCKUP_VIEWS.map((v) => v.screen), ...TARGET_SHOTS.map((t) => t.screen)];
+
+/** The screen of one photographed target state, by its state key. */
+export function targetScreen(state) {
+  const hit = TARGET_SHOTS.find((t) => t.state === state);
+  if (!hit) throw new Error(`target state ${state} is not configured in TARGET_SHOTS`);
+  return hit.screen;
+}
 
 /** The screen of one configured mockup view, by its `sN` — never by position in the list. */
 export function mockupScreen(view) {
