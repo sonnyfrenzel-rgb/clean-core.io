@@ -13,6 +13,8 @@ import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { StageToolBar } from '@/components/workspace/ToolBar';
 import StageViewSwitch from '@/components/StageViewSwitch';
 import { useLocationSearch } from '@/lib/location-search';
+import { ArrowLeft } from 'lucide-react';
+import { nav } from '@/lib/messages/navigation';
 
 /**
  * The header at the top of a workflow stage. There is exactly one.
@@ -79,6 +81,8 @@ export default function StageHeader({
   actions,
   align = 'left',
   tools,
+  toolsNote,
+  backToMyWorkspace = false,
   children,
 }: {
   /** The stage this header belongs to; its name comes from `PHASES`. */
@@ -107,6 +111,19 @@ export default function StageHeader({
    * one way across — the old seven-circle stepper went with roadmap 3.0.1.
    */
   tools?: { steps: RailStep[]; current?: PhaseKey; base?: string };
+  /**
+   * One quiet line beside the tools — the soft gate of Analyze in the Business
+   * view, "Best after the business walk-through" (plan AB-2, mockup state 3).
+   * A hint, never a lock: every tool stays a link.
+   */
+  toolsNote?: React.ReactNode;
+  /**
+   * The way back leads to "My workspace", the list of all projects, instead of
+   * the project's workspace — for Analyze in the Business view, which is where
+   * a project opens (plan AB-2, ADR-107): its way back to the project would
+   * lead to itself.
+   */
+  backToMyWorkspace?: boolean;
   /** The lead sentence. */
   children?: React.ReactNode;
 }) {
@@ -150,7 +167,16 @@ export default function StageHeader({
         // under the way back and fills the row.
         <div data-stage-head-row="" className="flex flex-wrap items-start justify-between gap-x-4">
           <div className="min-w-0">
-            {back.kind === 'link' && back.origin ? (
+            {backToMyWorkspace && !demo && !back.origin ? (
+              <Link
+                href="/dashboard"
+                data-stage-back="my-workspace"
+                className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap`}
+              >
+                <ArrowLeft size={16} aria-hidden="true" className="shrink-0" />
+                <span data-stage-back-lead="">{nav('nav.backToMyWorkspace')}</span>
+              </Link>
+            ) : back.kind === 'link' && back.origin ? (
               // A choice made here was asked for elsewhere (`?origin=`, a key of the
               // closed list in `lib/choice-addresses.ts`): the way back leads there,
               // one level deep. The tool bar and the footer still lead to the workspace.
@@ -172,6 +198,11 @@ export default function StageHeader({
       {tools && toolCurrent && toolBase && (
         <div data-stage-toolbar="" className="cc-no-print mb-4">
           <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} />
+          {toolsNote ? (
+            <p data-stage-tools-note="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
+              {toolsNote}
+            </p>
+          ) : null}
         </div>
       )}
 

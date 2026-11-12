@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { FileCode2 } from 'lucide-react';
+import { FileCode2, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -94,6 +94,8 @@ export default function WorkspaceProcess({
   draftHolder,
   startRun,
   coach,
+  codeOnClick = false,
+  openLines = null,
 }: {
   project: Project | null;
   projectId: string;
@@ -127,6 +129,19 @@ export default function WorkspaceProcess({
    * reader to select, and takes their clicks.
    */
   coach?: React.ReactNode;
+  /**
+   * Analyze in the Business view (plan AB-2, mockup states 3 and 7): the code
+   * speaks on demand — no source column until a step or a line is chosen, then
+   * the cited lines in a panel beside the map (below it on a narrow screen),
+   * never over it, with a way to close it. The workspace keeps its column.
+   */
+  codeOnClick?: boolean;
+  /**
+   * A line range asked for from outside the map — a `#L42` address, a line
+   * anchor in the text around the map. `key` changes with every ask, so the
+   * same lines can be opened again after the panel was closed.
+   */
+  openLines?: { lineStart: number; lineEnd: number; key: number } | null;
 }) {
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const absence = useMemo(() => signedSourceAbsence(project), [project]);
@@ -394,6 +409,21 @@ export default function WorkspaceProcess({
 
   const marked: Range | null = selectedElement?.anchor ?? looseRange;
 
+  /** A line range asked for from outside (`openLines`), once the map can say which step it belongs to. */
+  const askedLines = useRef<number | null>(null);
+  useEffect(() => {
+    if (!openLines || !model || askedLines.current === openLines.key) return;
+    askedLines.current = openLines.key;
+    openRange({ lineStart: openLines.lineStart, lineEnd: openLines.lineEnd });
+  }, [openLines, model, openRange]);
+
+  /** Closes the code panel of `codeOnClick`: nothing selected, no loose range. */
+  const closeCode = useCallback(() => {
+    setSelected(null);
+    setLooseRange(null);
+    setFullSource(false);
+  }, []);
+
   const lines: CcCodeLine[] = useMemo(() => {
     if (!signed) return [];
     if (fullSource) {
@@ -453,7 +483,8 @@ export default function WorkspaceProcess({
     return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
   }, [projectId]);
 
-  const analyzeHref = stageHref({ base: `/project/${projectId}`, path: 'analyze', view, from: WORKSPACE_RETURN.tools });
+  // On Analyze's own Business view (`codeOnClick`) the way to a run is today's page there, in IT.
+  const analyzeHref = stageHref({ base: `/project/${projectId}`, path: 'analyze', view: codeOnClick ? 'it' : view, from: WORKSPACE_RETURN.tools });
 
   /* ------------------------------------------------------------ no map */
 
@@ -691,6 +722,60 @@ export default function WorkspaceProcess({
     </div>
   );
 
+  /*
+   * The code on demand (Analyze, Business — plan AB-2, mockup state 7): the
+   * lines of the chosen step or line range, ± the usual context, in a panel
+   * beside the map. Nothing until a click; closed by its own button.
+   */
+  const codePanel =
+    codeOnClick && marked ? (
+      <aside
+        ref={columnRef}
+        data-workspace-source-column="panel"
+        data-analyze-code-panel=""
+        aria-labelledby="analyze-code-panel-title"
+        className="flex min-w-0 flex-col gap-3 self-start rounded-cc-card border border-cc-line bg-cc-surface p-4"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+              {`${wt('abiz.codeTitle')} · ${bizLinesLabel(marked.lineStart, marked.lineEnd)}`}
+            </p>
+            <h3 id="analyze-code-panel-title" className="m-0 mt-1 text-[15px] leading-snug font-bold break-words text-cc-ink">
+              {selectedElement ? selectedElement.label : signed.fileName}
+            </h3>
+          </div>
+          <CcButton variant="ghost" onClick={closeCode} aria-label={wt('abiz.codeClose')} data-analyze-code-close="">
+            <X size={16} aria-hidden={true} />
+          </CcButton>
+        </div>
+        {owner && selectedElement && stepSubject ? (
+          <div data-workspace-step-need="" className="flex flex-col gap-2 border-b border-cc-line pb-3">
+            <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('biz.stepNeedTitle')}</p>
+            <StateChoice
+              key={selectedElement.id}
+              subject={stepSubject}
+              entry={answers[selectedElement.id] ?? null}
+              busy={answering?.subject === selectedElement.id && answering.error === null}
+              error={answering?.subject === selectedElement.id ? answering.error : null}
+              onConfirm={(state, note) => answerStep(selectedElement.id, state, note)}
+            />
+          </div>
+        ) : null}
+        {lines.length > 0 ? (
+          <div className={fullSource ? 'max-h-112 overflow-y-auto' : 'overflow-x-auto'}>
+            <CcCodeSurface lines={lines} label={codeCardLabel(signed.fileName, marked, signed.source)} />
+          </div>
+        ) : null}
+        <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('abiz.codeLine')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <CcButton onClick={() => setFullSource((v) => !v)} aria-pressed={fullSource} data-workspace-source-full="">
+            {fullSource ? wt('biz.showMarkedOnly') : wt('biz.showFullSource')}
+          </CcButton>
+        </div>
+      </aside>
+    ) : null;
+
   /* ------------------------------------------------------------ the map */
 
   return (
@@ -712,7 +797,14 @@ export default function WorkspaceProcess({
         <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
-      <div data-coach-target="decision">
+      <div
+        className={
+          codeOnClick && codePanel
+            ? 'grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]'
+            : undefined
+        }
+      >
+      <div data-coach-target="decision" className="min-w-0">
         <CcCard>
           {model ? (
             <ProcessMap
@@ -749,8 +841,15 @@ export default function WorkspaceProcess({
             </div>
           )}
         </CcCard>
+        {codeOnClick && model ? (
+          <p data-analyze-map-hint="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {wt('abiz.mapHint')}
+          </p>
+        ) : null}
       </div>
-      {model ? column : null}
+      {codePanel}
+      </div>
+      {model && !codeOnClick ? column : null}
     </div>
   );
 }

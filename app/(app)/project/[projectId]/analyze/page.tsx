@@ -143,8 +143,55 @@ import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
 import { countSourceLines } from '@/lib/source-lines';
+import AnalyzeBusiness from '@/components/analyze/AnalyzeBusiness';
+import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 
+/**
+ * Analyze — one route, three views (`?view=`; plan
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-107).
+ *
+ * **Business** (the default, and where a project opens): the map is the page —
+ * `components/analyze/AnalyzeBusiness.tsx`. A project without source has no
+ * map yet, so it gets the upload and start path below (P4).
+ *
+ * **IT and Management** keep today's page, the score hero with its findings
+ * (`AnalyzeScorePage`), until AB-9 and AB-10 give each one page of its own.
+ *
+ * The view is read from the address in the browser (`useLocationSearch`), as
+ * the stage header's view switch writes it, so a switch changes the page in
+ * place. Until the browser has answered, nothing is chosen: a server render
+ * has no query, and choosing Business there would start Business's reads for
+ * a reader who asked for IT.
+ */
 export default function AnalyzePage() {
+  const { projectId } = useParams();
+  // Subscribed to the router too, so a `router.push` to this route with a new query (a run that finished in IT
+  // and goes on to `?first=1`) renders again; the view switch writes the address without the router.
+  useSearchParams();
+  const search = useLocationSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center" role="status">
+        <p className="cc-text-body text-cc-ink-muted">Loading project data...</p>
+      </div>
+    );
+  }
+  const view = stageViewOf(search);
+  // A working address of today's page — a re-run it asks for (`?reason=no-run`, `?reason=legacy-run`) or an import it
+  // opens (`?add=usage|atc`) — keeps opening that page, whichever view it names.
+  const params = new URLSearchParams(search);
+  const working = params.has('reason') || params.has('add');
+  if (view === 'business' && !working && typeof projectId === 'string') {
+    const first = params.get('first') === '1';
+    return <AnalyzeBusiness key={projectId} projectId={projectId} first={first} fallback={<AnalyzeScorePage />} />;
+  }
+  return <AnalyzeScorePage />;
+}
+
+/** Today's Analyze page: the score hero, findings, route and folds (ADR-093) — IT and Management until AB-9/AB-10. */
+function AnalyzeScorePage() {
   const { projectId } = useParams();
   const searchParams = useSearchParams();
   const [project, setProject] = useState<Project | null>(null);
@@ -644,7 +691,8 @@ export default function AnalyzePage() {
         // first look. Only once the run is signed — a failed run stays here
         // with its error.
         if (openWorkspaceAfterRunRef.current || firstRunOfProject) {
-          router.push(`/project/${projectId}?first=1`);
+          // On to the project's entry, Analyze in the Business view, with the first look (plan AB-2).
+          router.push(`/project/${projectId}/analyze?first=1`);
         } else {
           // The result stands on this page now, so it has been read here (ADR-090).
           // A first run goes on to the workspace unread — that is where the hint is.
