@@ -34,6 +34,12 @@ A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findin
   beside the unconfirmed keep, rebuild or retire decision.
 - **"When the the value is below 3" reads "When the value is below 3".** Rule statements add the article once
   where the code tests an expression without a field name.
+- **Who may act is read once in the process documentation.** Without an AUTHORITY-CHECK, the "Roles" gap no longer
+  says the source proves authorization objects; it repeats the Controls line (the program's own role check, or "No
+  AUTHORITY-CHECK and no role check in the code") in the delivery package, on screen and in the description's
+  question. The stored document is unchanged.
+- **The handbook's roles block names the RACI when there is one.** It no longer says "No AI-generated draft for
+  roles exists" beside a RACI the SOP and RACI step wrote; without a RACI it says what the code shows.
 
 ## [v3.0.22] — 2026-11-12
 
