@@ -628,10 +628,29 @@ is neither provenance nor object status, and no finding carries a severity that 
 
 ---
 
-## 5. The first look — the workspace opens in the Business view
+## 5. Analyze opens in the Business view
 
-After a code import or an example, the workspace opens in the **Business view** and shows at once which process it
-is (ADR-002).
+**Since v3.1.0 (ADR-109, plan `docs/design/analyze-business-first-plan.md` AB-2, mockup
+`docs/roadmap/analyze-business-first-mockup.html` states 3, 7 and 17)** a project opens in **Analyze, Business view**
+— after a code import, an example, a link to `/project/<id>` and on every return visit — and **the map is the page**:
+
+1. the stage header: the way back to *My workspace*, the view switch, the seven tools with the quiet hint *Best after
+   the business walk-through* (a hint, never a lock);
+2. *What this program does* in the engine's sentence (*Reconstructed*), with the one invitation: *Walk me through it*
+   (the page's only `primary`) and *I'll look around myself*;
+3. the reconstructed BPMN map from the signed run, with its own tool row (Map | Steps, zoom, fit, full screen), legend
+   and status below;
+4. the code **on demand**: a step or a line clicked — or `#L42` in the address — opens its lines in a panel beside the
+   map (below it on a narrow screen), never over it, closed by its own button. No score, no findings, no code before
+   a click: those are IT's.
+
+Until v3.2.0 the First insights blocks (`BusinessOpening`) and *Next step* stand unchanged below the map; AB-4 and AB-6
+replace them in place. Analyze shows no coach marks. The paced build-up described in §5.1–§5.2 is not shown on the
+entry any more; the sections below describe it until AB-3 retires it with the name swap. IT and Management keep the
+workspace until v3.5.0.
+
+Before v3.1.0: after a code import or an example, the workspace opened in the **Business view** and showed at once
+which process it is (ADR-002).
 
 > **The wow effect is content the user did not expect, in under three seconds, with a line anchor — the
 > staging only makes visible where it comes from** (ADR-013).
@@ -1253,6 +1272,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.14 | 12.11.2026 | Analyze opens in the Business view and is the project's entry (ADR-109, plan AB-2): the map is the page under "What this program does" and one invitation; code on demand beside the map; the workspace sends Business there; the First insights blocks and "Next step" below the map until v3.2.0; no coach marks in Analyze (§5) |
 | 1.8.13 | 12.10.2026 | Re-entry in Business (ADR-099, owner 12.10.2026, amending ADR-072): one fixed line under the title says what the page is, and a compact tool bar — the same tools, marks and "Next" tag, with the legend — stands in the header above "Next step"; below L the "Tools" menu. The full bar stays in the work area under the map: §2.3 item 3, §2.11, §5.5 |
 | 1.8.12 | 11.10.2026 | Analyze: the Clean Core Score is the hero, and declutter wave 2 (ADR-093, owner approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`): the score with its band, scale, edition rule, the other edition's figure and its provenance beside the deduction table that sums to the signed score; one row of four facets; the "On this page" bar under the hero without a score anchor; one "Add evidence" and one "Export" menu; complexity/criticality meters and the inventory tables leave Analyze (display only); the hero figure joins the type scale: §1.2, §1.8, §2.3 |
 | 1.8.11 | 10.10.2026 | Analyze is not overlooked (ADR-090, owner 10.10.2026): until this browser has opened Analyze once, a done Analyze carries "Result ready" in every tool bar and the Business work area says "Your analysis is ready" with the signed run's figures; browser-only, the next step unchanged: §2.3 item 3 |

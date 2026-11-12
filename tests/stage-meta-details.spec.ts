@@ -109,7 +109,7 @@ test.describe('the stage meta line is behind "Details"', () => {
     });
     await signInThroughForm(page, acct);
     // Analyze: the provenance stands open in the score hero (ADR-093).
-    await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-analysis-meta]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-analysis-meta]')).toContainText('v2.20.0');

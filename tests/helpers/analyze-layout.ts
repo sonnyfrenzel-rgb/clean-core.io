@@ -4,10 +4,10 @@
  * the pages the layout guard measures, shared by the guard's files, one per
  * viewport group, so the shard plan can put them on different shards.
  *
- * Report-only until AB-2: every state is measured and attached to the test
- * (overlaps, clipping, focus-out, sideways scroll, first-screen counts), and
- * nothing fails on a finding. A state moves into `ENFORCED` when the package
- * that rebuilds it lands: 3, 7 and 17 with AB-2, 1, 2 and 18 with AB-3.
+ * Every state is measured and attached to the test (overlaps, clipping,
+ * focus-out, sideways scroll, first-screen counts). A state fails on a finding
+ * once it is in `ENFORCED`, which the package that rebuilds it fills: 3, 7 and
+ * 17 with AB-2 (here), 1, 2 and 18 with AB-3.
  */
 import fs from 'fs';
 import { expect, type Page } from './test';
@@ -32,18 +32,26 @@ export const VIEWPORT_GROUPS = {
 } as const;
 
 /**
- * Today's pages, named after the mockup state they turn into. `business` is
- * the workspace's Business view, which AB-2 replaces by Analyze in Business
- * (states 3 and 17); `analyze` is today's Analyze page, the score hero (state
- * 12 keeps it as IT until v3.5.0).
+ * The pages, named after the mockup state they stand for. Since AB-2 the
+ * project opens in Analyze, Business (ADR-109): state 3 is its map page with
+ * the names ready, state 7 the same page with a step's code open beside the
+ * map (`#L42` opens the panel as a click on the step does), state 17 a return
+ * visit (no `?first=1`, no banner, no hub). `analyze` is today's score page,
+ * Analyze's IT view until AB-9 (state 12).
  */
 export const LAYOUT_STATES = [
-  { key: 'business', mockup: '03', path: (id: string) => `/project/${id}?view=business`, ready: '[data-workspace-shell="business"]' },
-  { key: 'analyze', mockup: '12', path: (id: string) => `/project/${id}/analyze`, ready: '[data-stage-title]' },
+  { key: 'business', mockup: '03', path: (id: string) => `/project/${id}/analyze?view=business`, ready: '[data-analyze-business="ready"] [data-workspace-process="ready"]' },
+  { key: 'code', mockup: '07', path: (id: string) => `/project/${id}/analyze?view=business#L42`, ready: '[data-analyze-code-panel]' },
+  { key: 'return', mockup: '17', path: (id: string) => `/project/${id}`, ready: '[data-analyze-business="ready"] [data-workspace-process="ready"]' },
+  { key: 'analyze', mockup: '12', path: (id: string) => `/project/${id}/analyze?view=it`, ready: '[data-stage-title]' },
 ] as const;
 
-/** States whose findings fail the guard. Empty until AB-2 (report-only, plan §4.1 AB-0). */
-export const ENFORCED: readonly string[] = [];
+/**
+ * States whose findings fail the guard, by mockup number: 3, 7 and 17 since
+ * AB-2 (plan §4.1); AB-3 adds 1, 2 and 18. State 12 (IT) stays report-only
+ * until AB-9 rebuilds it.
+ */
+export const ENFORCED: readonly string[] = ['03', '07', '17'];
 
 const BASE = process.env.TEST_BASE_URL || 'http://localhost:3000';
 
@@ -115,7 +123,7 @@ export function summarise(measured: LayoutMeasurement[]): { text: string; failin
   );
   const details = measured.flatMap((m) => [...m.report.overlaps, ...m.report.clipped, ...m.report.focusOut.map((f) => `focus out: ${f}`)].map((f) => `${m.name}: ${f}`));
   const failing = measured
-    .filter((m) => ENFORCED.some((key) => m.name.includes(`-${key}@`)))
+    .filter((m) => ENFORCED.some((mockup) => m.name.startsWith(`${mockup}-`)))
     .filter((m) => !layoutClean(m.report) || m.errors.length > 0)
     .map((m) => layoutLine(m.name, m.report));
   return { text: [...lines, '', ...details].join('\n'), failing };

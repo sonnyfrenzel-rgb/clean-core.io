@@ -90,7 +90,7 @@ async function startExample(page: Page, viewport: { width: number; height: numbe
   // Said before the click: with the model off, the start calls none.
   await expect(page.locator('[data-examples-model="none"]').first()).toContainText('No model call');
   await start.click({ timeout: 60000 });
-  await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+  await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
   return new URL(page.url()).pathname.split('/')[2];
 }
 
@@ -103,19 +103,19 @@ async function mapCounts(page: Page): Promise<[number, number]> {
 }
 
 test.describe('a project starts on its full map (ADR-072)', () => {
-  test('an example from My workspace: build-up, signed at the start, full map, Need & process agrees', async ({ page }) => {
+  test('an example from My workspace: Analyze, Business, signed at the start, full map, Need & process agrees', async ({ page }) => {
     test.setTimeout(360 * 1000);
     const { email, uid } = await communityAccount('ws-start');
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, email, PASSWORD);
-    await recordTipsDuringBuildUp(page);
     const seen = watch(page);
     const projectId = await startExample(page, { width: 1440, height: 900 });
 
-    // The build-up, paced: a rail of moments, the first one current.
-    await expect(page.locator('[data-first-look="building"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look-rail-step]')).toHaveCount(6);
-    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 60000 });
+    // Since AB-2 (ADR-109) the project opens in Analyze, Business: the map is the
+    // page, and the paced build-up of the workspace is gone — the first look's
+    // blocks stand below the map in their end state (interim until v3.2.0).
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
 
     // (1) The full map, drawn from a run the start signed.
     const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
@@ -124,31 +124,20 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     expect(steps + decisions, 'the map is the two-node main line').toBeGreaterThan(2);
     const stored = await adminGetDoc('projects', projectId);
     expect(typeof stored?.activeRunId, 'the map stands without a signed run').toBe('string');
-    expect(seen.visited.filter((u) => u.includes('/analyze')), 'the start went through Analyze').toEqual([]);
+    expect(seen.visited.filter((u) => u.includes('view=it')), 'the start went through the score page').toEqual([]);
     expect(seen.model, 'the start called the model').toEqual([]);
     // The example's free first run, as the card said: no unit spent.
     const account = await adminGetDoc('users', uid);
     expect(account?.transformationsUsed ?? 0).toBe(0);
     expect(account?.starterExamplesUsed?.[EXAMPLE]).toBe(true);
 
-    // (2) The way back, on a desktop.
-    const back = page.locator('[data-workspace-back]');
+    // (2) The way back, on a desktop: Analyze is the project's entry, so it leads to My workspace.
+    const back = page.locator('[data-stage-back="my-workspace"]');
     await expect(back).toBeVisible();
     await expect(back).toHaveAttribute('href', '/dashboard');
 
-    // (4) No tip stood over the first look while it was building, and none stands over it now.
-    const flags = await page.evaluate(() => {
-      const w = window as unknown as { __tipWhileBuilding: boolean; __sawBuilding: boolean };
-      return { __tipWhileBuilding: w.__tipWhileBuilding, __sawBuilding: w.__sawBuilding };
-    });
-    expect(flags.__sawBuilding, 'the recorder never saw the build-up — the tip check would be vacuous').toBe(true);
-    expect(flags.__tipWhileBuilding, 'a tip stood while the first look was building').toBe(false);
-    const tip = page.locator('[data-coach-mark][data-coach-form="popover"]');
-    if (await tip.count()) {
-      const [a, b] = await Promise.all([tip.first().boundingBox(), page.locator('[data-first-look]').boundingBox()]);
-      const overlaps = !!a && !!b && a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-      expect(overlaps, 'the tip covers the first look').toBe(false);
-    }
+    // (4) No tip in Analyze (plan P7): the invitation and the tour do that job.
+    await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
 
     // (5) Business has no Need & process (ADR-080): the map is the process
     // there, and its counts are not repeated in a section under it.
@@ -156,7 +145,8 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
     // IT has no layers since ADR-086: an old `?view=it#need` lands on the map
     // in Business, where the process stands, instead of an IT section.
-    const here = new URL(page.url());
+    // The workspace's own address: Business has moved to Analyze (AB-2), IT and Management have not yet.
+    const here = { pathname: `/project/${projectId}` };
     await page.goto(`${here.pathname}?view=it#need`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\?view=business#process-map$/, { timeout: 60000 });
     await expect(page.locator('#process-map')).toBeVisible({ timeout: 60000 });
@@ -177,20 +167,20 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
   });
 
-  test('on a phone: the build-up, the full map, the way back — no horizontal scroll', async ({ page }) => {
+  test('on a phone: Analyze, Business, the full map, the way back — no horizontal scroll', async ({ page }) => {
     test.setTimeout(360 * 1000);
     const { email } = await communityAccount('ws-start-phone');
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, email, PASSWORD);
     await startExample(page, { width: 390, height: 844 });
 
-    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(1);
 
     // (2) The way back, on a phone: visible, a 44 px target, and it leads to the list.
-    const back = page.locator('[data-workspace-back]');
+    const back = page.locator('[data-stage-back="my-workspace"]');
     await back.scrollIntoViewIfNeeded();
     await expect(back).toBeVisible();
     const box = await back.boundingBox();

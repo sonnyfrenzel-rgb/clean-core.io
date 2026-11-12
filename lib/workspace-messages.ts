@@ -42,6 +42,7 @@ import { TRANSFORMATION_MESSAGES } from './messages/transformation';
 import { RULE_QUESTION_MESSAGES } from './messages/rule-questions';
 import { FIRST_LOOK_FINDINGS_MESSAGES } from './messages/first-look-findings';
 import { PORTFOLIO_MESSAGES } from './messages/portfolio';
+import { ANALYZE_BUSINESS_MESSAGES } from './messages/analyze-business';
 
 /** The parts, by surface — read by the guard to prove that no two share a key. */
 export const WORKSPACE_MESSAGE_PARTS = {
@@ -64,6 +65,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   ruleQuestions: RULE_QUESTION_MESSAGES,
   firstLookFindings: FIRST_LOOK_FINDINGS_MESSAGES,
   portfolio: PORTFOLIO_MESSAGES,
+  analyzeBusiness: ANALYZE_BUSINESS_MESSAGES,
 } as const;
 
 export const WORKSPACE_MESSAGES = {
@@ -86,6 +88,7 @@ export const WORKSPACE_MESSAGES = {
   ...RULE_QUESTION_MESSAGES,
   ...FIRST_LOOK_FINDINGS_MESSAGES,
   ...PORTFOLIO_MESSAGES,
+  ...ANALYZE_BUSINESS_MESSAGES,
 } as const;
 
 export type WorkspaceMessageKey = keyof typeof WORKSPACE_MESSAGES;
@@ -117,3 +120,4 @@ export * from './messages/transformation';
 export * from './messages/rule-questions';
 export * from './messages/first-look-findings';
 export * from './messages/portfolio';
+export * from './messages/analyze-business';

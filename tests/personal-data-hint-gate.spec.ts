@@ -234,7 +234,7 @@ test.beforeAll(async () => {
 
 async function openUploadScreen(page: import('@playwright/test').Page) {
   await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
-  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
 }
 
@@ -415,7 +415,7 @@ test('an example project the reader edited is the reader\'s code again: the hint
     legacyCode: example, fromExample: true,
   });
   await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
-  await page.goto(`/project/${EXAMPLE_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${EXAMPLE_PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
   await expect(page.locator('textarea')).toHaveValue(/ZLEGACY_ORDER_FULFILLMENT_AUDIT/i, { timeout: 30000 });
   const panel = page.locator('[data-personal-data-hints="analyze-personal-data"]');

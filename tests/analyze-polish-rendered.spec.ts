@@ -99,7 +99,7 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   test.setTimeout(300 * 1000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await signInViaLanding(page, EMAIL, EMULATOR_PASSWORD, { pauseMs: 3500 });
-  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
 
   await page.getByText('SAP Cloud ERP Private', { exact: true }).first().click();
@@ -111,10 +111,11 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   // A project's first run continues in the workspace with the first look
   // (owner 02.10.2026, roadmap 3.0.1); the report is read on the Analyze tool,
   // opened from the workspace's tools bar.
-  await page.waitForURL(new RegExp(`/project/${PROJECT_ID}\\?first=1`), { timeout: 180000 });
-  await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
-  await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]').click({ timeout: 60000 });
-  await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze`), { timeout: 60000 });
+  await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze\\?first=1`), { timeout: 180000 });
+  // Since AB-2 the first run continues in Analyze, Business view (the map); the report is IT's, one view switch away.
+  await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+  await page.locator('[data-stage-view-switch] [role="radio"]', { hasText: 'IT' }).click({ timeout: 60000 });
+  await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze\\?.*view=it`), { timeout: 60000 });
 
   const report = page.locator('[data-evidence-only-report]');
   await expect(report).toBeVisible({ timeout: 180000 });
@@ -218,7 +219,7 @@ test('with a model narrative stored, the head says which part is the proposal', 
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await signInViaLanding(page, EMAIL, EMULATOR_PASSWORD, { pauseMs: 3500 });
-  await page.goto(`/project/${NARRATIVE_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${NARRATIVE_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
   const head = page.locator('[data-analysis-answer]');
   await expect(head).toBeVisible({ timeout: 90000 });
   await head.scrollIntoViewIfNeeded();

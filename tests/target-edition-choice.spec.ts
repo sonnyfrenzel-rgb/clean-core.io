@@ -110,7 +110,7 @@ test.describe('an example started for the Public Edition', () => {
     }
     await start.click({ timeout: 60000 });
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
     const projectId = new URL(page.url()).pathname.split('/')[2];
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
 

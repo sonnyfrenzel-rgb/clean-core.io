@@ -428,6 +428,14 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 
 #### AB-2 — Analyze opens business first: the map is the page · L
 
+- **Status (12.11.2026, worktree branch `night/ab2`, not on `dev`):** built — `AnalyzeBusiness` on the Analyze route
+  for Business, the code panel beside the map (`WorkspaceProcess` `codeOnClick`, `#L42`), the start run moved to
+  Analyze, the entry points and the workspace redirect (`lib/analyze-entry.ts`), the interim blocks below the map;
+  written as **ADR-109** (ADR-107 went to Documentation and ADR-108 to the names' arrival of AB-1/AB-3 the same day);
+  `analyze-business-first` added, `analyze-layout-guard` enforced for 3, 7, 17, the address-only spec changes made.
+  Open: the Business branch of `WorkspaceShell` (unreachable since the redirect), the retirement of `WorkspaceHub`,
+  `AnalysisReady` and their three specs, the demo (O10), and the rendered specs that read the workspace's Business
+  view in depth (listed in the branch's report). No rendered spec was run on the branch.
 - **Scope:** the Business view of Analyze per mockup states 3, 7 and 17 without the tour, the swap and the text
   blocks: header as today's `StageHeader` (way back, view switch, tools, soft-gate hint), "What this program does"
   with the engine sentence, the invitation bar ("Walk me through it" starts today's tour layer until AB-4; "I'll look

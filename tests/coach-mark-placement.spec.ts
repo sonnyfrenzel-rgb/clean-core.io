@@ -172,7 +172,7 @@ async function startExample(page: Page, viewport: { width: number; height: numbe
     await list.locator('[data-examples-more] button').first().click({ timeout: 60000 });
   }
   await start.click({ timeout: 60000 });
-  await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+  await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
   await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]').first()).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
 }
@@ -263,28 +263,14 @@ for (const vp of [
       test.setTimeout(420 * 1000);
       await startExample(page, { width: vp.width, height: vp.height });
 
-      // Business, "1 of 3": "Your next step", in the flow right above the bar —
-      // and the page has not moved to show it: the reader is where they were.
+      // Business is Analyze's since AB-2 (ADR-109), and Analyze has no tips
+      // (plan P7): the invitation "Walk me through it" and the tour do that job.
+      // The tour of tips stands in the workspace's IT and Management views.
       const mark = page.locator('[data-coach-mark]');
-      await expect(mark).toHaveAttribute('data-coach-mark', 'next-step', { timeout: 60000 });
-      const before = await page.evaluate(() => window.scrollY);
-      holds(await measure(page, 'next-step'), 'inline', 'Business, Your next step');
-      await expect(mark).toContainText('1 of 3');
+      await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
       await page.waitForTimeout(1500);
-      expect(await page.evaluate(() => window.scrollY), 'the first tip scrolled the page by itself').toBe(before);
-      await shot(page, `${vp.slug}-business-1-next-step`);
-
-      // "Next": the decision point, in the flow right above the map.
-      await next(page, 'next-step');
-      holds(await measure(page, 'decision'), 'inline', 'Business, Select the decision point');
-      await shot(page, `${vp.slug}-business-2-decision`);
-
-      // "Next": what could not be determined, at the foot of the page.
-      await next(page, 'decision');
-      holds(await measure(page, 'not-determined'), vp.floatForm, 'Business, This is what we could not determine');
-      await shot(page, `${vp.slug}-business-3-not-determined`);
-      await next(page, 'not-determined');
-      await expect(mark).toHaveCount(0);
+      await expect(mark, 'a tip stands in Analyze, Business').toHaveCount(0);
+      await shot(page, `${vp.slug}-business-no-tips`);
 
       // IT: "Next step" under the answer, then the Not determined figure in
       // the answer — and nothing after it. IT draws no process since ADR-086

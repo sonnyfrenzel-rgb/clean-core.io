@@ -117,7 +117,7 @@ async function startExample(page: Page) {
   // Said before the click: the start calls the model.
   await expect(page.locator('[data-examples-model="calls"]').first()).toContainText('Calls the model');
   await start.click({ timeout: 60000 });
-  await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+  await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
   return new URL(page.url()).pathname.split('/')[2];
 }
 

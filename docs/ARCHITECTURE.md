@@ -24,7 +24,9 @@ Upload ABAP ─▶ Deterministic Evidence Engine (lib/abap) ─▶ Run (immutabl
 
 ## 2. The workspace and its seven stages as tools
 
-`app/(app)/project/[projectId]/page.tsx` is the workspace (`components/workspace/WorkspaceShell.tsx`; views, layers and their labels in `lib/workspace-model.ts`). Every project opens there for every account since roadmap 3.0.1; Business, IT and Management are views only and never stored (CLAUDE.md). The tool bar (`components/workspace/ToolBar.tsx`) leads from the workspace to the seven stages.
+`app/(app)/project/[projectId]/page.tsx` is the workspace (`components/workspace/WorkspaceShell.tsx`; views, layers and their labels in `lib/workspace-model.ts`). Business, IT and Management are views only and never stored (CLAUDE.md).
+
+**Since v3.1.0 a project opens in Analyze, Business view (ADR-109, plan `docs/design/analyze-business-first-plan.md` AB-2).** `analyze/page.tsx` is one route with three views (`?view=`, read with `useLocationSearch`): Business — the default — renders `components/analyze/AnalyzeBusiness.tsx` (what the program does, the map from the signed run with the code on click beside it, and until v3.2.0 the First insights blocks and "Next step" below the map); IT and Management keep today's score page (`AnalyzeScorePage`) until AB-9/AB-10, as does a working address of it (`?reason=`, `?add=`) and a project without source (the upload and start path). The workspace route sends `/project/<id>` in Business, or with no view, to Analyze (`lib/analyze-entry.ts`: `view`, `first`, `from`, `origin` and a `#L…` or the map are kept); IT and Management stay on the workspace until v3.5.0 (AB-11 dissolves it). The signed start run of a new project (ADR-072, `useStartRun`) is started by Analyze on a `?first=1` visit; the starter examples and the own-code import open `/project/<id>/analyze?first=1`. The tool bar (`components/workspace/ToolBar.tsx`) leads from the workspace to the seven stages.
 
 Under `app/(app)/project/[projectId]/`, each stage is its own `page.tsx` (`'use client'`, `export const dynamic = 'force-dynamic'`), hydrated by `lib/project-loader.ts` and gated by `lib/run-guard.ts`:
 

@@ -124,6 +124,15 @@ export function stageBackLink({
   return origin ? { kind: 'link', href, origin } : { kind: 'link', href };
 }
 
+/**
+ * "My workspace", the list of all projects — where Analyze's Business view leads
+ * back to, because it is where a project opens (ADR-109): its way back to the
+ * project would lead to itself. Every other stage still leads back to the project.
+ */
+export function myWorkspaceHref(): string {
+  return '/dashboard';
+}
+
 /** The way back to the place that asked for a choice made on this stage — one level deep. */
 export interface StageOriginLink {
   key: OriginKey;
@@ -222,13 +231,14 @@ export const LAYER_LABELS: Readonly<Record<LayerKey, string>> = {
 export const BUSINESS_MAP_LABEL = 'Process map';
 
 /**
- * The project's process — its BPMN map in the Business view (ADR-080), the one
- * place the process stands. Analyze links here: the tool reads findings, never
- * draws the process, and a reader who looks for the BPMN there must find the
- * way to it at once (owner, 11.10.2026).
+ * The project's process — its BPMN map, the one place the process stands:
+ * Analyze in the Business view since AB-2 (ADR-109; before, the workspace's
+ * Business view, ADR-080). Analyze's IT page links here: it reads findings,
+ * never draws the process, and a reader who looks for the BPMN there must find
+ * the way to it at once (owner, 11.10.2026).
  */
 export function workspaceProcessHref(projectId: string): string {
-  return `/project/${encodeURIComponent(projectId)}?view=business#${BUSINESS_MAP_ID}`;
+  return `/project/${encodeURIComponent(projectId)}/analyze?view=business#${BUSINESS_MAP_ID}`;
 }
 
 /** Business reached by a layer it no longer shows, whose content is its map (ADR-080). */

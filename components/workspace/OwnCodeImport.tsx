@@ -279,14 +279,15 @@ export default function OwnCodeImport() {
         personalDataKey: hintKey,
         ...(assembly.main?.file ? { fileName: assembly.main.file.split('/').pop() } : {}),
       });
-      // The workspace first, with the first look (owner 02.10.2026) — never
-      // the Analyze tool. The workspace signs the engine's reading at once, so
-      // the full map stands after the build-up (ADR-072); Analyze takes the
-      // handoff above for a later run, so nothing is asked twice.
+      // Analyze in the Business view (plan AB-2, ADR-109): it signs the
+      // engine's reading at once, so the map stands (ADR-072); today's Analyze
+      // page (IT) takes the handoff above for a later run, so nothing is asked
+      // twice.
       // The release is not a field the browser may write; the first run
       // carries it (`lib/start-release-handoff.ts`), as Change target does.
       leaveStartRelease(docRef.id, edition === 'private' ? release : '');
-      router.push(`/project/${docRef.id}?first=1`);
+      // The project's entry since AB-2 (ADR-109): Analyze, Business view, which signs the engine's reading at once.
+      router.push(`/project/${docRef.id}/analyze?first=1`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));

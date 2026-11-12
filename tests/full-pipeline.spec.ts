@@ -215,7 +215,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       userId: ownerUid,
       createdAt: new Date(),
     });
-    await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 45000 });
     console.log('Project created. Navigated to analyze page.');
 
@@ -301,10 +301,11 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // A project's first run continues in the workspace with the first look
     // (owner 02.10.2026, roadmap 3.0.1); the report is read on the Analyze
     // tool, opened from the workspace's tools bar.
-    await page.waitForURL(new RegExp(`/project/${projectId}\\?first=1`), { timeout: 180000 });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
-    await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]').click({ timeout: 60000 });
-    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze\\?first=1`), { timeout: 180000 });
+    // Since AB-2 the first run continues in Analyze, Business view (the map); the report is IT's, one view switch away.
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await page.locator('[data-stage-view-switch] [role="radio"]', { hasText: 'IT' }).click({ timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze\\?.*view=it`), { timeout: 60000 });
     // The stage answers first since the tool-page rebuild (ADR-029, ADR-050).
     await expect(page.locator('[data-analysis-answer]')).toBeVisible({ timeout: 90000 });
     console.log('Stage 1 Complete: Analysis report parsed and rendered.');
