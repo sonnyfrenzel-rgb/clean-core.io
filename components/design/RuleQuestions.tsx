@@ -45,6 +45,7 @@ import { plainModelEnabled, rulePlainSentences, type PlainWordingRecord, type Wo
 import type { Project } from '@/lib/types';
 import { itProposals, questionsAnsweredOf, questionsChangeTarget, questionsLater, questionsWithoutImpact, wt, type WorkspaceMessageKey } from '@/lib/workspace-messages';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { questionRuleCountsOf, questionsCoverRules } from '@/lib/rule-counts';
 
 /**
  * The questions for the business — the Design tool, before Transformation
@@ -291,6 +292,8 @@ export interface RuleQuestionsViewProps {
 /** Presentational: the flow, the answered questions, and one line on IT's options. */
 export function RuleQuestionsView({ explanation, entries, rules, owner, busy, error, recorded, onRecord, say, registerHref }: RuleQuestionsViewProps) {
   const flow = useMemo(() => questionFlow(explanation, entries), [explanation, entries]);
+  // HF-e (3.0.22): questions are not rules — say how many of the business rules they cover and where the rest are.
+  const cover = useMemo(() => questionRuleCountsOf(explanation, flow.answered), [explanation, flow.answered]);
   // The open questions in two groups: the ones that change the target first (owner decision 22.10.2026).
   const groups = useMemo(() => targetQuestionGroups(explanation, entries), [explanation, entries]);
   // Taken in the rule register of the IT view; Design names how many there are.
@@ -333,6 +336,11 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
               </span>
             </span>
           )}
+          {cover.total > 0 ? (
+            <p data-questions-cover-rules="" data-rules-asked={cover.rulesAsked} data-rules-total={cover.total} className="m-0 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">
+              {questionsCoverRules(cover)}
+            </p>
+          ) : null}
           {owner && accept.length > 0 && flow.shown.length > 0 ? (
             <div data-questions-accept-all="" className="flex max-w-3xl flex-col gap-1">
               <span>
