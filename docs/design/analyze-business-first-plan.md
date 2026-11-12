@@ -855,6 +855,12 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 
 ##### AB-15a — v3.1.0 · Status workflows as the process, technical methods folded · M–L
 
+*Status 12.11.2026: engine part built on `night/ab15` (ADR-112) — `lib/abap/state-machine.ts`,
+`lib/abap/technical-methods.ts`, the labels in `plain-language.ts`, the fold and the lift in `lib/bpmn/model.ts`
+(`readsObjects`), two skeleton readings (a wrapper that calls a phase stays a phase; `SET HANDLER NEW …->…` binds);
+specs `engine-state-machine` and `engine-method-collapse`. Starter examples read byte-identical. Open: the run of
+owner example A end to end (owner), and the Analyze views (not part of the engine).*
+
 - **Scope:** read classes, interfaces, methods, local classes and events as the program's structure, not its process;
   surface a **state machine** — a status field with its transitions (constants such as DRAFT/SUBMITTED/APPROVED/
   APPLIED, the checks that guard each transition, the role checks) — as the first level of the business map, each

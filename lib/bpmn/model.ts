@@ -9,6 +9,7 @@ import { ncName } from './xml';
 import type { PlainLabels } from '../abap/plain-language';
 import { TABLE_TERMS_EN } from '../abap/plain-glossary';
 import { quotedComment } from '../abap/author-comments';
+import { isConstructorName, isTechnicalMethodName } from '../abap/technical-methods';
 
 /**
  * Skeleton → BPMN elements — roadmap 2.6, the half that decides *what* is drawn.
@@ -442,11 +443,40 @@ export interface ExportModelOptions {
    * `anchorLabel`), and the technical file and the IT view draw every statement. Default: off.
    */
   foldTechnique?: boolean;
+  /**
+   * Object-oriented programs read as business processes (roadmap 3.1.0, AB-15a, from engine 3.1.0 —
+   * `ENGINE_READS_310_FROM`; owner decision 06.11.2026). With plain labels and `foldTechnique`, two things more:
+   *
+   *   - **a technical method is technique** (`lib/abap/technical-methods.ts`): the call of a constructor, a getter or
+   *     setter, a `show`/`display`/`output` method that the skeleton drew as one step is folded into the step beside
+   *     it like a lock — every line kept on the element that carries it;
+   *   - **the top level is not one method**: where an entry of the top plane does nothing but call one method (and,
+   *     at most, technical methods beside it) — `NEW lcl_app( )->run( )` — that method's plane is the top level,
+   *     so the process is on the first level and not under "Run". The method's lines stay on the element that now
+   *     opens its content (`folded`), the technical file keeps the method as it is.
+   *
+   * Default: off.
+   */
+  readsObjects?: boolean;
 }
 
 export function buildExportModel(skeleton: ProcessSkeleton, options: ExportModelOptions = {}): ExportModel {
+  const technique = !!options.labels && (options.foldTechnique ?? false);
   return new ModelBuilder(skeleton, options.labels ?? null, options.chainEntries ?? !!options.labels, options.businessLevel ?? false,
-    !!options.labels && (options.foldTechnique ?? false)).build();
+    technique, technique && (options.readsObjects ?? false)).build();
+}
+
+/**
+ * AB-15a: a call of a technical method (`lib/abap/technical-methods.ts`) that the skeleton drew as one step — never a
+ * phase (a plane is a part of the process), never a write, never a read other than a constructor's (they change or
+ * fetch the business's data), never a person's step.
+ */
+function isTechnicalMethodStep(n: ExportNode): boolean {
+  if (n.source.detail?.method !== true || n.inner || n.tag === 'subProcess') return false;
+  if (/^(?:write|user-task|sub-process)$/.test(n.source.kind)) return false;
+  // A constructor that reads its settings is still the set-up of the run; any other method that reads is a step.
+  if (n.source.kind === 'read' && !isConstructorName(n.source.label)) return false;
+  return isTechnicalMethodName(n.source.label);
 }
 
 /** The SAP technique a business step does not need to see (`ExportModelOptions.foldTechnique`), by the code's name. */
@@ -485,6 +515,7 @@ class ModelBuilder {
     private chain = false,
     private businessLevel = false,
     private technique = false,
+    private objects = false,
   ) {}
 
   build(): ExportModel {
@@ -712,6 +743,7 @@ class ModelBuilder {
     }
 
     if (this.businessLevel) this.collapseGuardChains(into, band, local);
+    if (this.objects && into.tag === 'process') this.liftLoneMethod(into, band);
     if (this.technique) this.foldTechniqueSteps(into, band, local);
 
     for (const node of local.values()) {
@@ -867,12 +899,75 @@ class ModelBuilder {
     }
   }
 
+  /**
+   * AB-15a — the top level is not one method (`ExportModelOptions.readsObjects`). An entry band of the top plane
+   * that runs start → one method's plane → end, with at most technical method steps beside it, takes that plane's
+   * content in its place: the flow into the method goes to the first element of its plane, every way to the plane's
+   * normal end goes on where the method went on. Its error and early ends stay ends. Repeated while it applies —
+   * `main` calling `run` is lifted twice. Nothing else moves: a method with a guard on its way in, an error boundary
+   * on it, or a plane that does not open with one flow from its start stays where it is.
+   */
+  private liftLoneMethod(into: ExportContainer, band: ExportBand): void {
+    for (let guard = 0; guard < 8; guard++) {
+      const mine = into.nodes.filter((n) => band.nodeIds.includes(n.id));
+      const activities = mine.filter((n) => ACTIVITY_TAGS.has(n.tag));
+      const planes = activities.filter((n) => n.tag === 'subProcess' && n.inner && /^method:/i.test(n.source.expandsTo ?? ''));
+      if (planes.length !== 1) return;
+      const wrapper = planes[0];
+      const inner = wrapper.inner!;
+      if (activities.some((n) => n !== wrapper && !isTechnicalMethodStep(n))) return;
+      if (mine.some((n) => n.tag === 'exclusiveGateway' || n.tag === 'parallelGateway' || n.attachedTo === wrapper.id)) return;
+      if (guardOf(wrapper) || isMultiInstanceLoop(wrapper.source)) return;
+      const ins = into.flows.filter((f) => f.targetId === wrapper.id);
+      const outs = into.flows.filter((f) => f.sourceId === wrapper.id);
+      if (ins.length !== 1 || outs.length !== 1 || ins[0].condition || outs[0].condition) return;
+      const innerBand = inner.bands[0];
+      const start = inner.nodes.find((n) => n.id === innerBand?.entryId && n.tag === 'startEvent');
+      const end = inner.nodes.find((n) => n.id === innerBand?.endId && n.tag === 'endEvent');
+      if (!start || !end || inner.bands.length !== 1) return;
+      const first = inner.flows.filter((f) => f.sourceId === start.id);
+      const last = inner.flows.filter((f) => f.targetId === end.id);
+      if (first.length !== 1 || first[0].condition || !last.length) return;
+      const head = inner.nodes.find((n) => n.id === first[0].targetId);
+      if (!head || head === end) return;
+
+      // The flows: into the wrapper -> into the head of its plane; into the plane's end -> where the wrapper went on.
+      ins[0].targetId = head.id;
+      for (const f of last) f.targetId = outs[0].targetId;
+      const bandIndex = into.bands.indexOf(band);
+      const moved = inner.nodes.filter((n) => n !== start && n !== end);
+      for (const n of moved) n.band = bandIndex;
+      // The method's own lines stay readable on the element that now opens its content.
+      const a = wrapper.source.anchor;
+      const own = a ? (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`) : null;
+      if (ACTIVITY_TAGS.has(head.tag)) {
+        head.folded = [...(head.folded ?? []), { name: wrapper.name, technicalName: wrapper.technicalName, anchor: own }, ...(wrapper.folded ?? [])];
+      }
+      into.flows = [...into.flows.filter((f) => f !== outs[0]), ...inner.flows.filter((f) => f !== first[0])];
+      const at = into.nodes.indexOf(wrapper);
+      into.nodes.splice(at, 1, ...moved);
+      band.nodeIds = band.nodeIds.flatMap((id) => (id === wrapper.id ? moved.map((n) => n.id) : [id]));
+      into.storeRefs.push(...inner.storeRefs);
+      into.dataAssociations.push(...inner.dataAssociations);
+      into.annotations.push(...inner.annotations);
+      this.containers = this.containers.filter((c) => c !== inner);
+      this.owner.delete(inner.id);
+      for (const [id, o] of this.owner) if (o.parent === inner) this.owner.set(id, { node: o.node, parent: into });
+      for (const n of into.nodes) {
+        n.incoming = into.flows.filter((f) => f.targetId === n.id).map((f) => f.id);
+        n.outgoing = into.flows.filter((f) => f.sourceId === n.id).map((f) => f.id);
+      }
+    }
+  }
+
   /** See `ExportModelOptions.foldTechnique`. */
   private foldTechniqueSteps(into: ExportContainer, band: ExportBand, local: Map<string, ExportNode>): void {
     // 3.1.0: the call of a technical helper the engine draws as an arm's outcome (`detail.helperCall`) is technique too
     // when it writes a log (`PERFORM add_log`) — folded where it stands in a straight run; an arm's only step stays.
     const isTechnique = (n: ExportNode) => TECHNIQUE_CALL.test(n.technicalName.replace(/^\/\w+\//, ''))
-      || (n.source.detail?.helperCall === true && LOG_HELPER.test(String(n.source.detail?.routine ?? n.technicalName)));
+      || (n.source.detail?.helperCall === true && LOG_HELPER.test(String(n.source.detail?.routine ?? n.technicalName)))
+      // AB-15a: the call of a technical method (constructor, getter, setter, show) drawn as one step.
+      || (this.objects && isTechnicalMethodStep(n));
     const plain = (n: ExportNode) => ACTIVITY_TAGS.has(n.tag) && !n.inner && n.tag !== 'subProcess' && !n.attachedTo
       && !guardOf(n) && !into.nodes.some((b) => b.attachedTo === n.id);
     // The same words as `anchorText` in layout.ts, which imports this file.

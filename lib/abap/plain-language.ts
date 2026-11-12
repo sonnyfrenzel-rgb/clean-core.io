@@ -32,6 +32,8 @@ import {
   dictionaryWords,
 } from './sap-dictionary';
 import { APP_VERSION } from '../version';
+import { readStateMachine, stateWords, transitionsIn, type StateMachine, type StateTransition } from './state-machine';
+import { interfaceOfMethod, isConstructorName, isTechnicalMethodName, ownMethodName } from './technical-methods';
 
 /**
  * Plain-language wording for the process map — deterministic, no model.
@@ -121,6 +123,11 @@ export interface PlainContext {
   readonly customer?: CustomerTexts;
   /** 3.1.0: the customer texts a label was just built from, code → text — read and cleared by `plainLabels`. */
   readonly customerUsed?: Map<string, string>;
+  /**
+   * 3.1.0 (AB-15a): the program's status workflow (`lib/abap/state-machine.ts`), read once on first use — null when
+   * the code shows none. Absent for an older engine, which keeps its picture.
+   */
+  readonly stateMachine?: () => StateMachine | null;
 }
 
 /** What `plainContext` and `plainLabels` read besides the source. */
@@ -268,8 +275,10 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
       }
     }
     const customer = reads310 && isCustomerTexts(options.customerTexts) ? options.customerTexts : undefined;
+    let machine: StateMachine | null | undefined;
+    const stateMachine = () => (machine === undefined ? (machine = readStateMachine(lines.join('\n'))) : machine);
     return reads310
-      ? { lines, statements, selections, constants, types, tables, flags, reads310, sources, selected, ...(customer ? { customer, customerUsed: new Map<string, string>() } : {}) }
+      ? { lines, statements, selections, constants, types, tables, flags, reads310, sources, selected, stateMachine, ...(customer ? { customer, customerUsed: new Map<string, string>() } : {}) }
       : { lines, statements, selections, constants, types, tables, flags };
   } catch {
     return EMPTY_CONTEXT;
@@ -1367,6 +1376,9 @@ function humaniseOperand(operand: string, ctx: PlainContext, short = false): str
       return inner ? `Number of ${itemsOf(inner, ctx)}` : 'Number of entries';
     }
     const name = fn.split(/->|=>/).pop() ?? fn;
+    // 3.1.0 (AB-15a): a getter is the value it gets — `get_status( )` is the status, not "Get status".
+    const got = ctx.reads310 ? /^get_?(\w+)$/i.exec(name.split('~').pop() ?? name)?.[1] : undefined;
+    if (got) return humaniseOperand(got, ctx, short);
     return routineWords(name, false) || 'Result';
   }
   const tokens = text.split(/\s+/);
@@ -2039,11 +2051,74 @@ function writeName(node: SkeletonNode, ctx: PlainContext): string {
   return `${verb} entry in ${target.toUpperCase()}`;
 }
 
+/**
+ * 3.1.0 (AB-15a): the name of a call of a routine. Before 3.1.0, and for every call that is not one of the cases
+ * below, the routine's name in words. From 3.1.0:
+ *
+ *   - **a routine that moves the program's status** (`lib/abap/state-machine.ts`) says the move beside its name:
+ *     "Approve (Submitted → Approved)" — the from-values only where the code demands them;
+ *   - **a method of an interface** is named by its own name, without the interface (`LIF_STORE~SAVE` → "Save");
+ *   - **a constructor drawn as a phase** prepares the run ("Prepare the run"), never "Constructor".
+ *
+ * A technical method folded onto one step is named by that step in `plainLabels`, which holds the skeleton.
+ */
+function callSiteName(node: SkeletonNode, c: PlainContext): string {
+  const plain = humaniseRoutine(node.label, c);
+  if (!c.reads310) return plain;
+  const method = node.detail?.method === true || /^method:/i.test(node.expandsTo ?? '');
+  const own = method ? ownMethodName(node.label) : node.label;
+  const words = method && (interfaceOfMethod(node.label) || own !== node.label) ? humaniseRoutine(own, c) || plain : plain;
+  const routine = /^(?:method|form|function):(.+)$/i.exec(node.expandsTo ?? '')?.[1];
+  const moves = routine && c.stateMachine ? transitionsIn(c.stateMachine(), routine) : [];
+  if (moves.length) return transitionName(words, moves, c.stateMachine?.() ?? null);
+  // A constructor prepares the object the run works with; its class name is the developer's, not the business's.
+  if (method && isConstructorName(node.label)) return 'Prepare the run';
+  return words;
+}
+
+/**
+ * A status value in words (`stateWords`), in English where the value is German the vocabulary can translate
+ * ("ABGELEHNT" → "Rejected"); German it cannot translate stays the code it is — never a German word in an English label.
+ */
+function stateSaid(value: string, constant: string | null): string {
+  const words = value.replace(/_/g, ' ').trim().toLowerCase();
+  if (/^[a-zäöüß ]{3,}$/.test(words)) {
+    const english = translateGermanText(words, FIELD_SOURCES_310)?.english;
+    if (english) return sentenceCase(english);
+    if (hasGermanWord(words, FIELD_SOURCES_310) || germanUntranslated(words)) return value.toUpperCase();
+  }
+  return stateWords(value, constant);
+}
+
+/** "Approve (Submitted → Approved)", "Decide (Pending → Approved or Rejected)", "Start (to Draft)". */
+function transitionName(words: string, moves: readonly StateTransition[], machine: StateMachine | null): string {
+  const say = (value: string) => {
+    const known = machine?.states.find((s) => s.value === value);
+    return stateSaid(value, known?.constant ?? null);
+  };
+  const to = [...new Set(moves.map((m) => m.to))];
+  const from = [...new Set(moves.flatMap((m) => m.from))].filter((v) => !to.includes(v) || to.length > 1);
+  const target = to.length <= 2 ? to.map(say).join(' or ') : `${to.length} statuses`;
+  const move = from.length && from.length <= 2 ? `${from.map(say).join(' or ')} → ${target}` : `to ${target}`;
+  return `${words} (${move})`;
+}
+
+/** The kinds a status setter's call can be drawn as. */
+const STEP_KINDS_FOR_MOVES = new Set<string>(['call-opaque', 'task', 'write', 'send-task', 'service-task', 'sub-process', 'call-activity']);
+
 /** Readable name for a step, a sub-process, a loop or an event. */
 export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
   try {
     const c = contextOf(ctx);
     const line = node.anchor?.lineStart;
+    // 3.1.0 (AB-15a): the call of a status setter (`set_status( gc_approved )`) is the move it makes.
+    if (c.reads310 && c.stateMachine && STEP_KINDS_FOR_MOVES.has(node.kind)) {
+      const machine = c.stateMachine?.();
+      const move = machine?.transitions.find((t) => t.line === line);
+      if (machine && move && /\(/.test(statementAt(c, line)?.text ?? '')) {
+        return fit(`Set ${machine.field} to ${stateSaid(move.to, move.toConstant)}`);
+      }
+    }
     switch (node.kind) {
       case 'start': {
         if (node.detail?.subProcess === true) return 'Start';
@@ -2073,7 +2148,7 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
       if (isMultiInstance(node)) return fit(`For each ${itemOf(node.label, c)}`);
       return loopQuestion(node, c);
     }
-    if (isCallSite(node)) return fit(humaniseRoutine(node.label, c));
+    if (isCallSite(node)) return fit(callSiteName(node, c));
     switch (node.kind) {
       case 'read':
         return fit(readName(node, c));
@@ -2207,6 +2282,9 @@ function flagStepName(node: SkeletonNode, ctx: PlainContext): string {
   // The program's sentence is the value set into the field itself: the field and the sentence.
   if (said && literal !== null && englishText(literal).replace(/[.:;,]+$/, '').trim() === said) return firstFitting([`${subject}: ${lcFirst(said)}`, sentenceCase(said)]);
   if (said) return sentenceCase(said);
+  // 3.1.0 (AB-15a): a move of the program's status workflow says the state in words ("Set status to Declined").
+  const move = ctx.stateMachine?.()?.transitions.find((t) => t.line === node.anchor?.lineStart);
+  if (move) return `Set ${lcFirst(subject)} to ${stateSaid(move.to, move.toConstant)}`;
   const lower = value.toLowerCase();
   const participle = isParticiple(field, ctx);
   if (TRUE_VALUES.has(lower)) return participle ? `Mark as ${lcFirst(subject)}` : `Set ${lcFirst(subject)}`;
@@ -2514,6 +2592,28 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
   }
 
   const lineOf = (node: SkeletonNode | undefined) => node?.anchor?.lineStart;
+  const inRegion = new Map<string, SkeletonNode[]>();
+  for (const node of skeletonNodes) inRegion.set(node.region, [...(inRegion.get(node.region) ?? []), node]);
+  /**
+   * 3.1.0 (AB-15a): the step a collapsed call of a technical or an interface method stands for — the skeleton's
+   * `collapsedFrom`, followed through further collapsed calls to the statement. Null for every other node.
+   */
+  const foldedStepOf = (node: SkeletonNode): SkeletonNode | null => {
+    const method = node.detail?.method === true;
+    if (!method || node.collapsed !== true || !(isTechnicalMethodName(node.label) || interfaceOfMethod(node.label))) return null;
+    // A constructor is the set-up of the run whatever it reads (`callSiteName`): "Prepare the run".
+    if (isConstructorName(node.label)) return null;
+    // A status setter's call is the move it makes (`stepName`), not what the setter does besides.
+    if (ctx.stateMachine?.()?.transitions.some((t) => t.line === node.anchor?.lineStart)) return null;
+    let step: SkeletonNode | undefined = node;
+    for (let depth = 0; step?.collapsed === true && step.expandsTo && depth < 10; depth++) {
+      const from = detailString(step, 'collapsedFrom');
+      const kind: SkeletonNode['kind'] = step.kind;
+      step = (inRegion.get(step.expandsTo) ?? []).find((n) => n.kind === kind && n.label === from);
+    }
+    // Only a statement names it; a further routine call keeps the method's own name ("Process", not "Check").
+    return step && step !== node && !isCallSite(step) ? step : null;
+  };
   const phrase = (condition: string, node: SkeletonNode | undefined) =>
     fit(conditionToPhrase(condition, ctx, lineOf(node)));
 
@@ -2707,7 +2807,13 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
         const { lead, rejected, line } = leadingOf(node);
         label = outcomeName(node, lead, ctx, { rejected, line });
       } else {
-        label = stepName(node, ctx);
+        // 3.1.0 (AB-15a): a technical method, or an interface method, that the skeleton folded onto the one thing it
+        // does is named by that thing — "Read change request", "Show the result list" — not "Lif store~row".
+        const step = ctx.reads310 ? foldedStepOf(node) : null;
+        const said = step ? stepName(step, ctx) : '';
+        // A getter keeps its own words where its read could only be said as a table's code ("Get tolerance", not
+        // "Read ZPP_TOL"): the code is no better a name than the developer's.
+        label = said && !(/^get_/i.test(ownMethodName(node.label)) && /^Read [A-Z0-9_/]+$/.test(said)) ? said : stepName(node, ctx);
       }
     } catch {
       label = humaniseRoutine(node.label) || 'Step';

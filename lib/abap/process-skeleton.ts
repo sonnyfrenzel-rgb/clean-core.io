@@ -1893,7 +1893,10 @@ class SkeletonBuilder {
     const out = Object.assign([] as Array<{ key: string; name: string }>, {
       deregisters: activation !== undefined && !/^(?:'X'|abap_true)$/i.test(activation),
     });
-    for (const handler of set[1].split(/\s+/)) {
+    // Engine 3.1.0 (AB-15a): a handler of an object created right there — `SET HANDLER NEW lcl_mailer( )->on_x` —
+    // is that class's method, as if it were written `lcl_mailer=>on_x`; before, the split words matched nothing.
+    const list = this.reads310 ? set[1].replace(/\bNEW\s+([\w/]+)\(\s*[^()]*\)\s*->\s*([\w/~]+)/gi, '$1=>$2') : set[1];
+    for (const handler of list.split(/\s+/)) {
       const parts = /^(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)$/.exec(handler);
       if (!parts) continue;
       const { key, ambiguous } = this.resolveMethod(parts[1] ?? null,
@@ -4935,6 +4938,20 @@ class SkeletonBuilder {
         }
         if (callers[0].kind === 'business-rule-task') {
           for (const caller of callers) caller.collapsed = inner.length <= 3;
+          continue;
+        }
+        // Engine 3.1.0 (AB-15a): a routine that calls a phase of its own is not one step. `main` creating the object
+        // and calling `run` has two elements, and folding it onto the constructor's read hid the whole process
+        // behind one box named after that read. A phase inside keeps the routine a phase.
+        if (this.reads310 && inner.some((n) => n.kind === 'sub-process' && n.expandsTo && !n.collapsed)) {
+          for (const caller of callers) {
+            if (caller.collapsed) {
+              caller.collapsed = false;
+              caller.kind = 'sub-process';
+              if (caller.detail) delete caller.detail.collapsedFrom;
+              changed = true;
+            }
+          }
           continue;
         }
         const steps = inner.filter((n) => DOMINANT_ORDER.includes(n.kind));
