@@ -519,7 +519,7 @@ test.describe('capture the landing page views', () => {
         createdAt: new Date(),
         fromExample: true,
       });
-      await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
       const startButton = page.getByRole('button', { name: 'Start Analysis' });
       await startButton.waitFor({ timeout: 120000 });
       await page.waitForTimeout(2000);
@@ -531,16 +531,21 @@ test.describe('capture the landing page views', () => {
       const boxes = dialog.locator('input[type=checkbox]');
       for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).check();
       await page.getByRole('button', { name: 'Confirm and start the analysis' }).click();
-      // Since the start lands on the workspace once the run is signed (ADR-072), the
-      // analysis is done when either the score or the done mark on the Analyze tool stands.
+      // Since AB-2 the start lands on Analyze in the Business view once the run is signed: the
+      // analysis is done when the score, the done mark on the Analyze tool or the drawn map stands.
       await expect(
-        page.locator('[data-analyze-score]').or(page.getByRole('link', { name: 'Analyze (done)' })).first(),
+        page
+          .locator('[data-analyze-score]')
+          .or(page.getByRole('link', { name: 'Analyze (done)' }))
+          .or(page.locator('[data-analyze-business="ready"] [data-workspace-process="ready"]'))
+          .first(),
       ).toBeVisible({ timeout: 600000 });
     }
 
     for (const phase of PHASES) {
       const fromRun = STAGE_SHOT_SOURCE[phase.key] === 'run';
-      const url = fromRun ? `/project/${projectId}/${phase.key}` : `/demo/${phase.key}`;
+      // Analyze's score page is its IT view since AB-2 (Business is the map).
+      const url = fromRun ? `/project/${projectId}/${phase.key}${phase.key === 'analyze' ? '?view=it' : ''}` : `/demo/${phase.key}`;
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       if (!fromRun) {
         await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });

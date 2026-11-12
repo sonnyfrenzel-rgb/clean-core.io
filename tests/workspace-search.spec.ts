@@ -139,7 +139,8 @@ test.describe('the index — elements, rules, findings, glossary', () => {
     expect(finding).toBeTruthy();
     expect(finding!.title).toBe(WORKLIST[0].title);
     expect(finding!.anchor).toBe('L14');
-    expect(finding!.href).toBe('/project/proj-2/analyze');
+    // Findings are IT's since AB-2 (Analyze opens in Business, which shows none).
+    expect(finding!.href).toBe('/project/proj-2/analyze?view=it');
   });
 
   test('start and end events are not searchable elements — they are flow boilerplate, not things to find', () => {
@@ -768,7 +769,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     const hit = page.locator('[data-command-search-hit="finding"]').first();
     await expect(hit).toBeVisible();
     await hit.locator('button').click();
-    await page.waitForURL(`**/project/${PROJECT_ID}/analyze`);
+    await page.waitForURL(`**/project/${PROJECT_ID}/analyze?view=it`);
   });
 
   test('a glossary answer appears in place, says "No model call", and no request reaches /api/gemini', async ({ page }) => {

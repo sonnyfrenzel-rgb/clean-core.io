@@ -96,12 +96,12 @@ test.describe('Dashboard — starter examples', () => {
     // One click must create the project AND carry the source with it. Since
     // roadmap 3.0.1 every project opens in the workspace, with its first look.
     await panel.locator('[data-example-start="Z_MATERIAL_STOCK_CALC"]').click();
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 45000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 45000 });
     const projectId = new URL(page.url()).pathname.split('/')[2];
 
     // The code has to be there — a project that lands empty is the failure mode
     // this guards against. Read where the source is shown: the Analyze tool.
-    await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/z_material_stock_calc/i).first()).toBeVisible({ timeout: 30000 });
 
     await page.screenshot({ path: 'test-results/starter-example-loaded.png', fullPage: false });

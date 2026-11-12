@@ -198,7 +198,7 @@ test.describe('an example started for Private Edition 2023 FPS03', () => {
     }
     await start.click({ timeout: 60000 });
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
     const projectId = new URL(page.url()).pathname.split('/')[2];
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
 
@@ -259,7 +259,7 @@ test.describe('own code imported for Private Edition 2023 FPS03', () => {
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
     const projectId = new URL(page.url()).pathname.split('/')[2];
     await expect
       .poll(async () => {

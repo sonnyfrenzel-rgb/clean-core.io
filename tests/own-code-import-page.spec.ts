@@ -169,10 +169,11 @@ test.describe('own code: choose, check, start', () => {
     const writes = watchWrites(page);
     await page.click('[data-own-code-start]');
 
-    // The workspace first, with the first look — never the Analyze tool (owner
-    // 02.10.2026) — and it signs the engine's reading at once (ADR-072).
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
-    expect(page.url()).not.toContain('/analyze');
+    // The project's entry first, with the first look — Analyze in the Business
+    // view since AB-2 (ADR-107), never the score page (owner 02.10.2026) — and
+    // it signs the engine's reading at once (ADR-072).
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
+    expect(page.url()).not.toContain('view=it');
     const projectId = new URL(page.url()).pathname.split('/')[2];
     await expect(page.locator('[data-first-look]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
@@ -245,10 +246,10 @@ test.describe('own code: after the run, the workspace', () => {
     });
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
-    expect(page.url()).not.toContain('/analyze');
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
+    expect(page.url()).not.toContain('view=it');
     const projectId = new URL(page.url()).pathname.split('/')[2];
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
     const stored = await adminGetDoc('projects', projectId);
     expect(typeof stored?.activeRunId, 'the workspace drew a map before a run was signed').toBe('string');

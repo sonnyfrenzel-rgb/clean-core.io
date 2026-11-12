@@ -249,7 +249,7 @@ test.describe('and inside a project', () => {
     test.setTimeout(240 * 1000);
 
     await signIn(page, OWNER);
-    await page.goto(`/project/${LIVE_PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${LIVE_PROJECT}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
     const trigger = page.locator('[data-help-menu-trigger]');
     await expect(trigger).toBeVisible({ timeout: 90000 });

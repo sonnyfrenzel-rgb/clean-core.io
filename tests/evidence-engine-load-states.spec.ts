@@ -140,7 +140,7 @@ test.describe('the project evidence, read from the server', () => {
 
     const chunks = await countEngineChunks(page);
     const gate = await gateEvidence(page, 'hold');
-    await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await gate.requested;
 
     // The project has loaded (the evidence is only asked for once its source
@@ -171,7 +171,7 @@ test.describe('the project evidence, read from the server', () => {
     await signInThroughForm(page, acct);
 
     const gate = await gateEvidence(page, 'abort');
-    await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await gate.requested;
 
     const failed = page.locator('[data-analyze-evidence-failed]');

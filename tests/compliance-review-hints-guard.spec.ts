@@ -435,7 +435,7 @@ test.describe('the panel a reader actually meets', () => {
     });
 
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
     // One action deeper since the stage leads with its answer (§2.11): folded, not removed.
     // A part of the folded "Technical detail" since 02.10.2026; the inventory itself is the

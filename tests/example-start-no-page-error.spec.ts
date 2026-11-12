@@ -74,8 +74,8 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
     }
     await start.click({ timeout: 60000 });
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-first-look]')).toHaveAttribute('data-first-look', /^(complete|end-state)$/, {
       timeout: 90000,
     });
@@ -145,11 +145,13 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
     });
 
     for (const [name, path, ready] of [
-      ['the workspace', '', '[data-workspace-shell]'],
+      // The project's address opens Analyze, Business, since AB-2 (ADR-107); IT stays on the workspace.
+      ['the project, Analyze in the Business view', '', '[data-analyze-business="ready"]'],
+      ['the workspace, IT view', '?view=it', '[data-workspace-shell]'],
       // The bucket panel stands in the folded "Evidence" since 03.10.2026; the
       // answer the view opens with is the decision beside fit to standard.
       ['the workspace, management view', '?view=management', '[data-management-executive]'],
-      ['Analyze', '/analyze', '[data-analysis-answer]'],
+      ['Analyze, IT view', '/analyze?view=it', '[data-analysis-answer]'],
       ['Transformation', '/transformation', '[data-stage-title]'],
     ] as const) {
       test(`opening ${name} draws without a page error`, async ({ page }) => {

@@ -65,15 +65,17 @@ async function goto(page: Page, url: string) {
 }
 
 /**
- * The workspace, with the first look grown and the full map drawn from the
- * run the start signed (ADR-072) — not the two-node main line, and never a
- * visit to Analyze.
+ * The project's entry since AB-2 (ADR-107): Analyze in the Business view, the
+ * full map drawn from the run the start signed (ADR-072) — not the two-node
+ * main line — with the first look's blocks below it, and never today's score
+ * page (IT's).
  */
 async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
-  await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
-  expect(page.url(), 'an example landed on the Analyze tool').not.toContain('/analyze');
+  await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
+  expect(page.url(), 'an example landed on the score page').not.toContain('view=it');
   const projectId = new URL(page.url()).pathname.split('/')[2];
-  await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('[data-analyze-score]'), 'Business shows no score').toHaveCount(0);
   const look = page.locator('[data-first-look]');
   await expect(look).toBeVisible({ timeout: 60000 });
   await expect(look).toHaveAttribute('data-first-look', /^(building|complete|end-state)$/, { timeout: 60000 });
@@ -83,7 +85,7 @@ async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   // And it stays.
   await page.waitForTimeout(3000);
   await expect(map).toBeVisible();
-  expect(page.url()).not.toContain('/analyze');
+  expect(page.url()).not.toContain('view=it');
   return projectId;
 }
 
@@ -97,7 +99,7 @@ async function startFromGallery(page: Page, scope: string, name: string) {
   await start.click({ timeout: 60000 });
 }
 
-test.describe('an example opens the workspace with the first look, never Analyze (owner 02.10.2026)', () => {
+test.describe('an example opens Analyze, Business, with the map and the first look, never the score page (owner 02.10.2026; AB-2)', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('from the gallery on "My workspace" — the empty list a new account sees', async ({ page }) => {

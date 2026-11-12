@@ -37,6 +37,12 @@ const EMAIL = `first-look-map-${Date.now()}-${Math.random().toString(36).slice(2
 /** What stands in the first screen, at the top of the page. */
 async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
+  // Since AB-2 (ADR-107) the project opens in Analyze, Business: "What this
+  // program does", then the map from the signed run — the first block under it,
+  // starting in the first screen. The first look's blocks stand below the map
+  // (interim until v3.2.0).
+  await expect(page.locator('[data-analyze-summary]')).toBeInViewport();
+  await expect(page.locator('[data-analyze-map]')).toBeInViewport();
   await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible();
   // The process stands in the first screen — since 03.10.2026 as the story of
   // its steps in plain words, the opening of the Business view (owner: "he just
@@ -47,10 +53,9 @@ async function firstScreen(page: Page) {
   // under "In short" — which quotes the header's title as the author's claim —
   // and "Started by / Goes in / Comes out". Owner decision 23.10.2026: its first
   // steps stand whole in the first screen of 1440 × 1000, beside the main line.
-  await expect(page.locator('[data-first-look-process="drawn"]')).toBeInViewport();
-  await expect(page.locator('[data-process-story]')).toBeInViewport();
-  await expect(page.locator('[data-process-story-step="1"]')).toBeInViewport({ ratio: 1 });
-  await expect(page.locator('[data-process-story-step="2"]')).toBeInViewport({ ratio: 1 });
+  //
+  // AB-2 moves the map to the top: the story is one of the blocks under it now.
+  await expect(page.locator('[data-process-story]')).toBeAttached();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
   // The main line stays on the right after the build-up (owner 10.10.2026,
@@ -91,18 +96,17 @@ test.describe('a new project: the first look ends on the full map', () => {
     });
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
-    // The build-up runs on this first visit, and its last moment is the map.
-    await expect(page.locator('[data-first-look="building"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 60000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
+    // No build-up since AB-2: the map stands at once, the first look's blocks below it in their end state.
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 
-    // Next step first (owner, 03.10.2026), the map directly under the answer,
-    // and the work area after it. Business's one layer stands on its own, with no
-    // bar (ADR-096): its section is the last block.
+    // AB-2: what the program does, then the map, then the first look's blocks
+    // and "Next step" under it (the interim until v3.2.0).
     const order = await page.evaluate(() =>
-      ['[data-next-step]', '[data-first-look]', '[data-workspace-process-block]', '[data-workspace-status-tools]', '[data-workspace-layer-section]'].map(
+      ['[data-analyze-summary]', '[data-workspace-process-block]', '[data-first-look]', '[data-next-step]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
@@ -115,6 +119,6 @@ test.describe('a new project: the first look ends on the full map', () => {
     // And it stays.
     await page.waitForTimeout(5000);
     await firstScreen(page);
-    expect(visited.filter((u) => u.includes('/analyze')), 'the start went through Analyze').toEqual([]);
+    expect(visited.filter((u) => u.includes('view=it')), 'the start went through the score page').toEqual([]);
   });
 });

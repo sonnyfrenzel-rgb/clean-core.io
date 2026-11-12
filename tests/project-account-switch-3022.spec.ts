@@ -50,7 +50,7 @@ test.beforeAll(async () => {
 test('a sign-in as another account in a second tab leaves nothing of the first account\'s project on screen', async ({ page, context }) => {
   test.setTimeout(240 * 1000);
   await signInViaLanding(page, EMAIL_A, SIGN_IN, { pauseMs: 3500 });
-  await page.goto(`/project/${PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('body')).toContainText(PROJECT_NAME, { timeout: 60000 });
 
   // The second tab of the same browser: A signs out from the account menu
