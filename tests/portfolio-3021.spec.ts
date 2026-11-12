@@ -608,6 +608,12 @@ test('My workspace carries the way into the portfolio, for every account', () =>
   // Outside the `hasOwn` branch: a new account with an own key starts here too.
   const actions = src.slice(src.indexOf('actions={', src.indexOf("title={t('workspace.projects')}")));
   expect(actions.indexOf('data-workspace-portfolio')).toBeLessThan(actions.indexOf('{hasOwn ?'));
+  // AB-14a: an account with no project yet sees the first view instead of the
+  // list — the way in is there too, outside any condition.
+  const first = read('components/workspace/HomeFirstView.tsx');
+  const entry = first.indexOf('data-workspace-portfolio=""');
+  expect(entry).toBeGreaterThan(-1);
+  expect(first.slice(Math.max(0, entry - 120), entry)).toContain('href="/portfolio"');
 });
 
 test('account erasure takes the portfolio with it', () => {

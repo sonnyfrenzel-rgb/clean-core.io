@@ -191,8 +191,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     }
     console.log('[CI DEBUG] Hard navigation to /dashboard committed. Waiting for Workspace h1...');
 
-    // Wait for the dashboard loading guard to resolve and the h1 "Workspace" to appear
-    await page.waitForSelector('h1:has-text("Workspace")', { timeout: 90000 });
+    // Wait for the dashboard loading guard to resolve and "My workspace" to appear —
+    // for an account with no project yet its first view (AB-14a), whose h1 is not "My workspace".
+    await page.waitForSelector('[data-cc-workspace] h1', { timeout: 90000 });
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
@@ -203,7 +204,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // from the Analyze stage's own upload on, so it checks that "New project"
     // is there and then starts from an empty project of this account.
     console.log('Creating a new E2E transformation project...');
-    await expect(page.locator('[data-workspace-new-project]').first()).toBeVisible({ timeout: 60000 });
+    // A new account's first view has the start built in (AB-14a); the list has "New project".
+    await expect(page.locator('[data-workspace-new-project], [data-home-start]').first()).toBeVisible({ timeout: 60000 });
 
     const { adminMergeDoc } = await import('./helpers/admin-seed');
     const projectId = `e2e-pipeline-${branchSuffix}-${Date.now()}`;

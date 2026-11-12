@@ -67,17 +67,17 @@ const STEPS: Step[] = [
   },
   {
     n: 2,
-    where: 'Dashboard',
-    action: 'Scroll to "Try it with an example"',
+    where: 'My workspace',
+    action: 'Look at "Try an example"',
     detail:
-      'Below your projects there is a panel of ready-made legacy reports. They are fictional, but written the way grown enterprise ABAP actually looks — and they are the same objects the analysis engine is regression-tested against.',
-    see: 'One recommended example under "Start here", three more chosen for what they show, and the rest behind "More examples" — each card naming the object, its size, and the Clean Core problem it demonstrates.',
+      'A new account lands on a first view with the start built in: what the analysis gives you, the seven tools in one line, and two ways to begin. "Try an example" holds ready-made legacy reports. They are fictional, but written the way grown enterprise ABAP actually looks — and they are the same objects the analysis engine is regression-tested against.',
+    see: 'One recommended example, Z_MM_PO_APPROVAL, with the green "Start this example" button, and the other shipped examples as a list with their size. Beside them, "Analyse your own program" for when you have a file.',
     note: 'This is the step that saves you the most time. Nothing has to be exported from an SAP system, and no customer code leaves anybody\'s estate.',
   },
   {
     n: 3,
-    where: 'Dashboard',
-    action: 'Press Start on the card under "Start here" — Z_MM_PO_APPROVAL, the case the demo project is built on',
+    where: 'My workspace',
+    action: 'Press "Start this example" on Z_MM_PO_APPROVAL, the case the demo project is built on',
     detail:
       'One click creates the project and opens its workspace, and the start is the analysis: the deterministic engine reads the source and the result is sealed as a signed run. With the model on, the narrative is written into the same run while you watch; without it, the engine’s reading is signed alone. At 552 lines it is a real approval process — vendor block list, price tolerance, approval by department head or manager — and it shows the honest gaps too: two includes the code names but does not contain are marked Not determined, never guessed.',
     see: 'The first look, about 20 seconds in six steps — the code read, the process recognised, plain names, the rules hard-coded in the program, what could not be determined, and your process as numbered steps beside the map. Pause or skip it at any time.',

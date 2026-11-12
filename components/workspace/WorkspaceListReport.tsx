@@ -80,6 +80,8 @@ import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
 import YourTurnCard, { yourTurnItems } from './YourTurnCard';
+import HomeFirstView from './HomeFirstView';
+import type { HomeMapSlice } from '@/lib/home-map-slice';
 import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
@@ -173,7 +175,14 @@ function RulesCell({ facts }: { facts: RowFacts['rules'] | undefined }) {
 
 const DEMO_ID = 'demo';
 
-export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }) {
+export default function WorkspaceListReport({
+  demo,
+  homeSlice = null,
+}: {
+  demo: WorkspaceDemoRow;
+  /** The live slice of the demo map for a new account's first view (AB-14a); null draws none. */
+  homeSlice?: HomeMapSlice | null;
+}) {
   const router = useRouter();
   const isS = useBreakpointS();
   const { profile, loading: profileLoading } = useUserProfile();
@@ -200,6 +209,8 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
   const [inviting, setInviting] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  /** The own list could not be read: the list stands as before, never the first view. */
+  const [ownFailedFor, setOwnFailedFor] = useState<string | null>(null);
 
   useEffect(() => onAuthStateChanged(getAuth(), (u) => setUser(u)), []);
 
@@ -240,7 +251,10 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         live = true;
         take(snap.docs);
       },
-      (error) => handleFirestoreError(error, OperationType.LIST, 'projects'),
+      (error) => {
+        setOwnFailedFor(uid);
+        handleFirestoreError(error, OperationType.LIST, 'projects');
+      },
     );
     return () => {
       alive = false;
@@ -549,6 +563,27 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         {t('state.loading')}
       </div>
     );
+  }
+
+  // AB-14a: an account with no project of its own and none shared with it
+  // lands on the first view (home mockup v2.1, state 1) — the start built in,
+  // not a list with only the demo in it. Decided only once both lists have
+  // answered for this account; until then the page waits rather than show one
+  // and switch to the other. A list that could not be read keeps today's page.
+  const ownAnswered = !!user && loaded?.uid === user.uid;
+  const sharedAnswered = !!user && sharedLoaded?.uid === user.uid;
+  const ownFailed = !!user && ownFailedFor === user.uid;
+  if (user && !ownFailed && (!ownAnswered || !sharedAnswered)) {
+    return (
+      <div className="cc min-h-screen bg-cc-page" data-workspace-waiting="">
+        <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted" role="status">
+          {t('state.loading')}
+        </div>
+      </div>
+    );
+  }
+  if (user && ownAnswered && sharedAnswered && projects.length === 0 && shared.length === 0) {
+    return <HomeFirstView userId={user.uid} profile={profile ?? null} slice={homeSlice} />;
   }
 
   const runnable = (row: WorkspaceRow) => !row.isDemo && row.access === 'own' && row.hasSource;
