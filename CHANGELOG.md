@@ -5,6 +5,17 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — v3.0.23
+
+A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it
+(`docs/ROADMAP.md`, row 3.0.23). Collected here while it is built on `dev`.
+
+### Fixed
+
+- **A model call the generation lease refuses no longer costs the community key's daily budget.** The budget counts
+  a call before the lease checks it; a call the lease then refuses never reaches the provider and is now given back
+  to the day it was counted on, also when the lease check itself fails.
+
 ## [v3.0.22] — 2026-11-12
 
 A hotfix from an end-to-end run of an owner example: a 936-line object-oriented program with a status workflow and
