@@ -45,8 +45,8 @@ move.
 - **SAP reference patterns are named again where SAP restored them.** SAP archived several reference architectures
   of its Architecture Center on 9 October 2026 and restored some of them on 27 October 2026. The integration target
   names RA0022 and RA0021 again, XSUAA and IAM roles RA0019, the Destination service RA0021 and RA0022 (partial),
-  and the Delivery handover RA0023 for CAP, integration and event targets. For a CAP target the line says that no current
-  pattern describes a side-by-side CAP extension as such, and points to RA0023 for its build, transport and operation.
+  and the Delivery handover RA0023 for CAP, integration and event targets. A CAP target names RA0023 (its lifecycle) and RA0021
+  (its integration) as partial patterns: no current SAP pattern describes a CAP extension as a whole.
 
 ### Operations
 

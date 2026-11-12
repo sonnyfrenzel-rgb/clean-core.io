@@ -24,7 +24,6 @@ import { cloudServiceDetails } from '../components/design/CloudServiceIntegratio
 import { CLOUD_SERVICE_KEYS, getCloudServiceKey } from '../lib/cloud-service-key';
 import {
   ARCHITECTURE_CENTER_SOURCE,
-  NO_CAP_PATTERN,
   DELIVERY_REFERENCE_OF_TARGET,
   RA0001_ABAP_QUOTE,
   REFERENCE_LINE_LEAD,
@@ -145,13 +144,13 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     expect(of(REFERENCE_OF_SERVICE.xsuaa)).toEqual(['RA0019:direct']);
     expect(of(REFERENCE_OF_SERVICE.iamRoles)).toEqual(['RA0019:partial']);
     expect(of(REFERENCE_OF_SERVICE.destination)).toEqual(['RA0021:partial', 'RA0022:partial']);
-    for (const code of ['rap', 'keep', 'retire', 'standard', 'keyuser', 'cap'] as const) {
+    for (const code of ['rap', 'keep', 'retire', 'standard', 'keyuser'] as const) {
       expect(of(REFERENCE_OF_TARGET[code]), code).toEqual(['-:none']);
     }
-    // cap: no current pattern describes a side-by-side CAP extension (RA0007, RA0018 are archived and not named).
-    // Owner decision 12.11.2026: a CAP target is never told "archived"; it is pointed to RA0023 for build and run.
-    expect(REFERENCE_OF_TARGET.cap[0].why).toBe(NO_CAP_PATTERN);
-    expect(NO_CAP_PATTERN).toBe('No current SAP reference pattern describes a side-by-side CAP extension as such; its build, transport and operation follow RA0023 (DevOps on SAP BTP), named with the handover.');
+    // cap: no current pattern describes a side-by-side CAP extension as a whole (RA0007, RA0018 are archived and not
+    // named). Owner decision 12.11.2026: CAP is SAP's standard, so the current patterns that cover it in part are
+    // named as partial — RA0023 for its lifecycle, RA0021 for its integration — and a CAP target is never "archived".
+    expect(of(REFERENCE_OF_TARGET.cap)).toEqual(['RA0023:partial', 'RA0021:partial']);
     for (const b of allBindings()) expect(b.why, b.ra ?? 'none').not.toMatch(/archived/i);
     const synced = new Map(SYNCED.architectures.map((a) => [a.id, a]));
     for (const id of ['RA0007', 'RA0018']) expect(synced.get(id)?.archived, `${id} stays unnamed while archived`).toBe(true);
@@ -200,16 +199,16 @@ test.describe('every target and every building block has an entry', () => {
   test('the one line says yes · partly · none, and never "archived"', () => {
     expect(referenceAnswer('event')).toBe('yes');
     expect(referenceAnswer('integration')).toBe('yes');
-    expect(referenceAnswer('cap')).toBe('none');
+    expect(referenceAnswer('cap')).toBe('partly');
     expect(referenceAnswer('rap')).toBe('none');
     expect(referencePatternLine('event').text).toBe(`${REFERENCE_LINE_LEAD}: yes.`);
     expect(referencePatternLine('event').ras).toEqual(['RA0001']);
     expect(referencePatternLine('integration').text).toBe(`${REFERENCE_LINE_LEAD}: yes.`);
     expect(referencePatternLine('integration').ras).toEqual(['RA0022', 'RA0021']);
     expect(referencePatternLine('rap').text).toBe(`${REFERENCE_LINE_LEAD}: none.`);
-    expect(referencePatternLine('cap').text).toBe(`${REFERENCE_LINE_LEAD}: none.`);
+    expect(referencePatternLine('cap').text).toBe(`${REFERENCE_LINE_LEAD}: partly.`);
     for (const code of TARGET_ARCHITECTURES) expect(referencePatternLine(code).text, code).not.toMatch(/archived/i);
-    expect(referencePatternLine('cap').ras).toEqual([]);
+    expect(referencePatternLine('cap').ras).toEqual(['RA0023', 'RA0021']);
   });
 
   test('the handover README section, by target code', () => {
@@ -222,11 +221,10 @@ test.describe('every target and every building block has an entry', () => {
     expect(referencePatternsReadme('rap')).not.toContain('RA0023');
     expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0022 API Managed Integration with SAP Integration Suite](${raUrl('RA0022')})`);
     expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0021 App2App Integration with SAP Integration Suite](${raUrl('RA0021')})`);
-    expect(referencePatternsReadme('integration')).not.toContain(NO_CAP_PATTERN);
+    expect(referencePatternsReadme('cap')).toContain(`- Partial fit: [RA0021 App2App Integration with SAP Integration Suite](${raUrl('RA0021')})`);
     expect(referencePatternsReadme('event', 'public')).toContain(eventSourceSentence('public'));
     expect(referencePatternsReadme(null)).toContain('no pattern is named');
     expect(referencePatternsReadme('cap')).toContain('## Reference patterns');
-    expect(referencePatternsReadme('cap')).toContain(NO_CAP_PATTERN);
     expect(referencePatternsReadme('cap')).not.toMatch(/archived/i);
   });
 });

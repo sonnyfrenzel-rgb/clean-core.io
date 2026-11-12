@@ -106,17 +106,6 @@ export interface ReferenceBinding {
 const bind = (ra: SapRaId | null, fit: ReferenceFit, why: string): ReferenceBinding =>
   Object.freeze({ ra, fit, why, verifiedAt: VERIFIED_AT });
 
-/**
- * `cap`: no current Architecture Center pattern describes a side-by-side CAP
- * extension as such (RA0007 and RA0018, which did, are archived and are not
- * named). The line says what is true today and points to the pattern that does
- * cover a CAP application — its build, transport and operation (RA0023, named
- * with the handover). Owner decision 12.11.2026: a CAP target is never told
- * "archived".
- */
-export const NO_CAP_PATTERN =
-  'No current SAP reference pattern describes a side-by-side CAP extension as such; its build, transport and operation follow RA0023 (DevOps on SAP BTP), named with the handover.';
-
 const NO_IN_APP_PATTERN =
   'The Architecture Center does not cover in-app ABAP Cloud, RAP, released APIs or Level A–D; SAP’s Cloudification Repository is the source for this path.';
 
@@ -124,7 +113,12 @@ const NO_IN_APP_PATTERN =
 export const REFERENCE_OF_TARGET: Readonly<Record<TargetArchitectureCode, readonly ReferenceBinding[]>> = Object.freeze({
   rap: [bind(null, 'none', NO_IN_APP_PATTERN)],
   // Were RA0007 / RA0018 (partial) until SAP archived them on 09.10.2026; both are still archived and not named.
-  cap: [bind(null, 'none', NO_CAP_PATTERN)],
+  // Owner decision 12.11.2026: CAP is SAP's standard for side-by-side extensions, so the current patterns that cover
+  // it in part are named as partial, each for the part it covers.
+  cap: [
+    bind('RA0023', 'partial', 'Names building applications with the Cloud Application Programming (CAP) model on Cloud Foundry, with CI/CD through SAP Continuous Integration and Delivery, transport through SAP Cloud Transport Management and operation in SAP Cloud ALM — the lifecycle of the extension, not its design.'),
+    bind('RA0021', 'partial', 'Connects an application to SAP S/4HANA through Cloud Integration and, for Cloud2OnPremise, the Connectivity service with a cloud connector and the Destination service — the integration side of a side-by-side extension, not the extension itself.'),
+  ],
   integration: [
     bind('RA0022', 'direct', 'APIs exposed as governed API proxies through API Management in SAP Integration Suite, with Cloud Integration for mediation beyond it and the Connectivity and Destination services for on-premise back ends.'),
     bind('RA0021', 'direct', 'Transactional messages between applications through Cloud Integration in SAP Integration Suite, Cloud2Cloud and Cloud2OnPremise, with SAP AIF for monitoring on SAP S/4HANA or SAP ECC.'),
