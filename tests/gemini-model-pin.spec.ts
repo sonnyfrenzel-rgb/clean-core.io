@@ -145,6 +145,20 @@ test("a request for the product default runs on the deployment's product model",
  * `node scripts/check-gemini-register.mjs`, which exits 1 on a dead entry and 2
  * when there is no key. Wiring it in is not part of this step.
  */
+test('a model under evaluation is served only as the deployment\'s product model, never on a client\'s request', () => {
+  const route = read('app/api/gemini/route.ts');
+  expect(route).toContain("const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);");
+  expect(route).toContain('if (!ALLOWED_MODELS.has(model) || (EVALUATION_ONLY_MODELS.has(model) && model !== productModel())) {');
+});
+
+test('the register probe counts an answer only from the model that was asked', async () => {
+  const { servedVerdict } = await import('../scripts/check-gemini-register.mjs');
+  expect(servedVerdict('gemini-3.8-flash', { modelVersion: 'gemini-3.8-flash' })).toEqual({ answered: true, servedBy: 'gemini-3.8-flash' });
+  expect(servedVerdict('gemini-3.5-flash', { modelVersion: 'gemini-3.6-flash' }).answered).toBe(false);
+  expect(servedVerdict('gemini-3.8-flash', {}).answered).toBe(false);
+  expect(servedVerdict('gemini-3.8-flash', { modelVersion: 'gemini-3.8-flash-001' }).answered).toBe(true);
+});
+
 test('every model in the register has been called, and answered', () => {
   const route = read('app/api/gemini/route.ts');
   const start = route.indexOf('const ALLOWED_MODELS');
