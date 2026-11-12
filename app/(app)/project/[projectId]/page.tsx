@@ -9,6 +9,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
 import { viewSwitchHash } from '@/lib/view-switch';
 import { layerRedirect } from '@/lib/layer-redirect';
+import { analyzeEntryHref } from '@/lib/analyze-entry';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { originOf } from '@/lib/choice-addresses';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
@@ -132,13 +133,37 @@ export default function ProjectWorkspacePage() {
     leavingHref = `/project/${encodeURIComponent(projectId)}?${query.toString()}#${leaving.hash}`;
   }
   const arrived = leaving?.kind === 'view' && view === leaving.view;
-  const redirecting = leavingHref !== null && !arrived;
+  /**
+   * The Business view is Analyze's now (plan AB-2, ADR-107): `/project/<id>`
+   * in Business — or with no view — goes to `/project/<id>/analyze`, keeping
+   * `view`, `first`, `from`, `origin` and a line (`#L42`) or the map
+   * (`lib/analyze-entry.ts`). An old layer address is sent where it lives
+   * first (`#costs` to Economics, `#architecture` to IT, above); one whose
+   * content is the map (`#need`) lands on the map. Every time the view is
+   * Business, not only on arrival: the workspace's own view switch to
+   * Business leads there too. IT and Management stay here until AB-9/AB-10.
+   */
+  const toAnalyze =
+    state === 'ready' && view === 'business' && !(leavingHref !== null && !arrived)
+      ? analyzeEntryHref({
+          projectId,
+          search: searchParams?.toString() ?? '',
+          hash:
+            target?.kind === 'view' && target.view === 'business'
+              ? `#${target.hash}`
+              : typeof window === 'undefined'
+                ? ''
+                : window.location.hash,
+        })
+      : null;
+  const sendTo = leavingHref !== null && !arrived ? leavingHref : toAnalyze;
+  const redirecting = sendTo !== null;
   useEffect(() => {
-    if (!leavingHref || arrived) return;
-    router.replace(leavingHref, { scroll: false });
-    const timer = window.setTimeout(() => window.location.replace(leavingHref), 8000);
+    if (!sendTo) return;
+    router.replace(sendTo, { scroll: false });
+    const timer = window.setTimeout(() => window.location.replace(sendTo), 8000);
     return () => window.clearTimeout(timer);
-  }, [leavingHref, arrived, router]);
+  }, [sendTo, router]);
   // Landed. The place follower and the shell hear of the new fragment — a
   // client navigation sends no `hashchange` of its own.
   useEffect(() => {
@@ -154,8 +179,9 @@ export default function ProjectWorkspacePage() {
   // not when it was merely asked for: a load that fails, or a tab closed before
   // the project arrived, used to cost the reader their first look.
   useEffect(() => {
-    if (state === 'ready' && buildUp === true && projectId) markFirstLookSeen(projectId);
-  }, [state, buildUp, projectId]);
+    // Not in Business: that view is Analyze's, where the first look is marked (plan AB-2).
+    if (state === 'ready' && buildUp === true && projectId && view !== 'business') markFirstLookSeen(projectId);
+  }, [state, buildUp, projectId, view]);
 
   const setView = useCallback(
     (next: WorkspaceView) => {
@@ -226,7 +252,8 @@ export default function ProjectWorkspacePage() {
   const startRun = useStartRun({
     project,
     projectId,
-    auto: state === 'ready' && buildUp === true,
+    // Never on the way to Analyze: the start run of a Business arrival is signed there (plan AB-2).
+    auto: state === 'ready' && buildUp === true && view !== 'business',
     onSigned: reload,
   });
 
