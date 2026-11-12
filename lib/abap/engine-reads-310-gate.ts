@@ -1,7 +1,7 @@
 import { engineVersionAtLeast } from '../score-rule';
 
 /**
- * The one engine version gate of the rebuild's first release, v3.1.0. Two groups of readings live behind it.
+ * The one engine version gate of the rebuild's first release, 3.1.0. Two groups of readings live behind it.
  *
  * **1. The Business view in business language** — the version from which the Business view reads the code in business language (concept
  * "Business-Lesbarkeit" of 05.11.2026, owner decisions E1–E4 of 06.11.2026). Deterministic only — no model call, no
@@ -29,7 +29,7 @@ import { engineVersionAtLeast } from '../score-rule';
  * pattern as `ENGINE_READS_3021_FROM`.
  *
  * Owner decisions 06.11.2026: there is no user release 3.0.22. The rebuild ships to users piece by piece on main —
- * v3.1.0 first (about 23.11.2026), then v3.2.0, then v3.5.0 — and hotfixes in between are 3.0.22, 3.0.23 … and keep
+ * 3.1.0 first (about 23.11.2026), then 3.2.0, then 3.5.0 — and hotfixes in between are 3.0.22, 3.0.23 … and keep
  * the 3.0.21 reading. So the gate is 3.1.0, the first release that carries these readings: a run signed by a 3.0.x
  * hotfix is never read as carrying them.
  *
