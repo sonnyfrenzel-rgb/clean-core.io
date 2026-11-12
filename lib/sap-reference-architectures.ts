@@ -31,7 +31,7 @@
  * **Only current RAs (owner decision 10.10.2026).** An archived RA (tag
  * `archive`, shown on the page as "This content has been archived … should not be
  * relied on as current guidance") is never named here: where only archived ones
- * fit, the binding is `none` and says so (`ARCHIVED_ONLY`). The synced metadata
+ * fit, the binding is `none` with a reason that is true today. The synced metadata
  * keeps the archive state, and the spec fails the day a binding points at an
  * archived RA. On 09.10.2026 SAP archived 18 RAs, among them every RA that fitted
  * `cap`, `integration`, `xsuaa`, `iamRoles` and `destination` (RA0007, RA0018,
@@ -107,12 +107,15 @@ const bind = (ra: SapRaId | null, fit: ReferenceFit, why: string): ReferenceBind
   Object.freeze({ ra, fit, why, verifiedAt: VERIFIED_AT });
 
 /**
- * Where the only RAs that fit are archived by SAP — said openly, never replaced
- * by an archived link or by a weaker current one. Since SAP's restore of
- * 27.10.2026 this holds for `cap` alone (RA0007, RA0018).
+ * `cap`: no current Architecture Center pattern describes a side-by-side CAP
+ * extension as such (RA0007 and RA0018, which did, are archived and are not
+ * named). The line says what is true today and points to the pattern that does
+ * cover a CAP application — its build, transport and operation (RA0023, named
+ * with the handover). Owner decision 12.11.2026: a CAP target is never told
+ * "archived".
  */
-export const ARCHIVED_ONLY =
-  'No current SAP reference pattern — the ones that fitted were archived by SAP on 09.10.2026.';
+export const NO_CAP_PATTERN =
+  'No current SAP reference pattern describes a side-by-side CAP extension as such; its build, transport and operation follow RA0023 (DevOps on SAP BTP), named with the handover.';
 
 const NO_IN_APP_PATTERN =
   'The Architecture Center does not cover in-app ABAP Cloud, RAP, released APIs or Level A–D; SAP’s Cloudification Repository is the source for this path.';
@@ -120,8 +123,8 @@ const NO_IN_APP_PATTERN =
 /** Target architecture → RA. Every code has an entry; `none` is said, not left out. */
 export const REFERENCE_OF_TARGET: Readonly<Record<TargetArchitectureCode, readonly ReferenceBinding[]>> = Object.freeze({
   rap: [bind(null, 'none', NO_IN_APP_PATTERN)],
-  // Were RA0007 / RA0018 (partial) until SAP archived them on 09.10.2026; both are still archived.
-  cap: [bind(null, 'none', ARCHIVED_ONLY)],
+  // Were RA0007 / RA0018 (partial) until SAP archived them on 09.10.2026; both are still archived and not named.
+  cap: [bind(null, 'none', NO_CAP_PATTERN)],
   integration: [
     bind('RA0022', 'direct', 'APIs exposed as governed API proxies through API Management in SAP Integration Suite, with Cloud Integration for mediation beyond it and the Connectivity and Destination services for on-premise back ends.'),
     bind('RA0021', 'direct', 'Transactional messages between applications through Cloud Integration in SAP Integration Suite, Cloud2Cloud and Cloud2OnPremise, with SAP AIF for monitoring on SAP S/4HANA or SAP ECC.'),
@@ -252,9 +255,7 @@ export function referencePatternLine(code: TargetArchitectureCode): {
   const ras = best
     ? REFERENCE_OF_TARGET[code].filter((b) => b.fit === best && b.ra !== null).map((b) => b.ra as SapRaId)
     : [];
-  // A `none` because SAP archived what fitted says so — openly, in the line itself.
-  const archivedOnly = answer === 'none' && REFERENCE_OF_TARGET[code].some((b) => b.why === ARCHIVED_ONLY);
-  const text = `${REFERENCE_LINE_LEAD}: ${answer}${archivedOnly ? ' — the ones that fitted were archived by SAP on 09.10.2026' : ''}.`;
+  const text = `${REFERENCE_LINE_LEAD}: ${answer}.`;
   return { answer, text, ras };
 }
 

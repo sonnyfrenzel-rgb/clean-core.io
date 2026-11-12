@@ -24,7 +24,7 @@ import { cloudServiceDetails } from '../components/design/CloudServiceIntegratio
 import { CLOUD_SERVICE_KEYS, getCloudServiceKey } from '../lib/cloud-service-key';
 import {
   ARCHITECTURE_CENTER_SOURCE,
-  ARCHIVED_ONLY,
+  NO_CAP_PATTERN,
   DELIVERY_REFERENCE_OF_TARGET,
   RA0001_ABAP_QUOTE,
   REFERENCE_LINE_LEAD,
@@ -148,12 +148,13 @@ test.describe('every RA the mapping names exists, as SAP publishes it', () => {
     for (const code of ['rap', 'keep', 'retire', 'standard', 'keyuser', 'cap'] as const) {
       expect(of(REFERENCE_OF_TARGET[code]), code).toEqual(['-:none']);
     }
-    // cap's RAs (RA0007, RA0018) are still archived: none, said openly — and only there.
-    expect(REFERENCE_OF_TARGET.cap[0].why).toBe(ARCHIVED_ONLY);
-    expect(allBindings().filter((b) => b.why === ARCHIVED_ONLY)).toEqual([REFERENCE_OF_TARGET.cap[0]]);
-    expect(ARCHIVED_ONLY).toBe('No current SAP reference pattern — the ones that fitted were archived by SAP on 09.10.2026.');
+    // cap: no current pattern describes a side-by-side CAP extension (RA0007, RA0018 are archived and not named).
+    // Owner decision 12.11.2026: a CAP target is never told "archived"; it is pointed to RA0023 for build and run.
+    expect(REFERENCE_OF_TARGET.cap[0].why).toBe(NO_CAP_PATTERN);
+    expect(NO_CAP_PATTERN).toBe('No current SAP reference pattern describes a side-by-side CAP extension as such; its build, transport and operation follow RA0023 (DevOps on SAP BTP), named with the handover.');
+    for (const b of allBindings()) expect(b.why, b.ra ?? 'none').not.toMatch(/archived/i);
     const synced = new Map(SYNCED.architectures.map((a) => [a.id, a]));
-    for (const id of ['RA0007', 'RA0018']) expect(synced.get(id)?.archived, `${id} — cap's reason is still true`).toBe(true);
+    for (const id of ['RA0007', 'RA0018']) expect(synced.get(id)?.archived, `${id} stays unnamed while archived`).toBe(true);
     // RFC: no RA describes replacing it, so the nearest (RA0022) only as partial.
     expect(`${RFC_DRIVER_REFERENCE.ra}:${RFC_DRIVER_REFERENCE.fit}`).toBe('RA0022:partial');
     // Delivery: RA0023 for the targets that ship a BTP application.
@@ -196,7 +197,7 @@ test.describe('every target and every building block has an entry', () => {
     }
   });
 
-  test('the one line says yes · partly · none, and says when SAP archived the pattern', () => {
+  test('the one line says yes · partly · none, and never "archived"', () => {
     expect(referenceAnswer('event')).toBe('yes');
     expect(referenceAnswer('integration')).toBe('yes');
     expect(referenceAnswer('cap')).toBe('none');
@@ -206,7 +207,8 @@ test.describe('every target and every building block has an entry', () => {
     expect(referencePatternLine('integration').text).toBe(`${REFERENCE_LINE_LEAD}: yes.`);
     expect(referencePatternLine('integration').ras).toEqual(['RA0022', 'RA0021']);
     expect(referencePatternLine('rap').text).toBe(`${REFERENCE_LINE_LEAD}: none.`);
-    expect(referencePatternLine('cap').text).toBe(`${REFERENCE_LINE_LEAD}: none — the ones that fitted were archived by SAP on 09.10.2026.`);
+    expect(referencePatternLine('cap').text).toBe(`${REFERENCE_LINE_LEAD}: none.`);
+    for (const code of TARGET_ARCHITECTURES) expect(referencePatternLine(code).text, code).not.toMatch(/archived/i);
     expect(referencePatternLine('cap').ras).toEqual([]);
   });
 
@@ -220,11 +222,12 @@ test.describe('every target and every building block has an entry', () => {
     expect(referencePatternsReadme('rap')).not.toContain('RA0023');
     expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0022 API Managed Integration with SAP Integration Suite](${raUrl('RA0022')})`);
     expect(referencePatternsReadme('integration')).toContain(`- Direct fit: [RA0021 App2App Integration with SAP Integration Suite](${raUrl('RA0021')})`);
-    expect(referencePatternsReadme('integration')).not.toContain(ARCHIVED_ONLY);
+    expect(referencePatternsReadme('integration')).not.toContain(NO_CAP_PATTERN);
     expect(referencePatternsReadme('event', 'public')).toContain(eventSourceSentence('public'));
     expect(referencePatternsReadme(null)).toContain('no pattern is named');
     expect(referencePatternsReadme('cap')).toContain('## Reference patterns');
-    expect(referencePatternsReadme('cap')).toContain(ARCHIVED_ONLY);
+    expect(referencePatternsReadme('cap')).toContain(NO_CAP_PATTERN);
+    expect(referencePatternsReadme('cap')).not.toMatch(/archived/i);
   });
 });
 
