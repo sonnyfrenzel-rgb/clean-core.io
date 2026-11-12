@@ -105,7 +105,8 @@ test.describe('a finished project reopens on its process', () => {
   });
 
   test('Analyze has the way to the process where a run is signed', () => {
-    expect(workspaceProcessHref('p1')).toBe(`/project/p1?view=business#${BUSINESS_MAP_ID}`);
+    // The process stands in Analyze's Business view since AB-2 (ADR-107), no longer on the workspace.
+    expect(workspaceProcessHref('p1')).toBe(`/project/p1/analyze?view=business#${BUSINESS_MAP_ID}`);
     const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
     const at = analyze.indexOf('data-analyze-open-process');
     expect(at, 'Analyze has no link to the process').toBeGreaterThan(0);

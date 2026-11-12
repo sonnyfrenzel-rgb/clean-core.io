@@ -265,12 +265,14 @@ test.describe('own code: the handoff to Analyze', () => {
     expect(page).not.toContain('CcRadioGroup');
   });
 
-  test('the import opens the workspace, and Analyze returns there after a project\'s first run', () => {
-    // Owner 02.10.2026: an example or own code always opens the workspace with
-    // the first look first, never the Analyze tool.
+  test('the import opens the project\'s entry, and Analyze returns there after a project\'s first run', () => {
+    // Owner 02.10.2026: an example or own code always opens with the first look
+    // first. Since AB-2 (ADR-107) the entry is Analyze in the Business view —
+    // the map — with `?first=1`, never today's score page.
     const importPage = read('components/workspace/OwnCodeImport.tsx');
-    expect(importPage).toContain('router.push(`/project/${docRef.id}?first=1`);');
+    expect(importPage).toContain('router.push(`/project/${docRef.id}/analyze?first=1`);');
     expect(importPage).not.toContain('/analyze`');
+    expect(importPage).not.toContain('view=it');
     const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
     // A project's first run — whatever started it — continues in the workspace;
     // a re-run stays on the tool.
@@ -281,7 +283,7 @@ test.describe('own code: the handoff to Analyze', () => {
     expect(analyze.slice(take, set)).toContain('if (handoff) {');
     // After the signed run's id is in hand — for every account since roadmap 3.0.1.
     const runId = analyze.indexOf('const activeRunId = runResult.runId;');
-    const push = analyze.indexOf("router.push(`/project/${projectId}?first=1`)");
+    const push = analyze.indexOf("router.push(`/project/${projectId}/analyze?first=1`)");
     expect(push).toBeGreaterThan(runId);
     expect(analyze.slice(runId, push)).toContain('if (openWorkspaceAfterRunRef.current || firstRunOfProject) {');
   });
