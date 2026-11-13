@@ -45,7 +45,20 @@ const CONFIGURABLE: Record<string, ThinkingLevel> = {
 
 /** The level a model thinks at for a stage, where no shape rule applies. */
 const MODEL_STAGE_LEVELS: Readonly<Record<string, Readonly<Record<string, ThinkingLevel>>>> = {
-  [EVALUATION_GEMINI_MODEL]: { statements: ThinkingLevel.MEDIUM },
+  // Owner decision 13.11.2026 (evening): Hydrogen MEDIUM on every stage it is given — where the measurement
+  // allows it. Measured per stage with `tests/prozess-benchmark/stage-bench.ts` (10 learn cases, blind, MEDIUM
+  // against the provider's default): analyze 0 against 1 contradicting answers, 25 s against 49 s median;
+  // design 5 against 6, 33 s against 46 s; documentation 0 against 1, 18 s against 30 s — each about 35 %
+  // cheaper, the default fuller, MEDIUM more correct (wins 6:4, 6:4 and 5:2 for the default, p ≥ 0.45: no
+  // difference at this size). Testing is the exception: the default's test classes were the usable ones (8:1,
+  // p = 0.04; MEDIUM left stubs unimplemented and assertions empty), so Testing keeps the provider's default
+  // and its 80 s. The statements' measurement is in the module header.
+  [EVALUATION_GEMINI_MODEL]: {
+    analyze: ThinkingLevel.MEDIUM,
+    statements: ThinkingLevel.MEDIUM,
+    design: ThinkingLevel.MEDIUM,
+    documentation: ThinkingLevel.MEDIUM,
+  },
 };
 
 export function thinkingConfigFor(
@@ -64,9 +77,11 @@ export function thinkingConfigFor(
   if (shape === 'statements-rewording') return { thinkingLevel: ThinkingLevel.LOW };
   if (shape === 'documentation-business') {
     const level = CONFIGURABLE[(env[DOCUMENTATION_BUSINESS_THINKING_ENV] ?? '').trim().toLowerCase()];
-    return level ? { thinkingLevel: level } : undefined;
+    if (level) return { thinkingLevel: level };
+    // Unset: the model's level for the stage below, as for a call without a shape — the business layer
+    // is the documentation stage's answer, and the stage's model was measured with it.
   }
-  if (call && shape === undefined) {
+  if (call && (shape === undefined || shape === 'documentation-business')) {
     const level = MODEL_STAGE_LEVELS[call.model]?.[call.stage];
     if (level) return { thinkingLevel: level };
   }

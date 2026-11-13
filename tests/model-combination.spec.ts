@@ -136,7 +136,17 @@ test.describe('the thinking level per model and stage', () => {
   test('gemini-4-hydrogen thinks MEDIUM for the statements; the product model keeps its default; a shape rule wins', () => {
     expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage: 'statements' })).toEqual({ thinkingLevel: ThinkingLevel.MEDIUM });
     expect(thinkingConfigFor(undefined, {}, { model: 'gemini-3.8-flash', stage: 'statements' })).toBeUndefined();
-    expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage: 'analyze' })).toBeUndefined();
+    // The stages Hydrogen is given think MEDIUM (13.11.2026) — except Testing, whose test classes the default wrote
+    // and MEDIUM left empty (8:1 blind); the naming stage has its own model and no level here.
+    for (const stage of ['analyze', 'design', 'documentation']) {
+      expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage }), stage).toEqual({ thinkingLevel: ThinkingLevel.MEDIUM });
+    }
+    expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage: 'testing' })).toBeUndefined();
+    expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage: 'naming' })).toBeUndefined();
+    // The business layer's shape follows the stage's model level when the operator set none for it.
+    expect(thinkingConfigFor('documentation-business', {}, { model: 'gemini-4-hydrogen', stage: 'documentation' })).toEqual({ thinkingLevel: ThinkingLevel.MEDIUM });
+    expect(thinkingConfigFor('documentation-business', { GEMINI_THINKING_DOCUMENTATION_BUSINESS: 'low' }, { model: 'gemini-4-hydrogen', stage: 'documentation' })).toEqual({ thinkingLevel: ThinkingLevel.LOW });
+    expect(thinkingConfigFor('documentation-business', {}, { model: 'gemini-3.8-flash', stage: 'documentation' })).toBeUndefined();
     // Without the call the function is what it was: the shape alone decides.
     expect(thinkingConfigFor(undefined)).toBeUndefined();
     expect(thinkingConfigFor('plain-wording', {}, { model: 'gemini-4-hydrogen', stage: 'statements' })).toEqual({ thinkingLevel: ThinkingLevel.LOW });
